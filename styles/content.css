@@ -1,0 +1,71 @@
+/* WPlace Studio - Content Script Styles */
+
+/* Toast Animations */
+@keyframes wplace-studio-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes wplace-studio-slide-out {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Studio UI Elements */
+#wplace-studio-indicator {
+  transition: all 0.3s ease;
+}
+
+#wplace-studio-indicator:hover {
+  opacity: 1 !important;
+  transform: scale(1.05);
+}
+
+/* Protected Elements */
+.wplace-studio-protected {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  -webkit-user-drag: none !important;
+  -khtml-user-drag: none !important;
+  -moz-user-drag: none !important;
+  -o-user-drag: none !important;
+  user-drag: none !important;
+}
+
+/* UI Enhancements - Will be injected dynamically */
+.wplace-studio-enhanced {
+  /* Placeholder for dynamic enhancements */
+}
+
+/* Custom scrollbar for enhanced UI */
+.wplace-studio-enhanced::-webkit-scrollbar {
+  width: 8px;
+}
+
+.wplace-studio-enhanced::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.1);
+  border-radius: 4px;
+}
+
+.wplace-studio-enhanced::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4px;
+}
+
+.wplace-studio-enhanced::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
