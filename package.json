@@ -1,38 +1,12 @@
 {
   "name": "wplace-studio",
   "version": "1.0.0",
-  "description": "Professional toolkit for WPlace - Chrome extension for creators",
-  "main": "background.js",
   "scripts": {
-    "build": "npm run copy-files",
-    "copy-files": "cp -r . ../dist/wplace-studio || xcopy . ..\\dist\\wplace-studio /E /I",
-    "dev": "echo 'Load unpacked extension from current directory'",
-    "lint": "eslint *.js",
-    "test": "echo 'Tests coming soon'"
+    "build": "esbuild src/content.ts --bundle --outfile=dist/content.js --minify --target=chrome88",
+    "dev": "npm run build -- --watch"
   },
-  "keywords": [
-    "chrome-extension",
-    "wplace",
-    "image-protection",
-    "creator-tools",
-    "art-protection"
-  ],
-  "author": {
-    "name": "WPlace Studio Team"
-  },
-  "license": "MIT",
   "devDependencies": {
-    "eslint": "^8.0.0"
-  },
-  "engines": {
-    "node": ">=16.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/wplace-studio/wplace-studio.git"
-  },
-  "bugs": {
-    "url": "https://github.com/wplace-studio/wplace-studio/issues"
-  },
-  "homepage": "https://github.com/wplace-studio/wplace-studio#readme"
+    "esbuild": "^0.19.0",
+    "@types/chrome": "^0.0.246"
+  }
 }

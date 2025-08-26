@@ -1,7 +1,7 @@
 // WPlace Studio - Main Content Script
 // Migrated from Tampermonkey script to Chrome Extension
 
-import { WPlaceExtendedFavorites } from './features/favorite/index.js';
+import { WPlaceExtendedFavorites } from './features/favorite/index';
 
 // Chrome拡張機能として初期化
 if (typeof chrome !== 'undefined' && chrome.storage) {
