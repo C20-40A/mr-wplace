@@ -16,7 +16,13 @@ export class WPlaceExtendedFavorites {
   }
 
   init() {
-    this.observeAndInit();
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", () =>
+        this.observeAndInit()
+      );
+    } else {
+      this.observeAndInit();
+    }
   }
 
   observeAndInit() {
@@ -40,7 +46,7 @@ export class WPlaceExtendedFavorites {
     this.startButtonObserver(buttonConfigs);
 
     // モーダル作成
-    setTimeout(() => this.createModal(), 2000);
+    this.createModal();
   }
 
   // 汎用ボタン監視システム
@@ -58,14 +64,13 @@ export class WPlaceExtendedFavorites {
 
     // DOM変更監視
     const observer = new MutationObserver(() => {
-      setTimeout(ensureButtons, 100);
+      ensureButtons();
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
 
-    // 初期配置 & 定期チェック
-    setTimeout(ensureButtons, 1000);
-    setInterval(ensureButtons, 5000);
+    // 初回実行
+    ensureButtons();
   }
 
   // お気に入りボタン作成
