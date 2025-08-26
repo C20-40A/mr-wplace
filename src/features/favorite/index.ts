@@ -143,7 +143,7 @@ export class WPlaceExtendedFavorites {
   }
 
   // モーダルを作成
-  createModal() {
+  createModal(): void {
     const modal = document.createElement("dialog");
     modal.id = "wplace-studio-favorite-modal";
     modal.className = "modal";
@@ -196,15 +196,24 @@ export class WPlaceExtendedFavorites {
 
     // イベントリスナー（既存のグリッドクリック）
     modal
-      .querySelector("#wps-favorites-grid")
+      .querySelector("#wps-favorites-grid")!
       .addEventListener("click", (e) => {
-        const card = e.target.closest(".wps-favorite-card");
-        const deleteBtn = e.target.closest(".wps-delete-btn");
+        const target = e.target as HTMLElement;
+        if (!target) return;
 
-        if (deleteBtn) {
+        const card = target.closest(".wps-favorite-card") as HTMLElement | null;
+        const deleteBtn = target.closest(
+          ".wps-delete-btn"
+        ) as HTMLElement | null;
+
+        if (deleteBtn?.dataset.id) {
           const id = parseInt(deleteBtn.dataset.id);
           this.deleteFavorite(id);
-        } else if (card) {
+        } else if (
+          card?.dataset.lat &&
+          card?.dataset.lng &&
+          card?.dataset.zoom
+        ) {
           const lat = parseFloat(card.dataset.lat);
           const lng = parseFloat(card.dataset.lng);
           const zoom = parseFloat(card.dataset.zoom);
@@ -215,10 +224,10 @@ export class WPlaceExtendedFavorites {
 
     // エクスポート・インポートのイベントリスナー
     modal
-      .querySelector("#wps-export-btn")
+      .querySelector("#wps-export-btn")!
       .addEventListener("click", () => this.exportFavorites());
     modal
-      .querySelector("#wps-import-btn")
+      .querySelector("#wps-import-btn")!
       .addEventListener("click", () => this.importFavorites());
   }
 
@@ -240,7 +249,7 @@ export class WPlaceExtendedFavorites {
   }
 
   // エクスポート機能
-  async exportFavorites() {
+  async exportFavorites(): Promise<void> {
     try {
       const favorites = await this.getFavorites();
 
@@ -268,19 +277,23 @@ export class WPlaceExtendedFavorites {
       link.click();
 
       this.showToast(`${favorites.length}件のお気に入りをエクスポートしました`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("WPlace Studio: エクスポートエラー:", error);
       this.showToast("エクスポートに失敗しました");
     }
   }
 
   // インポート機能
-  importFavorites() {
-    const fileInput = document.getElementById("wps-import-file");
+  importFavorites(): void {
+    const fileInput = document.getElementById(
+      "wps-import-file"
+    ) as HTMLInputElement;
+    if (!fileInput) return;
     fileInput.click();
 
     fileInput.onchange = async (e) => {
-      const file = e.target.files[0];
+      const target = e.target as HTMLInputElement;
+      const file = target.files?.[0];
       if (!file) return;
 
       try {
@@ -304,16 +317,18 @@ export class WPlaceExtendedFavorites {
         }
 
         // 重複チェック（座標が同じものは除外）
-        const newFavorites = importData.favorites.filter((importFav) => {
-          return !currentFavorites.some(
-            (existing) =>
-              Math.abs(existing.lat - importFav.lat) < 0.001 &&
-              Math.abs(existing.lng - importFav.lng) < 0.001
-          );
-        });
+        const newFavorites = importData.favorites.filter(
+          (importFav: Favorite) => {
+            return !currentFavorites.some(
+              (existing: Favorite) =>
+                Math.abs(existing.lat - importFav.lat) < 0.001 &&
+                Math.abs(existing.lng - importFav.lng) < 0.001
+            );
+          }
+        );
 
         // IDを新規採番（整数で）
-        newFavorites.forEach((fav, index) => {
+        newFavorites.forEach((fav: Favorite, index: number) => {
           fav.id = Date.now() + index;
         });
 
@@ -328,20 +343,27 @@ export class WPlaceExtendedFavorites {
         this.showToast(
           `${newFavorites.length}件のお気に入りをインポートしました`
         );
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("WPlace Studio: インポートエラー:", error);
-        this.showToast("インポートに失敗しました: " + error.message);
+        this.showToast(
+          "インポートに失敗しました: " +
+            (error instanceof Error ? error.message : String(error))
+        );
       }
 
       // ファイル入力をクリア
-      fileInput.value = "";
+      target.value = "";
     };
   }
 
   // モーダルを開く
-  openModal() {
+  openModal(): void {
     this.renderFavorites();
-    document.getElementById("wplace-studio-favorite-modal").showModal();
+    (
+      document.getElementById(
+        "wplace-studio-favorite-modal"
+      ) as HTMLDialogElement
+    ).showModal();
   }
 
   // 現在位置を取得
@@ -365,7 +387,7 @@ export class WPlaceExtendedFavorites {
   }
 
   // お気に入りを追加
-  async addFavorite() {
+  async addFavorite(): Promise<void> {
     const position = this.getCurrentPosition();
     if (!position) {
       alert(
@@ -415,10 +437,10 @@ export class WPlaceExtendedFavorites {
   }
 
   // お気に入り一覧を表示
-  async renderFavorites() {
+  async renderFavorites(): Promise<void> {
     const favorites = await this.getFavorites();
-    const grid = document.getElementById("wps-favorites-grid");
-    const count = document.getElementById("wps-favorites-count");
+    const grid = document.getElementById("wps-favorites-grid") as HTMLElement;
+    const count = document.getElementById("wps-favorites-count") as HTMLElement;
 
     if (!grid || !count) return;
 
@@ -438,11 +460,11 @@ export class WPlaceExtendedFavorites {
     }
 
     // 新しい順にソート
-    favorites.sort((a, b) => b.id - a.id);
+    favorites.sort((a: Favorite, b: Favorite) => b.id - a.id);
 
     grid.innerHTML = favorites
       .map(
-        (fav) => `
+        (fav: Favorite) => `
             <div class="wps-favorite-card card bg-base-200 shadow-sm hover:shadow-md cursor-pointer transition-all relative"
                  data-lat="${fav.lat}" data-lng="${fav.lng}" data-zoom="${
           fav.zoom
@@ -471,9 +493,9 @@ export class WPlaceExtendedFavorites {
   // 位置へ移動
   goTo(lat: number, lng: number, zoom: number): void {
     const url = new URL(window.location.href);
-    url.searchParams.set("lat", lat);
-    url.searchParams.set("lng", lng);
-    url.searchParams.set("zoom", zoom);
+    url.searchParams.set("lat", lat.toString());
+    url.searchParams.set("lng", lng.toString());
+    url.searchParams.set("zoom", zoom.toString());
     window.location.href = url.toString();
   }
 
