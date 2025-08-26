@@ -29,7 +29,7 @@
         "*://*.wplace.live/*"
       ],
       "js": [
-        "content.js"
+        "dist/content.js"
       ],
       "css": [
         "styles/content.css"
