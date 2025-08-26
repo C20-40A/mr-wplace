@@ -6,7 +6,7 @@
     "dev": "npm run build -- --watch"
   },
   "devDependencies": {
-    "esbuild": "^0.19.0",
-    "@types/chrome": "^0.0.246"
+    "@types/chrome": "^0.1.4",
+    "esbuild": "^0.19.0"
   }
 }

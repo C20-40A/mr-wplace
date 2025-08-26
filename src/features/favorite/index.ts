@@ -1,4 +1,38 @@
+interface Position {
+  lat: number;
+  lng: number;
+  zoom: number;
+}
+
+interface Favorite {
+  id: number;
+  name: string;
+  lat: number;
+  lng: number;
+  zoom: number;
+  date: string;
+}
+
+interface ButtonConfig {
+  id: string;
+  selector: string;
+  containerSelector: string;
+  create: (container: Element) => void;
+}
+
 export class WPlaceExtendedFavorites {
+  private CONFIG: {
+    selectors: {
+      favoriteButton: string;
+      toggleOpacityButton: string;
+      saveContainer: string;
+    };
+    storageKeys: {
+      favorites: string;
+      location: string;
+    };
+  };
+
   constructor() {
     this.CONFIG = {
       selectors: {
@@ -50,7 +84,7 @@ export class WPlaceExtendedFavorites {
   }
 
   // 汎用ボタン監視システム
-  startButtonObserver(configs) {
+  startButtonObserver(configs: ButtonConfig[]): void {
     const ensureButtons = () => {
       configs.forEach((config) => {
         if (!document.querySelector(config.selector)) {
@@ -74,7 +108,7 @@ export class WPlaceExtendedFavorites {
   }
 
   // お気に入りボタン作成
-  createFavoriteButton(toggleButton) {
+  createFavoriteButton(toggleButton: Element): void {
     const container = toggleButton.parentElement;
     if (!container) return;
 
@@ -93,7 +127,7 @@ export class WPlaceExtendedFavorites {
   }
 
   // 保存ボタン作成
-  createSaveButton(container) {
+  createSaveButton(container: Element): void {
     const button = document.createElement("button");
     button.className = "btn btn-primary btn-soft";
     button.setAttribute("data-wplace-save", "true");
@@ -189,7 +223,7 @@ export class WPlaceExtendedFavorites {
   }
 
   // Chrome Storage API を使用したストレージ操作
-  async setValue(key, value) {
+  async setValue(key: string, value: any): Promise<void> {
     return new Promise((resolve) => {
       chrome.storage.local.set({ [key]: value }, () => {
         resolve();
@@ -197,7 +231,7 @@ export class WPlaceExtendedFavorites {
     });
   }
 
-  async getValue(key, defaultValue = null) {
+  async getValue(key: string, defaultValue: any = null): Promise<any> {
     return new Promise((resolve) => {
       chrome.storage.local.get([key], (result) => {
         resolve(result[key] !== undefined ? result[key] : defaultValue);
@@ -311,7 +345,7 @@ export class WPlaceExtendedFavorites {
   }
 
   // 現在位置を取得
-  getCurrentPosition() {
+  getCurrentPosition(): Position | null {
     try {
       const locationStr = localStorage.getItem(
         this.CONFIG.storageKeys.location
@@ -367,7 +401,7 @@ export class WPlaceExtendedFavorites {
   }
 
   // お気に入り一覧を取得
-  async getFavorites() {
+  async getFavorites(): Promise<Favorite[]> {
     try {
       const stored = await this.getValue(
         this.CONFIG.storageKeys.favorites,
@@ -435,8 +469,8 @@ export class WPlaceExtendedFavorites {
   }
 
   // 位置へ移動
-  goTo(lat, lng, zoom) {
-    const url = new URL(window.location);
+  goTo(lat: number, lng: number, zoom: number): void {
+    const url = new URL(window.location.href);
     url.searchParams.set("lat", lat);
     url.searchParams.set("lng", lng);
     url.searchParams.set("zoom", zoom);
@@ -444,7 +478,7 @@ export class WPlaceExtendedFavorites {
   }
 
   // お気に入り削除
-  async deleteFavorite(id) {
+  async deleteFavorite(id: number): Promise<void> {
     if (!confirm("このお気に入りを削除しますか？")) return;
 
     const favorites = await this.getFavorites();
@@ -459,7 +493,7 @@ export class WPlaceExtendedFavorites {
   }
 
   // トースト通知
-  showToast(message) {
+  showToast(message: string): void {
     const toast = document.createElement("div");
     toast.className = "toast toast-top toast-end z-50";
     toast.innerHTML = `
