@@ -9,7 +9,6 @@
     "scripting"
   ],
   "host_permissions": [
-    "*://*.wplace.jp/*",
     "*://*.wplace.live/*"
   ],
   "action": {
@@ -28,7 +27,6 @@
   "content_scripts": [
     {
       "matches": [
-        "*://*.wplace.jp/*",
         "*://*.wplace.live/*"
       ],
       "js": [
@@ -47,7 +45,6 @@
         "icons/*"
       ],
       "matches": [
-        "*://*.wplace.jp/*",
         "*://*.wplace.live/*"
       ]
     }
