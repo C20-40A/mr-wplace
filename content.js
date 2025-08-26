@@ -1,434 +1,428 @@
-// WPlace Studio - Content Script
-console.log('WPlace Studio Content Script loaded on:', window.location.href);
+// WPlace Studio - Extended Favorites Functionality
+// Migrated from Tampermonkey script to Chrome Extension
 
-class WPlaceStudioContent {
-  constructor() {
-    this.features = {
-      imageProtection: false,
-      rightClickDisable: false,
-      uiEnhancement: false,
-      autoTools: false
-    };
-    
-    this.initialize();
-  }
-
-  async initialize() {
-    // メッセージリスナーを設定
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      this.handleMessage(message, sender, sendResponse);
-      return true;
-    });
-
-    // 設定を取得して初期化
-    try {
-      const response = await chrome.runtime.sendMessage({ action: 'getSettings' });
-      if (response.success) {
-        this.features = { ...this.features, ...response.settings };
-        this.applyAllFeatures();
-      }
-    } catch (error) {
-      console.error('Failed to get initial settings:', error);
+class WPlaceExtendedFavorites {
+    constructor() {
+        this.STORAGE_KEY = 'wplace_extended_favorites';
+        this.init();
     }
 
-    // WPlace Studio の UI要素を追加
-    this.injectStudioUI();
-    
-    // お気に入り機能を初期化
-    this.initFavorites();
-    
-    console.log('WPlace Studio initialized with features:', this.features);
-  }
-
-  handleMessage(message, sender, sendResponse) {
-    switch (message.action) {
-      case 'toggleFeature':
-        this.toggleFeature(message.feature, message.enabled);
-        sendResponse({ success: true });
-        break;
-
-      case 'initializeFeatures':
-        this.features = { ...this.features, ...message.settings };
-        this.applyAllFeatures();
-        sendResponse({ success: true });
-        break;
-
-      default:
-        console.log('Unknown message:', message);
-        sendResponse({ success: false });
-    }
-  }
-
-  toggleFeature(feature, enabled) {
-    this.features[feature] = enabled;
-    
-    switch (feature) {
-      case 'imageProtection':
-        this.toggleImageProtection(enabled);
-        break;
-      case 'rightClickDisable':
-        this.toggleRightClickProtection(enabled);
-        break;
-      case 'uiEnhancement':
-        this.toggleUIEnhancement(enabled);
-        break;
-      case 'autoTools':
-        this.toggleAutoTools(enabled);
-        break;
+    init() {
+        this.observeAndInit();
     }
 
-    this.logActivity(`Feature ${feature} ${enabled ? 'enabled' : 'disabled'}`);
-  }
+    observeAndInit() {
+        // ボタン設定
+        const buttonConfigs = [
+            {
+                id: 'favorite-btn',
+                selector: '[title="お気に入り"]',
+                containerSelector: 'button[title="Toggle art opacity"]',
+                create: this.createFavoriteButton.bind(this)
+            },
+            {
+                id: 'save-btn',
+                selector: '[data-wplace-save="true"]',
+                containerSelector: '.hide-scrollbar.flex.max-w-full.gap-1\\.5.overflow-x-auto',
+                create: this.createSaveButton.bind(this)
+            }
+        ];
 
-  applyAllFeatures() {
-    Object.entries(this.features).forEach(([feature, enabled]) => {
-      if (enabled) {
-        this.toggleFeature(feature, true);
-      }
-    });
-  }
+        // 汎用ボタン監視
+        this.startButtonObserver(buttonConfigs);
 
-  // 画像保護機能
-  toggleImageProtection(enabled) {
-    if (enabled) {
-      this.enableImageProtection();
-    } else {
-      this.disableImageProtection();
+        // モーダル作成
+        setTimeout(() => this.createModal(), 2000);
     }
-  }
 
-  enableImageProtection() {
-    // 画像の右クリック防止
-    document.querySelectorAll('img').forEach(img => {
-      img.addEventListener('contextmenu', this.preventContextMenu);
-      img.addEventListener('dragstart', this.preventDrag);
-      img.style.userSelect = 'none';
-      img.style.webkitUserSelect = 'none';
-      img.style.mozUserSelect = 'none';
-      img.style.msUserSelect = 'none';
-    });
-
-    // 新しく追加される画像にも適用
-    this.imageProtectionObserver = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
-          if (node.nodeType === 1) {
-            const images = node.tagName === 'IMG' ? [node] : node.querySelectorAll?.('img') || [];
-            images.forEach(img => {
-              img.addEventListener('contextmenu', this.preventContextMenu);
-              img.addEventListener('dragstart', this.preventDrag);
-              img.style.userSelect = 'none';
+    // 汎用ボタン監視システム
+    startButtonObserver(configs) {
+        const ensureButtons = () => {
+            configs.forEach(config => {
+                if (!document.querySelector(config.selector)) {
+                    const container = document.querySelector(config.containerSelector);
+                    if (container) {
+                        config.create(container);
+                    }
+                }
             });
-          }
+        };
+
+        // DOM変更監視
+        const observer = new MutationObserver(() => {
+            setTimeout(ensureButtons, 100);
         });
-      });
-    });
 
-    this.imageProtectionObserver.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
+        observer.observe(document.body, { childList: true, subtree: true });
 
-    this.showToast('画像保護が有効になりました');
-  }
-
-  disableImageProtection() {
-    document.querySelectorAll('img').forEach(img => {
-      img.removeEventListener('contextmenu', this.preventContextMenu);
-      img.removeEventListener('dragstart', this.preventDrag);
-      img.style.userSelect = '';
-    });
-
-    if (this.imageProtectionObserver) {
-      this.imageProtectionObserver.disconnect();
+        // 初期配置 & 定期チェック
+        setTimeout(ensureButtons, 1000);
+        setInterval(ensureButtons, 5000);
     }
 
-    this.showToast('画像保護が無効になりました');
-  }
+    // お気に入りボタン作成
+    createFavoriteButton(toggleButton) {
+        const container = toggleButton.parentElement;
+        if (!container) return;
 
-  // 右クリック防止機能
-  toggleRightClickProtection(enabled) {
-    if (enabled) {
-      document.addEventListener('contextmenu', this.preventContextMenu);
-      this.showToast('右クリック防止が有効になりました');
-    } else {
-      document.removeEventListener('contextmenu', this.preventContextMenu);
-      this.showToast('右クリック防止が無効になりました');
-    }
-  }
-
-  // UI改善機能
-  toggleUIEnhancement(enabled) {
-    if (enabled) {
-      this.applyUIEnhancements();
-      this.showToast('UI改善が有効になりました');
-    } else {
-      this.removeUIEnhancements();
-      this.showToast('UI改善が無効になりました');
-    }
-  }
-
-  applyUIEnhancements() {
-    // カスタムCSSを追加
-    if (!document.getElementById('wplace-studio-enhancements')) {
-      const style = document.createElement('style');
-      style.id = 'wplace-studio-enhancements';
-      style.textContent = `
-        /* WPlace Studio UI Enhancements */
-        body {
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-        }
-        
-        /* スムーズなスクロール */
-        html {
-          scroll-behavior: smooth;
-        }
-        
-        /* ボタンのホバーエフェクト改善 */
-        button, .btn, [role="button"] {
-          transition: all 0.2s ease !important;
-        }
-        
-        button:hover, .btn:hover, [role="button"]:hover {
-          transform: translateY(-1px) !important;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-        }
-      `;
-      document.head.appendChild(style);
-    }
-  }
-
-  removeUIEnhancements() {
-    const style = document.getElementById('wplace-studio-enhancements');
-    if (style) {
-      style.remove();
-    }
-  }
-
-  // 自動化ツール
-  toggleAutoTools(enabled) {
-    if (enabled) {
-      this.enableAutoTools();
-      this.showToast('自動化ツールが有効になりました');
-    } else {
-      this.disableAutoTools();
-      this.showToast('自動化ツールが無効になりました');
-    }
-  }
-
-  enableAutoTools() {
-    // 自動スクロール機能などを追加予定
-    console.log('Auto tools enabled');
-  }
-
-  disableAutoTools() {
-    console.log('Auto tools disabled');
-  }
-
-  // WPlace Studio UI要素を注入
-  injectStudioUI() {
-    // Studio indicator を追加
-    const indicator = document.createElement('div');
-    indicator.id = 'wplace-studio-indicator';
-    indicator.innerHTML = '🎨 WPlace Studio';
-    indicator.style.cssText = `
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 8px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      z-index: 10000;
-      opacity: 0.8;
-      pointer-events: none;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        const button = document.createElement('button');
+        button.className = 'btn btn-lg sm:btn-xl btn-square shadow-md text-base-content/80 ml-2 z-30';
+        button.title = 'お気に入り';
+        button.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-5">
+            <path d="m354-287 126-76 126 77-33-144 111-96-146-13-58-136-58 135-146 13 111 97-33 143ZM233-120l65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Zm247-350Z"/>
+        </svg>
     `;
-    
-    document.body.appendChild(indicator);
+        button.addEventListener('click', () => this.openModal());
+        container.appendChild(button);
+        console.log('⭐ WPlace Studio: Favorite button added');
+    }
 
-    // 3秒後に薄くする
-    setTimeout(() => {
-      indicator.style.opacity = '0.3';
-    }, 3000);
-  }
+    // 保存ボタン作成
+    createSaveButton(container) {
+        const button = document.createElement('button');
+        button.className = 'btn btn-primary btn-soft';
+        button.setAttribute('data-wplace-save', 'true');
+        button.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4.5">
+            <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/>
+        </svg>
+        保存
+    `;
+        button.addEventListener('click', () => this.addFavorite());
+        container.appendChild(button);
+        console.log('⭐ WPlace Studio: Save button added');
+    }
 
-  // ヘルパーメソッド
-  preventContextMenu = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    return false;
-  }
+    // モーダルを作成
+    createModal() {
+        const modal = document.createElement('dialog');
+        modal.id = 'wplace-studio-favorite-modal';
+        modal.className = 'modal';
 
-  preventDrag = (e) => {
-    e.preventDefault();
-    return false;
-  }
+        modal.innerHTML = `
+        <div class="modal-box max-w-4xl">
+            <form method="dialog">
+                <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+            </form>
 
-  showToast(message) {
-    // トースト通知を表示
-    const toast = document.createElement('div');
-    toast.textContent = message;
-    toast.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: rgba(0,0,0,0.8);
-      color: white;
-      padding: 12px 16px;
-      border-radius: 8px;
-      z-index: 10001;
-      font-size: 14px;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      animation: slideIn 0.3s ease;
+            <div class="flex items-center gap-1.5 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-5">
+                    <path d="m354-287 126-76 126 77-33-144 111-96-146-13-58-136-58 135-146 13 111 97-33 143ZM233-120l65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Zm247-350Z"/>
+                </svg>
+                <h3 class="text-lg font-bold">WPlace Studio - お気に入り</h3>
+            </div>
+
+            <!-- エクスポート・インポートボタン -->
+            <div class="flex gap-2 mb-4">
+                <button id="wps-export-btn" class="btn btn-outline btn-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
+                        <path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
+                    </svg>
+                    エクスポート
+                </button>
+                <button id="wps-import-btn" class="btn btn-outline btn-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
+                        <path d="M260-160q-91 0-155.5-63T40-377q0-78 47-139t123-78q25-92 100-149t170-57q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 75-52.5 127.5T740-160H520q-33 0-56.5-23.5T440-240v-206l-64 62-56-56 160-160 160 160-56 56-64-62v206h220q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-83 0-141.5 58.5T280-520h-20q-58 0-99 41t-41 99q0 58 41 99t99 41h100v80H260Z"/>
+                    </svg>
+                    インポート
+                </button>
+                <input type="file" id="wps-import-file" accept=".json" style="display: none;">
+            </div>
+
+            <div id="wps-favorites-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
+                <!-- ここにお気に入りが表示される -->
+            </div>
+
+            <div id="wps-favorites-count" class="text-center text-sm text-base-content/80 mt-4">
+                <!-- 件数表示 -->
+            </div>
+        </div>
+
+        <form method="dialog" class="modal-backdrop">
+            <button>close</button>
+        </form>
     `;
 
-    // アニメーション用CSS
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-      }
-    `;
-    document.head.appendChild(style);
+        document.body.appendChild(modal);
 
-    document.body.appendChild(toast);
+        // イベントリスナー（既存のグリッドクリック）
+        modal.querySelector('#wps-favorites-grid').addEventListener('click', (e) => {
+            const card = e.target.closest('.wps-favorite-card');
+            const deleteBtn = e.target.closest('.wps-delete-btn');
 
-    // 3秒後に削除
-    setTimeout(() => {
-      toast.style.animation = 'slideIn 0.3s ease reverse';
-      setTimeout(() => toast.remove(), 300);
-    }, 3000);
-  }
+            if (deleteBtn) {
+                const id = parseInt(deleteBtn.dataset.id);
+                this.deleteFavorite(id);
+            } else if (card) {
+                const lat = parseFloat(card.dataset.lat);
+                const lng = parseFloat(card.dataset.lng);
+                const zoom = parseFloat(card.dataset.zoom);
+                this.goTo(lat, lng, zoom);
+                modal.close();
+            }
+        });
 
-  logActivity(message) {
-    chrome.runtime.sendMessage({
-      action: 'logActivity',
-      data: {
-        message,
-        url: window.location.href,
-        timestamp: new Date().toISOString()
-      }
-    }).catch(error => {
-      console.error('Failed to log activity:', error);
-    });
-  }
-
-  // お気に入り機能を初期化
-  initFavorites() {
-    // WPlace.liveサイトでのみ実行
-    if (!window.location.href.includes('wplace.live')) return;
-    
-    // 保存ボタンを追加
-    this.addSaveButton();
-  }
-
-  // 保存ボタンを追加
-  addSaveButton() {
-    // ボタンを追加する場所を探す
-    const checkAndAddButton = () => {
-      // 既にボタンが存在する場合はスキップ
-      if (document.querySelector('#wplace-studio-save-btn')) return;
-      
-      // 適当な場所にボタンを追加（右上あたり）
-      const button = document.createElement('button');
-      button.id = 'wplace-studio-save-btn';
-      button.innerHTML = '⭐ 保存';
-      button.style.cssText = `
-        position: fixed;
-        top: 80px;
-        right: 20px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        padding: 10px 16px;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-        z-index: 10000;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        transition: all 0.2s ease;
-      `;
-      
-      // ホバーエフェクト
-      button.addEventListener('mouseenter', () => {
-        button.style.transform = 'translateY(-2px)';
-        button.style.boxShadow = '0 6px 16px rgba(0,0,0,0.2)';
-      });
-      
-      button.addEventListener('mouseleave', () => {
-        button.style.transform = 'translateY(0)';
-        button.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-      });
-      
-      // クリックイベント
-      button.addEventListener('click', () => {
-        this.saveCurrentLocation();
-      });
-      
-      document.body.appendChild(button);
-      console.log('⭐ Save button added');
-    };
-    
-    // すぐに実行＋定期チェック
-    checkAndAddButton();
-    setInterval(checkAndAddButton, 3000);
-  }
-
-  // 現在位置を保存
-  async saveCurrentLocation() {
-    try {
-      // URLから位置情報を取得
-      const url = new URL(window.location.href);
-      const lat = parseFloat(url.searchParams.get('lat'));
-      const lng = parseFloat(url.searchParams.get('lng'));
-      const zoom = parseFloat(url.searchParams.get('zoom')) || 14;
-      
-      if (isNaN(lat) || isNaN(lng)) {
-        this.showToast('位置情報が見つかりません。マップを移動してから保存してください。');
-        return;
-      }
-      
-      const name = prompt(`お気に入り名を入力してください:`, `地点 (${lat.toFixed(3)}, ${lng.toFixed(3)})`);
-      if (!name) return;
-      
-      const favorite = {
-        id: Date.now(),
-        name: name,
-        lat: lat,
-        lng: lng,
-        zoom: zoom,
-        date: new Date().toLocaleDateString('ja-JP'),
-        url: window.location.href
-      };
-      
-      // Chrome Storageに保存
-      const result = await chrome.storage.local.get(['wplace_favorites']);
-      const favorites = result.wplace_favorites || [];
-      favorites.push(favorite);
-      
-      await chrome.storage.local.set({ 'wplace_favorites': favorites });
-      
-      this.showToast(`"${name}" を保存しました (${favorites.length}件目)`);
-      
-    } catch (error) {
-      console.error('保存エラー:', error);
-      this.showToast('保存に失敗しました');
+        // エクスポート・インポートのイベントリスナー
+        modal.querySelector('#wps-export-btn').addEventListener('click', () => this.exportFavorites());
+        modal.querySelector('#wps-import-btn').addEventListener('click', () => this.importFavorites());
     }
-  }
+
+    // Chrome Storage API を使用したストレージ操作
+    async setValue(key, value) {
+        return new Promise((resolve) => {
+            chrome.storage.local.set({ [key]: value }, () => {
+                resolve();
+            });
+        });
+    }
+
+    async getValue(key, defaultValue = null) {
+        return new Promise((resolve) => {
+            chrome.storage.local.get([key], (result) => {
+                resolve(result[key] !== undefined ? result[key] : defaultValue);
+            });
+        });
+    }
+
+    // エクスポート機能
+    async exportFavorites() {
+        try {
+            const favorites = await this.getFavorites();
+
+            if (favorites.length === 0) {
+                this.showToast('エクスポートするお気に入りがありません');
+                return;
+            }
+
+            const exportData = {
+                version: "1.0",
+                exportDate: new Date().toISOString(),
+                count: favorites.length,
+                favorites: favorites,
+                source: "WPlace Studio Chrome Extension"
+            };
+
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `wplace-studio-favorites-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+
+            this.showToast(`${favorites.length}件のお気に入りをエクスポートしました`);
+
+        } catch (error) {
+            console.error('WPlace Studio: エクスポートエラー:', error);
+            this.showToast('エクスポートに失敗しました');
+        }
+    }
+
+    // インポート機能
+    importFavorites() {
+        const fileInput = document.getElementById('wps-import-file');
+        fileInput.click();
+
+        fileInput.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                const text = await file.text();
+                const importData = JSON.parse(text);
+
+                // データ形式チェック
+                if (!importData.favorites || !Array.isArray(importData.favorites)) {
+                    throw new Error('無効なファイル形式です');
+                }
+
+                const currentFavorites = await this.getFavorites();
+                const importCount = importData.favorites.length;
+
+                if (!confirm(`${importCount}件のお気に入りをインポートしますか？\n既存のデータは保持されます。`)) {
+                    return;
+                }
+
+                // 重複チェック（座標が同じものは除外）
+                const newFavorites = importData.favorites.filter(importFav => {
+                    return !currentFavorites.some(existing =>
+                        Math.abs(existing.lat - importFav.lat) < 0.001 &&
+                        Math.abs(existing.lng - importFav.lng) < 0.001
+                    );
+                });
+
+                // IDを新規採番（整数で）
+                newFavorites.forEach((fav, index) => {
+                    fav.id = Date.now() + index;
+                });
+
+                // マージして保存
+                const mergedFavorites = [...currentFavorites, ...newFavorites];
+                await this.setValue(this.STORAGE_KEY, JSON.stringify(mergedFavorites));
+
+                this.renderFavorites();
+                this.showToast(`${newFavorites.length}件のお気に入りをインポートしました`);
+
+            } catch (error) {
+                console.error('WPlace Studio: インポートエラー:', error);
+                this.showToast('インポートに失敗しました: ' + error.message);
+            }
+
+            // ファイル入力をクリア
+            fileInput.value = '';
+        };
+    }
+
+    // モーダルを開く
+    openModal() {
+        this.renderFavorites();
+        document.getElementById('wplace-studio-favorite-modal').showModal();
+    }
+
+    // 現在位置を取得
+    getCurrentPosition() {
+        try {
+            const locationStr = localStorage.getItem('location');
+            if (locationStr) {
+                const location = JSON.parse(locationStr);
+                return {
+                    lat: location.lat,
+                    lng: location.lng,
+                    zoom: location.zoom
+                };
+            }
+        } catch (error) {
+            console.error('WPlace Studio: 位置取得エラー:', error);
+        }
+        return null;
+    }
+
+    // お気に入りを追加
+    async addFavorite() {
+        const position = this.getCurrentPosition();
+        if (!position) {
+            alert('位置情報を取得できませんでした。マップをクリックしてから保存してください。');
+            return;
+        }
+
+        const name = prompt('お気に入り名を入力してください:', `地点 (${position.lat.toFixed(3)}, ${position.lng.toFixed(3)})`);
+        if (!name) return;
+
+        const favorite = {
+            id: Date.now(),
+            name: name,
+            lat: position.lat,
+            lng: position.lng,
+            zoom: position.zoom || 14,
+            date: new Date().toLocaleDateString('ja-JP')
+        };
+
+        const favorites = await this.getFavorites();
+        favorites.push(favorite);
+        await this.setValue(this.STORAGE_KEY, JSON.stringify(favorites));
+
+        // 通知
+        this.showToast(`"${name}" を保存しました`);
+    }
+
+    // お気に入り一覧を取得
+    async getFavorites() {
+        try {
+            const stored = await this.getValue(this.STORAGE_KEY, '[]');
+            return JSON.parse(stored);
+        } catch (error) {
+            console.error('WPlace Studio: お気に入り取得エラー:', error);
+            return [];
+        }
+    }
+
+    // お気に入り一覧を表示
+    async renderFavorites() {
+        const favorites = await this.getFavorites();
+        const grid = document.getElementById('wps-favorites-grid');
+        const count = document.getElementById('wps-favorites-count');
+
+        if (!grid || !count) return;
+
+        count.textContent = `保存済み: ${favorites.length} 件`;
+
+        if (favorites.length === 0) {
+            grid.innerHTML = `
+                <div class="col-span-full text-center py-12">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-12 mx-auto mb-4 text-base-content/50">
+                        <path d="m354-287 126-76 126 77-33-144 111-96-146-13-58-136-58 135-146 13 111 97-33 143ZM233-120l65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Zm247-350Z"/>
+                    </svg>
+                    <p class="text-base-content/80">お気に入りがありません</p>
+                    <p class="text-sm text-base-content/60">下の「保存」ボタンから追加してください</p>
+                </div>
+            `;
+            return;
+        }
+
+        // 新しい順にソート
+        favorites.sort((a, b) => b.id - a.id);
+
+        grid.innerHTML = favorites.map(fav => `
+            <div class="wps-favorite-card card bg-base-200 shadow-sm hover:shadow-md cursor-pointer transition-all relative"
+                 data-lat="${fav.lat}" data-lng="${fav.lng}" data-zoom="${fav.zoom}">
+                <button class="wps-delete-btn btn btn-ghost btn-xs btn-circle absolute right-1 top-1 z-10"
+                        data-id="${fav.id}">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-3">
+                        <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
+                    </svg>
+                </button>
+                <div class="card-body p-3">
+                    <h4 class="card-title text-sm line-clamp-2">${fav.name}</h4>
+                    <div class="text-xs text-base-content/70 space-y-1">
+                        <div>📍 ${fav.lat.toFixed(3)}, ${fav.lng.toFixed(3)}</div>
+                        <div>📅 ${fav.date}</div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 位置へ移動
+    goTo(lat, lng, zoom) {
+        const url = new URL(window.location);
+        url.searchParams.set('lat', lat);
+        url.searchParams.set('lng', lng);
+        url.searchParams.set('zoom', zoom);
+        window.location.href = url.toString();
+    }
+
+    // お気に入り削除
+    async deleteFavorite(id) {
+        if (!confirm('このお気に入りを削除しますか？')) return;
+
+        const favorites = await this.getFavorites();
+        const filtered = favorites.filter(fav => fav.id !== id);
+        await this.setValue(this.STORAGE_KEY, JSON.stringify(filtered));
+
+        this.renderFavorites();
+        this.showToast('削除しました');
+    }
+
+    // トースト通知
+    showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'toast toast-top toast-end z-50';
+        toast.innerHTML = `
+            <div class="alert alert-success">
+                <span>${message}</span>
+            </div>
+        `;
+
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    }
 }
 
-// コンテンツスクリプトを初期化
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    new WPlaceStudioContent();
-  });
+// Chrome拡張機能として初期化
+if (typeof chrome !== 'undefined' && chrome.storage) {
+    console.log('🎨 WPlace Studio: Initializing Extended Favorites...');
+    new WPlaceExtendedFavorites();
 } else {
-  new WPlaceStudioContent();
+    console.warn('🎨 WPlace Studio: Chrome extension APIs not available');
 }

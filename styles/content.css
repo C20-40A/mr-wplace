@@ -1,71 +1,42 @@
-/* WPlace Studio - Content Script Styles */
+/* WPlace Studio - Content Styles */
+/* Additional styles for WPlace.live integration */
 
-/* Toast Animations */
-@keyframes wplace-studio-slide-in {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
+/* お気に入りボタンのカスタムスタイル */
+#wplace-studio-favorite-modal .modal-box {
+    background: var(--fallback-b1, oklch(var(--b1)));
+}
+
+/* トースト通知のz-index調整 */
+.toast {
+    z-index: 9999 !important;
+}
+
+/* WPlace Studio特有のスタイル調整 */
+.wps-favorite-card {
+    transition: all 0.2s ease;
+}
+
+.wps-favorite-card:hover {
+    transform: translateY(-2px);
+}
+
+.wps-delete-btn {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.wps-delete-btn:hover {
     opacity: 1;
-  }
+    background-color: rgba(255, 0, 0, 0.1) !important;
 }
 
-@keyframes wplace-studio-slide-out {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(100%);
-    opacity: 0;
-  }
+/* エクスポート・インポートボタンのスタイル */
+#wps-export-btn,
+#wps-import-btn {
+    transition: all 0.2s ease;
 }
 
-/* Studio UI Elements */
-#wplace-studio-indicator {
-  transition: all 0.3s ease;
-}
-
-#wplace-studio-indicator:hover {
-  opacity: 1 !important;
-  transform: scale(1.05);
-}
-
-/* Protected Elements */
-.wplace-studio-protected {
-  -webkit-user-select: none !important;
-  -moz-user-select: none !important;
-  -ms-user-select: none !important;
-  user-select: none !important;
-  -webkit-user-drag: none !important;
-  -khtml-user-drag: none !important;
-  -moz-user-drag: none !important;
-  -o-user-drag: none !important;
-  user-drag: none !important;
-}
-
-/* UI Enhancements - Will be injected dynamically */
-.wplace-studio-enhanced {
-  /* Placeholder for dynamic enhancements */
-}
-
-/* Custom scrollbar for enhanced UI */
-.wplace-studio-enhanced::-webkit-scrollbar {
-  width: 8px;
-}
-
-.wplace-studio-enhanced::-webkit-scrollbar-track {
-  background: rgba(0,0,0,0.1);
-  border-radius: 4px;
-}
-
-.wplace-studio-enhanced::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 4px;
-}
-
-.wplace-studio-enhanced::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+#wps-export-btn:hover,
+#wps-import-btn:hover {
+    transform: translateY(-1px);
 }
