@@ -1,51 +1,9 @@
-interface Position {
-  lat: number;
-  lng: number;
-  zoom: number;
-}
-
-interface Favorite {
-  id: number;
-  name: string;
-  lat: number;
-  lng: number;
-  zoom: number;
-  date: string;
-}
-
-interface ButtonConfig {
-  id: string;
-  selector: string;
-  containerSelector: string;
-  create: (container: Element) => void;
-}
+import { Position, Favorite, ButtonConfig } from './types';
+import { CONFIG } from './config';
+import { FavoriteStorage, STORAGE_KEYS } from './storage';
 
 export class WPlaceExtendedFavorites {
-  private CONFIG: {
-    selectors: {
-      favoriteButton: string;
-      toggleOpacityButton: string;
-      saveContainer: string;
-    };
-    storageKeys: {
-      favorites: string;
-      location: string;
-    };
-  };
-
   constructor() {
-    this.CONFIG = {
-      selectors: {
-        favoriteButton: '[title="お気に入り"]',
-        toggleOpacityButton: 'button[title="Toggle art opacity"]',
-        saveContainer:
-          ".hide-scrollbar.flex.max-w-full.gap-1\\.5.overflow-x-auto",
-      },
-      storageKeys: {
-        favorites: "wplace_extended_favorites",
-        location: "location",
-      },
-    };
     this.init();
   }
 
@@ -64,14 +22,14 @@ export class WPlaceExtendedFavorites {
     const buttonConfigs = [
       {
         id: "favorite-btn",
-        selector: this.CONFIG.selectors.favoriteButton,
-        containerSelector: this.CONFIG.selectors.toggleOpacityButton,
+        selector: CONFIG.selectors.favoriteButton,
+        containerSelector: CONFIG.selectors.toggleOpacityButton,
         create: this.createFavoriteButton.bind(this),
       },
       {
         id: "save-btn",
         selector: '[data-wplace-save="true"]',
-        containerSelector: this.CONFIG.selectors.saveContainer,
+        containerSelector: CONFIG.selectors.saveContainer,
         create: this.createSaveButton.bind(this),
       },
     ];
@@ -231,27 +189,10 @@ export class WPlaceExtendedFavorites {
       .addEventListener("click", () => this.importFavorites());
   }
 
-  // Chrome Storage API を使用したストレージ操作
-  async setValue(key: string, value: any): Promise<void> {
-    return new Promise((resolve) => {
-      chrome.storage.local.set({ [key]: value }, () => {
-        resolve();
-      });
-    });
-  }
-
-  async getValue(key: string, defaultValue: any = null): Promise<any> {
-    return new Promise((resolve) => {
-      chrome.storage.local.get([key], (result) => {
-        resolve(result[key] !== undefined ? result[key] : defaultValue);
-      });
-    });
-  }
-
   // エクスポート機能
   async exportFavorites(): Promise<void> {
     try {
-      const favorites = await this.getFavorites();
+      const favorites = await FavoriteStorage.getFavorites();
 
       if (favorites.length === 0) {
         this.showToast("エクスポートするお気に入りがありません");
@@ -305,7 +246,7 @@ export class WPlaceExtendedFavorites {
           throw new Error("無効なファイル形式です");
         }
 
-        const currentFavorites = await this.getFavorites();
+        const currentFavorites = await FavoriteStorage.getFavorites();
         const importCount = importData.favorites.length;
 
         if (
@@ -334,8 +275,8 @@ export class WPlaceExtendedFavorites {
 
         // マージして保存
         const mergedFavorites = [...currentFavorites, ...newFavorites];
-        await this.setValue(
-          this.CONFIG.storageKeys.favorites,
+        await FavoriteStorage.setValue(
+          STORAGE_KEYS.favorites,
           JSON.stringify(mergedFavorites)
         );
 
@@ -369,9 +310,7 @@ export class WPlaceExtendedFavorites {
   // 現在位置を取得
   getCurrentPosition(): Position | null {
     try {
-      const locationStr = localStorage.getItem(
-        this.CONFIG.storageKeys.location
-      );
+      const locationStr = localStorage.getItem(STORAGE_KEYS.location);
       if (locationStr) {
         const location = JSON.parse(locationStr);
         return {
@@ -411,10 +350,10 @@ export class WPlaceExtendedFavorites {
       date: new Date().toLocaleDateString("ja-JP"),
     };
 
-    const favorites = await this.getFavorites();
+    const favorites = await FavoriteStorage.getFavorites();
     favorites.push(favorite);
-    await this.setValue(
-      this.CONFIG.storageKeys.favorites,
+    await FavoriteStorage.setValue(
+      STORAGE_KEYS.favorites,
       JSON.stringify(favorites)
     );
 
@@ -422,23 +361,9 @@ export class WPlaceExtendedFavorites {
     this.showToast(`"${name}" を保存しました`);
   }
 
-  // お気に入り一覧を取得
-  async getFavorites(): Promise<Favorite[]> {
-    try {
-      const stored = await this.getValue(
-        this.CONFIG.storageKeys.favorites,
-        "[]"
-      );
-      return JSON.parse(stored);
-    } catch (error) {
-      console.error("WPlace Studio: お気に入り取得エラー:", error);
-      return [];
-    }
-  }
-
   // お気に入り一覧を表示
   async renderFavorites(): Promise<void> {
-    const favorites = await this.getFavorites();
+    const favorites = await FavoriteStorage.getFavorites();
     const grid = document.getElementById("wps-favorites-grid") as HTMLElement;
     const count = document.getElementById("wps-favorites-count") as HTMLElement;
 
@@ -503,10 +428,10 @@ export class WPlaceExtendedFavorites {
   async deleteFavorite(id: number): Promise<void> {
     if (!confirm("このお気に入りを削除しますか？")) return;
 
-    const favorites = await this.getFavorites();
+    const favorites = await FavoriteStorage.getFavorites();
     const filtered = favorites.filter((fav) => fav.id !== id);
-    await this.setValue(
-      this.CONFIG.storageKeys.favorites,
+    await FavoriteStorage.setValue(
+      STORAGE_KEYS.favorites,
       JSON.stringify(filtered)
     );
 
