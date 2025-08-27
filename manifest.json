@@ -41,7 +41,8 @@
     {
       "resources": [
         "styles/*",
-        "icons/*"
+        "icons/*",
+        "inject.js"
       ],
       "matches": [
         "*://*.wplace.live/*"
