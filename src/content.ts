@@ -1,12 +1,25 @@
 // WPlace Studio - Main Content Script
-// Migrated from Tampermonkey script to Chrome Extension
 
-import { WPlaceExtendedFavorites } from './features/favorite/index';
+import { WPlaceExtendedFavorites } from "./features/favorite/index";
+import { injectFetchInterceptor } from "./features/fetch-interceptor/index";
 
-// Chrome拡張機能として初期化
-if (typeof chrome !== 'undefined' && chrome.storage) {
-    console.log('🎨 WPlace Studio: Initializing Extended Favorites...');
-    new WPlaceExtendedFavorites();
-} else {
-    console.warn('🎨 WPlace Studio: Chrome extension APIs not available');
+class WPlaceStudio {
+  constructor() {
+    this.init();
+  }
+
+  private async init(): Promise<void> {
+    if (typeof chrome === "undefined" || !chrome.storage) {
+      return;
+    }
+
+    try {
+      new WPlaceExtendedFavorites();
+      injectFetchInterceptor();
+    } catch (error) {
+      console.error("WPlace Studio initialization error:", error);
+    }
+  }
 }
+
+new WPlaceStudio();
