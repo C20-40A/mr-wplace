@@ -1,8 +1,8 @@
-import { TileOverlayUI } from './ui';
+import { TileOverlayUI, OverlayMode } from './ui';
 
 export class TileOverlay {
   private readonly TILE_SIZE = 1000;
-  private enabled = true;
+  private mode = OverlayMode.ON;
   private ui: TileOverlayUI | null = null;
 
   constructor() {
@@ -25,12 +25,9 @@ export class TileOverlay {
   private startUIObserver(): void {
     const ensureUI = () => {
       if (!this.ui) {
-        const container = document.querySelector('.flex.flex-col.items-center.gap-3');
-        if (container) {
-          this.ui = new TileOverlayUI((enabled) => {
-            this.setEnabled(enabled);
-          });
-        }
+        this.ui = new TileOverlayUI((mode) => {
+          this.setMode(mode);
+        });
       }
     };
 
@@ -64,9 +61,9 @@ export class TileOverlay {
     console.log('Tile processing listener setup complete');
   }
 
-  setEnabled(enabled: boolean): void {
-    this.enabled = enabled;
-    console.log(`Tile overlay: ${enabled ? 'ON' : 'OFF'}`);
+  setMode(mode: OverlayMode): void {
+    this.mode = mode;
+    console.log(`Tile overlay: ${mode}`);
   }
 
   async drawPixelOnTile(
@@ -74,8 +71,8 @@ export class TileOverlay {
     tileX: number,
     tileY: number
   ): Promise<Blob> {
-    // Return original tile if disabled
-    if (!this.enabled) {
+    // Return original tile if off
+    if (this.mode === OverlayMode.OFF) {
       return tileBlob;
     }
 
@@ -84,7 +81,7 @@ export class TileOverlay {
       return tileBlob;
     }
 
-    console.log(`Processing tile ${tileX},${tileY}`);
+    console.log(`Processing tile ${tileX},${tileY} in ${this.mode} mode`);
 
     // Create canvas for drawing
     const canvas = new OffscreenCanvas(this.TILE_SIZE, this.TILE_SIZE);
@@ -99,11 +96,15 @@ export class TileOverlay {
     const tileBitmap = await createImageBitmap(tileBlob);
     context.drawImage(tileBitmap, 0, 0);
 
-    // Draw red pixel at (345, 497)
+    // Draw red pixel with appropriate opacity
+    if (this.mode === OverlayMode.TRANSPARENT) {
+      context.globalAlpha = 0.5;
+    }
     context.fillStyle = "red";
     context.fillRect(345, 497, 1, 1);
+    context.globalAlpha = 1.0; // Reset
 
-    console.log("Drew red pixel at (345, 497)");
+    console.log(`Drew red pixel at (345, 497) with ${this.mode} mode`);
 
     // Return modified blob
     return await canvas.convertToBlob({ type: "image/png" });

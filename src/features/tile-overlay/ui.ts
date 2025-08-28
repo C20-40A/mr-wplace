@@ -1,24 +1,28 @@
+export enum OverlayMode {
+  OFF = 'OFF',
+  ON = 'ON', 
+  TRANSPARENT = 'TRANSPARENT'
+}
+
 export class TileOverlayUI {
   private button: HTMLButtonElement | null = null;
-  private enabled = true;
-  private onToggle: (enabled: boolean) => void;
+  private mode = OverlayMode.ON;
+  private onToggle: (mode: OverlayMode) => void;
 
-  constructor(onToggle: (enabled: boolean) => void) {
+  constructor(onToggle: (mode: OverlayMode) => void) {
     this.onToggle = onToggle;
     this.createButton();
   }
 
   private createButton(): void {
-    const container = document.querySelector('.flex.flex-col.items-center.gap-3');
-    if (!container) {
-      return;
-    }
-
     this.button = document.createElement('button');
     this.button.className = 'btn btn-square shadow-md';
-    this.button.title = 'Toggle Overlay';
+    this.button.style.position = 'fixed';
+    this.button.style.top = '20px';
+    this.button.style.left = '50%';
+    this.button.style.transform = 'translateX(-50%)';
+    this.button.style.zIndex = '9999';
     
-    // Eye icon SVG
     this.button.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
         <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/>
@@ -27,24 +31,47 @@ export class TileOverlayUI {
     `;
 
     this.button.addEventListener('click', () => {
-      this.enabled = !this.enabled;
-      this.updateButtonState();
-      this.onToggle(this.enabled);
+      this.cycleMode();
     });
 
     this.updateButtonState();
-    container.appendChild(this.button);
+    document.body.appendChild(this.button);
+  }
+
+  private cycleMode(): void {
+    switch (this.mode) {
+      case OverlayMode.ON:
+        this.mode = OverlayMode.TRANSPARENT;
+        break;
+      case OverlayMode.TRANSPARENT:
+        this.mode = OverlayMode.OFF;
+        break;
+      case OverlayMode.OFF:
+        this.mode = OverlayMode.ON;
+        break;
+    }
+    this.updateButtonState();
+    this.onToggle(this.mode);
   }
 
   private updateButtonState(): void {
     if (!this.button) return;
 
-    if (this.enabled) {
-      this.button.classList.remove('opacity-50');
-      this.button.title = 'Toggle Overlay (ON)';
-    } else {
-      this.button.classList.add('opacity-50');
-      this.button.title = 'Toggle Overlay (OFF)';
+    switch (this.mode) {
+      case OverlayMode.ON:
+        this.button.classList.remove('opacity-50');
+        this.button.title = 'Toggle Overlay (ON)';
+        break;
+      case OverlayMode.TRANSPARENT:
+        this.button.classList.remove('opacity-50');
+        this.button.style.opacity = '0.7';
+        this.button.title = 'Toggle Overlay (TRANSPARENT)';
+        break;
+      case OverlayMode.OFF:
+        this.button.classList.add('opacity-50');
+        this.button.style.opacity = '';
+        this.button.title = 'Toggle Overlay (OFF)';
+        break;
     }
   }
 }
