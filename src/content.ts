@@ -5,10 +5,7 @@ import { injectFetchInterceptor } from "./features/fetch-interceptor/index";
 import { TileOverlay } from "./features/tile-overlay/index";
 
 class WPlaceStudio {
-  private tileOverlay: TileOverlay;
-
   constructor() {
-    this.tileOverlay = new TileOverlay();
     this.init();
   }
 
@@ -18,35 +15,12 @@ class WPlaceStudio {
     }
 
     try {
-      new WPlaceExtendedFavorites();
       injectFetchInterceptor();
-      this.setupTileProcessing();
+      new WPlaceExtendedFavorites();
+      new TileOverlay();
     } catch (error) {
       console.error("WPlace Studio initialization error:", error);
     }
-  }
-
-  private setupTileProcessing(): void {
-    window.addEventListener('message', async (event) => {
-      if (event.data.source === 'wplace-studio-tile') {
-        const { blobID, tileBlob, tileX, tileY } = event.data;
-        
-        try {
-          const processedBlob = await this.tileOverlay.drawPixelOnTile(tileBlob, tileX, tileY);
-          
-          // Send processed blob back to inject script
-          window.postMessage({
-            source: 'wplace-studio-processed',
-            blobID: blobID,
-            processedBlob: processedBlob
-          }, '*');
-        } catch (error) {
-          console.error('Failed to process tile:', error);
-        }
-      }
-    });
-    
-    console.log('Tile processing listener setup complete');
   }
 }
 
