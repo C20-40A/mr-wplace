@@ -5,6 +5,7 @@
   "description": "Professional toolkit for WPlace - Enhance your creative workflow with advanced features and protection tools",
   "permissions": [
     "storage",
+    "unlimitedStorage",
     "activeTab",
     "scripting"
   ],

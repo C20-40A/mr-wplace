@@ -1,16 +1,16 @@
-import { availableColors, paidColors } from '../../constants/colors';
+import { availableColors, paidColors } from "../../constants/colors";
 
 export class ImageProcessor {
   private container: HTMLElement;
   private originalImage: HTMLImageElement | null = null;
-  private colorConvertedCanvas: HTMLCanvasElement | null = null;  // 色変換後の中間状態
+  private colorConvertedCanvas: HTMLCanvasElement | null = null; // 色変換後の中間状態
   private scaledCanvas: HTMLCanvasElement | null = null;
-  private imageScale = 1.0;     // 実際のサイズ変更
-  private displayZoom = 1.0;   // UI表示用ズーム
-  private isColorConverted = false;  // パレット変換済みフラグ
-  private includePaidColors = true;  // Paid色を含むかどうか
-  private panX = 0;  // ドラッグ移動X座標
-  private panY = 0;  // ドラッグ移動Y座標
+  private imageScale = 1.0; // 実際のサイズ変更
+  private displayZoom = 1.0; // UI表示用ズーム
+  private isColorConverted = false; // パレット変換済みフラグ
+  private includePaidColors = true; // Paid色を含むかどうか
+  private panX = 0; // ドラッグ移動X座標
+  private panY = 0; // ドラッグ移動Y座標
   private isDragging = false;
   private lastMouseX = 0;
   private lastMouseY = 0;
@@ -18,6 +18,55 @@ export class ImageProcessor {
   constructor(container: HTMLElement) {
     this.container = container;
     this.init();
+  }
+
+  private downloadImage(): void {
+    if (!this.scaledCanvas) return;
+
+    this.scaledCanvas.toBlob((blob) => {
+      if (!blob) return;
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `wplace-image-${Date.now()}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, "image/png");
+  }
+
+  private saveToGallery(): void {
+    if (!this.scaledCanvas) return;
+
+    // WebPフォールバック付き
+    const format = "image/webp";
+    this.scaledCanvas.toBlob((blob) => {
+      if (!blob) {
+        // WebP失敗時はPNGで再試行
+        this.scaledCanvas!.toBlob((pngBlob) => {
+          if (!pngBlob) return;
+          this.saveCanvasToGallery(pngBlob);
+        }, "image/png");
+        return;
+      }
+      this.saveCanvasToGallery(blob);
+    }, format);
+  }
+
+  private saveCanvasToGallery(blob: Blob): void {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      const key = `gallery_${Date.now()}`;
+
+      (chrome as any).storage.local.set({ [key]: base64 }, () => {
+        console.log("画像をギャラリーに保存しました");
+        // TODO: ユーザーに成功メッセージ表示
+      });
+    };
+    reader.readAsDataURL(blob);
   }
 
   private init(): void {
@@ -93,48 +142,57 @@ export class ImageProcessor {
             <span class="text-sm">Paid色を含む</span>
           </label>
         </div>
+        
+        <div id="wps-action-buttons" class="hidden flex gap-2 mt-4">
+          <button id="wps-add-to-gallery" class="btn btn-primary flex-1">ギャラリーに追加</button>
+          <button id="wps-download" class="btn btn-ghost">ダウンロード</button>
+        </div>
       </div>
     `;
   }
 
   private setupImageUpload(): void {
-    const dropzone = this.container.querySelector('#wps-dropzone');
-    const fileInput = this.container.querySelector('#wps-file-input') as HTMLInputElement;
-    const imageArea = this.container.querySelector('#wps-image-area') as HTMLElement;
+    const dropzone = this.container.querySelector("#wps-dropzone");
+    const fileInput = this.container.querySelector(
+      "#wps-file-input"
+    ) as HTMLInputElement;
+    const imageArea = this.container.querySelector(
+      "#wps-image-area"
+    ) as HTMLElement;
 
-    dropzone?.addEventListener('click', () => fileInput?.click());
-    
-    dropzone?.addEventListener('dragover', (e) => {
+    dropzone?.addEventListener("click", () => fileInput?.click());
+
+    dropzone?.addEventListener("dragover", (e) => {
       const dragEvent = e as DragEvent;
       dragEvent.preventDefault();
       if (imageArea) {
-        imageArea.style.borderColor = '#3b82f6';
-        imageArea.style.backgroundColor = '#eff6ff';
+        imageArea.style.borderColor = "#3b82f6";
+        imageArea.style.backgroundColor = "#eff6ff";
       }
     });
-    
-    dropzone?.addEventListener('dragleave', () => {
+
+    dropzone?.addEventListener("dragleave", () => {
       if (imageArea) {
-        imageArea.style.borderColor = '#d1d5db';
-        imageArea.style.backgroundColor = '';
+        imageArea.style.borderColor = "#d1d5db";
+        imageArea.style.backgroundColor = "";
       }
     });
-    
-    dropzone?.addEventListener('drop', (e) => {
+
+    dropzone?.addEventListener("drop", (e) => {
       const dragEvent = e as DragEvent;
       dragEvent.preventDefault();
       if (imageArea) {
-        imageArea.style.borderColor = '#d1d5db';
-        imageArea.style.backgroundColor = '';
+        imageArea.style.borderColor = "#d1d5db";
+        imageArea.style.backgroundColor = "";
       }
-      
+
       const files = dragEvent.dataTransfer?.files;
       if (files && files[0]) {
         this.handleFile(files[0]);
       }
     });
-    
-    fileInput?.addEventListener('change', (e) => {
+
+    fileInput?.addEventListener("change", (e) => {
       const files = (e.target as HTMLInputElement).files;
       if (files && files[0]) {
         this.handleFile(files[0]);
@@ -143,16 +201,24 @@ export class ImageProcessor {
   }
 
   private setupScaleControl(): void {
-    const slider = this.container.querySelector('#wps-scale-slider') as HTMLInputElement;
-    const valueDisplay = this.container.querySelector('#wps-scale-value');
-    const canvas = this.container.querySelector('#wps-scaled-canvas') as HTMLCanvasElement;
-    const zoomIndicator = this.container.querySelector('#wps-zoom-indicator');
-    const resetBtn = this.container.querySelector('#wps-reset-btn');
-    const clearBtn = this.container.querySelector('#wps-clear-btn');
-    const paidToggle = this.container.querySelector('#wps-paid-toggle') as HTMLInputElement;
-    
+    const slider = this.container.querySelector(
+      "#wps-scale-slider"
+    ) as HTMLInputElement;
+    const valueDisplay = this.container.querySelector("#wps-scale-value");
+    const canvas = this.container.querySelector(
+      "#wps-scaled-canvas"
+    ) as HTMLCanvasElement;
+    const zoomIndicator = this.container.querySelector("#wps-zoom-indicator");
+    const resetBtn = this.container.querySelector("#wps-reset-btn");
+    const clearBtn = this.container.querySelector("#wps-clear-btn");
+    const paidToggle = this.container.querySelector(
+      "#wps-paid-toggle"
+    ) as HTMLInputElement;
+    const addToGalleryBtn = this.container.querySelector("#wps-add-to-gallery");
+    const downloadBtn = this.container.querySelector("#wps-download");
+
     // サイズ縮小スライダー
-    slider?.addEventListener('input', (e) => {
+    slider?.addEventListener("input", (e) => {
       const value = (e.target as HTMLInputElement).value;
       this.imageScale = parseFloat(value);
       if (valueDisplay) {
@@ -162,46 +228,46 @@ export class ImageProcessor {
     });
 
     // マウスホイールズーム（UI表示のみ）
-    canvas?.addEventListener('wheel', (e) => {
+    canvas?.addEventListener("wheel", (e) => {
       const wheelEvent = e as WheelEvent;
       wheelEvent.preventDefault();
       const delta = wheelEvent.deltaY > 0 ? -0.1 : 0.1;
       const newZoom = Math.max(0.5, Math.min(5.0, this.displayZoom + delta));
-      
+
       this.displayZoom = newZoom;
       if (zoomIndicator) {
-        zoomIndicator.textContent = Math.round(newZoom * 100) + '%';
+        zoomIndicator.textContent = Math.round(newZoom * 100) + "%";
       }
       this.updateCanvasDisplay();
     });
-    
+
     // ドラッグ移動機能
     this.setupDragPan(canvas);
-    
+
     // 編集リセットボタン
-    resetBtn?.addEventListener('click', () => {
+    resetBtn?.addEventListener("click", () => {
       this.imageScale = 1.0;
       this.displayZoom = 1.0;
       this.isColorConverted = false;
       this.panX = 0;
       this.panY = 0;
-      
-      if (slider) slider.value = '1';
-      if (valueDisplay) valueDisplay.textContent = '1.0';
-      if (zoomIndicator) zoomIndicator.textContent = '100%';
-      
+
+      if (slider) slider.value = "1";
+      if (valueDisplay) valueDisplay.textContent = "1.0";
+      if (zoomIndicator) zoomIndicator.textContent = "100%";
+
       this.updateScaledImage();
     });
-    
+
     // 画像クリアボタン
-    clearBtn?.addEventListener('click', () => {
-      if (confirm('画像をクリアして初期状態に戻しますか？')) {
+    clearBtn?.addEventListener("click", () => {
+      if (confirm("画像をクリアして初期状態に戻しますか？")) {
         this.clearImage();
       }
     });
-    
+
     // Paid色トグル
-    paidToggle?.addEventListener('change', (e) => {
+    paidToggle?.addEventListener("change", (e) => {
       const target = e.target as HTMLInputElement;
       this.includePaidColors = target.checked;
       if (this.isColorConverted) {
@@ -211,11 +277,21 @@ export class ImageProcessor {
         }, 50);
       }
     });
+
+    // ギャラリーに追加
+    addToGalleryBtn?.addEventListener("click", () => {
+      this.saveToGallery();
+    });
+
+    // ダウンロード
+    downloadBtn?.addEventListener("click", () => {
+      this.downloadImage();
+    });
   }
 
   private handleFile(file: File): void {
-    if (!file.type.startsWith('image/')) return;
-    
+    if (!file.type.startsWith("image/")) return;
+
     const reader = new FileReader();
     reader.onload = (e) => {
       if (e.target?.result) {
@@ -224,27 +300,29 @@ export class ImageProcessor {
     };
     reader.readAsDataURL(file);
   }
-  
+
   private displayImage(imageSrc: string): void {
-    const dropzone = this.container.querySelector('#wps-dropzone');
-    const imageDisplay = this.container.querySelector('#wps-image-display');
-    const controls = this.container.querySelector('#wps-controls');
-    const originalImage = this.container.querySelector('#wps-original-image') as HTMLImageElement;
-    const zoomIndicator = this.container.querySelector('#wps-zoom-indicator');
-    
+    const dropzone = this.container.querySelector("#wps-dropzone");
+    const imageDisplay = this.container.querySelector("#wps-image-display");
+    const controls = this.container.querySelector("#wps-controls");
+    const originalImage = this.container.querySelector(
+      "#wps-original-image"
+    ) as HTMLImageElement;
+    const zoomIndicator = this.container.querySelector("#wps-zoom-indicator");
+
     // 初期化
     this.displayZoom = 1.0;
     this.panX = 0;
     this.panY = 0;
-    
+
     if (zoomIndicator) {
-      zoomIndicator.textContent = '100%';
+      zoomIndicator.textContent = "100%";
     }
-    
+
     if (originalImage) {
       originalImage.src = imageSrc;
       this.originalImage = originalImage;
-      
+
       originalImage.onload = () => {
         this.updateOriginalImageDisplay();
         // 色変換を非同期で自動実行
@@ -253,65 +331,86 @@ export class ImageProcessor {
         }, 50);
       };
     }
-    
+
     // UI状態変更
-    dropzone?.classList.add('hidden');
-    imageDisplay?.classList.remove('hidden');
-    controls?.classList.remove('hidden');
+    dropzone?.classList.add("hidden");
+    imageDisplay?.classList.remove("hidden");
+    controls?.classList.remove("hidden");
+
+    // アクションボタンを表示
+    const actionButtons = this.container.querySelector("#wps-action-buttons");
+    actionButtons?.classList.remove("hidden");
   }
-  
+
   private updateOriginalImageDisplay(): void {
-    const originalImage = this.container.querySelector('#wps-original-image') as HTMLImageElement;
+    const originalImage = this.container.querySelector(
+      "#wps-original-image"
+    ) as HTMLImageElement;
     if (!originalImage || !this.originalImage) return;
-    
+
     const width = this.originalImage.naturalWidth;
     const height = this.originalImage.naturalHeight;
     const maxDisplaySize = 300;
-    
+
     // 小さい画像は拡大表示
     if (width <= maxDisplaySize && height <= maxDisplaySize) {
       const scale = Math.min(maxDisplaySize / width, maxDisplaySize / height);
       originalImage.style.width = `${width * scale}px`;
       originalImage.style.height = `${height * scale}px`;
     } else {
-      originalImage.style.width = 'auto';
-      originalImage.style.height = 'auto';
+      originalImage.style.width = "auto";
+      originalImage.style.height = "auto";
     }
   }
 
   private updateScaledImage(): void {
     if (!this.originalImage) return;
-    
-    const canvas = this.container.querySelector('#wps-scaled-canvas') as HTMLCanvasElement;
-    const originalSizeDisplay = this.container.querySelector('#wps-original-size');
-    const currentSizeDisplay = this.container.querySelector('#wps-current-size');
-    const zoomIndicator = this.container.querySelector('#wps-zoom-indicator');
-    const ctx = canvas?.getContext('2d');
+
+    const canvas = this.container.querySelector(
+      "#wps-scaled-canvas"
+    ) as HTMLCanvasElement;
+    const originalSizeDisplay =
+      this.container.querySelector("#wps-original-size");
+    const currentSizeDisplay =
+      this.container.querySelector("#wps-current-size");
+    const zoomIndicator = this.container.querySelector("#wps-zoom-indicator");
+    const ctx = canvas?.getContext("2d");
     if (!ctx) return;
-    
+
     const originalWidth = this.originalImage.naturalWidth;
     const originalHeight = this.originalImage.naturalHeight;
     const newWidth = Math.floor(originalWidth * this.imageScale);
     const newHeight = Math.floor(originalHeight * this.imageScale);
-    
+
     // Canvasの実際のサイズ設定
     canvas.width = newWidth;
     canvas.height = newHeight;
-    
+
     // ピクセル化を防ぐため
     ctx.imageSmoothingEnabled = false;
-    
+
     // 色変換済みの場合はcolorConvertedCanvas、そうでなければoriginalImageを使用
-    const sourceImage = this.isColorConverted && this.colorConvertedCanvas 
-      ? this.colorConvertedCanvas 
-      : this.originalImage;
-    
+    const sourceImage =
+      this.isColorConverted && this.colorConvertedCanvas
+        ? this.colorConvertedCanvas
+        : this.originalImage;
+
     if (sourceImage instanceof HTMLCanvasElement) {
-      ctx.drawImage(sourceImage, 0, 0, originalWidth, originalHeight, 0, 0, newWidth, newHeight);
+      ctx.drawImage(
+        sourceImage,
+        0,
+        0,
+        originalWidth,
+        originalHeight,
+        0,
+        0,
+        newWidth,
+        newHeight
+      );
     } else {
       ctx.drawImage(sourceImage, 0, 0, newWidth, newHeight);
     }
-    
+
     // サイズ表示更新
     if (originalSizeDisplay) {
       originalSizeDisplay.textContent = `${originalWidth} x ${originalHeight}`;
@@ -320,98 +419,106 @@ export class ImageProcessor {
       currentSizeDisplay.textContent = `${newWidth} x ${newHeight}`;
     }
     if (zoomIndicator) {
-      zoomIndicator.textContent = Math.round(this.displayZoom * 100) + '%';
+      zoomIndicator.textContent = Math.round(this.displayZoom * 100) + "%";
     }
-    
+
     this.scaledCanvas = canvas;
     this.updateCanvasDisplay();
   }
-  
+
   private updateCanvasDisplay(): void {
-    const canvas = this.container.querySelector('#wps-scaled-canvas') as HTMLCanvasElement;
+    const canvas = this.container.querySelector(
+      "#wps-scaled-canvas"
+    ) as HTMLCanvasElement;
     if (!canvas || !this.scaledCanvas) return;
-    
+
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
     const containerSize = 300; // 固定コンテナサイズ
-    
+
     // 基本表示サイズを計算（コンテナに収まるサイズ）
     let baseDisplayScale: number;
     if (canvasWidth <= containerSize && canvasHeight <= containerSize) {
       // 小さい画像はコンテナいっぱいに拡大
-      baseDisplayScale = Math.min(containerSize / canvasWidth, containerSize / canvasHeight);
+      baseDisplayScale = Math.min(
+        containerSize / canvasWidth,
+        containerSize / canvasHeight
+      );
     } else {
       // 大きい画像はコンテナに収まるように縮小
-      baseDisplayScale = Math.min(containerSize / canvasWidth, containerSize / canvasHeight);
+      baseDisplayScale = Math.min(
+        containerSize / canvasWidth,
+        containerSize / canvasHeight
+      );
     }
-    
+
     // ズームを適用
     const finalDisplayScale = baseDisplayScale * this.displayZoom;
-    
+
     const displayWidth = canvasWidth * finalDisplayScale;
     const displayHeight = canvasHeight * finalDisplayScale;
-    
+
     canvas.style.width = `${displayWidth}px`;
     canvas.style.height = `${displayHeight}px`;
-    canvas.style.imageRendering = 'pixelated'; // ピクセル保持
-    canvas.style.imageRendering = 'crisp-edges'; // フォールバック
-    
+    canvas.style.imageRendering = "pixelated"; // ピクセル保持
+    canvas.style.imageRendering = "crisp-edges"; // フォールバック
+
     // ドラッグ移動を適用（コンテナの中央からのオフセット）
     canvas.style.transform = `translate(calc(-50% + ${this.panX}px), calc(-50% + ${this.panY}px))`;
-    
+
     // カーソル状態変更
-    canvas.style.cursor = this.displayZoom > 1.0 ? 'move' : 'grab';
+    canvas.style.cursor = this.displayZoom > 1.0 ? "move" : "grab";
   }
-  
+
   private setupDragPan(canvas: HTMLCanvasElement | null): void {
     if (!canvas) return;
-    
+
     const handleMouseDown = (e: MouseEvent) => {
       if (this.displayZoom <= 1.0) return; // ズーム時のみドラッグ可能
-      
+
       this.isDragging = true;
       this.lastMouseX = e.clientX;
       this.lastMouseY = e.clientY;
-      canvas.style.cursor = 'grabbing';
+      canvas.style.cursor = "grabbing";
       e.preventDefault();
     };
-    
+
     const handleMouseMove = (e: MouseEvent) => {
       if (!this.isDragging) return;
-      
+
       const deltaX = e.clientX - this.lastMouseX;
       const deltaY = e.clientY - this.lastMouseY;
-      
+
       this.panX += deltaX;
       this.panY += deltaY;
-      
+
       this.lastMouseX = e.clientX;
       this.lastMouseY = e.clientY;
-      
+
       this.updateCanvasDisplay();
     };
-    
+
     const handleMouseUp = () => {
       if (!this.isDragging) return;
-      
+
       this.isDragging = false;
-      canvas.style.cursor = this.displayZoom > 1.0 ? 'move' : 'grab';
+      canvas.style.cursor = this.displayZoom > 1.0 ? "move" : "grab";
     };
-    
+
     // イベントリスナー登録
-    canvas.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    
+    canvas.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+
     // マウスがCanvas外に出た時の処理
-    canvas.addEventListener('mouseleave', () => {
+    canvas.addEventListener("mouseleave", () => {
       if (this.isDragging) {
         this.isDragging = false;
-        canvas.style.cursor = this.displayZoom > 1.0 ? 'move' : 'grab';
+        canvas.style.cursor = this.displayZoom > 1.0 ? "move" : "grab";
       }
     });
   }
-  
+
   private clearImage(): void {
     // 初期状態にリセット
     this.originalImage = null;
@@ -424,71 +531,81 @@ export class ImageProcessor {
     this.panX = 0;
     this.panY = 0;
     this.isDragging = false;
-    
+
     // UI状態をリセット
-    const dropzone = this.container.querySelector('#wps-dropzone');
-    const imageDisplay = this.container.querySelector('#wps-image-display');
-    const controls = this.container.querySelector('#wps-controls');
-    const slider = this.container.querySelector('#wps-scale-slider') as HTMLInputElement;
-    const valueDisplay = this.container.querySelector('#wps-scale-value');
-    const paidToggle = this.container.querySelector('#wps-paid-toggle') as HTMLInputElement;
-    
+    const dropzone = this.container.querySelector("#wps-dropzone");
+    const imageDisplay = this.container.querySelector("#wps-image-display");
+    const controls = this.container.querySelector("#wps-controls");
+    const slider = this.container.querySelector(
+      "#wps-scale-slider"
+    ) as HTMLInputElement;
+    const valueDisplay = this.container.querySelector("#wps-scale-value");
+    const paidToggle = this.container.querySelector(
+      "#wps-paid-toggle"
+    ) as HTMLInputElement;
+
     // スライダーリセット
-    if (slider) slider.value = '1';
-    if (valueDisplay) valueDisplay.textContent = '1.0';
+    if (slider) slider.value = "1";
+    if (valueDisplay) valueDisplay.textContent = "1.0";
     if (paidToggle) paidToggle.checked = true;
-    
+
     // UI表示切り替え
-    dropzone?.classList.remove('hidden');
-    imageDisplay?.classList.add('hidden');
-    controls?.classList.add('hidden');
+    dropzone?.classList.remove("hidden");
+    imageDisplay?.classList.add("hidden");
+    controls?.classList.add("hidden");
+
+    // アクションボタンを非表示
+    const actionButtons = this.container.querySelector("#wps-action-buttons");
+    actionButtons?.classList.add("hidden");
   }
-  
+
   private convertToPalette(): void {
     if (!this.originalImage) return;
-    
+
     // 元画像から色変換を実行
-    const tempCanvas = document.createElement('canvas');
-    const tempCtx = tempCanvas.getContext('2d');
+    const tempCanvas = document.createElement("canvas");
+    const tempCtx = tempCanvas.getContext("2d");
     if (!tempCtx) return;
-    
+
     const width = this.originalImage.naturalWidth;
     const height = this.originalImage.naturalHeight;
     tempCanvas.width = width;
     tempCanvas.height = height;
-    
+
     // ピクセル補間無効化
     tempCtx.imageSmoothingEnabled = false;
     tempCtx.drawImage(this.originalImage, 0, 0);
-    
+
     const imageData = tempCtx.getImageData(0, 0, width, height);
     const data = imageData.data;
-    
+
     // RGB距離計算で最寄り色に変換
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i];
       const g = data[i + 1];
       const b = data[i + 2];
-      
+
       const nearestColor = this.findNearestColor([r, g, b]);
-      data[i] = nearestColor[0];     // R
+      data[i] = nearestColor[0]; // R
       data[i + 1] = nearestColor[1]; // G
       data[i + 2] = nearestColor[2]; // B
       // Alpha値は変更しない
     }
-    
+
     tempCtx.putImageData(imageData, 0, 0);
     this.colorConvertedCanvas = tempCanvas;
     this.isColorConverted = true;
-    
+
     // スケール適用して表示更新
     this.updateScaledImage();
   }
-  
-  private findNearestColor(rgb: [number, number, number]): [number, number, number] {
+
+  private findNearestColor(
+    rgb: [number, number, number]
+  ): [number, number, number] {
     let minDistance = Infinity;
     let nearestColor: [number, number, number] = [0, 0, 0];
-    
+
     for (const color of Object.values(availableColors)) {
       // Paid色を除外するかチェック
       if (!this.includePaidColors) {
@@ -497,19 +614,19 @@ export class ImageProcessor {
           continue; // Paid色をスキップ
         }
       }
-      
+
       const distance = Math.sqrt(
         Math.pow(rgb[0] - color[0], 2) +
-        Math.pow(rgb[1] - color[1], 2) +
-        Math.pow(rgb[2] - color[2], 2)
+          Math.pow(rgb[1] - color[1], 2) +
+          Math.pow(rgb[2] - color[2], 2)
       );
-      
+
       if (distance < minDistance) {
         minDistance = distance;
         nearestColor = color as [number, number, number];
       }
     }
-    
+
     return nearestColor;
   }
 }
