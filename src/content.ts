@@ -3,6 +3,8 @@
 import { WPlaceExtendedFavorites } from "./features/favorite/index";
 import { injectFetchInterceptor } from "./features/fetch-interceptor/index";
 import { TileOverlay } from "./features/tile-overlay/index";
+import { ImageEditor } from "./features/image-editor/index";
+import { Toolbar } from "./components/toolbar";
 
 class WPlaceStudio {
   constructor() {
@@ -15,9 +17,12 @@ class WPlaceStudio {
     }
 
     try {
+      const toolbar = new Toolbar();
+      
       injectFetchInterceptor();
       new WPlaceExtendedFavorites();
-      new TileOverlay();
+      new TileOverlay(toolbar);
+      new ImageEditor(toolbar);
     } catch (error) {
       console.error("WPlace Studio initialization error:", error);
     }
