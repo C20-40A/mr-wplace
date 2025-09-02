@@ -1,4 +1,4 @@
-import { availableColors } from '../../utils/colors';
+import { availableColors, paidColors } from '../../constants/colors';
 
 export class ImageProcessor {
   private container: HTMLElement;
@@ -8,6 +8,7 @@ export class ImageProcessor {
   private imageScale = 1.0;     // 実際のサイズ変更
   private displayZoom = 1.0;   // UI表示用ズーム
   private isColorConverted = false;  // パレット変換済みフラグ
+  private includePaidColors = true;  // Paid色を含むかどうか
   private panX = 0;  // ドラッグ移動X座標
   private panY = 0;  // ドラッグ移動Y座標
   private isDragging = false;
@@ -86,6 +87,12 @@ export class ImageProcessor {
             <span>1.0x</span>
           </div>
         </div>
+        <div>
+          <label class="flex items-center space-x-2">
+            <input type="checkbox" id="wps-paid-toggle" checked class="checkbox checkbox-xs">
+            <span class="text-sm">Paid色を含む</span>
+          </label>
+        </div>
       </div>
     `;
   }
@@ -142,6 +149,7 @@ export class ImageProcessor {
     const zoomIndicator = this.container.querySelector('#wps-zoom-indicator');
     const resetBtn = this.container.querySelector('#wps-reset-btn');
     const clearBtn = this.container.querySelector('#wps-clear-btn');
+    const paidToggle = this.container.querySelector('#wps-paid-toggle') as HTMLInputElement;
     
     // サイズ縮小スライダー
     slider?.addEventListener('input', (e) => {
@@ -189,6 +197,18 @@ export class ImageProcessor {
     clearBtn?.addEventListener('click', () => {
       if (confirm('画像をクリアして初期状態に戻しますか？')) {
         this.clearImage();
+      }
+    });
+    
+    // Paid色トグル
+    paidToggle?.addEventListener('change', (e) => {
+      const target = e.target as HTMLInputElement;
+      this.includePaidColors = target.checked;
+      if (this.isColorConverted) {
+        // 色変換をやり直し
+        setTimeout(() => {
+          this.convertToPalette();
+        }, 50);
       }
     });
   }
@@ -400,6 +420,7 @@ export class ImageProcessor {
     this.imageScale = 1.0;
     this.displayZoom = 1.0;
     this.isColorConverted = false;
+    this.includePaidColors = true;
     this.panX = 0;
     this.panY = 0;
     this.isDragging = false;
@@ -410,10 +431,12 @@ export class ImageProcessor {
     const controls = this.container.querySelector('#wps-controls');
     const slider = this.container.querySelector('#wps-scale-slider') as HTMLInputElement;
     const valueDisplay = this.container.querySelector('#wps-scale-value');
+    const paidToggle = this.container.querySelector('#wps-paid-toggle') as HTMLInputElement;
     
     // スライダーリセット
     if (slider) slider.value = '1';
     if (valueDisplay) valueDisplay.textContent = '1.0';
+    if (paidToggle) paidToggle.checked = true;
     
     // UI表示切り替え
     dropzone?.classList.remove('hidden');
@@ -467,6 +490,14 @@ export class ImageProcessor {
     let nearestColor: [number, number, number] = [0, 0, 0];
     
     for (const color of Object.values(availableColors)) {
+      // Paid色を除外するかチェック
+      if (!this.includePaidColors) {
+        const rgbKey = `${color[0]},${color[1]},${color[2]}`;
+        if (paidColors.has(rgbKey)) {
+          continue; // Paid色をスキップ
+        }
+      }
+      
       const distance = Math.sqrt(
         Math.pow(rgb[0] - color[0], 2) +
         Math.pow(rgb[1] - color[1], 2) +
