@@ -1,4 +1,4 @@
-import { TileOverlayUI, OverlayMode } from './ui';
+import { TileOverlayUI, OverlayMode } from "./ui";
 
 export class TileOverlay {
   private readonly TILE_SIZE = 1000;
@@ -11,7 +11,9 @@ export class TileOverlay {
 
   private init(): void {
     if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", () => this.observeAndInit());
+      document.addEventListener("DOMContentLoaded", () =>
+        this.observeAndInit()
+      );
     } else {
       this.observeAndInit();
     }
@@ -40,25 +42,32 @@ export class TileOverlay {
   }
 
   private setupTileProcessing(): void {
-    window.addEventListener('message', async (event) => {
-      if (event.data.source === 'wplace-studio-tile') {
+    window.addEventListener("message", async (event) => {
+      if (event.data.source === "wplace-studio-tile") {
         const { blobID, tileBlob, tileX, tileY } = event.data;
-        
+
         try {
-          const processedBlob = await this.drawPixelOnTile(tileBlob, tileX, tileY);
-          
-          window.postMessage({
-            source: 'wplace-studio-processed',
-            blobID: blobID,
-            processedBlob: processedBlob
-          }, '*');
+          const processedBlob = await this.drawPixelOnTile(
+            tileBlob,
+            tileX,
+            tileY
+          );
+
+          window.postMessage(
+            {
+              source: "wplace-studio-processed",
+              blobID: blobID,
+              processedBlob: processedBlob,
+            },
+            "*"
+          );
         } catch (error) {
-          console.error('Failed to process tile:', error);
+          console.error("Failed to process tile:", error);
         }
       }
     });
-    
-    console.log('Tile processing listener setup complete');
+
+    console.log("Tile processing listener setup complete");
   }
 
   setMode(mode: OverlayMode): void {
@@ -76,8 +85,8 @@ export class TileOverlay {
       return tileBlob;
     }
 
-    // Only process tile 1803,802
-    if (tileX !== 1803 || tileY !== 802) {
+    // Only process tile 520,218
+    if (tileX !== 520 || tileY !== 218) {
       return tileBlob;
     }
 
@@ -101,10 +110,10 @@ export class TileOverlay {
       context.globalAlpha = 0.5;
     }
     context.fillStyle = "red";
-    context.fillRect(345, 497, 1, 1);
+    context.fillRect(811, 118, 1, 1);
     context.globalAlpha = 1.0; // Reset
 
-    console.log(`Drew red pixel at (345, 497) with ${this.mode} mode`);
+    console.log(`Drew red pixel with ${this.mode} mode`);
 
     // Return modified blob
     return await canvas.convertToBlob({ type: "image/png" });
