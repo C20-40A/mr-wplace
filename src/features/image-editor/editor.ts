@@ -2,7 +2,13 @@ export class ImageProcessor {
   private container: HTMLElement;
   private originalImage: HTMLImageElement | null = null;
   private scaledCanvas: HTMLCanvasElement | null = null;
-  private currentScale = 1.0;
+  private currentScale = 1.0;  // 実際のサイズ変更
+  private currentZoom = 1.0;   // UI表示用ズーム
+  private panX = 0;  // ドラッグ移動X座標
+  private panY = 0;  // ドラッグ移動Y座標
+  private isDragging = false;
+  private lastMouseX = 0;
+  private lastMouseY = 0;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -28,27 +34,52 @@ export class ImageProcessor {
           </div>
         </div>
         
-        <div id="wps-image-display" class="hidden">
+        <div id="wps-image-display" class="hidden relative">
+          <button id="wps-clear-btn" class="btn btn-xs btn-circle btn-ghost absolute -top-2 -right-2 z-10 opacity-60 hover:opacity-100" title="画像をクリア">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3">
+              <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd"/>
+            </svg>
+          </button>
           <div class="grid grid-cols-2 gap-4">
             <div class="text-center">
               <h4 class="text-sm font-medium mb-2">元画像</h4>
-              <img id="wps-original-image" class="max-w-full max-h-60 rounded shadow" alt="Original">
+              <img id="wps-original-image" class="border rounded shadow" style="max-width: 300px; max-height: 300px; object-fit: contain; image-rendering: pixelated; image-rendering: crisp-edges;" alt="Original">
             </div>
-            <div class="text-center">
-              <h4 class="text-sm font-medium mb-2">スケール後</h4>
-              <canvas id="wps-scaled-canvas" class="max-w-full max-h-60 rounded shadow border"></canvas>
+            <div class="text-center relative">
+              <h4 class="text-sm font-medium mb-2">現在の画像
+                <button id="wps-reset-btn" class="btn btn-xs btn-ghost ml-2 opacity-60 hover:opacity-100" title="編集リセット">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3">
+                    <path fill-rule="evenodd" d="M4.755 10.059a7.5 7.5 0 0112.548-3.364l1.903 1.903h-3.183a.75.75 0 100 1.5h4.992a.75.75 0 00.75-.75V4.356a.75.75 0 00-1.5 0v3.18l-1.9-1.9A9 9 0 003.306 9.67a.75.75 0 101.45.388zm15.408 3.352a.75.75 0 00-.919.53 7.5 7.5 0 01-12.548 3.364l-1.902-1.903h3.183a.75.75 0 000-1.5H2.984a.75.75 0 00-.75.75v4.992a.75.75 0 001.5 0v-3.18l1.9 1.9a9 9 0 0015.059-4.035.75.75 0 00-.53-.918z" clip-rule="evenodd"/>
+                  </svg>
+                </button>
+              </h4>
+              <div class="canvas-container" style="width: 300px; height: 300px; border: 1px solid #d1d5db; border-radius: 0.375rem; overflow: hidden; position: relative; margin: 0 auto; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);">
+                <canvas id="wps-scaled-canvas" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></canvas>
+                <div id="wps-zoom-indicator" class="absolute bottom-2 right-2 text-xs text-gray-500 bg-white bg-opacity-80 px-1 rounded pointer-events-none">
+                  100%
+                </div>
+              </div>
+              <p class="text-xs text-gray-500 mt-2">マウスホイールでズーム</p>
             </div>
           </div>
         </div>
       </div>
       
       <div id="wps-controls" class="hidden space-y-4">
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div class="text-sm">
+            <span class="font-medium">元サイズ:</span> <span id="wps-original-size">-</span>
+          </div>
+          <div class="text-sm">
+            <span class="font-medium">現在サイズ:</span> <span id="wps-current-size">-</span>
+          </div>
+        </div>
         <div>
-          <label class="block text-sm font-medium mb-2">スケール: <span id="wps-scale-value">1.0</span>x</label>
-          <input type="range" id="wps-scale-slider" min="0.1" max="5" step="0.1" value="1" class="w-full">
+          <label class="block text-sm font-medium mb-2">サイズ縮小: <span id="wps-scale-value">1.0</span>x</label>
+          <input type="range" id="wps-scale-slider" min="0.1" max="1" step="0.05" value="1" class="w-full">
           <div class="flex justify-between text-xs text-gray-500 mt-1">
             <span>0.1x</span>
-            <span>5.0x</span>
+            <span>1.0x</span>
           </div>
         </div>
       </div>
@@ -63,7 +94,8 @@ export class ImageProcessor {
     dropzone?.addEventListener('click', () => fileInput?.click());
     
     dropzone?.addEventListener('dragover', (e) => {
-      e.preventDefault();
+      const dragEvent = e as DragEvent;
+      dragEvent.preventDefault();
       if (imageArea) {
         imageArea.style.borderColor = '#3b82f6';
         imageArea.style.backgroundColor = '#eff6ff';
@@ -78,13 +110,14 @@ export class ImageProcessor {
     });
     
     dropzone?.addEventListener('drop', (e) => {
-      e.preventDefault();
+      const dragEvent = e as DragEvent;
+      dragEvent.preventDefault();
       if (imageArea) {
         imageArea.style.borderColor = '#d1d5db';
         imageArea.style.backgroundColor = '';
       }
       
-      const files = e.dataTransfer?.files;
+      const files = dragEvent.dataTransfer?.files;
       if (files && files[0]) {
         this.handleFile(files[0]);
       }
@@ -101,7 +134,12 @@ export class ImageProcessor {
   private setupScaleControl(): void {
     const slider = this.container.querySelector('#wps-scale-slider') as HTMLInputElement;
     const valueDisplay = this.container.querySelector('#wps-scale-value');
+    const canvas = this.container.querySelector('#wps-scaled-canvas') as HTMLCanvasElement;
+    const zoomIndicator = this.container.querySelector('#wps-zoom-indicator');
+    const resetBtn = this.container.querySelector('#wps-reset-btn');
+    const clearBtn = this.container.querySelector('#wps-clear-btn');
     
+    // サイズ縮小スライダー
     slider?.addEventListener('input', (e) => {
       const value = (e.target as HTMLInputElement).value;
       this.currentScale = parseFloat(value);
@@ -109,6 +147,44 @@ export class ImageProcessor {
         valueDisplay.textContent = value;
       }
       this.updateScaledImage();
+    });
+
+    // マウスホイールズーム（UI表示のみ）
+    canvas?.addEventListener('wheel', (e) => {
+      const wheelEvent = e as WheelEvent;
+      wheelEvent.preventDefault();
+      const delta = wheelEvent.deltaY > 0 ? -0.1 : 0.1;
+      const newZoom = Math.max(0.5, Math.min(5.0, this.currentZoom + delta));
+      
+      this.currentZoom = newZoom;
+      if (zoomIndicator) {
+        zoomIndicator.textContent = Math.round(newZoom * 100) + '%';
+      }
+      this.updateCanvasDisplay();
+    });
+    
+    // ドラッグ移動機能
+    this.setupDragPan(canvas);
+    
+    // 編集リセットボタン
+    resetBtn?.addEventListener('click', () => {
+      this.currentScale = 1.0;
+      this.currentZoom = 1.0;
+      this.panX = 0;
+      this.panY = 0;
+      
+      if (slider) slider.value = '1';
+      if (valueDisplay) valueDisplay.textContent = '1.0';
+      if (zoomIndicator) zoomIndicator.textContent = '100%';
+      
+      this.updateScaledImage();
+    });
+    
+    // 画像クリアボタン
+    clearBtn?.addEventListener('click', () => {
+      if (confirm('画像をクリアして初期状態に戻しますか？')) {
+        this.clearImage();
+      }
     });
   }
 
@@ -129,12 +205,23 @@ export class ImageProcessor {
     const imageDisplay = this.container.querySelector('#wps-image-display');
     const controls = this.container.querySelector('#wps-controls');
     const originalImage = this.container.querySelector('#wps-original-image') as HTMLImageElement;
+    const zoomIndicator = this.container.querySelector('#wps-zoom-indicator');
+    
+    // 初期化
+    this.currentZoom = 1.0;
+    this.panX = 0;
+    this.panY = 0;
+    
+    if (zoomIndicator) {
+      zoomIndicator.textContent = '100%';
+    }
     
     if (originalImage) {
       originalImage.src = imageSrc;
       this.originalImage = originalImage;
       
       originalImage.onload = () => {
+        this.updateOriginalImageDisplay();
         this.updateScaledImage();
       };
     }
@@ -144,17 +231,42 @@ export class ImageProcessor {
     imageDisplay?.classList.remove('hidden');
     controls?.classList.remove('hidden');
   }
+  
+  private updateOriginalImageDisplay(): void {
+    const originalImage = this.container.querySelector('#wps-original-image') as HTMLImageElement;
+    if (!originalImage || !this.originalImage) return;
+    
+    const width = this.originalImage.naturalWidth;
+    const height = this.originalImage.naturalHeight;
+    const maxDisplaySize = 300;
+    
+    // 小さい画像は拡大表示
+    if (width <= maxDisplaySize && height <= maxDisplaySize) {
+      const scale = Math.min(maxDisplaySize / width, maxDisplaySize / height);
+      originalImage.style.width = `${width * scale}px`;
+      originalImage.style.height = `${height * scale}px`;
+    } else {
+      originalImage.style.width = 'auto';
+      originalImage.style.height = 'auto';
+    }
+  }
 
   private updateScaledImage(): void {
     if (!this.originalImage) return;
     
     const canvas = this.container.querySelector('#wps-scaled-canvas') as HTMLCanvasElement;
+    const originalSizeDisplay = this.container.querySelector('#wps-original-size');
+    const currentSizeDisplay = this.container.querySelector('#wps-current-size');
+    const zoomIndicator = this.container.querySelector('#wps-zoom-indicator');
     const ctx = canvas?.getContext('2d');
     if (!ctx) return;
     
-    const newWidth = Math.floor(this.originalImage.naturalWidth * this.currentScale);
-    const newHeight = Math.floor(this.originalImage.naturalHeight * this.currentScale);
+    const originalWidth = this.originalImage.naturalWidth;
+    const originalHeight = this.originalImage.naturalHeight;
+    const newWidth = Math.floor(originalWidth * this.currentScale);
+    const newHeight = Math.floor(originalHeight * this.currentScale);
     
+    // Canvasの実際のサイズ設定
     canvas.width = newWidth;
     canvas.height = newHeight;
     
@@ -162,6 +274,130 @@ export class ImageProcessor {
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(this.originalImage, 0, 0, newWidth, newHeight);
     
+    // サイズ表示更新
+    if (originalSizeDisplay) {
+      originalSizeDisplay.textContent = `${originalWidth} x ${originalHeight}`;
+    }
+    if (currentSizeDisplay) {
+      currentSizeDisplay.textContent = `${newWidth} x ${newHeight}`;
+    }
+    if (zoomIndicator) {
+      zoomIndicator.textContent = Math.round(this.currentZoom * 100) + '%';
+    }
+    
     this.scaledCanvas = canvas;
+    this.updateCanvasDisplay();
+  }
+  
+  private updateCanvasDisplay(): void {
+    const canvas = this.container.querySelector('#wps-scaled-canvas') as HTMLCanvasElement;
+    if (!canvas || !this.scaledCanvas) return;
+    
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+    const containerSize = 300; // 固定コンテナサイズ
+    
+    // 基本表示サイズを計算（コンテナに収まるサイズ）
+    let baseDisplayScale: number;
+    if (canvasWidth <= containerSize && canvasHeight <= containerSize) {
+      // 小さい画像はコンテナいっぱいに拡大
+      baseDisplayScale = Math.min(containerSize / canvasWidth, containerSize / canvasHeight);
+    } else {
+      // 大きい画像はコンテナに収まるように縮小
+      baseDisplayScale = Math.min(containerSize / canvasWidth, containerSize / canvasHeight);
+    }
+    
+    // ズームを適用
+    const finalDisplayScale = baseDisplayScale * this.currentZoom;
+    
+    const displayWidth = canvasWidth * finalDisplayScale;
+    const displayHeight = canvasHeight * finalDisplayScale;
+    
+    canvas.style.width = `${displayWidth}px`;
+    canvas.style.height = `${displayHeight}px`;
+    canvas.style.imageRendering = 'pixelated'; // ピクセル保持
+    canvas.style.imageRendering = 'crisp-edges'; // フォールバック
+    
+    // ドラッグ移動を適用（コンテナの中央からのオフセット）
+    canvas.style.transform = `translate(calc(-50% + ${this.panX}px), calc(-50% + ${this.panY}px))`;
+    
+    // カーソル状態変更
+    canvas.style.cursor = this.currentZoom > 1.0 ? 'move' : 'grab';
+  }
+  
+  private setupDragPan(canvas: HTMLCanvasElement | null): void {
+    if (!canvas) return;
+    
+    const handleMouseDown = (e: MouseEvent) => {
+      if (this.currentZoom <= 1.0) return; // ズーム時のみドラッグ可能
+      
+      this.isDragging = true;
+      this.lastMouseX = e.clientX;
+      this.lastMouseY = e.clientY;
+      canvas.style.cursor = 'grabbing';
+      e.preventDefault();
+    };
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!this.isDragging) return;
+      
+      const deltaX = e.clientX - this.lastMouseX;
+      const deltaY = e.clientY - this.lastMouseY;
+      
+      this.panX += deltaX;
+      this.panY += deltaY;
+      
+      this.lastMouseX = e.clientX;
+      this.lastMouseY = e.clientY;
+      
+      this.updateCanvasDisplay();
+    };
+    
+    const handleMouseUp = () => {
+      if (!this.isDragging) return;
+      
+      this.isDragging = false;
+      canvas.style.cursor = this.currentZoom > 1.0 ? 'move' : 'grab';
+    };
+    
+    // イベントリスナー登録
+    canvas.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    
+    // マウスがCanvas外に出た時の処理
+    canvas.addEventListener('mouseleave', () => {
+      if (this.isDragging) {
+        this.isDragging = false;
+        canvas.style.cursor = this.currentZoom > 1.0 ? 'move' : 'grab';
+      }
+    });
+  }
+  
+  private clearImage(): void {
+    // 初期状態にリセット
+    this.originalImage = null;
+    this.scaledCanvas = null;
+    this.currentScale = 1.0;
+    this.currentZoom = 1.0;
+    this.panX = 0;
+    this.panY = 0;
+    this.isDragging = false;
+    
+    // UI状態をリセット
+    const dropzone = this.container.querySelector('#wps-dropzone');
+    const imageDisplay = this.container.querySelector('#wps-image-display');
+    const controls = this.container.querySelector('#wps-controls');
+    const slider = this.container.querySelector('#wps-scale-slider') as HTMLInputElement;
+    const valueDisplay = this.container.querySelector('#wps-scale-value');
+    
+    // スライダーリセット
+    if (slider) slider.value = '1';
+    if (valueDisplay) valueDisplay.textContent = '1.0';
+    
+    // UI表示切り替え
+    dropzone?.classList.remove('hidden');
+    imageDisplay?.classList.add('hidden');
+    controls?.classList.add('hidden');
   }
 }
