@@ -1,9 +1,11 @@
 import { Toolbar } from "../../components/toolbar";
 import { ImageEditorUI } from "./ui";
+import { ImageProcessor } from "./editor";
 
 export class ImageEditor {
   private button: HTMLButtonElement | null = null;
   private ui: ImageEditorUI;
+  private processor: ImageProcessor | null = null;
   private toolbar: Toolbar;
 
   constructor(toolbar: Toolbar) {
@@ -30,7 +32,15 @@ export class ImageEditor {
         </svg>
       `,
       title: 'Image Editor',
-      onClick: () => this.ui.showModal()
+      onClick: () => this.openEditor()
     });
+  }
+
+  private openEditor(): void {
+    const container = this.ui.getContainer();
+    if (container && !this.processor) {
+      this.processor = new ImageProcessor(container);
+    }
+    this.ui.showModal();
   }
 }
