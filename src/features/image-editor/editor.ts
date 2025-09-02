@@ -1,9 +1,13 @@
+import { availableColors } from '../../utils/colors';
+
 export class ImageProcessor {
   private container: HTMLElement;
   private originalImage: HTMLImageElement | null = null;
+  private colorConvertedCanvas: HTMLCanvasElement | null = null;  // 色変換後の中間状態
   private scaledCanvas: HTMLCanvasElement | null = null;
-  private currentScale = 1.0;  // 実際のサイズ変更
-  private currentZoom = 1.0;   // UI表示用ズーム
+  private imageScale = 1.0;     // 実際のサイズ変更
+  private displayZoom = 1.0;   // UI表示用ズーム
+  private isColorConverted = false;  // パレット変換済みフラグ
   private panX = 0;  // ドラッグ移動X座標
   private panY = 0;  // ドラッグ移動Y座標
   private isDragging = false;
@@ -142,7 +146,7 @@ export class ImageProcessor {
     // サイズ縮小スライダー
     slider?.addEventListener('input', (e) => {
       const value = (e.target as HTMLInputElement).value;
-      this.currentScale = parseFloat(value);
+      this.imageScale = parseFloat(value);
       if (valueDisplay) {
         valueDisplay.textContent = value;
       }
@@ -154,9 +158,9 @@ export class ImageProcessor {
       const wheelEvent = e as WheelEvent;
       wheelEvent.preventDefault();
       const delta = wheelEvent.deltaY > 0 ? -0.1 : 0.1;
-      const newZoom = Math.max(0.5, Math.min(5.0, this.currentZoom + delta));
+      const newZoom = Math.max(0.5, Math.min(5.0, this.displayZoom + delta));
       
-      this.currentZoom = newZoom;
+      this.displayZoom = newZoom;
       if (zoomIndicator) {
         zoomIndicator.textContent = Math.round(newZoom * 100) + '%';
       }
@@ -168,8 +172,9 @@ export class ImageProcessor {
     
     // 編集リセットボタン
     resetBtn?.addEventListener('click', () => {
-      this.currentScale = 1.0;
-      this.currentZoom = 1.0;
+      this.imageScale = 1.0;
+      this.displayZoom = 1.0;
+      this.isColorConverted = false;
       this.panX = 0;
       this.panY = 0;
       
@@ -208,7 +213,7 @@ export class ImageProcessor {
     const zoomIndicator = this.container.querySelector('#wps-zoom-indicator');
     
     // 初期化
-    this.currentZoom = 1.0;
+    this.displayZoom = 1.0;
     this.panX = 0;
     this.panY = 0;
     
@@ -222,7 +227,10 @@ export class ImageProcessor {
       
       originalImage.onload = () => {
         this.updateOriginalImageDisplay();
-        this.updateScaledImage();
+        // 色変換を非同期で自動実行
+        setTimeout(() => {
+          this.convertToPalette();
+        }, 50);
       };
     }
     
@@ -263,8 +271,8 @@ export class ImageProcessor {
     
     const originalWidth = this.originalImage.naturalWidth;
     const originalHeight = this.originalImage.naturalHeight;
-    const newWidth = Math.floor(originalWidth * this.currentScale);
-    const newHeight = Math.floor(originalHeight * this.currentScale);
+    const newWidth = Math.floor(originalWidth * this.imageScale);
+    const newHeight = Math.floor(originalHeight * this.imageScale);
     
     // Canvasの実際のサイズ設定
     canvas.width = newWidth;
@@ -272,7 +280,17 @@ export class ImageProcessor {
     
     // ピクセル化を防ぐため
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(this.originalImage, 0, 0, newWidth, newHeight);
+    
+    // 色変換済みの場合はcolorConvertedCanvas、そうでなければoriginalImageを使用
+    const sourceImage = this.isColorConverted && this.colorConvertedCanvas 
+      ? this.colorConvertedCanvas 
+      : this.originalImage;
+    
+    if (sourceImage instanceof HTMLCanvasElement) {
+      ctx.drawImage(sourceImage, 0, 0, originalWidth, originalHeight, 0, 0, newWidth, newHeight);
+    } else {
+      ctx.drawImage(sourceImage, 0, 0, newWidth, newHeight);
+    }
     
     // サイズ表示更新
     if (originalSizeDisplay) {
@@ -282,7 +300,7 @@ export class ImageProcessor {
       currentSizeDisplay.textContent = `${newWidth} x ${newHeight}`;
     }
     if (zoomIndicator) {
-      zoomIndicator.textContent = Math.round(this.currentZoom * 100) + '%';
+      zoomIndicator.textContent = Math.round(this.displayZoom * 100) + '%';
     }
     
     this.scaledCanvas = canvas;
@@ -308,7 +326,7 @@ export class ImageProcessor {
     }
     
     // ズームを適用
-    const finalDisplayScale = baseDisplayScale * this.currentZoom;
+    const finalDisplayScale = baseDisplayScale * this.displayZoom;
     
     const displayWidth = canvasWidth * finalDisplayScale;
     const displayHeight = canvasHeight * finalDisplayScale;
@@ -322,14 +340,14 @@ export class ImageProcessor {
     canvas.style.transform = `translate(calc(-50% + ${this.panX}px), calc(-50% + ${this.panY}px))`;
     
     // カーソル状態変更
-    canvas.style.cursor = this.currentZoom > 1.0 ? 'move' : 'grab';
+    canvas.style.cursor = this.displayZoom > 1.0 ? 'move' : 'grab';
   }
   
   private setupDragPan(canvas: HTMLCanvasElement | null): void {
     if (!canvas) return;
     
     const handleMouseDown = (e: MouseEvent) => {
-      if (this.currentZoom <= 1.0) return; // ズーム時のみドラッグ可能
+      if (this.displayZoom <= 1.0) return; // ズーム時のみドラッグ可能
       
       this.isDragging = true;
       this.lastMouseX = e.clientX;
@@ -357,7 +375,7 @@ export class ImageProcessor {
       if (!this.isDragging) return;
       
       this.isDragging = false;
-      canvas.style.cursor = this.currentZoom > 1.0 ? 'move' : 'grab';
+      canvas.style.cursor = this.displayZoom > 1.0 ? 'move' : 'grab';
     };
     
     // イベントリスナー登録
@@ -369,7 +387,7 @@ export class ImageProcessor {
     canvas.addEventListener('mouseleave', () => {
       if (this.isDragging) {
         this.isDragging = false;
-        canvas.style.cursor = this.currentZoom > 1.0 ? 'move' : 'grab';
+        canvas.style.cursor = this.displayZoom > 1.0 ? 'move' : 'grab';
       }
     });
   }
@@ -377,9 +395,11 @@ export class ImageProcessor {
   private clearImage(): void {
     // 初期状態にリセット
     this.originalImage = null;
+    this.colorConvertedCanvas = null;
     this.scaledCanvas = null;
-    this.currentScale = 1.0;
-    this.currentZoom = 1.0;
+    this.imageScale = 1.0;
+    this.displayZoom = 1.0;
+    this.isColorConverted = false;
     this.panX = 0;
     this.panY = 0;
     this.isDragging = false;
@@ -399,5 +419,66 @@ export class ImageProcessor {
     dropzone?.classList.remove('hidden');
     imageDisplay?.classList.add('hidden');
     controls?.classList.add('hidden');
+  }
+  
+  private convertToPalette(): void {
+    if (!this.originalImage) return;
+    
+    // 元画像から色変換を実行
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    if (!tempCtx) return;
+    
+    const width = this.originalImage.naturalWidth;
+    const height = this.originalImage.naturalHeight;
+    tempCanvas.width = width;
+    tempCanvas.height = height;
+    
+    // ピクセル補間無効化
+    tempCtx.imageSmoothingEnabled = false;
+    tempCtx.drawImage(this.originalImage, 0, 0);
+    
+    const imageData = tempCtx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+    
+    // RGB距離計算で最寄り色に変換
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      
+      const nearestColor = this.findNearestColor([r, g, b]);
+      data[i] = nearestColor[0];     // R
+      data[i + 1] = nearestColor[1]; // G
+      data[i + 2] = nearestColor[2]; // B
+      // Alpha値は変更しない
+    }
+    
+    tempCtx.putImageData(imageData, 0, 0);
+    this.colorConvertedCanvas = tempCanvas;
+    this.isColorConverted = true;
+    
+    // スケール適用して表示更新
+    this.updateScaledImage();
+  }
+  
+  private findNearestColor(rgb: [number, number, number]): [number, number, number] {
+    let minDistance = Infinity;
+    let nearestColor: [number, number, number] = [0, 0, 0];
+    
+    for (const color of Object.values(availableColors)) {
+      const distance = Math.sqrt(
+        Math.pow(rgb[0] - color[0], 2) +
+        Math.pow(rgb[1] - color[1], 2) +
+        Math.pow(rgb[2] - color[2], 2)
+      );
+      
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearestColor = color as [number, number, number];
+      }
+    }
+    
+    return nearestColor;
   }
 }
