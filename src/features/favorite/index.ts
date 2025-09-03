@@ -8,6 +8,8 @@ import { getCurrentPosition } from "../../utils/position";
 
 export class WPlaceExtendedFavorites {
   private buttonObserver: ButtonObserver;
+  private selectedImage: any = null;
+  private isDrawMode: boolean = false;
 
   constructor() {
     this.buttonObserver = new ButtonObserver();
@@ -81,7 +83,36 @@ export class WPlaceExtendedFavorites {
 
   startDraw(selectedItem: any): void {
     console.log("🎨 Start drawing with:", selectedItem);
-    // TODO: implement drawing logic
+    this.selectedImage = selectedItem;
+    this.isDrawMode = true;
+    
+    const position = getCurrentPosition();
+    if (!position) {
+      alert("位置情報を取得できませんでした。");
+      this.resetDrawMode();
+      return;
+    }
+
+    this.drawImageOnMap(position.lat, position.lng, selectedItem);
+  }
+
+  resetDrawMode(): void {
+    this.selectedImage = null;
+    this.isDrawMode = false;
+  }
+
+  drawImageOnMap(lat: number, lng: number, imageItem: any): void {
+    // TODO: TileOverlay連携で画像描画
+    console.log("📍 Drawing at:", lat, lng, "Image:", imageItem.key);
+    
+    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
+    if (tileOverlay) {
+      tileOverlay.drawImageAt(lat, lng, imageItem);
+    } else {
+      console.error("TileOverlay instance not found");
+    }
+    
+    this.resetDrawMode();
   }
 
   createModal(): void {
