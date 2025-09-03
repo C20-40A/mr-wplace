@@ -1,11 +1,14 @@
 import { OverlayMode } from "./ui";
 import { Toolbar } from "../../components/toolbar";
+import { llzToTilePixel } from "../../utils/coordinate";
 
 export class TileOverlay {
   private readonly TILE_SIZE = 1000;
   private mode = OverlayMode.ON;
   private button: HTMLButtonElement | null = null;
   private toolbar: Toolbar;
+  private drawingImage: any = null;
+  private drawingCoords: any = null;
 
   constructor(toolbar: Toolbar) {
     this.toolbar = toolbar;
@@ -127,6 +130,61 @@ export class TileOverlay {
     console.log(`Tile overlay: ${mode}`);
   }
 
+  drawImageAt(lat: number, lng: number, imageItem: any): void {
+    console.log("🖼️ Drawing image at:", lat, lng);
+    
+    // Convert coordinates
+    const coords = llzToTilePixel(lat, lng);
+    console.log("Tile coords:", coords);
+    
+    this.drawingImage = imageItem;
+    this.drawingCoords = coords;
+    
+    console.log("✅ Image drawing setup complete");
+  }
+
+  async drawImageOnTile(
+    tileBlob: Blob,
+    tileX: number,
+    tileY: number
+  ): Promise<Blob> {
+    console.log(`🎨 Drawing image on tile ${tileX},${tileY}`);
+    
+    const canvas = new OffscreenCanvas(this.TILE_SIZE, this.TILE_SIZE);
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      console.warn("Failed to get canvas context");
+      return tileBlob;
+    }
+
+    // Draw original tile
+    const tileBitmap = await createImageBitmap(tileBlob);
+    context.drawImage(tileBitmap, 0, 0);
+
+    // Draw image
+    if (this.drawingImage && this.drawingCoords) {
+      try {
+        const img = new Image();
+        img.src = this.drawingImage.dataUrl;
+        await img.decode();
+        
+        if (this.mode === OverlayMode.TRANSPARENT) {
+          context.globalAlpha = 0.5;
+        }
+        
+        context.drawImage(img, this.drawingCoords.PxX, this.drawingCoords.PxY);
+        context.globalAlpha = 1.0;
+        
+        console.log(`✅ Drew image at ${this.drawingCoords.PxX}, ${this.drawingCoords.PxY}`);
+      } catch (error) {
+        console.error("Failed to draw image:", error);
+      }
+    }
+
+    return await canvas.convertToBlob({ type: "image/png" });
+  }
+
   async drawPixelOnTile(
     tileBlob: Blob,
     tileX: number,
@@ -137,7 +195,13 @@ export class TileOverlay {
       return tileBlob;
     }
 
-    // Only process tile 520,218
+    // Check for image drawing
+    if (this.drawingImage && this.drawingCoords && 
+        tileX === this.drawingCoords.TLX && tileY === this.drawingCoords.TLY) {
+      return this.drawImageOnTile(tileBlob, tileX, tileY);
+    }
+
+    // Original pixel drawing (520,218 only)
     if (tileX !== 520 || tileY !== 218) {
       return tileBlob;
     }

@@ -1,7 +1,7 @@
 export function llzToTilePixel(lat: number, lng: number) {
   const tileSize = 1000;
-  const zoom = 9;
-  
+  const zoom = 11;
+
   // 世界ピクセル座標（tileSize * 2^z が世界全体のピクセル幅/高さ）
   const scale = tileSize * Math.pow(2, zoom);
 
@@ -10,7 +10,8 @@ export function llzToTilePixel(lat: number, lng: number) {
 
   // 緯度→Y はメルカトル（XYZは上原点なので0.5-...）
   const sinLat = Math.sin((lat * Math.PI) / 180);
-  const worldY = (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI)) * scale;
+  const worldY =
+    (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI)) * scale;
 
   // タイル番号（左上=TL）
   const TLX = Math.floor(worldX / tileSize);

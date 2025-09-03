@@ -22,12 +22,12 @@ class WPlaceStudio {
       
       injectFetchInterceptor();
       new WPlaceExtendedFavorites();
-      new TileOverlay(toolbar);
+      const tileOverlay = new TileOverlay(toolbar);
       const imageEditor = new ImageEditor(toolbar);
       const gallery = new Gallery(toolbar);
       
       // Global access for ImageProcessor and Gallery
-      (window as any).wplaceStudio = { gallery, imageEditor };
+      (window as any).wplaceStudio = { gallery, imageEditor, tileOverlay };
     } catch (error) {
       console.error("WPlace Studio initialization error:", error);
     }
