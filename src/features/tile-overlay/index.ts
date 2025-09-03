@@ -191,7 +191,8 @@ export class TileOverlay {
             context.globalAlpha = 0.5;
           }
 
-          // Draw specific portion of image on this tile
+          // Draw image with Blue Marble style (3x3 blocks, center pixel only)
+          const drawMult = 3;
           context.drawImage(
             img,
             imagePortion.srcX,
@@ -200,9 +201,28 @@ export class TileOverlay {
             imagePortion.srcHeight,
             imagePortion.dstX,
             imagePortion.dstY,
-            imagePortion.dstWidth,
-            imagePortion.dstHeight
+            imagePortion.dstWidth * drawMult,
+            imagePortion.dstHeight * drawMult
           );
+          
+          // Get image data and make non-center pixels transparent
+          const imageData = context.getImageData(
+            imagePortion.dstX, 
+            imagePortion.dstY, 
+            imagePortion.dstWidth * drawMult, 
+            imagePortion.dstHeight * drawMult
+          );
+          
+          for (let y = 0; y < imageData.height; y++) {
+            for (let x = 0; x < imageData.width; x++) {
+              if (x % drawMult !== 1 || y % drawMult !== 1) {
+                const pixelIndex = (y * imageData.width + x) * 4;
+                imageData.data[pixelIndex + 3] = 0; // Make transparent
+              }
+            }
+          }
+          
+          context.putImageData(imageData, imagePortion.dstX, imagePortion.dstY);
           context.globalAlpha = 1.0;
 
           console.log(`✅ Drew image portion on tile ${tileX},${tileY}`);
