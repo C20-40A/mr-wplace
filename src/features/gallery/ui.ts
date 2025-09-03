@@ -26,7 +26,7 @@ export class GalleryUI {
     }
   }
 
-  render(items: GalleryItem[], onDelete: (key: string) => void): void {
+  render(items: GalleryItem[], onDelete: (key: string) => void, isSelectionMode: boolean = false, onSelect?: (item: GalleryItem) => void): void {
     if (!this.container) return;
 
     if (items.length === 0) {

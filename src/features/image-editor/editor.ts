@@ -63,12 +63,12 @@ export class ImageProcessor {
 
       (chrome as any).storage.local.set({ [key]: base64 }, () => {
         console.log("画像をギャラリーに保存しました");
-        
+
         // ImageEditorモーダルを閉じる
         if ((window as any).wplaceStudio?.imageEditor) {
           (window as any).wplaceStudio.imageEditor.closeModal();
         }
-        
+
         // ギャラリーモーダルを開く
         if ((window as any).wplaceStudio?.gallery) {
           (window as any).wplaceStudio.gallery.show();
