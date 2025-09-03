@@ -308,37 +308,7 @@ export class TileOverlay {
       console.log(`🔍 No image drawing: drawingImage=${!!this.drawingImage}, drawingCoords=${!!this.drawingCoords}`);
     }
 
-    // Original pixel drawing (520,218 only)
-    if (tileX !== 520 || tileY !== 218) {
-      return tileBlob;
-    }
-
-    console.log(`Processing tile ${tileX},${tileY} in ${this.mode} mode`);
-
-    // Create canvas for drawing
-    const canvas = new OffscreenCanvas(this.TILE_SIZE, this.TILE_SIZE);
-    const context = canvas.getContext("2d");
-
-    if (!context) {
-      console.warn("Failed to get canvas context");
-      return tileBlob;
-    }
-
-    // Draw original tile
-    const tileBitmap = await createImageBitmap(tileBlob);
-    context.drawImage(tileBitmap, 0, 0);
-
-    // Draw red pixel with appropriate opacity
-    if (this.mode === OverlayMode.TRANSPARENT) {
-      context.globalAlpha = 0.5;
-    }
-    context.fillStyle = "red";
-    context.fillRect(811, 118, 1, 1);
-    context.globalAlpha = 1.0; // Reset
-
-    console.log(`Drew red pixel with ${this.mode} mode`);
-
-    // Return modified blob
-    return await canvas.convertToBlob({ type: "image/png" });
+    // Return original tile if no processing needed
+    return tileBlob;
   }
 }
