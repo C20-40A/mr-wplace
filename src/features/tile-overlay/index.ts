@@ -55,7 +55,7 @@ export class TileOverlay {
         </svg>
       `,
       title: `Toggle Overlay (${this.mode})`,
-      onClick: () => this.cycleMode()
+      onClick: () => this.cycleMode(),
     });
     this.updateButtonState();
   }
@@ -81,18 +81,18 @@ export class TileOverlay {
 
     switch (this.mode) {
       case OverlayMode.ON:
-        this.button.classList.remove('opacity-50');
-        this.button.title = 'Toggle Overlay (ON)';
+        this.button.classList.remove("opacity-50");
+        this.button.title = "Toggle Overlay (ON)";
         break;
       case OverlayMode.TRANSPARENT:
-        this.button.classList.remove('opacity-50');
-        this.button.style.opacity = '0.7';
-        this.button.title = 'Toggle Overlay (TRANSPARENT)';
+        this.button.classList.remove("opacity-50");
+        this.button.style.opacity = "0.7";
+        this.button.title = "Toggle Overlay (TRANSPARENT)";
         break;
       case OverlayMode.OFF:
-        this.button.classList.add('opacity-50');
-        this.button.style.opacity = '';
-        this.button.title = 'Toggle Overlay (OFF)';
+        this.button.classList.add("opacity-50");
+        this.button.style.opacity = "";
+        this.button.title = "Toggle Overlay (OFF)";
         break;
     }
   }
@@ -133,17 +133,17 @@ export class TileOverlay {
 
   drawImageAt(lat: number, lng: number, imageItem: any): void {
     console.log("🖼️ Drawing image at:", lat, lng);
-    
+
     // Convert coordinates
     const coords = llzToTilePixel(lat, lng);
     console.log("Tile coords:", coords);
-    
+
     this.drawingImage = imageItem;
     this.drawingCoords = coords;
-    
+
     // Calculate affected tile range (will be set after image size known)
     this.drawingTileRange = null;
-    
+
     console.log("✅ Image drawing setup complete");
   }
 
@@ -153,7 +153,7 @@ export class TileOverlay {
     tileY: number
   ): Promise<Blob> {
     console.log(`🎨 Drawing image on tile ${tileX},${tileY}`);
-    
+
     const canvas = new OffscreenCanvas(this.TILE_SIZE, this.TILE_SIZE);
     const context = canvas.getContext("2d");
 
@@ -172,28 +172,39 @@ export class TileOverlay {
         const img = new Image();
         img.src = this.drawingImage.dataUrl;
         await img.decode();
-        
+
         // Calculate affected tile range on first tile processing
         if (!this.drawingTileRange) {
           this.calculateTileRange(img.naturalWidth, img.naturalHeight);
         }
-        
+
         // Calculate image portion for this specific tile
-        const imagePortion = this.getImagePortionForTile(tileX, tileY, img.naturalWidth, img.naturalHeight);
-        
+        const imagePortion = this.getImagePortionForTile(
+          tileX,
+          tileY,
+          img.naturalWidth,
+          img.naturalHeight
+        );
+
         if (imagePortion) {
           if (this.mode === OverlayMode.TRANSPARENT) {
             context.globalAlpha = 0.5;
           }
-          
+
           // Draw specific portion of image on this tile
           context.drawImage(
             img,
-            imagePortion.srcX, imagePortion.srcY, imagePortion.srcWidth, imagePortion.srcHeight,
-            imagePortion.dstX, imagePortion.dstY, imagePortion.dstWidth, imagePortion.dstHeight
+            imagePortion.srcX,
+            imagePortion.srcY,
+            imagePortion.srcWidth,
+            imagePortion.srcHeight,
+            imagePortion.dstX,
+            imagePortion.dstY,
+            imagePortion.dstWidth,
+            imagePortion.dstHeight
           );
           context.globalAlpha = 1.0;
-          
+
           console.log(`✅ Drew image portion on tile ${tileX},${tileY}`);
         }
       } catch (error) {
@@ -206,62 +217,77 @@ export class TileOverlay {
 
   calculateTileRange(imageWidth: number, imageHeight: number): void {
     if (!this.drawingCoords) return;
-    
+
     // Calculate absolute coordinates
-    const imgStartAbsX = this.drawingCoords.TLX * this.TILE_SIZE + this.drawingCoords.PxX;
-    const imgStartAbsY = this.drawingCoords.TLY * this.TILE_SIZE + this.drawingCoords.PxY;
+    const imgStartAbsX =
+      this.drawingCoords.TLX * this.TILE_SIZE + this.drawingCoords.PxX;
+    const imgStartAbsY =
+      this.drawingCoords.TLY * this.TILE_SIZE + this.drawingCoords.PxY;
     const imgEndAbsX = imgStartAbsX + imageWidth;
     const imgEndAbsY = imgStartAbsY + imageHeight;
-    
+
     // Calculate affected tile range
     const minTileX = this.drawingCoords.TLX;
     const minTileY = this.drawingCoords.TLY;
     const maxTileX = Math.floor((imgEndAbsX - 1) / this.TILE_SIZE);
     const maxTileY = Math.floor((imgEndAbsY - 1) / this.TILE_SIZE);
-    
+
     this.drawingTileRange = {
       minTileX,
       maxTileX,
       minTileY,
       maxTileY,
       imageWidth,
-      imageHeight
+      imageHeight,
     };
-    
+
     console.log("🗺️ Calculated tile range:", this.drawingTileRange);
-    console.log(`🗺️ Tiles affected: ${minTileX}-${maxTileX}, ${minTileY}-${maxTileY}`);
+    console.log(
+      `🗺️ Tiles affected: ${minTileX}-${maxTileX}, ${minTileY}-${maxTileY}`
+    );
   }
 
-  getImagePortionForTile(tileX: number, tileY: number, imageWidth: number, imageHeight: number): any {
+  getImagePortionForTile(
+    tileX: number,
+    tileY: number,
+    imageWidth: number,
+    imageHeight: number
+  ): any {
     if (!this.drawingCoords || !this.drawingTileRange) return null;
-    
+
     // Check if this tile is in drawing range
-    if (tileX < this.drawingTileRange.minTileX || tileX > this.drawingTileRange.maxTileX ||
-        tileY < this.drawingTileRange.minTileY || tileY > this.drawingTileRange.maxTileY) {
+    if (
+      tileX < this.drawingTileRange.minTileX ||
+      tileX > this.drawingTileRange.maxTileX ||
+      tileY < this.drawingTileRange.minTileY ||
+      tileY > this.drawingTileRange.maxTileY
+    ) {
       return null;
     }
-    
+
     // Calculate absolute coordinates
-    const imgStartX = this.drawingCoords.TLX * this.TILE_SIZE + this.drawingCoords.PxX;
-    const imgStartY = this.drawingCoords.TLY * this.TILE_SIZE + this.drawingCoords.PxY;
+    const imgStartX =
+      this.drawingCoords.TLX * this.TILE_SIZE + this.drawingCoords.PxX;
+    const imgStartY =
+      this.drawingCoords.TLY * this.TILE_SIZE + this.drawingCoords.PxY;
     const imgEndX = imgStartX + imageWidth;
     const imgEndY = imgStartY + imageHeight;
-    
+
     const tileStartX = tileX * this.TILE_SIZE;
     const tileStartY = tileY * this.TILE_SIZE;
     const tileEndX = tileStartX + this.TILE_SIZE;
     const tileEndY = tileStartY + this.TILE_SIZE;
-    
+
     // Calculate intersection
     const intersectStartX = Math.max(imgStartX, tileStartX);
     const intersectStartY = Math.max(imgStartY, tileStartY);
     const intersectEndX = Math.min(imgEndX, tileEndX);
     const intersectEndY = Math.min(imgEndY, tileEndY);
-    
+
     if (intersectStartX >= intersectEndX || intersectStartY >= intersectEndY) {
       return null; // No intersection
     }
-    
+
     return {
       // Source coordinates in image
       srcX: intersectStartX - imgStartX,
@@ -272,7 +298,7 @@ export class TileOverlay {
       dstX: intersectStartX - tileStartX,
       dstY: intersectStartY - tileStartY,
       dstWidth: intersectEndX - intersectStartX,
-      dstHeight: intersectEndY - intersectStartY
+      dstHeight: intersectEndY - intersectStartY,
     };
   }
 
@@ -289,15 +315,27 @@ export class TileOverlay {
     // Check for image drawing
     if (this.drawingImage && this.drawingCoords) {
       // First time: calculate range with any tile in drawing coords
-      if (!this.drawingTileRange && (tileX === this.drawingCoords.TLX || tileY === this.drawingCoords.TLY)) {
-        console.log(`⚡ First tile processing for image drawing on ${tileX},${tileY}`);
+      if (
+        !this.drawingTileRange &&
+        (tileX === this.drawingCoords.TLX || tileY === this.drawingCoords.TLY)
+      ) {
+        console.log(
+          `⚡ First tile processing for image drawing on ${tileX},${tileY}`
+        );
         return this.drawImageOnTile(tileBlob, tileX, tileY);
       }
       // After range calculated: check all tiles in range
       if (this.drawingTileRange) {
-        console.log(`🔍 Checking tile ${tileX},${tileY} against range:`, this.drawingTileRange);
-        if (tileX >= this.drawingTileRange.minTileX && tileX <= this.drawingTileRange.maxTileX &&
-            tileY >= this.drawingTileRange.minTileY && tileY <= this.drawingTileRange.maxTileY) {
+        console.log(
+          `🔍 Checking tile ${tileX},${tileY} against range:`,
+          this.drawingTileRange
+        );
+        if (
+          tileX >= this.drawingTileRange.minTileX &&
+          tileX <= this.drawingTileRange.maxTileX &&
+          tileY >= this.drawingTileRange.minTileY &&
+          tileY <= this.drawingTileRange.maxTileY
+        ) {
           console.log(`✅ Tile ${tileX},${tileY} is in range, drawing image`);
           return this.drawImageOnTile(tileBlob, tileX, tileY);
         } else {
@@ -305,7 +343,10 @@ export class TileOverlay {
         }
       }
     } else {
-      console.log(`🔍 No image drawing: drawingImage=${!!this.drawingImage}, drawingCoords=${!!this.drawingCoords}`);
+      console.log(
+        `🔍 No image drawing: drawingImage=${!!this
+          .drawingImage}, drawingCoords=${!!this.drawingCoords}`
+      );
     }
 
     // Return original tile if no processing needed
