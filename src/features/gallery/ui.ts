@@ -1,4 +1,4 @@
-import { GalleryItem } from './storage';
+import { GalleryItem } from "./storage";
 
 export class GalleryUI {
   private modal: HTMLDialogElement | null = null;
@@ -19,7 +19,7 @@ export class GalleryUI {
   private openImageEditor(): void {
     // ギャラリーモーダルを閉じる
     this.closeModal();
-    
+
     // 空の状態でImageEditorを開く
     if ((window as any).wplaceStudio?.imageEditor) {
       (window as any).wplaceStudio.imageEditor.clearAndOpen();
@@ -38,19 +38,29 @@ export class GalleryUI {
       return;
     }
 
-    const itemsHtml = items.map(item => `
+    const itemsHtml = items
+      .map(
+        (item) => `
       <div class="border rounded-lg overflow-hidden shadow relative">
-        <button class="btn btn-xs btn-circle btn-ghost absolute -top-1 -right-1 z-10 opacity-50 hover:opacity-80 bg-white border border-gray-200 shadow-sm" data-delete="${item.key}">
+        <button class="btn btn-xs btn-circle btn-ghost absolute -top-1 -right-1 z-10 opacity-50 hover:opacity-80 bg-white border border-gray-200 shadow-sm" data-delete="${
+          item.key
+        }">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3">
             <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd"/>
           </svg>
         </button>
-        <img src="${item.dataUrl}" alt="Gallery item" class="w-full h-32 object-cover">
+        <img src="${
+          item.dataUrl
+        }" alt="Gallery item" class="w-full h-32 object-cover">
         <div class="p-2">
-          <span class="text-xs text-gray-500">${new Date(item.timestamp).toLocaleString()}</span>
+          <span class="text-xs text-gray-500">${new Date(
+            item.timestamp
+          ).toLocaleString()}</span>
         </div>
       </div>
-    `).join('');
+    `
+      )
+      .join("");
 
     this.container.innerHTML = `
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -59,10 +69,12 @@ export class GalleryUI {
     `;
 
     // 削除ボタンのイベントリスナー
-    this.container.querySelectorAll('[data-delete]').forEach(button => {
-      button.addEventListener('click', (e) => {
-        const key = (e.currentTarget as HTMLElement).getAttribute('data-delete');
-        if (key && confirm('この画像を削除しますか？')) {
+    this.container.querySelectorAll("[data-delete]").forEach((button) => {
+      button.addEventListener("click", (e) => {
+        const key = (e.currentTarget as HTMLElement).getAttribute(
+          "data-delete"
+        );
+        if (key && confirm("この画像を削除しますか？")) {
           onDelete(key);
         }
       });
@@ -85,7 +97,7 @@ export class GalleryUI {
         </div>
         
         <!-- +ボタン（右下固定） -->
-        <button id="wps-gallery-add-btn" class="btn btn-circle btn-primary fixed bottom-6 right-6 z-20 shadow-lg">
+        <button id="wps-gallery-add-btn" class="btn btn-circle btn-primary absolute z-20 shadow-lg" style="bottom: 1rem; right: 1rem;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
             <path fill-rule="evenodd" d="M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z" clip-rule="evenodd"/>
           </svg>
@@ -99,10 +111,10 @@ export class GalleryUI {
 
     document.body.appendChild(this.modal);
     this.container = document.getElementById("wps-gallery-container");
-    
+
     // +ボタンのイベントリスナー
     const addBtn = document.getElementById("wps-gallery-add-btn");
-    addBtn?.addEventListener('click', () => {
+    addBtn?.addEventListener("click", () => {
       this.openImageEditor();
     });
   }
