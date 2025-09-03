@@ -1,4 +1,4 @@
-import { Favorite } from './types';
+import { Favorite } from "./types";
 
 export class FavoriteUI {
   static createFavoriteButton(toggleButton: Element): HTMLButtonElement {
@@ -6,7 +6,8 @@ export class FavoriteUI {
     if (!container) throw new Error("Container not found");
 
     const button = document.createElement("button");
-    button.className = "btn btn-lg sm:btn-xl btn-square shadow-md text-base-content/80 ml-2 z-30";
+    button.className =
+      "btn btn-lg sm:btn-xl btn-square shadow-md text-base-content/80 ml-2 z-30";
     button.title = "お気に入り";
     button.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-5">
@@ -120,7 +121,9 @@ export class FavoriteUI {
       .map(
         (fav) => `
           <div class="wps-favorite-card card bg-base-200 shadow-sm hover:shadow-md cursor-pointer transition-all relative"
-               data-lat="${fav.lat}" data-lng="${fav.lng}" data-zoom="${fav.zoom}">
+               data-lat="${fav.lat}" data-lng="${fav.lng}" data-zoom="${
+          fav.zoom
+        }">
             <button class="wps-delete-btn btn btn-ghost btn-xs btn-circle absolute right-1 top-1 z-10"
                     data-id="${fav.id}">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-3">

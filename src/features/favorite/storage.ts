@@ -1,4 +1,4 @@
-import { Favorite } from './types';
+import { Favorite } from "./types";
 
 const STORAGE_KEYS = {
   favorites: "wplace_extended_favorites",

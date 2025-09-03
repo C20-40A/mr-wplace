@@ -73,7 +73,7 @@ export class WPlaceExtendedFavorites {
   openDrawMode(): void {
     const gallery = (window as any).wplaceStudio?.gallery;
     if (gallery) {
-      gallery.showSelectionMode((selectedItem) => {
+      gallery.showSelectionMode((selectedItem: any) => {
         this.startDraw(selectedItem);
       });
     } else {
@@ -85,7 +85,7 @@ export class WPlaceExtendedFavorites {
     console.log("🎨 Start drawing with:", selectedItem);
     this.selectedImage = selectedItem;
     this.isDrawMode = true;
-    
+
     const position = getCurrentPosition();
     if (!position) {
       alert("位置情報を取得できませんでした。");
@@ -104,14 +104,14 @@ export class WPlaceExtendedFavorites {
   drawImageOnMap(lat: number, lng: number, imageItem: any): void {
     // TODO: TileOverlay連携で画像描画
     console.log("📍 Drawing at:", lat, lng, "Image:", imageItem.key);
-    
+
     const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
     if (tileOverlay) {
       tileOverlay.drawImageAt(lat, lng, imageItem);
     } else {
       console.error("TileOverlay instance not found");
     }
-    
+
     this.resetDrawMode();
   }
 
