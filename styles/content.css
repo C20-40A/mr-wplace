@@ -7,31 +7,7 @@
 }
 
 /* WPlace Studio特有のスタイル調整 */
-.wps-favorite-card {
-  transition: all 0.2s ease;
-}
 
 .wps-favorite-card:hover {
   transform: translateY(-2px);
-}
-
-.wps-delete-btn {
-  opacity: 0.7;
-  transition: opacity 0.2s ease;
-}
-
-.wps-delete-btn:hover {
-  opacity: 1;
-  background-color: rgba(255, 0, 0, 0.1) !important;
-}
-
-/* エクスポート・インポートボタンのスタイル */
-#wps-export-btn,
-#wps-import-btn {
-  transition: all 0.2s ease;
-}
-
-#wps-export-btn:hover,
-#wps-import-btn:hover {
-  transform: translateY(-1px);
 }

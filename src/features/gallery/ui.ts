@@ -12,6 +12,20 @@ export class GalleryUI {
     this.modal?.showModal();
   }
 
+  closeModal(): void {
+    this.modal?.close();
+  }
+
+  private openImageEditor(): void {
+    // ギャラリーモーダルを閉じる
+    this.closeModal();
+    
+    // 空の状態でImageEditorを開く
+    if ((window as any).wplaceStudio?.imageEditor) {
+      (window as any).wplaceStudio.imageEditor.clearAndOpen();
+    }
+  }
+
   render(items: GalleryItem[], onDelete: (key: string) => void): void {
     if (!this.container) return;
 
@@ -26,7 +40,7 @@ export class GalleryUI {
 
     const itemsHtml = items.map(item => `
       <div class="border rounded-lg overflow-hidden shadow relative">
-        <button class="btn btn-xs btn-circle btn-error absolute top-1 right-1 z-10 opacity-70 hover:opacity-100" data-delete="${item.key}">
+        <button class="btn btn-xs btn-circle btn-ghost absolute -top-1 -right-1 z-10 opacity-50 hover:opacity-80 bg-white border border-gray-200 shadow-sm" data-delete="${item.key}">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3">
             <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd"/>
           </svg>
@@ -47,7 +61,7 @@ export class GalleryUI {
     // 削除ボタンのイベントリスナー
     this.container.querySelectorAll('[data-delete]').forEach(button => {
       button.addEventListener('click', (e) => {
-        const key = (e.target as HTMLElement).getAttribute('data-delete');
+        const key = (e.currentTarget as HTMLElement).getAttribute('data-delete');
         if (key && confirm('この画像を削除しますか？')) {
           onDelete(key);
         }
@@ -59,7 +73,7 @@ export class GalleryUI {
     this.modal = document.createElement("dialog");
     this.modal.className = "modal";
     this.modal.innerHTML = `
-      <div class="modal-box max-w-6xl">
+      <div class="modal-box max-w-6xl relative">
         <form method="dialog">
           <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
         </form>
@@ -69,6 +83,13 @@ export class GalleryUI {
         <div id="wps-gallery-container">
           <!-- ギャラリー一覧がここに表示されます -->
         </div>
+        
+        <!-- +ボタン（右下固定） -->
+        <button id="wps-gallery-add-btn" class="btn btn-circle btn-primary fixed bottom-6 right-6 z-20 shadow-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+            <path fill-rule="evenodd" d="M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z" clip-rule="evenodd"/>
+          </svg>
+        </button>
       </div>
       
       <form method="dialog" class="modal-backdrop">
@@ -78,5 +99,11 @@ export class GalleryUI {
 
     document.body.appendChild(this.modal);
     this.container = document.getElementById("wps-gallery-container");
+    
+    // +ボタンのイベントリスナー
+    const addBtn = document.getElementById("wps-gallery-add-btn");
+    addBtn?.addEventListener('click', () => {
+      this.openImageEditor();
+    });
   }
 }
