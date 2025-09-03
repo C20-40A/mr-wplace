@@ -31,6 +31,20 @@ export class FavoriteUI {
     return button;
   }
 
+  static createDrawButton(container: Element): HTMLButtonElement {
+    const button = document.createElement("button");
+    button.className = "btn btn-primary btn-soft";
+    button.setAttribute("data-wplace-draw", "true");
+    button.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4.5">
+        <path d="M200-200h56l345-345-56-56-345 345v56Zm572-403L602-771l56-56q23-23 56.5-23t56.5 23l56 56q23 23 23 56.5T827-658l-55 55Zm-58 59L290-120H120v-170l424-424 170 170Zm-141-29-28-28 56 56-28-28Z"/>
+      </svg>
+      描画
+    `;
+    container.appendChild(button);
+    return button;
+  }
+
   static createModal(): HTMLDialogElement {
     const modal = document.createElement("dialog");
     modal.id = "wplace-studio-favorite-modal";

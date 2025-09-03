@@ -38,6 +38,12 @@ export class WPlaceExtendedFavorites {
         containerSelector: CONFIG.selectors.saveContainer,
         create: this.createSaveButton.bind(this),
       },
+      {
+        id: "draw-btn",
+        selector: '[data-wplace-draw="true"]',
+        containerSelector: CONFIG.selectors.saveContainer,
+        create: this.createDrawButton.bind(this),
+      },
     ];
 
     this.buttonObserver.startObserver(buttonConfigs);
@@ -54,6 +60,28 @@ export class WPlaceExtendedFavorites {
     const button = FavoriteUI.createSaveButton(container);
     button.addEventListener("click", () => this.addFavorite());
     console.log("⭐ WPlace Studio: Save button added");
+  }
+
+  createDrawButton(container: Element): void {
+    const button = FavoriteUI.createDrawButton(container);
+    button.addEventListener("click", () => this.openDrawMode());
+    console.log("✏️ WPlace Studio: Draw button added");
+  }
+
+  openDrawMode(): void {
+    const gallery = (window as any).wplaceStudio?.gallery;
+    if (gallery) {
+      gallery.showSelectionMode((selectedItem) => {
+        this.startDraw(selectedItem);
+      });
+    } else {
+      console.error("Gallery instance not found");
+    }
+  }
+
+  startDraw(selectedItem: any): void {
+    console.log("🎨 Start drawing with:", selectedItem);
+    // TODO: implement drawing logic
   }
 
   createModal(): void {

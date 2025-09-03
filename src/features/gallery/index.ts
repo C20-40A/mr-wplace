@@ -35,10 +35,14 @@ export class Gallery {
     });
   }
 
-  async show(): Promise<void> {
+  async show(isSelectionMode: boolean = false, onSelect?: (item: GalleryItem) => void): Promise<void> {
     const items = await this.storage.getAll();
-    this.ui.render(items, (key) => this.deleteItem(key));
+    this.ui.render(items, (key) => this.deleteItem(key), isSelectionMode, onSelect);
     this.ui.showModal();
+  }
+
+  showSelectionMode(onSelect: (item: GalleryItem) => void): void {
+    this.show(true, onSelect);
   }
 
   private async deleteItem(key: string): Promise<void> {
