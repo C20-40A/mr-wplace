@@ -9,6 +9,10 @@ export class ImageEditorUI {
     this.modal?.showModal();
   }
 
+  closeModal(): void {
+    this.modal?.close();
+  }
+
   private createModal(): void {
     this.modal = document.createElement("dialog");
     this.modal.className = "modal";

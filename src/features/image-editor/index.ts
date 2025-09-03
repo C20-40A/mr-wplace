@@ -43,4 +43,17 @@ export class ImageEditor {
     }
     this.ui.showModal();
   }
+
+  clearAndOpen(): void {
+    const container = this.ui.getContainer();
+    if (container) {
+      // 新しいprocessorインスタンスを作成（空の状態）
+      this.processor = new ImageProcessor(container);
+    }
+    this.ui.showModal();
+  }
+
+  closeModal(): void {
+    this.ui.closeModal();
+  }
 }
