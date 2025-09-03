@@ -17,12 +17,22 @@ window.fetch = async function (...args) {
   const requestInfo = args[0];
   const url = requestInfo.url || "";
 
-  // Intercept only tile 520,218
+  // Intercept all tile requests
   if (
     url.includes("backend.wplace.live") &&
-    url.includes("tiles/520/218.png")
+    url.includes("tiles/") &&
+    url.endsWith(".png")
   ) {
-    console.log("Intercepting target tile:", url);
+    // Extract tileX, tileY from URL
+    const tileMatch = url.match(/tiles\/(\d+)\/(\d+)\.png/);
+    if (!tileMatch) {
+      return originalFetch.apply(this, args);
+    }
+    
+    const tileX = parseInt(tileMatch[1]);
+    const tileY = parseInt(tileMatch[2]);
+    
+    console.log(`Intercepting tile: ${tileX},${tileY} - ${url}`);
 
     const response = await originalFetch.apply(this, args);
     const clonedResponse = response.clone();
@@ -51,8 +61,8 @@ window.fetch = async function (...args) {
             source: "wplace-studio-tile",
             blobID: blobUUID,
             tileBlob: blob,
-            tileX: 520,
-            tileY: 218,
+            tileX: tileX,
+            tileY: tileY,
           },
           "*"
         );
