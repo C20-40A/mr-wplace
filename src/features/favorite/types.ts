@@ -12,10 +12,3 @@ export interface Favorite {
   zoom: number;
   date: string;
 }
-
-export interface ButtonConfig {
-  id: string;
-  selector: string;
-  containerSelector: string;
-  create: (container: Element) => void;
-}

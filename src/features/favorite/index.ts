@@ -1,4 +1,5 @@
-import { Position, Favorite, ButtonConfig } from "./types";
+import { Position, Favorite } from "./types";
+import { ButtonConfig, ButtonObserver } from "../../components/button-observer";
 import { CONFIG } from "./config";
 import { FavoriteStorage, STORAGE_KEYS } from "./storage";
 import { FavoriteUI } from "./ui";
@@ -6,7 +7,10 @@ import { ImportExportService } from "./import-export";
 import { getCurrentPosition } from "../../utils/position";
 
 export class WPlaceExtendedFavorites {
+  private buttonObserver: ButtonObserver;
+
   constructor() {
+    this.buttonObserver = new ButtonObserver();
     this.init();
   }
 
@@ -36,28 +40,8 @@ export class WPlaceExtendedFavorites {
       },
     ];
 
-    this.startButtonObserver(buttonConfigs);
+    this.buttonObserver.startObserver(buttonConfigs);
     this.createModal();
-  }
-
-  startButtonObserver(configs: ButtonConfig[]): void {
-    const ensureButtons = () => {
-      configs.forEach((config) => {
-        if (!document.querySelector(config.selector)) {
-          const container = document.querySelector(config.containerSelector);
-          if (container) {
-            config.create(container);
-          }
-        }
-      });
-    };
-
-    const observer = new MutationObserver(() => {
-      ensureButtons();
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
-    ensureButtons();
   }
 
   createFavoriteButton(toggleButton: Element): void {
