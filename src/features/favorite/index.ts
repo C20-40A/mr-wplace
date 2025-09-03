@@ -1,8 +1,9 @@
-import { Position, Favorite, ButtonConfig } from './types';
-import { CONFIG } from './config';
-import { FavoriteStorage, STORAGE_KEYS } from './storage';
-import { FavoriteUI } from './ui';
-import { ImportExportService } from './import-export';
+import { Position, Favorite, ButtonConfig } from "./types";
+import { CONFIG } from "./config";
+import { FavoriteStorage, STORAGE_KEYS } from "./storage";
+import { FavoriteUI } from "./ui";
+import { ImportExportService } from "./import-export";
+import { getCurrentPosition } from "../../utils/position";
 
 export class WPlaceExtendedFavorites {
   constructor() {
@@ -74,65 +75,66 @@ export class WPlaceExtendedFavorites {
   createModal(): void {
     const modal = FavoriteUI.createModal();
 
-    modal.querySelector("#wps-favorites-grid")!.addEventListener("click", (e) => {
-      const target = e.target as HTMLElement;
-      if (!target) return;
+    modal
+      .querySelector("#wps-favorites-grid")!
+      .addEventListener("click", (e) => {
+        const target = e.target as HTMLElement;
+        if (!target) return;
 
-      const card = target.closest(".wps-favorite-card") as HTMLElement | null;
-      const deleteBtn = target.closest(".wps-delete-btn") as HTMLElement | null;
+        const card = target.closest(".wps-favorite-card") as HTMLElement | null;
+        const deleteBtn = target.closest(
+          ".wps-delete-btn"
+        ) as HTMLElement | null;
 
-      if (deleteBtn?.dataset.id) {
-        const id = parseInt(deleteBtn.dataset.id);
-        this.deleteFavorite(id);
-      } else if (card?.dataset.lat && card?.dataset.lng && card?.dataset.zoom) {
-        const lat = parseFloat(card.dataset.lat);
-        const lng = parseFloat(card.dataset.lng);
-        const zoom = parseFloat(card.dataset.zoom);
-        this.goTo(lat, lng, zoom);
-        modal.close();
-      }
-    });
+        if (deleteBtn?.dataset.id) {
+          const id = parseInt(deleteBtn.dataset.id);
+          this.deleteFavorite(id);
+        } else if (
+          card?.dataset.lat &&
+          card?.dataset.lng &&
+          card?.dataset.zoom
+        ) {
+          const lat = parseFloat(card.dataset.lat);
+          const lng = parseFloat(card.dataset.lng);
+          const zoom = parseFloat(card.dataset.zoom);
+          this.goTo(lat, lng, zoom);
+          modal.close();
+        }
+      });
 
-    modal.querySelector("#wps-export-btn")!.addEventListener("click", async () => {
-      const result = await ImportExportService.exportFavorites();
-      this.showToast(result.message);
-    });
+    modal
+      .querySelector("#wps-export-btn")!
+      .addEventListener("click", async () => {
+        const result = await ImportExportService.exportFavorites();
+        this.showToast(result.message);
+      });
 
-    modal.querySelector("#wps-import-btn")!.addEventListener("click", async () => {
-      const result = await ImportExportService.importFavorites();
-      this.showToast(result.message);
-      if (result.shouldRender) {
-        this.renderFavorites();
-      }
-    });
+    modal
+      .querySelector("#wps-import-btn")!
+      .addEventListener("click", async () => {
+        const result = await ImportExportService.importFavorites();
+        this.showToast(result.message);
+        if (result.shouldRender) {
+          this.renderFavorites();
+        }
+      });
   }
 
   openModal(): void {
     this.renderFavorites();
-    (document.getElementById("wplace-studio-favorite-modal") as HTMLDialogElement).showModal();
-  }
-
-  getCurrentPosition(): Position | null {
-    try {
-      const locationStr = localStorage.getItem(STORAGE_KEYS.location);
-      if (locationStr) {
-        const location = JSON.parse(locationStr);
-        return {
-          lat: location.lat,
-          lng: location.lng,
-          zoom: location.zoom,
-        };
-      }
-    } catch (error) {
-      console.error("WPlace Studio: 位置取得エラー:", error);
-    }
-    return null;
+    (
+      document.getElementById(
+        "wplace-studio-favorite-modal"
+      ) as HTMLDialogElement
+    ).showModal();
   }
 
   async addFavorite(): Promise<void> {
-    const position = this.getCurrentPosition();
+    const position = getCurrentPosition();
     if (!position) {
-      alert("位置情報を取得できませんでした。マップをクリックしてから保存してください。");
+      alert(
+        "位置情報を取得できませんでした。マップをクリックしてから保存してください。"
+      );
       return;
     }
 
@@ -153,7 +155,10 @@ export class WPlaceExtendedFavorites {
 
     const favorites = await FavoriteStorage.getFavorites();
     favorites.push(favorite);
-    await FavoriteStorage.setValue(STORAGE_KEYS.favorites, JSON.stringify(favorites));
+    await FavoriteStorage.setValue(
+      STORAGE_KEYS.favorites,
+      JSON.stringify(favorites)
+    );
 
     this.showToast(`"${name}" を保存しました`);
   }
@@ -176,7 +181,10 @@ export class WPlaceExtendedFavorites {
 
     const favorites = await FavoriteStorage.getFavorites();
     const filtered = favorites.filter((fav) => fav.id !== id);
-    await FavoriteStorage.setValue(STORAGE_KEYS.favorites, JSON.stringify(filtered));
+    await FavoriteStorage.setValue(
+      STORAGE_KEYS.favorites,
+      JSON.stringify(filtered)
+    );
 
     this.renderFavorites();
     this.showToast("削除しました");

@@ -2,6 +2,8 @@ export interface GalleryItem {
   key: string;
   timestamp: number;
   dataUrl: string;
+  lat?: number;
+  lng?: number;
 }
 
 export class GalleryStorage {
