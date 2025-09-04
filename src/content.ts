@@ -19,13 +19,13 @@ class WPlaceStudio {
 
     try {
       const toolbar = new Toolbar();
-      
+
       injectFetchInterceptor();
       new WPlaceExtendedFavorites();
-      const tileOverlay = new TileOverlay(toolbar);
+      const tileOverlay = new TileOverlay();
       const imageEditor = new ImageEditor(toolbar);
       const gallery = new Gallery(toolbar);
-      
+
       // Global access for ImageProcessor and Gallery
       (window as any).wplaceStudio = { gallery, imageEditor, tileOverlay };
     } catch (error) {
