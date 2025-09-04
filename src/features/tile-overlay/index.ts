@@ -1,99 +1,23 @@
-import { OverlayMode } from "./ui";
-import { Toolbar } from "../../components/toolbar";
 import { llzToTilePixel } from "../../utils/coordinate";
 
 export class TileOverlay {
   private readonly TILE_SIZE = 1000;
-  private mode = OverlayMode.ON;
-  private button: HTMLButtonElement | null = null;
-  private toolbar: Toolbar;
   private drawingImage: any = null;
   private drawingCoords: any = null;
   private drawingTileRange: any = null;
+  // private drawMult = 3; // Draw at 3x for better quality
 
-  constructor(toolbar: Toolbar) {
-    this.toolbar = toolbar;
+  constructor() {
     this.init();
   }
 
   private init(): void {
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", () =>
-        this.observeAndInit()
+        this.setupTileProcessing()
       );
     } else {
-      this.observeAndInit();
-    }
-  }
-
-  private observeAndInit(): void {
-    this.setupTileProcessing();
-    this.startUIObserver();
-  }
-
-  private startUIObserver(): void {
-    const ensureUI = () => {
-      if (!this.button) {
-        this.createButton();
-      }
-    };
-
-    const observer = new MutationObserver(() => {
-      ensureUI();
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
-    ensureUI();
-  }
-
-  private createButton(): void {
-    this.button = this.toolbar.addButton({
-      icon: `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
-          <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/>
-          <path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z" clip-rule="evenodd"/>
-        </svg>
-      `,
-      title: `Toggle Overlay (${this.mode})`,
-      onClick: () => this.cycleMode(),
-    });
-    this.updateButtonState();
-  }
-
-  private cycleMode(): void {
-    switch (this.mode) {
-      case OverlayMode.ON:
-        this.mode = OverlayMode.TRANSPARENT;
-        break;
-      case OverlayMode.TRANSPARENT:
-        this.mode = OverlayMode.OFF;
-        break;
-      case OverlayMode.OFF:
-        this.mode = OverlayMode.ON;
-        break;
-    }
-    this.updateButtonState();
-    this.setMode(this.mode);
-  }
-
-  private updateButtonState(): void {
-    if (!this.button) return;
-
-    switch (this.mode) {
-      case OverlayMode.ON:
-        this.button.classList.remove("opacity-50");
-        this.button.title = "Toggle Overlay (ON)";
-        break;
-      case OverlayMode.TRANSPARENT:
-        this.button.classList.remove("opacity-50");
-        this.button.style.opacity = "0.7";
-        this.button.title = "Toggle Overlay (TRANSPARENT)";
-        break;
-      case OverlayMode.OFF:
-        this.button.classList.add("opacity-50");
-        this.button.style.opacity = "";
-        this.button.title = "Toggle Overlay (OFF)";
-        break;
+      this.setupTileProcessing();
     }
   }
 
@@ -124,11 +48,6 @@ export class TileOverlay {
     });
 
     console.log("Tile processing listener setup complete");
-  }
-
-  setMode(mode: OverlayMode): void {
-    this.mode = mode;
-    console.log(`Tile overlay: ${mode}`);
   }
 
   drawImageAt(lat: number, lng: number, imageItem: any): void {
@@ -164,7 +83,8 @@ export class TileOverlay {
 
     // Draw original tile
     const tileBitmap = await createImageBitmap(tileBlob);
-    context.drawImage(tileBitmap, 0, 0);
+    context.imageSmoothingEnabled = false;
+    context.drawImage(tileBitmap, 0, 0, this.TILE_SIZE, this.TILE_SIZE);
 
     // Draw image
     if (this.drawingImage && this.drawingCoords) {
@@ -186,47 +106,68 @@ export class TileOverlay {
           img.naturalHeight
         );
 
-        if (imagePortion) {
-          if (this.mode === OverlayMode.TRANSPARENT) {
-            context.globalAlpha = 0.5;
-          }
-
-          // Draw image with Blue Marble style (3x3 blocks, center pixel only)
-          const drawMult = 3;
-          context.drawImage(
-            img,
-            imagePortion.srcX,
-            imagePortion.srcY,
-            imagePortion.srcWidth,
-            imagePortion.srcHeight,
-            imagePortion.dstX,
-            imagePortion.dstY,
-            imagePortion.dstWidth * drawMult,
-            imagePortion.dstHeight * drawMult
-          );
-          
-          // Get image data and make non-center pixels transparent
-          const imageData = context.getImageData(
-            imagePortion.dstX, 
-            imagePortion.dstY, 
-            imagePortion.dstWidth * drawMult, 
-            imagePortion.dstHeight * drawMult
-          );
-          
-          for (let y = 0; y < imageData.height; y++) {
-            for (let x = 0; x < imageData.width; x++) {
-              if (x % drawMult !== 1 || y % drawMult !== 1) {
-                const pixelIndex = (y * imageData.width + x) * 4;
-                imageData.data[pixelIndex + 3] = 0; // Make transparent
-              }
-            }
-          }
-          
-          context.putImageData(imageData, imagePortion.dstX, imagePortion.dstY);
-          context.globalAlpha = 1.0;
-
-          console.log(`✅ Drew image portion on tile ${tileX},${tileY}`);
+        if (!imagePortion) {
+          console.log(`❌ No image portion for tile ${tileX},${tileY}`);
+          return tileBlob;
         }
+
+        // 1. 一時的なキャンバスに元の画像を拡大して描画
+        const tempCanvas = new OffscreenCanvas(
+          imagePortion.srcWidth,
+          imagePortion.srcHeight
+        );
+        const tempContext = tempCanvas.getContext("2d");
+
+        if (!tempContext) {
+          console.warn("Failed to get temporary canvas context.");
+          return tileBlob;
+        }
+        tempContext.drawImage(
+          img,
+          imagePortion.srcX,
+          imagePortion.srcY,
+          imagePortion.srcWidth,
+          imagePortion.srcHeight
+        );
+
+        // 2. 一時キャンバスから全ピクセルデータを取得 (情報損失なし)
+        const imageData = tempContext.getImageData(
+          0,
+          0,
+          imagePortion.srcWidth,
+          imagePortion.srcHeight
+        );
+
+        // 3. ピクセルデータの編集
+        // for (let y = 0; y < imageData.height; y++) {
+        //   for (let x = 0; x < imageData.width; x++) {
+        //     // 中心ピクセル（x%3==1 && y%3==1）以外を透過させる
+        //     if (x % this.drawMult !== 1 || y % this.drawMult !== 1) {
+        //       const pixelIndex = (y * imageData.width + x) * 4;
+        //       imageData.data[pixelIndex + 3] = 0; // Make transparent
+        //     }
+        //   }
+        // }
+
+        // 3. 取得したピクセルデータからImageBitmapを作成
+        const pixelBitmap = await createImageBitmap(imageData);
+
+        // 4. 最終キャンバスに描画
+        context.imageSmoothingEnabled = false;
+        context.drawImage(
+          pixelBitmap,
+          0,
+          0,
+          pixelBitmap.width,
+          pixelBitmap.height,
+          imagePortion.dstX,
+          imagePortion.dstY,
+          imagePortion.dstWidth,
+          imagePortion.dstHeight
+        );
+
+        context.globalAlpha = 1.0;
+        console.log(`✅ Drew image portion on tile ${tileX},${tileY}`);
       } catch (error) {
         console.error("Failed to draw image:", error);
       }
@@ -238,7 +179,7 @@ export class TileOverlay {
   calculateTileRange(imageWidth: number, imageHeight: number): void {
     if (!this.drawingCoords) return;
 
-    // Calculate absolute coordinates
+    // Calculate absolute coordinates (original size, no multiplier)
     const imgStartAbsX =
       this.drawingCoords.TLX * this.TILE_SIZE + this.drawingCoords.PxX;
     const imgStartAbsY =
@@ -272,7 +213,7 @@ export class TileOverlay {
     tileY: number,
     imageWidth: number,
     imageHeight: number
-  ): any {
+  ) {
     if (!this.drawingCoords || !this.drawingTileRange) return null;
 
     // Check if this tile is in drawing range
@@ -285,7 +226,7 @@ export class TileOverlay {
       return null;
     }
 
-    // Calculate absolute coordinates
+    // Calculate absolute coordinates (original size)
     const imgStartX =
       this.drawingCoords.TLX * this.TILE_SIZE + this.drawingCoords.PxX;
     const imgStartY =
@@ -309,7 +250,7 @@ export class TileOverlay {
     }
 
     return {
-      // Source coordinates in image
+      // Source coordinates in image (original size)
       srcX: intersectStartX - imgStartX,
       srcY: intersectStartY - imgStartY,
       srcWidth: intersectEndX - intersectStartX,
@@ -327,11 +268,6 @@ export class TileOverlay {
     tileX: number,
     tileY: number
   ): Promise<Blob> {
-    // Return original tile if off
-    if (this.mode === OverlayMode.OFF) {
-      return tileBlob;
-    }
-
     // Check for image drawing
     if (this.drawingImage && this.drawingCoords) {
       // First time: calculate range with any tile in drawing coords
