@@ -5,7 +5,7 @@ export class TileOverlay {
   private drawingImage: any = null;
   private drawingCoords: any = null;
   private drawingTileRange: any = null;
-  // private drawMult = 3; // Draw at 3x for better quality
+  private drawMult = 3; // Draw at 3x for better quality
 
   constructor() {
     this.init();
@@ -87,90 +87,99 @@ export class TileOverlay {
     context.drawImage(tileBitmap, 0, 0, this.TILE_SIZE, this.TILE_SIZE);
 
     // Draw image
-    if (this.drawingImage && this.drawingCoords) {
-      try {
-        const img = new Image();
-        img.src = this.drawingImage.dataUrl;
-        await img.decode();
+    if (!this.drawingImage || !this.drawingCoords) {
+      console.warn("No drawing image or coordinates set");
+      return tileBlob;
+    }
 
-        // Calculate affected tile range on first tile processing
-        if (!this.drawingTileRange) {
-          this.calculateTileRange(img.naturalWidth, img.naturalHeight);
-        }
+    try {
+      const img = new Image();
+      img.src = this.drawingImage.dataUrl;
+      await img.decode();
 
-        // Calculate image portion for this specific tile
-        const imagePortion = this.getImagePortionForTile(
-          tileX,
-          tileY,
-          img.naturalWidth,
-          img.naturalHeight
-        );
-
-        if (!imagePortion) {
-          console.log(`❌ No image portion for tile ${tileX},${tileY}`);
-          return tileBlob;
-        }
-
-        // 1. 一時的なキャンバスに元の画像を拡大して描画
-        const tempCanvas = new OffscreenCanvas(
-          imagePortion.srcWidth,
-          imagePortion.srcHeight
-        );
-        const tempContext = tempCanvas.getContext("2d");
-
-        if (!tempContext) {
-          console.warn("Failed to get temporary canvas context.");
-          return tileBlob;
-        }
-        tempContext.drawImage(
-          img,
-          imagePortion.srcX,
-          imagePortion.srcY,
-          imagePortion.srcWidth,
-          imagePortion.srcHeight
-        );
-
-        // 2. 一時キャンバスから全ピクセルデータを取得 (情報損失なし)
-        const imageData = tempContext.getImageData(
-          0,
-          0,
-          imagePortion.srcWidth,
-          imagePortion.srcHeight
-        );
-
-        // 3. ピクセルデータの編集
-        // for (let y = 0; y < imageData.height; y++) {
-        //   for (let x = 0; x < imageData.width; x++) {
-        //     // 中心ピクセル（x%3==1 && y%3==1）以外を透過させる
-        //     if (x % this.drawMult !== 1 || y % this.drawMult !== 1) {
-        //       const pixelIndex = (y * imageData.width + x) * 4;
-        //       imageData.data[pixelIndex + 3] = 0; // Make transparent
-        //     }
-        //   }
-        // }
-
-        // 3. 取得したピクセルデータからImageBitmapを作成
-        const pixelBitmap = await createImageBitmap(imageData);
-
-        // 4. 最終キャンバスに描画
-        context.imageSmoothingEnabled = false;
-        context.drawImage(
-          pixelBitmap,
-          0,
-          0,
-          pixelBitmap.width,
-          pixelBitmap.height,
-          imagePortion.dstX,
-          imagePortion.dstY,
-          imagePortion.dstWidth,
-          imagePortion.dstHeight
-        );
-
-        context.globalAlpha = 1.0;
-        console.log(`✅ Drew image portion on tile ${tileX},${tileY}`);
-      } catch (error) {
-        console.error("Failed to draw image:", error);
+      // Calculate affected tile range on first tile processing
+      if (!this.drawingTileRange) {
+        this.calculateTileRange(img.naturalWidth, img.naturalHeight);
       }
+
+      // Calculate image portion for this specific tile
+      const imagePortion = this.getImagePortionForTile(
+        tileX,
+        tileY,
+        img.naturalWidth,
+        img.naturalHeight
+      );
+
+      if (!imagePortion) {
+        console.log(`❌ No image portion for tile ${tileX},${tileY}`);
+        return tileBlob;
+      }
+
+      const scaledWidth = imagePortion.srcWidth * this.drawMult;
+      const scaledHeight = imagePortion.srcHeight * this.drawMult;
+
+      // 1. 一時的なキャンバスに元の画像を拡大して描画
+      const tempCanvas = new OffscreenCanvas(scaledWidth, scaledHeight);
+      const tempContext = tempCanvas.getContext("2d");
+      if (!tempContext) throw new Error("Failed to get temp canvas context");
+      // ピクセル補間をオフ
+      tempContext.imageSmoothingEnabled = false;
+
+      // 拡大して描画（元ピクセルが3x3ブロックになる）
+      tempContext.drawImage(
+        img,
+        imagePortion.srcX,
+        imagePortion.srcY,
+        imagePortion.srcWidth,
+        imagePortion.srcHeight,
+        0,
+        0,
+        scaledWidth,
+        scaledHeight
+      );
+
+      // 2. 一時キャンバスから全ピクセルデータを取得
+      const imageData = tempContext.getImageData(
+        0,
+        0,
+        scaledWidth,
+        scaledHeight
+      );
+
+      // 3. ピクセルデータの編集(中央以外透明化)
+      for (let y = 0; y < imageData.height; y++) {
+        for (let x = 0; x < imageData.width; x++) {
+          // 中心ピクセル（x%3==1 && y%3==1）以外を透過させる
+          if (x % this.drawMult !== 1 || y % this.drawMult !== 1) {
+            const pixelIndex = (y * imageData.width + x) * 4;
+            imageData.data[pixelIndex + 3] = 0; // Make transparent
+          }
+        }
+      }
+
+      // 3. 取得したピクセルデータからImageBitmapを作成
+      const pixelBitmap = await createImageBitmap(imageData);
+
+      // 4. 最終キャンバスに描画
+      context.imageSmoothingEnabled = false;
+      // context.scale(0.5, 0.5);
+      context.drawImage(
+        pixelBitmap,
+        0,
+        0,
+        scaledWidth,
+        scaledHeight,
+        imagePortion.dstX,
+        imagePortion.dstY,
+        imagePortion.dstWidth,
+        imagePortion.dstHeight
+      );
+      // context.scale(3, 3);
+
+      context.globalAlpha = 1.0;
+      console.log(`✅ Drew image portion on tile ${tileX},${tileY}`);
+    } catch (error) {
+      console.error("Failed to draw image:", error);
     }
 
     return await canvas.convertToBlob({ type: "image/png" });
