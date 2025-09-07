@@ -93,6 +93,7 @@ export class WPlaceExtendedFavorites {
       return;
     }
 
+    // 非同期処理でもUIブロックしない
     this.drawImageOnMap(position.lat, position.lng, selectedItem);
   }
 
@@ -101,13 +102,18 @@ export class WPlaceExtendedFavorites {
     this.isDrawMode = false;
   }
 
-  drawImageOnMap(lat: number, lng: number, imageItem: any): void {
+  async drawImageOnMap(lat: number, lng: number, imageItem: any): Promise<void> {
     // TODO: TileOverlay連携で画像描画
     console.log("📍 Drawing at:", lat, lng, "Image:", imageItem.key);
 
     const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
     if (tileOverlay) {
-      tileOverlay.drawImageAt(lat, lng, imageItem);
+      try {
+        await tileOverlay.drawImageAt(lat, lng, imageItem);
+        console.log("✅ Image drawing completed");
+      } catch (error) {
+        console.error("❌ Image drawing failed:", error);
+      }
     } else {
       console.error("TileOverlay instance not found");
     }
