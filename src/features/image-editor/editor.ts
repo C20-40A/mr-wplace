@@ -40,19 +40,11 @@ export class ImageProcessor {
   private saveToGallery(): void {
     if (!this.scaledCanvas) return;
 
-    // WebPフォールバック付き
-    const format = "image/webp";
+    // PNG形式で可逆圧縮保存
     this.scaledCanvas.toBlob((blob) => {
-      if (!blob) {
-        // WebP失敗時はPNGで再試行
-        this.scaledCanvas!.toBlob((pngBlob) => {
-          if (!pngBlob) return;
-          this.saveCanvasToGallery(pngBlob);
-        }, "image/png");
-        return;
-      }
+      if (!blob) return;
       this.saveCanvasToGallery(blob);
-    }, format);
+    }, "image/png");
   }
 
   private saveCanvasToGallery(blob: Blob): void {
