@@ -5,62 +5,33 @@ interface Overlay {
   handleDisplayStatus(message: string): void;
 }
 
-/** Template JSON structure */
-interface TemplateJSON {
-  whoami: string;
-  scriptVersion: string;
-  templates: Record<string, any>;
-}
-
 /** 最小化されたTemplateManager - 画像表示機能のみ
  * WPlace Studio用に簡略化
  */
 export default class TemplateManager {
-  public name: string;
-  public version: string;
   public overlay: Overlay;
   public tileSize: number;
   public drawMult: number;
   public templatesArray: Template[];
-  public templatesJSON: TemplateJSON | null;
   public templatesShouldBeDrawn: boolean;
 
-  constructor(name: string, version: string, overlay: Overlay) {
-    this.name = name;
-    this.version = version;
+  constructor(name: string, overlay: Overlay) {
     this.overlay = overlay;
     this.tileSize = 1000;
     this.drawMult = 3;
 
     this.templatesArray = []; // アクティブなテンプレート
-    this.templatesJSON = null;
     this.templatesShouldBeDrawn = true;
   }
 
   /** テンプレート作成（コア機能のみ） */
-  async createTemplate(
-    blob: File,
-    name: string,
-    coords: number[]
-  ): Promise<void> {
-    // JSONオブジェクト初期化
-    if (!this.templatesJSON) {
-      this.templatesJSON = {
-        whoami: "WPlaceStudio",
-        scriptVersion: this.version,
-        templates: {},
-      };
-    }
-
+  async createTemplate(blob: File, coords: number[]): Promise<void> {
     this.overlay.handleDisplayStatus(
       `Creating template at ${coords.join(", ")}...`
     );
 
     // テンプレート作成
     const template = new Template({
-      displayName: name,
-      sortID: 0,
-      authorID: "0",
       file: blob,
       coords: coords,
     });
