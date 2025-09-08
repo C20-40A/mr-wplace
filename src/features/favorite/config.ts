@@ -2,6 +2,6 @@ export const CONFIG = {
   selectors: {
     favoriteButton: '[title="お気に入り"]',
     toggleOpacityButton: 'button[title="Toggle art opacity"]',
-    saveContainer: ".hide-scrollbar.flex.max-w-full.gap-1\\.5.overflow-x-auto",
+    positionModal: ".absolute.bottom-0.left-0.z-50.w-full.sm\\:left-1\\/2.sm\\:max-w-md.sm\\:-translate-x-1\\/2.md\\:max-w-lg",
   },
 };
