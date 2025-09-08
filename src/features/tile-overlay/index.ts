@@ -1,26 +1,10 @@
 import { llzToTilePixel } from "../../utils/coordinate";
 import TemplateManager from "../blue-marble/templateManager";
-
-// Simple overlay mock for TemplateManager compatibility
-class SimpleOverlay {
-  handleDisplayStatus(text: string): void {
-    console.log("📊 Template Status:", text);
-  }
-  handleDisplayError(text: string): void {
-    console.error("❌ Template Error:", text);
-  }
-}
-
 export class TileOverlay {
   private templateManager: TemplateManager;
-  private simpleOverlay: SimpleOverlay;
 
   constructor() {
-    this.simpleOverlay = new SimpleOverlay();
-    this.templateManager = new TemplateManager(
-      "WPlace Studio",
-      this.simpleOverlay
-    );
+    this.templateManager = new TemplateManager();
     this.init();
   }
 

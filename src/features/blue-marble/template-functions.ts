@@ -1,12 +1,10 @@
-import { uint8ToBase64, colorpalette, ColorPaletteEntry } from "./utils";
+import { uint8ToBase64 } from "./utils";
 
 /** テンプレート処理結果の型定義 */
 export interface TemplateProcessingResult {
   templateTiles: Record<string, ImageBitmap>;
   templateTilesBuffers: Record<string, string>;
   pixelCount: number;
-  requiredPixelCount: number;
-  defacePixelCount: number;
   colorPalette: Record<string, { count: number; enabled: boolean }>;
   tilePrefixes: Set<string>;
 }
@@ -21,8 +19,6 @@ export interface TemplateProcessingInput {
 
 /** ピクセル分析結果の型定義 */
 interface PixelAnalysisResult {
-  required: number;
-  deface: number;
   paletteMap: Map<string, number>;
 }
 
@@ -50,8 +46,6 @@ const analyzePixels = (
   height: number,
   allowedColorsSet: Set<string>
 ): PixelAnalysisResult => {
-  let required = 0;
-  let deface = 0;
   const paletteMap = new Map<string, number>();
 
   for (let y = 0; y < height; y++) {
@@ -61,20 +55,17 @@ const analyzePixels = (
       const g = imageData[idx + 1];
       const b = imageData[idx + 2];
       const a = imageData[idx + 3];
-      
+
       if (a === 0) continue; // 透明ピクセルを無視
-      
-      if (r === 222 && g === 250 && b === 206) {
-        deface++;
-      }
-      
-      const key = allowedColorsSet.has(`${r},${g},${b}`) ? `${r},${g},${b}` : "other";
-      required++;
+
+      const key = allowedColorsSet.has(`${r},${g},${b}`)
+        ? `${r},${g},${b}`
+        : "other";
       paletteMap.set(key, (paletteMap.get(key) || 0) + 1);
     }
   }
 
-  return { required, deface, paletteMap };
+  return { paletteMap };
 };
 
 /** タイル座標計算（純粋関数） */
@@ -175,14 +166,14 @@ const processSingleTile = async (
 ): Promise<{ bitmap: ImageBitmap; buffer: string; tileName: string }> => {
   const canvas = new OffscreenCanvas(settings.width, settings.height);
   const context = canvas.getContext("2d", { willReadFrequently: true });
-  
+
   if (!context) {
-    throw new Error('Failed to get 2D context');
+    throw new Error("Failed to get 2D context");
   }
 
   context.imageSmoothingEnabled = false;
   context.clearRect(0, 0, settings.width, settings.height);
-  
+
   // 画像描画
   context.drawImage(
     bitmap,
@@ -203,16 +194,16 @@ const processSingleTile = async (
     allowedColorsSet,
     settings.shreadSize
   );
-  
+
   context.putImageData(processedImageData, 0, 0);
 
   // タイル名生成
   const tileCoords = calculateTileCoords(pixelX, pixelY, coords, 1000);
   const tileName = `${tileCoords.x.toString().padStart(4, "0")},${tileCoords.y
     .toString()
-    .padStart(4, "0")},${tileCoords.pixelX.toString().padStart(3, "0")},${tileCoords.pixelY
+    .padStart(4, "0")},${tileCoords.pixelX
     .toString()
-    .padStart(3, "0")}`;
+    .padStart(3, "0")},${tileCoords.pixelY.toString().padStart(3, "0")}`;
 
   // 結果生成
   const resultBitmap = await createImageBitmap(canvas);
@@ -249,20 +240,30 @@ export const createTemplateTiles = async (
   let pixelAnalysis: PixelAnalysisResult;
   try {
     const inspectCanvas = new OffscreenCanvas(imageWidth, imageHeight);
-    const inspectCtx = inspectCanvas.getContext("2d", { willReadFrequently: true });
-    if (!inspectCtx) throw new Error('Failed to get inspect context');
-    
+    const inspectCtx = inspectCanvas.getContext("2d", {
+      willReadFrequently: true,
+    });
+    if (!inspectCtx) throw new Error("Failed to get inspect context");
+
     inspectCtx.imageSmoothingEnabled = false;
     inspectCtx.clearRect(0, 0, imageWidth, imageHeight);
     inspectCtx.drawImage(bitmap, 0, 0);
-    const inspectData = inspectCtx.getImageData(0, 0, imageWidth, imageHeight).data;
+    const inspectData = inspectCtx.getImageData(
+      0,
+      0,
+      imageWidth,
+      imageHeight
+    ).data;
 
-    pixelAnalysis = analyzePixels(inspectData, imageWidth, imageHeight, allowedColorsSet);
+    pixelAnalysis = analyzePixels(
+      inspectData,
+      imageWidth,
+      imageHeight,
+      allowedColorsSet
+    );
   } catch (err) {
     // フェイルセーフ
     pixelAnalysis = {
-      required: Math.max(0, totalPixels),
-      deface: 0,
       paletteMap: new Map(),
     };
   }
@@ -323,8 +324,6 @@ export const createTemplateTiles = async (
     templateTiles,
     templateTilesBuffers,
     pixelCount: totalPixels,
-    requiredPixelCount: pixelAnalysis.required,
-    defacePixelCount: pixelAnalysis.deface,
     colorPalette,
     tilePrefixes,
   };
