@@ -1,22 +1,15 @@
 import Template from "./Template";
 
-/** Overlay interface for minimal compatibility */
-interface Overlay {
-  handleDisplayStatus(message: string): void;
-}
-
 /** 最小化されたTemplateManager - 画像表示機能のみ
  * WPlace Studio用に簡略化
  */
 export default class TemplateManager {
-  public overlay: Overlay;
   public tileSize: number;
   public drawMult: number;
   public templatesArray: Template[];
   public templatesShouldBeDrawn: boolean;
 
-  constructor(name: string, overlay: Overlay) {
-    this.overlay = overlay;
+  constructor() {
     this.tileSize = 1000;
     this.drawMult = 3;
 
@@ -26,10 +19,6 @@ export default class TemplateManager {
 
   /** テンプレート作成（コア機能のみ） */
   async createTemplate(blob: File, coords: number[]): Promise<void> {
-    this.overlay.handleDisplayStatus(
-      `Creating template at ${coords.join(", ")}...`
-    );
-
     // テンプレート作成
     const template = new Template({
       file: blob,
@@ -42,12 +31,6 @@ export default class TemplateManager {
     // 既存テンプレートをクリア（単一テンプレートのみ対応）
     this.templatesArray = [];
     this.templatesArray.push(template);
-
-    this.overlay.handleDisplayStatus(
-      `Template created! Pixels: ${new Intl.NumberFormat().format(
-        template.pixelCount
-      )}`
-    );
   }
 
   /** タイルに画像描画（メイン機能） */
