@@ -209,7 +209,7 @@ const processSingleTile = async (
   const resultBitmap = await createImageBitmap(canvas);
   const canvasBlob = await canvas.convertToBlob();
   const canvasBuffer = await canvasBlob.arrayBuffer();
-  const canvasBufferBytes = Array.from(new Uint8Array(canvasBuffer));
+  const canvasBufferBytes = new Uint8Array(canvasBuffer);
   const bufferString = uint8ToBase64(canvasBufferBytes);
 
   return {
