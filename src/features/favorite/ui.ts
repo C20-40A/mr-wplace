@@ -5,9 +5,12 @@ export class FavoriteUI {
     const container = toggleButton.parentElement;
     if (!container) throw new Error("Container not found");
 
+    // Add flex layout classes to container
+    container.className += " flex flex-col-reverse gap-1";
+
     const button = document.createElement("button");
     button.className =
-      "btn btn-lg sm:btn-xl btn-square shadow-md text-base-content/80 ml-2 z-30";
+      "btn btn-lg sm:btn-xl btn-square shadow-md text-base-content/80 z-30";
     button.title = "お気に入り";
     button.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-5">
@@ -28,7 +31,7 @@ export class FavoriteUI {
       </svg>
       ブックマーク
     `;
-    
+
     // 既存の子要素の前に挿入（先頭に表示）
     const firstChild = container.firstElementChild;
     if (firstChild) {
@@ -49,12 +52,12 @@ export class FavoriteUI {
       </svg>
       画像を描く
     `;
-    
+
     // saveButtonの次に挿入（saveButtonが既にある場合）
     const saveButton = container.querySelector('[data-wplace-save="true"]');
     if (saveButton) {
       // saveButtonの後に挿入
-      saveButton.insertAdjacentElement('afterend', button);
+      saveButton.insertAdjacentElement("afterend", button);
     } else {
       // saveButtonがない場合は先頭に挿入
       const firstChild = container.firstElementChild;
