@@ -1,10 +1,7 @@
-// WPlace Studio - Main Content Script
-
 import { WPlaceExtendedFavorites } from "./features/favorite/index";
 import { injectFetchInterceptor } from "./features/fetch-interceptor/index";
 import { TileOverlay } from "./features/tile-overlay/index";
-import { ImageEditor } from "./features/image-editor/index";
-import { Gallery } from "./features/gallery/index";
+import { Gallery } from "./features/gallery/routes/list/index";
 import { Toolbar } from "./components/toolbar";
 
 class WPlaceStudio {
@@ -23,11 +20,10 @@ class WPlaceStudio {
       injectFetchInterceptor();
       new WPlaceExtendedFavorites();
       const tileOverlay = new TileOverlay();
-      const imageEditor = new ImageEditor(toolbar);
       const gallery = new Gallery(toolbar);
 
       // Global access for ImageProcessor and Gallery
-      (window as any).wplaceStudio = { gallery, imageEditor, tileOverlay };
+      (window as any).wplaceStudio = { gallery, tileOverlay };
     } catch (error) {
       console.error("WPlace Studio initialization error:", error);
     }

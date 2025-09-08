@@ -1,4 +1,4 @@
-import { GalleryItem } from "./storage";
+import { GalleryItem } from "../../storage";
 
 export class GalleryUI {
   private modal: HTMLDialogElement | null = null;
