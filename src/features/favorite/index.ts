@@ -1,5 +1,4 @@
-import { Position, Favorite } from "./types";
-import { ButtonConfig, ButtonObserver } from "../../components/button-observer";
+import { ButtonObserver } from "../../components/button-observer";
 import { CONFIG } from "./config";
 import { FavoriteStorage, STORAGE_KEYS } from "./storage";
 import { FavoriteUI } from "./ui";
@@ -37,13 +36,13 @@ export class WPlaceExtendedFavorites {
       {
         id: "save-btn",
         selector: '[data-wplace-save="true"]',
-        containerSelector: CONFIG.selectors.saveContainer,
+        containerSelector: CONFIG.selectors.positionModal,
         create: this.createSaveButton.bind(this),
       },
       {
         id: "draw-btn",
         selector: '[data-wplace-draw="true"]',
-        containerSelector: CONFIG.selectors.saveContainer,
+        containerSelector: CONFIG.selectors.positionModal,
         create: this.createDrawButton.bind(this),
       },
     ];
@@ -102,7 +101,11 @@ export class WPlaceExtendedFavorites {
     this.isDrawMode = false;
   }
 
-  async drawImageOnMap(lat: number, lng: number, imageItem: any): Promise<void> {
+  async drawImageOnMap(
+    lat: number,
+    lng: number,
+    imageItem: any
+  ): Promise<void> {
     // TODO: TileOverlay連携で画像描画
     console.log("📍 Drawing at:", lat, lng, "Image:", imageItem.key);
 

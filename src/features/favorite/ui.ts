@@ -20,29 +20,50 @@ export class FavoriteUI {
 
   static createSaveButton(container: Element): HTMLButtonElement {
     const button = document.createElement("button");
-    button.className = "btn btn-primary btn-soft";
+    button.className = "btn btn-neutral btn-soft mx-3";
     button.setAttribute("data-wplace-save", "true");
     button.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4.5">
-        <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/>
+        <path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/>
       </svg>
-      保存
+      ブックマーク
     `;
-    container.appendChild(button);
+    
+    // 既存の子要素の前に挿入（先頭に表示）
+    const firstChild = container.firstElementChild;
+    if (firstChild) {
+      container.insertBefore(button, firstChild);
+    } else {
+      container.appendChild(button);
+    }
     return button;
   }
 
   static createDrawButton(container: Element): HTMLButtonElement {
     const button = document.createElement("button");
-    button.className = "btn btn-primary btn-soft";
+    button.className = "btn btn-neutral btn-soft mx-3";
     button.setAttribute("data-wplace-draw", "true");
     button.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4.5">
-        <path d="M200-200h56l345-345-56-56-345 345v56Zm572-403L602-771l56-56q23-23 56.5-23t56.5 23l56 56q23 23 23 56.5T827-658l-55 55Zm-58 59L290-120H120v-170l424-424 170 170Zm-141-29-28-28 56 56-28-28Z"/>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4.5">
+        <path fill-rule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clip-rule="evenodd"/>
       </svg>
-      描画
+      画像を描く
     `;
-    container.appendChild(button);
+    
+    // saveButtonの次に挿入（saveButtonが既にある場合）
+    const saveButton = container.querySelector('[data-wplace-save="true"]');
+    if (saveButton) {
+      // saveButtonの後に挿入
+      saveButton.insertAdjacentElement('afterend', button);
+    } else {
+      // saveButtonがない場合は先頭に挿入
+      const firstChild = container.firstElementChild;
+      if (firstChild) {
+        container.insertBefore(button, firstChild);
+      } else {
+        container.appendChild(button);
+      }
+    }
     return button;
   }
 
