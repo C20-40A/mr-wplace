@@ -17,7 +17,10 @@ export class TileOverlay {
 
   constructor() {
     this.simpleOverlay = new SimpleOverlay();
-    this.templateManager = new TemplateManager("WPlace Studio", "1.0.0", this.simpleOverlay);
+    this.templateManager = new TemplateManager(
+      "WPlace Studio",
+      this.simpleOverlay
+    );
     this.init();
   }
 
@@ -71,14 +74,17 @@ export class TileOverlay {
       // Convert dataUrl to File for Template
       const response = await fetch(imageItem.dataUrl);
       const blob = await response.blob();
-      const file = new File([blob], imageItem.title || "template.png", { type: blob.type });
+      const file = new File([blob], imageItem.title || "template.png", {
+        type: blob.type,
+      });
 
       // Create template using TemplateManager
-      await this.templateManager.createTemplate(
-        file, 
-        imageItem.title || "Generated Template",
-        [coords.TLX, coords.TLY, coords.PxX, coords.PxY]
-      );
+      await this.templateManager.createTemplate(file, [
+        coords.TLX,
+        coords.TLY,
+        coords.PxX,
+        coords.PxY,
+      ]);
 
       console.log("✅ Template created and ready for drawing");
     } catch (error) {
@@ -93,6 +99,9 @@ export class TileOverlay {
     tileY: number
   ): Promise<Blob> {
     // Use TemplateManager's drawing method
-    return await this.templateManager.drawTemplateOnTile(tileBlob, [tileX, tileY]);
+    return await this.templateManager.drawTemplateOnTile(tileBlob, [
+      tileX,
+      tileY,
+    ]);
   }
 }

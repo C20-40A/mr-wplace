@@ -3,9 +3,6 @@ import { createTemplateTiles as createTemplateTilesFn } from "./template-functio
 
 /** テンプレートコンストラクタパラメータ */
 interface TemplateParams {
-  displayName?: string;
-  sortID?: number;
-  authorID?: string;
   url?: string;
   file?: File | null;
   coords?: number[] | null;
@@ -27,9 +24,6 @@ interface RgbMeta {
 }
 
 export default class Template {
-  public displayName: string;
-  public sortID: number;
-  public authorID: string;
   public url: string;
   public file: File | null;
   public coords: number[] | null;
@@ -40,24 +34,17 @@ export default class Template {
   public defacePixelCount: number;
   public colorPalette: Record<string, PaletteEntry>;
   public tilePrefixes: Set<string>;
-  public storageKey: string | null;
   public allowedColorsSet: Set<string>;
   public rgbToMeta: Map<string, RgbMeta>;
 
   /** 拡張ピクセルトラッキング機能付きTemplateクラスのコンストラクタ */
   constructor({
-    displayName = "My template",
-    sortID = 0,
-    authorID = "",
     url = "",
     file = null,
     coords = null,
     chunked = null,
     tileSize = 1000,
   }: TemplateParams = {}) {
-    this.displayName = displayName;
-    this.sortID = sortID;
-    this.authorID = authorID;
     this.url = url;
     this.file = file;
     this.coords = coords;
@@ -68,7 +55,6 @@ export default class Template {
     this.defacePixelCount = 0; // #defaceピクセル数（ゲーム内透明色を表す）
     this.colorPalette = {}; // キー: "r,g,b" -> { count: number, enabled: boolean }
     this.tilePrefixes = new Set(); // このテンプレートが影響する"xxxx,yyyy"タイルのセット
-    this.storageKey = null; // templatesJSON内で設定を永続化するためのキー
 
     // サイトパレットから許可色セットを構築（特別な透明エントリを名前で除外）
     // "transparent"を除くWplaceパレット色のSetを作成
