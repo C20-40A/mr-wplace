@@ -3,6 +3,9 @@ import { GalleryItem } from "./storage";
 export class GalleryUI {
   private modal: HTMLDialogElement | null = null;
   private container: HTMLElement | null = null;
+  private isImageExpanded: boolean = false;
+  private currentItems: GalleryItem[] = [];
+  private currentOnDelete: ((key: string) => void) | null = null;
 
   constructor() {
     this.createModal();
@@ -32,7 +35,26 @@ export class GalleryUI {
     isSelectionMode: boolean = false,
     onSelect?: (item: GalleryItem) => void
   ): void {
+    // 状態を保存
+    this.currentItems = items;
+    this.currentOnDelete = onDelete;
+
+    if (this.isImageExpanded) {
+      return; // 拡大表示中は再レンダリングしない
+    }
+    this.renderGalleryList(items, onDelete, isSelectionMode, onSelect);
+  }
+
+  private renderGalleryList(
+    items: GalleryItem[],
+    onDelete: (key: string) => void,
+    isSelectionMode: boolean = false,
+    onSelect?: (item: GalleryItem) => void
+  ): void {
     if (!this.container) return;
+
+    // +ボタンを表示
+    this.toggleAddButton(true);
 
     if (items.length === 0) {
       this.container.innerHTML = `
@@ -60,14 +82,7 @@ export class GalleryUI {
         }
         <img src="${
           item.dataUrl
-        }" alt="Gallery item" class="w-full h-32 object-cover ${
-          isSelectionMode ? "cursor-pointer" : ""
-        }">
-        <div class="p-2">
-          <span class="text-xs text-gray-500">${new Date(
-            item.timestamp
-          ).toLocaleString()}</span>
-        </div>
+        }" alt="Gallery item" class="w-full h-32 aspect-square object-contain cursor-pointer" style="image-rendering: pixelated; object-fit: contain;">
       </div>
     `
       )
@@ -83,11 +98,32 @@ export class GalleryUI {
     if (!isSelectionMode) {
       this.container.querySelectorAll("[data-delete]").forEach((button) => {
         button.addEventListener("click", (e) => {
+          e.stopPropagation(); // 画像クリックイベントとの競合を防ぐ
           const key = (e.currentTarget as HTMLElement).getAttribute(
             "data-delete"
           );
           if (key && confirm("この画像を削除しますか？")) {
             onDelete(key);
+          }
+        });
+      });
+
+      // 拡大表示のイベントリスナー（通常モードのみ）
+      this.container.querySelectorAll(".gallery-item").forEach((item) => {
+        item.addEventListener("click", (e) => {
+          // 削除ボタンクリック時は拡大表示しない
+          if ((e.target as HTMLElement).closest("[data-delete]")) {
+            return;
+          }
+
+          const key = (e.currentTarget as HTMLElement).getAttribute(
+            "data-item-key"
+          );
+          if (key) {
+            const selectedItem = items.find((item) => item.key === key);
+            if (selectedItem) {
+              this.showExpandedImage(selectedItem);
+            }
           }
         });
       });
@@ -112,6 +148,53 @@ export class GalleryUI {
     }
   }
 
+  private showExpandedImage(item: GalleryItem): void {
+    if (!this.container) return;
+
+    this.isImageExpanded = true;
+
+    // +ボタンを非表示
+    this.toggleAddButton(false);
+
+    this.container.innerHTML = `
+      <div class="flex flex-col items-center justify-center h-full">
+        <div class="mb-4 flex items-center gap-2">
+          <button id="wps-gallery-back-btn" class="btn btn-sm btn-ghost">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+              <path fill-rule="evenodd" d="M7.72 12.53a.75.75 0 010-1.06l7.5-7.5a.75.75 0 111.06 1.06L9.31 12l6.97 6.97a.75.75 0 11-1.06 1.06l-7.5-7.5z" clip-rule="evenodd"/>
+            </svg>
+            戻る
+          </button>
+        </div>
+        <div class="flex items-center justify-center" style="max-height: 70vh; max-width: 90vw;">
+          <img src="${item.dataUrl}" alt="Expanded gallery item" class="" style="image-rendering: pixelated; min-width: 50vw; max-width: 90vw; max-height: 70vh; object-fit: contain; aspect-ratio: auto;">
+        </div>
+      </div>
+    `;
+
+    // 戻るボタンのイベントリスナー
+    const backBtn = document.getElementById("wps-gallery-back-btn");
+    backBtn?.addEventListener("click", () => {
+      this.hideExpandedImage();
+    });
+  }
+
+  private hideExpandedImage(): void {
+    this.isImageExpanded = false;
+
+    // 一覧表示に戻る
+    if (this.currentItems && this.currentOnDelete) {
+      this.renderGalleryList(this.currentItems, this.currentOnDelete, false);
+    }
+  }
+
+  private toggleAddButton(show: boolean): void {
+    const addBtn = document.getElementById("wps-gallery-add-btn");
+    if (addBtn) {
+      addBtn.style.display = show ? "flex" : "none";
+    }
+  }
+
   private createModal(): void {
     this.modal = document.createElement("dialog");
     this.modal.className = "modal";
@@ -123,7 +206,7 @@ export class GalleryUI {
         
         <h3 class="text-lg font-bold mb-4">ギャラリー</h3>
         
-        <div id="wps-gallery-container">
+        <div id="wps-gallery-container" style="min-height: 400px;">
           <!-- ギャラリー一覧がここに表示されます -->
         </div>
         
