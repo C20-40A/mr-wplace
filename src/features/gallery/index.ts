@@ -41,10 +41,11 @@ export class Gallery {
   private setupRouting(): void {
     // ツールバーボタン作成
     this.createButton();
-    
-    // ルーティング設定
+
+    // ルーティング設定（UIとコンテンツ両方を更新）
     this.router.setOnRouteChange((route) => {
-      this.renderCurrentRoute(route);
+      this.ui.updateHeader(route); // ヘッダー更新
+      this.renderCurrentRoute(route); // コンテンツ更新
     });
   }
 
@@ -65,15 +66,25 @@ export class Gallery {
     if (!container) return;
 
     switch (route) {
-      case 'list':
-        this.listRoute.render(container, this.router, this.isSelectionMode, this.onSelectCallback, (item) => this.showImageDetail(item));
+      case "list":
+        this.listRoute.render(
+          container,
+          this.router,
+          this.isSelectionMode,
+          this.onSelectCallback,
+          (item) => this.showImageDetail(item)
+        );
         break;
-      case 'image-editor':
+      case "image-editor":
         this.imageEditorRoute.render(container);
         break;
-      case 'image-detail':
+      case "image-detail":
         if (this.currentDetailItem) {
-          this.imageDetailRoute.render(container, this.router, this.currentDetailItem);
+          this.imageDetailRoute.render(
+            container,
+            this.router,
+            this.currentDetailItem
+          );
         }
         break;
     }
@@ -81,7 +92,7 @@ export class Gallery {
 
   private showImageDetail(item: GalleryItem): void {
     this.currentDetailItem = item;
-    this.router.navigate('image-detail');
+    this.router.navigate("image-detail");
   }
 
   // 外部インターフェース（互換性維持）
@@ -91,8 +102,8 @@ export class Gallery {
   ): Promise<void> {
     this.isSelectionMode = isSelectionMode;
     this.onSelectCallback = onSelect;
-    
-    this.router.navigate('list');
+
+    this.router.navigate("list");
     this.ui.showModal();
   }
 
