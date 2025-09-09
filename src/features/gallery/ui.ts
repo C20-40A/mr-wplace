@@ -1,4 +1,4 @@
-import { GalleryRouter, GalleryRoute } from './router';
+import { GalleryRouter, GalleryRoute } from "./router";
 
 export class GalleryUI {
   private modal: HTMLDialogElement | null = null;
@@ -10,7 +10,6 @@ export class GalleryUI {
   constructor(router: GalleryRouter) {
     this.router = router;
     this.createModal();
-    this.setupRouting();
   }
 
   showModal(): void {
@@ -25,28 +24,22 @@ export class GalleryUI {
     return this.container;
   }
 
-  private setupRouting(): void {
-    this.router.setOnRouteChange((route: GalleryRoute) => {
-      this.updateHeader(route);
-    });
-  }
-
-  private updateHeader(route: GalleryRoute): void {
-    console.log('updateHeader called with route:', route);
+  updateHeader(route: GalleryRoute): void {
+    console.log("updateHeader called with route:", route);
     if (this.headerTitle) {
       const titles = {
-        'list': 'ギャラリー',
-        'image-editor': '画像エディター',
-        'image-detail': '画像詳細'
+        list: "ギャラリー",
+        "image-editor": "画像エディター",
+        "image-detail": "画像詳細",
       };
       this.headerTitle.textContent = titles[route];
-      console.log('Header title updated to:', titles[route]);
+      console.log("Header title updated to:", titles[route]);
     }
 
     if (this.backButton) {
       const shouldShow = this.router.canNavigateBack();
-      this.backButton.style.display = shouldShow ? 'flex' : 'none';
-      console.log('Back button display:', shouldShow ? 'visible' : 'hidden');
+      this.backButton.style.display = shouldShow ? "flex" : "none";
+      console.log("Back button display:", shouldShow ? "visible" : "hidden");
     }
   }
 
