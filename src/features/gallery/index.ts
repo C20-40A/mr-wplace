@@ -4,6 +4,7 @@ import { GalleryRouter } from "./router";
 import { GalleryUI } from "./ui";
 import { GalleryList } from "./routes/list";
 import { GalleryImageEditor } from "./routes/image-editor";
+import { GalleryImageDetail } from "./routes/image-detail";
 
 export class Gallery {
   private button: HTMLButtonElement | null = null;
@@ -12,10 +13,12 @@ export class Gallery {
   private ui: GalleryUI;
   private listRoute: GalleryList;
   private imageEditorRoute: GalleryImageEditor;
+  private imageDetailRoute: GalleryImageDetail;
 
   // 選択モード用の状態
   private isSelectionMode: boolean = false;
   private onSelectCallback?: (item: GalleryItem) => void;
+  private currentDetailItem?: GalleryItem;
 
   constructor(toolbar: Toolbar) {
     this.toolbar = toolbar;
@@ -23,6 +26,7 @@ export class Gallery {
     this.ui = new GalleryUI(this.router);
     this.listRoute = new GalleryList();
     this.imageEditorRoute = new GalleryImageEditor();
+    this.imageDetailRoute = new GalleryImageDetail();
     this.init();
   }
 
@@ -62,12 +66,22 @@ export class Gallery {
 
     switch (route) {
       case 'list':
-        this.listRoute.render(container, this.router, this.isSelectionMode, this.onSelectCallback);
+        this.listRoute.render(container, this.router, this.isSelectionMode, this.onSelectCallback, (item) => this.showImageDetail(item));
         break;
       case 'image-editor':
         this.imageEditorRoute.render(container);
         break;
+      case 'image-detail':
+        if (this.currentDetailItem) {
+          this.imageDetailRoute.render(container, this.router, this.currentDetailItem);
+        }
+        break;
     }
+  }
+
+  private showImageDetail(item: GalleryItem): void {
+    this.currentDetailItem = item;
+    this.router.navigate('image-detail');
   }
 
   // 外部インターフェース（互換性維持）
