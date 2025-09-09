@@ -1,8 +1,8 @@
 import { WPlaceExtendedFavorites } from "./features/favorite/index";
 import { injectFetchInterceptor } from "./features/fetch-interceptor/index";
 import { TileOverlay } from "./features/tile-overlay/index";
-import { Gallery } from "./features/gallery/routes/list/index";
 import { Toolbar } from "./components/toolbar";
+import { Gallery } from "./features/gallery";
 
 class WPlaceStudio {
   constructor() {
