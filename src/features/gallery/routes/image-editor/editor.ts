@@ -1,4 +1,4 @@
-import { availableColors, paidColors } from "../../constants/colors";
+import { availableColors, paidColors } from "../../../../constants/colors";
 
 export class ImageProcessor {
   private container: HTMLElement;
