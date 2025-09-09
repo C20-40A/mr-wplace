@@ -1,4 +1,4 @@
-export type GalleryRoute = 'list' | 'image-editor';
+export type GalleryRoute = 'list' | 'image-editor' | 'image-detail';
 
 export class GalleryRouter {
   private currentRoute: GalleryRoute = 'list';
@@ -25,5 +25,9 @@ export class GalleryRouter {
     if (this.canNavigateBack()) {
       this.navigate('list');
     }
+  }
+
+  navigateToImageDetail(): void {
+    this.navigate('image-detail');
   }
 }

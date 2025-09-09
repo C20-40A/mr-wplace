@@ -32,16 +32,21 @@ export class GalleryUI {
   }
 
   private updateHeader(route: GalleryRoute): void {
+    console.log('updateHeader called with route:', route);
     if (this.headerTitle) {
       const titles = {
         'list': 'ギャラリー',
-        'image-editor': '画像エディター'
+        'image-editor': '画像エディター',
+        'image-detail': '画像詳細'
       };
       this.headerTitle.textContent = titles[route];
+      console.log('Header title updated to:', titles[route]);
     }
 
     if (this.backButton) {
-      this.backButton.style.display = this.router.canNavigateBack() ? 'flex' : 'none';
+      const shouldShow = this.router.canNavigateBack();
+      this.backButton.style.display = shouldShow ? 'flex' : 'none';
+      console.log('Back button display:', shouldShow ? 'visible' : 'hidden');
     }
   }
 

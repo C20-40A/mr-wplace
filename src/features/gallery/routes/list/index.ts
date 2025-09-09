@@ -12,7 +12,8 @@ export class GalleryList {
     container: HTMLElement,
     router: GalleryRouter,
     isSelectionMode: boolean = false,
-    onSelect?: (item: GalleryItem) => void
+    onSelect?: (item: GalleryItem) => void,
+    onImageClick?: (item: GalleryItem) => void
   ): Promise<void> {
     const items = await this.storage.getAll();
 
@@ -93,27 +94,34 @@ export class GalleryList {
           if (key && confirm("この画像を削除しますか？")) {
             await this.storage.delete(key);
             // 再描画
-            this.render(container, router, isSelectionMode, onSelect);
+            this.render(container, router, isSelectionMode, onSelect, onImageClick);
           }
         });
       });
     }
 
-    // 画像選択のイベントリスナー（選択モードのみ）
-    if (isSelectionMode && onSelect) {
-      container.querySelectorAll(".gallery-item").forEach((item) => {
-        item.addEventListener("click", (e) => {
-          const key = (e.currentTarget as HTMLElement).getAttribute(
-            "data-item-key"
-          );
-          if (key) {
-            const selectedItem = items.find((item) => item.key === key);
-            if (selectedItem) {
+    // 画像クリックのイベントリスナー
+    container.querySelectorAll(".gallery-item").forEach((item) => {
+      item.addEventListener("click", (e) => {
+        // 削除ボタンクリック時は処理しない
+        if ((e.target as HTMLElement).closest("[data-delete]")) {
+          return;
+        }
+
+        const key = (e.currentTarget as HTMLElement).getAttribute("data-item-key");
+        if (key) {
+          const selectedItem = items.find((item) => item.key === key);
+          if (selectedItem) {
+            if (isSelectionMode && onSelect) {
+              // 選択モード: 選択コールバック実行
               onSelect(selectedItem);
+            } else if (onImageClick) {
+              // 通常モード: 画像詳細表示
+              onImageClick(selectedItem);
             }
           }
-        });
+        }
       });
-    }
+    });
   }
 }
