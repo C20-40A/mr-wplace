@@ -1,6 +1,31 @@
 import { Favorite } from "./types";
 
 export class FavoriteUI {
+  static createGalleryButton(toggleButton: Element): HTMLButtonElement {
+    const container = toggleButton.parentElement;
+    if (!container) throw new Error("Container not found");
+
+    const button = document.createElement("button");
+    button.className =
+      "btn btn-lg sm:btn-xl btn-square shadow-md text-base-content/80 z-30";
+    button.title = "ギャラリー";
+    button.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+        <path fill-rule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clip-rule="evenodd"/>
+      </svg>
+    `;
+    
+    // ブックマークボタンの前に挿入（上に配置）
+    const favoriteButton = container.querySelector('[title="bookmarks"]');
+    if (favoriteButton) {
+      container.insertBefore(button, favoriteButton);
+    } else {
+      container.appendChild(button);
+    }
+    
+    return button;
+  }
+
   static createFavoriteButton(toggleButton: Element): HTMLButtonElement {
     const container = toggleButton.parentElement;
     if (!container) throw new Error("Container not found");
@@ -11,10 +36,10 @@ export class FavoriteUI {
     const button = document.createElement("button");
     button.className =
       "btn btn-lg sm:btn-xl btn-square shadow-md text-base-content/80 z-30";
-    button.title = "お気に入り";
+    button.title = "bookmarks";
     button.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-5">
-        <path d="m354-287 126-76 126 77-33-144 111-96-146-13-58-136-58 135-146 13 111 97-33 143ZM233-120l65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Zm247-350Z"/>
+        <path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/>
       </svg>
     `;
     container.appendChild(button);
@@ -82,7 +107,7 @@ export class FavoriteUI {
 
         <div class="flex items-center gap-1.5 mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-5">
-            <path d="m354-287 126-76 126 77-33-144 111-96-146-13-58-136-58 135-146 13 111 97-33 143ZM233-120l65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Zm247-350Z"/>
+            <path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/>
           </svg>
           <h3 class="text-lg font-bold">WPlace Studio - お気に入り</h3>
         </div>
@@ -130,7 +155,7 @@ export class FavoriteUI {
       grid.innerHTML = `
         <div class="col-span-full text-center py-12">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-12 mx-auto mb-4 text-base-content/50">
-            <path d="m354-287 126-76 126 77-33-144 111-96-146-13-58-136-58 135-146 13 111 97-33 143ZM233-120l65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Zm247-350Z"/>
+            <path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/>
           </svg>
           <p class="text-base-content/80">お気に入りがありません</p>
           <p class="text-sm text-base-content/60">下の「保存」ボタンから追加してください</p>

@@ -28,6 +28,12 @@ export class WPlaceExtendedFavorites {
   observeAndInit() {
     const buttonConfigs = [
       {
+        id: "gallery-btn",
+        selector: '[title="ギャラリー"]',
+        containerSelector: CONFIG.selectors.toggleOpacityButton,
+        create: this.createGalleryButton.bind(this),
+      },
+      {
         id: "favorite-btn",
         selector: CONFIG.selectors.favoriteButton,
         containerSelector: CONFIG.selectors.toggleOpacityButton,
@@ -49,6 +55,16 @@ export class WPlaceExtendedFavorites {
 
     this.buttonObserver.startObserver(buttonConfigs);
     this.createModal();
+  }
+
+  createGalleryButton(toggleButton: Element): void {
+    const gallery = (window as any).wplaceStudio?.gallery;
+    if (gallery) {
+      gallery.createButton(toggleButton);
+      console.log("🖼️ WPlace Studio: Gallery button added");
+    } else {
+      console.error("Gallery instance not found");
+    }
   }
 
   createFavoriteButton(toggleButton: Element): void {
