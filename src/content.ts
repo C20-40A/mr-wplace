@@ -1,7 +1,6 @@
 import { WPlaceExtendedFavorites } from "./features/favorite/index";
 import { injectFetchInterceptor } from "./features/fetch-interceptor/index";
 import { TileOverlay } from "./features/tile-overlay/index";
-import { Toolbar } from "./components/toolbar";
 import { Gallery } from "./features/gallery";
 
 class WPlaceStudio {
@@ -15,15 +14,13 @@ class WPlaceStudio {
     }
 
     try {
-      const toolbar = new Toolbar();
-
       injectFetchInterceptor();
-      new WPlaceExtendedFavorites();
+      const favorites = new WPlaceExtendedFavorites();
       const tileOverlay = new TileOverlay();
-      const gallery = new Gallery(toolbar);
+      const gallery = new Gallery();
 
       // Global access for ImageProcessor and Gallery
-      (window as any).wplaceStudio = { gallery, tileOverlay };
+      (window as any).wplaceStudio = { gallery, tileOverlay, favorites };
     } catch (error) {
       console.error("WPlace Studio initialization error:", error);
     }
