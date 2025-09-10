@@ -30,9 +30,9 @@ export class ImageGridComponent {
       isSelectionMode: false,
       showDeleteButton: true,
       showAddButton: true,
-      emptyStateMessage: t`${'no_saved_images'}`,
+      emptyStateMessage: t`${"no_saved_images"}`,
       gridCols: "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
-      ...options
+      ...options,
     };
   }
 
@@ -65,7 +65,7 @@ export class ImageGridComponent {
         <p>${this.options.emptyStateMessage}</p>
       </div>
       
-      ${this.options.showAddButton ? this.createAddButtonHtml() : ''}
+      ${this.options.showAddButton ? this.createAddButtonHtml() : ""}
     `;
 
     this.attachAddButtonListener();
@@ -84,7 +84,7 @@ export class ImageGridComponent {
         ${itemsHtml}
       </div>
       
-      ${this.options.showAddButton ? this.createAddButtonHtml() : ''}
+      ${this.options.showAddButton ? this.createAddButtonHtml() : ""}
     `;
 
     this.attachEventListeners();
@@ -94,10 +94,13 @@ export class ImageGridComponent {
    * 画像アイテムのHTMLを生成
    */
   private createImageItemHtml(item: ImageItem): string {
-    const showDeleteBtn = this.options.showDeleteButton && !this.options.isSelectionMode;
-    
+    const showDeleteBtn =
+      this.options.showDeleteButton && !this.options.isSelectionMode;
+
     return `
-      <div class="border rounded-lg overflow-hidden shadow relative gallery-item" data-item-key="${item.key}">
+      <div class="border rounded-lg overflow-hidden shadow relative gallery-item" data-item-key="${
+        item.key
+      }">
         ${showDeleteBtn ? this.createDeleteButtonHtml(item.key) : ""}
         <img 
           src="${item.dataUrl}" 
@@ -105,7 +108,11 @@ export class ImageGridComponent {
           class="w-full h-32 aspect-square object-contain cursor-pointer" 
           style="image-rendering: pixelated; object-fit: contain;"
         >
-        ${item.title ? `<div class="p-2 text-sm text-gray-600 truncate">${item.title}</div>` : ''}
+        ${
+          item.title
+            ? `<div class="p-2 text-sm text-gray-600 truncate">${item.title}</div>`
+            : ""
+        }
       </div>
     `;
   }
@@ -158,7 +165,9 @@ export class ImageGridComponent {
   private attachAddButtonListener(): void {
     if (!this.options.showAddButton) return;
 
-    const addBtn = this.container.querySelector("#wps-gallery-add-btn") as HTMLButtonElement;
+    const addBtn = this.container.querySelector(
+      "#wps-gallery-add-btn"
+    ) as HTMLButtonElement;
     addBtn?.addEventListener("click", () => {
       this.options.onAddClick?.();
     });
@@ -173,8 +182,10 @@ export class ImageGridComponent {
     this.container.querySelectorAll("[data-delete]").forEach((button) => {
       button.addEventListener("click", async (e) => {
         e.stopPropagation();
-        const key = (e.currentTarget as HTMLElement).getAttribute("data-delete");
-        if (key && confirm(t`${'delete_image_confirm'}`)) {
+        const key = (e.currentTarget as HTMLElement).getAttribute(
+          "data-delete"
+        );
+        if (key && confirm(t`${"delete_image_confirm"}`)) {
           this.options.onImageDelete?.(key);
         }
       });
@@ -192,9 +203,13 @@ export class ImageGridComponent {
           return;
         }
 
-        const key = (e.currentTarget as HTMLElement).getAttribute("data-item-key");
+        const key = (e.currentTarget as HTMLElement).getAttribute(
+          "data-item-key"
+        );
         if (key) {
-          const selectedItem = this.options.items.find((item) => item.key === key);
+          const selectedItem = this.options.items.find(
+            (item) => item.key === key
+          );
           if (selectedItem) {
             if (this.options.isSelectionMode) {
               // 選択モード: 選択コールバック実行
@@ -213,6 +228,6 @@ export class ImageGridComponent {
    * コンポーネントをクリーンアップ
    */
   destroy(): void {
-    this.container.innerHTML = '';
+    this.container.innerHTML = "";
   }
 }
