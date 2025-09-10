@@ -4,14 +4,17 @@ import { FavoriteStorage, STORAGE_KEYS } from "./storage";
 import { FavoriteUI } from "./ui";
 import { ImportExportService } from "./import-export";
 import { getCurrentPosition } from "../../utils/position";
+import { ImageSelectorModal } from "../gallery/routes/image-selector";
 
 export class WPlaceExtendedFavorites {
   private buttonObserver: ButtonObserver;
   private selectedImage: any = null;
   private isDrawMode: boolean = false;
+  private imageSelectorModal: ImageSelectorModal;
 
   constructor() {
     this.buttonObserver = new ButtonObserver();
+    this.imageSelectorModal = new ImageSelectorModal();
     this.init();
   }
 
@@ -86,14 +89,11 @@ export class WPlaceExtendedFavorites {
   }
 
   openDrawMode(): void {
-    const gallery = (window as any).wplaceStudio?.gallery;
-    if (gallery) {
-      gallery.showSelectionMode((selectedItem: any) => {
-        this.startDraw(selectedItem);
-      });
-    } else {
-      console.error("Gallery instance not found");
-    }
+    console.log("✏️ Opening image selector modal for drawing");
+    
+    this.imageSelectorModal.show((selectedItem) => {
+      this.startDraw(selectedItem);
+    });
   }
 
   startDraw(selectedItem: any): void {
