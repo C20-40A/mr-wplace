@@ -108,17 +108,13 @@ export class ImageSelectorModal {
       items,
       isSelectionMode: true, // 選択モードを有効化
       showDeleteButton: false, // 削除ボタンを非表示
-      showAddButton: true, // 追加ボタンを表示
-      emptyStateMessage: "描画用の画像がありません。右下の+ボタンから画像を追加してください。",
+      showAddButton: false, // 追加ボタンを非表示
+      emptyStateMessage: "描画用の画像がありません。",
       gridCols: "grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
       onImageSelect: (item) => {
         // 画像が選択された時
         this.onSelectCallback?.(item);
         this.close();
-      },
-      onAddClick: () => {
-        // 新しい画像を追加（ギャラリーのimage-editorを開く）
-        this.openImageEditor();
       }
     });
 
@@ -132,27 +128,10 @@ export class ImageSelectorModal {
     return galleryItems.map(item => ({
       key: item.key,
       dataUrl: item.dataUrl,
-      title: item.title || `画像 ${new Date(item.timestamp).toLocaleDateString('ja-JP')}`,
+      // タイトルや日付は表示しない
+      title: undefined,
       createdAt: new Date(item.timestamp).toISOString()
     }));
-  }
-
-  /**
-   * 画像エディターを開く
-   */
-  private openImageEditor(): void {
-    // 一時的にモーダルを閉じる
-    this.close();
-    
-    // ギャラリーのimage-editorを開く
-    const gallery = (window as any).wplaceStudio?.gallery;
-    if (gallery) {
-      gallery.show(); // 通常のギャラリーを開く
-      // ルーターでimage-editorに遷移
-      setTimeout(() => {
-        gallery.router?.navigate("image-editor");
-      }, 100);
-    }
   }
 
   /**
