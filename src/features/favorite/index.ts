@@ -5,6 +5,7 @@ import { FavoriteUI } from "./ui";
 import { ImportExportService } from "./import-export";
 import { getCurrentPosition } from "../../utils/position";
 import { ImageSelectorModal } from "../gallery/routes/image-selector";
+import { t } from "../../i18n/manager";
 
 export class WPlaceExtendedFavorites {
   private buttonObserver: ButtonObserver;
@@ -32,7 +33,7 @@ export class WPlaceExtendedFavorites {
     const buttonConfigs = [
       {
         id: "gallery-btn",
-        selector: '[title="ギャラリー"]',
+        selector: `[title="${t`${'gallery'}`}"]`,
         containerSelector: CONFIG.selectors.toggleOpacityButton,
         create: this.createGalleryButton.bind(this),
       },
@@ -103,7 +104,7 @@ export class WPlaceExtendedFavorites {
 
     const position = getCurrentPosition();
     if (!position) {
-      alert("位置情報を取得できませんでした。");
+      alert(t`${'location_unavailable'}`);
       this.resetDrawMode();
       return;
     }
@@ -200,15 +201,13 @@ export class WPlaceExtendedFavorites {
   async addFavorite(): Promise<void> {
     const position = getCurrentPosition();
     if (!position) {
-      alert(
-        "位置情報を取得できませんでした。マップをクリックしてから保存してください。"
-      );
+      alert(t`${'location_unavailable_instruction'}`);
       return;
     }
 
     const name = prompt(
-      "お気に入り名を入力してください:",
-      `地点 (${position.lat.toFixed(3)}, ${position.lng.toFixed(3)})`
+      t`${'enter_favorite_name'}`,
+      t`${'location_point'} (${position.lat.toFixed(3)}, ${position.lng.toFixed(3)})`
     );
     if (!name) return;
 
@@ -228,7 +227,7 @@ export class WPlaceExtendedFavorites {
       JSON.stringify(favorites)
     );
 
-    this.showToast(`"${name}" を保存しました`);
+    this.showToast(t`"${name}" ${'saved_message'}`);
   }
 
   async renderFavorites(): Promise<void> {
@@ -245,7 +244,7 @@ export class WPlaceExtendedFavorites {
   }
 
   async deleteFavorite(id: number): Promise<void> {
-    if (!confirm("このお気に入りを削除しますか？")) return;
+    if (!confirm(t`${'delete_confirm'}`)) return;
 
     const favorites = await FavoriteStorage.getFavorites();
     const filtered = favorites.filter((fav) => fav.id !== id);
@@ -255,7 +254,7 @@ export class WPlaceExtendedFavorites {
     );
 
     this.renderFavorites();
-    this.showToast("削除しました");
+    this.showToast(t`${'deleted_message'}`);
   }
 
   showToast(message: string): void {

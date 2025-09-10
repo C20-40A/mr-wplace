@@ -1,4 +1,5 @@
 import { Favorite } from "./types";
+import { t } from "../../i18n/manager";
 
 export class FavoriteUI {
   static createGalleryButton(toggleButton: Element): HTMLButtonElement {
@@ -8,7 +9,7 @@ export class FavoriteUI {
     const button = document.createElement("button");
     button.className =
       "btn btn-lg sm:btn-xl btn-square shadow-md text-base-content/80 z-30";
-    button.title = "ギャラリー";
+    button.title = t`${'gallery'}`;
     button.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
         <path fill-rule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clip-rule="evenodd"/>
@@ -36,7 +37,7 @@ export class FavoriteUI {
     const button = document.createElement("button");
     button.className =
       "btn btn-lg sm:btn-xl btn-square shadow-md text-base-content/80 z-30";
-    button.title = "bookmarks";
+    button.title = t`${'bookmarks'}`;
     button.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-5">
         <path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/>
@@ -51,11 +52,11 @@ export class FavoriteUI {
     button.className = "btn btn-neutral btn-soft mx-3";
     button.style = "margin: 0.5rem;";
     button.setAttribute("data-wplace-save", "true");
-    button.innerHTML = `
+    button.innerHTML = t`
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4.5">
         <path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/>
       </svg>
-      ブックマーク
+      ${'bookmark'}
     `;
 
     // 既存の子要素の前に挿入（先頭に表示）
@@ -73,11 +74,11 @@ export class FavoriteUI {
     button.className = "btn btn-neutral btn-soft";
     button.style = "margin: 0.5rem;";
     button.setAttribute("data-wplace-draw", "true");
-    button.innerHTML = `
+    button.innerHTML = t`
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4.5">
         <path fill-rule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clip-rule="evenodd"/>
       </svg>
-      画像を描く
+      ${'draw_image'}
     `;
 
     // saveButtonの次に挿入（saveButtonが既にある場合）
@@ -101,7 +102,7 @@ export class FavoriteUI {
     const modal = document.createElement("dialog");
     modal.id = "wplace-studio-favorite-modal";
     modal.className = "modal";
-    modal.innerHTML = `
+    modal.innerHTML = t`
       <div class="modal-box max-w-4xl">
         <form method="dialog">
           <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
@@ -111,7 +112,7 @@ export class FavoriteUI {
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-5">
             <path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/>
           </svg>
-          <h3 class="text-lg font-bold">WPlace Studio - お気に入り</h3>
+          <h3 class="text-lg font-bold">${'bookmark_list'}</h3>
         </div>
 
         <div class="flex gap-2 mb-4">
@@ -119,13 +120,13 @@ export class FavoriteUI {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
               <path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
             </svg>
-            エクスポート
+            ${'export'}
           </button>
           <button id="wps-import-btn" class="btn btn-outline btn-sm">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
               <path d="M260-160q-91 0-155.5-63T40-377q0-78 47-139t123-78q25-92 100-149t170-57q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 75-52.5 127.5T740-160H520q-33 0-56.5-23.5T440-240v-206l-64 62-56-56 160-160 160 160-56 56-64-62v206h220q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-83 0-141.5 58.5T280-520h-20q-58 0-99 41t-41 99q0 58 41 99t99 41h100v80H260Z"/>
             </svg>
-            インポート
+            ${'import'}
           </button>
           <input type="file" id="wps-import-file" accept=".json" style="display: none;">
         </div>
@@ -138,7 +139,7 @@ export class FavoriteUI {
       </div>
 
       <form method="dialog" class="modal-backdrop">
-        <button>close</button>
+        <button>${'close'}</button>
       </form>
     `;
     document.body.appendChild(modal);
@@ -151,16 +152,16 @@ export class FavoriteUI {
 
     if (!grid || !count) return;
 
-    count.textContent = `保存済み: ${favorites.length} 件`;
+    count.textContent = t`${'saved_count'}: ${favorites.length} ${'items_unit'}`;
 
     if (favorites.length === 0) {
-      grid.innerHTML = `
+      grid.innerHTML = t`
         <div class="col-span-full text-center py-12">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-12 mx-auto mb-4 text-base-content/50">
             <path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/>
           </svg>
-          <p class="text-base-content/80">お気に入りがありません</p>
-          <p class="text-sm text-base-content/60">下の「保存」ボタンから追加してください</p>
+          <p class="text-base-content/80">${'no_favorites'}</p>
+          <p class="text-sm text-base-content/60">${'add_favorites_instruction'}</p>
         </div>
       `;
       return;

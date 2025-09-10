@@ -1,4 +1,5 @@
 import { availableColors, paidColors } from "../../../../constants/colors";
+import { t } from "../../../../i18n/manager";
 
 export class ImageProcessor {
   private container: HTMLElement;
@@ -54,7 +55,7 @@ export class ImageProcessor {
       const key = `gallery_${Date.now()}`;
 
       (chrome as any).storage.local.set({ [key]: base64 }, () => {
-        console.log("画像をギャラリーに保存しました");
+        console.log(t`${'saved_to_gallery'}`);
 
         // ImageEditorモーダルを閉じる
         if ((window as any).wplaceStudio?.imageEditor) {
@@ -77,32 +78,32 @@ export class ImageProcessor {
   }
 
   private createUI(): void {
-    this.container.innerHTML = `
+    this.container.innerHTML = t`
       <div id="wps-image-area" class="border-2 border-dashed border-gray-300 rounded-lg p-4 mb-4 min-h-80">
         <div id="wps-dropzone" class="flex items-center justify-center h-full text-center">
           <div>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-12 mx-auto mb-4 text-gray-400">
               <path fill-rule="evenodd" d="M11.47 2.47a.75.75 0 011.06 0l4.5 4.5a.75.75 0 01-1.06 1.06L12.75 4.81V15a.75.75 0 01-1.5 0V4.81L8.03 8.03a.75.75 0 01-1.06-1.06l4.5-4.5zM3 15.75a.75.75 0 01.75.75v2.25A1.5 1.5 0 005.25 21h13.5a1.5 1.5 0 001.5-1.5V16.5a.75.75 0 011.5 0v2.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V16.5a.75.75 0 01.75-.75z" clip-rule="evenodd"/>
             </svg>
-            <p class="text-gray-600 mb-2">画像をドラッグ&ドロップまたはクリックして選択</p>
+            <p class="text-gray-600 mb-2">${'drag_drop_or_click'}</p>
             <input type="file" id="wps-file-input" accept="image/*" class="hidden">
           </div>
         </div>
         
         <div id="wps-image-display" class="hidden relative">
-          <button id="wps-clear-btn" class="btn btn-xs btn-circle btn-ghost absolute -top-2 -right-2 z-10 opacity-60 hover:opacity-100" title="画像をクリア">
+          <button id="wps-clear-btn" class="btn btn-xs btn-circle btn-ghost absolute -top-2 -right-2 z-10 opacity-60 hover:opacity-100" title="${'clear_image'}">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3">
               <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd"/>
             </svg>
           </button>
           <div class="grid grid-cols-2 gap-4">
             <div class="text-center">
-              <h4 class="text-sm font-medium mb-2">元画像</h4>
+              <h4 class="text-sm font-medium mb-2">${'original_image'}</h4>
               <img id="wps-original-image" class="border rounded shadow" style="max-width: 300px; max-height: 300px; object-fit: contain; image-rendering: pixelated; image-rendering: crisp-edges;" alt="Original">
             </div>
             <div class="text-center relative">
-              <h4 class="text-sm font-medium mb-2">現在の画像
-                <button id="wps-reset-btn" class="btn btn-xs btn-ghost ml-2 opacity-60 hover:opacity-100" title="編集リセット">
+              <h4 class="text-sm font-medium mb-2">${'current_image'}
+                <button id="wps-reset-btn" class="btn btn-xs btn-ghost ml-2 opacity-60 hover:opacity-100" title="${'reset_edit'}">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3">
                     <path fill-rule="evenodd" d="M4.755 10.059a7.5 7.5 0 0112.548-3.364l1.903 1.903h-3.183a.75.75 0 100 1.5h4.992a.75.75 0 00.75-.75V4.356a.75.75 0 00-1.5 0v3.18l-1.9-1.9A9 9 0 003.306 9.67a.75.75 0 101.45.388zm15.408 3.352a.75.75 0 00-.919.53 7.5 7.5 0 01-12.548 3.364l-1.902-1.903h3.183a.75.75 0 000-1.5H2.984a.75.75 0 00-.75.75v4.992a.75.75 0 001.5 0v-3.18l1.9 1.9a9 9 0 0015.059-4.035.75.75 0 00-.53-.918z" clip-rule="evenodd"/>
                   </svg>
@@ -114,7 +115,7 @@ export class ImageProcessor {
                   100%
                 </div>
               </div>
-              <p class="text-xs text-gray-500 mt-2">マウスホイールでズーム</p>
+              <p class="text-xs text-gray-500 mt-2">${'scroll_to_zoom'}</p>
             </div>
           </div>
         </div>
@@ -123,14 +124,14 @@ export class ImageProcessor {
       <div id="wps-controls" class="hidden space-y-4">
         <div class="grid grid-cols-2 gap-4 mb-4">
           <div class="text-sm">
-            <span class="font-medium">元サイズ:</span> <span id="wps-original-size">-</span>
+            <span class="font-medium">${'original_size'}:</span> <span id="wps-original-size">-</span>
           </div>
           <div class="text-sm">
-            <span class="font-medium">現在サイズ:</span> <span id="wps-current-size">-</span>
+            <span class="font-medium">${'current_size'}:</span> <span id="wps-current-size">-</span>
           </div>
         </div>
         <div>
-          <label class="block text-sm font-medium mb-2">サイズ縮小: <span id="wps-scale-value">1.0</span>x</label>
+          <label class="block text-sm font-medium mb-2">${'size_reduction'}: <span id="wps-scale-value">1.0</span>x</label>
           <input type="range" id="wps-scale-slider" min="0.1" max="1" step="0.05" value="1" class="w-full">
           <div class="flex justify-between text-xs text-gray-500 mt-1">
             <span>0.1x</span>
@@ -140,13 +141,13 @@ export class ImageProcessor {
         <div>
           <label class="flex items-center space-x-2">
             <input type="checkbox" id="wps-paid-toggle" checked class="checkbox checkbox-xs">
-            <span class="text-sm">Paid色を含む</span>
+            <span class="text-sm">${'include_paid_colors'}</span>
           </label>
         </div>
         
         <div id="wps-action-buttons" class="hidden flex gap-2 mt-4">
-          <button id="wps-add-to-gallery" class="btn btn-primary flex-1">ギャラリーに追加</button>
-          <button id="wps-download" class="btn btn-ghost">ダウンロード</button>
+          <button id="wps-add-to-gallery" class="btn btn-primary flex-1">${'add_to_gallery'}</button>
+          <button id="wps-download" class="btn btn-ghost">${'download'}</button>
         </div>
       </div>
     `;
@@ -262,7 +263,7 @@ export class ImageProcessor {
 
     // 画像クリアボタン
     clearBtn?.addEventListener("click", () => {
-      if (confirm("画像をクリアして初期状態に戻しますか？")) {
+      if (confirm(t`${'clear_image_confirm'}`)) {
         this.clearImage();
       }
     });

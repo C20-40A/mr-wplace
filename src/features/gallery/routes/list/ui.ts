@@ -1,5 +1,6 @@
 import { GalleryItem } from "../../storage";
 import { ImageGridComponent, ImageItem } from "./components/ImageGridComponent";
+import { t } from "../../../../i18n/manager";
 
 export class GalleryUI {
   private modal: HTMLDialogElement | null = null;
@@ -109,14 +110,14 @@ export class GalleryUI {
       this.imageGrid = null;
     }
 
-    this.container.innerHTML = `
+    this.container.innerHTML = t`
       <div class="flex flex-col items-center justify-center h-full">
         <div class="mb-4 flex items-center gap-2">
           <button id="wps-gallery-back-btn" class="btn btn-sm btn-ghost">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
               <path fill-rule="evenodd" d="M7.72 12.53a.75.75 0 010-1.06l7.5-7.5a.75.75 0 111.06 1.06L9.31 12l6.97 6.97a.75.75 0 11-1.06 1.06l-7.5-7.5z" clip-rule="evenodd"/>
             </svg>
-            戻る
+            ${'back'}
           </button>
         </div>
         <div class="flex items-center justify-center" style="max-height: 70vh; max-width: 90vw;">
@@ -144,13 +145,13 @@ export class GalleryUI {
   private createModal(): void {
     this.modal = document.createElement("dialog");
     this.modal.className = "modal";
-    this.modal.innerHTML = `
+    this.modal.innerHTML = t`
       <div class="modal-box max-w-6xl relative">
         <form method="dialog">
           <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
         </form>
         
-        <h3 class="text-lg font-bold mb-4">ギャラリー</h3>
+        <h3 class="text-lg font-bold mb-4">${'gallery'}</h3>
         
         <div id="wps-gallery-container" style="min-height: 400px;">
           <!-- ギャラリー一覧がここに表示されます -->
@@ -158,7 +159,7 @@ export class GalleryUI {
       </div>
       
       <form method="dialog" class="modal-backdrop">
-        <button>close</button>
+        <button>${'close'}</button>
       </form>
     `;
 

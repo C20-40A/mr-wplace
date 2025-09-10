@@ -1,3 +1,5 @@
+import { t } from "../../../../../i18n/manager";
+
 export interface ImageItem {
   key: string;
   dataUrl: string;
@@ -28,7 +30,7 @@ export class ImageGridComponent {
       isSelectionMode: false,
       showDeleteButton: true,
       showAddButton: true,
-      emptyStateMessage: "保存された画像がありません",
+      emptyStateMessage: t`${'no_saved_images'}`,
       gridCols: "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
       ...options
     };
@@ -172,7 +174,7 @@ export class ImageGridComponent {
       button.addEventListener("click", async (e) => {
         e.stopPropagation();
         const key = (e.currentTarget as HTMLElement).getAttribute("data-delete");
-        if (key && confirm("この画像を削除しますか？")) {
+        if (key && confirm(t`${'delete_image_confirm'}`)) {
           this.options.onImageDelete?.(key);
         }
       });
