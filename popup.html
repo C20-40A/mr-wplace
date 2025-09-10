@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WPlace Studio Settings</title>
+    <style>
+        body {
+            width: 280px;
+            min-height: 200px;
+            margin: 0;
+            padding: 16px;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .header h2 {
+            margin: 0 0 4px 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .header p {
+            margin: 0;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .setting-group {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .setting-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        select:focus {
+            outline: 2px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .status {
+            text-align: center;
+            font-size: 12px;
+            opacity: 0.7;
+            margin-top: 12px;
+        }
+        
+        .icon {
+            width: 16px;
+            height: 16px;
+            display: inline-block;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>🎨 WPlace Studio</h2>
+        <p>Settings</p>
+    </div>
+    
+    <div class="setting-group">
+        <label class="setting-label" for="language-select">
+            <span class="icon">🌐</span>
+            Language / 言語
+        </label>
+        <select id="language-select">
+            <option value="ja">日本語</option>
+            <option value="en">English</option>
+        </select>
+    </div>
+    
+    <div class="status" id="status">
+        Ready
+    </div>
+    
+    <script src="popup.js"></script>
+</body>
+</html>

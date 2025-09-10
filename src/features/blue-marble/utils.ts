@@ -11,7 +11,7 @@ export function uint8ToBase64(uint8: Uint8Array): string {
 }
 
 /** Color palette entry interface */
-export interface ColorPaletteEntry {
+interface ColorPaletteEntry {
   id: number;
   premium: boolean;
   name: string;
