@@ -60,7 +60,10 @@ export class GalleryUI {
     const imageItems: ImageItem[] = items.map(item => ({
       key: item.key,
       dataUrl: item.dataUrl,
-      createdAt: new Date(item.timestamp).toISOString()
+      createdAt: new Date(item.timestamp).toISOString(),
+      drawPosition: item.drawPosition,
+      drawEnabled: item.drawEnabled,
+      hasDrawPosition: !!item.drawPosition
     }));
 
     // 既存のImageGridComponentがあれば破棄
@@ -84,6 +87,9 @@ export class GalleryUI {
           onSelect(galleryItem);
           this.closeModal();
         }
+      },
+      onDrawToggle: (key) => {
+        this.handleDrawToggle(key, items, onDelete, isSelectionMode, onSelect);
       },
       onImageDelete: (key) => {
         onDelete(key);
@@ -139,6 +145,37 @@ export class GalleryUI {
     // 一覧表示に戻る
     if (this.currentItems && this.currentOnDelete) {
       this.renderGalleryList(this.currentItems, this.currentOnDelete, false);
+    }
+  }
+
+  private async handleDrawToggle(
+    key: string,
+    items: GalleryItem[],
+    onDelete: (key: string) => void,
+    isSelectionMode: boolean,
+    onSelect?: (item: GalleryItem) => void
+  ): Promise<void> {
+    try {
+      // アイテムを見つけて状態を切り替え
+      const item = items.find(i => i.key === key);
+      if (!item) return;
+
+      const updatedItem = {
+        ...item,
+        drawEnabled: !item.drawEnabled
+      };
+
+      // GalleryStorageを使って保存
+      const galleryStorage = new (await import('../../storage')).GalleryStorage();
+      await galleryStorage.save(updatedItem);
+
+      // 画面を再描画
+      const updatedItems = await galleryStorage.getAll();
+      this.renderGalleryList(updatedItems, onDelete, isSelectionMode, onSelect);
+      
+      console.log(`🎯 Draw toggle: ${key} -> ${updatedItem.drawEnabled}`);
+    } catch (error) {
+      console.error('Failed to toggle draw state:', error);
     }
   }
 

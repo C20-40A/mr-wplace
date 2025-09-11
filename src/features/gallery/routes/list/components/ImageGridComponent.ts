@@ -5,6 +5,9 @@ export interface ImageItem {
   dataUrl: string;
   title?: string;
   createdAt?: string;
+  drawPosition?: { TLX: number; TLY: number; PxX: number; PxY: number };
+  drawEnabled?: boolean;
+  hasDrawPosition?: boolean;
 }
 
 export interface ImageGridOptions {
@@ -13,8 +16,10 @@ export interface ImageGridOptions {
   onImageClick?: (item: ImageItem) => void;
   onImageSelect?: (item: ImageItem) => void;
   onImageDelete?: (key: string) => void;
+  onDrawToggle?: (key: string) => void; // 描画状態切り替えコールバック
   showDeleteButton?: boolean;
   showAddButton?: boolean;
+  showDrawToggleButton?: boolean; // 描画切り替えボタンを表示するか
   onAddClick?: () => void;
   emptyStateMessage?: string;
   gridCols?: string;
@@ -30,6 +35,7 @@ export class ImageGridComponent {
       isSelectionMode: false,
       showDeleteButton: true,
       showAddButton: true,
+      showDrawToggleButton: true, // デフォルトで目アイコンを表示
       emptyStateMessage: t`${"no_saved_images"}`,
       gridCols: "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
       ...options,
@@ -96,12 +102,19 @@ export class ImageGridComponent {
   private createImageItemHtml(item: ImageItem): string {
     const showDeleteBtn =
       this.options.showDeleteButton && !this.options.isSelectionMode;
+    const showDrawToggleBtn =
+      this.options.showDrawToggleButton && !this.options.isSelectionMode;
 
     return `
       <div class="border rounded-lg overflow-hidden shadow relative gallery-item" data-item-key="${
         item.key
       }">
         ${showDeleteBtn ? this.createDeleteButtonHtml(item.key) : ""}
+        ${
+          showDrawToggleBtn && item.hasDrawPosition
+            ? this.createDrawToggleButtonHtml(item)
+            : ""
+        }
         <img 
           src="${item.dataUrl}" 
           alt="Gallery item" 
@@ -134,6 +147,37 @@ export class ImageGridComponent {
   }
 
   /**
+   * 描画切り替えボタンのHTMLを生成
+   */
+  private createDrawToggleButtonHtml(item: ImageItem): string {
+    const isEnabled = item.drawEnabled;
+    // const eyeClass = isEnabled ? "text-green-600" : "text-gray-400";
+    const eyeStyle = isEnabled ? "color: #16a34a;" : "color: #9ca3af;";
+    // const bgClass = isEnabled ? "bg-green-50" : "bg-gray-100";
+    const bgStyle = isEnabled
+      ? "background-color: #dcfce7;"
+      : "background-color: #f3f4f6;";
+
+    // 描画有効時は開いた目、無効時は閉じた目
+    const eyeIcon = isEnabled
+      ? `<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z" clip-rule="evenodd"/>`
+      : `<path fill-rule="evenodd" d="M3.53 2.47a.75.75 0 00-1.06 1.06l18 18a.75.75 0 101.06-1.06l-18-18zM7.823 9.177A4.31 4.31 0 006.586 12 4.31 4.31 0 0012 17.411c1.02 0 1.958-.351 2.696-.937L13.177 15c-.465.465-1.102.75-1.177.75a3 3 0 01-3-3c0-.075.285-.712.75-1.177L7.823 9.177zM7.29 6.696l8.014 8.014a4.31 4.31 0 001.282-3.123A4.31 4.31 0 0012 6.075a4.31 4.31 0 00-4.71.621z" clip-rule="evenodd"/>`;
+
+    return `
+      <button 
+        class="btn btn-xs btn-circle btn-ghost absolute top-1 left-1 z-10 opacity-70 hover:opacity-100 border border-gray-200 shadow-sm" 
+        data-draw-toggle="${item.key}"
+        title="${isEnabled ? "Hide drawing" : "Show drawing"}"
+        style="${bgStyle}"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3" style="${eyeStyle}">
+          ${eyeIcon}
+        </svg>
+      </button>
+    `;
+  }
+
+  /**
    * 追加ボタンのHTMLを生成
    */
   private createAddButtonHtml(): string {
@@ -156,6 +200,7 @@ export class ImageGridComponent {
   private attachEventListeners(): void {
     this.attachAddButtonListener();
     this.attachDeleteButtonListeners();
+    this.attachDrawToggleButtonListeners();
     this.attachImageClickListeners();
   }
 
@@ -193,13 +238,36 @@ export class ImageGridComponent {
   }
 
   /**
+   * 描画切り替えボタンのイベントリスナーを設定
+   */
+  private attachDrawToggleButtonListeners(): void {
+    if (!this.options.showDrawToggleButton || this.options.isSelectionMode)
+      return;
+
+    this.container.querySelectorAll("[data-draw-toggle]").forEach((button) => {
+      button.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const key = (e.currentTarget as HTMLElement).getAttribute(
+          "data-draw-toggle"
+        );
+        if (key) {
+          this.options.onDrawToggle?.(key);
+        }
+      });
+    });
+  }
+
+  /**
    * 画像クリックのイベントリスナーを設定
    */
   private attachImageClickListeners(): void {
     this.container.querySelectorAll(".gallery-item").forEach((item) => {
       item.addEventListener("click", (e) => {
-        // 削除ボタンクリック時は処理しない
-        if ((e.target as HTMLElement).closest("[data-delete]")) {
+        // 削除ボタンまたは描画切り替えボタンクリック時は処理しない
+        if (
+          (e.target as HTMLElement).closest("[data-delete]") ||
+          (e.target as HTMLElement).closest("[data-draw-toggle]")
+        ) {
           return;
         }
 

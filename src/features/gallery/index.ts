@@ -15,6 +15,7 @@ export class Gallery {
   private imageEditorRoute: GalleryImageEditor;
   private imageDetailRoute: GalleryImageDetail;
   private buttonObserver: ButtonObserver;
+  private onDrawToggleCallback?: (key: string) => Promise<boolean>;
 
   // 選択モード用の状態
   private isSelectionMode: boolean = false;
@@ -77,7 +78,8 @@ export class Gallery {
           this.router,
           this.isSelectionMode,
           this.onSelectCallback,
-          (item) => this.showImageDetail(item)
+          (item) => this.showImageDetail(item),
+          this.onDrawToggleCallback
         );
         break;
       case "image-editor":
@@ -114,5 +116,12 @@ export class Gallery {
 
   showSelectionMode(onSelect: (item: GalleryItem) => void): void {
     this.show(true, onSelect);
+  }
+
+  /**
+   * 描画切り替えコールバックを設定
+   */
+  setDrawToggleCallback(callback: (key: string) => Promise<boolean>): void {
+    this.onDrawToggleCallback = callback;
   }
 }
