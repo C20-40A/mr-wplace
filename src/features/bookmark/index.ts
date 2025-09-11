@@ -43,12 +43,6 @@ export class ExtendedBookmarks {
         containerSelector: CONFIG.selectors.positionModal,
         create: this.createSaveButton.bind(this),
       },
-      {
-        id: "snapshot-btn",
-        selector: '[data-wplace-snapshot="true"]',
-        containerSelector: CONFIG.selectors.toggleOpacityButton,
-        create: this.createSnapshotButton.bind(this),
-      },
     ];
 
     this.buttonObserver.startObserver(buttonConfigs);
@@ -65,32 +59,6 @@ export class ExtendedBookmarks {
     const button = createSaveBookmarkButton(container);
     button.addEventListener("click", () => this.addFavorite());
     console.log("⭐ WPlace Studio: Save button added");
-  }
-
-  createSnapshotButton(toggleButton: Element): void {
-    const button = document.createElement("button");
-    button.setAttribute("data-wplace-snapshot", "true");
-    button.className = "btn btn-circle btn-sm btn-secondary ml-2";
-    button.innerHTML = "📸";
-    button.title = "Save Snapshot";
-    
-    toggleButton.parentNode?.insertBefore(button, toggleButton.nextSibling);
-    
-    button.addEventListener("click", async () => {
-      const tileSnapshot = (window as any).wplaceStudio?.tileSnapshot;
-      if (tileSnapshot) {
-        try {
-          const snapshotId = await tileSnapshot.saveSnapshot(520, 218);
-          this.showToast(`Snapshot saved: ${snapshotId}`);
-          console.log(`📸 Snapshot saved: ${snapshotId}`);
-        } catch (error) {
-          this.showToast(`Snapshot failed: ${error}`);
-          console.error(`📸 Snapshot failed:`, error);
-        }
-      }
-    });
-    
-    console.log("📸 WPlace Studio: Snapshot button added");
   }
 
   createModal(): void {
