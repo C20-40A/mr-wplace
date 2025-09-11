@@ -110,6 +110,7 @@ export class ImageSelectorModal {
       isSelectionMode: true, // 選択モードを有効化
       showDeleteButton: false, // 削除ボタンを非表示
       showAddButton: false, // 追加ボタンを非表示
+      showDrawToggleButton: false, // 描画切り替えボタンを非表示
       emptyStateMessage: t`${'no_draw_images'}`,
       gridCols: "grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
       onImageSelect: (item) => {
@@ -131,7 +132,9 @@ export class ImageSelectorModal {
       dataUrl: item.dataUrl,
       // タイトルや日付は表示しない
       title: undefined,
-      createdAt: new Date(item.timestamp).toISOString()
+      createdAt: new Date(item.timestamp).toISOString(),
+      drawEnabled: item.drawEnabled,
+      hasDrawPosition: !!item.drawPosition
     }));
   }
 

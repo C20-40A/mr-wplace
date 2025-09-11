@@ -31,15 +31,23 @@ export class ImageStorage<T extends BaseImageItem> {
     const dataResult = await chrome.storage.local.get(keys);
     
     // 4. ImageItem配列構築
-    return index.items.map(meta => ({
-      ...meta,
-      dataUrl: dataResult[meta.key] || ''
-    } as T));
+    return index.items.map(meta => {
+      const data = dataResult[meta.key];
+      // 新形式（完全オブジェクト）で保存されている場合
+      if (typeof data === 'object' && data.key) {
+        return data as T;
+      }
+      // 旧形式（dataUrlのみ）で保存されている場合
+      return {
+        ...meta,
+        dataUrl: data || ''
+      } as T;
+    });
   }
 
   async save(item: T): Promise<void> {
-    // 1. 実データ保存
-    await chrome.storage.local.set({ [item.key]: item.dataUrl });
+    // 1. 実データ保存（完全なオブジェクト）
+    await chrome.storage.local.set({ [item.key]: item });
     
     // 2. インデックス更新
     await this.updateIndex(item.key, item.timestamp);

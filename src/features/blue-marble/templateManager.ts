@@ -28,8 +28,7 @@ export default class TemplateManager {
     const { templateTiles } = await template.createTemplateTiles();
     template.chunked = templateTiles;
 
-    // 既存テンプレートをクリア（単一テンプレートのみ対応）
-    this.templatesArray = [];
+    // 複数テンプレート対応: 追加のみ
     this.templatesArray.push(template);
   }
 
@@ -48,15 +47,22 @@ export default class TemplateManager {
       "," +
       tileCoords[1].toString().padStart(4, "0");
 
-    // テンプレートがこのタイルに影響するかチェック
-    const template = this.templatesArray[0]; // 単一テンプレート想定
-    if (!template?.chunked) return tileBlob;
+    // 全テンプレートから該当タイルを収集
+    const allMatchingTiles: Array<{tileKey: string, template: Template}> = [];
+    
+    for (const template of this.templatesArray) {
+      if (!template?.chunked) continue;
+      
+      const matchingTiles = Object.keys(template.chunked).filter((tile) =>
+        tile.startsWith(coordStr)
+      );
+      
+      for (const tileKey of matchingTiles) {
+        allMatchingTiles.push({ tileKey, template });
+      }
+    }
 
-    const matchingTiles = Object.keys(template.chunked).filter((tile) =>
-      tile.startsWith(coordStr)
-    );
-
-    if (matchingTiles.length === 0) return tileBlob;
+    if (allMatchingTiles.length === 0) return tileBlob;
 
     // Canvas描画処理
     const tileBitmap = await createImageBitmap(tileBlob);
@@ -69,8 +75,8 @@ export default class TemplateManager {
     context.clearRect(0, 0, drawSize, drawSize);
     context.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
 
-    // テンプレート描画
-    for (const tileKey of matchingTiles) {
+    // 全テンプレート描画（配列順序で後勝ち）
+    for (const { tileKey, template } of allMatchingTiles) {
       const coords = tileKey.split(",");
       const templateBitmap = template.chunked[tileKey];
 
@@ -87,5 +93,15 @@ export default class TemplateManager {
   /** テンプレート表示ON/OFF */
   setTemplatesShouldBeDrawn(value: boolean): void {
     this.templatesShouldBeDrawn = value;
+  }
+
+  /** 特定テンプレート削除（複数対応用） */
+  removeTemplate(templateToRemove: Template): void {
+    this.templatesArray = this.templatesArray.filter(t => t !== templateToRemove);
+  }
+
+  /** 全テンプレートクリア */
+  clearAllTemplates(): void {
+    this.templatesArray = [];
   }
 }

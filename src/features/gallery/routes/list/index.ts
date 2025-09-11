@@ -5,6 +5,7 @@ import { ImageGridComponent, ImageItem } from "./components/ImageGridComponent";
 export class GalleryList {
   private storage: GalleryStorage;
   private imageGrid: ImageGridComponent | null = null;
+  private onDrawToggleCallback?: (key: string) => Promise<boolean>;
 
   constructor() {
     this.storage = new GalleryStorage();
@@ -15,15 +16,20 @@ export class GalleryList {
     router: GalleryRouter,
     isSelectionMode: boolean = false,
     onSelect?: (item: GalleryItem) => void,
-    onImageClick?: (item: GalleryItem) => void
+    onImageClick?: (item: GalleryItem) => void,
+    onDrawToggle?: (key: string) => Promise<boolean>
   ): Promise<void> {
+    this.onDrawToggleCallback = onDrawToggle;
+    
     const items = await this.storage.getAll();
     
     // GalleryItemをImageItemに変換
     const imageItems: ImageItem[] = items.map(item => ({
       key: item.key,
       dataUrl: item.dataUrl,
-      createdAt: new Date(item.timestamp).toISOString()
+      createdAt: new Date(item.timestamp).toISOString(),
+      drawEnabled: item.drawEnabled,
+      hasDrawPosition: !!item.drawPosition
     }));
 
     // 既存のImageGridComponentがあれば破棄
@@ -50,14 +56,22 @@ export class GalleryList {
       onImageDelete: async (key) => {
         await this.storage.delete(key);
         // 再描画
-        this.render(container, router, isSelectionMode, onSelect, onImageClick);
+        this.render(container, router, isSelectionMode, onSelect, onImageClick, onDrawToggle);
+      },
+      onDrawToggle: async (key) => {
+        if (this.onDrawToggleCallback) {
+          const newState = await this.onDrawToggleCallback(key);
+          // 状態変更後に再描画
+          this.render(container, router, isSelectionMode, onSelect, onImageClick, onDrawToggle);
+        }
       },
       onAddClick: () => {
         console.log("Navigate to image editor");
         router.navigate("image-editor");
       },
       showDeleteButton: !isSelectionMode,
-      showAddButton: true
+      showAddButton: true,
+      showDrawToggleButton: true
     });
 
     // レンダリング

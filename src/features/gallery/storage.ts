@@ -1,15 +1,28 @@
-import { ImageStorage, BaseImageItem } from '../../utils/image-storage';
+import { ImageStorage, BaseImageItem } from "../../utils/image-storage";
+
+export interface DrawPosition {
+  TLX: number;
+  TLY: number;
+  PxX: number;
+  PxY: number;
+}
 
 export interface GalleryItem extends BaseImageItem {
-  lat?: number;
-  lng?: number;
+  drawPosition?: {TLX: number; TLY: number; PxX: number; PxY: number};
+  drawEnabled?: boolean;
 }
 
 export class GalleryStorage {
-  private imageStorage = new ImageStorage<GalleryItem>('gallery');
+  private imageStorage = new ImageStorage<GalleryItem>("gallery");
 
   async getAll(): Promise<GalleryItem[]> {
-    return this.imageStorage.getAll();
+    const items = await this.imageStorage.getAll();
+    
+    // hasDrawPositionを計算して追加
+    return items.map(item => ({
+      ...item,
+      hasDrawPosition: !!item.drawPosition
+    }));
   }
 
   async save(item: GalleryItem): Promise<void> {

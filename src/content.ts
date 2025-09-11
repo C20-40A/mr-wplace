@@ -27,6 +27,11 @@ const initializeWPlaceStudio = async (): Promise<void> => {
   const timeTravel = new TimeTravel();
   const drawingLoader = new DrawingLoader();
 
+  // GalleryとTileOverlayの連携設定
+  gallery.setDrawToggleCallback(async (imageKey: string) => {
+    return await tileOverlay.toggleImageDrawState(imageKey);
+  });
+
   // Global access for ImageProcessor and Gallery
   (window as any).wplaceStudio = {
     gallery,
