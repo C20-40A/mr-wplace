@@ -38,6 +38,7 @@ const jaTranslations = {
   'deleted_message': '削除しました',
   'timetravel_modal_title': 'タイムマシン',
   'save_current_snapshot': '現在のタイルを保存',
+  'snapshot_download_title': 'スナップショット画像',
   // Image Editor関連
   'drag_drop_or_click': '画像をドラッグ&ドロップまたはクリックして選択',
   'clear_image': '画像をクリア',
@@ -107,6 +108,7 @@ const enTranslations = {
   'deleted_message': 'Deleted',
   'timetravel_modal_title': 'Time Machine',
   'save_current_snapshot': 'Save Current Snapshot',
+  'snapshot_download_title': 'Snapshot Image',
   
   // Image Editor関連
   'drag_drop_or_click': 'Drag & drop or click to select image',
