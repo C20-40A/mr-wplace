@@ -3,7 +3,7 @@ import { getCurrentPosition } from "../../utils/position";
 import { CONFIG } from "../bookmark/config";
 import { t } from "../../i18n/manager";
 import { I18nManager } from "../../i18n/manager";
-import { createTimeTravelButton, createTimeTravelModal } from "./ui";
+import { createTimeTravelButton, createTimeTravelModal, createSnapshotDownloadModal } from "./ui";
 import { ImageItem } from "../gallery/routes/list/components";
 
 /**
@@ -51,6 +51,7 @@ export class TimeTravel {
 
   private createModal(): void {
     const modal = createTimeTravelModal();
+    const downloadModal = createSnapshotDownloadModal();
     
     // 保存ボタンイベント
     modal.querySelector("#wps-save-snapshot-btn")?.addEventListener("click", async () => {
@@ -64,12 +65,21 @@ export class TimeTravel {
       
       const deleteBtn = target.closest(".wps-delete-btn") as HTMLElement | null;
       const drawBtn = target.closest(".wps-draw-btn") as HTMLElement | null;
+      const downloadBtn = target.closest(".wps-download-btn") as HTMLElement | null;
       
       if (deleteBtn?.dataset.snapshotKey) {
         this.deleteFavorite(deleteBtn.dataset.snapshotKey);
       } else if (drawBtn?.dataset.snapshotKey) {
         await this.drawSnapshot(drawBtn.dataset.snapshotKey);
+        modal.close(); // Modal閉じる
+      } else if (downloadBtn?.dataset.snapshotKey) {
+        await this.openDownloadModal(downloadBtn.dataset.snapshotKey);
       }
+    });
+    
+    // ダウンロードModalのイベント
+    downloadModal.querySelector("#wps-download-snapshot-btn")?.addEventListener("click", () => {
+      this.downloadCurrentSnapshot();
     });
   }
 
@@ -166,6 +176,9 @@ export class TimeTravel {
             <button class="btn btn-sm btn-primary wps-draw-btn" data-snapshot-key="${snapshot.fullKey}">
               ${t`${'draw_image'}`}
             </button>
+            <button class="btn btn-sm btn-neutral wps-download-btn" data-snapshot-key="${snapshot.fullKey}">
+              ${t`${'download'}`}
+            </button>
             <button class="btn btn-sm btn-error wps-delete-btn" data-snapshot-key="${snapshot.fullKey}">
               ${t`${'delete'}`}
             </button>
@@ -247,6 +260,64 @@ export class TimeTravel {
       console.error('Draw snapshot failed:', error);
       this.showToast(`Draw failed: ${error}`);
     }
+  }
+
+  private currentDownloadBlob: Blob | null = null;
+
+  async openDownloadModal(fullKey: string): Promise<void> {
+    try {
+      // スナップショット読み込み
+      const result = await chrome.storage.local.get(fullKey);
+      if (!result[fullKey]) {
+        this.showToast('Snapshot not found');
+        return;
+      }
+      
+      // blob変換
+      const uint8Array = new Uint8Array(result[fullKey]);
+      const blob = new Blob([uint8Array], { type: 'image/png' });
+      this.currentDownloadBlob = blob;
+      
+      // dataURL変換で画像表示
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+      
+      // 画像表示
+      const img = document.getElementById('wps-snapshot-image') as HTMLImageElement;
+      if (img) {
+        img.src = dataUrl;
+      }
+      
+      // Modal表示
+      const modal = document.getElementById('wplace-studio-snapshot-download-modal') as HTMLDialogElement;
+      modal?.showModal();
+      
+    } catch (error) {
+      console.error('Open download modal failed:', error);
+      this.showToast(`Open failed: ${error}`);
+    }
+  }
+
+  private downloadCurrentSnapshot(): void {
+    if (!this.currentDownloadBlob) {
+      this.showToast('No image to download');
+      return;
+    }
+    
+    // gallery/image-editor流用（toBlobパターン）
+    const url = URL.createObjectURL(this.currentDownloadBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `snapshot-${Date.now()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    this.showToast('Download started');
   }
 
   private showToast(message: string): void {

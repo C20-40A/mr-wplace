@@ -56,3 +56,40 @@ export const createTimeTravelModal = (): HTMLDialogElement => {
   document.body.appendChild(modal);
   return modal;
 };
+
+// ダウンロード用Modal（image-detail流用）
+export const createSnapshotDownloadModal = (): HTMLDialogElement => {
+  const modal = document.createElement("dialog");
+  modal.id = "wplace-studio-snapshot-download-modal";
+  modal.className = "modal";
+  modal.innerHTML = t`
+    <div class="modal-box w-11/12 max-w-4xl">
+      <h3 class="font-bold text-lg mb-4">${"snapshot_download_title"}</h3>
+      
+      <!-- 画像表示（image-detail流用） -->
+      <div class="flex flex-col items-center justify-center mb-4">
+        <div class="flex items-center justify-center" style="max-height: 70vh; max-width: 90vw;">
+          <img id="wps-snapshot-image" src="" alt="Snapshot" class="" style="image-rendering: pixelated; min-width: 50vw; max-width: 90vw; max-height: 70vh; object-fit: contain; aspect-ratio: auto;">
+        </div>
+      </div>
+      
+      <!-- ダウンロードボタン -->
+      <div class="flex gap-2 justify-center">
+        <button id="wps-download-snapshot-btn" class="btn btn-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+            <path fill-rule="evenodd" d="M12 2.25a.75.75 0 01.75.75v11.69l3.22-3.22a.75.75 0 111.06 1.06l-4.5 4.5a.75.75 0 01-1.06 0l-4.5-4.5a.75.75 0 111.06-1.06L11.25 14.69V3a.75.75 0 01.75-.75z" clip-rule="evenodd" />
+            <path fill-rule="evenodd" d="M6.75 15.75a.75.75 0 01.75-.75h9a.75.75 0 010 1.5h-9a.75.75 0 01-.75-.75z" clip-rule="evenodd" />
+          </svg>
+          ${"download"}
+        </button>
+        <button class="btn btn-ghost" onclick="this.closest('dialog').close()">${"close"}</button>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
+  `;
+
+  document.body.appendChild(modal);
+  return modal;
+};
