@@ -4,6 +4,8 @@ import { ExtendedBookmarks } from "./features/bookmark";
 import { TileOverlay } from "./features/tile-overlay";
 import { Gallery } from "./features/gallery";
 import { Drawing } from "./features/drawing";
+import { TileSnapshot } from "./features/tile-snapshot";
+import { TimeTravel } from "./features/time-travel";
 
 const initializeWPlaceStudio = async (): Promise<void> => {
   // Chrome拡張機能のストレージAPIが利用可能か確認
@@ -20,6 +22,8 @@ const initializeWPlaceStudio = async (): Promise<void> => {
   const tileOverlay = new TileOverlay();
   const gallery = new Gallery();
   const drawing = new Drawing();
+  const tileSnapshot = new TileSnapshot();
+  const timeTravel = new TimeTravel();
 
   // Global access for ImageProcessor and Gallery
   (window as any).wplaceStudio = {
@@ -27,7 +31,17 @@ const initializeWPlaceStudio = async (): Promise<void> => {
     tileOverlay,
     favorites,
     drawing,
+    tileSnapshot,
+    timeTravel,
   };
+
+  // Listen for snapshot tmp save messages from inject.js
+  window.addEventListener('message', async (event) => {
+    if (event.data.source === 'wplace-studio-snapshot-tmp') {
+      const { tileBlob, tileX, tileY } = event.data;
+      await tileSnapshot.saveTmpTile(tileX, tileY, tileBlob);
+    }
+  });
 };
 
 // 実行

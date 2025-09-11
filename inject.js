@@ -66,6 +66,17 @@ window.fetch = async function (...args) {
           },
           "*"
         );
+
+        // Send original tile for snapshot (tmp save)
+        window.postMessage(
+          {
+            source: "wplace-studio-snapshot-tmp",
+            tileBlob: blob,
+            tileX: tileX,
+            tileY: tileY,
+          },
+          "*"
+        );
       });
     } catch (error) {
       console.error("Failed to process tile blob:", error);

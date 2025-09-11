@@ -17,6 +17,7 @@ const jaTranslations = {
   'bookmarks': 'bookmarks',
   'bookmark': 'ブックマーク',
   'draw_image': '画像を描く',
+  'timetravel': 'タイムマシン',
   'export': 'エクスポート',
   'import': 'インポート',
   
@@ -35,6 +36,8 @@ const jaTranslations = {
   'location_point': '地点',
   'saved_message': 'を保存しました',
   'deleted_message': '削除しました',
+  'timetravel_modal_title': 'タイムマシン',
+  'save_current_snapshot': '現在のタイルを保存',
   // Image Editor関連
   'drag_drop_or_click': '画像をドラッグ&ドロップまたはクリックして選択',
   'clear_image': '画像をクリア',
@@ -83,6 +86,7 @@ const enTranslations = {
   'bookmarks': 'bookmarks',
   'bookmark': 'Bookmark',
   'draw_image': 'Draw Image',
+  'timetravel': 'Time Machine',
   'export': 'Export',
   'import': 'Import',
   
@@ -101,6 +105,8 @@ const enTranslations = {
   'location_point': 'Point',
   'saved_message': 'saved',
   'deleted_message': 'Deleted',
+  'timetravel_modal_title': 'Time Machine',
+  'save_current_snapshot': 'Save Current Snapshot',
   
   // Image Editor関連
   'drag_drop_or_click': 'Drag & drop or click to select image',
