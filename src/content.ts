@@ -6,6 +6,7 @@ import { Gallery } from "./features/gallery";
 import { Drawing } from "./features/drawing";
 import { TileSnapshot } from "./features/tile-snapshot";
 import { TimeTravel } from "./features/time-travel";
+import { DrawingLoader } from "./features/drawing-loader";
 
 const initializeWPlaceStudio = async (): Promise<void> => {
   // Chrome拡張機能のストレージAPIが利用可能か確認
@@ -24,6 +25,7 @@ const initializeWPlaceStudio = async (): Promise<void> => {
   const drawing = new Drawing();
   const tileSnapshot = new TileSnapshot();
   const timeTravel = new TimeTravel();
+  const drawingLoader = new DrawingLoader();
 
   // Global access for ImageProcessor and Gallery
   (window as any).wplaceStudio = {
@@ -33,6 +35,7 @@ const initializeWPlaceStudio = async (): Promise<void> => {
     drawing,
     tileSnapshot,
     timeTravel,
+    drawingLoader,
   };
 
   // Listen for snapshot tmp save messages from inject.js
