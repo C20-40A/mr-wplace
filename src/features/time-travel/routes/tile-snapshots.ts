@@ -139,31 +139,12 @@ export class TileSnapshotsRoute {
     router: TimeTravelRouter
   ): Promise<void> {
     if (!confirm(t`${"delete_confirm"}`)) return;
+    await TimeTravelStorage.removeSnapshotFromIndex(fullKey);
+    this.showToast(t`${"deleted_message"}`);
 
-    try {
-      console.log("🗑️ Removing from storage..."); // ← 追加
-      await chrome.storage.local.remove(fullKey);
-
-      // インデックス更新エラーは無視（Extension context invalidated対策）
-      try {
-        await TimeTravelStorage.removeSnapshotFromIndex(fullKey);
-      } catch (indexError) {
-        console.warn("⚠️ Index update failed (ignored):", indexError);
-      }
-
-      this.showToast(t`${"deleted_message"}`);
-
-      const selectedTile = (router as any).selectedTile;
-      if (selectedTile) {
-        this.loadTileSnapshots(
-          container,
-          selectedTile.tileX,
-          selectedTile.tileY
-        );
-      }
-    } catch (error) {
-      this.showToast(`Delete failed: ${error}`);
-    }
+    const selectedTile = (router as any).selectedTile;
+    if (selectedTile)
+      this.loadTileSnapshots(container, selectedTile.tileX, selectedTile.tileY);
   }
 
   private async drawSnapshot(fullKey: string): Promise<void> {
