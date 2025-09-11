@@ -1,4 +1,22 @@
 export class TileSnapshot {
+  // スナップショット削除（インデックス対応）
+  async deleteSnapshot(snapshotId: string): Promise<void> {
+    try {
+      const snapshotKey = `${TileSnapshot.SNAPSHOT_PREFIX}${snapshotId}`;
+      
+      // 実画像データ削除
+      await chrome.storage.local.remove(snapshotKey);
+      
+      // インデックス更新
+      const { TimeTravelStorage } = await import('../time-travel/storage');
+      await TimeTravelStorage.removeSnapshotFromIndex(snapshotKey);
+      
+      console.log(`Deleted snapshot: ${snapshotId}`);
+    } catch (error) {
+      console.error('Failed to delete snapshot:', error);
+      throw error;
+    }
+  }
   private static readonly TMP_PREFIX = 'tile_tmp_';
   private static readonly SNAPSHOT_PREFIX = 'tile_snapshot_';
 
@@ -24,10 +42,23 @@ export class TileSnapshot {
         throw new Error(`No tmp data found for tile ${tileX},${tileY}`);
       }
 
-      const snapshotId = `${Date.now()}_${tileX}_${tileY}`;
+      const timestamp = Date.now();
+      const snapshotId = `${timestamp}_${tileX}_${tileY}`;
       const snapshotKey = `${TileSnapshot.SNAPSHOT_PREFIX}${snapshotId}`;
       
+      // 実画像データ保存
       await chrome.storage.local.set({ [snapshotKey]: result[tmpKey] });
+      
+      // インデックス更新
+      const { TimeTravelStorage } = await import('../time-travel/storage');
+      await TimeTravelStorage.addSnapshotToIndex({
+        id: snapshotId,
+        fullKey: snapshotKey,
+        timestamp,
+        tileX,
+        tileY
+      });
+      
       console.log(`Saved snapshot: ${snapshotId}`);
       
       return snapshotId;
