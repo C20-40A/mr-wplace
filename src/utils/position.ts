@@ -1,5 +1,5 @@
-import { Position } from '../features/favorite/types';
-import { STORAGE_KEYS } from '../features/favorite/storage';
+import { Position } from "../features/bookmark/types";
+import { STORAGE_KEYS } from "../features/bookmark/storage";
 
 export function getCurrentPosition(): Position | null {
   try {

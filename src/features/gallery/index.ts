@@ -1,10 +1,11 @@
 import { GalleryItem } from "./storage";
 import { GalleryRouter } from "./router";
-import { GalleryUI } from "./ui";
+import { createGalleryButton, GalleryUI } from "./ui";
 import { GalleryList } from "./routes/list";
 import { GalleryImageEditor } from "./routes/image-editor";
 import { GalleryImageDetail } from "./routes/image-detail";
-import { FavoriteUI } from "../favorite/ui";
+import { ButtonObserver } from "../../components/button-observer";
+import { CONFIG } from "../bookmark/config";
 
 export class Gallery {
   private button: HTMLButtonElement | null = null;
@@ -13,6 +14,7 @@ export class Gallery {
   private listRoute: GalleryList;
   private imageEditorRoute: GalleryImageEditor;
   private imageDetailRoute: GalleryImageDetail;
+  private buttonObserver: ButtonObserver;
 
   // 選択モード用の状態
   private isSelectionMode: boolean = false;
@@ -25,29 +27,42 @@ export class Gallery {
     this.listRoute = new GalleryList();
     this.imageEditorRoute = new GalleryImageEditor();
     this.imageDetailRoute = new GalleryImageDetail();
+    this.buttonObserver = new ButtonObserver();
     this.init();
   }
 
   private init(): void {
     if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", () => this.setupRouting());
+      document.addEventListener("DOMContentLoaded", () =>
+        this.observeAndInit()
+      );
     } else {
-      this.setupRouting();
+      this.observeAndInit();
     }
   }
 
-  private setupRouting(): void {
+  private observeAndInit(): void {
     // ルーティング設定（UIとコンテンツ両方を更新）
     this.router.setOnRouteChange((route) => {
       this.ui.updateHeader(route); // ヘッダー更新
       this.renderCurrentRoute(route); // コンテンツ更新
     });
+
+    this.buttonObserver.startObserver([
+      {
+        id: "gallery-btn",
+        selector: CONFIG.selectors.galleryButton,
+        containerSelector: CONFIG.selectors.toggleOpacityButton,
+        create: this.createGalleryFAB.bind(this),
+      },
+    ]);
+    console.log("⭐ WPlace Studio: Gallery button observer initialized");
   }
 
   // ボタンを作成するメソッド（外部から呼び出される）
-  createButton(toggleButton: Element): HTMLButtonElement {
-    this.button = FavoriteUI.createGalleryButton(toggleButton);
-    this.button.addEventListener('click', () => this.show());
+  createGalleryFAB(toggleButton: Element): HTMLButtonElement {
+    this.button = createGalleryButton(toggleButton);
+    this.button.addEventListener("click", () => this.show());
     return this.button;
   }
 
