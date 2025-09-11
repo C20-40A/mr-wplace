@@ -1,6 +1,7 @@
 export class Router<T extends string> {
   private currentRoute: T;
   private onRouteChange: ((route: T) => void) | null = null;
+  private history: T[] = []; // ルーティングヒストリー
 
   constructor(defaultRoute: T) {
     this.currentRoute = defaultRoute;
@@ -12,8 +13,22 @@ export class Router<T extends string> {
 
   navigate(route: T): void {
     console.log(`Navigating to route: ${route}`);
+
+    // 現在のルートをヒストリーに追加
+    if (this.currentRoute !== route) {
+      this.history.push(this.currentRoute);
+    }
+
     this.currentRoute = route;
     this.onRouteChange?.(route);
+  }
+
+  // ヒストリーをクリアして初期化
+  initialize(route: T): void {
+    this.history = [];
+    this.currentRoute = route;
+    this.onRouteChange?.(route);
+    console.log(`Router initialized to route: ${route}`);
   }
 
   setOnRouteChange(callback: (route: T) => void): void {
@@ -21,13 +36,16 @@ export class Router<T extends string> {
     this.onRouteChange = callback;
   }
 
-  canNavigateBack(listRoute: T): boolean {
-    return this.currentRoute !== listRoute;
+  canNavigateBack(): boolean {
+    return this.history.length > 0;
   }
 
-  navigateBack(listRoute: T): void {
-    if (this.canNavigateBack(listRoute)) {
-      this.navigate(listRoute);
+  navigateBack(): void {
+    if (this.canNavigateBack()) {
+      const previousRoute = this.history.pop()!;
+      console.log(`Navigating back to route: ${previousRoute}`);
+      this.currentRoute = previousRoute;
+      this.onRouteChange?.(previousRoute);
     }
   }
 }

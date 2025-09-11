@@ -1,7 +1,12 @@
 import { ButtonObserver, ButtonConfig } from "../../components/button-observer";
 import { CONFIG } from "../bookmark/config";
 import { TimeTravelRouter, TimeTravelRoute } from "./router";
-import { TimeTravelUI, createTimeTravelButton, createTimeTravelFAB, createSnapshotDownloadModal } from "./ui";
+import {
+  TimeTravelUI,
+  createTimeTravelButton,
+  createTimeTravelFAB,
+  createSnapshotDownloadModal,
+} from "./ui";
 import { CurrentPositionRoute } from "./routes/current-position";
 import { TileListRoute } from "./routes/tile-list";
 import { TileSnapshotsRoute } from "./routes/tile-snapshots";
@@ -98,41 +103,43 @@ export class TimeTravel {
 
   // 外部インターフェース：FABはタイル一覧からスタート
   show(): void {
-    this.router.navigate("tile-list");
+    this.router.initialize("tile-list");
     this.ui.showModal();
   }
 
   // 元のボタン用：現在位置のみ表示
   showCurrentPosition(): void {
-    this.router.navigate("current-position");
+    this.router.initialize("current-position");
     this.ui.showModal();
   }
 
   private createDownloadModal(): void {
     const downloadModal = createSnapshotDownloadModal();
-    
+
     // ダウンロードModalのイベント
-    downloadModal.querySelector("#wps-download-snapshot-btn")?.addEventListener("click", () => {
-      this.downloadCurrentSnapshot();
-    });
+    downloadModal
+      .querySelector("#wps-download-snapshot-btn")
+      ?.addEventListener("click", () => {
+        this.downloadCurrentSnapshot();
+      });
   }
 
   private downloadCurrentSnapshot(): void {
     if (!this.currentDownloadBlob) {
-      this.showToast('No image to download');
+      this.showToast("No image to download");
       return;
     }
-    
+
     const url = URL.createObjectURL(this.currentDownloadBlob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `snapshot-${Date.now()}.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
-    this.showToast('Download started');
+
+    this.showToast("Download started");
   }
 
   private showToast(message: string): void {
