@@ -26,9 +26,6 @@ export const createSaveBookmarkButton = (
 };
 
 export const createBookmarkButton = (container: Element): HTMLButtonElement => {
-  // Add flex layout classes to container
-  container.className += " flex flex-col-reverse gap-1";
-
   const button = document.createElement("button");
   button.id = "bookmarks-btn";  // 重複チェック用ID設定
   button.className =
@@ -40,9 +37,13 @@ export const createBookmarkButton = (container: Element): HTMLButtonElement => {
       </svg>
     `;
   const parentNode = container.parentNode;
-  parentNode?.appendChild(button);
+  // Add flex layout classes to parentNode
+  if (parentNode) {
+    parentNode.className += " flex flex-col-reverse gap-1";
+    parentNode.appendChild(button);
+  }
   return button;
-};
+}
 
 export const createBookmarkModal = (): HTMLDialogElement => {
   const modal = document.createElement("dialog");
