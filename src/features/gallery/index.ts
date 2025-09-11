@@ -108,7 +108,7 @@ export class Gallery {
     this.isSelectionMode = isSelectionMode;
     this.onSelectCallback = onSelect;
 
-    this.router.navigate("list");
+    this.router.initialize("list");
     this.ui.showModal();
   }
 

@@ -14,34 +14,39 @@ export interface SnapshotInfo {
 }
 
 export class TimeTravelStorage {
-  // 全スナップショット保有タイル一覧取得
+  // 全スナップショット保有タイル一覧取得（最適化版）
   static async getAllTilesWithSnapshots(): Promise<TileSnapshotInfo[]> {
+    console.time('getAllTilesWithSnapshots');
+    
+    // スナップショットキーのみ取得（最適化）
     const result = await chrome.storage.local.get(null);
+    const snapshotKeys = Object.keys(result).filter(key => key.startsWith('tile_snapshot_'));
+    
+    console.log(`Found ${snapshotKeys.length} snapshot keys out of ${Object.keys(result).length} total keys`);
+    
     const tileMap = new Map<string, SnapshotInfo[]>();
     
-    // スナップショットキー検索
-    for (const [key, value] of Object.entries(result)) {
-      if (key.startsWith('tile_snapshot_')) {
-        const parts = key.split('_');
-        if (parts.length >= 5) {
-          const timestamp = parseInt(parts[2]);
-          const tileX = parseInt(parts[3]);
-          const tileY = parseInt(parts[4]);
-          const tileKey = `${tileX}_${tileY}`;
-          
-          const snapshot: SnapshotInfo = {
-            id: key.replace('tile_snapshot_', ''),
-            fullKey: key,
-            timestamp,
-            tileX,
-            tileY
-          };
-          
-          if (!tileMap.has(tileKey)) {
-            tileMap.set(tileKey, []);
-          }
-          tileMap.get(tileKey)!.push(snapshot);
+    // スナップショットキー検索（フィルター済み）
+    for (const key of snapshotKeys) {
+      const parts = key.split('_');
+      if (parts.length >= 5) {
+        const timestamp = parseInt(parts[2]);
+        const tileX = parseInt(parts[3]);
+        const tileY = parseInt(parts[4]);
+        const tileKey = `${tileX}_${tileY}`;
+        
+        const snapshot: SnapshotInfo = {
+          id: key.replace('tile_snapshot_', ''),
+          fullKey: key,
+          timestamp,
+          tileX,
+          tileY
+        };
+        
+        if (!tileMap.has(tileKey)) {
+          tileMap.set(tileKey, []);
         }
+        tileMap.get(tileKey)!.push(snapshot);
       }
     }
     
@@ -65,6 +70,7 @@ export class TimeTravelStorage {
       return a.tileY - b.tileY;
     });
     
+    console.timeEnd('getAllTilesWithSnapshots');
     return tiles;
   }
 

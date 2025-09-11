@@ -6,12 +6,4 @@ export class GalleryRouter extends Router<GalleryRoute> {
   constructor() {
     super("list");
   }
-
-  canNavigateBack(): boolean {
-    return super.canNavigateBack("list");
-  }
-
-  navigateBack(): void {
-    super.navigateBack("list");
-  }
 }
