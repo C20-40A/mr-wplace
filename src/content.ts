@@ -1,44 +1,37 @@
-import { WPlaceExtendedFavorites } from "./features/favorite/index";
-import { injectFetchInterceptor } from "./features/fetch-interceptor/index";
-import { TileOverlay } from "./features/tile-overlay/index";
-import { Gallery } from "./features/gallery";
+import { injectFetchInterceptor } from "./features/fetch-interceptor";
 import { I18nManager } from "./i18n/manager";
-import { setLocale } from "./i18n/index";
+import { ExtendedBookmarks } from "./features/bookmark";
+import { TileOverlay } from "./features/tile-overlay";
+import { Gallery } from "./features/gallery";
+import { Drawing } from "./features/drawing";
 
-class WPlaceStudio {
-  constructor() {
-    this.init();
-  }
+const initializeWPlaceStudio = async (): Promise<void> => {
+  // Chrome拡張機能のストレージAPIが利用可能か確認
+  if (typeof chrome === "undefined" || !chrome.storage)
+    throw new Error("Chrome storage API is not available");
 
-  private async init(): Promise<void> {
-    if (typeof chrome === "undefined" || !chrome.storage) {
-      return;
-    }
+  // Fetchインターセプターの注入
+  injectFetchInterceptor();
 
-    try {
-      // i18n初期化（ストレージから読み込み）
-      await I18nManager.init('ja');
+  // i18n初期化（ストレージから読み込み）
+  await I18nManager.init("ja");
 
-      injectFetchInterceptor();
-      const favorites = new WPlaceExtendedFavorites();
-      const tileOverlay = new TileOverlay();
-      const gallery = new Gallery();
+  const favorites = new ExtendedBookmarks();
+  const tileOverlay = new TileOverlay();
+  const gallery = new Gallery();
+  const drawing = new Drawing();
 
-      // Global access for ImageProcessor and Gallery
-      (window as any).wplaceStudio = { gallery, tileOverlay, favorites };
+  // Global access for ImageProcessor and Gallery
+  (window as any).wplaceStudio = {
+    gallery,
+    tileOverlay,
+    favorites,
+    drawing,
+  };
+};
 
-      // popupからのメッセージ処理
-      chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-        if (message.type === 'LOCALE_CHANGED') {
-          await setLocale(message.locale);
-          console.log('Locale changed to:', message.locale);
-          // UI再描画は必要に応じて実装
-        }
-      });
-    } catch (error) {
-      console.error("WPlace Studio initialization error:", error);
-    }
-  }
-}
-
-new WPlaceStudio();
+// 実行
+initializeWPlaceStudio().catch((error) => {
+  console.error("Failed to initialize WPlace Studio:", error);
+  alert(`WPlace Studio initialization error: ${error.message}`);
+});

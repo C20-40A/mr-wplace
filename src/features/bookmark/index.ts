@@ -1,21 +1,21 @@
 import { ButtonObserver } from "../../components/button-observer";
 import { CONFIG } from "./config";
 import { FavoriteStorage, STORAGE_KEYS } from "./storage";
-import { FavoriteUI } from "./ui";
 import { ImportExportService } from "./import-export";
 import { getCurrentPosition } from "../../utils/position";
-import { ImageSelectorModal } from "../gallery/routes/image-selector";
 import { t } from "../../i18n/manager";
+import {
+  createBookmarkButton,
+  createBookmarkModal,
+  createSaveBookmarkButton,
+  renderBookmarks,
+} from "./ui";
 
-export class WPlaceExtendedFavorites {
+export class ExtendedBookmarks {
   private buttonObserver: ButtonObserver;
-  private selectedImage: any = null;
-  private isDrawMode: boolean = false;
-  private imageSelectorModal: ImageSelectorModal;
 
   constructor() {
     this.buttonObserver = new ButtonObserver();
-    this.imageSelectorModal = new ImageSelectorModal();
     this.init();
   }
 
@@ -32,16 +32,10 @@ export class WPlaceExtendedFavorites {
   observeAndInit() {
     const buttonConfigs = [
       {
-        id: "gallery-btn",
-        selector: `[title="${t`${'gallery'}`}"]`,
+        id: "bookmarks-btn",
+        selector: CONFIG.selectors.bookmarksButton,
         containerSelector: CONFIG.selectors.toggleOpacityButton,
-        create: this.createGalleryButton.bind(this),
-      },
-      {
-        id: "favorite-btn",
-        selector: CONFIG.selectors.favoriteButton,
-        containerSelector: CONFIG.selectors.toggleOpacityButton,
-        create: this.createFavoriteButton.bind(this),
+        create: this.createBookmarkFAB.bind(this),
       },
       {
         id: "save-btn",
@@ -49,100 +43,26 @@ export class WPlaceExtendedFavorites {
         containerSelector: CONFIG.selectors.positionModal,
         create: this.createSaveButton.bind(this),
       },
-      {
-        id: "draw-btn",
-        selector: '[data-wplace-draw="true"]',
-        containerSelector: CONFIG.selectors.positionModal,
-        create: this.createDrawButton.bind(this),
-      },
     ];
 
     this.buttonObserver.startObserver(buttonConfigs);
     this.createModal();
   }
 
-  createGalleryButton(toggleButton: Element): void {
-    const gallery = (window as any).wplaceStudio?.gallery;
-    if (gallery) {
-      gallery.createButton(toggleButton);
-      console.log("🖼️ WPlace Studio: Gallery button added");
-    } else {
-      console.error("Gallery instance not found");
-    }
-  }
-
-  createFavoriteButton(toggleButton: Element): void {
-    const button = FavoriteUI.createFavoriteButton(toggleButton);
+  createBookmarkFAB(toggleButton: Element): void {
+    const button = createBookmarkButton(toggleButton);
     button.addEventListener("click", () => this.openModal());
     console.log("⭐ WPlace Studio: Favorite button added");
   }
 
   createSaveButton(container: Element): void {
-    const button = FavoriteUI.createSaveButton(container);
+    const button = createSaveBookmarkButton(container);
     button.addEventListener("click", () => this.addFavorite());
     console.log("⭐ WPlace Studio: Save button added");
   }
 
-  createDrawButton(container: Element): void {
-    const button = FavoriteUI.createDrawButton(container);
-    button.addEventListener("click", () => this.openDrawMode());
-    console.log("✏️ WPlace Studio: Draw button added");
-  }
-
-  openDrawMode(): void {
-    console.log("✏️ Opening image selector modal for drawing");
-    
-    this.imageSelectorModal.show((selectedItem) => {
-      this.startDraw(selectedItem);
-    });
-  }
-
-  startDraw(selectedItem: any): void {
-    console.log("🎨 Start drawing with:", selectedItem);
-    this.selectedImage = selectedItem;
-    this.isDrawMode = true;
-
-    const position = getCurrentPosition();
-    if (!position) {
-      alert(t`${'location_unavailable'}`);
-      this.resetDrawMode();
-      return;
-    }
-
-    // 非同期処理でもUIブロックしない
-    this.drawImageOnMap(position.lat, position.lng, selectedItem);
-  }
-
-  resetDrawMode(): void {
-    this.selectedImage = null;
-    this.isDrawMode = false;
-  }
-
-  async drawImageOnMap(
-    lat: number,
-    lng: number,
-    imageItem: any
-  ): Promise<void> {
-    // TODO: TileOverlay連携で画像描画
-    console.log("📍 Drawing at:", lat, lng, "Image:", imageItem.key);
-
-    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
-    if (tileOverlay) {
-      try {
-        await tileOverlay.drawImageAt(lat, lng, imageItem);
-        console.log("✅ Image drawing completed");
-      } catch (error) {
-        console.error("❌ Image drawing failed:", error);
-      }
-    } else {
-      console.error("TileOverlay instance not found");
-    }
-
-    this.resetDrawMode();
-  }
-
   createModal(): void {
-    const modal = FavoriteUI.createModal();
+    const modal = createBookmarkModal();
 
     modal
       .querySelector("#wps-favorites-grid")!
@@ -201,13 +121,15 @@ export class WPlaceExtendedFavorites {
   async addFavorite(): Promise<void> {
     const position = getCurrentPosition();
     if (!position) {
-      alert(t`${'location_unavailable_instruction'}`);
+      alert(t`${"location_unavailable_instruction"}`);
       return;
     }
 
     const name = prompt(
-      t`${'enter_favorite_name'}`,
-      t`${'location_point'} (${position.lat.toFixed(3)}, ${position.lng.toFixed(3)})`
+      t`${"enter_favorite_name"}`,
+      t`${"location_point"} (${position.lat.toFixed(3)}, ${position.lng.toFixed(
+        3
+      )})`
     );
     if (!name) return;
 
@@ -227,12 +149,12 @@ export class WPlaceExtendedFavorites {
       JSON.stringify(favorites)
     );
 
-    this.showToast(t`"${name}" ${'saved_message'}`);
+    this.showToast(t`"${name}" ${"saved_message"}`);
   }
 
   async renderFavorites(): Promise<void> {
     const favorites = await FavoriteStorage.getFavorites();
-    FavoriteUI.renderFavorites(favorites);
+    renderBookmarks(favorites);
   }
 
   goTo(lat: number, lng: number, zoom: number): void {
@@ -244,7 +166,7 @@ export class WPlaceExtendedFavorites {
   }
 
   async deleteFavorite(id: number): Promise<void> {
-    if (!confirm(t`${'delete_confirm'}`)) return;
+    if (!confirm(t`${"delete_confirm"}`)) return;
 
     const favorites = await FavoriteStorage.getFavorites();
     const filtered = favorites.filter((fav) => fav.id !== id);
@@ -254,7 +176,7 @@ export class WPlaceExtendedFavorites {
     );
 
     this.renderFavorites();
-    this.showToast(t`${'deleted_message'}`);
+    this.showToast(t`${"deleted_message"}`);
   }
 
   showToast(message: string): void {

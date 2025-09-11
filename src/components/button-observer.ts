@@ -10,6 +10,11 @@ export class ButtonObserver {
 
   startObserver(configs: ButtonConfig[]): void {
     const ensureButtons = () => {
+      // DOM操作中はObserver一時停止
+      if (this.observer) {
+        this.observer.disconnect();
+      }
+      
       configs.forEach((config) => {
         if (!document.querySelector(config.selector)) {
           const container = document.querySelector(config.containerSelector);
@@ -18,6 +23,11 @@ export class ButtonObserver {
           }
         }
       });
+      
+      // Observer再開
+      if (this.observer) {
+        this.observer.observe(document.body, { childList: true, subtree: true });
+      }
     };
 
     this.observer = new MutationObserver(() => {
