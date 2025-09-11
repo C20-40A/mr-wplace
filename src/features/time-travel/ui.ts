@@ -1,8 +1,11 @@
 import { t } from "../../i18n/manager";
 
-export const createTimeTravelButton = (container: Element): HTMLButtonElement => {
+export const createTimeTravelButton = (
+  container: Element
+): HTMLButtonElement => {
   const button = document.createElement("button");
   button.className = "btn btn-neutral btn-soft mx-3";
+  button.style = "margin: 0.5rem;";
   button.setAttribute("data-wplace-timetravel", "true");
   button.innerHTML = t`
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
