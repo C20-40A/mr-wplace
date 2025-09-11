@@ -4,6 +4,7 @@ import { CONFIG } from "../bookmark/config";
 import { t } from "../../i18n/manager";
 import { I18nManager } from "../../i18n/manager";
 import { createTimeTravelButton, createTimeTravelModal } from "./ui";
+import { ImageItem } from "../gallery/routes/list/components";
 
 /**
  * タイムマシン機能（Drawing流用）
@@ -57,13 +58,17 @@ export class TimeTravel {
     });
     
     // スナップショット一覧のイベント委譲（bookmark流用）
-    modal.querySelector("#wps-timetravel-list")?.addEventListener("click", (e) => {
+    modal.querySelector("#wps-timetravel-list")?.addEventListener("click", async (e) => {
       const target = e.target as HTMLElement;
       if (!target) return;
       
       const deleteBtn = target.closest(".wps-delete-btn") as HTMLElement | null;
+      const drawBtn = target.closest(".wps-draw-btn") as HTMLElement | null;
+      
       if (deleteBtn?.dataset.snapshotKey) {
         this.deleteFavorite(deleteBtn.dataset.snapshotKey);
+      } else if (drawBtn?.dataset.snapshotKey) {
+        await this.drawSnapshot(drawBtn.dataset.snapshotKey);
       }
     });
   }
@@ -157,9 +162,14 @@ export class TimeTravel {
           <div class="text-xs text-gray-500">${snapshot.id}</div>
         </div>
         <div class="details hidden p-2 bg-gray-50">
-          <button class="btn btn-sm btn-error wps-delete-btn" data-snapshot-key="${snapshot.fullKey}">
-            ${t`${'delete'}`}
-          </button>
+          <div class="flex gap-2">
+            <button class="btn btn-sm btn-primary wps-draw-btn" data-snapshot-key="${snapshot.fullKey}">
+              ${t`${'draw_image'}`}
+            </button>
+            <button class="btn btn-sm btn-error wps-delete-btn" data-snapshot-key="${snapshot.fullKey}">
+              ${t`${'delete'}`}
+            </button>
+          </div>
         </div>
       </div>
     `;
@@ -179,6 +189,63 @@ export class TimeTravel {
       }
     } catch (error) {
       this.showToast(`Delete failed: ${error}`);
+    }
+  }
+
+  async drawSnapshot(fullKey: string): Promise<void> {
+    try {
+      // スナップショット読み込み
+      const result = await chrome.storage.local.get(fullKey);
+      if (!result[fullKey]) {
+        this.showToast('Snapshot not found');
+        return;
+      }
+      
+      // blob変換
+      const uint8Array = new Uint8Array(result[fullKey]);
+      const blob = new Blob([uint8Array], { type: 'image/png' });
+      
+      // blob→dataURL変換
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+      
+      // ImageItem生成
+      const timestamp = parseInt(fullKey.split('_')[2]);
+      const imageItem: ImageItem = {
+        key: fullKey,
+        dataUrl: dataUrl,
+        title: `Snapshot ${fullKey.replace('tile_snapshot_', '')}`,
+        createdAt: new Date(timestamp).toISOString()
+      };
+      
+      // タイル座標取得（スナップショットのタイル座標）
+      const tileX = parseInt(fullKey.split('_')[3]);
+      const tileY = parseInt(fullKey.split('_')[4]);
+      
+      // タイル左上角座標設定
+      const coords = {
+        TLX: tileX,
+        TLY: tileY,
+        PxX: 0,  // タイル左上角
+        PxY: 0
+      };
+      
+      // TileOverlay機能で描画
+      const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
+      
+      if (tileOverlay) {
+        await tileOverlay.drawImageWithCoords(coords, imageItem);
+        this.showToast('Snapshot drawn successfully');
+      } else {
+        this.showToast('TileOverlay not available');
+      }
+      
+    } catch (error) {
+      console.error('Draw snapshot failed:', error);
+      this.showToast(`Draw failed: ${error}`);
     }
   }
 

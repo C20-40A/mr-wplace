@@ -1,5 +1,6 @@
 import { llzToTilePixel } from "../../utils/coordinate";
 import TemplateManager from "../blue-marble/templateManager";
+import { ImageItem } from "../gallery/routes/list/components";
 export class TileOverlay {
   private templateManager: TemplateManager;
 
@@ -47,12 +48,30 @@ export class TileOverlay {
     console.log("Tile processing listener setup complete");
   }
 
-  async drawImageAt(lat: number, lng: number, imageItem: any): Promise<void> {
+  async drawImageAt(
+    lat: number,
+    lng: number,
+    imageItem: ImageItem
+  ): Promise<void> {
     console.log("🖼️ Drawing image at:", lat, lng);
 
     // Convert coordinates
     const coords = llzToTilePixel(lat, lng);
     console.log("Tile coords:", coords);
+
+    await this.drawImageWithCoords(coords, imageItem);
+  }
+
+  async drawImageWithCoords(
+    coords: {
+      TLX: number;
+      TLY: number;
+      PxX: number;
+      PxY: number;
+    },
+    imageItem: ImageItem
+  ): Promise<void> {
+    console.log("🖼️ Drawing image with coords:", coords);
 
     try {
       // Convert dataUrl to File for Template
