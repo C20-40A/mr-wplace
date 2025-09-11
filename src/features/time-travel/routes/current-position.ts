@@ -160,6 +160,14 @@ export class CurrentPositionRoute {
     
     try {
       await chrome.storage.local.remove(fullKey);
+      
+      // インデックス更新エラーは無視（Extension context invalidated対策）
+      try {
+        await TimeTravelStorage.removeSnapshotFromIndex(fullKey);
+      } catch (indexError) {
+        console.warn("⚠️ Index update failed (ignored):", indexError);
+      }
+      
       this.showToast(t`${'deleted_message'}`);
       this.loadCurrentSnapshots(container);
     } catch (error) {

@@ -38,7 +38,7 @@ export const createTimeTravelFAB = (container: Element): HTMLButtonElement => {
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
       </svg>
     `;
-  
+
   const parentNode = container.parentNode;
   if (parentNode) {
     parentNode.className += " flex flex-col-reverse gap-1";
@@ -97,9 +97,11 @@ export class TimeTravelUI {
 
   private setupEvents(): void {
     // Back button
-    this.modal?.querySelector("#wps-timetravel-back-btn")?.addEventListener("click", () => {
-      this.router.navigateBack();
-    });
+    this.modal
+      ?.querySelector("#wps-timetravel-back-btn")
+      ?.addEventListener("click", () => {
+        this.router.navigateBack();
+      });
   }
 
   updateHeader(route: TimeTravelRoute): void {
@@ -130,7 +132,9 @@ export class TimeTravelUI {
   }
 
   getContainer(): HTMLElement | null {
-    return this.modal?.querySelector("#wps-timetravel-content") as HTMLElement | null;
+    return this.modal?.querySelector(
+      "#wps-timetravel-content"
+    ) as HTMLElement | null;
   }
 
   showModal(): void {
