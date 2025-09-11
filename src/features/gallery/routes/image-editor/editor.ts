@@ -38,23 +38,34 @@ export class ImageProcessor {
     }, "image/png");
   }
 
-  private saveToGallery(): void {
+  private async saveToGallery(): Promise<void> {
     if (!this.scaledCanvas) return;
 
     // PNG形式で可逆圧縮保存
-    this.scaledCanvas.toBlob((blob) => {
+    this.scaledCanvas.toBlob(async (blob) => {
       if (!blob) return;
-      this.saveCanvasToGallery(blob);
+      await this.saveCanvasToGallery(blob);
     }, "image/png");
   }
 
-  private saveCanvasToGallery(blob: Blob): void {
+  private async saveCanvasToGallery(blob: Blob): Promise<void> {
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       const base64 = reader.result as string;
       const key = `gallery_${Date.now()}`;
-
-      (chrome as any).storage.local.set({ [key]: base64 }, () => {
+      
+      try {
+        // GalleryStorageを使用した正しい保存処理
+        const { GalleryStorage } = await import('../../storage');
+        const galleryStorage = new GalleryStorage();
+        
+        const galleryItem = {
+          key: key,
+          timestamp: Date.now(),
+          dataUrl: base64
+        };
+        
+        await galleryStorage.save(galleryItem);
         console.log(t`${'saved_to_gallery'}`);
 
         // ImageEditorモーダルを閉じる
@@ -66,7 +77,9 @@ export class ImageProcessor {
         if ((window as any).wplaceStudio?.gallery) {
           (window as any).wplaceStudio.gallery.show();
         }
-      });
+      } catch (error) {
+        console.error('Failed to save to gallery:', error);
+      }
     };
     reader.readAsDataURL(blob);
   }

@@ -59,9 +59,12 @@ export class TileOverlay {
     console.log("🖼️ Drawing image at:", lat, lng);
 
     // 描画開始通知
-    window.postMessage({
-      source: "wplace-studio-drawing-start"
-    }, "*");
+    window.postMessage(
+      {
+        source: "wplace-studio-drawing-start",
+      },
+      "*"
+    );
 
     // Convert coordinates
     const coords = llzToTilePixel(lat, lng);
@@ -114,7 +117,7 @@ export class TileOverlay {
   ): Promise<Blob> {
     // 保存済み画像をチェックして復元
     await this.restoreImagesOnTile(tileX, tileY);
-    
+
     // Use TemplateManager's drawing method
     return await this.templateManager.drawTemplateOnTile(tileBlob, [
       tileX,
@@ -125,37 +128,39 @@ export class TileOverlay {
   /**
    * 描画位置情報を保存
    */
-  private async saveDrawPosition(imageKey: string, coords: {TLX: number; TLY: number; PxX: number; PxY: number}): Promise<void> {
+  private async saveDrawPosition(
+    imageKey: string,
+    coords: { TLX: number; TLY: number; PxX: number; PxY: number }
+  ): Promise<void> {
     try {
       console.log("🔍 Starting save for:", imageKey, coords);
-      
+
       const items = await this.galleryStorage.getAll();
       console.log("📦 Total items before save:", items.length);
-      
-      const item = items.find(i => i.key === imageKey);
+
+      const item = items.find((i) => i.key === imageKey);
       if (!item) {
         console.error("Image not found:", imageKey);
         return;
       }
-      
+
       console.log("🖼️ Found item:", item);
 
       const updatedItem = {
         ...item,
         drawPosition: coords,
-        drawEnabled: true
+        drawEnabled: true,
       };
-      
+
       console.log("🔄 Updated item:", updatedItem);
 
       await this.galleryStorage.save(updatedItem);
       console.log("💾 Save completed");
-      
+
       // 保存後の確認
       const itemsAfter = await this.galleryStorage.getAll();
-      const savedItem = itemsAfter.find(i => i.key === imageKey);
+      const savedItem = itemsAfter.find((i) => i.key === imageKey);
       console.log("🔍 Verification - saved item:", savedItem);
-      
     } catch (error) {
       console.error("Failed to save draw position:", error);
     }
@@ -164,29 +169,37 @@ export class TileOverlay {
   /**
    * タイル上の保存済み画像を復元
    */
-  private async restoreImagesOnTile(tileX: number, tileY: number): Promise<void> {
-    console.log(`🔍 Checking restore for tile ${tileX},${tileY}`);
+  private async restoreImagesOnTile(
+    tileX: number,
+    tileY: number
+  ): Promise<void> {
+    // console.debug(`🔍 Checking restore for tile ${tileX},${tileY}`);
     try {
       // 該当タイルの全テンプレートをクリア
       this.templateManager.clearAllTemplates();
-      
+
       const items = await this.galleryStorage.getAll();
-      console.log(`📦 Total gallery items: ${items.length}`);
-      
-      const enabledItems = items.filter(item => {
+      // console.debug(`📦 Total gallery items: ${items.length}`);
+
+      const enabledItems = items.filter((item) => {
         const hasPosition = !!item.drawPosition;
         const isEnabled = item.drawEnabled;
-        const matchesTile = item.drawPosition?.TLX === tileX && item.drawPosition?.TLY === tileY;
-        
-        console.log(`🖼️ Item ${item.key}: enabled=${isEnabled}, hasPosition=${hasPosition}, matchesTile=${matchesTile}`);
-        
+        const matchesTile =
+          item.drawPosition?.TLX === tileX && item.drawPosition?.TLY === tileY;
+
+        // console.debug(
+        //   `🖼️ Item ${item.key}: enabled=${isEnabled}, hasPosition=${hasPosition}, matchesTile=${matchesTile}`
+        // );
+
         return isEnabled && hasPosition && matchesTile;
       });
 
-      console.log(`✅ Found ${enabledItems.length} items to restore on tile ${tileX},${tileY}`);
-      
+      // console.debug(
+      //   `✅ Found ${enabledItems.length} items to restore on tile ${tileX},${tileY}`
+      // );
+
       if (enabledItems.length === 0) return;
-      
+
       for (const item of enabledItems) {
         await this.restoreImageOnTile(item);
       }
@@ -202,8 +215,8 @@ export class TileOverlay {
     try {
       const galleryStorage = new GalleryStorage();
       const items = await galleryStorage.getAll();
-      
-      const item = items.find(i => i.key === imageKey);
+
+      const item = items.find((i) => i.key === imageKey);
       if (!item) {
         console.warn(`Image not found: ${imageKey}`);
         return;
@@ -211,14 +224,16 @@ export class TileOverlay {
 
       const updatedItem = {
         ...item,
-        drawEnabled: !item.drawEnabled
+        drawEnabled: !item.drawEnabled,
       };
 
       await galleryStorage.save(updatedItem);
-      
-      console.log(`🔄 TileOverlay toggle: ${imageKey} -> ${updatedItem.drawEnabled}`);
+
+      console.log(
+        `🔄 TileOverlay toggle: ${imageKey} -> ${updatedItem.drawEnabled}`
+      );
     } catch (error) {
-      console.error('Failed to toggle image draw state:', error);
+      console.error("Failed to toggle image draw state:", error);
     }
   }
 
