@@ -64,6 +64,11 @@ const jaTranslations = {
   'no_saved_images': '保存された画像がありません',
   'delete_image_confirm': 'この画像を削除しますか？',
   
+  // Drawing/Loading関連
+  'drawing_image': '画像を描画中...',
+  'processing_image': '画像を処理中...',
+  'waiting_for_update': '更新を待っています...',
+  
   // ファイル関連
   'upload': 'アップロード',
   'file_select': 'ファイルを選択',
@@ -138,6 +143,11 @@ const enTranslations = {
   'no_draw_images': 'No images for drawing.',
   'no_saved_images': 'No saved images',
   'delete_image_confirm': 'Do you want to delete this image?',
+  
+  // Drawing/Loading関連
+  'drawing_image': 'Drawing image...',
+  'processing_image': 'Processing image...',
+  'waiting_for_update': 'Waiting for update...',
   
   // ファイル関連
   'upload': 'Upload',

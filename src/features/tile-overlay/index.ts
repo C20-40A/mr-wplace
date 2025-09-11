@@ -55,6 +55,11 @@ export class TileOverlay {
   ): Promise<void> {
     console.log("🖼️ Drawing image at:", lat, lng);
 
+    // 描画開始通知
+    window.postMessage({
+      source: "wplace-studio-drawing-start"
+    }, "*");
+
     // Convert coordinates
     const coords = llzToTilePixel(lat, lng);
     console.log("Tile coords:", coords);
