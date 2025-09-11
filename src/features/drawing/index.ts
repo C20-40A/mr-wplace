@@ -4,6 +4,7 @@ import { getCurrentPosition } from "../../utils/position";
 import { CONFIG } from "../bookmark/config";
 import { t } from "../../i18n/manager";
 import { createDrawButton } from "./ui";
+import { ImageItem } from "../gallery/routes/list/components";
 
 /**
  * 画像描画機能の独立モジュール
@@ -47,7 +48,7 @@ export class Drawing {
     });
   }
 
-  private startDraw(imageItem: any): void {
+  private startDraw(imageItem: ImageItem): void {
     console.log("🎨 Start drawing with:", imageItem);
     this.selectedImage = imageItem;
     this.isDrawMode = true;
@@ -67,10 +68,10 @@ export class Drawing {
     this.isDrawMode = false;
   }
 
-  private async drawImageOnMap(
+  public async drawImageOnMap(
     lat: number,
     lng: number,
-    imageItem: any
+    imageItem: ImageItem
   ): Promise<void> {
     console.log("📍 Drawing at:", lat, lng, "Image:", imageItem.key);
 
