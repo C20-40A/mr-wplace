@@ -1,5 +1,6 @@
 import { injectFetchInterceptor } from "./features/fetch-interceptor";
 import { I18nManager } from "./i18n/manager";
+import { Toast } from "./components/toast";
 import { ExtendedBookmarks } from "./features/bookmark";
 import { TileOverlay } from "./features/tile-overlay";
 import { Gallery } from "./features/gallery";
@@ -8,7 +9,7 @@ import { TileSnapshot } from "./features/tile-snapshot";
 import { TimeTravel } from "./features/time-travel";
 import { DrawingLoader } from "./features/drawing-loader";
 
-const initializeWPlaceStudio = async (): Promise<void> => {
+const runWPlaceStudio = async (): Promise<void> => {
   // Chrome拡張機能のストレージAPIが利用可能か確認
   if (typeof chrome === "undefined" || !chrome.storage)
     throw new Error("Chrome storage API is not available");
@@ -53,7 +54,7 @@ const initializeWPlaceStudio = async (): Promise<void> => {
 };
 
 // 実行
-initializeWPlaceStudio().catch((error) => {
+runWPlaceStudio().catch((error) => {
   console.error("Failed to initialize WPlace Studio:", error);
-  alert(`WPlace Studio initialization error: ${error.message}`);
+  Toast.error(`WPlace Studio initialization error: ${error.message}`);
 });

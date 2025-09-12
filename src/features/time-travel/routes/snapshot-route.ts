@@ -1,4 +1,5 @@
 import { BaseSnapshotRoute } from "./base-snapshot-route";
+import { Toast } from "../../../components/toast";
 import { TimeTravelRouter } from "../router";
 import { getCurrentPosition } from "../../../utils/position";
 import { TimeTravelStorage } from "../storage";
@@ -145,10 +146,10 @@ export class SnapshotRoute extends BaseSnapshotRoute {
           this.currentTileX,
           this.currentTileY
         );
-        this.showToast(`Snapshot saved: ${snapshotId}`);
+        Toast.success(`Snapshot saved: ${snapshotId}`);
         await this.reloadSnapshots(container);
       } catch (error) {
-        this.showToast(`Save failed: ${error}`);
+        Toast.error(`Save failed: ${error}`);
       }
     }
   }
