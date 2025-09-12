@@ -4,7 +4,7 @@ import { TimeTravelRouter } from "../router";
 import { getCurrentPosition, gotoPosition } from "../../../utils/position";
 import { TimeTravelStorage } from "../storage";
 import { t } from "../../../i18n/manager";
-import { llzToTilePixel, tileToLatLng } from "../../../utils/coordinate";
+import { llzToTilePixel, tilePixelToLatLng } from "../../../utils/coordinate";
 
 interface SnapshotRouteOptions {
   showSaveButton: boolean;
@@ -152,7 +152,10 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     if (this.currentTileX === undefined || this.currentTileY === undefined)
       return;
 
-    const { lat, lng } = tileToLatLng(this.currentTileX, this.currentTileY);
+    const { lat, lng } = tilePixelToLatLng(
+      this.currentTileX,
+      this.currentTileY
+    );
     gotoPosition({ lat, lng, zoom: 11 });
   }
 }
