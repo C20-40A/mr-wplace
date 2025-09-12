@@ -87,69 +87,62 @@ export abstract class BaseSnapshotRoute {
   }
 
   protected async drawSnapshot(fullKey: string): Promise<void> {
-    try {
-      const result = await chrome.storage.local.get(fullKey);
-      if (!result[fullKey]) {
-        Toast.error("Snapshot not found");
-        return;
-      }
+    const result = await chrome.storage.local.get(fullKey);
+    if (!result[fullKey]) throw new Error("Snapshot not found");
 
-      const tileX = parseInt(fullKey.split("_")[3]);
-      const tileY = parseInt(fullKey.split("_")[4]);
+    const tileX = parseInt(fullKey.split("_")[3]);
+    const tileY = parseInt(fullKey.split("_")[4]);
 
-      const uint8Array = new Uint8Array(result[fullKey]);
-      const blob = new Blob([uint8Array], { type: "image/png" });
-      const file = new File([blob], "snapshot.png", { type: "image/png" });
+    const uint8Array = new Uint8Array(result[fullKey]);
+    const blob = new Blob([uint8Array], { type: "image/png" });
+    const file = new File([blob], "snapshot.png", { type: "image/png" });
 
-      // 直接TemplateManagerで描画（座標は既にタイル単位）
-      const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
-      if (tileOverlay && tileOverlay.templateManager) {
-        await tileOverlay.templateManager.createTemplate(file, [tileX, tileY, 0, 0]);
-        Toast.success("Snapshot drawn successfully");
-        
-        // モーダルを閉じる
-        const timeTravelUI = (window as any).wplaceStudio?.timeTravel?.ui;
-        if (timeTravelUI) {
-          timeTravelUI.hideModal();
-        }
-      } else {
-        Toast.error("TileOverlay not available");
-      }
-    } catch (error) {
-      Toast.error(`Draw failed: ${error}`);
+    // 直接TemplateManagerで描画（座標は既にタイル単位）
+    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
+    await tileOverlay.templateManager.createTemplate(file, [
+      tileX,
+      tileY,
+      0,
+      0,
+    ]);
+    Toast.success("Snapshot drawn successfully");
+
+    // モーダルを閉じる
+    const timeTravelUI = (window as any).wplaceStudio?.timeTravel?.ui;
+    if (timeTravelUI) {
+      timeTravelUI.hideModal();
     }
   }
 
   protected async openDownloadModal(fullKey: string): Promise<void> {
-    try {
-      const result = await chrome.storage.local.get(fullKey);
-      if (!result[fullKey]) {
-        Toast.error("Snapshot not found");
-        return;
-      }
+    const result = await chrome.storage.local.get(fullKey);
+    if (!result[fullKey]) throw new Error("Snapshot not found");
 
-      const uint8Array = new Uint8Array(result[fullKey]);
-      const blob = new Blob([uint8Array], { type: "image/png" });
-      const dataUrl = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(blob);
-      });
+    const uint8Array = new Uint8Array(result[fullKey]);
+    const blob = new Blob([uint8Array], { type: "image/png" });
+    const dataUrl = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
 
-      const img = document.getElementById(
-        "wps-snapshot-image"
-      ) as HTMLImageElement;
-      if (img) {
-        img.src = dataUrl;
-      }
-
-      const modal = document.getElementById(
-        "wplace-studio-snapshot-download-modal"
-      ) as HTMLDialogElement;
-      modal?.showModal();
-    } catch (error) {
-      Toast.error(`Open failed: ${error}`);
+    // ダウンロード用のblob設定
+    const timeTravel = (window as any).wplaceStudio?.timeTravel;
+    if (timeTravel) {
+      (timeTravel as any).currentDownloadBlob = blob;
     }
+
+    const img = document.getElementById(
+      "wps-snapshot-image"
+    ) as HTMLImageElement;
+    if (img) {
+      img.src = dataUrl;
+    }
+
+    const modal = document.getElementById(
+      "wplace-studio-snapshot-download-modal"
+    ) as HTMLDialogElement;
+    modal?.showModal();
   }
 
   protected abstract reloadSnapshots(container: HTMLElement): Promise<void>;
