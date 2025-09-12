@@ -1,5 +1,5 @@
 {
-  "name": "wplace-studio",
+  "name": "mr-wplace",
   "version": "1.0.0",
   "scripts": {
     "build": "esbuild src/content.ts --bundle --outfile=dist/content.js --minify --target=chrome88",
