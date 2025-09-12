@@ -32,6 +32,10 @@ export class TimeTravel {
     this.tileSnapshotsRoute = new SnapshotRoute({ showSaveButton: false });
     this.buttonObserver = new ButtonObserver();
     this.init();
+    
+    // グローバルアクセス用（既存パターンに倣う）
+    (window as any).wplaceStudio = (window as any).wplaceStudio || {};
+    (window as any).wplaceStudio.timeTravel = { ui: this.ui };
   }
 
   private init(): void {

@@ -44,8 +44,8 @@ const initializeWPlaceStudio = async (): Promise<void> => {
   };
 
   // Listen for snapshot tmp save messages from inject.js
-  window.addEventListener('message', async (event) => {
-    if (event.data.source === 'wplace-studio-snapshot-tmp') {
+  window.addEventListener("message", async (event) => {
+    if (event.data.source === "wplace-studio-snapshot-tmp") {
       const { tileBlob, tileX, tileY } = event.data;
       await tileSnapshot.saveTmpTile(tileX, tileY, tileBlob);
     }

@@ -1,19 +1,25 @@
-import { TimeTravelRouter } from "../router";
 import { TimeTravelStorage, SnapshotInfo } from "../storage";
 import { t } from "../../../i18n/manager";
 import { I18nManager } from "../../../i18n/manager";
 
 export abstract class BaseSnapshotRoute {
-  protected setupSnapshotEvents(container: HTMLElement, listSelector: string): void {
+  protected setupSnapshotEvents(
+    container: HTMLElement,
+    listSelector: string
+  ): void {
     container
       .querySelector(listSelector)
       ?.addEventListener("click", async (e) => {
         const target = e.target as HTMLElement;
         if (!target) return;
 
-        const deleteBtn = target.closest(".wps-delete-btn") as HTMLElement | null;
+        const deleteBtn = target.closest(
+          ".wps-delete-btn"
+        ) as HTMLElement | null;
         const drawBtn = target.closest(".wps-draw-btn") as HTMLElement | null;
-        const downloadBtn = target.closest(".wps-download-btn") as HTMLElement | null;
+        const downloadBtn = target.closest(
+          ".wps-download-btn"
+        ) as HTMLElement | null;
 
         if (deleteBtn?.dataset.snapshotKey) {
           await this.deleteSnapshot(deleteBtn.dataset.snapshotKey, container);
@@ -48,13 +54,19 @@ export abstract class BaseSnapshotRoute {
         </div>
         <div class="details hidden p-2 bg-gray-50">
           <div class="flex gap-2">
-            <button class="btn btn-sm btn-primary wps-draw-btn" data-snapshot-key="${snapshot.fullKey}">
+            <button class="btn btn-sm btn-primary wps-draw-btn" data-snapshot-key="${
+              snapshot.fullKey
+            }">
               ${t`${"draw_image"}`}
             </button>
-            <button class="btn btn-sm btn-neutral wps-download-btn" data-snapshot-key="${snapshot.fullKey}">
+            <button class="btn btn-sm btn-neutral wps-download-btn" data-snapshot-key="${
+              snapshot.fullKey
+            }">
               ${t`${"download"}`}
             </button>
-            <button class="btn btn-sm btn-error wps-delete-btn" data-snapshot-key="${snapshot.fullKey}">
+            <button class="btn btn-sm btn-error wps-delete-btn" data-snapshot-key="${
+              snapshot.fullKey
+            }">
               ${t`${"delete"}`}
             </button>
           </div>
@@ -63,7 +75,10 @@ export abstract class BaseSnapshotRoute {
     `;
   }
 
-  protected async deleteSnapshot(fullKey: string, container: HTMLElement): Promise<void> {
+  protected async deleteSnapshot(
+    fullKey: string,
+    container: HTMLElement
+  ): Promise<void> {
     if (!confirm(t`${"delete_confirm"}`)) return;
     await TimeTravelStorage.removeSnapshotFromIndex(fullKey);
     this.showToast(t`${"deleted_message"}`);
@@ -102,6 +117,12 @@ export abstract class BaseSnapshotRoute {
       if (tileOverlay) {
         await tileOverlay.drawImageWithCoords(coords, imageItem);
         this.showToast("Snapshot drawn successfully");
+        
+        // モーダルを閉じる（既存パターンに倣うグローバルアクセス）
+        const timeTravelUI = (window as any).wplaceStudio?.timeTravel?.ui;
+        if (timeTravelUI) {
+          timeTravelUI.hideModal();
+        }
       } else {
         this.showToast("TileOverlay not available");
       }
@@ -126,12 +147,16 @@ export abstract class BaseSnapshotRoute {
         reader.readAsDataURL(blob);
       });
 
-      const img = document.getElementById("wps-snapshot-image") as HTMLImageElement;
+      const img = document.getElementById(
+        "wps-snapshot-image"
+      ) as HTMLImageElement;
       if (img) {
         img.src = dataUrl;
       }
 
-      const modal = document.getElementById("wplace-studio-snapshot-download-modal") as HTMLDialogElement;
+      const modal = document.getElementById(
+        "wplace-studio-snapshot-download-modal"
+      ) as HTMLDialogElement;
       modal?.showModal();
     } catch (error) {
       this.showToast(`Open failed: ${error}`);
@@ -142,7 +167,7 @@ export abstract class BaseSnapshotRoute {
     const toast = document.createElement("div");
     toast.className = "toast toast-top toast-end z-50";
     toast.innerHTML = `
-      <div class="alert alert-success">
+      <div class="alert alert-info">
         <span>${message}</span>
       </div>
     `;
