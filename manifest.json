@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "WPlace Studio",
+  "name": "Mr. Wplace",
   "version": "1.0.0",
   "description": "Professional toolkit for WPlace - Enhance your creative workflow with advanced features and protection tools",
   "permissions": [
@@ -13,7 +13,7 @@
     "*://*.wplace.live/*"
   ],
   "action": {
-    "default_title": "WPlace Studio",
+    "default_title": "Mr. Wplace",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
