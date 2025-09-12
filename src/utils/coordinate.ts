@@ -25,14 +25,19 @@ export function llzToTilePixel(lat: number, lng: number) {
 }
 
 // タイル座標から緯度経度への逆変換
-export function tileToLatLng(tileX: number, tileY: number) {
+export function tilePixelToLatLng(
+  tileX: number,
+  tileY: number,
+  pxX?: number,
+  pxY?: number
+) {
   const tileSize = 1000;
   const zoom = 11;
   const N = tileSize * Math.pow(2, zoom); // 世界全体のピクセル数
 
   // タイル中央のワールドピクセル座標
-  const worldX = tileX * tileSize + tileSize / 2;
-  const worldY = tileY * tileSize + tileSize / 2;
+  const worldX = tileX * tileSize + tileSize / 2 + (pxX ?? 0);
+  const worldY = tileY * tileSize + tileSize / 2 + (pxY ?? 0);
 
   // Web Mercator 逆変換
   const lng = (worldX / N) * 360 - 180;

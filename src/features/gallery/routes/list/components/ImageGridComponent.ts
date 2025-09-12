@@ -17,9 +17,11 @@ export interface ImageGridOptions {
   onImageSelect?: (item: ImageItem) => void;
   onImageDelete?: (key: string) => void;
   onDrawToggle?: (key: string) => void; // 描画状態切り替えコールバック
+  onGotoPosition?: (item: ImageItem) => void; // マップ移動コールバック
   showDeleteButton?: boolean;
   showAddButton?: boolean;
   showDrawToggleButton?: boolean; // 描画切り替えボタンを表示するか
+  showGotoPositionButton?: boolean; // マップピンボタンを表示するか
   onAddClick?: () => void;
   emptyStateMessage?: string;
   gridCols?: string;
@@ -36,6 +38,7 @@ export class ImageGridComponent {
       showDeleteButton: true,
       showAddButton: true,
       showDrawToggleButton: true, // デフォルトで目アイコンを表示
+      showGotoPositionButton: true, // デフォルトでピンアイコンを表示
       emptyStateMessage: t`${"no_saved_images"}`,
       gridCols: "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
       ...options,
@@ -104,6 +107,10 @@ export class ImageGridComponent {
       this.options.showDeleteButton && !this.options.isSelectionMode;
     const showDrawToggleBtn =
       this.options.showDrawToggleButton && !this.options.isSelectionMode;
+    const showGotoPositionBtn =
+      this.options.showGotoPositionButton &&
+      !this.options.isSelectionMode &&
+      item.hasDrawPosition;
 
     return `
       <div class="border rounded-lg overflow-hidden shadow relative gallery-item" data-item-key="${
@@ -115,6 +122,7 @@ export class ImageGridComponent {
             ? this.createDrawToggleButtonHtml(item)
             : ""
         }
+        ${showGotoPositionBtn ? this.createGotoPositionButtonHtml(item) : ""}
         <img 
           src="${item.dataUrl}" 
           alt="Gallery item" 
@@ -147,8 +155,22 @@ export class ImageGridComponent {
   }
 
   /**
-   * 描画切り替えボタンのHTMLを生成
+   * マップピンボタンのHTMLを生成
    */
+  private createGotoPositionButtonHtml(item: ImageItem): string {
+    return `
+      <button 
+        class="btn btn-xs btn-circle btn-ghost absolute bottom-1 left-1 z-10 opacity-70 hover:opacity-100 border border-gray-200 shadow-sm" 
+        data-goto-position="${item.key}"
+        title="Go to map position"
+        style="background-color: #f3f4f6;"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3" style="color: #059669;">
+          <path fill-rule="evenodd" d="m11.54 22.351.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+        </svg>
+      </button>
+    `;
+  }
   private createDrawToggleButtonHtml(item: ImageItem): string {
     const isEnabled = item.drawEnabled;
     // const eyeClass = isEnabled ? "text-green-600" : "text-gray-400";
@@ -201,6 +223,7 @@ export class ImageGridComponent {
     this.attachAddButtonListener();
     this.attachDeleteButtonListeners();
     this.attachDrawToggleButtonListeners();
+    this.attachGotoPositionButtonListeners();
     this.attachImageClickListeners();
   }
 
@@ -238,8 +261,33 @@ export class ImageGridComponent {
   }
 
   /**
-   * 描画切り替えボタンのイベントリスナーを設定
+   * マップピンボタンのイベントリスナーを設定
    */
+  private attachGotoPositionButtonListeners(): void {
+    if (!this.options.showGotoPositionButton || this.options.isSelectionMode) {
+      console.log("🔍 Goto position button disabled");
+      return;
+    }
+
+    const buttons = this.container.querySelectorAll("[data-goto-position]");
+    console.log("🔍 Found goto position buttons:", buttons.length);
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        const key = (e.currentTarget as HTMLElement).getAttribute(
+          "data-goto-position"
+        );
+        if (!key) throw new Error("No key found on button");
+        const selectedItem = this.options.items.find(
+          (item) => item.key === key
+        );
+        console.log("🔍 Selected item:", selectedItem);
+        if (!selectedItem) throw new Error("Selected item not found");
+        this.options.onGotoPosition?.(selectedItem);
+      });
+    });
+  }
   private attachDrawToggleButtonListeners(): void {
     if (!this.options.showDrawToggleButton || this.options.isSelectionMode)
       return;
@@ -263,10 +311,11 @@ export class ImageGridComponent {
   private attachImageClickListeners(): void {
     this.container.querySelectorAll(".gallery-item").forEach((item) => {
       item.addEventListener("click", (e) => {
-        // 削除ボタンまたは描画切り替えボタンクリック時は処理しない
+        // 削除ボタン、描画切り替えボタン、マップピンボタンクリック時は処理しない
         if (
           (e.target as HTMLElement).closest("[data-delete]") ||
-          (e.target as HTMLElement).closest("[data-draw-toggle]")
+          (e.target as HTMLElement).closest("[data-draw-toggle]") ||
+          (e.target as HTMLElement).closest("[data-goto-position]")
         ) {
           return;
         }

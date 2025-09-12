@@ -1,8 +1,10 @@
 import { GalleryItem } from "../../storage";
 import { ImageGridComponent, ImageItem } from "./components/ImageGridComponent";
 import { t } from "../../../../i18n/manager";
+import { gotoPosition } from "../../../../utils/position";
+import { tilePixelToLatLng } from "../../../../utils/coordinate";
 
-export class GalleryUI {
+export class GalleryListUI {
   private modal: HTMLDialogElement | null = null;
   private container: HTMLElement | null = null;
   private isImageExpanded: boolean = false;
@@ -36,11 +38,17 @@ export class GalleryUI {
     items: GalleryItem[],
     onDelete: (key: string) => void,
     isSelectionMode: boolean = false,
-    onSelect?: (item: GalleryItem) => void
+    onSelect?: (item: GalleryItem) => void,
+    container?: HTMLElement
   ): void {
     // 状態を保存
     this.currentItems = items;
     this.currentOnDelete = onDelete;
+
+    // 外部コンテナが指定された場合はそれを使用
+    if (container) {
+      this.container = container;
+    }
 
     if (this.isImageExpanded) {
       return; // 拡大表示中は再レンダリングしない
@@ -57,13 +65,13 @@ export class GalleryUI {
     if (!this.container) return;
 
     // GalleryItemをImageItemに変換
-    const imageItems: ImageItem[] = items.map(item => ({
+    const imageItems: ImageItem[] = items.map((item) => ({
       key: item.key,
       dataUrl: item.dataUrl,
       createdAt: new Date(item.timestamp).toISOString(),
       drawPosition: item.drawPosition,
       drawEnabled: item.drawEnabled,
-      hasDrawPosition: !!item.drawPosition
+      hasDrawPosition: !!item.drawPosition,
     }));
 
     // 既存のImageGridComponentがあれば破棄
@@ -76,13 +84,13 @@ export class GalleryUI {
       items: imageItems,
       isSelectionMode,
       onImageClick: (item) => {
-        const galleryItem = items.find(gItem => gItem.key === item.key);
+        const galleryItem = items.find((gItem) => gItem.key === item.key);
         if (galleryItem) {
           this.showExpandedImage(galleryItem);
         }
       },
       onImageSelect: (item) => {
-        const galleryItem = items.find(gItem => gItem.key === item.key);
+        const galleryItem = items.find((gItem) => gItem.key === item.key);
         if (galleryItem && onSelect) {
           onSelect(galleryItem);
           this.closeModal();
@@ -94,11 +102,17 @@ export class GalleryUI {
       onImageDelete: (key) => {
         onDelete(key);
       },
+      onGotoPosition: (item) => {
+        const galleryItem = items.find((gItem) => gItem.key === item.key);
+        if (galleryItem) {
+          this.handleGotoPosition(galleryItem);
+        }
+      },
       onAddClick: () => {
         this.openImageEditor();
       },
       showDeleteButton: !isSelectionMode,
-      showAddButton: true
+      showAddButton: true,
     });
 
     // レンダリング
@@ -123,11 +137,13 @@ export class GalleryUI {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
               <path fill-rule="evenodd" d="M7.72 12.53a.75.75 0 010-1.06l7.5-7.5a.75.75 0 111.06 1.06L9.31 12l6.97 6.97a.75.75 0 11-1.06 1.06l-7.5-7.5z" clip-rule="evenodd"/>
             </svg>
-            ${'back'}
+            ${"back"}
           </button>
         </div>
         <div class="flex items-center justify-center" style="max-height: 70vh; max-width: 90vw;">
-          <img src="${item.dataUrl}" alt="Expanded gallery item" class="" style="image-rendering: pixelated; min-width: 50vw; max-width: 90vw; max-height: 70vh; object-fit: contain; aspect-ratio: auto;">
+          <img src="${
+            item.dataUrl
+          }" alt="Expanded gallery item" class="" style="image-rendering: pixelated; min-width: 50vw; max-width: 90vw; max-height: 70vh; object-fit: contain; aspect-ratio: auto;">
         </div>
       </div>
     `;
@@ -155,28 +171,24 @@ export class GalleryUI {
     isSelectionMode: boolean,
     onSelect?: (item: GalleryItem) => void
   ): Promise<void> {
-    try {
-      // アイテムを見つけて状態を切り替え
-      const item = items.find(i => i.key === key);
-      if (!item) return;
+    // アイテムを見つけて状態を切り替え
+    const item = items.find((i) => i.key === key);
+    if (!item) return;
 
-      const updatedItem = {
-        ...item,
-        drawEnabled: !item.drawEnabled
-      };
+    const updatedItem = {
+      ...item,
+      drawEnabled: !item.drawEnabled,
+    };
 
-      // GalleryStorageを使って保存
-      const galleryStorage = new (await import('../../storage')).GalleryStorage();
-      await galleryStorage.save(updatedItem);
+    // GalleryStorageを使って保存
+    const galleryStorage = new (await import("../../storage")).GalleryStorage();
+    await galleryStorage.save(updatedItem);
 
-      // 画面を再描画
-      const updatedItems = await galleryStorage.getAll();
-      this.renderGalleryList(updatedItems, onDelete, isSelectionMode, onSelect);
-      
-      console.log(`🎯 Draw toggle: ${key} -> ${updatedItem.drawEnabled}`);
-    } catch (error) {
-      console.error('Failed to toggle draw state:', error);
-    }
+    // 画面を再描画
+    const updatedItems = await galleryStorage.getAll();
+    this.renderGalleryList(updatedItems, onDelete, isSelectionMode, onSelect);
+
+    console.log(`🎯 Draw toggle: ${key} -> ${updatedItem.drawEnabled}`);
   }
 
   private createModal(): void {
@@ -188,7 +200,7 @@ export class GalleryUI {
           <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
         </form>
         
-        <h3 class="text-lg font-bold mb-4">${'gallery'}</h3>
+        <h3 class="text-lg font-bold mb-4">${"gallery"}</h3>
         
         <div id="wps-gallery-container" style="min-height: 400px;">
           <!-- ギャラリー一覧がここに表示されます -->
@@ -196,12 +208,29 @@ export class GalleryUI {
       </div>
       
       <form method="dialog" class="modal-backdrop">
-        <button>${'close'}</button>
+        <button>${"close"}</button>
       </form>
     `;
 
     document.body.appendChild(this.modal);
     this.container = document.getElementById("wps-gallery-container");
+  }
+
+  private async handleGotoPosition(item: GalleryItem): Promise<void> {
+    if (!item.drawPosition) throw new Error("Item has no drawPosition");
+
+    // TLX, TLYからlat, lngへ変換。タイル中央座標を使用
+    const { lat, lng } = tilePixelToLatLng(
+      item.drawPosition.TLX,
+      item.drawPosition.TLY,
+      item.drawPosition.PxX,
+      item.drawPosition.PxY
+    );
+
+    gotoPosition({ lat, lng, zoom: 14 });
+
+    // モーダルが存在する場合のみ閉じる（外部コンテナ使用時は閉じない）
+    if (this.modal) this.closeModal();
   }
 
   destroy(): void {
