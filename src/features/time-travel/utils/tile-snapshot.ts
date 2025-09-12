@@ -21,7 +21,6 @@ export class TileSnapshot {
     const data = Array.from(new Uint8Array(arrayBuffer));
 
     await chrome.storage.local.set({ [key]: data });
-    console.log(`Saved tmp tile: ${tileX},${tileY}`);
   }
 
   async saveSnapshot(tileX: number, tileY: number): Promise<string> {

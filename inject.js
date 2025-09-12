@@ -28,11 +28,11 @@ window.fetch = async function (...args) {
     if (!tileMatch) {
       return originalFetch.apply(this, args);
     }
-    
+
     const tileX = parseInt(tileMatch[1]);
     const tileY = parseInt(tileMatch[2]);
-    
-    console.log(`Intercepting tile: ${tileX},${tileY} - ${url}`);
+
+    // console.log(`Intercepting tile: ${tileX},${tileY} - ${url}`);
 
     const response = await originalFetch.apply(this, args);
     const clonedResponse = response.clone();
