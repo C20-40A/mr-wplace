@@ -5,7 +5,7 @@ import { ExtendedBookmarks } from "./features/bookmark";
 import { TileOverlay } from "./features/tile-overlay";
 import { Gallery } from "./features/gallery";
 import { Drawing } from "./features/drawing";
-import { TileSnapshot } from "./features/tile-snapshot";
+import { TileSnapshot } from "./features/time-travel/utils/tile-snapshot";
 import { TimeTravel } from "./features/time-travel";
 import { DrawingLoader } from "./features/drawing-loader";
 
