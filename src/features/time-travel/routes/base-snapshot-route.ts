@@ -3,54 +3,20 @@ import { TimeTravelStorage, SnapshotInfo } from "../storage";
 import { t } from "../../../i18n/manager";
 import { I18nManager } from "../../../i18n/manager";
 
-export class TileSnapshotsRoute {
-  render(container: HTMLElement, router: TimeTravelRouter): void {
-    const selectedTile = (router as any).selectedTile;
-    if (!selectedTile) {
-      container.innerHTML = `<div class="text-sm text-red-500 text-center p-4">タイル情報が見つかりません</div>`;
-      return;
-    }
-
-    container.innerHTML = t`
-      <div class="mb-4">
-        <div class="text-sm text-gray-600">タイル(${selectedTile.tileX}, ${
-      selectedTile.tileY
-    })のスナップショット</div>
-      </div>
-      
-      <div class="max-h-60 overflow-y-auto border rounded p-2">
-        <div id="wps-tile-snapshots-list">
-          <div class="text-sm text-gray-500 text-center p-4">${"loading"}</div>
-        </div>
-      </div>
-    `;
-
-    this.setupEvents(container, router);
-    this.loadTileSnapshots(container, selectedTile.tileX, selectedTile.tileY);
-  }
-
-  private setupEvents(container: HTMLElement, router: TimeTravelRouter): void {
-    // スナップショット一覧のイベント委譲（current-position流用）
+export abstract class BaseSnapshotRoute {
+  protected setupSnapshotEvents(container: HTMLElement, listSelector: string): void {
     container
-      .querySelector("#wps-tile-snapshots-list")
+      .querySelector(listSelector)
       ?.addEventListener("click", async (e) => {
         const target = e.target as HTMLElement;
         if (!target) return;
 
-        const deleteBtn = target.closest(
-          ".wps-delete-btn"
-        ) as HTMLElement | null;
+        const deleteBtn = target.closest(".wps-delete-btn") as HTMLElement | null;
         const drawBtn = target.closest(".wps-draw-btn") as HTMLElement | null;
-        const downloadBtn = target.closest(
-          ".wps-download-btn"
-        ) as HTMLElement | null;
+        const downloadBtn = target.closest(".wps-download-btn") as HTMLElement | null;
 
         if (deleteBtn?.dataset.snapshotKey) {
-          await this.deleteSnapshot(
-            deleteBtn.dataset.snapshotKey,
-            container,
-            router
-          );
+          await this.deleteSnapshot(deleteBtn.dataset.snapshotKey, container);
         } else if (drawBtn?.dataset.snapshotKey) {
           await this.drawSnapshot(drawBtn.dataset.snapshotKey);
         } else if (downloadBtn?.dataset.snapshotKey) {
@@ -59,37 +25,7 @@ export class TileSnapshotsRoute {
       });
   }
 
-  private async loadTileSnapshots(
-    container: HTMLElement,
-    tileX: number,
-    tileY: number
-  ): Promise<void> {
-    try {
-      const snapshots = await TimeTravelStorage.getSnapshotsForTile(
-        tileX,
-        tileY
-      );
-      const listContainer = container.querySelector("#wps-tile-snapshots-list");
-
-      if (listContainer) {
-        if (snapshots.length === 0) {
-          listContainer.innerHTML = `<div class="text-sm text-gray-500 text-center p-4">${t`${"no_items"}`}</div>`;
-        } else {
-          listContainer.innerHTML = snapshots
-            .map((snapshot) => this.renderSnapshotItem(snapshot))
-            .join("");
-        }
-      }
-    } catch (error) {
-      console.error("Failed to load tile snapshots:", error);
-      const listContainer = container.querySelector("#wps-tile-snapshots-list");
-      if (listContainer) {
-        listContainer.innerHTML = `<div class="text-sm text-red-500 text-center p-4">Failed to load snapshots</div>`;
-      }
-    }
-  }
-
-  private renderSnapshotItem(snapshot: SnapshotInfo): string {
+  protected renderSnapshotItem(snapshot: SnapshotInfo): string {
     const locale = I18nManager.getCurrentLocale();
     const localeString = locale === "ja" ? "ja-JP" : "en-US";
     const timeFormat = {
@@ -112,19 +48,13 @@ export class TileSnapshotsRoute {
         </div>
         <div class="details hidden p-2 bg-gray-50">
           <div class="flex gap-2">
-            <button class="btn btn-sm btn-primary wps-draw-btn" data-snapshot-key="${
-              snapshot.fullKey
-            }">
+            <button class="btn btn-sm btn-primary wps-draw-btn" data-snapshot-key="${snapshot.fullKey}">
               ${t`${"draw_image"}`}
             </button>
-            <button class="btn btn-sm btn-neutral wps-download-btn" data-snapshot-key="${
-              snapshot.fullKey
-            }">
+            <button class="btn btn-sm btn-neutral wps-download-btn" data-snapshot-key="${snapshot.fullKey}">
               ${t`${"download"}`}
             </button>
-            <button class="btn btn-sm btn-error wps-delete-btn" data-snapshot-key="${
-              snapshot.fullKey
-            }">
+            <button class="btn btn-sm btn-error wps-delete-btn" data-snapshot-key="${snapshot.fullKey}">
               ${t`${"delete"}`}
             </button>
           </div>
@@ -133,22 +63,14 @@ export class TileSnapshotsRoute {
     `;
   }
 
-  private async deleteSnapshot(
-    fullKey: string,
-    container: HTMLElement,
-    router: TimeTravelRouter
-  ): Promise<void> {
+  protected async deleteSnapshot(fullKey: string, container: HTMLElement): Promise<void> {
     if (!confirm(t`${"delete_confirm"}`)) return;
     await TimeTravelStorage.removeSnapshotFromIndex(fullKey);
     this.showToast(t`${"deleted_message"}`);
-
-    const selectedTile = (router as any).selectedTile;
-    if (selectedTile)
-      this.loadTileSnapshots(container, selectedTile.tileX, selectedTile.tileY);
+    await this.reloadSnapshots(container);
   }
 
-  private async drawSnapshot(fullKey: string): Promise<void> {
-    // current-position実装をそのまま流用
+  protected async drawSnapshot(fullKey: string): Promise<void> {
     try {
       const result = await chrome.storage.local.get(fullKey);
       if (!result[fullKey]) {
@@ -188,8 +110,7 @@ export class TileSnapshotsRoute {
     }
   }
 
-  private async openDownloadModal(fullKey: string): Promise<void> {
-    // current-position実装をそのまま流用
+  protected async openDownloadModal(fullKey: string): Promise<void> {
     try {
       const result = await chrome.storage.local.get(fullKey);
       if (!result[fullKey]) {
@@ -205,23 +126,19 @@ export class TileSnapshotsRoute {
         reader.readAsDataURL(blob);
       });
 
-      const img = document.getElementById(
-        "wps-snapshot-image"
-      ) as HTMLImageElement;
+      const img = document.getElementById("wps-snapshot-image") as HTMLImageElement;
       if (img) {
         img.src = dataUrl;
       }
 
-      const modal = document.getElementById(
-        "wplace-studio-snapshot-download-modal"
-      ) as HTMLDialogElement;
+      const modal = document.getElementById("wplace-studio-snapshot-download-modal") as HTMLDialogElement;
       modal?.showModal();
     } catch (error) {
       this.showToast(`Open failed: ${error}`);
     }
   }
 
-  private showToast(message: string): void {
+  protected showToast(message: string): void {
     const toast = document.createElement("div");
     toast.className = "toast toast-top toast-end z-50";
     toast.innerHTML = `
@@ -232,4 +149,6 @@ export class TileSnapshotsRoute {
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
   }
+
+  protected abstract reloadSnapshots(container: HTMLElement): Promise<void>;
 }
