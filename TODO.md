@@ -1,0 +1,1 @@
+- src/features/time-travel/routes/tile-list.ts の translation
