@@ -3,7 +3,7 @@ import { Toast } from "../../components/toast";
 import { CONFIG } from "./config";
 import { FavoriteStorage, STORAGE_KEYS } from "./storage";
 import { ImportExportService } from "./import-export";
-import { getCurrentPosition } from "../../utils/position";
+import { getCurrentPosition, gotoPosition } from "../../utils/position";
 import { t } from "../../i18n/manager";
 import {
   createBookmarkButton,
@@ -87,7 +87,7 @@ export class ExtendedBookmarks {
           const lat = parseFloat(card.dataset.lat);
           const lng = parseFloat(card.dataset.lng);
           const zoom = parseFloat(card.dataset.zoom);
-          this.goTo(lat, lng, zoom);
+          gotoPosition({ lat, lng, zoom });
           modal.close();
         }
       });
@@ -158,14 +158,6 @@ export class ExtendedBookmarks {
     renderBookmarks(favorites);
   }
 
-  goTo(lat: number, lng: number, zoom: number): void {
-    const url = new URL(window.location.href);
-    url.searchParams.set("lat", lat.toString());
-    url.searchParams.set("lng", lng.toString());
-    url.searchParams.set("zoom", zoom.toString());
-    window.location.href = url.toString();
-  }
-
   async deleteFavorite(id: number): Promise<void> {
     if (!confirm(t`${"delete_confirm"}`)) return;
 
@@ -179,6 +171,4 @@ export class ExtendedBookmarks {
     this.renderFavorites();
     Toast.success(t`${"deleted_message"}`);
   }
-
-
 }

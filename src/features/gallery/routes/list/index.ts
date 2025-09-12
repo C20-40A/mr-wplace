@@ -20,16 +20,16 @@ export class GalleryList {
     onDrawToggle?: (key: string) => Promise<boolean>
   ): Promise<void> {
     this.onDrawToggleCallback = onDrawToggle;
-    
+
     const items = await this.storage.getAll();
-    
+
     // GalleryItemをImageItemに変換
-    const imageItems: ImageItem[] = items.map(item => ({
+    const imageItems: ImageItem[] = items.map((item) => ({
       key: item.key,
       dataUrl: item.dataUrl,
       createdAt: new Date(item.timestamp).toISOString(),
       drawEnabled: item.drawEnabled,
-      hasDrawPosition: !!item.drawPosition
+      hasDrawPosition: !!item.drawPosition,
     }));
 
     // 既存のImageGridComponentがあれば破棄
@@ -42,13 +42,13 @@ export class GalleryList {
       items: imageItems,
       isSelectionMode,
       onImageClick: (item) => {
-        const galleryItem = items.find(gItem => gItem.key === item.key);
+        const galleryItem = items.find((gItem) => gItem.key === item.key);
         if (galleryItem && onImageClick) {
           onImageClick(galleryItem);
         }
       },
       onImageSelect: (item) => {
-        const galleryItem = items.find(gItem => gItem.key === item.key);
+        const galleryItem = items.find((gItem) => gItem.key === item.key);
         if (galleryItem && onSelect) {
           onSelect(galleryItem);
         }
@@ -56,13 +56,27 @@ export class GalleryList {
       onImageDelete: async (key) => {
         await this.storage.delete(key);
         // 再描画
-        this.render(container, router, isSelectionMode, onSelect, onImageClick, onDrawToggle);
+        this.render(
+          container,
+          router,
+          isSelectionMode,
+          onSelect,
+          onImageClick,
+          onDrawToggle
+        );
       },
       onDrawToggle: async (key) => {
         if (this.onDrawToggleCallback) {
-          const newState = await this.onDrawToggleCallback(key);
+          await this.onDrawToggleCallback(key);
           // 状態変更後に再描画
-          this.render(container, router, isSelectionMode, onSelect, onImageClick, onDrawToggle);
+          this.render(
+            container,
+            router,
+            isSelectionMode,
+            onSelect,
+            onImageClick,
+            onDrawToggle
+          );
         }
       },
       onAddClick: () => {
@@ -71,7 +85,7 @@ export class GalleryList {
       },
       showDeleteButton: !isSelectionMode,
       showAddButton: true,
-      showDrawToggleButton: true
+      showDrawToggleButton: true,
     });
 
     // レンダリング
