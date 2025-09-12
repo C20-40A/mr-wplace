@@ -12,9 +12,9 @@ import { TileListRoute } from "./routes/tile-list";
 import { SnapshotRoute } from "./routes/snapshot-route";
 
 /**
- * タイムマシン機能（統合・拡張版）
- * - 現在位置のスナップショット管理（既存機能）
- * - タイル一覧→タイルスナップショット一覧（新機能）
+ * タイムマシン機能
+ * - 現在位置のスナップショット管理
+ * - タイル一覧→タイルスナップショット一覧
  */
 export class TimeTravel {
   private buttonObserver: ButtonObserver;
@@ -33,7 +33,7 @@ export class TimeTravel {
     this.tileSnapshotsRoute = new SnapshotRoute({ showSaveButton: false });
     this.buttonObserver = new ButtonObserver();
     this.init();
-    
+
     // グローバルアクセス用（既存パターンに倣う）
     (window as any).wplaceStudio = (window as any).wplaceStudio || {};
     (window as any).wplaceStudio.timeTravel = { ui: this.ui };
@@ -145,6 +145,4 @@ export class TimeTravel {
 
     Toast.success("Download started");
   }
-
-
 }
