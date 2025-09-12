@@ -7,9 +7,8 @@ import {
   createTimeTravelFAB,
   createSnapshotDownloadModal,
 } from "./ui";
-import { CurrentPositionRoute } from "./routes/current-position";
 import { TileListRoute } from "./routes/tile-list";
-import { TileSnapshotsRoute } from "./routes/tile-snapshots";
+import { SnapshotRoute } from "./routes/snapshot-route";
 
 /**
  * タイムマシン機能（統合・拡張版）
@@ -20,17 +19,17 @@ export class TimeTravel {
   private buttonObserver: ButtonObserver;
   private router: TimeTravelRouter;
   private ui: TimeTravelUI;
-  private currentPositionRoute: CurrentPositionRoute;
   private tileListRoute: TileListRoute;
-  private tileSnapshotsRoute: TileSnapshotsRoute;
+  private currentPositionRoute: SnapshotRoute;
+  private tileSnapshotsRoute: SnapshotRoute;
   private currentDownloadBlob: Blob | null = null;
 
   constructor() {
     this.router = new TimeTravelRouter();
     this.ui = new TimeTravelUI(this.router);
-    this.currentPositionRoute = new CurrentPositionRoute();
+    this.currentPositionRoute = new SnapshotRoute({ showSaveButton: true });
     this.tileListRoute = new TileListRoute();
-    this.tileSnapshotsRoute = new TileSnapshotsRoute();
+    this.tileSnapshotsRoute = new SnapshotRoute({ showSaveButton: false });
     this.buttonObserver = new ButtonObserver();
     this.init();
   }
