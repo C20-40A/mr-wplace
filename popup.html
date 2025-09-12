@@ -3,70 +3,71 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WPlace Studio Settings</title>
+    <title>Mr. WPlace Settings</title>
     <style>
       body {
         width: 280px;
         min-height: 200px;
         margin: 0;
         padding: 16px;
-        font-family: system-ui, -apple-system, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        font-family: 'Courier New', monospace;
+        background: #ffffff;
+        color: #000000;
+        border: 2px solid #000000;
+        box-sizing: border-box;
       }
 
       .header {
         text-align: center;
         margin-bottom: 20px;
+        border-bottom: 1px solid #000000;
+        padding-bottom: 12px;
       }
 
       .header h2 {
         margin: 0 0 4px 0;
         font-size: 18px;
-        font-weight: 600;
-      }
-
-      .header p {
-        margin: 0;
-        font-size: 12px;
-        opacity: 0.8;
+        font-weight: bold;
       }
 
       .setting-group {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        padding: 16px;
+        background: #ffffff;
+        border: 1px solid #000000;
+        padding: 12px;
         margin-bottom: 12px;
-        backdrop-filter: blur(10px);
       }
 
       .setting-label {
         display: block;
         font-size: 14px;
-        font-weight: 500;
+        font-weight: bold;
         margin-bottom: 8px;
       }
 
       select {
         width: 100%;
-        padding: 8px 12px;
-        border: none;
-        border-radius: 6px;
-        background: rgba(255, 255, 255, 0.9);
-        color: #333;
+        padding: 6px 8px;
+        border: 1px solid #000000;
+        background: #ffffff;
+        color: #000000;
         font-size: 14px;
+        font-family: 'Courier New', monospace;
         cursor: pointer;
+        box-sizing: border-box;
       }
 
       select:focus {
-        outline: 2px solid rgba(255, 255, 255, 0.5);
+        outline: 2px solid #000000;
+        outline-offset: -2px;
       }
 
       .status {
         text-align: center;
         font-size: 12px;
-        opacity: 0.7;
         margin-top: 12px;
+        padding: 4px 8px;
+        border: 1px solid #000000;
+        background: #f0f0f0;
       }
 
       .icon {
@@ -77,30 +78,33 @@
         vertical-align: middle;
       }
 
-      .feature-toggles {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
+      .coffee-support {
+        text-align: center;
+        margin-top: 16px;
+        padding-top: 12px;
+        border-top: 1px solid #000000;
       }
 
-      .toggle-item {
-        display: flex;
-        align-items: center;
-        font-size: 13px;
-        cursor: pointer;
-        padding: 4px 0;
+      .coffee-link {
+        display: inline-block;
+        color: #000000;
+        text-decoration: none;
+        font-size: 12px;
+        padding: 4px 8px;
+        border: 1px solid #000000;
+        background: #f0f0f0;
+        font-weight: bold;
       }
 
-      .toggle-item input[type="checkbox"] {
-        margin-right: 8px;
-        transform: scale(1.1);
+      .coffee-link:hover {
+        background: #000000;
+        color: #ffffff;
       }
     </style>
   </head>
   <body>
     <div class="header">
-      <h2>🎨 WPlace Studio</h2>
-      <p>Settings</p>
+      <h2>🎨 Mr. WPlace</h2>
     </div>
 
     <div class="setting-group">
@@ -115,6 +119,16 @@
     </div>
 
     <div class="status" id="status">Ready</div>
+
+    <div class="coffee-support">
+      <a
+        href="https://buymeacoffee.com/c20_40a"
+        target="_blank"
+        class="coffee-link"
+      >
+        ☕ Buy me a coffee
+      </a>
+    </div>
 
     <script src="popup.js"></script>
   </body>
