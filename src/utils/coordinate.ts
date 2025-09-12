@@ -23,3 +23,21 @@ export function llzToTilePixel(lat: number, lng: number) {
 
   return { TLX, TLY, PxX, PxY, worldX, worldY };
 }
+
+// タイル座標から緯度経度への逆変換
+export function tileToLatLng(tileX: number, tileY: number) {
+  const tileSize = 1000;
+  const zoom = 11;
+  const N = tileSize * Math.pow(2, zoom); // 世界全体のピクセル数
+
+  // タイル中央のワールドピクセル座標
+  const worldX = tileX * tileSize + tileSize / 2;
+  const worldY = tileY * tileSize + tileSize / 2;
+
+  // Web Mercator 逆変換
+  const lng = (worldX / N) * 360 - 180;
+  const lat =
+    (Math.atan(Math.sinh(Math.PI * (1 - (2 * worldY) / N))) * 180) / Math.PI;
+
+  return { lat, lng };
+}
