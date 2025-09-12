@@ -94,32 +94,20 @@ export abstract class BaseSnapshotRoute {
         return;
       }
 
-      const uint8Array = new Uint8Array(result[fullKey]);
-      const blob = new Blob([uint8Array], { type: "image/png" });
-      const dataUrl = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(blob);
-      });
-
-      const timestamp = parseInt(fullKey.split("_")[2]);
-      const imageItem = {
-        key: fullKey,
-        dataUrl: dataUrl,
-        title: `Snapshot ${fullKey.replace("tile_snapshot_", "")}`,
-        createdAt: new Date(timestamp).toISOString(),
-      };
-
       const tileX = parseInt(fullKey.split("_")[3]);
       const tileY = parseInt(fullKey.split("_")[4]);
-      const coords = { TLX: tileX, TLY: tileY, PxX: 0, PxY: 0 };
 
+      const uint8Array = new Uint8Array(result[fullKey]);
+      const blob = new Blob([uint8Array], { type: "image/png" });
+      const file = new File([blob], "snapshot.png", { type: "image/png" });
+
+      // 直接TemplateManagerで描画（座標は既にタイル単位）
       const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
-      if (tileOverlay) {
-        await tileOverlay.drawImageWithCoords(coords, imageItem);
+      if (tileOverlay && tileOverlay.templateManager) {
+        await tileOverlay.templateManager.createTemplate(file, [tileX, tileY, 0, 0]);
         Toast.success("Snapshot drawn successfully");
         
-        // モーダルを閉じる（既存パターンに倣うグローバルアクセス）
+        // モーダルを閉じる
         const timeTravelUI = (window as any).wplaceStudio?.timeTravel?.ui;
         if (timeTravelUI) {
           timeTravelUI.hideModal();
