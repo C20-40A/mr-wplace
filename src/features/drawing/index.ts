@@ -8,11 +8,8 @@ import { ImageItem } from "../gallery/routes/list/components";
 
 /**
  * 画像描画機能の独立モジュール
- * favorite機能から分離
  */
 export class Drawing {
-  private selectedImage: any = null;
-  private isDrawMode: boolean = false;
   private buttonObserver: ButtonObserver;
   private imageSelectorModal: ImageSelectorModal;
 
@@ -50,22 +47,14 @@ export class Drawing {
 
   private startDraw(imageItem: ImageItem): void {
     console.log("🎨 Start drawing with:", imageItem);
-    this.selectedImage = imageItem;
-    this.isDrawMode = true;
 
     const position = getCurrentPosition();
     if (!position) {
       alert(t`${"location_unavailable"}`);
-      this.resetDrawMode();
       return;
     }
 
     this.drawImageOnMap(position.lat, position.lng, imageItem);
-  }
-
-  private resetDrawMode(): void {
-    this.selectedImage = null;
-    this.isDrawMode = false;
   }
 
   public async drawImageOnMap(
@@ -87,7 +76,5 @@ export class Drawing {
     } catch (error) {
       console.error("❌ Image drawing failed:", error);
     }
-
-    this.resetDrawMode();
   }
 }

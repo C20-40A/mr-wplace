@@ -24,28 +24,19 @@ export class TileOverlay {
 
   private setupTileProcessing(): void {
     window.addEventListener("message", async (event) => {
-      if (event.data.source === "wplace-studio-tile") {
-        const { blobID, tileBlob, tileX, tileY } = event.data;
+      if (event.data.source !== "wplace-studio-tile") return;
+      const { blobID, tileBlob, tileX, tileY } = event.data;
 
-        try {
-          const processedBlob = await this.drawPixelOnTile(
-            tileBlob,
-            tileX,
-            tileY
-          );
+      const processedBlob = await this.drawPixelOnTile(tileBlob, tileX, tileY);
 
-          window.postMessage(
-            {
-              source: "wplace-studio-processed",
-              blobID: blobID,
-              processedBlob: processedBlob,
-            },
-            "*"
-          );
-        } catch (error) {
-          console.error("Failed to process tile:", error);
-        }
-      }
+      window.postMessage(
+        {
+          source: "wplace-studio-processed",
+          blobID: blobID,
+          processedBlob: processedBlob,
+        },
+        "*"
+      );
     });
 
     console.log("Tile processing listener setup complete");
@@ -84,30 +75,25 @@ export class TileOverlay {
   ): Promise<void> {
     console.log("🖼️ Drawing image with coords:", coords);
 
-    try {
-      // Convert dataUrl to File for Template
-      const response = await fetch(imageItem.dataUrl);
-      const blob = await response.blob();
-      const file = new File([blob], imageItem.title || "template.png", {
-        type: blob.type,
-      });
+    // Convert dataUrl to File for Template
+    const response = await fetch(imageItem.dataUrl);
+    const blob = await response.blob();
+    const file = new File([blob], imageItem.title || "template.png", {
+      type: blob.type,
+    });
 
-      // Create template using TemplateManager
-      await this.templateManager.createTemplate(file, [
-        coords.TLX,
-        coords.TLY,
-        coords.PxX,
-        coords.PxY,
-      ]);
+    // Create template using TemplateManager
+    await this.templateManager.createTemplate(file, [
+      coords.TLX,
+      coords.TLY,
+      coords.PxX,
+      coords.PxY,
+    ]);
 
-      // 描画完了後に位置情報を保存
-      console.log("🔄 Saving draw position:", imageItem.key, coords);
-      await this.saveDrawPosition(imageItem.key, coords);
-      console.log("✅ Template created and position saved");
-    } catch (error) {
-      console.error("❌ Failed to create template:", error);
-      throw error; // Re-throw to allow caller to handle
-    }
+    // 描画完了後に位置情報を保存
+    console.log("🔄 Saving draw position:", imageItem.key, coords);
+    await this.saveDrawPosition(imageItem.key, coords);
+    console.log("✅ Template created and position saved");
   }
 
   async drawPixelOnTile(
@@ -132,38 +118,33 @@ export class TileOverlay {
     imageKey: string,
     coords: { TLX: number; TLY: number; PxX: number; PxY: number }
   ): Promise<void> {
-    try {
-      console.log("🔍 Starting save for:", imageKey, coords);
+    console.log("🔍 Starting save for:", imageKey, coords);
 
-      const items = await this.galleryStorage.getAll();
-      console.log("📦 Total items before save:", items.length);
+    const items = await this.galleryStorage.getAll();
 
-      const item = items.find((i) => i.key === imageKey);
-      if (!item) {
-        console.error("Image not found:", imageKey);
-        return;
-      }
-
-      console.log("🖼️ Found item:", item);
-
-      const updatedItem = {
-        ...item,
-        drawPosition: coords,
-        drawEnabled: true,
-      };
-
-      console.log("🔄 Updated item:", updatedItem);
-
-      await this.galleryStorage.save(updatedItem);
-      console.log("💾 Save completed");
-
-      // 保存後の確認
-      const itemsAfter = await this.galleryStorage.getAll();
-      const savedItem = itemsAfter.find((i) => i.key === imageKey);
-      console.log("🔍 Verification - saved item:", savedItem);
-    } catch (error) {
-      console.error("Failed to save draw position:", error);
+    const item = items.find((i) => i.key === imageKey);
+    if (!item) {
+      console.error("Image not found:", imageKey);
+      return;
     }
+
+    console.log("🖼️ Found item:", item);
+
+    const updatedItem = {
+      ...item,
+      drawPosition: coords,
+      drawEnabled: true,
+    };
+
+    console.log("🔄 Updated item:", updatedItem);
+
+    await this.galleryStorage.save(updatedItem);
+    console.log("💾 Save completed");
+
+    // 保存後の確認
+    const itemsAfter = await this.galleryStorage.getAll();
+    const savedItem = itemsAfter.find((i) => i.key === imageKey);
+    console.log("🔍 Verification - saved item:", savedItem);
   }
 
   /**
@@ -173,13 +154,11 @@ export class TileOverlay {
     tileX: number,
     tileY: number
   ): Promise<void> {
-    // console.debug(`🔍 Checking restore for tile ${tileX},${tileY}`);
     try {
       // 該当タイルの全テンプレートをクリア
       this.templateManager.clearAllTemplates();
 
       const items = await this.galleryStorage.getAll();
-      // console.debug(`📦 Total gallery items: ${items.length}`);
 
       const enabledItems = items.filter((item) => {
         const hasPosition = !!item.drawPosition;
@@ -187,16 +166,8 @@ export class TileOverlay {
         const matchesTile =
           item.drawPosition?.TLX === tileX && item.drawPosition?.TLY === tileY;
 
-        // console.debug(
-        //   `🖼️ Item ${item.key}: enabled=${isEnabled}, hasPosition=${hasPosition}, matchesTile=${matchesTile}`
-        // );
-
         return isEnabled && hasPosition && matchesTile;
       });
-
-      // console.debug(
-      //   `✅ Found ${enabledItems.length} items to restore on tile ${tileX},${tileY}`
-      // );
 
       if (enabledItems.length === 0) return;
 
@@ -211,51 +182,38 @@ export class TileOverlay {
   /**
    * 画像の描画状態を切り替える
    */
-  async toggleImageDrawState(imageKey: string): Promise<void> {
-    try {
-      const galleryStorage = new GalleryStorage();
-      const items = await galleryStorage.getAll();
+  async toggleImageDrawState(imageKey: string): Promise<boolean> {
+    const galleryStorage = new GalleryStorage();
+    const items = await galleryStorage.getAll();
 
-      const item = items.find((i) => i.key === imageKey);
-      if (!item) {
-        console.warn(`Image not found: ${imageKey}`);
-        return;
-      }
-
-      const updatedItem = {
-        ...item,
-        drawEnabled: !item.drawEnabled,
-      };
-
-      await galleryStorage.save(updatedItem);
-
-      console.log(
-        `🔄 TileOverlay toggle: ${imageKey} -> ${updatedItem.drawEnabled}`
-      );
-    } catch (error) {
-      console.error("Failed to toggle image draw state:", error);
+    const item = items.find((i) => i.key === imageKey);
+    if (!item) {
+      console.warn(`Image not found: ${imageKey}`);
+      return false;
     }
+
+    const updatedItem = {
+      ...item,
+      drawEnabled: !item.drawEnabled,
+    };
+
+    await galleryStorage.save(updatedItem);
+    return updatedItem.drawEnabled;
   }
 
   /**
    * 単一画像をタイル上に復元
    */
   private async restoreImageOnTile(item: any): Promise<void> {
-    try {
-      const response = await fetch(item.dataUrl);
-      const blob = await response.blob();
-      const file = new File([blob], "restored.png", { type: blob.type });
+    const response = await fetch(item.dataUrl);
+    const blob = await response.blob();
+    const file = new File([blob], "restored.png", { type: blob.type });
 
-      await this.templateManager.createTemplate(file, [
-        item.drawPosition.TLX,
-        item.drawPosition.TLY,
-        item.drawPosition.PxX,
-        item.drawPosition.PxY,
-      ]);
-
-      console.log("Image restored:", item.key, item.drawPosition);
-    } catch (error) {
-      console.error("Failed to restore image:", item.key, error);
-    }
+    await this.templateManager.createTemplate(file, [
+      item.drawPosition.TLX,
+      item.drawPosition.TLY,
+      item.drawPosition.PxX,
+      item.drawPosition.PxY,
+    ]);
   }
 }
