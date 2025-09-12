@@ -1,4 +1,5 @@
 import { ButtonObserver } from "../../components/button-observer";
+import { Toast } from "../../components/toast";
 import { CONFIG } from "./config";
 import { FavoriteStorage, STORAGE_KEYS } from "./storage";
 import { ImportExportService } from "./import-export";
@@ -95,14 +96,14 @@ export class ExtendedBookmarks {
       .querySelector("#wps-export-btn")!
       .addEventListener("click", async () => {
         const result = await ImportExportService.exportFavorites();
-        this.showToast(result.message);
+        Toast.success(result.message);
       });
 
     modal
       .querySelector("#wps-import-btn")!
       .addEventListener("click", async () => {
         const result = await ImportExportService.importFavorites();
-        this.showToast(result.message);
+        Toast.success(result.message);
         if (result.shouldRender) {
           this.renderFavorites();
         }
@@ -149,7 +150,7 @@ export class ExtendedBookmarks {
       JSON.stringify(favorites)
     );
 
-    this.showToast(t`"${name}" ${"saved_message"}`);
+    Toast.success(t`"${name}" ${"saved_message"}`);
   }
 
   async renderFavorites(): Promise<void> {
@@ -176,19 +177,8 @@ export class ExtendedBookmarks {
     );
 
     this.renderFavorites();
-    this.showToast(t`${"deleted_message"}`);
+    Toast.success(t`${"deleted_message"}`);
   }
 
-  showToast(message: string): void {
-    const toast = document.createElement("div");
-    toast.className = "toast toast-top toast-end z-50";
-    toast.innerHTML = `
-      <div class="alert alert-success">
-        <span>${message}</span>
-      </div>
-    `;
 
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-  }
 }

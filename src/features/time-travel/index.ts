@@ -1,4 +1,5 @@
 import { ButtonObserver, ButtonConfig } from "../../components/button-observer";
+import { Toast } from "../../components/toast";
 import { CONFIG } from "../bookmark/config";
 import { TimeTravelRouter, TimeTravelRoute } from "./router";
 import {
@@ -129,7 +130,7 @@ export class TimeTravel {
 
   private downloadCurrentSnapshot(): void {
     if (!this.currentDownloadBlob) {
-      this.showToast("No image to download");
+      Toast.error("No image to download");
       return;
     }
 
@@ -142,18 +143,8 @@ export class TimeTravel {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    this.showToast("Download started");
+    Toast.success("Download started");
   }
 
-  private showToast(message: string): void {
-    const toast = document.createElement("div");
-    toast.className = "toast toast-top toast-end z-50";
-    toast.innerHTML = `
-      <div class="alert alert-success">
-        <span>${message}</span>
-      </div>
-    `;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-  }
+
 }

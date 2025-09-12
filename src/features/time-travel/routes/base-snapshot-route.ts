@@ -1,4 +1,5 @@
 import { TimeTravelStorage, SnapshotInfo } from "../storage";
+import { Toast } from "../../../components/toast";
 import { t } from "../../../i18n/manager";
 import { I18nManager } from "../../../i18n/manager";
 
@@ -81,7 +82,7 @@ export abstract class BaseSnapshotRoute {
   ): Promise<void> {
     if (!confirm(t`${"delete_confirm"}`)) return;
     await TimeTravelStorage.removeSnapshotFromIndex(fullKey);
-    this.showToast(t`${"deleted_message"}`);
+    Toast.success(t`${"deleted_message"}`);
     await this.reloadSnapshots(container);
   }
 
@@ -89,7 +90,7 @@ export abstract class BaseSnapshotRoute {
     try {
       const result = await chrome.storage.local.get(fullKey);
       if (!result[fullKey]) {
-        this.showToast("Snapshot not found");
+        Toast.error("Snapshot not found");
         return;
       }
 
@@ -116,7 +117,7 @@ export abstract class BaseSnapshotRoute {
       const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
       if (tileOverlay) {
         await tileOverlay.drawImageWithCoords(coords, imageItem);
-        this.showToast("Snapshot drawn successfully");
+        Toast.success("Snapshot drawn successfully");
         
         // モーダルを閉じる（既存パターンに倣うグローバルアクセス）
         const timeTravelUI = (window as any).wplaceStudio?.timeTravel?.ui;
@@ -124,10 +125,10 @@ export abstract class BaseSnapshotRoute {
           timeTravelUI.hideModal();
         }
       } else {
-        this.showToast("TileOverlay not available");
+        Toast.error("TileOverlay not available");
       }
     } catch (error) {
-      this.showToast(`Draw failed: ${error}`);
+      Toast.error(`Draw failed: ${error}`);
     }
   }
 
@@ -135,7 +136,7 @@ export abstract class BaseSnapshotRoute {
     try {
       const result = await chrome.storage.local.get(fullKey);
       if (!result[fullKey]) {
-        this.showToast("Snapshot not found");
+        Toast.error("Snapshot not found");
         return;
       }
 
@@ -159,20 +160,8 @@ export abstract class BaseSnapshotRoute {
       ) as HTMLDialogElement;
       modal?.showModal();
     } catch (error) {
-      this.showToast(`Open failed: ${error}`);
+      Toast.error(`Open failed: ${error}`);
     }
-  }
-
-  protected showToast(message: string): void {
-    const toast = document.createElement("div");
-    toast.className = "toast toast-top toast-end z-50";
-    toast.innerHTML = `
-      <div class="alert alert-info">
-        <span>${message}</span>
-      </div>
-    `;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
   }
 
   protected abstract reloadSnapshots(container: HTMLElement): Promise<void>;
