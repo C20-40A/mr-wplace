@@ -4,6 +4,7 @@ import { TimeTravelRouter } from "../router";
 import { getCurrentPosition } from "../../../utils/position";
 import { TimeTravelStorage } from "../storage";
 import { t } from "../../../i18n/manager";
+import { llzToTilePixel } from "../../../utils/coordinate";
 
 interface SnapshotRouteOptions {
   showSaveButton: boolean;
@@ -29,7 +30,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     } else {
       const position = getCurrentPosition();
       if (position) {
-        const coords = this.calculateTileCoords(position.lat, position.lng);
+        const coords = llzToTilePixel(position.lat, position.lng);
         this.currentTileX = coords.TLX;
         this.currentTileY = coords.TLY;
       }
@@ -38,7 +39,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     // タイル情報表示部分（特定タイルの場合のみ）
     const tileInfoHtml = selectedTile
       ? `<div class="mb-4">
-           <div class="text-sm text-gray-600">タイル(${this.currentTileX}, ${this.currentTileY})のスナップショット</div>
+           <div class="text-sm text-gray-600">Tile(${this.currentTileX}, ${this.currentTileY})</div>
          </div>`
       : "";
 
@@ -115,25 +116,6 @@ export class SnapshotRoute extends BaseSnapshotRoute {
         listContainer.innerHTML = `<div class="text-sm text-red-500 text-center p-4">Failed to load snapshots</div>`;
       }
     }
-  }
-
-  private calculateTileCoords(
-    lat: number,
-    lng: number
-  ): { TLX: number; TLY: number } {
-    const tileSize = 1000;
-    const zoom = 11;
-    const scale = tileSize * Math.pow(2, zoom);
-
-    const worldX = ((lng + 180) / 360) * scale;
-    const sinLat = Math.sin((lat * Math.PI) / 180);
-    const worldY =
-      (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI)) * scale;
-
-    return {
-      TLX: Math.floor(worldX / tileSize),
-      TLY: Math.floor(worldY / tileSize),
-    };
   }
 
   private async saveCurrentSnapshot(container: HTMLElement): Promise<void> {

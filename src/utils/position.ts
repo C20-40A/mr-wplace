@@ -13,3 +13,11 @@ export function getCurrentPosition(): Position | null {
   }
   return null;
 }
+
+export const gotoPosition = ({ lat, lng, zoom }: Position) => {
+  const url = new URL(window.location.href);
+  url.searchParams.set("lat", lat.toString());
+  url.searchParams.set("lng", lng.toString());
+  url.searchParams.set("zoom", zoom.toString());
+  window.location.href = url.toString();
+};
