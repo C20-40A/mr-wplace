@@ -1,11 +1,14 @@
 import { TimeTravelRouter } from "../router";
 import { t } from "../../../i18n/manager";
 import { ImageInspector } from "../../../components/image-inspector";
+import { Toast } from "../../../components/toast";
 
 export class SnapshotDetailRoute {
   private imageInspector?: ImageInspector;
+  private router?: TimeTravelRouter;
 
   render(container: HTMLElement, router: TimeTravelRouter): void {
+    this.router = router;
     const selectedSnapshot = (router as any).selectedSnapshot;
 
     if (!selectedSnapshot) {
@@ -22,7 +25,13 @@ export class SnapshotDetailRoute {
         </div>
         
         <div style="height: 60px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-          <button id="wps-download-snapshot-btn" class="btn btn-primary">
+          <button id="wps-draw-snapshot-btn" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+              <path d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712zM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4z" />
+            </svg>
+            ${"draw_image"}
+          </button>
+          <button id="wps-download-snapshot-btn" class="btn btn-neutral">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
               <path fill-rule="evenodd" d="M12 2.25a.75.75 0 01.75.75v11.69l3.22-3.22a.75.75 0 111.06 1.06l-4.5 4.5a.75.75 0 01-1.06 0l-4.5-4.5a.75.75 0 111.06-1.06L11.25 14.69V3a.75.75 0 01.75-.75z" clip-rule="evenodd" />
               <path fill-rule="evenodd" d="M6.75 15.75a.75.75 0 01.75-.75h9a.75.75 0 010 1.5h-9a.75.75 0 01-.75-.75z" clip-rule="evenodd" />
@@ -38,6 +47,16 @@ export class SnapshotDetailRoute {
   }
 
   private setupEvents(container: HTMLElement): void {
+    const selectedSnapshot = (this.router as any)?.selectedSnapshot;
+
+    container
+      .querySelector("#wps-draw-snapshot-btn")
+      ?.addEventListener("click", () => {
+        if (selectedSnapshot?.fullKey) {
+          this.drawSnapshot(selectedSnapshot.fullKey);
+        }
+      });
+
     container
       .querySelector("#wps-download-snapshot-btn")
       ?.addEventListener("click", () => {
@@ -85,6 +104,34 @@ export class SnapshotDetailRoute {
       img.src = dataUrl;
     } catch (error) {
       console.error("Failed to load snapshot:", error);
+    }
+  }
+
+  private async drawSnapshot(fullKey: string): Promise<void> {
+    const result = await chrome.storage.local.get(fullKey);
+    if (!result[fullKey]) throw new Error("Snapshot not found");
+
+    const tileX = parseInt(fullKey.split("_")[3]);
+    const tileY = parseInt(fullKey.split("_")[4]);
+
+    const uint8Array = new Uint8Array(result[fullKey]);
+    const blob = new Blob([uint8Array], { type: "image/png" });
+    const file = new File([blob], "snapshot.png", { type: "image/png" });
+
+    // 直接TemplateManagerで描画（座標は既にタイル単位）
+    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
+    await tileOverlay.templateManager.createTemplate(file, [
+      tileX,
+      tileY,
+      0,
+      0,
+    ]);
+    Toast.success("Snapshot drawn successfully");
+
+    // モーダルを閉じる
+    const timeTravelUI = (window as any).wplaceStudio?.timeTravel?.ui;
+    if (timeTravelUI) {
+      timeTravelUI.hideModal();
     }
   }
 
