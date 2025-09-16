@@ -17,17 +17,15 @@ export abstract class BaseSnapshotRoute {
         const deleteBtn = target.closest(
           ".wps-delete-btn"
         ) as HTMLElement | null;
-        const drawBtn = target.closest(".wps-draw-btn") as HTMLElement | null;
-        const downloadBtn = target.closest(
-          ".wps-download-btn"
+        const snapshotItem = target.closest(
+          ".wps-snapshot-item"
         ) as HTMLElement | null;
 
         if (deleteBtn?.dataset.snapshotKey) {
+          e.stopPropagation();
           await this.deleteSnapshot(deleteBtn.dataset.snapshotKey, container);
-        } else if (drawBtn?.dataset.snapshotKey) {
-          await this.drawSnapshot(drawBtn.dataset.snapshotKey);
-        } else if (downloadBtn?.dataset.snapshotKey) {
-          await this.openDownloadModal(downloadBtn.dataset.snapshotKey);
+        } else if (snapshotItem?.dataset.snapshotKey) {
+          await this.navigateToDetail(snapshotItem.dataset.snapshotKey);
         }
       });
   }
@@ -48,30 +46,12 @@ export abstract class BaseSnapshotRoute {
     );
 
     return `
-      <div class="border-b">
-        <div class="p-2 cursor-pointer hover:bg-gray-50" onclick="this.parentElement.querySelector('.details').classList.toggle('hidden')">
+      <div class="border-b wps-snapshot-item cursor-pointer hover:bg-gray-50" data-snapshot-key="${snapshot.fullKey}" style="position: relative;">
+        <div class="p-3">
           <div class="text-sm font-medium">${formattedTime}</div>
-          <div class="text-xs text-gray-500">${snapshot.id}</div>
+          <div class="text-xs" style="color: #9ca3af;">${snapshot.id}</div>
         </div>
-        <div class="details hidden p-2 bg-gray-50">
-          <div class="flex gap-2">
-            <button class="btn btn-sm btn-primary wps-draw-btn" data-snapshot-key="${
-              snapshot.fullKey
-            }">
-              ${t`${"draw_image"}`}
-            </button>
-            <button class="btn btn-sm btn-neutral wps-download-btn" data-snapshot-key="${
-              snapshot.fullKey
-            }">
-              ${t`${"download"}`}
-            </button>
-            <button class="btn btn-sm btn-error wps-delete-btn" data-snapshot-key="${
-              snapshot.fullKey
-            }">
-              ${t`${"delete"}`}
-            </button>
-          </div>
-        </div>
+        <button class="wps-delete-btn" data-snapshot-key="${snapshot.fullKey}" style="position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; border: none; background: grey; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer;">×</button>
       </div>
     `;
   }
@@ -86,35 +66,7 @@ export abstract class BaseSnapshotRoute {
     await this.reloadSnapshots(container);
   }
 
-  protected async drawSnapshot(fullKey: string): Promise<void> {
-    const result = await chrome.storage.local.get(fullKey);
-    if (!result[fullKey]) throw new Error("Snapshot not found");
-
-    const tileX = parseInt(fullKey.split("_")[3]);
-    const tileY = parseInt(fullKey.split("_")[4]);
-
-    const uint8Array = new Uint8Array(result[fullKey]);
-    const blob = new Blob([uint8Array], { type: "image/png" });
-    const file = new File([blob], "snapshot.png", { type: "image/png" });
-
-    // 直接TemplateManagerで描画（座標は既にタイル単位）
-    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
-    await tileOverlay.templateManager.createTemplate(file, [
-      tileX,
-      tileY,
-      0,
-      0,
-    ]);
-    Toast.success("Snapshot drawn successfully");
-
-    // モーダルを閉じる
-    const timeTravelUI = (window as any).wplaceStudio?.timeTravel?.ui;
-    if (timeTravelUI) {
-      timeTravelUI.hideModal();
-    }
-  }
-
-  protected async openDownloadModal(fullKey: string): Promise<void> {
+  protected async navigateToDetail(fullKey: string): Promise<void> {
     const timeTravel = (window as any).wplaceStudio?.timeTravel;
     if (timeTravel?.router) {
       (timeTravel.router as any).selectedSnapshot = { fullKey };
