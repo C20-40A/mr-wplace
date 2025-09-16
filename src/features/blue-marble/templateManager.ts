@@ -48,15 +48,15 @@ export default class TemplateManager {
       tileCoords[1].toString().padStart(4, "0");
 
     // 全テンプレートから該当タイルを収集
-    const allMatchingTiles: Array<{tileKey: string, template: Template}> = [];
-    
+    const allMatchingTiles: Array<{ tileKey: string; template: Template }> = [];
+
     for (const template of this.templatesArray) {
       if (!template?.chunked) continue;
-      
+
       const matchingTiles = Object.keys(template.chunked).filter((tile) =>
         tile.startsWith(coordStr)
       );
-      
+
       for (const tileKey of matchingTiles) {
         allMatchingTiles.push({ tileKey, template });
       }
@@ -78,7 +78,8 @@ export default class TemplateManager {
     // 全テンプレート描画（配列順序で後勝ち）
     for (const { tileKey, template } of allMatchingTiles) {
       const coords = tileKey.split(",");
-      const templateBitmap = template.chunked[tileKey];
+      const templateBitmap = template.chunked?.[tileKey];
+      if (!templateBitmap) continue;
 
       context.drawImage(
         templateBitmap,
@@ -97,7 +98,9 @@ export default class TemplateManager {
 
   /** 特定テンプレート削除（複数対応用） */
   removeTemplate(templateToRemove: Template): void {
-    this.templatesArray = this.templatesArray.filter(t => t !== templateToRemove);
+    this.templatesArray = this.templatesArray.filter(
+      (t) => t !== templateToRemove
+    );
   }
 
   /** 全テンプレートクリア */

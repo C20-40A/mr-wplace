@@ -4,7 +4,6 @@ import { uint8ToBase64 } from "./utils";
 export interface TemplateProcessingResult {
   templateTiles: Record<string, ImageBitmap>;
   templateTilesBuffers: Record<string, string>;
-  pixelCount: number;
   colorPalette: Record<string, { count: number; enabled: boolean }>;
   tilePrefixes: Set<string>;
 }
@@ -323,7 +322,6 @@ export const createTemplateTiles = async (
   return {
     templateTiles,
     templateTilesBuffers,
-    pixelCount: totalPixels,
     colorPalette,
     tilePrefixes,
   };
