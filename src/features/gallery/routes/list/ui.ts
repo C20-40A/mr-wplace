@@ -171,24 +171,18 @@ export class GalleryListUI {
     isSelectionMode: boolean,
     onSelect?: (item: GalleryItem) => void
   ): Promise<void> {
-    // アイテムを見つけて状態を切り替え
-    const item = items.find((i) => i.key === key);
-    if (!item) return;
+    // TileOverlayのtoggleImageDrawStateに一本化
+    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
+    if (!tileOverlay) return;
 
-    const updatedItem = {
-      ...item,
-      drawEnabled: !item.drawEnabled,
-    };
-
-    // GalleryStorageを使って保存
-    const galleryStorage = new (await import("../../storage")).GalleryStorage();
-    await galleryStorage.save(updatedItem);
+    const newDrawEnabled = await tileOverlay.toggleImageDrawState(key);
 
     // 画面を再描画
+    const galleryStorage = new (await import("../../storage")).GalleryStorage();
     const updatedItems = await galleryStorage.getAll();
     this.renderGalleryList(updatedItems, onDelete, isSelectionMode, onSelect);
 
-    console.log(`🎯 Draw toggle: ${key} -> ${updatedItem.drawEnabled}`);
+    console.log(`🎯 Draw toggle: ${key} -> ${newDrawEnabled}`);
   }
 
   private createModal(): void {

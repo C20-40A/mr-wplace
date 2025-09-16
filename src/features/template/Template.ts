@@ -3,7 +3,6 @@ import { createTemplateTiles as createTemplateTilesFn } from "./template-functio
 
 /** テンプレートコンストラクタパラメータ */
 interface TemplateParams {
-  url?: string;
   file?: File | null;
   coords?: number[] | null;
   chunked?: Record<string, ImageBitmap> | null;

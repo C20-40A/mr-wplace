@@ -1,12 +1,18 @@
 import { Template } from "./Template";
 
+interface TemplateInstance {
+  template: Template;
+  imageKey: string;
+  drawEnabled: boolean;
+}
+
 /** 最小化されたTemplateManager - 画像表示機能のみ
  * WPlace Studio用に簡略化
  */
 export class TemplateManager {
   public tileSize: number;
   public drawMult: number;
-  public templatesArray: Template[];
+  public templatesArray: TemplateInstance[];
 
   constructor() {
     this.tileSize = 1000;
@@ -16,7 +22,7 @@ export class TemplateManager {
   }
 
   /** テンプレート作成（コア機能のみ） */
-  async createTemplate(blob: File, coords: number[]): Promise<void> {
+  async createTemplate(blob: File, coords: number[], imageKey: string): Promise<void> {
     // テンプレート作成
     const template = new Template({
       file: blob,
@@ -26,8 +32,12 @@ export class TemplateManager {
     const { templateTiles } = await template.createTemplateTiles();
     template.chunked = templateTiles;
 
-    // 複数テンプレート対応: 追加のみ
-    this.templatesArray.push(template);
+    // TemplateInstanceとして追加
+    this.templatesArray.push({
+      template,
+      imageKey,
+      drawEnabled: true
+    });
   }
 
   /** タイルに画像描画（メイン機能） */
@@ -43,18 +53,18 @@ export class TemplateManager {
       "," +
       tileCoords[1].toString().padStart(4, "0");
 
-    // 全テンプレートから該当タイルを収集
+    // 全テンプレートから該当タイル（有効のみ）を収集
     const allMatchingTiles: Array<{ tileKey: string; template: Template }> = [];
 
-    for (const template of this.templatesArray) {
-      if (!template?.chunked) continue;
+    for (const templateInstance of this.templatesArray) {
+      if (!templateInstance?.drawEnabled || !templateInstance?.template?.chunked) continue;
 
-      const matchingTiles = Object.keys(template.chunked).filter((tile) =>
+      const matchingTiles = Object.keys(templateInstance.template.chunked).filter((tile) =>
         tile.startsWith(coordStr)
       );
 
       for (const tileKey of matchingTiles) {
-        allMatchingTiles.push({ tileKey, template });
+        allMatchingTiles.push({ tileKey, template: templateInstance.template });
       }
     }
 
@@ -87,11 +97,20 @@ export class TemplateManager {
     return await canvas.convertToBlob({ type: "image/png" });
   }
 
-  /** 特定テンプレート削除（複数対応用） */
-  removeTemplate(templateToRemove: Template): void {
+  /** 特定テンプレート削除（imageKey指定） */
+  removeTemplateByKey(imageKey: string): void {
     this.templatesArray = this.templatesArray.filter(
-      (t) => t !== templateToRemove
+      (instance) => instance.imageKey !== imageKey
     );
+  }
+
+  /** 描画状態切り替え */
+  toggleDrawEnabled(imageKey: string): boolean {
+    const instance = this.templatesArray.find(i => i.imageKey === imageKey);
+    if (!instance) return false;
+    
+    instance.drawEnabled = !instance.drawEnabled;
+    return instance.drawEnabled;
   }
 
   /** 全テンプレートクリア */
