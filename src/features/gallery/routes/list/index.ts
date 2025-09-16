@@ -32,7 +32,9 @@ export class GalleryList {
       },
       isSelectionMode,
       onSelect,
-      container
+      container,
+      () => router.navigate('image-editor'),
+      onImageClick
     );
   }
 
