@@ -155,8 +155,7 @@ export class TileOverlay {
     tileY: number
   ): Promise<void> {
     try {
-      // 該当タイルの全テンプレートをクリア
-      this.templateManager.clearAllTemplates();
+      // clearAllTemplates()削除: 他タイルのTemplateInstance保持
 
       const items = await this.galleryStorage.getAll();
 
