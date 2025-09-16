@@ -88,7 +88,7 @@ export class TileOverlay {
       coords.TLY,
       coords.PxX,
       coords.PxY,
-    ]);
+    ], imageItem.key);
 
     // 描画完了後に位置情報を保存
     console.log("🔄 Saving draw position:", imageItem.key, coords);
@@ -180,7 +180,7 @@ export class TileOverlay {
   }
 
   /**
-   * 画像の描画状態を切り替える
+   * 画像の描画状態を切り替える（Gallery + TemplateManager連携）
    */
   async toggleImageDrawState(imageKey: string): Promise<boolean> {
     const galleryStorage = new GalleryStorage();
@@ -198,6 +198,10 @@ export class TileOverlay {
     };
 
     await galleryStorage.save(updatedItem);
+    
+    // TemplateManagerと同期
+    this.templateManager.toggleDrawEnabled(imageKey);
+    
     return updatedItem.drawEnabled;
   }
 
@@ -214,6 +218,6 @@ export class TileOverlay {
       item.drawPosition.TLY,
       item.drawPosition.PxX,
       item.drawPosition.PxY,
-    ]);
+    ], item.key);
   }
 }
