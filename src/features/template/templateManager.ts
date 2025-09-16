@@ -22,10 +22,14 @@ export class TemplateManager {
   }
 
   /** テンプレート作成（コア機能のみ） */
-  async createTemplate(blob: File, coords: number[], imageKey: string): Promise<void> {
+  async createTemplate(
+    blob: File,
+    coords: number[],
+    imageKey: string
+  ): Promise<void> {
     // 既存の同じimageKeyのTemplateInstanceを削除（重複防止）
     this.removeTemplateByKey(imageKey);
-    
+
     // テンプレート作成
     const template = new Template({
       file: blob,
@@ -39,7 +43,7 @@ export class TemplateManager {
     this.templatesArray.push({
       template,
       imageKey,
-      drawEnabled: true
+      drawEnabled: true,
     });
   }
 
@@ -60,11 +64,15 @@ export class TemplateManager {
     const allMatchingTiles: Array<{ tileKey: string; template: Template }> = [];
 
     for (const templateInstance of this.templatesArray) {
-      if (!templateInstance?.drawEnabled || !templateInstance?.template?.chunked) continue;
+      if (
+        !templateInstance?.drawEnabled ||
+        !templateInstance?.template?.chunked
+      )
+        continue;
 
-      const matchingTiles = Object.keys(templateInstance.template.chunked).filter((tile) =>
-        tile.startsWith(coordStr)
-      );
+      const matchingTiles = Object.keys(
+        templateInstance.template.chunked
+      ).filter((tile) => tile.startsWith(coordStr));
 
       for (const tileKey of matchingTiles) {
         allMatchingTiles.push({ tileKey, template: templateInstance.template });
@@ -109,9 +117,9 @@ export class TemplateManager {
 
   /** 描画状態切り替え */
   toggleDrawEnabled(imageKey: string): boolean {
-    const instance = this.templatesArray.find(i => i.imageKey === imageKey);
+    const instance = this.templatesArray.find((i) => i.imageKey === imageKey);
     if (!instance) return false;
-    
+
     instance.drawEnabled = !instance.drawEnabled;
     return instance.drawEnabled;
   }
@@ -119,5 +127,45 @@ export class TemplateManager {
   /** 全テンプレートクリア */
   clearAllTemplates(): void {
     this.templatesArray = [];
+  }
+
+  /** 特定タイル座標での描画判定 */
+  isDrawingOnTile(tileX: number, tileY: number): boolean {
+    for (const instance of this.templatesArray) {
+      if (!instance.drawEnabled || !instance.template?.coords) continue;
+
+      const [templateTileX, templateTileY] = instance.template.coords;
+      if (templateTileX === tileX && templateTileY === tileY) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** 特定スナップショット描画判定 */
+  isSnapshotDrawing(fullKey: string): boolean {
+    const imageKey = `snapshot_${fullKey}`;
+    return this.templatesArray.some(
+      (instance) => instance.imageKey === imageKey && instance.drawEnabled
+    );
+  }
+
+  /** 特定タイルでTimeTravelスナップショット描画判定 */
+  isTimeTravelDrawingOnTile(tileX: number, tileY: number): boolean {
+    for (const instance of this.templatesArray) {
+      if (
+        !instance.drawEnabled ||
+        !instance.template?.coords ||
+        !instance.imageKey.startsWith("snapshot_")
+      ) {
+        continue;
+      }
+
+      const [templateTileX, templateTileY] = instance.template.coords;
+      if (templateTileX === tileX && templateTileY === tileY) {
+        return true;
+      }
+    }
+    return false;
   }
 }

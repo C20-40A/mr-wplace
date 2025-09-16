@@ -31,6 +31,12 @@ export class SnapshotDetailRoute {
             </svg>
             ${"draw_image"}
           </button>
+          <button id="wps-return-current-btn" class="btn btn-outline hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+              <path fill-rule="evenodd" d="M9.53 2.47a.75.75 0 010 1.06L4.81 8.25H15a6.75 6.75 0 010 13.5h-3a.75.75 0 010-1.5h3a5.25 5.25 0 100-10.5H4.81l4.72 4.72a.75.75 0 11-1.06 1.06l-6-6a.75.75 0 010-1.06l6-6a.75.75 0 011.06 0z" clip-rule="evenodd" />
+            </svg>
+            現在に戻る
+          </button>
           <button id="wps-download-snapshot-btn" class="btn btn-neutral">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
               <path fill-rule="evenodd" d="M12 2.25a.75.75 0 01.75.75v11.69l3.22-3.22a.75.75 0 111.06 1.06l-4.5 4.5a.75.75 0 01-1.06 0l-4.5-4.5a.75.75 0 111.06-1.06L11.25 14.69V3a.75.75 0 01.75-.75z" clip-rule="evenodd" />
@@ -44,6 +50,7 @@ export class SnapshotDetailRoute {
 
     this.setupEvents(container);
     this.loadSnapshot(selectedSnapshot.fullKey);
+    this.updateReturnCurrentButton(selectedSnapshot.fullKey);
   }
 
   private setupEvents(container: HTMLElement): void {
@@ -54,6 +61,14 @@ export class SnapshotDetailRoute {
       ?.addEventListener("click", () => {
         if (selectedSnapshot?.fullKey) {
           this.drawSnapshot(selectedSnapshot.fullKey);
+        }
+      });
+
+    container
+      .querySelector("#wps-return-current-btn")
+      ?.addEventListener("click", () => {
+        if (selectedSnapshot?.fullKey) {
+          this.returnToCurrent(selectedSnapshot.fullKey);
         }
       });
 
@@ -120,13 +135,17 @@ export class SnapshotDetailRoute {
 
     // 直接TemplateManagerで描画（座標は既にタイル単位）
     const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
+    const imageKey = `snapshot_${fullKey}`;
     await tileOverlay.templateManager.createTemplate(file, [
       tileX,
       tileY,
       0,
       0,
-    ]);
+    ], imageKey);
     Toast.success("Snapshot drawn successfully");
+    
+    // 「現在に戻る」ボタン表示更新
+    this.updateReturnCurrentButton(fullKey);
 
     // モーダルを閉じる
     const timeTravelUI = (window as any).wplaceStudio?.timeTravel?.ui;
@@ -153,5 +172,34 @@ export class SnapshotDetailRoute {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }, "image/png");
+  }
+
+  private updateReturnCurrentButton(fullKey: string): void {
+    const tileX = parseInt(fullKey.split("_")[3]);
+    const tileY = parseInt(fullKey.split("_")[4]);
+    const imageKey = `snapshot_${fullKey}`;
+    
+    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
+    const isDrawing = tileOverlay?.templateManager?.isDrawingOnTile(tileX, tileY) || false;
+    
+    const returnBtn = document.querySelector("#wps-return-current-btn");
+    if (returnBtn) {
+      if (isDrawing) {
+        returnBtn.classList.remove("hidden");
+      } else {
+        returnBtn.classList.add("hidden");
+      }
+    }
+  }
+
+  private returnToCurrent(fullKey: string): void {
+    const imageKey = `snapshot_${fullKey}`;
+    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
+    
+    tileOverlay?.templateManager?.removeTemplateByKey(imageKey);
+    Toast.success("Returned to current state");
+    
+    // ボタン非表示
+    this.updateReturnCurrentButton(fullKey);
   }
 }
