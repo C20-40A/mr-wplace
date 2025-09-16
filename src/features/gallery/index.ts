@@ -45,7 +45,6 @@ export class Gallery {
   private observeAndInit(): void {
     // ルーティング設定（UIとコンテンツ両方を更新）
     this.router.setOnRouteChange((route) => {
-      this.ui.updateHeader(route); // ヘッダー更新
       this.renderCurrentRoute(route); // コンテンツ更新
     });
 
