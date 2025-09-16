@@ -63,7 +63,8 @@ export class ExtendedBookmarks {
   }
 
   createModal(): void {
-    const modal = createBookmarkModal();
+    const modalElements = createBookmarkModal();
+    const modal = modalElements.modal;
 
     modal
       .querySelector("#wps-favorites-grid")!

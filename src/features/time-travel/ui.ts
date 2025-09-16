@@ -1,5 +1,5 @@
 import { t } from "../../i18n/manager";
-import { TimeTravelRoute, TimeTravelRouter } from "./router";
+import { TimeTravelRouter } from "./router";
 import { createModal, ModalElements } from "../../utils/modal";
 
 // 元の位置に配置されるボタン（復元）
