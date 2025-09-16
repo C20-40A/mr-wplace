@@ -41,11 +41,13 @@ export class Router<T extends string> {
   }
 
   navigateBack(): void {
-    if (this.canNavigateBack()) {
-      const previousRoute = this.history.pop()!;
-      console.log(`Navigating back to route: ${previousRoute}`);
-      this.currentRoute = previousRoute;
-      this.onRouteChange?.(previousRoute);
+    if (!this.canNavigateBack()) {
+      console.warn("No previous route to navigate back to.");
+      return;
     }
+    const previousRoute = this.history.pop()!;
+    console.log(`Navigating back to route: ${previousRoute}`);
+    this.currentRoute = previousRoute;
+    this.onRouteChange?.(previousRoute);
   }
 }

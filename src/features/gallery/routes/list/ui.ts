@@ -7,9 +7,7 @@ import { tilePixelToLatLng } from "../../../../utils/coordinate";
 export class GalleryListUI {
   private modal: HTMLDialogElement | null = null;
   private container: HTMLElement | null = null;
-  private isImageExpanded: boolean = false;
-  private currentItems: GalleryItem[] = [];
-  private currentOnDelete: ((key: string) => void) | null = null;
+
   private imageGrid: ImageGridComponent | null = null;
 
   constructor() {
@@ -24,43 +22,31 @@ export class GalleryListUI {
     this.modal?.close();
   }
 
-  private openImageEditor(): void {
-    // ギャラリーモーダルを閉じる
-    this.closeModal();
 
-    // 空の状態でImageEditorを開く
-    if ((window as any).wplaceStudio?.imageEditor) {
-      (window as any).wplaceStudio.imageEditor.clearAndOpen();
-    }
-  }
 
   render(
     items: GalleryItem[],
     onDelete: (key: string) => void,
     isSelectionMode: boolean = false,
     onSelect?: (item: GalleryItem) => void,
-    container?: HTMLElement
+    container?: HTMLElement,
+    onAddClick?: () => void,
+    onImageClick?: (item: GalleryItem) => void
   ): void {
-    // 状態を保存
-    this.currentItems = items;
-    this.currentOnDelete = onDelete;
-
     // 外部コンテナが指定された場合はそれを使用
     if (container) {
       this.container = container;
     }
-
-    if (this.isImageExpanded) {
-      return; // 拡大表示中は再レンダリングしない
-    }
-    this.renderGalleryList(items, onDelete, isSelectionMode, onSelect);
+    this.renderGalleryList(items, onDelete, isSelectionMode, onSelect, onImageClick, onAddClick);
   }
 
   private renderGalleryList(
     items: GalleryItem[],
     onDelete: (key: string) => void,
     isSelectionMode: boolean = false,
-    onSelect?: (item: GalleryItem) => void
+    onSelect?: (item: GalleryItem) => void,
+    onImageClick?: (item: GalleryItem) => void,
+    onAddClick?: () => void
   ): void {
     if (!this.container) return;
 
@@ -85,8 +71,8 @@ export class GalleryListUI {
       isSelectionMode,
       onImageClick: (item) => {
         const galleryItem = items.find((gItem) => gItem.key === item.key);
-        if (galleryItem) {
-          this.showExpandedImage(galleryItem);
+        if (galleryItem && onImageClick) {
+          onImageClick(galleryItem);
         }
       },
       onImageSelect: (item) => {
@@ -97,7 +83,7 @@ export class GalleryListUI {
         }
       },
       onDrawToggle: (key) => {
-        this.handleDrawToggle(key, items, onDelete, isSelectionMode, onSelect);
+        this.handleDrawToggle(key, items, onDelete, isSelectionMode, onSelect, onImageClick);
       },
       onImageDelete: (key) => {
         onDelete(key);
@@ -108,9 +94,7 @@ export class GalleryListUI {
           this.handleGotoPosition(galleryItem);
         }
       },
-      onAddClick: () => {
-        this.openImageEditor();
-      },
+      onAddClick: onAddClick || (() => {}),
       showDeleteButton: !isSelectionMode,
       showAddButton: true,
     });
@@ -119,57 +103,17 @@ export class GalleryListUI {
     this.imageGrid.render();
   }
 
-  private showExpandedImage(item: GalleryItem): void {
-    if (!this.container) return;
 
-    this.isImageExpanded = true;
 
-    // ImageGridComponentを破棄
-    if (this.imageGrid) {
-      this.imageGrid.destroy();
-      this.imageGrid = null;
-    }
 
-    this.container.innerHTML = t`
-      <div class="flex flex-col items-center justify-center h-full">
-        <div class="mb-4 flex items-center gap-2">
-          <button id="wps-gallery-back-btn" class="btn btn-sm btn-ghost">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
-              <path fill-rule="evenodd" d="M7.72 12.53a.75.75 0 010-1.06l7.5-7.5a.75.75 0 111.06 1.06L9.31 12l6.97 6.97a.75.75 0 11-1.06 1.06l-7.5-7.5z" clip-rule="evenodd"/>
-            </svg>
-            ${"back"}
-          </button>
-        </div>
-        <div class="flex items-center justify-center" style="max-height: 70vh; max-width: 90vw;">
-          <img src="${
-            item.dataUrl
-          }" alt="Expanded gallery item" class="" style="image-rendering: pixelated; min-width: 50vw; max-width: 90vw; max-height: 70vh; object-fit: contain; aspect-ratio: auto;">
-        </div>
-      </div>
-    `;
-
-    // 戻るボタンのイベントリスナー
-    const backBtn = document.getElementById("wps-gallery-back-btn");
-    backBtn?.addEventListener("click", () => {
-      this.hideExpandedImage();
-    });
-  }
-
-  private hideExpandedImage(): void {
-    this.isImageExpanded = false;
-
-    // 一覧表示に戻る
-    if (this.currentItems && this.currentOnDelete) {
-      this.renderGalleryList(this.currentItems, this.currentOnDelete, false);
-    }
-  }
 
   private async handleDrawToggle(
     key: string,
     items: GalleryItem[],
     onDelete: (key: string) => void,
     isSelectionMode: boolean,
-    onSelect?: (item: GalleryItem) => void
+    onSelect?: (item: GalleryItem) => void,
+    onImageClick?: (item: GalleryItem) => void
   ): Promise<void> {
     // TileOverlayのtoggleImageDrawStateに一本化
     const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
@@ -180,7 +124,7 @@ export class GalleryListUI {
     // 画面を再描画
     const galleryStorage = new (await import("../../storage")).GalleryStorage();
     const updatedItems = await galleryStorage.getAll();
-    this.renderGalleryList(updatedItems, onDelete, isSelectionMode, onSelect);
+    this.renderGalleryList(updatedItems, onDelete, isSelectionMode, onSelect, onImageClick);
 
     console.log(`🎯 Draw toggle: ${key} -> ${newDrawEnabled}`);
   }
