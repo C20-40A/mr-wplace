@@ -16,7 +16,7 @@ interface PaletteEntry {
   enabled: boolean;
 }
 
-export default class Template {
+export class Template {
   public file: File | null;
   public coords: number[] | null;
   public chunked: Record<string, ImageBitmap> | null;
