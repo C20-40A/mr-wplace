@@ -6,10 +6,10 @@ import {
   TimeTravelUI,
   createTimeTravelButton,
   createTimeTravelFAB,
-  createSnapshotDownloadModal,
 } from "./ui";
 import { TileListRoute } from "./routes/tile-list";
 import { SnapshotRoute } from "./routes/snapshot-route";
+import { SnapshotDetailRoute } from "./routes/snapshot-detail";
 
 /**
  * タイムマシン機能
@@ -23,7 +23,7 @@ export class TimeTravel {
   private tileListRoute: TileListRoute;
   private currentPositionRoute: SnapshotRoute;
   private tileSnapshotsRoute: SnapshotRoute;
-  private currentDownloadBlob: Blob | null = null;
+  private snapshotDetailRoute: SnapshotDetailRoute;
 
   constructor() {
     this.router = new TimeTravelRouter();
@@ -31,12 +31,13 @@ export class TimeTravel {
     this.currentPositionRoute = new SnapshotRoute({ showSaveButton: true });
     this.tileListRoute = new TileListRoute();
     this.tileSnapshotsRoute = new SnapshotRoute({ showSaveButton: false });
+    this.snapshotDetailRoute = new SnapshotDetailRoute();
     this.buttonObserver = new ButtonObserver();
     this.init();
 
     // グローバルアクセス用（既存パターンに倣う）
     (window as any).wplaceStudio = (window as any).wplaceStudio || {};
-    (window as any).wplaceStudio.timeTravel = { ui: this.ui };
+    (window as any).wplaceStudio.timeTravel = { ui: this.ui, router: this.router };
   }
 
   private init(): void {
@@ -71,7 +72,6 @@ export class TimeTravel {
     ];
 
     this.buttonObserver.startObserver(buttonConfigs);
-    this.createDownloadModal();
     console.log("⏰ WPlace Studio: TimeTravel button observer initialized");
   }
 
@@ -101,6 +101,9 @@ export class TimeTravel {
       case "tile-snapshots":
         this.tileSnapshotsRoute.render(container, this.router);
         break;
+      case "snapshot-detail":
+        this.snapshotDetailRoute.render(container, this.router);
+        break;
     }
   }
 
@@ -116,32 +119,5 @@ export class TimeTravel {
     this.ui.showModal();
   }
 
-  private createDownloadModal(): void {
-    const downloadModal = createSnapshotDownloadModal();
 
-    // ダウンロードModalのイベント
-    downloadModal
-      .querySelector("#wps-download-snapshot-btn")
-      ?.addEventListener("click", () => {
-        this.downloadCurrentSnapshot();
-      });
-  }
-
-  private downloadCurrentSnapshot(): void {
-    if (!this.currentDownloadBlob) {
-      Toast.error("No image to download");
-      return;
-    }
-
-    const url = URL.createObjectURL(this.currentDownloadBlob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `snapshot-${Date.now()}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    Toast.success("Download started");
-  }
 }

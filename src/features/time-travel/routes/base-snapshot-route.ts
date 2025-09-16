@@ -115,34 +115,11 @@ export abstract class BaseSnapshotRoute {
   }
 
   protected async openDownloadModal(fullKey: string): Promise<void> {
-    const result = await chrome.storage.local.get(fullKey);
-    if (!result[fullKey]) throw new Error("Snapshot not found");
-
-    const uint8Array = new Uint8Array(result[fullKey]);
-    const blob = new Blob([uint8Array], { type: "image/png" });
-    const dataUrl = await new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.readAsDataURL(blob);
-    });
-
-    // ダウンロード用のblob設定
     const timeTravel = (window as any).wplaceStudio?.timeTravel;
-    if (timeTravel) {
-      (timeTravel as any).currentDownloadBlob = blob;
+    if (timeTravel?.router) {
+      (timeTravel.router as any).selectedSnapshot = { fullKey };
+      timeTravel.router.navigate("snapshot-detail");
     }
-
-    const img = document.getElementById(
-      "wps-snapshot-image"
-    ) as HTMLImageElement;
-    if (img) {
-      img.src = dataUrl;
-    }
-
-    const modal = document.getElementById(
-      "wplace-studio-snapshot-download-modal"
-    ) as HTMLDialogElement;
-    modal?.showModal();
   }
 
   protected abstract reloadSnapshots(container: HTMLElement): Promise<void>;
