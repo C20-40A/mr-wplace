@@ -23,7 +23,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
   render(container: HTMLElement, router: TimeTravelRouter): void {
     const selectedTile = (router as any).selectedTile;
 
-    // タイル情報を決定
+    // タイル情報を毎回最新取得（位置変更対応）
     if (selectedTile) {
       this.currentTileX = selectedTile.tileX;
       this.currentTileY = selectedTile.tileY;
@@ -33,6 +33,10 @@ export class SnapshotRoute extends BaseSnapshotRoute {
         const coords = llzToTilePixel(position.lat, position.lng);
         this.currentTileX = coords.TLX;
         this.currentTileY = coords.TLY;
+      } else {
+        // 位置が取得できない場合は初期化
+        this.currentTileX = undefined;
+        this.currentTileY = undefined;
       }
     }
 
