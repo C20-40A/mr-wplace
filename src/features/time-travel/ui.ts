@@ -1,5 +1,6 @@
 import { t } from "../../i18n/manager";
 import { TimeTravelRoute, TimeTravelRouter } from "./router";
+import { createModal, ModalElements } from "../../utils/modal";
 
 // 元の位置に配置されるボタン（復元）
 export const createTimeTravelButton = (
@@ -49,7 +50,7 @@ export const createTimeTravelFAB = (container: Element): HTMLButtonElement => {
 
 // Gallery UI構造完全流用のTimeTravelUI
 export class TimeTravelUI {
-  private modal: HTMLDialogElement | null = null;
+  private modalElements: ModalElements;
   private router: TimeTravelRouter;
 
   constructor(router: TimeTravelRouter) {
@@ -58,71 +59,30 @@ export class TimeTravelUI {
   }
 
   private createModal(): void {
-    this.modal = document.createElement("dialog");
-    this.modal.id = "wplace-studio-timetravel-modal";
-    this.modal.className = "modal";
-    this.modal.innerHTML = t`
-      <div class="modal-box w-11/12 max-w-4xl">
-        <!-- Header (Gallery流用) -->
-        <div id="wps-timetravel-header" class="flex justify-between items-center mb-4">
-          <h3 id="wps-timetravel-title" class="font-bold text-lg">${"timetravel_modal_title"}</h3>
-          <div class="flex gap-2">
-            <button id="wps-timetravel-back-btn" class="btn btn-sm btn-ghost hidden">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
-                <path fill-rule="evenodd" d="M7.72 12.53a.75.75 0 010-1.06l7.5-7.5a.75.75 0 111.06 1.06L9.31 12l6.97 6.97a.75.75 0 11-1.06 1.06l-7.5-7.5z" clip-rule="evenodd" />
-              </svg>
-              ${"back"}
-            </button>
-            <button class="btn btn-sm btn-ghost" onclick="this.closest('dialog').close()">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
-                <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- Content Area -->
-        <div id="wps-timetravel-content" class="min-h-60">
-          <!-- ルート別コンテンツがここに挿入される -->
-        </div>
-      </div>
-      <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-      </form>
-    `;
-
-    document.body.appendChild(this.modal);
-    this.setupEvents();
-  }
-
-  private setupEvents(): void {
-    // Back button
-    this.modal
-      ?.querySelector("#wps-timetravel-back-btn")
-      ?.addEventListener("click", () => {
-        this.router.navigateBack();
-      });
+    this.modalElements = createModal({
+      id: "wplace-studio-timetravel-modal",
+      title: t`${"timetravel_modal_title"}`,
+      hasBackButton: false,
+      onBack: () => this.router.navigateBack(),
+    });
 
     // Header elements setup
-    const titleElement = this.modal?.querySelector("#wps-timetravel-title") as HTMLElement;
-    const backButton = this.modal?.querySelector("#wps-timetravel-back-btn") as HTMLElement;
-    if (titleElement && backButton) {
-      this.router.setHeaderElements(titleElement, backButton);
-    }
+    this.router.setHeaderElements(
+      this.modalElements.titleElement,
+      this.modalElements.backButton
+    );
   }
 
   getContainer(): HTMLElement | null {
-    return this.modal?.querySelector(
-      "#wps-timetravel-content"
-    ) as HTMLElement | null;
+    return this.modalElements.container;
   }
 
   showModal(): void {
-    (this.modal as HTMLDialogElement)?.showModal();
+    this.modalElements.modal.showModal();
   }
 
   hideModal(): void {
-    this.modal?.close();
+    this.modalElements.modal.close();
   }
 }
 
