@@ -7,14 +7,12 @@ export class TemplateManager {
   public tileSize: number;
   public drawMult: number;
   public templatesArray: Template[];
-  public templatesShouldBeDrawn: boolean;
 
   constructor() {
     this.tileSize = 1000;
     this.drawMult = 3;
 
     this.templatesArray = []; // アクティブなテンプレート
-    this.templatesShouldBeDrawn = true;
   }
 
   /** テンプレート作成（コア機能のみ） */
@@ -37,9 +35,7 @@ export class TemplateManager {
     tileBlob: Blob,
     tileCoords: [number, number]
   ): Promise<Blob> {
-    if (!this.templatesShouldBeDrawn || this.templatesArray.length === 0) {
-      return tileBlob;
-    }
+    if (this.templatesArray.length === 0) return tileBlob;
 
     const drawSize = this.tileSize * this.drawMult;
     const coordStr =
@@ -89,11 +85,6 @@ export class TemplateManager {
     }
 
     return await canvas.convertToBlob({ type: "image/png" });
-  }
-
-  /** テンプレート表示ON/OFF */
-  setTemplatesShouldBeDrawn(value: boolean): void {
-    this.templatesShouldBeDrawn = value;
   }
 
   /** 特定テンプレート削除（複数対応用） */
