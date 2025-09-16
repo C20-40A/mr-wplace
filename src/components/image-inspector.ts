@@ -3,6 +3,7 @@ import { t } from "../i18n/manager";
 interface ImageInspectorOptions {
   minZoom?: number; // デフォルト0.1
   maxZoom?: number; // デフォルト1.0
+  containerSize?: number; // コンテナサイズ（デフォルト300px）
   onViewportChange?: (zoom: number, panX: number, panY: number) => void;
 }
 
@@ -22,12 +23,14 @@ export class ImageInspector {
   private zoomIndicator?: HTMLElement;
   private resetButton?: HTMLElement;
   private containerElement?: HTMLElement;
+  private controlsContainer?: HTMLElement;
 
   constructor(canvas: HTMLCanvasElement, options: ImageInspectorOptions = {}) {
     this.canvas = canvas;
     this.options = {
       minZoom: options.minZoom ?? 1.0, // 縮小禁止、拡大のみ
       maxZoom: options.maxZoom ?? 5.0, // 最大5倍まで拡大
+      containerSize: options.containerSize ?? 300, // デフォルト300px
       onViewportChange: options.onViewportChange ?? (() => {}),
     };
 
@@ -48,7 +51,8 @@ export class ImageInspector {
     this.containerElement = parent;
 
     // コントロールボタンをまとめるコンテナを作成し、flexboxで横並びに配置
-    const controlsContainer = document.createElement("div");
+    this.controlsContainer = document.createElement("div");
+    const controlsContainer = this.controlsContainer;
     controlsContainer.style.cssText = `
     position: absolute;
     top: 8px;
@@ -162,7 +166,7 @@ export class ImageInspector {
   private updateDisplay(): void {
     const canvasWidth = this.canvas.width;
     const canvasHeight = this.canvas.height;
-    const containerSize = 300; // 固定コンテナサイズ
+    const containerSize = this.options.containerSize; // 動的コンテナサイズ
 
     // 基本表示サイズを計算（コンテナに収まるサイズ）
     let baseDisplayScale: number;
@@ -226,16 +230,14 @@ export class ImageInspector {
    */
   destroy(): void {
     // DOM要素を削除
-    if (this.zoomIndicator && this.containerElement) {
-      this.containerElement.removeChild(this.zoomIndicator);
-    }
-    if (this.resetButton && this.containerElement) {
-      this.containerElement.removeChild(this.resetButton);
+    if (this.controlsContainer && this.containerElement && this.containerElement.contains(this.controlsContainer)) {
+      this.containerElement.removeChild(this.controlsContainer);
     }
 
     // イベントリスナーは自動的に削除される（要素削除時）
     this.zoomIndicator = undefined;
     this.resetButton = undefined;
     this.containerElement = undefined;
+    this.controlsContainer = undefined;
   }
 }
