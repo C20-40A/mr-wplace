@@ -1,9 +1,9 @@
-import Template from "./Template";
+import { Template } from "./Template";
 
 /** 最小化されたTemplateManager - 画像表示機能のみ
  * WPlace Studio用に簡略化
  */
-export default class TemplateManager {
+export class TemplateManager {
   public tileSize: number;
   public drawMult: number;
   public templatesArray: Template[];

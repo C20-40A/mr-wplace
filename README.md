@@ -9,15 +9,17 @@ WPlace サイト専用の多機能 Chrome 拡張機能。地図タイル上へ�
 ## 🚀 主な機能
 
 ### ✅ 実装済み機能
+
 - **画像描画システム**: 地図上の任意座標に画像を描画
-- **全タイル対応**: fetch傍受により任意タイル処理
-- **ギャラリー管理**: 画像一覧・編集・詳細表示の3ルート
+- **全タイル対応**: fetch 傍受により任意タイル処理
+- **ギャラリー管理**: 画像一覧・編集・詳細表示の 3 ルート
 - **座標変換**: Web Mercator（EPSG:3857）変換
 - **お気に入り機能**: 位置・画像の管理
 - **多言語対応**: 日本語・英語切替（i18n）
-- **Toast通知**: 統一された通知システム
+- **Toast 通知**: 統一された通知システム
 
 ### 📋 構想中機能
+
 - お気に入りモーダル整理機能
 - タイルスナップショット保存・変更検知
 
@@ -29,7 +31,7 @@ fetchハイジャック → TileOverlay → TemplateManager → 画像描画
 UI Button → Gallery → 座標指定 → Template作成 → 全タイル処理
 ```
 
-**コアパターン**: 全タイル傍受 + Template描画（Blue Marble移植版）
+**コアパターン**: 全タイル傍受 + Template 描画（Blue Marble 移植版）
 
 ## 📁 ファイル構成
 
@@ -40,7 +42,7 @@ src/
 │   ├── tile-overlay/       # TileOverlay (TemplateManager wrapper)
 │   ├── favorite/           # お気に入り機能
 │   ├── gallery/            # ギャラリー3ルートシステム
-│   ├── blue-marble/        # Template + TemplateManager
+│   ├── template/        # Template + TemplateManager
 │   └── fetch-interceptor/  # fetch傍受機能
 ├── components/
 │   ├── button-observer.ts  # 統一ボタン管理
@@ -54,17 +56,20 @@ inject.js                  # 全タイル fetch傍受スクリプト
 ## 🔧 技術仕様
 
 ### 座標変換
+
 - **投影法**: Web Mercator（EPSG:3857）
-- **ズームレベル**: 11固定
+- **ズームレベル**: 11 固定
 - **タイルサイズ**: 1000×1000px
 
-### Fetch傍受
+### Fetch 傍受
+
 ```javascript
 // 正規表現: tiles\/(\d+)\/(\d+)\.png
 // 全タイル処理 → TemplateManager → 描画済みblob返却
 ```
 
 ### 必要な権限
+
 - `storage`: 設定・データ保存
 - `activeTab`: サイトアクセス
 - `scripting`: スクリプト注入
@@ -73,6 +78,7 @@ inject.js                  # 全タイル fetch傍受スクリプト
 ## 📦 インストール
 
 ### 開発版
+
 1. リポジトリクローン
 2. `bun install` (依存関係インストール)
 3. `bun run build` (ビルド)
@@ -81,7 +87,7 @@ inject.js                  # 全タイル fetch傍受スクリプト
 
 ## 🎯 使用方法
 
-1. **WPlaceサイト**を開く
+1. **WPlace サイト**を開く
 2. 拡張機能ボタンから**Gallery**を選択
 3. 画像をアップロード・選択
 4. 地図上の描画位置をクリック
@@ -89,20 +95,21 @@ inject.js                  # 全タイル fetch傍受スクリプト
 
 ## 🔍 開発状況
 
-**機能完成度**: 画像選択→座標指定→複数タイル描画 完全実装  
-**技術的実現**: inject.js全タイル傍受により任意座標・任意サイズ画像の完全描画  
-**核心技術**: Web Mercator座標変換 + TemplateManager描画
+**機能完成度**: 画像選択 → 座標指定 → 複数タイル描画 完全実装  
+**技術的実現**: inject.js 全タイル傍受により任意座標・任意サイズ画像の完全描画  
+**核心技術**: Web Mercator 座標変換 + TemplateManager 描画
 
 ### 制約
-- Single Template: 1つのテンプレート同時処理
-- Chrome Extension専用
-- Blue Marble依存（内部実装詳細抽象化不足）
+
+- Single Template: 1 つのテンプレート同時処理
+- Chrome Extension 専用
+- Blue Marble 依存（内部実装詳細抽象化不足）
 
 ## 🤝 開発方針
 
-- **最小限実装**: 1つずつ問題解決
-- **モジュラー設計**: feature分離
-- **統一管理**: ButtonObserver/Toast/i18n共通化
+- **最小限実装**: 1 つずつ問題解決
+- **モジュラー設計**: feature 分離
+- **統一管理**: ButtonObserver/Toast/i18n 共通化
 
 ## 📄 ライセンス
 

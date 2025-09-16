@@ -1,5 +1,5 @@
 import { llzToTilePixel } from "../../utils/coordinate";
-import TemplateManager from "../blue-marble/templateManager";
+import { TemplateManager } from "../template";
 import { ImageItem } from "../gallery/routes/list/components";
 import { GalleryStorage } from "../gallery/storage";
 export class TileOverlay {
