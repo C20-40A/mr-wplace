@@ -1,5 +1,6 @@
 import { Favorite } from "./types";
 import { t } from "../../i18n/manager";
+import { createModal, ModalElements } from "../../utils/modal";
 
 export const createSaveBookmarkButton = (
   container: Element
@@ -45,52 +46,39 @@ export const createBookmarkButton = (container: Element): HTMLButtonElement => {
   return button;
 }
 
-export const createBookmarkModal = (): HTMLDialogElement => {
-  const modal = document.createElement("dialog");
-  modal.id = "wplace-studio-favorite-modal";
-  modal.className = "modal";
-  modal.innerHTML = t`
-      <div class="modal-box max-w-4xl">
-        <form method="dialog">
-          <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-        </form>
+export const createBookmarkModal = (): ModalElements => {
+  const modalElements = createModal({
+    id: "wplace-studio-favorite-modal",
+    title: t`${"bookmark_list"}`,
+    maxWidth: "64rem" // 4xl equivalent
+  });
 
-        <div class="flex items-center gap-1.5 mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-5">
-            <path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/>
-          </svg>
-          <h3 class="text-lg font-bold">${"bookmark_list"}</h3>
-        </div>
+  // Add bookmark-specific content to container
+  modalElements.container.innerHTML = t`
+    <div class="flex gap-2 mb-4">
+      <button id="wps-export-btn" class="btn btn-outline btn-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
+          <path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
+        </svg>
+        ${"export"}
+      </button>
+      <button id="wps-import-btn" class="btn btn-outline btn-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
+          <path d="M260-160q-91 0-155.5-63T40-377q0-78 47-139t123-78q25-92 100-149t170-57q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 75-52.5 127.5T740-160H520q-33 0-56.5-23.5T440-240v-206l-64 62-56-56 160-160 160 160-56 56-64-62v206h220q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-83 0-141.5 58.5T280-520h-20q-58 0-99 41t-41 99q0 58 41 99t99 41h100v80H260Z"/>
+        </svg>
+        ${"import"}
+      </button>
+      <input type="file" id="wps-import-file" accept=".json" style="display: none;">
+    </div>
 
-        <div class="flex gap-2 mb-4">
-          <button id="wps-export-btn" class="btn btn-outline btn-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
-              <path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
-            </svg>
-            ${"export"}
-          </button>
-          <button id="wps-import-btn" class="btn btn-outline btn-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
-              <path d="M260-160q-91 0-155.5-63T40-377q0-78 47-139t123-78q25-92 100-149t170-57q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 75-52.5 127.5T740-160H520q-33 0-56.5-23.5T440-240v-206l-64 62-56-56 160-160 160 160-56 56-64-62v206h220q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-83 0-141.5 58.5T280-520h-20q-58 0-99 41t-41 99q0 58 41 99t99 41h100v80H260Z"/>
-            </svg>
-            ${"import"}
-          </button>
-          <input type="file" id="wps-import-file" accept=".json" style="display: none;">
-        </div>
+    <div id="wps-favorites-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
+    </div>
 
-        <div id="wps-favorites-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
-        </div>
+    <div id="wps-favorites-count" class="text-center text-sm text-base-content/80 mt-4">
+    </div>
+  `;
 
-        <div id="wps-favorites-count" class="text-center text-sm text-base-content/80 mt-4">
-        </div>
-      </div>
-
-      <form method="dialog" class="modal-backdrop">
-        <button>${"close"}</button>
-      </form>
-    `;
-  document.body.appendChild(modal);
-  return modal;
+  return modalElements;
 };
 
 export const renderBookmarks = (favorites: Favorite[]): void => {
@@ -140,4 +128,9 @@ export const renderBookmarks = (favorites: Favorite[]): void => {
         `
     )
     .join("");
+};
+
+// Legacy accessor for modal element
+export const getBookmarkModalElement = (modalElements: ModalElements): HTMLDialogElement => {
+  return modalElements.modal;
 };
