@@ -54,12 +54,24 @@ export class TileListRoute {
   }
 
   private renderTileItem(tile: TileSnapshotInfo): string {
+    // 該当タイルでTimeTravelスナップショット描画中か判定
+    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
+    const isDrawing = tileOverlay?.templateManager?.isTimeTravelDrawingOnTile(tile.tileX, tile.tileY) || false;
+    
     return `
       <div class="tile-item border-b p-3 cursor-pointer hover:bg-gray-50 transition-colors" 
            data-tile-x="${tile.tileX}" data-tile-y="${tile.tileY}">
         <div class="flex justify-between items-center">
           <div>
-            <div class="text-sm font-medium">タイル(${tile.tileX}, ${tile.tileY})</div>
+            <div class="text-sm font-medium flex items-center gap-2">
+              タイル(${tile.tileX}, ${tile.tileY})
+              ${isDrawing ? `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 text-green-500">
+                  <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+                  <path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z" clip-rule="evenodd" />
+                </svg>
+              ` : ''}
+            </div>
             <div class="text-xs text-gray-500">${tile.count}個のスナップショット</div>
           </div>
           <div class="flex items-center">
