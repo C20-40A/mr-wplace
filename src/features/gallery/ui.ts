@@ -25,25 +25,6 @@ export class GalleryUI {
     return this.container;
   }
 
-  updateHeader(route: GalleryRoute): void {
-    console.log("updateHeader called with route:", route);
-    if (this.headerTitle) {
-      const titles = {
-        list: t`${"gallery"}`,
-        "image-editor": t`${"image_editor"}`,
-        "image-detail": t`${"image_detail"}`,
-      };
-      this.headerTitle.textContent = titles[route];
-      console.log("Header title updated to:", titles[route]);
-    }
-
-    if (this.backButton) {
-      const shouldShow = this.router.canNavigateBack();
-      this.backButton.style.display = shouldShow ? "flex" : "none";
-      console.log("Back button display:", shouldShow ? "visible" : "hidden");
-    }
-  }
-
   private createModal(): void {
     this.modal = document.createElement("dialog");
     this.modal.className = "modal";
@@ -82,6 +63,11 @@ export class GalleryUI {
     this.backButton?.addEventListener("click", () => {
       this.router.navigateBack();
     });
+
+    // Header elements setup
+    if (this.headerTitle && this.backButton) {
+      this.router.setHeaderElements(this.headerTitle, this.backButton);
+    }
   }
 }
 

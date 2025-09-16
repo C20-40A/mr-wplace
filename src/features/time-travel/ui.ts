@@ -102,32 +102,12 @@ export class TimeTravelUI {
       ?.addEventListener("click", () => {
         this.router.navigateBack();
       });
-  }
 
-  updateHeader(route: TimeTravelRoute): void {
-    const title = this.modal?.querySelector("#wps-timetravel-title");
-    const backBtn = this.modal?.querySelector("#wps-timetravel-back-btn");
-
-    if (!title || !backBtn) return;
-
-    // タイトル更新
-    switch (route) {
-      case "current-position":
-        title.textContent = t`${"timetravel_current_position"}`;
-        break;
-      case "tile-list":
-        title.textContent = t`${"timetravel_tile_list"}`;
-        break;
-      case "tile-snapshots":
-        title.textContent = t`${"timetravel_tile_snapshots"}`;
-        break;
-    }
-
-    // Back button表示/非表示
-    if (this.router.canNavigateBack()) {
-      backBtn.classList.remove("hidden");
-    } else {
-      backBtn.classList.add("hidden");
+    // Header elements setup
+    const titleElement = this.modal?.querySelector("#wps-timetravel-title") as HTMLElement;
+    const backButton = this.modal?.querySelector("#wps-timetravel-back-btn") as HTMLElement;
+    if (titleElement && backButton) {
+      this.router.setHeaderElements(titleElement, backButton);
     }
   }
 

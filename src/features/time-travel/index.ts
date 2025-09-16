@@ -52,7 +52,6 @@ export class TimeTravel {
   private observeAndInit(): void {
     // ルーティング設定（Gallery流用）
     this.router.setOnRouteChange((route) => {
-      this.ui.updateHeader(route);
       this.renderCurrentRoute(route);
     });
 

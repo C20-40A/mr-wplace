@@ -1,5 +1,7 @@
 # クリティカル
 
+- タイムマシン機能で描画中のタイルを Disable にできない
+
 # マイナー
 
 - src/features/time-travel/routes/tile-list.ts の translation
