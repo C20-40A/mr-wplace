@@ -23,6 +23,9 @@ export class TemplateManager {
 
   /** テンプレート作成（コア機能のみ） */
   async createTemplate(blob: File, coords: number[], imageKey: string): Promise<void> {
+    // 既存の同じimageKeyのTemplateInstanceを削除（重複防止）
+    this.removeTemplateByKey(imageKey);
+    
     // テンプレート作成
     const template = new Template({
       file: blob,
