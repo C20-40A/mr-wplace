@@ -50,7 +50,7 @@ export const createModal = (options: ModalOptions): ModalElements => {
       </div>
 
       <!-- Content Area -->
-      <div id="${id}-content" class="min-h-60">
+      <div id="${id}-content" style="min-height: 200px; max-height: 80vh; overflow: auto;">
         <!-- ルート別コンテンツがここに挿入される -->
       </div>
     </div>
