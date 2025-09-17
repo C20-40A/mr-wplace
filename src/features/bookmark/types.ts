@@ -4,7 +4,7 @@ export interface Position {
   zoom: number;
 }
 
-export interface Favorite {
+export interface Bookmark {
   id: number;
   name: string;
   lat: number;

@@ -1,5 +1,5 @@
-import { Favorite } from "./types";
-import { FavoriteStorage, STORAGE_KEYS } from "./storage";
+import { Bookmark } from "./types";
+import { BookmarkStorage, STORAGE_KEYS } from "./storage";
 
 interface ExportResult {
   success: boolean;
@@ -15,7 +15,7 @@ interface ImportResult {
 export class ImportExportService {
   static async exportFavorites(): Promise<ExportResult> {
     try {
-      const favorites = await FavoriteStorage.getFavorites();
+      const favorites = await BookmarkStorage.getFavorites();
 
       if (favorites.length === 0) {
         return {
@@ -83,7 +83,7 @@ export class ImportExportService {
             throw new Error("無効なファイル形式です");
           }
 
-          const currentFavorites = await FavoriteStorage.getFavorites();
+          const currentFavorites = await BookmarkStorage.getFavorites();
           const importCount = importData.favorites.length;
 
           if (
@@ -99,22 +99,22 @@ export class ImportExportService {
           }
 
           const newFavorites = importData.favorites.filter(
-            (importFav: Favorite) => {
+            (importFav: Bookmark) => {
               return !currentFavorites.some(
-                (existing: Favorite) =>
+                (existing: Bookmark) =>
                   Math.abs(existing.lat - importFav.lat) < 0.001 &&
                   Math.abs(existing.lng - importFav.lng) < 0.001
               );
             }
           );
 
-          newFavorites.forEach((fav: Favorite, index: number) => {
+          newFavorites.forEach((fav: Bookmark, index: number) => {
             fav.id = Date.now() + index;
           });
 
           const mergedFavorites = [...currentFavorites, ...newFavorites];
-          await FavoriteStorage.setValue(
-            STORAGE_KEYS.favorites,
+          await BookmarkStorage.setValue(
+            STORAGE_KEYS.bookmarks,
             JSON.stringify(mergedFavorites)
           );
 

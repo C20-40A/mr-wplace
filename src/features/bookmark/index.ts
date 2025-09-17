@@ -1,7 +1,7 @@
 import { ButtonObserver } from "../../components/button-observer";
 import { Toast } from "../../components/toast";
 import { CONFIG } from "./config";
-import { FavoriteStorage, STORAGE_KEYS } from "./storage";
+import { BookmarkStorage, STORAGE_KEYS } from "./storage";
 import { ImportExportService } from "./import-export";
 import { getCurrentPosition, gotoPosition } from "../../utils/position";
 import { showNameInputModal } from "../../utils/modal";
@@ -145,10 +145,10 @@ export class ExtendedBookmarks {
       date: new Date().toLocaleDateString("ja-JP"),
     };
 
-    const favorites = await FavoriteStorage.getFavorites();
+    const favorites = await BookmarkStorage.getFavorites();
     favorites.push(favorite);
-    await FavoriteStorage.setValue(
-      STORAGE_KEYS.favorites,
+    await BookmarkStorage.setValue(
+      STORAGE_KEYS.bookmarks,
       JSON.stringify(favorites)
     );
 
@@ -156,17 +156,17 @@ export class ExtendedBookmarks {
   }
 
   async renderFavorites(): Promise<void> {
-    const favorites = await FavoriteStorage.getFavorites();
+    const favorites = await BookmarkStorage.getFavorites();
     renderBookmarks(favorites);
   }
 
   async deleteFavorite(id: number): Promise<void> {
     if (!confirm(t`${"delete_confirm"}`)) return;
 
-    const favorites = await FavoriteStorage.getFavorites();
+    const favorites = await BookmarkStorage.getFavorites();
     const filtered = favorites.filter((fav) => fav.id !== id);
-    await FavoriteStorage.setValue(
-      STORAGE_KEYS.favorites,
+    await BookmarkStorage.setValue(
+      STORAGE_KEYS.bookmarks,
       JSON.stringify(filtered)
     );
 

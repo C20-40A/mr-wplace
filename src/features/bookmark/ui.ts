@@ -1,4 +1,4 @@
-import { Favorite } from "./types";
+import { Bookmark } from "./types";
 import { t } from "../../i18n/manager";
 import { createModal, ModalElements } from "../../utils/modal";
 
@@ -81,7 +81,7 @@ export const createBookmarkModal = (): ModalElements => {
   return modalElements;
 };
 
-export const renderBookmarks = (favorites: Favorite[]): void => {
+export const renderBookmarks = (favorites: Bookmark[]): void => {
   const grid = document.getElementById("wps-favorites-grid") as HTMLElement;
   const count = document.getElementById("wps-favorites-count") as HTMLElement;
 
