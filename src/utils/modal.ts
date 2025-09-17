@@ -6,6 +6,7 @@ export interface ModalOptions {
   hasBackButton?: boolean;
   maxWidth?: string;
   onBack?: () => void;
+  containerStyle?: string;
 }
 
 export interface ModalElements {
@@ -18,7 +19,10 @@ export interface ModalElements {
 /**
  * 名称入力Modal（スナップショット用）
  */
-export const showNameInputModal = (title: string, placeholder: string): Promise<string | null> => {
+export const showNameInputModal = (
+  title: string,
+  placeholder: string
+): Promise<string | null> => {
   return new Promise((resolve) => {
     const modal = document.createElement("dialog");
     modal.className = "modal";
@@ -42,7 +46,9 @@ export const showNameInputModal = (title: string, placeholder: string): Promise<
     const nameInput = modal.querySelector("#name-input") as HTMLInputElement;
     const saveBtn = modal.querySelector("#save-btn") as HTMLButtonElement;
     const cancelBtn = modal.querySelector("#cancel-btn") as HTMLButtonElement;
-    const backdropBtn = modal.querySelector("#backdrop-btn") as HTMLButtonElement;
+    const backdropBtn = modal.querySelector(
+      "#backdrop-btn"
+    ) as HTMLButtonElement;
 
     const cleanup = () => {
       modal.remove();
@@ -62,7 +68,7 @@ export const showNameInputModal = (title: string, placeholder: string): Promise<
     saveBtn.addEventListener("click", handleSave);
     cancelBtn.addEventListener("click", handleCancel);
     backdropBtn.addEventListener("click", handleCancel);
-    
+
     // Enter押下で保存
     nameInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") handleSave();
@@ -81,13 +87,14 @@ export const createModal = (options: ModalOptions): ModalElements => {
     hasBackButton = false,
     maxWidth = "64rem",
     onBack,
+    containerStyle,
   } = options;
 
   const modal = document.createElement("dialog");
   modal.id = id;
   modal.className = "modal";
   modal.innerHTML = t`
-    <div class="modal-box" style="width: 91.666667%; max-width: ${maxWidth};">
+    <div class="modal-box" style="width: 91.666667%; max-width: ${maxWidth}; ${containerStyle}">
       <!-- Header -->
       <div class="flex justify-between items-center mb-4">
         <div class="flex items-center gap-2">
