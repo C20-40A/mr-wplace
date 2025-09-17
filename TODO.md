@@ -2,7 +2,6 @@
 
 # マイナー
 
-- src/features/bookmark/import-export.ts の i18n
 - 入力文字を描画したい
 - goTo は map のインスタンス使えるかも
 - 逆ジオあってもいいかも
@@ -22,3 +21,4 @@
 - ギャラリーのルーティングができてない
 - ある地点のスナップショットを表示（ここにはスナップショットがあり、スナップショット一覧が表示される）　 → 　そして、別のスナップショットがない場所のスナップショット一覧を表示しようとする → 期待する動作：スナップショットがないという表示。実際の動作：前回表示した別の地点のスナップショット一覧が表示される
 - 画像エディタに https://pepoafonso.github.io/color_converter_wplace/index.html へのリンク
+- src/features/bookmark/import-export.ts の i18n
