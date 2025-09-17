@@ -25,7 +25,10 @@ export class SnapshotRoute extends BaseSnapshotRoute {
   private async editTileName(): Promise<void> {
     if (!this.currentTileX || this.currentTileY === undefined) return;
 
-    const currentName = await TileNameStorage.getTileName(this.currentTileX, this.currentTileY);
+    // const currentName = await TileNameStorage.getTileName(
+    //   this.currentTileX,
+    //   this.currentTileY
+    // );
     const newName = await showNameInputModal(
       t`${"edit"}`,
       t`${"enter_tile_name"}`
@@ -33,7 +36,11 @@ export class SnapshotRoute extends BaseSnapshotRoute {
 
     if (newName === null) return;
 
-    await TileNameStorage.setTileName(this.currentTileX, this.currentTileY, newName);
+    await TileNameStorage.setTileName(
+      this.currentTileX,
+      this.currentTileY,
+      newName
+    );
     await this.updateTileInfo();
     Toast.success("Tile name updated");
   }
@@ -52,11 +59,16 @@ export class SnapshotRoute extends BaseSnapshotRoute {
       return;
     }
 
-    const tileName = await TileNameStorage.getTileName(this.currentTileX, this.currentTileY);
-    const displayName = tileName || `タイル(${this.currentTileX}, ${this.currentTileY})`;
+    const tileName = await TileNameStorage.getTileName(
+      this.currentTileX,
+      this.currentTileY
+    );
+    const displayName =
+      tileName || `Tile(${this.currentTileX}, ${this.currentTileY})`;
 
     nameDisplay && (nameDisplay.textContent = displayName);
-    coordinateInfo && (coordinateInfo.textContent = `Tile(${this.currentTileX}, ${this.currentTileY})`);
+    coordinateInfo &&
+      (coordinateInfo.textContent = `Tile(${this.currentTileX}, ${this.currentTileY})`);
     editBtn && editBtn.removeAttribute("disabled");
     gotoBtn && gotoBtn.removeAttribute("disabled");
   }
@@ -148,11 +160,9 @@ export class SnapshotRoute extends BaseSnapshotRoute {
       });
 
     // 位置移動ボタンのイベント
-    container
-      .querySelector("#goto-tile-btn")
-      ?.addEventListener("click", () => {
-        this.gotoTilePosition();
-      });
+    container.querySelector("#goto-tile-btn")?.addEventListener("click", () => {
+      this.gotoTilePosition();
+    });
 
     // スナップショット一覧のイベント委譲
     this.setupSnapshotEvents(container, "#wps-snapshots-list");
@@ -167,27 +177,19 @@ export class SnapshotRoute extends BaseSnapshotRoute {
       return;
     }
 
-    try {
-      const snapshots = await TimeTravelStorage.getSnapshotsForTile(
-        this.currentTileX,
-        this.currentTileY
-      );
-      const listContainer = container.querySelector("#wps-snapshots-list");
+    const snapshots = await TimeTravelStorage.getSnapshotsForTile(
+      this.currentTileX,
+      this.currentTileY
+    );
+    const listContainer = container.querySelector("#wps-snapshots-list");
 
-      if (listContainer) {
-        if (snapshots.length === 0) {
-          listContainer.innerHTML = `<div class="text-sm text-gray-500 text-center p-4">${t`${"no_items"}`}</div>`;
-        } else {
-          listContainer.innerHTML = snapshots
-            .map((snapshot) => this.renderSnapshotItem(snapshot))
-            .join("");
-        }
-      }
-    } catch (error) {
-      console.error("Failed to load snapshots:", error);
-      const listContainer = container.querySelector("#wps-snapshots-list");
-      if (listContainer) {
-        listContainer.innerHTML = `<div class="text-sm text-red-500 text-center p-4">Failed to load snapshots</div>`;
+    if (listContainer) {
+      if (snapshots.length === 0) {
+        listContainer.innerHTML = `<div class="text-sm text-gray-500 text-center p-4">${t`${"no_items"}`}</div>`;
+      } else {
+        listContainer.innerHTML = snapshots
+          .map((snapshot) => this.renderSnapshotItem(snapshot))
+          .join("");
       }
     }
   }
@@ -202,22 +204,17 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     );
 
     // キャンセルされた場合は処理中断
-    if (name === null) return;
+    // if (name === null) return;
 
     const tileSnapshot = (window as any).wplaceStudio?.tileSnapshot;
-    if (tileSnapshot) {
-      try {
-        const snapshotId = await tileSnapshot.saveSnapshot(
-          this.currentTileX,
-          this.currentTileY,
-          name || undefined // 空文字時はundefined
-        );
-        Toast.success(`Snapshot saved: ${snapshotId}`);
-        await this.reloadSnapshots(container);
-      } catch (error) {
-        Toast.error(`Save failed: ${error}`);
-      }
-    }
+    if (!tileSnapshot) throw new Error("TileSnapshot not found");
+    const snapshotId = await tileSnapshot.saveSnapshot(
+      this.currentTileX,
+      this.currentTileY,
+      name || undefined
+    );
+    Toast.success(`Snapshot saved: ${snapshotId}`);
+    await this.reloadSnapshots(container);
   }
 
   private gotoTilePosition(): void {

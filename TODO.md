@@ -2,6 +2,7 @@
 
 # マイナー
 
+- src/features/bookmark/import-export.ts の i18n
 - 画像エディタに https://pepoafonso.github.io/color_converter_wplace/index.html へのリンク
 - 入力文字を描画したい
 - goTo は map のインスタンス使えるかも

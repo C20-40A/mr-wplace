@@ -59,7 +59,11 @@ export class TileSnapshot {
     });
   }
 
-  async saveSnapshot(tileX: number, tileY: number, name?: string): Promise<string> {
+  async saveSnapshot(
+    tileX: number,
+    tileY: number,
+    name?: string
+  ): Promise<string> {
     const tmpKey = `${TileSnapshot.TMP_PREFIX}${tileX}_${tileY}`;
     const result = await chrome.storage.local.get(tmpKey);
 

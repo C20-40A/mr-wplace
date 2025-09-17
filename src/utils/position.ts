@@ -1,18 +1,11 @@
 import { Position } from "../features/bookmark/types";
-import { STORAGE_KEYS } from "../features/bookmark/storage";
+import { WplaceLocalStorage } from "./wplaceLocalStorage";
 
-export function getCurrentPosition(): Position | null {
-  const locationStr = localStorage.getItem(STORAGE_KEYS.location);
-  if (locationStr) {
-    const location = JSON.parse(locationStr);
-    return {
-      lat: location.lat,
-      lng: location.lng,
-      zoom: location.zoom,
-    };
-  }
-  return null;
-}
+export const getCurrentPosition = (): Position | null => {
+  const location = WplaceLocalStorage.getClickedPosition();
+  if (!location) return null;
+  return { lat: location.lat, lng: location.lng, zoom: location.zoom };
+};
 
 export const gotoPosition = ({ lat, lng, zoom }: Position) => {
   const url = new URL(window.location.href);

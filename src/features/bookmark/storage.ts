@@ -11,21 +11,17 @@ export class BookmarkStorage {
     });
   }
 
-  private static async getValue(defaultValue: any = null): Promise<any> {
+  private static async getValue(): Promise<any> {
     return new Promise((resolve) => {
       chrome.storage.local.get([this.INDEX_KEY], (result) => {
-        resolve(
-          result[this.INDEX_KEY] !== undefined
-            ? result[this.INDEX_KEY]
-            : defaultValue
-        );
+        resolve(result[this.INDEX_KEY]);
       });
     });
   }
 
   static async getBookmarks(): Promise<Bookmark[]> {
-    const stored = await this.getValue("[]");
-    return JSON.parse(stored);
+    const stored = await this.getValue();
+    return JSON.parse(stored) ?? [];
   }
 
   static async addBookmark(bookmark: Bookmark): Promise<void> {
