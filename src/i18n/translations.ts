@@ -98,6 +98,17 @@ const jaTranslations = {
   file_select: "ファイルを選択",
   image_editor: "画像エディタ",
   image_detail: "画像詳細",
+
+  // 描画関連
+  draw_enabled: "描画ON",
+  draw_disabled: "描画OFF",
+  draw_state: "描画状態",
+  enabled: "有効",
+  disabled: "無効",
+  goto_map: "マップへ移動",
+  goto_map_success: "マップに移動しました",
+  error: "エラー",
+  deleted: "削除しました",
 };
 
 // 英語翻訳辞書
@@ -186,6 +197,17 @@ const enTranslations = {
   file_select: "Select File",
   image_editor: "Image Editor",
   image_detail: "Image Detail",
+
+  // Drawing
+  draw_enabled: "Draw ON",
+  draw_disabled: "Draw OFF",
+  draw_state: "Draw State",
+  enabled: "Enabled",
+  disabled: "Disabled",
+  goto_map: "Go to Map",
+  goto_map_success: "Moved to map",
+  error: "Error",
+  deleted: "Deleted",
 };
 
 // 翻訳辞書を登録

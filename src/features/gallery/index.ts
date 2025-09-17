@@ -89,7 +89,16 @@ export class Gallery {
           this.imageDetailRoute.render(
             container,
             this.router,
-            this.currentDetailItem
+            this.currentDetailItem,
+            async (key: string) => {
+              // 削除処理
+              const { GalleryStorage } = await import("./storage");
+              const storage = new GalleryStorage();
+              await storage.delete(key);
+              
+              // 一覧に戻る
+              this.router.navigateBack();
+            }
           );
         }
         break;
