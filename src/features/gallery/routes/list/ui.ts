@@ -1,8 +1,7 @@
 import { GalleryItem } from "../../storage";
 import { ImageGridComponent, ImageItem } from "./components/ImageGridComponent";
+import { GalleryImageActions } from "../../common-actions";
 import { t } from "../../../../i18n/manager";
-import { gotoPosition } from "../../../../utils/position";
-import { tilePixelToLatLng } from "../../../../utils/coordinate";
 
 export class GalleryListUI {
   private modal: HTMLDialogElement | null = null;
@@ -22,8 +21,6 @@ export class GalleryListUI {
     this.modal?.close();
   }
 
-
-
   render(
     items: GalleryItem[],
     onDelete: (key: string) => void,
@@ -37,7 +34,14 @@ export class GalleryListUI {
     if (container) {
       this.container = container;
     }
-    this.renderGalleryList(items, onDelete, isSelectionMode, onSelect, onImageClick, onAddClick);
+    this.renderGalleryList(
+      items,
+      onDelete,
+      isSelectionMode,
+      onSelect,
+      onImageClick,
+      onAddClick
+    );
   }
 
   private renderGalleryList(
@@ -83,7 +87,14 @@ export class GalleryListUI {
         }
       },
       onDrawToggle: (key) => {
-        this.handleDrawToggle(key, items, onDelete, isSelectionMode, onSelect, onImageClick);
+        this.handleDrawToggle(
+          key,
+          items,
+          onDelete,
+          isSelectionMode,
+          onSelect,
+          onImageClick
+        );
       },
       onImageDelete: (key) => {
         onDelete(key);
@@ -103,10 +114,6 @@ export class GalleryListUI {
     this.imageGrid.render();
   }
 
-
-
-
-
   private async handleDrawToggle(
     key: string,
     items: GalleryItem[],
@@ -115,16 +122,18 @@ export class GalleryListUI {
     onSelect?: (item: GalleryItem) => void,
     onImageClick?: (item: GalleryItem) => void
   ): Promise<void> {
-    // TileOverlayのtoggleImageDrawStateに一本化
-    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
-    if (!tileOverlay) return;
-
-    const newDrawEnabled = await tileOverlay.toggleImageDrawState(key);
+    const newDrawEnabled = await GalleryImageActions.toggleDrawState(key);
 
     // 画面を再描画
     const galleryStorage = new (await import("../../storage")).GalleryStorage();
     const updatedItems = await galleryStorage.getAll();
-    this.renderGalleryList(updatedItems, onDelete, isSelectionMode, onSelect, onImageClick);
+    this.renderGalleryList(
+      updatedItems,
+      onDelete,
+      isSelectionMode,
+      onSelect,
+      onImageClick
+    );
 
     console.log(`🎯 Draw toggle: ${key} -> ${newDrawEnabled}`);
   }
@@ -155,17 +164,7 @@ export class GalleryListUI {
   }
 
   private async handleGotoPosition(item: GalleryItem): Promise<void> {
-    if (!item.drawPosition) throw new Error("Item has no drawPosition");
-
-    // TLX, TLYからlat, lngへ変換。タイル中央座標を使用
-    const { lat, lng } = tilePixelToLatLng(
-      item.drawPosition.TLX,
-      item.drawPosition.TLY,
-      item.drawPosition.PxX,
-      item.drawPosition.PxY
-    );
-
-    gotoPosition({ lat, lng, zoom: 14 });
+    await GalleryImageActions.gotoMapPosition(item);
 
     // モーダルが存在する場合のみ閉じる（外部コンテナ使用時は閉じない）
     if (this.modal) this.closeModal();
