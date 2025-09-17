@@ -1,4 +1,4 @@
-import { ImageEditorUI } from "./ui";
+import { ImageEditorUI, ImageEditorCallbacks } from "./ui";
 import { ImageProcessor } from "./editor";
 
 export class GalleryImageEditor {
@@ -10,14 +10,23 @@ export class GalleryImageEditor {
   }
 
   render(container: HTMLElement): void {
-    // コンテナをクリア
     container.innerHTML = '';
     
-    // UIコンテナを作成して追加
     const uiContainer = this.ui.createAndGetContainer();
     container.appendChild(uiContainer);
 
-    // プロセッサーを初期化（空の状態）
     this.processor = new ImageProcessor(uiContainer);
+    
+    // コールバック設定
+    const callbacks: ImageEditorCallbacks = {
+      onFileHandle: (file) => this.processor?.handleFile(file),
+      onScaleChange: (scale) => this.processor?.onScaleChange(scale),
+      onClear: () => this.processor?.clearImage(),
+      onPaidToggle: (includePaid) => this.processor?.onPaidToggle(includePaid),
+      onSaveToGallery: () => this.processor?.saveToGallery(),
+      onDownload: () => this.processor?.downloadImage()
+    };
+    
+    this.ui.setupUI(callbacks);
   }
 }
