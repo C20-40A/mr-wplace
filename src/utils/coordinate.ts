@@ -35,9 +35,9 @@ export function tilePixelToLatLng(
   const zoom = 11;
   const N = tileSize * Math.pow(2, zoom); // 世界全体のピクセル数
 
-  // タイル中央のワールドピクセル座標
-  const worldX = tileX * tileSize + tileSize / 2 + (pxX ?? 0);
-  const worldY = tileY * tileSize + tileSize / 2 + (pxY ?? 0);
+  // ワールドピクセル座標（タイル左上 + タイル内オフセット）
+  const worldX = tileX * tileSize + (pxX ?? 0);
+  const worldY = tileY * tileSize + (pxY ?? 0);
 
   // Web Mercator 逆変換
   const lng = (worldX / N) * 360 - 180;
