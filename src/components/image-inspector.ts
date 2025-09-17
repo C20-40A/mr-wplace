@@ -96,7 +96,7 @@ export class ImageInspector {
   private setupWheelZoom(): void {
     this.canvas.addEventListener("wheel", (e) => {
       e.preventDefault();
-      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      const delta = e.deltaY > 0 ? -0.2 : 0.2;
       const newZoom = Math.max(
         this.options.minZoom,
         Math.min(this.options.maxZoom, this.zoom + delta)
@@ -230,7 +230,11 @@ export class ImageInspector {
    */
   destroy(): void {
     // DOM要素を削除
-    if (this.controlsContainer && this.containerElement && this.containerElement.contains(this.controlsContainer)) {
+    if (
+      this.controlsContainer &&
+      this.containerElement &&
+      this.containerElement.contains(this.controlsContainer)
+    ) {
       this.containerElement.removeChild(this.controlsContainer);
     }
 
