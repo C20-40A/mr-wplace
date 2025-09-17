@@ -128,7 +128,7 @@ export class ExtendedBookmarks {
     }
 
     const name = prompt(
-      t`${"enter_favorite_name"}`,
+      t`${"enter_bookmark_name"}`,
       t`${"location_point"} (${position.lat.toFixed(3)}, ${position.lng.toFixed(
         3
       )})`

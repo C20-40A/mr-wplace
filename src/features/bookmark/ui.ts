@@ -28,7 +28,7 @@ export const createSaveBookmarkButton = (
 
 export const createBookmarkButton = (container: Element): HTMLButtonElement => {
   const button = document.createElement("button");
-  button.id = "bookmarks-btn";  // 重複チェック用ID設定
+  button.id = "bookmarks-btn"; // 重複チェック用ID設定
   button.className =
     "btn btn-lg sm:btn-xl btn-square shadow-md text-base-content/80 z-30";
   button.title = t`${"bookmarks"}`;
@@ -44,13 +44,13 @@ export const createBookmarkButton = (container: Element): HTMLButtonElement => {
     parentNode.appendChild(button);
   }
   return button;
-}
+};
 
 export const createBookmarkModal = (): ModalElements => {
   const modalElements = createModal({
     id: "wplace-studio-favorite-modal",
     title: t`${"bookmark_list"}`,
-    maxWidth: "64rem" // 4xl equivalent
+    maxWidth: "64rem", // 4xl equivalent
   });
 
   // Add bookmark-specific content to container
@@ -95,8 +95,8 @@ export const renderBookmarks = (favorites: Favorite[]): void => {
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-12 mx-auto mb-4 text-base-content/50">
             <path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/>
           </svg>
-          <p class="text-base-content/80">${"no_favorites"}</p>
-          <p class="text-sm text-base-content/60">${"add_favorites_instruction"}</p>
+          <p class="text-base-content/80">${"no_bookmarks"}</p>
+          <p class="text-sm text-base-content/60">${"add_bookmark_instruction"}</p>
         </div>
       `;
     return;
@@ -131,6 +131,8 @@ export const renderBookmarks = (favorites: Favorite[]): void => {
 };
 
 // Legacy accessor for modal element
-export const getBookmarkModalElement = (modalElements: ModalElements): HTMLDialogElement => {
+export const getBookmarkModalElement = (
+  modalElements: ModalElements
+): HTMLDialogElement => {
   return modalElements.modal;
 };

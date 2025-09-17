@@ -8,9 +8,6 @@
 - お気に入りがない場合の UI が少しずれている
 - 逆ジオあってもいいかも
 - お気に入りモーダルを整理可能にする
-- 「個のスナップショット」を translate
-- 「現在に戻る」日本語ハードコード
-- src/features/time-travel/routes/tile-list.ts の translation
 
 # DONE
 
