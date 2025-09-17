@@ -87,6 +87,14 @@ export abstract class BaseSnapshotRoute {
     container: HTMLElement
   ): Promise<void> {
     if (!confirm(t`${"delete_confirm"}`)) return;
+    
+    // TemplateManager からも削除（描画中の場合）
+    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
+    const imageKey = `snapshot_${fullKey}`;
+    if (tileOverlay?.templateManager) {
+      tileOverlay.templateManager.removeTemplateByKey(imageKey);
+    }
+    
     await TimeTravelStorage.removeSnapshotFromIndex(fullKey);
     Toast.success(t`${"deleted_message"}`);
     await this.reloadSnapshots(container);
