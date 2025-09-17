@@ -17,10 +17,46 @@ export class TileSnapshot {
 
   async saveTmpTile(tileX: number, tileY: number, blob: Blob): Promise<void> {
     const key = `${TileSnapshot.TMP_PREFIX}${tileX}_${tileY}`;
-    const arrayBuffer = await blob.arrayBuffer();
+
+    // Check image size and scale down if 3000x3000
+    const processedBlob = await this.scaleDownIfNeeded(blob);
+
+    const arrayBuffer = await processedBlob.arrayBuffer();
     const data = Array.from(new Uint8Array(arrayBuffer));
 
     await chrome.storage.local.set({ [key]: data });
+  }
+
+  /**
+   * If the image is 3000x3000, scale it down to 1000x1000 to save storage space.
+   * - skirk marbleなどと競合して、3000x3000の画像が保存されるケースがあるため。
+   */
+  private async scaleDownIfNeeded(blob: Blob): Promise<Blob> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        if (img.width === 3000 && img.height === 3000) {
+          // Scale down to 1000x1000
+          const canvas = document.createElement("canvas");
+          canvas.width = 1000;
+          canvas.height = 1000;
+          const ctx = canvas.getContext("2d")!;
+          // アンチエイリアシングを無効化する
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(img, 0, 0, 1000, 1000);
+          canvas.toBlob((scaledBlob) => {
+            resolve(scaledBlob || blob);
+          }, "image/png");
+        } else {
+          resolve(blob);
+        }
+      };
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(blob);
+    });
   }
 
   async saveSnapshot(tileX: number, tileY: number): Promise<string> {
