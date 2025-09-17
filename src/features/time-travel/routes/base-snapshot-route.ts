@@ -53,7 +53,7 @@ export abstract class BaseSnapshotRoute {
       <div class="border-b wps-snapshot-item cursor-pointer hover:bg-gray-50" data-snapshot-key="${snapshot.fullKey}" style="position: relative;">
         <div class="p-3">
           <div class="text-sm font-medium flex items-center gap-2">
-            ${formattedTime}
+            ${snapshot.name || formattedTime}
             ${isDrawing ? `
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 text-green-500">
                 <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
@@ -61,6 +61,7 @@ export abstract class BaseSnapshotRoute {
               </svg>
             ` : ''}
           </div>
+          ${snapshot.name ? `<div class="text-xs" style="color: #9ca3af;">${formattedTime}</div>` : ''}
           <div class="text-xs" style="color: #9ca3af;">${snapshot.id}</div>
         </div>
         <button class="wps-delete-btn" data-snapshot-key="${snapshot.fullKey}" style="position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; border: none; background: grey; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer;">×</button>

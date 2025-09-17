@@ -11,6 +11,7 @@ export interface SnapshotInfo {
   timestamp: number;
   tileX: number;
   tileY: number;
+  name?: string;
 }
 
 interface SnapshotIndex {

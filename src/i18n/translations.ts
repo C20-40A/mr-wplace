@@ -50,6 +50,7 @@ const jaTranslations = {
   snapshot_download_title: "スナップショット画像",
   snapshot_detail: "スナップショット詳細",
   return_to_current: "描画を元に戻す",
+  enter_snapshot_name: "スナップショット名を入力（空の場合は日時表示）:",
 
   // Image Editor関連
   drag_drop_or_click: "画像をドラッグ&ドロップまたはクリックして選択",
@@ -135,6 +136,7 @@ const enTranslations = {
   snapshot_download_title: "Snapshot Image",
   snapshot_detail: "Snapshot Detail",
   return_to_current: "Return to Current",
+  enter_snapshot_name: "Enter snapshot name (empty for timestamp):",
 
   // Image Editor
   drag_drop_or_click: "Drag & drop or click to select image",
