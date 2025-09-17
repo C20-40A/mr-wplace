@@ -31,7 +31,8 @@ const jaTranslations = {
 
   // ブックマーク
   no_bookmarks: "ブックマークがありません",
-  add_bookmark_instruction: "下の「保存」ボタンから追加してください",
+  add_bookmark_instruction:
+    "マップをクリックし、「ブックマーク」ボタンで追加してください",
   saved_count: "保存済み",
   items_unit: "件",
   location_unavailable: "位置情報を取得できませんでした。",
@@ -118,7 +119,8 @@ const enTranslations = {
 
   // Bookmarks
   no_bookmarks: "No bookmarks",
-  add_bookmark_instruction: 'Please add from the "Save" button below',
+  add_bookmark_instruction:
+    'Click on the map and use the "Bookmark" button to add',
   saved_count: "Saved",
   items_unit: "items",
   location_unavailable: "Could not retrieve location information.",

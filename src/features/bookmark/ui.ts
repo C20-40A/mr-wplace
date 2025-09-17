@@ -51,6 +51,7 @@ export const createBookmarkModal = (): ModalElements => {
     id: "wplace-studio-favorite-modal",
     title: t`${"bookmark_list"}`,
     maxWidth: "64rem", // 4xl equivalent
+    containerStyle: "min-height: 35rem;",
   });
 
   // Add bookmark-specific content to container
@@ -91,7 +92,7 @@ export const renderBookmarks = (favorites: Bookmark[]): void => {
 
   if (favorites.length === 0) {
     grid.innerHTML = t`
-        <div class="col-span-full text-center py-12">
+        <div class="text-center" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-12 mx-auto mb-4 text-base-content/50">
             <path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/>
           </svg>
