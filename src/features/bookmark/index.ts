@@ -135,10 +135,14 @@ export class ExtendedBookmarks {
       )})`
     );
     if (name === null) return;
+    const bookmarkName =
+      name === ""
+        ? `(${position.lat.toFixed(3)}, ${position.lng.toFixed(3)})`
+        : name;
 
     const favorite = {
       id: Date.now(),
-      name: name,
+      name: bookmarkName,
       lat: position.lat,
       lng: position.lng,
       zoom: position.zoom || 14,
