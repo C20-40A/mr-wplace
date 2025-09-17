@@ -151,7 +151,13 @@ export class TemplateManager {
   }
 
   /** 特定タイルでTimeTravelスナップショット描画判定 */
-  isTimeTravelDrawingOnTile(tileX: number, tileY: number): boolean {
+  findSnapshotDrawingInTile(
+    tileX: number,
+    tileY: number
+  ): {
+    isTemplateActive: boolean;
+    imageKey: string | null;
+  } {
     for (const instance of this.templatesArray) {
       if (
         !instance.drawEnabled ||
@@ -162,10 +168,29 @@ export class TemplateManager {
       }
 
       const [templateTileX, templateTileY] = instance.template.coords;
-      if (templateTileX === tileX && templateTileY === tileY) {
-        return true;
-      }
+      if (templateTileX === tileX && templateTileY === tileY)
+        return { isTemplateActive: true, imageKey: instance.imageKey };
     }
-    return false;
+    return { isTemplateActive: false, imageKey: null };
+  }
+
+  /** スナップショット描画toggle（1タイル1スナップショット制限） */
+  async drawSnapshotOnTile(
+    tileX: number,
+    tileY: number,
+    file: File,
+    imageKey: string
+  ): Promise<boolean> {
+    const { isTemplateActive, imageKey: snapshotImageKey } =
+      this.findSnapshotDrawingInTile(tileX, tileY);
+
+    // 既に描画されている場合は削除
+    if (isTemplateActive && snapshotImageKey) {
+      this.removeTemplateByKey(snapshotImageKey);
+    }
+
+    // 新しいスナップショットを描画
+    await this.createTemplate(file, [tileX, tileY, 0, 0], imageKey);
+    return true;
   }
 }
