@@ -1,31 +1,42 @@
 import { Bookmark } from "./types";
 
-const STORAGE_KEYS = {
-  bookmarks: "wplace_extended_bookmarks",
-  location: "location",
-};
-
 export class BookmarkStorage {
-  static async setValue(key: string, value: any): Promise<void> {
+  private static readonly INDEX_KEY = "wplace_extended_bookmarks";
+
+  private static async setValue(value: any): Promise<void> {
     return new Promise((resolve) => {
-      chrome.storage.local.set({ [key]: value }, () => {
+      chrome.storage.local.set({ [this.INDEX_KEY]: value }, () => {
         resolve();
       });
     });
   }
 
-  static async getValue(key: string, defaultValue: any = null): Promise<any> {
+  private static async getValue(defaultValue: any = null): Promise<any> {
     return new Promise((resolve) => {
-      chrome.storage.local.get([key], (result) => {
-        resolve(result[key] !== undefined ? result[key] : defaultValue);
+      chrome.storage.local.get([this.INDEX_KEY], (result) => {
+        resolve(
+          result[this.INDEX_KEY] !== undefined
+            ? result[this.INDEX_KEY]
+            : defaultValue
+        );
       });
     });
   }
 
-  static async getFavorites(): Promise<Bookmark[]> {
-    const stored = await this.getValue(STORAGE_KEYS.bookmarks, "[]");
+  static async getBookmarks(): Promise<Bookmark[]> {
+    const stored = await this.getValue("[]");
     return JSON.parse(stored);
   }
-}
 
-export { STORAGE_KEYS };
+  static async addBookmark(bookmark: Bookmark): Promise<void> {
+    const bookmarks = await this.getBookmarks();
+    bookmarks.push(bookmark);
+    await this.setValue(JSON.stringify(bookmarks));
+  }
+
+  static async removeBookmark(id: number): Promise<void> {
+    const bookmarks = await this.getBookmarks();
+    const filtered = bookmarks.filter((fav) => fav.id !== id);
+    await this.setValue(JSON.stringify(filtered));
+  }
+}
