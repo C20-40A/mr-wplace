@@ -80,46 +80,42 @@ export class SnapshotDetailRoute {
   }
 
   private async loadSnapshot(fullKey: string): Promise<void> {
-    try {
-      const result = await chrome.storage.local.get(fullKey);
-      if (!result[fullKey]) throw new Error("Snapshot not found");
+    const result = await chrome.storage.local.get(fullKey);
+    if (!result[fullKey]) throw new Error("Snapshot not found");
 
-      const uint8Array = new Uint8Array(result[fullKey]);
-      const blob = new Blob([uint8Array], { type: "image/png" });
+    const uint8Array = new Uint8Array(result[fullKey]);
+    const blob = new Blob([uint8Array], { type: "image/png" });
 
-      const dataUrl = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(blob);
+    const dataUrl = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+
+    const canvas = document.getElementById(
+      "wps-snapshot-canvas"
+    ) as HTMLCanvasElement;
+    if (!canvas) return;
+
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0);
+
+      // ImageInspector初期化（キャンバスエリアサイズに合わせて動的計算）
+      const canvasArea = canvas.parentElement!;
+      const containerSize =
+        Math.min(canvasArea.offsetWidth, canvasArea.offsetHeight) * 0.9;
+
+      this.imageInspector = new ImageInspector(canvas, {
+        containerSize: containerSize,
+        minZoom: 1.0,
+        maxZoom: 5.0,
       });
-
-      const canvas = document.getElementById(
-        "wps-snapshot-canvas"
-      ) as HTMLCanvasElement;
-      if (!canvas) return;
-
-      const img = new Image();
-      img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext("2d")!;
-        ctx.drawImage(img, 0, 0);
-
-        // ImageInspector初期化（キャンバスエリアサイズに合わせて動的計算）
-        const canvasArea = canvas.parentElement!;
-        const containerSize =
-          Math.min(canvasArea.offsetWidth, canvasArea.offsetHeight) * 0.9;
-
-        this.imageInspector = new ImageInspector(canvas, {
-          containerSize: containerSize,
-          minZoom: 1.0,
-          maxZoom: 5.0,
-        });
-      };
-      img.src = dataUrl;
-    } catch (error) {
-      console.error("Failed to load snapshot:", error);
-    }
+    };
+    img.src = dataUrl;
   }
 
   private async drawSnapshot(fullKey: string): Promise<void> {
@@ -136,14 +132,13 @@ export class SnapshotDetailRoute {
     // 直接TemplateManagerで描画（座標は既にタイル単位）
     const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
     const imageKey = `snapshot_${fullKey}`;
-    await tileOverlay.templateManager.createTemplate(file, [
-      tileX,
-      tileY,
-      0,
-      0,
-    ], imageKey);
+    await tileOverlay.templateManager.createTemplate(
+      file,
+      [tileX, tileY, 0, 0],
+      imageKey
+    );
     Toast.success("Snapshot drawn successfully");
-    
+
     // 「現在に戻る」ボタン表示更新
     this.updateReturnCurrentButton(fullKey);
 
@@ -178,27 +173,27 @@ export class SnapshotDetailRoute {
     const tileX = parseInt(fullKey.split("_")[3]);
     const tileY = parseInt(fullKey.split("_")[4]);
     const imageKey = `snapshot_${fullKey}`;
-    
+
     const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
-    const isDrawing = tileOverlay?.templateManager?.isDrawingOnTile(tileX, tileY) || false;
-    
+    const isDrawing =
+      tileOverlay?.templateManager?.isDrawingOnTile(tileX, tileY) || false;
+
     const returnBtn = document.querySelector("#wps-return-current-btn");
-    if (returnBtn) {
-      if (isDrawing) {
-        returnBtn.classList.remove("hidden");
-      } else {
-        returnBtn.classList.add("hidden");
-      }
+    if (!returnBtn) throw new Error("Return button not found");
+    if (isDrawing) {
+      returnBtn.classList.remove("hidden");
+    } else {
+      returnBtn.classList.add("hidden");
     }
   }
 
   private returnToCurrent(fullKey: string): void {
     const imageKey = `snapshot_${fullKey}`;
     const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
-    
+
     tileOverlay?.templateManager?.removeTemplateByKey(imageKey);
     Toast.success("Returned to current state");
-    
+
     // ボタン非表示
     this.updateReturnCurrentButton(fullKey);
   }

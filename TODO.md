@@ -1,11 +1,8 @@
 # クリティカル
 
-- タイムマシン機能で描画中のタイルを Disable にできない
-
 # マイナー
 
 - タイルに名称を設定できると便利
-- src/features/time-travel/routes/tile-list.ts の translation
 - ギャラリーから、画像に移動したとき、即座に描画されない？
 - goTo は map のインスタンス使えるかも
 - お気に入りがない場合の UI が少しずれている
@@ -13,9 +10,11 @@
 - お気に入りモーダルを整理可能にする
 - 「個のスナップショット」を translate
 - 「現在に戻る」日本語ハードコード
+- src/features/time-travel/routes/tile-list.ts の translation
 
 # DONE
 
+- タイムマシン機能で描画中のタイルを Disable にできない
 - タイムスタンプの描画できてない？
 - タイルまたぎの描画できてない？
   - おそらく複数描画の影響。描画を整理したほうがいいかもしれない。

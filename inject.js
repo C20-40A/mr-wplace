@@ -55,11 +55,10 @@ window.fetch = async function (...args) {
           );
         });
 
-        // Send tile for processing
+        // Send original tile for snapshot (tmp save)
         window.postMessage(
           {
-            source: "wplace-studio-tile",
-            blobID: blobUUID,
+            source: "wplace-studio-snapshot-tmp",
             tileBlob: blob,
             tileX: tileX,
             tileY: tileY,
@@ -67,10 +66,11 @@ window.fetch = async function (...args) {
           "*"
         );
 
-        // Send original tile for snapshot (tmp save)
+        // Send tile for processing
         window.postMessage(
           {
-            source: "wplace-studio-snapshot-tmp",
+            source: "wplace-studio-tile",
+            blobID: blobUUID,
             tileBlob: blob,
             tileX: tileX,
             tileY: tileY,
