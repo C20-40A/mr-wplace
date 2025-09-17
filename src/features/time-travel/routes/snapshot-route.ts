@@ -3,6 +3,7 @@ import { Toast } from "../../../components/toast";
 import { TimeTravelRouter } from "../router";
 import { getCurrentPosition, gotoPosition } from "../../../utils/position";
 import { TimeTravelStorage } from "../storage";
+import { TileNameStorage } from "../tile-name-storage";
 import { t } from "../../../i18n/manager";
 import { showNameInputModal } from "../../../utils/modal";
 import { llzToTilePixel, tilePixelToLatLng } from "../../../utils/coordinate";
@@ -21,6 +22,59 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     this.options = options;
   }
 
+  private async editTileName(): Promise<void> {
+    if (!this.currentTileX || this.currentTileY === undefined) return;
+
+    const currentName = await TileNameStorage.getTileName(this.currentTileX, this.currentTileY);
+    const newName = await showNameInputModal(
+      t`${"edit"}`,
+      t`${"enter_tile_name"}`
+    );
+
+    if (newName === null) return;
+
+    await TileNameStorage.setTileName(this.currentTileX, this.currentTileY, newName);
+    await this.updateTileInfo();
+    Toast.success("Tile name updated");
+  }
+
+  private async updateTileInfo(): Promise<void> {
+    const nameDisplay = document.getElementById("tile-name-display");
+    const coordinateInfo = document.getElementById("tile-coordinate-info");
+    const editBtn = document.getElementById("edit-tile-name-btn");
+    const gotoBtn = document.getElementById("goto-tile-btn");
+
+    if (!this.currentTileX || this.currentTileY === undefined) {
+      nameDisplay && (nameDisplay.textContent = "Location unavailable");
+      coordinateInfo && (coordinateInfo.textContent = "Tile(-,-)");
+      editBtn && editBtn.setAttribute("disabled", "true");
+      gotoBtn && gotoBtn.setAttribute("disabled", "true");
+      return;
+    }
+
+    const tileName = await TileNameStorage.getTileName(this.currentTileX, this.currentTileY);
+    const displayName = tileName || `タイル(${this.currentTileX}, ${this.currentTileY})`;
+
+    nameDisplay && (nameDisplay.textContent = displayName);
+    coordinateInfo && (coordinateInfo.textContent = `Tile(${this.currentTileX}, ${this.currentTileY})`);
+    editBtn && editBtn.removeAttribute("disabled");
+    gotoBtn && gotoBtn.removeAttribute("disabled");
+  }
+
+  private renderSaveButton(): string {
+    return `
+      <div class="mb-4">
+        <button id="wps-save-current-snapshot-btn" class="btn btn-primary w-full">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+            <path d="M21.731 2.269a2.625 2.625 0 00-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 000-3.712zM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 00-1.32 2.214l-.8 2.685a.75.75 0 00.933.933l2.685-.8a5.25 5.25 0 002.214-1.32l8.4-8.4z" />
+            <path d="M5.25 5.25a3 3 0 00-3 3v10.5a3 3 0 003 3h10.5a3 3 0 003-3V13.5a.75.75 0 00-1.5 0v5.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5V8.25a1.5 1.5 0 011.5-1.5h5.25a.75.75 0 000-1.5H5.25z" />
+          </svg>
+          ${t`${"save_current_snapshot"}`}
+        </button>
+      </div>
+    `;
+  }
+
   render(container: HTMLElement, router: TimeTravelRouter): void {
     const selectedTile = (router as any).selectedTile;
 
@@ -35,48 +89,44 @@ export class SnapshotRoute extends BaseSnapshotRoute {
         this.currentTileX = coords.TLX;
         this.currentTileY = coords.TLY;
       } else {
-        // 位置が取得できない場合は初期化
         this.currentTileX = undefined;
         this.currentTileY = undefined;
       }
     }
 
-    // タイル情報表示部分（特定タイルの場合のみ）
-    const tileInfoHtml = selectedTile
-      ? `<div class="mb-4 flex items-center gap-2">
-           <div class="text-sm text-gray-600">Tile(${this.currentTileX}, ${this.currentTileY})</div>
-           <button id="wps-goto-tile-btn" class="btn btn-ghost btn-xs" title="Go to location">
-             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
-               <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
-             </svg>
-           </button>
-         </div>`
-      : "";
-
-    // 保存ボタン（モードにより表示制御）
-    const saveButtonHtml = this.options.showSaveButton
-      ? `<div class="mb-4">
-           <button id="wps-save-current-snapshot-btn" class="btn btn-primary w-full">
-             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
-               <path d="M21.731 2.269a2.625 2.625 0 00-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 000-3.712zM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 00-1.32 2.214l-.8 2.685a.75.75 0 00.933.933l2.685-.8a5.25 5.25 0 002.214-1.32l8.4-8.4z" />
-               <path d="M5.25 5.25a3 3 0 00-3 3v10.5a3 3 0 003 3h10.5a3 3 0 003-3V13.5a.75.75 0 00-1.5 0v5.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5V8.25a1.5 1.5 0 011.5-1.5h5.25a.75.75 0 000-1.5H5.25z" />
-             </svg>
-             ${t`${"save_current_snapshot"}`}
-           </button>
-         </div>`
-      : "";
-
     container.innerHTML = `
-      ${tileInfoHtml}
+      <!-- タイル名称管理UI -->
+      <div class="mb-4 p-3 border rounded bg-gray-50">
+        <div id="tile-info-section" class="flex items-center gap-3">
+          <div class="flex-1">
+            <div id="tile-name-display" class="font-bold text-base">Loading...</div>
+          </div>
+          <button id="edit-tile-name-btn" class="btn btn-sm btn-outline" title="Edit tile name">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+              <path d="M21.731 2.269a2.625 2.625 0 00-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 000-3.712zM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 00-1.32 2.214l-.8 2.685a.75.75 0 00.933.933l2.685-.8a5.25 5.25 0 002.214-1.32l8.4-8.4z" />
+              <path d="M5.25 5.25a3 3 0 00-3 3v10.5a3 3 0 003 3h10.5a3 3 0 003-3V13.5a.75.75 0 00-1.5 0v5.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5V8.25a1.5 1.5 0 011.5-1.5h5.25a.75.75 0 000-1.5H5.25z" />
+            </svg>
+            Edit
+          </button>
+          <div id="tile-coordinate-info" class="text-sm text-gray-600">Tile(-,-)</div>
+          <button id="goto-tile-btn" class="btn btn-sm btn-ghost" title="Go to location">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+              <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
       <div class="max-h-60 overflow-y-auto border rounded p-2">
         <div id="wps-snapshots-list">
           <div class="text-sm text-gray-500 text-center p-4">${t`${"loading"}`}</div>
         </div>
       </div>
-      ${saveButtonHtml}
+      ${this.options.showSaveButton ? this.renderSaveButton() : ""}
     `;
 
     this.setupEvents(container);
+    this.updateTileInfo(); // タイル情報更新
     this.reloadSnapshots(container);
   }
 
@@ -90,9 +140,16 @@ export class SnapshotRoute extends BaseSnapshotRoute {
         });
     }
 
+    // Edit名前ボタンのイベント
+    container
+      .querySelector("#edit-tile-name-btn")
+      ?.addEventListener("click", async () => {
+        await this.editTileName();
+      });
+
     // 位置移動ボタンのイベント
     container
-      .querySelector("#wps-goto-tile-btn")
+      .querySelector("#goto-tile-btn")
       ?.addEventListener("click", () => {
         this.gotoTilePosition();
       });
