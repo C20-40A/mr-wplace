@@ -1,5 +1,7 @@
 import { TimeTravelRouter } from "../router";
 import { TimeTravelStorage, TileSnapshotInfo } from "../storage";
+import { TileNameStorage } from "../tile-name-storage";
+import { showNameInputModal } from "../../../utils/modal";
 import { t } from "../../../i18n/manager";
 
 export class TileListRoute {
@@ -16,18 +18,44 @@ export class TileListRoute {
     this.loadTileList(container);
   }
 
+  private async editTileName(tileX: number, tileY: number, container: HTMLElement): Promise<void> {
+    const currentName = await TileNameStorage.getTileName(tileX, tileY);
+    const placeholder = currentName || `Tile(${tileX}, ${tileY})`;
+    
+    const newName = await showNameInputModal(
+      t`${"edit"}`,
+      t`${"enter_tile_name"}`
+    );
+    
+    if (newName === null) return; // キャンセル
+    
+    await TileNameStorage.setTileName(tileX, tileY, newName);
+    this.loadTileList(container); // 一覧再描画
+  }
+
   private setupEvents(container: HTMLElement, router: TimeTravelRouter): void {
     container
       .querySelector("#wps-tile-list")
-      ?.addEventListener("click", (e) => {
+      ?.addEventListener("click", async (e) => {
         const target = e.target as HTMLElement;
-        const tileItem = target.closest(".tile-item") as HTMLElement | null;
+        
+        // Editボタンクリック処理
+        const editBtn = target.closest(".tile-edit-btn") as HTMLElement | null;
+        if (editBtn?.dataset.tileX && editBtn?.dataset.tileY) {
+          e.stopPropagation(); // タイル遷移防止
+          await this.editTileName(
+            parseInt(editBtn.dataset.tileX),
+            parseInt(editBtn.dataset.tileY),
+            container
+          );
+          return;
+        }
 
+        // タイル遷移処理
+        const tileItem = target.closest(".tile-item") as HTMLElement | null;
         if (tileItem?.dataset.tileX && tileItem?.dataset.tileY) {
           const tileX = parseInt(tileItem.dataset.tileX);
           const tileY = parseInt(tileItem.dataset.tileY);
-
-          // 選択されたタイル情報を保存してスナップショット一覧に遷移
           (router as any).selectedTile = { tileX, tileY };
           router.navigate("tile-snapshots");
         }
@@ -37,14 +65,19 @@ export class TileListRoute {
   private async loadTileList(container: HTMLElement): Promise<void> {
     try {
       const tiles = await TimeTravelStorage.getAllTilesWithSnapshots();
+      
+      // 名称一括取得（効率化）
+      const tileNames = await TileNameStorage.getTileNames(
+        tiles.map(t => ({ tileX: t.tileX, tileY: t.tileY }))
+      );
+      
       const listContainer = container.querySelector("#wps-tile-list");
-
       if (listContainer) {
         if (tiles.length === 0) {
           listContainer.innerHTML = `<div class="text-sm text-gray-500 text-center p-4">${t`${"no_items"}`}</div>`;
         } else {
           listContainer.innerHTML = tiles
-            .map((tile) => this.renderTileItem(tile))
+            .map((tile) => this.renderTileItem(tile, tileNames))
             .join("");
         }
       }
@@ -57,8 +90,7 @@ export class TileListRoute {
     }
   }
 
-  private renderTileItem(tile: TileSnapshotInfo): string {
-    // 該当タイルでTimeTravelスナップショット描画中か判定
+  private renderTileItem(tile: TileSnapshotInfo, tileNames: Map<string, string>): string {
     const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
     const isDrawing =
       tileOverlay?.templateManager?.isTimeTravelDrawingOnTile(
@@ -66,13 +98,17 @@ export class TileListRoute {
         tile.tileY
       ) || false;
 
+    const nameKey = `${tile.tileX}_${tile.tileY}`;
+    const tileName = tileNames.get(nameKey);
+    const displayName = tileName || `タイル(${tile.tileX}, ${tile.tileY})`;
+
     return `
       <div class="tile-item border-b p-3 cursor-pointer hover:bg-gray-50 transition-colors" 
-           data-tile-x="${tile.tileX}" data-tile-y="${tile.tileY}">
+           data-tile-x="${tile.tileX}" data-tile-y="${tile.tileY}" style="position: relative;">
         <div class="flex justify-between items-center">
           <div>
             <div class="text-sm font-medium flex items-center gap-2">
-              タイル(${tile.tileX}, ${tile.tileY})
+              ${displayName}
               ${
                 isDrawing
                   ? `
@@ -84,6 +120,7 @@ export class TileListRoute {
                   : ""
               }
             </div>
+            ${tileName ? `<div class="text-xs text-gray-500">Tile(${tile.tileX}, ${tile.tileY})</div>` : ''}
             <div class="text-xs text-gray-500">Total: ${tile.count}</div>
           </div>
           <div class="flex items-center">
@@ -92,6 +129,14 @@ export class TileListRoute {
             </svg>
           </div>
         </div>
+        
+        <!-- Edit Button -->
+        <button class="tile-edit-btn" data-tile-x="${tile.tileX}" data-tile-y="${tile.tileY}" 
+                style="position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; 
+                       border: none; background: #6b7280; color: white; border-radius: 50%; 
+                       display: flex; align-items: center; justify-content: center; 
+                       font-size: 12px; cursor: pointer;" 
+                title="Edit tile name">✎</button>
       </div>
     `;
   }

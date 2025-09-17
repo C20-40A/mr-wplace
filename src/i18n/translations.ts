@@ -51,6 +51,7 @@ const jaTranslations = {
   snapshot_detail: "スナップショット詳細",
   return_to_current: "描画を元に戻す",
   enter_snapshot_name: "スナップショット名を入力（空の場合は日時表示）:",
+  enter_tile_name: "タイル名を入力（空の場合は座標表示）:",
 
   // Image Editor関連
   drag_drop_or_click: "画像をドラッグ&ドロップまたはクリックして選択",
@@ -137,6 +138,7 @@ const enTranslations = {
   snapshot_detail: "Snapshot Detail",
   return_to_current: "Return to Current",
   enter_snapshot_name: "Enter snapshot name (empty for timestamp):",
+  enter_tile_name: "Enter tile name (empty for coordinates):",
 
   // Image Editor
   drag_drop_or_click: "Drag & drop or click to select image",
