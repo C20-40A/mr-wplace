@@ -26,23 +26,31 @@ const jaTranslations = {
   no_items: "アイテムがありません",
   upload_success: "アップロードが完了しました",
   delete_confirm: "本当に削除しますか？",
-  no_favorites: "お気に入りがありません",
-  add_favorites_instruction: "下の「保存」ボタンから追加してください",
+  saved_message: "を保存しました",
+  deleted_message: "削除しました",
+
+  // ブックマーク
+  no_bookmarks: "ブックマークがありません",
+  add_bookmark_instruction: "下の「保存」ボタンから追加してください",
   saved_count: "保存済み",
   items_unit: "件",
   location_unavailable: "位置情報を取得できませんでした。",
   location_unavailable_instruction:
     "位置情報を取得できませんでした。マップをクリックしてから保存してください。",
-  enter_favorite_name: "お気に入り名を入力してください:",
+  enter_bookmark_name: "ブックマーク名を入力してください:",
   location_point: "地点",
-  saved_message: "を保存しました",
-  deleted_message: "削除しました",
+  bookmark_list: "ブックマーク一覧",
+
+  // スナップショット
   timetravel_modal_title: "タイムマシン",
   timetravel_current_position: "現在位置のスナップショット",
   timetravel_tile_list: "タイル一覧",
   timetravel_tile_snapshots: "タイルスナップショット",
   save_current_snapshot: "現在のタイルを保存",
   snapshot_download_title: "スナップショット画像",
+  snapshot_detail: "スナップショット詳細",
+  return_to_current: "描画を元に戻す",
+
   // Image Editor関連
   drag_drop_or_click: "画像をドラッグ&ドロップまたはクリックして選択",
   clear_image: "画像をクリア",
@@ -75,19 +83,16 @@ const jaTranslations = {
   file_select: "ファイルを選択",
   image_editor: "画像エディタ",
   image_detail: "画像詳細",
-
-  // Favorites関連
-  bookmark_list: "ブックマーク一覧",
 };
 
 // 英語翻訳辞書
 const enTranslations = {
-  // Gallery関連
+  // Gallery
   gallery: "Gallery",
   back: "Back",
   close: "Close",
 
-  // ボタン関連
+  // Buttons
   save: "Save",
   delete: "Delete",
   edit: "Edit",
@@ -101,30 +106,37 @@ const enTranslations = {
   export: "Export",
   import: "Import",
 
-  // メッセージ関連
+  // Messages
   loading: "Loading...",
   no_items: "No items",
   upload_success: "Upload completed",
   delete_confirm: "Are you sure you want to delete?",
-  no_favorites: "No favorites",
-  add_favorites_instruction: 'Please add from the "Save" button below',
+  saved_message: "saved",
+  deleted_message: "Deleted",
+
+  // Bookmarks
+  no_bookmarks: "No bookmarks",
+  add_bookmark_instruction: 'Please add from the "Save" button below',
   saved_count: "Saved",
   items_unit: "items",
   location_unavailable: "Could not retrieve location information.",
   location_unavailable_instruction:
     "Could not retrieve location information. Please click on the map and then save.",
-  enter_favorite_name: "Please enter favorite name:",
+  enter_bookmark_name: "Please enter bookmark name:",
   location_point: "Point",
-  saved_message: "saved",
-  deleted_message: "Deleted",
+  bookmark_list: "Bookmark List",
+
+  // Snapshots
   timetravel_modal_title: "Time Machine",
   timetravel_current_position: "Current Position Snapshots",
   timetravel_tile_list: "Tile List",
   timetravel_tile_snapshots: "Tile Snapshots",
   save_current_snapshot: "Save Current Snapshot",
   snapshot_download_title: "Snapshot Image",
+  snapshot_detail: "Snapshot Detail",
+  return_to_current: "Return to Current",
 
-  // Image Editor関連
+  // Image Editor
   drag_drop_or_click: "Drag & drop or click to select image",
   clear_image: "Clear image",
   original_image: "Original image",
@@ -146,19 +158,16 @@ const enTranslations = {
   no_saved_images: "No saved images",
   delete_image_confirm: "Do you want to delete this image?",
 
-  // Drawing/Loading関連
+  // Drawing/Loading
   drawing_image: "Drawing image...",
   processing_image: "Processing image...",
   waiting_for_update: "Waiting for update...",
 
-  // ファイル関連
+  // File related
   upload: "Upload",
   file_select: "Select File",
   image_editor: "Image Editor",
   image_detail: "Image Detail",
-
-  // Favorites関連
-  bookmark_list: "Bookmark List",
 };
 
 // 翻訳辞書を登録
