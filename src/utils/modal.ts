@@ -15,6 +15,65 @@ export interface ModalElements {
   container: HTMLElement;
 }
 
+/**
+ * 名称入力Modal（スナップショット用）
+ */
+export const showNameInputModal = (title: string, placeholder: string): Promise<string | null> => {
+  return new Promise((resolve) => {
+    const modal = document.createElement("dialog");
+    modal.className = "modal";
+    modal.innerHTML = `
+      <div class="modal-box">
+        <h3 class="font-bold text-lg mb-4">${title}</h3>
+        <input id="name-input" type="text" placeholder="${placeholder}" 
+               class="input input-bordered w-full mb-4" />
+        <div class="modal-action">
+          <button id="cancel-btn" class="btn">Cancel</button>
+          <button id="save-btn" class="btn btn-primary">Save</button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button type="button" id="backdrop-btn">close</button>
+      </form>
+    `;
+
+    document.body.appendChild(modal);
+
+    const nameInput = modal.querySelector("#name-input") as HTMLInputElement;
+    const saveBtn = modal.querySelector("#save-btn") as HTMLButtonElement;
+    const cancelBtn = modal.querySelector("#cancel-btn") as HTMLButtonElement;
+    const backdropBtn = modal.querySelector("#backdrop-btn") as HTMLButtonElement;
+
+    const cleanup = () => {
+      modal.remove();
+    };
+
+    const handleSave = () => {
+      const value = nameInput.value.trim();
+      cleanup();
+      resolve(value || null); // 空文字時はnull
+    };
+
+    const handleCancel = () => {
+      cleanup();
+      resolve(null);
+    };
+
+    saveBtn.addEventListener("click", handleSave);
+    cancelBtn.addEventListener("click", handleCancel);
+    backdropBtn.addEventListener("click", handleCancel);
+    
+    // Enter押下で保存
+    nameInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") handleSave();
+      if (e.key === "Escape") handleCancel();
+    });
+
+    modal.showModal();
+    nameInput.focus();
+  });
+};
+
 export const createModal = (options: ModalOptions): ModalElements => {
   const {
     id,

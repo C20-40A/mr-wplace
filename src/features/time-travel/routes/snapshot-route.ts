@@ -4,6 +4,7 @@ import { TimeTravelRouter } from "../router";
 import { getCurrentPosition, gotoPosition } from "../../../utils/position";
 import { TimeTravelStorage } from "../storage";
 import { t } from "../../../i18n/manager";
+import { showNameInputModal } from "../../../utils/modal";
 import { llzToTilePixel, tilePixelToLatLng } from "../../../utils/coordinate";
 
 interface SnapshotRouteOptions {
@@ -137,12 +138,22 @@ export class SnapshotRoute extends BaseSnapshotRoute {
   private async saveCurrentSnapshot(container: HTMLElement): Promise<void> {
     if (!this.currentTileX || this.currentTileY === undefined) return;
 
+    // 名称入力Modal表示
+    const name = await showNameInputModal(
+      t`${"save_current_snapshot"}`,
+      t`${"enter_snapshot_name"}`
+    );
+
+    // キャンセルされた場合は処理中断
+    if (name === null) return;
+
     const tileSnapshot = (window as any).wplaceStudio?.tileSnapshot;
     if (tileSnapshot) {
       try {
         const snapshotId = await tileSnapshot.saveSnapshot(
           this.currentTileX,
-          this.currentTileY
+          this.currentTileY,
+          name || undefined // 空文字時はundefined
         );
         Toast.success(`Snapshot saved: ${snapshotId}`);
         await this.reloadSnapshots(container);
