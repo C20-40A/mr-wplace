@@ -112,7 +112,7 @@ export class SnapshotDetailRoute {
       this.imageInspector = new ImageInspector(canvas, {
         containerSize: containerSize,
         minZoom: 1.0,
-        maxZoom: 5.0,
+        maxZoom: 10.0,
       });
     };
     img.src = dataUrl;
