@@ -2,6 +2,8 @@
 
 # マイナー
 
+- 画像エディタに https://pepoafonso.github.io/color_converter_wplace/index.html へのリンク
+- 入力文字を描画したい
 - goTo は map のインスタンス使えるかも
 - 逆ジオあってもいいかも
 - お気に入りモーダルを整理可能にする

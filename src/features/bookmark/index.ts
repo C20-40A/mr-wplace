@@ -1,7 +1,7 @@
 import { ButtonObserver } from "../../components/button-observer";
 import { Toast } from "../../components/toast";
 import { CONFIG } from "./config";
-import { BookmarkStorage, STORAGE_KEYS } from "./storage";
+import { BookmarkStorage } from "./storage";
 import { ImportExportService } from "./import-export";
 import { getCurrentPosition, gotoPosition } from "../../utils/position";
 import { showNameInputModal } from "../../utils/modal";
@@ -59,7 +59,7 @@ export class ExtendedBookmarks {
 
   createSaveButton(container: Element): void {
     const button = createSaveBookmarkButton(container);
-    button.addEventListener("click", () => this.addFavorite());
+    button.addEventListener("click", () => this.addBookmark());
     console.log("⭐ WPlace Studio: Save button added");
   }
 
@@ -80,7 +80,7 @@ export class ExtendedBookmarks {
 
         if (deleteBtn?.dataset.id) {
           const id = parseInt(deleteBtn.dataset.id);
-          this.deleteFavorite(id);
+          this.deleteBookmarks(id);
         } else if (
           card?.dataset.lat &&
           card?.dataset.lng &&
@@ -107,13 +107,13 @@ export class ExtendedBookmarks {
         const result = await ImportExportService.importFavorites();
         Toast.success(result.message);
         if (result.shouldRender) {
-          this.renderFavorites();
+          this.renderBookmarks();
         }
       });
   }
 
   openModal(): void {
-    this.renderFavorites();
+    this.renderBookmarks();
     (
       document.getElementById(
         "wplace-studio-favorite-modal"
@@ -121,7 +121,7 @@ export class ExtendedBookmarks {
     ).showModal();
   }
 
-  async addFavorite(): Promise<void> {
+  async addBookmark(): Promise<void> {
     const position = getCurrentPosition();
     if (!position) {
       alert(t`${"location_unavailable_instruction"}`);
@@ -145,32 +145,23 @@ export class ExtendedBookmarks {
       date: new Date().toLocaleDateString("ja-JP"),
     };
 
-    const favorites = await BookmarkStorage.getFavorites();
-    favorites.push(favorite);
-    await BookmarkStorage.setValue(
-      STORAGE_KEYS.bookmarks,
-      JSON.stringify(favorites)
-    );
+    await BookmarkStorage.addBookmark(favorite);
 
     Toast.success(t`"${name}" ${"saved_message"}`);
   }
 
-  async renderFavorites(): Promise<void> {
-    const favorites = await BookmarkStorage.getFavorites();
+  async renderBookmarks(): Promise<void> {
+    const favorites = await BookmarkStorage.getBookmarks();
     renderBookmarks(favorites);
   }
 
-  async deleteFavorite(id: number): Promise<void> {
+  async deleteBookmarks(id: number): Promise<void> {
     if (!confirm(t`${"delete_confirm"}`)) return;
 
-    const favorites = await BookmarkStorage.getFavorites();
-    const filtered = favorites.filter((fav) => fav.id !== id);
-    await BookmarkStorage.setValue(
-      STORAGE_KEYS.bookmarks,
-      JSON.stringify(filtered)
-    );
+    const favorites = await BookmarkStorage.getBookmarks();
+    await BookmarkStorage.removeBookmark(id);
 
-    this.renderFavorites();
+    this.renderBookmarks();
     Toast.success(t`${"deleted_message"}`);
   }
 }

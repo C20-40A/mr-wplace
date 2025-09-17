@@ -15,7 +15,7 @@ interface ImportResult {
 export class ImportExportService {
   static async exportFavorites(): Promise<ExportResult> {
     try {
-      const favorites = await BookmarkStorage.getFavorites();
+      const favorites = await BookmarkStorage.getBookmarks();
 
       if (favorites.length === 0) {
         return {
@@ -83,7 +83,7 @@ export class ImportExportService {
             throw new Error("無効なファイル形式です");
           }
 
-          const currentFavorites = await BookmarkStorage.getFavorites();
+          const currentFavorites = await BookmarkStorage.getBookmarks();
           const importCount = importData.favorites.length;
 
           if (
