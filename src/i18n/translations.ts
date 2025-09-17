@@ -42,6 +42,18 @@ const jaTranslations = {
   location_point: "地点",
   bookmark_list: "ブックマーク一覧",
 
+  // Import/Export関連
+  no_export_bookmarks: "エクスポートするお気に入りがありません",
+  bookmarks_exported: "件のお気に入りをエクスポートしました",
+  export_failed: "エクスポートに失敗しました",
+  file_input_not_found: "ファイル入力が見つかりません",
+  no_file_selected: "ファイルが選択されませんでした",
+  invalid_file_format: "無効なファイル形式です",
+  import_confirm: "件のお気に入りをインポートしますか？\n既存のデータは保持されます。",
+  import_cancelled: "インポートがキャンセルされました",
+  bookmarks_imported: "件のお気に入りをインポートしました",
+  import_failed_prefix: "インポートに失敗しました: ",
+
   // スナップショット
   timetravel_modal_title: "タイムマシン",
   timetravel_current_position: "現在位置のスナップショット",

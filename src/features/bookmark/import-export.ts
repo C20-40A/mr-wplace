@@ -1,5 +1,6 @@
 import { Bookmark } from "./types";
 import { BookmarkStorage } from "./storage";
+import { t } from "../../i18n/manager";
 
 interface ExportResult {
   success: boolean;
@@ -20,7 +21,7 @@ export class ImportExportService {
       if (favorites.length === 0) {
         return {
           success: false,
-          message: "エクスポートするお気に入りがありません",
+          message: t`${'no_export_bookmarks'}`,
         };
       }
 
@@ -44,11 +45,11 @@ export class ImportExportService {
 
       return {
         success: true,
-        message: `${favorites.length}件のお気に入りをエクスポートしました`,
+        message: `${favorites.length}${t`${'bookmarks_exported'}`}`,
       };
     } catch (error) {
       console.error("WPlace Studio: エクスポートエラー:", error);
-      return { success: false, message: "エクスポートに失敗しました" };
+      return { success: false, message: t`${'export_failed'}` };
     }
   }
 
@@ -58,7 +59,7 @@ export class ImportExportService {
         "wps-import-file"
       ) as HTMLInputElement;
       if (!fileInput) {
-        resolve({ success: false, message: "ファイル入力が見つかりません" });
+        resolve({ success: false, message: t`${'file_input_not_found'}` });
         return;
       }
 
@@ -70,7 +71,7 @@ export class ImportExportService {
         if (!file) {
           resolve({
             success: false,
-            message: "ファイルが選択されませんでした",
+            message: t`${'no_file_selected'}`,
           });
           return;
         }
@@ -80,7 +81,7 @@ export class ImportExportService {
           const importData = JSON.parse(text);
 
           if (!importData.favorites || !Array.isArray(importData.favorites)) {
-            throw new Error("無効なファイル形式です");
+            throw new Error(t`${'invalid_file_format'}`);
           }
 
           const currentBookmarks = await BookmarkStorage.getBookmarks();
@@ -88,12 +89,12 @@ export class ImportExportService {
 
           if (
             !confirm(
-              `${importCount}件のお気に入りをインポートしますか？\n既存のデータは保持されます。`
+              `${importCount}${t`${'import_confirm'}`}`
             )
           ) {
             resolve({
               success: false,
-              message: "インポートがキャンセルされました",
+              message: t`${'import_cancelled'}`,
             });
             return;
           }
@@ -116,7 +117,7 @@ export class ImportExportService {
 
           resolve({
             success: true,
-            message: `${newBookmarks.length}件のお気に入りをインポートしました`,
+            message: `${newBookmarks.length}${t`${'bookmarks_imported'}`}`,
             shouldRender: true,
           });
         } catch (error) {
@@ -124,7 +125,7 @@ export class ImportExportService {
           resolve({
             success: false,
             message:
-              "インポートに失敗しました: " +
+              t`${'import_failed_prefix'}` +
               (error instanceof Error ? error.message : String(error)),
           });
         }
