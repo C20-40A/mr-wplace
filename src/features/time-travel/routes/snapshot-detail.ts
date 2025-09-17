@@ -124,29 +124,28 @@ export class SnapshotDetailRoute {
 
     const tileX = parseInt(fullKey.split("_")[3]);
     const tileY = parseInt(fullKey.split("_")[4]);
+    const imageKey = `snapshot_${fullKey}`;
 
     const uint8Array = new Uint8Array(result[fullKey]);
     const blob = new Blob([uint8Array], { type: "image/png" });
     const file = new File([blob], "snapshot.png", { type: "image/png" });
 
-    // 直接TemplateManagerで描画（座標は既にタイル単位）
+    // toggle実行
     const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
-    const imageKey = `snapshot_${fullKey}`;
-    await tileOverlay.templateManager.createTemplate(
+    const isDrawing = await tileOverlay.templateManager.drawSnapshotOnTile(
+      tileX,
+      tileY,
       file,
-      [tileX, tileY, 0, 0],
       imageKey
     );
-    Toast.success("Snapshot drawn successfully");
 
-    // 「現在に戻る」ボタン表示更新
-    this.updateReturnCurrentButton(fullKey);
-
-    // モーダルを閉じる
     const timeTravelUI = (window as any).wplaceStudio?.timeTravel?.ui;
-    if (timeTravelUI) {
-      timeTravelUI.hideModal();
-    }
+    if (timeTravelUI) timeTravelUI.hideModal();
+
+    this.updateReturnCurrentButton(fullKey);
+    Toast.success(
+      isDrawing ? "Snapshot drawn successfully" : "Snapshot removed"
+    );
   }
 
   private downloadSnapshot(): void {
