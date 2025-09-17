@@ -25,10 +25,6 @@ export class SnapshotRoute extends BaseSnapshotRoute {
   private async editTileName(): Promise<void> {
     if (!this.currentTileX || this.currentTileY === undefined) return;
 
-    // const currentName = await TileNameStorage.getTileName(
-    //   this.currentTileX,
-    //   this.currentTileY
-    // );
     const newName = await showNameInputModal(
       t`${"edit"}`,
       t`${"enter_tile_name"}`
@@ -204,14 +200,14 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     );
 
     // キャンセルされた場合は処理中断
-    // if (name === null) return;
+    if (name === null) return;
 
     const tileSnapshot = (window as any).wplaceStudio?.tileSnapshot;
     if (!tileSnapshot) throw new Error("TileSnapshot not found");
     const snapshotId = await tileSnapshot.saveSnapshot(
       this.currentTileX,
       this.currentTileY,
-      name || undefined
+      name === "" ? undefined : name
     );
     Toast.success(`Snapshot saved: ${snapshotId}`);
     await this.reloadSnapshots(container);

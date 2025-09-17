@@ -17,7 +17,8 @@ export interface ModalElements {
 }
 
 /**
- * 名称入力Modal（スナップショット用）
+ * 名称入力Modal
+ * - NOTE: 空文字は''。キャンセルの場合はnullを返す
  */
 export const showNameInputModal = (
   title: string,
@@ -57,7 +58,7 @@ export const showNameInputModal = (
     const handleSave = () => {
       const value = nameInput.value.trim();
       cleanup();
-      resolve(value || null); // 空文字時はnull
+      resolve(value ?? "");
     };
 
     const handleCancel = () => {
