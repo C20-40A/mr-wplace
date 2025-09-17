@@ -4,6 +4,7 @@ import { CONFIG } from "./config";
 import { FavoriteStorage, STORAGE_KEYS } from "./storage";
 import { ImportExportService } from "./import-export";
 import { getCurrentPosition, gotoPosition } from "../../utils/position";
+import { showNameInputModal } from "../../utils/modal";
 import { t } from "../../i18n/manager";
 import {
   createBookmarkButton,
@@ -127,13 +128,13 @@ export class ExtendedBookmarks {
       return;
     }
 
-    const name = prompt(
+    const name = await showNameInputModal(
       t`${"enter_bookmark_name"}`,
       t`${"location_point"} (${position.lat.toFixed(3)}, ${position.lng.toFixed(
         3
       )})`
     );
-    if (!name) return;
+    if (name === null) return;
 
     const favorite = {
       id: Date.now(),
