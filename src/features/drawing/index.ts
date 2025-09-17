@@ -2,7 +2,6 @@ import { ButtonObserver, ButtonConfig } from "../../components/button-observer";
 import { ImageSelectorModal } from "../gallery/routes/image-selector/ImageSelectorModal";
 import { getCurrentPosition } from "../../utils/position";
 import { CONFIG } from "../bookmark/config";
-import { t } from "../../i18n/manager";
 import { createDrawButton } from "./ui";
 import { ImageItem } from "../gallery/routes/list/components";
 
@@ -49,10 +48,7 @@ export class Drawing {
     console.log("🎨 Start drawing with:", imageItem);
 
     const position = getCurrentPosition();
-    if (!position) {
-      alert(t`${"location_unavailable"}`);
-      return;
-    }
+    if (!position) throw new Error("Current position not available");
 
     this.drawImageOnMap(position.lat, position.lng, imageItem);
   }
@@ -65,16 +61,8 @@ export class Drawing {
     console.log("📍 Drawing at:", lat, lng, "Image:", imageItem.key);
 
     const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
-    if (!tileOverlay) {
-      console.error("TileOverlay instance not found");
-      return;
-    }
+    if (!tileOverlay) throw new Error("TileOverlay not found");
 
-    try {
-      await tileOverlay.drawImageAt(lat, lng, imageItem);
-      console.log("✅ Image drawing completed");
-    } catch (error) {
-      console.error("❌ Image drawing failed:", error);
-    }
+    await tileOverlay.drawImageAt(lat, lng, imageItem);
   }
 }
