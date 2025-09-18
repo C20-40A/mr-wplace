@@ -138,7 +138,6 @@ const tileY = parseInt(tileMatch[2]);
 
 - `storage`: 設定・データ保存
 - `activeTab`: サイトアクセス
-- `host_permissions`: `*://wplace.jp/*`
 
 ## 🎯 使用方法
 
