@@ -109,6 +109,7 @@ export const renderBookmarks = (favorites: Bookmark[]): void => {
     .map(
       (fav) => `
           <div class="wps-favorite-card card bg-base-200 shadow-sm hover:shadow-md cursor-pointer transition-all relative"
+          style="hover:transform: translateY(-2px);"
                data-lat="${fav.lat}" data-lng="${fav.lng}" data-zoom="${
         fav.zoom
       }">
