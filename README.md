@@ -124,9 +124,24 @@ const tileY = parseInt(tileMatch[2]);
 
 1. `git clone https://github.com/username/wplace-studio.git`
 2. `bun install`
-3. `bun run build`
+3. `bun run build` (src/content.ts → dist/content.js 生成)
 4. Chrome Extensions → デベロッパーモード → 「パッケージ化されていない拡張機能を読み込む」
-5. `dist` フォルダを選択
+5. プロジェクトルートフォルダを選択
+
+### 配布用パッケージ作成
+
+1. `bun run build` でビルド実行
+2. 以下のファイル・フォルダをzipに圧縮:
+   ```
+   manifest.json
+   popup.html
+   popup.js
+   background.js
+   inject.js
+   dist/content.js
+   icons/
+   ```
+3. zipファイルをChrome Web Storeにアップロードまたは開発者向け配布
 
 ### 必要な権限
 
