@@ -105,6 +105,9 @@ const jaTranslations = {
   goto_map: "マップへ移動",
   error: "エラー",
   deleted: "削除しました",
+
+  // popup専用
+  buy_me_coffee: "作者にコーヒーをおごる",
 };
 
 // 英語翻訳辞書
@@ -212,6 +215,9 @@ const enTranslations = {
   goto_map: "Go to Map",
   error: "Error",
   deleted: "Deleted",
+
+  // popup専用
+  buy_me_coffee: "Buy me a coffee",
 };
 
 // 翻訳辞書を登録
