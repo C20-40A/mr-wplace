@@ -1,9 +1,9 @@
 {
   "name": "mr-wplace",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "MPL-2.0",
   "scripts": {
-    "build": "esbuild src/content.ts --bundle --outfile=dist/content.js --minify --target=chrome88",
+    "build": "esbuild src/content.ts src/popup.ts --bundle --outdir=dist --minify --target=chrome88",
     "dev": "npm run build -- --watch",
     "build:release": "bash ./scripts/build-release.sh"
   },
