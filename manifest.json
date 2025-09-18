@@ -9,7 +9,6 @@
     "unlimitedStorage",
     "activeTab"
   ],
-
   "action": {
     "default_title": "__MSG_popupTitle__",
     "default_popup": "popup.html",
@@ -26,7 +25,7 @@
   "content_scripts": [
     {
       "matches": [
-        "*://*.wplace.live/*"
+        "https://wplace.live/*"
       ],
       "js": [
         "dist/content.js"
@@ -36,13 +35,11 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": [
-        "styles/*",
-        "icons/*",
-        "inject.js"
-      ],
       "matches": [
-        "*://*.wplace.live/*"
+        "https://wplace.live/*"
+      ],
+      "resources": [
+        "inject.js"
       ]
     }
   ],
