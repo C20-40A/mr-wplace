@@ -21,7 +21,6 @@ mkdir -p release
 echo "📋 Copying files..."
 cp manifest.json release/
 cp popup.html release/
-cp background.js release/
 cp inject.js release/
 mkdir -p release/dist
 cp dist/content.js release/dist/
