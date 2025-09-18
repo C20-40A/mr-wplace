@@ -1,6 +1,6 @@
 # Mr. Wplace
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)
 ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green.svg)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-orange.svg)
 ![License](https://img.shields.io/badge/license-MPL--2.0-blue.svg)
@@ -132,7 +132,7 @@ const tileY = parseInt(tileMatch[2]);
 
 1. `bun run build:release` で配布パッケージ作成
 2. `mr-wplace-v1.0.0.zip` が生成される
-3. zipファイルをChrome Web Storeにアップロードまたは開発者向け配布
+3. zip ファイルを Chrome Web Store にアップロードまたは開発者向け配布
 
 ### 必要な権限
 
