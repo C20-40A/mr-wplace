@@ -5,7 +5,7 @@ import { BookmarkStorage } from "./storage";
 import { ImportExportService } from "./import-export";
 import { getCurrentPosition, gotoPosition } from "../../utils/position";
 import { showNameInputModal } from "../../utils/modal";
-import { t } from "../../i18n/manager";
+import { t, formatDateShort } from "../../i18n/manager";
 import {
   createBookmarkButton,
   createBookmarkModal,
@@ -146,7 +146,7 @@ export class ExtendedBookmarks {
       lat: position.lat,
       lng: position.lng,
       zoom: position.zoom || 14,
-      date: new Date().toLocaleDateString("ja-JP"),
+      date: formatDateShort(new Date()),
     };
 
     await BookmarkStorage.addBookmark(favorite);

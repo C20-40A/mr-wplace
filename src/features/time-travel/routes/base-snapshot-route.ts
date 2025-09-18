@@ -1,7 +1,6 @@
 import { TimeTravelStorage, SnapshotInfo } from "../storage";
 import { Toast } from "../../../components/toast";
-import { t } from "../../../i18n/manager";
-import { I18nManager } from "../../../i18n/manager";
+import { t, formatDate } from "../../../i18n/manager";
 
 export abstract class BaseSnapshotRoute {
   protected setupSnapshotEvents(
@@ -31,8 +30,6 @@ export abstract class BaseSnapshotRoute {
   }
 
   protected renderSnapshotItem(snapshot: SnapshotInfo): string {
-    const locale = I18nManager.getCurrentLocale();
-    const localeString = locale === "ja" ? "ja-JP" : "en-US";
     const timeFormat = {
       year: "numeric" as const,
       month: "2-digit" as const,
@@ -40,10 +37,7 @@ export abstract class BaseSnapshotRoute {
       hour: "2-digit" as const,
       minute: "2-digit" as const,
     };
-    const formattedTime = new Date(snapshot.timestamp).toLocaleString(
-      localeString,
-      timeFormat
-    );
+    const formattedTime = formatDate(new Date(snapshot.timestamp), timeFormat);
 
     // スナップショット描画判定
     const tileOverlay = (window as any).wplaceStudio?.tileOverlay;

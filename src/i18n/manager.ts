@@ -3,6 +3,8 @@ import {
   setLocale,
   getLocale,
   loadLocaleFromStorage,
+  formatDate,
+  formatDateShort,
   type SupportedLocale,
 } from "./index";
 import "./translations"; // 翻訳辞書を自動登録
@@ -23,5 +25,5 @@ export class I18nManager {
   }
 }
 
-// 翻訳関数を再エクスポート
-export { t };
+// 翻訳・日付関数を再エクスポート
+export { t, formatDate, formatDateShort };

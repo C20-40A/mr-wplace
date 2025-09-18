@@ -73,6 +73,27 @@ export function registerTranslations(
   Object.assign(translations[locale], data);
 }
 
+// locale対応日付フォーマット関数
+export function formatDate(date: Date, options?: Intl.DateTimeFormatOptions): string {
+  const localeMap = {
+    ja: "ja-JP",
+    en: "en-US",
+    pt: "pt-BR",
+    es: "es-ES"
+  };
+  return date.toLocaleString(localeMap[currentLocale], options);
+}
+
+export function formatDateShort(date: Date): string {
+  const localeMap = {
+    ja: "ja-JP",
+    en: "en-US",
+    pt: "pt-BR",
+    es: "es-ES"
+  };
+  return date.toLocaleDateString(localeMap[currentLocale]);
+}
+
 // タグ付きテンプレートリテラル関数
 export function t(strings: TemplateStringsArray, ...values: any[]): string {
   let result = "";
