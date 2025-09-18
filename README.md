@@ -130,17 +130,8 @@ const tileY = parseInt(tileMatch[2]);
 
 ### 配布用パッケージ作成
 
-1. `bun run build` でビルド実行
-2. 以下のファイル・フォルダをzipに圧縮:
-   ```
-   manifest.json
-   popup.html
-   popup.js
-   background.js
-   inject.js
-   dist/content.js
-   icons/
-   ```
+1. `bun run build:release` で配布パッケージ作成
+2. `mr-wplace-v1.0.0.zip` が生成される
 3. zipファイルをChrome Web Storeにアップロードまたは開発者向け配布
 
 ### 必要な権限
