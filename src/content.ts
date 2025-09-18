@@ -1,5 +1,6 @@
 import { injectFetchInterceptor } from "./features/fetch-interceptor";
 import { I18nManager } from "./i18n/manager";
+import { detectBrowserLanguage } from "./i18n/index";
 import { Toast } from "./components/toast";
 import { ExtendedBookmarks } from "./features/bookmark";
 import { TileOverlay } from "./features/tile-overlay";
@@ -17,8 +18,8 @@ const runWPlaceStudio = async (): Promise<void> => {
   // Fetchインターセプターの注入
   injectFetchInterceptor();
 
-  // i18n初期化（ストレージから読み込み）
-  await I18nManager.init("ja");
+  // i18n初期化（ブラウザ言語検出）
+  await I18nManager.init(detectBrowserLanguage());
 
   const favorites = new ExtendedBookmarks();
   const tileOverlay = new TileOverlay();

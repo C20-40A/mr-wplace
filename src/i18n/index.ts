@@ -57,6 +57,11 @@ export function getLocale(): 'ja' | 'en' {
   return currentLocale;
 }
 
+// ブラウザ言語検出
+export function detectBrowserLanguage(): 'ja' | 'en' {
+  return navigator.language.startsWith('ja') ? 'ja' : 'en';
+}
+
 // 翻訳辞書登録
 export function registerTranslations(locale: 'ja' | 'en', data: Translations): void {
   Object.assign(translations[locale], data);

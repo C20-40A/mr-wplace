@@ -7,12 +7,9 @@
   "permissions": [
     "storage",
     "unlimitedStorage",
-    "activeTab",
-    "scripting"
+    "activeTab"
   ],
-  "host_permissions": [
-    "*://*.wplace.live/*"
-  ],
+
   "action": {
     "default_title": "__MSG_popupTitle__",
     "default_popup": "popup.html",
