@@ -220,6 +220,14 @@ const enTranslations = {
   buy_me_coffee: "Buy me a coffee",
 };
 
+// ポルトガル語翻訳辞書（空）
+const ptTranslations = {};
+
+// スペイン語翻訳辞書（空）
+const esTranslations = {};
+
 // 翻訳辞書を登録
 registerTranslations("ja", jaTranslations);
 registerTranslations("en", enTranslations);
+registerTranslations("pt", ptTranslations);
+registerTranslations("es", esTranslations);
