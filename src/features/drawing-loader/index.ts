@@ -20,9 +20,9 @@ export class DrawingLoader {
       if (event.data.source === "wplace-studio-drawing-start") {
         this.startLoading();
       }
-      
+
       // fetch完了監視 (inject.js → content.ts)
-      if (event.data.source === "wplace-studio-processed") {
+      if (event.data.source === "mr-wplace-processed") {
         this.finishLoading();
       }
     });
@@ -30,7 +30,7 @@ export class DrawingLoader {
 
   startLoading(): void {
     if (this.isLoading) return;
-    
+
     this.isLoading = true;
     this.loadingStartTime = Date.now();
     this.ui.showDrawing();
@@ -39,10 +39,10 @@ export class DrawingLoader {
 
   finishLoading(): void {
     if (!this.isLoading) return;
-    
+
     const duration = Date.now() - this.loadingStartTime;
     console.log(`🎨 Drawing loader finished (${duration}ms)`);
-    
+
     this.isLoading = false;
     this.ui.hide();
   }

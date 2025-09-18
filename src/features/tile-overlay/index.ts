@@ -31,7 +31,7 @@ export class TileOverlay {
 
       window.postMessage(
         {
-          source: "wplace-studio-processed",
+          source: "mr-wplace-processed",
           blobID: blobID,
           processedBlob: processedBlob,
         },
@@ -83,12 +83,11 @@ export class TileOverlay {
     });
 
     // Create template using TemplateManager
-    await this.templateManager.createTemplate(file, [
-      coords.TLX,
-      coords.TLY,
-      coords.PxX,
-      coords.PxY,
-    ], imageItem.key);
+    await this.templateManager.createTemplate(
+      file,
+      [coords.TLX, coords.TLY, coords.PxX, coords.PxY],
+      imageItem.key
+    );
 
     // 描画完了後に位置情報を保存
     console.log("🔄 Saving draw position:", imageItem.key, coords);
@@ -197,10 +196,10 @@ export class TileOverlay {
     };
 
     await galleryStorage.save(updatedItem);
-    
+
     // TemplateManagerと同期
     this.templateManager.toggleDrawEnabled(imageKey);
-    
+
     return updatedItem.drawEnabled;
   }
 
@@ -212,11 +211,15 @@ export class TileOverlay {
     const blob = await response.blob();
     const file = new File([blob], "restored.png", { type: blob.type });
 
-    await this.templateManager.createTemplate(file, [
-      item.drawPosition.TLX,
-      item.drawPosition.TLY,
-      item.drawPosition.PxX,
-      item.drawPosition.PxY,
-    ], item.key);
+    await this.templateManager.createTemplate(
+      file,
+      [
+        item.drawPosition.TLX,
+        item.drawPosition.TLY,
+        item.drawPosition.PxX,
+        item.drawPosition.PxY,
+      ],
+      item.key
+    );
   }
 }
