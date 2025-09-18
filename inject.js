@@ -2,7 +2,7 @@ const originalFetch = window.fetch;
 
 // Listen for processed blobs from content script
 window.addEventListener("message", (event) => {
-  if (event.data.source === "wplace-studio-processed") {
+  if (event.data.source === "mr-wplace-processed") {
     const { blobID, processedBlob } = event.data;
     const callback = window.tileProcessingQueue?.get(blobID);
 
