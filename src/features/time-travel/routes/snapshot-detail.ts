@@ -16,10 +16,8 @@ export class SnapshotDetailRoute {
       return;
     }
 
-    container.style.height = "80vh";
-
     container.innerHTML = t`
-      <div style="height: 100%; display: flex; flex-direction: column;">
+      <div style="height: 75vh; display: flex; flex-direction: column;">
         <div style="flex: 1; position: relative; min-height: 0; overflow: hidden;">
           <canvas id="wps-snapshot-canvas" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);"></canvas>
         </div>
