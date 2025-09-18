@@ -26,6 +26,7 @@ mkdir -p release/dist
 cp dist/content.js release/dist/
 cp dist/popup.js release/dist/
 cp -r icons release/
+cp -r _locales release/
 
 # Create zip package
 echo "🗜️ Creating zip package..."
