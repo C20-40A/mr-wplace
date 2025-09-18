@@ -5,7 +5,10 @@
   "scripts": {
     "build": "esbuild src/content.ts src/popup.ts --bundle --outdir=dist --minify --target=chrome88",
     "dev": "npm run build -- --watch",
-    "build:release": "bash ./scripts/build-release.sh"
+    "build:release": "bash ./scripts/build-release.sh",
+    "bump:major": "node ./scripts/bump-version.js major",
+    "bump:minor": "node ./scripts/bump-version.js minor",
+    "bump:patch": "node ./scripts/bump-version.js patch"
   },
   "devDependencies": {
     "@types/chrome": "^0.1.4",
