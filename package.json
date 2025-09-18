@@ -4,7 +4,8 @@
   "license": "MPL-2.0",
   "scripts": {
     "build": "esbuild src/content.ts --bundle --outfile=dist/content.js --minify --target=chrome88",
-    "dev": "npm run build -- --watch"
+    "dev": "npm run build -- --watch",
+    "build:release": "bash ./scripts/build-release.sh"
   },
   "devDependencies": {
     "@types/chrome": "^0.1.4",
