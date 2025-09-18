@@ -24,7 +24,6 @@ const jaTranslations = {
   // メッセージ関連
   loading: "読み込み中...",
   no_items: "アイテムがありません",
-  upload_success: "アップロードが完了しました",
   delete_confirm: "本当に削除しますか？",
   saved_message: "を保存しました",
   deleted_message: "削除しました",
@@ -59,7 +58,6 @@ const jaTranslations = {
   timetravel_tile_list: "タイル一覧",
   timetravel_tile_snapshots: "タイルスナップショット",
   save_current_snapshot: "現在のタイルを保存",
-  snapshot_download_title: "スナップショット画像",
   snapshot_detail: "スナップショット詳細",
   return_to_current: "描画を元に戻す",
   enter_snapshot_name: "スナップショット名を入力（空の場合は日時表示）:",
@@ -105,7 +103,6 @@ const jaTranslations = {
   enabled: "有効",
   disabled: "無効",
   goto_map: "マップへ移動",
-  goto_map_success: "マップに移動しました",
   error: "エラー",
   deleted: "削除しました",
 };
@@ -134,7 +131,6 @@ const enTranslations = {
   // Messages
   loading: "Loading...",
   no_items: "No items",
-  upload_success: "Upload completed",
   delete_confirm: "Are you sure you want to delete?",
   saved_message: "saved",
   deleted_message: "Deleted",
@@ -169,7 +165,6 @@ const enTranslations = {
   timetravel_tile_list: "Tile List",
   timetravel_tile_snapshots: "Tile Snapshots",
   save_current_snapshot: "Save Current Snapshot",
-  snapshot_download_title: "Snapshot Image",
   snapshot_detail: "Snapshot Detail",
   return_to_current: "Return to Current",
   enter_snapshot_name: "Enter snapshot name (empty for timestamp):",
@@ -215,7 +210,6 @@ const enTranslations = {
   enabled: "Enabled",
   disabled: "Disabled",
   goto_map: "Go to Map",
-  goto_map_success: "Moved to map",
   error: "Error",
   deleted: "Deleted",
 };

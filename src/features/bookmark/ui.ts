@@ -122,7 +122,9 @@ export const renderBookmarks = (favorites: Bookmark[]): void => {
             <div class="card-body p-3">
               <h4 class="card-title text-sm line-clamp-2">${fav.name}</h4>
               <div class="text-xs text-base-content/70 space-y-1">
-                <div>📍 ${fav.lat?.toFixed(3) || 'N/A'}, ${fav.lng?.toFixed(3) || 'N/A'}</div>
+                <div>📍 ${fav.lat?.toFixed(3) || "N/A"}, ${
+        fav.lng?.toFixed(3) || "N/A"
+      }</div>
                 <div>📅 ${fav.date}</div>
               </div>
             </div>

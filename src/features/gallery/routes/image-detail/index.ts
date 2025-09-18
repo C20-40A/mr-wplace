@@ -126,7 +126,6 @@ export class GalleryImageDetail {
       if (!this.currentItem) return;
 
       await GalleryImageActions.gotoMapPosition(this.currentItem);
-      Toast.success(t`${"goto_map_success"}`);
     });
 
     // 削除ボタン
