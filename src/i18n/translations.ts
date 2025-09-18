@@ -45,14 +45,13 @@ const jaTranslations = {
   // Import/Export関連
   no_export_bookmarks: "エクスポートするお気に入りがありません",
   bookmarks_exported: "件のお気に入りをエクスポートしました",
-  export_failed: "エクスポートに失敗しました",
   file_input_not_found: "ファイル入力が見つかりません",
   no_file_selected: "ファイルが選択されませんでした",
   invalid_file_format: "無効なファイル形式です",
-  import_confirm: "件のお気に入りをインポートしますか？\n既存のデータは保持されます。",
+  import_confirm:
+    "件のお気に入りをインポートしますか？\n既存のデータは保持されます。",
   import_cancelled: "インポートがキャンセルされました",
   bookmarks_imported: "件のお気に入りをインポートしました",
-  import_failed_prefix: "インポートに失敗しました: ",
 
   // スナップショット
   timetravel_modal_title: "タイムマシン",
@@ -152,6 +151,17 @@ const enTranslations = {
   enter_bookmark_name: "Please enter bookmark name:",
   location_point: "Point",
   bookmark_list: "Bookmark List",
+
+  // Import/Export関連
+  no_export_bookmarks: "No favorites to export",
+  bookmarks_exported: " favorites exported",
+  file_input_not_found: "File input not found",
+  no_file_selected: "No file selected",
+  invalid_file_format: "Invalid file format",
+  import_confirm:
+    "Are you sure you want to import favorites?\nExisting data will be preserved.",
+  import_cancelled: "Import cancelled",
+  bookmarks_imported: " favorites imported",
 
   // Snapshots
   timetravel_modal_title: "Time Machine",

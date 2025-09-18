@@ -54,13 +54,13 @@ export class ExtendedBookmarks {
   createBookmarkFAB(toggleButton: Element): void {
     const button = createBookmarkButton(toggleButton);
     button.addEventListener("click", () => this.openModal());
-    console.log("⭐ WPlace Studio: Favorite button added");
+    console.log("⭐ Mr.WPlace: Favorite button added");
   }
 
   createSaveButton(container: Element): void {
     const button = createSaveBookmarkButton(container);
     button.addEventListener("click", () => this.addBookmark());
-    console.log("⭐ WPlace Studio: Save button added");
+    console.log("⭐ Mr.WPlace: Save button added");
   }
 
   createModal(): void {
