@@ -1,5 +1,5 @@
 import { I18nManager, t } from './i18n/manager';
-import { setLocale } from './i18n/index';
+import { setLocale, detectBrowserLanguage } from './i18n/index';
 
 function updateUI(): void {
   const coffeeLink = document.querySelector('.coffee-link') as HTMLElement;
@@ -11,8 +11,8 @@ function updateUI(): void {
 document.addEventListener('DOMContentLoaded', async () => {
   const languageSelect = document.getElementById('language-select') as HTMLSelectElement;
 
-  // i18n初期化
-  await I18nManager.init();
+  // i18n初期化（ブラウザ言語検出）
+  await I18nManager.init(detectBrowserLanguage());
   const currentLocale = I18nManager.getCurrentLocale();
 
   languageSelect.value = currentLocale;
@@ -29,17 +29,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // UI更新
     updateUI();
 
-    // アクティブなタブに言語変更を通知
-    const [activeTab] = await chrome.tabs.query({
-      active: true,
-      currentWindow: true,
-    });
 
-    if (activeTab && activeTab.url && activeTab.url.includes('wplace.live')) {
-      await chrome.tabs.sendMessage(activeTab.id!, {
-        type: 'LOCALE_CHANGED',
-        locale: newLocale,
-      });
-    }
   });
 });
