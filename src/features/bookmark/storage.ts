@@ -21,7 +21,7 @@ export class BookmarkStorage {
 
   static async getBookmarks(): Promise<Bookmark[]> {
     const stored = await this.getValue();
-    return JSON.parse(stored) ?? [];
+    return stored ? JSON.parse(stored) : [];
   }
 
   static async addBookmark(bookmark: Bookmark): Promise<void> {
