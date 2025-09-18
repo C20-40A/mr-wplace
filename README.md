@@ -113,7 +113,7 @@ inject.js                  # 全タイル fetch傍受スクリプト
 
 ## 📄 ライセンス
 
-MIT License
+Mozilla Public License 2.0
 
 ## 🔗 関連リンク
 
