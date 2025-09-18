@@ -1,5 +1,5 @@
 import { I18nManager, t } from "./i18n/manager";
-import { setLocale, detectBrowserLanguage } from "./i18n/index";
+import { setLocale, detectBrowserLanguage, type SupportedLocale } from "./i18n/index";
 
 function updateUI(): void {
   const coffeeLink = document.querySelector(".coffee-link") as HTMLElement;
@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // 言語変更イベント
   languageSelect.addEventListener("change", async (event) => {
     const target = event.target as HTMLSelectElement;
-    const newLocale = target.value as "ja" | "en";
+    const newLocale = target.value as SupportedLocale;
 
     // 設定を保存（setLocale経由）
     await setLocale(newLocale);
