@@ -54,6 +54,14 @@ const runWPlaceStudio = async (): Promise<void> => {
   });
 };
 
+// 言語切替メッセージリスナー
+chrome.runtime.onMessage.addListener(async (message) => {
+  if (message.type === 'LOCALE_CHANGED') {
+    // i18nマネージャーの状態を更新
+    await I18nManager.init(message.locale);
+  }
+});
+
 // 実行
 runWPlaceStudio().catch((error) => {
   console.error("Failed to initialize WPlace Studio:", error);
