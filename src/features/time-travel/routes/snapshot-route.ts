@@ -84,13 +84,11 @@ export class SnapshotRoute extends BaseSnapshotRoute {
   }
 
   render(container: HTMLElement, router: TimeTravelRouter): void {
+    const currentRoute = router.getCurrentRoute();
     const selectedTile = (router as any).selectedTile;
 
-    // タイル情報を毎回最新取得（位置変更対応）
-    if (selectedTile) {
-      this.currentTileX = selectedTile.tileX;
-      this.currentTileY = selectedTile.tileY;
-    } else {
+    // current-positionルートでは必ず現在位置を使用
+    if (currentRoute === "current-position" || !selectedTile) {
       const position = getCurrentPosition();
       if (position) {
         const coords = llzToTilePixel(position.lat, position.lng);
@@ -100,6 +98,9 @@ export class SnapshotRoute extends BaseSnapshotRoute {
         this.currentTileX = undefined;
         this.currentTileY = undefined;
       }
+    } else {
+      this.currentTileX = selectedTile.tileX;
+      this.currentTileY = selectedTile.tileY;
     }
 
     container.innerHTML = `

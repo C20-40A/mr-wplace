@@ -1,15 +1,8 @@
 # クリティカル
 
 - 言語設定がポルトガル語だと、セレクタが動作しない。おそらく、Title が変化しているため。
-- 一度、タイル一覧を表示してしまうと、次以降タイムマシンで前回の位置のスナップショットが表示される
 
 # マイナー
-
-- maplibre-gl のインスタンスを取得する
-
-  - MyLocation ボタンのイベントリスナーからたどることは可能。（　 document.querySelector("div.absolute.bottom-3.right-3.z-30").childNodes[0].\_\_click[3].v 　）
-  - "#map"に`__click` はなかった。 getEventListeners($0) で調べることは可能
-  - document.querySelector(".maplibregl-canvas")
 
 - レベルアップまでの残りの pixel 数
 - フルチャージまでの時間・notification
@@ -27,7 +20,16 @@
 - Transparent の色が、既存の色を上書きできない
 - 文字入力モーダルを初期で選択状態に変更
 
-# DONE
+# DONE v1.2.0
+
+- 一度、タイル一覧を表示してしまうと、次以降タイムマシンで前回の位置のスナップショットが表示される
+- map 移動モードの option 化
+- maplibre-gl のインスタンスを取得する
+  - MyLocation ボタンのイベントリスナーからたどることは可能。（　 document.querySelector("div.absolute.bottom-3.right-3.z-30").childNodes[0].\_\_click[3].v 　）
+  - "#map"に`__click` はなかった。 getEventListeners($0) で調べることは可能
+  - document.querySelector(".maplibregl-canvas")
+
+# DONE v1.1.0
 
 - 言語変更後に即座に適用
 - タイルに名称を設定できると便利
