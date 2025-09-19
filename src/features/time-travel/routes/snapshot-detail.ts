@@ -138,7 +138,7 @@ export class SnapshotDetailRoute {
     );
 
     const timeTravelUI = (window as any).wplaceStudio?.timeTravel?.ui;
-    if (timeTravelUI) timeTravelUI.hideModal();
+    if (timeTravelUI) timeTravelUI.closeModal();
 
     this.updateReturnCurrentButton(fullKey);
     Toast.success(
