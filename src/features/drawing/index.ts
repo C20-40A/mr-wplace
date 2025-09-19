@@ -1,4 +1,4 @@
-import { ButtonObserver, ButtonConfig } from "../../components/button-observer";
+import { setupButtonObserver } from "../../components/button-observer";
 import { ImageSelectorModal } from "../gallery/routes/image-selector/ImageSelectorModal";
 import { getCurrentPosition } from "../../utils/position";
 import { CONFIG } from "../bookmark/config";
@@ -9,26 +9,16 @@ import { ImageItem } from "../gallery/routes/list/components";
  * 画像描画機能の独立モジュール
  */
 export class Drawing {
-  private buttonObserver: ButtonObserver;
   private imageSelectorModal: ImageSelectorModal;
 
   constructor() {
-    this.buttonObserver = new ButtonObserver();
     this.imageSelectorModal = new ImageSelectorModal();
-    this.init();
-  }
-
-  private init(): void {
-    const buttonConfigs: ButtonConfig[] = [
-      {
-        id: "draw-btn",
-        selector: '[data-wplace-draw="true"]',
-        containerSelector: CONFIG.selectors.positionModal,
-        create: this.createDrawButton.bind(this),
-      },
-    ];
-
-    this.buttonObserver.startObserver(buttonConfigs);
+    setupButtonObserver([{
+      id: "draw-btn",
+      selector: '[data-wplace-draw="true"]',
+      containerSelector: CONFIG.selectors.positionModal,
+      create: this.createDrawButton.bind(this),
+    }]);
   }
 
   private createDrawButton(container: Element): void {
