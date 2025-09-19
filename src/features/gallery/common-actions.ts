@@ -32,6 +32,6 @@ export class GalleryImageActions {
       item.drawPosition.PxY
     );
 
-    gotoPosition({ lat, lng, zoom: 14 });
+    await gotoPosition({ lat, lng, zoom: 14 });
   }
 }
