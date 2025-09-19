@@ -69,7 +69,7 @@ export class ExtendedBookmarks {
 
     modal
       .querySelector("#wps-favorites-grid")!
-      .addEventListener("click", (e) => {
+      .addEventListener("click", async (e) => {
         const target = e.target as HTMLElement;
         if (!target) return;
 
@@ -89,7 +89,7 @@ export class ExtendedBookmarks {
           const lat = parseFloat(card.dataset.lat);
           const lng = parseFloat(card.dataset.lng);
           const zoom = parseFloat(card.dataset.zoom);
-          gotoPosition({ lat, lng, zoom });
+          await gotoPosition({ lat, lng, zoom });
           modal.close();
         }
       });

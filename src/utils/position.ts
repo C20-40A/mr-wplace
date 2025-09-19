@@ -1,6 +1,7 @@
 import { Position } from "../features/bookmark/types";
 import { WplaceLocalStorage } from "./wplaceLocalStorage";
 import { flyToPosition } from "./map-control";
+import { loadNavigationModeFromStorage, getNavigationMode } from "./navigation-mode";
 
 export const getCurrentPosition = (): Position | null => {
   const location = WplaceLocalStorage.getClickedPosition();
@@ -8,14 +9,20 @@ export const getCurrentPosition = (): Position | null => {
   return { lat: location.lat, lng: location.lng, zoom: location.zoom };
 };
 
-export const gotoPosition = ({ lat, lng, zoom }: Position) => {
-  // Try MapLibre flyTo first (no reload)
-  if (flyToPosition(lat, lng, zoom)) return;
+export const gotoPosition = async ({ lat, lng, zoom }: Position) => {
+  // Load navigation mode from storage
+  await loadNavigationModeFromStorage();
+  const useFlyTo = getNavigationMode();
 
-  // Fallback to URL navigation (with reload)
-  const url = new URL(window.location.href);
-  url.searchParams.set("lat", lat.toString());
-  url.searchParams.set("lng", lng.toString());
-  url.searchParams.set("zoom", zoom.toString());
-  window.location.href = url.toString();
+  if (useFlyTo) {
+    // Use flyTo (smooth navigation)
+    flyToPosition(lat, lng, zoom);
+  } else {
+    // Use URL navigation (with reload)
+    const url = new URL(window.location.href);
+    url.searchParams.set("lat", lat.toString());
+    url.searchParams.set("lng", lng.toString());
+    url.searchParams.set("zoom", zoom.toString());
+    window.location.href = url.toString();
+  }
 };

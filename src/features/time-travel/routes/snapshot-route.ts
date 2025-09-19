@@ -213,7 +213,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     await this.reloadSnapshots(container);
   }
 
-  private gotoTilePosition(): void {
+  private async gotoTilePosition(): Promise<void> {
     if (this.currentTileX === undefined || this.currentTileY === undefined)
       return;
 
@@ -221,6 +221,6 @@ export class SnapshotRoute extends BaseSnapshotRoute {
       this.currentTileX,
       this.currentTileY
     );
-    gotoPosition({ lat, lng, zoom: 11 });
+    await gotoPosition({ lat, lng, zoom: 11 });
   }
 }
