@@ -11,6 +11,40 @@ window.addEventListener("message", (event) => {
       window.tileProcessingQueue.delete(blobID);
     }
   }
+  
+  // Listen for flyTo requests from content script
+  if (event.data.source === "wplace-studio-flyto") {
+    const { lat, lng, zoom } = event.data;
+    window.wplaceMap?.flyTo?.({ center: [lng, lat], zoom });
+  }
+});
+
+// Map instance observer
+const mapObserver = new MutationObserver(() => {
+  try {
+    const mapElement = document.querySelector(
+      "div.absolute.bottom-3.right-3.z-30"
+    );
+    if (
+      mapElement &&
+      mapElement.childNodes[0] &&
+      mapElement.childNodes[0].__click
+    ) {
+      const map = mapElement.childNodes[0].__click[3].v;
+      if (map && typeof map.version === "string") {
+        window.wplaceMap = map;
+        mapObserver.disconnect();
+        console.log("WPlace map instance captured", map);
+      }
+    }
+  } catch (e) {
+    // Continue observing
+  }
+});
+
+mapObserver.observe(document.body, {
+  childList: true,
+  subtree: true,
 });
 
 window.fetch = async function (...args) {
