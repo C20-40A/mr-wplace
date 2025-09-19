@@ -1,8 +1,16 @@
 # クリティカル
 
+- 言語設定がポルトガル語だと、セレクタが動作しない。おそらく、Title が変化しているため。
+- 一度、タイル一覧を表示してしまうと、次以降タイムマシンで前回の位置のスナップショットが表示される
+
 # マイナー
 
-- i18n を増やす
+- maplibre-gl のインスタンスを取得する
+
+  - MyLocation ボタンのイベントリスナーからたどることは可能。（　 document.querySelector("div.absolute.bottom-3.right-3.z-30").childNodes[0].\_\_click[3].v 　）
+  - "#map"に`__click` はなかった。 getEventListeners($0) で調べることは可能
+  - document.querySelector(".maplibregl-canvas")
+
 - レベルアップまでの残りの pixel 数
 - フルチャージまでの時間・notification
 - ギャラリー画像＋位置を export して、複数人で編集できる機能
@@ -16,6 +24,8 @@
 - selector 失敗したとき用の、予備の UI
 - ギャラリーから画像を削除したとき、空のアイテムが残る
 - (window as any).wplaceStudio?.tileOverlay;のような方式は微妙
+- Transparent の色が、既存の色を上書きできない
+- 文字入力モーダルを初期で選択状態に変更
 
 # DONE
 
@@ -34,3 +44,4 @@
 - 現在位置のスナップショットから、id を消し、スナップショットダウンロードする場合のファイル名を変更
 - スナップショットの描画が被る場合がある
 - 描画中にスナップショットを削除すると、描画がリセットできなくなる問題の修正
+- i18n を増やす
