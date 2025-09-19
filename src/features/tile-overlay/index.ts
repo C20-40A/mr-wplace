@@ -13,13 +13,7 @@ export class TileOverlay {
   }
 
   private init(): void {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", () =>
-        this.setupTileProcessing()
-      );
-    } else {
-      this.setupTileProcessing();
-    }
+    this.setupTileProcessing();
   }
 
   private setupTileProcessing(): void {

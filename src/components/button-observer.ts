@@ -11,12 +11,9 @@ export interface ButtonConfig {
 export function setupButtonObserver(configs: ButtonConfig[]): void {
   const ensureButtons = () => {
     configs.forEach((config) => {
-      if (!document.querySelector(config.selector)) {
-        const container = document.querySelector(config.containerSelector);
-        if (container) {
-          config.create(container);
-        }
-      }
+      if (document.querySelector(config.selector)) return;
+      const container = document.querySelector(config.containerSelector);
+      if (container) config.create(container);
     });
   };
 
@@ -24,17 +21,7 @@ export function setupButtonObserver(configs: ButtonConfig[]): void {
     ensureButtons();
   });
 
-  const init = () => {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", () => {
-        observer.observe(document.body, { childList: true, subtree: true });
-        ensureButtons();
-      });
-    } else {
-      observer.observe(document.body, { childList: true, subtree: true });
-      ensureButtons();
-    }
-  };
-
-  init();
+  // document_end なので即座に実行可能
+  observer.observe(document.body, { childList: true, subtree: true });
+  ensureButtons();
 }
