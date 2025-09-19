@@ -1,41 +1,13 @@
-import { GalleryRouter, GalleryRoute } from "./router";
+import { GalleryRouter } from "./router";
 import { t } from "../../i18n";
-import { createModal, ModalElements } from "../../utils/modal";
+import { BaseModalUI, ModalConfig } from "../../components/base-modal-ui";
 
-export class GalleryUI {
-  private modalElements: ModalElements;
-  private router: GalleryRouter;
-
-  constructor(router: GalleryRouter) {
-    this.router = router;
-    this.createModal();
-  }
-
-  showModal(): void {
-    this.modalElements.modal.showModal();
-  }
-
-  closeModal(): void {
-    this.modalElements.modal.close();
-  }
-
-  getContainer(): HTMLElement | null {
-    return this.modalElements.container;
-  }
-
-  private createModal(): void {
-    this.modalElements = createModal({
+export class GalleryUI extends BaseModalUI<GalleryRouter> {
+  getModalConfig(): ModalConfig {
+    return {
       id: "wplace-studio-gallery-modal",
-      title: t`${"gallery"}`,
-      hasBackButton: false,
-      onBack: () => this.router.navigateBack(),
-    });
-
-    // Header elements setup
-    this.router.setHeaderElements(
-      this.modalElements.titleElement, 
-      this.modalElements.backButton
-    );
+      title: t`${"gallery"}`
+    };
   }
 }
 

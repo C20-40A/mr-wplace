@@ -1,6 +1,6 @@
 import { t } from "../../i18n/manager";
 import { TimeTravelRouter } from "./router";
-import { createModal, ModalElements } from "../../utils/modal";
+import { BaseModalUI, ModalConfig } from "../../components/base-modal-ui";
 
 // 元の位置に配置されるボタン（復元）
 export const createTimeTravelButton = (
@@ -48,41 +48,13 @@ export const createTimeTravelFAB = (container: Element): HTMLButtonElement => {
   return button;
 };
 
-// Gallery UI構造完全流用のTimeTravelUI
-export class TimeTravelUI {
-  private modalElements: ModalElements;
-  private router: TimeTravelRouter;
 
-  constructor(router: TimeTravelRouter) {
-    this.router = router;
-    this.createModal();
-  }
-
-  private createModal(): void {
-    this.modalElements = createModal({
+export class TimeTravelUI extends BaseModalUI<TimeTravelRouter> {
+  getModalConfig(): ModalConfig {
+    return {
       id: "wplace-studio-timetravel-modal",
-      title: t`${"timetravel_modal_title"}`,
-      hasBackButton: false,
-      onBack: () => this.router.navigateBack(),
-    });
-
-    // Header elements setup
-    this.router.setHeaderElements(
-      this.modalElements.titleElement,
-      this.modalElements.backButton
-    );
-  }
-
-  getContainer(): HTMLElement | null {
-    return this.modalElements.container;
-  }
-
-  showModal(): void {
-    this.modalElements.modal.showModal();
-  }
-
-  hideModal(): void {
-    this.modalElements.modal.close();
+      title: t`${"timetravel_modal_title"}`
+    };
   }
 }
 
