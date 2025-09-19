@@ -1,4 +1,4 @@
-import { ButtonObserver, ButtonConfig } from "../../components/button-observer";
+import { setupButtonObserver, ButtonConfig } from "../../components/button-observer";
 import { Toast } from "../../components/toast";
 import { CONFIG } from "../bookmark/config";
 import { TimeTravelRouter, TimeTravelRoute } from "./router";
@@ -17,7 +17,6 @@ import { SnapshotDetailRoute } from "./routes/snapshot-detail";
  * - タイル一覧→タイルスナップショット一覧
  */
 export class TimeTravel {
-  private buttonObserver: ButtonObserver;
   private router: TimeTravelRouter;
   private ui: TimeTravelUI;
   private tileListRoute: TileListRoute;
@@ -32,7 +31,6 @@ export class TimeTravel {
     this.tileListRoute = new TileListRoute();
     this.tileSnapshotsRoute = new SnapshotRoute({ showSaveButton: false });
     this.snapshotDetailRoute = new SnapshotDetailRoute();
-    this.buttonObserver = new ButtonObserver();
     this.init();
 
     // グローバルアクセス用（既存パターンに倣う）
@@ -71,7 +69,7 @@ export class TimeTravel {
       },
     ];
 
-    this.buttonObserver.startObserver(buttonConfigs);
+    setupButtonObserver(buttonConfigs);
     console.log("⏰ WPlace Studio: TimeTravel button observer initialized");
   }
 

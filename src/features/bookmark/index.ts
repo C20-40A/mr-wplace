@@ -1,4 +1,4 @@
-import { ButtonObserver } from "../../components/button-observer";
+import { setupButtonObserver } from "../../components/button-observer";
 import { Toast } from "../../components/toast";
 import { CONFIG } from "./config";
 import { BookmarkStorage } from "./storage";
@@ -14,10 +14,7 @@ import {
 } from "./ui";
 
 export class ExtendedBookmarks {
-  private buttonObserver: ButtonObserver;
-
   constructor() {
-    this.buttonObserver = new ButtonObserver();
     this.init();
   }
 
@@ -32,7 +29,7 @@ export class ExtendedBookmarks {
   }
 
   observeAndInit() {
-    const buttonConfigs = [
+    setupButtonObserver([
       {
         id: "bookmarks-btn",
         selector: CONFIG.selectors.bookmarksButton,
@@ -45,9 +42,7 @@ export class ExtendedBookmarks {
         containerSelector: CONFIG.selectors.positionModal,
         create: this.createSaveButton.bind(this),
       },
-    ];
-
-    this.buttonObserver.startObserver(buttonConfigs);
+    ]);
     this.createModal();
   }
 

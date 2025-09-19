@@ -4,7 +4,7 @@ import { createGalleryButton, GalleryUI } from "./ui";
 import { GalleryList } from "./routes/list";
 import { GalleryImageEditor } from "./routes/image-editor";
 import { GalleryImageDetail } from "./routes/image-detail";
-import { ButtonObserver } from "../../components/button-observer";
+import { setupButtonObserver } from "../../components/button-observer";
 import { CONFIG } from "../bookmark/config";
 
 export class Gallery {
@@ -14,7 +14,6 @@ export class Gallery {
   private listRoute: GalleryList;
   private imageEditorRoute: GalleryImageEditor;
   private imageDetailRoute: GalleryImageDetail;
-  private buttonObserver: ButtonObserver;
   private onDrawToggleCallback?: (key: string) => Promise<boolean>;
 
   // 選択モード用の状態
@@ -28,7 +27,6 @@ export class Gallery {
     this.listRoute = new GalleryList();
     this.imageEditorRoute = new GalleryImageEditor();
     this.imageDetailRoute = new GalleryImageDetail();
-    this.buttonObserver = new ButtonObserver();
     this.init();
   }
 
@@ -48,14 +46,12 @@ export class Gallery {
       this.renderCurrentRoute(route); // コンテンツ更新
     });
 
-    this.buttonObserver.startObserver([
-      {
-        id: "gallery-btn",
-        selector: CONFIG.selectors.galleryButton,
-        containerSelector: CONFIG.selectors.toggleOpacityButton,
-        create: this.createGalleryFAB.bind(this),
-      },
-    ]);
+    setupButtonObserver([{
+      id: "gallery-btn",
+      selector: CONFIG.selectors.galleryButton,
+      containerSelector: CONFIG.selectors.toggleOpacityButton,
+      create: this.createGalleryFAB.bind(this),
+    }]);
     console.log("⭐ WPlace Studio: Gallery button observer initialized");
   }
 
