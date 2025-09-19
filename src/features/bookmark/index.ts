@@ -19,13 +19,7 @@ export class ExtendedBookmarks {
   }
 
   init() {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", () =>
-        this.observeAndInit()
-      );
-    } else {
-      this.observeAndInit();
-    }
+    this.observeAndInit();
   }
 
   observeAndInit() {

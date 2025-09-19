@@ -39,13 +39,7 @@ export class TimeTravel {
   }
 
   private init(): void {
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", () =>
-        this.observeAndInit()
-      );
-    } else {
-      this.observeAndInit();
-    }
+    this.observeAndInit();
   }
 
   private observeAndInit(): void {
