@@ -31,22 +31,18 @@ export class Gallery {
   }
 
   private init(): void {
-    this.observeAndInit();
-  }
-
-  private observeAndInit(): void {
-    // ルーティング設定（UIとコンテンツ両方を更新）
     this.router.setOnRouteChange((route) => {
       this.renderCurrentRoute(route); // コンテンツ更新
     });
 
-    setupButtonObserver([{
-      id: "gallery-btn",
-      selector: CONFIG.selectors.galleryButton,
-      containerSelector: CONFIG.selectors.toggleOpacityButton,
-      create: this.createGalleryFAB.bind(this),
-    }]);
-    console.log("⭐ WPlace Studio: Gallery button observer initialized");
+    setupButtonObserver([
+      {
+        id: "gallery-btn",
+        selector: CONFIG.selectors.galleryButton,
+        containerSelector: CONFIG.selectors.toggleOpacityButton,
+        create: this.createGalleryFAB.bind(this),
+      },
+    ]);
   }
 
   // ボタンを作成するメソッド（外部から呼び出される）
@@ -85,7 +81,7 @@ export class Gallery {
               const { GalleryStorage } = await import("./storage");
               const storage = new GalleryStorage();
               await storage.delete(key);
-              
+
               // 一覧に戻る
               this.router.navigateBack();
             }

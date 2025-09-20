@@ -15,14 +15,6 @@ import {
 
 export class ExtendedBookmarks {
   constructor() {
-    this.init();
-  }
-
-  init() {
-    this.observeAndInit();
-  }
-
-  observeAndInit() {
     setupButtonObserver([
       {
         id: "bookmarks-btn",
@@ -43,13 +35,13 @@ export class ExtendedBookmarks {
   createBookmarkFAB(toggleButton: Element): void {
     const button = createBookmarkButton(toggleButton);
     button.addEventListener("click", () => this.openModal());
-    console.log("⭐ Mr.WPlace: Favorite button added");
+    console.log("⭐ Favorite button added");
   }
 
   createSaveButton(container: Element): void {
     const button = createSaveBookmarkButton(container);
     button.addEventListener("click", () => this.addBookmark());
-    console.log("⭐ Mr.WPlace: Save button added");
+    console.log("⭐ Save button added");
   }
 
   createModal(): void {
@@ -151,7 +143,6 @@ export class ExtendedBookmarks {
   async deleteBookmarks(id: number): Promise<void> {
     if (!confirm(t`${"delete_confirm"}`)) return;
 
-    const favorites = await BookmarkStorage.getBookmarks();
     await BookmarkStorage.removeBookmark(id);
 
     this.renderBookmarks();

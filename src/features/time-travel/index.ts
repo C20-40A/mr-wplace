@@ -1,4 +1,7 @@
-import { setupButtonObserver, ButtonConfig } from "../../components/button-observer";
+import {
+  setupButtonObserver,
+  ButtonConfig,
+} from "../../components/button-observer";
 import { Toast } from "../../components/toast";
 import { CONFIG } from "../bookmark/config";
 import { TimeTravelRouter, TimeTravelRoute } from "./router";
@@ -35,14 +38,13 @@ export class TimeTravel {
 
     // グローバルアクセス用（既存パターンに倣う）
     (window as any).wplaceStudio = (window as any).wplaceStudio || {};
-    (window as any).wplaceStudio.timeTravel = { ui: this.ui, router: this.router };
+    (window as any).wplaceStudio.timeTravel = {
+      ui: this.ui,
+      router: this.router,
+    };
   }
 
   private init(): void {
-    this.observeAndInit();
-  }
-
-  private observeAndInit(): void {
     // ルーティング設定（Gallery流用）
     this.router.setOnRouteChange((route) => {
       this.renderCurrentRoute(route);
@@ -64,7 +66,7 @@ export class TimeTravel {
     ];
 
     setupButtonObserver(buttonConfigs);
-    console.log("⏰ WPlace Studio: TimeTravel button observer initialized");
+    console.log("⏰ TimeTravel button observer initialized");
   }
 
   createTimeTravelButton(container: Element): HTMLButtonElement {
@@ -110,6 +112,4 @@ export class TimeTravel {
     this.router.initialize("current-position");
     this.ui.showModal();
   }
-
-
 }
