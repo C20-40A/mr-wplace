@@ -1,7 +1,7 @@
 import { setupElementObserver } from "../../components/element-observer";
 import { ImageSelectorModal } from "../gallery/routes/image-selector/ImageSelectorModal";
 import { getCurrentPosition } from "../../utils/position";
-import { SELECTORS } from "../../constants/selectors";
+import { findPositionModal } from "../../constants/selectors";
 import { createDrawButton } from "./ui";
 import { ImageItem } from "../gallery/routes/list/components";
 
@@ -16,7 +16,7 @@ export class Drawing {
     setupElementObserver([
       {
         id: "draw-btn",
-        getTargetElement: SELECTORS.positionModal,
+        getTargetElement: findPositionModal,
         createElement: (container) => {
           const button = createDrawButton();
           button.id = "draw-btn"; // 重複チェック用ID設定
