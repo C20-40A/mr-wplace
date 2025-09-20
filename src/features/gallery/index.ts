@@ -5,7 +5,7 @@ import { GalleryList } from "./routes/list";
 import { GalleryImageEditor } from "./routes/image-editor";
 import { GalleryImageDetail } from "./routes/image-detail";
 import { setupElementObserver } from "../../components/element-observer";
-import { SELECTORS } from "../../constants/selectors";
+import { findOpacityContainer } from "../../constants/selectors";
 
 export class Gallery {
   private router: GalleryRouter;
@@ -37,7 +37,7 @@ export class Gallery {
     setupElementObserver([
       {
         id: "gallery-btn",
-        getTargetElement: SELECTORS.toggleOpacityContainer,
+        getTargetElement: findOpacityContainer,
         createElement: (container) => {
           const button = createGalleryButton();
           button.id = "gallery-btn"; // 重複チェック用ID設定

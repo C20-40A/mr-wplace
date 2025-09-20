@@ -1,6 +1,9 @@
 import { setupElementObserver } from "../../components/element-observer";
 import { Toast } from "../../components/toast";
-import { SELECTORS } from "../../constants/selectors";
+import {
+  findOpacityContainer,
+  findPositionModal,
+} from "../../constants/selectors";
 import { BookmarkStorage } from "./storage";
 import { ImportExportService } from "./import-export";
 import { getCurrentPosition, gotoPosition } from "../../utils/position";
@@ -18,7 +21,7 @@ export class ExtendedBookmarks {
     setupElementObserver([
       {
         id: "bookmarks-btn",
-        getTargetElement: SELECTORS.toggleOpacityContainer,
+        getTargetElement: findOpacityContainer,
         createElement: (container) => {
           const button = createBookmarkButton();
           button.id = "bookmarks-btn"; // 重複チェック用ID設定
@@ -29,7 +32,7 @@ export class ExtendedBookmarks {
       },
       {
         id: "save-btn",
-        getTargetElement: SELECTORS.positionModal,
+        getTargetElement: findPositionModal,
         createElement: (positionModal) => {
           const saveButton = createSaveBookmarkButton();
           saveButton.id = "save-btn"; // 重複チェック用ID設定

@@ -2,7 +2,10 @@ import {
   setupElementObserver,
   ElementConfig,
 } from "../../components/element-observer";
-import { SELECTORS } from "../../constants/selectors";
+import {
+  findOpacityContainer,
+  findPositionModal,
+} from "../../constants/selectors";
 import { TimeTravelRouter, TimeTravelRoute } from "./router";
 import {
   TimeTravelUI,
@@ -52,7 +55,7 @@ export class TimeTravel {
     const buttonConfigs: ElementConfig[] = [
       {
         id: "timetravel-btn",
-        getTargetElement: SELECTORS.positionModal,
+        getTargetElement: findPositionModal,
         createElement: (container) => {
           const button = createTimeTravelButton(container);
           button.id = "timetravel-btn"; // 重複チェック用ID設定
@@ -62,7 +65,7 @@ export class TimeTravel {
       },
       {
         id: "timetravel-fab-btn",
-        getTargetElement: SELECTORS.toggleOpacityContainer,
+        getTargetElement: findOpacityContainer,
         createElement: (container) => {
           const button = createTimeTravelFAB();
           button.id = "timetravel-fab-btn"; // 重複チェック用ID設定
