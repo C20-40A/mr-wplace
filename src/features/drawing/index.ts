@@ -13,18 +13,20 @@ export class Drawing {
 
   constructor() {
     this.imageSelectorModal = new ImageSelectorModal();
-    setupButtonObserver([{
-      id: "draw-btn",
-      selector: '[data-wplace-draw="true"]',
-      containerSelector: CONFIG.selectors.positionModal,
-      create: this.createDrawButton.bind(this),
-    }]);
+    setupButtonObserver([
+      {
+        id: "draw-btn",
+        selector: '[data-wplace-draw="true"]',
+        containerSelector: CONFIG.selectors.positionModal,
+        create: this.createDrawButton.bind(this),
+      },
+    ]);
   }
 
   private createDrawButton(container: Element): void {
     const button = createDrawButton(container);
     button.addEventListener("click", () => this.openDrawMode());
-    console.log("🖼️ WPlace Studio: Draw button added");
+    console.log("🖼️ Draw button added");
   }
 
   private openDrawMode(): void {
