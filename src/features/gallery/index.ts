@@ -4,7 +4,7 @@ import { createGalleryButton, GalleryUI } from "./ui";
 import { GalleryList } from "./routes/list";
 import { GalleryImageEditor } from "./routes/image-editor";
 import { GalleryImageDetail } from "./routes/image-detail";
-import { setupButtonObserver } from "../../components/button-observer";
+import { setupElementObserver } from "../../components/element-observer";
 import { CONFIG } from "../bookmark/config";
 
 export class Gallery {
@@ -35,7 +35,7 @@ export class Gallery {
       this.renderCurrentRoute(route); // コンテンツ更新
     });
 
-    setupButtonObserver([
+    setupElementObserver([
       {
         id: "gallery-btn",
         selector: CONFIG.selectors.galleryButton,

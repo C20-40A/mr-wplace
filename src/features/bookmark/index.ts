@@ -1,4 +1,4 @@
-import { setupButtonObserver } from "../../components/button-observer";
+import { setupElementObserver } from "../../components/element-observer";
 import { Toast } from "../../components/toast";
 import { CONFIG } from "./config";
 import { BookmarkStorage } from "./storage";
@@ -15,7 +15,7 @@ import {
 
 export class ExtendedBookmarks {
   constructor() {
-    setupButtonObserver([
+    setupElementObserver([
       {
         id: "bookmarks-btn",
         selector: CONFIG.selectors.bookmarksButton,
