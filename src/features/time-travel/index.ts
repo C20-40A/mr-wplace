@@ -52,32 +52,29 @@ export class TimeTravel {
     const buttonConfigs: ElementConfig[] = [
       {
         id: "timetravel-btn",
-        selector: '[data-wplace-timetravel="true"]',
-        containerSelector: SELECTORS.positionModal,
-        create: this.createTimeTravelButton.bind(this),
+        getTargetElement: SELECTORS.positionModal,
+        createElement: (container) => {
+          const button = createTimeTravelButton(container);
+          button.id = "timetravel-btn"; // 重複チェック用ID設定
+          button.addEventListener("click", () => this.showCurrentPosition());
+          container.prepend(button);
+        },
       },
       {
         id: "timetravel-fab-btn",
-        selector: "#timetravel-fab-btn",
-        containerSelector: SELECTORS.toggleOpacityButton,
-        create: this.createTimeTravelFAB.bind(this),
+        getTargetElement: SELECTORS.toggleOpacityContainer,
+        createElement: (container) => {
+          const button = createTimeTravelFAB();
+          button.id = "timetravel-fab-btn"; // 重複チェック用ID設定
+          button.addEventListener("click", () => this.show());
+          container.className += " flex flex-col-reverse gap-1";
+          container.appendChild(button);
+        },
       },
     ];
 
     setupElementObserver(buttonConfigs);
     console.log("⏰ TimeTravel button observer initialized");
-  }
-
-  createTimeTravelButton(container: Element): HTMLButtonElement {
-    const button = createTimeTravelButton(container);
-    button.addEventListener("click", () => this.showCurrentPosition());
-    return button;
-  }
-
-  createTimeTravelFAB(toggleButton: Element): HTMLButtonElement {
-    const button = createTimeTravelFAB(toggleButton);
-    button.addEventListener("click", () => this.show());
-    return button;
   }
 
   private renderCurrentRoute(route: TimeTravelRoute): void {

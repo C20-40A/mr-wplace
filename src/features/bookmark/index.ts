@@ -18,30 +18,27 @@ export class ExtendedBookmarks {
     setupElementObserver([
       {
         id: "bookmarks-btn",
-        selector: SELECTORS.bookmarksButton,
-        containerSelector: SELECTORS.toggleOpacityButton,
-        create: this.createBookmarkFAB.bind(this),
+        getTargetElement: SELECTORS.toggleOpacityContainer,
+        createElement: (container) => {
+          const button = createBookmarkButton();
+          button.id = "bookmarks-btn"; // 重複チェック用ID設定
+          button.addEventListener("click", () => this.openModal());
+          container.className += " flex flex-col-reverse gap-1"; // Add flex layout
+          container.appendChild(button);
+        },
       },
       {
         id: "save-btn",
-        selector: '[data-wplace-save="true"]',
-        containerSelector: SELECTORS.positionModal,
-        create: this.createSaveButton.bind(this),
+        getTargetElement: SELECTORS.positionModal,
+        createElement: (positionModal) => {
+          const saveButton = createSaveBookmarkButton();
+          saveButton.id = "save-btn"; // 重複チェック用ID設定
+          saveButton.addEventListener("click", () => this.addBookmark());
+          positionModal.prepend(saveButton);
+        },
       },
     ]);
     this.createModal();
-  }
-
-  createBookmarkFAB(toggleButton: Element): void {
-    const button = createBookmarkButton(toggleButton);
-    button.addEventListener("click", () => this.openModal());
-    console.log("⭐ Favorite button added");
-  }
-
-  createSaveButton(container: Element): void {
-    const button = createSaveBookmarkButton(container);
-    button.addEventListener("click", () => this.addBookmark());
-    console.log("⭐ Save button added");
   }
 
   createModal(): void {

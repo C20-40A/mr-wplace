@@ -2,9 +2,7 @@ import { Bookmark } from "./types";
 import { t } from "../../i18n/manager";
 import { createModal, ModalElements } from "../../utils/modal";
 
-export const createSaveBookmarkButton = (
-  container: Element
-): HTMLButtonElement => {
+export const createSaveBookmarkButton = (): HTMLButtonElement => {
   const button = document.createElement("button");
   button.className = "btn btn-neutral btn-soft mx-3";
   button.style = "margin: 0.5rem;";
@@ -16,17 +14,10 @@ export const createSaveBookmarkButton = (
       ${"bookmark"}
     `;
 
-  // 既存の子要素の前に挿入（先頭に表示）
-  const firstChild = container.firstElementChild;
-  if (firstChild) {
-    container.insertBefore(button, firstChild);
-  } else {
-    container.appendChild(button);
-  }
   return button;
 };
 
-export const createBookmarkButton = (container: Element): HTMLButtonElement => {
+export const createBookmarkButton = (): HTMLButtonElement => {
   const button = document.createElement("button");
   button.id = "bookmarks-btn"; // 重複チェック用ID設定
   button.className =
@@ -37,12 +28,6 @@ export const createBookmarkButton = (container: Element): HTMLButtonElement => {
         <path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/>
       </svg>
     `;
-  const parentNode = container.parentNode;
-  // Add flex layout classes to parentNode
-  if (parentNode) {
-    parentNode.className += " flex flex-col-reverse gap-1";
-    parentNode.appendChild(button);
-  }
   return button;
 };
 

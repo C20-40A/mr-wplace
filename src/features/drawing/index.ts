@@ -16,17 +16,16 @@ export class Drawing {
     setupElementObserver([
       {
         id: "draw-btn",
-        selector: '[data-wplace-draw="true"]',
-        containerSelector: SELECTORS.positionModal,
-        create: this.createDrawButton.bind(this),
+        getTargetElement: SELECTORS.positionModal,
+        createElement: (container) => {
+          const button = createDrawButton();
+          button.id = "draw-btn"; // 重複チェック用ID設定
+          button.addEventListener("click", () => this.openDrawMode());
+          container.prepend(button);
+          console.log("Draw button added to", container);
+        },
       },
     ]);
-  }
-
-  private createDrawButton(container: Element): void {
-    const button = createDrawButton(container);
-    button.addEventListener("click", () => this.openDrawMode());
-    console.log("🖼️ Draw button added");
   }
 
   private openDrawMode(): void {
