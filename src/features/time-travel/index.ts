@@ -1,8 +1,7 @@
 import {
-  setupButtonObserver,
-  ButtonConfig,
-} from "../../components/button-observer";
-import { Toast } from "../../components/toast";
+  setupElementObserver,
+  ElementConfig,
+} from "../../components/element-observer";
 import { CONFIG } from "../bookmark/config";
 import { TimeTravelRouter, TimeTravelRoute } from "./router";
 import {
@@ -50,7 +49,7 @@ export class TimeTravel {
       this.renderCurrentRoute(route);
     });
 
-    const buttonConfigs: ButtonConfig[] = [
+    const buttonConfigs: ElementConfig[] = [
       {
         id: "timetravel-btn",
         selector: '[data-wplace-timetravel="true"]',
@@ -65,7 +64,7 @@ export class TimeTravel {
       },
     ];
 
-    setupButtonObserver(buttonConfigs);
+    setupElementObserver(buttonConfigs);
     console.log("⏰ TimeTravel button observer initialized");
   }
 

@@ -1,4 +1,4 @@
-import { setupButtonObserver } from "../../components/button-observer";
+import { setupElementObserver } from "../../components/element-observer";
 import { ImageSelectorModal } from "../gallery/routes/image-selector/ImageSelectorModal";
 import { getCurrentPosition } from "../../utils/position";
 import { CONFIG } from "../bookmark/config";
@@ -13,7 +13,7 @@ export class Drawing {
 
   constructor() {
     this.imageSelectorModal = new ImageSelectorModal();
-    setupButtonObserver([
+    setupElementObserver([
       {
         id: "draw-btn",
         selector: '[data-wplace-draw="true"]',

@@ -4,6 +4,7 @@
 
 # マイナー
 
+- Transparent の色が、既存の色を上書きできない
 - レベルアップまでの残りの pixel 数
 - フルチャージまでの時間・notification
 - ギャラリー画像＋位置を export して、複数人で編集できる機能
@@ -17,7 +18,6 @@
 - selector 失敗したとき用の、予備の UI
 - ギャラリーから画像を削除したとき、空のアイテムが残る
 - (window as any).wplaceStudio?.tileOverlay;のような方式は微妙
-- Transparent の色が、既存の色を上書きできない
 - 文字入力モーダルを初期で選択状態に変更
 
 # DONE v1.2.0
