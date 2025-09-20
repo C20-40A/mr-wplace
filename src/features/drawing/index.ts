@@ -1,7 +1,7 @@
 import { setupElementObserver } from "../../components/element-observer";
 import { ImageSelectorModal } from "../gallery/routes/image-selector/ImageSelectorModal";
 import { getCurrentPosition } from "../../utils/position";
-import { CONFIG } from "../bookmark/config";
+import { SELECTORS } from "../../constants/selectors";
 import { createDrawButton } from "./ui";
 import { ImageItem } from "../gallery/routes/list/components";
 
@@ -17,7 +17,7 @@ export class Drawing {
       {
         id: "draw-btn",
         selector: '[data-wplace-draw="true"]',
-        containerSelector: CONFIG.selectors.positionModal,
+        containerSelector: SELECTORS.positionModal,
         create: this.createDrawButton.bind(this),
       },
     ]);

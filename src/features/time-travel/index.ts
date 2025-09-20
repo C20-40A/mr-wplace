@@ -2,7 +2,7 @@ import {
   setupElementObserver,
   ElementConfig,
 } from "../../components/element-observer";
-import { CONFIG } from "../bookmark/config";
+import { SELECTORS } from "../../constants/selectors";
 import { TimeTravelRouter, TimeTravelRoute } from "./router";
 import {
   TimeTravelUI,
@@ -53,13 +53,13 @@ export class TimeTravel {
       {
         id: "timetravel-btn",
         selector: '[data-wplace-timetravel="true"]',
-        containerSelector: CONFIG.selectors.positionModal,
+        containerSelector: SELECTORS.positionModal,
         create: this.createTimeTravelButton.bind(this),
       },
       {
         id: "timetravel-fab-btn",
         selector: "#timetravel-fab-btn",
-        containerSelector: CONFIG.selectors.toggleOpacityButton,
+        containerSelector: SELECTORS.toggleOpacityButton,
         create: this.createTimeTravelFAB.bind(this),
       },
     ];

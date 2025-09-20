@@ -1,6 +1,6 @@
 import { setupElementObserver } from "../../components/element-observer";
 import { Toast } from "../../components/toast";
-import { CONFIG } from "./config";
+import { SELECTORS } from "../../constants/selectors";
 import { BookmarkStorage } from "./storage";
 import { ImportExportService } from "./import-export";
 import { getCurrentPosition, gotoPosition } from "../../utils/position";
@@ -18,14 +18,14 @@ export class ExtendedBookmarks {
     setupElementObserver([
       {
         id: "bookmarks-btn",
-        selector: CONFIG.selectors.bookmarksButton,
-        containerSelector: CONFIG.selectors.toggleOpacityButton,
+        selector: SELECTORS.bookmarksButton,
+        containerSelector: SELECTORS.toggleOpacityButton,
         create: this.createBookmarkFAB.bind(this),
       },
       {
         id: "save-btn",
         selector: '[data-wplace-save="true"]',
-        containerSelector: CONFIG.selectors.positionModal,
+        containerSelector: SELECTORS.positionModal,
         create: this.createSaveButton.bind(this),
       },
     ]);

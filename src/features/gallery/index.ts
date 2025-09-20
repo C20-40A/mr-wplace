@@ -5,7 +5,7 @@ import { GalleryList } from "./routes/list";
 import { GalleryImageEditor } from "./routes/image-editor";
 import { GalleryImageDetail } from "./routes/image-detail";
 import { setupElementObserver } from "../../components/element-observer";
-import { CONFIG } from "../bookmark/config";
+import { SELECTORS } from "../../constants/selectors";
 
 export class Gallery {
   private button: HTMLButtonElement | null = null;
@@ -38,8 +38,8 @@ export class Gallery {
     setupElementObserver([
       {
         id: "gallery-btn",
-        selector: CONFIG.selectors.galleryButton,
-        containerSelector: CONFIG.selectors.toggleOpacityButton,
+        selector: SELECTORS.galleryButton,
+        containerSelector: SELECTORS.toggleOpacityButton,
         create: this.createGalleryFAB.bind(this),
       },
     ]);
