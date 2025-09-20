@@ -8,7 +8,6 @@ import { setupElementObserver } from "../../components/element-observer";
 import { SELECTORS } from "../../constants/selectors";
 
 export class Gallery {
-  private button: HTMLButtonElement | null = null;
   private router: GalleryRouter;
   private ui: GalleryUI;
   private listRoute: GalleryList;
@@ -38,18 +37,15 @@ export class Gallery {
     setupElementObserver([
       {
         id: "gallery-btn",
-        selector: SELECTORS.galleryButton,
-        containerSelector: SELECTORS.toggleOpacityButton,
-        create: this.createGalleryFAB.bind(this),
+        getTargetElement: SELECTORS.toggleOpacityContainer,
+        createElement: (container) => {
+          const button = createGalleryButton();
+          button.id = "gallery-btn"; // 重複チェック用ID設定
+          button.addEventListener("click", () => this.show());
+          container?.appendChild(button);
+        },
       },
     ]);
-  }
-
-  // ボタンを作成するメソッド（外部から呼び出される）
-  createGalleryFAB(toggleButton: Element): HTMLButtonElement {
-    this.button = createGalleryButton(toggleButton);
-    this.button.addEventListener("click", () => this.show());
-    return this.button;
   }
 
   private renderCurrentRoute(route: string): void {

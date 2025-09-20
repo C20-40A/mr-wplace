@@ -1,6 +1,6 @@
 import { t } from "../../i18n/manager";
 
-export const createDrawButton = (container: Element): HTMLButtonElement => {
+export const createDrawButton = (): HTMLButtonElement => {
   const button = document.createElement("button");
   button.className = "btn btn-neutral btn-soft mx-3";
   button.setAttribute("data-wplace-draw", "true");
@@ -10,13 +10,5 @@ export const createDrawButton = (container: Element): HTMLButtonElement => {
       </svg>
       ${"draw_image"}
     `;
-
-  // 既存の子要素の前に挿入（先頭に表示）
-  const firstChild = container.firstElementChild;
-  if (firstChild) {
-    container.insertBefore(button, firstChild);
-  } else {
-    container.appendChild(button);
-  }
   return button;
 };

@@ -16,19 +16,11 @@ export const createTimeTravelButton = (
       </svg>
       ${"timetravel"}
     `;
-
-  // 既存の子要素の前に挿入（先頭に表示）
-  const firstChild = container.firstElementChild;
-  if (firstChild) {
-    container.insertBefore(button, firstChild);
-  } else {
-    container.appendChild(button);
-  }
   return button;
 };
 
 // 新しいFABボタン（丸い・SVGのみ）
-export const createTimeTravelFAB = (container: Element): HTMLButtonElement => {
+export const createTimeTravelFAB = (): HTMLButtonElement => {
   const button = document.createElement("button");
   button.id = "timetravel-fab-btn";
   button.className =
@@ -39,23 +31,14 @@ export const createTimeTravelFAB = (container: Element): HTMLButtonElement => {
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
       </svg>
     `;
-
-  const parentNode = container.parentNode;
-  if (parentNode) {
-    parentNode.className += " flex flex-col-reverse gap-1";
-    parentNode.appendChild(button);
-  }
   return button;
 };
-
 
 export class TimeTravelUI extends BaseModalUI<TimeTravelRouter> {
   getModalConfig(): ModalConfig {
     return {
       id: "wplace-studio-timetravel-modal",
-      title: t`${"timetravel_modal_title"}`
+      title: t`${"timetravel_modal_title"}`,
     };
   }
 }
-
-
