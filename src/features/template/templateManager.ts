@@ -1,4 +1,5 @@
 import { Template } from "./Template";
+import { ColorFilterManager } from "../../utils/color-filter-manager";
 
 interface TemplateInstance {
   template: Template;
@@ -93,13 +94,22 @@ export class TemplateManager {
     context.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
 
     // 全テンプレート描画（配列順序で後勝ち）
+    const colorFilter = (window as any).colorFilterManager as ColorFilterManager;
+    
     for (const { tileKey, template } of allMatchingTiles) {
       const coords = tileKey.split(",");
       const templateBitmap = template.chunked?.[tileKey];
       if (!templateBitmap) continue;
 
+      // 色フィルタ適用
+      let filteredBitmap = templateBitmap;
+      if (colorFilter?.isFilterActive()) {
+        const filtered = colorFilter.applyColorFilter(templateBitmap);
+        if (filtered) filteredBitmap = filtered;
+      }
+
       context.drawImage(
-        templateBitmap,
+        filteredBitmap,
         Number(coords[2]) * this.drawMult,
         Number(coords[3]) * this.drawMult
       );
