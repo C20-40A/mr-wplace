@@ -15,6 +15,7 @@ import {
 import { TileListRoute } from "./routes/tile-list";
 import { SnapshotRoute } from "./routes/snapshot-route";
 import { SnapshotDetailRoute } from "./routes/snapshot-detail";
+import { ImportSnapshotRoute } from "./routes/import-snapshot";
 
 /**
  * タイムマシン機能
@@ -28,6 +29,7 @@ export class TimeTravel {
   private currentPositionRoute: SnapshotRoute;
   private tileSnapshotsRoute: SnapshotRoute;
   private snapshotDetailRoute: SnapshotDetailRoute;
+  private importSnapshotRoute: ImportSnapshotRoute;
 
   constructor() {
     this.router = new TimeTravelRouter();
@@ -36,6 +38,7 @@ export class TimeTravel {
     this.tileListRoute = new TileListRoute();
     this.tileSnapshotsRoute = new SnapshotRoute({ showSaveButton: false });
     this.snapshotDetailRoute = new SnapshotDetailRoute();
+    this.importSnapshotRoute = new ImportSnapshotRoute();
     this.init();
 
     // グローバルアクセス用（既存パターンに倣う）
@@ -96,6 +99,9 @@ export class TimeTravel {
         break;
       case "snapshot-detail":
         this.snapshotDetailRoute.render(container, this.router);
+        break;
+      case "import-snapshot":
+        this.importSnapshotRoute.render(container, this.router);
         break;
     }
   }
