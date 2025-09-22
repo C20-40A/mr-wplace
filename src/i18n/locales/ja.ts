@@ -106,4 +106,7 @@ export const jaTranslations = {
 
   // popup専用
   buy_me_coffee: "作者にコーヒーをおごる",
+
+  // Color Filter
+  color_filter: "カラー フィルター",
 };

@@ -3,9 +3,7 @@ import { TimeTravelRouter } from "./router";
 import { BaseModalUI, ModalConfig } from "../../components/base-modal-ui";
 
 // 元の位置に配置されるボタン（復元）
-export const createTimeTravelButton = (
-  container: Element
-): HTMLButtonElement => {
+export const createTimeTravelButton = (): HTMLButtonElement => {
   const button = document.createElement("button");
   button.className = "btn btn-neutral btn-soft mx-3";
   button.style = "margin: 0.5rem;";

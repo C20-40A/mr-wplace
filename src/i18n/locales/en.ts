@@ -106,4 +106,7 @@ export const enTranslations = {
 
   // popup専用
   buy_me_coffee: "Buy me a coffee",
+
+  // Color Filter
+  color_filter: "Color Filter",
 };
