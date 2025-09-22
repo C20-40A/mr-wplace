@@ -152,55 +152,8 @@ export class TemplateManager {
     return false;
   }
 
-  /** 特定スナップショット描画判定 */
-  isSnapshotDrawing(fullKey: string): boolean {
-    const imageKey = `snapshot_${fullKey}`;
-    return this.templatesArray.some(
-      (instance) => instance.imageKey === imageKey && instance.drawEnabled
-    );
-  }
 
-  /** 特定タイルでTimeTravelスナップショット描画判定 */
-  findSnapshotDrawingInTile(
-    tileX: number,
-    tileY: number
-  ): {
-    isTemplateActive: boolean;
-    imageKey: string | null;
-  } {
-    for (const instance of this.templatesArray) {
-      if (
-        !instance.drawEnabled ||
-        !instance.template?.coords ||
-        !instance.imageKey.startsWith("snapshot_")
-      ) {
-        continue;
-      }
 
-      const [templateTileX, templateTileY] = instance.template.coords;
-      if (templateTileX === tileX && templateTileY === tileY)
-        return { isTemplateActive: true, imageKey: instance.imageKey };
-    }
-    return { isTemplateActive: false, imageKey: null };
-  }
 
-  /** スナップショット描画toggle（1タイル1スナップショット制限） */
-  async drawSnapshotOnTile(
-    tileX: number,
-    tileY: number,
-    file: File,
-    imageKey: string
-  ): Promise<boolean> {
-    const { isTemplateActive, imageKey: snapshotImageKey } =
-      this.findSnapshotDrawingInTile(tileX, tileY);
 
-    // 既に描画されている場合は削除
-    if (isTemplateActive && snapshotImageKey) {
-      this.removeTemplateByKey(snapshotImageKey);
-    }
-
-    // 新しいスナップショットを描画
-    await this.createTemplate(file, [tileX, tileY, 0, 0], imageKey);
-    return true;
-  }
 }

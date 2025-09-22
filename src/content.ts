@@ -13,6 +13,7 @@ import { ColorFilter } from "./features/color-filter";
 import { ColorFilterManager } from "./utils/color-filter-manager";
 import { NextLevelBadge } from "./features/next-level-badge";
 import { WPlaceUserData } from "./types/user-data";
+import { TimeTravelStorage } from "./features/time-travel/storage";
 
 const runWPlaceStudio = async (): Promise<void> => {
   // Chrome拡張機能のストレージAPIが利用可能か確認
@@ -27,6 +28,7 @@ const runWPlaceStudio = async (): Promise<void> => {
 
   const favorites = new ExtendedBookmarks();
   const tileOverlay = new TileOverlay();
+  await (tileOverlay as any).init(); // 明示的初期化
   const gallery = new Gallery();
   const drawing = new Drawing();
   const tileSnapshot = new TileSnapshot();

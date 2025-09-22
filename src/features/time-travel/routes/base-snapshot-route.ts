@@ -29,7 +29,7 @@ export abstract class BaseSnapshotRoute {
       });
   }
 
-  protected renderSnapshotItem(snapshot: SnapshotInfo): string {
+  protected async renderSnapshotItem(snapshot: SnapshotInfo): Promise<string> {
     const timeFormat = {
       year: "numeric" as const,
       month: "2-digit" as const,
@@ -39,11 +39,9 @@ export abstract class BaseSnapshotRoute {
     };
     const formattedTime = formatDate(new Date(snapshot.timestamp), timeFormat);
 
-    // スナップショット描画判定
-    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
-    const isDrawing =
-      tileOverlay?.templateManager?.isSnapshotDrawing(snapshot.fullKey) ||
-      false;
+    // スナップショット描画判定（TimeTravelStorageに移管）
+    const { TimeTravelStorage } = await import('../storage');
+    const isDrawing = await TimeTravelStorage.isSnapshotDrawing(snapshot.fullKey);
 
     return `
       <div class="border-b wps-snapshot-item cursor-pointer hover:bg-gray-50" data-snapshot-key="${

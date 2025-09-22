@@ -1,4 +1,5 @@
 import { TimeTravelRouter } from "../router";
+import { TimeTravelStorage } from "../storage";
 import { t } from "../../../i18n/manager";
 import { ImageInspector } from "../../../components/image-inspector";
 import { Toast } from "../../../components/toast";
@@ -48,7 +49,7 @@ export class SnapshotDetailRoute {
 
     this.setupEvents(container);
     this.loadSnapshot(selectedSnapshot.fullKey);
-    this.updateReturnCurrentButton(selectedSnapshot.fullKey);
+    this.updateReturnCurrentButton(selectedSnapshot.fullKey); // async呼び出しは非同期
   }
 
   private setupEvents(container: HTMLElement): void {
@@ -122,25 +123,23 @@ export class SnapshotDetailRoute {
 
     const tileX = parseInt(fullKey.split("_")[3]);
     const tileY = parseInt(fullKey.split("_")[4]);
-    const imageKey = `snapshot_${fullKey}`;
 
     const uint8Array = new Uint8Array(result[fullKey]);
     const blob = new Blob([uint8Array], { type: "image/png" });
     const file = new File([blob], "snapshot.png", { type: "image/png" });
 
-    // toggle実行
-    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
-    const isDrawing = await tileOverlay.templateManager.drawSnapshotOnTile(
+    // TimeTravelStorage.drawSnapshotOnTile使用
+    const isDrawing = await TimeTravelStorage.drawSnapshotOnTile(
       tileX,
       tileY,
       file,
-      imageKey
+      fullKey
     );
 
     const timeTravelUI = (window as any).wplaceStudio?.timeTravel?.ui;
     if (timeTravelUI) timeTravelUI.closeModal();
 
-    this.updateReturnCurrentButton(fullKey);
+    await this.updateReturnCurrentButton(fullKey);
     Toast.success(
       isDrawing ? "Snapshot drawn successfully" : "Snapshot removed"
     );
@@ -170,14 +169,8 @@ export class SnapshotDetailRoute {
     }, "image/png");
   }
 
-  private updateReturnCurrentButton(fullKey: string): void {
-    const tileX = parseInt(fullKey.split("_")[3]);
-    const tileY = parseInt(fullKey.split("_")[4]);
-    const imageKey = `snapshot_${fullKey}`;
-
-    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
-    const isDrawing =
-      tileOverlay?.templateManager?.isDrawingOnTile(tileX, tileY) || false;
+  private async updateReturnCurrentButton(fullKey: string): Promise<void> {
+    const isDrawing = await TimeTravelStorage.isSnapshotDrawing(fullKey);
 
     const returnBtn = document.querySelector("#wps-return-current-btn");
     if (!returnBtn) throw new Error("Return button not found");
@@ -188,14 +181,16 @@ export class SnapshotDetailRoute {
     }
   }
 
-  private returnToCurrent(fullKey: string): void {
-    const imageKey = `snapshot_${fullKey}`;
-    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
+  private async returnToCurrent(fullKey: string): Promise<void> {
+    const tileX = parseInt(fullKey.split("_")[3]);
+    const tileY = parseInt(fullKey.split("_")[4]);
+    const file = new File([], "placeholder");
 
-    tileOverlay?.templateManager?.removeTemplateByKey(imageKey);
+    // TimeTravelStorage経由でOFFに切り替え（結果的に削除される）
+    await TimeTravelStorage.drawSnapshotOnTile(tileX, tileY, file, fullKey);
     Toast.success("Returned to current state");
 
     // ボタン非表示
-    this.updateReturnCurrentButton(fullKey);
+    await this.updateReturnCurrentButton(fullKey);
   }
 }

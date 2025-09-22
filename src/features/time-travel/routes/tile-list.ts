@@ -60,9 +60,10 @@ export class TileListRoute {
         if (tiles.length === 0) {
           listContainer.innerHTML = `<div class="text-sm text-gray-500 text-center p-4">${t`${"no_items"}`}</div>`;
         } else {
-          listContainer.innerHTML = tiles
-            .map((tile) => this.renderTileItem(tile, tileNames))
-            .join("");
+          const renderedTiles = await Promise.all(
+            tiles.map((tile) => this.renderTileItem(tile, tileNames))
+          );
+          listContainer.innerHTML = renderedTiles.join("");
         }
       }
     } catch (error) {
@@ -74,16 +75,14 @@ export class TileListRoute {
     }
   }
 
-  private renderTileItem(
+  private async renderTileItem(
     tile: TileSnapshotInfo,
     tileNames: Map<string, string>
-  ): string {
-    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
-    const snapshotDrawing =
-      tileOverlay?.templateManager?.findSnapshotDrawingInTile(
-        tile.tileX,
-        tile.tileY
-      );
+  ): Promise<string> {
+    const activeSnapshot = await TimeTravelStorage.getActiveSnapshotForTile(
+      tile.tileX,
+      tile.tileY
+    );
 
     const nameKey = `${tile.tileX}_${tile.tileY}`;
     const tileName = tileNames.get(nameKey);
@@ -98,7 +97,7 @@ export class TileListRoute {
             <div class="flex items-center gap-2">
               <span class="font-medium text-base">${displayName}</span>
               ${
-                snapshotDrawing.isTemplateActive
+                activeSnapshot
                   ? `
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 text-green-500">
                   <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
