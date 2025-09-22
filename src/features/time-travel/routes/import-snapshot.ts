@@ -19,8 +19,8 @@ export class ImportSnapshotRoute {
 
     container.innerHTML = t`
       <div class="p-4" style="display: flex; flex-direction: column; gap: 16px;">
-        <div class="border-2 border-dashed border-gray-300 rounded p-4">
-          <div id="import-dropzone" style="max-height: 30vh; overflow: auto;"></div>
+        <div class="border-2 border-dashed border-gray-300 rounded">
+          <div id="import-dropzone" style="max-height: 30vh; overflow: auto; padding: 1.5rem"></div>
         </div>
         
         <div class="grid grid-cols-2 gap-4">
@@ -64,15 +64,31 @@ export class ImportSnapshotRoute {
   }
 
   private parseFilenameCoordinates(filename: string): void {
-    const match = filename.match(/^(\d+)-(\d+)\.[^.]+$/);
+    // 対応形式: 1791-908.png, 1791-908-1758516204724.png, 1791-908-1758516204724.snapshot.png
+    const match = filename.match(
+      /^(\d+)-(\d+)(?:-(\d+))?(?:\.snapshot)?\.[^.]+$/
+    );
     if (match) {
       const tileX = match[1];
       const tileY = match[2];
+      const timestamp = match[3]; // オプショナル
 
       (document.querySelector("#tile-x-input") as HTMLInputElement).value =
         tileX;
       (document.querySelector("#tile-y-input") as HTMLInputElement).value =
         tileY;
+
+      // timestampがある場合はdatetimeフィールドにset
+      if (timestamp) {
+        const date = new Date(parseInt(timestamp));
+        const datetimeValue = new Date(
+          date.getTime() - date.getTimezoneOffset() * 60000
+        )
+          .toISOString()
+          .slice(0, 16);
+        (document.querySelector("#datetime-input") as HTMLInputElement).value =
+          datetimeValue;
+      }
 
       this.updateImportButton();
     }
