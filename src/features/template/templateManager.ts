@@ -8,7 +8,6 @@ interface TemplateInstance {
 }
 
 /** 最小化されたTemplateManager - 画像表示機能のみ
- * WPlace Studio用に簡略化
  */
 export class TemplateManager {
   public tileSize: number;
@@ -94,8 +93,9 @@ export class TemplateManager {
     context.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
 
     // 全テンプレート描画（配列順序で後勝ち）
-    const colorFilter = (window as any).colorFilterManager as ColorFilterManager;
-    
+    const colorFilter = (window as any)
+      .colorFilterManager as ColorFilterManager;
+
     for (const { tileKey, template } of allMatchingTiles) {
       const coords = tileKey.split(",");
       const templateBitmap = template.chunked?.[tileKey];

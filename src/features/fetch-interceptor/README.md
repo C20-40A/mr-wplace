@@ -1,4 +1,4 @@
-# WPlace Studio - Fetch Interceptor
+# Fetch Interceptor
 
 WPlace のタイル画像リクエストをキャッチするシンプルな fetch ハイジャック
 

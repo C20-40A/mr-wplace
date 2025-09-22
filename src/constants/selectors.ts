@@ -24,6 +24,39 @@ export const findOpacityContainer = (): Element | null => {
   return newContainer;
 };
 
+export const findNextLevelBadgeContainer = (): Element | null => {
+  // 1. profile dropdown後のbutton群container探索
+  const buttonContainer = document.querySelector(
+    ".absolute.right-2.top-2.z-30 > .flex.flex-col.gap-4.items-center > .flex.flex-col.items-center.gap-3"
+  );
+  if (buttonContainer) return buttonContainer;
+
+  // 2. dropdown基準でbutton群探索
+  const dropdown = document.querySelector(".dropdown");
+  if (dropdown) {
+    const parentContainer = dropdown.closest(
+      ".flex.flex-col.gap-4.items-center"
+    );
+    if (parentContainer) {
+      const buttonContainer = parentContainer.querySelector(
+        ".flex.flex-col.items-center.gap-3"
+      );
+      if (buttonContainer) return buttonContainer;
+    }
+  }
+
+  // 3. indicator基準でbutton群探索
+  const indicator = document.querySelector(".indicator");
+  if (indicator) {
+    const buttonContainer = indicator.closest(
+      ".flex.flex-col.items-center.gap-3"
+    );
+    if (buttonContainer) return buttonContainer;
+  }
+
+  return null;
+};
+
 export const findPositionModal = (): Element | null => {
   // 1. classのstyleで検索
   const positionModal = document.querySelector(
