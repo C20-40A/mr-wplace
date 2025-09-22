@@ -42,8 +42,8 @@ export class TimeTravel {
     this.init();
 
     // グローバルアクセス用（既存パターンに倣う）
-    (window as any).wplaceStudio = (window as any).wplaceStudio || {};
-    (window as any).wplaceStudio.timeTravel = {
+    window.mrWplace = window.mrWplace || {};
+    window.mrWplace.timeTravel = {
       ui: this.ui,
       router: this.router,
     };

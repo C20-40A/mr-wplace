@@ -38,7 +38,7 @@ Router<T> + HeaderManager → i18nキーマッピング → 自動ヘッダー�
 
 ```
 src/
-├── content.ts                    # main entry: WPlaceStudio class
+├── content.ts                    # main entry: mrWplace class
 ├── features/
 │   ├── tile-overlay/             # TileOverlay (TemplateManager wrapper)
 │   ├── gallery/                  # ギャラリー3ルートシステム

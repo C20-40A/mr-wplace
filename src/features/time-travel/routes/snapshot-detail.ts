@@ -136,7 +136,7 @@ export class SnapshotDetailRoute {
       fullKey
     );
 
-    const timeTravelUI = (window as any).wplaceStudio?.timeTravel?.ui;
+    const timeTravelUI = window.mrWplace?.timeTravel?.ui;
     if (timeTravelUI) timeTravelUI.closeModal();
 
     await this.updateReturnCurrentButton(fullKey);

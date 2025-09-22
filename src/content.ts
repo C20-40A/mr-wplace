@@ -15,7 +15,7 @@ import { NextLevelBadge } from "./features/next-level-badge";
 import { WPlaceUserData } from "./types/user-data";
 import { TimeTravelStorage } from "./features/time-travel/storage";
 
-const runWPlaceStudio = async (): Promise<void> => {
+const runmrWplace = async (): Promise<void> => {
   // Chrome拡張機能のストレージAPIが利用可能か確認
   if (typeof chrome === "undefined" || !chrome.storage)
     throw new Error("Chrome storage API is not available");
@@ -50,7 +50,7 @@ const runWPlaceStudio = async (): Promise<void> => {
   });
 
   // Global access for ImageProcessor and Gallery
-  (window as any).wplaceStudio = {
+  window.mrWplace = {
     gallery,
     tileOverlay,
     favorites,
@@ -63,7 +63,7 @@ const runWPlaceStudio = async (): Promise<void> => {
   };
 
   // ColorFilterManager 直接登録（TemplateManagerからアクセス用）
-  (window as any).colorFilterManager = colorFilterManager;
+  window.colorFilterManager = colorFilterManager;
 
   // Listen for snapshot tmp save messages from inject.js
   window.addEventListener("message", async (event) => {
@@ -91,7 +91,7 @@ chrome.runtime.onMessage.addListener(async (message) => {
 });
 
 // 実行
-runWPlaceStudio().catch((error) => {
+runmrWplace().catch((error) => {
   console.error("🧑‍🎨: Failed to initialize", error);
   Toast.error(`initialization error: ${error.message}`);
 });

@@ -51,7 +51,7 @@ export class Drawing {
   ): Promise<void> {
     console.log("📍 Drawing at:", lat, lng, "Image:", imageItem.key);
 
-    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
+    const tileOverlay = window.mrWplace?.tileOverlay;
     if (!tileOverlay) throw new Error("TileOverlay not found");
 
     await tileOverlay.drawImageAt(lat, lng, imageItem);

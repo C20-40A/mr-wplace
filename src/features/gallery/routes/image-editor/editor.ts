@@ -124,12 +124,12 @@ export class ImageProcessor {
         await galleryStorage.save(galleryItem);
         console.log(t`${"saved_to_gallery"}`);
 
-        if ((window as any).wplaceStudio?.imageEditor) {
-          (window as any).wplaceStudio.imageEditor.closeModal();
+        if (window.mrWplace?.imageEditor) {
+          window.mrWplace.imageEditor.closeModal();
         }
 
-        if ((window as any).wplaceStudio?.gallery) {
-          (window as any).wplaceStudio.gallery.show();
+        if (window.mrWplace?.gallery) {
+          window.mrWplace.gallery.show();
         }
       } catch (error) {
         console.error("Failed to save to gallery:", error);

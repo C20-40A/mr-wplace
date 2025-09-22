@@ -10,7 +10,7 @@ export class GalleryImageActions {
    * 描画ON/OFFトグル
    */
   static async toggleDrawState(key: string): Promise<boolean> {
-    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
+    const tileOverlay = window.mrWplace?.tileOverlay;
     if (!tileOverlay) {
       throw new Error("TileOverlay not available");
     }
