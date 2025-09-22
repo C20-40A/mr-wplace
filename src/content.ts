@@ -10,6 +10,7 @@ import { TileSnapshot } from "./features/time-travel/utils/tile-snapshot";
 import { TimeTravel } from "./features/time-travel";
 import { DrawingLoader } from "./features/drawing-loader";
 import { ColorFilter } from "./features/color-filter";
+import { ColorFilterManager } from "./utils/color-filter-manager";
 
 const runWPlaceStudio = async (): Promise<void> => {
   // Chrome拡張機能のストレージAPIが利用可能か確認
@@ -30,6 +31,10 @@ const runWPlaceStudio = async (): Promise<void> => {
   const timeTravel = new TimeTravel();
   const drawingLoader = new DrawingLoader();
   const colorFilter = new ColorFilter();
+  const colorFilterManager = new ColorFilterManager();
+  
+  // ColorFilterManager初期化完了を待つ
+  await colorFilterManager.init();
 
   // GalleryとTileOverlayの連携設定
   gallery.setDrawToggleCallback(async (imageKey: string) => {
@@ -47,6 +52,9 @@ const runWPlaceStudio = async (): Promise<void> => {
     drawingLoader,
     colorFilter,
   };
+  
+  // ColorFilterManager 直接登録（TemplateManagerからアクセス用）
+  (window as any).colorFilterManager = colorFilterManager;
 
   // Listen for snapshot tmp save messages from inject.js
   window.addEventListener("message", async (event) => {
