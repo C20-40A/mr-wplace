@@ -58,7 +58,8 @@ export const esTranslations = {
   save_current_snapshot: "Guardar Instantánea Actual",
   snapshot_detail: "Detalle de Instantánea",
   return_to_current: "Volver a Actual",
-  enter_snapshot_name: "Introduce el nombre de la instantánea (vacío para marca de tiempo):",
+  enter_snapshot_name:
+    "Introduce el nombre de la instantánea (vacío para marca de tiempo):",
   enter_tile_name: "Introduce el nombre del azulejo (vacío para coordenadas):",
 
   // Image Editor
@@ -106,4 +107,7 @@ export const esTranslations = {
 
   // popup専用
   buy_me_coffee: "Cómprame un café",
+
+  // Color Filter
+  color_filter: "Filtro de Color",
 };

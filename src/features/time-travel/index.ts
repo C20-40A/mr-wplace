@@ -60,7 +60,7 @@ export class TimeTravel {
         id: "timetravel-btn",
         getTargetElement: findPositionModal,
         createElement: (container) => {
-          const button = createTimeTravelButton(container);
+          const button = createTimeTravelButton();
           button.id = "timetravel-btn"; // 重複チェック用ID設定
           button.addEventListener("click", () => this.showCurrentPosition());
           container.prepend(button);

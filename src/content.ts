@@ -9,6 +9,7 @@ import { Drawing } from "./features/drawing";
 import { TileSnapshot } from "./features/time-travel/utils/tile-snapshot";
 import { TimeTravel } from "./features/time-travel";
 import { DrawingLoader } from "./features/drawing-loader";
+import { ColorFilter } from "./features/color-filter";
 
 const runWPlaceStudio = async (): Promise<void> => {
   // Chrome拡張機能のストレージAPIが利用可能か確認
@@ -28,6 +29,7 @@ const runWPlaceStudio = async (): Promise<void> => {
   const tileSnapshot = new TileSnapshot();
   const timeTravel = new TimeTravel();
   const drawingLoader = new DrawingLoader();
+  const colorFilter = new ColorFilter();
 
   // GalleryとTileOverlayの連携設定
   gallery.setDrawToggleCallback(async (imageKey: string) => {
@@ -43,6 +45,7 @@ const runWPlaceStudio = async (): Promise<void> => {
     tileSnapshot,
     timeTravel,
     drawingLoader,
+    colorFilter,
   };
 
   // Listen for snapshot tmp save messages from inject.js
@@ -56,7 +59,7 @@ const runWPlaceStudio = async (): Promise<void> => {
 
 // 言語切替メッセージリスナー
 chrome.runtime.onMessage.addListener(async (message) => {
-  if (message.type === 'LOCALE_CHANGED') {
+  if (message.type === "LOCALE_CHANGED") {
     // i18nマネージャーの状態を更新
     await I18nManager.init(message.locale);
   }

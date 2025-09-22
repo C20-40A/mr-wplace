@@ -106,4 +106,7 @@ export const ptTranslations = {
 
   // popup専用
   buy_me_coffee: "Me pague um café",
+
+  // Color Filter
+  color_filter: "Filtro de Cor",
 };
