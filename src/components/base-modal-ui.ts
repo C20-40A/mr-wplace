@@ -9,8 +9,8 @@ export interface ModalConfig {
 /**
  * Modal UI統一基盤クラス
  */
-export abstract class BaseModalUI<T extends Router<string>> {
-  protected modalElements: ModalElements;
+export abstract class BaseModalUI<T extends Router<any>> {
+  protected modalElements!: ModalElements;
   protected router: T;
 
   constructor(router: T) {
