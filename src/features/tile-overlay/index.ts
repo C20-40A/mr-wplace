@@ -9,11 +9,13 @@ export class TileOverlay {
   constructor() {
     this.templateManager = new TemplateManager();
     this.galleryStorage = new GalleryStorage();
-    this.init();
   }
 
-  private init(): void {
+  private async init(): Promise<void> {
     this.setupTileProcessing();
+    await this.restoreAllDrawnImages();
+    
+    // TimeTravel画像復元を削除: restoreImagesOnTile()で処理
   }
 
   private setupTileProcessing(): void {
@@ -150,8 +152,8 @@ export class TileOverlay {
     try {
       // clearAllTemplates()削除: 他タイルのTemplateInstance保持
 
+      // 1. Gallery画像復元
       const items = await this.galleryStorage.getAll();
-
       const enabledItems = items.filter((item) => {
         const hasPosition = !!item.drawPosition;
         const isEnabled = item.drawEnabled;
@@ -161,10 +163,32 @@ export class TileOverlay {
         return isEnabled && hasPosition && matchesTile;
       });
 
-      if (enabledItems.length === 0) return;
-
       for (const item of enabledItems) {
         await this.restoreImageOnTile(item);
+      }
+      
+      // 2. TimeTravel画像復元
+      const { TimeTravelStorage } = await import('../time-travel/storage');
+      const activeSnapshot = await TimeTravelStorage.getActiveSnapshotForTile(tileX, tileY);
+      
+      if (activeSnapshot) {
+        // スナップショットデータ取得
+        const snapshotData = await chrome.storage.local.get([activeSnapshot.fullKey]);
+        const rawData = snapshotData[activeSnapshot.fullKey];
+        
+        if (rawData) {
+          // Uint8Array → File変換
+          const uint8Array = new Uint8Array(rawData);
+          const blob = new Blob([uint8Array], { type: "image/png" });
+          const file = new File([blob], "snapshot.png", { type: "image/png" });
+          
+          const imageKey = `snapshot_${activeSnapshot.fullKey}`;
+          await this.templateManager.createTemplate(
+            file,
+            [tileX, tileY, 0, 0],
+            imageKey
+          );
+        }
       }
     } catch (error) {
       console.error("Failed to restore images:", error);
@@ -195,6 +219,24 @@ export class TileOverlay {
     this.templateManager.toggleDrawEnabled(imageKey);
 
     return updatedItem.drawEnabled;
+  }
+
+  /**
+   * ブラウザ再起動時の全描画状態復元
+   */
+  private async restoreAllDrawnImages(): Promise<void> {
+    console.log("🧑‍🎨 : Restoring all drawn images from storage");
+    
+    const items = await this.galleryStorage.getAll();
+    const drawnItems = items.filter(item => item.drawEnabled && item.drawPosition);
+    
+    console.log(`🧑‍🎨 : Found ${drawnItems.length} drawn images to restore`);
+    
+    for (const item of drawnItems) {
+      await this.restoreImageOnTile(item);
+    }
+    
+    console.log("🧑‍🎨 : All drawn images restored");
   }
 
   /**

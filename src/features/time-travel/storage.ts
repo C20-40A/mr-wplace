@@ -19,8 +19,16 @@ interface SnapshotIndex {
   lastUpdated: number;
 }
 
+export interface SnapshotDrawState {
+  fullKey: string;
+  tileX: number;
+  tileY: number;
+  drawEnabled: boolean;
+}
+
 export class TimeTravelStorage {
   private static readonly INDEX_KEY = "tile_snapshots_index";
+  private static readonly DRAW_STATES_KEY = "timetravel_draw_states";
 
   // 全スナップショット保有タイル一覧取得（インデックス最適化版）
   static async getAllTilesWithSnapshots(): Promise<TileSnapshotInfo[]> {
@@ -200,5 +208,130 @@ export class TimeTravelStorage {
     index.lastUpdated = Date.now();
 
     await chrome.storage.local.set({ [this.INDEX_KEY]: index });
+  }
+
+  // 描画状態管理
+  static async getDrawStates(): Promise<SnapshotDrawState[]> {
+    const result = await chrome.storage.local.get([this.DRAW_STATES_KEY]);
+    return result[this.DRAW_STATES_KEY] || [];
+  }
+
+  static async setDrawState(drawState: SnapshotDrawState): Promise<void> {
+    const states = await this.getDrawStates();
+    const index = states.findIndex(s => s.fullKey === drawState.fullKey);
+    
+    if (index >= 0) {
+      states[index] = drawState;
+    } else {
+      states.push(drawState);
+    }
+    
+    await chrome.storage.local.set({ [this.DRAW_STATES_KEY]: states });
+  }
+
+  static async getActiveSnapshotForTile(tileX: number, tileY: number): Promise<SnapshotDrawState | null> {
+    const states = await this.getDrawStates();
+    return states.find(s => s.tileX === tileX && s.tileY === tileY && s.drawEnabled) || null;
+  }
+
+  static async toggleDrawState(fullKey: string): Promise<boolean> {
+    const states = await this.getDrawStates();
+    const state = states.find(s => s.fullKey === fullKey);
+    
+    if (!state) return false;
+    
+    state.drawEnabled = !state.drawEnabled;
+    await chrome.storage.local.set({ [this.DRAW_STATES_KEY]: states });
+    return state.drawEnabled;
+  }
+
+  static async restoreDrawStates(): Promise<void> {
+    console.log("🧑‍🎨 : Restoring TimeTravel draw states");
+    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
+    if (!tileOverlay?.templateManager) return;
+
+    const states = await this.getDrawStates();
+    const enabledStates = states.filter(s => s.drawEnabled);
+
+    for (const state of enabledStates) {
+      const snapshotData = await chrome.storage.local.get([state.fullKey]);
+      const rawData = snapshotData[state.fullKey];
+      if (rawData) {
+        // Uint8Array → File変換
+        const uint8Array = new Uint8Array(rawData);
+        const blob = new Blob([uint8Array], { type: "image/png" });
+        const file = new File([blob], "snapshot.png", { type: "image/png" });
+        
+        const imageKey = `snapshot_${state.fullKey}`;
+        await tileOverlay.templateManager.createTemplate(
+          file, 
+          [state.tileX, state.tileY, 0, 0], 
+          imageKey
+        );
+      }
+    }
+  }
+
+  static async isSnapshotDrawing(fullKey: string): Promise<boolean> {
+    const states = await this.getDrawStates();
+    const state = states.find(s => s.fullKey === fullKey);
+    return state?.drawEnabled || false;
+  }
+
+  static async drawSnapshotOnTile(
+    tileX: number, 
+    tileY: number, 
+    file: File, 
+    fullKey: string
+  ): Promise<boolean> {
+    // 1. 既存の描画状態をチェックしてトグル
+    const currentState = await this.getActiveSnapshotForTile(tileX, tileY);
+    let newDrawEnabled: boolean;
+    
+    if (currentState && currentState.fullKey === fullKey) {
+      // 同じスナップショットが既に描画中 → OFF
+      newDrawEnabled = false;
+    } else {
+      // 別のスナップショットが描画中 OR 何も描画されていない → ON
+      if (currentState) {
+        // 既存の描画を削除
+        const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
+        const oldImageKey = `snapshot_${currentState.fullKey}`;
+        tileOverlay?.templateManager?.removeTemplateByKey(oldImageKey);
+        
+        // 古い状態をOFFに
+        await this.setDrawState({
+          ...currentState,
+          drawEnabled: false
+        });
+      }
+      newDrawEnabled = true;
+    }
+    
+    // 2. 新しい描画状態を設定
+    await this.setDrawState({
+      fullKey,
+      tileX,
+      tileY,
+      drawEnabled: newDrawEnabled
+    });
+    
+    // 3. TemplateManagerに反映
+    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
+    const imageKey = `snapshot_${fullKey}`;
+    
+    if (newDrawEnabled) {
+      // 描画ON: Template作成
+      await tileOverlay?.templateManager?.createTemplate(
+        file,
+        [tileX, tileY, 0, 0],
+        imageKey
+      );
+    } else {
+      // 描画OFF: Template削除
+      tileOverlay?.templateManager?.removeTemplateByKey(imageKey);
+    }
+    
+    return newDrawEnabled;
   }
 }

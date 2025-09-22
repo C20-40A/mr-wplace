@@ -184,9 +184,10 @@ export class SnapshotRoute extends BaseSnapshotRoute {
       if (snapshots.length === 0) {
         listContainer.innerHTML = `<div class="text-sm text-gray-500 text-center p-4">${t`${"no_items"}`}</div>`;
       } else {
-        listContainer.innerHTML = snapshots
-          .map((snapshot) => this.renderSnapshotItem(snapshot))
-          .join("");
+        const renderedItems = await Promise.all(
+          snapshots.map((snapshot) => this.renderSnapshotItem(snapshot))
+        );
+        listContainer.innerHTML = renderedItems.join("");
       }
     }
   }

@@ -2,6 +2,7 @@
 
 # マイナー
 
+- ui.ts 系は functional のほうがいいかもしれない
 - フルチャージまでの時間・notification
 - ギャラリー画像＋位置を export して、複数人で編集できる機能
 - 入力文字を描画したい
@@ -17,6 +18,10 @@
 - 「持っている色のみ」の filter
 - 画像読み込み時の color filter
 - filter 適用中に描画中モーダル表示
+
+# DONE v1.2.2
+
+- タイルの描画状態は、storage 保存にする
 
 # DONE v1.2.1
 
