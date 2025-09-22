@@ -11,7 +11,6 @@
 - 逆ジオあってもいいかも
 - お気に入りモーダルを整理可能にする
 - ギャラリーから、画像に移動したとき、即座に描画されない？
-- selector 失敗したとき用の、予備の UI
 - ギャラリーから画像を削除したとき、空のアイテムが残る
 - (window as any).wplaceStudio?.tileOverlay;のような方式は微妙
 - 文字入力モーダルを初期で選択状態に変更
@@ -29,6 +28,7 @@
   - "#map"に`__click` はなかった。 getEventListeners($0) で調べることは可能
   - document.querySelector(".maplibregl-canvas")
 - goTo は map のインスタンス使えるかも
+- selector 失敗したとき用の、予備の UI
 
 # DONE v1.1.0
 
