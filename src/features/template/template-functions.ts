@@ -1,5 +1,4 @@
 import { uint8ToBase64 } from "./utils";
-import { formatDate } from "../../i18n/manager";
 
 /** テンプレート処理結果の型定義 */
 export interface TemplateProcessingResult {

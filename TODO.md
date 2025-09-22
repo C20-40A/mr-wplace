@@ -8,7 +8,6 @@
 - skirk marble 相当の機能
   - 描画画像のカラーフィルター
 - 入力文字を描画したい
-- goTo は map のインスタンス使えるかも
 - 逆ジオあってもいいかも
 - お気に入りモーダルを整理可能にする
 - ギャラリーから、画像に移動したとき、即座に描画されない？
@@ -29,6 +28,7 @@
   - MyLocation ボタンのイベントリスナーからたどることは可能。（　 document.querySelector("div.absolute.bottom-3.right-3.z-30").childNodes[0].\_\_click[3].v 　）
   - "#map"に`__click` はなかった。 getEventListeners($0) で調べることは可能
   - document.querySelector(".maplibregl-canvas")
+- goTo は map のインスタンス使えるかも
 
 # DONE v1.1.0
 

@@ -1,4 +1,4 @@
-import { availableColors, paidColors } from "../../../../constants/colors";
+import { colorpalette } from "../../../../constants/colors";
 import { t } from "../../../../i18n/manager";
 import { ImageInspector } from "../../../../components/image-inspector";
 
@@ -38,7 +38,7 @@ export class ImageProcessor {
       this.imageInspector.destroy();
       this.imageInspector = null;
     }
-    
+
     this.originalImage = null;
     this.colorConvertedCanvas = null;
     this.scaledCanvas = null;
@@ -50,9 +50,13 @@ export class ImageProcessor {
     const dropzone = this.container.querySelector("#wps-dropzone");
     const imageDisplay = this.container.querySelector("#wps-image-display");
     const controls = this.container.querySelector("#wps-controls");
-    const slider = this.container.querySelector("#wps-scale-slider") as HTMLInputElement;
+    const slider = this.container.querySelector(
+      "#wps-scale-slider"
+    ) as HTMLInputElement;
     const valueDisplay = this.container.querySelector("#wps-scale-value");
-    const paidToggle = this.container.querySelector("#wps-paid-toggle") as HTMLInputElement;
+    const paidToggle = this.container.querySelector(
+      "#wps-paid-toggle"
+    ) as HTMLInputElement;
 
     if (slider) slider.value = "1";
     if (valueDisplay) valueDisplay.textContent = "1.0";
@@ -106,19 +110,19 @@ export class ImageProcessor {
     reader.onload = async () => {
       const base64 = reader.result as string;
       const key = `gallery_${Date.now()}`;
-      
+
       try {
-        const { GalleryStorage } = await import('../../storage');
+        const { GalleryStorage } = await import("../../storage");
         const galleryStorage = new GalleryStorage();
-        
+
         const galleryItem = {
           key: key,
           timestamp: Date.now(),
-          dataUrl: base64
+          dataUrl: base64,
         };
-        
+
         await galleryStorage.save(galleryItem);
-        console.log(t`${'saved_to_gallery'}`);
+        console.log(t`${"saved_to_gallery"}`);
 
         if ((window as any).wplaceStudio?.imageEditor) {
           (window as any).wplaceStudio.imageEditor.closeModal();
@@ -128,7 +132,7 @@ export class ImageProcessor {
           (window as any).wplaceStudio.gallery.show();
         }
       } catch (error) {
-        console.error('Failed to save to gallery:', error);
+        console.error("Failed to save to gallery:", error);
       }
     };
     reader.readAsDataURL(blob);
@@ -138,7 +142,9 @@ export class ImageProcessor {
     const dropzone = this.container.querySelector("#wps-dropzone");
     const imageDisplay = this.container.querySelector("#wps-image-display");
     const controls = this.container.querySelector("#wps-controls");
-    const originalImage = this.container.querySelector("#wps-original-image") as HTMLImageElement;
+    const originalImage = this.container.querySelector(
+      "#wps-original-image"
+    ) as HTMLImageElement;
 
     if (originalImage) {
       originalImage.src = imageSrc;
@@ -146,12 +152,14 @@ export class ImageProcessor {
 
       originalImage.onload = () => {
         this.updateOriginalImageDisplay();
-        
-        const canvas = this.container.querySelector("#wps-scaled-canvas") as HTMLCanvasElement;
+
+        const canvas = this.container.querySelector(
+          "#wps-scaled-canvas"
+        ) as HTMLCanvasElement;
         if (canvas) {
           this.imageInspector = new ImageInspector(canvas);
         }
-        
+
         setTimeout(() => {
           this.convertToPalette();
         }, 50);
@@ -167,7 +175,9 @@ export class ImageProcessor {
   }
 
   private updateOriginalImageDisplay(): void {
-    const originalImage = this.container.querySelector("#wps-original-image") as HTMLImageElement;
+    const originalImage = this.container.querySelector(
+      "#wps-original-image"
+    ) as HTMLImageElement;
     if (!originalImage || !this.originalImage) return;
 
     const width = this.originalImage.naturalWidth;
@@ -187,9 +197,13 @@ export class ImageProcessor {
   private updateScaledImage(): void {
     if (!this.originalImage) return;
 
-    const canvas = this.container.querySelector("#wps-scaled-canvas") as HTMLCanvasElement;
-    const originalSizeDisplay = this.container.querySelector("#wps-original-size");
-    const currentSizeDisplay = this.container.querySelector("#wps-current-size");
+    const canvas = this.container.querySelector(
+      "#wps-scaled-canvas"
+    ) as HTMLCanvasElement;
+    const originalSizeDisplay =
+      this.container.querySelector("#wps-original-size");
+    const currentSizeDisplay =
+      this.container.querySelector("#wps-current-size");
     const ctx = canvas?.getContext("2d");
     if (!ctx) return;
 
@@ -203,12 +217,23 @@ export class ImageProcessor {
 
     ctx.imageSmoothingEnabled = false;
 
-    const sourceImage = this.isColorConverted && this.colorConvertedCanvas
-      ? this.colorConvertedCanvas
-      : this.originalImage;
+    const sourceImage =
+      this.isColorConverted && this.colorConvertedCanvas
+        ? this.colorConvertedCanvas
+        : this.originalImage;
 
     if (sourceImage instanceof HTMLCanvasElement) {
-      ctx.drawImage(sourceImage, 0, 0, originalWidth, originalHeight, 0, 0, newWidth, newHeight);
+      ctx.drawImage(
+        sourceImage,
+        0,
+        0,
+        originalWidth,
+        originalHeight,
+        0,
+        0,
+        newWidth,
+        newHeight
+      );
     } else {
       ctx.drawImage(sourceImage, 0, 0, newWidth, newHeight);
     }
@@ -221,7 +246,7 @@ export class ImageProcessor {
     }
 
     this.scaledCanvas = canvas;
-    
+
     if (this.imageInspector) {
       this.imageInspector.resetViewport();
     }
@@ -263,18 +288,18 @@ export class ImageProcessor {
     this.updateScaledImage();
   }
 
-  private findNearestColor(rgb: [number, number, number]): [number, number, number] {
+  private findNearestColor(
+    rgb: [number, number, number]
+  ): [number, number, number] {
     let minDistance = Infinity;
     let nearestColor: [number, number, number] = [0, 0, 0];
 
-    for (const color of Object.values(availableColors)) {
-      if (!this.includePaidColors) {
-        const rgbKey = `${color[0]},${color[1]},${color[2]}`;
-        if (paidColors.has(rgbKey)) {
-          continue;
-        }
+    for (const colorEntry of colorpalette) {
+      if (!this.includePaidColors && colorEntry.premium) {
+        continue;
       }
 
+      const color = colorEntry.rgb;
       const distance = Math.sqrt(
         Math.pow(rgb[0] - color[0], 2) +
           Math.pow(rgb[1] - color[1], 2) +
@@ -283,7 +308,7 @@ export class ImageProcessor {
 
       if (distance < minDistance) {
         minDistance = distance;
-        nearestColor = color as [number, number, number];
+        nearestColor = color;
       }
     }
 

@@ -1,4 +1,4 @@
-import { colorpalette } from "./utils";
+import { colorpalette } from "../../constants/colors";
 import { createTemplateTiles as createTemplateTilesFn } from "./template-functions";
 
 /** テンプレートコンストラクタパラメータ */
