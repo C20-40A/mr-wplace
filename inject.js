@@ -11,7 +11,7 @@ window.addEventListener("message", (event) => {
       window.tileProcessingQueue.delete(blobID);
     }
   }
-  
+
   // Listen for flyTo requests from content script
   if (event.data.source === "wplace-studio-flyto") {
     const { lat, lng, zoom } = event.data;
@@ -48,8 +48,33 @@ mapObserver.observe(document.body, {
 });
 
 window.fetch = async function (...args) {
+  console.log("fetch", args);
   const requestInfo = args[0];
-  const url = requestInfo.url || "";
+  const url =
+    typeof requestInfo === "string" ? requestInfo : requestInfo.url || "";
+
+  // Intercept /me endpoint for user data
+  if (url.includes("backend.wplace.live") && url.includes("/me")) {
+    console.log("🧑‍🎨: Intercepting /me endpoint:", url);
+    const response = await originalFetch.apply(this, args);
+    const clonedResponse = response.clone();
+
+    try {
+      const jsonData = await clonedResponse.json();
+      console.log("🧑‍🎨: Sending user data:", jsonData);
+      window.postMessage(
+        {
+          source: "wplace-studio-userdata",
+          userData: jsonData,
+        },
+        "*"
+      );
+    } catch (error) {
+      console.error("Failed to parse /me response:", error);
+    }
+
+    return response;
+  }
 
   // Intercept all tile requests
   if (

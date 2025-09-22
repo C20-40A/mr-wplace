@@ -14,6 +14,10 @@
 - 文字入力モーダルを初期で選択状態に変更
 - Transparent の色が、既存の色を上書きできない
 - UI の描画方法を統合する
+- color filter の enable all/ disable all を i18n
+- 「持っている色のみ」の filter
+- 画像読み込み時の color filter
+- filter 適用中に描画中モーダル表示
 
 # DONE v1.2.1
 

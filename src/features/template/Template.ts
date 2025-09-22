@@ -57,8 +57,6 @@ export class Template {
 
     const keyOther = "other";
     this.allowedColorsSet.add(keyOther); // Special "other" key for non-palette colors
-
-    console.log("Allowed colors for template:", this.allowedColorsSet);
   }
 
   /** タイルチャンク作成（関数型実装へのラッパー）
@@ -69,7 +67,7 @@ export class Template {
     templateTiles: Record<string, ImageBitmap>;
     templateTilesBuffers: Record<string, string>;
   }> {
-    console.log("Template coordinates:", this.coords);
+    // console.log("Template coordinates:", this.coords);
 
     if (!this.file || !this.coords)
       throw new Error("Template file and coordinates are required");

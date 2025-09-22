@@ -11,6 +11,8 @@ import { TimeTravel } from "./features/time-travel";
 import { DrawingLoader } from "./features/drawing-loader";
 import { ColorFilter } from "./features/color-filter";
 import { ColorFilterManager } from "./utils/color-filter-manager";
+import { NextLevelBadge } from "./features/next-level-badge";
+import { WPlaceUserData } from "./types/user-data";
 
 const runWPlaceStudio = async (): Promise<void> => {
   // Chrome拡張機能のストレージAPIが利用可能か確認
@@ -32,9 +34,13 @@ const runWPlaceStudio = async (): Promise<void> => {
   const drawingLoader = new DrawingLoader();
   const colorFilter = new ColorFilter();
   const colorFilterManager = new ColorFilterManager();
-  
+  const nextLevelBadge = new NextLevelBadge();
+
   // ColorFilterManager初期化完了を待つ
   await colorFilterManager.init();
+
+  // NextLevelBadge初期化
+  nextLevelBadge.init();
 
   // GalleryとTileOverlayの連携設定
   gallery.setDrawToggleCallback(async (imageKey: string) => {
@@ -51,8 +57,9 @@ const runWPlaceStudio = async (): Promise<void> => {
     timeTravel,
     drawingLoader,
     colorFilter,
+    nextLevelBadge,
   };
-  
+
   // ColorFilterManager 直接登録（TemplateManagerからアクセス用）
   (window as any).colorFilterManager = colorFilterManager;
 
@@ -61,6 +68,14 @@ const runWPlaceStudio = async (): Promise<void> => {
     if (event.data.source === "wplace-studio-snapshot-tmp") {
       const { tileBlob, tileX, tileY } = event.data;
       await tileSnapshot.saveTmpTile(tileX, tileY, tileBlob);
+    }
+
+    // Listen for user data from inject.js
+    if (event.data.source === "wplace-studio-userdata") {
+      console.log("🧑‍🎨: Received user data:", event.data.userData);
+      const userData = event.data.userData as WPlaceUserData;
+
+      nextLevelBadge.updateFromUserData(userData);
     }
   });
 };
@@ -75,6 +90,6 @@ chrome.runtime.onMessage.addListener(async (message) => {
 
 // 実行
 runWPlaceStudio().catch((error) => {
-  console.error("Failed to initialize WPlace Studio:", error);
-  Toast.error(`WPlace Studio initialization error: ${error.message}`);
+  console.error("🧑‍🎨: Failed to initialize", error);
+  Toast.error(`initialization error: ${error.message}`);
 });
