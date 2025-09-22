@@ -4,9 +4,7 @@ let colorPalette: ColorPalette | null = null;
 
 export const renderColorFilters = (container: HTMLElement): void => {
   // 既存インスタンス破棄
-  if (colorPalette) {
-    colorPalette.destroy();
-  }
+  if (colorPalette) colorPalette.destroy();
 
   // ColorFilterManagerの現在状態取得
   const colorFilterManager = (window as any).colorFilterManager;
@@ -21,6 +19,6 @@ export const renderColorFilters = (container: HTMLElement): void => {
         colorFilterManager.setSelectedColors(colorIds);
       }
       console.log(`Selected color IDs:`, colorIds);
-    }
+    },
   });
 };
