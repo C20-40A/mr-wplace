@@ -1,8 +1,8 @@
 import { colorpalette } from "../constants/colors";
 
 interface ColorPaletteOptions {
-  onChange?: (colorId: number) => void;
-  selectedColorId?: number;
+  onChange?: (colorIds: number[]) => void;
+  selectedColorIds?: number[];
 }
 
 /**
@@ -12,12 +12,13 @@ interface ColorPaletteOptions {
 export class ColorPalette {
   private container: HTMLElement;
   private options: ColorPaletteOptions;
-  private selectedColorId: number | null = null;
+  private selectedColorIds: Set<number> = new Set();
 
   constructor(container: HTMLElement, options: ColorPaletteOptions = {}) {
     this.container = container;
     this.options = options;
-    this.selectedColorId = options.selectedColorId ?? null;
+    // 初期状態で全色選択
+    this.selectedColorIds = new Set(options.selectedColorIds ?? colorpalette.map(c => c.id));
     
     this.init();
   }
@@ -32,7 +33,7 @@ export class ColorPalette {
       const [r, g, b] = color.rgb;
       const backgroundColor = `rgb(${r}, ${g}, ${b})`;
       const textColor = this.getContrastTextColor(r, g, b);
-      const isSelected = this.selectedColorId === color.id;
+      const isSelected = this.selectedColorIds.has(color.id);
       const borderColor = isSelected ? '#22c55e' : '#ef4444'; // green-500 : red-500
       
       return `
@@ -46,7 +47,11 @@ export class ColorPalette {
     }).join('');
 
     this.container.innerHTML = `
-      <div class="color-palette-grid grid grid-cols-8 gap-2 p-4">
+      <div class="color-palette-controls flex gap-2 mb-4 px-4 pt-4">
+        <button class="enable-all-btn px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600">Enable All</button>
+        <button class="disable-all-btn px-3 py-1 bg-red-500 text-white rounded text-sm hover:bg-red-600">Disable All</button>
+      </div>
+      <div class="color-palette-grid grid grid-cols-8 gap-2 px-4 pb-4">
         ${paletteGrid}
       </div>
     `;
@@ -54,20 +59,54 @@ export class ColorPalette {
 
   private setupEventHandlers(): void {
     this.container.addEventListener('click', (e) => {
-      const colorItem = (e.target as HTMLElement).closest('.color-item');
+      const target = e.target as HTMLElement;
+      
+      // Enable All ボタン
+      if (target.classList.contains('enable-all-btn')) {
+        this.enableAll();
+        return;
+      }
+      
+      // Disable All ボタン
+      if (target.classList.contains('disable-all-btn')) {
+        this.disableAll();
+        return;
+      }
+      
+      // 色選択
+      const colorItem = target.closest('.color-item');
       if (!colorItem) return;
 
       const colorId = parseInt((colorItem as HTMLElement).dataset.colorId!);
-      this.selectColor(colorId);
+      this.toggleColor(colorId);
     });
   }
 
-  private selectColor(colorId: number): void {
-    this.selectedColorId = colorId;
+  private toggleColor(colorId: number): void {
+    if (this.selectedColorIds.has(colorId)) {
+      this.selectedColorIds.delete(colorId);
+    } else {
+      this.selectedColorIds.add(colorId);
+    }
     this.updateSelection();
-    
+    this.notifyChange();
+  }
+
+  private enableAll(): void {
+    this.selectedColorIds = new Set(colorpalette.map(c => c.id));
+    this.updateSelection();
+    this.notifyChange();
+  }
+
+  private disableAll(): void {
+    this.selectedColorIds.clear();
+    this.updateSelection();
+    this.notifyChange();
+  }
+
+  private notifyChange(): void {
     if (this.options.onChange) {
-      this.options.onChange(colorId);
+      this.options.onChange(Array.from(this.selectedColorIds));
     }
   }
 
@@ -75,7 +114,7 @@ export class ColorPalette {
     const colorItems = this.container.querySelectorAll('.color-item');
     colorItems.forEach((item) => {
       const itemColorId = parseInt((item as HTMLElement).dataset.colorId!);
-      const isSelected = itemColorId === this.selectedColorId;
+      const isSelected = this.selectedColorIds.has(itemColorId);
       const borderColor = isSelected ? '#22c55e' : '#ef4444';
       
       (item as HTMLElement).style.borderColor = borderColor;
@@ -88,12 +127,12 @@ export class ColorPalette {
     return luminance > 0.5 ? '#000000' : '#ffffff';
   }
 
-  getSelectedColor(): number | null {
-    return this.selectedColorId;
+  getSelectedColors(): number[] {
+    return Array.from(this.selectedColorIds);
   }
 
-  setSelectedColor(colorId: number | null): void {
-    this.selectedColorId = colorId;
+  setSelectedColors(colorIds: number[]): void {
+    this.selectedColorIds = new Set(colorIds);
     this.updateSelection();
   }
 
