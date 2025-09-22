@@ -83,10 +83,25 @@ export class ImageDropzone {
   }
 
   private handleFileSelection(file: File): void {
+    this.showSelectedFile(file);
     this.options.onFileSelected(file);
     if (this.options.autoHide) {
       this.hide();
     }
+  }
+
+  private showSelectedFile(file: File): void {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.dropzoneElement.innerHTML = `
+        <div class="text-center">
+          <img src="${e.target?.result}" class="max-w-full max-h-32 mx-auto mb-2 rounded" alt="Selected image">
+          <p class="text-sm text-gray-600">${file.name}</p>
+          <p class="text-xs text-gray-500 mt-1">クリックで変更</p>
+        </div>
+      `;
+    };
+    reader.readAsDataURL(file);
   }
 
   private setDragState(isDragging: boolean): void {

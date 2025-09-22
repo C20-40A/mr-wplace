@@ -2,8 +2,6 @@ import { TimeTravelRouter } from "../router";
 import { TimeTravelStorage, TileSnapshotInfo } from "../storage";
 import { TileNameStorage } from "../tile-name-storage";
 import { t } from "../../../i18n/manager";
-import { ImageDropzone } from "../../../components/image-dropzone";
-import { TileSnapshot } from "../utils/tile-snapshot";
 
 export class TileListRoute {
   render(container: HTMLElement, router: TimeTravelRouter): void {
@@ -29,7 +27,7 @@ export class TileListRoute {
     container
       .querySelector("#wps-import-snapshot-btn")
       ?.addEventListener("click", () => {
-        this.handleImportSnapshot();
+        router.navigate("import-snapshot");
       });
 
     // Tile list click events
@@ -74,77 +72,6 @@ export class TileListRoute {
         listContainer.innerHTML = `<div class="text-sm text-red-500 text-center p-4">Failed to load tiles</div>`;
       }
     }
-  }
-
-  private async handleImportSnapshot(): Promise<void> {
-    // Create temporary modal for file selection
-    const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-    modal.innerHTML = `
-      <div class="bg-white p-6 rounded max-w-md w-full mx-4">
-        <h3 class="text-lg font-bold mb-4">${t`${'import'}`}</h3>
-        <div id="import-dropzone" class="border-2 border-dashed border-gray-300 rounded p-4 h-40"></div>
-        <div class="mt-4 flex justify-end gap-2">
-          <button id="import-cancel" class="btn btn-sm">${t`${'cancel'}`}</button>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    const dropzoneContainer = modal.querySelector('#import-dropzone')!;
-    const imageDropzone = new ImageDropzone(dropzoneContainer as HTMLElement, {
-      onFileSelected: async (file) => {
-        try {
-          // Get tile coordinates and timestamp
-          const tileXInput = prompt('タイル座標 X:');
-          const tileYInput = prompt('タイル座標 Y:');
-          const timestampInput = prompt('タイムスタンプ (空の場合は現在時刻):', Date.now().toString());
-          
-          if (!tileXInput || !tileYInput) {
-            alert('座標の入力が必要です');
-            return;
-          }
-          
-          const tileX = parseInt(tileXInput);
-          const tileY = parseInt(tileYInput);
-          const timestamp = timestampInput ? parseInt(timestampInput) : Date.now();
-          
-          if (isNaN(tileX) || isNaN(tileY) || isNaN(timestamp)) {
-            alert('数値が正しくありません');
-            return;
-          }
-          
-          // Import snapshot
-          const tileSnapshot = new TileSnapshot();
-          await tileSnapshot.importSnapshot(file, tileX, tileY, timestamp);
-          
-          alert('インポートが完了しました');
-          document.body.removeChild(modal);
-          
-          // Reload tile list
-          const container = document.querySelector('#wps-tile-list')?.parentElement?.parentElement;
-          if (container) {
-            this.loadTileList(container as HTMLElement);
-          }
-        } catch (error) {
-          alert(`エラー: ${error.message}`);
-        }
-      },
-      autoHide: false
-    });
-    
-    // Cancel button
-    modal.querySelector('#import-cancel')?.addEventListener('click', () => {
-      document.body.removeChild(modal);
-    });
-    
-    // Close on background click
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        document.body.removeChild(modal);
-      }
-    });
   }
 
   private renderTileItem(
