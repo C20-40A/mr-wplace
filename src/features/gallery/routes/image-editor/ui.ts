@@ -1,4 +1,5 @@
 import { t } from "../../../../i18n/manager";
+import { ImageDropzone } from "../../../../components/image-dropzone";
 
 export interface ImageEditorCallbacks {
   onFileHandle: (file: File) => void;
@@ -12,6 +13,7 @@ export interface ImageEditorCallbacks {
 export class ImageEditorUI {
   private container: HTMLElement | null = null;
   private callbacks: ImageEditorCallbacks | null = null;
+  private imageDropzone: ImageDropzone | null = null;
 
   constructor() {}
 
@@ -30,7 +32,7 @@ export class ImageEditorUI {
 
     this.callbacks = callbacks;
     this.createUI();
-    this.setupImageUpload();
+    this.setupImageDropzone();
     this.setupScaleControl();
   }
 
@@ -41,16 +43,8 @@ export class ImageEditorUI {
       <a href="https://pepoafonso.github.io/color_converter_wplace/index.html" target="_blank" 
       style="position: absolute; bottom: 0.5rem; right: 0.5rem; z-index: 10; font-size: 1.5rem;"
       title="Wplace Color Converter">🎨</a>
-      <div id="wps-image-area" class="border-2 border-dashed border-gray-300 rounded-lg p-4 mb-4 min-h-80">
-        <div id="wps-dropzone" class="flex items-center justify-center h-full text-center">
-          <div>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-12 mx-auto mb-4 text-gray-400">
-              <path fill-rule="evenodd" d="M11.47 2.47a.75.75 0 011.06 0l4.5 4.5a.75.75 0 01-1.06 1.06L12.75 4.81V15a.75.75 0 01-1.5 0V4.81L8.03 8.03a.75.75 0 01-1.06-1.06l4.5-4.5zM3 15.75a.75.75 0 01.75.75v2.25A1.5 1.5 0 005.25 21h13.5a1.5 1.5 0 001.5-1.5V16.5a.75.75 0 011.5 0v2.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V16.5a.75.75 0 01.75-.75z" clip-rule="evenodd"/>
-            </svg>
-            <p class="text-gray-600 mb-2">${"drag_drop_or_click"}</p>
-            <input type="file" id="wps-file-input" accept="image/*" class="hidden">
-          </div>
-        </div>
+      <div id="wps-image-area" class="border-2 border-dashed border-gray-300 rounded-lg mb-4 min-h-80">
+        <div id="wps-dropzone-container" class="h-full p-4"></div>
         
         <div id="wps-image-display" class="hidden relative">
           <button id="wps-clear-btn" class="btn btn-xs btn-circle btn-ghost absolute -top-2 -right-2 z-10 opacity-60 hover:opacity-100" title="${"clear_image"}">
@@ -106,54 +100,15 @@ export class ImageEditorUI {
     `;
   }
 
-  private setupImageUpload(): void {
+  private setupImageDropzone(): void {
     if (!this.container || !this.callbacks) return;
 
-    const dropzone = this.container.querySelector("#wps-dropzone");
-    const fileInput = this.container.querySelector(
-      "#wps-file-input"
-    ) as HTMLInputElement;
-    const imageArea = this.container.querySelector(
-      "#wps-image-area"
-    ) as HTMLElement;
+    const dropzoneContainer = this.container.querySelector("#wps-dropzone-container") as HTMLElement;
+    if (!dropzoneContainer) return;
 
-    dropzone?.addEventListener("click", () => fileInput?.click());
-
-    dropzone?.addEventListener("dragover", (e) => {
-      const dragEvent = e as DragEvent;
-      dragEvent.preventDefault();
-      if (imageArea) {
-        imageArea.style.borderColor = "#3b82f6";
-        imageArea.style.backgroundColor = "#eff6ff";
-      }
-    });
-
-    dropzone?.addEventListener("dragleave", () => {
-      if (imageArea) {
-        imageArea.style.borderColor = "#d1d5db";
-        imageArea.style.backgroundColor = "";
-      }
-    });
-
-    dropzone?.addEventListener("drop", (e) => {
-      const dragEvent = e as DragEvent;
-      dragEvent.preventDefault();
-      if (imageArea) {
-        imageArea.style.borderColor = "#d1d5db";
-        imageArea.style.backgroundColor = "";
-      }
-
-      const files = dragEvent.dataTransfer?.files;
-      if (files && files[0]) {
-        this.callbacks?.onFileHandle(files[0]);
-      }
-    });
-
-    fileInput?.addEventListener("change", (e) => {
-      const files = (e.target as HTMLInputElement).files;
-      if (files && files[0]) {
-        this.callbacks?.onFileHandle(files[0]);
-      }
+    this.imageDropzone = new ImageDropzone(dropzoneContainer, {
+      onFileSelected: (file: File) => this.callbacks?.onFileHandle(file),
+      autoHide: true
     });
   }
 
@@ -184,6 +139,7 @@ export class ImageEditorUI {
     clearBtn?.addEventListener("click", () => {
       if (confirm(t`${"clear_image_confirm"}`)) {
         this.callbacks?.onClear();
+        this.imageDropzone?.show();
       }
     });
 
