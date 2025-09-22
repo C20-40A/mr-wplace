@@ -2,6 +2,7 @@
 
 # マイナー
 
+- Tile の import 機能
 - レベルアップまでの残りの pixel 数
 - フルチャージまでの時間・notification
 - ギャラリー画像＋位置を export して、複数人で編集できる機能
