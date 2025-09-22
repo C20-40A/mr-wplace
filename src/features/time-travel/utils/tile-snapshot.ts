@@ -102,4 +102,40 @@ export class TileSnapshot {
     const uint8Array = new Uint8Array(result[key]);
     return new Blob([uint8Array], { type: "image/png" });
   }
+
+  async importSnapshot(
+    file: File,
+    tileX: number,
+    tileY: number,
+    timestamp: number,
+    name?: string
+  ): Promise<string> {
+    // Scale down if needed
+    const processedBlob = await this.scaleDownIfNeeded(file);
+    
+    // Convert to Uint8Array
+    const arrayBuffer = await processedBlob.arrayBuffer();
+    const data = Array.from(new Uint8Array(arrayBuffer));
+    
+    // Create snapshot ID and key
+    const snapshotId = `${timestamp}_${tileX}_${tileY}`;
+    const snapshotKey = `${TileSnapshot.SNAPSHOT_PREFIX}${snapshotId}`;
+    
+    // Save to storage
+    await chrome.storage.local.set({ [snapshotKey]: data });
+    
+    // Update index
+    const { TimeTravelStorage } = await import("../storage");
+    await TimeTravelStorage.addSnapshotToIndex({
+      id: snapshotId,
+      fullKey: snapshotKey,
+      timestamp,
+      tileX,
+      tileY,
+      name,
+    });
+    
+    console.log(`Imported snapshot: ${snapshotId}`);
+    return snapshotId;
+  }
 }
