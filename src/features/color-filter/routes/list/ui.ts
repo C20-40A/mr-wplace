@@ -10,8 +10,8 @@ export const renderColorFilters = (container: HTMLElement): void => {
 
   // ColorPaletteコンポーネント表示
   colorPalette = new ColorPalette(container, {
-    onChange: (colorId) => {
-      console.log(`Selected color ID: ${colorId}`);
+    onChange: (colorIds) => {
+      console.log(`Selected color IDs:`, colorIds);
     }
   });
 };
