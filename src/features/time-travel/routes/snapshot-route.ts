@@ -204,7 +204,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     // キャンセルされた場合は処理中断
     if (name === null) return;
 
-    const tileSnapshot = (window as any).wplaceStudio?.tileSnapshot;
+    const tileSnapshot = window.mrWplace?.tileSnapshot;
     if (!tileSnapshot) throw new Error("TileSnapshot not found");
     const snapshotId = await tileSnapshot.saveSnapshot(
       this.currentTileX,

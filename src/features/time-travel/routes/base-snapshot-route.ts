@@ -40,8 +40,10 @@ export abstract class BaseSnapshotRoute {
     const formattedTime = formatDate(new Date(snapshot.timestamp), timeFormat);
 
     // スナップショット描画判定（TimeTravelStorageに移管）
-    const { TimeTravelStorage } = await import('../storage');
-    const isDrawing = await TimeTravelStorage.isSnapshotDrawing(snapshot.fullKey);
+    const { TimeTravelStorage } = await import("../storage");
+    const isDrawing = await TimeTravelStorage.isSnapshotDrawing(
+      snapshot.fullKey
+    );
 
     return `
       <div class="border-b wps-snapshot-item cursor-pointer hover:bg-gray-50" data-snapshot-key="${
@@ -79,21 +81,21 @@ export abstract class BaseSnapshotRoute {
     container: HTMLElement
   ): Promise<void> {
     if (!confirm(t`${"delete_confirm"}`)) return;
-    
+
     // TemplateManager からも削除（描画中の場合）
-    const tileOverlay = (window as any).wplaceStudio?.tileOverlay;
+    const tileOverlay = window.mrWplace?.tileOverlay;
     const imageKey = `snapshot_${fullKey}`;
     if (tileOverlay?.templateManager) {
       tileOverlay.templateManager.removeTemplateByKey(imageKey);
     }
-    
+
     await TimeTravelStorage.removeSnapshotFromIndex(fullKey);
     Toast.success(t`${"deleted_message"}`);
     await this.reloadSnapshots(container);
   }
 
   protected async navigateToDetail(fullKey: string): Promise<void> {
-    const timeTravel = (window as any).wplaceStudio?.timeTravel;
+    const timeTravel = window.mrWplace?.timeTravel;
     if (timeTravel?.router) {
       (timeTravel.router as any).selectedSnapshot = { fullKey };
       timeTravel.router.navigate("snapshot-detail");
