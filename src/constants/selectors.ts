@@ -25,21 +25,33 @@ export const findOpacityContainer = (): Element | null => {
 };
 
 export const findPositionModal = (): Element | null => {
+  // 1. classのstyleで検索
   const positionModal = document.querySelector(
     ".absolute.bottom-0.left-0.z-50.w-full.sm\\:left-1\\/2.sm\\:max-w-md.sm\\:-translate-x-1\\/2.md\\:max-w-lg"
   );
   if (positionModal) return positionModal;
 
+  // 2. modalの中身で検索
+  const modalContent = document.querySelector(
+    ".rounded-t-box.bg-base-100.border-base-300.sm\\:rounded-b-box.w-full.border-t.pt-2.sm\\:mb-3.sm\\:shadow-xl"
+  );
+  if (modalContent?.parentElement) return modalContent.parentElement;
+
+  return null;
+
   // 見つからない場合は作る
-  const modalId = "mr-wplace-position-modal";
-  // もし既に同じIDの要素があれば追加しない
-  const existingModal = document.querySelector(`#${modalId}`);
-  if (existingModal) return existingModal;
-  // absoluteで上部中央に配置
-  const newModal = document.createElement("div");
-  newModal.className =
-    "absolute top-0 left-1/2 z-50 w-full max-w-md -translate-x-1/2 rounded-lg";
-  newModal.id = modalId;
-  document.body.appendChild(newModal);
-  return newModal;
+  // Modalはdynamicに出たり消えたりするので、ここでは作らない
+  // {
+  //   const modalId = "mr-wplace-position-modal";
+  //   // もし既に同じIDの要素があれば追加しない
+  //   const existingModal = document.querySelector(`#${modalId}`);
+  //   if (existingModal) return existingModal;
+  //   // absoluteで上部中央に配置
+  //   const newModal = document.createElement("div");
+  //   newModal.className =
+  //     "absolute top-0 left-1/2 z-50 w-full max-w-md -translate-x-1/2 rounded-lg";
+  //   newModal.id = modalId;
+  //   document.body.appendChild(newModal);
+  //   return newModal;
+  // }
 };
