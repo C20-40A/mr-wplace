@@ -15,7 +15,7 @@
 - Transparent の色が、既存の色を上書きできない
 - UI の描画方法を統合する
 
-# DONE v1.3.0
+# DONE v1.2.1
 
 - skirk marble 相当の機能
   - 描画画像のカラーフィルター
