@@ -2,9 +2,9 @@
 
 # マイナー
 
+- notification
 - image import で color pick
 - ui.ts 系は functional のほうがいいかもしれない
-- フルチャージまでの時間・notification
 - ギャラリー画像＋位置を export して、複数人で編集できる機能
 - 入力文字を描画したい
 - 逆ジオあってもいいかも
@@ -21,6 +21,10 @@
 - filter 適用中に描画中モーダル表示
 - タイル詳細に削除ボタンあってもいい
 - next level までの pixel のバッジ少しわかりにくい
+
+# DONE v1.2.3
+
+- フルチャージまでの時間
 
 # DONE v1.2.2
 

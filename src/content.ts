@@ -11,9 +11,8 @@ import { TimeTravel } from "./features/time-travel";
 import { DrawingLoader } from "./features/drawing-loader";
 import { ColorFilter } from "./features/color-filter";
 import { ColorFilterManager } from "./utils/color-filter-manager";
-import { NextLevelBadge } from "./features/next-level-badge";
+import { UserStatus } from "./features/user-status";
 import { WPlaceUserData } from "./types/user-data";
-import { TimeTravelStorage } from "./features/time-travel/storage";
 
 const runmrWplace = async (): Promise<void> => {
   // Chrome拡張機能のストレージAPIが利用可能か確認
@@ -36,13 +35,13 @@ const runmrWplace = async (): Promise<void> => {
   const drawingLoader = new DrawingLoader();
   const colorFilter = new ColorFilter();
   const colorFilterManager = new ColorFilterManager();
-  const nextLevelBadge = new NextLevelBadge();
+  const userStatus = new UserStatus();
 
   // ColorFilterManager初期化完了を待つ
   await colorFilterManager.init();
 
-  // NextLevelBadge初期化
-  nextLevelBadge.init();
+  // UserStatus初期化
+  userStatus.init();
 
   // GalleryとTileOverlayの連携設定
   gallery.setDrawToggleCallback(async (imageKey: string) => {
@@ -59,7 +58,7 @@ const runmrWplace = async (): Promise<void> => {
     timeTravel,
     drawingLoader,
     colorFilter,
-    nextLevelBadge,
+    userStatus,
   };
 
   // ColorFilterManager 直接登録（TemplateManagerからアクセス用）
@@ -73,11 +72,11 @@ const runmrWplace = async (): Promise<void> => {
     }
 
     // Listen for user data from inject.js
-    if (event.data.source === "wplace-studio-userdata") {
+    if (event.data.source === "mr-wplace-me") {
       console.log("🧑‍🎨: Received user data:", event.data.userData);
       const userData = event.data.userData as WPlaceUserData;
 
-      nextLevelBadge.updateFromUserData(userData);
+      userStatus.updateFromUserData(userData);
     }
   });
 };
