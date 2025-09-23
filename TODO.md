@@ -2,6 +2,7 @@
 
 # マイナー
 
+- アイコンを pixel art にする
 - notification
 - image import で color pick
 - ui.ts 系は functional のほうがいいかもしれない
