@@ -11,8 +11,8 @@ export class UserStatus {
     this.container = this.createContainer();
     this.nextLevelBadge = this.createNextLevelBadge();
     this.chargeCountdown = this.createChargeCountdown();
-    this.container.appendChild(this.nextLevelBadge);
     this.container.appendChild(this.chargeCountdown);
+    this.container.appendChild(this.nextLevelBadge);
   }
 
   private createContainer(): HTMLElement {
@@ -24,49 +24,39 @@ export class UserStatus {
       transform: translateX(-50%);
       z-index: 50;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
       pointer-events: none;
+      background-color: white;
+      border-radius: 12px;
+      padding: 4px 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      font-size: 11px;
+      font-weight: 500;
     `;
     container.id = "user-status-container";
     return container;
   }
 
   private createNextLevelBadge(): HTMLElement {
-    const badge = document.createElement("div");
+    const badge = document.createElement("span");
     badge.style.cssText = `
-      background-color: oklch(42.551% .161 282.339);
-      color: white;
-      padding: 2px 6px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 500;
+      color: #333;
       display: none;
       align-items: center;
       white-space: nowrap;
-      min-width: 40px;
-      justify-content: center;
-      pointer-events: auto;
     `;
     return badge;
   }
 
   private createChargeCountdown(): HTMLElement {
-    const countdown = document.createElement("div");
+    const countdown = document.createElement("span");
     countdown.style.cssText = `
-      background-color: oklch(72.551% .161 82.339);
-      color: white;
-      padding: 2px 6px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 500;
+      color: #333;
       display: none;
       align-items: center;
       white-space: nowrap;
-      min-width: 40px;
-      justify-content: center;
-      pointer-events: auto;
     `;
     return countdown;
   }
@@ -101,10 +91,38 @@ export class UserStatus {
     this.chargeCountdown.style.display = "flex";
   }
 
-  private updateNextLevelBadge(pixels: number): void {
-    this.nextLevelBadge.textContent = `↗️ ${new Intl.NumberFormat().format(
-      pixels
-    )}`;
+  private updateNextLevelBadge(
+    remainingPixels: number,
+    currentLevel: number
+  ): void {
+    // 次レベルで必要な総pixel数を計算
+    const nextLevel = Math.floor(currentLevel) + 1;
+    const totalPixelsForNextLevel = Math.ceil(
+      Math.pow(nextLevel * Math.pow(30, 0.65), 1 / 0.65)
+    );
+    const currentLevelPixels = Math.ceil(
+      Math.pow(Math.floor(currentLevel) * Math.pow(30, 0.65), 1 / 0.65)
+    );
+    const totalPixelsNeeded = totalPixelsForNextLevel - currentLevelPixels;
+
+    // 進捗率計算
+    const currentProgressPixels = totalPixelsNeeded - remainingPixels;
+    const progressRatio = Math.max(
+      0,
+      Math.min(1, currentProgressPixels / totalPixelsNeeded)
+    );
+
+    // 連続ゲージHTML生成
+    const progressWidth = Math.floor(progressRatio * 40); // 40px総幅
+    const gaugeHtml = `
+      <div style="display:inline-block;width:40px;height:6px;background-color:#E5E7EB;border-radius:3px;position:relative;margin-right:4px;">
+        <div style="width:${progressWidth}px;height:6px;background-color:#3B82F6;border-radius:3px;position:absolute;top:0;left:0;"></div>
+      </div>
+    `;
+
+    this.nextLevelBadge.innerHTML = `${gaugeHtml} +${new Intl.NumberFormat().format(
+      remainingPixels
+    )}px`;
   }
 
   private updateFullChargeInfo(charges: {
@@ -152,7 +170,6 @@ export class UserStatus {
     // If already at full charges
     if (data.current >= data.max || remainingMs <= 0) {
       this.chargeCountdown.textContent = "⚡ FULL";
-      this.chargeCountdown.style.backgroundColor = "oklch(62.8% 0.257 160.1)";
 
       // Clear interval when full
       if (this.countdownInterval) {
@@ -178,12 +195,10 @@ export class UserStatus {
     }
 
     // Calculate current charges (increases over time)
-    const chargesGained = Math.floor(elapsed / data.cooldownMs);
-    const currentCharges = Math.min(data.current + chargesGained, data.max);
-    const chargesText = `${Math.floor(currentCharges)}/${data.max}`;
+    // const chargesGained = Math.floor(elapsed / data.cooldownMs);
+    // const currentCharges = Math.min(data.current + chargesGained, data.max);
 
-    this.chargeCountdown.textContent = `⚡ ${timeText} (${chargesText})`;
-    this.chargeCountdown.style.backgroundColor = "oklch(72.551% .161 82.339)";
+    this.chargeCountdown.textContent = `⚡ ${timeText}`;
   }
 
   updateFromUserData(userData: WPlaceUserData): void {
@@ -197,7 +212,7 @@ export class UserStatus {
       );
 
       if (nextLevelPixels > 0) {
-        this.updateNextLevelBadge(Math.max(0, nextLevelPixels));
+        this.updateNextLevelBadge(Math.max(0, nextLevelPixels), userData.level);
         this.showNextLevelBadge();
       }
     }
