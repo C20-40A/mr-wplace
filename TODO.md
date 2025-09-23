@@ -2,15 +2,16 @@
 
 # マイナー
 
+- image import で color pick
 - ui.ts 系は functional のほうがいいかもしれない
 - フルチャージまでの時間・notification
 - ギャラリー画像＋位置を export して、複数人で編集できる機能
 - 入力文字を描画したい
 - 逆ジオあってもいいかも
+  - https://nominatim.org/ が利用可能
 - お気に入りモーダルを整理可能にする
 - ギャラリーから、画像に移動したとき、即座に描画されない？
 - ギャラリーから画像を削除したとき、空のアイテムが残る
-- window.mrWplace?.tileOverlay;のような方式は微妙
 - 文字入力モーダルを初期で選択状態に変更
 - Transparent の色が、既存の色を上書きできない
 - UI の描画方法を統合する
@@ -18,10 +19,13 @@
 - 「持っている色のみ」の filter
 - 画像読み込み時の color filter
 - filter 適用中に描画中モーダル表示
+- タイル詳細に削除ボタンあってもいい
+- next level までの pixel のバッジ少しわかりにくい
 
 # DONE v1.2.2
 
 - タイルの描画状態は、storage 保存にする
+- window.mrWplace?.tileOverlay;のような方式は微妙
 
 # DONE v1.2.1
 
