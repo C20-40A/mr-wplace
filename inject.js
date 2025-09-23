@@ -48,7 +48,6 @@ mapObserver.observe(document.body, {
 });
 
 window.fetch = async function (...args) {
-  console.log("fetch", args);
   const requestInfo = args[0];
   const url =
     typeof requestInfo === "string" ? requestInfo : requestInfo.url || "";
