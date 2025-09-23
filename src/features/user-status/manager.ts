@@ -1,0 +1,79 @@
+import { WPlaceUserData } from "../../types/user-data";
+import { StatusUIComponents } from "./ui/components";
+import { StatusCalculator } from "./services/calculator";
+import { TimerService } from "./services/timer-service";
+
+export class StatusManager {
+  private uiComponents = new StatusUIComponents();
+  private calculator = new StatusCalculator();
+  private timerService = new TimerService();
+
+  private container: HTMLElement;
+  private nextLevelBadge: HTMLElement;
+  private chargeCountdown: HTMLElement;
+
+  constructor() {
+    this.container = this.uiComponents.createContainer();
+    this.nextLevelBadge = this.uiComponents.createNextLevelBadge();
+    this.chargeCountdown = this.uiComponents.createChargeCountdown();
+    this.setupContainer();
+    this.hideAll();
+  }
+
+  private setupContainer(): void {
+    this.container.appendChild(this.chargeCountdown);
+    this.container.appendChild(this.nextLevelBadge);
+  }
+
+  private hideAll(): void {
+    this.nextLevelBadge.style.display = "none";
+    this.chargeCountdown.style.display = "none";
+  }
+
+  private showNextLevelBadge(): void {
+    this.nextLevelBadge.style.display = "flex";
+  }
+
+  private showChargeCountdown(): void {
+    this.chargeCountdown.style.display = "flex";
+  }
+
+  updateFromUserData(userData: WPlaceUserData): void {
+    console.log("🧑‍🎨: StatusManager updating from userData");
+
+    if (userData.level !== undefined && userData.pixelsPainted !== undefined) {
+      const remainingPixels = this.calculator.calculateNextLevelPixels(
+        userData.level, 
+        userData.pixelsPainted
+      );
+
+      if (remainingPixels > 0) {
+        const badgeHtml = this.calculator.generateProgressGaugeHtml(
+          remainingPixels, 
+          userData.level
+        );
+        this.nextLevelBadge.innerHTML = badgeHtml;
+        this.showNextLevelBadge();
+      }
+    }
+
+    if (userData.charges) {
+      this.timerService.startChargeCountdown(
+        userData.charges,
+        (timeText: string) => {
+          this.chargeCountdown.textContent = timeText;
+        }
+      );
+      this.showChargeCountdown();
+    }
+  }
+
+  getContainer(): HTMLElement {
+    return this.container;
+  }
+
+  destroy(): void {
+    this.timerService.destroy();
+    this.container.remove();
+  }
+}
