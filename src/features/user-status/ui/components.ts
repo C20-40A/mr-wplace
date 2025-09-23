@@ -23,6 +23,29 @@ export class StatusUIComponents {
     return container;
   }
 
+  createNotificationIcon(): HTMLElement {
+    const icon = document.createElement("button");
+    icon.innerHTML = "🔔";
+    icon.style.cssText = `
+      order: -1;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px;
+      border-radius: 4px;
+      pointer-events: all;
+      transition: background-color 0.2s;
+    `;
+    icon.addEventListener("mouseenter", () => {
+      icon.style.backgroundColor = "#f3f4f6";
+    });
+    icon.addEventListener("mouseleave", () => {
+      icon.style.backgroundColor = "transparent";
+    });
+    return icon;
+  }
+
   createNextLevelBadge(): HTMLElement {
     const badge = document.createElement("span");
     badge.style.cssText = `
