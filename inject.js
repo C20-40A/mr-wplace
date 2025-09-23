@@ -48,22 +48,27 @@ mapObserver.observe(document.body, {
 });
 
 window.fetch = async function (...args) {
+  console.log("🧑‍🎨: Fetch called with args:", args);
   const requestInfo = args[0];
   const url =
     typeof requestInfo === "string" ? requestInfo : requestInfo.url || "";
 
+  if (!url || !url.includes("backend.wplace.live")) {
+    return originalFetch.apply(this, args);
+  }
+
   // Intercept /me endpoint for user data
-  if (url.includes("backend.wplace.live") && url.includes("/me")) {
+  if (url.includes("/me")) {
     console.log("🧑‍🎨: Intercepting /me endpoint:", url);
     const response = await originalFetch.apply(this, args);
     const clonedResponse = response.clone();
 
     try {
       const jsonData = await clonedResponse.json();
-      console.log("🧑‍🎨: Sending user data:", jsonData);
+      console.log("🧑‍🎨: Parsed json:", jsonData);
       window.postMessage(
         {
-          source: "wplace-studio-userdata",
+          source: "mr-wplace-me",
           userData: jsonData,
         },
         "*"
@@ -76,11 +81,7 @@ window.fetch = async function (...args) {
   }
 
   // Intercept all tile requests
-  if (
-    url.includes("backend.wplace.live") &&
-    url.includes("tiles/") &&
-    url.endsWith(".png")
-  ) {
+  if (url.includes("tiles/") && url.endsWith(".png")) {
     // Extract tileX, tileY from URL
     const tileMatch = url.match(/tiles\/(\d+)\/(\d+)\.png/);
     if (!tileMatch) {
