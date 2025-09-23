@@ -84,7 +84,7 @@ export class UserStatus {
       },
     ]);
 
-    // this.hideAll();
+    this.hideAll();
     return true;
   }
 
@@ -107,32 +107,36 @@ export class UserStatus {
     )}`;
   }
 
-  private updateFullChargeInfo(charges: { count: number; max: number; cooldownMs: number }): void {
+  private updateFullChargeInfo(charges: {
+    count: number;
+    max: number;
+    cooldownMs: number;
+  }): void {
     const currentCharges = charges.count || 0;
     const maxCharges = charges.max || 1;
     const cooldownMs = charges.cooldownMs || 30000;
-    
+
     // Calculate charges needed and time to full
     const chargesNeeded = maxCharges - currentCharges;
     const timeToFullMs = chargesNeeded * cooldownMs;
-    
+
     // Store data for countdown
     (window as any).wplaceChargeData = {
       current: currentCharges,
       max: maxCharges,
       cooldownMs: cooldownMs,
       timeToFull: timeToFullMs,
-      startTime: Date.now()
+      startTime: Date.now(),
     };
-    
+
     // Initial display
     this.updateFullChargeDisplay();
-    
+
     // Start countdown interval
     if (this.countdownInterval) {
       clearInterval(this.countdownInterval);
     }
-    
+
     this.countdownInterval = window.setInterval(() => {
       this.updateFullChargeDisplay();
     }, 1000);
@@ -141,15 +145,15 @@ export class UserStatus {
   private updateFullChargeDisplay(): void {
     const data = (window as any).wplaceChargeData;
     if (!data) return;
-    
+
     const elapsed = Date.now() - data.startTime;
     const remainingMs = Math.max(0, data.timeToFull - elapsed);
-    
+
     // If already at full charges
     if (data.current >= data.max || remainingMs <= 0) {
       this.chargeCountdown.textContent = "⚡ FULL";
       this.chargeCountdown.style.backgroundColor = "oklch(62.8% 0.257 160.1)";
-      
+
       // Clear interval when full
       if (this.countdownInterval) {
         clearInterval(this.countdownInterval);
@@ -157,14 +161,14 @@ export class UserStatus {
       }
       return;
     }
-    
+
     // Convert to hours, minutes, seconds
     const totalSeconds = Math.ceil(remainingMs / 1000);
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
-    
-    let timeText = '';
+
+    let timeText = "";
     if (hours > 0) {
       timeText = `${hours}h ${minutes}m ${seconds}s`;
     } else if (minutes > 0) {
@@ -172,12 +176,12 @@ export class UserStatus {
     } else {
       timeText = `${seconds}s`;
     }
-    
+
     // Calculate current charges (increases over time)
     const chargesGained = Math.floor(elapsed / data.cooldownMs);
     const currentCharges = Math.min(data.current + chargesGained, data.max);
     const chargesText = `${Math.floor(currentCharges)}/${data.max}`;
-    
+
     this.chargeCountdown.textContent = `⚡ ${timeText} (${chargesText})`;
     this.chargeCountdown.style.backgroundColor = "oklch(72.551% .161 82.339)";
   }

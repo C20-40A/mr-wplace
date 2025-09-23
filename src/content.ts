@@ -1,4 +1,3 @@
-import { injectFetchInterceptor } from "./features/fetch-interceptor";
 import { I18nManager } from "./i18n/manager";
 import { detectBrowserLanguage } from "./i18n/index";
 import { Toast } from "./components/toast";
@@ -15,19 +14,53 @@ import { UserStatus } from "./features/user-status";
 import { WPlaceUserData } from "./types/user-data";
 
 const runmrWplace = async (): Promise<void> => {
+  console.log("🧑‍🎨: Starting initialization...");
+
   // Chrome拡張機能のストレージAPIが利用可能か確認
   if (typeof chrome === "undefined" || !chrome.storage)
     throw new Error("Chrome storage API is not available");
 
-  // Fetchインターセプターの注入
-  injectFetchInterceptor();
+  // Fetchインターセプターの注入（早期実行）
+  {
+    const script = document.createElement("script");
+    script.src = chrome.runtime.getURL("inject.js");
+    (document.head || document.documentElement).prepend(script);
+    script.remove();
+    console.log("🧑‍🎨: Injected fetch interceptor");
+  }
+  // Listen for messages from inject.js
+  window.addEventListener("message", async (event) => {
+    if (event.data.source === "wplace-studio-snapshot-tmp") {
+      const { tileBlob, tileX, tileY } = event.data;
+      await tileSnapshot.saveTmpTile(tileX, tileY, tileBlob);
+    }
+
+    // Listen for user data from inject.js
+    if (event.data.source === "mr-wplace-me") {
+      console.log("🧑‍🎨: Received user data:", event.data.userData);
+      const userData = event.data.userData as WPlaceUserData;
+
+      userStatus.updateFromUserData(userData);
+    }
+  });
+
+  // DOM準備待機
+  if (document.readyState === "loading") {
+    await new Promise((resolve) => {
+      document.addEventListener("DOMContentLoaded", resolve, { once: true });
+    });
+  }
+  console.log("🧑‍🎨: DOM ready, proceeding with initialization");
+
+  // UserStatus初期化
+  const userStatus = new UserStatus();
+  userStatus.init();
 
   // i18n初期化（ブラウザ言語検出）
   await I18nManager.init(detectBrowserLanguage());
 
   const favorites = new ExtendedBookmarks();
   const tileOverlay = new TileOverlay();
-  await (tileOverlay as any).init(); // 明示的初期化
   const gallery = new Gallery();
   const drawing = new Drawing();
   const tileSnapshot = new TileSnapshot();
@@ -35,13 +68,9 @@ const runmrWplace = async (): Promise<void> => {
   const drawingLoader = new DrawingLoader();
   const colorFilter = new ColorFilter();
   const colorFilterManager = new ColorFilterManager();
-  const userStatus = new UserStatus();
 
   // ColorFilterManager初期化完了を待つ
   await colorFilterManager.init();
-
-  // UserStatus初期化
-  userStatus.init();
 
   // GalleryとTileOverlayの連携設定
   gallery.setDrawToggleCallback(async (imageKey: string) => {
@@ -63,22 +92,6 @@ const runmrWplace = async (): Promise<void> => {
 
   // ColorFilterManager 直接登録（TemplateManagerからアクセス用）
   window.colorFilterManager = colorFilterManager;
-
-  // Listen for snapshot tmp save messages from inject.js
-  window.addEventListener("message", async (event) => {
-    if (event.data.source === "wplace-studio-snapshot-tmp") {
-      const { tileBlob, tileX, tileY } = event.data;
-      await tileSnapshot.saveTmpTile(tileX, tileY, tileBlob);
-    }
-
-    // Listen for user data from inject.js
-    if (event.data.source === "mr-wplace-me") {
-      console.log("🧑‍🎨: Received user data:", event.data.userData);
-      const userData = event.data.userData as WPlaceUserData;
-
-      userStatus.updateFromUserData(userData);
-    }
-  });
 };
 
 // 言語切替メッセージリスナー
