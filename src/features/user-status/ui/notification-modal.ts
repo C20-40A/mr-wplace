@@ -16,6 +16,7 @@ export class NotificationModal {
   private modalElements?: ModalElements;
   private userData?: WPlaceUserData;
   private updateInterval?: number;
+  private currentAlarmInfo: any = null;
 
   show(userData: WPlaceUserData): void {
     this.userData = userData;
@@ -40,10 +41,17 @@ export class NotificationModal {
 
   private startPeriodicUpdate(): void {
     this.stopPeriodicUpdate();
-    // UI更新のみ（時間計算はグローバル状態から）
-    this.updateInterval = window.setInterval(() => {
-      this.renderContent();
+    // 初回アラーム情報取得
+    this.updateAlarmInfoAndRender();
+    // UI更新 + アラーム情報更新（1秒間隔）
+    this.updateInterval = window.setInterval(async () => {
+      await this.updateAlarmInfoAndRender();
     }, 1000);
+  }
+
+  private async updateAlarmInfoAndRender(): Promise<void> {
+    this.currentAlarmInfo = await this.getAlarmInfo();
+    this.renderContent();
   }
 
   private stopPeriodicUpdate(): void {
@@ -51,6 +59,19 @@ export class NotificationModal {
       clearInterval(this.updateInterval);
       this.updateInterval = undefined;
     }
+  }
+
+  private async getAlarmInfo(): Promise<any> {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ type: "GET_ALARM_INFO" }, (response) => {
+        if (chrome.runtime.lastError) {
+          console.log("🧑‍🎨: Alarm info error:", chrome.runtime.lastError.message);
+          resolve(null);
+        } else {
+          resolve(response);
+        }
+      });
+    });
   }
 
   private renderContent(): void {
@@ -117,9 +138,31 @@ export class NotificationModal {
   }
 
   private createChargeMonitorSection(): string {
+    let alarmStatusHtml = '';
+    
+    if (this.currentAlarmInfo) {
+      const alarmTime = new Date(this.currentAlarmInfo.scheduledTime).toLocaleTimeString("ja-JP", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+      alarmStatusHtml = `
+        <div style="background-color: #dcfce7; padding: 8px 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #bbf7d0;">
+          <div style="font-size: 13px; color: #15803d; font-weight: 500;">⏰ Alarm Active</div>
+          <div style="font-size: 12px; color: #16a34a; margin-top: 2px;">Scheduled: ${alarmTime}</div>
+        </div>
+      `;
+    } else {
+      alarmStatusHtml = `
+        <div style="background-color: #f3f4f6; padding: 8px 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #d1d5db;">
+          <div style="font-size: 13px; color: #6b7280; font-weight: 500;">😴 No Alarm Set</div>
+        </div>
+      `;
+    }
+
     return `
       <div class="mb-6 border-t pt-4" style="border-top: 1px solid #e5e7eb; margin-bottom: 24px; padding-top: 16px;">
-        <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 12px;">🔔 Charge Monitor</h4>
+        <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 12px;">🔔 Charge Alarm</h4>
         <div style="display: flex; gap: 8px;">
           <button id="startChargeMonitor" style="
             background-color: #16a34a;
@@ -141,6 +184,7 @@ export class NotificationModal {
           ">Stop Monitor</button>
         </div>
         <p style="font-size: 12px; color: #6b7280; margin-top: 8px;">Notifies when charge reaches 80%</p>
+        ${alarmStatusHtml}
       </div>
     `;
   }
@@ -153,9 +197,9 @@ export class NotificationModal {
 
     startButton.addEventListener("click", () => {
       const when = Date.now() + 60000; // 1分後 (テスト用)
-      chrome.runtime.sendMessage({ 
-        type: "START_CHARGE_ALARM", 
-        when: when 
+      chrome.runtime.sendMessage({
+        type: "START_CHARGE_ALARM",
+        when: when,
       });
       console.log("🧑‍🎨: Charge monitor started");
     });
