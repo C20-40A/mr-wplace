@@ -1,59 +1,38 @@
 console.log("🧑‍🎨: service_worker.js loaded");
 
-chrome.alarms.onAlarm.addListener((alarm) => {
-  console.log("🧑‍🎨: Alarm triggered:", alarm.name);
-  if (alarm.name === 'charge-check') {
-    checkChargeAndNotify();
+const ALARM_ID = "mr-wplace-charged";
+
+// NOTE: ここから呼んでいる
+// src/features/user-status/ui/notification-modal.ts
+const ALARM_MESSAGE_START = "START_CHARGE_ALARM";
+const ALARM_MESSAGE_STOP = "STOP_CHARGE_ALARM";
+
+chrome.runtime.onMessage.addListener((message) => {
+  console.log("🧑‍🎨: Service worker received message:", message.type);
+  if (message.type === ALARM_MESSAGE_START) {
+    chrome.alarms.create(ALARM_ID, { when: message.when });
+    console.log("🧑‍🎨: Charge alarm created at", message.when);
+  } else if (message.type === ALARM_MESSAGE_STOP) {
+    chrome.alarms.clear(ALARM_ID);
+    console.log("🧑‍🎨: Charge alarm cancelled");
   }
 });
 
 chrome.notifications.onClicked.addListener((notificationId) => {
   console.log("🧑‍🎨: Notification clicked:", notificationId);
-  if (notificationId === 'charge-ready') {
-    chrome.tabs.create({ url: 'https://wplace.live/' });
+  if (notificationId === "charge-ready") {
+    chrome.tabs.create({ url: "https://wplace.live/" });
   }
 });
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'START_CHARGE_MONITOR') {
-    createChargeAlarm();
-  } else if (message.type === 'STOP_CHARGE_MONITOR') {
-    cancelChargeAlarm();
-  }
-});
-
-function checkChargeAndNotify() {
-  chrome.tabs.query({ url: 'https://wplace.live/*' }, (tabs) => {
-    if (tabs.length === 0) return;
-    
-    chrome.tabs.sendMessage(tabs[0].id, { type: 'GET_CHARGE_DATA' }, (response) => {
-      if (response?.chargeData) {
-        const current = response.chargeData.current;
-        const max = response.chargeData.max;
-        const percentage = Math.round((current / max) * 100);
-        
-        if (percentage >= 80) { // 固定値80%
-          chrome.notifications.create('charge-ready', {
-            type: 'basic',
-            iconUrl: 'icons/icon128.png',
-            title: 'Mr. Wplace - Charge Ready!',
-            message: `Charge: ${current}/${max} (${percentage}%)`
-          });
-        }
-      }
+chrome.alarms.onAlarm.addListener((alarm) => {
+  console.log("🧑‍🎨: Alarm triggered:", alarm.name);
+  if (alarm.name === ALARM_ID) {
+    chrome.notifications.create("charge-ready", {
+      type: "basic",
+      iconUrl: "icons/icon128.png",
+      title: "Mr. Wplace - Charge Ready!",
+      message: "Your painting charge is ready. Click to open Wplace.",
     });
-  });
-}
-
-function createChargeAlarm() {
-  chrome.alarms.create('charge-check', {
-    delayInMinutes: 1,
-    periodInMinutes: 1
-  });
-  console.log("🧑‍🎨: Charge monitor started");
-}
-
-function cancelChargeAlarm() {
-  chrome.alarms.clear('charge-check');
-  console.log("🧑‍🎨: Charge monitor stopped");
-}
+  }
+});
