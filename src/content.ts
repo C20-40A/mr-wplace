@@ -44,7 +44,7 @@ const runmrWplace = async (): Promise<void> => {
       if (userData.charges) {
         (window as any).wplaceChargeData = {
           current: userData.charges.count,
-          max: userData.charges.max
+          max: userData.charges.max,
         };
       }
 
@@ -108,17 +108,6 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     // i18nマネージャーの状態を更新
     await I18nManager.init(message.locale);
     return;
-  }
-  
-  if (message.type === "GET_CHARGE_DATA") {
-    const wplaceChargeData = (window as any).wplaceChargeData;
-    if (wplaceChargeData) {
-      sendResponse({ chargeData: wplaceChargeData });
-    } else {
-      console.log("🧑‍🎨: wplaceChargeData not found");
-      sendResponse({ chargeData: null });
-    }
-    return true; // 非同期response用
   }
 });
 

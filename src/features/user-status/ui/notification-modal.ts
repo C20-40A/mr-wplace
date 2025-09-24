@@ -19,12 +19,12 @@ export class NotificationModal {
 
   show(userData: WPlaceUserData): void {
     this.userData = userData;
-    
+
     if (!this.modalElements) {
       this.modalElements = createModal({
         id: "user-status-notification-modal",
         title: "User Status Details",
-        maxWidth: "32rem"
+        maxWidth: "32rem",
       });
     }
 
@@ -33,7 +33,7 @@ export class NotificationModal {
     this.startPeriodicUpdate();
 
     // Modal close時にinterval停止
-    this.modalElements.modal.addEventListener('close', () => {
+    this.modalElements.modal.addEventListener("close", () => {
       this.stopPeriodicUpdate();
     });
   }
@@ -58,7 +58,10 @@ export class NotificationModal {
 
     const sections = [];
 
-    if (this.userData.level !== undefined && this.userData.pixelsPainted !== undefined) {
+    if (
+      this.userData.level !== undefined &&
+      this.userData.pixelsPainted !== undefined
+    ) {
       sections.push(this.createLevelSection());
     }
 
@@ -67,17 +70,17 @@ export class NotificationModal {
       sections.push(this.createChargeMonitorSection());
     }
 
-    this.modalElements.container.innerHTML = sections.join('');
+    this.modalElements.container.innerHTML = sections.join("");
     this.setupChargeMonitorListeners();
   }
 
   private createLevelSection(): string {
-    if (!this.userData) return '';
+    if (!this.userData) return "";
 
     const currentLevel = Math.floor(this.userData.level);
     const nextLevel = currentLevel + 1;
     const remainingPixels = this.calculator.calculateNextLevelPixels(
-      this.userData.level, 
+      this.userData.level,
       this.userData.pixelsPainted!
     );
 
@@ -91,15 +94,22 @@ export class NotificationModal {
           </div>
           <div class="flex justify-between">
             <span>Pixels Painted:</span>
-            <span class="font-mono">${new Intl.NumberFormat().format(this.userData.pixelsPainted!)}</span>
+            <span class="font-mono">${new Intl.NumberFormat().format(
+              this.userData.pixelsPainted!
+            )}</span>
           </div>
           <div class="flex justify-between">
             <span>Next Level (${nextLevel}):</span>
-            <span class="font-mono text-blue-600">${new Intl.NumberFormat().format(remainingPixels)} px</span>
+            <span class="font-mono text-blue-600">${new Intl.NumberFormat().format(
+              remainingPixels
+            )} px</span>
           </div>
           <div class="w-full bg-gray-200 rounded-full h-2 mt-3">
             <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                 style="width: ${Math.max(10, 100 - (remainingPixels / 1000))}%"></div>
+                 style="width: ${Math.max(
+                   10,
+                   100 - remainingPixels / 1000
+                 )}%"></div>
           </div>
         </div>
       </div>
@@ -136,28 +146,32 @@ export class NotificationModal {
   }
 
   private setupChargeMonitorListeners(): void {
-    const startButton = document.getElementById('startChargeMonitor');
-    const stopButton = document.getElementById('stopChargeMonitor');
+    const startButton = document.getElementById("startChargeMonitor");
+    const stopButton = document.getElementById("stopChargeMonitor");
 
     if (!startButton || !stopButton) return;
 
-    startButton.addEventListener('click', () => {
-      chrome.runtime.sendMessage({ type: 'START_CHARGE_MONITOR' });
+    startButton.addEventListener("click", () => {
+      const when = Date.now() + 60000; // 1分後 (テスト用)
+      chrome.runtime.sendMessage({ 
+        type: "START_CHARGE_ALARM", 
+        when: when 
+      });
       console.log("🧑‍🎨: Charge monitor started");
     });
 
-    stopButton.addEventListener('click', () => {
-      chrome.runtime.sendMessage({ type: 'STOP_CHARGE_MONITOR' });
+    stopButton.addEventListener("click", () => {
+      chrome.runtime.sendMessage({ type: "STOP_CHARGE_ALARM" });
       console.log("🧑‍🎨: Charge monitor stopped");
     });
   }
 
   private createChargeSection(): string {
-    if (!this.userData?.charges) return '';
+    if (!this.userData?.charges) return "";
 
     // timer-service.tsのグローバル状態を読み取り
     const globalChargeData: ChargeData = (window as any).wplaceChargeData;
-    
+
     let timeData, timeRemaining: string;
     if (globalChargeData) {
       // リアルタイム計算
@@ -167,19 +181,21 @@ export class NotificationModal {
       timeData = {
         current: globalChargeData.current,
         max: globalChargeData.max,
-        timeToFullMs: remainingMs
+        timeToFullMs: remainingMs,
       };
     } else {
       // フォールバック：従来ロジック
       timeData = this.calculator.calculateTimeToFull(this.userData.charges);
-      timeRemaining = this.calculator.formatTimeRemaining(timeData.timeToFullMs);
+      timeRemaining = this.calculator.formatTimeRemaining(
+        timeData.timeToFullMs
+      );
     }
 
     const percentage = (Math.floor(timeData.current) / timeData.max) * 100;
     const fullChargeTime = new Date(Date.now() + timeData.timeToFullMs);
-    const formattedTime = fullChargeTime.toLocaleTimeString('ja-JP', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    const formattedTime = fullChargeTime.toLocaleTimeString("ja-JP", {
+      hour: "2-digit",
+      minute: "2-digit",
     });
 
     return `
@@ -188,7 +204,9 @@ export class NotificationModal {
         <div class="space-y-3">
           <div class="flex justify-between">
             <span>Current Charges:</span>
-            <span class="font-mono text-lg">${Math.floor(timeData.current)}/${timeData.max}</span>
+            <span class="font-mono text-lg">${Math.floor(timeData.current)}/${
+      timeData.max
+    }</span>
           </div>
           
           <div class="relative">
@@ -201,22 +219,29 @@ export class NotificationModal {
             </div>
           </div>
           
-          ${timeData.timeToFullMs > 0 ? `
+          ${
+            timeData.timeToFullMs > 0
+              ? `
             <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
               <div class="flex justify-between items-center mb-2">
                 <span class="text-sm font-medium text-blue-800">⏱️ Time to Full:</span>
-                <span class="font-mono text-blue-900">${timeRemaining.replace('⚡ ', '')}</span>
+                <span class="font-mono text-blue-900">${timeRemaining.replace(
+                  "⚡ ",
+                  ""
+                )}</span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-sm font-medium text-blue-800">🎯 Full Charge At:</span>
                 <span class="font-mono text-blue-900">${formattedTime}</span>
               </div>
             </div>
-          ` : `
+          `
+              : `
             <div class="bg-green-50 p-3 rounded-lg border border-green-200 text-center">
               <span class="text-green-800 font-semibold">⚡ FULLY CHARGED!</span>
             </div>
-          `}
+          `
+          }
         </div>
       </div>
     `;

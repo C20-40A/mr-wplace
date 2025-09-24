@@ -231,9 +231,9 @@ export const createTemplateTiles = async (
   const imageHeight = bitmap.height;
   const totalPixels = imageWidth * imageHeight;
 
-  console.log(
-    `Template pixel analysis - Dimensions: ${imageWidth}×${imageHeight} = ${totalPixels.toLocaleString()} pixels`
-  );
+  // console.log(
+  //   `Template pixel analysis - Dimensions: ${imageWidth}×${imageHeight} = ${totalPixels.toLocaleString()} pixels`
+  // );
 
   // ピクセル分析
   let pixelAnalysis: PixelAnalysisResult;
