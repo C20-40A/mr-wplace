@@ -1,7 +1,6 @@
 import { createModal, ModalElements } from "../../../utils/modal";
 import { WPlaceUserData } from "../../../types/user-data";
 import { StatusCalculator } from "../services/calculator";
-import { TimerService } from "../services/timer-service";
 
 interface ChargeData {
   current: number;
@@ -17,6 +16,7 @@ export class NotificationModal {
   private userData?: WPlaceUserData;
   private updateInterval?: number;
   private currentAlarmInfo: any = null;
+  private currentThreshold: number = 80;
 
   show(userData: WPlaceUserData): void {
     this.userData = userData;
@@ -33,7 +33,6 @@ export class NotificationModal {
     this.modalElements.modal.showModal();
     this.startPeriodicUpdate();
 
-    // Modal close時にinterval停止
     this.modalElements.modal.addEventListener("close", () => {
       this.stopPeriodicUpdate();
     });
@@ -41,9 +40,7 @@ export class NotificationModal {
 
   private startPeriodicUpdate(): void {
     this.stopPeriodicUpdate();
-    // 初回アラーム情報取得
     this.updateAlarmInfoAndRender();
-    // UI更新 + アラーム情報更新（1秒間隔）
     this.updateInterval = window.setInterval(async () => {
       await this.updateAlarmInfoAndRender();
     }, 1000);
@@ -59,6 +56,50 @@ export class NotificationModal {
       clearInterval(this.updateInterval);
       this.updateInterval = undefined;
     }
+  }
+
+  // chargeData取得統一
+  private getChargeData(): { current: number; max: number; cooldownMs: number; timeToFullMs: number } {
+    if (!this.userData?.charges) throw new Error("No charge data available");
+
+    const globalChargeData: ChargeData = (window as any).wplaceChargeData;
+    
+    if (globalChargeData) {
+      const elapsed = Date.now() - globalChargeData.startTime;
+      const remainingMs = Math.max(0, globalChargeData.timeToFull - elapsed);
+      return {
+        current: globalChargeData.current,
+        max: globalChargeData.max,
+        cooldownMs: globalChargeData.cooldownMs || 30000,
+        timeToFullMs: remainingMs
+      };
+    }
+
+    const timeData = this.calculator.calculateTimeToFull(this.userData.charges);
+    return {
+      current: timeData.current,
+      max: timeData.max,
+      cooldownMs: timeData.cooldownMs,
+      timeToFullMs: timeData.timeToFullMs
+    };
+  }
+
+  private calculateThresholdTime(threshold: number): string {
+    if (!this.userData?.charges) return "--:--";
+
+    const { current, max, cooldownMs } = this.getChargeData();
+    const requiredCharges = (max * threshold) / 100;
+    
+    if (current >= requiredCharges) return "Already reached";
+
+    const neededCharges = requiredCharges - current;
+    const requiredMs = neededCharges * cooldownMs;
+    const targetTime = new Date(Date.now() + requiredMs);
+    
+    return targetTime.toLocaleTimeString("ja-JP", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
   }
 
   private async getAlarmInfo(): Promise<any> {
@@ -79,10 +120,7 @@ export class NotificationModal {
 
     const sections = [];
 
-    if (
-      this.userData.level !== undefined &&
-      this.userData.pixelsPainted !== undefined
-    ) {
+    if (this.userData.level !== undefined && this.userData.pixelsPainted !== undefined) {
       sections.push(this.createLevelSection());
     }
 
@@ -115,132 +153,48 @@ export class NotificationModal {
           </div>
           <div class="flex justify-between">
             <span>Pixels Painted:</span>
-            <span class="font-mono">${new Intl.NumberFormat().format(
-              this.userData.pixelsPainted!
-            )}</span>
+            <span class="font-mono">${new Intl.NumberFormat().format(this.userData.pixelsPainted!)}</span>
           </div>
           <div class="flex justify-between">
             <span>Next Level (${nextLevel}):</span>
-            <span class="font-mono text-blue-600">${new Intl.NumberFormat().format(
-              remainingPixels
-            )} px</span>
+            <span class="font-mono text-blue-600">${new Intl.NumberFormat().format(remainingPixels)} px</span>
           </div>
           <div class="w-full bg-gray-200 rounded-full h-2 mt-3">
             <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                 style="width: ${Math.max(
-                   10,
-                   100 - remainingPixels / 1000
-                 )}%"></div>
+                 style="width: ${Math.max(10, 100 - remainingPixels / 1000)}%"></div>
           </div>
         </div>
       </div>
     `;
-  }
-
-  private createChargeMonitorSection(): string {
-    let alarmStatusHtml = '';
-    
-    if (this.currentAlarmInfo) {
-      const alarmTime = new Date(this.currentAlarmInfo.scheduledTime).toLocaleTimeString("ja-JP", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit"
-      });
-      alarmStatusHtml = `
-        <div style="background-color: #dcfce7; padding: 8px 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #bbf7d0;">
-          <div style="font-size: 13px; color: #15803d; font-weight: 500;">⏰ Alarm Active</div>
-          <div style="font-size: 12px; color: #16a34a; margin-top: 2px;">Scheduled: ${alarmTime}</div>
-        </div>
-      `;
-    } else {
-      alarmStatusHtml = `
-        <div style="background-color: #f3f4f6; padding: 8px 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #d1d5db;">
-          <div style="font-size: 13px; color: #6b7280; font-weight: 500;">😴 No Alarm Set</div>
-        </div>
-      `;
-    }
-
-    return `
-      <div class="mb-6 border-t pt-4" style="border-top: 1px solid #e5e7eb; margin-bottom: 24px; padding-top: 16px;">
-        <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 12px;">🔔 Charge Alarm</h4>
-        <div style="display: flex; gap: 8px;">
-          <button id="startChargeMonitor" style="
-            background-color: #16a34a;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-weight: 500;
-          ">Start Monitor</button>
-          <button id="stopChargeMonitor" style="
-            background-color: #dc2626;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-weight: 500;
-          ">Stop Monitor</button>
-        </div>
-        <p style="font-size: 12px; color: #6b7280; margin-top: 8px;">Notifies when charge reaches 80%</p>
-        ${alarmStatusHtml}
-      </div>
-    `;
-  }
-
-  private setupChargeMonitorListeners(): void {
-    const startButton = document.getElementById("startChargeMonitor");
-    const stopButton = document.getElementById("stopChargeMonitor");
-
-    if (!startButton || !stopButton) return;
-
-    startButton.addEventListener("click", () => {
-      const when = Date.now() + 60000; // 1分後 (テスト用)
-      chrome.runtime.sendMessage({
-        type: "START_CHARGE_ALARM",
-        when: when,
-      });
-      console.log("🧑‍🎨: Charge monitor started");
-    });
-
-    stopButton.addEventListener("click", () => {
-      chrome.runtime.sendMessage({ type: "STOP_CHARGE_ALARM" });
-      console.log("🧑‍🎨: Charge monitor stopped");
-    });
   }
 
   private createChargeSection(): string {
     if (!this.userData?.charges) return "";
 
-    // timer-service.tsのグローバル状態を読み取り
-    const globalChargeData: ChargeData = (window as any).wplaceChargeData;
-
-    let timeData, timeRemaining: string;
-    if (globalChargeData) {
-      // リアルタイム計算
-      const elapsed = Date.now() - globalChargeData.startTime;
-      const remainingMs = Math.max(0, globalChargeData.timeToFull - elapsed);
-      timeRemaining = this.calculator.formatTimeRemaining(remainingMs);
-      timeData = {
-        current: globalChargeData.current,
-        max: globalChargeData.max,
-        timeToFullMs: remainingMs,
-      };
-    } else {
-      // フォールバック：従来ロジック
-      timeData = this.calculator.calculateTimeToFull(this.userData.charges);
-      timeRemaining = this.calculator.formatTimeRemaining(
-        timeData.timeToFullMs
-      );
-    }
-
-    const percentage = (Math.floor(timeData.current) / timeData.max) * 100;
-    const fullChargeTime = new Date(Date.now() + timeData.timeToFullMs);
+    const { current, max, timeToFullMs } = this.getChargeData();
+    const timeRemaining = this.calculator.formatTimeRemaining(timeToFullMs);
+    const percentage = (Math.floor(current) / max) * 100;
+    
+    const fullChargeTime = new Date(Date.now() + timeToFullMs);
     const formattedTime = fullChargeTime.toLocaleTimeString("ja-JP", {
       hour: "2-digit",
       minute: "2-digit",
     });
+
+    const timeDisplay = timeToFullMs > 0 
+      ? `<div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
+           <div class="flex justify-between items-center mb-2">
+             <span class="text-sm font-medium text-blue-800">⏱️ Time to Full:</span>
+             <span class="font-mono text-blue-900">${timeRemaining.replace("⚡ ", "")}</span>
+           </div>
+           <div class="flex justify-between items-center">
+             <span class="text-sm font-medium text-blue-800">🎯 Full Charge At:</span>
+             <span class="font-mono text-blue-900">${formattedTime}</span>
+           </div>
+         </div>`
+      : `<div class="bg-green-50 p-3 rounded-lg border border-green-200 text-center">
+           <span class="text-green-800 font-semibold">⚡ FULLY CHARGED!</span>
+         </div>`;
 
     return `
       <div class="mb-6">
@@ -248,11 +202,8 @@ export class NotificationModal {
         <div class="space-y-3">
           <div class="flex justify-between">
             <span>Current Charges:</span>
-            <span class="font-mono text-lg">${Math.floor(timeData.current)}/${
-      timeData.max
-    }</span>
+            <span class="font-mono text-lg">${Math.floor(current)}/${max}</span>
           </div>
-          
           <div class="relative">
             <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
               <div class="bg-gradient-to-r from-green-400 to-green-600 h-full rounded-full transition-all duration-500 ease-out" 
@@ -262,33 +213,93 @@ export class NotificationModal {
               ${Math.round(percentage)}%
             </div>
           </div>
-          
-          ${
-            timeData.timeToFullMs > 0
-              ? `
-            <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
-              <div class="flex justify-between items-center mb-2">
-                <span class="text-sm font-medium text-blue-800">⏱️ Time to Full:</span>
-                <span class="font-mono text-blue-900">${timeRemaining.replace(
-                  "⚡ ",
-                  ""
-                )}</span>
-              </div>
-              <div class="flex justify-between items-center">
-                <span class="text-sm font-medium text-blue-800">🎯 Full Charge At:</span>
-                <span class="font-mono text-blue-900">${formattedTime}</span>
-              </div>
-            </div>
-          `
-              : `
-            <div class="bg-green-50 p-3 rounded-lg border border-green-200 text-center">
-              <span class="text-green-800 font-semibold">⚡ FULLY CHARGED!</span>
-            </div>
-          `
-          }
+          ${timeDisplay}
         </div>
       </div>
     `;
+  }
+
+  private createAlarmStatusHTML(): string {
+    if (this.currentAlarmInfo) {
+      const alarmTime = new Date(this.currentAlarmInfo.scheduledTime).toLocaleTimeString("ja-JP", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+      return `
+        <div style="background-color: #dcfce7; padding: 8px 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #bbf7d0;">
+          <div style="font-size: 13px; color: #15803d; font-weight: 500;">⏰ Alarm Active</div>
+          <div style="font-size: 12px; color: #16a34a; margin-top: 2px;">Scheduled: ${alarmTime}</div>
+        </div>
+      `;
+    }
+    
+    return `
+      <div style="background-color: #f3f4f6; padding: 8px 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #d1d5db;">
+        <div style="font-size: 13px; color: #6b7280; font-weight: 500;">😴 No Alarm Set</div>
+      </div>
+    `;
+  }
+
+  private createChargeMonitorSection(): string {
+    return `
+      <div class="mb-6 border-t pt-4" style="border-top: 1px solid #e5e7eb; margin-bottom: 24px; padding-top: 16px;">
+        <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 12px;">🔔 Charge Alarm</h4>
+        
+        <div style="margin-bottom: 16px;">
+          <label style="font-size: 14px; font-weight: 500; color: #374151; display: block; margin-bottom: 8px;">
+            Notification Threshold: <span id="thresholdValue">${this.currentThreshold}</span>%
+          </label>
+          <input type="range" id="chargeThreshold" min="10" max="100" value="${this.currentThreshold}" step="5" 
+                 style="width: 100%; margin-bottom: 8px;">
+          <div id="estimatedTime" style="font-size: 12px; color: #6b7280; background-color: #f9fafb; padding: 6px 8px; border-radius: 4px; border: 1px solid #e5e7eb;">
+            Estimated time: ${this.calculateThresholdTime(this.currentThreshold)}
+          </div>
+        </div>
+        
+        <div style="display: flex; gap: 8px;">
+          <button id="startChargeMonitor" style="background-color: #16a34a; color: white; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 500;">
+            Start Monitor
+          </button>
+          <button id="stopChargeMonitor" style="background-color: #dc2626; color: white; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 500;">
+            Stop Monitor
+          </button>
+        </div>
+        ${this.createAlarmStatusHTML()}
+      </div>
+    `;
+  }
+
+  private setupChargeMonitorListeners(): void {
+    const startButton = document.getElementById("startChargeMonitor");
+    const stopButton = document.getElementById("stopChargeMonitor");
+    const thresholdSlider = document.getElementById("chargeThreshold") as HTMLInputElement;
+    const thresholdValue = document.getElementById("thresholdValue");
+    const estimatedTime = document.getElementById("estimatedTime");
+
+    if (!startButton || !stopButton) return;
+
+    startButton.addEventListener("click", () => {
+      const when = Date.now() + 60000; // 1分後 (テスト用)
+      chrome.runtime.sendMessage({ type: "START_CHARGE_ALARM", when });
+      console.log("🧑‍🎨: Charge monitor started");
+    });
+
+    stopButton.addEventListener("click", () => {
+      chrome.runtime.sendMessage({ type: "STOP_CHARGE_ALARM" });
+      console.log("🧑‍🎨: Charge monitor stopped");
+    });
+
+    if (thresholdSlider && thresholdValue && estimatedTime) {
+      const updateThresholdDisplay = () => {
+        const threshold = parseInt(thresholdSlider.value);
+        this.currentThreshold = threshold;
+        thresholdValue.textContent = threshold.toString();
+        estimatedTime.textContent = `Estimated time: ${this.calculateThresholdTime(threshold)}`;
+      };
+      
+      thresholdSlider.addEventListener("input", updateThresholdDisplay);
+    }
   }
 
   destroy(): void {
