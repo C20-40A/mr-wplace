@@ -9,8 +9,7 @@
     "unlimitedStorage",
     "activeTab",
     "alarms",
-    "notifications",
-    "tabs"
+    "notifications"
   ],
   "background": {
     "service_worker": "service_worker.js"
