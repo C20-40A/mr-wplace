@@ -17,9 +17,11 @@ export class NotificationModal {
   private updateInterval?: number;
   private currentAlarmInfo: any = null;
   private currentThreshold: number = 80;
+  private isFirstRender: boolean = true;
 
   show(userData: WPlaceUserData): void {
     this.userData = userData;
+    this.isFirstRender = true;
 
     if (!this.modalElements) {
       this.modalElements = createModal({
@@ -58,7 +60,6 @@ export class NotificationModal {
     }
   }
 
-  // chargeData取得統一
   private getChargeData(): { current: number; max: number; cooldownMs: number; timeToFullMs: number } {
     if (!this.userData?.charges) throw new Error("No charge data available");
 
@@ -118,19 +119,50 @@ export class NotificationModal {
   private renderContent(): void {
     if (!this.modalElements || !this.userData) return;
 
+    if (this.isFirstRender) {
+      this.renderInitialContent();
+      this.isFirstRender = false;
+    } else {
+      this.updateDynamicContent();
+    }
+  }
+
+  private renderInitialContent(): void {
     const sections = [];
 
-    if (this.userData.level !== undefined && this.userData.pixelsPainted !== undefined) {
+    if (this.userData?.level !== undefined && this.userData?.pixelsPainted !== undefined) {
       sections.push(this.createLevelSection());
     }
 
-    if (this.userData.charges) {
+    if (this.userData?.charges) {
       sections.push(this.createChargeSection());
       sections.push(this.createChargeMonitorSection());
     }
 
-    this.modalElements.container.innerHTML = sections.join("");
+    this.modalElements!.container.innerHTML = sections.join("");
     this.setupChargeMonitorListeners();
+  }
+
+  private updateDynamicContent(): void {
+    if (!this.userData?.charges) return;
+
+    // Charge Status更新
+    const chargeStatusElement = document.getElementById("charge-status-content");
+    if (chargeStatusElement) {
+      chargeStatusElement.innerHTML = this.createChargeStatusContent();
+    }
+
+    // Alarm Status更新  
+    const alarmStatusElement = document.getElementById("alarm-status-content");
+    if (alarmStatusElement) {
+      alarmStatusElement.innerHTML = this.createAlarmStatusHTML();
+    }
+
+    // Estimated Time更新
+    const estimatedTimeElement = document.getElementById("estimatedTime");
+    if (estimatedTimeElement) {
+      estimatedTimeElement.textContent = `Estimated time: ${this.calculateThresholdTime(this.currentThreshold)}`;
+    }
   }
 
   private createLevelSection(): string {
@@ -169,8 +201,17 @@ export class NotificationModal {
   }
 
   private createChargeSection(): string {
-    if (!this.userData?.charges) return "";
+    return `
+      <div class="mb-6">
+        <h4 class="font-semibold text-md mb-3">⚡ Charge Status</h4>
+        <div id="charge-status-content">
+          ${this.createChargeStatusContent()}
+        </div>
+      </div>
+    `;
+  }
 
+  private createChargeStatusContent(): string {
     const { current, max, timeToFullMs } = this.getChargeData();
     const timeRemaining = this.calculator.formatTimeRemaining(timeToFullMs);
     const percentage = (Math.floor(current) / max) * 100;
@@ -197,24 +238,21 @@ export class NotificationModal {
          </div>`;
 
     return `
-      <div class="mb-6">
-        <h4 class="font-semibold text-md mb-3">⚡ Charge Status</h4>
-        <div class="space-y-3">
-          <div class="flex justify-between">
-            <span>Current Charges:</span>
-            <span class="font-mono text-lg">${Math.floor(current)}/${max}</span>
-          </div>
-          <div class="relative">
-            <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-              <div class="bg-gradient-to-r from-green-400 to-green-600 h-full rounded-full transition-all duration-500 ease-out" 
-                   style="width: ${percentage}%"></div>
-            </div>
-            <div class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-gray-700">
-              ${Math.round(percentage)}%
-            </div>
-          </div>
-          ${timeDisplay}
+      <div class="space-y-3">
+        <div class="flex justify-between">
+          <span>Current Charges:</span>
+          <span class="font-mono text-lg">${Math.floor(current)}/${max}</span>
         </div>
+        <div class="relative">
+          <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+            <div class="bg-gradient-to-r from-green-400 to-green-600 h-full rounded-full transition-all duration-500 ease-out" 
+                 style="width: ${percentage}%"></div>
+          </div>
+          <div class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-gray-700">
+            ${Math.round(percentage)}%
+          </div>
+        </div>
+        ${timeDisplay}
       </div>
     `;
   }
@@ -265,7 +303,9 @@ export class NotificationModal {
             Stop Monitor
           </button>
         </div>
-        ${this.createAlarmStatusHTML()}
+        <div id="alarm-status-content">
+          ${this.createAlarmStatusHTML()}
+        </div>
       </div>
     `;
   }
