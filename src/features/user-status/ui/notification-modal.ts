@@ -64,9 +64,11 @@ export class NotificationModal {
 
     if (this.userData.charges) {
       sections.push(this.createChargeSection());
+      sections.push(this.createChargeMonitorSection());
     }
 
     this.modalElements.container.innerHTML = sections.join('');
+    this.setupChargeMonitorListeners();
   }
 
   private createLevelSection(): string {
@@ -102,6 +104,52 @@ export class NotificationModal {
         </div>
       </div>
     `;
+  }
+
+  private createChargeMonitorSection(): string {
+    return `
+      <div class="mb-6 border-t pt-4" style="border-top: 1px solid #e5e7eb; margin-bottom: 24px; padding-top: 16px;">
+        <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 12px;">🔔 Charge Monitor</h4>
+        <div style="display: flex; gap: 8px;">
+          <button id="startChargeMonitor" style="
+            background-color: #16a34a;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+          ">Start Monitor</button>
+          <button id="stopChargeMonitor" style="
+            background-color: #dc2626;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+          ">Stop Monitor</button>
+        </div>
+        <p style="font-size: 12px; color: #6b7280; margin-top: 8px;">Notifies when charge reaches 80%</p>
+      </div>
+    `;
+  }
+
+  private setupChargeMonitorListeners(): void {
+    const startButton = document.getElementById('startChargeMonitor');
+    const stopButton = document.getElementById('stopChargeMonitor');
+
+    if (!startButton || !stopButton) return;
+
+    startButton.addEventListener('click', () => {
+      chrome.runtime.sendMessage({ type: 'START_CHARGE_MONITOR' });
+      console.log("🧑‍🎨: Charge monitor started");
+    });
+
+    stopButton.addEventListener('click', () => {
+      chrome.runtime.sendMessage({ type: 'STOP_CHARGE_MONITOR' });
+      console.log("🧑‍🎨: Charge monitor stopped");
+    });
   }
 
   private createChargeSection(): string {

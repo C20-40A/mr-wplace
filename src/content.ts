@@ -40,6 +40,14 @@ const runmrWplace = async (): Promise<void> => {
       console.log("🧑‍🎨: Received user data:", event.data.userData);
       const userData = event.data.userData as WPlaceUserData;
 
+      // Set charge data for service worker
+      if (userData.charges) {
+        (window as any).wplaceChargeData = {
+          current: userData.charges.count,
+          max: userData.charges.max
+        };
+      }
+
       userStatus.updateFromUserData(userData);
     }
   });
@@ -94,11 +102,23 @@ const runmrWplace = async (): Promise<void> => {
   window.colorFilterManager = colorFilterManager;
 };
 
-// 言語切替メッセージリスナー
-chrome.runtime.onMessage.addListener(async (message) => {
+// メッセージリスナー（言語切替・charge data要求）
+chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.type === "LOCALE_CHANGED") {
     // i18nマネージャーの状態を更新
     await I18nManager.init(message.locale);
+    return;
+  }
+  
+  if (message.type === "GET_CHARGE_DATA") {
+    const wplaceChargeData = (window as any).wplaceChargeData;
+    if (wplaceChargeData) {
+      sendResponse({ chargeData: wplaceChargeData });
+    } else {
+      console.log("🧑‍🎨: wplaceChargeData not found");
+      sendResponse({ chargeData: null });
+    }
+    return true; // 非同期response用
   }
 });
 

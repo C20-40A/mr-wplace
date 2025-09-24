@@ -35,17 +35,6 @@ export class StatusUIComponents {
     return container;
   }
 
-  createNotificationIcon(): HTMLElement {
-    const icon = document.createElement("span");
-    icon.innerHTML = "🔔";
-    icon.style.cssText = `
-      order: -1;
-      font-size: 14px;
-      pointer-events: none;
-    `;
-    return icon;
-  }
-
   createNextLevelBadge(): HTMLElement {
     const badge = document.createElement("span");
     badge.style.cssText = `

@@ -7,8 +7,13 @@
   "permissions": [
     "storage",
     "unlimitedStorage",
-    "activeTab"
+    "activeTab",
+    "alarms",
+    "notifications"
   ],
+  "background": {
+    "service_worker": "service_worker.js"
+  },
   "action": {
     "default_title": "__MSG_popupTitle__",
     "default_popup": "popup.html",

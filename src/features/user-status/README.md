@@ -1,87 +1,51 @@
-# UserStatus 責務分割+Notification実装ナレッジ
+# UserStatus Charge Monitor - 簡略化実装ナレッジ
 
-## 責務分割アーキテクチャ
+## アーキテクチャ（簡略化）
 ```
-StatusManager → StatusUIComponents + StatusCalculator + TimerService + NotificationModal
-     ↓              ↓                    ↓                ↓               ↓
-   統合制御      UI要素作成           データ計算        タイマー処理    詳細表示Modal
-```
-
-## ファイル構成
-```
-src/features/user-status/
-├── ui/
-│   ├── components.ts           # UI要素作成（Container+🔔+Badge+Countdown）
-│   └── notification-modal.ts   # Modal詳細表示（utils/modal.ts流用）
-├── services/
-│   ├── calculator.ts           # データ計算（レベル・チャージ・進捗HTML）
-│   └── timer-service.ts        # タイマー（カウントダウン+interval管理）
-├── manager.ts                  # 統合制御（全責務統合）
-└── index.ts                   # 公開API（elementObserver統合）
+service_worker.js → chrome.alarms → checkChargeAndNotify() → chrome.notifications
+     ↓                  ↓                      ↓                    ↓
+   シンプル制御     1分間隔監視      80%固定判定      通知表示+wplace.live開く
 ```
 
-## Notification機能仕様
-- **🔔位置**: Container一番左（装飾要素のみ、CSS order:-1）
-- **クリック対象**: Container全体（ボタン化）
-- **UI**: Container全体にhover効果+cursor:pointer+pointer-events:all
-- **Modal**: utils/modal.ts統一パターン流用
-- **内容**: Level進捗詳細+Charge状態詳細+プログレスバー
-
-## 技術実装パターン
-
-### 責務分離原則
-```typescript
-// UI作成のみ
-StatusUIComponents.createNotificationIcon()
-
-// データ計算のみ  
-StatusCalculator.calculateNextLevelPixels()
-
-// Modal表示制御のみ
-NotificationModal.show(userData)
-
-// 統合管理のみ
-StatusManager.updateFromUserData()
+## ファイル変更
+```
+service_worker.js          # 簡略化: 80%固定、複雑設定削除
+NotificationModal.ts       # Start/Stopボタンのみ、設定UI削除
+content.ts                # window.wplaceChargeData設定追加
+manifest.json              # alarms,notifications権限（両方必要）
 ```
 
-### 既存パターン流用
-- **Modal統一**: utils/modal.ts.createModal()使用
-- **elementObserver**: 既存パターン維持
-- **i18n**: 未対応（最小限実装優先）
-- **lifecycle**: init/destroy/updateFromUserData維持
+## 機能仕様（最小限）
+- **監視開始**: Start Monitorボタン
+- **監視停止**: Stop Monitorボタン  
+- **判定**: charge 80%固定（current/max*100>=80）
+- **通知**: chrome.notifications（1分間隔チェック）
+- **クリック**: 通知クリック→wplace.live開く
 
-### Container構造変更
-```typescript
-// BEFORE: countdown + badge
-// AFTER: notificationIcon(order:-1) + countdown + badge
-setupContainer() {
-  this.container.appendChild(this.notificationIcon);  // 一番左
-  this.container.appendChild(this.chargeCountdown);
-  this.container.appendChild(this.nextLevelBadge);
-}
-```
+## 技術実装
+### service_worker.js
+- `chrome.alarms.create('charge-check', 1分間隔)`
+- `checkChargeAndNotify()`: tabs.query→sendMessage→GET_CHARGE_DATA
+- `chrome.notifications.create('charge-ready')`
 
-## Modal内容仕様
-- **Level Section**: 現在レベル+総pixel+次レベル必要pixel+プログレスバー
-- **Charge Section**: 現在charge/max+cooldown秒数+chargeプログレスバー
-- **レスポンシブ**: maxWidth:32rem
-- **スタイル**: TailwindCSS使用
+### content.ts  
+- UserData受信時: `window.wplaceChargeData = {current, max}` 設定
+- GET_CHARGE_DATA応答: wplaceChargeData返却
 
-## 状態管理統合
-```typescript
-private currentUserData?: WPlaceUserData;  // Modal表示用データ保持
-updateFromUserData(userData) {
-  this.currentUserData = userData;         // 保持更新
-  // 既存Badge/Countdown更新
-  // notificationIconクリックで this.notificationModal.show(userData)
-}
-```
+### NotificationModal
+- Start/Stopボタン: `chrome.runtime.sendMessage`でservice_worker制御
+- UI: 緑Start・赤Stopボタン、説明テキストのみ
 
-## 削除なし・既存機能維持
-- レベル進捗表示維持
-- チャージカウントダウン維持  
-- elementObserver統合維持
-- 表示制御ロジック維持
-- TimerService interval管理維持
+## 削除した複雑機能
+- ~~設定UI（スライダー・トグル・保存）~~
+- ~~chrome.storage設定管理~~
+- ~~パーセンテージ可変設定~~
+- ~~複雑イベントリスナー~~
 
-**Core**: 責務完全分離+🔔Modal統合+既存機能100%維持+utils/modal統一パターン流用で最小限実装完了
+## 制約
+- **両権限必要**: "alarms"（監視）+"notifications"（通知表示）
+- **80%固定**: 可変設定なし
+- **1分間隔**: chrome.alarms最小制約
+- **wplace.liveタブ必要**: 他タブではcharge data取得不可
+
+**Core**: 複雑設定削除→Start/Stopボタン制御→80%固定通知の最小限実装完了

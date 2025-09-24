@@ -13,21 +13,18 @@ export class StatusManager {
   private container: HTMLElement;
   private nextLevelBadge: HTMLElement;
   private chargeCountdown: HTMLElement;
-  private notificationIcon: HTMLElement;
   private currentUserData?: WPlaceUserData;
 
   constructor() {
     this.container = this.uiComponents.createContainer();
     this.nextLevelBadge = this.uiComponents.createNextLevelBadge();
     this.chargeCountdown = this.uiComponents.createChargeCountdown();
-    this.notificationIcon = this.uiComponents.createNotificationIcon();
     this.setupContainer();
     this.setupEventListeners();
     this.hideAll();
   }
 
   private setupContainer(): void {
-    this.container.appendChild(this.notificationIcon);
     this.container.appendChild(this.chargeCountdown);
     this.container.appendChild(this.nextLevelBadge);
   }
