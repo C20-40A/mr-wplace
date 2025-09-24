@@ -33,7 +33,7 @@ export class StatusManager {
   }
 
   private setupEventListeners(): void {
-    this.notificationIcon.addEventListener("click", () => {
+    this.container.addEventListener("click", () => {
       if (this.currentUserData) {
         this.notificationModal.show(this.currentUserData);
       }

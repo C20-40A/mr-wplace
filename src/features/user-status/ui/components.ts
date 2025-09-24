@@ -10,7 +10,7 @@ export class StatusUIComponents {
       display: flex;
       align-items: center;
       gap: 12px;
-      pointer-events: none;
+      pointer-events: all;
       background-color: white;
       border-radius: 12px;
       padding: 4px 8px;
@@ -18,31 +18,31 @@ export class StatusUIComponents {
       border: 1px solid rgba(0, 0, 0, 0.1);
       font-size: 11px;
       font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s, box-shadow 0.2s;
     `;
     container.id = "user-status-container";
+    
+    container.addEventListener("mouseenter", () => {
+      container.style.backgroundColor = "#f8f9fa";
+      container.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
+    });
+    container.addEventListener("mouseleave", () => {
+      container.style.backgroundColor = "white";
+      container.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
+    });
+    
     return container;
   }
 
   createNotificationIcon(): HTMLElement {
-    const icon = document.createElement("button");
+    const icon = document.createElement("span");
     icon.innerHTML = "🔔";
     icon.style.cssText = `
       order: -1;
-      background: none;
-      border: none;
-      cursor: pointer;
       font-size: 14px;
-      padding: 2px;
-      border-radius: 4px;
-      pointer-events: all;
-      transition: background-color 0.2s;
+      pointer-events: none;
     `;
-    icon.addEventListener("mouseenter", () => {
-      icon.style.backgroundColor = "#f3f4f6";
-    });
-    icon.addEventListener("mouseleave", () => {
-      icon.style.backgroundColor = "transparent";
-    });
     return icon;
   }
 

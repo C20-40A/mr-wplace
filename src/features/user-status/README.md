@@ -21,8 +21,9 @@ src/features/user-status/
 ```
 
 ## Notification機能仕様
-- **🔔位置**: Container一番左（CSS order:-1）
-- **UI**: button + hover効果 + pointer-events:all
+- **🔔位置**: Container一番左（装飾要素のみ、CSS order:-1）
+- **クリック対象**: Container全体（ボタン化）
+- **UI**: Container全体にhover効果+cursor:pointer+pointer-events:all
 - **Modal**: utils/modal.ts統一パターン流用
 - **内容**: Level進捗詳細+Charge状態詳細+プログレスバー
 
