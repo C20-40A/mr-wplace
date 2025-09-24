@@ -1,11 +1,21 @@
 import { createModal, ModalElements } from "../../../utils/modal";
 import { WPlaceUserData } from "../../../types/user-data";
 import { StatusCalculator } from "../services/calculator";
+import { TimerService } from "../services/timer-service";
+
+interface ChargeData {
+  current: number;
+  max: number;
+  cooldownMs: number;
+  timeToFull: number;
+  startTime: number;
+}
 
 export class NotificationModal {
   private calculator = new StatusCalculator();
   private modalElements?: ModalElements;
   private userData?: WPlaceUserData;
+  private updateInterval?: number;
 
   show(userData: WPlaceUserData): void {
     this.userData = userData;
@@ -20,6 +30,27 @@ export class NotificationModal {
 
     this.renderContent();
     this.modalElements.modal.showModal();
+    this.startPeriodicUpdate();
+
+    // Modal close時にinterval停止
+    this.modalElements.modal.addEventListener('close', () => {
+      this.stopPeriodicUpdate();
+    });
+  }
+
+  private startPeriodicUpdate(): void {
+    this.stopPeriodicUpdate();
+    // UI更新のみ（時間計算はグローバル状態から）
+    this.updateInterval = window.setInterval(() => {
+      this.renderContent();
+    }, 1000);
+  }
+
+  private stopPeriodicUpdate(): void {
+    if (this.updateInterval) {
+      clearInterval(this.updateInterval);
+      this.updateInterval = undefined;
+    }
   }
 
   private renderContent(): void {
@@ -76,31 +107,75 @@ export class NotificationModal {
   private createChargeSection(): string {
     if (!this.userData?.charges) return '';
 
-    const timeData = this.calculator.calculateTimeToFull(this.userData.charges);
-    const percentage = (timeData.current / timeData.max) * 100;
+    // timer-service.tsのグローバル状態を読み取り
+    const globalChargeData: ChargeData = (window as any).wplaceChargeData;
+    
+    let timeData, timeRemaining: string;
+    if (globalChargeData) {
+      // リアルタイム計算
+      const elapsed = Date.now() - globalChargeData.startTime;
+      const remainingMs = Math.max(0, globalChargeData.timeToFull - elapsed);
+      timeRemaining = this.calculator.formatTimeRemaining(remainingMs);
+      timeData = {
+        current: globalChargeData.current,
+        max: globalChargeData.max,
+        timeToFullMs: remainingMs
+      };
+    } else {
+      // フォールバック：従来ロジック
+      timeData = this.calculator.calculateTimeToFull(this.userData.charges);
+      timeRemaining = this.calculator.formatTimeRemaining(timeData.timeToFullMs);
+    }
+
+    const percentage = (Math.floor(timeData.current) / timeData.max) * 100;
+    const fullChargeTime = new Date(Date.now() + timeData.timeToFullMs);
+    const formattedTime = fullChargeTime.toLocaleTimeString('ja-JP', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
 
     return `
       <div class="mb-6">
         <h4 class="font-semibold text-md mb-3">⚡ Charge Status</h4>
-        <div class="space-y-2">
+        <div class="space-y-3">
           <div class="flex justify-between">
             <span>Current Charges:</span>
-            <span class="font-mono">${timeData.current}/${timeData.max}</span>
+            <span class="font-mono text-lg">${Math.floor(timeData.current)}/${timeData.max}</span>
           </div>
-          <div class="flex justify-between">
-            <span>Cooldown:</span>
-            <span class="font-mono">${(timeData.cooldownMs / 1000)}s</span>
+          
+          <div class="relative">
+            <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+              <div class="bg-gradient-to-r from-green-400 to-green-600 h-full rounded-full transition-all duration-500 ease-out" 
+                   style="width: ${percentage}%"></div>
+            </div>
+            <div class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-gray-700">
+              ${Math.round(percentage)}%
+            </div>
           </div>
-          <div class="w-full bg-gray-200 rounded-full h-2 mt-3">
-            <div class="bg-green-500 h-2 rounded-full transition-all duration-300" 
-                 style="width: ${percentage}%"></div>
-          </div>
+          
+          ${timeData.timeToFullMs > 0 ? `
+            <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-blue-800">⏱️ Time to Full:</span>
+                <span class="font-mono text-blue-900">${timeRemaining.replace('⚡ ', '')}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm font-medium text-blue-800">🎯 Full Charge At:</span>
+                <span class="font-mono text-blue-900">${formattedTime}</span>
+              </div>
+            </div>
+          ` : `
+            <div class="bg-green-50 p-3 rounded-lg border border-green-200 text-center">
+              <span class="text-green-800 font-semibold">⚡ FULLY CHARGED!</span>
+            </div>
+          `}
         </div>
       </div>
     `;
   }
 
   destroy(): void {
+    this.stopPeriodicUpdate();
     if (this.modalElements) {
       this.modalElements.modal.remove();
       this.modalElements = undefined;
