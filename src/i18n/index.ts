@@ -1,5 +1,5 @@
 // サポート対象ロケール型定義
-export type SupportedLocale = "ja" | "en" | "pt" | "es";
+export type SupportedLocale = "ja" | "en" | "pt" | "es" | "vi";
 
 // 翻訳辞書の型定義
 export interface Translations {
@@ -11,6 +11,7 @@ export interface LocaleData {
   en: Translations;
   pt: Translations;
   es: Translations;
+  vi: Translations;
 }
 
 // 現在のロケール管理
@@ -24,7 +25,7 @@ export async function loadLocaleFromStorage(): Promise<void> {
   if (typeof chrome !== "undefined" && chrome.storage) {
     const result = await chrome.storage.local.get([STORAGE_KEY]);
     const storedLocale = result[STORAGE_KEY] as SupportedLocale;
-    if (storedLocale === "ja" || storedLocale === "en" || storedLocale === "pt" || storedLocale === "es") {
+    if (storedLocale === "ja" || storedLocale === "en" || storedLocale === "pt" || storedLocale === "es" || storedLocale === "vi") {
       currentLocale = storedLocale;
     }
   }
@@ -43,6 +44,7 @@ const translations: LocaleData = {
   en: {},
   pt: {},
   es: {},
+  vi: {},
 };
 
 // ロケール設定（ストレージ連携版）
@@ -59,7 +61,7 @@ export function getLocale(): SupportedLocale {
 // ブラウザ言語検出
 export function detectBrowserLanguage(): SupportedLocale {
   const lang = navigator.language.substring(0, 2);
-  if (lang === "ja" || lang === "en" || lang === "pt" || lang === "es") {
+  if (lang === "ja" || lang === "en" || lang === "pt" || lang === "es" || lang === "vi") {
     return lang as SupportedLocale;
   }
   return "en";
@@ -79,7 +81,8 @@ export function formatDate(date: Date, options?: Intl.DateTimeFormatOptions): st
     ja: "ja-JP",
     en: "en-US",
     pt: "pt-BR",
-    es: "es-ES"
+    es: "es-ES",
+    vi: "vi-VN"
   };
   return date.toLocaleString(localeMap[currentLocale], options);
 }
@@ -89,7 +92,8 @@ export function formatDateShort(date: Date): string {
     ja: "ja-JP",
     en: "en-US",
     pt: "pt-BR",
-    es: "es-ES"
+    es: "es-ES",
+    vi: "vi-VN"
   };
   return date.toLocaleDateString(localeMap[currentLocale]);
 }
