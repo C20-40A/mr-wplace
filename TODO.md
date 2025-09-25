@@ -3,7 +3,6 @@
 # マイナー
 
 - アイコンを pixel art にする
-- notification
 - image import で color pick
 - ui.ts 系は functional のほうがいいかもしれない
 - ギャラリー画像＋位置を export して、複数人で編集できる機能
@@ -24,9 +23,11 @@
 - 道路引くツール
 - ギャラリー画像の入れ替えもあってもいいかも
 - Current Charges がずれている問題
+- 現在選択中の色を filter に表示
 
 # DONE v1.2.3
 
+- notification
 - フルチャージまでの時間
 - next level までの pixel のバッジ少しわかりにくい
 

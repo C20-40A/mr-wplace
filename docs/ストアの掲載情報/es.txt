@@ -1,30 +1,29 @@
-🚀 ¡Transforma tu experiencia WPlace con Mr. Wplace - el kit de herramientas definitivo que trae características creativas profesionales directamente a tu plataforma de mapeo favorita!
+🚀 Kit de Herramientas Multifuncional Mr. Wplace
 
-🎨 DIBUJA EN CUALQUIER LUGAR DEL MAPA
-• Coloca imágenes personalizadas en cualquier ubicación con precisión perfecta
-• Activa/desactiva tus dibujos instantáneamente sin perder tu trabajo
-• Tu arte se extiende automáticamente a través de múltiples secciones del mapa
+🔔 Recibe notificaciones cuando se acumule pintura
+• Recibe notificaciones cuando tu pintura alcance un nivel determinado (activa/desactiva)
+• Configura umbrales de notificación personalizados del 10% al 100%
+• Integra con enlaces de Google Calendar
 
-📸 GALERÍA DE IMÁGENES INTELIGENTE
-• Sube y organiza todas tus imágenes en un lugar
-• Editor integrado para redimensionar y ajustar colores
-• Selector rápido de imágenes cuando necesitas colocar algo rápido
-• Vista previa de todo antes de colocarlo en el mapa
+🎨 Dibuja imágenes en el mapa
+• Muestra los píxeles necesarios para dibujar tus imágenes subidas en el mapa
+• Ve tu colección de obras de arte en la galería
+• Alterna fácilmente la visibilidad de obras y teletranspórtate a ubicaciones de obras
 
-⭐ GUARDA TUS LUGARES FAVORITOS
-• Marca ubicaciones importantes con nombres personalizados
-• Añade descripciones y notas para recordar por qué son especiales
-• Exporta tu colección de marcadores para compartir con amigos
-• Importa marcadores de otros para descubrir nuevos lugares
+⭐ Marcadores ilimitados
+• Guarda tus ubicaciones favoritas con nombres personalizados sin límites
+• Importa/exporta tus listas de marcadores
 
-⏰ FUNCIÓN VIAJE EN EL TIEMPO
-• Toma capturas de áreas del mapa para ver cómo cambian con el tiempo
-• Detecta automáticamente cuando algo ha cambiado
-• Navega por vistas históricas como una máquina del tiempo
-• Perfecto para rastrear construcción, cambios naturales o actualizaciones
+⏰ Restaura obras a estados anteriores
+• Guarda imágenes dibujadas en los mosaicos actuales del mapa
+• Muestra estados anteriores en el mapa para corregir rápidamente obras vandalizadas
+• Ve todos los mosaicos guardados en una lista
 
-🔒 PRIVACIDAD PRIMERO
-• Todo permanece en tu navegador - no se envían datos a ningún lado
-• Tus imágenes y marcadores son completamente privados
-• Seguro por diseño con los últimos estándares de seguridad de Chrome
-• Licencia de código abierto para transparencia completa
+
+--------------------
+
+🔒 Privacidad Primero
+• Todos los datos permanecen en tu navegador
+• Las imágenes y marcadores son completamente privados
+• Diseñado con los últimos estándares de seguridad de Chrome desde cero
+• Licencia de código abierto para total transparencia
