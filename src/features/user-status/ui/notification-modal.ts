@@ -18,6 +18,9 @@ export class NotificationModal {
   private currentAlarmInfo: any = null;
   private currentThreshold: number = 80;
   private isFirstRender: boolean = true;
+  private static readonly ALARM_THRESHOLD_KEY = "ALARM_THRESHOLD";
+  private static readonly ALARM_ENABLED_STATE_KEY = "ALARM_ENABLED_STATE";
+  private currentEnabledState: boolean = false;
 
   show(userData: WPlaceUserData): void {
     this.userData = userData;
@@ -50,6 +53,7 @@ export class NotificationModal {
 
   private async updateAlarmInfoAndRender(): Promise<void> {
     this.currentAlarmInfo = await this.getAlarmInfo();
+    this.currentEnabledState = await this.getAlarmEnabledState();
     this.renderContent();
   }
 
@@ -86,21 +90,27 @@ export class NotificationModal {
   }
 
   private calculateThresholdTime(threshold: number): string {
-    if (!this.userData?.charges) return "--:--";
+    const alarmTime = this.calculateAlarmTime(threshold);
+    if (!alarmTime) return "Already reached";
+    
+    return alarmTime.toLocaleTimeString("ja-JP", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  private calculateAlarmTime(threshold: number): Date | null {
+    if (!this.userData?.charges) return null;
 
     const { current, max, cooldownMs } = this.getChargeData();
     const requiredCharges = (max * threshold) / 100;
     
-    if (current >= requiredCharges) return "Already reached";
+    if (current >= requiredCharges) return null;
 
     const neededCharges = requiredCharges - current;
     const requiredMs = neededCharges * cooldownMs;
-    const targetTime = new Date(Date.now() + requiredMs);
     
-    return targetTime.toLocaleTimeString("ja-JP", {
-      hour: "2-digit",
-      minute: "2-digit"
-    });
+    return new Date(Date.now() + requiredMs);
   }
 
   private async getAlarmInfo(): Promise<any> {
@@ -112,6 +122,15 @@ export class NotificationModal {
         } else {
           resolve(response);
         }
+      });
+    });
+  }
+
+  private async getAlarmEnabledState(): Promise<boolean> {
+    return new Promise(resolve => {
+      chrome.storage.local.get([NotificationModal.ALARM_ENABLED_STATE_KEY], (result) => {
+        const enabled = result[NotificationModal.ALARM_ENABLED_STATE_KEY];
+        resolve(enabled === true);
       });
     });
   }
@@ -280,6 +299,9 @@ export class NotificationModal {
   }
 
   private createChargeMonitorSection(): string {
+    const enableButtonDisplay = this.currentEnabledState ? "none" : "inline-block";
+    const disableButtonDisplay = this.currentEnabledState ? "inline-block" : "none";
+    
     return `
       <div class="mb-6 border-t pt-4" style="border-top: 1px solid #e5e7eb; margin-bottom: 24px; padding-top: 16px;">
         <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 12px;">🔔 Charge Alarm</h4>
@@ -296,11 +318,11 @@ export class NotificationModal {
         </div>
         
         <div style="display: flex; gap: 8px;">
-          <button id="startChargeMonitor" style="background-color: #16a34a; color: white; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 500;">
-            Start Monitor
+          <button id="enableAlarm" style="background-color: #16a34a; color: white; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 500; display: ${enableButtonDisplay};">
+            Enable Alarm
           </button>
-          <button id="stopChargeMonitor" style="background-color: #dc2626; color: white; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 500;">
-            Stop Monitor
+          <button id="disableAlarm" style="background-color: #dc2626; color: white; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 500; display: ${disableButtonDisplay};">
+            Disable Alarm
           </button>
         </div>
         <div id="alarm-status-content">
@@ -311,23 +333,46 @@ export class NotificationModal {
   }
 
   private setupChargeMonitorListeners(): void {
-    const startButton = document.getElementById("startChargeMonitor");
-    const stopButton = document.getElementById("stopChargeMonitor");
+    const enableButton = document.getElementById("enableAlarm");
+    const disableButton = document.getElementById("disableAlarm");
     const thresholdSlider = document.getElementById("chargeThreshold") as HTMLInputElement;
     const thresholdValue = document.getElementById("thresholdValue");
     const estimatedTime = document.getElementById("estimatedTime");
 
-    if (!startButton || !stopButton) return;
+    if (!enableButton || !disableButton) return;
 
-    startButton.addEventListener("click", () => {
-      const when = Date.now() + 60000; // 1分後 (テスト用)
-      chrome.runtime.sendMessage({ type: "START_CHARGE_ALARM", when });
-      console.log("🧑‍🎨: Charge monitor started");
+    enableButton.addEventListener("click", async () => {
+      const threshold = this.currentThreshold;
+      
+      // thresholdとenabled状態をstorageに保存
+      chrome.storage.local.set({
+        [NotificationModal.ALARM_THRESHOLD_KEY]: threshold,
+        [NotificationModal.ALARM_ENABLED_STATE_KEY]: true
+      });
+      
+      // ボタン表示切り替え
+      enableButton.style.display = "none";
+      disableButton.style.display = "inline-block";
+      
+      const alarmTime = this.calculateAlarmTime(threshold);
+      if (!alarmTime) {
+        console.log("🧑‍🎨: Threshold already reached, alarm enabled but not set");
+        return;
+      }
+      chrome.runtime.sendMessage({ type: "START_CHARGE_ALARM", when: alarmTime.getTime() });
+      console.log("🧑‍🎨: Alarm enabled for threshold:", threshold, "at", alarmTime.toLocaleTimeString());
     });
 
-    stopButton.addEventListener("click", () => {
+    disableButton.addEventListener("click", () => {
+      // enabled状態をfalseに保存
+      chrome.storage.local.set({[NotificationModal.ALARM_ENABLED_STATE_KEY]: false});
+      
+      // ボタン表示切り替え
+      disableButton.style.display = "none";
+      enableButton.style.display = "inline-block";
+      
       chrome.runtime.sendMessage({ type: "STOP_CHARGE_ALARM" });
-      console.log("🧑‍🎨: Charge monitor stopped");
+      console.log("🧑‍🎨: Alarm disabled");
     });
 
     if (thresholdSlider && thresholdValue && estimatedTime) {

@@ -1,51 +1,61 @@
-# UserStatus Charge Monitor - 簡略化実装ナレッジ
+# UserStatus実装ナレッジ
 
-## アーキテクチャ（簡略化）
+## アーキテクチャ
 ```
-service_worker.js → chrome.alarms → checkChargeAndNotify() → chrome.notifications
-     ↓                  ↓                      ↓                    ↓
-   シンプル制御     1分間隔監視      80%固定判定      通知表示+wplace.live開く
-```
-
-## ファイル変更
-```
-service_worker.js          # 簡略化: 80%固定、複雑設定削除
-NotificationModal.ts       # Start/Stopボタンのみ、設定UI削除
-content.ts                # window.wplaceChargeData設定追加
-manifest.json              # alarms,notifications権限（両方必要）
+StatusManager → NotificationModal → service_worker.js → chrome.alarms/notifications
+     ↓              ↓                    ↓                      ↓
+userData監視    threshold管理         アラーム制御           通知表示
 ```
 
-## 機能仕様（最小限）
-- **監視開始**: Start Monitorボタン
-- **監視停止**: Stop Monitorボタン  
-- **判定**: charge 80%固定（current/max*100>=80）
-- **通知**: chrome.notifications（1分間隔チェック）
-- **クリック**: 通知クリック→wplace.live開く
+## ファイル構成・役割
+```
+manager.ts                 # userData変化→アラーム自動更新
+ui/notification-modal.ts   # threshold設定UI、Start/Stop制御
+services/calculator.ts     # charge/level計算
+services/timer-service.ts  # UI countdown表示
+service_worker.js          # chrome.alarms→chrome.notifications
+```
 
 ## 技術実装
+
+### Threshold管理
+- chrome.storage.local: `ALARM_THRESHOLD` (default: 80)
+- NotificationModal: slider UI + Start Monitor時保存
+- StatusManager: userData変化時storage読み取り→アラーム更新
+
+### アラーム制御フロー
+```
+1. Start Monitor → storage保存 + アラーム設定
+2. paint使用 → userData変化 → StatusManager.handleChargeAlarmUpdate()
+3. storage読み取り → 時刻再計算 → アラーム更新
+```
+
+### Charge計算
+- globalChargeData優先、なければuserData.charges
+- current/max*100 >= threshold → アラーム停止
+- 未到達 → (requiredCharges-current) * cooldownMs で時刻計算
+
 ### service_worker.js
-- `chrome.alarms.create('charge-check', 1分間隔)`
-- `checkChargeAndNotify()`: tabs.query→sendMessage→GET_CHARGE_DATA
-- `chrome.notifications.create('charge-ready')`
+- START_CHARGE_ALARM/STOP_CHARGE_ALARM/GET_ALARM_INFO
+- chrome.alarms.create(ALARM_ID, {when})
+- アラーム発火 → chrome.notifications.create
 
-### content.ts  
-- UserData受信時: `window.wplaceChargeData = {current, max}` 設定
-- GET_CHARGE_DATA応答: wplaceChargeData返却
+## UI仕様
+- slider: threshold設定（10-100%, step5）
+- Start/Stop Monitor: アラーム制御
+- リアルタイム表示: Estimated time更新
+- Modal: click→詳細表示
 
-### NotificationModal
-- Start/Stopボタン: `chrome.runtime.sendMessage`でservice_worker制御
-- UI: 緑Start・赤Stopボタン、説明テキストのみ
-
-## 削除した複雑機能
-- ~~設定UI（スライダー・トグル・保存）~~
-- ~~chrome.storage設定管理~~
-- ~~パーセンテージ可変設定~~
-- ~~複雑イベントリスナー~~
+## データフロー統合
+```
+paint使用 → fetchハイジャック → userData更新 → StatusManager.updateFromUserData()
+                                                      ↓
+アラーム設定中 → handleChargeAlarmUpdate() → storage読み取り → 時刻再計算 → アラーム更新
+```
 
 ## 制約
-- **両権限必要**: "alarms"（監視）+"notifications"（通知表示）
-- **80%固定**: 可変設定なし
-- **1分間隔**: chrome.alarms最小制約
-- **wplace.liveタブ必要**: 他タブではcharge data取得不可
+- chrome.alarms: when時刻指定（相対時間なし）
+- globalChargeData/userData.charges: 両対応必要
+- threshold変化: Start Monitor時のみ保存（slider変更毎は重い）
 
-**Core**: 複雑設定削除→Start/Stopボタン制御→80%固定通知の最小限実装完了
+TODO: Start/Stop → enable/disable仕様変更予定
