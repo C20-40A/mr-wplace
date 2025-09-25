@@ -34,18 +34,28 @@ export class NotificationModal {
       });
     }
 
+    // 即座にモーダル表示（アラーム部分はローディング状態）
     this.renderContent();
     this.modalElements.modal.showModal();
     this.startPeriodicUpdate();
+
+    // 非同期で状態取得→更新
+    this.loadAlarmState();
 
     this.modalElements.modal.addEventListener("close", () => {
       this.stopPeriodicUpdate();
     });
   }
 
+  private async loadAlarmState(): Promise<void> {
+    this.currentAlarmInfo = await this.getAlarmInfo();
+    this.currentEnabledState = await this.getAlarmEnabledState();
+    this.currentThreshold = await this.getAlarmThreshold();
+    this.updateAlarmSection();
+  }
+
   private startPeriodicUpdate(): void {
     this.stopPeriodicUpdate();
-    this.updateAlarmInfoAndRender();
     this.updateInterval = window.setInterval(async () => {
       await this.updateAlarmInfoAndRender();
     }, 1000);
@@ -135,6 +145,15 @@ export class NotificationModal {
     });
   }
 
+  private async getAlarmThreshold(): Promise<number> {
+    return new Promise(resolve => {
+      chrome.storage.local.get([NotificationModal.ALARM_THRESHOLD_KEY], (result) => {
+        const threshold = result[NotificationModal.ALARM_THRESHOLD_KEY];
+        resolve(threshold !== undefined ? threshold : 80);
+      });
+    });
+  }
+
   private renderContent(): void {
     if (!this.modalElements || !this.userData) return;
 
@@ -155,10 +174,17 @@ export class NotificationModal {
 
     if (this.userData?.charges) {
       sections.push(this.createChargeSection());
-      sections.push(this.createChargeMonitorSection());
+      sections.push(this.createChargeMonitorLoadingSection());
     }
 
     this.modalElements!.container.innerHTML = sections.join("");
+  }
+
+  private updateAlarmSection(): void {
+    const alarmSection = document.getElementById("alarm-section-container");
+    if (!alarmSection) return;
+    
+    alarmSection.innerHTML = this.createChargeMonitorSection();
     this.setupChargeMonitorListeners();
   }
 
@@ -298,6 +324,17 @@ export class NotificationModal {
     `;
   }
 
+  private createChargeMonitorLoadingSection(): string {
+    return `
+      <div id="alarm-section-container" class="mb-6 border-t pt-4" style="border-top: 1px solid #e5e7eb; margin-bottom: 24px; padding-top: 16px;">
+        <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 12px;">🔔 Charge Alarm</h4>
+        <div style="display: flex; align-items: center; justify-content: center; padding: 24px; color: #6b7280;">
+          <span>Loading alarm settings...</span>
+        </div>
+      </div>
+    `;
+  }
+
   private createChargeMonitorSection(): string {
     const enableButtonDisplay = this.currentEnabledState ? "none" : "inline-block";
     const disableButtonDisplay = this.currentEnabledState ? "inline-block" : "none";
@@ -376,11 +413,28 @@ export class NotificationModal {
     });
 
     if (thresholdSlider && thresholdValue && estimatedTime) {
-      const updateThresholdDisplay = () => {
+      const updateThresholdDisplay = async () => {
         const threshold = parseInt(thresholdSlider.value);
         this.currentThreshold = threshold;
         thresholdValue.textContent = threshold.toString();
         estimatedTime.textContent = `Estimated time: ${this.calculateThresholdTime(threshold)}`;
+        
+        // storageに保存
+        chrome.storage.local.set({[NotificationModal.ALARM_THRESHOLD_KEY]: threshold});
+        
+        // enable状態の場合のみアラーム更新
+        const enabled = await this.getAlarmEnabledState();
+        if (enabled) {
+          const alarmTime = this.calculateAlarmTime(threshold);
+          if (!alarmTime) {
+            console.log("🧑‍🎨: Threshold reached, stopping alarm");
+            chrome.runtime.sendMessage({ type: "STOP_CHARGE_ALARM" });
+            return;
+          }
+          chrome.runtime.sendMessage({ type: "STOP_CHARGE_ALARM" });
+          chrome.runtime.sendMessage({ type: "START_CHARGE_ALARM", when: alarmTime.getTime() });
+          console.log("🧑‍🎨: Alarm updated for threshold:", threshold, "at", alarmTime.toLocaleTimeString());
+        }
       };
       
       thresholdSlider.addEventListener("input", updateThresholdDisplay);
