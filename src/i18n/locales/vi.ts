@@ -28,8 +28,7 @@ export const viTranslations = {
 
   // Bookmarks
   no_bookmarks: "Không có đánh dấu",
-  add_bookmark_instruction:
-    'Nhấp vào bản đồ và sử dụng nút "Đánh dấu" để thêm',
+  add_bookmark_instruction: 'Nhấp vào bản đồ và sử dụng nút "Đánh dấu" để thêm',
   saved_count: "Đã lưu",
   items_unit: "mục",
   location_unavailable: "Không thể lấy thông tin vị trí.",
@@ -68,9 +67,6 @@ export const viTranslations = {
   current_image: "Hình ảnh hiện tại",
   reset_edit: "Đặt lại chỉnh sửa",
   reset_viewport: "Đặt lại chế độ xem",
-  scroll_to_zoom: "Cuộn để phóng to",
-  original_size: "Kích thước gốc",
-  current_size: "Kích thước hiện tại",
   size_reduction: "Giảm kích thước",
   include_paid_colors: "Bao gồm màu trả phí",
   add_to_gallery: "Thêm vào thư viện",

@@ -1,6 +1,7 @@
-# Gallery Image Editor - AI向けナレッジ
+# Gallery Image Editor - AI 向けナレッジ
 
 ## アーキテクチャ
+
 ```
 GalleryImageEditor → {ImageEditorUI, ImageProcessor}
          ↓                ↓              ↓
@@ -8,24 +9,27 @@ GalleryImageEditor → {ImageEditorUI, ImageProcessor}
 ```
 
 ## ファイル構成
-- **index.ts**: GalleryImageEditor（UI+Processor統合）
+
+- **index.ts**: GalleryImageEditor（UI+Processor 統合）
 - **ui.ts**: ImageEditorUI（DOM+callbacks interface）
 - **editor.ts**: ImageProcessor（画像処理コア）
 
 ## ImageProcessor (editor.ts)
 
 ### 状態管理
+
 ```typescript
-originalImage: HTMLImageElement       // 元画像
-colorConvertedCanvas: HTMLCanvasElement  // パレット変換後
-scaledCanvas: HTMLCanvasElement       // 縮小処理後
-imageScale: number                    // 縮小率(0.1-1.0)
-isColorConverted: boolean             // 色変換状態
-includePaidColors: boolean            // paid色含む
-imageInspector: ImageInspector        // canvas zoom/pan
+originalImage: HTMLImageElement; // 元画像
+colorConvertedCanvas: HTMLCanvasElement; // パレット変換後
+scaledCanvas: HTMLCanvasElement; // 縮小処理後
+imageScale: number; // 縮小率(0.1-1.0)
+isColorConverted: boolean; // 色変換状態
+includePaidColors: boolean; // paid色含む
+imageInspector: ImageInspector; // canvas zoom/pan
 ```
 
 ### 処理フロー
+
 ```
 File読込 → displayImage() → convertToPalette() → updateScaledImage()
               ↓                    ↓                   ↓
@@ -33,6 +37,7 @@ File読込 → displayImage() → convertToPalette() → updateScaledImage()
 ```
 
 ### 色変換アルゴリズム
+
 ```typescript
 // RGB Euclidean距離で最近色探索
 findNearestColor(rgb: [r,g,b]) {
@@ -45,19 +50,22 @@ findNearestColor(rgb: [r,g,b]) {
 ```
 
 ### 保存処理
-- **Gallery保存**: canvas.toBlob() → base64 → GalleryStorage.save()
+
+- **Gallery 保存**: canvas.toBlob() → base64 → GalleryStorage.save()
 - **Download**: canvas.toBlob() → URL.createObjectURL() → a.download
 
 ### 画像表示制御
+
 ```typescript
 // 小画像: 300px内に拡大表示
-if (w,h <= 300) scale = min(300/w, 300/h);
+if ((w, h <= 300)) scale = min(300 / w, 300 / h);
 // 大画像: auto（縮小表示）
 ```
 
 ## ImageEditorUI (ui.ts)
 
 ### Callbacks Interface
+
 ```typescript
 interface ImageEditorCallbacks {
   onFileHandle: (file: File) => void;
@@ -69,7 +77,8 @@ interface ImageEditorCallbacks {
 }
 ```
 
-### UI構造
+### UI 構造
+
 ```html
 <div id="wps-image-editor-container">
   <a href="color_converter" target="_blank">🎨</a>  <!-- 外部ツールリンク -->
@@ -95,12 +104,14 @@ interface ImageEditorCallbacks {
 ```
 
 ### コンポーネント統合
-- **ImageDropzone**: autoHide=true、File選択後非表示
-- **ImageInspector**: canvas zoom/pan機能自動付与
+
+- **ImageDropzone**: autoHide=true、File 選択後非表示
+- **ImageInspector**: canvas zoom/pan 機能自動付与
 
 ## GalleryImageEditor (index.ts)
 
 ### 初期化フロー
+
 ```typescript
 constructor() → render(container) → {
   ui.createAndGetContainer()
@@ -109,55 +120,63 @@ constructor() → render(container) → {
 }
 ```
 
-### Callbacks配線
+### Callbacks 配線
+
 ```typescript
 callbacks = {
   onFileHandle: processor.handleFile,
   onScaleChange: processor.onScaleChange,
   // ... 全メソッドbind
-}
+};
 ```
 
 ## 技術仕様
 
-### Canvas処理
+### Canvas 処理
+
 - **imageSmoothingEnabled: false** → ピクセルアート保持
-- **image-rendering: pixelated** → CSS側でもピクセル保持
-- scale処理: `ctx.drawImage(src, 0,0,w,h, 0,0,newW,newH)`
+- **image-rendering: pixelated** → CSS 側でもピクセル保持
+- scale 処理: `ctx.drawImage(src, 0,0,w,h, 0,0,newW,newH)`
 
 ### 色変換制約
-- **colorpalette依存**: constants/colors.ts
-- **premium filter**: colorEntry.premium判定
+
+- **colorpalette 依存**: constants/colors.ts
+- **premium filter**: colorEntry.premium 判定
 - **全ピクセル処理**: getImageData → 逐次変換 → putImageData
 
-### ImageInspector連携
+### ImageInspector 連携
+
 ```typescript
 originalImage.onload = () => {
   updateOriginalImageDisplay();
-  imageInspector = new ImageInspector(canvas);  // 自動zoom/pan
+  imageInspector = new ImageInspector(canvas); // 自動zoom/pan
   convertToPalette();
 };
 ```
 
 ### Global access
+
 ```typescript
-window.mrWplace.imageEditor.closeModal()  // モーダル閉じる
-window.mrWplace.gallery.show()            // Gallery表示
+window.mrWplace.imageEditor.closeModal(); // モーダル閉じる
+window.mrWplace.gallery.show(); // Gallery表示
 ```
 
 ## UI/UX
-- **2カラムレイアウト**: オリジナル（左）+ 処理後（右）
-- **リアルタイム更新**: scale/paid toggle変更即反映
-- **画像クリア**: confirm確認後clearImage()
-- **外部ツール**: 🎨リンクでcolor converter別タブ表示
+
+- **2 カラムレイアウト**: オリジナル（左）+ 処理後（右）
+- **リアルタイム更新**: scale/paid toggle 変更即反映
+- **画像クリア**: confirm 確認後 clearImage()
+- **外部ツール**: 🎨 リンクで color converter 別タブ表示
 
 ## 制約
-- **zoom固定**: 11固定（coordinate.ts依存）
-- **colorpalette依存**: 色変換完全依存
-- **Chrome Extension**: window.mrWplace global依存
+
+- **zoom 固定**: 11 固定（coordinate.ts 依存）
+- **colorpalette 依存**: 色変換完全依存
+- **Chrome Extension**: window.mrWplace global 依存
 - **canvas size**: 大画像は自動縮小表示（max-width: 300px）
 
 ## 処理フロー詳細
+
 ```
 1. File drop → FileReader.readAsDataURL()
 2. displayImage() → img.src設定 → onload
@@ -168,4 +187,15 @@ window.mrWplace.gallery.show()            // Gallery表示
 7. 保存: toBlob() → {Gallery storage | Download}
 ```
 
-**Core**: UI/Logic完全分離、callbacks interface結合、ImageInspector統合、colorpalette色変換、canvas scale処理
+**Core**: UI/Logic 完全分離、callbacks interface 結合、ImageInspector 統合、colorpalette 色変換、canvas scale 処理
+
+## レイアウト
+
+[上部] 画像エリア
+├─ PC: 2 カラム横並び (lg:grid-cols-2)
+├─ Mobile: 縦並び
+└─ 各画像: 枠囲み + 下部にサイズ表示
+
+[下部] 設定エリア  
+├─ PC: 左(ColorPalette 常時表示) | 右(スライダー+ボタン)
+└─ Mobile: アコーディオンパレット(デフォルト閉) + スライダー+ボタン
