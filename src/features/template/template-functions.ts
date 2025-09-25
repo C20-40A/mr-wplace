@@ -24,6 +24,45 @@ export interface TemplateProcessingInput {
   enhanced?: EnhancedConfig;
 }
 
+/** タイル比較Enhanced適用 */
+export function applyTileComparisonEnhanced(
+  templateData: ImageData,
+  tileData: ImageData,
+  selectedColors?: Set<string>
+): void {
+  const tData = templateData.data;
+  const tileDat = tileData.data;
+  const width = templateData.width;
+
+  for (let y = 1; y < templateData.height; y += 3) {
+    for (let x = 1; x < width; x += 3) {
+      const i = (y * width + x) * 4;
+      if (tData[i + 3] === 0) continue;
+
+      const tColor = `${tData[i]},${tData[i + 1]},${tData[i + 2]}`;
+      if (selectedColors && !selectedColors.has(tColor)) continue;
+
+      const tileColor = `${tileDat[i]},${tileDat[i + 1]},${tileDat[i + 2]}`;
+
+      if (tColor !== tileColor) {
+        [
+          [x, y - 1],
+          [x, y + 1],
+          [x - 1, y],
+          [x + 1, y],
+        ].forEach(([px, py]) => {
+          if (px >= 0 && px < width && py >= 0 && py < templateData.height) {
+            const j = (py * width + px) * 4;
+            [tData[j], tData[j + 1], tData[j + 2], tData[j + 3]] = [
+              255, 0, 0, 255,
+            ];
+          }
+        });
+      }
+    }
+  }
+}
+
 /** ピクセル分析 */
 const analyzePixels = (data: Uint8ClampedArray, allowedColors: Set<string>) => {
   const palette = new Map<string, number>();
