@@ -2,6 +2,8 @@ import { llzToTilePixel } from "../../utils/coordinate";
 import { TemplateManager } from "../template";
 import { ImageItem } from "../gallery/routes/list/components";
 import { GalleryStorage } from "../gallery/storage";
+import { colorpalette } from "../../constants/colors";
+
 export class TileOverlay {
   private templateManager: TemplateManager;
   private galleryStorage: GalleryStorage;
@@ -9,13 +11,31 @@ export class TileOverlay {
   constructor() {
     this.templateManager = new TemplateManager();
     this.galleryStorage = new GalleryStorage();
-
     this.init();
   }
 
   private async init(): Promise<void> {
     this.setupTileProcessing();
     await this.restoreAllDrawnImages();
+  }
+
+  private getEnhancedConfig():
+    | { enabled: boolean; selectedColors: Set<string> }
+    | undefined {
+    const colorFilterManager = window.mrWplace?.colorFilterManager;
+    if (!colorFilterManager?.isEnhancedEnabled()) return undefined;
+
+    const selectedColorIds = colorFilterManager.getSelectedColors();
+    const selectedColors = new Set<string>();
+
+    for (const id of selectedColorIds) {
+      const color = colorpalette.find((c) => c.id === id);
+      if (color) {
+        selectedColors.add(`${color.rgb[0]},${color.rgb[1]},${color.rgb[2]}`);
+      }
+    }
+
+    return { enabled: true, selectedColors };
   }
 
   private setupTileProcessing(): void {
@@ -28,14 +48,14 @@ export class TileOverlay {
       window.postMessage(
         {
           source: "mr-wplace-processed",
-          blobID: blobID,
-          processedBlob: processedBlob,
+          blobID,
+          processedBlob,
         },
         "*"
       );
     });
 
-    console.log("Tile processing listener setup complete");
+    console.log("🧑‍🎨 : Tile processing listener setup complete");
   }
 
   async drawImageAt(
@@ -43,52 +63,29 @@ export class TileOverlay {
     lng: number,
     imageItem: ImageItem
   ): Promise<void> {
-    console.log("🖼️ Drawing image at:", lat, lng);
+    window.postMessage({ source: "wplace-studio-drawing-start" }, "*");
 
-    // 描画開始通知
-    window.postMessage(
-      {
-        source: "wplace-studio-drawing-start",
-      },
-      "*"
-    );
-
-    // Convert coordinates
     const coords = llzToTilePixel(lat, lng);
-    console.log("Tile coords:", coords);
-
     await this.drawImageWithCoords(coords, imageItem);
   }
 
   async drawImageWithCoords(
-    coords: {
-      TLX: number;
-      TLY: number;
-      PxX: number;
-      PxY: number;
-    },
+    coords: { TLX: number; TLY: number; PxX: number; PxY: number },
     imageItem: ImageItem
   ): Promise<void> {
-    console.log("🖼️ Drawing image with coords:", coords);
+    const file = await this.dataUrlToFile(
+      imageItem.dataUrl,
+      imageItem.title || "template.png"
+    );
 
-    // Convert dataUrl to File for Template
-    const response = await fetch(imageItem.dataUrl);
-    const blob = await response.blob();
-    const file = new File([blob], imageItem.title || "template.png", {
-      type: blob.type,
-    });
-
-    // Create template using TemplateManager
     await this.templateManager.createTemplate(
       file,
       [coords.TLX, coords.TLY, coords.PxX, coords.PxY],
-      imageItem.key
+      imageItem.key,
+      this.getEnhancedConfig()
     );
 
-    // 描画完了後に位置情報を保存
-    console.log("🔄 Saving draw position:", imageItem.key, coords);
     await this.saveDrawPosition(imageItem.key, coords);
-    console.log("✅ Template created and position saved");
   }
 
   async drawPixelOnTile(
@@ -96,78 +93,45 @@ export class TileOverlay {
     tileX: number,
     tileY: number
   ): Promise<Blob> {
-    // 保存済み画像をチェックして復元
     await this.restoreImagesOnTile(tileX, tileY);
-
-    // Use TemplateManager's drawing method
     return await this.templateManager.drawTemplateOnTile(tileBlob, [
       tileX,
       tileY,
     ]);
   }
 
-  /**
-   * 描画位置情報を保存
-   */
   private async saveDrawPosition(
     imageKey: string,
     coords: { TLX: number; TLY: number; PxX: number; PxY: number }
   ): Promise<void> {
-    console.log("🔍 Starting save for:", imageKey, coords);
+    const images = await this.galleryStorage.getAll();
+    const image = images.find((i) => i.key === imageKey);
+    if (!image) throw new Error(`Image not found: ${imageKey}`);
 
-    const items = await this.galleryStorage.getAll();
-
-    const item = items.find((i) => i.key === imageKey);
-    if (!item) {
-      console.error("Image not found:", imageKey);
-      return;
-    }
-
-    console.log("🖼️ Found item:", item);
-
-    const updatedItem = {
-      ...item,
+    await this.galleryStorage.save({
+      ...image,
       drawPosition: coords,
       drawEnabled: true,
-    };
-
-    console.log("🔄 Updated item:", updatedItem);
-
-    await this.galleryStorage.save(updatedItem);
-    console.log("💾 Save completed");
-
-    // 保存後の確認
-    const itemsAfter = await this.galleryStorage.getAll();
-    const savedItem = itemsAfter.find((i) => i.key === imageKey);
-    console.log("🔍 Verification - saved item:", savedItem);
+    });
   }
 
-  /**
-   * タイル上の保存済み画像を復元
-   */
   private async restoreImagesOnTile(
     tileX: number,
     tileY: number
   ): Promise<void> {
     try {
-      // clearAllTemplates()削除: 他タイルのTemplateInstance保持
+      const images = await this.galleryStorage.getAll();
+      const targetImages = images.filter(
+        (img) =>
+          img.drawEnabled &&
+          img.drawPosition?.TLX === tileX &&
+          img.drawPosition?.TLY === tileY
+      );
 
-      // 1. Gallery画像復元
-      const items = await this.galleryStorage.getAll();
-      const enabledItems = items.filter((item) => {
-        const hasPosition = !!item.drawPosition;
-        const isEnabled = item.drawEnabled;
-        const matchesTile =
-          item.drawPosition?.TLX === tileX && item.drawPosition?.TLY === tileY;
-
-        return isEnabled && hasPosition && matchesTile;
-      });
-
-      for (const item of enabledItems) {
-        await this.restoreImageOnTile(item);
+      for (const image of targetImages) {
+        await this.restoreImage(image);
       }
 
-      // 2. TimeTravel画像復元
       const { TimeTravelStorage } = await import("../time-travel/storage");
       const activeSnapshot = await TimeTravelStorage.getActiveSnapshotForTile(
         tileX,
@@ -175,94 +139,77 @@ export class TileOverlay {
       );
 
       if (activeSnapshot) {
-        // スナップショットデータ取得
         const snapshotData = await chrome.storage.local.get([
           activeSnapshot.fullKey,
         ]);
         const rawData = snapshotData[activeSnapshot.fullKey];
 
         if (rawData) {
-          // Uint8Array → File変換
           const uint8Array = new Uint8Array(rawData);
           const blob = new Blob([uint8Array], { type: "image/png" });
           const file = new File([blob], "snapshot.png", { type: "image/png" });
 
-          const imageKey = `snapshot_${activeSnapshot.fullKey}`;
           await this.templateManager.createTemplate(
             file,
             [tileX, tileY, 0, 0],
-            imageKey
+            `snapshot_${activeSnapshot.fullKey}`,
+            this.getEnhancedConfig()
           );
         }
       }
     } catch (error) {
-      console.error("Failed to restore images:", error);
+      console.error("🧑‍🎨 : Failed to restore images:", error);
     }
   }
 
-  /**
-   * 画像の描画状態を切り替える（Gallery + TemplateManager連携）
-   */
   async toggleImageDrawState(imageKey: string): Promise<boolean> {
-    const galleryStorage = new GalleryStorage();
-    const items = await galleryStorage.getAll();
+    const images = await this.galleryStorage.getAll();
+    const image = images.find((i) => i.key === imageKey);
 
-    const item = items.find((i) => i.key === imageKey);
-    if (!item) {
-      console.warn(`Image not found: ${imageKey}`);
+    if (!image) {
+      console.warn(`🧑‍🎨 : Image not found: ${imageKey}`);
       return false;
     }
 
-    const updatedItem = {
-      ...item,
-      drawEnabled: !item.drawEnabled,
+    const updatedImage = {
+      ...image,
+      drawEnabled: !image.drawEnabled,
     };
 
-    await galleryStorage.save(updatedItem);
-
-    // TemplateManagerと同期
+    await this.galleryStorage.save(updatedImage);
     this.templateManager.toggleDrawEnabled(imageKey);
 
-    return updatedItem.drawEnabled;
+    return updatedImage.drawEnabled;
   }
 
-  /**
-   * ブラウザ再起動時の全描画状態復元
-   */
   private async restoreAllDrawnImages(): Promise<void> {
-    console.log("🧑‍🎨 : Restoring all drawn images from storage");
+    const images = await this.galleryStorage.getAll();
+    const drawnImages = images.filter((img) => img.drawEnabled && img.drawPosition);
 
-    const items = await this.galleryStorage.getAll();
-    const drawnItems = items.filter(
-      (item) => item.drawEnabled && item.drawPosition
-    );
-
-    console.log(`🧑‍🎨 : Found ${drawnItems.length} drawn images to restore`);
-
-    for (const item of drawnItems) {
-      await this.restoreImageOnTile(item);
+    for (const image of drawnImages) {
+      await this.restoreImage(image);
     }
-
-    console.log("🧑‍🎨 : All drawn images restored");
   }
 
-  /**
-   * 単一画像をタイル上に復元
-   */
-  private async restoreImageOnTile(item: any): Promise<void> {
-    const response = await fetch(item.dataUrl);
-    const blob = await response.blob();
-    const file = new File([blob], "restored.png", { type: blob.type });
+  private async restoreImage(image: any): Promise<void> {
+    const file = await this.dataUrlToFile(image.dataUrl, "restored.png");
 
     await this.templateManager.createTemplate(
       file,
       [
-        item.drawPosition.TLX,
-        item.drawPosition.TLY,
-        item.drawPosition.PxX,
-        item.drawPosition.PxY,
+        image.drawPosition.TLX,
+        image.drawPosition.TLY,
+        image.drawPosition.PxX,
+        image.drawPosition.PxY,
       ],
-      item.key
+      image.key,
+      this.getEnhancedConfig()
     );
+  }
+
+  private async dataUrlToFile(dataUrl: string, filename: string): Promise<File> {
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    return new File([blob], filename, { type: blob.type });
   }
 }

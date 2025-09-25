@@ -2,6 +2,11 @@
 
 # マイナー
 
+- 表示中の色を Enhance する
+- 「持っている色のみ」の filter
+- color filter の enable all/ disable all を i18n
+- filter 適用中に描画中モーダル表示
+- タイル詳細に削除ボタンあってもいい
 - アイコンを pixel art にする
 - ui.ts 系は functional のほうがいいかもしれない
 - ギャラリー画像＋位置を export して、複数人で編集できる機能
@@ -14,13 +19,9 @@
 - 文字入力モーダルを初期で選択状態に変更
 - Transparent の色が、既存の色を上書きできない
 - UI の描画方法を統合する
-- color filter の enable all/ disable all を i18n
-- 「持っている色のみ」の filter
-- filter 適用中に描画中モーダル表示
-- タイル詳細に削除ボタンあってもいい
 - 道路引くツール
 - ギャラリー画像の入れ替えもあってもいいかも
-- Current Charges がずれている問題
+- Current Charges が少しだけ手持ちのものとずれている問題
 
 # DONE v1.3.2
 
