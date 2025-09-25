@@ -74,20 +74,26 @@ export class NotificationModal {
     }
   }
 
-  private getChargeData(): { current: number; max: number; cooldownMs: number; timeToFullMs: number } {
+  private getChargeData(): {
+    current: number;
+    max: number;
+    cooldownMs: number;
+    timeToFullMs: number;
+  } {
     if (!this.userData?.charges) throw new Error("No charge data available");
 
     const globalChargeData: ChargeData = (window as any).wplaceChargeData;
-    
+
     if (globalChargeData) {
       const elapsed = Date.now() - globalChargeData.startTime;
       const remainingMs = Math.max(0, globalChargeData.timeToFull - elapsed);
-      const calculatedCurrent = this.calculator.calculateCurrentCharge(globalChargeData);
+      const calculatedCurrent =
+        this.calculator.calculateCurrentCharge(globalChargeData);
       return {
         current: calculatedCurrent,
         max: globalChargeData.max,
         cooldownMs: globalChargeData.cooldownMs || 30000,
-        timeToFullMs: remainingMs
+        timeToFullMs: remainingMs,
       };
     }
 
@@ -96,17 +102,17 @@ export class NotificationModal {
       current: timeData.current,
       max: timeData.max,
       cooldownMs: timeData.cooldownMs,
-      timeToFullMs: timeData.timeToFullMs
+      timeToFullMs: timeData.timeToFullMs,
     };
   }
 
   private calculateThresholdTime(threshold: number): string {
     const alarmTime = this.calculateAlarmTime(threshold);
     if (!alarmTime) return "Already reached";
-    
+
     return alarmTime.toLocaleTimeString("ja-JP", {
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
     });
   }
 
@@ -115,12 +121,12 @@ export class NotificationModal {
 
     const { current, max, cooldownMs } = this.getChargeData();
     const requiredCharges = (max * threshold) / 100;
-    
+
     if (current >= requiredCharges) return null;
 
     const neededCharges = requiredCharges - current;
     const requiredMs = neededCharges * cooldownMs;
-    
+
     return new Date(Date.now() + requiredMs);
   }
 
@@ -128,7 +134,10 @@ export class NotificationModal {
     return new Promise((resolve) => {
       chrome.runtime.sendMessage({ type: "GET_ALARM_INFO" }, (response) => {
         if (chrome.runtime.lastError) {
-          console.log("🧑‍🎨: Alarm info error:", chrome.runtime.lastError.message);
+          console.log(
+            "🧑‍🎨: Alarm info error:",
+            chrome.runtime.lastError.message
+          );
           resolve(null);
         } else {
           resolve(response);
@@ -138,20 +147,26 @@ export class NotificationModal {
   }
 
   private async getAlarmEnabledState(): Promise<boolean> {
-    return new Promise(resolve => {
-      chrome.storage.local.get([NotificationModal.ALARM_ENABLED_STATE_KEY], (result) => {
-        const enabled = result[NotificationModal.ALARM_ENABLED_STATE_KEY];
-        resolve(enabled === true);
-      });
+    return new Promise((resolve) => {
+      chrome.storage.local.get(
+        [NotificationModal.ALARM_ENABLED_STATE_KEY],
+        (result) => {
+          const enabled = result[NotificationModal.ALARM_ENABLED_STATE_KEY];
+          resolve(enabled === true);
+        }
+      );
     });
   }
 
   private async getAlarmThreshold(): Promise<number> {
-    return new Promise(resolve => {
-      chrome.storage.local.get([NotificationModal.ALARM_THRESHOLD_KEY], (result) => {
-        const threshold = result[NotificationModal.ALARM_THRESHOLD_KEY];
-        resolve(threshold !== undefined ? threshold : 80);
-      });
+    return new Promise((resolve) => {
+      chrome.storage.local.get(
+        [NotificationModal.ALARM_THRESHOLD_KEY],
+        (result) => {
+          const threshold = result[NotificationModal.ALARM_THRESHOLD_KEY];
+          resolve(threshold !== undefined ? threshold : 80);
+        }
+      );
     });
   }
 
@@ -169,7 +184,10 @@ export class NotificationModal {
   private renderInitialContent(): void {
     const sections = [];
 
-    if (this.userData?.level !== undefined && this.userData?.pixelsPainted !== undefined) {
+    if (
+      this.userData?.level !== undefined &&
+      this.userData?.pixelsPainted !== undefined
+    ) {
       sections.push(this.createLevelSection());
     }
 
@@ -184,7 +202,7 @@ export class NotificationModal {
   private updateAlarmSection(): void {
     const alarmSection = document.getElementById("alarm-section-container");
     if (!alarmSection) return;
-    
+
     alarmSection.innerHTML = this.createChargeMonitorSection();
     this.setupChargeMonitorListeners();
   }
@@ -193,12 +211,14 @@ export class NotificationModal {
     if (!this.userData?.charges) return;
 
     // Charge Status更新
-    const chargeStatusElement = document.getElementById("charge-status-content");
+    const chargeStatusElement = document.getElementById(
+      "charge-status-content"
+    );
     if (chargeStatusElement) {
       chargeStatusElement.innerHTML = this.createChargeStatusContent();
     }
 
-    // Alarm Status更新  
+    // Alarm Status更新
     const alarmStatusElement = document.getElementById("alarm-status-content");
     if (alarmStatusElement) {
       alarmStatusElement.innerHTML = this.createAlarmStatusHTML();
@@ -207,7 +227,9 @@ export class NotificationModal {
     // Estimated Time更新
     const estimatedTimeElement = document.getElementById("estimatedTime");
     if (estimatedTimeElement) {
-      estimatedTimeElement.textContent = `Estimated time: ${this.calculateThresholdTime(this.currentThreshold)}`;
+      estimatedTimeElement.textContent = `Estimated time: ${this.calculateThresholdTime(
+        this.currentThreshold
+      )}`;
     }
   }
 
@@ -221,6 +243,11 @@ export class NotificationModal {
       this.userData.pixelsPainted!
     );
 
+    const levelGaugeHtml = this.calculator.generateLevelGaugeOnly(
+      remainingPixels,
+      this.userData.level
+    );
+
     return `
       <div class="mb-6">
         <h4 class="font-semibold text-md mb-3">🎯 Level Progress</h4>
@@ -231,15 +258,18 @@ export class NotificationModal {
           </div>
           <div class="flex justify-between">
             <span>Pixels Painted:</span>
-            <span class="font-mono">${new Intl.NumberFormat().format(this.userData.pixelsPainted!)}</span>
+            <span class="font-mono">${new Intl.NumberFormat().format(
+              this.userData.pixelsPainted!
+            )}</span>
           </div>
           <div class="flex justify-between">
             <span>Next Level (${nextLevel}):</span>
-            <span class="font-mono text-blue-600">${new Intl.NumberFormat().format(remainingPixels)} px</span>
+            <span class="font-mono text-blue-600">${new Intl.NumberFormat().format(
+              remainingPixels
+            )} px</span>
           </div>
-          <div class="w-full bg-gray-200 rounded-full h-2 mt-3">
-            <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                 style="width: ${Math.max(10, 100 - remainingPixels / 1000)}%"></div>
+          <div class="mt-3">
+            ${levelGaugeHtml}
           </div>
         </div>
       </div>
@@ -260,55 +290,50 @@ export class NotificationModal {
   private createChargeStatusContent(): string {
     const { current, max, timeToFullMs } = this.getChargeData();
     const timeRemaining = this.calculator.formatTimeRemaining(timeToFullMs);
-    const percentage = (Math.floor(current) / max) * 100;
-    
+
+    const chargeGaugeHtml = this.calculator.generateChargeGaugeHtml(
+      current,
+      max
+    );
+
     const fullChargeTime = new Date(Date.now() + timeToFullMs);
     const formattedTime = fullChargeTime.toLocaleTimeString("ja-JP", {
       hour: "2-digit",
       minute: "2-digit",
     });
 
-    const timeDisplay = timeToFullMs > 0 
-      ? `<div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
-           <div class="flex justify-between items-center mb-2">
-             <span class="text-sm font-medium text-blue-800">⏱️ Time to Full:</span>
-             <span class="font-mono text-blue-900">${timeRemaining.replace("⚡ ", "")}</span>
-           </div>
-           <div class="flex justify-between items-center">
-             <span class="text-sm font-medium text-blue-800">🎯 Full Charge At:</span>
-             <span class="font-mono text-blue-900">${formattedTime}</span>
-           </div>
+    const timeDisplay =
+      timeToFullMs > 0
+        ? `<div class="flex justify-between">
+           <span>Time to Full:</span>
+           <span class="font-mono">${timeRemaining.replace("⚡ ", "")}</span>
+         </div>
+         <div class="flex justify-between">
+           <span>Full Charge At:</span>
+           <span class="font-mono">${formattedTime}</span>
          </div>`
-      : `<div class="bg-green-50 p-3 rounded-lg border border-green-200 text-center">
-           <span class="text-green-800 font-semibold">⚡ FULLY CHARGED!</span>
+        : `<div class="flex justify-between text-green-600">
+           <span class="font-semibold">⚡ FULLY CHARGED!</span>
          </div>`;
 
     return `
-      <div class="space-y-3">
-        <div class="flex justify-between">
-          <span>Current Charges:</span>
-          <span class="font-mono text-lg">${Math.floor(current)}/${max}</span>
-        </div>
-        <div class="relative">
-          <div class="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-            <div class="bg-gradient-to-r from-green-400 to-green-600 h-full rounded-full transition-all duration-500 ease-out" 
-                 style="width: ${percentage}%"></div>
-          </div>
-          <div class="absolute inset-0 flex items-center justify-center text-xs font-semibold text-gray-700">
-            ${Math.round(percentage)}%
-          </div>
-        </div>
+      <div class="space-y-2">
         ${timeDisplay}
+        <div class="mt-3">
+          ${chargeGaugeHtml}
+        </div>
       </div>
     `;
   }
 
   private createAlarmStatusHTML(): string {
     if (this.currentAlarmInfo) {
-      const alarmTime = new Date(this.currentAlarmInfo.scheduledTime).toLocaleTimeString("ja-JP", {
+      const alarmTime = new Date(
+        this.currentAlarmInfo.scheduledTime
+      ).toLocaleTimeString("ja-JP", {
         hour: "2-digit",
         minute: "2-digit",
-        second: "2-digit"
+        second: "2-digit",
       });
       return `
         <div style="background-color: #dcfce7; padding: 8px 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #bbf7d0;">
@@ -317,7 +342,7 @@ export class NotificationModal {
         </div>
       `;
     }
-    
+
     return `
       <div style="background-color: #f3f4f6; padding: 8px 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #d1d5db;">
         <div style="font-size: 13px; color: #6b7280; font-weight: 500;">😴 No Alarm Set</div>
@@ -337,21 +362,34 @@ export class NotificationModal {
   }
 
   private createChargeMonitorSection(): string {
-    const enableButtonDisplay = this.currentEnabledState ? "none" : "inline-block";
-    const disableButtonDisplay = this.currentEnabledState ? "inline-block" : "none";
-    
+    const enableButtonDisplay = this.currentEnabledState
+      ? "none"
+      : "inline-block";
+    const disableButtonDisplay = this.currentEnabledState
+      ? "inline-block"
+      : "none";
+
+    const { max } = this.getChargeData();
+    const thresholdPixels = Math.floor((max * this.currentThreshold) / 100);
+
     return `
-      <div class="mb-6 border-t pt-4" style="border-top: 1px solid #e5e7eb; margin-bottom: 24px; padding-top: 16px;">
+      <div style="margin-bottom: 24px;">
         <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 12px;">🔔 Charge Alarm</h4>
         
         <div style="margin-bottom: 16px;">
           <label style="font-size: 14px; font-weight: 500; color: #374151; display: block; margin-bottom: 8px;">
-            Notification Threshold: <span id="thresholdValue">${this.currentThreshold}</span>%
+            Notification Threshold: <span id="thresholdValue">${
+              this.currentThreshold
+            }</span>% <span id="thresholdPixels" style="color: #6b7280;">(${thresholdPixels}/${max})</span>
           </label>
-          <input type="range" id="chargeThreshold" min="10" max="100" value="${this.currentThreshold}" step="5" 
+          <input type="range" id="chargeThreshold" min="10" max="100" value="${
+            this.currentThreshold
+          }" step="5" 
                  style="width: 100%; margin-bottom: 8px;">
           <div id="estimatedTime" style="font-size: 12px; color: #6b7280; background-color: #f9fafb; padding: 6px 8px; border-radius: 4px; border: 1px solid #e5e7eb;">
-            Estimated time: ${this.calculateThresholdTime(this.currentThreshold)}
+            Estimated time: ${this.calculateThresholdTime(
+              this.currentThreshold
+            )}
           </div>
         </div>
         
@@ -373,56 +411,78 @@ export class NotificationModal {
   private setupChargeMonitorListeners(): void {
     const enableButton = document.getElementById("enableAlarm");
     const disableButton = document.getElementById("disableAlarm");
-    const thresholdSlider = document.getElementById("chargeThreshold") as HTMLInputElement;
+    const thresholdSlider = document.getElementById(
+      "chargeThreshold"
+    ) as HTMLInputElement;
     const thresholdValue = document.getElementById("thresholdValue");
+    const thresholdPixels = document.getElementById("thresholdPixels");
     const estimatedTime = document.getElementById("estimatedTime");
 
     if (!enableButton || !disableButton) return;
 
     enableButton.addEventListener("click", async () => {
       const threshold = this.currentThreshold;
-      
+
       // thresholdとenabled状態をstorageに保存
       chrome.storage.local.set({
         [NotificationModal.ALARM_THRESHOLD_KEY]: threshold,
-        [NotificationModal.ALARM_ENABLED_STATE_KEY]: true
+        [NotificationModal.ALARM_ENABLED_STATE_KEY]: true,
       });
-      
+
       // ボタン表示切り替え
       enableButton.style.display = "none";
       disableButton.style.display = "inline-block";
-      
+
       const alarmTime = this.calculateAlarmTime(threshold);
       if (!alarmTime) {
         console.log("🧑‍🎨: Threshold already reached, alarm enabled but not set");
         return;
       }
-      chrome.runtime.sendMessage({ type: "START_CHARGE_ALARM", when: alarmTime.getTime() });
-      console.log("🧑‍🎨: Alarm enabled for threshold:", threshold, "at", alarmTime.toLocaleTimeString());
+      chrome.runtime.sendMessage({
+        type: "START_CHARGE_ALARM",
+        when: alarmTime.getTime(),
+      });
+      console.log(
+        "🧑‍🎨: Alarm enabled for threshold:",
+        threshold,
+        "at",
+        alarmTime.toLocaleTimeString()
+      );
     });
 
     disableButton.addEventListener("click", () => {
       // enabled状態をfalseに保存
-      chrome.storage.local.set({[NotificationModal.ALARM_ENABLED_STATE_KEY]: false});
-      
+      chrome.storage.local.set({
+        [NotificationModal.ALARM_ENABLED_STATE_KEY]: false,
+      });
+
       // ボタン表示切り替え
       disableButton.style.display = "none";
       enableButton.style.display = "inline-block";
-      
+
       chrome.runtime.sendMessage({ type: "STOP_CHARGE_ALARM" });
       console.log("🧑‍🎨: Alarm disabled");
     });
 
-    if (thresholdSlider && thresholdValue && estimatedTime) {
+    if (thresholdSlider && thresholdValue && estimatedTime && thresholdPixels) {
       const updateThresholdDisplay = async () => {
         const threshold = parseInt(thresholdSlider.value);
         this.currentThreshold = threshold;
+
+        const { current, max } = this.getChargeData();
+        const pixels = Math.floor((max * threshold) / 100);
+
         thresholdValue.textContent = threshold.toString();
-        estimatedTime.textContent = `Estimated time: ${this.calculateThresholdTime(threshold)}`;
-        
+        thresholdPixels.textContent = `(${pixels}/${max})`;
+        estimatedTime.textContent = `Estimated time: ${this.calculateThresholdTime(
+          threshold
+        )}`;
+
         // storageに保存
-        chrome.storage.local.set({[NotificationModal.ALARM_THRESHOLD_KEY]: threshold});
-        
+        chrome.storage.local.set({
+          [NotificationModal.ALARM_THRESHOLD_KEY]: threshold,
+        });
+
         // enable状態の場合のみアラーム更新
         const enabled = await this.getAlarmEnabledState();
         if (enabled) {
@@ -433,11 +493,19 @@ export class NotificationModal {
             return;
           }
           chrome.runtime.sendMessage({ type: "STOP_CHARGE_ALARM" });
-          chrome.runtime.sendMessage({ type: "START_CHARGE_ALARM", when: alarmTime.getTime() });
-          console.log("🧑‍🎨: Alarm updated for threshold:", threshold, "at", alarmTime.toLocaleTimeString());
+          chrome.runtime.sendMessage({
+            type: "START_CHARGE_ALARM",
+            when: alarmTime.getTime(),
+          });
+          console.log(
+            "🧑‍🎨: Alarm updated for threshold:",
+            threshold,
+            "at",
+            alarmTime.toLocaleTimeString()
+          );
         }
       };
-      
+
       thresholdSlider.addEventListener("input", updateThresholdDisplay);
     }
   }
