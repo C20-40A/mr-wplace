@@ -64,7 +64,14 @@ export class ColorFilterManager {
 
     for (let i = 0; i < data.length; i += 4) {
       const a = data[i + 3];
-      if (a > 0 && !this.isColorMatch(data[i], data[i + 1], data[i + 2])) {
+      if (a === 0) continue;
+
+      const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
+      
+      // Enhanced赤ドット[255,0,0]を保護
+      const isEnhancedRed = r === 255 && g === 0 && b === 0;
+      
+      if (!isEnhancedRed && !this.isColorMatch(r, g, b)) {
         data[i + 3] = 0;
       }
     }
