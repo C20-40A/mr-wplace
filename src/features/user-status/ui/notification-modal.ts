@@ -130,6 +130,18 @@ export class NotificationModal {
     return new Date(Date.now() + requiredMs);
   }
 
+  private generateGoogleCalendarLink(alarmTime: Date): string {
+    const startTime =
+      alarmTime.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+    const endTime =
+      new Date(alarmTime.getTime() + 60 * 1000)
+        .toISOString()
+        .replace(/[-:]/g, "")
+        .split(".")[0] + "Z";
+    const eventName = encodeURIComponent("WPlace Charged ⚡");
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${eventName}&dates=${startTime}/${endTime}`;
+  }
+
   private async getAlarmInfo(): Promise<any> {
     return new Promise((resolve) => {
       chrome.runtime.sendMessage({ type: "GET_ALARM_INFO" }, (response) => {
@@ -227,9 +239,15 @@ export class NotificationModal {
     // Estimated Time更新
     const estimatedTimeElement = document.getElementById("estimatedTime");
     if (estimatedTimeElement) {
-      estimatedTimeElement.textContent = `Estimated time: ${this.calculateThresholdTime(
-        this.currentThreshold
-      )}`;
+      const thresholdTime = this.calculateThresholdTime(this.currentThreshold);
+      estimatedTimeElement.textContent = `Estimated time: ${thresholdTime}`;
+
+      // Calendar button表示制御
+      const calendarButton = document.getElementById("addToCalendar");
+      if (calendarButton) {
+        calendarButton.style.display =
+          thresholdTime === "Already reached" ? "none" : "inline-block";
+      }
     }
   }
 
@@ -371,6 +389,8 @@ export class NotificationModal {
 
     const { max } = this.getChargeData();
     const thresholdPixels = Math.floor((max * this.currentThreshold) / 100);
+    const isThresholdReached =
+      this.calculateThresholdTime(this.currentThreshold) === "Already reached";
 
     return `
       <div style="margin-bottom: 24px;">
@@ -386,10 +406,17 @@ export class NotificationModal {
             this.currentThreshold
           }" step="5" 
                  style="width: 100%; margin-bottom: 8px;">
-          <div id="estimatedTime" style="font-size: 12px; color: #6b7280; background-color: #f9fafb; padding: 6px 8px; border-radius: 4px; border: 1px solid #e5e7eb;">
-            Estimated time: ${this.calculateThresholdTime(
-              this.currentThreshold
-            )}
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <div id="estimatedTime" style="flex: 1; font-size: 12px; color: #6b7280; background-color: #f9fafb; padding: 6px 8px; border-radius: 4px; border: 1px solid #e5e7eb;">
+              Estimated time: ${this.calculateThresholdTime(
+                this.currentThreshold
+              )}
+            </div>
+            <button id="addToCalendar" style="background-color: #3b82f6; color: white; padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; white-space: nowrap; display: ${
+              isThresholdReached ? "none" : "inline-block"
+            };" title="Add to Google Calendar">
+              📅
+            </button>
           </div>
         </div>
         
@@ -417,6 +444,7 @@ export class NotificationModal {
     const thresholdValue = document.getElementById("thresholdValue");
     const thresholdPixels = document.getElementById("thresholdPixels");
     const estimatedTime = document.getElementById("estimatedTime");
+    const addToCalendarButton = document.getElementById("addToCalendar");
 
     if (!enableButton || !disableButton) return;
 
@@ -507,6 +535,16 @@ export class NotificationModal {
       };
 
       thresholdSlider.addEventListener("input", updateThresholdDisplay);
+    }
+
+    if (addToCalendarButton) {
+      addToCalendarButton.addEventListener("click", () => {
+        const alarmTime = this.calculateAlarmTime(this.currentThreshold);
+        if (alarmTime) {
+          const calendarUrl = this.generateGoogleCalendarLink(alarmTime);
+          window.open(calendarUrl, "_blank");
+        }
+      });
     }
   }
 
