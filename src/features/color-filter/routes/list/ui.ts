@@ -20,5 +20,6 @@ export const renderColorFilters = (container: HTMLElement): void => {
       }
       console.log(`Selected color IDs:`, colorIds);
     },
+    showCurrentlySelected: true,
   });
 };

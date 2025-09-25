@@ -21,10 +21,10 @@
 - 道路引くツール
 - ギャラリー画像の入れ替えもあってもいいかも
 - Current Charges がずれている問題
+
+# DONE v1.3.2
+
 - 現在選択中の色を filter に表示
-
-# DONE v1.3.1
-
 - image import で color pick
 - 画像読み込み時の color filter
 
