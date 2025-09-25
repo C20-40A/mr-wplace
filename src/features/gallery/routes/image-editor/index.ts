@@ -16,6 +16,7 @@ export class GalleryImageEditor {
     container.appendChild(uiContainer);
 
     this.processor = new ImageProcessor(uiContainer);
+    this.ui.setImageProcessor(this.processor);
     
     // コールバック設定
     const callbacks: ImageEditorCallbacks = {
