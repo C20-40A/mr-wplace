@@ -3,12 +3,15 @@ import { colorpalette } from "../constants/colors";
 interface ColorPaletteOptions {
   onChange?: (colorIds: number[]) => void;
   selectedColorIds?: number[];
+  showCurrentlySelected?: boolean; // 現在選択中の色を表示するか（default: false）
 }
 
 const enabledBadgeHTML =
   '<span class="badge-status" style="position: absolute; top: -0.5rem; left: -0.5rem; width: 1rem; height: 1rem; background-color: #22c55e; border: 1px solid black; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem; font-weight: bold;">✓</span>';
 const disabledBadgeHTML =
   '<span class="badge-status" style="position: absolute; top: -0.5rem; left: -0.5rem; width: 1rem; height: 1rem; background-color: #ef4444; border: 1px solid black; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem; font-weight: bold;">x</span>';
+const currentlySelectedIconHTML =
+  '<span class="currently-selected-icon" style="position: absolute; bottom: 0.4rem; left: 0.25rem; font-size: 0.8rem; background: white; border-radius: 50%; border: solid; border-width: 1px;">⭐</span>';
 
 /**
  * カラーパレット表示コンポーネント
@@ -18,6 +21,7 @@ export class ColorPalette {
   private container: HTMLElement;
   private options: ColorPaletteOptions;
   private selectedColorIds: Set<number> = new Set();
+  private currentlySelectedColorId: number | null = null;
 
   constructor(container: HTMLElement, options: ColorPaletteOptions = {}) {
     this.container = container;
@@ -26,6 +30,14 @@ export class ColorPalette {
     this.selectedColorIds = new Set(
       options.selectedColorIds ?? colorpalette.map((c) => c.id)
     );
+
+    // 現在選択中の色を取得
+    if (this.options.showCurrentlySelected) {
+      const selectedColorStr = window.localStorage.getItem("selected-color");
+      if (selectedColorStr) {
+        this.currentlySelectedColorId = parseInt(selectedColorStr);
+      }
+    }
 
     this.init();
   }
@@ -48,6 +60,11 @@ export class ColorPalette {
           ? '<span style="position: absolute; right: 0.25rem; top: 0.25rem; font-size: 0.75rem;">💧</span>'
           : "";
         const enabledBadge = isSelected ? enabledBadgeHTML : disabledBadgeHTML;
+        const currentlySelectedIcon =
+          this.options.showCurrentlySelected &&
+          this.currentlySelectedColorId === color.id
+            ? currentlySelectedIconHTML
+            : "";
 
         return `
         <div class="color-item cursor-pointer p-2 text-xs font-medium flex items-center justify-center min-h-[3rem]"
@@ -58,6 +75,7 @@ export class ColorPalette {
           ${enabledBadge}
           ${color.name}
           ${premiumIcon}
+          ${currentlySelectedIcon}
         </div>
       `;
       })
