@@ -82,8 +82,9 @@ export class NotificationModal {
     if (globalChargeData) {
       const elapsed = Date.now() - globalChargeData.startTime;
       const remainingMs = Math.max(0, globalChargeData.timeToFull - elapsed);
+      const calculatedCurrent = this.calculator.calculateCurrentCharge(globalChargeData);
       return {
-        current: globalChargeData.current,
+        current: calculatedCurrent,
         max: globalChargeData.max,
         cooldownMs: globalChargeData.cooldownMs || 30000,
         timeToFullMs: remainingMs

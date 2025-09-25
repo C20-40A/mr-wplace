@@ -108,4 +108,17 @@ export class StatusCalculator {
       </div>
     `;
   }
+
+  calculateCurrentCharge(globalChargeData: any): number {
+    if (!globalChargeData.startTime || !globalChargeData.cooldownMs) {
+      return globalChargeData.current || 0;
+    }
+
+    const elapsed = Date.now() - globalChargeData.startTime;
+    const recoveredCharges = Math.floor(elapsed / globalChargeData.cooldownMs);
+    return Math.min(
+      globalChargeData.current + recoveredCharges,
+      globalChargeData.max
+    );
+  }
 }

@@ -152,7 +152,7 @@ export class StatusManager {
     let cooldownMs: number;
 
     if (globalChargeData) {
-      current = globalChargeData.current;
+      current = this.calculator.calculateCurrentCharge(globalChargeData);
       max = globalChargeData.max;
       cooldownMs = globalChargeData.cooldownMs || 30000;
     } else {
@@ -176,8 +176,9 @@ export class StatusManager {
     const globalChargeData: any = (window as any).wplaceChargeData;
 
     if (globalChargeData) {
+      const calculatedCurrent = this.calculator.calculateCurrentCharge(globalChargeData);
       return {
-        current: globalChargeData.current,
+        current: calculatedCurrent,
         max: globalChargeData.max,
       };
     }
