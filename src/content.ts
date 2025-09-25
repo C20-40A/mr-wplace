@@ -96,10 +96,8 @@ const runmrWplace = async (): Promise<void> => {
     drawingLoader,
     colorFilter,
     userStatus,
+    colorFilterManager,
   };
-
-  // ColorFilterManager 直接登録（TemplateManagerからアクセス用）
-  window.colorFilterManager = colorFilterManager;
 };
 
 // メッセージリスナー（言語切替・charge data要求）

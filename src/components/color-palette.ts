@@ -4,6 +4,9 @@ interface ColorPaletteOptions {
   onChange?: (colorIds: number[]) => void;
   selectedColorIds?: number[];
   showCurrentlySelected?: boolean; // 現在選択中の色を表示するか（default: false）
+  showEnhancedToggle?: boolean; // enhancedトグル表示（default: false）
+  onEnhancedChange?: (enabled: boolean) => void;
+  enhancedEnabled?: boolean;
 }
 
 const enabledBadgeHTML =
@@ -22,6 +25,7 @@ export class ColorPalette {
   private options: ColorPaletteOptions;
   private selectedColorIds: Set<number> = new Set();
   private currentlySelectedColorId: number | null = null;
+  private enhancedEnabled: boolean = false;
 
   constructor(container: HTMLElement, options: ColorPaletteOptions = {}) {
     this.container = container;
@@ -38,6 +42,9 @@ export class ColorPalette {
         this.currentlySelectedColorId = parseInt(selectedColorStr);
       }
     }
+
+    // enhanced初期状態
+    this.enhancedEnabled = options.enhancedEnabled ?? false;
 
     this.init();
   }
@@ -81,10 +88,17 @@ export class ColorPalette {
       })
       .join("");
 
+    const enhancedToggleHTML = this.options.showEnhancedToggle
+      ? `<button class="enhanced-toggle-btn btn btn-outline btn-sm rounded" style="${this.enhancedEnabled ? 'background-color: #22c55e; border-color: #22c55e; color: white;' : 'border-color: #ef4444; color: #ef4444;'}">
+          Enhanced: ${this.enhancedEnabled ? 'ON' : 'OFF'}
+         </button>`
+      : '';
+
     this.container.innerHTML = `
       <div class="color-palette-controls flex gap-2 mb-4 px-4 pt-4">
         <button class="enable-all-btn btn btn-outline btn-success btn-sm rounded">Enable All</button>
         <button class="disable-all-btn btn btn-outline btn-error btn-sm rounded">Disable All</button>
+        ${enhancedToggleHTML}
       </div>
       <div class="color-palette-grid grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 px-4 pb-4">
         ${paletteGrid}
@@ -105,6 +119,12 @@ export class ColorPalette {
       // Disable All ボタン
       if (target.classList.contains("disable-all-btn")) {
         this.disableAll();
+        return;
+      }
+
+      // Enhanced Toggle ボタン
+      if (target.classList.contains("enhanced-toggle-btn")) {
+        this.toggleEnhanced();
         return;
       }
 
@@ -180,5 +200,29 @@ export class ColorPalette {
 
   destroy(): void {
     this.container.innerHTML = "";
+  }
+
+  private toggleEnhanced(): void {
+    this.enhancedEnabled = !this.enhancedEnabled;
+    this.updateEnhancedButton();
+    if (this.options.onEnhancedChange) {
+      this.options.onEnhancedChange(this.enhancedEnabled);
+    }
+  }
+
+  private updateEnhancedButton(): void {
+    const button = this.container.querySelector('.enhanced-toggle-btn') as HTMLButtonElement;
+    if (!button) return;
+
+    button.textContent = `Enhanced: ${this.enhancedEnabled ? 'ON' : 'OFF'}`;
+    if (this.enhancedEnabled) {
+      button.style.backgroundColor = '#22c55e';
+      button.style.borderColor = '#22c55e';
+      button.style.color = 'white';
+    } else {
+      button.style.backgroundColor = '';
+      button.style.borderColor = '#ef4444';
+      button.style.color = '#ef4444';
+    }
   }
 }

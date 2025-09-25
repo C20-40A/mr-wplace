@@ -7,7 +7,7 @@ export const renderColorFilters = (container: HTMLElement): void => {
   if (colorPalette) colorPalette.destroy();
 
   // ColorFilterManagerの現在状態取得
-  const colorFilterManager = (window as any).colorFilterManager;
+  const colorFilterManager = window.mrWplace?.colorFilterManager;
   const currentSelectedColors = colorFilterManager?.getSelectedColors() || [];
 
   // ColorPaletteコンポーネント表示
@@ -15,11 +15,15 @@ export const renderColorFilters = (container: HTMLElement): void => {
     selectedColorIds: currentSelectedColors,
     onChange: (colorIds) => {
       // 色フィルター適用
-      if (colorFilterManager) {
-        colorFilterManager.setSelectedColors(colorIds);
-      }
+      colorFilterManager?.setSelectedColors(colorIds);
       console.log(`Selected color IDs:`, colorIds);
     },
     showCurrentlySelected: true,
+    showEnhancedToggle: true,
+    enhancedEnabled: colorFilterManager?.isEnhancedEnabled() ?? false,
+    onEnhancedChange: (enabled) => {
+      colorFilterManager?.setEnhanced(enabled);
+      console.log(`🧑‍🎨 : Enhanced filter:`, enabled);
+    },
   });
 };
