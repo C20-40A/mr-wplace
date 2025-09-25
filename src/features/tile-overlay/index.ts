@@ -81,8 +81,7 @@ export class TileOverlay {
     await this.templateManager.createTemplate(
       file,
       [coords.TLX, coords.TLY, coords.PxX, coords.PxY],
-      imageItem.key,
-      this.getEnhancedConfig()
+      imageItem.key
     );
 
     await this.saveDrawPosition(imageItem.key, coords);
@@ -152,8 +151,7 @@ export class TileOverlay {
           await this.templateManager.createTemplate(
             file,
             [tileX, tileY, 0, 0],
-            `snapshot_${activeSnapshot.fullKey}`,
-            this.getEnhancedConfig()
+            `snapshot_${activeSnapshot.fullKey}`
           );
         }
       }
@@ -202,8 +200,7 @@ export class TileOverlay {
         image.drawPosition.PxX,
         image.drawPosition.PxY,
       ],
-      image.key,
-      this.getEnhancedConfig()
+      image.key
     );
   }
 

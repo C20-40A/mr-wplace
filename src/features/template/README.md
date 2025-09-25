@@ -168,6 +168,38 @@ if (!isEnhancedRed && !this.isColorMatch(r, g, b)) {
 }
 ```
 
+### ✅ タイル比較Enhanced実装
+
+仕様: tile既存色≠template色の場合のみenhanced赤ドット表示（未描画部分の可視化）
+
+実装:
+```typescript
+// template-functions.ts
+applyTileComparisonEnhanced(templateData, tileData, selectedColors)
+  → 中央pixel(x%3===1, y%3===1)比較
+  → template色≠tile色 → 上下左右赤ドット追加
+
+// templateManager.ts
+getEnhancedConfig() → selectedColors取得
+applyTileComparison(templateBitmap, tileContext, coords)
+  → template+tile両ImageData取得
+  → applyTileComparisonEnhanced実行
+  → 変更済みImageBitmap返却
+
+drawTemplateOnTile
+  → 元タイル状態保存用canvas作成 ← 重要
+  → ColorFilter適用
+  → タイル比較Enhanced適用（元タイルcanvas参照）
+  → メインcanvas描画
+```
+
+問題修正: 複数template時2つ目以降が前template描画後canvasと比較される
+原因: tileContext.getImageData→canvas現在状態取得→前template含む→誤比較
+解決: originalTileCanvas作成→全templateで元タイル参照→正常比較
+
+座標計算: tileContext.getImageData(coords[2]*renderScale, coords[3]*renderScale)
+動作: 未描画=赤表示、既描画=赤非表示、selectedColors選択色のみ対象
+
 ### 技術制約
 
 - enhanced色: 赤[255,0,0]固定（colorpaletteに存在しない色）

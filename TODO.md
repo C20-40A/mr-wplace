@@ -2,7 +2,6 @@
 
 # マイナー
 
-- 表示中の色を Enhance する
 - 「持っている色のみ」の filter
 - color filter の enable all/ disable all を i18n
 - filter 適用中に描画中モーダル表示
@@ -22,9 +21,13 @@
 - 道路引くツール
 - ギャラリー画像の入れ替えもあってもいいかも
 - Current Charges が少しだけ手持ちのものとずれている問題
+- 大きな範囲の tile が異なると alert を出す
+- 友人帳
+- 現在何パーセントの進捗か表示(ゲーミフィケーション)
 
-# DONE v1.3.2
+# DONE v1.3.3
 
+- 表示中の色を Enhance する
 - 現在選択中の色を filter に表示
 - image import で color pick
 - 画像読み込み時の color filter
