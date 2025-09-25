@@ -3,7 +3,6 @@
 # マイナー
 
 - アイコンを pixel art にする
-- image import で color pick
 - ui.ts 系は functional のほうがいいかもしれない
 - ギャラリー画像＋位置を export して、複数人で編集できる機能
 - 入力文字を描画したい
@@ -17,13 +16,17 @@
 - UI の描画方法を統合する
 - color filter の enable all/ disable all を i18n
 - 「持っている色のみ」の filter
-- 画像読み込み時の color filter
 - filter 適用中に描画中モーダル表示
 - タイル詳細に削除ボタンあってもいい
 - 道路引くツール
 - ギャラリー画像の入れ替えもあってもいいかも
 - Current Charges がずれている問題
 - 現在選択中の色を filter に表示
+
+# DONE v1.3.1
+
+- image import で color pick
+- 画像読み込み時の color filter
 
 # DONE v1.3.0
 

@@ -64,24 +64,16 @@ export class ImageProcessor {
     this.imageScale = 1.0;
     this.isColorConverted = false;
 
-    // UI状態をリセット
-    const dropzone = this.container.querySelector("#wps-dropzone");
-    const imageDisplay = this.container.querySelector("#wps-image-display");
-    const controls = this.container.querySelector("#wps-controls");
-    const slider = this.container.querySelector(
-      "#wps-scale-slider"
-    ) as HTMLInputElement;
+    const dropzone = this.container.querySelector("#wps-dropzone-container") as HTMLElement;
+    const imageDisplay = this.container.querySelector("#wps-image-display") as HTMLElement;
+    const slider = this.container.querySelector("#wps-scale-slider") as HTMLInputElement;
     const valueDisplay = this.container.querySelector("#wps-scale-value");
 
     if (slider) slider.value = "1";
     if (valueDisplay) valueDisplay.textContent = "1.0";
 
-    dropzone?.classList.remove("hidden");
-    imageDisplay?.classList.add("hidden");
-    controls?.classList.add("hidden");
-
-    const actionButtons = this.container.querySelector("#wps-action-buttons");
-    actionButtons?.classList.add("hidden");
+    if (dropzone) dropzone.style.display = "block";
+    if (imageDisplay) imageDisplay.style.display = "none";
   }
 
 
@@ -146,10 +138,8 @@ export class ImageProcessor {
   }
 
   private displayImage(imageSrc: string): void {
-    const dropzone = this.container.querySelector("#wps-dropzone");
-    const imageDisplay = this.container.querySelector("#wps-image-display");
-    const controls = this.container.querySelector("#wps-controls");
-    const colorPaletteContainer = this.container.querySelector("#wps-color-palette-container") as HTMLElement;
+    const dropzone = this.container.querySelector("#wps-dropzone-container");
+    const imageDisplay = this.container.querySelector("#wps-image-display") as HTMLElement;
     const originalImage = this.container.querySelector(
       "#wps-original-image"
     ) as HTMLImageElement;
@@ -168,9 +158,13 @@ export class ImageProcessor {
           this.imageInspector = new ImageInspector(canvas);
         }
 
+        const isMobile = window.innerWidth < 1024;
+        const colorPaletteContainer = isMobile
+          ? this.container.querySelector("#wps-color-palette-container-mobile") as HTMLElement
+          : this.container.querySelector("#wps-color-palette-container") as HTMLElement;
+
         if (colorPaletteContainer) {
           this.initColorPalette(colorPaletteContainer);
-          colorPaletteContainer.classList.remove("hidden");
         }
 
         setTimeout(() => {
@@ -179,12 +173,8 @@ export class ImageProcessor {
       };
     }
 
-    dropzone?.classList.add("hidden");
-    imageDisplay?.classList.remove("hidden");
-    controls?.classList.remove("hidden");
-
-    const actionButtons = this.container.querySelector("#wps-action-buttons");
-    actionButtons?.classList.remove("hidden");
+    if (dropzone) dropzone.style.display = "none";
+    if (imageDisplay) imageDisplay.style.display = "block";
   }
 
   private updateOriginalImageDisplay(): void {
