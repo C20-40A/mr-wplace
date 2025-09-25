@@ -22,6 +22,7 @@ echo "📋 Copying files..."
 cp manifest.json release/
 cp popup.html release/
 cp inject.js release/
+cp service_worker.js release/
 mkdir -p release/dist
 cp dist/content.js release/dist/
 cp dist/popup.js release/dist/
