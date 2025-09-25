@@ -5,7 +5,6 @@ export interface ImageEditorCallbacks {
   onFileHandle: (file: File) => void;
   onScaleChange: (scale: number) => void;
   onClear: () => void;
-  onPaidToggle: (includePaid: boolean) => void;
   onSaveToGallery: () => void;
   onDownload: () => void;
 }
@@ -68,6 +67,8 @@ export class ImageEditorUI {
         </div>
       </div>
       
+      <div id="wps-color-palette-container" class="hidden mb-4"></div>
+      
       <div id="wps-controls" class="hidden space-y-4">
         <div class="grid grid-cols-2 gap-4 mb-4">
           <div class="text-sm">
@@ -84,12 +85,6 @@ export class ImageEditorUI {
             <span>0.1x</span>
             <span>1.0x</span>
           </div>
-        </div>
-        <div>
-          <label class="flex items-center space-x-2">
-            <input type="checkbox" id="wps-paid-toggle" checked class="checkbox checkbox-xs">
-            <span class="text-sm">${"include_paid_colors"}</span>
-          </label>
         </div>
         
         <div id="wps-action-buttons" class="hidden flex gap-2 mt-4">
@@ -120,9 +115,6 @@ export class ImageEditorUI {
     ) as HTMLInputElement;
     const valueDisplay = this.container.querySelector("#wps-scale-value");
     const clearBtn = this.container.querySelector("#wps-clear-btn");
-    const paidToggle = this.container.querySelector(
-      "#wps-paid-toggle"
-    ) as HTMLInputElement;
     const addToGalleryBtn = this.container.querySelector("#wps-add-to-gallery");
     const downloadBtn = this.container.querySelector("#wps-download");
 
@@ -141,12 +133,6 @@ export class ImageEditorUI {
         this.callbacks?.onClear();
         this.imageDropzone?.show();
       }
-    });
-
-    // Paid色トグル
-    paidToggle?.addEventListener("change", (e) => {
-      const target = e.target as HTMLInputElement;
-      this.callbacks?.onPaidToggle(target.checked);
     });
 
     // ギャラリーに追加

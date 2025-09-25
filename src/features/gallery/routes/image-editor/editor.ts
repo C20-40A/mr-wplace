@@ -1,6 +1,7 @@
 import { colorpalette } from "../../../../constants/colors";
 import { t } from "../../../../i18n/manager";
 import { ImageInspector } from "../../../../components/image-inspector";
+import { ColorPalette } from "../../../../components/color-palette";
 
 export class ImageProcessor {
   private container: HTMLElement;
@@ -9,8 +10,9 @@ export class ImageProcessor {
   private scaledCanvas: HTMLCanvasElement | null = null;
   private imageScale = 1.0;
   private isColorConverted = false;
-  private includePaidColors = true;
+  private selectedColorIds: number[] = [];
   private imageInspector: ImageInspector | null = null;
+  private colorPalette: ColorPalette | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -33,6 +35,23 @@ export class ImageProcessor {
     this.updateScaledImage();
   }
 
+  onColorSelectionChange(colorIds: number[]): void {
+    this.selectedColorIds = colorIds;
+    if (this.isColorConverted) {
+      setTimeout(() => {
+        this.convertToPalette();
+      }, 50);
+    }
+  }
+
+  initColorPalette(container: HTMLElement): void {
+    this.selectedColorIds = colorpalette.map(c => c.id);
+    this.colorPalette = new ColorPalette(container, {
+      selectedColorIds: this.selectedColorIds,
+      onChange: (colorIds) => this.onColorSelectionChange(colorIds)
+    });
+  }
+
   clearImage(): void {
     if (this.imageInspector) {
       this.imageInspector.destroy();
@@ -44,7 +63,6 @@ export class ImageProcessor {
     this.scaledCanvas = null;
     this.imageScale = 1.0;
     this.isColorConverted = false;
-    this.includePaidColors = true;
 
     // UI状態をリセット
     const dropzone = this.container.querySelector("#wps-dropzone");
@@ -54,13 +72,9 @@ export class ImageProcessor {
       "#wps-scale-slider"
     ) as HTMLInputElement;
     const valueDisplay = this.container.querySelector("#wps-scale-value");
-    const paidToggle = this.container.querySelector(
-      "#wps-paid-toggle"
-    ) as HTMLInputElement;
 
     if (slider) slider.value = "1";
     if (valueDisplay) valueDisplay.textContent = "1.0";
-    if (paidToggle) paidToggle.checked = true;
 
     dropzone?.classList.remove("hidden");
     imageDisplay?.classList.add("hidden");
@@ -70,14 +84,7 @@ export class ImageProcessor {
     actionButtons?.classList.add("hidden");
   }
 
-  onPaidToggle(includePaid: boolean): void {
-    this.includePaidColors = includePaid;
-    if (this.isColorConverted) {
-      setTimeout(() => {
-        this.convertToPalette();
-      }, 50);
-    }
-  }
+
 
   async saveToGallery(): Promise<void> {
     if (!this.scaledCanvas) return;
@@ -142,6 +149,7 @@ export class ImageProcessor {
     const dropzone = this.container.querySelector("#wps-dropzone");
     const imageDisplay = this.container.querySelector("#wps-image-display");
     const controls = this.container.querySelector("#wps-controls");
+    const colorPaletteContainer = this.container.querySelector("#wps-color-palette-container") as HTMLElement;
     const originalImage = this.container.querySelector(
       "#wps-original-image"
     ) as HTMLImageElement;
@@ -158,6 +166,11 @@ export class ImageProcessor {
         ) as HTMLCanvasElement;
         if (canvas) {
           this.imageInspector = new ImageInspector(canvas);
+        }
+
+        if (colorPaletteContainer) {
+          this.initColorPalette(colorPaletteContainer);
+          colorPaletteContainer.classList.remove("hidden");
         }
 
         setTimeout(() => {
@@ -295,7 +308,7 @@ export class ImageProcessor {
     let nearestColor: [number, number, number] = [0, 0, 0];
 
     for (const colorEntry of colorpalette) {
-      if (!this.includePaidColors && colorEntry.premium) {
+      if (!this.selectedColorIds.includes(colorEntry.id)) {
         continue;
       }
 
