@@ -22,7 +22,6 @@ export class GalleryImageEditor {
       onFileHandle: (file) => this.processor?.handleFile(file),
       onScaleChange: (scale) => this.processor?.onScaleChange(scale),
       onClear: () => this.processor?.clearImage(),
-      onPaidToggle: (includePaid) => this.processor?.onPaidToggle(includePaid),
       onSaveToGallery: () => this.processor?.saveToGallery(),
       onDownload: () => this.processor?.downloadImage()
     };
