@@ -25,7 +25,7 @@
 - Current Charges がずれている問題
 - 現在選択中の色を filter に表示
 
-# DONE v1.2.3
+# DONE v1.3.0
 
 - notification
 - フルチャージまでの時間
