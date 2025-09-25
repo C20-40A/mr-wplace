@@ -1,30 +1,29 @@
-🚀 Transform your WPlace experience with Mr. Wplace - the ultimate toolkit that brings professional creative features directly to your favorite mapping platform!
+🚀 Mr. Wplace All-in-one Toolkit
 
-🎨 DRAW ANYWHERE ON THE MAP
-• Place custom images at any location with perfect precision
-• Turn your drawings ON/OFF instantly without losing your work
-• Your artwork automatically spans across multiple map sections
+🔔 Get notified when paint accumulates
+• Receive notifications when your paint reaches a certain level (toggle ON/OFF)
+• Set custom notification thresholds from 10% to 100%
+• Integrate with Google Calendar links
 
-📸 SMART IMAGE GALLERY
-• Upload and organize all your images in one place
-• Built-in editor to resize and adjust colors
-• Quick image picker when you need to place something fast
-• Preview everything before placing it on the map
+🎨 Draw images on the map
+• Display the pixels needed to draw your uploaded images on the map
+• View your artwork collection in the gallery
+• Easily toggle artwork visibility and warp to artwork locations
 
-⭐ SAVE YOUR FAVORITE SPOTS
-• Bookmark important locations with custom names
-• Add descriptions and notes to remember why they're special
-• Export your bookmark collection to share with friends
-• Import bookmarks from others to discover new places
+⭐ Unlimited bookmarks
+• Save your favorite locations with custom names without limits
+• Import/export your bookmark lists
 
-⏰ TIME TRAVEL FEATURE
-• Take snapshots of map areas to see how they change over time
-• Automatically detect when something has changed
-• Browse through historical views like a time machine
-• Perfect for tracking construction, natural changes, or updates
+⏰ Restore artwork to past states
+• Save images drawn on current map tiles
+• Display past states on the map to quickly fix vandalized artwork
+• View all saved tiles in a list
 
-🔒 PRIVACY FIRST
-• Everything stays in your browser - no data sent anywhere
-• Your images and bookmarks are completely private
-• Secure by design with Chrome's latest security standards
-• Open source license for complete transparency
+
+--------------------
+
+🔒 Privacy First
+• All data stays within your browser
+• Images and bookmarks are completely private
+• Designed with Chrome's latest security standards from the ground up
+• Open-source license for complete transparency
