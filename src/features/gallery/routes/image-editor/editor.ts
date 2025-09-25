@@ -52,6 +52,26 @@ export class ImageProcessor {
     });
   }
 
+  updateColorPaletteContainer(isMobile: boolean): void {
+    if (!this.originalImage) return;
+
+    const containerSelector = isMobile
+      ? "#wps-color-palette-container-mobile"
+      : "#wps-color-palette-container";
+    const newContainer = this.container.querySelector(containerSelector) as HTMLElement;
+    
+    if (!newContainer) return;
+
+    if (this.colorPalette) {
+      this.colorPalette.destroy();
+    }
+
+    this.colorPalette = new ColorPalette(newContainer, {
+      selectedColorIds: this.selectedColorIds,
+      onChange: (colorIds) => this.onColorSelectionChange(colorIds)
+    });
+  }
+
   clearImage(): void {
     if (this.imageInspector) {
       this.imageInspector.destroy();
