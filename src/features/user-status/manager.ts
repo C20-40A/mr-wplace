@@ -45,41 +45,49 @@ export class StatusManager {
   }
 
   private showNextLevelBadge(): void {
-    this.nextLevelBadge.style.display = "flex";
+    this.nextLevelBadge.style.display = "block";
   }
 
   private showChargeCountdown(): void {
-    this.chargeCountdown.style.display = "flex";
+    this.chargeCountdown.style.display = "block";
   }
 
   updateFromUserData(userData: WPlaceUserData): void {
     console.log("🧑‍🎨: StatusManager updating from userData");
     this.currentUserData = userData;
-    
+
     // アラーム設定中の場合、charge変化で時刻更新
     this.handleChargeAlarmUpdate(userData);
 
     if (userData.level !== undefined && userData.pixelsPainted !== undefined) {
       const remainingPixels = this.calculator.calculateNextLevelPixels(
-        userData.level, 
+        userData.level,
         userData.pixelsPainted
       );
 
       if (remainingPixels > 0) {
-        const badgeHtml = this.calculator.generateProgressGaugeHtml(
-          remainingPixels, 
+        const levelGaugeHtml = this.calculator.generateLevelGaugeOnly(
+          remainingPixels,
           userData.level
         );
-        this.nextLevelBadge.innerHTML = badgeHtml;
+        this.nextLevelBadge.innerHTML = `⬆️ ${new Intl.NumberFormat().format(
+          remainingPixels
+        )} px<br>${levelGaugeHtml}`;
         this.showNextLevelBadge();
       }
     }
 
     if (userData.charges) {
+      const chargeData = this.getChargeData(userData.charges);
+      const chargeGaugeHtml = this.calculator.generateChargeGaugeHtml(
+        chargeData.current,
+        chargeData.max
+      );
+
       this.timerService.startChargeCountdown(
         userData.charges,
         (timeText: string) => {
-          this.chargeCountdown.textContent = timeText;
+          this.chargeCountdown.innerHTML = `${timeText}<br>${chargeGaugeHtml}`;
         }
       );
       this.showChargeCountdown();
@@ -97,20 +105,26 @@ export class StatusManager {
   }
 
   private async getAlarmThreshold(): Promise<number> {
-    return new Promise(resolve => {
-      chrome.storage.local.get([StatusManager.ALARM_THRESHOLD_KEY], (result) => {
-        const threshold = result[StatusManager.ALARM_THRESHOLD_KEY];
-        resolve(threshold !== undefined ? threshold : 80);
-      });
+    return new Promise((resolve) => {
+      chrome.storage.local.get(
+        [StatusManager.ALARM_THRESHOLD_KEY],
+        (result) => {
+          const threshold = result[StatusManager.ALARM_THRESHOLD_KEY];
+          resolve(threshold !== undefined ? threshold : 80);
+        }
+      );
     });
   }
 
   private async getAlarmEnabledState(): Promise<boolean> {
-    return new Promise(resolve => {
-      chrome.storage.local.get([StatusManager.ALARM_ENABLED_STATE_KEY], (result) => {
-        const enabled = result[StatusManager.ALARM_ENABLED_STATE_KEY];
-        resolve(enabled === true);
-      });
+    return new Promise((resolve) => {
+      chrome.storage.local.get(
+        [StatusManager.ALARM_ENABLED_STATE_KEY],
+        (result) => {
+          const enabled = result[StatusManager.ALARM_ENABLED_STATE_KEY];
+          resolve(enabled === true);
+        }
+      );
     });
   }
 
@@ -118,7 +132,10 @@ export class StatusManager {
     return new Promise((resolve) => {
       chrome.runtime.sendMessage({ type: "GET_ALARM_INFO" }, (response) => {
         if (chrome.runtime.lastError) {
-          console.log("🧑‍🎨: Alarm info error:", chrome.runtime.lastError.message);
+          console.log(
+            "🧑‍🎨: Alarm info error:",
+            chrome.runtime.lastError.message
+          );
           resolve(null);
         } else {
           resolve(response);
@@ -129,11 +146,11 @@ export class StatusManager {
 
   private calculateAlarmTime(charges: any, threshold: number): Date | null {
     const globalChargeData: any = (window as any).wplaceChargeData;
-    
+
     let current: number;
     let max: number;
     let cooldownMs: number;
-    
+
     if (globalChargeData) {
       current = globalChargeData.current;
       max = globalChargeData.max;
@@ -144,18 +161,37 @@ export class StatusManager {
       max = timeData.max;
       cooldownMs = timeData.cooldownMs;
     }
-    
+
     const requiredCharges = (max * threshold) / 100;
-    
+
     if (current >= requiredCharges) return null;
-    
+
     const neededCharges = requiredCharges - current;
     const requiredMs = neededCharges * cooldownMs;
-    
+
     return new Date(Date.now() + requiredMs);
   }
 
-  private async handleChargeAlarmUpdate(userData: WPlaceUserData): Promise<void> {
+  private getChargeData(charges: any): { current: number; max: number } {
+    const globalChargeData: any = (window as any).wplaceChargeData;
+
+    if (globalChargeData) {
+      return {
+        current: globalChargeData.current,
+        max: globalChargeData.max,
+      };
+    }
+
+    const timeData = this.calculator.calculateTimeToFull(charges);
+    return {
+      current: timeData.current,
+      max: timeData.max,
+    };
+  }
+
+  private async handleChargeAlarmUpdate(
+    userData: WPlaceUserData
+  ): Promise<void> {
     const enabled = await this.getAlarmEnabledState();
     if (!enabled) return;
 
@@ -163,7 +199,7 @@ export class StatusManager {
 
     const threshold = await this.getAlarmThreshold();
     const newAlarmTime = this.calculateAlarmTime(userData.charges, threshold);
-    
+
     if (!newAlarmTime) {
       console.log("🧑‍🎨: Threshold reached, stopping alarm (enable maintained)");
       chrome.runtime.sendMessage({ type: "STOP_CHARGE_ALARM" });
@@ -171,8 +207,14 @@ export class StatusManager {
     }
 
     chrome.runtime.sendMessage({ type: "STOP_CHARGE_ALARM" });
-    chrome.runtime.sendMessage({ type: "START_CHARGE_ALARM", when: newAlarmTime.getTime() });
-    
-    console.log("🧑‍🎨: Alarm updated for charge change to:", newAlarmTime.toLocaleTimeString());
+    chrome.runtime.sendMessage({
+      type: "START_CHARGE_ALARM",
+      when: newAlarmTime.getTime(),
+    });
+
+    console.log(
+      "🧑‍🎨: Alarm updated for charge change to:",
+      newAlarmTime.toLocaleTimeString()
+    );
   }
 }

@@ -72,4 +72,40 @@ export class StatusCalculator {
       return `⚡ ${seconds}s`;
     }
   }
+
+  generateChargeGaugeHtml(current: number, max: number): string {
+    const progressRatio = Math.max(0, Math.min(1, current / max));
+    const progressPercent = Math.floor(progressRatio * 100);
+
+    return `
+      <div style="display:block;width:100%;height:6px;background-color:#E5E7EB;border-radius:3px;position:relative;">
+        <div style="width:${progressPercent}%;height:6px;background-color:#FCD34D;border-radius:3px;position:absolute;top:0;left:0;"></div>
+      </div>
+    `;
+  }
+
+  generateLevelGaugeOnly(remainingPixels: number, currentLevel: number): string {
+    const nextLevel = Math.floor(currentLevel) + 1;
+    const totalPixelsForNextLevel = Math.ceil(
+      Math.pow(nextLevel * Math.pow(30, 0.65), 1 / 0.65)
+    );
+    const currentLevelPixels = Math.ceil(
+      Math.pow(Math.floor(currentLevel) * Math.pow(30, 0.65), 1 / 0.65)
+    );
+    const totalPixelsNeeded = totalPixelsForNextLevel - currentLevelPixels;
+
+    const currentProgressPixels = totalPixelsNeeded - remainingPixels;
+    const progressRatio = Math.max(
+      0,
+      Math.min(1, currentProgressPixels / totalPixelsNeeded)
+    );
+
+    const progressPercent = Math.floor(progressRatio * 100);
+
+    return `
+      <div style="display:block;width:100%;height:6px;background-color:#E5E7EB;border-radius:3px;position:relative;">
+        <div style="width:${progressPercent}%;height:6px;background-color:#3B82F6;border-radius:3px;position:absolute;top:0;left:0;"></div>
+      </div>
+    `;
+  }
 }

@@ -3,17 +3,17 @@ export class StatusUIComponents {
     const container = document.createElement("div");
     container.style.cssText = `
       position: absolute;
-      top: 20px;
+      top: 5px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 50;
       display: flex;
-      align-items: center;
-      gap: 12px;
+      align-items: flex-start;
+      gap: 8px;
       pointer-events: all;
       background-color: white;
       border-radius: 12px;
-      padding: 4px 8px;
+      padding: 4px 12px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       border: 1px solid rgba(0, 0, 0, 0.1);
       font-size: 11px;
@@ -22,7 +22,7 @@ export class StatusUIComponents {
       transition: background-color 0.2s, box-shadow 0.2s;
     `;
     container.id = "user-status-container";
-    
+
     container.addEventListener("mouseenter", () => {
       container.style.backgroundColor = "#f8f9fa";
       container.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
@@ -31,28 +31,26 @@ export class StatusUIComponents {
       container.style.backgroundColor = "white";
       container.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
     });
-    
+
     return container;
   }
 
   createNextLevelBadge(): HTMLElement {
-    const badge = document.createElement("span");
+    const badge = document.createElement("div");
     badge.style.cssText = `
       color: #333;
       display: none;
-      align-items: center;
-      white-space: nowrap;
+      line-height: 1.4;
     `;
     return badge;
   }
 
   createChargeCountdown(): HTMLElement {
-    const countdown = document.createElement("span");
+    const countdown = document.createElement("div");
     countdown.style.cssText = `
       color: #333;
       display: none;
-      align-items: center;
-      white-space: nowrap;
+      line-height: 1.4;
     `;
     return countdown;
   }
