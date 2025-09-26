@@ -98,6 +98,8 @@ export const enTranslations = {
   enabled: "Enabled",
   disabled: "Disabled",
   goto_map: "Go to Map",
+  share_request: "Share Request",
+  download_success: "Download Success",
   error: "Error",
   deleted: "Deleted",
 

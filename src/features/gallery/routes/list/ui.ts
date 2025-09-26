@@ -1,6 +1,6 @@
 import { GalleryItem } from "../../storage";
 import { ImageGridComponent, ImageItem } from "./components/ImageGridComponent";
-import { GalleryImageActions } from "../../common-actions";
+import { gotoMapPosition, toggleDrawState } from "../../common-actions";
 import { t } from "../../../../i18n/manager";
 
 export class GalleryListUI {
@@ -122,7 +122,7 @@ export class GalleryListUI {
     onSelect?: (item: GalleryItem) => void,
     onImageClick?: (item: GalleryItem) => void
   ): Promise<void> {
-    const newDrawEnabled = await GalleryImageActions.toggleDrawState(key);
+    const newDrawEnabled = await toggleDrawState(key);
 
     // 画面を再描画
     const galleryStorage = new (await import("../../storage")).GalleryStorage();
@@ -164,7 +164,7 @@ export class GalleryListUI {
   }
 
   private async handleGotoPosition(item: GalleryItem): Promise<void> {
-    await GalleryImageActions.gotoMapPosition(item);
+    await gotoMapPosition(item);
 
     // モーダルが存在する場合のみ閉じる（外部コンテナ使用時は閉じない）
     if (this.modal) this.closeModal();

@@ -98,6 +98,8 @@ export const jaTranslations = {
   enabled: "有効",
   disabled: "無効",
   goto_map: "マップへ移動",
+  share_request: "サポート要請",
+  download_success: "ダウンロード成功",
   error: "エラー",
   deleted: "削除しました",
 

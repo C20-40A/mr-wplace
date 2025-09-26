@@ -1,14 +1,17 @@
 # クリティカル
 
+- 黒色だけなぜか enhance されない。transparent と同じ扱いになっている？
+
 # マイナー
 
+- ギャラリー画像＋位置を export して、複数人で編集できる機能
+  - シェアボタン。tile+pixel の座標表示。lat lng のリンク表示。説明表示
+- アイコンを pixel art にする
 - 「持っている色のみ」の filter
 - color filter の enable all/ disable all を i18n
 - filter 適用中に描画中モーダル表示
 - タイル詳細に削除ボタンあってもいい
-- アイコンを pixel art にする
 - ui.ts 系は functional のほうがいいかもしれない
-- ギャラリー画像＋位置を export して、複数人で編集できる機能
 - 入力文字を描画したい
 - 逆ジオあってもいいかも
   - https://nominatim.org/ が利用可能
@@ -24,6 +27,7 @@
 - 大きな範囲の tile が異なると alert を出す
 - 友人帳
 - 現在何パーセントの進捗か表示(ゲーミフィケーション)
+- スナップショットを削除しても、タイルの設定は残る
 
 # DONE v1.3.3
 

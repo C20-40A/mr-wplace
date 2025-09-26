@@ -1,7 +1,11 @@
 import { GalleryItem } from "../../storage";
 import { GalleryRouter } from "../../router";
 import { ImageInspector } from "../../../../components/image-inspector";
-import { GalleryImageActions } from "../../common-actions";
+import {
+  gotoMapPosition,
+  toggleDrawState,
+  downloadImage,
+} from "../../common-actions";
 import { t } from "../../../../i18n/manager";
 import { Toast } from "../../../../components/toast";
 
@@ -41,6 +45,12 @@ export class GalleryImageDetail {
             !item.drawPosition ? "disabled" : ""
           }>
             ${t`${"goto_map"}`}
+          </button>
+          
+          <button id="share-request-btn" class="btn btn-sm" ${
+            !item.drawPosition ? 'style="display: none;"' : ""
+          }>
+            ${t`${"share_request"}`}
           </button>
           
           <button id="delete-btn" class="btn btn-sm btn-error">
@@ -98,9 +108,7 @@ export class GalleryImageDetail {
     drawToggleBtn?.addEventListener("click", async () => {
       if (!this.currentItem) return;
 
-      const newDrawEnabled = await GalleryImageActions.toggleDrawState(
-        this.currentItem.key
-      );
+      const newDrawEnabled = await toggleDrawState(this.currentItem.key);
 
       // ボタン表示更新
       drawToggleBtn.className = `btn btn-sm ${
@@ -125,7 +133,7 @@ export class GalleryImageDetail {
     gotoMapBtn?.addEventListener("click", async () => {
       if (!this.currentItem) return;
 
-      await GalleryImageActions.gotoMapPosition(this.currentItem);
+      await gotoMapPosition(this.currentItem);
     });
 
     // 削除ボタン
@@ -138,6 +146,15 @@ export class GalleryImageDetail {
         router.navigateBack(); // 削除後は一覧に戻る
         Toast.success(t`${"deleted"}`);
       }
+    });
+
+    // シェアリクエストボタン
+    const shareRequestBtn = document.getElementById("share-request-btn");
+    shareRequestBtn?.addEventListener("click", () => {
+      if (!this.currentItem) return;
+
+      downloadImage(this.currentItem, "image-detail-canvas");
+      Toast.success(t`${"download_success"}`);
     });
   }
 }
