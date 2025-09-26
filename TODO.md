@@ -1,7 +1,6 @@
 # クリティカル
 
 - 黒色だけなぜか enhance されない。transparent と同じ扱いになっている？
-- タイルの import, 時刻が import されてないというより、「ダウンロードした時刻」になっている問題
 
 # マイナー
 
@@ -32,6 +31,7 @@
 
 # DONE v1.3.3
 
+- タイルの import, 時刻が import されてないというより、「ダウンロードした時刻」になっている問題
 - 表示中の色を Enhance する
 - 現在選択中の色を filter に表示
 - image import で color pick
