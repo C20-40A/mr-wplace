@@ -4,6 +4,7 @@ import { createGalleryButton, GalleryUI } from "./ui";
 import { GalleryList } from "./routes/list";
 import { GalleryImageEditor } from "./routes/image-editor";
 import { GalleryImageDetail } from "./routes/image-detail";
+import { GalleryImageShare } from "./routes/image-share";
 import { setupElementObserver } from "../../components/element-observer";
 import { findOpacityContainer } from "../../constants/selectors";
 
@@ -13,6 +14,7 @@ export class Gallery {
   private listRoute: GalleryList;
   private imageEditorRoute: GalleryImageEditor;
   private imageDetailRoute: GalleryImageDetail;
+  private imageShareRoute: GalleryImageShare;
   private onDrawToggleCallback?: (key: string) => Promise<boolean>;
 
   // 選択モード用の状態
@@ -26,6 +28,7 @@ export class Gallery {
     this.listRoute = new GalleryList();
     this.imageEditorRoute = new GalleryImageEditor();
     this.imageDetailRoute = new GalleryImageDetail();
+    this.imageShareRoute = new GalleryImageShare();
     this.init();
   }
 
@@ -82,6 +85,11 @@ export class Gallery {
               this.router.navigateBack();
             }
           );
+        }
+        break;
+      case "image-share":
+        if (this.currentDetailItem) {
+          this.imageShareRoute.render(container, this.currentDetailItem);
         }
         break;
     }

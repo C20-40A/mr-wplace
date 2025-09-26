@@ -1,11 +1,7 @@
 import { GalleryItem } from "../../storage";
 import { GalleryRouter } from "../../router";
 import { ImageInspector } from "../../../../components/image-inspector";
-import {
-  gotoMapPosition,
-  toggleDrawState,
-  downloadImage,
-} from "../../common-actions";
+import { gotoMapPosition, toggleDrawState } from "../../common-actions";
 import { t } from "../../../../i18n/manager";
 import { Toast } from "../../../../components/toast";
 
@@ -38,23 +34,23 @@ export class GalleryImageDetail {
           <button id="draw-toggle-btn" class="btn btn-sm ${
             item.drawEnabled ? "btn-success" : "btn-outline"
           }">
-            ${item.drawEnabled ? t`${"draw_enabled"}` : t`${"draw_disabled"}`}
+            🎨 ${item.drawEnabled ? t`${"draw_enabled"}` : t`${"draw_disabled"}`}
           </button>
           
           <button id="goto-map-btn" class="btn btn-sm btn-primary" ${
             !item.drawPosition ? "disabled" : ""
           }>
-            ${t`${"goto_map"}`}
+            📍 ${t`${"goto_map"}`}
           </button>
           
-          <button id="share-request-btn" class="btn btn-sm" ${
+          <button id="share-btn" class="btn btn-sm" ${
             !item.drawPosition ? 'style="display: none;"' : ""
           }>
-            ${t`${"share_request"}`}
+            📤 ${t`${"share"}`}
           </button>
           
           <button id="delete-btn" class="btn btn-sm btn-error">
-            ${t`${"delete"}`}
+            🗑 ${t`${"delete"}`}
           </button>
         </div>
       </div>
@@ -115,8 +111,8 @@ export class GalleryImageDetail {
         newDrawEnabled ? "btn-success" : "btn-outline"
       }`;
       drawToggleBtn.textContent = newDrawEnabled
-        ? t`${"draw_enabled"}`
-        : t`${"draw_disabled"}`;
+        ? `🎨 ${t`${"draw_enabled"}`}`
+        : `🎨 ${t`${"draw_disabled"}`}`;
 
       // 現在のアイテム状態更新
       this.currentItem.drawEnabled = newDrawEnabled;
@@ -148,13 +144,12 @@ export class GalleryImageDetail {
       }
     });
 
-    // シェアリクエストボタン
-    const shareRequestBtn = document.getElementById("share-request-btn");
-    shareRequestBtn?.addEventListener("click", () => {
+    // シェアボタン
+    const shareBtn = document.getElementById("share-btn");
+    shareBtn?.addEventListener("click", () => {
       if (!this.currentItem) return;
 
-      downloadImage(this.currentItem, "image-detail-canvas");
-      Toast.success(t`${"download_success"}`);
+      router.navigate("image-share");
     });
   }
 }
