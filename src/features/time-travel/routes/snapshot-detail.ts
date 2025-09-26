@@ -158,9 +158,9 @@ export class SnapshotDetailRoute {
       const a = document.createElement("a");
       a.href = url;
       const selectedSnapshot = (this.router as any)?.selectedSnapshot;
+      const timestamp = parseInt(selectedSnapshot.fullKey.split("_")[2]);
       const tileX = parseInt(selectedSnapshot.fullKey.split("_")[3]);
       const tileY = parseInt(selectedSnapshot.fullKey.split("_")[4]);
-      const timestamp = Date.now();
       a.download = `${tileX}-${tileY}-${timestamp}.snapshot.png`;
       document.body.appendChild(a);
       a.click();
