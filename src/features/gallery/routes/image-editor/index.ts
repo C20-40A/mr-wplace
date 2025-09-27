@@ -22,6 +22,9 @@ export class GalleryImageEditor {
     const callbacks: ImageEditorCallbacks = {
       onFileHandle: (file) => this.processor?.handleFile(file),
       onScaleChange: (scale) => this.processor?.onScaleChange(scale),
+      onBrightnessChange: (value) => this.processor?.onBrightnessChange(value),
+      onContrastChange: (value) => this.processor?.onContrastChange(value),
+      onSaturationChange: (value) => this.processor?.onSaturationChange(value),
       onClear: () => this.processor?.clearImage(),
       onSaveToGallery: () => this.processor?.saveToGallery(),
       onDownload: () => this.processor?.downloadImage()
