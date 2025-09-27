@@ -30,8 +30,14 @@ export class ColorFilterManager {
 
   private updateSelectedRGBs(): void {
     this.selectedRGBs = colorpalette
-      .filter((color) => this.selectedColorIds.has(color.id))
+      .filter((color) => {
+        // id: 0 (Transparent)を除外 - 透明色はColorFilter対象外
+        if (color.id === 0) return false;
+        return this.selectedColorIds.has(color.id);
+      })
       .map((color) => color.rgb as [number, number, number]);
+    
+    console.log("🧑‍🎨 : ColorFilter selectedRGBs:", this.selectedRGBs);
   }
 
   private isColorMatch(r: number, g: number, b: number): boolean {

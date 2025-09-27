@@ -28,13 +28,21 @@ export class TileOverlay {
     const selectedColorIds = colorFilterManager.getSelectedColors();
     const selectedColors = new Set<string>();
 
+    console.log("🧑‍🎨 : Selected color IDs:", selectedColorIds);
+
     for (const id of selectedColorIds) {
+      // id: 0 (Transparent)を除外 - 透明色はenhance不要、黒[0,0,0]はid: 1のみ
+      if (id === 0) continue;
+      
       const color = colorpalette.find((c) => c.id === id);
       if (color) {
-        selectedColors.add(`${color.rgb[0]},${color.rgb[1]},${color.rgb[2]}`);
+        const rgbStr = `${color.rgb[0]},${color.rgb[1]},${color.rgb[2]}`;
+        selectedColors.add(rgbStr);
+        console.log("🧑‍🎨 : Added color to enhance:", id, color.name, rgbStr);
       }
     }
 
+    console.log("🧑‍🎨 : Final selectedColors:", Array.from(selectedColors));
     return { enabled: true, selectedColors };
   }
 
@@ -78,10 +86,14 @@ export class TileOverlay {
       imageItem.title || "template.png"
     );
 
+    const enhancedConfig = this.getEnhancedConfig();
+    console.log("🧑‍🎨 : drawImageWithCoords enhancedConfig:", enhancedConfig);
+
     await this.templateManager.createTemplate(
       file,
       [coords.TLX, coords.TLY, coords.PxX, coords.PxY],
-      imageItem.key
+      imageItem.key,
+      enhancedConfig
     );
 
     await this.saveDrawPosition(imageItem.key, coords);
@@ -148,10 +160,13 @@ export class TileOverlay {
           const blob = new Blob([uint8Array], { type: "image/png" });
           const file = new File([blob], "snapshot.png", { type: "image/png" });
 
+          const enhancedConfig = this.getEnhancedConfig();
+
           await this.templateManager.createTemplate(
             file,
             [tileX, tileY, 0, 0],
-            `snapshot_${activeSnapshot.fullKey}`
+            `snapshot_${activeSnapshot.fullKey}`,
+            enhancedConfig
           );
         }
       }
@@ -192,6 +207,8 @@ export class TileOverlay {
   private async restoreImage(image: any): Promise<void> {
     const file = await this.dataUrlToFile(image.dataUrl, "restored.png");
 
+    const enhancedConfig = this.getEnhancedConfig();
+
     await this.templateManager.createTemplate(
       file,
       [
@@ -200,7 +217,8 @@ export class TileOverlay {
         image.drawPosition.PxX,
         image.drawPosition.PxY,
       ],
-      image.key
+      image.key,
+      enhancedConfig
     );
   }
 
