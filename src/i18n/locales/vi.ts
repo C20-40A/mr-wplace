@@ -114,6 +114,9 @@ export const viTranslations = {
 
   // Color Filter
   color_filter: "Bộ lọc màu",
+  enable_all: "Bật tất cả",
+  disable_all: "Tắt tất cả",
+  enhanced: "Nâng cao",
 
   // User Status (Notification Modal)
   user_status_details: "Chi tiết trạng thái người dùng",

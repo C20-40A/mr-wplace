@@ -115,6 +115,9 @@ export const ptTranslations = {
 
   // Color Filter
   color_filter: "Filtro de Cor",
+  enable_all: "Ativar Todos",
+  disable_all: "Desativar Todos",
+  enhanced: "Aprimorado",
 
   // User Status (Notification Modal)
   user_status_details: "Detalhes do Status do Usuário",

@@ -118,6 +118,9 @@ export const jaTranslations = {
 
   // Color Filter
   color_filter: "カラー フィルター",
+  enable_all: "すべて有効",
+  disable_all: "すべて無効",
+  enhanced: "強化",
 
   // User Status (Notification Modal)
   user_status_details: "ステータス",

@@ -1,12 +1,9 @@
 # クリティカル
 
-- 黒色だけなぜか enhance されない。transparent と同じ扱いになっている？
-
 # マイナー
 
 - firefox addon 対応
 - 「持っている色のみ」の filter
-- color filter の enable all/ disable all を i18n
 - filter 適用中に描画中モーダル表示
 - ui.ts 系は functional のほうがいいかもしれない
 - 入力文字を描画したい
@@ -27,8 +24,10 @@
 - スナップショットを削除しても、タイルの設定は残る
 - 描画が重複しているときアラート。フィルターがすべて OFF になっているとアラート
 
-# DONE v1.4.6
+# DONE v1.4.7
 
+- color filter の enable all/ disable all を i18n
+- 黒色だけなぜか enhance されない。transparent と同じ扱いになっている？
 - スナップショット詳細に削除ボタンあってもいい
 - スナップショットの UI 改善
 - アイコンを pixel art にする
