@@ -42,3 +42,8 @@ https://backend.wplace.live/leaderboard/alliance/today
 ## Pixel
 
 https://backend.wplace.live/s0/pixel/<Tile_x>/<Tile_y>?x=<pixel_x>&y=<pixel_y>
+
+## Purchase
+
+https://backend.wplace.live/purchase
+{product: {id: 70, amount: 2}}

@@ -1,6 +1,7 @@
 import { Bookmark } from "./types";
 import { t } from "../../i18n/manager";
 import { createModal, ModalElements } from "../../utils/modal";
+import { IMG_ICON_BOOKMARK } from "../../assets/iconImages";
 
 export const createSaveBookmarkButton = (): HTMLButtonElement => {
   const button = document.createElement("button");
@@ -24,10 +25,8 @@ export const createBookmarkButton = (): HTMLButtonElement => {
     "btn btn-lg sm:btn-xl btn-square shadow-md text-base-content/80 z-30";
   button.title = t`${"bookmarks"}`;
   button.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-5">
-        <path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/>
-      </svg>
-    `;
+    <img src="${IMG_ICON_BOOKMARK}" alt="${t`${"bookmarks"}`}" style="image-rendering: pixelated; width: calc(var(--spacing)*9); height: calc(var(--spacing)*9);">
+  `;
   return button;
 };
 
