@@ -1,6 +1,7 @@
 import { createModal, ModalElements } from "../../../utils/modal";
 import { WPlaceUserData } from "../../../types/user-data";
 import { StatusCalculator } from "../services/calculator";
+import { t } from "../../../i18n/manager";
 
 interface ChargeData {
   current: number;
@@ -29,7 +30,7 @@ export class NotificationModal {
     if (!this.modalElements) {
       this.modalElements = createModal({
         id: "user-status-notification-modal",
-        title: "User Status Details",
+        title: t`${"user_status_details"}`,
         maxWidth: "32rem",
       });
     }
@@ -108,7 +109,7 @@ export class NotificationModal {
 
   private calculateThresholdTime(threshold: number): string {
     const alarmTime = this.calculateAlarmTime(threshold);
-    if (!alarmTime) return "Already reached";
+    if (!alarmTime) return t`${"already_reached"}`;
 
     return alarmTime.toLocaleTimeString("ja-JP", {
       hour: "2-digit",
@@ -138,7 +139,7 @@ export class NotificationModal {
         .toISOString()
         .replace(/[-:]/g, "")
         .split(".")[0] + "Z";
-    const eventName = encodeURIComponent("WPlace Charged ⚡");
+    const eventName = encodeURIComponent(t`${"wplace_charged_event"}`);
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${eventName}&dates=${startTime}/${endTime}`;
   }
 
@@ -268,20 +269,20 @@ export class NotificationModal {
 
     return `
       <div class="mb-6">
-        <h4 class="font-semibold text-md mb-3">🎯 Level Progress</h4>
+        <h4 class="font-semibold text-md mb-3">🎯 ${t`${"level_progress"}`}</h4>
         <div class="space-y-2">
           <div class="flex justify-between">
-            <span>Current Level:</span>
+            <span>${t`${"current_level"}`}:</span>
             <span class="font-mono">${currentLevel}</span>
           </div>
           <div class="flex justify-between">
-            <span>Pixels Painted:</span>
+            <span>${t`${"pixels_painted"}`}:</span>
             <span class="font-mono">${new Intl.NumberFormat().format(
               this.userData.pixelsPainted!
             )}</span>
           </div>
           <div class="flex justify-between">
-            <span>Next Level (${nextLevel}):</span>
+            <span>${t`${"next_level"}`} (${nextLevel}):</span>
             <span class="font-mono text-blue-600">${new Intl.NumberFormat().format(
               remainingPixels
             )} px</span>
@@ -297,7 +298,7 @@ export class NotificationModal {
   private createChargeSection(): string {
     return `
       <div class="mb-6">
-        <h4 class="font-semibold text-md mb-3">⚡ Charge Status</h4>
+        <h4 class="font-semibold text-md mb-3">⚡ ${t`${"charge_status"}`}</h4>
         <div id="charge-status-content">
           ${this.createChargeStatusContent()}
         </div>
@@ -323,15 +324,15 @@ export class NotificationModal {
     const timeDisplay =
       timeToFullMs > 0
         ? `<div class="flex justify-between">
-           <span>Time to Full:</span>
+           <span>${t`${"time_to_full"}`}:</span>
            <span class="font-mono">${timeRemaining.replace("⚡ ", "")}</span>
          </div>
          <div class="flex justify-between">
-           <span>Full Charge At:</span>
+           <span>${t`${"full_charge_at"}`}:</span>
            <span class="font-mono">${formattedTime}</span>
          </div>`
         : `<div class="flex justify-between text-green-600">
-           <span class="font-semibold">⚡ FULLY CHARGED!</span>
+           <span class="font-semibold">${t`${"fully_charged"}`}</span>
          </div>`;
 
     return `
@@ -355,15 +356,15 @@ export class NotificationModal {
       });
       return `
         <div style="background-color: #dcfce7; padding: 8px 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #bbf7d0;">
-          <div style="font-size: 13px; color: #15803d; font-weight: 500;">⏰ Alarm Active</div>
-          <div style="font-size: 12px; color: #16a34a; margin-top: 2px;">Scheduled: ${alarmTime}</div>
+          <div style="font-size: 13px; color: #15803d; font-weight: 500;">${t`${"alarm_active"}`}</div>
+          <div style="font-size: 12px; color: #16a34a; margin-top: 2px;">${t`${"scheduled"}`}: ${alarmTime}</div>
         </div>
       `;
     }
 
     return `
       <div style="background-color: #f3f4f6; padding: 8px 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #d1d5db;">
-        <div style="font-size: 13px; color: #6b7280; font-weight: 500;">😴 No Alarm Set</div>
+        <div style="font-size: 13px; color: #6b7280; font-weight: 500;">${t`${"no_alarm_set"}`}</div>
       </div>
     `;
   }
@@ -371,9 +372,9 @@ export class NotificationModal {
   private createChargeMonitorLoadingSection(): string {
     return `
       <div id="alarm-section-container" class="mb-6 border-t pt-4" style="border-top: 1px solid #e5e7eb; margin-bottom: 24px; padding-top: 16px;">
-        <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 12px;">🔔 Charge Alarm</h4>
+        <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 12px;">🔔 ${t`${"charge_alarm"}`}</h4>
         <div style="display: flex; align-items: center; justify-content: center; padding: 24px; color: #6b7280;">
-          <span>Loading alarm settings...</span>
+          <span>${t`${"loading_alarm_settings"}`}</span>
         </div>
       </div>
     `;
@@ -389,18 +390,18 @@ export class NotificationModal {
 
     const { max } = this.getChargeData();
     const thresholdPixels = Math.floor((max * this.currentThreshold) / 100);
-    const isThresholdReached =
-      this.calculateThresholdTime(this.currentThreshold) === "Already reached";
+    const thresholdTime = this.calculateThresholdTime(this.currentThreshold);
+    const isThresholdReached = thresholdTime === t`${"already_reached"}`;
 
     return `
       <div style="margin-bottom: 24px;">
-        <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 12px;">🔔 Charge Alarm</h4>
+        <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 12px;">${t`${"charge_alarm"}`}</h4>
         
         <div style="margin-bottom: 16px;">
           <label style="font-size: 14px; font-weight: 500; color: #374151; display: block; margin-bottom: 8px;">
-            Notification Threshold: <span id="thresholdValue">${
-              this.currentThreshold
-            }</span>% <span id="thresholdPixels" style="color: #6b7280;">(${thresholdPixels}/${max})</span>
+            ${t`${"notification_threshold"}`}: <span id="thresholdValue">${
+      this.currentThreshold
+    }</span>% <span id="thresholdPixels" style="color: #6b7280;">(${thresholdPixels}/${max})</span>
           </label>
           <input type="range" id="chargeThreshold" min="10" max="100" value="${
             this.currentThreshold
@@ -408,13 +409,11 @@ export class NotificationModal {
                  style="width: 100%; margin-bottom: 8px;">
           <div style="display: flex; gap: 8px; align-items: center;">
             <div id="estimatedTime" style="flex: 1; font-size: 12px; color: #6b7280; background-color: #f9fafb; padding: 6px 8px; border-radius: 4px; border: 1px solid #e5e7eb;">
-              Estimated time: ${this.calculateThresholdTime(
-                this.currentThreshold
-              )}
+              ${t`${"estimated_time"}`}: ${thresholdTime}
             </div>
             <button id="addToCalendar" style="background-color: #3b82f6; color: white; padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; white-space: nowrap; display: ${
               isThresholdReached ? "none" : "inline-block"
-            };" title="Add to Google Calendar">
+            };" title="${t`${"add_to_calendar_title"}`}">
               📅
             </button>
           </div>
@@ -422,10 +421,10 @@ export class NotificationModal {
         
         <div style="display: flex; gap: 8px;">
           <button id="enableAlarm" style="background-color: #16a34a; color: white; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 500; display: ${enableButtonDisplay};">
-            Enable Alarm
+            ${t`${"enable_alarm"}`}
           </button>
           <button id="disableAlarm" style="background-color: #dc2626; color: white; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 500; display: ${disableButtonDisplay};">
-            Disable Alarm
+            ${t`${"disable_alarm"}`}
           </button>
         </div>
         <div id="alarm-status-content">
@@ -502,7 +501,7 @@ export class NotificationModal {
 
         thresholdValue.textContent = threshold.toString();
         thresholdPixels.textContent = `(${pixels}/${max})`;
-        estimatedTime.textContent = `Estimated time: ${this.calculateThresholdTime(
+        estimatedTime.textContent = `${t`${"estimated_time"}`}: ${this.calculateThresholdTime(
           threshold
         )}`;
 

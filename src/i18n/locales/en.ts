@@ -115,4 +115,27 @@ export const enTranslations = {
 
   // Color Filter
   color_filter: "Color Filter",
+
+  // User Status (Notification Modal)
+  user_status_details: "User Status Details",
+  level_progress: "Level Progress",
+  current_level: "Current Level",
+  pixels_painted: "Pixels Painted",
+  next_level: "Next Level",
+  charge_status: "Charge Status",
+  time_to_full: "Time to Full",
+  full_charge_at: "Full Charge At",
+  fully_charged: "⚡ FULLY CHARGED!",
+  alarm_active: "⏰ Alarm Active",
+  scheduled: "Scheduled",
+  no_alarm_set: "😴 No Alarm Set",
+  charge_alarm: "🔔 Charge Alarm",
+  loading_alarm_settings: "Loading alarm settings...",
+  notification_threshold: "Notification Threshold",
+  estimated_time: "Estimated time",
+  already_reached: "Already reached",
+  enable_alarm: "Enable Alarm",
+  disable_alarm: "Disable Alarm",
+  add_to_calendar_title: "Add to Google Calendar",
+  wplace_charged_event: "WPlace Charged ⚡",
 };

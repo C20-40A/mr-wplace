@@ -99,6 +99,15 @@ export const esTranslations = {
   enabled: "Habilitado",
   disabled: "Deshabilitado",
   goto_map: "Ir al Mapa",
+  share: "Compartir",
+  image_share: "Compartir Imagen",
+  tile_coordinate: "Coordenada de Azulejo",
+  pixel_coordinate: "Coordenada de Píxel",
+  lat_lng: "Latitud/Longitud",
+  share_description:
+    "Este nombre de archivo de imagen contiene información de coordenadas. Cuando agregues la imagen descargada a la galería nuevamente, se colocará automáticamente en la misma posición.",
+  no_position_data: "Sin datos de posición",
+  download_success: "Descarga Exitosa",
   error: "Error",
   deleted: "Eliminado",
 
@@ -107,4 +116,27 @@ export const esTranslations = {
 
   // Color Filter
   color_filter: "Filtro de Color",
+
+  // User Status (Notification Modal)
+  user_status_details: "Detalles del Estado del Usuario",
+  level_progress: "Progreso de Nivel",
+  current_level: "Nivel Actual",
+  pixels_painted: "Píxeles Pintados",
+  next_level: "Siguiente Nivel",
+  charge_status: "Estado de Carga",
+  time_to_full: "Tiempo hasta Carga Completa",
+  full_charge_at: "Carga Completa A",
+  fully_charged: "⚡ ¡COMPLETAMENTE CARGADO!",
+  alarm_active: "⏰ Alarma Activa",
+  scheduled: "Programado",
+  no_alarm_set: "😴 Sin Alarma Configurada",
+  charge_alarm: "🔔 Alarma de Carga",
+  loading_alarm_settings: "Cargando configuración de alarma...",
+  notification_threshold: "Umbral de Notificación",
+  estimated_time: "Tiempo estimado",
+  already_reached: "Ya alcanzado",
+  enable_alarm: "Activar Alarma",
+  disable_alarm: "Desactivar Alarma",
+  add_to_calendar_title: "Añadir a Google Calendar",
+  wplace_charged_event: "WPlace Cargado ⚡",
 };

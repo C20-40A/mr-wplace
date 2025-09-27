@@ -115,4 +115,27 @@ export const jaTranslations = {
 
   // Color Filter
   color_filter: "カラー フィルター",
+
+  // User Status (Notification Modal)
+  user_status_details: "ステータス",
+  level_progress: "レベル",
+  current_level: "現在のレベル",
+  pixels_painted: "塗りつぶしたピクセル",
+  next_level: "次のレベル",
+  charge_status: "チャージ",
+  time_to_full: "フルチャージまで",
+  full_charge_at: "チャージ完了時刻",
+  fully_charged: "⚡ チャージ完了！",
+  alarm_active: "⏰ アラーム作動中",
+  scheduled: "予定時刻",
+  no_alarm_set: "😴 アラーム未設定",
+  charge_alarm: "🔔 アラーム",
+  loading_alarm_settings: "アラーム設定を読み込み中...",
+  notification_threshold: "通知しきい値",
+  estimated_time: "予想時刻",
+  already_reached: "到達済み",
+  enable_alarm: "アラーム有効化",
+  disable_alarm: "アラーム無効化",
+  add_to_calendar_title: "Googleカレンダーに追加",
+  wplace_charged_event: "WPlace チャージ完了 ⚡",
 };

@@ -97,6 +97,15 @@ export const viTranslations = {
   enabled: "Đã bật",
   disabled: "Đã tắt",
   goto_map: "Đến bản đồ",
+  share: "Chia sẻ",
+  image_share: "Chia sẻ hình ảnh",
+  tile_coordinate: "Tọa độ ô",
+  pixel_coordinate: "Tọa độ pixel",
+  lat_lng: "Vĩ độ/Kinh độ",
+  share_description:
+    "Tên tệp hình ảnh này chứa thông tin tọa độ. Khi bạn thêm hình ảnh đã tải vào thư viện lại, nó sẽ tự động được đặt ở cùng vị trí.",
+  no_position_data: "Không có dữ liệu vị trí",
+  download_success: "Tải xuống thành công",
   error: "Lỗi",
   deleted: "Đã xóa",
 
@@ -105,4 +114,27 @@ export const viTranslations = {
 
   // Color Filter
   color_filter: "Bộ lọc màu",
+
+  // User Status (Notification Modal)
+  user_status_details: "Chi tiết trạng thái người dùng",
+  level_progress: "Tiến trình cấp độ",
+  current_level: "Cấp độ hiện tại",
+  pixels_painted: "Pixel đã vẽ",
+  next_level: "Cấp độ tiếp theo",
+  charge_status: "Trạng thái sạc",
+  time_to_full: "Thời gian đến đầy",
+  full_charge_at: "Sạc đầy lúc",
+  fully_charged: "⚡ ĐÃ SẠC ĐẦY!",
+  alarm_active: "⏰ Báo thức hoạt động",
+  scheduled: "Đã lên lịch",
+  no_alarm_set: "😴 Chưa đặt báo thức",
+  charge_alarm: "🔔 Báo thức sạc",
+  loading_alarm_settings: "Đang tải cài đặt báo thức...",
+  notification_threshold: "Ngưỡng thông báo",
+  estimated_time: "Thời gian ước tính",
+  already_reached: "Đã đạt được",
+  enable_alarm: "Bật báo thức",
+  disable_alarm: "Tắt báo thức",
+  add_to_calendar_title: "Thêm vào Google Calendar",
+  wplace_charged_event: "WPlace đã sạc ⚡",
 };
