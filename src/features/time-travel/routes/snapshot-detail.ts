@@ -134,6 +134,15 @@ export class SnapshotDetailRoute {
     const tileX = parseInt(fullKey.split("_")[3]);
     const tileY = parseInt(fullKey.split("_")[4]);
 
+    // 現在の状態確認
+    const currentState = await TimeTravelStorage.getActiveSnapshotForTile(tileX, tileY);
+    const willDraw = !currentState || currentState.fullKey !== fullKey;
+
+    // 描画する場合のみローダー開始
+    if (willDraw) {
+      window.postMessage({ source: "wplace-studio-drawing-start" }, "*");
+    }
+
     const uint8Array = new Uint8Array(result[fullKey]);
     const blob = new Blob([uint8Array], { type: "image/png" });
     const file = new File([blob], "snapshot.png", { type: "image/png" });
