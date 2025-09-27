@@ -9,8 +9,10 @@ export class ImageProcessor {
   private colorConvertedCanvas: HTMLCanvasElement | null = null;
   private scaledCanvas: HTMLCanvasElement | null = null;
   private imageScale = 1.0;
-  private isColorConverted = false;
   private selectedColorIds: number[] = [];
+  private brightness = 0;
+  private contrast = 0;
+  private saturation = 0;
   private imageInspector: ImageInspector | null = null;
   private colorPalette: ColorPalette | null = null;
 
@@ -35,13 +37,27 @@ export class ImageProcessor {
     this.updateScaledImage();
   }
 
+  onBrightnessChange(value: number): void {
+    this.brightness = value;
+    this.updateScaledImage();
+  }
+
+  onContrastChange(value: number): void {
+    this.contrast = value;
+    this.updateScaledImage();
+  }
+
+  onSaturationChange(value: number): void {
+    this.saturation = value;
+    this.updateScaledImage();
+  }
+
   onColorSelectionChange(colorIds: number[]): void {
     this.selectedColorIds = colorIds;
-    if (this.isColorConverted) {
-      setTimeout(() => {
-        this.convertToPalette();
-      }, 50);
-    }
+    // パレット変更時は再描画
+    setTimeout(() => {
+      this.updateScaledImage();
+    }, 50);
   }
 
   initColorPalette(container: HTMLElement): void {
@@ -82,15 +98,29 @@ export class ImageProcessor {
     this.colorConvertedCanvas = null;
     this.scaledCanvas = null;
     this.imageScale = 1.0;
-    this.isColorConverted = false;
+    this.brightness = 0;
+    this.contrast = 0;
+    this.saturation = 0;
 
     const dropzone = this.container.querySelector("#wps-dropzone-container") as HTMLElement;
     const imageDisplay = this.container.querySelector("#wps-image-display") as HTMLElement;
     const slider = this.container.querySelector("#wps-scale-slider") as HTMLInputElement;
     const valueDisplay = this.container.querySelector("#wps-scale-value");
+    const brightnessSlider = this.container.querySelector("#wps-brightness-slider") as HTMLInputElement;
+    const brightnessValue = this.container.querySelector("#wps-brightness-value");
+    const contrastSlider = this.container.querySelector("#wps-contrast-slider") as HTMLInputElement;
+    const contrastValue = this.container.querySelector("#wps-contrast-value");
+    const saturationSlider = this.container.querySelector("#wps-saturation-slider") as HTMLInputElement;
+    const saturationValue = this.container.querySelector("#wps-saturation-value");
 
     if (slider) slider.value = "1";
     if (valueDisplay) valueDisplay.textContent = "1.0";
+    if (brightnessSlider) brightnessSlider.value = "0";
+    if (brightnessValue) brightnessValue.textContent = "0";
+    if (contrastSlider) contrastSlider.value = "0";
+    if (contrastValue) contrastValue.textContent = "0";
+    if (saturationSlider) saturationSlider.value = "0";
+    if (saturationValue) saturationValue.textContent = "0";
 
     if (dropzone) dropzone.style.display = "block";
     if (imageDisplay) imageDisplay.style.display = "none";
@@ -187,8 +217,9 @@ export class ImageProcessor {
           this.initColorPalette(colorPaletteContainer);
         }
 
+        // 初期表示: リサイズ→調整→パレット変換
         setTimeout(() => {
-          this.convertToPalette();
+          this.updateScaledImage();
         }, 50);
       };
     }
@@ -240,26 +271,14 @@ export class ImageProcessor {
 
     ctx.imageSmoothingEnabled = false;
 
-    const sourceImage =
-      this.isColorConverted && this.colorConvertedCanvas
-        ? this.colorConvertedCanvas
-        : this.originalImage;
+    // 1. 元画像からリサイズ
+    ctx.drawImage(this.originalImage, 0, 0, newWidth, newHeight);
 
-    if (sourceImage instanceof HTMLCanvasElement) {
-      ctx.drawImage(
-        sourceImage,
-        0,
-        0,
-        originalWidth,
-        originalHeight,
-        0,
-        0,
-        newWidth,
-        newHeight
-      );
-    } else {
-      ctx.drawImage(sourceImage, 0, 0, newWidth, newHeight);
-    }
+    // 2. 調整適用（リサイズ後）
+    this.applyAdjustments(ctx, newWidth, newHeight);
+
+    // 3. カラーパレット変換（調整後）
+    this.applyPaletteToCanvas(ctx, newWidth, newHeight);
 
     if (originalSizeDisplay) {
       originalSizeDisplay.textContent = `${originalWidth} x ${originalHeight}`;
@@ -273,6 +292,63 @@ export class ImageProcessor {
     if (this.imageInspector) {
       this.imageInspector.resetViewport();
     }
+  }
+
+  private applyAdjustments(ctx: CanvasRenderingContext2D, width: number, height: number): void {
+    if (this.brightness === 0 && this.contrast === 0 && this.saturation === 0) return;
+
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    for (let i = 0; i < data.length; i += 4) {
+      let r = data[i];
+      let g = data[i + 1];
+      let b = data[i + 2];
+
+      // 明るさ
+      r += this.brightness * 2.55;
+      g += this.brightness * 2.55;
+      b += this.brightness * 2.55;
+
+      // コントラスト
+      const contrastFactor = (259 * (this.contrast + 255)) / (255 * (259 - this.contrast));
+      r = contrastFactor * (r - 128) + 128;
+      g = contrastFactor * (g - 128) + 128;
+      b = contrastFactor * (b - 128) + 128;
+
+      // 彩度
+      if (this.saturation !== 0) {
+        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+        const satFactor = 1 + this.saturation / 100;
+        r = gray + (r - gray) * satFactor;
+        g = gray + (g - gray) * satFactor;
+        b = gray + (b - gray) * satFactor;
+      }
+
+      data[i] = Math.max(0, Math.min(255, r));
+      data[i + 1] = Math.max(0, Math.min(255, g));
+      data[i + 2] = Math.max(0, Math.min(255, b));
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+  }
+
+  private applyPaletteToCanvas(ctx: CanvasRenderingContext2D, width: number, height: number): void {
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+
+      const nearestColor = this.findNearestColor([r, g, b]);
+      data[i] = nearestColor[0];
+      data[i + 1] = nearestColor[1];
+      data[i + 2] = nearestColor[2];
+    }
+
+    ctx.putImageData(imageData, 0, 0);
   }
 
   private convertToPalette(): void {

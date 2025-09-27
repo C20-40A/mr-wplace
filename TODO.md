@@ -24,8 +24,9 @@
 - スナップショットを削除しても、タイルの設定は残る
 - 描画が重複しているときアラート。フィルターがすべて OFF になっているとアラート
 
-# DONE v1.4.7
+# DONE v1.4.8
 
+- image editor の画像処理を強化
 - color filter の enable all/ disable all を i18n
 - 黒色だけなぜか enhance されない。transparent と同じ扱いになっている？
 - スナップショット詳細に削除ボタンあってもいい
