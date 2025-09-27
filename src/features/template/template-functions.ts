@@ -105,6 +105,7 @@ const processPixels = (
 
   // 2nd pass: enhanced処理（上下左右に赤ドット）
   if (enhanced?.enabled) {
+    let enhancedCount = 0;
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         if (x % pixelScale !== 1 || y % pixelScale !== 1) continue;
@@ -113,8 +114,11 @@ const processPixels = (
         if (data[i + 3] === 0) continue;
 
         const rgb = `${data[i]},${data[i + 1]},${data[i + 2]}`;
-        if (enhanced.selectedColors && !enhanced.selectedColors.has(rgb))
-          continue;
+        
+        if (enhanced.selectedColors) {
+          if (!enhanced.selectedColors.has(rgb)) continue;
+          console.log("🧑‍🎨 : Enhancing pixel:", rgb);
+        }
 
         // 上下左右
         [
@@ -129,10 +133,12 @@ const processPixels = (
               ...enhanced.color,
               255,
             ];
+            enhancedCount++;
           }
         });
       }
     }
+    console.log("🧑‍🎨 : Total enhanced dots added:", enhancedCount);
   }
 
   return imageData;
