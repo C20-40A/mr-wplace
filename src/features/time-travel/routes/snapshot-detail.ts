@@ -43,6 +43,9 @@ export class SnapshotDetailRoute {
             </svg>
             ${"download"}
           </button>
+          <button id="wps-delete-snapshot-btn" class="btn btn-sm btn-error">
+            🗑 ${"delete"}
+          </button>
         </div>
       </div>
     `;
@@ -75,6 +78,14 @@ export class SnapshotDetailRoute {
       .querySelector("#wps-download-snapshot-btn")
       ?.addEventListener("click", () => {
         this.downloadSnapshot();
+      });
+
+    container
+      .querySelector("#wps-delete-snapshot-btn")
+      ?.addEventListener("click", () => {
+        if (selectedSnapshot?.fullKey) {
+          this.deleteSnapshot(selectedSnapshot.fullKey);
+        }
       });
   }
 
@@ -192,5 +203,22 @@ export class SnapshotDetailRoute {
 
     // ボタン非表示
     await this.updateReturnCurrentButton(fullKey);
+  }
+
+  private async deleteSnapshot(fullKey: string): Promise<void> {
+    if (!confirm(t`${"delete_confirm"}`)) return;
+
+    // TemplateManager からも削除（描画中の場合）
+    const tileOverlay = window.mrWplace?.tileOverlay;
+    const imageKey = `snapshot_${fullKey}`;
+    if (tileOverlay?.templateManager) {
+      tileOverlay.templateManager.removeTemplateByKey(imageKey);
+    }
+
+    await TimeTravelStorage.removeSnapshotFromIndex(fullKey);
+    Toast.success(t`${"deleted_message"}`);
+    
+    // 削除後は前画面に戻る
+    this.router?.navigateBack();
   }
 }
