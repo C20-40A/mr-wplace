@@ -36,12 +36,11 @@ export class SnapshotDetailRoute {
             </svg>
             ${"return_to_current"}
           </button>
-          <button id="wps-download-snapshot-btn" class="btn btn-neutral">
+          <button id="wps-share-snapshot-btn" class="btn btn-neutral">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
-              <path fill-rule="evenodd" d="M12 2.25a.75.75 0 01.75.75v11.69l3.22-3.22a.75.75 0 111.06 1.06l-4.5 4.5a.75.75 0 01-1.06 0l-4.5-4.5a.75.75 0 111.06-1.06L11.25 14.69V3a.75.75 0 01.75-.75z" clip-rule="evenodd" />
-              <path fill-rule="evenodd" d="M6.75 15.75a.75.75 0 01.75-.75h9a.75.75 0 010 1.5h-9a.75.75 0 01-.75-.75z" clip-rule="evenodd" />
+              <path fill-rule="evenodd" d="M15.75 4.5a3 3 0 11.825 2.066l-8.421 4.679a3.002 3.002 0 010 1.51l8.421 4.679a3 3 0 11-.729 1.31l-8.421-4.678a3 3 0 110-4.132l8.421-4.679a3 3 0 01-.096-.755z" clip-rule="evenodd" />
             </svg>
-            ${"download"}
+            ${"share"}
           </button>
           <button id="wps-delete-snapshot-btn" class="btn btn-sm btn-error">
             🗑 ${"delete"}
@@ -75,9 +74,9 @@ export class SnapshotDetailRoute {
       });
 
     container
-      .querySelector("#wps-download-snapshot-btn")
+      .querySelector("#wps-share-snapshot-btn")
       ?.addEventListener("click", () => {
-        this.downloadSnapshot();
+        this.router?.navigate('snapshot-share');
       });
 
     container
@@ -156,29 +155,7 @@ export class SnapshotDetailRoute {
     );
   }
 
-  private downloadSnapshot(): void {
-    const canvas = document.getElementById(
-      "wps-snapshot-canvas"
-    ) as HTMLCanvasElement;
-    if (!canvas) return;
 
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      const selectedSnapshot = (this.router as any)?.selectedSnapshot;
-      const timestamp = parseInt(selectedSnapshot.fullKey.split("_")[2]);
-      const tileX = parseInt(selectedSnapshot.fullKey.split("_")[3]);
-      const tileY = parseInt(selectedSnapshot.fullKey.split("_")[4]);
-      a.download = `${tileX}-${tileY}-${timestamp}.snapshot.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, "image/png");
-  }
 
   private async updateReturnCurrentButton(fullKey: string): Promise<void> {
     const isDrawing = await TimeTravelStorage.isSnapshotDrawing(fullKey);

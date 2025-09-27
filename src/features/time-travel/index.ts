@@ -15,6 +15,7 @@ import {
 import { TileListRoute } from "./routes/tile-list";
 import { SnapshotRoute } from "./routes/snapshot-route";
 import { SnapshotDetailRoute } from "./routes/snapshot-detail";
+import { SnapshotShareRoute } from "./routes/snapshot-share";
 import { ImportSnapshotRoute } from "./routes/import-snapshot";
 
 /**
@@ -29,6 +30,7 @@ export class TimeTravel {
   private currentPositionRoute: SnapshotRoute;
   private tileSnapshotsRoute: SnapshotRoute;
   private snapshotDetailRoute: SnapshotDetailRoute;
+  private snapshotShareRoute: SnapshotShareRoute;
   private importSnapshotRoute: ImportSnapshotRoute;
 
   constructor() {
@@ -38,6 +40,7 @@ export class TimeTravel {
     this.tileListRoute = new TileListRoute();
     this.tileSnapshotsRoute = new SnapshotRoute({ showSaveButton: false });
     this.snapshotDetailRoute = new SnapshotDetailRoute();
+    this.snapshotShareRoute = new SnapshotShareRoute();
     this.importSnapshotRoute = new ImportSnapshotRoute();
     this.init();
 
@@ -99,6 +102,9 @@ export class TimeTravel {
         break;
       case "snapshot-detail":
         this.snapshotDetailRoute.render(container, this.router);
+        break;
+      case "snapshot-share":
+        this.snapshotShareRoute.render(container, this.router);
         break;
       case "import-snapshot":
         this.importSnapshotRoute.render(container, this.router);
