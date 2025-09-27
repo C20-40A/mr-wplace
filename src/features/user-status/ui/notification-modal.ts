@@ -355,7 +355,7 @@ export class NotificationModal {
         second: "2-digit",
       });
       return `
-        <div style="background-color: #dcfce7; padding: 8px 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #bbf7d0;">
+        <div style="background-color: #dcfce7; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #bbf7d0;">
           <div style="font-size: 13px; color: #15803d; font-weight: 500;">${t`${"alarm_active"}`}</div>
           <div style="font-size: 12px; color: #16a34a; margin-top: 2px;">${t`${"scheduled"}`}: ${alarmTime}</div>
         </div>
@@ -363,7 +363,7 @@ export class NotificationModal {
     }
 
     return `
-      <div style="background-color: #f3f4f6; padding: 8px 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #d1d5db;">
+      <div style="background-color: #f3f4f6; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #d1d5db;">
         <div style="font-size: 13px; color: #6b7280; font-weight: 500;">${t`${"no_alarm_set"}`}</div>
       </div>
     `;
@@ -419,6 +419,10 @@ export class NotificationModal {
           </div>
         </div>
         
+        <div id="alarm-status-content">
+          ${this.createAlarmStatusHTML()}
+        </div>
+
         <div style="display: flex; gap: 8px;">
           <button id="enableAlarm" style="background-color: #16a34a; color: white; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 500; display: ${enableButtonDisplay};">
             ${t`${"enable_alarm"}`}
@@ -426,9 +430,6 @@ export class NotificationModal {
           <button id="disableAlarm" style="background-color: #dc2626; color: white; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 500; display: ${disableButtonDisplay};">
             ${t`${"disable_alarm"}`}
           </button>
-        </div>
-        <div id="alarm-status-content">
-          ${this.createAlarmStatusHTML()}
         </div>
       </div>
     `;
