@@ -5,7 +5,6 @@
 # マイナー
 
 - firefox addon 対応
-- アイコンを pixel art にする
 - 「持っている色のみ」の filter
 - color filter の enable all/ disable all を i18n
 - filter 適用中に描画中モーダル表示
@@ -29,8 +28,9 @@
 - スナップショットを削除しても、タイルの設定は残る
 - 描画が重複しているときアラート。フィルターがすべて OFF になっているとアラート
 
-# DONE v1.3.3
+# DONE v1.4.6
 
+- アイコンを pixel art にする
 - ギャラリー画像＋位置を export して、複数人で編集できる機能
   - シェアボタン。tile+pixel の座標表示。lat lng のリンク表示。説明表示
 - タイルの import, 時刻が import されてないというより、「ダウンロードした時刻」になっている問題

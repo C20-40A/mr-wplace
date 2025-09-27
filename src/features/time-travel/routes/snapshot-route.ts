@@ -71,7 +71,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
 
   private renderSaveButton(): string {
     return `
-      <div class="mb-4">
+      <div style="margin-top: 8px;">
         <button id="wps-save-current-snapshot-btn" class="btn btn-primary w-full">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
             <path d="M21.731 2.269a2.625 2.625 0 00-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 000-3.712zM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 00-1.32 2.214l-.8 2.685a.75.75 0 00.933.933l2.685-.8a5.25 5.25 0 002.214-1.32l8.4-8.4z" />
@@ -126,17 +126,30 @@ export class SnapshotRoute extends BaseSnapshotRoute {
         </div>
       </div>
 
-      <div class="max-h-60 overflow-y-auto border rounded p-2">
-        <div id="wps-snapshots-list">
-          <div class="text-sm text-gray-500 text-center p-4">${t`${"loading"}`}</div>
+      <!-- 左右分割レイアウト -->
+      <div style="display: flex; gap: 12px; height: calc(80vh - 180px);">
+        <!-- 左: スナップショット一覧 (3) -->
+        <div style="flex: 3; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 4px; padding: 8px;">
+          <div id="wps-snapshots-list">
+            <div class="text-sm text-gray-500 text-center p-4">${t`${"loading"}`}</div>
+          </div>
+        </div>
+
+        <!-- 右: 現在タイル画像 + 保存ボタン (2) -->
+        <div style="flex: 2; display: flex; flex-direction: column; border: 1px solid #e5e7eb; border-radius: 4px; padding: 8px;">
+          <div id="current-tile-image-container" style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background-color: #f9fafb; min-height: 0;">
+            <canvas id="wps-current-tile-canvas" style="max-width: 100%; max-height: 100%; object-fit: contain;"></canvas>
+            <div id="no-image-message" class="text-sm text-gray-500" style="display: none; position: absolute;">Tile image not loaded</div>
+          </div>
+          ${this.options.showSaveButton ? this.renderSaveButton() : ""}
         </div>
       </div>
-      ${this.options.showSaveButton ? this.renderSaveButton() : ""}
     `;
 
     this.setupEvents(container);
     this.updateTileInfo(); // タイル情報更新
     this.reloadSnapshots(container);
+    this.loadCurrentTileImage(); // 現在タイル画像読み込み
   }
 
   private setupEvents(container: HTMLElement): void {
@@ -224,5 +237,54 @@ export class SnapshotRoute extends BaseSnapshotRoute {
       this.currentTileY
     );
     await gotoPosition({ lat, lng, zoom: 11 });
+  }
+
+  private async loadCurrentTileImage(): Promise<void> {
+    const canvas = document.getElementById(
+      "wps-current-tile-canvas"
+    ) as HTMLCanvasElement;
+    const noImageMessage = document.getElementById("no-image-message");
+    
+    if (!canvas || !noImageMessage) return;
+
+    // 現在位置がない場合
+    if (!this.currentTileX || this.currentTileY === undefined) {
+      canvas.style.display = "none";
+      noImageMessage.textContent = t`${"location_unavailable"}`;
+      noImageMessage.style.display = "block";
+      return;
+    }
+
+    // tmpタイルを取得
+    const tmpKey = `tile_tmp_${this.currentTileX}_${this.currentTileY}`;
+    const result = await chrome.storage.local.get(tmpKey);
+
+    if (!result[tmpKey]) {
+      canvas.style.display = "none";
+      noImageMessage.textContent = "Tile image not loaded";
+      noImageMessage.style.display = "block";
+      return;
+    }
+
+    // Blobに変換して画像表示
+    const uint8Array = new Uint8Array(result[tmpKey]);
+    const blob = new Blob([uint8Array], { type: "image/png" });
+    const dataUrl = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+
+    const img = new Image();
+    img.onload = () => {
+      // 元画像サイズでcanvas設定
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0);
+      canvas.style.display = "block";
+      noImageMessage.style.display = "none";
+    };
+    img.src = dataUrl;
   }
 }
