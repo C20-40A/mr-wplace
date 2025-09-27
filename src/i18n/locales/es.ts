@@ -116,6 +116,9 @@ export const esTranslations = {
 
   // Color Filter
   color_filter: "Filtro de Color",
+  enable_all: "Activar Todos",
+  disable_all: "Desactivar Todos",
+  enhanced: "Mejorado",
 
   // User Status (Notification Modal)
   user_status_details: "Detalles del Estado del Usuario",

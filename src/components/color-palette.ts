@@ -1,4 +1,5 @@
 import { colorpalette } from "../constants/colors";
+import { t } from "../i18n/manager";
 
 interface ColorPaletteOptions {
   onChange?: (colorIds: number[]) => void;
@@ -90,14 +91,14 @@ export class ColorPalette {
 
     const enhancedToggleHTML = this.options.showEnhancedToggle
       ? `<button class="enhanced-toggle-btn btn btn-outline btn-sm rounded" style="${this.enhancedEnabled ? 'background-color: #22c55e; border-color: #22c55e; color: white;' : 'border-color: #ef4444; color: #ef4444;'}">
-          Enhanced: ${this.enhancedEnabled ? 'ON' : 'OFF'}
+          ${t`${'enhanced'}`}: ${this.enhancedEnabled ? 'ON' : 'OFF'}
          </button>`
       : '';
 
     this.container.innerHTML = `
       <div class="color-palette-controls flex gap-2 mb-4 px-4 pt-4">
-        <button class="enable-all-btn btn btn-outline btn-success btn-sm rounded">Enable All</button>
-        <button class="disable-all-btn btn btn-outline btn-error btn-sm rounded">Disable All</button>
+        <button class="enable-all-btn btn btn-outline btn-success btn-sm rounded">${t`${'enable_all'}`}</button>
+        <button class="disable-all-btn btn btn-outline btn-error btn-sm rounded">${t`${'disable_all'}`}</button>
         ${enhancedToggleHTML}
       </div>
       <div class="color-palette-grid grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 px-4 pb-4">
@@ -214,7 +215,7 @@ export class ColorPalette {
     const button = this.container.querySelector('.enhanced-toggle-btn') as HTMLButtonElement;
     if (!button) return;
 
-    button.textContent = `Enhanced: ${this.enhancedEnabled ? 'ON' : 'OFF'}`;
+    button.textContent = `${t`${'enhanced'}`}: ${this.enhancedEnabled ? 'ON' : 'OFF'}`;
     if (this.enhancedEnabled) {
       button.style.backgroundColor = '#22c55e';
       button.style.borderColor = '#22c55e';

@@ -118,6 +118,9 @@ export const enTranslations = {
 
   // Color Filter
   color_filter: "Color Filter",
+  enable_all: "Enable All",
+  disable_all: "Disable All",
+  enhanced: "Enhanced",
 
   // User Status (Notification Modal)
   user_status_details: "User Status Details",
