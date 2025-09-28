@@ -1,5 +1,5 @@
 import { uint8ToBase64 } from "./utils";
-import { TEMPLATE_CONSTANTS } from "./constants";
+import { TEMPLATE_CONSTANTS, TemplateCoords } from "./constants";
 
 /** テンプレート処理結果の型定義 */
 export interface TemplateProcessingResult {
@@ -19,7 +19,7 @@ interface EnhancedConfig {
 /** テンプレート入力パラメータの型定義 */
 export interface TemplateProcessingInput {
   file: File;
-  coords: number[];
+  coords: TemplateCoords;
   tileSize: number;
   allowedColorsSet: Set<string>;
   enhanced?: EnhancedConfig;

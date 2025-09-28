@@ -7,3 +7,8 @@ export const TEMPLATE_CONSTANTS = {
   /** Tile size in pixels */
   TILE_SIZE: 1000,
 } as const;
+
+/** Template coordinate types */
+export type TemplateCoords = [tileX: number, tileY: number, pixelX: number, pixelY: number];
+export type TileCoords = [tileX: number, tileY: number];
+export type PixelCoords = [pixelX: number, pixelY: number];

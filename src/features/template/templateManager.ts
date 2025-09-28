@@ -2,7 +2,7 @@ import { Template } from "./Template";
 import { ColorFilterManager } from "../../utils/color-filter-manager";
 import { colorpalette } from "../../constants/colors";
 import { applyTileComparisonEnhanced } from "./template-functions";
-import { TEMPLATE_CONSTANTS } from "./constants";
+import { TEMPLATE_CONSTANTS, TemplateCoords, TileCoords } from "./constants";
 
 interface TemplateInstance {
   template: Template;
@@ -23,7 +23,7 @@ export class TemplateManager {
 
   async createTemplate(
     blob: File,
-    coords: number[],
+    coords: TemplateCoords,
     imageKey: string,
     enhancedConfig?: { enabled: boolean; selectedColors?: Set<string> }
   ): Promise<void> {
@@ -45,7 +45,7 @@ export class TemplateManager {
 
   async drawTemplateOnTile(
     tileBlob: Blob,
-    tileCoords: [number, number]
+    tileCoords: TileCoords
   ): Promise<Blob> {
     if (this.templates.length === 0) return tileBlob;
 
