@@ -1,4 +1,5 @@
 import { uint8ToBase64 } from "./utils";
+import { TEMPLATE_CONSTANTS } from "./constants";
 
 /** テンプレート処理結果の型定義 */
 export interface TemplateProcessingResult {
@@ -199,7 +200,7 @@ export const createTemplateTiles = async (
   input: TemplateProcessingInput
 ): Promise<TemplateProcessingResult> => {
   const { file, coords, tileSize, allowedColorsSet, enhanced } = input;
-  const pixelScale = 3;
+  const pixelScale = TEMPLATE_CONSTANTS.PIXEL_SCALE;
 
   const bitmap = await createImageBitmap(file);
   const [w, h] = [bitmap.width, bitmap.height];
