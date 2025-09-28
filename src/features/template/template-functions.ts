@@ -1,10 +1,10 @@
 import { TEMPLATE_CONSTANTS, TemplateCoords } from "./constants";
 import { CanvasPool } from "./canvas-pool";
+import { createAllowedColorsSet } from "./utils";
 
 /** テンプレート処理結果の型定義 */
 export interface TemplateProcessingResult {
   templateTiles: Record<string, ImageBitmap>;
-  colorPalette: Record<string, { count: number; enabled: boolean }>;
 }
 
 /** Enhanced設定の型定義 */
@@ -19,7 +19,6 @@ export interface TemplateProcessingInput {
   file: File;
   coords: TemplateCoords;
   tileSize: number;
-  allowedColorsSet: Set<string>;
   enhanced?: EnhancedConfig;
 }
 
@@ -62,20 +61,7 @@ export function applyTileComparisonEnhanced(
   }
 }
 
-/** ピクセル分析 */
-const analyzePixels = (data: Uint8ClampedArray, allowedColors: Set<string>) => {
-  const palette = new Map<string, number>();
 
-  for (let i = 0; i < data.length; i += 4) {
-    if (data[i + 3] === 0) continue; // 透明skip
-
-    const rgb = `${data[i]},${data[i + 1]},${data[i + 2]}`;
-    const key = allowedColors.has(rgb) ? rgb : "other";
-    palette.set(key, (palette.get(key) || 0) + 1);
-  }
-
-  return palette;
-};
 
 /** 基本ピクセル処理: #deface変換 + 中央ピクセル抽出 */
 const processBasicPixels = (imageData: ImageData, pixelScale: number): void => {
@@ -99,7 +85,11 @@ const processBasicPixels = (imageData: ImageData, pixelScale: number): void => {
 };
 
 /** Enhanced処理: 選択色の中央ピクセル周りに赤ドット追加 */
-const processEnhancedPixels = (imageData: ImageData, pixelScale: number, enhanced: EnhancedConfig): void => {
+const processEnhancedPixels = (
+  imageData: ImageData,
+  pixelScale: number,
+  enhanced: EnhancedConfig
+): void => {
   const { data, width, height } = imageData;
 
   for (let y = 0; y < height; y++) {
@@ -110,15 +100,22 @@ const processEnhancedPixels = (imageData: ImageData, pixelScale: number, enhance
       if (data[i + 3] === 0) continue;
 
       const rgb = `${data[i]},${data[i + 1]},${data[i + 2]}`;
-      if (enhanced.selectedColors && !enhanced.selectedColors.has(rgb)) continue;
+      if (enhanced.selectedColors && !enhanced.selectedColors.has(rgb))
+        continue;
 
       // 上下左右に赤ドット
       [
-        [x, y - 1], [x, y + 1], [x - 1, y], [x + 1, y]
+        [x, y - 1],
+        [x, y + 1],
+        [x - 1, y],
+        [x + 1, y],
       ].forEach(([px, py]) => {
         if (px >= 0 && px < width && py >= 0 && py < height) {
           const j = (py * width + px) * 4;
-          [data[j], data[j + 1], data[j + 2], data[j + 3]] = [...enhanced.color, 255];
+          [data[j], data[j + 1], data[j + 2], data[j + 3]] = [
+            ...enhanced.color,
+            255,
+          ];
         }
       });
     }
@@ -126,7 +123,11 @@ const processEnhancedPixels = (imageData: ImageData, pixelScale: number, enhance
 };
 
 /** ImageDataピクセル処理 */
-const processPixels = (imageData: ImageData, pixelScale: number, enhanced?: EnhancedConfig): ImageData => {
+const processPixels = (
+  imageData: ImageData,
+  pixelScale: number,
+  enhanced?: EnhancedConfig
+): ImageData => {
   processBasicPixels(imageData, pixelScale);
   if (enhanced?.enabled) {
     processEnhancedPixels(imageData, pixelScale, enhanced);
@@ -192,23 +193,14 @@ const processTile = async (
 export const createTemplateTiles = async (
   input: TemplateProcessingInput
 ): Promise<TemplateProcessingResult> => {
-  const { file, coords, tileSize, allowedColorsSet, enhanced } = input;
+  const { file, coords, tileSize, enhanced } = input;
+  const allowedColorsSet = createAllowedColorsSet();
   const pixelScale = TEMPLATE_CONSTANTS.PIXEL_SCALE;
 
   const bitmap = await createImageBitmap(file);
   const [w, h] = [bitmap.width, bitmap.height];
 
-  // ピクセル分析
-  const canvas = new OffscreenCanvas(w, h);
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  if (!ctx) throw new Error("Failed to get canvas context for pixel analysis");
-  
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(bitmap, 0, 0);
-  const palette = analyzePixels(
-    ctx.getImageData(0, 0, w, h).data,
-    allowedColorsSet
-  );
+  // ピクセル分析削除（colorPalette不要のため）
 
   // タイル処理
   const templateTiles: Record<string, ImageBitmap> = {};
@@ -238,11 +230,5 @@ export const createTemplateTiles = async (
     py += drawH;
   }
 
-  // カラーパレット構築
-  const colorPalette: Record<string, { count: number; enabled: boolean }> = {};
-  palette.forEach((count, key) => {
-    colorPalette[key] = { count, enabled: true };
-  });
-
-  return { templateTiles, colorPalette };
+  return { templateTiles };
 };
