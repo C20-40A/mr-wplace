@@ -1,16 +1,16 @@
 import { createTemplateTiles as createTemplateTilesFn } from "./template-functions";
 import { createAllowedColorsSet } from "./utils";
-import { TEMPLATE_CONSTANTS } from "./constants";
+import { TEMPLATE_CONSTANTS, TemplateCoords } from "./constants";
 
 export class Template {
   public file: File;
-  public coords: number[];
+  public coords: TemplateCoords;
   public tiles: Record<string, ImageBitmap> | null;
   public colorPalette: Record<string, { count: number; enabled: boolean }>;
   public affectedTiles: Set<string>;
   public allowedColorsSet: Set<string>;
 
-  constructor(file: File, coords: number[]) {
+  constructor(file: File, coords: TemplateCoords) {
     this.file = file;
     this.coords = coords;
     this.tiles = null;
