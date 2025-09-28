@@ -1,4 +1,5 @@
 import { TEMPLATE_CONSTANTS, TemplateCoords } from "./constants";
+import { CanvasPool } from "./canvas-pool";
 
 /** テンプレート処理結果の型定義 */
 export interface TemplateProcessingResult {
@@ -144,9 +145,12 @@ const processTile = async (
   pixelScale: number,
   enhanced?: EnhancedConfig
 ) => {
-  const canvas = new OffscreenCanvas(drawW * pixelScale, drawH * pixelScale);
+  const canvas = CanvasPool.acquire(drawW * pixelScale, drawH * pixelScale);
   const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  if (!ctx) throw new Error("Failed to get 2D context");
+  if (!ctx) {
+    CanvasPool.release(canvas);
+    throw new Error("Failed to get 2D context");
+  }
 
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(
@@ -173,8 +177,13 @@ const processTile = async (
     .toString()
     .padStart(3, "0")}`;
 
+  const resultBitmap = await createImageBitmap(canvas);
+
+  // Canvas cleanup
+  CanvasPool.release(canvas);
+
   return {
-    bitmap: await createImageBitmap(canvas),
+    bitmap: resultBitmap,
     tileName,
   };
 };
@@ -190,19 +199,16 @@ export const createTemplateTiles = async (
   const [w, h] = [bitmap.width, bitmap.height];
 
   // ピクセル分析
-  let palette = new Map<string, number>();
-  try {
-    const canvas = new OffscreenCanvas(w, h);
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (ctx) {
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(bitmap, 0, 0);
-      palette = analyzePixels(
-        ctx.getImageData(0, 0, w, h).data,
-        allowedColorsSet
-      );
-    }
-  } catch {}
+  const canvas = new OffscreenCanvas(w, h);
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) throw new Error("Failed to get canvas context for pixel analysis");
+  
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(bitmap, 0, 0);
+  const palette = analyzePixels(
+    ctx.getImageData(0, 0, w, h).data,
+    allowedColorsSet
+  );
 
   // タイル処理
   const templateTiles: Record<string, ImageBitmap> = {};

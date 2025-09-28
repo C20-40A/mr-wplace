@@ -36,7 +36,7 @@ export class ColorFilterManager {
         return this.selectedColorIds.has(color.id);
       })
       .map((color) => color.rgb as [number, number, number]);
-    
+
     console.log("🧑‍🎨 : ColorFilter selectedRGBs:", this.selectedRGBs);
   }
 
@@ -51,7 +51,7 @@ export class ColorFilterManager {
     if (this.selectedRGBs.length === colorpalette.length) return imageBitmap;
 
     const canvas = new OffscreenCanvas(imageBitmap.width, imageBitmap.height);
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return imageBitmap;
 
     if (this.selectedRGBs.length === 0) {
@@ -73,10 +73,10 @@ export class ColorFilterManager {
       if (a === 0) continue;
 
       const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
-      
+
       // Enhanced赤ドット[255,0,0]を保護
       const isEnhancedRed = r === 255 && g === 0 && b === 0;
-      
+
       if (!isEnhancedRed && !this.isColorMatch(r, g, b)) {
         data[i + 3] = 0;
       }

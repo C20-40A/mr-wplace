@@ -3,6 +3,8 @@ import { ColorFilterManager } from "../../utils/color-filter-manager";
 import { colorpalette } from "../../constants/colors";
 import { applyTileComparisonEnhanced } from "./template-functions";
 import { TEMPLATE_CONSTANTS, TemplateCoords, TileCoords } from "./constants";
+import { CanvasPool } from "./canvas-pool";
+import { EnhancedConfigProvider } from "./enhanced-config-provider";
 
 interface TemplateInstance {
   template: Template;
@@ -14,11 +16,13 @@ export class TemplateManager {
   public tileSize: number;
   public renderScale: number;
   public templates: TemplateInstance[];
+  private readonly configProvider: EnhancedConfigProvider;
 
   constructor() {
     this.tileSize = TEMPLATE_CONSTANTS.TILE_SIZE;
     this.renderScale = TEMPLATE_CONSTANTS.RENDER_SCALE;
     this.templates = [];
+    this.configProvider = new EnhancedConfigProvider();
   }
 
   async createTemplate(
@@ -72,32 +76,38 @@ export class TemplateManager {
     if (matchingTiles.length === 0) return tileBlob;
 
     const tileBitmap = await createImageBitmap(tileBlob);
-    const canvas = new OffscreenCanvas(drawSize, drawSize);
-    const context = canvas.getContext("2d");
+    const canvas = CanvasPool.acquire(drawSize, drawSize);
+    const context = canvas.getContext("2d", { willReadFrequently: true });
 
-    if (!context) throw new Error("Failed to get 2D context");
+    if (!context) {
+      CanvasPool.release(canvas);
+      throw new Error("Failed to get 2D context");
+    }
 
     context.imageSmoothingEnabled = false;
     context.clearRect(0, 0, drawSize, drawSize);
     context.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
 
     // 元タイル状態保存用canvas
-    const originalTileCanvas = new OffscreenCanvas(drawSize, drawSize);
-    const originalTileCtx = originalTileCanvas.getContext("2d");
-    if (!originalTileCtx) throw new Error("Failed to get original tile context");
+    const originalTileCanvas = CanvasPool.acquire(drawSize, drawSize);
+    const originalTileCtx = originalTileCanvas.getContext("2d", { willReadFrequently: true });
+    if (!originalTileCtx) {
+      CanvasPool.release(canvas);
+      CanvasPool.release(originalTileCanvas);
+      throw new Error("Failed to get original tile context");
+    }
     originalTileCtx.imageSmoothingEnabled = false;
     originalTileCtx.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
 
     const colorFilter = window.mrWplace
       ?.colorFilterManager as ColorFilterManager;
-    const enhancedConfig = this.getEnhancedConfig();
+    const enhancedConfig = this.configProvider.getEnhancedConfig();
 
     for (const { tileKey, template } of matchingTiles) {
       const coords = tileKey.split(",");
       let templateBitmap = template.tiles?.[tileKey];
       if (!templateBitmap) continue;
 
-      // タイル比較Enhanced（ColorFilter前）
       if (enhancedConfig?.enabled) {
         templateBitmap = await this.applyTileComparison(
           templateBitmap,
@@ -121,7 +131,13 @@ export class TemplateManager {
       );
     }
 
-    return await canvas.convertToBlob({ type: "image/png" });
+    const result = await canvas.convertToBlob({ type: "image/png" });
+    
+    // Canvas cleanup
+    CanvasPool.release(canvas);
+    CanvasPool.release(originalTileCanvas);
+    
+    return result;
   }
 
   removeTemplateByKey(imageKey: string): void {
@@ -150,40 +166,21 @@ export class TemplateManager {
     return false;
   }
 
-  private getEnhancedConfig():
-    | { enabled: boolean; selectedColors: Set<string> }
-    | undefined {
-    const colorFilterManager = window.mrWplace?.colorFilterManager;
-    if (!colorFilterManager?.isEnhancedEnabled()) return undefined;
-
-    const selectedColorIds = colorFilterManager.getSelectedColors();
-    const selectedColors = new Set<string>();
-
-    for (const id of selectedColorIds) {
-      // id: 0 (Transparent)を除外 - 透明色はenhance不要、黒[0,0,0]はid: 1のみ
-      if (id === 0) continue;
-      
-      const color = colorpalette.find((c) => c.id === id);
-      if (color) {
-        selectedColors.add(`${color.rgb[0]},${color.rgb[1]},${color.rgb[2]}`);
-      }
-    }
-
-    return { enabled: true, selectedColors };
-  }
-
   private async applyTileComparison(
     templateBitmap: ImageBitmap,
     tileContext: OffscreenCanvasRenderingContext2D,
     coords: string[],
     selectedColors?: Set<string>
   ): Promise<ImageBitmap> {
-    const tempCanvas = new OffscreenCanvas(
+    const tempCanvas = CanvasPool.acquire(
       templateBitmap.width,
       templateBitmap.height
     );
-    const tempCtx = tempCanvas.getContext("2d");
-    if (!tempCtx) return templateBitmap;
+    const tempCtx = tempCanvas.getContext("2d", { willReadFrequently: true });
+    if (!tempCtx) {
+      CanvasPool.release(tempCanvas);
+      return templateBitmap;
+    }
 
     tempCtx.drawImage(templateBitmap, 0, 0);
 
@@ -203,6 +200,11 @@ export class TemplateManager {
     applyTileComparisonEnhanced(templateData, tileData, selectedColors);
 
     tempCtx.putImageData(templateData, 0, 0);
-    return await createImageBitmap(tempCanvas);
+    const result = await createImageBitmap(tempCanvas);
+    
+    // Canvas cleanup
+    CanvasPool.release(tempCanvas);
+    
+    return result;
   }
 }
