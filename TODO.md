@@ -1,14 +1,16 @@
 # クリティカル
 
-- タイルのスナップショット描画時に　カラーパレット強化すると、真っ赤になる。重くなる。動かなくなる
+- 黒色だけなぜか enhance されない。transparent と同じ扱いになっている？
 
 # マイナー
 
+- enhance 対象が多いと、パフォーマンスが極めて悪くなる
+- 入力文字を描画したい
+- UI テキストをドットっぽくしたい
 - firefox addon 対応
 - 「持っている色のみ」の filter
 - filter 適用中に描画中モーダル表示
 - ui.ts 系は functional のほうがいいかもしれない
-- 入力文字を描画したい
 - 逆ジオあってもいいかも
   - https://nominatim.org/ が利用可能
 - お気に入りモーダルを整理可能にする
@@ -31,7 +33,6 @@
 
 - image editor の画像処理を強化
 - color filter の enable all/ disable all を i18n
-- 黒色だけなぜか enhance されない。transparent と同じ扱いになっている？
 - スナップショット詳細に削除ボタンあってもいい
 - スナップショットの UI 改善
 - アイコンを pixel art にする

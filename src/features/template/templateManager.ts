@@ -31,7 +31,7 @@ export class TemplateManager {
     const template = new Template(blob, coords);
 
     const { templateTiles } = await template.createTemplateTiles(
-      enhancedConfig
+      undefined
     );
     template.tiles = templateTiles;
 
