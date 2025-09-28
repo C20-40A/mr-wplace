@@ -1,20 +1,15 @@
 import { createTemplateTiles as createTemplateTilesFn } from "./template-functions";
-import { createAllowedColorsSet } from "./utils";
 import { TEMPLATE_CONSTANTS, TemplateCoords } from "./constants";
 
 export class Template {
-  public file: File;
-  public coords: TemplateCoords;
+  public file: File; // タイル画像
+  public coords: TemplateCoords; // タイル位置
   public tiles: Record<string, ImageBitmap> | null;
-  public colorPalette: Record<string, { count: number; enabled: boolean }>;
-  public allowedColorsSet: Set<string>;
 
   constructor(file: File, coords: TemplateCoords) {
     this.file = file;
     this.coords = coords;
     this.tiles = null;
-    this.colorPalette = {};
-    this.allowedColorsSet = createAllowedColorsSet();
   }
 
   /** Create template tiles with optional enhanced config */
@@ -28,7 +23,6 @@ export class Template {
       file: this.file,
       coords: this.coords,
       tileSize: TEMPLATE_CONSTANTS.TILE_SIZE,
-      allowedColorsSet: this.allowedColorsSet,
       enhanced: enhancedConfig
         ? {
             enabled: enhancedConfig.enabled,
@@ -37,8 +31,6 @@ export class Template {
           }
         : undefined,
     });
-
-    this.colorPalette = result.colorPalette;
 
     return {
       templateTiles: result.templateTiles,
