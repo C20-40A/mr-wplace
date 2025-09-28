@@ -7,7 +7,6 @@ export class Template {
   public coords: TemplateCoords;
   public tiles: Record<string, ImageBitmap> | null;
   public colorPalette: Record<string, { count: number; enabled: boolean }>;
-  public affectedTiles: Set<string>;
   public allowedColorsSet: Set<string>;
 
   constructor(file: File, coords: TemplateCoords) {
@@ -15,7 +14,6 @@ export class Template {
     this.coords = coords;
     this.tiles = null;
     this.colorPalette = {};
-    this.affectedTiles = new Set();
     this.allowedColorsSet = createAllowedColorsSet();
   }
 
@@ -25,7 +23,6 @@ export class Template {
     selectedColors?: Set<string>;
   }): Promise<{
     templateTiles: Record<string, ImageBitmap>;
-    templateTilesBuffers: Record<string, string>;
   }> {
     const result = await createTemplateTilesFn({
       file: this.file,
@@ -42,11 +39,9 @@ export class Template {
     });
 
     this.colorPalette = result.colorPalette;
-    this.affectedTiles = result.affectedTiles;
 
     return {
       templateTiles: result.templateTiles,
-      templateTilesBuffers: result.templateTilesBuffers,
     };
   }
 }

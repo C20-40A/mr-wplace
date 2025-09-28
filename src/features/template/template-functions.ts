@@ -1,12 +1,9 @@
-import { uint8ToBase64 } from "./utils";
 import { TEMPLATE_CONSTANTS, TemplateCoords } from "./constants";
 
 /** テンプレート処理結果の型定義 */
 export interface TemplateProcessingResult {
   templateTiles: Record<string, ImageBitmap>;
-  templateTilesBuffers: Record<string, string>;
   colorPalette: Record<string, { count: number; enabled: boolean }>;
-  affectedTiles: Set<string>;
 }
 
 /** Enhanced設定の型定義 */
@@ -79,15 +76,10 @@ const analyzePixels = (data: Uint8ClampedArray, allowedColors: Set<string>) => {
   return palette;
 };
 
-/** ImageDataピクセル処理 */
-const processPixels = (
-  imageData: ImageData,
-  pixelScale: number,
-  enhanced?: EnhancedConfig
-): ImageData => {
+/** 基本ピクセル処理: #deface変換 + 中央ピクセル抽出 */
+const processBasicPixels = (imageData: ImageData, pixelScale: number): void => {
   const { data, width, height } = imageData;
 
-  // 1st pass: 基本処理
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const i = (y * width + x) * 4;
@@ -103,52 +95,48 @@ const processPixels = (
       }
     }
   }
+};
 
-  // 2nd pass: enhanced処理（上下左右に赤ドット）
-  if (enhanced?.enabled) {
-    let enhancedCount = 0;
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        if (x % pixelScale !== 1 || y % pixelScale !== 1) continue;
+/** Enhanced処理: 選択色の中央ピクセル周りに赤ドット追加 */
+const processEnhancedPixels = (imageData: ImageData, pixelScale: number, enhanced: EnhancedConfig): void => {
+  const { data, width, height } = imageData;
 
-        const i = (y * width + x) * 4;
-        if (data[i + 3] === 0) continue;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (x % pixelScale !== 1 || y % pixelScale !== 1) continue;
 
-        const rgb = `${data[i]},${data[i + 1]},${data[i + 2]}`;
-        
-        if (enhanced.selectedColors) {
-          if (!enhanced.selectedColors.has(rgb)) continue;
-          console.log("🧑‍🎨 : Enhancing pixel:", rgb);
+      const i = (y * width + x) * 4;
+      if (data[i + 3] === 0) continue;
+
+      const rgb = `${data[i]},${data[i + 1]},${data[i + 2]}`;
+      if (enhanced.selectedColors && !enhanced.selectedColors.has(rgb)) continue;
+
+      // 上下左右に赤ドット
+      [
+        [x, y - 1], [x, y + 1], [x - 1, y], [x + 1, y]
+      ].forEach(([px, py]) => {
+        if (px >= 0 && px < width && py >= 0 && py < height) {
+          const j = (py * width + px) * 4;
+          [data[j], data[j + 1], data[j + 2], data[j + 3]] = [...enhanced.color, 255];
         }
-
-        // 上下左右
-        [
-          [x, y - 1],
-          [x, y + 1],
-          [x - 1, y],
-          [x + 1, y],
-        ].forEach(([px, py]) => {
-          if (px >= 0 && px < width && py >= 0 && py < height) {
-            const j = (py * width + px) * 4;
-            [data[j], data[j + 1], data[j + 2], data[j + 3]] = [
-              ...enhanced.color,
-              255,
-            ];
-            enhancedCount++;
-          }
-        });
-      }
+      });
     }
-    console.log("🧑‍🎨 : Total enhanced dots added:", enhancedCount);
   }
+};
 
+/** ImageDataピクセル処理 */
+const processPixels = (imageData: ImageData, pixelScale: number, enhanced?: EnhancedConfig): ImageData => {
+  processBasicPixels(imageData, pixelScale);
+  if (enhanced?.enabled) {
+    processEnhancedPixels(imageData, pixelScale, enhanced);
+  }
   return imageData;
 };
 
 /** 単一タイル処理 */
 const processTile = async (
   bitmap: ImageBitmap,
-  coords: number[],
+  coords: TemplateCoords,
   px: number,
   py: number,
   drawW: number,
@@ -185,12 +173,8 @@ const processTile = async (
     .toString()
     .padStart(3, "0")}`;
 
-  const blob = await canvas.convertToBlob();
-  const buffer = uint8ToBase64(new Uint8Array(await blob.arrayBuffer()));
-
   return {
     bitmap: await createImageBitmap(canvas),
-    buffer,
     tileName,
   };
 };
@@ -222,8 +206,6 @@ export const createTemplateTiles = async (
 
   // タイル処理
   const templateTiles: Record<string, ImageBitmap> = {};
-  const templateTilesBuffers: Record<string, string> = {};
-  const affectedTiles = new Set<string>();
 
   for (let py = coords[3]; py < h + coords[3]; ) {
     const drawH = Math.min(tileSize - (py % tileSize), h - (py - coords[3]));
@@ -243,8 +225,6 @@ export const createTemplateTiles = async (
       );
 
       templateTiles[result.tileName] = result.bitmap;
-      templateTilesBuffers[result.tileName] = result.buffer;
-      affectedTiles.add(result.tileName.split(",").slice(0, 2).join(","));
 
       px += drawW;
     }
@@ -258,5 +238,5 @@ export const createTemplateTiles = async (
     colorPalette[key] = { count, enabled: true };
   });
 
-  return { templateTiles, templateTilesBuffers, colorPalette, affectedTiles };
+  return { templateTiles, colorPalette };
 };

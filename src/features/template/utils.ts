@@ -1,14 +1,5 @@
 import { colorpalette } from "../../constants/colors";
 
-/** Converts a Uint8 array to base64 using the browser's built-in binary to ASCII function */
-export const uint8ToBase64 = (uint8: Uint8Array): string => {
-  let binary = "";
-  for (let i = 0; i < uint8.length; i++) {
-    binary += String.fromCharCode(uint8[i]);
-  }
-  return btoa(binary);
-};
-
 /** Create allowed colors set from color palette */
 export const createAllowedColorsSet = (): Set<string> => {
   const allowed = Array.isArray(colorpalette) ? colorpalette : [];
