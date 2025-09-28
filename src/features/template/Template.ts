@@ -1,5 +1,6 @@
 import { createTemplateTiles as createTemplateTilesFn } from "./template-functions";
 import { createAllowedColorsSet } from "./utils";
+import { TEMPLATE_CONSTANTS } from "./constants";
 
 export class Template {
   public file: File;
@@ -29,7 +30,7 @@ export class Template {
     const result = await createTemplateTilesFn({
       file: this.file,
       coords: this.coords,
-      tileSize: 1000,
+      tileSize: TEMPLATE_CONSTANTS.TILE_SIZE,
       allowedColorsSet: this.allowedColorsSet,
       enhanced: enhancedConfig
         ? {

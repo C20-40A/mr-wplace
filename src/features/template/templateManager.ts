@@ -2,6 +2,7 @@ import { Template } from "./Template";
 import { ColorFilterManager } from "../../utils/color-filter-manager";
 import { colorpalette } from "../../constants/colors";
 import { applyTileComparisonEnhanced } from "./template-functions";
+import { TEMPLATE_CONSTANTS } from "./constants";
 
 interface TemplateInstance {
   template: Template;
@@ -15,8 +16,8 @@ export class TemplateManager {
   public templates: TemplateInstance[];
 
   constructor() {
-    this.tileSize = 1000;
-    this.renderScale = 3;
+    this.tileSize = TEMPLATE_CONSTANTS.TILE_SIZE;
+    this.renderScale = TEMPLATE_CONSTANTS.RENDER_SCALE;
     this.templates = [];
   }
 
