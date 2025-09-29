@@ -19,33 +19,6 @@ export class TileOverlay {
     await this.restoreAllDrawnImages();
   }
 
-  private getEnhancedConfig():
-    | { enabled: boolean; selectedColors: Set<string> }
-    | undefined {
-    const colorFilterManager = window.mrWplace?.colorFilterManager;
-    if (!colorFilterManager?.isEnhancedEnabled()) return undefined;
-
-    const selectedColorIds = colorFilterManager.getSelectedColors();
-    const selectedColors = new Set<string>();
-
-    console.log("🧑‍🎨 : Selected color IDs:", selectedColorIds);
-
-    for (const id of selectedColorIds) {
-      // id: 0 (Transparent)を除外 - 透明色はenhance不要、黒[0,0,0]はid: 1のみ
-      if (id === 0) continue;
-      
-      const color = colorpalette.find((c) => c.id === id);
-      if (color) {
-        const rgbStr = `${color.rgb[0]},${color.rgb[1]},${color.rgb[2]}`;
-        selectedColors.add(rgbStr);
-        console.log("🧑‍🎨 : Added color to enhance:", id, color.name, rgbStr);
-      }
-    }
-
-    console.log("🧑‍🎨 : Final selectedColors:", Array.from(selectedColors));
-    return { enabled: true, selectedColors };
-  }
-
   private setupTileProcessing(): void {
     window.addEventListener("message", async (event) => {
       if (event.data.source !== "wplace-studio-tile") return;
@@ -86,14 +59,10 @@ export class TileOverlay {
       imageItem.title || "template.png"
     );
 
-    const enhancedConfig = this.getEnhancedConfig();
-    console.log("🧑‍🎨 : drawImageWithCoords enhancedConfig:", enhancedConfig);
-
     await this.templateManager.createTemplate(
       file,
       [coords.TLX, coords.TLY, coords.PxX, coords.PxY],
-      imageItem.key,
-      enhancedConfig
+      imageItem.key
     );
 
     await this.saveDrawPosition(imageItem.key, coords);
@@ -160,13 +129,10 @@ export class TileOverlay {
           const blob = new Blob([uint8Array], { type: "image/png" });
           const file = new File([blob], "snapshot.png", { type: "image/png" });
 
-          const enhancedConfig = this.getEnhancedConfig();
-
           await this.templateManager.createTemplate(
             file,
             [tileX, tileY, 0, 0],
-            `snapshot_${activeSnapshot.fullKey}`,
-            enhancedConfig
+            `snapshot_${activeSnapshot.fullKey}`
           );
         }
       }
@@ -197,7 +163,9 @@ export class TileOverlay {
 
   private async restoreAllDrawnImages(): Promise<void> {
     const images = await this.galleryStorage.getAll();
-    const drawnImages = images.filter((img) => img.drawEnabled && img.drawPosition);
+    const drawnImages = images.filter(
+      (img) => img.drawEnabled && img.drawPosition
+    );
 
     for (const image of drawnImages) {
       await this.restoreImage(image);
@@ -207,8 +175,6 @@ export class TileOverlay {
   private async restoreImage(image: any): Promise<void> {
     const file = await this.dataUrlToFile(image.dataUrl, "restored.png");
 
-    const enhancedConfig = this.getEnhancedConfig();
-
     await this.templateManager.createTemplate(
       file,
       [
@@ -217,12 +183,14 @@ export class TileOverlay {
         image.drawPosition.PxX,
         image.drawPosition.PxY,
       ],
-      image.key,
-      enhancedConfig
+      image.key
     );
   }
 
-  private async dataUrlToFile(dataUrl: string, filename: string): Promise<File> {
+  private async dataUrlToFile(
+    dataUrl: string,
+    filename: string
+  ): Promise<File> {
     const response = await fetch(dataUrl);
     const blob = await response.blob();
     return new File([blob], filename, { type: blob.type });

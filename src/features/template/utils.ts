@@ -1,22 +1,23 @@
 import { colorpalette } from "../../constants/colors";
 
-/** Create allowed colors set from color palette */
-export const createAllowedColorsSet = (): Set<string> => {
-  const allowed = Array.isArray(colorpalette) ? colorpalette : [];
-  const set = new Set(
-    allowed
-      .filter(
-        (color) =>
-          (color?.name || "").toLowerCase() !== "transparent" &&
-          Array.isArray(color?.rgb)
-      )
-      .map((color) => `${color.rgb[0]},${color.rgb[1]},${color.rgb[2]}`)
-  );
+export const getEnhancedConfig = ():
+  | { enabled: boolean; selectedColors: Set<string> }
+  | undefined => {
+  const colorFilterManager = window.mrWplace?.colorFilterManager;
+  if (!colorFilterManager?.isEnhancedEnabled()) return undefined;
 
-  // #deface marker (maps to Transparent color)
-  set.add("222,250,206");
-  // Special "other" key for non-palette colors
-  set.add("other");
+  const selectedColorIds = colorFilterManager.getSelectedColors();
+  const selectedColors = new Set<string>();
 
-  return set;
+  for (const id of selectedColorIds) {
+    // id: 0 (Transparent)を除外 - 透明色はenhance不要、黒[0,0,0]はid: 1のみ
+    if (id === 0) continue;
+
+    const color = colorpalette.find((c) => c.id === id);
+    if (color) {
+      selectedColors.add(`${color.rgb[0]},${color.rgb[1]},${color.rgb[2]}`);
+    }
+  }
+
+  return { enabled: true, selectedColors };
 };
