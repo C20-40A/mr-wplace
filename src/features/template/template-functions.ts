@@ -21,7 +21,11 @@ export interface TemplateProcessingInput {
   enhanced?: EnhancedConfig;
 }
 
-/** タイル比較Enhanced適用 */
+/**
+ * タイル比較Enhanced適用
+ * 用途: 描画時処理 - 選択色がタイルと「違う場合」に赤ドット(差分強調)
+ * 呼び出し: TemplateManager.applyTileComparison() → 描画時比較
+ */
 export function applyTileComparisonEnhanced(
   templateData: ImageData,
   tileData: ImageData,
@@ -60,10 +64,22 @@ export function applyTileComparisonEnhanced(
   }
 }
 
-/** 基本ピクセル処理: #deface変換 + 中央ピクセル抽出 */
-const processBasicPixels = (imageData: ImageData, pixelScale: number): void => {
+/**
+ * ImageDataピクセル処理統合
+ * 処理内容:
+ *   1. #deface色 → チェッカーボード透過
+ *   2. 中央ピクセル抽出(3x3グリッド)
+ *   3. Enhanced有効時: 選択色周りに赤ドット(作成時処理 - 無条件強調)
+ * 呼び出し: processTile() → Template作成時のみ
+ */
+const processPixels = (
+  imageData: ImageData,
+  pixelScale: number,
+  enhanced?: EnhancedConfig
+): ImageData => {
   const { data, width, height } = imageData;
 
+  // 基本処理: #deface変換 + 中央ピクセル抽出
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const i = (y * width + x) * 4;
@@ -79,56 +95,39 @@ const processBasicPixels = (imageData: ImageData, pixelScale: number): void => {
       }
     }
   }
-};
 
-/** Enhanced処理: 選択色の中央ピクセル周りに赤ドット追加 */
-const processEnhancedPixels = (
-  imageData: ImageData,
-  pixelScale: number,
-  enhanced: EnhancedConfig
-): void => {
-  const { data, width, height } = imageData;
+  // Enhanced処理: 選択色周りに赤ドット(作成時)
+  if (enhanced?.enabled) {
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (x % pixelScale !== 1 || y % pixelScale !== 1) continue;
 
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      if (x % pixelScale !== 1 || y % pixelScale !== 1) continue;
+        const i = (y * width + x) * 4;
+        if (data[i + 3] === 0) continue;
 
-      const i = (y * width + x) * 4;
-      if (data[i + 3] === 0) continue;
+        const rgb = `${data[i]},${data[i + 1]},${data[i + 2]}`;
+        if (enhanced.selectedColors && !enhanced.selectedColors.has(rgb))
+          continue;
 
-      const rgb = `${data[i]},${data[i + 1]},${data[i + 2]}`;
-      if (enhanced.selectedColors && !enhanced.selectedColors.has(rgb))
-        continue;
-
-      // 上下左右に赤ドット
-      [
-        [x, y - 1],
-        [x, y + 1],
-        [x - 1, y],
-        [x + 1, y],
-      ].forEach(([px, py]) => {
-        if (px >= 0 && px < width && py >= 0 && py < height) {
-          const j = (py * width + px) * 4;
-          [data[j], data[j + 1], data[j + 2], data[j + 3]] = [
-            ...enhanced.color,
-            255,
-          ];
-        }
-      });
+        // 上下左右に赤ドット
+        [
+          [x, y - 1],
+          [x, y + 1],
+          [x - 1, y],
+          [x + 1, y],
+        ].forEach(([px, py]) => {
+          if (px >= 0 && px < width && py >= 0 && py < height) {
+            const j = (py * width + px) * 4;
+            [data[j], data[j + 1], data[j + 2], data[j + 3]] = [
+              ...enhanced.color,
+              255,
+            ];
+          }
+        });
+      }
     }
   }
-};
 
-/** ImageDataピクセル処理 */
-const processPixels = (
-  imageData: ImageData,
-  pixelScale: number,
-  enhanced?: EnhancedConfig
-): ImageData => {
-  processBasicPixels(imageData, pixelScale);
-  if (enhanced?.enabled) {
-    processEnhancedPixels(imageData, pixelScale, enhanced);
-  }
   return imageData;
 };
 

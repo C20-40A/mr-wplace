@@ -1,11 +1,14 @@
-import { Template } from "./Template";
-import { applyTileComparisonEnhanced } from "./template-functions";
+import {
+  applyTileComparisonEnhanced,
+  createTemplateTiles,
+} from "./template-functions";
 import { TEMPLATE_CONSTANTS, TemplateCoords, TileCoords } from "./constants";
 import { CanvasPool } from "./canvas-pool";
-import { getEnhancedConfig } from "./utils";
+import { colorpalette } from "../../constants/colors";
 
 interface TemplateInstance {
-  template: Template;
+  coords: TemplateCoords;
+  tiles: Record<string, ImageBitmap> | null;
   imageKey: string;
   drawEnabled: boolean;
 }
@@ -28,13 +31,16 @@ export class TemplateManager {
   ): Promise<void> {
     this.removeTemplateByKey(imageKey);
 
-    const template = new Template(blob, coords);
-
-    const { templateTiles } = await template.createTemplateTiles(undefined);
-    template.tiles = templateTiles;
+    const { templateTiles } = await createTemplateTiles({
+      file: blob,
+      coords,
+      tileSize: this.tileSize,
+      enhanced: undefined,
+    });
 
     this.templates.push({
-      template,
+      coords,
+      tiles: templateTiles,
       imageKey,
       drawEnabled: true,
     });
@@ -52,17 +58,20 @@ export class TemplateManager {
       "," +
       tileCoords[1].toString().padStart(4, "0");
 
-    const matchingTiles: Array<{ tileKey: string; template: Template }> = [];
+    const matchingTiles: Array<{
+      tileKey: string;
+      instance: TemplateInstance;
+    }> = [];
 
     for (const instance of this.templates) {
-      if (!instance.drawEnabled || !instance.template?.tiles) continue;
+      if (!instance.drawEnabled || !instance.tiles) continue;
 
-      const tiles = Object.keys(instance.template.tiles).filter((tile) =>
+      const tiles = Object.keys(instance.tiles).filter((tile) =>
         tile.startsWith(coordStr)
       );
 
       for (const tileKey of tiles) {
-        matchingTiles.push({ tileKey, template: instance.template });
+        matchingTiles.push({ tileKey, instance });
       }
     }
 
@@ -95,11 +104,11 @@ export class TemplateManager {
     originalTileCtx.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
 
     const colorFilter = window.mrWplace?.colorFilterManager;
-    const enhancedConfig = getEnhancedConfig();
+    const enhancedConfig = this.getEnhancedConfig();
 
-    for (const { tileKey, template } of matchingTiles) {
+    for (const { tileKey, instance } of matchingTiles) {
       const coords = tileKey.split(",");
-      let templateBitmap = template.tiles?.[tileKey];
+      let templateBitmap = instance.tiles?.[tileKey];
       if (!templateBitmap) continue;
 
       if (enhancedConfig?.enabled) {
@@ -152,12 +161,34 @@ export class TemplateManager {
 
   isDrawingOnTile(tileX: number, tileY: number): boolean {
     for (const instance of this.templates) {
-      if (!instance.drawEnabled || !instance.template?.coords) continue;
+      if (!instance.drawEnabled || !instance.coords) continue;
 
-      const [templateTileX, templateTileY] = instance.template.coords;
+      const [templateTileX, templateTileY] = instance.coords;
       if (templateTileX === tileX && templateTileY === tileY) return true;
     }
     return false;
+  }
+
+  private getEnhancedConfig():
+    | { enabled: boolean; selectedColors: Set<string> }
+    | undefined {
+    const colorFilterManager = window.mrWplace?.colorFilterManager;
+    if (!colorFilterManager?.isEnhancedEnabled()) return undefined;
+
+    const selectedColorIds = colorFilterManager.getSelectedColors();
+    const selectedColors = new Set<string>();
+
+    for (const id of selectedColorIds) {
+      // id: 0 (Transparent)を除外 - 透明色はenhance不要、黒[0,0,0]はid: 1のみ
+      if (id === 0) continue;
+
+      const color = colorpalette.find((c) => c.id === id);
+      if (color) {
+        selectedColors.add(`${color.rgb[0]},${color.rgb[1]},${color.rgb[2]}`);
+      }
+    }
+
+    return { enabled: true, selectedColors };
   }
 
   private async applyTileComparison(
