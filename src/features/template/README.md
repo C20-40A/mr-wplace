@@ -3,9 +3,7 @@
 ## Core Architecture
 
 ```
-TemplateManager → getEnhancedConfig + CanvasPool + Template → template-functions
-     ↓                   ↓                    ↓            ↓              ↓
-   統合管理            設定管理           リソース管理    状態保持      ピクセル処理
+TemplateManager(統合管理) → getEnhancedConfig(設定管理) + CanvasPool(リソース管理) → template-functions(ピクセル処理)
 ```
 
 ## File Structure
@@ -14,10 +12,8 @@ TemplateManager → getEnhancedConfig + CanvasPool + Template → template-funct
 src/features/template/
 ├── index.ts                      # export { TemplateManager }
 ├── constants.ts                  # 定数・型定義 (TEMPLATE_CONSTANTS, TemplateCoords)
-├── Template.ts                   # 状態保持クラス
 ├── templateManager.ts            # 統合管理クラス (管理・描画責任)
 ├── template-functions.ts         # ピクセル処理関数群
-├── utils.ts                      # createAllowedColorsSet
 ├── canvas-pool.ts               # Canvas再利用システム
 └── README.md                    # このファイル
 ```
