@@ -31,15 +31,6 @@ manager.toggleDrawEnabled(imageKey);
 
 ## Technical Implementation
 
-### Constants & Types
-
-```typescript
-// constants.ts
-TEMPLATE_CONSTANTS = { PIXEL_SCALE: 3, RENDER_SCALE: 3, TILE_SIZE: 1000 };
-type TemplateCoords = [tileX, tileY, pixelX, pixelY];
-type TileCoords = [tileX, tileY];
-```
-
 ### Canvas Pool System
 
 ```typescript
@@ -84,18 +75,10 @@ ColorFilter UI Toggle → EnhancedConfigProvider → TemplateManager → process
 
 ## Integration Points
 
-- TileOverlay: drawImageAt() → TemplateManager.createTemplate()
+- TileOverlay: drawImageAt() → TileDrawManager.createTemplate()
 - inject.js: タイル傍受 → drawTemplateOnTile()
 - ColorFilter: applyColorFilter() → Enhanced 機能連携
 - Gallery: TemplateInstance.drawEnabled 管理
-
-## Development Status
-
-- 型安全化完了 (TemplateCoords)
-- 関数分割完了 (processPixels→3 関数)
-- Canvas 最適化完了 (Pool + willReadFrequently)
-- SRP 改善完了 (設定管理分離)
-- エラーハンドリング統一完了
 
 ## Known Constraints
 
@@ -103,10 +86,3 @@ ColorFilter UI Toggle → EnhancedConfigProvider → TemplateManager → process
 - 座標系固定: zoom=11、3x3 グリッド中央抽出
 - ColorFilter 依存: window.mrWplace.colorFilterManager
 - Single Template: 1 ファイル単位処理
-
-## Future Extension Points
-
-- Enhanced 色動的変更
-- Multi-template 同時最適化
-- TemplateRenderer 完全分離 (描画責任)
-- 関数型リファクタリング

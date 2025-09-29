@@ -1,37 +1,34 @@
-import {
-  applyTileComparisonEnhanced,
-  createTemplateTiles,
-} from "./template-functions";
-import { TEMPLATE_CONSTANTS, TemplateCoords, TileCoords } from "./constants";
+import { applyTileComparisonEnhanced, drawImageOnTiles } from "./tile-draw";
+import { TILE_DRAW_CONSTANTS, WplaceCoords, TileCoords } from "./constants";
 import { CanvasPool } from "./canvas-pool";
 import { colorpalette } from "../../constants/colors";
 
-interface TemplateInstance {
-  coords: TemplateCoords;
+interface TileDrawInstance {
+  coords: WplaceCoords;
   tiles: Record<string, ImageBitmap> | null;
   imageKey: string;
   drawEnabled: boolean;
 }
 
-export class TemplateManager {
+export class TileDrawManager {
   public tileSize: number;
   public renderScale: number;
-  public templates: TemplateInstance[];
+  public templates: TileDrawInstance[];
 
   constructor() {
-    this.tileSize = TEMPLATE_CONSTANTS.TILE_SIZE;
-    this.renderScale = TEMPLATE_CONSTANTS.RENDER_SCALE;
+    this.tileSize = TILE_DRAW_CONSTANTS.TILE_SIZE;
+    this.renderScale = TILE_DRAW_CONSTANTS.RENDER_SCALE;
     this.templates = [];
   }
 
   async createTemplate(
     blob: File,
-    coords: TemplateCoords,
+    coords: WplaceCoords,
     imageKey: string
   ): Promise<void> {
     this.removeTemplateByKey(imageKey);
 
-    const { templateTiles } = await createTemplateTiles({
+    const { templateTiles } = await drawImageOnTiles({
       file: blob,
       coords,
       tileSize: this.tileSize,
@@ -60,7 +57,7 @@ export class TemplateManager {
 
     const matchingTiles: Array<{
       tileKey: string;
-      instance: TemplateInstance;
+      instance: TileDrawInstance;
     }> = [];
 
     for (const instance of this.templates) {

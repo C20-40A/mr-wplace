@@ -1,1 +1,0 @@
-export { TemplateManager } from "./templateManager";
