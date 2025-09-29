@@ -1,15 +1,14 @@
 import { llzToTilePixel } from "../../utils/coordinate";
-import { TemplateManager } from "../template";
+import { TileDrawManager } from "../tile-draw";
 import { ImageItem } from "../gallery/routes/list/components";
 import { GalleryStorage } from "../gallery/storage";
-import { colorpalette } from "../../constants/colors";
 
 export class TileOverlay {
-  private templateManager: TemplateManager;
+  private templateManager: TileDrawManager;
   private galleryStorage: GalleryStorage;
 
   constructor() {
-    this.templateManager = new TemplateManager();
+    this.templateManager = new TileDrawManager();
     this.galleryStorage = new GalleryStorage();
     this.init();
   }

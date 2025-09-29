@@ -1,5 +1,5 @@
 /** Template system constants */
-export const TEMPLATE_CONSTANTS = {
+export const TILE_DRAW_CONSTANTS = {
   /** Pixel scale for rendering (3x3 grid, center pixel extraction) */
   PIXEL_SCALE: 3,
   /** Render scale for canvas drawing */
@@ -9,6 +9,11 @@ export const TEMPLATE_CONSTANTS = {
 } as const;
 
 /** Template coordinate types */
-export type TemplateCoords = [tileX: number, tileY: number, pixelX: number, pixelY: number];
+export type WplaceCoords = [
+  tileX: number,
+  tileY: number,
+  pixelX: number,
+  pixelY: number
+];
 export type TileCoords = [tileX: number, tileY: number];
 export type PixelCoords = [pixelX: number, pixelY: number];
