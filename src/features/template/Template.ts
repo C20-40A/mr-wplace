@@ -32,8 +32,6 @@ export class Template {
         : undefined,
     });
 
-    return {
-      templateTiles: result.templateTiles,
-    };
+    return { templateTiles: result.templateTiles };
   }
 }

@@ -1,10 +1,8 @@
 import { Template } from "./Template";
-import { ColorFilterManager } from "../../utils/color-filter-manager";
-import { colorpalette } from "../../constants/colors";
 import { applyTileComparisonEnhanced } from "./template-functions";
 import { TEMPLATE_CONSTANTS, TemplateCoords, TileCoords } from "./constants";
 import { CanvasPool } from "./canvas-pool";
-import { EnhancedConfigProvider } from "./enhanced-config-provider";
+import { getEnhancedConfig } from "./utils";
 
 interface TemplateInstance {
   template: Template;
@@ -16,28 +14,23 @@ export class TemplateManager {
   public tileSize: number;
   public renderScale: number;
   public templates: TemplateInstance[];
-  private readonly configProvider: EnhancedConfigProvider;
 
   constructor() {
     this.tileSize = TEMPLATE_CONSTANTS.TILE_SIZE;
     this.renderScale = TEMPLATE_CONSTANTS.RENDER_SCALE;
     this.templates = [];
-    this.configProvider = new EnhancedConfigProvider();
   }
 
   async createTemplate(
     blob: File,
     coords: TemplateCoords,
-    imageKey: string,
-    enhancedConfig?: { enabled: boolean; selectedColors?: Set<string> }
+    imageKey: string
   ): Promise<void> {
     this.removeTemplateByKey(imageKey);
 
     const template = new Template(blob, coords);
 
-    const { templateTiles } = await template.createTemplateTiles(
-      undefined
-    );
+    const { templateTiles } = await template.createTemplateTiles(undefined);
     template.tiles = templateTiles;
 
     this.templates.push({
@@ -90,7 +83,9 @@ export class TemplateManager {
 
     // 元タイル状態保存用canvas
     const originalTileCanvas = CanvasPool.acquire(drawSize, drawSize);
-    const originalTileCtx = originalTileCanvas.getContext("2d", { willReadFrequently: true });
+    const originalTileCtx = originalTileCanvas.getContext("2d", {
+      willReadFrequently: true,
+    });
     if (!originalTileCtx) {
       CanvasPool.release(canvas);
       CanvasPool.release(originalTileCanvas);
@@ -99,9 +94,8 @@ export class TemplateManager {
     originalTileCtx.imageSmoothingEnabled = false;
     originalTileCtx.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
 
-    const colorFilter = window.mrWplace
-      ?.colorFilterManager as ColorFilterManager;
-    const enhancedConfig = this.configProvider.getEnhancedConfig();
+    const colorFilter = window.mrWplace?.colorFilterManager;
+    const enhancedConfig = getEnhancedConfig();
 
     for (const { tileKey, template } of matchingTiles) {
       const coords = tileKey.split(",");
@@ -132,11 +126,11 @@ export class TemplateManager {
     }
 
     const result = await canvas.convertToBlob({ type: "image/png" });
-    
+
     // Canvas cleanup
     CanvasPool.release(canvas);
     CanvasPool.release(originalTileCanvas);
-    
+
     return result;
   }
 
@@ -201,10 +195,10 @@ export class TemplateManager {
 
     tempCtx.putImageData(templateData, 0, 0);
     const result = await createImageBitmap(tempCanvas);
-    
+
     // Canvas cleanup
     CanvasPool.release(tempCanvas);
-    
+
     return result;
   }
 }

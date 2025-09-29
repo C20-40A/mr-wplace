@@ -1,6 +1,5 @@
 import { TEMPLATE_CONSTANTS, TemplateCoords } from "./constants";
 import { CanvasPool } from "./canvas-pool";
-import { createAllowedColorsSet } from "./utils";
 
 /** テンプレート処理結果の型定義 */
 export interface TemplateProcessingResult {
@@ -60,8 +59,6 @@ export function applyTileComparisonEnhanced(
     }
   }
 }
-
-
 
 /** 基本ピクセル処理: #deface変換 + 中央ピクセル抽出 */
 const processBasicPixels = (imageData: ImageData, pixelScale: number): void => {
@@ -194,7 +191,6 @@ export const createTemplateTiles = async (
   input: TemplateProcessingInput
 ): Promise<TemplateProcessingResult> => {
   const { file, coords, tileSize, enhanced } = input;
-  const allowedColorsSet = createAllowedColorsSet();
   const pixelScale = TEMPLATE_CONSTANTS.PIXEL_SCALE;
 
   const bitmap = await createImageBitmap(file);

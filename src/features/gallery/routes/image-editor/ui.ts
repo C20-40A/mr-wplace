@@ -1,15 +1,6 @@
 import { t } from "../../../../i18n/manager";
 import { ImageDropzone } from "../../../../components/image-dropzone";
 
-declare global {
-  interface Window {
-    mrWplace?: {
-      imageEditor?: any;
-      gallery?: any;
-    };
-  }
-}
-
 export interface ImageEditorCallbacks {
   onFileHandle: (file: File) => void;
   onScaleChange: (scale: number) => void;
