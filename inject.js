@@ -78,29 +78,6 @@ mapObserver.observe(document.body, {
   subtree: true,
 });
 
-// Proactively fetch user data on page load
-setTimeout(async () => {
-  try {
-    const response = await originalFetch('https://backend.wplace.live/me', {
-      method: 'GET',
-      credentials: 'include'
-    });
-    if (response.ok) {
-      const userData = await response.json();
-      console.log('🧑‍🎨: Proactively fetched user data:', userData);
-      window.postMessage(
-        {
-          source: 'mr-wplace-me',
-          userData: userData,
-        },
-        '*'
-      );
-    }
-  } catch (error) {
-    console.log('🧑‍🎨: Failed to fetch initial user data:', error);
-  }
-}, 1000); // Wait 1 second for page initialization
-
 window.fetch = async function (...args) {
   // 初期化完了待機
   while (!isInitialized) {
