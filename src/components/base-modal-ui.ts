@@ -4,6 +4,7 @@ import { createModal, ModalElements } from "../utils/modal";
 export interface ModalConfig {
   id: string;
   title: string;
+  maxWidth?: string;
 }
 
 /**
@@ -26,6 +27,7 @@ export abstract class BaseModalUI<T extends Router<any>> {
       id: config.id,
       title: config.title,
       hasBackButton: false,
+      maxWidth: config.maxWidth,
       onBack: () => this.router.navigateBack(),
     });
 
