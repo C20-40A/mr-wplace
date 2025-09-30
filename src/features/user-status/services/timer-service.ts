@@ -1,6 +1,7 @@
+import { RuntimeChargeData } from "../../../types/global";
 import { StatusCalculator } from "./calculator";
 
-interface ChargeData {
+export interface ChargeData {
   current: number;
   max: number;
   cooldownMs: number;
@@ -17,8 +18,9 @@ export class TimerService {
     updateCallback: (timeText: string) => void
   ): void {
     const chargeData = this.calculator.calculateTimeToFull(charges);
-    
-    (window as any).wplaceChargeData = {
+
+    if (!window.mrWplace) throw new Error("window.mrWplace not found");
+    window.mrWplace.wplaceChargeData = {
       ...chargeData,
       timeToFull: chargeData.timeToFullMs,
       startTime: Date.now(),
@@ -33,7 +35,7 @@ export class TimerService {
     this.intervalId = window.setInterval(() => {
       const timeText = this.getCurrentTimeText();
       updateCallback(timeText);
-      
+
       if (timeText === "⚡ FULL" && this.intervalId) {
         clearInterval(this.intervalId);
         this.intervalId = undefined;
@@ -42,8 +44,8 @@ export class TimerService {
   }
 
   private getCurrentTimeText(): string {
-    const data: ChargeData = (window as any).wplaceChargeData;
-    if (!data) return "⚡ FULL";
+    const data = window.mrWplace?.wplaceChargeData;
+    if (!data) return "...";
 
     const elapsed = Date.now() - data.startTime;
     const remainingMs = Math.max(0, data.timeToFull - elapsed);
@@ -56,6 +58,6 @@ export class TimerService {
       clearInterval(this.intervalId);
       this.intervalId = undefined;
     }
-    delete (window as any).wplaceChargeData;
+    if (window.mrWplace) delete window.mrWplace.wplaceChargeData;
   }
 }

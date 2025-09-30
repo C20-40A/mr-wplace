@@ -29,10 +29,8 @@ const runmrWplace = async (): Promise<void> => {
     console.log("🧑‍🎨: Injected fetch interceptor");
   }
 
+  // Global instance初期化（inject.js message listener前）
   window.mrWplace = {} as any;
-  window.mrWplace.wplaceChargeData = {
-    startTime: Date.now(),
-  } as any; // ⚠️ほんとはerror。先に定義したいからした。いつかなおす
 
   // Listen for messages from inject.js
   window.addEventListener("message", async (event) => {
@@ -50,14 +48,6 @@ const runmrWplace = async (): Promise<void> => {
     if (event.data.source === "mr-wplace-me") {
       console.log("🧑‍🎨: Received user data:", event.data.userData);
       const userData = event.data.userData as WPlaceUserData;
-
-      // Set charge data for service worker
-      if (userData.charges && window.mrWplace) {
-        window.mrWplace.wplaceChargeData = {
-          current: userData.charges.count,
-          max: userData.charges.max,
-        } as any; // ⚠️ほんとはerror
-      }
 
       userStatus.updateFromUserData(userData);
     }
@@ -98,7 +88,6 @@ const runmrWplace = async (): Promise<void> => {
 
   // Global access for ImageProcessor and Gallery
   window.mrWplace = {
-    ...window.mrWplace,
     gallery,
     tileOverlay,
     favorites,
