@@ -1,5 +1,4 @@
 import { setupElementObserver } from "../../components/element-observer";
-import { ImageSelectorModal } from "../gallery/routes/image-selector/ImageSelectorModal";
 import { getCurrentPosition } from "../../utils/position";
 import { findPositionModal } from "../../constants/selectors";
 import { createDrawButton } from "./ui";
@@ -9,10 +8,7 @@ import { ImageItem } from "../gallery/routes/list/components";
  * 画像描画機能の独立モジュール
  */
 export class Drawing {
-  private imageSelectorModal: ImageSelectorModal;
-
   constructor() {
-    this.imageSelectorModal = new ImageSelectorModal();
     setupElementObserver([
       {
         id: "draw-btn",
@@ -29,19 +25,14 @@ export class Drawing {
   }
 
   private openDrawMode(): void {
-    console.log("✏️ Opening image selector modal for drawing");
-    this.imageSelectorModal.show(
-      (selectedItem) => {
-        this.startDraw(selectedItem);
-      },
-      () => {
-        // 追加ボタンが押されたらGalleryのImage Editorへ遷移
-        console.log("🎭 Navigating to Gallery Image Editor");
-        const gallery = window.mrWplace?.gallery;
-        if (!gallery) throw new Error("Gallery not found");
-        gallery.navigateToImageEditor();
-      }
-    );
+    console.log("✏️ Opening image selector for drawing");
+    
+    const gallery = window.mrWplace?.gallery;
+    if (!gallery) throw new Error("Gallery not found");
+    
+    gallery.showSelectionMode((selectedItem) => {
+      this.startDraw(selectedItem);
+    });
   }
 
   private startDraw(imageItem: ImageItem): void {

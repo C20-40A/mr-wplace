@@ -73,7 +73,7 @@ const runmrWplace = async (): Promise<void> => {
   const gallery = new Gallery();
   const drawing = new Drawing();
   const tileSnapshot = new TileSnapshot();
-  const timeTravel = new TimeTravel();
+  new TimeTravel();
   const drawingLoader = new DrawingLoader();
   const colorFilter = new ColorFilter();
   const colorFilterManager = new ColorFilterManager();

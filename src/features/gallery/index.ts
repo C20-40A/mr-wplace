@@ -5,6 +5,7 @@ import { GalleryList } from "./routes/list";
 import { GalleryImageEditor } from "./routes/image-editor";
 import { GalleryImageDetail } from "./routes/image-detail";
 import { GalleryImageShare } from "./routes/image-share";
+import { GalleryImageSelector } from "./routes/image-selector";
 import { setupElementObserver } from "../../components/element-observer";
 import { findOpacityContainer } from "../../constants/selectors";
 
@@ -15,12 +16,12 @@ export class Gallery {
   private imageEditorRoute: GalleryImageEditor;
   private imageDetailRoute: GalleryImageDetail;
   private imageShareRoute: GalleryImageShare;
+  private imageSelectorRoute: GalleryImageSelector;
   private onDrawToggleCallback?: (key: string) => Promise<boolean>;
 
-  // 選択モード用の状態
-  private isSelectionMode: boolean = false;
-  private onSelectCallback?: (item: GalleryItem) => void;
+  // 状態管理
   private currentDetailItem?: GalleryItem;
+  private imageSelectorOnSelect?: (item: GalleryItem) => void;
 
   constructor() {
     this.router = new GalleryRouter();
@@ -29,6 +30,7 @@ export class Gallery {
     this.imageEditorRoute = new GalleryImageEditor();
     this.imageDetailRoute = new GalleryImageDetail();
     this.imageShareRoute = new GalleryImageShare();
+    this.imageSelectorRoute = new GalleryImageSelector();
     this.init();
   }
 
@@ -60,8 +62,6 @@ export class Gallery {
         this.listRoute.render(
           container,
           this.router,
-          this.isSelectionMode,
-          this.onSelectCallback,
           (item) => this.showImageDetail(item),
           this.onDrawToggleCallback
         );
@@ -87,6 +87,24 @@ export class Gallery {
           );
         }
         break;
+      case "image-selector":
+        this.imageSelectorRoute.render(
+          container,
+          this.router,
+          (item) => {
+            // ImageItem → GalleryItem変換してimageSelectorOnSelect実行
+            if (this.imageSelectorOnSelect) {
+              // ImageItemのkeyでGalleryItemを検索
+              this.findGalleryItemByKey(item.key).then(galleryItem => {
+                if (galleryItem) {
+                  this.imageSelectorOnSelect!(galleryItem);
+                }
+              });
+            }
+          },
+          () => this.router.navigate('image-editor') // onAddClick
+        );
+        break;
       case "image-share":
         if (this.currentDetailItem) {
           this.imageShareRoute.render(container, this.currentDetailItem);
@@ -100,20 +118,16 @@ export class Gallery {
     this.router.navigate("image-detail");
   }
 
-  // 外部インターフェース（互換性維持）
-  async show(
-    isSelectionMode: boolean = false,
-    onSelect?: (item: GalleryItem) => void
-  ): Promise<void> {
-    this.isSelectionMode = isSelectionMode;
-    this.onSelectCallback = onSelect;
-
+  // 外部インターフェース
+  show(): void {
     this.router.initialize("list");
     this.ui.showModal();
   }
 
   showSelectionMode(onSelect: (item: GalleryItem) => void): void {
-    this.show(true, onSelect);
+    this.imageSelectorOnSelect = onSelect;
+    this.router.initialize('image-selector');
+    this.ui.showModal();
   }
 
   /**
@@ -121,6 +135,16 @@ export class Gallery {
    */
   setDrawToggleCallback(callback: (key: string) => Promise<boolean>): void {
     this.onDrawToggleCallback = callback;
+  }
+
+  /**
+   * キーでGalleryItemを検索
+   */
+  private async findGalleryItemByKey(key: string): Promise<GalleryItem | null> {
+    const { GalleryStorage } = await import("./storage");
+    const storage = new GalleryStorage();
+    const items = await storage.getAll();
+    return items.find(item => item.key === key) || null;
   }
 
   /**

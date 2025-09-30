@@ -15,8 +15,6 @@ export class GalleryList {
   async render(
     container: HTMLElement,
     router: GalleryRouter,
-    isSelectionMode: boolean = false,
-    onSelect?: (item: GalleryItem) => void,
     onImageClick?: (item: GalleryItem) => void,
     onDrawToggle?: (key: string) => Promise<boolean>
   ): Promise<void> {
@@ -28,10 +26,8 @@ export class GalleryList {
       async (key: string) => {
         await this.storage.delete(key);
         // 再描画
-        this.render(container, router, isSelectionMode, onSelect, onImageClick, onDrawToggle);
+        this.render(container, router, onImageClick, onDrawToggle);
       },
-      isSelectionMode,
-      onSelect,
       container,
       () => router.navigate('image-editor'),
       onImageClick
