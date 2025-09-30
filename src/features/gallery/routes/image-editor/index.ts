@@ -4,9 +4,14 @@ import { ImageProcessor } from "./editor";
 export class GalleryImageEditor {
   private ui: ImageEditorUI;
   private processor: ImageProcessor | null = null;
+  private onSaveSuccess?: () => void;
 
   constructor() {
     this.ui = new ImageEditorUI();
+  }
+
+  setOnSaveSuccess(callback: () => void): void {
+    this.onSaveSuccess = callback;
   }
 
   render(container: HTMLElement): void {
@@ -16,6 +21,7 @@ export class GalleryImageEditor {
     container.appendChild(uiContainer);
 
     this.processor = new ImageProcessor(uiContainer);
+    this.processor.setOnSaveSuccess(this.onSaveSuccess);
     this.ui.setImageProcessor(this.processor);
     
     // コールバック設定

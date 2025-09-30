@@ -4,6 +4,7 @@
 
 # マイナー
 
+- Me の fetch は、me が「ない場合」のみにしたい
 - 入力文字を描画したい
 - UI テキストをドットっぽくしたい
 - firefox addon 対応
@@ -33,6 +34,7 @@
 
 # DONE v1.4.2
 
+- Select image -> image editor -> ここで select image に戻りたい
 - 上部のアラートタグが表示されない場合が多い
   - fetch で解決
 - 描画しようとしても、No images for drawing.で、画像が表示されない

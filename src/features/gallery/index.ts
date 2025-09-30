@@ -67,6 +67,7 @@ export class Gallery {
         );
         break;
       case "image-editor":
+        this.imageEditorRoute.setOnSaveSuccess(() => this.router.navigateBack());
         this.imageEditorRoute.render(container);
         break;
       case "image-detail":
