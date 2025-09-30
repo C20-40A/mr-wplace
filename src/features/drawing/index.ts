@@ -30,9 +30,18 @@ export class Drawing {
 
   private openDrawMode(): void {
     console.log("✏️ Opening image selector modal for drawing");
-    this.imageSelectorModal.show((selectedItem) => {
-      this.startDraw(selectedItem);
-    });
+    this.imageSelectorModal.show(
+      (selectedItem) => {
+        this.startDraw(selectedItem);
+      },
+      () => {
+        // 追加ボタンが押されたらGalleryのImage Editorへ遷移
+        console.log("🎭 Navigating to Gallery Image Editor");
+        const gallery = window.mrWplace?.gallery;
+        if (!gallery) throw new Error("Gallery not found");
+        gallery.navigateToImageEditor();
+      }
+    );
   }
 
   private startDraw(imageItem: ImageItem): void {

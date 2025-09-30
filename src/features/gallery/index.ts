@@ -122,4 +122,12 @@ export class Gallery {
   setDrawToggleCallback(callback: (key: string) => Promise<boolean>): void {
     this.onDrawToggleCallback = callback;
   }
+
+  /**
+   * Image Editorへ遷移（外部から呼び出し用）
+   */
+  navigateToImageEditor(): void {
+    this.router.navigate('image-editor');
+    this.ui.showModal();
+  }
 }

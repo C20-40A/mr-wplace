@@ -24,6 +24,8 @@ export interface ImageGridOptions {
   showGotoPositionButton?: boolean; // マップピンボタンを表示するか
   onAddClick?: () => void;
   emptyStateMessage?: string;
+  emptyStateButtonText?: string; // 空状態のボタンテキスト（i18nキー）
+  emptyStateButtonStyle?: 'fab' | 'primary'; // 空状態のボタンスタイル
   gridCols?: string;
 }
 
@@ -40,6 +42,7 @@ export class ImageGridComponent {
       showDrawToggleButton: true, // デフォルトで目アイコンを表示
       showGotoPositionButton: true, // デフォルトでピンアイコンを表示
       emptyStateMessage: t`${"no_saved_images"}`,
+      emptyStateButtonStyle: 'fab', // デフォルトはFABボタン
       gridCols: "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
       ...options,
     };
@@ -69,12 +72,18 @@ export class ImageGridComponent {
    * 空の状態を表示
    */
   private renderEmptyState(): void {
+    const addButtonHtml = this.options.showAddButton
+      ? this.options.emptyStateButtonStyle === 'primary'
+        ? this.createPrimaryAddButtonHtml()
+        : this.createAddButtonHtml()
+      : "";
+
     this.container.innerHTML = `
       <div class="text-center text-gray-500 py-8">
         <p>${this.options.emptyStateMessage}</p>
       </div>
       
-      ${this.options.showAddButton ? this.createAddButtonHtml() : ""}
+      ${addButtonHtml}
     `;
 
     this.attachAddButtonListener();
@@ -200,19 +209,35 @@ export class ImageGridComponent {
   }
 
   /**
-   * 追加ボタンのHTMLを生成
+   * 追加ボタン（FAB）のHTMLを生成
    */
   private createAddButtonHtml(): string {
     return `
       <button 
         id="wps-gallery-add-btn" 
-        class="btn btn-circle btn-primary absolute z-20 shadow-lg" 
-        style="bottom: 1rem; right: 1rem;"
+        class="btn btn-circle btn-primary z-20 shadow-lg" 
+        style="position: fixed; bottom: 1rem; right: 1rem;"
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
           <path fill-rule="evenodd" d="M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z" clip-rule="evenodd"/>
         </svg>
       </button>
+    `;
+  }
+
+  /**
+   * 追加ボタン（Primary）のHTMLを生成
+   */
+  private createPrimaryAddButtonHtml(): string {
+    const buttonText = this.options.emptyStateButtonText
+      ? t`${this.options.emptyStateButtonText}`
+      : '+';
+    return `
+      <div class="text-center mt-4">
+        <button id="wps-gallery-add-btn" class="btn btn-primary">
+          ${buttonText}
+        </button>
+      </div>
     `;
   }
 

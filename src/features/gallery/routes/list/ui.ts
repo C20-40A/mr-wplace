@@ -31,9 +31,7 @@ export class GalleryListUI {
     onImageClick?: (item: GalleryItem) => void
   ): void {
     // 外部コンテナが指定された場合はそれを使用
-    if (container) {
-      this.container = container;
-    }
+    if (container) this.container = container;
     this.renderGalleryList(
       items,
       onDelete,
@@ -65,9 +63,7 @@ export class GalleryListUI {
     }));
 
     // 既存のImageGridComponentがあれば破棄
-    if (this.imageGrid) {
-      this.imageGrid.destroy();
-    }
+    if (this.imageGrid) this.imageGrid.destroy();
 
     // 新しいImageGridComponentを作成
     this.imageGrid = new ImageGridComponent(this.container, {

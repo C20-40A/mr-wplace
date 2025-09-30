@@ -6,7 +6,7 @@ import { ColorPalette } from "../../../../components/color-palette";
 export class ImageProcessor {
   private container: HTMLElement;
   private originalImage: HTMLImageElement | null = null;
-  private colorConvertedCanvas: HTMLCanvasElement | null = null;
+  // private colorConvertedCanvas: HTMLCanvasElement | null = null;
   private scaledCanvas: HTMLCanvasElement | null = null;
   private imageScale = 1.0;
   private selectedColorIds: number[] = [];
@@ -61,10 +61,10 @@ export class ImageProcessor {
   }
 
   initColorPalette(container: HTMLElement): void {
-    this.selectedColorIds = colorpalette.map(c => c.id);
+    this.selectedColorIds = colorpalette.map((c) => c.id);
     this.colorPalette = new ColorPalette(container, {
       selectedColorIds: this.selectedColorIds,
-      onChange: (colorIds) => this.onColorSelectionChange(colorIds)
+      onChange: (colorIds) => this.onColorSelectionChange(colorIds),
     });
   }
 
@@ -74,8 +74,10 @@ export class ImageProcessor {
     const containerSelector = isMobile
       ? "#wps-color-palette-container-mobile"
       : "#wps-color-palette-container";
-    const newContainer = this.container.querySelector(containerSelector) as HTMLElement;
-    
+    const newContainer = this.container.querySelector(
+      containerSelector
+    ) as HTMLElement;
+
     if (!newContainer) return;
 
     if (this.colorPalette) {
@@ -84,7 +86,7 @@ export class ImageProcessor {
 
     this.colorPalette = new ColorPalette(newContainer, {
       selectedColorIds: this.selectedColorIds,
-      onChange: (colorIds) => this.onColorSelectionChange(colorIds)
+      onChange: (colorIds) => this.onColorSelectionChange(colorIds),
     });
   }
 
@@ -95,23 +97,39 @@ export class ImageProcessor {
     }
 
     this.originalImage = null;
-    this.colorConvertedCanvas = null;
+    // this.colorConvertedCanvas = null;
     this.scaledCanvas = null;
     this.imageScale = 1.0;
     this.brightness = 0;
     this.contrast = 0;
     this.saturation = 0;
 
-    const dropzone = this.container.querySelector("#wps-dropzone-container") as HTMLElement;
-    const imageDisplay = this.container.querySelector("#wps-image-display") as HTMLElement;
-    const slider = this.container.querySelector("#wps-scale-slider") as HTMLInputElement;
+    const dropzone = this.container.querySelector(
+      "#wps-dropzone-container"
+    ) as HTMLElement;
+    const imageDisplay = this.container.querySelector(
+      "#wps-image-display"
+    ) as HTMLElement;
+    const slider = this.container.querySelector(
+      "#wps-scale-slider"
+    ) as HTMLInputElement;
     const valueDisplay = this.container.querySelector("#wps-scale-value");
-    const brightnessSlider = this.container.querySelector("#wps-brightness-slider") as HTMLInputElement;
-    const brightnessValue = this.container.querySelector("#wps-brightness-value");
-    const contrastSlider = this.container.querySelector("#wps-contrast-slider") as HTMLInputElement;
+    const brightnessSlider = this.container.querySelector(
+      "#wps-brightness-slider"
+    ) as HTMLInputElement;
+    const brightnessValue = this.container.querySelector(
+      "#wps-brightness-value"
+    );
+    const contrastSlider = this.container.querySelector(
+      "#wps-contrast-slider"
+    ) as HTMLInputElement;
     const contrastValue = this.container.querySelector("#wps-contrast-value");
-    const saturationSlider = this.container.querySelector("#wps-saturation-slider") as HTMLInputElement;
-    const saturationValue = this.container.querySelector("#wps-saturation-value");
+    const saturationSlider = this.container.querySelector(
+      "#wps-saturation-slider"
+    ) as HTMLInputElement;
+    const saturationValue = this.container.querySelector(
+      "#wps-saturation-value"
+    );
 
     if (slider) slider.value = "1";
     if (valueDisplay) valueDisplay.textContent = "1.0";
@@ -125,8 +143,6 @@ export class ImageProcessor {
     if (dropzone) dropzone.style.display = "block";
     if (imageDisplay) imageDisplay.style.display = "none";
   }
-
-
 
   async saveToGallery(): Promise<void> {
     if (!this.scaledCanvas) return;
@@ -160,36 +176,35 @@ export class ImageProcessor {
       const base64 = reader.result as string;
       const key = `gallery_${Date.now()}`;
 
-      try {
-        const { GalleryStorage } = await import("../../storage");
-        const galleryStorage = new GalleryStorage();
+      const { GalleryStorage } = await import("../../storage");
+      const galleryStorage = new GalleryStorage();
 
-        const galleryItem = {
-          key: key,
-          timestamp: Date.now(),
-          dataUrl: base64,
-        };
+      const galleryItem = {
+        key: key,
+        timestamp: Date.now(),
+        dataUrl: base64,
+      };
 
-        await galleryStorage.save(galleryItem);
-        console.log(t`${"saved_to_gallery"}`);
+      await galleryStorage.save(galleryItem);
+      console.log(t`${"saved_to_gallery"}`);
 
-        if (window.mrWplace?.imageEditor) {
-          window.mrWplace.imageEditor.closeModal();
-        }
+      if (window.mrWplace?.imageEditor)
+        throw new Error("window.mrWplace?.imageEditor not found");
 
-        if (window.mrWplace?.gallery) {
-          window.mrWplace.gallery.show();
-        }
-      } catch (error) {
-        console.error("Failed to save to gallery:", error);
+      if (window.mrWplace?.gallery) {
+        window.mrWplace.gallery.show();
       }
     };
     reader.readAsDataURL(blob);
   }
 
   private displayImage(imageSrc: string): void {
-    const dropzone = this.container.querySelector("#wps-dropzone-container");
-    const imageDisplay = this.container.querySelector("#wps-image-display") as HTMLElement;
+    const dropzone = this.container.querySelector(
+      "#wps-dropzone-container"
+    ) as HTMLElement;
+    const imageDisplay = this.container.querySelector(
+      "#wps-image-display"
+    ) as HTMLElement;
     const originalImage = this.container.querySelector(
       "#wps-original-image"
     ) as HTMLImageElement;
@@ -210,8 +225,12 @@ export class ImageProcessor {
 
         const isMobile = window.innerWidth < 1024;
         const colorPaletteContainer = isMobile
-          ? this.container.querySelector("#wps-color-palette-container-mobile") as HTMLElement
-          : this.container.querySelector("#wps-color-palette-container") as HTMLElement;
+          ? (this.container.querySelector(
+              "#wps-color-palette-container-mobile"
+            ) as HTMLElement)
+          : (this.container.querySelector(
+              "#wps-color-palette-container"
+            ) as HTMLElement);
 
         if (colorPaletteContainer) {
           this.initColorPalette(colorPaletteContainer);
@@ -294,8 +313,13 @@ export class ImageProcessor {
     }
   }
 
-  private applyAdjustments(ctx: CanvasRenderingContext2D, width: number, height: number): void {
-    if (this.brightness === 0 && this.contrast === 0 && this.saturation === 0) return;
+  private applyAdjustments(
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number
+  ): void {
+    if (this.brightness === 0 && this.contrast === 0 && this.saturation === 0)
+      return;
 
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
@@ -311,7 +335,8 @@ export class ImageProcessor {
       b += this.brightness * 2.55;
 
       // コントラスト
-      const contrastFactor = (259 * (this.contrast + 255)) / (255 * (259 - this.contrast));
+      const contrastFactor =
+        (259 * (this.contrast + 255)) / (255 * (259 - this.contrast));
       r = contrastFactor * (r - 128) + 128;
       g = contrastFactor * (g - 128) + 128;
       b = contrastFactor * (b - 128) + 128;
@@ -333,7 +358,11 @@ export class ImageProcessor {
     ctx.putImageData(imageData, 0, 0);
   }
 
-  private applyPaletteToCanvas(ctx: CanvasRenderingContext2D, width: number, height: number): void {
+  private applyPaletteToCanvas(
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number
+  ): void {
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
 
@@ -351,41 +380,41 @@ export class ImageProcessor {
     ctx.putImageData(imageData, 0, 0);
   }
 
-  private convertToPalette(): void {
-    if (!this.originalImage) return;
+  // private convertToPalette(): void {
+  //   if (!this.originalImage) return;
 
-    const tempCanvas = document.createElement("canvas");
-    const tempCtx = tempCanvas.getContext("2d");
-    if (!tempCtx) return;
+  //   const tempCanvas = document.createElement("canvas");
+  //   const tempCtx = tempCanvas.getContext("2d");
+  //   if (!tempCtx) return;
 
-    const width = this.originalImage.naturalWidth;
-    const height = this.originalImage.naturalHeight;
-    tempCanvas.width = width;
-    tempCanvas.height = height;
+  //   const width = this.originalImage.naturalWidth;
+  //   const height = this.originalImage.naturalHeight;
+  //   tempCanvas.width = width;
+  //   tempCanvas.height = height;
 
-    tempCtx.imageSmoothingEnabled = false;
-    tempCtx.drawImage(this.originalImage, 0, 0);
+  //   tempCtx.imageSmoothingEnabled = false;
+  //   tempCtx.drawImage(this.originalImage, 0, 0);
 
-    const imageData = tempCtx.getImageData(0, 0, width, height);
-    const data = imageData.data;
+  //   const imageData = tempCtx.getImageData(0, 0, width, height);
+  //   const data = imageData.data;
 
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
+  //   for (let i = 0; i < data.length; i += 4) {
+  //     const r = data[i];
+  //     const g = data[i + 1];
+  //     const b = data[i + 2];
 
-      const nearestColor = this.findNearestColor([r, g, b]);
-      data[i] = nearestColor[0];
-      data[i + 1] = nearestColor[1];
-      data[i + 2] = nearestColor[2];
-    }
+  //     const nearestColor = this.findNearestColor([r, g, b]);
+  //     data[i] = nearestColor[0];
+  //     data[i + 1] = nearestColor[1];
+  //     data[i + 2] = nearestColor[2];
+  //   }
 
-    tempCtx.putImageData(imageData, 0, 0);
-    this.colorConvertedCanvas = tempCanvas;
-    this.isColorConverted = true;
+  //   tempCtx.putImageData(imageData, 0, 0);
+  //   this.colorConvertedCanvas = tempCanvas;
+  //   this.isColorConverted = true;
 
-    this.updateScaledImage();
-  }
+  //   this.updateScaledImage();
+  // }
 
   private findNearestColor(
     rgb: [number, number, number]
