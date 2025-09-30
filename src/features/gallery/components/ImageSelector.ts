@@ -33,13 +33,13 @@ export class ImageSelector {
    * 指定コンテナに画像選択UIをレンダリング
    */
   render(container: HTMLElement): void {
-    // 描画用画像のみフィルタ
-    const drawableItems = this.options.items.filter((item) => item.hasDrawPosition);
+    // 全画像を表示（未描画画像も描画対象として選択可能）
+    const items = this.options.items;
     
     // コンテナHTMLを設定
     container.innerHTML = `
       <!-- 説明 -->
-      ${this.options.showInstruction ? this.createInstructionHtml(drawableItems.length > 0) : ''}
+      ${this.options.showInstruction ? this.createInstructionHtml(items.length > 0) : ''}
 
       <!-- 画像グリッドコンテナ -->
       <div id="image-selector-grid" class="flex-1 overflow-y-auto relative">
@@ -47,7 +47,7 @@ export class ImageSelector {
       </div>
     `;
 
-    this.setupImageGrid(container, drawableItems);
+    this.setupImageGrid(container, items);
   }
 
   /**
