@@ -100,7 +100,7 @@ export class TileOverlay {
     this.currentTiles.add(tileKey);
     
     if (this.currentTiles.size > this.MAX_TILE_HISTORY) {
-      const firstTile = this.currentTiles.values().next().value;
+      const firstTile = this.currentTiles.values().next().value!;
       this.currentTiles.delete(firstTile);
     }
   }
@@ -109,6 +109,9 @@ export class TileOverlay {
     tileX: number,
     tileY: number
   ): Promise<void> {
+    // Ensure tile is recorded (fix timing issue)
+    this.addCurrentTile(tileX, tileY);
+    
     const tileKey = `${tileX},${tileY}`;
     if (!this.currentTiles.has(tileKey)) {
       console.log(`🧑‍🎨 : Skip tile ${tileKey} - not in current view`);
