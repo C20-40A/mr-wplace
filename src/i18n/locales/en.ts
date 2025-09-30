@@ -148,4 +148,10 @@ export const enTranslations = {
   disable_alarm: "Disable Alarm",
   add_to_calendar_title: "Add to Google Calendar",
   wplace_charged_event: "WPlace Charged ⚡",
+
+  // Theme Toggle
+  theme_toggle: "Toggle Theme",
+  theme_light: "Light Theme",
+  theme_dark: "Dark Theme",
+  theme_switched: "Theme switched",
 };

@@ -57,3 +57,41 @@ export const findPositionModal = (): Element | null => {
   //   return newModal;
   // }
 };
+
+export const findTopLeftControls = (): Element | null => {
+  // 1. titleベース検索（多言語対応）
+  // EN: "Info", "Zoom in", "Zoom out"
+  // PT: "Informações", "Aumentar zoom", "Diminuir zoom"
+  const infoButton = document.querySelector(
+    'button[title="Info"], button[title="Informações"]'
+  );
+  if (infoButton?.parentElement?.parentElement) {
+    return infoButton.parentElement.parentElement; // .flex.flex-col.gap-3
+  }
+
+  // 2. classベース検索
+  const topLeftContainer = document.querySelector(
+    ".absolute.left-2.top-2.z-30.flex.flex-col.gap-3"
+  );
+  if (topLeftContainer) return topLeftContainer;
+
+  // 3. 構造的検索 (左上のz-30要素)
+  const leftTopElements = document.querySelectorAll(".absolute.left-2.top-2.z-30");
+  for (const element of leftTopElements) {
+    if (element.querySelector('button[title*="Info"], button[title*="Informações"]')) {
+      return element;
+    }
+  }
+
+  // 4. 見つからない場合は新規作成
+  const containerId = "mr-wplace-top-left-container";
+  const existingContainer = document.querySelector(`#${containerId}`);
+  if (existingContainer) return existingContainer;
+
+  const newContainer = document.createElement("div");
+  newContainer.className = "absolute left-2 z-30 flex flex-col gap-1";
+  newContainer.style.top = "5.5rem"; // 既存コントロールの下に配置
+  newContainer.id = containerId;
+  document.body.appendChild(newContainer);
+  return newContainer;
+};

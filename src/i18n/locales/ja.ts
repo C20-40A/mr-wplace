@@ -149,4 +149,10 @@ export const jaTranslations = {
   disable_alarm: "アラーム無効化",
   add_to_calendar_title: "Googleカレンダーに追加",
   wplace_charged_event: "WPlace チャージ完了 ⚡",
+
+  // Theme Toggle
+  theme_toggle: "テーマ切り替え",
+  theme_light: "ライトテーマ",
+  theme_dark: "ダークテーマ",
+  theme_switched: "テーマを切り替えました",
 };

@@ -17,7 +17,16 @@ window.addEventListener("message", (event) => {
     const { lat, lng, zoom } = event.data;
     window.wplaceMap?.flyTo?.({ center: [lng, lat], zoom });
   }
+
+  // Listen for initial theme from content script
+  if (event.data.source === "mr-wplace-init-theme") {
+    currentTheme = event.data.theme;
+    console.log("🧑‍🎨 : Initial theme received:", currentTheme);
+  }
 });
+
+// Theme state
+let currentTheme = "light";
 
 // Map instance observer
 const mapObserver = new MutationObserver(() => {
@@ -75,6 +84,29 @@ window.fetch = async function (...args) {
   const requestInfo = args[0];
   const url =
     typeof requestInfo === "string" ? requestInfo : requestInfo.url || "";
+
+  // Intercept map style for theme switching
+  if (url === "https://maps.wplace.live/styles/liberty") {
+    if (currentTheme === "dark") {
+      try {
+        const darkStyleResponse = await originalFetch("https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json");
+        const darkStyleData = await darkStyleResponse.json();
+        console.log("🧑‍🎨 : Switched to dark map style");
+        return new Response(JSON.stringify(darkStyleData), {
+          status: 200,
+          statusText: "OK",
+          headers: {
+            "Content-Type": "application/json"
+          }
+        });
+      } catch (error) {
+        console.error("🧑‍🎨 : Dark map style failed:", error);
+        return originalFetch.apply(this, args);
+      }
+    }
+    // Light theme: use default
+    return originalFetch.apply(this, args);
+  }
 
   if (!url || !url.includes("backend.wplace.live")) {
     return originalFetch.apply(this, args);

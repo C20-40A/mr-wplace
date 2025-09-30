@@ -12,6 +12,7 @@ import { ColorFilter } from "./features/color-filter";
 import { ColorFilterManager } from "./utils/color-filter-manager";
 import { UserStatus } from "./features/user-status";
 import { WPlaceUserData } from "./types/user-data";
+import { ThemeToggleStorage } from "./features/theme-toggle/storage";
 
 const runmrWplace = async (): Promise<void> => {
   console.log("🧑‍🎨: Starting initialization...");
@@ -78,8 +79,16 @@ const runmrWplace = async (): Promise<void> => {
   const colorFilter = new ColorFilter();
   const colorFilterManager = new ColorFilterManager();
 
-  // ColorFilterManager初期化完了を待つ
+  // 初期化完了を待つ
   await colorFilterManager.init();
+
+  // テーマをinject.jsに通知
+  const currentTheme = await ThemeToggleStorage.get();
+  window.postMessage({
+    source: "mr-wplace-init-theme",
+    theme: currentTheme,
+  }, "*");
+  console.log("🧑‍🎨 : Initial theme sent to inject.js:", currentTheme);
 
   // GalleryとTileOverlayの連携設定
   gallery.setDrawToggleCallback(async (imageKey: string) => {
