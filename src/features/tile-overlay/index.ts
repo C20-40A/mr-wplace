@@ -98,7 +98,7 @@ export class TileOverlay {
   addCurrentTile(tileX: number, tileY: number): void {
     const tileKey = `${tileX},${tileY}`;
     this.currentTiles.add(tileKey);
-    
+
     if (this.currentTiles.size > this.MAX_TILE_HISTORY) {
       const firstTile = this.currentTiles.values().next().value!;
       this.currentTiles.delete(firstTile);
@@ -111,52 +111,48 @@ export class TileOverlay {
   ): Promise<void> {
     // Ensure tile is recorded (fix timing issue)
     this.addCurrentTile(tileX, tileY);
-    
+
     const tileKey = `${tileX},${tileY}`;
     if (!this.currentTiles.has(tileKey)) {
       console.log(`🧑‍🎨 : Skip tile ${tileKey} - not in current view`);
       return;
     }
 
-    try {
-      const images = await this.galleryStorage.getAll();
-      const targetImages = images.filter(
-        (img) =>
-          img.drawEnabled &&
-          img.drawPosition?.TLX === tileX &&
-          img.drawPosition?.TLY === tileY
-      );
+    const images = await this.galleryStorage.getAll();
+    const targetImages = images.filter(
+      (img) =>
+        img.drawEnabled &&
+        img.drawPosition?.TLX === tileX &&
+        img.drawPosition?.TLY === tileY
+    );
 
-      for (const image of targetImages) {
-        await this.restoreImage(image);
+    for (const image of targetImages) {
+      await this.restoreImage(image);
+    }
+
+    const { TimeTravelStorage } = await import("../time-travel/storage");
+    const activeSnapshot = await TimeTravelStorage.getActiveSnapshotForTile(
+      tileX,
+      tileY
+    );
+
+    if (activeSnapshot) {
+      const snapshotData = await chrome.storage.local.get([
+        activeSnapshot.fullKey,
+      ]);
+      const rawData = snapshotData[activeSnapshot.fullKey];
+
+      if (rawData) {
+        const uint8Array = new Uint8Array(rawData);
+        const blob = new Blob([uint8Array], { type: "image/png" });
+        const file = new File([blob], "snapshot.png", { type: "image/png" });
+
+        await this.tileDrawManager.addImageToOverlayLayers(
+          file,
+          [tileX, tileY, 0, 0],
+          `snapshot_${activeSnapshot.fullKey}`
+        );
       }
-
-      const { TimeTravelStorage } = await import("../time-travel/storage");
-      const activeSnapshot = await TimeTravelStorage.getActiveSnapshotForTile(
-        tileX,
-        tileY
-      );
-
-      if (activeSnapshot) {
-        const snapshotData = await chrome.storage.local.get([
-          activeSnapshot.fullKey,
-        ]);
-        const rawData = snapshotData[activeSnapshot.fullKey];
-
-        if (rawData) {
-          const uint8Array = new Uint8Array(rawData);
-          const blob = new Blob([uint8Array], { type: "image/png" });
-          const file = new File([blob], "snapshot.png", { type: "image/png" });
-
-          await this.tileDrawManager.addImageToOverlayLayers(
-            file,
-            [tileX, tileY, 0, 0],
-            `snapshot_${activeSnapshot.fullKey}`
-          );
-        }
-      }
-    } catch (error) {
-      console.error("🧑‍🎨 : Failed to restore images:", error);
     }
   }
 
@@ -179,8 +175,6 @@ export class TileOverlay {
 
     return updatedImage.drawEnabled;
   }
-
-
 
   private async restoreImage(image: any): Promise<void> {
     const file = await this.dataUrlToFile(image.dataUrl, "restored.png");

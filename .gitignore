@@ -2,3 +2,6 @@ dist/
 node_modules/
 release/
 *.zip
+
+# devで一時的にcopyしているだけだから不要
+assets/*

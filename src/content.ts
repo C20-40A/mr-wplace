@@ -24,8 +24,8 @@ const runmrWplace = async (): Promise<void> => {
   // データをDOM属性で渡す（CSP safe）
   {
     const currentTheme = await ThemeToggleStorage.get();
-    const jsonUrl = chrome.runtime.getURL("src/assets/mapDarkStyle.json");
-    
+    const jsonUrl = chrome.runtime.getURL("assets/mapDarkStyle.json");
+
     const dataElement = document.createElement("div");
     dataElement.id = "__mr_wplace_data__";
     dataElement.setAttribute("data-theme", currentTheme);
@@ -49,6 +49,7 @@ const runmrWplace = async (): Promise<void> => {
 
   // Listen for messages from inject.js
   window.addEventListener("message", async (event) => {
+    // console.log("🧑‍🎨: event", event.data.source);
     if (event.data.source === "wplace-studio-snapshot-tmp") {
       const { tileBlob, tileX, tileY } = event.data;
       await tileSnapshot.saveTmpTile(tileX, tileY, tileBlob);
@@ -117,7 +118,7 @@ const runmrWplace = async (): Promise<void> => {
   };
 };
 
-// メッセージリスナー（言語切替・charge data要求）
+// メッセージリスナー（言語切替）
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.type === "LOCALE_CHANGED") {
     // i18nマネージャーの状態を更新

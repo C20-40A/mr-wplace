@@ -42,7 +42,8 @@
       ],
       "resources": [
         "inject.js",
-        "src/assets/mapDarkStyle.json"
+        "assets/mapDarkStyle.json",
+        "assets/fonts/k8x12/k8x12S.ttf"
       ]
     }
   ],
