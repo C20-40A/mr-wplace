@@ -4,7 +4,8 @@
   "license": "MPL-2.0",
   "scripts": {
     "build": "esbuild src/content.ts src/popup.ts --bundle --outdir=dist --minify --target=chrome88",
-    "dev": "npm run build -- --watch",
+    "copy-assets": "cp -r public/* .",
+    "dev": "npm run copy-assets && npm run build -- --watch",
     "build:release": "bash ./scripts/build-release.sh",
     "bump:major": "node ./scripts/bump-version.js major",
     "bump:minor": "node ./scripts/bump-version.js minor",
