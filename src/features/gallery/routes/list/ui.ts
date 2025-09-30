@@ -24,8 +24,6 @@ export class GalleryListUI {
   render(
     items: GalleryItem[],
     onDelete: (key: string) => void,
-    isSelectionMode: boolean = false,
-    onSelect?: (item: GalleryItem) => void,
     container?: HTMLElement,
     onAddClick?: () => void,
     onImageClick?: (item: GalleryItem) => void
@@ -35,8 +33,6 @@ export class GalleryListUI {
     this.renderGalleryList(
       items,
       onDelete,
-      isSelectionMode,
-      onSelect,
       onImageClick,
       onAddClick
     );
@@ -45,8 +41,6 @@ export class GalleryListUI {
   private renderGalleryList(
     items: GalleryItem[],
     onDelete: (key: string) => void,
-    isSelectionMode: boolean = false,
-    onSelect?: (item: GalleryItem) => void,
     onImageClick?: (item: GalleryItem) => void,
     onAddClick?: () => void
   ): void {
@@ -68,29 +62,15 @@ export class GalleryListUI {
     // 新しいImageGridComponentを作成
     this.imageGrid = new ImageGridComponent(this.container, {
       items: imageItems,
-      isSelectionMode,
+      isSelectionMode: false, // list routeは選択モードなし
       onImageClick: (item) => {
         const galleryItem = items.find((gItem) => gItem.key === item.key);
         if (galleryItem && onImageClick) {
           onImageClick(galleryItem);
         }
       },
-      onImageSelect: (item) => {
-        const galleryItem = items.find((gItem) => gItem.key === item.key);
-        if (galleryItem && onSelect) {
-          onSelect(galleryItem);
-          this.closeModal();
-        }
-      },
       onDrawToggle: (key) => {
-        this.handleDrawToggle(
-          key,
-          items,
-          onDelete,
-          isSelectionMode,
-          onSelect,
-          onImageClick
-        );
+        this.handleDrawToggle(key, items, onDelete, onImageClick);
       },
       onImageDelete: (key) => {
         onDelete(key);
@@ -102,7 +82,7 @@ export class GalleryListUI {
         }
       },
       onAddClick: onAddClick || (() => {}),
-      showDeleteButton: !isSelectionMode,
+      showDeleteButton: true, // list routeは削除ボタン表示
       showAddButton: true,
     });
 
@@ -114,8 +94,6 @@ export class GalleryListUI {
     key: string,
     items: GalleryItem[],
     onDelete: (key: string) => void,
-    isSelectionMode: boolean,
-    onSelect?: (item: GalleryItem) => void,
     onImageClick?: (item: GalleryItem) => void
   ): Promise<void> {
     const newDrawEnabled = await toggleDrawState(key);
@@ -126,8 +104,6 @@ export class GalleryListUI {
     this.renderGalleryList(
       updatedItems,
       onDelete,
-      isSelectionMode,
-      onSelect,
       onImageClick
     );
 
