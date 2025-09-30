@@ -4,11 +4,11 @@ import { ImageItem } from "../gallery/routes/list/components";
 import { GalleryStorage } from "../gallery/storage";
 
 export class TileOverlay {
-  private templateManager: TileDrawManager;
+  private tileDrawManager: TileDrawManager;
   private galleryStorage: GalleryStorage;
 
   constructor() {
-    this.templateManager = new TileDrawManager();
+    this.tileDrawManager = new TileDrawManager();
     this.galleryStorage = new GalleryStorage();
     this.init();
   }
@@ -58,7 +58,7 @@ export class TileOverlay {
       imageItem.title || "template.png"
     );
 
-    await this.templateManager.createTemplate(
+    await this.tileDrawManager.addImageToOverlayLayers(
       file,
       [coords.TLX, coords.TLY, coords.PxX, coords.PxY],
       imageItem.key
@@ -73,7 +73,7 @@ export class TileOverlay {
     tileY: number
   ): Promise<Blob> {
     await this.restoreImagesOnTile(tileX, tileY);
-    return await this.templateManager.drawTemplateOnTile(tileBlob, [
+    return await this.tileDrawManager.drawOverlayLayersOnTile(tileBlob, [
       tileX,
       tileY,
     ]);
@@ -128,7 +128,7 @@ export class TileOverlay {
           const blob = new Blob([uint8Array], { type: "image/png" });
           const file = new File([blob], "snapshot.png", { type: "image/png" });
 
-          await this.templateManager.createTemplate(
+          await this.tileDrawManager.addImageToOverlayLayers(
             file,
             [tileX, tileY, 0, 0],
             `snapshot_${activeSnapshot.fullKey}`
@@ -155,7 +155,7 @@ export class TileOverlay {
     };
 
     await this.galleryStorage.save(updatedImage);
-    this.templateManager.toggleDrawEnabled(imageKey);
+    this.tileDrawManager.toggleDrawEnabled(imageKey);
 
     return updatedImage.drawEnabled;
   }
@@ -174,7 +174,7 @@ export class TileOverlay {
   private async restoreImage(image: any): Promise<void> {
     const file = await this.dataUrlToFile(image.dataUrl, "restored.png");
 
-    await this.templateManager.createTemplate(
+    await this.tileDrawManager.addImageToOverlayLayers(
       file,
       [
         image.drawPosition.TLX,
