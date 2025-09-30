@@ -1,6 +1,7 @@
 import { I18nManager, t } from "./i18n/manager";
 import { setLocale, detectBrowserLanguage, type SupportedLocale } from "./i18n/index";
 import { loadNavigationModeFromStorage, getNavigationMode, setNavigationMode, type NavigationMode } from "./utils/navigation-mode";
+import { ThemeToggleStorage } from "./features/theme-toggle/storage";
 
 function updateUI(): void {
   const coffeeLink = document.querySelector(".coffee-link") as HTMLElement;
@@ -16,6 +17,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const navigationSelect = document.getElementById(
     "navigation-select"
   ) as HTMLSelectElement;
+  const themeSelect = document.getElementById(
+    "theme-select"
+  ) as HTMLSelectElement;
 
   // i18n初期化（ブラウザ言語検出）
   await I18nManager.init(detectBrowserLanguage());
@@ -25,8 +29,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadNavigationModeFromStorage();
   const currentMode = getNavigationMode();
 
+  // theme初期化
+  const currentTheme = await ThemeToggleStorage.get();
+
   languageSelect.value = currentLocale;
   navigationSelect.value = currentMode.toString();
+  themeSelect.value = currentTheme;
   updateUI();
 
   // 言語変更イベント
@@ -60,5 +68,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // 設定を保存
     await setNavigationMode(newMode);
+  });
+
+  // テーマ変更イベント
+  themeSelect.addEventListener("change", async (event) => {
+    const target = event.target as HTMLSelectElement;
+    const newTheme = target.value as "light" | "dark";
+
+    // 設定を保存
+    await ThemeToggleStorage.set(newTheme);
+
+    // ページリロード
+    const [activeTab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (activeTab.id) {
+      await chrome.tabs.reload(activeTab.id);
+    }
   });
 });

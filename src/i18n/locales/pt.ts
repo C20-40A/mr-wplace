@@ -145,4 +145,10 @@ export const ptTranslations = {
   disable_alarm: "Desativar Alarme",
   add_to_calendar_title: "Adicionar ao Google Calendar",
   wplace_charged_event: "WPlace Carregado ⚡",
+
+  // Theme Toggle
+  theme_toggle: "Alternar Tema",
+  theme_light: "Tema Claro",
+  theme_dark: "Tema Escuro",
+  theme_switched: "Tema alterado",
 };
