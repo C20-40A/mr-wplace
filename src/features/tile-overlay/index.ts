@@ -6,6 +6,8 @@ import { GalleryStorage } from "../gallery/storage";
 export class TileOverlay {
   public tileDrawManager: TileDrawManager;
   private galleryStorage: GalleryStorage;
+  private currentTiles: Set<string> = new Set();
+  private readonly MAX_TILE_HISTORY = 50;
 
   constructor() {
     this.tileDrawManager = new TileDrawManager();
@@ -15,7 +17,6 @@ export class TileOverlay {
 
   private async init(): Promise<void> {
     this.setupTileProcessing();
-    await this.restoreAllDrawnImages();
   }
 
   private setupTileProcessing(): void {
@@ -94,10 +95,26 @@ export class TileOverlay {
     });
   }
 
+  addCurrentTile(tileX: number, tileY: number): void {
+    const tileKey = `${tileX},${tileY}`;
+    this.currentTiles.add(tileKey);
+    
+    if (this.currentTiles.size > this.MAX_TILE_HISTORY) {
+      const firstTile = this.currentTiles.values().next().value;
+      this.currentTiles.delete(firstTile);
+    }
+  }
+
   private async restoreImagesOnTile(
     tileX: number,
     tileY: number
   ): Promise<void> {
+    const tileKey = `${tileX},${tileY}`;
+    if (!this.currentTiles.has(tileKey)) {
+      console.log(`🧑‍🎨 : Skip tile ${tileKey} - not in current view`);
+      return;
+    }
+
     try {
       const images = await this.galleryStorage.getAll();
       const targetImages = images.filter(
@@ -160,16 +177,7 @@ export class TileOverlay {
     return updatedImage.drawEnabled;
   }
 
-  private async restoreAllDrawnImages(): Promise<void> {
-    const images = await this.galleryStorage.getAll();
-    const drawnImages = images.filter(
-      (img) => img.drawEnabled && img.drawPosition
-    );
 
-    for (const image of drawnImages) {
-      await this.restoreImage(image);
-    }
-  }
 
   private async restoreImage(image: any): Promise<void> {
     const file = await this.dataUrlToFile(image.dataUrl, "restored.png");
