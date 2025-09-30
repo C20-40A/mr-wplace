@@ -9,7 +9,7 @@ interface ColorPaletteEntry {
 /** The color palette used by wplace.live
  */
 export const colorpalette: ColorPaletteEntry[] = [
-  { id: 0, premium: false, name: "Transparent", rgb: [0, 0, 0] },
+  // { id: 0, premium: false, name: "Transparent", rgb: [0, 0, 0] },
   { id: 1, premium: false, name: "Black", rgb: [0, 0, 0] },
   { id: 2, premium: false, name: "Dark Gray", rgb: [60, 60, 60] },
   { id: 3, premium: false, name: "Gray", rgb: [120, 120, 120] },
