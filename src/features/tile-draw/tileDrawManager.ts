@@ -1,4 +1,4 @@
-import { applyTileComparisonEnhanced, drawImageOnTiles } from "./tile-draw";
+import { drawImageOnTiles } from "./tile-draw";
 import type { EnhancedConfig } from "./tile-draw";
 import { TILE_DRAW_CONSTANTS, WplaceCoords, TileCoords } from "./constants";
 import { CanvasPool } from "./canvas-pool";
@@ -97,41 +97,6 @@ export class TileDrawManager {
     const result = await canvas.convertToBlob({ type: "image/png" });
     return result;
 
-    // {
-    //   const tileBitmap = await createImageBitmap(tileBlob);
-    //   const canvas = CanvasPool.acquire(drawSize, drawSize);
-    //   const context = canvas.getContext("2d", { willReadFrequently: true });
-
-    //   if (!context) {
-    //     CanvasPool.release(canvas);
-    //     throw new Error("Failed to get 2D context");
-    //   }
-
-    //   context.imageSmoothingEnabled = false;
-    //   context.clearRect(0, 0, drawSize, drawSize);
-    //   context.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
-
-    //   // 元タイル状態保存用canvas
-    //   const originalTileCanvas = CanvasPool.acquire(drawSize, drawSize);
-    //   const originalTileCtx = originalTileCanvas.getContext("2d", {
-    //     willReadFrequently: true,
-    //   });
-    //   if (!originalTileCtx) {
-    //     CanvasPool.release(canvas);
-    //     CanvasPool.release(originalTileCanvas);
-    //     throw new Error("Failed to get original tile context");
-    //   }
-    //   originalTileCtx.imageSmoothingEnabled = false;
-    //   originalTileCtx.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
-
-    //   const colorFilter = window.mrWplace?.colorFilterManager;
-    //   const enhancedConfig = this.getEnhancedConfig();
-
-    //   for (const { tileKey, instance } of matchingTiles) {
-    //     const coords = tileKey.split(",");
-    //     let templateBitmap = instance.tiles?.[tileKey];
-    //     if (!templateBitmap) continue;
-
     //     // ⚠️TODO: タイルの違いチェッカーは後で実装
     //     if (enhancedConfig?.enabled) {
     //       templateBitmap = await this.applyTileComparison(
@@ -141,28 +106,6 @@ export class TileDrawManager {
     //         enhancedConfig.selectedColors
     //       );
     //     }
-
-    //     // ColorFilter適用
-    //     let filteredBitmap = templateBitmap;
-    //     if (colorFilter?.isFilterActive()) {
-    //       const filtered = colorFilter.applyColorFilter(templateBitmap);
-    //       if (filtered) filteredBitmap = filtered;
-    //     }
-
-    //     context.drawImage(
-    //       filteredBitmap,
-    //       Number(coords[2]) * this.renderScale,
-    //       Number(coords[3]) * this.renderScale
-    //     );
-
-    //     const result = await canvas.convertToBlob({ type: "image/png" });
-
-    //     // Canvas cleanup
-    //     CanvasPool.release(canvas);
-    //     CanvasPool.release(originalTileCanvas);
-    //   }
-    // return result;
-    // }
   }
 
   removeTemplateByKey(imageKey: string): void {
@@ -213,45 +156,45 @@ export class TileDrawManager {
     return { enabled: true, selectedColors, color: [255, 0, 0] };
   }
 
-  private async applyTileComparison(
-    templateBitmap: ImageBitmap,
-    tileContext: OffscreenCanvasRenderingContext2D,
-    coords: string[],
-    selectedColors?: Set<string>
-  ): Promise<ImageBitmap> {
-    const tempCanvas = CanvasPool.acquire(
-      templateBitmap.width,
-      templateBitmap.height
-    );
-    const tempCtx = tempCanvas.getContext("2d", { willReadFrequently: true });
-    if (!tempCtx) {
-      CanvasPool.release(tempCanvas);
-      return templateBitmap;
-    }
+  // private async applyTileComparison(
+  //   templateBitmap: ImageBitmap,
+  //   tileContext: OffscreenCanvasRenderingContext2D,
+  //   coords: string[],
+  //   selectedColors?: Set<string>
+  // ): Promise<ImageBitmap> {
+  //   const tempCanvas = CanvasPool.acquire(
+  //     templateBitmap.width,
+  //     templateBitmap.height
+  //   );
+  //   const tempCtx = tempCanvas.getContext("2d", { willReadFrequently: true });
+  //   if (!tempCtx) {
+  //     CanvasPool.release(tempCanvas);
+  //     return templateBitmap;
+  //   }
 
-    tempCtx.drawImage(templateBitmap, 0, 0);
+  //   tempCtx.drawImage(templateBitmap, 0, 0);
 
-    const templateData = tempCtx.getImageData(
-      0,
-      0,
-      templateBitmap.width,
-      templateBitmap.height
-    );
-    const tileData = tileContext.getImageData(
-      Number(coords[2]) * this.renderScale,
-      Number(coords[3]) * this.renderScale,
-      templateBitmap.width,
-      templateBitmap.height
-    );
+  //   const templateData = tempCtx.getImageData(
+  //     0,
+  //     0,
+  //     templateBitmap.width,
+  //     templateBitmap.height
+  //   );
+  //   const tileData = tileContext.getImageData(
+  //     Number(coords[2]) * this.renderScale,
+  //     Number(coords[3]) * this.renderScale,
+  //     templateBitmap.width,
+  //     templateBitmap.height
+  //   );
 
-    applyTileComparisonEnhanced(templateData, tileData, selectedColors);
+  //   applyTileComparisonEnhanced(templateData, tileData, selectedColors);
 
-    tempCtx.putImageData(templateData, 0, 0);
-    const result = await createImageBitmap(tempCanvas);
+  //   tempCtx.putImageData(templateData, 0, 0);
+  //   const result = await createImageBitmap(tempCanvas);
 
-    // Canvas cleanup
-    CanvasPool.release(tempCanvas);
+  //   // Canvas cleanup
+  //   CanvasPool.release(tempCanvas);
 
-    return result;
-  }
+  //   return result;
+  // }
 }

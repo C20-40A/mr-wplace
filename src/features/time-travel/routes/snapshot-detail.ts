@@ -76,7 +76,7 @@ export class SnapshotDetailRoute {
     container
       .querySelector("#wps-share-snapshot-btn")
       ?.addEventListener("click", () => {
-        this.router?.navigate('snapshot-share');
+        this.router?.navigate("snapshot-share");
       });
 
     container
@@ -135,7 +135,10 @@ export class SnapshotDetailRoute {
     const tileY = parseInt(fullKey.split("_")[4]);
 
     // 現在の状態確認
-    const currentState = await TimeTravelStorage.getActiveSnapshotForTile(tileX, tileY);
+    const currentState = await TimeTravelStorage.getActiveSnapshotForTile(
+      tileX,
+      tileY
+    );
     const willDraw = !currentState || currentState.fullKey !== fullKey;
 
     // 描画する場合のみローダー開始
@@ -163,8 +166,6 @@ export class SnapshotDetailRoute {
       isDrawing ? "Snapshot drawn successfully" : "Snapshot removed"
     );
   }
-
-
 
   private async updateReturnCurrentButton(fullKey: string): Promise<void> {
     const isDrawing = await TimeTravelStorage.isSnapshotDrawing(fullKey);
@@ -194,16 +195,16 @@ export class SnapshotDetailRoute {
   private async deleteSnapshot(fullKey: string): Promise<void> {
     if (!confirm(t`${"delete_confirm"}`)) return;
 
-    // TemplateManager からも削除（描画中の場合）
+    // TileDrawManager からも削除（描画中の場合）
     const tileOverlay = window.mrWplace?.tileOverlay;
     const imageKey = `snapshot_${fullKey}`;
-    if (tileOverlay?.templateManager) {
-      tileOverlay.templateManager.removeTemplateByKey(imageKey);
+    if (tileOverlay?.tileDrawManager) {
+      tileOverlay.tileDrawManager.removeTemplateByKey(imageKey);
     }
 
     await TimeTravelStorage.removeSnapshotFromIndex(fullKey);
     Toast.success(t`${"deleted_message"}`);
-    
+
     // 削除後は前画面に戻る
     this.router?.navigateBack();
   }
