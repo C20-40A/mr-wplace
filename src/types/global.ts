@@ -7,7 +7,6 @@ import { DrawingLoader } from "../features/drawing-loader";
 import { Gallery } from "../features/gallery";
 import { GalleryImageEditor } from "../features/gallery/routes/image-editor";
 import { TileOverlay } from "../features/tile-overlay";
-import type { TimeTravel } from "../features/time-travel";
 import { TileSnapshot } from "../features/time-travel/utils/tile-snapshot";
 import type { UserStatus } from "../features/user-status";
 import { ChargeData } from "../features/user-status/services/timer-service";
@@ -25,7 +24,6 @@ interface mrWplace {
   favorites: ExtendedBookmarks;
   drawing: Drawing;
   tileSnapshot: TileSnapshot;
-  timeTravel: TimeTravel;
   drawingLoader: DrawingLoader;
   colorFilter: ColorFilter;
   // Optional properties (動的に追加される可能性)

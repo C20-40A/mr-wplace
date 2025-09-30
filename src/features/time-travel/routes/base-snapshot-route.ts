@@ -1,6 +1,7 @@
 import { TimeTravelStorage, SnapshotInfo } from "../storage";
 import { Toast } from "../../../components/toast";
 import { t, formatDate } from "../../../i18n/manager";
+import { getTimeTravelInstance } from "../instance";
 
 export abstract class BaseSnapshotRoute {
   protected setupSnapshotEvents(
@@ -95,11 +96,9 @@ export abstract class BaseSnapshotRoute {
   }
 
   protected async navigateToDetail(fullKey: string): Promise<void> {
-    const timeTravel = window.mrWplace?.timeTravel;
-    if (timeTravel?.router) {
-      (timeTravel.router as any).selectedSnapshot = { fullKey };
-      timeTravel.router.navigate("snapshot-detail");
-    }
+    const timeTravel = getTimeTravelInstance();
+    (timeTravel.router as any).selectedSnapshot = { fullKey };
+    timeTravel.router.navigate("snapshot-detail");
   }
 
   protected abstract reloadSnapshots(container: HTMLElement): Promise<void>;

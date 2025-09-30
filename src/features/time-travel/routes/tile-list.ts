@@ -8,10 +8,10 @@ export class TileListRoute {
     container.innerHTML = t`
       <div class="mb-2">
         <button id="wps-import-snapshot-btn" class="btn btn-sm btn-neutral">
-          ${'import'}
+          ${"import"}
         </button>
       </div>
-      <div class="max-h-80 overflow-y-auto border rounded p-2">
+      <div class="max-h-80 overflow-y-auto border rounded p-2" style="">
         <div id="wps-tile-list">
           <div class="text-sm text-gray-500 text-center p-4">${"loading"}</div>
         </div>

@@ -93,7 +93,6 @@ const runmrWplace = async (): Promise<void> => {
     favorites,
     drawing,
     tileSnapshot,
-    timeTravel,
     drawingLoader,
     colorFilter,
     userStatus,
