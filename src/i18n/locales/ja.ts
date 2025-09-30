@@ -59,7 +59,8 @@ export const jaTranslations = {
   snapshot_detail: "スナップショット詳細",
   snapshot_share: "スナップショット シェア",
   snapshot_timestamp: "スナップショット時刻",
-  snapshot_share_description: "このファイル名には座標・時刻情報が含まれています。タイル一覧から再インポートすると、同じ位置・時刻のスナップショットとして登録されます。",
+  snapshot_share_description:
+    "このファイル名には座標・時刻情報が含まれています。タイル一覧から再インポートすると、同じ位置・時刻のスナップショットとして登録されます。",
   return_to_current: "描画を元に戻す",
   enter_snapshot_name: "スナップショット名を入力（空の場合は日時表示）:",
   enter_tile_name: "タイル名を入力（空の場合は座標表示）:",
@@ -101,6 +102,7 @@ export const jaTranslations = {
   draw_enabled: "描画ON",
   draw_disabled: "描画OFF",
   draw_state: "描画状態",
+  draw_this_tile: "このタイルを描画",
   enabled: "有効",
   disabled: "無効",
   goto_map: "マップへ移動",

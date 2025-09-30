@@ -99,6 +99,7 @@ export const esTranslations = {
   draw_enabled: "Dibujo ON",
   draw_disabled: "Dibujo OFF",
   draw_state: "Estado de Dibujo",
+  draw_this_tile: "Dibujar este tile",
   enabled: "Habilitado",
   disabled: "Deshabilitado",
   goto_map: "Ir al Mapa",

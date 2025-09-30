@@ -4,6 +4,8 @@ import { t } from "../../../i18n/manager";
 import { ImageInspector } from "../../../components/image-inspector";
 import { Toast } from "../../../components/toast";
 import { getTimeTravelInstance } from "../instance";
+import { gotoPosition } from "../../../utils/position";
+import { tilePixelToLatLng } from "../../../utils/coordinate";
 
 export class SnapshotDetailRoute {
   private imageInspector?: ImageInspector;
@@ -29,13 +31,19 @@ export class SnapshotDetailRoute {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
               <path d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712zM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4z" />
             </svg>
-            ${"draw_image"}
+            ${"draw_this_tile"}
           </button>
           <button id="wps-return-current-btn" class="btn btn-outline hidden">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
               <path fill-rule="evenodd" d="M9.53 2.47a.75.75 0 010 1.06L4.81 8.25H15a6.75 6.75 0 010 13.5h-3a.75.75 0 010-1.5h3a5.25 5.25 0 100-10.5H4.81l4.72 4.72a.75.75 0 11-1.06 1.06l-6-6a.75.75 0 010-1.06l6-6a.75.75 0 011.06 0z" clip-rule="evenodd" />
             </svg>
             ${"return_to_current"}
+          </button>
+          <button id="wps-goto-tile-btn" class="btn btn-outline">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+              <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+            </svg>
+            ${"goto_map"}
           </button>
           <button id="wps-share-snapshot-btn" class="btn btn-neutral">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
@@ -52,7 +60,7 @@ export class SnapshotDetailRoute {
 
     this.setupEvents(container);
     this.loadSnapshot(selectedSnapshot.fullKey);
-    this.updateReturnCurrentButton(selectedSnapshot.fullKey); // async呼び出しは非同期
+    this.updateButtonStates(selectedSnapshot.fullKey);
   }
 
   private setupEvents(container: HTMLElement): void {
@@ -71,6 +79,14 @@ export class SnapshotDetailRoute {
       ?.addEventListener("click", () => {
         if (selectedSnapshot?.fullKey) {
           this.returnToCurrent(selectedSnapshot.fullKey);
+        }
+      });
+
+    container
+      .querySelector("#wps-goto-tile-btn")
+      ?.addEventListener("click", () => {
+        if (selectedSnapshot?.fullKey) {
+          this.gotoTilePosition(selectedSnapshot.fullKey);
         }
       });
 
@@ -162,20 +178,24 @@ export class SnapshotDetailRoute {
     const timeTravel = getTimeTravelInstance();
     timeTravel.ui.closeModal();
 
-    await this.updateReturnCurrentButton(fullKey);
+    await this.updateButtonStates(fullKey);
     Toast.success(
       isDrawing ? "Snapshot drawn successfully" : "Snapshot removed"
     );
   }
 
-  private async updateReturnCurrentButton(fullKey: string): Promise<void> {
+  private async updateButtonStates(fullKey: string): Promise<void> {
     const isDrawing = await TimeTravelStorage.isSnapshotDrawing(fullKey);
 
+    const drawBtn = document.querySelector("#wps-draw-snapshot-btn");
     const returnBtn = document.querySelector("#wps-return-current-btn");
-    if (!returnBtn) throw new Error("Return button not found");
+    if (!drawBtn || !returnBtn) throw new Error("Button not found");
+
     if (isDrawing) {
+      drawBtn.classList.add("hidden");
       returnBtn.classList.remove("hidden");
     } else {
+      drawBtn.classList.remove("hidden");
       returnBtn.classList.add("hidden");
     }
   }
@@ -189,8 +209,15 @@ export class SnapshotDetailRoute {
     await TimeTravelStorage.drawSnapshotOnTile(tileX, tileY, file, fullKey);
     Toast.success("Returned to current state");
 
-    // ボタン非表示
-    await this.updateReturnCurrentButton(fullKey);
+    // ボタン状態更新
+    await this.updateButtonStates(fullKey);
+  }
+
+  private async gotoTilePosition(fullKey: string): Promise<void> {
+    const tileX = parseInt(fullKey.split("_")[3]);
+    const tileY = parseInt(fullKey.split("_")[4]);
+    const { lat, lng } = tilePixelToLatLng(tileX, tileY);
+    await gotoPosition({ lat, lng, zoom: 11 });
   }
 
   private async deleteSnapshot(fullKey: string): Promise<void> {

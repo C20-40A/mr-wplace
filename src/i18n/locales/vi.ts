@@ -97,6 +97,7 @@ export const viTranslations = {
   draw_enabled: "Vẽ BẬT",
   draw_disabled: "Vẽ TẮT",
   draw_state: "Trạng thái vẽ",
+  draw_this_tile: "Vẽ tile này",
   enabled: "Đã bật",
   disabled: "Đã tắt",
   goto_map: "Đến bản đồ",
