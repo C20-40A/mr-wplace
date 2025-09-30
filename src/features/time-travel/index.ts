@@ -17,6 +17,7 @@ import { SnapshotRoute } from "./routes/snapshot-route";
 import { SnapshotDetailRoute } from "./routes/snapshot-detail";
 import { SnapshotShareRoute } from "./routes/snapshot-share";
 import { ImportSnapshotRoute } from "./routes/import-snapshot";
+import { setTimeTravelInstance } from "./instance";
 
 /**
  * タイムマシン機能
@@ -24,8 +25,8 @@ import { ImportSnapshotRoute } from "./routes/import-snapshot";
  * - タイル一覧→タイルスナップショット一覧
  */
 export class TimeTravel {
-  private router: TimeTravelRouter;
-  private ui: TimeTravelUI;
+  public router: TimeTravelRouter;
+  public ui: TimeTravelUI;
   private tileListRoute: TileListRoute;
   private currentPositionRoute: SnapshotRoute;
   private tileSnapshotsRoute: SnapshotRoute;
@@ -43,13 +44,7 @@ export class TimeTravel {
     this.snapshotShareRoute = new SnapshotShareRoute();
     this.importSnapshotRoute = new ImportSnapshotRoute();
     this.init();
-
-    // グローバルアクセス用（既存パターンに倣う）
-    window.mrWplace = window.mrWplace || {};
-    window.mrWplace.timeTravel = {
-      ui: this.ui,
-      router: this.router,
-    };
+    setTimeTravelInstance(this);
   }
 
   private init(): void {

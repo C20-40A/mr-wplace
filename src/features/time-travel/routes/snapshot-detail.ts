@@ -3,6 +3,7 @@ import { TimeTravelStorage } from "../storage";
 import { t } from "../../../i18n/manager";
 import { ImageInspector } from "../../../components/image-inspector";
 import { Toast } from "../../../components/toast";
+import { getTimeTravelInstance } from "../instance";
 
 export class SnapshotDetailRoute {
   private imageInspector?: ImageInspector;
@@ -158,8 +159,8 @@ export class SnapshotDetailRoute {
       fullKey
     );
 
-    const timeTravelUI = window.mrWplace?.timeTravel?.ui;
-    if (timeTravelUI) timeTravelUI.closeModal();
+    const timeTravel = getTimeTravelInstance();
+    timeTravel.ui.closeModal();
 
     await this.updateReturnCurrentButton(fullKey);
     Toast.success(
