@@ -11,7 +11,7 @@ export class TileListRoute {
           ${"import"}
         </button>
       </div>
-      <div class="max-h-80 overflow-y-auto border rounded p-2" style="">
+      <div class="overflow-y-auto border rounded p-2">
         <div id="wps-tile-list">
           <div class="text-sm text-gray-500 text-center p-4">${"loading"}</div>
         </div>
