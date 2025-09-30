@@ -28,11 +28,22 @@ const runmrWplace = async (): Promise<void> => {
     script.remove();
     console.log("🧑‍🎨: Injected fetch interceptor");
   }
+
+  window.mrWplace = {} as any;
+  window.mrWplace.wplaceChargeData = {
+    startTime: Date.now(),
+  } as any; // ⚠️ほんとはerror。先に定義したいからした。いつかなおす
+
   // Listen for messages from inject.js
   window.addEventListener("message", async (event) => {
     if (event.data.source === "wplace-studio-snapshot-tmp") {
       const { tileBlob, tileX, tileY } = event.data;
       await tileSnapshot.saveTmpTile(tileX, tileY, tileBlob);
+
+      // Record current tile for processing optimization
+      if (window.mrWplace?.tileOverlay) {
+        window.mrWplace.tileOverlay.addCurrentTile(tileX, tileY);
+      }
     }
 
     // Listen for user data from inject.js
@@ -41,11 +52,11 @@ const runmrWplace = async (): Promise<void> => {
       const userData = event.data.userData as WPlaceUserData;
 
       // Set charge data for service worker
-      if (userData.charges) {
-        (window as any).wplaceChargeData = {
+      if (userData.charges && window.mrWplace) {
+        window.mrWplace.wplaceChargeData = {
           current: userData.charges.count,
           max: userData.charges.max,
-        };
+        } as any; // ⚠️ほんとはerror
       }
 
       userStatus.updateFromUserData(userData);
@@ -87,6 +98,7 @@ const runmrWplace = async (): Promise<void> => {
 
   // Global access for ImageProcessor and Gallery
   window.mrWplace = {
+    ...window.mrWplace,
     gallery,
     tileOverlay,
     favorites,
