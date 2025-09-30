@@ -86,7 +86,7 @@ export class TileListRoute {
 
     const nameKey = `${tile.tileX}_${tile.tileY}`;
     const tileName = tileNames.get(nameKey);
-    const displayName = tileName || `タイル(${tile.tileX}, ${tile.tileY})`;
+    const displayName = tileName || `Tile(${tile.tileX}, ${tile.tileY})`;
 
     return `
       <div class="tile-item p-4 cursor-pointer hover:bg-gray-50 transition-colors border-b border-gray-200 last:border-b-0" 
