@@ -95,14 +95,16 @@ export class Gallery {
             // ImageItem → GalleryItem変換してimageSelectorOnSelect実行
             if (this.imageSelectorOnSelect) {
               // ImageItemのkeyでGalleryItemを検索
-              this.findGalleryItemByKey(item.key).then(galleryItem => {
+              this.findGalleryItemByKey(item.key).then((galleryItem) => {
                 if (galleryItem) {
                   this.imageSelectorOnSelect!(galleryItem);
+                  // 選択後にmodal閉じる
+                  this.ui.closeModal();
                 }
               });
             }
           },
-          () => this.router.navigate('image-editor') // onAddClick
+          () => this.router.navigate("image-editor") // onAddClick
         );
         break;
       case "image-share":
@@ -126,7 +128,7 @@ export class Gallery {
 
   showSelectionMode(onSelect: (item: GalleryItem) => void): void {
     this.imageSelectorOnSelect = onSelect;
-    this.router.initialize('image-selector');
+    this.router.initialize("image-selector");
     this.ui.showModal();
   }
 
@@ -144,14 +146,14 @@ export class Gallery {
     const { GalleryStorage } = await import("./storage");
     const storage = new GalleryStorage();
     const items = await storage.getAll();
-    return items.find(item => item.key === key) || null;
+    return items.find((item) => item.key === key) || null;
   }
 
   /**
    * Image Editorへ遷移（外部から呼び出し用）
    */
   navigateToImageEditor(): void {
-    this.router.navigate('image-editor');
+    this.router.navigate("image-editor");
     this.ui.showModal();
   }
 }
