@@ -21,11 +21,25 @@ const runmrWplace = async (): Promise<void> => {
   if (typeof chrome === "undefined" || !chrome.storage)
     throw new Error("Chrome storage API is not available");
 
-  // Fetchインターセプターの注入（早期実行）
+  // データをDOM属性で渡す（CSP safe）
+  {
+    const currentTheme = await ThemeToggleStorage.get();
+    const jsonUrl = chrome.runtime.getURL("src/assets/mapDarkStyle.json");
+    
+    const dataElement = document.createElement("div");
+    dataElement.id = "__mr_wplace_data__";
+    dataElement.setAttribute("data-theme", currentTheme);
+    dataElement.setAttribute("data-dark-style-url", jsonUrl);
+    dataElement.style.display = "none";
+    (document.head || document.documentElement).prepend(dataElement);
+    console.log("🧑‍🎨: Injected data element with URLs");
+  }
+
+  // Fetchインターセプターの注入
   {
     const script = document.createElement("script");
     script.src = chrome.runtime.getURL("inject.js");
-    (document.head || document.documentElement).prepend(script);
+    (document.head || document.documentElement).appendChild(script);
     script.remove();
     console.log("🧑‍🎨: Injected fetch interceptor");
   }
@@ -82,13 +96,7 @@ const runmrWplace = async (): Promise<void> => {
   // 初期化完了を待つ
   await colorFilterManager.init();
 
-  // テーマをinject.jsに通知
-  const currentTheme = await ThemeToggleStorage.get();
-  window.postMessage({
-    source: "mr-wplace-init-theme",
-    theme: currentTheme,
-  }, "*");
-  console.log("🧑‍🎨 : Initial theme sent to inject.js:", currentTheme);
+  // データは先行注入済みなので、ここでは何もしない
 
   // GalleryとTileOverlayの連携設定
   gallery.setDrawToggleCallback(async (imageKey: string) => {

@@ -9,8 +9,16 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "dist",
     "rootDir": "src",
-    "types": ["chrome"]
+    "types": [
+      "chrome"
+    ],
+    "resolveJsonModule": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

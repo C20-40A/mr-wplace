@@ -1,5 +1,30 @@
 const originalFetch = window.fetch;
 
+// 初期化用変数
+let currentTheme = "light";
+let darkStyleData = null;
+let isInitialized = false;
+
+// DOM属性からデータ読み込み（即時実行）
+(async () => {
+  const dataElement = document.getElementById("__mr_wplace_data__");
+  if (dataElement) {
+    currentTheme = dataElement.getAttribute("data-theme") || "light";
+    const jsonUrl = dataElement.getAttribute("data-dark-style-url");
+    if (jsonUrl) {
+      try {
+        const response = await originalFetch(jsonUrl);
+        darkStyleData = await response.json();
+        console.log("🧑‍🎨: Dark style data loaded");
+      } catch (error) {
+        console.error("🧑‍🎨: Failed to load dark style:", error);
+      }
+    }
+  }
+  isInitialized = true;
+  console.log("🧑‍🎨: Initialization complete, theme:", currentTheme);
+})();
+
 // Listen for processed blobs from content script
 window.addEventListener("message", (event) => {
   if (event.data.source === "mr-wplace-processed") {
@@ -18,15 +43,12 @@ window.addEventListener("message", (event) => {
     window.wplaceMap?.flyTo?.({ center: [lng, lat], zoom });
   }
 
-  // Listen for initial theme from content script
-  if (event.data.source === "mr-wplace-init-theme") {
+  // Listen for theme updates (for dynamic theme switching)
+  if (event.data.source === "mr-wplace-theme-update") {
     currentTheme = event.data.theme;
-    console.log("🧑‍🎨 : Initial theme received:", currentTheme);
+    console.log("🧑‍🎨 : Theme updated:", currentTheme);
   }
 });
-
-// Theme state
-let currentTheme = "light";
 
 // Map instance observer
 const mapObserver = new MutationObserver(() => {
@@ -80,6 +102,11 @@ setTimeout(async () => {
 }, 1000); // Wait 1 second for page initialization
 
 window.fetch = async function (...args) {
+  // 初期化完了待機
+  while (!isInitialized) {
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+
   // console.log("🧑‍🎨: Fetch called with args:", args);
   const requestInfo = args[0];
   const url =
@@ -87,24 +114,17 @@ window.fetch = async function (...args) {
 
   // Intercept map style for theme switching
   if (url === "https://maps.wplace.live/styles/liberty") {
-    if (currentTheme === "dark") {
-      try {
-        const darkStyleResponse = await originalFetch("https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json");
-        const darkStyleData = await darkStyleResponse.json();
-        console.log("🧑‍🎨 : Switched to dark map style");
-        return new Response(JSON.stringify(darkStyleData), {
-          status: 200,
-          statusText: "OK",
-          headers: {
-            "Content-Type": "application/json"
-          }
-        });
-      } catch (error) {
-        console.error("🧑‍🎨 : Dark map style failed:", error);
-        return originalFetch.apply(this, args);
-      }
+    if (currentTheme === "dark" && darkStyleData) {
+      console.log("🧑‍🎨 : Switched to dark map style");
+      return new Response(JSON.stringify(darkStyleData), {
+        status: 200,
+        statusText: "OK",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
     }
-    // Light theme: use default
+    // Light theme or darkStyleData not ready: use default
     return originalFetch.apply(this, args);
   }
 
