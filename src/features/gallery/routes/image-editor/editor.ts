@@ -15,9 +15,14 @@ export class ImageProcessor {
   private saturation = 0;
   private imageInspector: ImageInspector | null = null;
   private colorPalette: ColorPalette | null = null;
+  private onSaveSuccess?: () => void;
 
   constructor(container: HTMLElement) {
     this.container = container;
+  }
+
+  setOnSaveSuccess(callback?: () => void): void {
+    this.onSaveSuccess = callback;
   }
 
   handleFile(file: File): void {
@@ -188,12 +193,7 @@ export class ImageProcessor {
       await galleryStorage.save(galleryItem);
       console.log(t`${"saved_to_gallery"}`);
 
-      if (window.mrWplace?.imageEditor)
-        throw new Error("window.mrWplace?.imageEditor not found");
-
-      if (window.mrWplace?.gallery) {
-        window.mrWplace.gallery.show();
-      }
+      this.onSaveSuccess?.();
     };
     reader.readAsDataURL(blob);
   }

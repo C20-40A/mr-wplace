@@ -95,7 +95,7 @@ export const jaTranslations = {
   // ファイル関連
   upload: "アップロード",
   file_select: "ファイルを選択",
-  image_editor: "画像エディタ",
+  image_editor: "画像を追加",
   image_detail: "画像詳細",
 
   // 描画関連
@@ -122,7 +122,7 @@ export const jaTranslations = {
   buy_me_coffee: "作者にコーヒーをおごる",
 
   // Color Filter
-  color_filter: "カラー フィルター",
+  color_filter: "カラーフィルター",
   enable_all: "すべて有効",
   disable_all: "すべて無効",
   enhanced: "強化",
