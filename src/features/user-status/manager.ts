@@ -145,7 +145,7 @@ export class StatusManager {
   }
 
   private calculateAlarmTime(charges: any, threshold: number): Date | null {
-    const globalChargeData: any = (window as any).wplaceChargeData;
+    const globalChargeData = window.mrWplace?.wplaceChargeData;
 
     let current: number;
     let max: number;
@@ -173,10 +173,11 @@ export class StatusManager {
   }
 
   private getChargeData(charges: any): { current: number; max: number } {
-    const globalChargeData: any = (window as any).wplaceChargeData;
+    const globalChargeData = window.mrWplace?.wplaceChargeData;
 
     if (globalChargeData) {
-      const calculatedCurrent = this.calculator.calculateCurrentCharge(globalChargeData);
+      const calculatedCurrent =
+        this.calculator.calculateCurrentCharge(globalChargeData);
       return {
         current: calculatedCurrent,
         max: globalChargeData.max,

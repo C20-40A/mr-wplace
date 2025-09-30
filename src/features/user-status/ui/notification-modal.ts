@@ -83,7 +83,7 @@ export class NotificationModal {
   } {
     if (!this.userData?.charges) throw new Error("No charge data available");
 
-    const globalChargeData: ChargeData = (window as any).wplaceChargeData;
+    const globalChargeData = window.mrWplace?.wplaceChargeData;
 
     if (globalChargeData) {
       const elapsed = Date.now() - globalChargeData.startTime;
@@ -241,7 +241,7 @@ export class NotificationModal {
     const estimatedTimeElement = document.getElementById("estimatedTime");
     if (estimatedTimeElement) {
       const thresholdTime = this.calculateThresholdTime(this.currentThreshold);
-      estimatedTimeElement.textContent = `Estimated time: ${thresholdTime}`;
+      estimatedTimeElement.textContent = t`${"estimated_time"}: ${thresholdTime}`;
 
       // Calendar button表示制御
       const calendarButton = document.getElementById("addToCalendar");
