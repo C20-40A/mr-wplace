@@ -33,8 +33,10 @@ export class GalleryImageDetail {
         <div style="height: 60px; display: flex; align-items: center; justify-content: center; gap: 8px;">
           <button id="draw-toggle-btn" class="btn btn-sm ${
             item.drawEnabled ? "btn-success" : "btn-outline"
-          }">
-            🎨 ${item.drawEnabled ? t`${"draw_enabled"}` : t`${"draw_disabled"}`}
+          }" style="${item.drawPosition ? "" : "display:none"}">
+            🎨 ${
+              item.drawEnabled ? t`${"draw_enabled"}` : t`${"draw_disabled"}`
+            }
           </button>
           
           <button id="goto-map-btn" class="btn btn-sm btn-primary" ${
