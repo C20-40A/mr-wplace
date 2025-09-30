@@ -13,6 +13,7 @@ import { ColorFilterManager } from "./utils/color-filter-manager";
 import { UserStatus } from "./features/user-status";
 import { WPlaceUserData } from "./types/user-data";
 import { ThemeToggleStorage } from "./features/theme-toggle/storage";
+import { TextDraw } from "./features/text-draw";
 
 const runmrWplace = async (): Promise<void> => {
   console.log("🧑‍🎨: Starting initialization...");
@@ -90,6 +91,7 @@ const runmrWplace = async (): Promise<void> => {
   const drawing = new Drawing();
   const tileSnapshot = new TileSnapshot();
   new TimeTravel();
+  new TextDraw();
   const drawingLoader = new DrawingLoader();
   const colorFilter = new ColorFilter();
   const colorFilterManager = new ColorFilterManager();
