@@ -98,6 +98,7 @@ export const ptTranslations = {
   draw_enabled: "Desenho ON",
   draw_disabled: "Desenho OFF",
   draw_state: "Estado do Desenho",
+  draw_this_tile: "Desenhar este tile",
   enabled: "Habilitado",
   disabled: "Desabilitado",
   goto_map: "Ir ao Mapa",

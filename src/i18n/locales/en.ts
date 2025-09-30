@@ -101,6 +101,7 @@ export const enTranslations = {
   draw_enabled: "Draw ON",
   draw_disabled: "Draw OFF",
   draw_state: "Draw State",
+  draw_this_tile: "Draw this tile",
   enabled: "Enabled",
   disabled: "Disabled",
   goto_map: "Go to Map",
