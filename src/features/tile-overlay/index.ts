@@ -4,7 +4,7 @@ import { ImageItem } from "../gallery/routes/list/components";
 import { GalleryStorage } from "../gallery/storage";
 
 export class TileOverlay {
-  private tileDrawManager: TileDrawManager;
+  public tileDrawManager: TileDrawManager;
   private galleryStorage: GalleryStorage;
 
   constructor() {

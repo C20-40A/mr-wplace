@@ -255,7 +255,7 @@ export class TimeTravelStorage {
   static async restoreDrawStates(): Promise<void> {
     console.log("🧑‍🎨 : Restoring TimeTravel draw states");
     const tileOverlay = window.mrWplace?.tileOverlay;
-    if (!tileOverlay?.templateManager) return;
+    if (!tileOverlay?.tileDrawManager) return;
 
     const states = await this.getDrawStates();
     const enabledStates = states.filter((s) => s.drawEnabled);
@@ -270,7 +270,7 @@ export class TimeTravelStorage {
         const file = new File([blob], "snapshot.png", { type: "image/png" });
 
         const imageKey = `snapshot_${state.fullKey}`;
-        await tileOverlay.templateManager.addImageToOverlayLayers(
+        await tileOverlay.tileDrawManager.addImageToOverlayLayers(
           file,
           [state.tileX, state.tileY, 0, 0],
           imageKey
@@ -304,7 +304,7 @@ export class TimeTravelStorage {
         // 既存の描画を削除
         const tileOverlay = window.mrWplace?.tileOverlay;
         const oldImageKey = `snapshot_${currentState.fullKey}`;
-        tileOverlay?.templateManager?.removeTemplateByKey(oldImageKey);
+        tileOverlay?.tileDrawManager?.removeTemplateByKey(oldImageKey);
 
         // 古い状態をOFFに
         await this.setDrawState({
@@ -323,20 +323,20 @@ export class TimeTravelStorage {
       drawEnabled: newDrawEnabled,
     });
 
-    // 3. TemplateManagerに反映
+    // 3. TileDrawManagerに反映
     const tileOverlay = window.mrWplace?.tileOverlay;
     const imageKey = `snapshot_${fullKey}`;
 
     if (newDrawEnabled) {
       // 描画ON: Template作成
-      await tileOverlay?.templateManager?.addImageToOverlayLayers(
+      await tileOverlay?.tileDrawManager?.addImageToOverlayLayers(
         file,
         [tileX, tileY, 0, 0],
         imageKey
       );
     } else {
       // 描画OFF: Template削除
-      tileOverlay?.templateManager?.removeTemplateByKey(imageKey);
+      tileOverlay?.tileDrawManager?.removeTemplateByKey(imageKey);
     }
 
     return newDrawEnabled;

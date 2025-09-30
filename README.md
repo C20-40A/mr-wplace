@@ -25,7 +25,7 @@ WPlace サイト専用の多機能 Chrome 拡張機能。地図タイル上へ�
 ## 🏗️ アーキテクチャ
 
 ```
-fetchハイジャック(inject.js) → TileOverlay → TemplateManager → 画像描画
+fetchハイジャック(inject.js) → TileOverlay → TileDrawManager → 画像描画
         ↓
 UI Button → Gallery → 座標指定 → Template作成 → 全タイル処理
         ↓
@@ -40,7 +40,7 @@ Router<T> + HeaderManager → i18nキーマッピング → 自動ヘッダー�
 src/
 ├── content.ts                    # main entry: mrWplace class
 ├── features/
-│   ├── tile-overlay/             # TileOverlay (TemplateManager wrapper)
+│   ├── tile-overlay/             # TileOverlay (TileDrawManager wrapper)
 │   ├── gallery/                  # ギャラリー3ルートシステム
 │   │   ├── router.ts             # GalleryRouter拡張
 │   │   ├── routes/
@@ -49,7 +49,7 @@ src/
 │   │   │   ├── image-detail/     # 画像表示
 │   │   │   └── image-selector/   # 画像選択モーダル
 │   │   └── storage.ts            # Gallery専用ストレージ
-│   ├── template/                 # Template + TemplateManager + functions
+│   ├── template/                 # Template + TileDrawManager + functions
 │   ├── bookmark/                 # ブックマーク管理・インポート/エクスポート
 │   ├── time-travel/              # タイムトラベル機能
 │   │   ├── router.ts             # TimeTravelRouter拡張
@@ -103,7 +103,7 @@ interface TemplateInstance {
 // inject.js: 正規表現 tiles\/(\d+)\/(\d+)\.png
 const tileX = parseInt(tileMatch[1]);
 const tileY = parseInt(tileMatch[2]);
-// 全タイル処理 → TileOverlay → TemplateManager → 描画済みblob返却
+// 全タイル処理 → TileOverlay → TileDrawManager → 描画済みblob返却
 ```
 
 ### i18n システム
@@ -169,14 +169,14 @@ const tileY = parseInt(tileMatch[2]);
 ### 🎯 技術的実現
 
 - **コア**: Web Mercator 座標変換 + inject.js 全タイル傍受
-- **描画**: TemplateManager（Blue Marble 移植）+ TemplateInstance 抽象化
+- **描画**: TileDrawManager（Blue Marble 移植）+ TemplateInstance 抽象化
 - **UI**: Router<T>基盤クラス + ButtonObserver 統一管理
 - **ストレージ**: ImageStorage 抽象化 + インデックス最適化
 
 ### 制約・技術負債
 
 - **Single Template**: 1 つのテンプレート同時処理のみ
-- **Blue Marble 依存**: TemplateManager 内部実装詳細抽象化不足
+- **Blue Marble 依存**: TileDrawManager 内部実装詳細抽象化不足
 - **Chrome Extension 専用**: manifest.json + chrome.storage 依存
 
 ## 🤝 開発方針

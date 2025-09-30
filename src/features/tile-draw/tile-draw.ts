@@ -137,6 +137,8 @@ const processPixels = (
 ): ImageData => {
   const { data, width, height } = imageData;
 
+  console.log(`🧑‍🎨: processPixels: editing image ${width}x${height}`);
+
   // もしフィルターですべて非表示なら、何もないImageDataを返す(パフォーマンスのため)
   if (colorFilter?.length === 0) return new ImageData(width, height);
 
@@ -181,42 +183,41 @@ const processPixels = (
 /**
  * タイル比較Enhanced適用
  * 用途: 描画時処理 - 選択色がタイルと「違う場合」に赤ドット(差分強調)
- * 呼び出し: TemplateManager.applyTileComparison() → 描画時比較
  */
-export const applyTileComparisonEnhanced = (
-  templateData: ImageData,
-  tileData: ImageData,
-  selectedColors?: Set<string>
-): void => {
-  const tData = templateData.data;
-  const tileDat = tileData.data;
-  const width = templateData.width;
+// export const applyTileComparisonEnhanced = (
+//   templateData: ImageData,
+//   tileData: ImageData,
+//   selectedColors?: Set<string>
+// ): void => {
+//   const tData = templateData.data;
+//   const tileDat = tileData.data;
+//   const width = templateData.width;
 
-  for (let y = 1; y < templateData.height; y += 3) {
-    for (let x = 1; x < width; x += 3) {
-      const i = (y * width + x) * 4;
-      if (tData[i + 3] === 0) continue;
+//   for (let y = 1; y < templateData.height; y += 3) {
+//     for (let x = 1; x < width; x += 3) {
+//       const i = (y * width + x) * 4;
+//       if (tData[i + 3] === 0) continue;
 
-      const tColor = `${tData[i]},${tData[i + 1]},${tData[i + 2]}`;
-      if (selectedColors && !selectedColors.has(tColor)) continue;
+//       const tColor = `${tData[i]},${tData[i + 1]},${tData[i + 2]}`;
+//       if (selectedColors && !selectedColors.has(tColor)) continue;
 
-      const tileColor = `${tileDat[i]},${tileDat[i + 1]},${tileDat[i + 2]}`;
+//       const tileColor = `${tileDat[i]},${tileDat[i + 1]},${tileDat[i + 2]}`;
 
-      if (tColor !== tileColor) {
-        [
-          [x, y - 1],
-          [x, y + 1],
-          [x - 1, y],
-          [x + 1, y],
-        ].forEach(([px, py]) => {
-          if (px >= 0 && px < width && py >= 0 && py < templateData.height) {
-            const j = (py * width + px) * 4;
-            [tData[j], tData[j + 1], tData[j + 2], tData[j + 3]] = [
-              255, 0, 0, 255,
-            ];
-          }
-        });
-      }
-    }
-  }
-};
+//       if (tColor !== tileColor) {
+//         [
+//           [x, y - 1],
+//           [x, y + 1],
+//           [x - 1, y],
+//           [x + 1, y],
+//         ].forEach(([px, py]) => {
+//           if (px >= 0 && px < width && py >= 0 && py < templateData.height) {
+//             const j = (py * width + px) * 4;
+//             [tData[j], tData[j + 1], tData[j + 2], tData[j + 3]] = [
+//               255, 0, 0, 255,
+//             ];
+//           }
+//         });
+//       }
+//     }
+//   }
+// };
