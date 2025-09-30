@@ -5,7 +5,7 @@ const ENHANCED_STORAGE_KEY = "enhanced-filter-enabled";
 
 export class ColorFilterManager {
   private selectedColorIds: Set<number>;
-  private selectedRGBs: Array<[number, number, number]> = [];
+  public selectedRGBs: Array<[number, number, number]> = [];
   private enhancedEnabled: boolean = false;
 
   constructor() {

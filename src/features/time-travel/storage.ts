@@ -270,7 +270,7 @@ export class TimeTravelStorage {
         const file = new File([blob], "snapshot.png", { type: "image/png" });
 
         const imageKey = `snapshot_${state.fullKey}`;
-        await tileOverlay.templateManager.createTemplate(
+        await tileOverlay.templateManager.addImageToOverlayLayers(
           file,
           [state.tileX, state.tileY, 0, 0],
           imageKey
@@ -329,7 +329,7 @@ export class TimeTravelStorage {
 
     if (newDrawEnabled) {
       // 描画ON: Template作成
-      await tileOverlay?.templateManager?.createTemplate(
+      await tileOverlay?.templateManager?.addImageToOverlayLayers(
         file,
         [tileX, tileY, 0, 0],
         imageKey

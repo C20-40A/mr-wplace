@@ -19,10 +19,10 @@ export class CanvasPool {
     const canvas = pool.pop() || new OffscreenCanvas(width, height);
 
     // Clear canvas state for reuse
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (ctx) {
-      ctx.clearRect(0, 0, width, height);
-      ctx.resetTransform();
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (context) {
+      context.clearRect(0, 0, width, height);
+      context.resetTransform();
     }
 
     return canvas;
