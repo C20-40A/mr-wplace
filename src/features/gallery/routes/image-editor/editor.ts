@@ -2,6 +2,7 @@ import { colorpalette } from "../../../../constants/colors";
 import { t } from "../../../../i18n/manager";
 import { ImageInspector } from "../../../../components/image-inspector";
 import { ColorPalette } from "../../../../components/color-palette";
+import { DrawPosition, GalleryItem } from "../../storage";
 
 export class ImageProcessor {
   private container: HTMLElement;
@@ -16,6 +17,8 @@ export class ImageProcessor {
   private imageInspector: ImageInspector | null = null;
   private colorPalette: ColorPalette | null = null;
   private onSaveSuccess?: () => void;
+  private currentFileName: string | null = null;
+  private drawPosition: DrawPosition | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -27,6 +30,14 @@ export class ImageProcessor {
 
   handleFile(file: File): void {
     if (!file.type.startsWith("image/")) return;
+
+    // ファイル名から座標情報抽出
+    this.currentFileName = file.name;
+    this.drawPosition = this.parseDrawPositionFromFileName(file.name);
+
+    if (this.drawPosition) {
+      console.log("🧑‍🎨 : Detected position from filename:", this.drawPosition);
+    }
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -108,6 +119,8 @@ export class ImageProcessor {
     this.brightness = 0;
     this.contrast = 0;
     this.saturation = 0;
+    this.currentFileName = null;
+    this.drawPosition = null;
 
     const dropzone = this.container.querySelector(
       "#wps-dropzone-container"
@@ -184,14 +197,21 @@ export class ImageProcessor {
       const { GalleryStorage } = await import("../../storage");
       const galleryStorage = new GalleryStorage();
 
-      const galleryItem = {
+      const galleryItem: GalleryItem = {
         key: key,
         timestamp: Date.now(),
         dataUrl: base64,
       };
 
+      // 座標情報があれば追加（デフォルト表示ON）
+      if (this.drawPosition) {
+        galleryItem.drawPosition = this.drawPosition;
+        galleryItem.drawEnabled = true;
+        console.log("🧑‍🎨 : Saving with position:", this.drawPosition);
+      }
+
       await galleryStorage.save(galleryItem);
-      console.log(t`${"saved_to_gallery"}`);
+      console.log("🧑‍🎨 : ", t`${"saved_to_gallery"}`);
 
       this.onSaveSuccess?.();
     };
@@ -415,6 +435,22 @@ export class ImageProcessor {
 
   //   this.updateScaledImage();
   // }
+
+  /**
+   * ファイル名から座標情報抽出
+   * 形式: ${TLX}-${TLY}-${PxX}-${PxY}.png
+   */
+  private parseDrawPositionFromFileName(fileName: string): DrawPosition | null {
+    const match = fileName.match(/^(\d+)-(\d+)-(\d+)-(\d+)\.png$/);
+    if (!match) return null;
+
+    return {
+      TLX: parseInt(match[1]),
+      TLY: parseInt(match[2]),
+      PxX: parseInt(match[3]),
+      PxY: parseInt(match[4])
+    };
+  }
 
   private findNearestColor(
     rgb: [number, number, number]
