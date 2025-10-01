@@ -86,12 +86,8 @@ export const createTextModal = (): {
     drawButton.onclick = async () => {
       const text = input.value.trim();
       if (!text) return;
-
-      drawButton.disabled = true;
-      drawButton.textContent = "Drawing...";
-
-      await onDraw(text, fontSelect.value);
       hide();
+      await onDraw(text, fontSelect.value);
     };
 
     input.onkeydown = (e) => {
