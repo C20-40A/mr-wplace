@@ -51,3 +51,19 @@ if (enhanced?.enabled) {
   }
 }
 ```
+
+```js:周囲を暗くする
+  // 中央そのまま
+  if (x % pixelScale === 1 && y % pixelScale === 1) {
+    continue;
+  }
+  // ４隅なら透明(X列が中央ではない　かつ　Y列が中央ではない)
+  if (!(x % pixelScale === 1)) {
+    data[i + 3] = 0; // 0 = 透明
+    continue;
+  }
+  data[i] -= 40;
+  data[i + 1] -= 40;
+  data[i + 2] -= 40;
+  data[i + 3] = 255; // 不透明
+```
