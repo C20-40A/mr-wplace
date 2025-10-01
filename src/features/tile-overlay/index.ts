@@ -126,6 +126,11 @@ export class TileOverlay {
         img.drawPosition?.TLY === tileY
     );
 
+    console.log(
+      `🧑‍🎨 : restoreImagesOnTile(${tileX},${tileY}) - found ${targetImages.length} images`
+    );
+    targetImages.forEach((img) => console.log(`  - imageKey: ${img.key}`));
+
     for (const image of targetImages) {
       await this.restoreImage(image);
     }
@@ -145,12 +150,32 @@ export class TileOverlay {
       if (rawData) {
         const uint8Array = new Uint8Array(rawData);
         const blob = new Blob([uint8Array], { type: "image/png" });
-        const file = new File([blob], "snapshot.png", { type: "image/png" });
 
+        // renderScale=3で拡大済みなので1000x1000pxにリサイズ
+        const img = await createImageBitmap(blob);
+
+        const resizedImg = await createImageBitmap(img, {
+          resizeWidth: 1000,
+          resizeHeight: 1000,
+          resizeQuality: "high",
+        });
+
+        // リサイズ済み画像をBlobに変換
+        const canvas = new OffscreenCanvas(1000, 1000);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("Failed to get canvas context");
+        ctx.drawImage(resizedImg, 0, 0);
+        const resizedBlob = await canvas.convertToBlob({ type: "image/png" });
+
+        const file = new File([resizedBlob], "snapshot.png", {
+          type: "image/png",
+        });
+
+        const snapshotKey = `snapshot_${activeSnapshot.fullKey}`;
         await this.tileDrawManager.addImageToOverlayLayers(
           file,
           [tileX, tileY, 0, 0],
-          `snapshot_${activeSnapshot.fullKey}`
+          snapshotKey
         );
       }
     }
