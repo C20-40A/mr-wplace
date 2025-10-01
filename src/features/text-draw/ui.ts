@@ -8,7 +8,7 @@ export const createTextInputButton = (): HTMLButtonElement => {
 };
 
 export const createTextModal = (): {
-  show: (onDraw: (text: string) => Promise<void>) => void;
+  show: (onDraw: (text: string, font: string) => Promise<void>) => void;
   hide: () => void;
 } => {
   const backdrop = document.createElement("div");
@@ -34,7 +34,8 @@ export const createTextModal = (): {
 
   const title = document.createElement("h3");
   title.textContent = "TEXT";
-  title.style.cssText = "font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem;";
+  title.style.cssText =
+    "font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem;";
 
   const input = document.createElement("input");
   input.type = "text";
@@ -42,8 +43,18 @@ export const createTextModal = (): {
   input.className = "input input-bordered w-full";
   input.style.cssText = "width: 100%; margin-bottom: 1rem;";
 
+  const fontSelect = document.createElement("select");
+  fontSelect.className = "select select-bordered w-full";
+  fontSelect.style.cssText = "width: 100%; margin-bottom: 1rem;";
+  fontSelect.innerHTML = `
+    <option value="Bytesized">Bytesized (3x4)</option>
+    <option value="Misaki">🇯🇵 Misaki (8x8)</option>
+    <option value="k8x12">🇯🇵 k8x12 (8x12)</option>
+  `;
+
   const buttonContainer = document.createElement("div");
-  buttonContainer.style.cssText = "display: flex; justify-content: flex-end; gap: 0.5rem;";
+  buttonContainer.style.cssText =
+    "display: flex; justify-content: flex-end; gap: 0.5rem;";
 
   const cancelButton = document.createElement("button");
   cancelButton.textContent = "Cancel";
@@ -58,6 +69,7 @@ export const createTextModal = (): {
 
   modal.appendChild(title);
   modal.appendChild(input);
+  modal.appendChild(fontSelect);
   modal.appendChild(buttonContainer);
   backdrop.appendChild(modal);
 
@@ -65,7 +77,7 @@ export const createTextModal = (): {
     backdrop.remove();
   };
 
-  const show = (onDraw: (text: string) => Promise<void>) => {
+  const show = (onDraw: (text: string, font: string) => Promise<void>) => {
     document.body.appendChild(backdrop);
     input.focus();
 
@@ -74,11 +86,11 @@ export const createTextModal = (): {
     drawButton.onclick = async () => {
       const text = input.value.trim();
       if (!text) return;
-      
+
       drawButton.disabled = true;
       drawButton.textContent = "Drawing...";
-      
-      await onDraw(text);
+
+      await onDraw(text, fontSelect.value);
       hide();
     };
 
