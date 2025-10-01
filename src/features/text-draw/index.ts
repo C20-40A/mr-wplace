@@ -10,6 +10,14 @@ import { Toast } from "../../components/toast";
 
 export class TextDraw {
   private fontLoaded = false;
+  private readonly fonts = {
+    k8x12: { path: "assets/fonts/k8x12/k8x12S.ttf", size: 12 },
+    Bytesized: {
+      path: "assets/fonts/Bytesized/Bytesized-Regular.ttf",
+      size: 8,
+    },
+    Misaki: { path: "assets/fonts/misaki/misaki_gothic.ttf", size: 8 },
+  };
 
   constructor() {
     this.init();
@@ -35,12 +43,12 @@ export class TextDraw {
 
   private showModal(): void {
     const modal = createTextModal();
-    modal.show(async (text: string) => {
-      await this.drawText(text);
+    modal.show(async (text: string, font: string) => {
+      await this.drawText(text, font);
     });
   }
 
-  private async drawText(text: string): Promise<void> {
+  private async drawText(text: string, font: string): Promise<void> {
     const position = getCurrentPosition();
     if (!position) {
       Toast.error("Position not found");
@@ -49,7 +57,7 @@ export class TextDraw {
 
     await this.ensureFontLoaded();
 
-    const blob = await this.textToBlob(text);
+    const blob = await this.textToBlob(text, font);
     const dataUrl = await this.blobToDataUrl(blob);
 
     const imageItem: ImageItem = {
@@ -72,27 +80,30 @@ export class TextDraw {
   private async ensureFontLoaded(): Promise<void> {
     if (this.fontLoaded) return;
 
-    const fontUrl = chrome.runtime.getURL("assets/fonts/k8x12/k8x12S.ttf");
-    const font = new FontFace("k8x12", `url(${fontUrl})`);
-    await font.load();
-    document.fonts.add(font);
+    for (const [name, config] of Object.entries(this.fonts)) {
+      const fontUrl = chrome.runtime.getURL(config.path);
+      const font = new FontFace(name, `url(${fontUrl})`);
+      await font.load();
+      document.fonts.add(font);
+      console.log("🧑‍🎨 : Font loaded", name);
+    }
+
     this.fontLoaded = true;
-    console.log("🧑‍🎨 : Font loaded", fontUrl);
   }
 
-  private async textToBlob(text: string): Promise<Blob> {
+  private async textToBlob(text: string, font: string): Promise<Blob> {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Canvas context not found");
 
-    const fontSize = 12;
-    ctx.font = `${fontSize}px k8x12`;
+    const fontSize = this.fonts[font as keyof typeof this.fonts].size;
+    ctx.font = `${fontSize}px ${font}`;
 
     const metrics = ctx.measureText(text);
     canvas.width = Math.ceil(metrics.width);
     canvas.height = fontSize;
 
-    ctx.font = `${fontSize}px k8x12`;
+    ctx.font = `${fontSize}px ${font}`;
     ctx.fillStyle = "#000000";
     ctx.textBaseline = "top";
     ctx.fillText(text, 0, 0);
