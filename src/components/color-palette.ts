@@ -1,13 +1,14 @@
 import { colorpalette } from "../constants/colors";
 import { t } from "../i18n/manager";
+import type { EnhancedConfig } from "../features/tile-draw/tile-draw";
 
 interface ColorPaletteOptions {
   onChange?: (colorIds: number[]) => void;
   selectedColorIds?: number[];
   showCurrentlySelected?: boolean; // 現在選択中の色を表示するか（default: false）
-  showEnhancedToggle?: boolean; // enhancedトグル表示（default: false）
-  onEnhancedChange?: (enabled: boolean) => void;
-  enhancedEnabled?: boolean;
+  showEnhancedSelect?: boolean; // enhancedモード選択表示（default: false）
+  onEnhancedModeChange?: (mode: EnhancedConfig["mode"]) => void;
+  enhancedMode?: EnhancedConfig["mode"];
 }
 
 const enabledBadgeHTML =
@@ -26,7 +27,7 @@ export class ColorPalette {
   private options: ColorPaletteOptions;
   private selectedColorIds: Set<number> = new Set();
   private currentlySelectedColorId: number | null = null;
-  private enhancedEnabled: boolean = false;
+  private enhancedMode: EnhancedConfig["mode"] = "dot";
 
   constructor(container: HTMLElement, options: ColorPaletteOptions = {}) {
     this.container = container;
@@ -45,7 +46,7 @@ export class ColorPalette {
     }
 
     // enhanced初期状態
-    this.enhancedEnabled = options.enhancedEnabled ?? false;
+    this.enhancedMode = options.enhancedMode ?? "dot";
 
     this.init();
   }
@@ -89,17 +90,24 @@ export class ColorPalette {
       })
       .join("");
 
-    const enhancedToggleHTML = this.options.showEnhancedToggle
-      ? `<button class="enhanced-toggle-btn btn btn-outline btn-sm rounded" style="${this.enhancedEnabled ? 'background-color: #22c55e; border-color: #22c55e; color: white;' : 'border-color: #ef4444; color: #ef4444;'}">
-          ${t`${'enhanced'}`}: ${this.enhancedEnabled ? 'ON' : 'OFF'}
-         </button>`
+    const enhancedSelectHTML = this.options.showEnhancedSelect
+      ? `<select class="enhanced-mode-select" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem;">
+          <option value="dot" ${this.enhancedMode === "dot" ? "selected" : ""}>Dot</option>
+          <option value="cross" ${this.enhancedMode === "cross" ? "selected" : ""}>Cross</option>
+          <option value="red-cross" ${this.enhancedMode === "red-cross" ? "selected" : ""}>Red Cross</option>
+          <option value="cyan-cross" ${this.enhancedMode === "cyan-cross" ? "selected" : ""}>Cyan Cross</option>
+          <option value="dark-cross" ${this.enhancedMode === "dark-cross" ? "selected" : ""}>Dark Cross</option>
+          <option value="complement-cross" ${this.enhancedMode === "complement-cross" ? "selected" : ""}>Complement Cross</option>
+          <option value="fill" ${this.enhancedMode === "fill" ? "selected" : ""}>Fill</option>
+          <option value="red-border" ${this.enhancedMode === "red-border" ? "selected" : ""}>Red Border</option>
+         </select>`
       : '';
 
     this.container.innerHTML = `
       <div class="color-palette-controls flex gap-2 mb-4 px-4 pt-4">
         <button class="enable-all-btn btn btn-outline btn-success btn-sm rounded">${t`${'enable_all'}`}</button>
         <button class="disable-all-btn btn btn-outline btn-error btn-sm rounded">${t`${'disable_all'}`}</button>
-        ${enhancedToggleHTML}
+        ${enhancedSelectHTML}
       </div>
       <div class="color-palette-grid grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 px-4 pb-4">
         ${paletteGrid}
@@ -123,12 +131,6 @@ export class ColorPalette {
         return;
       }
 
-      // Enhanced Toggle ボタン
-      if (target.classList.contains("enhanced-toggle-btn")) {
-        this.toggleEnhanced();
-        return;
-      }
-
       // 色選択
       const colorItem = target.closest(".color-item");
       if (!colorItem) return;
@@ -136,6 +138,14 @@ export class ColorPalette {
       const colorId = parseInt((colorItem as HTMLElement).dataset.colorId!);
       this.toggleColor(colorId);
     });
+
+    // Enhanced Mode Select
+    const select = this.container.querySelector('.enhanced-mode-select') as HTMLSelectElement;
+    if (select) {
+      select.addEventListener('change', () => {
+        this.handleEnhancedModeChange(select.value as EnhancedConfig["mode"]);
+      });
+    }
   }
 
   private toggleColor(colorId: number): void {
@@ -203,27 +213,10 @@ export class ColorPalette {
     this.container.innerHTML = "";
   }
 
-  private toggleEnhanced(): void {
-    this.enhancedEnabled = !this.enhancedEnabled;
-    this.updateEnhancedButton();
-    if (this.options.onEnhancedChange) {
-      this.options.onEnhancedChange(this.enhancedEnabled);
-    }
-  }
-
-  private updateEnhancedButton(): void {
-    const button = this.container.querySelector('.enhanced-toggle-btn') as HTMLButtonElement;
-    if (!button) return;
-
-    button.textContent = `${t`${'enhanced'}`}: ${this.enhancedEnabled ? 'ON' : 'OFF'}`;
-    if (this.enhancedEnabled) {
-      button.style.backgroundColor = '#22c55e';
-      button.style.borderColor = '#22c55e';
-      button.style.color = 'white';
-    } else {
-      button.style.backgroundColor = '';
-      button.style.borderColor = '#ef4444';
-      button.style.color = '#ef4444';
+  private handleEnhancedModeChange(mode: EnhancedConfig["mode"]): void {
+    this.enhancedMode = mode;
+    if (this.options.onEnhancedModeChange) {
+      this.options.onEnhancedModeChange(mode);
     }
   }
 }

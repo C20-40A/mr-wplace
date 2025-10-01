@@ -1,12 +1,13 @@
 import { colorpalette } from "../constants/colors";
+import type { EnhancedConfig } from "../features/tile-draw/tile-draw";
 
 const STORAGE_KEY = "color-filter-selection";
-const ENHANCED_STORAGE_KEY = "enhanced-filter-enabled";
+const ENHANCED_MODE_STORAGE_KEY = "enhanced-mode";
 
 export class ColorFilterManager {
   private selectedColorIds: Set<number>;
   public selectedRGBs: Array<[number, number, number]> = [];
-  private enhancedEnabled: boolean = false;
+  private enhancedMode: EnhancedConfig["mode"] = "dot";
 
   constructor() {
     this.selectedColorIds = this.getDefaultColorIds();
@@ -15,7 +16,7 @@ export class ColorFilterManager {
 
   async init(): Promise<void> {
     await this.loadFromStorage();
-    await this.loadEnhancedFromStorage();
+    await this.loadEnhancedModeFromStorage();
   }
 
   async setSelectedColors(colorIds: number[]): Promise<void> {
@@ -113,27 +114,33 @@ export class ColorFilterManager {
     return Array.from(this.selectedColorIds);
   }
 
-  setEnhanced(enabled: boolean): void {
-    this.enhancedEnabled = enabled;
-    this.saveEnhancedToStorage();
+  setEnhancedMode(mode: EnhancedConfig["mode"]): void {
+    this.enhancedMode = mode;
+    this.saveEnhancedModeToStorage();
   }
 
-  isEnhancedEnabled(): boolean {
-    return this.enhancedEnabled;
+  getEnhancedMode(): EnhancedConfig["mode"] {
+    return this.enhancedMode;
   }
 
-  private async loadEnhancedFromStorage(): Promise<void> {
+  private async loadEnhancedModeFromStorage(): Promise<void> {
     try {
-      const result = await chrome.storage.local.get(ENHANCED_STORAGE_KEY);
-      this.enhancedEnabled = result[ENHANCED_STORAGE_KEY] === true;
+      const result = await chrome.storage.local.get(ENHANCED_MODE_STORAGE_KEY);
+      const savedMode = result[ENHANCED_MODE_STORAGE_KEY];
+      // Validate mode
+      const validModes: EnhancedConfig["mode"][] = [
+        "dot", "cross", "red-cross", "cyan-cross", 
+        "dark-cross", "complement-cross", "fill", "red-border"
+      ];
+      this.enhancedMode = validModes.includes(savedMode) ? savedMode : "dot";
     } catch {
-      this.enhancedEnabled = false;
+      this.enhancedMode = "dot";
     }
   }
 
-  private async saveEnhancedToStorage(): Promise<void> {
+  private async saveEnhancedModeToStorage(): Promise<void> {
     await chrome.storage.local.set({
-      [ENHANCED_STORAGE_KEY]: this.enhancedEnabled,
+      [ENHANCED_MODE_STORAGE_KEY]: this.enhancedMode,
     });
   }
 }
