@@ -39,6 +39,7 @@ export const drawImageOnTiles = async ({
     for (let px = coords[2]; px < w + coords[2]; ) {
       const drawW = Math.min(tileSize - (px % tileSize), w - (px - coords[2]));
 
+      console.log(`🧑‍🎨: drawImageOnTiles at ${coords} size ${tileSize}`);
       const result = await processTile(
         bitmap,
         coords,
@@ -136,8 +137,6 @@ const processPixels = (
   colorFilter?: Array<[number, number, number]> // フィルターなしなら、undefined
 ): ImageData => {
   const { data, width, height } = imageData;
-
-  console.log(`🧑‍🎨: processPixels: editing image ${width}x${height}`);
 
   // もしフィルターですべて非表示なら、何もないImageDataを返す(パフォーマンスのため)
   if (colorFilter?.length === 0) return new ImageData(width, height);
