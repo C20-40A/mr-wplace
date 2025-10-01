@@ -3,9 +3,15 @@ import { CanvasPool } from "./canvas-pool";
 
 /** Enhanced設定の型定義 */
 export interface EnhancedConfig {
-  enabled: boolean; // enhanceするか否か
-  color: [number, number, number]; // enhanceで表示する色(赤デフォ)
-  selectedColors?: Set<string>; // この色をenhanceする
+  mode:
+    | "dot" // 1ドット
+    | "cross" // 同色十字
+    | "red-cross" // 赤十字
+    | "cyan-cross" // シアン十字
+    | "dark-cross" // 暗色十字
+    | "complement-cross" // 補色十字
+    | "fill" // 全塗り
+    | "red-border"; // 赤枠
 }
 
 /**
@@ -20,7 +26,7 @@ export const drawImageOnTiles = async ({
   file: File;
   coords: WplaceCoords;
   tileSize: number;
-  enhanced?: EnhancedConfig;
+  enhanced: EnhancedConfig;
 }): Promise<{ templateTiles: Record<string, ImageBitmap> }> => {
   const bitmap = await createImageBitmap(file);
   const [w, h] = [bitmap.width, bitmap.height];
@@ -70,7 +76,7 @@ const processTile = async (
   py: number,
   drawW: number,
   drawH: number,
-  enhanced?: EnhancedConfig,
+  enhanced: EnhancedConfig,
   colorFilter?: Array<[number, number, number]>
 ) => {
   const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
@@ -133,7 +139,7 @@ const processTile = async (
 const processPixels = (
   imageData: ImageData,
   pixelScale: number,
-  enhanced?: EnhancedConfig,
+  enhanced: EnhancedConfig,
   colorFilter?: Array<[number, number, number]> // フィルターなしなら、undefined
 ): ImageData => {
   const { data, width, height } = imageData;
@@ -146,6 +152,8 @@ const processPixels = (
   // data[i+1] = G値
   // data[i+2] = B値
   // data[i+3] = A値（透明度）
+
+  const enhancedMode = enhanced?.mode;
 
   // ピクセル単位で編集
   for (let y = 0; y < height; y++) {
@@ -161,12 +169,12 @@ const processPixels = (
         if (!match) data[i + 3] = 0; // フィルター以外なので透明化
       }
 
-      if (!enhanced?.enabled) {
+      if (enhancedMode === "dot") {
         // 中央ピクセル以外透明化 (現在位置のXとYのどちらも1余る=中央)
         if (x % pixelScale !== 1 || y % pixelScale !== 1) {
           data[i + 3] = 0; // 0 = 透明
         }
-      } else if (enhanced?.enabled) {
+      } else if (enhancedMode === "cross") {
         // ４隅なら透明(X列が中央ではない　かつ　Y列が中央ではない)
         if (!(x % pixelScale === 1 || y % pixelScale === 1)) {
           data[i + 3] = 0; // 0 = 透明

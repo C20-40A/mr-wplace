@@ -19,11 +19,11 @@ export const renderColorFilters = (container: HTMLElement): void => {
       console.log(`Selected color IDs:`, colorIds);
     },
     showCurrentlySelected: true,
-    showEnhancedToggle: true,
-    enhancedEnabled: colorFilterManager?.isEnhancedEnabled() ?? false,
-    onEnhancedChange: (enabled) => {
-      colorFilterManager?.setEnhanced(enabled);
-      console.log(`🧑‍🎨 : Enhanced filter:`, enabled);
+    showEnhancedSelect: true,
+    enhancedMode: colorFilterManager?.getEnhancedMode() ?? "dot",
+    onEnhancedModeChange: (mode) => {
+      colorFilterManager?.setEnhancedMode(mode);
+      console.log(`🧑‍🎨 : Enhanced mode:`, mode);
     },
   });
 };
