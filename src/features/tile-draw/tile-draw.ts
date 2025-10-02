@@ -180,6 +180,11 @@ const processPixels = (
           data[i + 3] = 0; // 0 = 透明
           continue;
         }
+      } else if (enhancedMode === "red-cross") {
+        // ここで背景色（背景タイルの該当ピクセル）をとってきて、比較したい
+      } else if (enhancedMode === "fill") {
+        // 塗りつぶしは、そのまま何もしない
+        continue;
       }
     }
   }
