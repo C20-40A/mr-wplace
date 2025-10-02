@@ -118,7 +118,10 @@ export class ImageEditorUI {
                   <span>${"size_reduction"}: <span id="wps-scale-value">1.0</span>x</span>
                   <span style="font-size: 0.75rem; color: #9ca3af;">1.0x</span>
                 </label>
-                <input type="range" id="wps-scale-slider" min="0.1" max="1" step="0.05" value="1" class="range" style="width: 100%;">
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <input type="range" id="wps-scale-slider" min="0.1" max="1" step="0.01" value="1" class="range" style="flex: 1;">
+                  <input type="number" id="wps-scale-input" min="0.1" max="1" step="0.01" value="1" style="width: 50px; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; text-align: center;">
+                </div>
               </div>
               
               <div>
@@ -179,6 +182,9 @@ export class ImageEditorUI {
     const slider = this.container.querySelector(
       "#wps-scale-slider"
     ) as HTMLInputElement;
+    const input = this.container.querySelector(
+      "#wps-scale-input"
+    ) as HTMLInputElement;
     const valueDisplay = this.container.querySelector("#wps-scale-value");
     const brightnessSlider = this.container.querySelector(
       "#wps-brightness-slider"
@@ -203,10 +209,28 @@ export class ImageEditorUI {
     // サイズ縮小スライダー
     slider?.addEventListener("input", (e) => {
       const value = (e.target as HTMLInputElement).value;
+      const floatValue = parseFloat(value);
       if (valueDisplay) {
-        valueDisplay.textContent = value;
+        valueDisplay.textContent = floatValue.toFixed(2);
       }
-      this.callbacks?.onScaleChange(parseFloat(value));
+      if (input) {
+        input.value = value;
+      }
+      this.callbacks?.onScaleChange(floatValue);
+    });
+
+    // サイズ縮小数値入力
+    input?.addEventListener("input", (e) => {
+      let value = parseFloat((e.target as HTMLInputElement).value);
+      // 範囲制限
+      value = Math.max(0.1, Math.min(1, value));
+      if (valueDisplay) {
+        valueDisplay.textContent = value.toFixed(2);
+      }
+      if (slider) {
+        slider.value = value.toString();
+      }
+      this.callbacks?.onScaleChange(value);
     });
 
     // 明るさスライダー
