@@ -131,6 +131,9 @@ export class ImageProcessor {
     const slider = this.container.querySelector(
       "#wps-scale-slider"
     ) as HTMLInputElement;
+    const input = this.container.querySelector(
+      "#wps-scale-input"
+    ) as HTMLInputElement;
     const valueDisplay = this.container.querySelector("#wps-scale-value");
     const brightnessSlider = this.container.querySelector(
       "#wps-brightness-slider"
@@ -150,7 +153,8 @@ export class ImageProcessor {
     );
 
     if (slider) slider.value = "1";
-    if (valueDisplay) valueDisplay.textContent = "1.0";
+    if (input) input.value = "1";
+    if (valueDisplay) valueDisplay.textContent = "1.00";
     if (brightnessSlider) brightnessSlider.value = "0";
     if (brightnessValue) brightnessValue.textContent = "0";
     if (contrastSlider) contrastSlider.value = "0";
