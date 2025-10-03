@@ -92,21 +92,37 @@ export class ColorPalette {
 
     const enhancedSelectHTML = this.options.showEnhancedSelect
       ? `<select class="enhanced-mode-select" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem;">
-          <option value="dot" ${this.enhancedMode === "dot" ? "selected" : ""}>Dot</option>
-          <option value="cross" ${this.enhancedMode === "cross" ? "selected" : ""}>Cross</option>
-          <option value="red-cross" ${this.enhancedMode === "red-cross" ? "selected" : ""}>Red Cross</option>
-          <option value="cyan-cross" ${this.enhancedMode === "cyan-cross" ? "selected" : ""}>Cyan Cross</option>
-          <option value="dark-cross" ${this.enhancedMode === "dark-cross" ? "selected" : ""}>Dark Cross</option>
-          <option value="complement-cross" ${this.enhancedMode === "complement-cross" ? "selected" : ""}>Complement Cross</option>
-          <option value="fill" ${this.enhancedMode === "fill" ? "selected" : ""}>Fill</option>
-          <option value="red-border" ${this.enhancedMode === "red-border" ? "selected" : ""}>Red Border</option>
+          <option value="dot" ${
+            this.enhancedMode === "dot" ? "selected" : ""
+          }>Dot</option>
+          <option value="cross" ${
+            this.enhancedMode === "cross" ? "selected" : ""
+          }>Cross</option>
+          <option value="fill" ${
+            this.enhancedMode === "fill" ? "selected" : ""
+          }>Fill</option>
+          <option value="red-cross" ${
+            this.enhancedMode === "red-cross" ? "selected" : ""
+          }>Red Cross</option>
+          <option value="cyan-cross" ${
+            this.enhancedMode === "cyan-cross" ? "selected" : ""
+          }>Cyan Cross</option>
+          <option value="dark-cross" ${
+            this.enhancedMode === "dark-cross" ? "selected" : ""
+          }>Dark Cross</option>
+          <option value="complement-cross" ${
+            this.enhancedMode === "complement-cross" ? "selected" : ""
+          }>Complement Cross</option>
+          <option value="red-border" ${
+            this.enhancedMode === "red-border" ? "selected" : ""
+          }>Red Border</option>
          </select>`
-      : '';
+      : "";
 
     this.container.innerHTML = `
       <div class="color-palette-controls flex gap-2 mb-4 px-4 pt-4">
-        <button class="enable-all-btn btn btn-outline btn-success btn-sm rounded">${t`${'enable_all'}`}</button>
-        <button class="disable-all-btn btn btn-outline btn-error btn-sm rounded">${t`${'disable_all'}`}</button>
+        <button class="enable-all-btn btn btn-outline btn-success btn-sm rounded">${t`${"enable_all"}`}</button>
+        <button class="disable-all-btn btn btn-outline btn-error btn-sm rounded">${t`${"disable_all"}`}</button>
         ${enhancedSelectHTML}
       </div>
       <div class="color-palette-grid grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 px-4 pb-4">
@@ -140,9 +156,11 @@ export class ColorPalette {
     });
 
     // Enhanced Mode Select
-    const select = this.container.querySelector('.enhanced-mode-select') as HTMLSelectElement;
+    const select = this.container.querySelector(
+      ".enhanced-mode-select"
+    ) as HTMLSelectElement;
     if (select) {
-      select.addEventListener('change', () => {
+      select.addEventListener("change", () => {
         this.handleEnhancedModeChange(select.value as EnhancedConfig["mode"]);
       });
     }
