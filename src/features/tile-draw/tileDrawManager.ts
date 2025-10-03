@@ -1,8 +1,6 @@
 import { drawImageOnTiles } from "./tile-draw";
 import type { EnhancedConfig } from "./tile-draw";
 import { TILE_DRAW_CONSTANTS, WplaceCoords, TileCoords } from "./constants";
-import { CanvasPool } from "./canvas-pool";
-import { colorpalette } from "../../constants/colors";
 
 interface TileDrawInstance {
   coords: WplaceCoords;
@@ -27,10 +25,10 @@ export class TileDrawManager {
     coords: WplaceCoords,
     imageKey: string
   ): Promise<void> {
-    this.removeTemplateByKey(imageKey);
+    this.removePreparedOverlayImageByKey(imageKey);
     const enhancedConfig = this.getEnhancedConfig();
 
-    const { templateTiles } = await drawImageOnTiles({
+    const { preparedOverlayImage } = await drawImageOnTiles({
       file: blob,
       coords,
       tileSize: this.tileSize,
@@ -39,7 +37,7 @@ export class TileDrawManager {
 
     this.overlayLayers.push({
       coords,
-      tiles: templateTiles,
+      tiles: preparedOverlayImage,
       imageKey,
       drawEnabled: true,
     });
@@ -96,19 +94,9 @@ export class TileDrawManager {
 
     const result = await canvas.convertToBlob({ type: "image/png" });
     return result;
-
-    //     // ⚠️TODO: タイルの違いチェッカーは後で実装
-    //     if (enhancedConfig?.enabled) {
-    //       templateBitmap = await this.applyTileComparison(
-    //         templateBitmap,
-    //         originalTileCtx,
-    //         coords,
-    //         enhancedConfig.selectedColors
-    //       );
-    //     }
   }
 
-  removeTemplateByKey(imageKey: string): void {
+  removePreparedOverlayImageByKey(imageKey: string): void {
     this.overlayLayers = this.overlayLayers.filter(
       (i) => i.imageKey !== imageKey
     );
@@ -122,7 +110,7 @@ export class TileDrawManager {
     return instance.drawEnabled;
   }
 
-  clearAllTemplates(): void {
+  clearAllPreparedOverlayImages(): void {
     this.overlayLayers = [];
   }
 
@@ -130,8 +118,8 @@ export class TileDrawManager {
     for (const instance of this.overlayLayers) {
       if (!instance.drawEnabled || !instance.coords) continue;
 
-      const [templateTileX, templateTileY] = instance.coords;
-      if (templateTileX === tileX && templateTileY === tileY) return true;
+      const [overlayTileX, overlayTileY] = instance.coords;
+      if (overlayTileX === tileX && overlayTileY === tileY) return true;
     }
     return false;
   }
@@ -141,46 +129,4 @@ export class TileDrawManager {
     const mode = colorFilterManager?.getEnhancedMode() ?? "dot";
     return { mode };
   }
-
-  // private async applyTileComparison(
-  //   templateBitmap: ImageBitmap,
-  //   tileContext: OffscreenCanvasRenderingContext2D,
-  //   coords: string[],
-  //   selectedColors?: Set<string>
-  // ): Promise<ImageBitmap> {
-  //   const tempCanvas = CanvasPool.acquire(
-  //     templateBitmap.width,
-  //     templateBitmap.height
-  //   );
-  //   const tempCtx = tempCanvas.getContext("2d", { willReadFrequently: true });
-  //   if (!tempCtx) {
-  //     CanvasPool.release(tempCanvas);
-  //     return templateBitmap;
-  //   }
-
-  //   tempCtx.drawImage(templateBitmap, 0, 0);
-
-  //   const templateData = tempCtx.getImageData(
-  //     0,
-  //     0,
-  //     templateBitmap.width,
-  //     templateBitmap.height
-  //   );
-  //   const tileData = tileContext.getImageData(
-  //     Number(coords[2]) * this.renderScale,
-  //     Number(coords[3]) * this.renderScale,
-  //     templateBitmap.width,
-  //     templateBitmap.height
-  //   );
-
-  //   applyTileComparisonEnhanced(templateData, tileData, selectedColors);
-
-  //   tempCtx.putImageData(templateData, 0, 0);
-  //   const result = await createImageBitmap(tempCanvas);
-
-  //   // Canvas cleanup
-  //   CanvasPool.release(tempCanvas);
-
-  //   return result;
-  // }
 }

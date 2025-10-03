@@ -304,7 +304,9 @@ export class TimeTravelStorage {
         // 既存の描画を削除
         const tileOverlay = window.mrWplace?.tileOverlay;
         const oldImageKey = `snapshot_${currentState.fullKey}`;
-        tileOverlay?.tileDrawManager?.removeTemplateByKey(oldImageKey);
+        tileOverlay?.tileDrawManager?.removePreparedOverlayImageByKey(
+          oldImageKey
+        );
 
         // 古い状態をOFFに
         await this.setDrawState({
@@ -328,15 +330,15 @@ export class TimeTravelStorage {
     const imageKey = `snapshot_${fullKey}`;
 
     if (newDrawEnabled) {
-      // 描画ON: Template作成
+      // 描画ON
       await tileOverlay?.tileDrawManager?.addImageToOverlayLayers(
         file,
         [tileX, tileY, 0, 0],
         imageKey
       );
     } else {
-      // 描画OFF: Template削除
-      tileOverlay?.tileDrawManager?.removeTemplateByKey(imageKey);
+      // 描画OFF
+      tileOverlay?.tileDrawManager?.removePreparedOverlayImageByKey(imageKey);
     }
 
     return newDrawEnabled;

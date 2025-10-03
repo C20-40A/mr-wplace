@@ -27,7 +27,7 @@ export const drawImageOnTiles = async ({
   coords: WplaceCoords;
   tileSize: number;
   enhanced: EnhancedConfig;
-}): Promise<{ templateTiles: Record<string, ImageBitmap> }> => {
+}): Promise<{ preparedOverlayImage: Record<string, ImageBitmap> }> => {
   const bitmap = await createImageBitmap(file);
   const [w, h] = [bitmap.width, bitmap.height];
 
@@ -37,7 +37,7 @@ export const drawImageOnTiles = async ({
     : undefined;
 
   // タイル処理
-  const templateTiles: Record<string, ImageBitmap> = {};
+  const preparedOverlayImages: Record<string, ImageBitmap> = {};
 
   for (let py = coords[3]; py < h + coords[3]; ) {
     const drawH = Math.min(tileSize - (py % tileSize), h - (py - coords[3]));
@@ -57,7 +57,7 @@ export const drawImageOnTiles = async ({
         colorFilterRGBs
       );
 
-      templateTiles[result.tileName] = result.bitmap;
+      preparedOverlayImages[result.tileName] = result.bitmap;
 
       px += drawW;
     }
@@ -65,7 +65,7 @@ export const drawImageOnTiles = async ({
     py += drawH;
   }
 
-  return { templateTiles };
+  return { preparedOverlayImage: preparedOverlayImages };
 };
 
 /** 単一タイル処理 */
@@ -134,7 +134,6 @@ const processTile = async (
  *   1. #deface色 → チェッカーボード透過
  *   2. 中央ピクセル抽出(3x3グリッド)
  *   3. Enhanced有効時: 選択色周りに赤ドット(作成時処理 - 無条件強調)
- * 呼び出し: processTile() → Template作成時のみ
  */
 const processPixels = (
   imageData: ImageData,
@@ -191,45 +190,3 @@ const processPixels = (
 
   return imageData;
 };
-
-/**
- * タイル比較Enhanced適用
- * 用途: 描画時処理 - 選択色がタイルと「違う場合」に赤ドット(差分強調)
- */
-// export const applyTileComparisonEnhanced = (
-//   templateData: ImageData,
-//   tileData: ImageData,
-//   selectedColors?: Set<string>
-// ): void => {
-//   const tData = templateData.data;
-//   const tileDat = tileData.data;
-//   const width = templateData.width;
-
-//   for (let y = 1; y < templateData.height; y += 3) {
-//     for (let x = 1; x < width; x += 3) {
-//       const i = (y * width + x) * 4;
-//       if (tData[i + 3] === 0) continue;
-
-//       const tColor = `${tData[i]},${tData[i + 1]},${tData[i + 2]}`;
-//       if (selectedColors && !selectedColors.has(tColor)) continue;
-
-//       const tileColor = `${tileDat[i]},${tileDat[i + 1]},${tileDat[i + 2]}`;
-
-//       if (tColor !== tileColor) {
-//         [
-//           [x, y - 1],
-//           [x, y + 1],
-//           [x - 1, y],
-//           [x + 1, y],
-//         ].forEach(([px, py]) => {
-//           if (px >= 0 && px < width && py >= 0 && py < templateData.height) {
-//             const j = (py * width + px) * 4;
-//             [tData[j], tData[j + 1], tData[j + 2], tData[j + 3]] = [
-//               255, 0, 0, 255,
-//             ];
-//           }
-//         });
-//       }
-//     }
-//   }
-// };

@@ -1,6 +1,5 @@
 /**
  * Canvas Pool - Reuse OffscreenCanvas instances to reduce allocation overhead
- * Purpose: Prevent excessive Canvas creation in drawTemplateOnTile() which generates 3+N canvases per call
  */
 export class CanvasPool {
   private static pools = new Map<string, OffscreenCanvas[]>();

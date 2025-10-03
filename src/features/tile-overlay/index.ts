@@ -56,7 +56,7 @@ export class TileOverlay {
   ): Promise<void> {
     const file = await this.dataUrlToFile(
       imageItem.dataUrl,
-      imageItem.title || "template.png"
+      imageItem.title || "wplace.png"
     );
 
     await this.tileDrawManager.addImageToOverlayLayers(

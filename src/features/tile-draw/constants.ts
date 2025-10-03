@@ -1,4 +1,4 @@
-/** Template system constants */
+/** Tile Draw system constants */
 export const TILE_DRAW_CONSTANTS = {
   /** Pixel scale for rendering (3x3 grid, center pixel extraction) */
   PIXEL_SCALE: 3,
@@ -8,7 +8,6 @@ export const TILE_DRAW_CONSTANTS = {
   TILE_SIZE: 1000,
 } as const;
 
-/** Template coordinate types */
 export type WplaceCoords = [
   tileX: number,
   tileY: number,
