@@ -11,12 +11,13 @@ import { Toast } from "../../components/toast";
 export class TextDraw {
   private fontLoaded = false;
   private readonly fonts = {
-    k8x12: { path: "assets/fonts/k8x12/k8x12S.ttf", size: 12 },
     Bytesized: {
       path: "assets/fonts/Bytesized/Bytesized-Regular.ttf",
       size: 8,
     },
+    minikana: { path: "assets/fonts/4x4minkana/4x4kanafont.ttf", size: 5 },
     Misaki: { path: "assets/fonts/misaki/misaki_gothic.ttf", size: 8 },
+    k8x12: { path: "assets/fonts/k8x12/k8x12S.ttf", size: 12 },
   };
 
   constructor() {
