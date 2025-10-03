@@ -227,7 +227,7 @@ export class SnapshotDetailRoute {
     const tileOverlay = window.mrWplace?.tileOverlay;
     const imageKey = `snapshot_${fullKey}`;
     if (tileOverlay?.tileDrawManager) {
-      tileOverlay.tileDrawManager.removeTemplateByKey(imageKey);
+      tileOverlay.tileDrawManager.removePreparedOverlayImageByKey(imageKey);
     }
 
     await TimeTravelStorage.removeSnapshotFromIndex(fullKey);
