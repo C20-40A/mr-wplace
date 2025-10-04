@@ -48,5 +48,9 @@ Required to display paint accumulation alerts triggered by chrome.alarms. When u
 ### ホスト権限 (_://wplace.live/_, _://_.wplace.live/\*) 必要理由
 
 ```
+This extension is exclusively designed for WPlace site (*.wplace.live). Host access to WPlace domain is essential to intercept map tile fetch processes for image drawing. Does not function on other sites.
+```
+
+```
 Required exclusively for WPlace site (*.wplace.live) to enable all core features. The extension intercepts map tile fetch requests to overlay user images, monitors page DOM for paint status updates, injects UI elements for gallery/bookmark/time-travel functions, manages drawing tools, loads custom map styles (dark mode), and provides pixel fonts for text drawing features. These resources (map styles and fonts) are loaded from extension's web_accessible_resources to enhance creative capabilities on WPlace maps. These features only work on WPlace maps and have no functionality on other websites. Host permission is essential for the single purpose of creative image placement and resource monitoring on WPlace. No other sites are accessed.
 ```
