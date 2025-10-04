@@ -127,6 +127,7 @@ export const jaTranslations = {
   enable_all: "すべて有効",
   disable_all: "すべて無効",
   free_colors_only: "無料色",
+  owned_colors_only: "所持色",
   enhanced: "強化",
 
   // User Status (Notification Modal)

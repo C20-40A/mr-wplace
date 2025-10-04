@@ -71,7 +71,7 @@ export class TextDraw {
       title: text,
     };
 
-    const tileOverlay = (window as any).mrWplace?.tileOverlay;
+    const tileOverlay = window.mrWplace?.tileOverlay;
     if (!tileOverlay) {
       Toast.error("TileOverlay not found");
       return;
