@@ -11,7 +11,10 @@ export const createTextInputButton = (): HTMLButtonElement => {
 };
 
 export const createTextModal = (): {
-  show: (onDraw: (text: string, font: string) => Promise<void>) => void;
+  show: (
+    onDraw: (text: string, font: string) => Promise<void>,
+    onClear: () => void
+  ) => void;
   hide: () => void;
 } => {
   const backdrop = document.createElement("div");
@@ -36,7 +39,7 @@ export const createTextModal = (): {
   `;
 
   const title = document.createElement("h3");
-  title.textContent = "TEXT";
+  title.textContent = t`${"text_draw"}`;
   title.style.cssText =
     "font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem;";
 
@@ -62,14 +65,19 @@ export const createTextModal = (): {
     "display: flex; justify-content: flex-end; gap: 0.5rem;";
 
   const cancelButton = document.createElement("button");
-  cancelButton.textContent = "Cancel";
+  cancelButton.textContent = t`${"cancel"}`;
   cancelButton.className = "btn";
 
+  const clearButton = document.createElement("button");
+  clearButton.innerHTML = "🗑️ " + t`${"text_clear"}`;
+  clearButton.className = "btn";
+
   const drawButton = document.createElement("button");
-  drawButton.innerHTML = "✏️ Draw";
+  drawButton.innerHTML = "✏️ " + t`${"text_draw"}`;
   drawButton.className = "btn btn-primary";
 
   buttonContainer.appendChild(cancelButton);
+  buttonContainer.appendChild(clearButton);
   buttonContainer.appendChild(drawButton);
 
   modal.appendChild(title);
@@ -82,11 +90,19 @@ export const createTextModal = (): {
     backdrop.remove();
   };
 
-  const show = (onDraw: (text: string, font: string) => Promise<void>) => {
+  const show = (
+    onDraw: (text: string, font: string) => Promise<void>,
+    onClear: () => void
+  ) => {
     document.body.appendChild(backdrop);
     input.focus();
 
     cancelButton.onclick = hide;
+
+    clearButton.onclick = () => {
+      hide();
+      onClear();
+    };
 
     drawButton.onclick = async () => {
       const text = input.value.trim();

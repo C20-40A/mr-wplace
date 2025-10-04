@@ -138,6 +138,12 @@ export class TileDrawManager {
     this.overlayLayers = [];
   }
 
+  removeTextDrawInstances(): void {
+    this.overlayLayers = this.overlayLayers.filter(
+      (i) => !i.imageKey.startsWith("text_")
+    );
+  }
+
   isDrawingOnTile(tileX: number, tileY: number): boolean {
     for (const instance of this.overlayLayers) {
       if (!instance.drawEnabled || !instance.coords) continue;

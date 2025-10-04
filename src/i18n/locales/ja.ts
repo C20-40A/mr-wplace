@@ -16,6 +16,7 @@ export const jaTranslations = {
   bookmark: "ブックマーク",
   draw_image: "画像",
   text_draw: "テキスト",
+  text_clear: "テキストクリア",
   timetravel: "アーカイブ",
   export: "エクスポート",
   import: "インポート",
