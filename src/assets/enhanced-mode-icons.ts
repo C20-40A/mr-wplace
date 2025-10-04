@@ -3,22 +3,26 @@
  * 3x3グリッドのピクセルパターンをSVGで表現
  * 
  * 色定義:
- * - オーバーレイ色(緑): #22c55e
+ * - オーバーレイ色(黒): #000000
+ * - 明るいグレー: #9ca3af
+ * - 暗いグレー: #374151
  * - 透過(白): #ffffff
  * - 赤: #ef4444
  * - シアン: #06b6d4
- * - 暗色: #374151
- * - 補色(マゼンタ): #ec4899
+ * - 黄色: #eab308
+ * - 青(黄色の補色): #3b82f6
  */
 
 // 色定数
 const COLORS = {
-  OVERLAY: '#22c55e',    // オーバーレイ色(緑)
+  BLACK: '#000000',       // 黒(基本オーバーレイ)
+  LIGHT_GRAY: '#9ca3af',  // 明るいグレー
+  DARK_GRAY: '#374151',   // 暗いグレー
   TRANSPARENT: '#ffffff', // 透過(白)
-  RED: '#ef4444',        // 赤
-  CYAN: '#06b6d4',       // シアン
-  DARK: '#374151',       // 暗色
-  COMPLEMENT: '#ec4899', // 補色(マゼンタ)
+  RED: '#ef4444',         // 赤
+  CYAN: '#06b6d4',        // シアン
+  YELLOW: '#eab308',      // 黄色
+  BLUE: '#3b82f6',        // 青(黄色の補色)
 } as const;
 
 /**
@@ -53,7 +57,7 @@ const toDataURI = (svg: string): string => {
 // □□□
 const DOT_PATTERN = [
   ['transparent', 'transparent', 'transparent'],
-  ['transparent', COLORS.OVERLAY, 'transparent'],
+  ['transparent', COLORS.BLACK, 'transparent'],
   ['transparent', 'transparent', 'transparent'],
 ];
 
@@ -62,9 +66,9 @@ const DOT_PATTERN = [
 // ■■■
 // □■□
 const CROSS_PATTERN = [
-  ['transparent', COLORS.OVERLAY, 'transparent'],
-  [COLORS.OVERLAY, COLORS.OVERLAY, COLORS.OVERLAY],
-  ['transparent', COLORS.OVERLAY, 'transparent'],
+  ['transparent', COLORS.BLACK, 'transparent'],
+  [COLORS.BLACK, COLORS.BLACK, COLORS.BLACK],
+  ['transparent', COLORS.BLACK, 'transparent'],
 ];
 
 // fill: 全塗りつぶし
@@ -72,58 +76,58 @@ const CROSS_PATTERN = [
 // ■■■
 // ■■■
 const FILL_PATTERN = [
-  [COLORS.OVERLAY, COLORS.OVERLAY, COLORS.OVERLAY],
-  [COLORS.OVERLAY, COLORS.OVERLAY, COLORS.OVERLAY],
-  [COLORS.OVERLAY, COLORS.OVERLAY, COLORS.OVERLAY],
+  [COLORS.BLACK, COLORS.BLACK, COLORS.BLACK],
+  [COLORS.BLACK, COLORS.BLACK, COLORS.BLACK],
+  [COLORS.BLACK, COLORS.BLACK, COLORS.BLACK],
 ];
 
-// red-cross: 中央緑+上下左右赤
+// red-cross: 中央黒+上下左右赤
 // □赤□
 // 赤■赤
 // □赤□
 const RED_CROSS_PATTERN = [
   ['transparent', COLORS.RED, 'transparent'],
-  [COLORS.RED, COLORS.OVERLAY, COLORS.RED],
+  [COLORS.RED, COLORS.BLACK, COLORS.RED],
   ['transparent', COLORS.RED, 'transparent'],
 ];
 
-// cyan-cross: 中央緑+上下左右シアン
+// cyan-cross: 中央黒+上下左右シアン
 // □シ□
 // シ■シ
 // □シ□
 const CYAN_CROSS_PATTERN = [
   ['transparent', COLORS.CYAN, 'transparent'],
-  [COLORS.CYAN, COLORS.OVERLAY, COLORS.CYAN],
+  [COLORS.CYAN, COLORS.BLACK, COLORS.CYAN],
   ['transparent', COLORS.CYAN, 'transparent'],
 ];
 
-// dark-cross: 中央緑+上下左右暗色
+// dark-cross: 中央明るいグレー+上下左右暗いグレー
 // □暗□
-// 暗■暗
+// 暗明暗
 // □暗□
 const DARK_CROSS_PATTERN = [
-  ['transparent', COLORS.DARK, 'transparent'],
-  [COLORS.DARK, COLORS.OVERLAY, COLORS.DARK],
-  ['transparent', COLORS.DARK, 'transparent'],
+  ['transparent', COLORS.DARK_GRAY, 'transparent'],
+  [COLORS.DARK_GRAY, COLORS.LIGHT_GRAY, COLORS.DARK_GRAY],
+  ['transparent', COLORS.DARK_GRAY, 'transparent'],
 ];
 
-// complement-cross: 中央緑+上下左右補色
-// □補□
-// 補■補
-// □補□
+// complement-cross: 中央青(黄色の補色)+上下左右黄色
+// □黄□
+// 黄青黄
+// □黄□
 const COMPLEMENT_CROSS_PATTERN = [
-  ['transparent', COLORS.COMPLEMENT, 'transparent'],
-  [COLORS.COMPLEMENT, COLORS.OVERLAY, COLORS.COMPLEMENT],
-  ['transparent', COLORS.COMPLEMENT, 'transparent'],
+  ['transparent', COLORS.YELLOW, 'transparent'],
+  [COLORS.YELLOW, COLORS.BLUE, COLORS.YELLOW],
+  ['transparent', COLORS.YELLOW, 'transparent'],
 ];
 
-// red-border: 中央緑+周囲8ドット赤
+// red-border: 中央黒+周囲8ドット赤
 // 赤赤赤
 // 赤■赤
 // 赤赤赤
 const RED_BORDER_PATTERN = [
   [COLORS.RED, COLORS.RED, COLORS.RED],
-  [COLORS.RED, COLORS.OVERLAY, COLORS.RED],
+  [COLORS.RED, COLORS.BLACK, COLORS.RED],
   [COLORS.RED, COLORS.RED, COLORS.RED],
 ];
 

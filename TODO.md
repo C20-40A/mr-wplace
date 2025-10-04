@@ -3,7 +3,6 @@
 <!-- - 黒色だけなぜか enhance されない。transparent と同じ扱いになっている？ -->
 
 - 色フィルターが適用されない（タイルがスキップされている？）バグがある
-- 画像サイズ変更を任意にしたい
 
 # マイナー
 
@@ -37,6 +36,7 @@
   - open font でいいのが少ない
   - https://fontstruct.com/gallery/tag/4488/Wingdings
   - noto emoji もやりたい
+- 画像サイズ変更を任意の width にできたほうがいいかも？
 
 # DONE v1.4.5
 
