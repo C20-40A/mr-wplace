@@ -1,6 +1,7 @@
 import { colorpalette } from "../constants/colors";
 import { t } from "../i18n/manager";
 import type { EnhancedConfig } from "../features/tile-draw/tile-draw";
+import { ENHANCED_MODE_ICONS } from "../assets/enhanced-mode-icons";
 
 interface ColorPaletteOptions {
   onChange?: (colorIds: number[]) => void;
@@ -90,33 +91,44 @@ export class ColorPalette {
       })
       .join("");
 
+    const enhancedModes: Array<{ value: EnhancedConfig["mode"]; labelKey: string }> = [
+      { value: "dot", labelKey: "enhanced_mode_dot" },
+      { value: "cross", labelKey: "enhanced_mode_cross" },
+      { value: "fill", labelKey: "enhanced_mode_fill" },
+      { value: "red-cross", labelKey: "enhanced_mode_red_cross" },
+      { value: "cyan-cross", labelKey: "enhanced_mode_cyan_cross" },
+      { value: "dark-cross", labelKey: "enhanced_mode_dark_cross" },
+      { value: "complement-cross", labelKey: "enhanced_mode_complement_cross" },
+      { value: "red-border", labelKey: "enhanced_mode_red_border" },
+    ];
+
     const enhancedSelectHTML = this.options.showEnhancedSelect
-      ? `<select class="enhanced-mode-select" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem;">
-          <option value="dot" ${
-            this.enhancedMode === "dot" ? "selected" : ""
-          }>${t`${"enhanced_mode_dot"}`}</option>
-          <option value="cross" ${
-            this.enhancedMode === "cross" ? "selected" : ""
-          }>${t`${"enhanced_mode_cross"}`}</option>
-          <option value="fill" ${
-            this.enhancedMode === "fill" ? "selected" : ""
-          }>${t`${"enhanced_mode_fill"}`}</option>
-          <option value="red-cross" ${
-            this.enhancedMode === "red-cross" ? "selected" : ""
-          }>${t`${"enhanced_mode_red_cross"}`}</option>
-          <option value="cyan-cross" ${
-            this.enhancedMode === "cyan-cross" ? "selected" : ""
-          }>${t`${"enhanced_mode_cyan_cross"}`}</option>
-          <option value="dark-cross" ${
-            this.enhancedMode === "dark-cross" ? "selected" : ""
-          }>${t`${"enhanced_mode_dark_cross"}`}</option>
-          <option value="complement-cross" ${
-            this.enhancedMode === "complement-cross" ? "selected" : ""
-          }>${t`${"enhanced_mode_complement_cross"}`}</option>
-          <option value="red-border" ${
-            this.enhancedMode === "red-border" ? "selected" : ""
-          }>${t`${"enhanced_mode_red_border"}`}</option>
-         </select>`
+      ? `<div class="enhanced-mode-container" style="position: relative;">
+          <button class="enhanced-mode-button" type="button" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background-color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; width: 100%;">
+            <img class="enhanced-mode-current-icon" src="${ENHANCED_MODE_ICONS[this.enhancedMode]}" alt="${this.enhancedMode}" style="width: 20px; height: 20px; image-rendering: pixelated;" />
+            <span style="font-size: 0.875rem; color: #374151;">${t`${"enhanced_mode_label"}`}</span>
+            <span class="enhanced-mode-current-name" style="font-size: 0.875rem; font-weight: 600; color: #22c55e;">${t`${enhancedModes.find(m => m.value === this.enhancedMode)?.labelKey ?? "enhanced_mode_dot"}`}</span>
+          </button>
+          <div class="enhanced-mode-dropdown" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 0.25rem; background-color: white; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem; z-index: 1000; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); min-width: 320px;">
+            <div class="enhanced-mode-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
+              ${enhancedModes.map(mode => {
+                const isSelected = this.enhancedMode === mode.value;
+                const borderColor = isSelected ? "#22c55e" : "#d1d5db";
+                const borderWidth = isSelected ? "3px" : "2px";
+                return `
+                  <button class="enhanced-mode-item" 
+                          data-mode="${mode.value}"
+                          type="button"
+                          title="${t`${mode.labelKey}`}"
+                          style="padding: 0.5rem; border: ${borderWidth} solid ${borderColor}; border-radius: 0.375rem; background-color: white; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
+                    <img src="${ENHANCED_MODE_ICONS[mode.value]}" alt="${mode.value}" style="width: 24px; height: 24px; image-rendering: pixelated;" />
+                    <span style="font-size: 0.625rem; color: #6b7280; text-align: center;">${t`${mode.labelKey}`}</span>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>`
       : "";
 
     this.container.innerHTML = `
@@ -155,15 +167,37 @@ export class ColorPalette {
       this.toggleColor(colorId);
     });
 
-    // Enhanced Mode Select
-    const select = this.container.querySelector(
-      ".enhanced-mode-select"
-    ) as HTMLSelectElement;
-    if (select) {
-      select.addEventListener("change", () => {
-        this.handleEnhancedModeChange(select.value as EnhancedConfig["mode"]);
+    // Enhanced Mode Button (ドロップダウンを開閉)
+    const enhancedModeButton = this.container.querySelector(".enhanced-mode-button");
+    const enhancedModeDropdown = this.container.querySelector(".enhanced-mode-dropdown") as HTMLElement;
+    
+    if (enhancedModeButton && enhancedModeDropdown) {
+      enhancedModeButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const isVisible = enhancedModeDropdown.style.display !== "none";
+        enhancedModeDropdown.style.display = isVisible ? "none" : "block";
+      });
+      
+      // 外側クリックで閉じる
+      document.addEventListener("click", () => {
+        enhancedModeDropdown.style.display = "none";
       });
     }
+
+    // Enhanced Mode Grid
+    const enhancedModeButtons = this.container.querySelectorAll(
+      ".enhanced-mode-item"
+    );
+    enhancedModeButtons.forEach((button) => {
+      button.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const mode = (button as HTMLElement).dataset.mode as EnhancedConfig["mode"];
+        this.handleEnhancedModeChange(mode);
+        if (enhancedModeDropdown) {
+          enhancedModeDropdown.style.display = "none";
+        }
+      });
+    });
   }
 
   private toggleColor(colorId: number): void {
@@ -233,6 +267,39 @@ export class ColorPalette {
 
   private handleEnhancedModeChange(mode: EnhancedConfig["mode"]): void {
     this.enhancedMode = mode;
+    
+    // 現在選択中のアイコンと名称を更新
+    const currentIcon = this.container.querySelector(".enhanced-mode-current-icon") as HTMLImageElement;
+    if (currentIcon) {
+      currentIcon.src = ENHANCED_MODE_ICONS[mode];
+      currentIcon.alt = mode;
+    }
+    
+    const currentName = this.container.querySelector(".enhanced-mode-current-name");
+    if (currentName) {
+      const labelKey = [
+        { value: "dot", labelKey: "enhanced_mode_dot" },
+        { value: "cross", labelKey: "enhanced_mode_cross" },
+        { value: "fill", labelKey: "enhanced_mode_fill" },
+        { value: "red-cross", labelKey: "enhanced_mode_red_cross" },
+        { value: "cyan-cross", labelKey: "enhanced_mode_cyan_cross" },
+        { value: "dark-cross", labelKey: "enhanced_mode_dark_cross" },
+        { value: "complement-cross", labelKey: "enhanced_mode_complement_cross" },
+        { value: "red-border", labelKey: "enhanced_mode_red_border" },
+      ].find(m => m.value === mode)?.labelKey ?? "enhanced_mode_dot";
+      currentName.textContent = t`${labelKey}`;
+    }
+
+    // ドロップダウン内の全ボタンの選択状態を更新
+    const buttons = this.container.querySelectorAll(".enhanced-mode-item");
+    buttons.forEach((button) => {
+      const buttonMode = (button as HTMLElement).dataset.mode;
+      const isSelected = buttonMode === mode;
+      const borderColor = isSelected ? "#22c55e" : "#d1d5db";
+      const borderWidth = isSelected ? "3px" : "2px";
+      (button as HTMLElement).style.border = `${borderWidth} solid ${borderColor}`;
+    });
+    
     if (this.options.onEnhancedModeChange) {
       this.options.onEnhancedModeChange(mode);
     }

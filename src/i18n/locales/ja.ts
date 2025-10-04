@@ -157,6 +157,7 @@ export const jaTranslations = {
   theme_switched: "テーマを切り替えました",
 
   // Enhanced Draw Modes
+  enhanced_mode_label: "描画モード",
   enhanced_mode_dot: "ドット",
   enhanced_mode_cross: "十字",
   enhanced_mode_fill: "塗りつぶし",
