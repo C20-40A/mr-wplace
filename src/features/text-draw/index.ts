@@ -48,9 +48,12 @@ export class TextDraw {
 
   private showModal(): void {
     const modal = createTextModal();
-    modal.show(async (text: string, font: string) => {
-      await this.drawText(text, font);
-    });
+    modal.show(
+      async (text: string, font: string) => {
+        await this.drawText(text, font);
+      },
+      () => this.clearText()
+    );
   }
 
   private async drawText(text: string, font: string): Promise<void> {
@@ -145,5 +148,17 @@ export class TextDraw {
       reader.onloadend = () => resolve(reader.result as string);
       reader.readAsDataURL(blob);
     });
+  }
+
+  private clearText(): void {
+    const tileDrawManager = window.mrWplace?.tileOverlay?.tileDrawManager;
+    if (!tileDrawManager) {
+      Toast.error("TileDrawManager not found");
+      return;
+    }
+
+    tileDrawManager.removeTextDrawInstances();
+    Toast.success("Text cleared");
+    console.log("🧑‍🎨 : Text instances cleared");
   }
 }
