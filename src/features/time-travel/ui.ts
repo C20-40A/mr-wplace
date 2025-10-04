@@ -2,17 +2,16 @@ import { t } from "../../i18n/manager";
 import { TimeTravelRouter } from "./router";
 import { BaseModalUI, ModalConfig } from "../../components/base-modal-ui";
 import { IMG_ICON_TIME_TRAVEL } from "../../assets/iconImages";
+import { createResponsiveButton } from "../../components/responsive-button";
 
 // 元の位置に配置されるボタン（復元）
 export const createTimeTravelButton = (): HTMLButtonElement => {
-  const button = document.createElement("button");
-  button.className = "btn btn-primary";
-  button.style = "margin: 0.5rem;";
-  button.setAttribute("data-wplace-timetravel", "true");
-  button.innerHTML = t`
-  <img src="${IMG_ICON_TIME_TRAVEL}" alt="${"timetravel"}" style="image-rendering: pixelated;">
-  ${"timetravel"}`;
-  return button;
+  return createResponsiveButton({
+    iconSrc: IMG_ICON_TIME_TRAVEL,
+    text: t`${"timetravel"}`,
+    dataAttribute: "timetravel",
+    altText: t`${"timetravel"}`,
+  });
 };
 
 export const createTimeTravelFAB = (): HTMLButtonElement => {

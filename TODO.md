@@ -33,6 +33,10 @@
 - 画像を上下左右に動かすボタン
 - サイズの大きい画像をドラッグアンドドロップしたときの処理
 - Current Charges が少しだけ手持ちのものとずれている問題
+- font で Papyrus と wingdings 対応
+  - open font でいいのが少ない
+  - https://fontstruct.com/gallery/tag/4488/Wingdings
+  - noto emoji もやりたい
 
 # DONE v1.4.5
 
