@@ -10,6 +10,7 @@ interface ColorPaletteOptions {
   showEnhancedSelect?: boolean; // enhancedモード選択表示（default: false）
   onEnhancedModeChange?: (mode: EnhancedConfig["mode"]) => void;
   enhancedMode?: EnhancedConfig["mode"];
+  hasExtraColorsBitmap?: boolean; // extraColorsBitmap有無（所持色ボタン表示制御）
 }
 
 const enabledBadgeHTML =
@@ -131,11 +132,16 @@ export class ColorPalette {
         </div>`
       : "";
 
+    const ownedColorsButtonHTML = this.options.hasExtraColorsBitmap
+      ? `<button class="owned-colors-btn btn btn-outline btn-sm rounded" style="border-color: #a855f7; color: #a855f7;">${t`${"owned_colors_only"}`}</button>`
+      : "";
+
     this.container.innerHTML = `
       <div class="color-palette-controls flex gap-2 mb-4 px-4 pt-4">
         <button class="enable-all-btn btn btn-outline btn-success btn-sm rounded">${t`${"enable_all"}`}</button>
         <button class="disable-all-btn btn btn-outline btn-error btn-sm rounded">${t`${"disable_all"}`}</button>
         <button class="free-colors-btn btn btn-outline btn-sm rounded" style="border-color: #3b82f6; color: #3b82f6;">${t`${"free_colors_only"}`}</button>
+        ${ownedColorsButtonHTML}
         ${enhancedSelectHTML}
       </div>
       <div class="color-palette-grid grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 px-4 pb-4">
@@ -163,6 +169,12 @@ export class ColorPalette {
       // Free Colors ボタン
       if (target.classList.contains("free-colors-btn")) {
         this.enableFreeColors();
+        return;
+      }
+
+      // Owned Colors ボタン
+      if (target.classList.contains("owned-colors-btn")) {
+        this.enableOwnedColors();
         return;
       }
 
@@ -233,6 +245,15 @@ export class ColorPalette {
     this.selectedColorIds = new Set(
       colorpalette.filter((c) => !c.premium).map((c) => c.id)
     );
+    this.updateSelection();
+    this.notifyChange();
+  }
+
+  private enableOwnedColors(): void {
+    const ownedIds = window.mrWplace?.colorFilterManager?.getOwnedColorIds();
+    if (!ownedIds) return;
+
+    this.selectedColorIds = new Set(ownedIds);
     this.updateSelection();
     this.notifyChange();
   }

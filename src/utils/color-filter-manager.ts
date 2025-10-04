@@ -8,6 +8,7 @@ export class ColorFilterManager {
   private selectedColorIds: Set<number>;
   public selectedRGBs: Array<[number, number, number]> = [];
   private enhancedMode: EnhancedConfig["mode"] = "dot";
+  private extraColorsBitmap: number | undefined = undefined;
 
   constructor() {
     this.selectedColorIds = this.getDefaultColorIds();
@@ -123,14 +124,54 @@ export class ColorFilterManager {
     return this.enhancedMode;
   }
 
+  setExtraColorsBitmap(bitmap: number | undefined): void {
+    this.extraColorsBitmap = bitmap;
+  }
+
+  getOwnedColorIds(): number[] | null {
+    if (this.extraColorsBitmap === undefined) return null;
+
+    const ownedIds: number[] = [];
+
+    // ID 1-31: 無料色（常に含む）
+    for (let id = 1; id <= 31; id++) {
+      ownedIds.push(id);
+    }
+
+    // extraColorsBitmap=-1: 全色所持
+    if (this.extraColorsBitmap === -1) {
+      for (let id = 32; id <= 63; id++) {
+        ownedIds.push(id);
+      }
+      return ownedIds;
+    }
+
+    // ID 32-63: ビットマップ判定
+    // bit 0 = ID 32, bit 31 = ID 63
+    for (let id = 32; id <= 63; id++) {
+      const bitIndex = id - 32;
+      if (this.extraColorsBitmap & (1 << bitIndex)) {
+        ownedIds.push(id);
+      }
+    }
+
+    return ownedIds;
+  }
+
   private async loadEnhancedModeFromStorage(): Promise<void> {
     try {
       const result = await chrome.storage.local.get(ENHANCED_MODE_STORAGE_KEY);
       const savedMode = result[ENHANCED_MODE_STORAGE_KEY];
       // Validate mode
       const validModes: EnhancedConfig["mode"][] = [
-        "dot", "cross", "red-cross", "cyan-cross", 
-        "dark-cross", "complement-cross", "fill", "red-border"
+        "dot",
+        "cross",
+        "red-cross",
+        "cyan-cross",
+        "dark-cross",
+        "complement-cross",
+        "fill",
+        "red-border",
       ];
       this.enhancedMode = validModes.includes(savedMode) ? savedMode : "dot";
     } catch {

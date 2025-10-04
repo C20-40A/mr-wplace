@@ -9,6 +9,7 @@ export const renderColorFilters = (container: HTMLElement): void => {
   // ColorFilterManagerの現在状態取得
   const colorFilterManager = window.mrWplace?.colorFilterManager;
   const currentSelectedColors = colorFilterManager?.getSelectedColors() || [];
+  const hasExtraColorsBitmap = (colorFilterManager?.getOwnedColorIds() !== null);
 
   // ColorPaletteコンポーネント表示
   colorPalette = new ColorPalette(container, {
@@ -25,5 +26,6 @@ export const renderColorFilters = (container: HTMLElement): void => {
       colorFilterManager?.setEnhancedMode(mode);
       console.log(`🧑‍🎨 : Enhanced mode:`, mode);
     },
+    hasExtraColorsBitmap,
   });
 };

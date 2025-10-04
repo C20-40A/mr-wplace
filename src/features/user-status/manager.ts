@@ -56,6 +56,17 @@ export class StatusManager {
     console.log("🧑‍🎨: StatusManager updating from userData");
     this.currentUserData = userData;
 
+    // Update ColorFilterManager with extraColorsBitmap
+    if (window.mrWplace?.colorFilterManager) {
+      window.mrWplace.colorFilterManager.setExtraColorsBitmap(
+        userData.extraColorsBitmap
+      );
+      console.log(
+        "🧑‍🎨: Set extraColorsBitmap:",
+        userData.extraColorsBitmap
+      );
+    }
+
     // アラーム設定中の場合、charge変化で時刻更新
     this.handleChargeAlarmUpdate(userData);
 
