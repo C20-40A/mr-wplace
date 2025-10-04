@@ -156,6 +156,7 @@ export const enTranslations = {
   theme_switched: "Theme switched",
 
   // Enhanced Draw Modes
+  enhanced_mode_label: "Draw Mode",
   enhanced_mode_dot: "Dot",
   enhanced_mode_cross: "Cross",
   enhanced_mode_fill: "Fill",
