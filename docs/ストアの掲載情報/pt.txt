@@ -1,29 +1,27 @@
 🚀 Kit de Ferramentas Multifuncional Mr. Wplace
 
-🔔 Receba notificações quando a tinta acumular
-• Receba notificações quando sua tinta atingir um determinado nível (ativar/desativar)
-• Defina limiares de notificação personalizados de 10% a 100%
-• Integre com links do Google Calendar
+🔔 Notificações quando a Tinta Acumula
+• Receba notificações quando a tinta acumular (pode ser ativado/desativado)
+• Configure notificações de 10% a 100% no momento que preferir
+• Também pode usar links do Google Calendar
 
-🎨 Desenhe imagens no mapa
-• Exiba os pixels necessários para desenhar suas imagens enviadas no mapa
-• Veja sua coleção de obras de arte na galeria
-• Alterne facilmente a visibilidade das obras e teletransporte-se para localizações de obras
+✏ Desenhar Texto
+• Desenhe texto como pontos no mapa
+• Suporta múltiplos estilos de texto
 
-⭐ Favoritos ilimitados
-• Salve seus locais favoritos com nomes personalizados sem limites
-• Importe/exporte suas listas de favoritos
+🎨 Desenhar Imagens no Mapa
+• Exiba os pixels necessários para desenhar imagens carregadas no mapa
+• Veja a lista de obras de arte na galeria
+• Alterne facilmente a exibição de obras e teleporte-se para as posições das obras
+• Exiba pixels faltantes de maneira fácil de ver
+• Aplique filtros de cor para exibir imagens
+• Compartilhe e carregue imagens em andamento com informações de localização
 
-⏰ Restaure obras para estados anteriores
-• Salve imagens desenhadas nos ladrilhos atuais do mapa
-• Exiba estados anteriores no mapa para corrigir rapidamente obras vandalizadas
-• Veja todos os ladrilhos salvos em uma lista
+⭐ Marcadores Ilimitados
+• Salve locais ilimitados com nomes personalizados
+• Importe/exporte listas de marcadores
 
-
---------------------
-
-🔒 Privacidade em Primeiro Lugar
-• Todos os dados permanecem no seu navegador
-• Imagens e favoritos são completamente privados
-• Projetado com os mais recentes padrões de segurança do Chrome desde o início
-• Licença de código aberto para total transparência
+⏰ Restaurar Obras para Estados Passados
+• Salve imagens atualmente desenhadas nos tiles do mapa
+• Exiba estados passados no mapa para corrigir rapidamente obras vandalizadas
+• Veja os tiles salvos em uma lista

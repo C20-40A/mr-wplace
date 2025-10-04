@@ -1,29 +1,27 @@
 🚀 Kit de Herramientas Multifuncional Mr. Wplace
 
-🔔 Recibe notificaciones cuando se acumule pintura
-• Recibe notificaciones cuando tu pintura alcance un nivel determinado (activa/desactiva)
-• Configura umbrales de notificación personalizados del 10% al 100%
-• Integra con enlaces de Google Calendar
+🔔 Notificaciones cuando se Acumula Pintura
+• Recibe notificaciones cuando se acumula pintura (se puede activar/desactivar)
+• Configura notificaciones desde 10% hasta 100% en el momento que prefieras
+• También puedes usar enlaces de Google Calendar
 
-🎨 Dibuja imágenes en el mapa
-• Muestra los píxeles necesarios para dibujar tus imágenes subidas en el mapa
-• Ve tu colección de obras de arte en la galería
-• Alterna fácilmente la visibilidad de obras y teletranspórtate a ubicaciones de obras
+✏ Dibujar Texto
+• Dibuja texto como puntos en el mapa
+• Admite múltiples estilos de texto
 
-⭐ Marcadores ilimitados
-• Guarda tus ubicaciones favoritas con nombres personalizados sin límites
-• Importa/exporta tus listas de marcadores
+🎨 Dibujar Imágenes en el Mapa
+• Muestra los píxeles necesarios para dibujar imágenes cargadas en el mapa
+• Ve la lista de obras de arte en la galería
+• Alterna fácilmente la visualización de obras y teletranspórtate a las posiciones de las obras
+• Muestra píxeles faltantes de manera fácil de ver
+• Aplica filtros de color para mostrar imágenes
+• Comparte y carga imágenes en progreso con información de ubicación
 
-⏰ Restaura obras a estados anteriores
-• Guarda imágenes dibujadas en los mosaicos actuales del mapa
-• Muestra estados anteriores en el mapa para corregir rápidamente obras vandalizadas
-• Ve todos los mosaicos guardados en una lista
+⭐ Marcadores Ilimitados
+• Guarda ubicaciones ilimitadas con nombres personalizados
+• Importa/exporta listas de marcadores
 
-
---------------------
-
-🔒 Privacidad Primero
-• Todos los datos permanecen en tu navegador
-• Las imágenes y marcadores son completamente privados
-• Diseñado con los últimos estándares de seguridad de Chrome desde cero
-• Licencia de código abierto para total transparencia
+⏰ Restaurar Obras a Estados Pasados
+• Guarda imágenes actualmente dibujadas en las teselas del mapa
+• Muestra estados pasados en el mapa para corregir rápidamente obras vandalizadas
+• Ve las teselas guardadas en una lista

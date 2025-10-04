@@ -1,29 +1,27 @@
-🚀 Mr. Wplace All-in-one Toolkit
+🚀 Mr. Wplace Multifunctional Toolkit
 
-🔔 Get notified when paint accumulates
-• Receive notifications when your paint reaches a certain level (toggle ON/OFF)
-• Set custom notification thresholds from 10% to 100%
-• Integrate with Google Calendar links
+🔔 Notifications When Paint Accumulates
+• Get notified when paint accumulates (can be turned ON/OFF)
+• Set notifications at your preferred timing from 10% to 100%
+• Can also use Google Calendar links
 
-🎨 Draw images on the map
-• Display the pixels needed to draw your uploaded images on the map
-• View your artwork collection in the gallery
-• Easily toggle artwork visibility and warp to artwork locations
+✏ Draw Text
+• Draw text as dots on the map
+• Supports multiple text styles
 
-⭐ Unlimited bookmarks
-• Save your favorite locations with custom names without limits
-• Import/export your bookmark lists
+🎨 Draw Images on the Map
+• Display the pixels needed to draw uploaded images on the map
+• View artwork list in the gallery
+• Easy toggling of artwork display and warping to artwork positions
+• Display missing pixels in an easy-to-see manner
+• Apply color filters to display images
+• Share and load work-in-progress images with location information
 
-⏰ Restore artwork to past states
-• Save images drawn on current map tiles
+⭐ Unlimited Bookmarks
+• Save unlimited locations with custom names
+• Import/export bookmark lists
+
+⏰ Restore Artwork to Past States
+• Save images currently drawn on map tiles
 • Display past states on the map to quickly fix vandalized artwork
-• View all saved tiles in a list
-
-
---------------------
-
-🔒 Privacy First
-• All data stays within your browser
-• Images and bookmarks are completely private
-• Designed with Chrome's latest security standards from the ground up
-• Open-source license for complete transparency
+• View saved tiles in a list
