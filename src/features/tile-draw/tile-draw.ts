@@ -168,6 +168,7 @@ const processPixels = (
         if (!match) data[i + 3] = 0; // フィルター以外なので透明化
       }
 
+      // === 簡単パターン: タイル色比較不要 ===
       if (enhancedMode === "dot") {
         // 中央ピクセル以外透明化 (現在位置のXとYのどちらも1余る=中央)
         if (x % pixelScale !== 1 || y % pixelScale !== 1) {
@@ -177,14 +178,13 @@ const processPixels = (
         // ４隅なら透明(X列が中央ではない　かつ　Y列が中央ではない)
         if (!(x % pixelScale === 1 || y % pixelScale === 1)) {
           data[i + 3] = 0; // 0 = 透明
-          continue;
         }
-      } else if (enhancedMode === "red-cross") {
-        // ここで背景色（背景タイルの該当ピクセル）をとってきて、比較したい
       } else if (enhancedMode === "fill") {
-        // 塗りつぶしは、そのまま何もしない
+        // 塗りつぶしは、そのまま何もしない（全ピクセル保持）
         continue;
       }
+      // 補助色パターン（red-cross/cyan-cross/dark-cross/complement-cross/red-border）は
+      // drawOverlayLayersOnTileで背景タイルとの比較処理を行う
     }
   }
 

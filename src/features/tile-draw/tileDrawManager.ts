@@ -79,11 +79,26 @@ export class TileDrawManager {
     const tileBitmap = await createImageBitmap(tileBlob);
     context.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
 
+    // 背景タイルのImageDataを取得（補助色パターン用）
+    const backgroundImageData = context.getImageData(0, 0, drawSize, drawSize);
+
     // 透明背景に複数オーバーレイが重なった合成画像を出力
     for (const { tileKey, instance } of matchingTiles) {
       const coords = tileKey.split(",");
       let paintedTilebitmap = instance.tiles?.[tileKey];
       if (!paintedTilebitmap) continue;
+
+      // 補助色パターンの場合、ピクセル処理を適用
+      const enhancedConfig = this.getEnhancedConfig();
+      if (this.needsPixelComparison(enhancedConfig.mode)) {
+        paintedTilebitmap = await this.applyAuxiliaryColorPattern(
+          paintedTilebitmap,
+          backgroundImageData,
+          Number(coords[2]) * this.renderScale,
+          Number(coords[3]) * this.renderScale,
+          enhancedConfig.mode
+        );
+      }
 
       context.drawImage(
         paintedTilebitmap,
@@ -128,5 +143,145 @@ export class TileDrawManager {
     const colorFilterManager = window.mrWplace?.colorFilterManager;
     const mode = colorFilterManager?.getEnhancedMode() ?? "dot";
     return { mode };
+  }
+
+  /**
+   * 補助色パターンかどうかを判定
+   * 補助色パターン：タイル色との比較が必要
+   */
+  private needsPixelComparison(
+    mode: EnhancedConfig["mode"]
+  ): mode is
+    | "red-cross"
+    | "cyan-cross"
+    | "dark-cross"
+    | "complement-cross"
+    | "red-border" {
+    return [
+      "red-cross",
+      "cyan-cross",
+      "dark-cross",
+      "complement-cross",
+      "red-border",
+    ].includes(mode);
+  }
+
+  /**
+   * 補助色パターンのピクセル処理を適用
+   * README.mdの仕様：
+   * - タイル色とオーバーレイ色が異なる場合のみ補助色表示
+   * - 同じ場合は透明化
+   */
+  private async applyAuxiliaryColorPattern(
+    overlayBitmap: ImageBitmap,
+    backgroundImageData: ImageData,
+    offsetX: number,
+    offsetY: number,
+    mode: "red-cross" | "cyan-cross" | "dark-cross" | "complement-cross" | "red-border"
+  ): Promise<ImageBitmap> {
+    const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
+    const canvas = new OffscreenCanvas(overlayBitmap.width, overlayBitmap.height);
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) throw new Error("Failed to get canvas context");
+
+    ctx.drawImage(overlayBitmap, 0, 0);
+    const overlayData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const { data, width, height } = overlayData;
+
+    // ピクセル単位で処理
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4;
+
+        // 透明ピクセルはスキップ
+        if (data[i + 3] === 0) continue;
+
+        // 中央ピクセルかどうか
+        const isCenterPixel = x % pixelScale === 1 && y % pixelScale === 1;
+        
+        // 十字の腕部分かどうか
+        const isCrossArm = !isCenterPixel && (x % pixelScale === 1 || y % pixelScale === 1);
+
+        // 背景タイルの対応ピクセル色を取得
+        const bgX = offsetX + x;
+        const bgY = offsetY + y;
+        const bgI = (bgY * backgroundImageData.width + bgX) * 4;
+        const bgR = backgroundImageData.data[bgI];
+        const bgG = backgroundImageData.data[bgI + 1];
+        const bgB = backgroundImageData.data[bgI + 2];
+        const bgA = backgroundImageData.data[bgI + 3];
+
+        // 背景が透明な場合は、常に補助色を表示（色比較しない）
+        // 背景が透明でない場合のみ、色の比較を行う
+        const isSameColor =
+          bgA > 0 && data[i] === bgR && data[i + 1] === bgG && data[i + 2] === bgB;
+
+        if (isCenterPixel) {
+          // 中央ピクセル：同じ色なら透明化、異なるなら保持
+          if (isSameColor) {
+            data[i + 3] = 0; // 透明
+          }
+        } else if (isCrossArm) {
+          // 十字の腕：同じ色なら透明、異なるなら補助色
+          if (isSameColor) {
+            data[i + 3] = 0; // 透明
+          } else {
+            // 補助色を適用
+            const auxColor = this.getAuxiliaryColor(
+              mode,
+              data[i],
+              data[i + 1],
+              data[i + 2]
+            );
+            data[i] = auxColor[0];
+            data[i + 1] = auxColor[1];
+            data[i + 2] = auxColor[2];
+            data[i + 3] = 255;
+          }
+        } else if (mode === "red-border") {
+          // red-border: 周囲８ドットを赤色
+          if (!isCenterPixel) {
+            if (isSameColor) {
+              data[i + 3] = 0; // 透明
+            } else {
+              data[i] = 255;
+              data[i + 1] = 0;
+              data[i + 2] = 0;
+              data[i + 3] = 255;
+            }
+          }
+        } else {
+          // その他（４隅）は透明
+          data[i + 3] = 0;
+        }
+      }
+    }
+
+    ctx.putImageData(overlayData, 0, 0);
+    return await createImageBitmap(canvas);
+  }
+
+  /**
+   * モードに応じた補助色を返す
+   */
+  private getAuxiliaryColor(
+    mode: "red-cross" | "cyan-cross" | "dark-cross" | "complement-cross" | "red-border",
+    r: number,
+    g: number,
+    b: number
+  ): [number, number, number] {
+    switch (mode) {
+      case "red-cross":
+      case "red-border":
+        return [255, 0, 0]; // 赤
+      case "cyan-cross":
+        return [0, 255, 255]; // シアン
+      case "dark-cross":
+        return [Math.max(0, r - 40), Math.max(0, g - 40), Math.max(0, b - 40)]; // 暗色
+      case "complement-cross":
+        return [255 - r, 255 - g, 255 - b]; // 補色
+      default:
+        return [r, g, b];
+    }
   }
 }
