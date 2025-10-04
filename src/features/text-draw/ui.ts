@@ -1,10 +1,12 @@
+import { createResponsiveButton } from "../../components/responsive-button";
+
 export const createTextInputButton = (): HTMLButtonElement => {
-  const button = document.createElement("button");
-  button.className = "btn btn-primary";
-  button.style.cssText = "margin: 0.5rem;";
-  button.setAttribute("data-wplace-text-draw", "true");
-  button.innerHTML = `✏️ TEXT`;
-  return button;
+  return createResponsiveButton({
+    iconText: "✏️",
+    text: " TEXT",
+    dataAttribute: "text-draw",
+    altText: "TEXT",
+  });
 };
 
 export const createTextModal = (): {

@@ -2,17 +2,15 @@ import { Bookmark } from "./types";
 import { t } from "../../i18n/manager";
 import { createModal, ModalElements } from "../../utils/modal";
 import { IMG_ICON_BOOKMARK } from "../../assets/iconImages";
+import { createResponsiveButton } from "../../components/responsive-button";
 
 export const createSaveBookmarkButton = (): HTMLButtonElement => {
-  const button = document.createElement("button");
-  button.className = "btn btn-primary";
-  button.style = "margin: 0.5rem;";
-  button.setAttribute("data-wplace-save", "true");
-  button.innerHTML = t`
-    <img src="${IMG_ICON_BOOKMARK}" alt="${"bookmark"}" style="image-rendering: pixelated;">
-    ${"bookmark"}`;
-
-  return button;
+  return createResponsiveButton({
+    iconSrc: IMG_ICON_BOOKMARK,
+    text: t`${"bookmark"}`,
+    dataAttribute: "save",
+    altText: t`${"bookmark"}`,
+  });
 };
 
 export const createBookmarkButton = (): HTMLButtonElement => {
