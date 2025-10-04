@@ -20,15 +20,17 @@ let currentLocale: SupportedLocale = "en";
 // Chrome Storage連携
 const STORAGE_KEY = "mr_wplace_locale";
 
-// ストレージから設定を読み込み
-export async function loadLocaleFromStorage(): Promise<void> {
+// ストレージから設定を読み込み（成功時true）
+export async function loadLocaleFromStorage(): Promise<boolean> {
   if (typeof chrome !== "undefined" && chrome.storage) {
     const result = await chrome.storage.local.get([STORAGE_KEY]);
-    const storedLocale = result[STORAGE_KEY] as SupportedLocale;
+    const storedLocale = result[STORAGE_KEY] as SupportedLocale | undefined;
     if (storedLocale === "ja" || storedLocale === "en" || storedLocale === "pt" || storedLocale === "es" || storedLocale === "vi") {
       currentLocale = storedLocale;
+      return true;
     }
   }
+  return false;
 }
 
 // ストレージに設定を保存
