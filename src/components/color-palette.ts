@@ -94,28 +94,28 @@ export class ColorPalette {
       ? `<select class="enhanced-mode-select" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem;">
           <option value="dot" ${
             this.enhancedMode === "dot" ? "selected" : ""
-          }>Dot</option>
+          }>${t`${"enhanced_mode_dot"}`}</option>
           <option value="cross" ${
             this.enhancedMode === "cross" ? "selected" : ""
-          }>Cross</option>
+          }>${t`${"enhanced_mode_cross"}`}</option>
           <option value="fill" ${
             this.enhancedMode === "fill" ? "selected" : ""
-          }>Fill</option>
+          }>${t`${"enhanced_mode_fill"}`}</option>
           <option value="red-cross" ${
             this.enhancedMode === "red-cross" ? "selected" : ""
-          }>Red Cross</option>
+          }>${t`${"enhanced_mode_red_cross"}`}</option>
           <option value="cyan-cross" ${
             this.enhancedMode === "cyan-cross" ? "selected" : ""
-          }>Cyan Cross</option>
+          }>${t`${"enhanced_mode_cyan_cross"}`}</option>
           <option value="dark-cross" ${
             this.enhancedMode === "dark-cross" ? "selected" : ""
-          }>Dark Cross</option>
+          }>${t`${"enhanced_mode_dark_cross"}`}</option>
           <option value="complement-cross" ${
             this.enhancedMode === "complement-cross" ? "selected" : ""
-          }>Complement Cross</option>
+          }>${t`${"enhanced_mode_complement_cross"}`}</option>
           <option value="red-border" ${
             this.enhancedMode === "red-border" ? "selected" : ""
-          }>Red Border</option>
+          }>${t`${"enhanced_mode_red_border"}`}</option>
          </select>`
       : "";
 

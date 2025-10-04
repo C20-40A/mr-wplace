@@ -155,4 +155,14 @@ export const jaTranslations = {
   theme_light: "ライトテーマ",
   theme_dark: "ダークテーマ",
   theme_switched: "テーマを切り替えました",
+
+  // Enhanced Draw Modes
+  enhanced_mode_dot: "ドット",
+  enhanced_mode_cross: "十字",
+  enhanced_mode_fill: "塗りつぶし",
+  enhanced_mode_red_cross: "赤十字",
+  enhanced_mode_cyan_cross: "シアン十字",
+  enhanced_mode_dark_cross: "暗色十字",
+  enhanced_mode_complement_cross: "補色十字",
+  enhanced_mode_red_border: "赤枠",
 };
