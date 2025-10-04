@@ -10,11 +10,11 @@ export interface ModalConfig {
 /**
  * Modal UI統一基盤クラス
  */
-export abstract class BaseModalUI<T extends Router<any>> {
+export abstract class BaseModalUI<T extends Router<any> = any> {
   protected modalElements!: ModalElements;
-  protected router: T;
+  protected router?: T;
 
-  constructor(router: T) {
+  constructor(router?: T) {
     this.router = router;
     this.createModal();
   }
@@ -26,15 +26,17 @@ export abstract class BaseModalUI<T extends Router<any>> {
     this.modalElements = createModal({
       id: config.id,
       title: config.title,
-      hasBackButton: false,
+      hasBackButton: !!this.router,
       maxWidth: config.maxWidth,
-      onBack: () => this.router.navigateBack(),
+      onBack: () => this.router?.navigateBack(),
     });
 
-    this.router.setHeaderElements(
-      this.modalElements.titleElement,
-      this.modalElements.backButton
-    );
+    if (this.router) {
+      this.router.setHeaderElements(
+        this.modalElements.titleElement,
+        this.modalElements.backButton
+      );
+    }
   }
 
   showModal(): void {
