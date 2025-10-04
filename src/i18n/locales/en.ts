@@ -154,4 +154,14 @@ export const enTranslations = {
   theme_light: "Light Theme",
   theme_dark: "Dark Theme",
   theme_switched: "Theme switched",
+
+  // Enhanced Draw Modes
+  enhanced_mode_dot: "Dot",
+  enhanced_mode_cross: "Cross",
+  enhanced_mode_fill: "Fill",
+  enhanced_mode_red_cross: "Red Cross",
+  enhanced_mode_cyan_cross: "Cyan Cross",
+  enhanced_mode_dark_cross: "Dark Cross",
+  enhanced_mode_complement_cross: "Complement Cross",
+  enhanced_mode_red_border: "Red Border",
 };
