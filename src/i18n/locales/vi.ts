@@ -16,7 +16,7 @@ export const viTranslations = {
   bookmark: "Đánh dấu",
   draw_image: "Hình ảnh",
   text_draw: "Văn bản",
-  timetravel: "Cỗ máy thời gian",
+  timetravel: "Lưu trữ",
   export: "Xuất",
   import: "Nhập",
 

@@ -16,7 +16,7 @@ export const esTranslations = {
   bookmark: "Favorito",
   draw_image: "Imagen",
   text_draw: "Texto",
-  timetravel: "Máquina del Tiempo",
+  timetravel: "Archivo",
   export: "Exportar",
   import: "Importar",
 
