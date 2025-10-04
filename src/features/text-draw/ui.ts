@@ -1,11 +1,12 @@
 import { createResponsiveButton } from "../../components/responsive-button";
+import { t } from "../../i18n/manager";
 
 export const createTextInputButton = (): HTMLButtonElement => {
   return createResponsiveButton({
     iconText: "✏️",
-    text: " TEXT",
+    text: t`${"text_draw"}`,
     dataAttribute: "text-draw",
-    altText: "TEXT",
+    altText: t`${"text_draw"}`,
   });
 };
 
