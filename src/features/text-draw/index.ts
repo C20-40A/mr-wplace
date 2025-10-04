@@ -161,14 +161,6 @@ export class TextDraw {
     });
   }
 
-  private async blobToDataUrl(blob: Blob): Promise<string> {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.readAsDataURL(blob);
-    });
-  }
-
   private async moveText(
     key: string,
     direction: "up" | "down" | "left" | "right"
