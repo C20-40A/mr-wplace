@@ -85,13 +85,13 @@ const runmrWplace = async (): Promise<void> => {
   // i18n初期化（ブラウザ言語検出）
   await I18nManager.init(detectBrowserLanguage());
 
-  const favorites = new ExtendedBookmarks();
+  const favorites = new ExtendedBookmarks();  // 1. Bookmark (最後に表示)
   const tileOverlay = new TileOverlay();
   const gallery = new Gallery();
-  const drawing = new Drawing();
   const tileSnapshot = new TileSnapshot();
-  new TimeTravel();
-  new TextDraw();
+  new TimeTravel();                           // 2. TimeTravel
+  new TextDraw();                             // 3. TextDraw
+  const drawing = new Drawing();              // 4. Drawing (最初に表示)
   const drawingLoader = new DrawingLoader();
   const colorFilter = new ColorFilter();
   const colorFilterManager = new ColorFilterManager();
