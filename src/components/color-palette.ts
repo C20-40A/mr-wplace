@@ -135,6 +135,7 @@ export class ColorPalette {
       <div class="color-palette-controls flex gap-2 mb-4 px-4 pt-4">
         <button class="enable-all-btn btn btn-outline btn-success btn-sm rounded">${t`${"enable_all"}`}</button>
         <button class="disable-all-btn btn btn-outline btn-error btn-sm rounded">${t`${"disable_all"}`}</button>
+        <button class="free-colors-btn btn btn-outline btn-sm rounded" style="border-color: #3b82f6; color: #3b82f6;">${t`${"free_colors_only"}`}</button>
         ${enhancedSelectHTML}
       </div>
       <div class="color-palette-grid grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 px-4 pb-4">
@@ -156,6 +157,12 @@ export class ColorPalette {
       // Disable All ボタン
       if (target.classList.contains("disable-all-btn")) {
         this.disableAll();
+        return;
+      }
+
+      // Free Colors ボタン
+      if (target.classList.contains("free-colors-btn")) {
+        this.enableFreeColors();
         return;
       }
 
@@ -218,6 +225,14 @@ export class ColorPalette {
 
   private disableAll(): void {
     this.selectedColorIds.clear();
+    this.updateSelection();
+    this.notifyChange();
+  }
+
+  private enableFreeColors(): void {
+    this.selectedColorIds = new Set(
+      colorpalette.filter((c) => !c.premium).map((c) => c.id)
+    );
     this.updateSelection();
     this.notifyChange();
   }

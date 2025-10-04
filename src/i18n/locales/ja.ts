@@ -126,6 +126,7 @@ export const jaTranslations = {
   color_filter: "カラーフィルター",
   enable_all: "すべて有効",
   disable_all: "すべて無効",
+  free_colors_only: "無料色",
   enhanced: "強化",
 
   // User Status (Notification Modal)
