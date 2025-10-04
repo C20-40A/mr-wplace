@@ -11,13 +11,11 @@ import "./translations"; // 翻訳辞書を自動登録
 
 // 使用例とヘルパー関数
 export class I18nManager {
-  static async init(locale: SupportedLocale = "en"): Promise<void> {
-    // まずストレージから読み込み
-    await loadLocaleFromStorage();
-
-    // ストレージに値がない場合のみデフォルト値を設定
-    const currentLocale = getLocale();
-    if (!currentLocale) await setLocale(locale);
+  static async init(defaultLocale: SupportedLocale = "en"): Promise<void> {
+    const loaded = await loadLocaleFromStorage();
+    if (!loaded) {
+      await setLocale(defaultLocale);
+    }
   }
 
   static getCurrentLocale(): SupportedLocale {
