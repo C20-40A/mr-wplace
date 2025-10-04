@@ -79,8 +79,14 @@ export class TileDrawManager {
     const tileBitmap = await createImageBitmap(tileBlob);
     context.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
 
-    // 背景タイルのImageDataを取得（補助色パターン用）
-    const backgroundImageData = context.getImageData(0, 0, drawSize, drawSize);
+    // 補助色モード判定（ループ前に1回のみ）
+    const enhancedConfig = this.getEnhancedConfig();
+
+    // 補助色モードの場合のみ、背景ImageDataを取得（重い処理）
+    let backgroundImageData: ImageData | undefined;
+    if (this.needsPixelComparison(enhancedConfig.mode)) {
+      backgroundImageData = context.getImageData(0, 0, drawSize, drawSize);
+    }
 
     // 透明背景に複数オーバーレイが重なった合成画像を出力
     for (const { tileKey, instance } of matchingTiles) {
@@ -89,14 +95,17 @@ export class TileDrawManager {
       if (!paintedTilebitmap) continue;
 
       // 補助色パターンの場合、ピクセル処理を適用
-      const enhancedConfig = this.getEnhancedConfig();
-      if (this.needsPixelComparison(enhancedConfig.mode)) {
+      // 型ガードを直接使用することで、enhancedConfig.modeの型が絞り込まれる
+      if (
+        this.needsPixelComparison(enhancedConfig.mode) &&
+        backgroundImageData
+      ) {
         paintedTilebitmap = await this.applyAuxiliaryColorPattern(
           paintedTilebitmap,
           backgroundImageData,
           Number(coords[2]) * this.renderScale,
           Number(coords[3]) * this.renderScale,
-          enhancedConfig.mode
+          enhancedConfig.mode // ✅ 型が絞り込まれる
         );
       }
 
@@ -177,10 +186,18 @@ export class TileDrawManager {
     backgroundImageData: ImageData,
     offsetX: number,
     offsetY: number,
-    mode: "red-cross" | "cyan-cross" | "dark-cross" | "complement-cross" | "red-border"
+    mode:
+      | "red-cross"
+      | "cyan-cross"
+      | "dark-cross"
+      | "complement-cross"
+      | "red-border"
   ): Promise<ImageBitmap> {
     const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
-    const canvas = new OffscreenCanvas(overlayBitmap.width, overlayBitmap.height);
+    const canvas = new OffscreenCanvas(
+      overlayBitmap.width,
+      overlayBitmap.height
+    );
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) throw new Error("Failed to get canvas context");
 
@@ -198,9 +215,10 @@ export class TileDrawManager {
 
         // 中央ピクセルかどうか
         const isCenterPixel = x % pixelScale === 1 && y % pixelScale === 1;
-        
+
         // 十字の腕部分かどうか
-        const isCrossArm = !isCenterPixel && (x % pixelScale === 1 || y % pixelScale === 1);
+        const isCrossArm =
+          !isCenterPixel && (x % pixelScale === 1 || y % pixelScale === 1);
 
         // 背景タイルの対応ピクセル色を取得
         const bgX = offsetX + x;
@@ -214,7 +232,10 @@ export class TileDrawManager {
         // 背景が透明な場合は、常に補助色を表示（色比較しない）
         // 背景が透明でない場合のみ、色の比較を行う
         const isSameColor =
-          bgA > 0 && data[i] === bgR && data[i + 1] === bgG && data[i + 2] === bgB;
+          bgA > 0 &&
+          data[i] === bgR &&
+          data[i + 1] === bgG &&
+          data[i + 2] === bgB;
 
         if (isCenterPixel) {
           // 中央ピクセル：同じ色なら透明化、異なるなら保持
@@ -265,7 +286,12 @@ export class TileDrawManager {
    * モードに応じた補助色を返す
    */
   private getAuxiliaryColor(
-    mode: "red-cross" | "cyan-cross" | "dark-cross" | "complement-cross" | "red-border",
+    mode:
+      | "red-cross"
+      | "cyan-cross"
+      | "dark-cross"
+      | "complement-cross"
+      | "red-border",
     r: number,
     g: number,
     b: number
