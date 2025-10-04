@@ -125,6 +125,7 @@ export const enTranslations = {
   color_filter: "Color Filter",
   enable_all: "Enable All",
   disable_all: "Disable All",
+  free_colors_only: "Free Colors",
   enhanced: "Enhanced",
 
   // User Status (Notification Modal)
