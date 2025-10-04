@@ -3,13 +3,15 @@ import {
   ElementConfig,
 } from "../../components/element-observer";
 import { findPositionModal } from "../../constants/selectors";
-import { createTextInputButton, createTextModal } from "./ui";
+import { createTextInputButton, TextDrawUI, TextInstance } from "./ui";
 import { getCurrentPosition } from "../../utils/position";
-import { ImageItem } from "../gallery/routes/list/components";
 import { Toast } from "../../components/toast";
+import { llzToTilePixel } from "../../utils/coordinate";
 
 export class TextDraw {
   private fontLoaded = false;
+  private textInstances: TextInstance[] = [];
+  private textDrawUI: TextDrawUI;
   private readonly fonts = {
     Bytesized: {
       path: "assets/fonts/Bytesized/Bytesized-Regular.ttf",
@@ -25,6 +27,7 @@ export class TextDraw {
   };
 
   constructor() {
+    this.textDrawUI = new TextDrawUI();
     this.init();
   }
 
@@ -47,12 +50,14 @@ export class TextDraw {
   }
 
   private showModal(): void {
-    const modal = createTextModal();
-    modal.show(
+    this.textDrawUI.show(
       async (text: string, font: string) => {
         await this.drawText(text, font);
       },
-      () => this.clearText()
+      this.textInstances,
+      (key: string, direction: "up" | "down" | "left" | "right") =>
+        this.moveText(key, direction),
+      (key: string) => this.deleteText(key)
     );
   }
 
@@ -63,26 +68,40 @@ export class TextDraw {
       return;
     }
 
-    await this.ensureFontLoaded();
+    const coords = llzToTilePixel(position.lat, position.lng);
+    const key = `text_${Date.now()}`;
 
-    const blob = await this.textToBlob(text, font);
-    const dataUrl = await this.blobToDataUrl(blob);
-
-    const imageItem: ImageItem = {
-      key: `text_${Date.now()}`,
-      dataUrl,
-      title: text,
-    };
-
-    const tileOverlay = window.mrWplace?.tileOverlay;
-    if (!tileOverlay) {
-      Toast.error("TileOverlay not found");
+    const tileDrawManager = window.mrWplace?.tileOverlay?.tileDrawManager;
+    if (!tileDrawManager) {
+      Toast.error("TileDrawManager not found");
       return;
     }
 
-    await tileOverlay.drawImageAt(position.lat, position.lng, imageItem);
+    await this.ensureFontLoaded();
+    const blob = await this.textToBlob(text, font);
+    const file = new File([blob], "text.png", { type: "image/png" });
+
+    await tileDrawManager.addImageToOverlayLayers(
+      file,
+      [coords.TLX, coords.TLY, coords.PxX, coords.PxY],
+      key
+    );
+
+    this.textInstances.push({
+      key,
+      text,
+      font,
+      coords: {
+        TLX: coords.TLX,
+        TLY: coords.TLY,
+        PxX: coords.PxX,
+        PxY: coords.PxY,
+      },
+    });
+
     Toast.success("Text drawn");
-    console.log("🧑‍🎨 : Text drawn at position", position);
+    console.log("🧑‍🎨 : Text drawn at position", coords);
+    this.textDrawUI.updateList(this.textInstances);
   }
 
   private async ensureFontLoaded(): Promise<void> {
@@ -150,15 +169,56 @@ export class TextDraw {
     });
   }
 
-  private clearText(): void {
-    const tileDrawManager = window.mrWplace?.tileOverlay?.tileDrawManager;
-    if (!tileDrawManager) {
-      Toast.error("TileDrawManager not found");
-      return;
-    }
+  private async moveText(
+    key: string,
+    direction: "up" | "down" | "left" | "right"
+  ): Promise<void> {
+    const instance = this.textInstances.find((i) => i.key === key);
+    if (!instance) return;
 
-    tileDrawManager.removeTextDrawInstances();
-    Toast.success("Text cleared");
-    console.log("🧑‍🎨 : Text instances cleared");
+    const deltaMap = {
+      up: { x: 0, y: -1 },
+      down: { x: 0, y: 1 },
+      left: { x: -1, y: 0 },
+      right: { x: 1, y: 0 },
+    };
+
+    const delta = deltaMap[direction];
+    instance.coords.PxX += delta.x;
+    instance.coords.PxY += delta.y;
+
+    const tileDrawManager = window.mrWplace?.tileOverlay?.tileDrawManager;
+    if (!tileDrawManager) return;
+
+    await this.ensureFontLoaded();
+    const blob = await this.textToBlob(instance.text, instance.font);
+    const file = new File([blob], "text.png", { type: "image/png" });
+
+    tileDrawManager.removePreparedOverlayImageByKey(key);
+    await tileDrawManager.addImageToOverlayLayers(
+      file,
+      [
+        instance.coords.TLX,
+        instance.coords.TLY,
+        instance.coords.PxX,
+        instance.coords.PxY,
+      ],
+      key
+    );
+
+    console.log("🧑‍🎨 : Text moved", direction, instance.coords);
+    this.textDrawUI.updateList(this.textInstances);
+  }
+
+  private async deleteText(key: string): Promise<void> {
+    const tileDrawManager = window.mrWplace?.tileOverlay?.tileDrawManager;
+    if (!tileDrawManager) return;
+
+    tileDrawManager.removePreparedOverlayImageByKey(key);
+    this.textInstances = this.textInstances.filter((i) => i.key !== key);
+
+    Toast.success("Text deleted");
+    console.log("🧑‍🎨 : Text deleted", key);
+    this.textDrawUI.updateList(this.textInstances);
   }
 }
