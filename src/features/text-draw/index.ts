@@ -18,6 +18,10 @@ export class TextDraw {
     minikana: { path: "assets/fonts/4x4minkana/4x4kanafont.ttf", size: 5 },
     Misaki: { path: "assets/fonts/misaki/misaki_gothic.ttf", size: 8 },
     k8x12: { path: "assets/fonts/k8x12/k8x12S.ttf", size: 12 },
+    comic_sans_ms_pixel: {
+      path: "assets/fonts/comic_sans_ms_pixel/comic_sans_ms_pixel.ttf",
+      size: 16,
+    },
   };
 
   constructor() {

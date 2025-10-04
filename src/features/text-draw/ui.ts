@@ -48,6 +48,7 @@ export const createTextModal = (): {
   fontSelect.style.cssText = "width: 100%; margin-bottom: 1rem;";
   fontSelect.innerHTML = `
     <option value="Bytesized">Bytesized (3x4)</option>
+    <option value="comic_sans_ms_pixel">Comic Sans MS Pixel (6x10)</option>
     <option value="minikana">🇯🇵 Minikana (4x4)</option>
     <option value="Misaki">🇯🇵 Misaki (8x8)</option>
     <option value="k8x12">🇯🇵 k8x12 (8x12)</option>
