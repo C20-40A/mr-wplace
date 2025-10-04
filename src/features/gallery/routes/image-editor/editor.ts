@@ -81,6 +81,7 @@ export class ImageProcessor {
     this.colorPalette = new ColorPalette(container, {
       selectedColorIds: this.selectedColorIds,
       onChange: (colorIds) => this.onColorSelectionChange(colorIds),
+      hasExtraColorsBitmap: true,
     });
   }
 
@@ -103,6 +104,7 @@ export class ImageProcessor {
     this.colorPalette = new ColorPalette(newContainer, {
       selectedColorIds: this.selectedColorIds,
       onChange: (colorIds) => this.onColorSelectionChange(colorIds),
+      hasExtraColorsBitmap: true,
     });
   }
 
