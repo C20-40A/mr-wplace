@@ -1,29 +1,27 @@
 🚀 Bộ Công Cụ Đa Chức Năng Mr. Wplace
 
-🔔 Nhận thông báo khi sơn tích lũy
-• Nhận thông báo khi mức sơn của bạn đạt đến một mức nhất định (bật/tắt)
-• Đặt ngưỡng thông báo tùy chỉnh từ 10% đến 100%
-• Tích hợp với liên kết Google Calendar
+🔔 Thông Báo Khi Sơn Tích Lũy
+• Nhận thông báo khi sơn tích lũy (có thể bật/tắt)
+• Đặt thông báo từ 10% đến 100% vào thời điểm bạn muốn
+• Cũng có thể sử dụng liên kết Google Calendar
 
-🎨 Vẽ hình ảnh lên bản đồ
+✏ Vẽ Văn Bản
+• Vẽ văn bản dưới dạng các chấm trên bản đồ
+• Hỗ trợ nhiều kiểu văn bản
+
+🎨 Vẽ Hình Ảnh Trên Bản Đồ
 • Hiển thị các pixel cần thiết để vẽ hình ảnh đã tải lên trên bản đồ
-• Xem bộ sưu tập tác phẩm nghệ thuật của bạn trong phòng trưng bày
-• Dễ dàng bật/tắt hiển thị tác phẩm và dịch chuyển đến vị trí tác phẩm
+• Xem danh sách tác phẩm nghệ thuật trong thư viện
+• Dễ dàng chuyển đổi hiển thị tác phẩm và dịch chuyển đến vị trí tác phẩm
+• Hiển thị các pixel còn thiếu một cách dễ thấy
+• Áp dụng bộ lọc màu để hiển thị hình ảnh
+• Chia sẻ và tải hình ảnh đang làm dở với thông tin vị trí
 
-⭐ Đánh dấu không giới hạn
-• Lưu các địa điểm yêu thích của bạn với tên tùy chỉnh không giới hạn
-• Nhập/xuất danh sách đánh dấu của bạn
+⭐ Dấu Trang Không Giới Hạn
+• Lưu vị trí không giới hạn với tên tùy chỉnh
+• Nhập/xuất danh sách dấu trang
 
-⏰ Khôi phục tác phẩm về trạng thái trước đó
-• Lưu hình ảnh được vẽ trên các ô bản đồ hiện tại
-• Hiển thị trạng thái trước đó trên bản đồ để nhanh chóng sửa chữa tác phẩm bị phá hoại
-• Xem tất cả các ô đã lưu trong danh sách
-
-
---------------------
-
-🔒 Quyền Riêng Tư Là Ưu Tiên
-• Tất cả dữ liệu được giữ trong trình duyệt của bạn
-• Hình ảnh và đánh dấu hoàn toàn riêng tư
-• Được thiết kế với các tiêu chuẩn bảo mật mới nhất của Chrome ngay từ đầu
-• Giấy phép mã nguồn mở để đảm bảo minh bạch hoàn toàn
+⏰ Khôi Phục Tác Phẩm Về Trạng Thái Trước
+• Lưu hình ảnh hiện đang vẽ trên các ô bản đồ
+• Hiển thị trạng thái trước đó trên bản đồ để nhanh chóng sửa tác phẩm bị phá hoại
+• Xem các ô đã lưu trong danh sách
