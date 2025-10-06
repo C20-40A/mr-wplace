@@ -11,6 +11,7 @@ import { TileSnapshot } from "../features/time-travel/utils/tile-snapshot";
 import type { UserStatus } from "../features/user-status";
 import { ChargeData } from "../features/user-status/services/timer-service";
 import type { ColorFilterManager } from "../utils/color-filter-manager";
+import type { PixelHover } from "../features/pixel-hover";
 
 // Runtime拡張ChargeData型（startTime, timeToFull追加）
 export interface RuntimeChargeData extends ChargeData {
@@ -31,6 +32,7 @@ interface mrWplace {
   userStatus: UserStatus;
   colorFilterManager?: ColorFilterManager;
   wplaceChargeData?: RuntimeChargeData;
+  pixelHover: PixelHover;
 }
 
 declare global {
