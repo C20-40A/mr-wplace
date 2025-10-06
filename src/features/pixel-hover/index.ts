@@ -1,38 +1,31 @@
 import { colorpalette } from "../../constants/colors";
 import { createPixelHoverFAB, updatePixelHoverFAB } from "./ui";
+import { getPixelColorFromTile } from "../../utils/map-control";
 
 const MOUSE_MOVE_THROTTLE_PERIOD = 10; // ms
 
 export class PixelHover {
   private enabled: boolean = false;
-  private canvas: HTMLCanvasElement | null = null;
+  private map: any = null;
   private fab: HTMLButtonElement | null = null;
-  private tempCanvas: HTMLCanvasElement;
-  private tempCtx: CanvasRenderingContext2D;
   private lastColorId: number | null = null;
   private throttleTimer: number | null = null;
+  private mouseMoveHandler: ((e: any) => void) | null = null;
 
-  constructor() {
-    this.tempCanvas = document.createElement("canvas");
-    this.tempCanvas.width = 1;
-    this.tempCanvas.height = 1;
-    this.tempCtx = this.tempCanvas.getContext("2d", {
-      willReadFrequently: true,
-    })!;
-  }
+  constructor() {}
 
   public async init(): Promise<void> {
-    await this.waitForCanvas();
+    await this.waitForMap();
     this.createAndAttachFAB();
     console.log("🧑‍🎨 : PixelHover initialized");
   }
 
-  private async waitForCanvas(): Promise<void> {
+  private async waitForMap(): Promise<void> {
     return new Promise((resolve) => {
       let attempts = 0;
       const check = setInterval(() => {
-        this.canvas = document.querySelector(".maplibregl-canvas");
-        if (this.canvas || ++attempts >= 50) {
+        this.map = (window as any).wplaceMap;
+        if (this.map || ++attempts >= 50) {
           clearInterval(check);
           resolve();
         }
@@ -64,55 +57,45 @@ export class PixelHover {
     this.enabled = !this.enabled;
     console.log("🧑‍🎨 : PixelHover", this.enabled ? "enabled" : "disabled");
 
-    if (this.enabled)
-      this.canvas?.addEventListener("mousemove", this.handleMouseMove);
-    else this.canvas?.removeEventListener("mousemove", this.handleMouseMove);
+    if (this.enabled) {
+      this.mouseMoveHandler = this.handleMapMouseMove.bind(this);
+      console.log("MAPあるはず！⚡");
+      console.log(this.map);
+      this.map?.on("mousemove", this.mouseMoveHandler);
+    } else {
+      if (this.mouseMoveHandler) {
+        this.map?.off("mousemove", this.mouseMoveHandler);
+        this.mouseMoveHandler = null;
+      }
+    }
   }
 
-  private handleMouseMove = (event: MouseEvent): void => {
+  private handleMapMouseMove(e: any): void {
+    console.log("キターーーーーー");
     if (this.throttleTimer !== null) return;
 
     this.throttleTimer = window.setTimeout(() => {
-      this.processPixel(event);
+      console.log(e);
+      this.processPixel(e);
       this.throttleTimer = null;
     }, MOUSE_MOVE_THROTTLE_PERIOD);
-  };
+  }
 
-  private processPixel(event: MouseEvent): void {
-    if (!this.canvas) return;
+  private async processPixel(e: any): Promise<void> {
+    if (!e.lngLat) return;
 
-    const rect = this.canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    const { lat, lng } = e.lngLat;
+    const color = await getPixelColorFromTile(lat, lng);
 
-    const dpr = window.devicePixelRatio || 1;
-    const pixelX = Math.floor(x * dpr);
-    const pixelY = Math.floor(y * dpr);
+    if (!color || color.a === 0) return;
 
-    requestAnimationFrame(() => {
-      this.tempCtx.clearRect(0, 0, 1, 1);
-      this.tempCtx.drawImage(this.canvas!, pixelX, pixelY, 1, 1, 0, 0, 1, 1);
+    console.log("🧑‍🎨 : Tile pixel color:", color, { lat, lng });
 
-      const imageData = this.tempCtx.getImageData(0, 0, 1, 1);
-      const [r, g, b, a] = imageData.data;
-
-      console.log("🧑‍🎨 : Canvas2D (RAF) result:", {
-        r,
-        g,
-        b,
-        a,
-        pixelX,
-        pixelY,
-      });
-
-      if (a === 0) return;
-
-      const colorId = this.findClosestColorId(r, g, b);
-      if (colorId !== null && colorId !== this.lastColorId) {
-        this.selectColor(colorId);
-        this.lastColorId = colorId;
-      }
-    });
+    const colorId = this.findClosestColorId(color.r, color.g, color.b);
+    if (colorId !== null && colorId !== this.lastColorId) {
+      this.selectColor(colorId);
+      this.lastColorId = colorId;
+    }
   }
 
   private findClosestColorId(r: number, g: number, b: number): number | null {
