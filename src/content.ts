@@ -14,6 +14,7 @@ import { UserStatus } from "./features/user-status";
 import { WPlaceUserData } from "./types/user-data";
 import { ThemeToggleStorage } from "./features/theme-toggle/storage";
 import { TextDraw } from "./features/text-draw";
+import { PixelHover } from "./features/pixel-hover";
 
 const runmrWplace = async (): Promise<void> => {
   console.log("🧑‍🎨: Starting initialization...");
@@ -85,13 +86,13 @@ const runmrWplace = async (): Promise<void> => {
   // i18n初期化（ブラウザ言語検出）
   await I18nManager.init(detectBrowserLanguage());
 
-  const favorites = new ExtendedBookmarks();  // 1. Bookmark (最後に表示)
+  const favorites = new ExtendedBookmarks(); // 1. Bookmark (最後に表示)
   const tileOverlay = new TileOverlay();
   const gallery = new Gallery();
   const tileSnapshot = new TileSnapshot();
-  new TimeTravel();                           // 2. TimeTravel
-  new TextDraw();                             // 3. TextDraw
-  const drawing = new Drawing();              // 4. Drawing (最初に表示)
+  new TimeTravel(); // 2. TimeTravel
+  new TextDraw(); // 3. TextDraw
+  const drawing = new Drawing(); // 4. Drawing (最初に表示)
   const drawingLoader = new DrawingLoader();
   const colorFilter = new ColorFilter();
   const colorFilterManager = new ColorFilterManager();
@@ -106,6 +107,11 @@ const runmrWplace = async (): Promise<void> => {
     return await tileOverlay.toggleImageDrawState(imageKey);
   });
 
+  // PixelHover初期化
+  // ⚠️ いまはまだ研究段階
+  const pixelHover = new PixelHover();
+  // await pixelHover.init();
+
   // Global access for ImageProcessor and Gallery
   window.mrWplace = {
     gallery,
@@ -117,6 +123,7 @@ const runmrWplace = async (): Promise<void> => {
     colorFilter,
     userStatus,
     colorFilterManager,
+    pixelHover,
   };
 };
 
