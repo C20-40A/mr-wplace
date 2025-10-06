@@ -50,7 +50,10 @@ window.addEventListener("message", (event) => {
   }
 });
 
-// Map instance observer
+// Map instance observer + pixel hover setup
+let mouseMoveThrottleTimer = null;
+const MOUSE_MOVE_THROTTLE_PERIOD = 10; // ms
+
 const mapObserver = new MutationObserver(() => {
   try {
     const mapElement = document.querySelector(
@@ -66,6 +69,21 @@ const mapObserver = new MutationObserver(() => {
         window.wplaceMap = map;
         mapObserver.disconnect();
         console.log("WPlace map instance captured", map);
+        
+        // Setup mousemove for pixel hover
+        map.on('mousemove', (e) => {
+          if (mouseMoveThrottleTimer !== null) return;
+          
+          mouseMoveThrottleTimer = setTimeout(() => {
+            const { lat, lng } = e.lngLat;
+            window.postMessage({
+              source: "wplace-studio-pixel-hover",
+              lat,
+              lng
+            }, "*");
+            mouseMoveThrottleTimer = null;
+          }, MOUSE_MOVE_THROTTLE_PERIOD);
+        });
       }
     }
   } catch (e) {

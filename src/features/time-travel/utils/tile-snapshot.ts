@@ -27,6 +27,16 @@ export class TileSnapshot {
     await chrome.storage.local.set({ [key]: data });
   }
 
+  async getTmpTile(tileX: number, tileY: number): Promise<Blob | null> {
+    const key = `${TileSnapshot.TMP_PREFIX}${tileX}_${tileY}`;
+    const result = await chrome.storage.local.get(key);
+
+    if (!result[key]) return null;
+
+    const uint8Array = new Uint8Array(result[key]);
+    return new Blob([uint8Array], { type: "image/png" });
+  }
+
   /**
    * If the image is 3000x3000, scale it down to 1000x1000 to save storage space.
    * - skirk marbleなどと競合して、3000x3000の画像が保存されるケースがあるため。

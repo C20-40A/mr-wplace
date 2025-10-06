@@ -15,6 +15,7 @@ import { WPlaceUserData } from "./types/user-data";
 import { ThemeToggleStorage } from "./features/theme-toggle/storage";
 import { TextDraw } from "./features/text-draw";
 import { PixelHover } from "./features/pixel-hover";
+import { colorpalette } from "./constants/colors";
 
 const runmrWplace = async (): Promise<void> => {
   console.log("🧑‍🎨: Starting initialization...");
@@ -50,6 +51,8 @@ const runmrWplace = async (): Promise<void> => {
   window.mrWplace = {} as any;
 
   // Listen for messages from inject.js
+  let lastPixelHoverColorId: number | null = null;
+
   window.addEventListener("message", async (event) => {
     // console.log("🧑‍🎨: event", event.data.source);
     if (event.data.source === "wplace-studio-snapshot-tmp") {
@@ -68,6 +71,48 @@ const runmrWplace = async (): Promise<void> => {
       const userData = event.data.userData as WPlaceUserData;
 
       userStatus.updateFromUserData(userData);
+    }
+
+    // Listen for pixel hover from inject.js
+    if (event.data.source === "wplace-studio-pixel-hover") {
+      const { lat, lng } = event.data;
+      const color =
+        await window.mrWplace?.tileOverlay?.tileDrawManager?.getOverlayPixelColor(
+          lat,
+          lng
+        );
+
+      if (!color || color.a === 0) return;
+
+      console.log("🧑‍🎨 : Overlay pixel color:", color, { lat, lng });
+
+      // findClosestColorId
+      let minDistance = Infinity;
+      let closestColorId: number | null = null;
+
+      for (const c of colorpalette) {
+        const [pr, pg, pb] = c.rgb;
+        const distance = Math.sqrt(
+          Math.pow(color.r - pr, 2) +
+            Math.pow(color.g - pg, 2) +
+            Math.pow(color.b - pb, 2)
+        );
+
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestColorId = c.id;
+        }
+      }
+
+      // selectColor
+      if (closestColorId !== null && closestColorId !== lastPixelHoverColorId) {
+        const el = document.getElementById(`color-${closestColorId}`);
+        if (el) {
+          console.log("🧑‍🎨 : Selecting color ID:", closestColorId);
+          el.click();
+          lastPixelHoverColorId = closestColorId;
+        }
+      }
     }
   });
 

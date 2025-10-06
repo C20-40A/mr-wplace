@@ -1,6 +1,7 @@
 import { drawImageOnTiles } from "./tile-draw";
 import type { EnhancedConfig } from "./tile-draw";
 import { TILE_DRAW_CONSTANTS, WplaceCoords, TileCoords } from "./constants";
+import { llzToTilePixel } from "../../utils/coordinate";
 
 interface TileDrawInstance {
   coords: WplaceCoords;
@@ -142,6 +143,63 @@ export class TileDrawManager {
     this.overlayLayers = this.overlayLayers.filter(
       (i) => !i.imageKey.startsWith("text_")
     );
+  }
+
+  async getOverlayPixelColor(
+    lat: number,
+    lng: number
+  ): Promise<{ r: number; g: number; b: number; a: number } | null> {
+    const coords = llzToTilePixel(lat, lng);
+    const coordPrefix = `${coords.TLX.toString().padStart(4, "0")},${coords.TLY.toString().padStart(4, "0")}`;
+
+    // 後ろから検索（上位レイヤー優先）
+    for (let i = this.overlayLayers.length - 1; i >= 0; i--) {
+      const instance = this.overlayLayers[i];
+      if (!instance.drawEnabled || !instance.tiles) continue;
+
+      // 該当タイルのキー探す
+      for (const [key, bitmap] of Object.entries(instance.tiles)) {
+        if (!key.startsWith(coordPrefix)) continue;
+
+        const parts = key.split(",");
+        const offsetX = parseInt(parts[2]);
+        const offsetY = parseInt(parts[3]);
+
+        // 範囲チェック
+        const relX = coords.PxX - offsetX;
+        const relY = coords.PxY - offsetY;
+        const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
+        const drawW = bitmap.width / pixelScale;
+        const drawH = bitmap.height / pixelScale;
+
+        if (relX < 0 || relX >= drawW || relY < 0 || relY >= drawH) continue;
+
+        // ピクセル取得（3倍スケール）
+        const canvas = new OffscreenCanvas(1, 1);
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(
+          bitmap,
+          relX * pixelScale,
+          relY * pixelScale,
+          1,
+          1,
+          0,
+          0,
+          1,
+          1
+        );
+        const imageData = ctx.getImageData(0, 0, 1, 1);
+
+        return {
+          r: imageData.data[0],
+          g: imageData.data[1],
+          b: imageData.data[2],
+          a: imageData.data[3],
+        };
+      }
+    }
+
+    return null;
   }
 
   isDrawingOnTile(tileX: number, tileY: number): boolean {
