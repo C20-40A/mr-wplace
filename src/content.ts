@@ -14,7 +14,6 @@ import { UserStatus } from "./features/user-status";
 import { WPlaceUserData } from "./types/user-data";
 import { ThemeToggleStorage } from "./features/theme-toggle/storage";
 import { TextDraw } from "./features/text-draw";
-import { PixelHover } from "./features/pixel-hover";
 import { colorpalette } from "./constants/colors";
 
 const runmrWplace = async (): Promise<void> => {
@@ -86,32 +85,19 @@ const runmrWplace = async (): Promise<void> => {
 
       console.log("🧑‍🎨 : Overlay pixel color:", color, { lat, lng });
 
-      // findClosestColorId
-      let minDistance = Infinity;
-      let closestColorId: number | null = null;
-
-      for (const c of colorpalette) {
-        const [pr, pg, pb] = c.rgb;
-        const distance = Math.sqrt(
-          Math.pow(color.r - pr, 2) +
-            Math.pow(color.g - pg, 2) +
-            Math.pow(color.b - pb, 2)
-        );
-
-        if (distance < minDistance) {
-          minDistance = distance;
-          closestColorId = c.id;
-        }
-      }
+      // find color id
+      const targetColor = colorpalette.find(
+        (c) =>
+          c.rgb[0] === color.r && c.rgb[1] === color.g && c.rgb[2] === color.b
+      );
+      if (!targetColor) return;
 
       // selectColor
-      if (closestColorId !== null && closestColorId !== lastPixelHoverColorId) {
-        const el = document.getElementById(`color-${closestColorId}`);
-        if (el) {
-          console.log("🧑‍🎨 : Selecting color ID:", closestColorId);
-          el.click();
-          lastPixelHoverColorId = closestColorId;
-        }
+      const el = document.getElementById(`color-${targetColor.id}`);
+      if (el) {
+        console.log("🧑‍🎨 : Selecting color ID:", targetColor.id);
+        el.click();
+        lastPixelHoverColorId = targetColor.id;
       }
     }
   });
@@ -152,11 +138,6 @@ const runmrWplace = async (): Promise<void> => {
     return await tileOverlay.toggleImageDrawState(imageKey);
   });
 
-  // PixelHover初期化
-  // ⚠️ いまはまだ研究段階
-  const pixelHover = new PixelHover();
-  // await pixelHover.init();
-
   // Global access for ImageProcessor and Gallery
   window.mrWplace = {
     gallery,
@@ -168,7 +149,6 @@ const runmrWplace = async (): Promise<void> => {
     colorFilter,
     userStatus,
     colorFilterManager,
-    pixelHover,
   };
 };
 
