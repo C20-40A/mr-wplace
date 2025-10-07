@@ -50,10 +50,7 @@ window.addEventListener("message", (event) => {
   }
 });
 
-// Map instance observer + pixel hover setup
-let mouseMoveThrottleTimer = null;
-const MOUSE_MOVE_THROTTLE_PERIOD = 10; // ms
-
+// Map instance observer + pixel click setup
 const mapObserver = new MutationObserver(() => {
   try {
     const mapElement = document.querySelector(
@@ -69,18 +66,51 @@ const mapObserver = new MutationObserver(() => {
         window.wplaceMap = map;
         mapObserver.disconnect();
         console.log("WPlace map instance captured", map);
-        
-        // Setup mousemove for pixel hover
-        map.on('mousemove', (e) => {
+
+        // Setup mousedown for pixel color detection (earlier than click)
+        map.on("mousedown", (e) => {
+          const { lat, lng } = e.lngLat;
+          window.postMessage(
+            {
+              source: "wplace-studio-pixel-click",
+              lat,
+              lng,
+            },
+            "*"
+          );
+        });
+
+        // Setup space key + mousemove for continuous color detection
+        let isSpacePressed = false;
+        let mouseMoveThrottleTimer = null;
+        const MOUSE_MOVE_THROTTLE_PERIOD = 10; // ms
+
+        document.addEventListener("keydown", (e) => {
+          if (e.code === "Space") {
+            isSpacePressed = true;
+          }
+        });
+
+        document.addEventListener("keyup", (e) => {
+          if (e.code === "Space") {
+            isSpacePressed = false;
+          }
+        });
+
+        map.on("mousemove", (e) => {
+          if (!isSpacePressed) return;
           if (mouseMoveThrottleTimer !== null) return;
-          
+
           mouseMoveThrottleTimer = setTimeout(() => {
             const { lat, lng } = e.lngLat;
-            window.postMessage({
-              source: "wplace-studio-pixel-hover",
-              lat,
-              lng
-            }, "*");
+            window.postMessage(
+              {
+                source: "wplace-studio-pixel-click",
+                lat,
+                lng,
+              },
+              "*"
+            );
             mouseMoveThrottleTimer = null;
           }, MOUSE_MOVE_THROTTLE_PERIOD);
         });
@@ -99,7 +129,7 @@ mapObserver.observe(document.body, {
 window.fetch = async function (...args) {
   // 初期化完了待機
   while (!isInitialized) {
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 10));
   }
 
   // console.log("🧑‍🎨: Fetch called with args:", args);
@@ -115,8 +145,8 @@ window.fetch = async function (...args) {
         status: 200,
         statusText: "OK",
         headers: {
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       });
     }
     // Light theme or darkStyleData not ready: use default
