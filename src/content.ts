@@ -50,7 +50,7 @@ const runmrWplace = async (): Promise<void> => {
   window.mrWplace = {} as any;
 
   // Listen for messages from inject.js
-  let lastPixelHoverColorId: number | null = null;
+  let lastPixelClickColorId: number | null = null;
 
   window.addEventListener("message", async (event) => {
     // console.log("🧑‍🎨: event", event.data.source);
@@ -72,8 +72,8 @@ const runmrWplace = async (): Promise<void> => {
       userStatus.updateFromUserData(userData);
     }
 
-    // Listen for pixel hover from inject.js
-    if (event.data.source === "wplace-studio-pixel-hover") {
+    // Listen for pixel click from inject.js
+    if (event.data.source === "wplace-studio-pixel-click") {
       const { lat, lng } = event.data;
       const color =
         await window.mrWplace?.tileOverlay?.tileDrawManager?.getOverlayPixelColor(
@@ -97,7 +97,7 @@ const runmrWplace = async (): Promise<void> => {
       if (el) {
         console.log("🧑‍🎨 : Selecting color ID:", targetColor.id);
         el.click();
-        lastPixelHoverColorId = targetColor.id;
+        lastPixelClickColorId = targetColor.id;
       }
     }
   });
