@@ -169,4 +169,8 @@ export const enTranslations = {
   enhanced_mode_dark_cross: "Dark Cross",
   enhanced_mode_complement_cross: "Complement Cross",
   enhanced_mode_red_border: "Red Border",
+
+  // Auto Spoit
+  auto_spoit: "Auto Color Picker",
+  auto_spoit_tooltip: "Auto color picker",
 };

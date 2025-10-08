@@ -170,4 +170,8 @@ export const jaTranslations = {
   enhanced_mode_dark_cross: "暗色十字",
   enhanced_mode_complement_cross: "補色十字",
   enhanced_mode_red_border: "赤枠",
+
+  // Auto Spoit
+  auto_spoit: "オートスポイト",
+  auto_spoit_tooltip: "自動色取得",
 };

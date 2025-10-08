@@ -14,6 +14,7 @@ import { UserStatus } from "./features/user-status";
 import { WPlaceUserData } from "./types/user-data";
 import { ThemeToggleStorage } from "./features/theme-toggle/storage";
 import { TextDraw } from "./features/text-draw";
+import { AutoSpoit } from "./features/auto-spoit";
 import { colorpalette } from "./constants/colors";
 
 const runmrWplace = async (): Promise<void> => {
@@ -74,6 +75,9 @@ const runmrWplace = async (): Promise<void> => {
 
     // Listen for pixel click from inject.js
     if (event.data.source === "wplace-studio-pixel-click") {
+      // autoSpoit無効時は処理しない
+      if (!window.mrWplace?.autoSpoit?.isEnabled()) return;
+
       const { lat, lng } = event.data;
       const color =
         await window.mrWplace?.tileOverlay?.tileDrawManager?.getOverlayPixelColor(
@@ -127,6 +131,7 @@ const runmrWplace = async (): Promise<void> => {
   const drawingLoader = new DrawingLoader();
   const colorFilter = new ColorFilter();
   const colorFilterManager = new ColorFilterManager();
+  const autoSpoit = new AutoSpoit();
 
   // 初期化完了を待つ
   await colorFilterManager.init();
@@ -149,6 +154,7 @@ const runmrWplace = async (): Promise<void> => {
     colorFilter,
     userStatus,
     colorFilterManager,
+    autoSpoit,
   };
 };
 
