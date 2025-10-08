@@ -11,6 +11,7 @@ import { TileSnapshot } from "../features/time-travel/utils/tile-snapshot";
 import type { UserStatus } from "../features/user-status";
 import { ChargeData } from "../features/user-status/services/timer-service";
 import type { ColorFilterManager } from "../utils/color-filter-manager";
+import type { AutoSpoit } from "../features/auto-spoit";
 
 // Runtime拡張ChargeData型（startTime, timeToFull追加）
 export interface RuntimeChargeData extends ChargeData {
@@ -30,6 +31,7 @@ interface mrWplace {
   imageEditor?: GalleryImageEditor;
   userStatus: UserStatus;
   colorFilterManager?: ColorFilterManager;
+  autoSpoit?: AutoSpoit;
   wplaceChargeData?: RuntimeChargeData;
 }
 

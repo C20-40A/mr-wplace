@@ -58,6 +58,21 @@ export const findPositionModal = (): Element | null => {
   // }
 };
 
+export const findPaintPixelControls = (): Element | null => {
+  // "Toggle art opacity" ボタンの親要素を取得
+  const opacityTooltip = document.querySelector('[data-tip="Toggle art opacity"]');
+  if (opacityTooltip?.parentElement) return opacityTooltip.parentElement;
+  
+  // Paint pixel h2の親要素を取得
+  const paintPixelHeaders = Array.from(document.querySelectorAll('h2'));
+  const paintPixelHeader = paintPixelHeaders.find(
+    h2 => h2.textContent?.includes('Paint pixel')
+  );
+  if (paintPixelHeader?.parentElement) return paintPixelHeader.parentElement;
+  
+  return null;
+};
+
 export const findTopLeftControls = (): Element | null => {
   // 1. titleベース検索（多言語対応）
   // EN: "Info", "Zoom in", "Zoom out"
