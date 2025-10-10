@@ -145,7 +145,7 @@ export const ptTranslations = {
   already_reached: "Já alcançado",
   enable_alarm: "Ativar Alarme",
   disable_alarm: "Desativar Alarme",
-  add_to_calendar_title: "Adicionar ao Google Calendar",
+  add_to_calendar_title: "Google Calendar",
   wplace_charged_event: "WPlace Carregado ⚡",
 
   // Theme Toggle

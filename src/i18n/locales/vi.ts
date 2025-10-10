@@ -144,6 +144,6 @@ export const viTranslations = {
   already_reached: "Đã đạt được",
   enable_alarm: "Bật báo thức",
   disable_alarm: "Tắt báo thức",
-  add_to_calendar_title: "Thêm vào Google Calendar",
+  add_to_calendar_title: "Google Calendar",
   wplace_charged_event: "WPlace đã sạc ⚡",
 };

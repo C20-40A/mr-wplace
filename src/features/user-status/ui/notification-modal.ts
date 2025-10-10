@@ -414,7 +414,7 @@ export class NotificationModal {
             <button id="addToCalendar" style="background-color: #3b82f6; color: white; padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; white-space: nowrap; display: ${
               isThresholdReached ? "none" : "inline-block"
             };" title="${t`${"add_to_calendar_title"}`}">
-              📅
+              📅${t`${"add_to_calendar_title"}`}
             </button>
           </div>
         </div>
