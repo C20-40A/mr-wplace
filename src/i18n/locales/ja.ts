@@ -55,7 +55,7 @@ export const jaTranslations = {
 
   // スナップショット
   timetravel_modal_title: "タイムマシン",
-  timetravel_current_position: "現在位置のスナップショット",
+  timetravel_current_position: "現在位置のアーカイブ一覧",
   timetravel_tile_list: "タイル一覧",
   timetravel_tile_snapshots: "タイルスナップショット",
   save_current_snapshot: "現在のタイルを保存",
@@ -84,7 +84,8 @@ export const jaTranslations = {
   download: "ダウンロード",
   clear_image_confirm: "画像をクリアして初期状態に戻しますか？",
   saved_to_gallery: "画像をギャラリーに保存しました",
-  large_image_resize_confirm: "画像サイズが大きいため、処理が重くなる可能性があります。\n画像を縮小しますか？",
+  large_image_resize_confirm:
+    "画像サイズが大きいため、処理が重くなる可能性があります。\n画像を縮小しますか？",
   current_size: "現在のサイズ",
   resize_to: "縮小後のサイズ",
   adjustments: "調整",
