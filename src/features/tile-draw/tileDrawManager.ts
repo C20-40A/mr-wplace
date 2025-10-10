@@ -150,7 +150,10 @@ export class TileDrawManager {
     lng: number
   ): Promise<{ r: number; g: number; b: number; a: number } | null> {
     const coords = llzToTilePixel(lat, lng);
-    const coordPrefix = `${coords.TLX.toString().padStart(4, "0")},${coords.TLY.toString().padStart(4, "0")}`;
+    const coordPrefix = `${coords.TLX.toString().padStart(
+      4,
+      "0"
+    )},${coords.TLY.toString().padStart(4, "0")}`;
 
     // 後ろから検索（上位レイヤー優先）
     for (let i = this.overlayLayers.length - 1; i >= 0; i--) {
@@ -269,6 +272,10 @@ export class TileDrawManager {
     const overlayData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const { data, width, height } = overlayData;
 
+    // 色ごとのカウント
+    const colorCountMap = new Map<string, number>();
+    const totalColorCountMap = new Map<string, number>();
+
     // ピクセル単位で処理
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
@@ -305,7 +312,16 @@ export class TileDrawManager {
           // 中央ピクセル：同じ色なら透明化、異なるなら保持
           if (isSameColor) {
             data[i + 3] = 0; // 透明
+            // 色ごとのカウント更新
+            const colorKey = `${data[i]},${data[i + 1]},${data[i + 2]}`;
+            colorCountMap.set(colorKey, (colorCountMap.get(colorKey) || 0) + 1);
           }
+          // 色ごとのtotalカウント更新
+          const totalColorKey = `${data[i]},${data[i + 1]},${data[i + 2]}`;
+          totalColorCountMap.set(
+            totalColorKey,
+            (totalColorCountMap.get(totalColorKey) || 0) + 1
+          );
         } else if (isCrossArm) {
           // 十字の腕：同じ色なら透明、異なるなら補助色
           if (isSameColor) {
@@ -341,6 +357,12 @@ export class TileDrawManager {
         }
       }
     }
+
+    console.log("Overlay Color Counts:", Array.from(colorCountMap.entries()));
+    console.log(
+      "Overlay Total Color Counts:",
+      Array.from(totalColorCountMap.entries())
+    );
 
     ctx.putImageData(overlayData, 0, 0);
     return await createImageBitmap(canvas);
