@@ -15,6 +15,7 @@ import { WPlaceUserData } from "./types/user-data";
 import { ThemeToggleStorage } from "./features/theme-toggle/storage";
 import { TextDraw } from "./features/text-draw";
 import { AutoSpoit } from "./features/auto-spoit";
+import { PositionInfo } from "./features/position-info";
 import { colorpalette } from "./constants/colors";
 
 const runmrWplace = async (): Promise<void> => {
@@ -132,6 +133,7 @@ const runmrWplace = async (): Promise<void> => {
   const colorFilter = new ColorFilter();
   const colorFilterManager = new ColorFilterManager();
   const autoSpoit = new AutoSpoit();
+  new PositionInfo();
 
   // 初期化完了を待つ
   await colorFilterManager.init();
