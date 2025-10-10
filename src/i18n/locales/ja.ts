@@ -151,7 +151,7 @@ export const jaTranslations = {
   already_reached: "到達済み",
   enable_alarm: "アラーム有効化",
   disable_alarm: "アラーム無効化",
-  add_to_calendar_title: "Googleカレンダーに追加",
+  add_to_calendar_title: "Googleカレンダー",
   wplace_charged_event: "WPlace チャージ完了 ⚡",
 
   // Theme Toggle

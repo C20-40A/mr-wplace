@@ -61,7 +61,8 @@ export const enTranslations = {
   snapshot_detail: "Snapshot Detail",
   snapshot_share: "Snapshot Share",
   snapshot_timestamp: "Snapshot Timestamp",
-  snapshot_share_description: "This filename contains coordinate and timestamp information. When you re-import it from the tile list, it will be registered as a snapshot at the same position and time.",
+  snapshot_share_description:
+    "This filename contains coordinate and timestamp information. When you re-import it from the tile list, it will be registered as a snapshot at the same position and time.",
   return_to_current: "Return to Current",
   enter_snapshot_name: "Enter snapshot name (empty for timestamp):",
   enter_tile_name: "Enter tile name (empty for coordinates):",
@@ -150,7 +151,7 @@ export const enTranslations = {
   already_reached: "Already reached",
   enable_alarm: "Enable Alarm",
   disable_alarm: "Disable Alarm",
-  add_to_calendar_title: "Add to Google Calendar",
+  add_to_calendar_title: "Google Calendar",
   wplace_charged_event: "WPlace Charged ⚡",
 
   // Theme Toggle
