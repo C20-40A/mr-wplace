@@ -40,9 +40,11 @@ export class ImageProcessor {
     }
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       if (e.target?.result) {
-        this.displayImage(e.target.result as string);
+        const dataUrl = e.target.result as string;
+        const processedDataUrl = await this.resizeImageIfNeeded(dataUrl);
+        this.displayImage(processedDataUrl);
       }
     };
     reader.readAsDataURL(file);
@@ -441,6 +443,58 @@ export class ImageProcessor {
 
   //   this.updateScaledImage();
   // }
+
+  /**
+   * 画像サイズチェック・リサイズ
+   * 1000px超えたら確認→リサイズ
+   */
+  private async resizeImageIfNeeded(dataUrl: string): Promise<string> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxSize = 500;
+        const needsResize = img.width > maxSize || img.height > maxSize;
+
+        if (!needsResize) {
+          resolve(dataUrl);
+          return;
+        }
+
+        const shouldResize = confirm(
+          t`${'large_image_resize_confirm'}\n\n` +
+          t`${'current_size'}` + `: ${img.width} x ${img.height}px\n` +
+          t`${'resize_to'}` + `: ${maxSize}px`
+        );
+
+        if (!shouldResize) {
+          resolve(dataUrl);
+          return;
+        }
+
+        // リサイズ処理
+        const scale = maxSize / Math.max(img.width, img.height);
+        const newWidth = Math.floor(img.width * scale);
+        const newHeight = Math.floor(img.height * scale);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(dataUrl);
+          return;
+        }
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+        console.log(`🧑‍🎨 : Resized image: ${img.width}x${img.height} → ${newWidth}x${newHeight}`);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.src = dataUrl;
+    });
+  }
 
   /**
    * ファイル名から座標情報抽出
