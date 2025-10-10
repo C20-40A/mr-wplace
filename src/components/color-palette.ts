@@ -120,8 +120,8 @@ export class ColorPalette {
                 ?.labelKey ?? "enhanced_mode_dot"
             }`}</span>
           </button>
-          <div class="enhanced-mode-dropdown" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 0.25rem; background-color: white; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem; z-index: 1000; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); min-width: 320px;">
-            <div class="enhanced-mode-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
+          <div class="enhanced-mode-dropdown" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 0.25rem; background-color: white; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem; z-index: 1000; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <div class="enhanced-mode-grid" style="display: grid; gap: 0.5rem;">
               ${enhancedModes
                 .map((mode) => {
                   const isSelected = this.enhancedMode === mode.value;
@@ -151,14 +151,14 @@ export class ColorPalette {
       : "";
 
     this.container.innerHTML = `
-      <div class="color-palette-controls flex gap-2 mb-4 px-4 pt-4">
+      <div class="color-palette-controls flex flex-wrap gap-2 mb-4 px-4 pt-4">
         <button class="enable-all-btn btn btn-outline btn-success btn-sm rounded">${t`${"enable_all"}`}</button>
         <button class="disable-all-btn btn btn-outline btn-error btn-sm rounded">${t`${"disable_all"}`}</button>
         <button class="free-colors-btn btn btn-outline btn-sm rounded" style="border-color: #3b82f6; color: #3b82f6;">${t`${"free_colors_only"}`}</button>
         ${ownedColorsButtonHTML}
         ${enhancedSelectHTML}
       </div>
-      <div class="color-palette-grid grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 px-4 pb-4">
+      <div class="color-palette-grid grid grid-cols-3 sm:grid-cols-6 md:grid-cols-8 gap-2 px-4 pb-4">
         ${paletteGrid}
       </div>
     `;
@@ -212,6 +212,21 @@ export class ColorPalette {
       enhancedModeButton.addEventListener("click", (e) => {
         e.stopPropagation();
         const isVisible = enhancedModeDropdown.style.display !== "none";
+        
+        if (!isVisible) {
+          // レスポンシブ対応: モバイルは2列、PCは4列
+          const isMobile = window.innerWidth < 640;
+          const enhancedModeGrid = enhancedModeDropdown.querySelector(".enhanced-mode-grid") as HTMLElement;
+          
+          if (isMobile) {
+            enhancedModeDropdown.style.minWidth = "";
+            enhancedModeGrid.style.gridTemplateColumns = "repeat(2, 1fr)";
+          } else {
+            enhancedModeDropdown.style.minWidth = "320px";
+            enhancedModeGrid.style.gridTemplateColumns = "repeat(4, 1fr)";
+          }
+        }
+        
         enhancedModeDropdown.style.display = isVisible ? "none" : "block";
       });
 
