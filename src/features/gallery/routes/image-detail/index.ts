@@ -55,6 +55,15 @@ export class GalleryImageDetail {
             🗑 ${t`${"delete"}`}
           </button>
         </div>
+        
+        <!-- 座標編集エリア -->
+        <div style="padding: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px;">
+          <label>TLX: <input id="coord-tlx" type="number" value="${item.drawPosition?.TLX ?? 0}" style="width: 60px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 4px;"></label>
+          <label>TLY: <input id="coord-tly" type="number" value="${item.drawPosition?.TLY ?? 0}" style="width: 60px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 4px;"></label>
+          <label>PxX: <input id="coord-pxx" type="number" value="${item.drawPosition?.PxX ?? 0}" style="width: 60px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 4px;"></label>
+          <label>PxY: <input id="coord-pxy" type="number" value="${item.drawPosition?.PxY ?? 0}" style="width: 60px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 4px;"></label>
+          <button id="update-coords-btn" class="btn btn-sm" style="height: 24px; min-height: 24px; padding: 0 12px;">🔄 ${t`${"update"}`}</button>
+        </div>
       </div>
     `;
 
@@ -152,6 +161,37 @@ export class GalleryImageDetail {
       if (!this.currentItem) return;
 
       router.navigate("image-share");
+    });
+
+    // 座標更新ボタン
+    const updateCoordsBtn = document.getElementById("update-coords-btn");
+    updateCoordsBtn?.addEventListener("click", async () => {
+      if (!this.currentItem) return;
+
+      const tlx = parseInt((document.getElementById("coord-tlx") as HTMLInputElement).value);
+      const tly = parseInt((document.getElementById("coord-tly") as HTMLInputElement).value);
+      const pxx = parseInt((document.getElementById("coord-pxx") as HTMLInputElement).value);
+      const pxy = parseInt((document.getElementById("coord-pxy") as HTMLInputElement).value);
+
+      if (isNaN(tlx) || isNaN(tly) || isNaN(pxx) || isNaN(pxy)) {
+        Toast.error(t`${"invalid_coordinates"}`);
+        return;
+      }
+
+      console.log("🧑‍🎨 : Updating coordinates", { TLX: tlx, TLY: tly, PxX: pxx, PxY: pxy });
+
+      const tileOverlay = window.mrWplace?.tileOverlay;
+      if (!tileOverlay) throw new Error("TileOverlay not found");
+
+      await tileOverlay.drawImageWithCoords(
+        { TLX: tlx, TLY: tly, PxX: pxx, PxY: pxy },
+        this.currentItem
+      );
+
+      // currentItem更新
+      this.currentItem.drawPosition = { TLX: tlx, TLY: tly, PxX: pxx, PxY: pxy };
+
+      Toast.success(t`${"coordinates_updated"}`);
     });
   }
 }
