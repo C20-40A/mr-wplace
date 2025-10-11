@@ -12,7 +12,7 @@ interface ColorPaletteOptions {
   enhancedMode?: EnhancedConfig["mode"];
   hasExtraColorsBitmap?: boolean; // extraColorsBitmap有無（所持色ボタン表示制御）
   showColorStats?: boolean; // 色ごとの統計表示
-  colorStats?: Record<string, {matched: number, total: number}>; // 色ごとの統計データ
+  colorStats?: Record<string, { matched: number; total: number }>; // 色ごとの統計データ
 }
 
 const enabledBadgeHTML =
@@ -20,7 +20,7 @@ const enabledBadgeHTML =
 const disabledBadgeHTML =
   '<span class="badge-status" style="position: absolute; top: -0.5rem; left: -0.5rem; width: 1rem; height: 1rem; background-color: #ef4444; border: 1px solid black; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem; font-weight: bold;">x</span>';
 const currentlySelectedIconHTML =
-  '<span class="currently-selected-icon" style="position: absolute; bottom: 0.4rem; left: 0.25rem; font-size: 0.8rem; background: white; border-radius: 50%; border: solid; border-width: 1px;">⭐</span>';
+  '<span class="currently-selected-icon" style="position: absolute; top: -0.4rem; right: -0.4rem; font-size: 0.65rem; background: white; border-radius: 50%; border: 2px solid black;">⭐</span>';
 
 /**
  * カラーパレット表示コンポーネント
@@ -81,7 +81,8 @@ export class ColorPalette {
 
         // 統計表示
         const colorKey = `${r},${g},${b}`;
-        const stats = this.options.showColorStats && this.options.colorStats?.[colorKey];
+        const stats =
+          this.options.showColorStats && this.options.colorStats?.[colorKey];
         const statsHtml = stats ? this.createStatsHtml(stats) : "";
 
         return `
@@ -220,12 +221,14 @@ export class ColorPalette {
       enhancedModeButton.addEventListener("click", (e) => {
         e.stopPropagation();
         const isVisible = enhancedModeDropdown.style.display !== "none";
-        
+
         if (!isVisible) {
           // レスポンシブ対応: モバイルは2列、PCは4列
           const isMobile = window.innerWidth < 640;
-          const enhancedModeGrid = enhancedModeDropdown.querySelector(".enhanced-mode-grid") as HTMLElement;
-          
+          const enhancedModeGrid = enhancedModeDropdown.querySelector(
+            ".enhanced-mode-grid"
+          ) as HTMLElement;
+
           if (isMobile) {
             enhancedModeDropdown.style.minWidth = "";
             enhancedModeGrid.style.gridTemplateColumns = "repeat(2, 1fr)";
@@ -234,7 +237,7 @@ export class ColorPalette {
             enhancedModeGrid.style.gridTemplateColumns = "repeat(4, 1fr)";
           }
         }
-        
+
         enhancedModeDropdown.style.display = isVisible ? "none" : "block";
       });
 
@@ -330,16 +333,22 @@ export class ColorPalette {
     return luminance > 0.5 ? "#000000" : "#ffffff";
   }
 
-  private createStatsHtml(stats: {matched: number, total: number}): string {
+  private createStatsHtml(stats: { matched: number; total: number }): string {
     const remaining = stats.total - stats.matched;
-    const percentage = stats.total > 0 ? (stats.matched / stats.total) * 100 : 0;
+    const percentage =
+      stats.total > 0 ? (stats.matched / stats.total) * 100 : 0;
+
+    // 0pixelなら非表示
+    const pixelDisplay = remaining > 0 ? `<div style="font-size: 0.625rem; margin-left: 0.125rem; white-space: nowrap;">${remaining}px</div>` : '';
 
     return `
-      <div style="width: 100%; margin-top: 0.25rem;">
-        <div style="height: 0.25rem; background: #e5e7eb; border-radius: 0.125rem; overflow: hidden;">
-          <div style="height: 100%; background: linear-gradient(to right, #3b82f6, #60a5fa); width: ${percentage.toFixed(1)}%; transition: width 0.3s ease;"></div>
+      <div style="width: 100%; margin-top: 0.25rem; display: flex; align-items: center;">
+        <div style="flex: 1; height: 0.25rem; background: #e5e7eb; border: 1px solid #d1d5db; border-radius: 0.125rem; overflow: hidden;">
+          <div style="height: 100%; background: linear-gradient(to right, #3b82f6, #60a5fa); width: ${percentage.toFixed(
+            1
+          )}%; transition: width 0.3s ease;"></div>
         </div>
-        <div style="font-size: 0.625rem; margin-top: 0.125rem;">${remaining} px</div>
+        ${pixelDisplay}
       </div>
     `;
   }
