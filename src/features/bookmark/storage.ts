@@ -35,4 +35,13 @@ export class BookmarkStorage {
     const filtered = bookmarks.filter((fav) => fav.id !== id);
     await this.setValue(JSON.stringify(filtered));
   }
+
+  static async updateBookmark(bookmark: Bookmark): Promise<void> {
+    const bookmarks = await this.getBookmarks();
+    const index = bookmarks.findIndex((b) => b.id === bookmark.id);
+    if (index !== -1) {
+      bookmarks[index] = bookmark;
+      await this.setValue(JSON.stringify(bookmarks));
+    }
+  }
 }

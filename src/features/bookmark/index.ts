@@ -14,9 +14,12 @@ import {
   createBookmarkModal,
   createSaveBookmarkButton,
   renderBookmarks,
+  BookmarkSortType,
 } from "./ui";
 
 export class ExtendedBookmarks {
+  private static readonly SORT_KEY = "wplace-studio-bookmark-sort";
+
   constructor() {
     setupElementObserver([
       {
@@ -44,6 +47,25 @@ export class ExtendedBookmarks {
     this.createModal();
   }
 
+  private async getSortType(): Promise<BookmarkSortType> {
+    return new Promise((resolve) => {
+      chrome.storage.local.get([ExtendedBookmarks.SORT_KEY], (result) => {
+        resolve(result[ExtendedBookmarks.SORT_KEY] || "created");
+      });
+    });
+  }
+
+  private async setSortType(sortType: BookmarkSortType): Promise<void> {
+    return new Promise((resolve) => {
+      chrome.storage.local.set(
+        { [ExtendedBookmarks.SORT_KEY]: sortType },
+        () => {
+          resolve();
+        }
+      );
+    });
+  }
+
   createModal(): void {
     const modalElements = createBookmarkModal();
     const modal = modalElements.modal;
@@ -65,8 +87,17 @@ export class ExtendedBookmarks {
         } else if (
           card?.dataset.lat &&
           card?.dataset.lng &&
-          card?.dataset.zoom
+          card?.dataset.zoom &&
+          card?.dataset.id
         ) {
+          const id = parseInt(card.dataset.id);
+          const bookmarks = await BookmarkStorage.getBookmarks();
+          const bookmark = bookmarks.find((b) => b.id === id);
+          if (bookmark) {
+            bookmark.lastAccessedDate = new Date().toISOString();
+            await BookmarkStorage.updateBookmark(bookmark);
+          }
+
           const lat = parseFloat(card.dataset.lat);
           const lng = parseFloat(card.dataset.lng);
           const zoom = parseFloat(card.dataset.zoom);
@@ -90,6 +121,15 @@ export class ExtendedBookmarks {
         if (result.shouldRender) {
           this.renderBookmarks();
         }
+      });
+
+    modal
+      .querySelector("#wps-bookmark-sort")!
+      .addEventListener("change", async (e) => {
+        const sortType = (e.target as HTMLSelectElement)
+          .value as BookmarkSortType;
+        await this.setSortType(sortType);
+        await this.renderBookmarks();
       });
   }
 
@@ -137,7 +177,15 @@ export class ExtendedBookmarks {
 
   async renderBookmarks(): Promise<void> {
     const favorites = await BookmarkStorage.getBookmarks();
-    renderBookmarks(favorites);
+    const sortType = await this.getSortType();
+    renderBookmarks(favorites, sortType);
+
+    const sortSelect = document.getElementById(
+      "wps-bookmark-sort"
+    ) as HTMLSelectElement;
+    if (sortSelect) {
+      sortSelect.value = sortType;
+    }
   }
 
   async deleteBookmarks(id: number): Promise<void> {
