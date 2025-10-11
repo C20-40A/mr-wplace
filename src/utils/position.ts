@@ -15,7 +15,7 @@ export const gotoPosition = async ({ lat, lng, zoom }: Position) => {
   const useFlyTo = getNavigationMode();
 
   if (useFlyTo) {
-    // Use flyTo (smooth navigation)
+    // Use smart navigation (flyTo for close distance, jumpTo for far distance)
     flyToPosition(lat, lng, zoom);
   } else {
     // Use URL navigation (with reload)

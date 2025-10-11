@@ -40,7 +40,38 @@ window.addEventListener("message", (event) => {
   // Listen for flyTo requests from content script
   if (event.data.source === "wplace-studio-flyto") {
     const { lat, lng, zoom } = event.data;
-    window.wplaceMap?.flyTo?.({ center: [lng, lat], zoom });
+
+    // If map instance not available, fallback to URL navigation
+    if (!window.wplaceMap) {
+      console.log("🧑‍🎨 : Map instance not available, using URL navigation");
+      const url = new URL(window.location.href);
+      url.searchParams.set("lat", lat.toString());
+      url.searchParams.set("lng", lng.toString());
+      url.searchParams.set("zoom", zoom.toString());
+      window.location.href = url.toString();
+      return;
+    }
+
+    // Get current position
+    const currentCenter = window.wplaceMap.getCenter();
+    const currentZoom = window.wplaceMap.getZoom();
+
+    // Calculate distance (simple lat/lng difference)
+    const latDiff = Math.abs(currentCenter.lat - lat);
+    const lngDiff = Math.abs(currentCenter.lng - lng);
+    const zoomDiff = Math.abs(currentZoom - zoom);
+
+    // If close enough (within ~1km and zoom difference <= 2), use flyTo for smooth animation
+    // Otherwise use jumpTo for instant navigation
+    const isClose = latDiff < 2 && lngDiff < 2 && zoomDiff <= 2;
+
+    if (isClose) {
+      console.log("🧑‍🎨 : Using flyTo (close distance)");
+      window.wplaceMap.flyTo({ center: [lng, lat], zoom });
+    } else {
+      console.log("🧑‍🎨 : Using jumpTo (far distance)");
+      window.wplaceMap.jumpTo({ center: [lng, lat], zoom });
+    }
   }
 
   // Listen for theme updates (for dynamic theme switching)

@@ -1,11 +1,11 @@
 // Navigation mode type definition
-export type NavigationMode = boolean; // true: flyTo, false: URL
+export type NavigationMode = boolean; // true: smart (flyTo/jumpTo), false: URL
 
 // Storage key
 const STORAGE_KEY = "mr_wplace_navigation_mode";
 
 // Default: URL mode (false)
-let currentMode: NavigationMode = false;
+let currentMode: NavigationMode = true;
 
 // Load from storage
 export async function loadNavigationModeFromStorage(): Promise<void> {
@@ -19,7 +19,9 @@ export async function loadNavigationModeFromStorage(): Promise<void> {
 }
 
 // Save to storage
-export async function saveNavigationModeToStorage(mode: NavigationMode): Promise<void> {
+export async function saveNavigationModeToStorage(
+  mode: NavigationMode
+): Promise<void> {
   if (typeof chrome !== "undefined" && chrome.storage) {
     await chrome.storage.local.set({ [STORAGE_KEY]: mode });
   }
