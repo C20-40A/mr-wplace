@@ -51,7 +51,7 @@ export const createBookmarkModal = (): ModalElements => {
       <input type="file" id="wps-import-file" accept=".json" style="display: none;">
     </div>
 
-    <div id="wps-favorites-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
+    <div id="wps-favorites-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
     </div>
 
     <div id="wps-favorites-count" class="text-center text-sm text-base-content/80 mt-4">
