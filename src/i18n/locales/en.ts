@@ -41,6 +41,9 @@ export const enTranslations = {
   enter_bookmark_name: "Please enter bookmark name:",
   location_point: "Point",
   bookmark_list: "Bookmark List",
+  sort_by: "Sort by",
+  sort_created: "Date Added",
+  sort_accessed: "Last Accessed",
 
   // Import/Export関連
   no_export_bookmarks: "No favorites to export",

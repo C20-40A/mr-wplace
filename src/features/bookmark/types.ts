@@ -11,4 +11,5 @@ export interface Bookmark {
   lng: number;
   zoom: number;
   date: string;
+  lastAccessedDate?: string;
 }

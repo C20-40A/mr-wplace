@@ -41,6 +41,9 @@ export const jaTranslations = {
   enter_bookmark_name: "ブックマーク名を入力してください:",
   location_point: "地点",
   bookmark_list: "ブックマーク一覧",
+  sort_by: "並び替え",
+  sort_created: "追加順",
+  sort_accessed: "アクセス順",
 
   // Import/Export関連
   no_export_bookmarks: "エクスポートするお気に入りがありません",

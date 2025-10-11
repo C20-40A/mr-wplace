@@ -51,6 +51,14 @@ export const createBookmarkModal = (): ModalElements => {
       <input type="file" id="wps-import-file" accept=".json" style="display: none;">
     </div>
 
+    <div class="flex items-center gap-2 mb-4">
+      <label class="text-sm text-base-content/80">${"sort_by"}:</label>
+      <select id="wps-bookmark-sort" class="select select-sm select-bordered">
+        <option value="created">${"sort_created"}</option>
+        <option value="accessed">${"sort_accessed"}</option>
+      </select>
+    </div>
+
     <div id="wps-favorites-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
     </div>
 
@@ -61,7 +69,12 @@ export const createBookmarkModal = (): ModalElements => {
   return modalElements;
 };
 
-export const renderBookmarks = (favorites: Bookmark[]): void => {
+export type BookmarkSortType = 'created' | 'accessed';
+
+export const renderBookmarks = (
+  favorites: Bookmark[],
+  sortType: BookmarkSortType = 'created'
+): void => {
   const grid = document.getElementById("wps-favorites-grid") as HTMLElement;
   const count = document.getElementById("wps-favorites-count") as HTMLElement;
 
@@ -82,14 +95,23 @@ export const renderBookmarks = (favorites: Bookmark[]): void => {
     return;
   }
 
-  favorites.sort((a, b) => b.id - a.id);
+  if (sortType === 'created') {
+    favorites.sort((a, b) => b.id - a.id);
+  } else {
+    favorites.sort((a, b) => {
+      if (!a.lastAccessedDate && !b.lastAccessedDate) return b.id - a.id;
+      if (!a.lastAccessedDate) return 1;
+      if (!b.lastAccessedDate) return -1;
+      return new Date(b.lastAccessedDate).getTime() - new Date(a.lastAccessedDate).getTime();
+    });
+  }
 
   grid.innerHTML = favorites
     .map(
       (fav) => `
           <div class="wps-favorite-card card bg-base-200 shadow-sm hover:shadow-md cursor-pointer transition-all relative"
           style="hover:transform: translateY(-2px);"
-               data-lat="${fav.lat}" data-lng="${fav.lng}" data-zoom="${
+               data-id="${fav.id}" data-lat="${fav.lat}" data-lng="${fav.lng}" data-zoom="${
         fav.zoom
       }">
             <button class="wps-delete-btn btn btn-ghost btn-xs btn-circle absolute right-1 top-1 z-10"
