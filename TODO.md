@@ -21,8 +21,6 @@
 
 - ImageGridComponent もう分けていいんじゃね
 - 5x5 の pixel 対応して、ピクセルを枠で囲うことを可能にする
-- マップジャンプは、smooth fly to じゃなくて、map インスタンスを使った即ジャンプでもいいのでは？
-- https://maplibre.org/maplibre-gl-js/docs/API/classes/Map/#jumpto
 - bookmark の名称変えられるようにしたい
 - ブックマークを使った順で並び替え可能にする
 - ストア用画像をもうちょいよくする
@@ -55,6 +53,7 @@
 
 # DONE v1.6.0
 
+- マップジャンプは、smooth fly to じゃなくて、map インスタンスを使った即ジャンプも可能にする
 - モバイルの bookmark 一覧を 2 行ぐらいにしたい
 - ギャラリーのパーセント表示、残りのピクセル数と完成までの時間表示
 - sort が most missing のとき、カラーフィルターが押せない
