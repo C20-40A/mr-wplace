@@ -20,6 +20,8 @@ export class GalleryList {
   ): Promise<void> {
     this.onDrawToggleCallback = onDrawToggle;
     const items = await this.storage.getAll();
+    
+    console.log("🧑‍🎨 : Gallery items:", items.map(i => ({ key: i.key, hasStats: !!(i.currentColorStats && i.totalColorStats) })));
 
     this.ui.render(
       items,

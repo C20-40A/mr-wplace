@@ -46,6 +46,12 @@ export class GalleryListUI {
   ): void {
     if (!this.container) return;
 
+    console.log("🧑‍🎨 : renderGalleryList items:", items.map(i => ({
+      key: i.key,
+      hasCurrentStats: !!i.currentColorStats,
+      hasTotalStats: !!i.totalColorStats
+    })));
+
     // GalleryItemをImageItemに変換
     const imageItems: ImageItem[] = items.map((item) => ({
       key: item.key,
@@ -54,6 +60,8 @@ export class GalleryListUI {
       drawPosition: item.drawPosition,
       drawEnabled: item.drawEnabled,
       hasDrawPosition: !!item.drawPosition,
+      currentColorStats: item.currentColorStats,
+      totalColorStats: item.totalColorStats,
     }));
 
     // 既存のImageGridComponentがあれば破棄

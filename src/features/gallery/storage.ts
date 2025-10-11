@@ -8,8 +8,10 @@ export interface DrawPosition {
 }
 
 export interface GalleryItem extends BaseImageItem {
-  drawPosition?: {TLX: number; TLY: number; PxX: number; PxY: number};
+  drawPosition?: { TLX: number; TLY: number; PxX: number; PxY: number };
   drawEnabled?: boolean;
+  currentColorStats?: Record<string, number>;
+  totalColorStats?: Record<string, number>;
 }
 
 export class GalleryStorage {
@@ -17,11 +19,11 @@ export class GalleryStorage {
 
   async getAll(): Promise<GalleryItem[]> {
     const items = await this.imageStorage.getAll();
-    
+
     // hasDrawPositionを計算して追加
-    return items.map(item => ({
+    return items.map((item) => ({
       ...item,
-      hasDrawPosition: !!item.drawPosition
+      hasDrawPosition: !!item.drawPosition,
     }));
   }
 
