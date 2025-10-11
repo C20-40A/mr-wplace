@@ -349,17 +349,40 @@ export class ImageGridComponent {
     if (total === 0) return "";
 
     const percentage = (matched / total) * 100;
+    const remaining = total - matched;
+    const timeStr = this.formatEstimatedTime(remaining);
 
     return `
-      <div style="padding: 0.5rem; background-color: #f9fafb;">
-        <div style="position: relative; height: 0.5rem; background-color: #e5e7eb; border-radius: 0.25rem; overflow: hidden;">
-          <div style="height: 100%; background: linear-gradient(to right, #3b82f6, #60a5fa); width: ${percentage.toFixed(1)}%; transition: width 0.3s ease;"></div>
+      <div style="padding: 0.375rem 0.625rem; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+          <span style="font-size: 0.75rem; font-weight: 600; color: #3b82f6; font-family: ui-monospace, monospace; min-width: 3rem;">${percentage.toFixed(1)}%</span>
+          <div style="flex: 1; position: relative; height: 0.375rem; background-color: #e5e7eb; border-radius: 0.25rem; overflow: hidden;">
+            <div style="height: 100%; background: linear-gradient(to right, #3b82f6, #60a5fa); width: ${percentage.toFixed(1)}%; transition: width 0.3s ease;"></div>
+          </div>
         </div>
-        <div style="text-align: center; font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">
-          ${percentage.toFixed(1)}%
+        <div style="display: flex; justify-content: space-between; font-size: 0.6875rem; color: #6b7280; font-family: ui-monospace, monospace; letter-spacing: 0.025em;">
+          <span>${matched.toLocaleString()}/${total.toLocaleString()}</span>
+          ${remaining > 0 ? `<span style="color: #9ca3af;">${timeStr}</span>` : ''}
         </div>
       </div>
     `;
+  }
+
+  /**
+   * 予想完成時間をフォーマット (30秒/ピクセル)
+   */
+  private formatEstimatedTime(remainingPixels: number): string {
+    const totalSeconds = remainingPixels * 30;
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+    const parts: string[] = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    
+    return parts.length > 0 ? parts.join(' ') : '<1m';
   }
 
   /**
