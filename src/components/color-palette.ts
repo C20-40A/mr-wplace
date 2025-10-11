@@ -20,7 +20,7 @@ const enabledBadgeHTML =
 const disabledBadgeHTML =
   '<span class="badge-status" style="position: absolute; top: -0.5rem; left: -0.5rem; width: 1rem; height: 1rem; background-color: #ef4444; border: 1px solid black; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem; font-weight: bold;">x</span>';
 const currentlySelectedIconHTML =
-  '<span class="currently-selected-icon" style="position: absolute; top: -0.4rem; right: -0.4rem; font-size: 0.65rem; background: white; border-radius: 50%; border: 1px solid black;">⭐</span>';;
+  '<span class="currently-selected-icon" style="position: absolute; top: -0.4rem; right: -0.4rem; font-size: 0.65rem; background: white; border-radius: 50%; border: 1px solid black;">⭐</span>';
 
 /**
  * カラーパレット表示コンポーネント
@@ -32,7 +32,7 @@ export class ColorPalette {
   private selectedColorIds: Set<number> = new Set();
   private currentlySelectedColorId: number | null = null;
   private enhancedMode: EnhancedConfig["mode"] = "dot";
-  private sortOrder: 'default' | 'most-missing' | 'least-remaining' = 'default';
+  private sortOrder: "default" | "most-missing" | "least-remaining" = "default";
 
   constructor(container: HTMLElement, options: ColorPaletteOptions = {}) {
     this.container = container;
@@ -65,29 +65,32 @@ export class ColorPalette {
     // 並び替え処理
     let sortedColors = [...colorpalette];
     if (this.options.showColorStats && this.options.colorStats) {
-      if (this.sortOrder === 'most-missing') {
+      if (this.sortOrder === "most-missing") {
         // 統計あり/なしで分離
-        const withStats: Array<{color: typeof colorpalette[0], remaining: number}> = [];
+        const withStats: Array<{
+          color: (typeof colorpalette)[0];
+          remaining: number;
+        }> = [];
         const withoutStats: typeof colorpalette = [];
-        
+
         sortedColors.forEach((color) => {
           const [r, g, b] = color.rgb;
           const key = `${r},${g},${b}`;
           const stats = this.options.colorStats?.[key];
           if (stats) {
             const remaining = stats.total - stats.matched;
-            withStats.push({color, remaining});
+            withStats.push({ color, remaining });
           } else {
             withoutStats.push(color);
           }
         });
-        
+
         // 統計あり色を残り降順ソート
         withStats.sort((a, b) => b.remaining - a.remaining);
-        
+
         // 統計あり + 統計なし（default順）
-        sortedColors = [...withStats.map(w => w.color), ...withoutStats];
-      } else if (this.sortOrder === 'least-remaining') {
+        sortedColors = [...withStats.map((w) => w.color), ...withoutStats];
+      } else if (this.sortOrder === "least-remaining") {
         sortedColors.sort((a, b) => {
           const [rA, gA, bA] = a.rgb;
           const [rB, gB, bB] = b.rgb;
@@ -160,12 +163,12 @@ export class ColorPalette {
     ];
 
     const sortOrderOptions: Array<{
-      value: 'default' | 'most-missing' | 'least-remaining';
+      value: "default" | "most-missing" | "least-remaining";
       label: string;
     }> = [
-      { value: 'default', label: 'Default' },
-      { value: 'most-missing', label: 'Most Missing' },
-      { value: 'least-remaining', label: 'Almost Done' },
+      { value: "default", label: "Default" },
+      { value: "most-missing", label: "Most Missing" },
+      { value: "least-remaining", label: "Almost Done" },
     ];
 
     const sortOrderSelectHTML = this.options.showColorStats
@@ -174,7 +177,7 @@ export class ColorPalette {
             <span style="font-size: 0.875rem; color: #374151;">Sort:</span>
             <span class="sort-order-current-name" style="font-size: 0.875rem; font-weight: 600; color: #22c55e;">${
               sortOrderOptions.find((o) => o.value === this.sortOrder)?.label ??
-              'Default'
+              "Default"
             }</span>
           </button>
           <div class="sort-order-dropdown" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 0.25rem; background-color: white; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem; z-index: 1000; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); min-width: 200px;">
@@ -182,8 +185,8 @@ export class ColorPalette {
               ${sortOrderOptions
                 .map((option) => {
                   const isSelected = this.sortOrder === option.value;
-                  const borderColor = isSelected ? '#22c55e' : '#d1d5db';
-                  const borderWidth = isSelected ? '2px' : '1px';
+                  const borderColor = isSelected ? "#22c55e" : "#d1d5db";
+                  const borderWidth = isSelected ? "2px" : "1px";
                   return `
                   <button class="sort-order-item" 
                           data-sort="${option.value}"
@@ -193,11 +196,11 @@ export class ColorPalette {
                   </button>
                 `;
                 })
-                .join('')}
+                .join("")}
             </div>
           </div>
         </div>`
-      : '';
+      : "";
 
     const enhancedSelectHTML = this.options.showEnhancedSelect
       ? `<div class="enhanced-mode-container" style="position: relative;">
@@ -295,9 +298,7 @@ export class ColorPalette {
     });
 
     // Sort Order Button (ドロップダウンを開閉)
-    const sortOrderButton = this.container.querySelector(
-      ".sort-order-button"
-    );
+    const sortOrderButton = this.container.querySelector(".sort-order-button");
     const sortOrderDropdown = this.container.querySelector(
       ".sort-order-dropdown"
     ) as HTMLElement;
@@ -310,14 +311,15 @@ export class ColorPalette {
       });
 
       // Sort Order Items
-      const sortOrderItems = this.container.querySelectorAll(
-        ".sort-order-item"
-      );
+      const sortOrderItems =
+        this.container.querySelectorAll(".sort-order-item");
       sortOrderItems.forEach((item) => {
         item.addEventListener("click", (e) => {
           e.stopPropagation();
-          const sort = (item as HTMLElement).dataset
-            .sort as 'default' | 'most-missing' | 'least-remaining';
+          const sort = (item as HTMLElement).dataset.sort as
+            | "default"
+            | "most-missing"
+            | "least-remaining";
           this.handleSortOrderChange(sort);
           sortOrderDropdown.style.display = "none";
         });
@@ -460,13 +462,13 @@ export class ColorPalette {
       stats.total > 0 ? (stats.matched / stats.total) * 100 : 0;
 
     // 残り0px（完成済み）なら非表示
-    if (remaining === 0) return '';
+    if (remaining === 0) return "";
 
     const pixelDisplay = `<div style="font-size: 0.625rem; margin-left: 0.125rem; white-space: nowrap;">${remaining}px</div>`;
 
     return `
       <div style="width: 100%; margin-top: 0.25rem; display: flex; align-items: center;">
-        <div style="flex: 1; height: 0.3rem; background: #e5e7eb; border: 1px solid #d1d5db; border-radius: 0.125rem; overflow: hidden;">
+        <div style="flex: 1; height: 0.5rem; background: #e5e7eb; border: 1px solid #d1d5db; border-radius: 0.125rem; overflow: hidden;">
           <div style="height: 100%; background: linear-gradient(to right, #3b82f6, #60a5fa); width: ${percentage.toFixed(
             1
           )}%; transition: width 0.3s ease;"></div>
@@ -539,9 +541,10 @@ export class ColorPalette {
     }
   }
 
-  private handleSortOrderChange(sort: 'default' | 'most-missing' | 'least-remaining'): void {
+  private handleSortOrderChange(
+    sort: "default" | "most-missing" | "least-remaining"
+  ): void {
     this.sortOrder = sort;
     this.createPaletteUI();
-    this.setupEventHandlers();
   }
 }
