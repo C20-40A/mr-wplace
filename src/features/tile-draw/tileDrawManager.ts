@@ -14,6 +14,10 @@ export class TileDrawManager {
   public tileSize: number;
   public renderScale: number;
   public overlayLayers: TileDrawInstance[];
+  private colorStatsMap = new Map<string, {
+    matched: Map<string, number>;
+    total: Map<string, number>;
+  }>();
 
   constructor() {
     this.tileSize = TILE_DRAW_CONSTANTS.TILE_SIZE;
@@ -106,7 +110,8 @@ export class TileDrawManager {
           backgroundImageData,
           Number(coords[2]) * this.renderScale,
           Number(coords[3]) * this.renderScale,
-          enhancedConfig.mode // ✅ 型が絞り込まれる
+          enhancedConfig.mode,
+          instance.imageKey
         );
       }
 
@@ -215,6 +220,21 @@ export class TileDrawManager {
     return false;
   }
 
+  getColorStats(imageKey: string): { matched: Record<string, number>; total: Record<string, number> } | null {
+    const stats = this.colorStatsMap.get(imageKey);
+    if (!stats) {
+      console.log("🧑‍🎨 : getColorStats - no stats for", imageKey);
+      return null;
+    }
+    
+    const result = {
+      matched: Object.fromEntries(stats.matched),
+      total: Object.fromEntries(stats.total)
+    };
+    console.log("🧑‍🎨 : getColorStats", imageKey, result);
+    return result;
+  }
+
   private getEnhancedConfig(): EnhancedConfig {
     const colorFilterManager = window.mrWplace?.colorFilterManager;
     const mode = colorFilterManager?.getEnhancedMode() ?? "dot";
@@ -258,7 +278,8 @@ export class TileDrawManager {
       | "cyan-cross"
       | "dark-cross"
       | "complement-cross"
-      | "red-border"
+      | "red-border",
+    imageKey: string
   ): Promise<ImageBitmap> {
     const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
     const canvas = new OffscreenCanvas(
@@ -272,9 +293,15 @@ export class TileDrawManager {
     const overlayData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const { data, width, height } = overlayData;
 
-    // 色ごとのカウント
-    const colorCountMap = new Map<string, number>();
-    const totalColorCountMap = new Map<string, number>();
+    // 統計初期化
+    if (!this.colorStatsMap.has(imageKey)) {
+      this.colorStatsMap.set(imageKey, {
+        matched: new Map(),
+        total: new Map()
+      });
+    }
+    const stats = this.colorStatsMap.get(imageKey)!;
+    console.log("🧑‍🎨 : applyAuxiliaryColorPattern imageKey:", imageKey);
 
     // ピクセル単位で処理
     for (let y = 0; y < height; y++) {
@@ -309,19 +336,17 @@ export class TileDrawManager {
           data[i + 2] === bgB;
 
         if (isCenterPixel) {
+          const colorKey = `${data[i]},${data[i + 1]},${data[i + 2]}`;
+          
+          // total: 全中央ピクセル色
+          stats.total.set(colorKey, (stats.total.get(colorKey) || 0) + 1);
+          
           // 中央ピクセル：同じ色なら透明化、異なるなら保持
           if (isSameColor) {
             data[i + 3] = 0; // 透明
-            // 色ごとのカウント更新
-            const colorKey = `${data[i]},${data[i + 1]},${data[i + 2]}`;
-            colorCountMap.set(colorKey, (colorCountMap.get(colorKey) || 0) + 1);
+            // matched: 背景と同じだった色（正しく塗れた）
+            stats.matched.set(colorKey, (stats.matched.get(colorKey) || 0) + 1);
           }
-          // 色ごとのtotalカウント更新
-          const totalColorKey = `${data[i]},${data[i + 1]},${data[i + 2]}`;
-          totalColorCountMap.set(
-            totalColorKey,
-            (totalColorCountMap.get(totalColorKey) || 0) + 1
-          );
         } else if (isCrossArm) {
           // 十字の腕：同じ色なら透明、異なるなら補助色
           if (isSameColor) {
@@ -358,13 +383,10 @@ export class TileDrawManager {
       }
     }
 
-    console.log("Overlay Color Counts:", Array.from(colorCountMap.entries()));
-    console.log(
-      "Overlay Total Color Counts:",
-      Array.from(totalColorCountMap.entries())
-    );
-
     ctx.putImageData(overlayData, 0, 0);
+    
+    console.log("🧑‍🎨 : Stats for", imageKey, "matched:", stats.matched.size, "total:", stats.total.size);
+    
     return await createImageBitmap(canvas);
   }
 

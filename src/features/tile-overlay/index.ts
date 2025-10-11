@@ -74,10 +74,14 @@ export class TileOverlay {
     tileY: number
   ): Promise<Blob> {
     await this.restoreImagesOnTile(tileX, tileY);
-    return await this.tileDrawManager.drawOverlayLayersOnTile(tileBlob, [
+    const result = await this.tileDrawManager.drawOverlayLayersOnTile(tileBlob, [
       tileX,
       tileY,
     ]);
+    
+    await this.updateColorStatsForTile(tileX, tileY);
+    
+    return result;
   }
 
   private async saveDrawPosition(
@@ -223,5 +227,34 @@ export class TileOverlay {
     const response = await fetch(dataUrl);
     const blob = await response.blob();
     return new File([blob], filename, { type: blob.type });
+  }
+
+  private async updateColorStatsForTile(tileX: number, tileY: number): Promise<void> {
+    console.log(`🧑‍🎨 : updateColorStatsForTile(${tileX}, ${tileY})`);
+    
+    const images = await this.galleryStorage.getAll();
+    const targetImages = images.filter(
+      (img) =>
+        img.drawEnabled &&
+        img.drawPosition?.TLX === tileX &&
+        img.drawPosition?.TLY === tileY
+    );
+
+    console.log(`🧑‍🎨 : Found ${targetImages.length} target images`);
+
+    for (const image of targetImages) {
+      const stats = this.tileDrawManager.getColorStats(image.key);
+      if (!stats) {
+        console.log(`🧑‍🎨 : No stats for ${image.key}`);
+        continue;
+      }
+
+      console.log(`🧑‍🎨 : Saving stats for ${image.key}`, stats);
+      await this.galleryStorage.save({
+        ...image,
+        currentColorStats: stats.matched,
+        totalColorStats: stats.total
+      });
+    }
   }
 }

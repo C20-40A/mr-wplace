@@ -8,6 +8,8 @@ export interface ImageItem {
   drawPosition?: { TLX: number; TLY: number; PxX: number; PxY: number };
   drawEnabled?: boolean;
   hasDrawPosition?: boolean;
+  currentColorStats?: Record<string, number>;
+  totalColorStats?: Record<string, number>;
 }
 
 export interface ImageGridOptions {
@@ -121,6 +123,8 @@ export class ImageGridComponent {
       !this.options.isSelectionMode &&
       item.hasDrawPosition;
 
+    const progressHtml = this.createProgressBarHtml(item);
+
     return `
       <div class="border rounded-lg overflow-hidden shadow relative gallery-item" data-item-key="${
         item.key
@@ -143,6 +147,7 @@ export class ImageGridComponent {
             ? `<div class="p-2 text-sm text-gray-600 truncate">${item.title}</div>`
             : ""
         }
+        ${progressHtml}
       </div>
     `;
   }
@@ -172,7 +177,7 @@ export class ImageGridComponent {
         class="btn btn-xs btn-circle btn-ghost opacity-70 hover:opacity-100 border border-gray-200 shadow-sm" 
         data-goto-position="${item.key}"
         title="Go to map position"
-        style="position: absolute; bottom: 0.25rem; left: 2rem; z-index: 10; background-color: #f3f4f6;"
+        style="position: absolute; top: 0.25rem; left: 2rem; z-index: 10; background-color: #f3f4f6;"
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3" style="color: #059669;">
           <path fill-rule="evenodd" d="m11.54 22.351.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
@@ -182,9 +187,7 @@ export class ImageGridComponent {
   }
   private createDrawToggleButtonHtml(item: ImageItem): string {
     const isEnabled = item.drawEnabled;
-    // const eyeClass = isEnabled ? "text-green-600" : "text-gray-400";
     const eyeStyle = isEnabled ? "color: #16a34a;" : "color: #9ca3af;";
-    // const bgClass = isEnabled ? "bg-green-50" : "bg-gray-100";
     const bgStyle = isEnabled
       ? "background-color: #dcfce7;"
       : "background-color: #f3f4f6;";
@@ -199,7 +202,7 @@ export class ImageGridComponent {
         class="btn btn-xs btn-circle btn-ghost opacity-70 hover:opacity-100 border border-gray-200 shadow-sm" 
         data-draw-toggle="${item.key}"
         title="${isEnabled ? "Hide drawing" : "Show drawing"}"
-        style="position: absolute; bottom: 0.25rem; left: 0.25rem; z-index: 10; ${bgStyle}"
+        style="position: absolute; top: 0.25rem; left: 0.25rem; z-index: 10; ${bgStyle}"
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3" style="${eyeStyle}">
           ${eyeIcon}
@@ -328,6 +331,35 @@ export class ImageGridComponent {
         }
       });
     });
+  }
+
+  /**
+   * 進捗バーのHTMLを生成
+   */
+  private createProgressBarHtml(item: ImageItem): string {
+    console.log("🧑‍🎨 : createProgressBarHtml", item.key, "currentColorStats:", item.currentColorStats, "totalColorStats:", item.totalColorStats);
+    
+    if (!item.currentColorStats || !item.totalColorStats) return "";
+
+    const matched = Object.values(item.currentColorStats).reduce((sum, count) => sum + count, 0);
+    const total = Object.values(item.totalColorStats).reduce((sum, count) => sum + count, 0);
+
+    console.log("🧑‍🎨 : Progress", item.key, "matched:", matched, "total:", total);
+
+    if (total === 0) return "";
+
+    const percentage = (matched / total) * 100;
+
+    return `
+      <div style="padding: 0.5rem; background-color: #f9fafb;">
+        <div style="position: relative; height: 0.5rem; background-color: #e5e7eb; border-radius: 0.25rem; overflow: hidden;">
+          <div style="height: 100%; background: linear-gradient(to right, #3b82f6, #60a5fa); width: ${percentage.toFixed(1)}%; transition: width 0.3s ease;"></div>
+        </div>
+        <div style="text-align: center; font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">
+          ${percentage.toFixed(1)}%
+        </div>
+      </div>
+    `;
   }
 
   /**
