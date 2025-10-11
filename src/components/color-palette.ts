@@ -11,6 +11,8 @@ interface ColorPaletteOptions {
   onEnhancedModeChange?: (mode: EnhancedConfig["mode"]) => void;
   enhancedMode?: EnhancedConfig["mode"];
   hasExtraColorsBitmap?: boolean; // extraColorsBitmap有無（所持色ボタン表示制御）
+  showColorStats?: boolean; // 色ごとの統計表示
+  colorStats?: Record<string, {matched: number, total: number}>; // 色ごとの統計データ
 }
 
 const enabledBadgeHTML =
@@ -77,16 +79,22 @@ export class ColorPalette {
             ? currentlySelectedIconHTML
             : "";
 
+        // 統計表示
+        const colorKey = `${r},${g},${b}`;
+        const stats = this.options.showColorStats && this.options.colorStats?.[colorKey];
+        const statsHtml = stats ? this.createStatsHtml(stats) : "";
+
         return `
-        <div class="color-item cursor-pointer p-2 text-xs font-medium flex items-center justify-center min-h-[3rem]"
+        <div class="color-item cursor-pointer p-2 text-xs font-medium flex flex-col items-center justify-center min-h-[3rem]"
              style="background-color: ${backgroundColor}; color: ${textColor}; border-color: ${borderColor}; position: relative; 
              border-radius: 0.5rem; border-style: solid; border-width: 3px;"
              data-color-id="${color.id}"
              title="${color.name} (${color.premium ? "Premium" : "Free"})">
           ${enabledBadge}
-          ${color.name}
+          <span>${color.name}</span>
           ${premiumIcon}
           ${currentlySelectedIcon}
+          ${statsHtml}
         </div>
       `;
       })
@@ -320,6 +328,20 @@ export class ColorPalette {
     // RGB輝度計算（ITU-R BT.709）
     const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
     return luminance > 0.5 ? "#000000" : "#ffffff";
+  }
+
+  private createStatsHtml(stats: {matched: number, total: number}): string {
+    const remaining = stats.total - stats.matched;
+    const percentage = stats.total > 0 ? (stats.matched / stats.total) * 100 : 0;
+
+    return `
+      <div style="width: 100%; margin-top: 0.25rem;">
+        <div style="height: 0.25rem; background: #e5e7eb; border-radius: 0.125rem; overflow: hidden;">
+          <div style="height: 100%; background: linear-gradient(to right, #3b82f6, #60a5fa); width: ${percentage.toFixed(1)}%; transition: width 0.3s ease;"></div>
+        </div>
+        <div style="font-size: 0.625rem; margin-top: 0.125rem;">${remaining} px</div>
+      </div>
+    `;
   }
 
   getSelectedColors(): number[] {

@@ -109,6 +109,10 @@ export class TileOverlay {
     }
   }
 
+  public getCurrentTiles(): Set<string> {
+    return new Set(this.currentTiles);
+  }
+
   private async restoreImagesOnTile(
     tileX: number,
     tileY: number
