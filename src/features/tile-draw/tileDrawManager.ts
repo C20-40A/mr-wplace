@@ -235,6 +235,33 @@ export class TileDrawManager {
     return result;
   }
 
+  getAggregatedColorStats(imageKeys: string[]): Record<string, {matched: number, total: number}> {
+    const aggregated: Record<string, {matched: number, total: number}> = {};
+
+    for (const imageKey of imageKeys) {
+      const stats = this.colorStatsMap.get(imageKey);
+      if (!stats) continue;
+
+      // matched 集計
+      for (const [colorKey, count] of stats.matched.entries()) {
+        if (!aggregated[colorKey]) {
+          aggregated[colorKey] = { matched: 0, total: 0 };
+        }
+        aggregated[colorKey].matched += count;
+      }
+
+      // total 集計
+      for (const [colorKey, count] of stats.total.entries()) {
+        if (!aggregated[colorKey]) {
+          aggregated[colorKey] = { matched: 0, total: 0 };
+        }
+        aggregated[colorKey].total += count;
+      }
+    }
+
+    return aggregated;
+  }
+
   private getEnhancedConfig(): EnhancedConfig {
     const colorFilterManager = window.mrWplace?.colorFilterManager;
     const mode = colorFilterManager?.getEnhancedMode() ?? "dot";

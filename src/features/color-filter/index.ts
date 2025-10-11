@@ -38,13 +38,13 @@ export class ColorFilter {
     ]);
   }
 
-  private renderCurrentRoute(route: string): void {
+  private async renderCurrentRoute(route: string): Promise<void> {
     const container = this.colorFilterModal.getContainer();
     if (!container) return;
 
     switch (route) {
       case "color-filter":
-        renderColorFilters(container);
+        await renderColorFilters(container);
         break;
     }
   }
