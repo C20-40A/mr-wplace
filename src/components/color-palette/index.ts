@@ -1,12 +1,13 @@
-import { colorpalette } from "../constants/colors";
-import { t } from "../i18n/manager";
-import type { EnhancedMode } from "../features/tile-draw/types";
-import { ENHANCED_MODE_ICONS } from "../assets/enhanced-mode-icons";
+import { colorpalette } from "../../constants/colors";
+import { t } from "../../i18n/manager";
+import type { EnhancedMode } from "../../features/tile-draw/types";
+import { ENHANCED_MODE_ICONS } from "../../assets/enhanced-mode-icons";
+import { sortColors, type SortOrder } from "./color-sorter";
 
 // 並び替え処理はグローバル変数で保持
-let sortOrder: "default" | "most-missing" | "least-remaining" = "default";
+let sortOrder: SortOrder = "default";
 
-interface ColorPaletteOptions {
+export interface ColorPaletteOptions {
   onChange?: (colorIds: number[]) => void;
   selectedColorIds?: number[];
   showCurrentlySelected?: boolean; // 現在選択中の色を表示するか（default: false）
@@ -35,7 +36,6 @@ export class ColorPalette {
   private selectedColorIds: Set<number> = new Set();
   private currentlySelectedColorId: number | null = null;
   private enhancedMode: EnhancedMode = "dot";
-  // private sortOrder: "default" | "most-missing" | "least-remaining" = "default";
 
   constructor(container: HTMLElement, options: ColorPaletteOptions = {}) {
     this.container = container;
@@ -56,60 +56,13 @@ export class ColorPalette {
     // enhanced初期状態
     this.enhancedMode = options.enhancedMode ?? "dot";
 
-    this.init();
-  }
-
-  private init(): void {
     this.createPaletteUI();
     this.setupEventHandlers();
   }
 
   private createPaletteUI(): void {
     // 並び替え処理
-    let sortedColors = [...colorpalette];
-    if (this.options.showColorStats && this.options.colorStats) {
-      if (sortOrder === "most-missing") {
-        // 統計あり/なしで分離
-        const withStats: Array<{
-          color: (typeof colorpalette)[0];
-          remaining: number;
-        }> = [];
-        const withoutStats: typeof colorpalette = [];
-
-        sortedColors.forEach((color) => {
-          const [r, g, b] = color.rgb;
-          const key = `${r},${g},${b}`;
-          const stats = this.options.colorStats?.[key];
-          if (stats) {
-            const remaining = stats.total - stats.matched;
-            withStats.push({ color, remaining });
-          } else {
-            withoutStats.push(color);
-          }
-        });
-
-        // 統計あり色を残り降順ソート
-        withStats.sort((a, b) => b.remaining - a.remaining);
-
-        // 統計あり + 統計なし（default順）
-        sortedColors = [...withStats.map((w) => w.color), ...withoutStats];
-      } else if (sortOrder === "least-remaining") {
-        sortedColors.sort((a, b) => {
-          const [rA, gA, bA] = a.rgb;
-          const [rB, gB, bB] = b.rgb;
-          const keyA = `${rA},${gA},${bA}`;
-          const keyB = `${rB},${gB},${bB}`;
-          const statsA = this.options.colorStats?.[keyA];
-          const statsB = this.options.colorStats?.[keyB];
-          const remainingA = statsA ? statsA.total - statsA.matched : Infinity;
-          const remainingB = statsB ? statsB.total - statsB.matched : Infinity;
-          // 0はInfinity扱いで最後に
-          const sortValueA = remainingA === 0 ? Infinity : remainingA;
-          const sortValueB = remainingB === 0 ? Infinity : remainingB;
-          return sortValueA - sortValueB; // 昇順
-        });
-      }
-    }
+    const sortedColors = sortColors(sortOrder, this.options.colorStats);
 
     const paletteGrid = sortedColors
       .map((color) => {
@@ -166,7 +119,7 @@ export class ColorPalette {
     ];
 
     const sortOrderOptions: Array<{
-      value: "default" | "most-missing" | "least-remaining";
+      value: SortOrder;
       labelKey: string;
     }> = [
       { value: "default", labelKey: "sort_order_default" },
@@ -548,6 +501,6 @@ export class ColorPalette {
   ): void {
     sortOrder = sort;
     this.createPaletteUI();
-    this.setupEventHandlers();
+    // this.setupEventHandlers();
   }
 }
