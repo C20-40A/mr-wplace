@@ -65,6 +65,14 @@ export class TileDrawManager {
     }
     if (matchingTiles.length === 0) return tileBlob;
 
+    // 統計リセット: 処理対象imageKeyをクリア（ポーリング再描画時の累積防止）
+    const imageKeysToReset = new Set(
+      matchingTiles.map((t) => t.instance.imageKey)
+    );
+    for (const imageKey of imageKeysToReset) {
+      this.colorStatsMap.delete(imageKey);
+    }
+
     // 背景タイル1回デコード（高速化: 下地用+背景比較用）
     const {
       pixels: bgPixels,
