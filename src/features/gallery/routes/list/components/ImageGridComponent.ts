@@ -27,7 +27,7 @@ export interface ImageGridOptions {
   onAddClick?: () => void;
   emptyStateMessage?: string;
   emptyStateButtonText?: string; // 空状態のボタンテキスト（i18nキー）
-  emptyStateButtonStyle?: 'fab' | 'primary'; // 空状態のボタンスタイル
+  emptyStateButtonStyle?: "fab" | "primary"; // 空状態のボタンスタイル
   gridCols?: string;
 }
 
@@ -44,7 +44,7 @@ export class ImageGridComponent {
       showDrawToggleButton: true, // デフォルトで目アイコンを表示
       showGotoPositionButton: true, // デフォルトでピンアイコンを表示
       emptyStateMessage: t`${"no_saved_images"}`,
-      emptyStateButtonStyle: 'fab', // デフォルトはFABボタン
+      emptyStateButtonStyle: "fab", // デフォルトはFABボタン
       gridCols: "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
       ...options,
     };
@@ -75,7 +75,7 @@ export class ImageGridComponent {
    */
   private renderEmptyState(): void {
     const addButtonHtml = this.options.showAddButton
-      ? this.options.emptyStateButtonStyle === 'primary'
+      ? this.options.emptyStateButtonStyle === "primary"
         ? this.createPrimaryAddButtonHtml()
         : this.createAddButtonHtml()
       : "";
@@ -234,7 +234,7 @@ export class ImageGridComponent {
   private createPrimaryAddButtonHtml(): string {
     const buttonText = this.options.emptyStateButtonText
       ? t`${this.options.emptyStateButtonText}`
-      : '+';
+      : "+";
     return `
       <div class="text-center mt-4">
         <button id="wps-gallery-add-btn" class="btn btn-primary">
@@ -337,14 +337,34 @@ export class ImageGridComponent {
    * 進捗バーのHTMLを生成
    */
   private createProgressBarHtml(item: ImageItem): string {
-    console.log("🧑‍🎨 : createProgressBarHtml", item.key, "currentColorStats:", item.currentColorStats, "totalColorStats:", item.totalColorStats);
-    
+    console.log(
+      "🧑‍🎨 : createProgressBarHtml",
+      item.key,
+      "currentColorStats:",
+      item.currentColorStats,
+      "totalColorStats:",
+      item.totalColorStats
+    );
+
     if (!item.currentColorStats || !item.totalColorStats) return "";
 
-    const matched = Object.values(item.currentColorStats).reduce((sum, count) => sum + count, 0);
-    const total = Object.values(item.totalColorStats).reduce((sum, count) => sum + count, 0);
+    const matched = Object.values(item.currentColorStats).reduce(
+      (sum, count) => sum + count,
+      0
+    );
+    const total = Object.values(item.totalColorStats).reduce(
+      (sum, count) => sum + count,
+      0
+    );
 
-    console.log("🧑‍🎨 : Progress", item.key, "matched:", matched, "total:", total);
+    console.log(
+      "🧑‍🎨 : Progress",
+      item.key,
+      "matched:",
+      matched,
+      "total:",
+      total
+    );
 
     if (total === 0) return "";
 
@@ -355,14 +375,22 @@ export class ImageGridComponent {
     return `
       <div style="padding: 0.375rem 0.625rem; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
         <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-          <span style="font-size: 0.75rem; font-weight: 600; color: #3b82f6; font-family: ui-monospace, monospace; min-width: 3rem;">${percentage.toFixed(1)}%</span>
+          <span style="font-size: 0.75rem; font-weight: 600; color: #3b82f6; font-family: ui-monospace, monospace; min-width: 3rem;">${percentage.toFixed(
+            1
+          )}%</span>
           <div style="flex: 1; position: relative; height: 0.375rem; background-color: #e5e7eb; border-radius: 0.25rem; overflow: hidden;">
-            <div style="height: 100%; background: linear-gradient(to right, #3b82f6, #60a5fa); width: ${percentage.toFixed(1)}%; transition: width 0.3s ease;"></div>
+            <div style="height: 100%; background: linear-gradient(to right, #3b82f6, #60a5fa); width: ${percentage.toFixed(
+              1
+            )}%; transition: width 0.3s ease;"></div>
           </div>
         </div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.6875rem; color: #6b7280; font-family: ui-monospace, monospace; letter-spacing: 0.025em;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.6875rem; color: #6b7280; font-family: ui-monospace, monospace; letter-spacing: 0.025em; flex-wrap: wrap;">
           <span>${matched.toLocaleString()}/${total.toLocaleString()}</span>
-          ${remaining > 0 ? `<span style="color: #9ca3af;">${timeStr}</span>` : ''}
+          ${
+            remaining > 0
+              ? `<span style="color: #9ca3af;">${remaining}px(${timeStr})</span>`
+              : ""
+          }
         </div>
       </div>
     `;
@@ -381,8 +409,8 @@ export class ImageGridComponent {
     if (days > 0) parts.push(`${days}d`);
     if (hours > 0) parts.push(`${hours}h`);
     if (minutes > 0) parts.push(`${minutes}m`);
-    
-    return parts.length > 0 ? parts.join(' ') : '<1m';
+
+    return parts.length > 0 ? parts.join("") : "<1m";
   }
 
   /**
