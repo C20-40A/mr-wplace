@@ -99,21 +99,15 @@ export class TileDrawManager {
       let paintedTilebitmap = instance.tiles?.[tileKey];
       if (!paintedTilebitmap) continue;
 
-      // 補助色パターンの場合、ピクセル処理を適用
-      // 型ガードを直接使用することで、enhancedConfig.modeの型が絞り込まれる
-      if (
-        this.needsPixelComparison(enhancedConfig.mode) &&
-        backgroundImageData
-      ) {
-        paintedTilebitmap = await this.applyAuxiliaryColorPattern(
-          paintedTilebitmap,
-          backgroundImageData,
-          Number(coords[2]) * this.renderScale,
-          Number(coords[3]) * this.renderScale,
-          enhancedConfig.mode,
-          instance.imageKey
-        );
-      }
+      // 統一処理：通常モードは早期リターン、補色モードはピクセル処理
+      paintedTilebitmap = await this.applyAuxiliaryColorPattern(
+        paintedTilebitmap,
+        backgroundImageData,
+        Number(coords[2]) * this.renderScale,
+        Number(coords[3]) * this.renderScale,
+        enhancedConfig.mode,
+        instance.imageKey
+      );
 
       context.drawImage(
         paintedTilebitmap,
@@ -290,24 +284,30 @@ export class TileDrawManager {
   }
 
   /**
-   * 補助色パターンのピクセル処理を適用
+   * オーバーレイ画像の最終処理を統一適用
+   * - 通常モード(dot/cross/fill): そのまま返す（早期リターン、変換なし）
+   * - 補助色モード: 背景比較 + 補助色適用 + 統計計算
    * README.mdの仕様：
    * - タイル色とオーバーレイ色が異なる場合のみ補助色表示
    * - 同じ場合は透明化
    */
   private async applyAuxiliaryColorPattern(
     overlayBitmap: ImageBitmap,
-    backgroundImageData: ImageData,
+    backgroundImageData: ImageData | undefined,
     offsetX: number,
     offsetY: number,
-    mode:
-      | "red-cross"
-      | "cyan-cross"
-      | "dark-cross"
-      | "complement-cross"
-      | "red-border",
+    mode: EnhancedConfig["mode"],
     imageKey: string
   ): Promise<ImageBitmap> {
+    // 通常モード: 変換なしで即座に返す（パフォーマンス最適化）
+    if (!this.needsPixelComparison(mode)) {
+      return overlayBitmap;
+    }
+
+    // 補助色モード: 背景比較必須
+    if (!backgroundImageData) {
+      throw new Error("Background ImageData required for auxiliary color pattern");
+    }
     const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
     const canvas = new OffscreenCanvas(
       overlayBitmap.width,
@@ -381,7 +381,7 @@ export class TileDrawManager {
           } else {
             // 補助色を適用
             const auxColor = this.getAuxiliaryColor(
-              mode,
+              mode as "red-cross" | "cyan-cross" | "dark-cross" | "complement-cross" | "red-border",
               data[i],
               data[i + 1],
               data[i + 2]
