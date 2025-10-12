@@ -10,7 +10,7 @@ export class TileDrawManager {
   public tileSize: number;
   public renderScale: number;
   public overlayLayers: TileDrawInstance[];
-  private colorStatsMap = new Map<string, ColorStats>();
+  private perTileColorStats = new Map<string, Map<string, ColorStats>>();
 
   constructor() {
     this.tileSize = TILE_DRAW_CONSTANTS.TILE_SIZE;
@@ -44,7 +44,7 @@ export class TileDrawManager {
     tileBlob: Blob,
     tileCoords: TileCoords
   ): Promise<Blob> {
-    if (this.overlayLayers.length === 0) return tileBlob; // 描画するものがなければスキップ
+    if (this.overlayLayers.length === 0) return tileBlob;
 
     const coordStr =
       tileCoords[0].toString().padStart(4, "0") +
@@ -65,13 +65,14 @@ export class TileDrawManager {
     }
     if (matchingTiles.length === 0) return tileBlob;
 
-    // 統計リセット: 処理対象imageKeyをクリア（ポーリング再描画時の累積防止）
-    const imageKeysToReset = new Set(
-      matchingTiles.map((t) => t.instance.imageKey)
-    );
-    for (const imageKey of imageKeysToReset) {
-      this.colorStatsMap.delete(imageKey);
+    // ポーリング累積防止: 同タイルのみ統計delete
+    for (const { instance } of matchingTiles) {
+      const imageStatsMap = this.perTileColorStats.get(instance.imageKey);
+      imageStatsMap?.delete(coordStr);
     }
+
+    // 一時統計マップ: 複数タイルまたがり対応
+    const tempStatsMap = new Map<string, ColorStats>();
 
     // 背景タイル1回デコード（高速化: 下地用+背景比較用）
     const {
@@ -119,7 +120,6 @@ export class TileDrawManager {
       let paintedTilebitmap = instance.tiles?.[tileKey];
       if (!paintedTilebitmap) continue;
 
-      // 全モード統一処理: x1背景比較 → 処理 → x3拡大（背景ピクセル再利用）
       paintedTilebitmap = await this.applyOverlayProcessing(
         paintedTilebitmap,
         finalBgPixels,
@@ -127,7 +127,8 @@ export class TileDrawManager {
         Number(coords[2]),
         Number(coords[3]),
         mode,
-        instance.imageKey
+        instance.imageKey,
+        tempStatsMap
       );
 
       context.drawImage(
@@ -135,6 +136,14 @@ export class TileDrawManager {
         Number(coords[2]) * this.renderScale,
         Number(coords[3]) * this.renderScale
       );
+    }
+
+    // 一時統計をperTile統計に保存
+    for (const [imageKey, stats] of tempStatsMap.entries()) {
+      if (!this.perTileColorStats.has(imageKey)) {
+        this.perTileColorStats.set(imageKey, new Map());
+      }
+      this.perTileColorStats.get(imageKey)!.set(coordStr, stats);
     }
 
     const result = await canvas.convertToBlob({ type: "image/png" });
@@ -145,6 +154,7 @@ export class TileDrawManager {
     this.overlayLayers = this.overlayLayers.filter(
       (i) => i.imageKey !== imageKey
     );
+    this.perTileColorStats.delete(imageKey);
   }
 
   toggleDrawEnabled(imageKey: string): boolean {
@@ -238,18 +248,47 @@ export class TileDrawManager {
   getColorStats(
     imageKey: string
   ): { matched: Record<string, number>; total: Record<string, number> } | null {
-    const stats = this.colorStatsMap.get(imageKey);
-    if (!stats) {
-      console.log("🧑‍🎨 : getColorStats - no stats for", imageKey);
+    const tileStatsMap = this.perTileColorStats.get(imageKey);
+    if (!tileStatsMap || tileStatsMap.size === 0) {
       return null;
     }
 
-    const result = {
-      matched: Object.fromEntries(stats.matched),
-      total: Object.fromEntries(stats.total),
+    // 全タイル合算
+    const aggregated = {
+      matched: new Map<string, number>(),
+      total: new Map<string, number>(),
     };
-    console.log("🧑‍🎨 : getColorStats", imageKey, result);
-    return result;
+
+    for (const stats of tileStatsMap.values()) {
+      for (const [colorKey, count] of stats.matched.entries()) {
+        aggregated.matched.set(
+          colorKey,
+          (aggregated.matched.get(colorKey) || 0) + count
+        );
+      }
+      for (const [colorKey, count] of stats.total.entries()) {
+        aggregated.total.set(
+          colorKey,
+          (aggregated.total.get(colorKey) || 0) + count
+        );
+      }
+    }
+
+    return {
+      matched: Object.fromEntries(aggregated.matched),
+      total: Object.fromEntries(aggregated.total),
+    };
+  }
+
+  getPerTileColorStats(imageKey: string): Map<string, ColorStats> | null {
+    return this.perTileColorStats.get(imageKey) || null;
+  }
+
+  setPerTileColorStats(
+    imageKey: string,
+    tileStatsMap: Map<string, ColorStats>
+  ): void {
+    this.perTileColorStats.set(imageKey, tileStatsMap);
   }
 
   getAggregatedColorStats(
@@ -258,23 +297,25 @@ export class TileDrawManager {
     const aggregated: Record<string, { matched: number; total: number }> = {};
 
     for (const imageKey of imageKeys) {
-      const stats = this.colorStatsMap.get(imageKey);
-      if (!stats) continue;
+      const tileStatsMap = this.perTileColorStats.get(imageKey);
+      if (!tileStatsMap) continue;
 
-      // matched 集計
-      for (const [colorKey, count] of stats.matched.entries()) {
-        if (!aggregated[colorKey]) {
-          aggregated[colorKey] = { matched: 0, total: 0 };
+      for (const stats of tileStatsMap.values()) {
+        // matched集計
+        for (const [colorKey, count] of stats.matched.entries()) {
+          if (!aggregated[colorKey]) {
+            aggregated[colorKey] = { matched: 0, total: 0 };
+          }
+          aggregated[colorKey].matched += count;
         }
-        aggregated[colorKey].matched += count;
-      }
 
-      // total 集計
-      for (const [colorKey, count] of stats.total.entries()) {
-        if (!aggregated[colorKey]) {
-          aggregated[colorKey] = { matched: 0, total: 0 };
+        // total集計
+        for (const [colorKey, count] of stats.total.entries()) {
+          if (!aggregated[colorKey]) {
+            aggregated[colorKey] = { matched: 0, total: 0 };
+          }
+          aggregated[colorKey].total += count;
         }
-        aggregated[colorKey].total += count;
       }
     }
 
@@ -295,7 +336,8 @@ export class TileDrawManager {
     offsetX: number,
     offsetY: number,
     mode: EnhancedMode,
-    imageKey: string
+    imageKey: string,
+    tempStatsMap: Map<string, ColorStats>
   ): Promise<ImageBitmap> {
     const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
     const width = overlayBitmap.width;
@@ -308,22 +350,20 @@ export class TileDrawManager {
       : undefined;
 
     const data = await gpuApplyColorFilter(overlayBitmap, colorFilter);
-    // overlayBitmapはGPU内でclose済み
 
     // 背景ピクセル（事前デコード済み）
     const bgData = new Uint8ClampedArray(bgPixels.buffer);
 
-    // 統計初期化
-    if (!this.colorStatsMap.has(imageKey)) {
-      this.colorStatsMap.set(imageKey, {
+    // 統計初期化（tempStatsMap使用）
+    if (!tempStatsMap.has(imageKey)) {
+      tempStatsMap.set(imageKey, {
         matched: new Map(),
         total: new Map(),
       });
     }
-    const stats = this.colorStatsMap.get(imageKey)!;
+    const stats = tempStatsMap.get(imageKey)!;
 
     // === Phase 1: 背景比較 + 統計計算（x1全ピクセル）===
-    // カラーフィルターはGPU適用済み
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const i = (y * width + x) * 4;
@@ -452,15 +492,6 @@ export class TileDrawManager {
     if (!finalCtx) throw new Error("Failed to get final context");
     const finalImageData = new ImageData(scaledData, scaledWidth, scaledHeight);
     finalCtx.putImageData(finalImageData, 0, 0);
-
-    console.log(
-      "🧑‍🎨 : applyOverlayProcessing",
-      imageKey,
-      "matched:",
-      stats.matched.size,
-      "total:",
-      stats.total.size
-    );
 
     return await createImageBitmap(finalCanvas);
   }
