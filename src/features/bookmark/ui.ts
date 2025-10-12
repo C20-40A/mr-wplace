@@ -35,7 +35,7 @@ export const createBookmarkModal = (): ModalElements => {
 
   // Add bookmark-specific content to container
   modalElements.container.innerHTML = t`
-    <div class="flex gap-2 mb-4">
+    <div class="flex gap-2 mb-4" style="flex-wrap: wrap;">
       <button id="wps-export-btn" class="btn btn-outline btn-sm">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
           <path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
@@ -49,14 +49,13 @@ export const createBookmarkModal = (): ModalElements => {
         ${"import"}
       </button>
       <input type="file" id="wps-import-file" accept=".json" style="display: none;">
-    </div>
-
-    <div class="flex items-center gap-2 mb-4">
-      <label class="text-sm text-base-content/80">${"sort_by"}:</label>
-      <select id="wps-bookmark-sort" class="select select-sm select-bordered">
-        <option value="created">${"sort_created"}</option>
-        <option value="accessed">${"sort_accessed"}</option>
-      </select>
+      <div class="flex items-center gap-2 mb-4">
+        <label style="font-size: 0.875rem; white-space: nowrap;">${"sort_by"}</label>
+        <select id="wps-bookmark-sort" class="select select-sm select-bordered">
+          <option value="created">${"sort_created"}</option>
+          <option value="accessed">${"sort_accessed"}</option>
+        </select>
+      </div>
     </div>
 
     <div id="wps-favorites-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
@@ -69,11 +68,11 @@ export const createBookmarkModal = (): ModalElements => {
   return modalElements;
 };
 
-export type BookmarkSortType = 'created' | 'accessed';
+export type BookmarkSortType = "created" | "accessed";
 
 export const renderBookmarks = (
   favorites: Bookmark[],
-  sortType: BookmarkSortType = 'created'
+  sortType: BookmarkSortType = "created"
 ): void => {
   const grid = document.getElementById("wps-favorites-grid") as HTMLElement;
   const count = document.getElementById("wps-favorites-count") as HTMLElement;
@@ -95,14 +94,17 @@ export const renderBookmarks = (
     return;
   }
 
-  if (sortType === 'created') {
+  if (sortType === "created") {
     favorites.sort((a, b) => b.id - a.id);
   } else {
     favorites.sort((a, b) => {
       if (!a.lastAccessedDate && !b.lastAccessedDate) return b.id - a.id;
       if (!a.lastAccessedDate) return 1;
       if (!b.lastAccessedDate) return -1;
-      return new Date(b.lastAccessedDate).getTime() - new Date(a.lastAccessedDate).getTime();
+      return (
+        new Date(b.lastAccessedDate).getTime() -
+        new Date(a.lastAccessedDate).getTime()
+      );
     });
   }
 
@@ -111,9 +113,9 @@ export const renderBookmarks = (
       (fav) => `
           <div class="wps-favorite-card card bg-base-200 shadow-sm hover:shadow-md cursor-pointer transition-all relative"
           style="hover:transform: translateY(-2px);"
-               data-id="${fav.id}" data-lat="${fav.lat}" data-lng="${fav.lng}" data-zoom="${
-        fav.zoom
-      }">
+               data-id="${fav.id}" data-lat="${fav.lat}" data-lng="${
+        fav.lng
+      }" data-zoom="${fav.zoom}">
             <button class="wps-delete-btn btn btn-ghost btn-xs btn-circle absolute right-1 top-1 z-10"
                     data-id="${fav.id}">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-3">

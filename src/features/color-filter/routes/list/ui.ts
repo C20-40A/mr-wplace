@@ -54,7 +54,6 @@ export const renderColorFilters = async (
     onChange: (colorIds) => {
       // 色フィルター適用
       colorFilterManager?.setSelectedColors(colorIds);
-      console.log(`Selected color IDs:`, colorIds);
     },
     showCurrentlySelected: true,
     showEnhancedSelect: true,
