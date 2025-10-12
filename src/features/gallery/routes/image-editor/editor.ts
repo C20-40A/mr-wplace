@@ -321,11 +321,8 @@ export class ImageProcessor {
     // 1. 元画像からリサイズ
     ctx.drawImage(this.originalImage, 0, 0, newWidth, newHeight);
 
-    // 2. 調整適用（リサイズ後）
-    this.applyAdjustments(ctx, newWidth, newHeight);
-
-    // 3. カラーパレット変換（調整後）
-    this.applyPaletteToCanvas(ctx, newWidth, newHeight);
+    // 2. 調整適用 & カラーパレット変換
+    this.processImageFast(ctx, newWidth, newHeight);
 
     if (originalSizeDisplay) {
       originalSizeDisplay.textContent = `${originalWidth} x ${originalHeight}`;
@@ -341,89 +338,133 @@ export class ImageProcessor {
     }
   }
 
-  private applyAdjustments(
+  private processImageFast(
     ctx: CanvasRenderingContext2D,
     width: number,
     height: number
   ): void {
-    if (this.brightness === 0 && this.contrast === 0 && this.saturation === 0)
-      return;
+    if (!this.originalImage) return;
 
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
+
+    const brightness = this.brightness * 2.55;
+    const contrast = this.contrast;
+    const saturation = this.saturation;
+
+    const contrastFactor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+    const satFactor = 1 + saturation / 100;
+
+    // パレットキャッシュ
+    const activeColors = colorpalette.filter((c) =>
+      this.selectedColorIds.includes(c.id)
+    );
+    const rgbList = activeColors.map((c) => c.rgb);
+
+    // √省略
+    function colorDist2(
+      r1: number,
+      g1: number,
+      b1: number,
+      r2: number,
+      g2: number,
+      b2: number
+    ) {
+      const dr = r1 - r2,
+        dg = g1 - g2,
+        db = b1 - b2;
+      return dr * dr + dg * dg + db * db;
+    }
 
     for (let i = 0; i < data.length; i += 4) {
       let r = data[i];
       let g = data[i + 1];
       let b = data[i + 2];
 
-      // 明るさ
-      r += this.brightness * 2.55;
-      g += this.brightness * 2.55;
-      b += this.brightness * 2.55;
-
-      // コントラスト
-      const contrastFactor =
-        (259 * (this.contrast + 255)) / (255 * (259 - this.contrast));
-      r = contrastFactor * (r - 128) + 128;
-      g = contrastFactor * (g - 128) + 128;
-      b = contrastFactor * (b - 128) + 128;
+      // 明るさ＋コントラスト
+      r = contrastFactor * (r + brightness - 128) + 128;
+      g = contrastFactor * (g + brightness - 128) + 128;
+      b = contrastFactor * (b + brightness - 128) + 128;
 
       // 彩度
-      if (this.saturation !== 0) {
+      if (saturation !== 0) {
         const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-        const satFactor = 1 + this.saturation / 100;
         r = gray + (r - gray) * satFactor;
         g = gray + (g - gray) * satFactor;
         b = gray + (b - gray) * satFactor;
       }
 
-      data[i] = Math.max(0, Math.min(255, r));
-      data[i + 1] = Math.max(0, Math.min(255, g));
-      data[i + 2] = Math.max(0, Math.min(255, b));
+      // パレット量子化
+      let minDist = Infinity;
+      let nearest: [number, number, number] = rgbList[0];
+      for (let j = 0; j < rgbList.length; j++) {
+        const c = rgbList[j];
+        const d2 = colorDist2(r, g, b, c[0], c[1], c[2]);
+        if (d2 < minDist) {
+          minDist = d2;
+          nearest = c;
+        }
+      }
+
+      data[i] = nearest[0];
+      data[i + 1] = nearest[1];
+      data[i + 2] = nearest[2];
     }
 
     ctx.putImageData(imageData, 0, 0);
   }
 
-  private applyPaletteToCanvas(
-    ctx: CanvasRenderingContext2D,
-    width: number,
-    height: number
-  ): void {
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
+  // private applyAdjustments(
+  //   ctx: CanvasRenderingContext2D,
+  //   width: number,
+  //   height: number
+  // ): void {
+  //   if (this.brightness === 0 && this.contrast === 0 && this.saturation === 0)
+  //     return;
 
-    for (let i = 0; i < data.length; i += 4) {
-      const r = data[i];
-      const g = data[i + 1];
-      const b = data[i + 2];
+  //   const imageData = ctx.getImageData(0, 0, width, height);
+  //   const data = imageData.data;
 
-      const nearestColor = this.findNearestColor([r, g, b]);
-      data[i] = nearestColor[0];
-      data[i + 1] = nearestColor[1];
-      data[i + 2] = nearestColor[2];
-    }
+  //   for (let i = 0; i < data.length; i += 4) {
+  //     let r = data[i];
+  //     let g = data[i + 1];
+  //     let b = data[i + 2];
 
-    ctx.putImageData(imageData, 0, 0);
-  }
+  //     // 明るさ
+  //     r += this.brightness * 2.55;
+  //     g += this.brightness * 2.55;
+  //     b += this.brightness * 2.55;
 
-  // private convertToPalette(): void {
-  //   if (!this.originalImage) return;
+  //     // コントラスト
+  //     const contrastFactor =
+  //       (259 * (this.contrast + 255)) / (255 * (259 - this.contrast));
+  //     r = contrastFactor * (r - 128) + 128;
+  //     g = contrastFactor * (g - 128) + 128;
+  //     b = contrastFactor * (b - 128) + 128;
 
-  //   const tempCanvas = document.createElement("canvas");
-  //   const tempCtx = tempCanvas.getContext("2d");
-  //   if (!tempCtx) return;
+  //     // 彩度
+  //     if (this.saturation !== 0) {
+  //       const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+  //       const satFactor = 1 + this.saturation / 100;
+  //       r = gray + (r - gray) * satFactor;
+  //       g = gray + (g - gray) * satFactor;
+  //       b = gray + (b - gray) * satFactor;
+  //     }
 
-  //   const width = this.originalImage.naturalWidth;
-  //   const height = this.originalImage.naturalHeight;
-  //   tempCanvas.width = width;
-  //   tempCanvas.height = height;
+  //     data[i] = Math.max(0, Math.min(255, r));
+  //     data[i + 1] = Math.max(0, Math.min(255, g));
+  //     data[i + 2] = Math.max(0, Math.min(255, b));
+  //   }
 
-  //   tempCtx.imageSmoothingEnabled = false;
-  //   tempCtx.drawImage(this.originalImage, 0, 0);
+  //   ctx.putImageData(imageData, 0, 0);
+  // }
 
-  //   const imageData = tempCtx.getImageData(0, 0, width, height);
+  // private applyPaletteToCanvas(
+  //   ctx: CanvasRenderingContext2D,
+  //   width: number,
+  //   height: number
+  // ): void {
+  //   const imageData = ctx.getImageData(0, 0, width, height);
   //   const data = imageData.data;
 
   //   for (let i = 0; i < data.length; i += 4) {
@@ -437,11 +478,7 @@ export class ImageProcessor {
   //     data[i + 2] = nearestColor[2];
   //   }
 
-  //   tempCtx.putImageData(imageData, 0, 0);
-  //   this.colorConvertedCanvas = tempCanvas;
-  //   this.isColorConverted = true;
-
-  //   this.updateScaledImage();
+  //   ctx.putImageData(imageData, 0, 0);
   // }
 
   /**
@@ -461,9 +498,11 @@ export class ImageProcessor {
         }
 
         const shouldResize = confirm(
-          t`${'large_image_resize_confirm'}\n\n` +
-          t`${'current_size'}` + `: ${img.width} x ${img.height}px\n` +
-          t`${'resize_to'}` + `: ${maxSize}px`
+          t`${"large_image_resize_confirm"}\n\n` +
+            t`${"current_size"}` +
+            `: ${img.width} x ${img.height}px\n` +
+            t`${"resize_to"}` +
+            `: ${maxSize}px`
         );
 
         if (!shouldResize) {
@@ -476,21 +515,23 @@ export class ImageProcessor {
         const newWidth = Math.floor(img.width * scale);
         const newHeight = Math.floor(img.height * scale);
 
-        const canvas = document.createElement('canvas');
+        const canvas = document.createElement("canvas");
         canvas.width = newWidth;
         canvas.height = newHeight;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext("2d");
         if (!ctx) {
           resolve(dataUrl);
           return;
         }
 
         ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
+        ctx.imageSmoothingQuality = "high";
         ctx.drawImage(img, 0, 0, newWidth, newHeight);
 
-        console.log(`🧑‍🎨 : Resized image: ${img.width}x${img.height} → ${newWidth}x${newHeight}`);
-        resolve(canvas.toDataURL('image/png'));
+        console.log(
+          `🧑‍🎨 : Resized image: ${img.width}x${img.height} → ${newWidth}x${newHeight}`
+        );
+        resolve(canvas.toDataURL("image/png"));
       };
       img.src = dataUrl;
     });
@@ -508,7 +549,7 @@ export class ImageProcessor {
       TLX: parseInt(match[1]),
       TLY: parseInt(match[2]),
       PxX: parseInt(match[3]),
-      PxY: parseInt(match[4])
+      PxY: parseInt(match[4]),
     };
   }
 
