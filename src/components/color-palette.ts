@@ -1,6 +1,6 @@
 import { colorpalette } from "../constants/colors";
 import { t } from "../i18n/manager";
-import type { EnhancedConfig } from "../features/tile-draw/tile-draw";
+import type { EnhancedMode } from "../features/tile-draw/types";
 import { ENHANCED_MODE_ICONS } from "../assets/enhanced-mode-icons";
 
 interface ColorPaletteOptions {
@@ -8,8 +8,8 @@ interface ColorPaletteOptions {
   selectedColorIds?: number[];
   showCurrentlySelected?: boolean; // 現在選択中の色を表示するか（default: false）
   showEnhancedSelect?: boolean; // enhancedモード選択表示（default: false）
-  onEnhancedModeChange?: (mode: EnhancedConfig["mode"]) => void;
-  enhancedMode?: EnhancedConfig["mode"];
+  onEnhancedModeChange?: (mode: EnhancedMode) => void;
+  enhancedMode?: EnhancedMode;
   hasExtraColorsBitmap?: boolean; // extraColorsBitmap有無（所持色ボタン表示制御）
   showColorStats?: boolean; // 色ごとの統計表示
   colorStats?: Record<string, { matched: number; total: number }>; // 色ごとの統計データ
@@ -31,7 +31,7 @@ export class ColorPalette {
   private options: ColorPaletteOptions;
   private selectedColorIds: Set<number> = new Set();
   private currentlySelectedColorId: number | null = null;
-  private enhancedMode: EnhancedConfig["mode"] = "dot";
+  private enhancedMode: EnhancedMode = "dot";
   private sortOrder: "default" | "most-missing" | "least-remaining" = "default";
 
   constructor(container: HTMLElement, options: ColorPaletteOptions = {}) {
@@ -149,7 +149,7 @@ export class ColorPalette {
       .join("");
 
     const enhancedModes: Array<{
-      value: EnhancedConfig["mode"];
+      value: EnhancedMode;
       labelKey: string;
     }> = [
       { value: "dot", labelKey: "enhanced_mode_dot" },
@@ -377,8 +377,7 @@ export class ColorPalette {
     enhancedModeButtons.forEach((button) => {
       button.addEventListener("click", (e) => {
         e.stopPropagation();
-        const mode = (button as HTMLElement).dataset
-          .mode as EnhancedConfig["mode"];
+        const mode = (button as HTMLElement).dataset.mode as EnhancedMode;
         this.handleEnhancedModeChange(mode);
         if (enhancedModeDropdown) {
           enhancedModeDropdown.style.display = "none";
@@ -491,7 +490,7 @@ export class ColorPalette {
     this.container.innerHTML = "";
   }
 
-  private handleEnhancedModeChange(mode: EnhancedConfig["mode"]): void {
+  private handleEnhancedModeChange(mode: EnhancedMode): void {
     this.enhancedMode = mode;
 
     // 現在選択中のアイコンと名称を更新

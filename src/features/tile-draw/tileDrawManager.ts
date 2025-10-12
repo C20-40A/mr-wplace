@@ -1,7 +1,7 @@
-import { splitImageOnTiles } from "./tile-draw";
+import { splitImageOnTiles } from "./splitImageOnTiles";
 import { TILE_DRAW_CONSTANTS, WplaceCoords, TileCoords } from "./constants";
 import { llzToTilePixel } from "../../utils/coordinate";
-import type { TileDrawInstance, EnhancedConfig, ColorStats } from "./types";
+import type { TileDrawInstance, ColorStats, EnhancedMode } from "./types";
 import { getAuxiliaryColor, isSameColor, colorToKey } from "./color-processing";
 import { getGridPosition } from "./pixel-processing";
 import { gpuApplyColorFilter } from "./gpu-filter";
@@ -286,7 +286,7 @@ export class TileDrawManager {
     bgWidth: number,
     offsetX: number,
     offsetY: number,
-    mode: EnhancedConfig["mode"],
+    mode: EnhancedMode,
     imageKey: string
   ): Promise<ImageBitmap> {
     const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
