@@ -3,6 +3,9 @@ import { t } from "../i18n/manager";
 import type { EnhancedMode } from "../features/tile-draw/types";
 import { ENHANCED_MODE_ICONS } from "../assets/enhanced-mode-icons";
 
+// 並び替え処理はグローバル変数で保持
+let sortOrder: "default" | "most-missing" | "least-remaining" = "default";
+
 interface ColorPaletteOptions {
   onChange?: (colorIds: number[]) => void;
   selectedColorIds?: number[];
@@ -32,7 +35,7 @@ export class ColorPalette {
   private selectedColorIds: Set<number> = new Set();
   private currentlySelectedColorId: number | null = null;
   private enhancedMode: EnhancedMode = "dot";
-  private sortOrder: "default" | "most-missing" | "least-remaining" = "default";
+  // private sortOrder: "default" | "most-missing" | "least-remaining" = "default";
 
   constructor(container: HTMLElement, options: ColorPaletteOptions = {}) {
     this.container = container;
@@ -65,7 +68,7 @@ export class ColorPalette {
     // 並び替え処理
     let sortedColors = [...colorpalette];
     if (this.options.showColorStats && this.options.colorStats) {
-      if (this.sortOrder === "most-missing") {
+      if (sortOrder === "most-missing") {
         // 統計あり/なしで分離
         const withStats: Array<{
           color: (typeof colorpalette)[0];
@@ -90,7 +93,7 @@ export class ColorPalette {
 
         // 統計あり + 統計なし（default順）
         sortedColors = [...withStats.map((w) => w.color), ...withoutStats];
-      } else if (this.sortOrder === "least-remaining") {
+      } else if (sortOrder === "least-remaining") {
         sortedColors.sort((a, b) => {
           const [rA, gA, bA] = a.rgb;
           const [rB, gB, bB] = b.rgb;
@@ -176,7 +179,7 @@ export class ColorPalette {
           <button class="sort-order-button" type="button" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background-color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
             <span style="font-size: 0.875rem; color: #374151;">${t`${"sort_by"}`}</span>
             <span class="sort-order-current-name" style="font-size: 0.875rem; font-weight: 600; color: #22c55e;">${t`${
-              sortOrderOptions.find((o) => o.value === this.sortOrder)?.labelKey ??
+              sortOrderOptions.find((o) => o.value === sortOrder)?.labelKey ??
               "sort_order_default"
             }`}</span>
           </button>
@@ -184,7 +187,7 @@ export class ColorPalette {
             <div class="sort-order-list" style="display: flex; flex-direction: column; gap: 0.25rem;">
               ${sortOrderOptions
                 .map((option) => {
-                  const isSelected = this.sortOrder === option.value;
+                  const isSelected = sortOrder === option.value;
                   const borderColor = isSelected ? "#22c55e" : "#d1d5db";
                   const borderWidth = isSelected ? "2px" : "1px";
                   return `
@@ -543,7 +546,7 @@ export class ColorPalette {
   private handleSortOrderChange(
     sort: "default" | "most-missing" | "least-remaining"
   ): void {
-    this.sortOrder = sort;
+    sortOrder = sort;
     this.createPaletteUI();
     this.setupEventHandlers();
   }
