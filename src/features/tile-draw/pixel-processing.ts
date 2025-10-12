@@ -16,24 +16,6 @@ export const getGridPosition = (x: number, y: number): GridPosition => {
 };
 
 /**
- * x1座標をx3座標に変換（純粋関数）
- * @param coord x1座標
- * @returns x3座標
- */
-export const scaleCoord = (coord: number): number => {
-  return coord * TILE_DRAW_CONSTANTS.PIXEL_SCALE;
-};
-
-/**
- * x3座標をx1座標に変換（純粋関数）
- * @param coord x3座標
- * @returns x1座標
- */
-export const unscaleCoord = (coord: number): number => {
-  return Math.floor(coord / TILE_DRAW_CONSTANTS.PIXEL_SCALE);
-};
-
-/**
  * 背景ピクセルのインデックス計算（純粋関数）
  * @param bgX 背景x座標
  * @param bgY 背景y座標

@@ -1,4 +1,4 @@
-import { drawImageOnTiles } from "./tile-draw";
+import { splitImageOnTiles } from "./tile-draw";
 import { TILE_DRAW_CONSTANTS, WplaceCoords, TileCoords } from "./constants";
 import { llzToTilePixel } from "../../utils/coordinate";
 import type { TileDrawInstance, EnhancedConfig, ColorStats } from "./types";
@@ -25,11 +25,12 @@ export class TileDrawManager {
   ): Promise<void> {
     this.removePreparedOverlayImageByKey(imageKey);
 
-    const { preparedOverlayImage } = await drawImageOnTiles({
-      file: blob,
-      coords,
-      tileSize: this.tileSize,
-    });
+    const { preparedOverlayImages: preparedOverlayImage } =
+      await splitImageOnTiles({
+        file: blob,
+        coords,
+        tileSize: this.tileSize,
+      });
 
     this.overlayLayers.push({
       coords,
@@ -65,9 +66,19 @@ export class TileDrawManager {
     if (matchingTiles.length === 0) return tileBlob;
 
     // 背景タイル1回デコード（高速化: 下地用+背景比較用）
-    const { pixels: bgPixels, width: bgWidth, height: bgHeight } = await blobToPixels(tileBlob);
-    console.log("🧑‍🎨 : bg size", bgWidth, bgHeight, "bufferLength", bgPixels.length);
-    
+    const {
+      pixels: bgPixels,
+      width: bgWidth,
+      height: bgHeight,
+    } = await blobToPixels(tileBlob);
+    console.log(
+      "🧑‍🎨 : bg size",
+      bgWidth,
+      bgHeight,
+      "bufferLength",
+      bgPixels.length
+    );
+
     const bgImageData = new ImageData(
       new Uint8ClampedArray(bgPixels.buffer),
       bgWidth,
@@ -85,7 +96,9 @@ export class TileDrawManager {
     // 元タイル画像を下地化（デコード済みImageBitmap）
     context.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
 
-    const enhancedConfig = this.getEnhancedConfig();
+    // 描画モードを取得
+    const colorFilterManager = window.mrWplace?.colorFilterManager;
+    const mode = colorFilterManager?.getEnhancedMode() ?? "dot";
 
     // 透明背景に複数オーバーレイが重なった合成画像を出力
     for (const { tileKey, instance } of matchingTiles) {
@@ -100,7 +113,7 @@ export class TileDrawManager {
         bgWidth,
         Number(coords[2]),
         Number(coords[3]),
-        enhancedConfig.mode,
+        mode,
         instance.imageKey
       );
 
@@ -255,33 +268,6 @@ export class TileDrawManager {
     return aggregated;
   }
 
-  private getEnhancedConfig(): EnhancedConfig {
-    const colorFilterManager = window.mrWplace?.colorFilterManager;
-    const mode = colorFilterManager?.getEnhancedMode() ?? "dot";
-    return { mode };
-  }
-
-  /**
-   * 補助色パターンかどうかを判定
-   * 補助色パターン：タイル色との比較が必要
-   */
-  private needsPixelComparison(
-    mode: EnhancedConfig["mode"]
-  ): mode is
-    | "red-cross"
-    | "cyan-cross"
-    | "dark-cross"
-    | "complement-cross"
-    | "red-border" {
-    return [
-      "red-cross",
-      "cyan-cross",
-      "dark-cross",
-      "complement-cross",
-      "red-border",
-    ].includes(mode);
-  }
-
   /**
    * オーバーレイ最終処理（全モード統合）
    * 1. カラーフィルター適用（x1サイズ）
@@ -427,7 +413,8 @@ export class TileDrawManager {
             scaledData[i + 1] = g;
             scaledData[i + 2] = b;
             scaledData[i + 3] = a;
-          } else if (this.needsPixelComparison(mode)) {
+          } else {
+            // 補助色を使うパターン
             if (isCrossArm) {
               const [ar, ag, ab] = getAuxiliaryColor(mode, [r, g, b]);
               scaledData[i] = ar;
@@ -435,6 +422,7 @@ export class TileDrawManager {
               scaledData[i + 2] = ab;
               scaledData[i + 3] = 255;
             } else if (mode === "red-border") {
+              // 赤枠モードは腕以外(4隅)も赤
               scaledData[i] = 255;
               scaledData[i + 1] = 0;
               scaledData[i + 2] = 0;
