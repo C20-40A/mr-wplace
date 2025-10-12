@@ -196,6 +196,18 @@ export class TileOverlay {
       ],
       image.key
     );
+
+    // 統計復元
+    if (image.perTileColorStats) {
+      const tileStatsMap = new Map();
+      for (const [tileKey, stats] of Object.entries(image.perTileColorStats)) {
+        tileStatsMap.set(tileKey, {
+          matched: new Map(Object.entries((stats as any).matched)),
+          total: new Map(Object.entries((stats as any).total)),
+        });
+      }
+      this.tileDrawManager.setPerTileColorStats(image.key, tileStatsMap);
+    }
   }
 
   private async dataUrlToFile(
@@ -210,21 +222,11 @@ export class TileOverlay {
   private async updateColorStatsForTileWithCache(
     targetImages: any[]
   ): Promise<void> {
-    console.log(`🧑‍🎨 : Found ${targetImages.length} target images`);
-
     for (const image of targetImages) {
-      const stats = this.tileDrawManager.getColorStats(image.key);
-      if (!stats) {
-        console.log(`🧑‍🎨 : No stats for ${image.key}`);
-        continue;
-      }
+      const perTileStats = this.tileDrawManager.getPerTileColorStats(image.key);
+      if (!perTileStats) continue;
 
-      console.log(`🧑‍🎨 : Saving stats for ${image.key}`, stats);
-      await this.galleryStorage.save({
-        ...image,
-        currentColorStats: stats.matched,
-        totalColorStats: stats.total,
-      });
+      await this.galleryStorage.updateTileColorStats(image.key, perTileStats);
     }
   }
 }

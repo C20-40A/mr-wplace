@@ -30,12 +30,7 @@ export class GalleryListUI {
   ): void {
     // 外部コンテナが指定された場合はそれを使用
     if (container) this.container = container;
-    this.renderGalleryList(
-      items,
-      onDelete,
-      onImageClick,
-      onAddClick
-    );
+    this.renderGalleryList(items, onDelete, onImageClick, onAddClick);
   }
 
   private renderGalleryList(
@@ -46,11 +41,14 @@ export class GalleryListUI {
   ): void {
     if (!this.container) return;
 
-    console.log("🧑‍🎨 : renderGalleryList items:", items.map(i => ({
-      key: i.key,
-      hasCurrentStats: !!i.currentColorStats,
-      hasTotalStats: !!i.totalColorStats
-    })));
+    console.log(
+      "🧑‍🎨 : renderGalleryList items:",
+      items.map((i) => ({
+        key: i.key,
+        hasCurrentStats: !!i.matchedColorStats,
+        hasTotalStats: !!i.totalColorStats,
+      }))
+    );
 
     // GalleryItemをImageItemに変換
     const imageItems: ImageItem[] = items.map((item) => ({
@@ -60,7 +58,7 @@ export class GalleryListUI {
       drawPosition: item.drawPosition,
       drawEnabled: item.drawEnabled,
       hasDrawPosition: !!item.drawPosition,
-      currentColorStats: item.currentColorStats,
+      currentColorStats: item.matchedColorStats,
       totalColorStats: item.totalColorStats,
     }));
 
@@ -109,11 +107,7 @@ export class GalleryListUI {
     // 画面を再描画
     const galleryStorage = new (await import("../../storage")).GalleryStorage();
     const updatedItems = await galleryStorage.getAll();
-    this.renderGalleryList(
-      updatedItems,
-      onDelete,
-      onImageClick
-    );
+    this.renderGalleryList(updatedItems, onDelete, onImageClick);
 
     console.log(`🎯 Draw toggle: ${key} -> ${newDrawEnabled}`);
   }
