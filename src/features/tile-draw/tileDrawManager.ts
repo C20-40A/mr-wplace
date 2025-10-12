@@ -381,7 +381,7 @@ export class TileDrawManager {
           } else {
             // 補助色を適用
             const auxColor = this.getAuxiliaryColor(
-              mode as "red-cross" | "cyan-cross" | "dark-cross" | "complement-cross" | "red-border",
+              mode,
               data[i],
               data[i + 1],
               data[i + 2]
@@ -421,12 +421,7 @@ export class TileDrawManager {
    * モードに応じた補助色を返す
    */
   private getAuxiliaryColor(
-    mode:
-      | "red-cross"
-      | "cyan-cross"
-      | "dark-cross"
-      | "complement-cross"
-      | "red-border",
+    mode: EnhancedConfig["mode"],
     r: number,
     g: number,
     b: number
