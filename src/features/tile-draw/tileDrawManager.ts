@@ -71,23 +71,28 @@ export class TileDrawManager {
       width: bgWidth,
       height: bgHeight,
     } = await blobToPixels(tileBlob);
-    console.log(
-      "🧑‍🎨 : bg size",
-      bgWidth,
-      bgHeight,
-      "bufferLength",
-      bgPixels.length
-    );
+
+    // 1x1 = 未ロードタイル → 透明1000x1000生成
+    // NOTE: 何も描かれていない場所に描画しようとすると、1x1 ピクセルの背景 blob がやってきて、画像が描画されない問題の修正
+    let finalBgPixels = bgPixels;
+    let finalBgWidth = bgWidth;
+    let finalBgHeight = bgHeight;
+    if (bgWidth === 1 && bgHeight === 1) {
+      console.log("🧑‍🎨 : 1x1 tile detected, generating transparent 1000x1000");
+      finalBgPixels = new Uint8Array(this.tileSize * this.tileSize * 4);
+      finalBgWidth = this.tileSize;
+      finalBgHeight = this.tileSize;
+    }
 
     const bgImageData = new ImageData(
-      new Uint8ClampedArray(bgPixels.buffer),
-      bgWidth,
-      bgHeight
+      new Uint8ClampedArray(finalBgPixels.buffer),
+      finalBgWidth,
+      finalBgHeight
     );
     const tileBitmap = await createImageBitmap(bgImageData);
 
     // キャンバス作成（実サイズベース）
-    const drawSize = Math.max(bgWidth, bgHeight) * this.renderScale;
+    const drawSize = Math.max(finalBgWidth, finalBgHeight) * this.renderScale;
     const canvas = new OffscreenCanvas(drawSize, drawSize);
     const context = canvas.getContext("2d", { willReadFrequently: true });
     if (!context) throw new Error("tile canvas context not found");
@@ -109,8 +114,8 @@ export class TileDrawManager {
       // 全モード統一処理: x1背景比較 → 処理 → x3拡大（背景ピクセル再利用）
       paintedTilebitmap = await this.applyOverlayProcessing(
         paintedTilebitmap,
-        bgPixels,
-        bgWidth,
+        finalBgPixels,
+        finalBgWidth,
         Number(coords[2]),
         Number(coords[3]),
         mode,
