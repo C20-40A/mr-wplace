@@ -185,4 +185,9 @@ export const jaTranslations = {
   // Auto Spoit
   auto_spoit: "オートスポイト",
   auto_spoit_tooltip: "自動色取得",
+
+  // Sort Order
+  sort_order_default: "デフォルト",
+  sort_order_most_missing: "残りピクセルが多い",
+  sort_order_least_remaining: "残りピクセルが少ない",
 };

@@ -184,4 +184,9 @@ export const enTranslations = {
   // Auto Spoit
   auto_spoit: "Auto Color Picker",
   auto_spoit_tooltip: "Auto color picker",
+
+  // Sort Order
+  sort_order_default: "Default",
+  sort_order_most_missing: "Most Missing",
+  sort_order_least_remaining: "Almost Done",
 };
