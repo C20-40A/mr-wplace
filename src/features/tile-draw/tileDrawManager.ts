@@ -75,14 +75,22 @@ export class TileDrawManager {
     }
     if (matchingTiles.length === 0) return tileBlob;
 
+    // 背景タイル1回デコード（高速化: 下地用+背景比較用）
+    const bgPixels = await blobToPixels(tileBlob);
+    const bgImageData = new ImageData(
+      new Uint8ClampedArray(bgPixels.buffer),
+      this.tileSize,
+      this.tileSize
+    );
+    const tileBitmap = await createImageBitmap(bgImageData);
+
     // キャンバス作成
     const canvas = new OffscreenCanvas(drawSize, drawSize);
     const context = canvas.getContext("2d", { willReadFrequently: true });
     if (!context) throw new Error("tile canvas context not found");
     context.imageSmoothingEnabled = false;
 
-    // 元タイル画像を読み込んで下地化
-    const tileBitmap = await createImageBitmap(tileBlob);
+    // 元タイル画像を下地化（デコード済みImageBitmap）
     context.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
 
     const enhancedConfig = this.getEnhancedConfig();
@@ -93,10 +101,10 @@ export class TileDrawManager {
       let paintedTilebitmap = instance.tiles?.[tileKey];
       if (!paintedTilebitmap) continue;
 
-      // 全モード統一処理: x1背景比較 → 処理 → x3拡大
+      // 全モード統一処理: x1背景比較 → 処理 → x3拡大（背景ピクセル再利用）
       paintedTilebitmap = await this.applyOverlayProcessing(
         paintedTilebitmap,
-        tileBlob,
+        bgPixels,
         Number(coords[2]),
         Number(coords[3]),
         enhancedConfig.mode,
@@ -290,7 +298,7 @@ export class TileDrawManager {
    */
   private async applyOverlayProcessing(
     overlayBitmap: ImageBitmap,
-    tileBlob: Blob,
+    bgPixels: Uint8Array,
     offsetX: number,
     offsetY: number,
     mode: EnhancedConfig["mode"],
@@ -309,8 +317,7 @@ export class TileDrawManager {
     const data = await gpuApplyColorFilter(overlayBitmap, colorFilter);
     // overlayBitmapはGPU内でclose済み
 
-    // 背景x1サイズ取得（ImageDecoder API高速化）
-    const bgPixels = await blobToPixels(tileBlob);
+    // 背景ピクセル（事前デコード済み）
     const bgData = new Uint8ClampedArray(bgPixels.buffer);
 
     // 統計初期化
