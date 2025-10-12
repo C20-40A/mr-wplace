@@ -390,27 +390,8 @@ export class TileDrawManager {
     }
 
     // === Phase 3: モード別処理（x3サイズ） ===
-    const bgCanvas3x = new OffscreenCanvas(
-      this.tileSize * this.renderScale,
-      this.tileSize * this.renderScale
-    );
-    const bgCtx3x = bgCanvas3x.getContext("2d");
-    if (!bgCtx3x) throw new Error("Failed to get bg3x context");
-    bgCtx3x.drawImage(
-      bgBitmap,
-      0,
-      0,
-      this.tileSize * this.renderScale,
-      this.tileSize * this.renderScale
-    );
-    const bgData3x = bgCtx3x.getImageData(
-      0,
-      0,
-      this.tileSize * this.renderScale,
-      this.tileSize * this.renderScale
-    );
 
-    // Phase3ループは従来通り
+    // Phase3ループ(x3全ピクセル)
     for (let y = 0; y < scaledHeight; y++) {
       for (let x = 0; x < scaledWidth; x++) {
         const i = (y * scaledWidth + x) * 4;
@@ -422,18 +403,18 @@ export class TileDrawManager {
         // 十字形状のアーム部分(centerはスキップ済み)
         const isCrossArm = x % pixelScale === 1 || y % pixelScale === 1;
 
-        // 背景色取得（x3座標）
-        const bgX3 = offsetX * this.renderScale + x;
-        const bgY3 = offsetY * this.renderScale + y;
-        const bgI3 = (bgY3 * this.tileSize * this.renderScale + bgX3) * 4;
+        // 背景色取得（x1座標逆算）
+        const bgX1 = Math.floor((offsetX * this.renderScale + x) / this.renderScale);
+        const bgY1 = Math.floor((offsetY * this.renderScale + y) / this.renderScale);
+        const bgI1 = (bgY1 * this.tileSize + bgX1) * 4;
 
-        if (bgI3 + 3 >= bgData3x.data.length) continue;
+        if (bgI1 + 3 >= bgData.data.length) continue;
 
         const [bgR, bgG, bgB, bgA] = [
-          bgData3x.data[bgI3],
-          bgData3x.data[bgI3 + 1],
-          bgData3x.data[bgI3 + 2],
-          bgData3x.data[bgI3 + 3],
+          bgData.data[bgI1],
+          bgData.data[bgI1 + 1],
+          bgData.data[bgI1 + 2],
+          bgData.data[bgI1 + 3],
         ];
 
         // 背景と同色なら透明化
