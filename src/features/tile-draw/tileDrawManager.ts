@@ -364,89 +364,95 @@ export class TileDrawManager {
     const scaledHeight = height * pixelScale;
     const scaledData = new Uint8ClampedArray(scaledWidth * scaledHeight * 4); // デフォルト透明
 
+    // カラーフィルター色数0なら描画スキップ（統計は取得済み）
+    const shouldSkipRendering =
+      colorFilter !== undefined && colorFilter.length === 0;
+
     // x3全ピクセルループ
-    for (let y = 0; y < scaledHeight; y++) {
-      for (let x = 0; x < scaledWidth; x++) {
-        // x1座標逆算
-        const x1 = Math.floor(x / pixelScale);
-        const y1 = Math.floor(y / pixelScale);
-        const srcI = (y1 * width + x1) * 4;
+    if (!shouldSkipRendering) {
+      for (let y = 0; y < scaledHeight; y++) {
+        for (let x = 0; x < scaledWidth; x++) {
+          // x1座標逆算
+          const x1 = Math.floor(x / pixelScale);
+          const y1 = Math.floor(y / pixelScale);
+          const srcI = (y1 * width + x1) * 4;
 
-        // x1データから取得
-        const [r, g, b, a] = [
-          data[srcI],
-          data[srcI + 1],
-          data[srcI + 2],
-          data[srcI + 3],
-        ];
-        if (a === 0) continue; // 透明ならスキップ
+          // x1データから取得
+          const [r, g, b, a] = [
+            data[srcI],
+            data[srcI + 1],
+            data[srcI + 2],
+            data[srcI + 3],
+          ];
+          if (a === 0) continue; // 透明ならスキップ
 
-        const i = (y * scaledWidth + x) * 4;
+          const i = (y * scaledWidth + x) * 4;
 
-        const isCenterPixel = x % pixelScale === 1 && y % pixelScale === 1;
-        if (isCenterPixel) {
-          // 中心ピクセルは常に書き込み
-          scaledData[i] = r;
-          scaledData[i + 1] = g;
-          scaledData[i + 2] = b;
-          scaledData[i + 3] = a;
-          continue;
-        }
-
-        // 十字形状のアーム部分
-        const isCrossArm = x % pixelScale === 1 || y % pixelScale === 1;
-
-        // 背景色取得
-        const bgX1 = offsetX + x1;
-        const bgY1 = offsetY + y1;
-        const bgI1 = (bgY1 * this.tileSize + bgX1) * 4;
-
-        if (bgI1 + 3 >= bgData.data.length) continue;
-
-        const [bgR, bgG, bgB, bgA] = [
-          bgData.data[bgI1],
-          bgData.data[bgI1 + 1],
-          bgData.data[bgI1 + 2],
-          bgData.data[bgI1 + 3],
-        ];
-
-        // 背景と同色なら透明化（書き込まない）
-        const isSameColor = bgA > 0 && r === bgR && g === bgG && b === bgB;
-        if (isSameColor) continue;
-
-        // モード別処理
-        if (mode === "dot") {
-          // 書き込まない（デフォルト透明のまま）
-        } else if (mode === "cross") {
-          if (isCrossArm) {
+          const isCenterPixel = x % pixelScale === 1 && y % pixelScale === 1;
+          if (isCenterPixel) {
+            // 中心ピクセルは常に書き込み
             scaledData[i] = r;
             scaledData[i + 1] = g;
             scaledData[i + 2] = b;
             scaledData[i + 3] = a;
+            continue;
           }
-        } else if (mode === "fill") {
-          scaledData[i] = r;
-          scaledData[i + 1] = g;
-          scaledData[i + 2] = b;
-          scaledData[i + 3] = a;
-        } else if (this.needsPixelComparison(mode)) {
-          if (isCrossArm) {
-            const [ar, ag, ab] = this.getAuxiliaryColor(mode, r, g, b);
-            scaledData[i] = ar;
-            scaledData[i + 1] = ag;
-            scaledData[i + 2] = ab;
-            scaledData[i + 3] = 255;
-          } else if (mode === "red-border") {
-            scaledData[i] = 255;
-            scaledData[i + 1] = 0;
-            scaledData[i + 2] = 0;
-            scaledData[i + 3] = 255;
+
+          // 十字形状のアーム部分
+          const isCrossArm = x % pixelScale === 1 || y % pixelScale === 1;
+
+          // 背景色取得
+          const bgX1 = offsetX + x1;
+          const bgY1 = offsetY + y1;
+          const bgI1 = (bgY1 * this.tileSize + bgX1) * 4;
+
+          if (bgI1 + 3 >= bgData.data.length) continue;
+
+          const [bgR, bgG, bgB, bgA] = [
+            bgData.data[bgI1],
+            bgData.data[bgI1 + 1],
+            bgData.data[bgI1 + 2],
+            bgData.data[bgI1 + 3],
+          ];
+
+          // 背景と同色なら透明化（書き込まない）
+          const isSameColor = bgA > 0 && r === bgR && g === bgG && b === bgB;
+          if (isSameColor) continue;
+
+          // モード別処理
+          if (mode === "dot") {
+            // 書き込まない（デフォルト透明のまま）
+          } else if (mode === "cross") {
+            if (isCrossArm) {
+              scaledData[i] = r;
+              scaledData[i + 1] = g;
+              scaledData[i + 2] = b;
+              scaledData[i + 3] = a;
+            }
+          } else if (mode === "fill") {
+            scaledData[i] = r;
+            scaledData[i + 1] = g;
+            scaledData[i + 2] = b;
+            scaledData[i + 3] = a;
+          } else if (this.needsPixelComparison(mode)) {
+            if (isCrossArm) {
+              const [ar, ag, ab] = this.getAuxiliaryColor(mode, r, g, b);
+              scaledData[i] = ar;
+              scaledData[i + 1] = ag;
+              scaledData[i + 2] = ab;
+              scaledData[i + 3] = 255;
+            } else if (mode === "red-border") {
+              scaledData[i] = 255;
+              scaledData[i + 1] = 0;
+              scaledData[i + 2] = 0;
+              scaledData[i + 3] = 255;
+            }
           }
         }
       }
     }
 
-    // === 最終キャンバス投影 ===
+    // === 最終キャンバス投影 ===（常に実行）
     const finalCanvas = new OffscreenCanvas(scaledWidth, scaledHeight);
     const finalCtx = finalCanvas.getContext("2d");
     if (!finalCtx) throw new Error("Failed to get final context");
