@@ -2,6 +2,7 @@ import { llzToTilePixel } from "./coordinate";
 
 // Smart navigation: close distance uses flyTo (smooth), far distance uses jumpTo (instant)
 // Fallback to URL navigation if map instance is not available
+// src/utils/position.tsのgotoPosition経由で利用することを想定
 export const flyToPosition = (
   lat: number,
   lng: number,

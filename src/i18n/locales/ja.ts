@@ -33,8 +33,6 @@ export const jaTranslations = {
   no_bookmarks: "ブックマークがありません",
   add_bookmark_instruction:
     "マップをクリックし、「ブックマーク」ボタンで追加してください",
-  saved_count: "保存済み",
-  items_unit: "件",
   location_unavailable: "位置情報を取得できませんでした。",
   location_unavailable_instruction:
     "位置情報を取得できませんでした。マップをクリックしてから保存してください。",

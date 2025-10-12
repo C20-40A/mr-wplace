@@ -32,8 +32,6 @@ export const ptTranslations = {
   no_bookmarks: "Sem favoritos",
   add_bookmark_instruction:
     'Clique no mapa e use o botão "Favorito" para adicionar',
-  saved_count: "Salvos",
-  items_unit: "itens",
   location_unavailable: "Não foi possível obter as informações de localização.",
   location_unavailable_instruction:
     "Não foi possível obter as informações de localização. Por favor, clique no mapa e depois salve.",

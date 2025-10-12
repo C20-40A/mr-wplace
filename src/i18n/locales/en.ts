@@ -33,8 +33,6 @@ export const enTranslations = {
   no_bookmarks: "No bookmarks",
   add_bookmark_instruction:
     'Click on the map and use the "Bookmark" button to add',
-  saved_count: "Saved",
-  items_unit: "items",
   location_unavailable: "Could not retrieve location information.",
   location_unavailable_instruction:
     "Could not retrieve location information. Please click on the map and then save.",
@@ -87,7 +85,8 @@ export const enTranslations = {
   download: "Download",
   clear_image_confirm: "Clear image and return to initial state?",
   saved_to_gallery: "Image saved to gallery",
-  large_image_resize_confirm: "The image size is large and may cause slow processing.\nWould you like to resize the image?",
+  large_image_resize_confirm:
+    "The image size is large and may cause slow processing.\nWould you like to resize the image?",
   current_size: "Current size",
   resize_to: "Resize to",
   adjustments: "Adjustments",

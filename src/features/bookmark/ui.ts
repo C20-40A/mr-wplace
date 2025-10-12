@@ -3,6 +3,7 @@ import { t } from "../../i18n/manager";
 import { createModal, ModalElements } from "../../utils/modal";
 import { IMG_ICON_BOOKMARK } from "../../assets/iconImages";
 import { createResponsiveButton } from "../../components/responsive-button";
+import { createCoordinateJumper } from "./components/coordinate-jumper";
 
 export const createSaveBookmarkButton = (): HTMLButtonElement => {
   return createResponsiveButton({
@@ -34,6 +35,10 @@ export const createBookmarkModal = (): ModalElements => {
   });
 
   // Add bookmark-specific content to container
+  modalElements.container.style.display = "flex";
+  modalElements.container.style.flexDirection = "column";
+  modalElements.container.style.height = "40rem";
+
   modalElements.container.innerHTML = t`
     <div class="flex gap-2 mb-4" style="flex-wrap: wrap;">
       <button id="wps-export-btn" class="btn btn-outline btn-sm">
@@ -58,12 +63,17 @@ export const createBookmarkModal = (): ModalElements => {
       </div>
     </div>
 
-    <div id="wps-favorites-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-96 overflow-y-auto">
+    <div style="flex: 1; overflow-y: auto; min-height: 0;">
+      <div id="wps-favorites-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      </div>
     </div>
 
-    <div id="wps-favorites-count" class="text-center text-sm text-base-content/80 mt-4">
+    <div id="wps-favorites-count" class="text-center text-sm text-base-content/80 mt-1">
     </div>
   `;
+
+  // Add coordinate jumper
+  modalElements.container.appendChild(createCoordinateJumper());
 
   return modalElements;
 };
@@ -79,7 +89,7 @@ export const renderBookmarks = (
 
   if (!grid || !count) return;
 
-  count.textContent = t`${"saved_count"}: ${favorites.length} ${"items_unit"}`;
+  count.textContent = t`Total: ${favorites.length}`;
 
   if (favorites.length === 0) {
     grid.innerHTML = t`

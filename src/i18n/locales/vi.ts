@@ -31,8 +31,6 @@ export const viTranslations = {
   // Bookmarks
   no_bookmarks: "Không có đánh dấu",
   add_bookmark_instruction: 'Nhấp vào bản đồ và sử dụng nút "Đánh dấu" để thêm',
-  saved_count: "Đã lưu",
-  items_unit: "mục",
   location_unavailable: "Không thể lấy thông tin vị trí.",
   location_unavailable_instruction:
     "Không thể lấy thông tin vị trí. Vui lòng nhấp vào bản đồ rồi lưu.",
