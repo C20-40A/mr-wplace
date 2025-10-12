@@ -164,21 +164,21 @@ export class ColorPalette {
 
     const sortOrderOptions: Array<{
       value: "default" | "most-missing" | "least-remaining";
-      label: string;
+      labelKey: string;
     }> = [
-      { value: "default", label: "Default" },
-      { value: "most-missing", label: "Most Missing" },
-      { value: "least-remaining", label: "Almost Done" },
+      { value: "default", labelKey: "sort_order_default" },
+      { value: "most-missing", labelKey: "sort_order_most_missing" },
+      { value: "least-remaining", labelKey: "sort_order_least_remaining" },
     ];
 
     const sortOrderSelectHTML = this.options.showColorStats
       ? `<div class="sort-order-container" style="position: relative;">
           <button class="sort-order-button" type="button" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background-color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
-            <span style="font-size: 0.875rem; color: #374151;">Sort:</span>
-            <span class="sort-order-current-name" style="font-size: 0.875rem; font-weight: 600; color: #22c55e;">${
-              sortOrderOptions.find((o) => o.value === this.sortOrder)?.label ??
-              "Default"
-            }</span>
+            <span style="font-size: 0.875rem; color: #374151;">${t`${"sort_by"}`}</span>
+            <span class="sort-order-current-name" style="font-size: 0.875rem; font-weight: 600; color: #22c55e;">${t`${
+              sortOrderOptions.find((o) => o.value === this.sortOrder)?.labelKey ??
+              "sort_order_default"
+            }`}</span>
           </button>
           <div class="sort-order-dropdown" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 0.25rem; background-color: white; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem; z-index: 1000; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); min-width: 200px;">
             <div class="sort-order-list" style="display: flex; flex-direction: column; gap: 0.25rem;">
@@ -192,7 +192,7 @@ export class ColorPalette {
                           data-sort="${option.value}"
                           type="button"
                           style="padding: 0.5rem; border: ${borderWidth} solid ${borderColor}; border-radius: 0.375rem; background-color: white; cursor: pointer; text-align: left; font-size: 0.875rem;">
-                    ${option.label}
+                    ${t`${option.labelKey}`}
                   </button>
                 `;
                 })
@@ -545,5 +545,6 @@ export class ColorPalette {
   ): void {
     this.sortOrder = sort;
     this.createPaletteUI();
+    this.setupEventHandlers();
   }
 }
