@@ -6,8 +6,6 @@ import { GalleryStorage } from "../gallery/storage";
 export class TileOverlay {
   public tileDrawManager: TileDrawManager;
   private galleryStorage: GalleryStorage;
-  private currentTiles: Set<string> = new Set();
-  private readonly MAX_TILE_HISTORY = 50;
 
   constructor() {
     this.tileDrawManager = new TileDrawManager();
@@ -73,14 +71,6 @@ export class TileOverlay {
     tileX: number,
     tileY: number
   ): Promise<Blob> {
-    this.addCurrentTile(tileX, tileY);
-
-    const tileKey = `${tileX},${tileY}`;
-    if (!this.currentTiles.has(tileKey)) {
-      console.log(`🧑‍🎨 : Skip tile ${tileKey} - not in current view`);
-      return tileBlob;
-    }
-
     const images = await this.galleryStorage.getAll();
     const targetImages = images.filter(
       (img) =>
@@ -118,20 +108,6 @@ export class TileOverlay {
       drawPosition: coords,
       drawEnabled: true,
     });
-  }
-
-  addCurrentTile(tileX: number, tileY: number): void {
-    const tileKey = `${tileX},${tileY}`;
-    this.currentTiles.add(tileKey);
-
-    if (this.currentTiles.size > this.MAX_TILE_HISTORY) {
-      const firstTile = this.currentTiles.values().next().value!;
-      this.currentTiles.delete(firstTile);
-    }
-  }
-
-  public getCurrentTiles(): Set<string> {
-    return new Set(this.currentTiles);
   }
 
   private async restoreImagesOnTileWithCache(

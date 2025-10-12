@@ -17,6 +17,7 @@ import { TextDraw } from "./features/text-draw";
 import { AutoSpoit } from "./features/auto-spoit";
 import { PositionInfo } from "./features/position-info";
 import { colorpalette } from "./constants/colors";
+import { addCurrentTile } from "./states/currentTile";
 
 const runmrWplace = async (): Promise<void> => {
   console.log("🧑‍🎨: Starting initialization...");
@@ -61,9 +62,7 @@ const runmrWplace = async (): Promise<void> => {
       await tileSnapshot.saveTmpTile(tileX, tileY, tileBlob);
 
       // Record current tile for processing optimization
-      if (window.mrWplace?.tileOverlay) {
-        window.mrWplace.tileOverlay.addCurrentTile(tileX, tileY);
-      }
+      addCurrentTile(tileX, tileY);
     }
 
     // Listen for user data from inject.js

@@ -1,4 +1,5 @@
 import { ColorPalette } from "../../../../components/color-palette";
+import { getCurrentTiles } from "../../../../states/currentTile";
 
 let colorPalette: ColorPalette | null = null;
 
@@ -15,7 +16,7 @@ export const renderColorFilters = async (
 
   // 表示中タイルの統計取得
   const tileOverlay = window.mrWplace?.tileOverlay;
-  const currentTiles = tileOverlay?.getCurrentTiles();
+  const currentTiles = getCurrentTiles();
 
   let colorStats:
     | Record<string, { matched: number; total: number }>
