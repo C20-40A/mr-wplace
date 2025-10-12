@@ -1,5 +1,5 @@
 import { colorpalette } from "../constants/colors";
-import type { EnhancedConfig } from "../features/tile-draw/splitImageOnTiles";
+import type { EnhancedMode } from "../features/tile-draw/types";
 
 const STORAGE_KEY = "color-filter-selection";
 const ENHANCED_MODE_STORAGE_KEY = "enhanced-mode";
@@ -7,7 +7,7 @@ const ENHANCED_MODE_STORAGE_KEY = "enhanced-mode";
 export class ColorFilterManager {
   private selectedColorIds: Set<number>;
   public selectedRGBs: Array<[number, number, number]> = [];
-  private enhancedMode: EnhancedConfig["mode"] = "dot";
+  private enhancedMode: EnhancedMode = "dot";
   private extraColorsBitmap: number | undefined = undefined;
 
   constructor() {
@@ -39,7 +39,7 @@ export class ColorFilterManager {
       })
       .map((color) => color.rgb as [number, number, number]);
 
-    console.log("🧑‍🎨 : ColorFilter selectedRGBs:", this.selectedRGBs);
+    // console.log("🧑‍🎨 : ColorFilter selectedRGBs:", this.selectedRGBs);
   }
 
   private isColorMatch(r: number, g: number, b: number): boolean {
@@ -115,12 +115,12 @@ export class ColorFilterManager {
     return Array.from(this.selectedColorIds);
   }
 
-  setEnhancedMode(mode: EnhancedConfig["mode"]): void {
+  setEnhancedMode(mode: EnhancedMode): void {
     this.enhancedMode = mode;
     this.saveEnhancedModeToStorage();
   }
 
-  getEnhancedMode(): EnhancedConfig["mode"] {
+  getEnhancedMode(): EnhancedMode {
     return this.enhancedMode;
   }
 
@@ -163,7 +163,7 @@ export class ColorFilterManager {
       const result = await chrome.storage.local.get(ENHANCED_MODE_STORAGE_KEY);
       const savedMode = result[ENHANCED_MODE_STORAGE_KEY];
       // Validate mode
-      const validModes: EnhancedConfig["mode"][] = [
+      const validModes: EnhancedMode[] = [
         "dot",
         "cross",
         "red-cross",
