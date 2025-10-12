@@ -1,5 +1,5 @@
 import { colorpalette } from "../constants/colors";
-import type { EnhancedConfig } from "../features/tile-draw/tile-draw";
+import type { EnhancedConfig } from "../features/tile-draw/splitImageOnTiles";
 
 const STORAGE_KEY = "color-filter-selection";
 const ENHANCED_MODE_STORAGE_KEY = "enhanced-mode";
