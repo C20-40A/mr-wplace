@@ -309,13 +309,9 @@ export class TileDrawManager {
     const data = await gpuApplyColorFilter(overlayBitmap, colorFilter);
     // overlayBitmapはGPU内でclose済み
 
-    // 背景x1サイズ取得
-    const bgBitmap = await createImageBitmap(tileBlob);
-    const bgCanvas = new OffscreenCanvas(this.tileSize, this.tileSize);
-    const bgCtx = bgCanvas.getContext("2d");
-    if (!bgCtx) throw new Error("Failed to get bg context");
-    bgCtx.drawImage(bgBitmap, 0, 0);
-    const bgData = bgCtx.getImageData(0, 0, this.tileSize, this.tileSize);
+    // 背景x1サイズ取得（ImageDecoder API高速化）
+    const bgPixels = await blobToPixels(tileBlob);
+    const bgData = new Uint8ClampedArray(bgPixels.buffer);
 
     // 統計初期化
     if (!this.colorStatsMap.has(imageKey)) {
@@ -342,10 +338,10 @@ export class TileDrawManager {
         const bgY = offsetY + y;
         const bgI = (bgY * this.tileSize + bgX) * 4;
         const [bgR, bgG, bgB, bgA] = [
-          bgData.data[bgI],
-          bgData.data[bgI + 1],
-          bgData.data[bgI + 2],
-          bgData.data[bgI + 3],
+          bgData[bgI],
+          bgData[bgI + 1],
+          bgData[bgI + 2],
+          bgData[bgI + 3],
         ];
 
         const isSameColor = bgA > 0 && r === bgR && g === bgG && b === bgB;
@@ -406,13 +402,13 @@ export class TileDrawManager {
           const bgY1 = offsetY + y1;
           const bgI1 = (bgY1 * this.tileSize + bgX1) * 4;
 
-          if (bgI1 + 3 >= bgData.data.length) continue;
+          if (bgI1 + 3 >= bgData.length) continue;
 
           const [bgR, bgG, bgB, bgA] = [
-            bgData.data[bgI1],
-            bgData.data[bgI1 + 1],
-            bgData.data[bgI1 + 2],
-            bgData.data[bgI1 + 3],
+            bgData[bgI1],
+            bgData[bgI1 + 1],
+            bgData[bgI1 + 2],
+            bgData[bgI1 + 3],
           ];
 
           // 背景と同色なら透明化（書き込まない）
