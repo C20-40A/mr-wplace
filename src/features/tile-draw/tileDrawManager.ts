@@ -45,7 +45,6 @@ export class TileDrawManager {
   ): Promise<Blob> {
     if (this.overlayLayers.length === 0) return tileBlob; // 描画するものがなければスキップ
 
-    const drawSize = this.tileSize * this.renderScale;
     const coordStr =
       tileCoords[0].toString().padStart(4, "0") +
       "," +
@@ -66,15 +65,18 @@ export class TileDrawManager {
     if (matchingTiles.length === 0) return tileBlob;
 
     // 背景タイル1回デコード（高速化: 下地用+背景比較用）
-    const bgPixels = await blobToPixels(tileBlob);
+    const { pixels: bgPixels, width: bgWidth, height: bgHeight } = await blobToPixels(tileBlob);
+    console.log("🧑‍🎨 : bg size", bgWidth, bgHeight, "bufferLength", bgPixels.length);
+    
     const bgImageData = new ImageData(
       new Uint8ClampedArray(bgPixels.buffer),
-      this.tileSize,
-      this.tileSize
+      bgWidth,
+      bgHeight
     );
     const tileBitmap = await createImageBitmap(bgImageData);
 
-    // キャンバス作成
+    // キャンバス作成（実サイズベース）
+    const drawSize = Math.max(bgWidth, bgHeight) * this.renderScale;
     const canvas = new OffscreenCanvas(drawSize, drawSize);
     const context = canvas.getContext("2d", { willReadFrequently: true });
     if (!context) throw new Error("tile canvas context not found");
@@ -95,6 +97,7 @@ export class TileDrawManager {
       paintedTilebitmap = await this.applyOverlayProcessing(
         paintedTilebitmap,
         bgPixels,
+        bgWidth,
         Number(coords[2]),
         Number(coords[3]),
         enhancedConfig.mode,
@@ -289,6 +292,7 @@ export class TileDrawManager {
   private async applyOverlayProcessing(
     overlayBitmap: ImageBitmap,
     bgPixels: Uint8Array,
+    bgWidth: number,
     offsetX: number,
     offsetY: number,
     mode: EnhancedConfig["mode"],
@@ -333,7 +337,7 @@ export class TileDrawManager {
         // 背景比較 + 統計計算
         const bgX = offsetX + x;
         const bgY = offsetY + y;
-        const bgI = (bgY * this.tileSize + bgX) * 4;
+        const bgI = (bgY * bgWidth + bgX) * 4;
         const [bgR, bgG, bgB, bgA] = [
           bgData[bgI],
           bgData[bgI + 1],
@@ -394,7 +398,7 @@ export class TileDrawManager {
           // 背景色取得
           const bgX1 = offsetX + x1;
           const bgY1 = offsetY + y1;
-          const bgI1 = (bgY1 * this.tileSize + bgX1) * 4;
+          const bgI1 = (bgY1 * bgWidth + bgX1) * 4;
 
           if (bgI1 + 3 >= bgData.length) continue;
 
@@ -465,8 +469,10 @@ const blobToPixels = async (blob: Blob) => {
   const arrayBuffer = await blob.arrayBuffer();
   const decoder = new ImageDecoder({ data: arrayBuffer, type: blob.type });
   const { image } = await decoder.decode();
-  const buf = new Uint8Array(image.displayWidth * image.displayHeight * 4);
+  const width = image.displayWidth;
+  const height = image.displayHeight;
+  const buf = new Uint8Array(width * height * 4);
   await image.copyTo(buf, { format: "RGBA" });
   image.close();
-  return buf;
+  return { pixels: buf, width, height };
 };
