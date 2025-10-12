@@ -1,18 +1,5 @@
-import { TILE_DRAW_CONSTANTS, WplaceCoords } from "./constants";
+import { WplaceCoords } from "./constants";
 import { CanvasPool } from "./canvas-pool";
-
-/** Enhanced設定の型定義 */
-export interface EnhancedConfig {
-  mode:
-    | "dot" // 1ドット
-    | "cross" // 同色十字
-    | "red-cross" // 赤十字
-    | "cyan-cross" // シアン十字
-    | "dark-cross" // 暗色十字
-    | "complement-cross" // 補色十字
-    | "fill" // 全塗り
-    | "red-border"; // 赤枠
-}
 
 /**
  * タイル境界をまたぐ画像を複数タイルに分割する標準アルゴリズム。各タイルの処理済みImageBitmapを辞書形式で返却。
