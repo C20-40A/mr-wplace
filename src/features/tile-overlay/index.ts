@@ -73,14 +73,35 @@ export class TileOverlay {
     tileX: number,
     tileY: number
   ): Promise<Blob> {
-    await this.restoreImagesOnTile(tileX, tileY);
-    const result = await this.tileDrawManager.drawOverlayLayersOnTile(tileBlob, [
-      tileX,
-      tileY,
-    ]);
-    
-    await this.updateColorStatsForTile(tileX, tileY);
-    
+    this.addCurrentTile(tileX, tileY);
+
+    const tileKey = `${tileX},${tileY}`;
+    if (!this.currentTiles.has(tileKey)) {
+      console.log(`🧑‍🎨 : Skip tile ${tileKey} - not in current view`);
+      return tileBlob;
+    }
+
+    const images = await this.galleryStorage.getAll();
+    const targetImages = images.filter(
+      (img) =>
+        img.drawEnabled &&
+        img.drawPosition?.TLX === tileX &&
+        img.drawPosition?.TLY === tileY
+    );
+
+    console.log(
+      `🧑‍🎨 : drawPixelOnTile(${tileX},${tileY}) - found ${targetImages.length} images`
+    );
+
+    await this.restoreImagesOnTileWithCache(tileX, tileY, targetImages);
+
+    const result = await this.tileDrawManager.drawOverlayLayersOnTile(
+      tileBlob,
+      [tileX, tileY]
+    );
+
+    await this.updateColorStatsForTileWithCache(targetImages);
+
     return result;
   }
 
@@ -113,30 +134,11 @@ export class TileOverlay {
     return new Set(this.currentTiles);
   }
 
-  private async restoreImagesOnTile(
+  private async restoreImagesOnTileWithCache(
     tileX: number,
-    tileY: number
+    tileY: number,
+    targetImages: any[]
   ): Promise<void> {
-    // Ensure tile is recorded (fix timing issue)
-    this.addCurrentTile(tileX, tileY);
-
-    const tileKey = `${tileX},${tileY}`;
-    if (!this.currentTiles.has(tileKey)) {
-      console.log(`🧑‍🎨 : Skip tile ${tileKey} - not in current view`);
-      return;
-    }
-
-    const images = await this.galleryStorage.getAll();
-    const targetImages = images.filter(
-      (img) =>
-        img.drawEnabled &&
-        img.drawPosition?.TLX === tileX &&
-        img.drawPosition?.TLY === tileY
-    );
-
-    console.log(
-      `🧑‍🎨 : restoreImagesOnTile(${tileX},${tileY}) - found ${targetImages.length} images`
-    );
     targetImages.forEach((img) => console.log(`  - imageKey: ${img.key}`));
 
     for (const image of targetImages) {
@@ -159,16 +161,12 @@ export class TileOverlay {
         const uint8Array = new Uint8Array(rawData);
         const blob = new Blob([uint8Array], { type: "image/png" });
 
-        // renderScale=3で拡大済みなので1000x1000pxにリサイズ
-        const img = await createImageBitmap(blob);
-
-        const resizedImg = await createImageBitmap(img, {
+        const resizedImg = await createImageBitmap(blob, {
           resizeWidth: 1000,
           resizeHeight: 1000,
           resizeQuality: "high",
         });
 
-        // リサイズ済み画像をBlobに変換
         const canvas = new OffscreenCanvas(1000, 1000);
         const ctx = canvas.getContext("2d");
         if (!ctx) throw new Error("Failed to get canvas context");
@@ -233,17 +231,9 @@ export class TileOverlay {
     return new File([blob], filename, { type: blob.type });
   }
 
-  private async updateColorStatsForTile(tileX: number, tileY: number): Promise<void> {
-    console.log(`🧑‍🎨 : updateColorStatsForTile(${tileX}, ${tileY})`);
-    
-    const images = await this.galleryStorage.getAll();
-    const targetImages = images.filter(
-      (img) =>
-        img.drawEnabled &&
-        img.drawPosition?.TLX === tileX &&
-        img.drawPosition?.TLY === tileY
-    );
-
+  private async updateColorStatsForTileWithCache(
+    targetImages: any[]
+  ): Promise<void> {
     console.log(`🧑‍🎨 : Found ${targetImages.length} target images`);
 
     for (const image of targetImages) {
@@ -257,7 +247,7 @@ export class TileOverlay {
       await this.galleryStorage.save({
         ...image,
         currentColorStats: stats.matched,
-        totalColorStats: stats.total
+        totalColorStats: stats.total,
       });
     }
   }
