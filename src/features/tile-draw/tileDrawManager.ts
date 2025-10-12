@@ -359,53 +359,46 @@ export class TileDrawManager {
       }
     }
 
-    // === Phase 2: x3拡大 ===
+    // === Phase 2+3統合: x3拡大 + モード別処理 ===
     const scaledWidth = width * pixelScale;
     const scaledHeight = height * pixelScale;
-    const scaledData = new Uint8ClampedArray(scaledWidth * scaledHeight * 4); // 4=RGBA
+    const scaledData = new Uint8ClampedArray(scaledWidth * scaledHeight * 4); // デフォルト透明
 
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const srcI = (y * width + x) * 4;
+    // x3全ピクセルループ
+    for (let y = 0; y < scaledHeight; y++) {
+      for (let x = 0; x < scaledWidth; x++) {
+        // x1座標逆算
+        const x1 = Math.floor(x / pixelScale);
+        const y1 = Math.floor(y / pixelScale);
+        const srcI = (y1 * width + x1) * 4;
+
+        // x1データから取得
         const [r, g, b, a] = [
           data[srcI],
           data[srcI + 1],
           data[srcI + 2],
           data[srcI + 3],
         ];
-        if (a === 0) continue;
+        if (a === 0) continue; // 透明ならスキップ
 
-        const sx = x * pixelScale;
-        const sy = y * pixelScale;
-        for (let dy = 0; dy < pixelScale; dy++) {
-          for (let dx = 0; dx < pixelScale; dx++) {
-            const dstI = ((sy + dy) * scaledWidth + (sx + dx)) * 4;
-            scaledData[dstI] = r;
-            scaledData[dstI + 1] = g;
-            scaledData[dstI + 2] = b;
-            scaledData[dstI + 3] = a;
-          }
-        }
-      }
-    }
-
-    // === Phase 3: モード別処理（x3サイズ） ===
-
-    // Phase3ループ(x3全ピクセル)
-    for (let y = 0; y < scaledHeight; y++) {
-      for (let x = 0; x < scaledWidth; x++) {
         const i = (y * scaledWidth + x) * 4;
-        if (scaledData[i + 3] === 0) continue; // 透明ならスキップ
 
         const isCenterPixel = x % pixelScale === 1 && y % pixelScale === 1;
-        if (isCenterPixel) continue; // 中心ピクセルは常に残す
+        if (isCenterPixel) {
+          // 中心ピクセルは常に書き込み
+          scaledData[i] = r;
+          scaledData[i + 1] = g;
+          scaledData[i + 2] = b;
+          scaledData[i + 3] = a;
+          continue;
+        }
 
-        // 十字形状のアーム部分(centerはスキップ済み)
+        // 十字形状のアーム部分
         const isCrossArm = x % pixelScale === 1 || y % pixelScale === 1;
 
-        // 背景色取得（x1座標逆算）
-        const bgX1 = Math.floor((offsetX * this.renderScale + x) / this.renderScale);
-        const bgY1 = Math.floor((offsetY * this.renderScale + y) / this.renderScale);
+        // 背景色取得
+        const bgX1 = offsetX + x1;
+        const bgY1 = offsetY + y1;
         const bgI1 = (bgY1 * this.tileSize + bgX1) * 4;
 
         if (bgI1 + 3 >= bgData.data.length) continue;
@@ -417,46 +410,37 @@ export class TileDrawManager {
           bgData.data[bgI1 + 3],
         ];
 
-        // 背景と同色なら透明化
-        const isSameColor =
-          bgA > 0 &&
-          scaledData[i] === bgR &&
-          scaledData[i + 1] === bgG &&
-          scaledData[i + 2] === bgB;
-        if (isSameColor) {
-          scaledData[i + 3] = 0;
-          continue;
-        }
+        // 背景と同色なら透明化（書き込まない）
+        const isSameColor = bgA > 0 && r === bgR && g === bgG && b === bgB;
+        if (isSameColor) continue;
 
+        // モード別処理
         if (mode === "dot") {
-          scaledData[i + 3] = 0;
+          // 書き込まない（デフォルト透明のまま）
         } else if (mode === "cross") {
-          if (!isCrossArm) scaledData[i + 3] = 0;
+          if (isCrossArm) {
+            scaledData[i] = r;
+            scaledData[i + 1] = g;
+            scaledData[i + 2] = b;
+            scaledData[i + 3] = a;
+          }
         } else if (mode === "fill") {
-          // 何もしない
+          scaledData[i] = r;
+          scaledData[i + 1] = g;
+          scaledData[i + 2] = b;
+          scaledData[i + 3] = a;
         } else if (this.needsPixelComparison(mode)) {
           if (isCrossArm) {
-            const [r, g, b] = this.getAuxiliaryColor(
-              mode,
-              scaledData[i],
-              scaledData[i + 1],
-              scaledData[i + 2]
-            );
-            [
-              scaledData[i],
-              scaledData[i + 1],
-              scaledData[i + 2],
-              scaledData[i + 3],
-            ] = [r, g, b, 255];
-          } else if (mode === "red-border" && !isCenterPixel) {
-            [
-              scaledData[i],
-              scaledData[i + 1],
-              scaledData[i + 2],
-              scaledData[i + 3],
-            ] = [255, 0, 0, 255];
-          } else {
-            scaledData[i + 3] = 0;
+            const [ar, ag, ab] = this.getAuxiliaryColor(mode, r, g, b);
+            scaledData[i] = ar;
+            scaledData[i + 1] = ag;
+            scaledData[i + 2] = ab;
+            scaledData[i + 3] = 255;
+          } else if (mode === "red-border") {
+            scaledData[i] = 255;
+            scaledData[i + 1] = 0;
+            scaledData[i + 2] = 0;
+            scaledData[i + 3] = 255;
           }
         }
       }
