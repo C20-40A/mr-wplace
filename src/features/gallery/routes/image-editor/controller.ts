@@ -11,10 +11,7 @@ import {
   downloadBlob,
   parseDrawPositionFromFileName,
 } from "./file-handler";
-import {
-  createProcessedCanvas,
-  ImageAdjustments,
-} from "./canvas-processor";
+import { createProcessedCanvas, ImageAdjustments } from "./canvas-processor";
 
 /**
  * 画像エディタController
@@ -287,7 +284,7 @@ export class EditorController {
     }
   }
 
-  private updateScaledImage(): void {
+  private async updateScaledImage(): Promise<void> {
     if (!this.originalImage) return;
 
     const canvas = this.container.querySelector(
@@ -306,8 +303,8 @@ export class EditorController {
       saturation: this.saturation,
     };
 
-    // 統合処理: リサイズ→調整→パレット
-    const processedCanvas = createProcessedCanvas(
+    // 統合処理: リサイズ→調整→パレット（GPU優先）
+    const processedCanvas = await createProcessedCanvas(
       this.originalImage,
       this.imageScale,
       adjustments,

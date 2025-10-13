@@ -216,7 +216,11 @@ export class ImageEditorUI {
       if (input) {
         input.value = value;
       }
-      this.callbacks?.onScaleChange(floatValue);
+    });
+
+    slider?.addEventListener("change", (e) => {
+      const value = parseFloat((e.target as HTMLInputElement).value);
+      this.callbacks?.onScaleChange(value);
     });
 
     // サイズ縮小数値入力
@@ -230,6 +234,11 @@ export class ImageEditorUI {
       if (slider) {
         slider.value = value.toString();
       }
+    });
+
+    input?.addEventListener("change", (e) => {
+      let value = parseFloat((e.target as HTMLInputElement).value);
+      value = Math.max(0.1, Math.min(1, value));
       this.callbacks?.onScaleChange(value);
     });
 
@@ -239,7 +248,11 @@ export class ImageEditorUI {
       if (brightnessValue) {
         brightnessValue.textContent = value;
       }
-      this.callbacks?.onBrightnessChange(parseInt(value));
+    });
+
+    brightnessSlider?.addEventListener("change", (e) => {
+      const value = parseInt((e.target as HTMLInputElement).value);
+      this.callbacks?.onBrightnessChange(value);
     });
 
     // コントラストスライダー
@@ -248,7 +261,11 @@ export class ImageEditorUI {
       if (contrastValue) {
         contrastValue.textContent = value;
       }
-      this.callbacks?.onContrastChange(parseInt(value));
+    });
+
+    contrastSlider?.addEventListener("change", (e) => {
+      const value = parseInt((e.target as HTMLInputElement).value);
+      this.callbacks?.onContrastChange(value);
     });
 
     // 彩度スライダー
@@ -257,7 +274,11 @@ export class ImageEditorUI {
       if (saturationValue) {
         saturationValue.textContent = value;
       }
-      this.callbacks?.onSaturationChange(parseInt(value));
+    });
+
+    saturationSlider?.addEventListener("change", (e) => {
+      const value = parseInt((e.target as HTMLInputElement).value);
+      this.callbacks?.onSaturationChange(value);
     });
 
     // 画像クリアボタン
