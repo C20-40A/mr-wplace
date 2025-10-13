@@ -1,5 +1,4 @@
 import type { EnhancedMode } from "../../features/tile-draw/types";
-import { t } from "../../i18n/manager";
 import type { ColorStats, EnhancedModeOption, SortOrderOption } from "./types";
 
 // HTML定数
