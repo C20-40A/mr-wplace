@@ -201,19 +201,18 @@ export class TileDrawManager {
         // 範囲チェック
         const relX = coords.PxX - offsetX;
         const relY = coords.PxY - offsetY;
-        const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
-        const drawW = bitmap.width / pixelScale;
-        const drawH = bitmap.height / pixelScale;
+        const drawW = bitmap.width;
+        const drawH = bitmap.height;
 
         if (relX < 0 || relX >= drawW || relY < 0 || relY >= drawH) continue;
 
-        // ピクセル取得（3倍スケール）
+        // ピクセル取得（x1サイズbitmapから直接取得）
         const canvas = new OffscreenCanvas(1, 1);
         const ctx = canvas.getContext("2d")!;
         ctx.drawImage(
           bitmap,
-          relX * pixelScale,
-          relY * pixelScale,
+          relX,
+          relY,
           1,
           1,
           0,
@@ -339,9 +338,16 @@ export class TileDrawManager {
     imageKey: string,
     tempStatsMap: Map<string, ColorStats>
   ): Promise<ImageBitmap> {
+    // dev mode有効時のみクローン作成（getOverlayPixelColor用）
+    // 通常時はgpuApplyColorFilter内でclose()されてパフォーマンス最適化
+    const isDevMode = window.mrWplace?.autoSpoit?.isDevModeEnabled() ?? false;
+    const processedBitmap = isDevMode
+      ? await createImageBitmap(overlayBitmap)
+      : overlayBitmap;
+
     const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
-    const width = overlayBitmap.width;
-    const height = overlayBitmap.height;
+    const width = processedBitmap.width;
+    const height = processedBitmap.height;
 
     // === Phase 1: x1サイズ処理 ===
     // GPU: カラーフィルター適用
@@ -349,7 +355,7 @@ export class TileDrawManager {
       ? window.mrWplace.colorFilterManager.selectedRGBs
       : undefined;
 
-    const data = await gpuApplyColorFilter(overlayBitmap, colorFilter);
+    const data = await gpuApplyColorFilter(processedBitmap, colorFilter);
 
     // 背景ピクセル（事前デコード済み）
     const bgData = new Uint8ClampedArray(bgPixels.buffer);

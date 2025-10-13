@@ -89,6 +89,10 @@ import { addCurrentTile } from "./states/currentTile";
             lng
           );
 
+        console.log("🧑‍🎨 : Overlay pixel color (before check):", color, {
+          lat,
+          lng,
+        });
         if (!color || color.a === 0) return;
 
         console.log("🧑‍🎨 : Overlay pixel color:", color, { lat, lng });
