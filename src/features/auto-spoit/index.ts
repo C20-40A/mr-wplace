@@ -3,6 +3,7 @@ import { findPaintPixelControls } from "../../constants/selectors";
 import { createAutoSpoitButton } from "./ui";
 import { AutoSpoitStorage } from "./storage";
 import { createKonamiCodeDetector } from "./konami-detector";
+import { t } from "../../i18n/manager";
 
 export class AutoSpoit {
   private enabled: boolean = true;
@@ -103,6 +104,22 @@ export class AutoSpoit {
   }
 
   async toggle(): Promise<void> {
+    // 有効化しようとしている場合、初回警告チェック
+    if (!this.enabled) {
+      const hasShownWarning = await AutoSpoitStorage.hasShownWarning();
+      if (!hasShownWarning) {
+        const warningMessage = t`${'auto_spoit_warning'}`;
+
+        const agreed = confirm(warningMessage);
+        if (!agreed) {
+          console.log("🧑‍🎨 : Auto spoit activation cancelled by user");
+          return;
+        }
+        await AutoSpoitStorage.setWarningShown();
+        console.log("🧑‍🎨 : Auto spoit warning shown and agreed");
+      }
+    }
+
     this.enabled = await AutoSpoitStorage.toggle();
     console.log("🧑‍🎨 : Auto spoit toggled:", this.enabled);
 
