@@ -200,8 +200,18 @@
           mapObserver.disconnect();
           console.log("WPlace map instance captured", map);
 
+          // Helper function to check dev mode
+          const isAutoSpoitDevModeEnabled = () => {
+            const dataElement = document.getElementById("__mr_wplace_data__");
+            const devMode = dataElement?.getAttribute("data-auto-spoit-dev-mode");
+            return devMode === "true";
+          };
+
           // Setup mousedown for pixel color detection (earlier than click)
           map.on("mousedown", (e) => {
+            // Skip if dev mode is disabled
+            if (!isAutoSpoitDevModeEnabled()) return;
+            
             const { lat, lng } = e.lngLat;
             window.postMessage(
               {
@@ -232,6 +242,8 @@
 
           map.on("mousemove", (e) => {
             if (!isSpacePressed) return;
+            // Skip if dev mode is disabled
+            if (!isAutoSpoitDevModeEnabled()) return;
             if (mouseMoveThrottleTimer !== null) return;
 
             mouseMoveThrottleTimer = setTimeout(() => {

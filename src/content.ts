@@ -78,7 +78,8 @@ import { addCurrentTile } from "./states/currentTile";
 
       // Listen for pixel click from inject.js
       if (event.data.source === "wplace-studio-pixel-click") {
-        // autoSpoit無効時は処理しない
+        // autoSpoit dev modeがoffまたは無効時は処理しない
+        if (!window.mrWplace?.autoSpoit?.isDevModeEnabled()) return;
         if (!window.mrWplace?.autoSpoit?.isEnabled()) return;
 
         const { lat, lng } = event.data;
