@@ -16,7 +16,7 @@ export class ImageEditorUI {
   private container: HTMLElement | null = null;
   private callbacks: ImageEditorCallbacks | null = null;
   private imageDropzone: ImageDropzone | null = null;
-  private imageProcessor: any = null;
+  private controller: any = null;
 
   constructor() {}
 
@@ -279,8 +279,8 @@ export class ImageEditorUI {
     });
   }
 
-  setImageProcessor(processor: any): void {
-    this.imageProcessor = processor;
+  setController(controller: any): void {
+    this.controller = controller;
   }
 
   private setupResponsive(): void {
@@ -310,8 +310,8 @@ export class ImageEditorUI {
         desktopPalette.style.display = isDesktop ? "block" : "none";
       }
 
-      if (this.imageProcessor) {
-        this.imageProcessor.updateColorPaletteContainer(!isDesktop);
+      if (this.controller) {
+        this.controller.updateColorPaletteContainer(!isDesktop);
       }
     };
 

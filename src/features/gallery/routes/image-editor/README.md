@@ -1,65 +1,119 @@
-# Gallery Image Editor - AI 向けナレッジ
+# Gallery Image Editor - AI向けナレッジ
 
 ## アーキテクチャ
 
 ```
-GalleryImageEditor → {ImageEditorUI, ImageProcessor}
+GalleryImageEditor → {ImageEditorUI, EditorController}
          ↓                ↓              ↓
-    render()        DOM生成+event    画像処理ロジック
+    render()        DOM生成+event    状態管理+統合
+         ↓                              ↓
+   Callbacks連携                file-handler.ts
+                                canvas-processor.ts
 ```
 
 ## ファイル構成
 
-- **index.ts**: GalleryImageEditor（UI+Processor 統合）
-- **ui.ts**: ImageEditorUI（DOM+callbacks interface）
-- **editor.ts**: ImageProcessor（画像処理コア）
+- **index.ts**: GalleryImageEditor（UI+Controller統合）
+- **ui.ts**: ImageEditorUI（DOM生成+callbacks interface）
+- **controller.ts**: EditorController（状態管理・DOM参照・統合処理）
+- **file-handler.ts**: ファイルIO純粋関数群
+- **canvas-processor.ts**: Canvas処理純粋関数群
 
-## ImageProcessor (editor.ts)
-
-### 状態管理
+## file-handler.ts - ファイルIO純粋関数
 
 ```typescript
-originalImage: HTMLImageElement; // 元画像
-colorConvertedCanvas: HTMLCanvasElement; // パレット変換後
-scaledCanvas: HTMLCanvasElement; // 縮小処理後
-imageScale: number; // 縮小率(0.1-1.0)
-isColorConverted: boolean; // 色変換状態
-includePaidColors: boolean; // paid色含む
-imageInspector: ImageInspector; // canvas zoom/pan
+readFileAsDataUrl(file): Promise<string>
+resizeImageIfNeeded(dataUrl): Promise<string>  // 500px超確認→リサイズ
+createBlobFromCanvas(canvas): Promise<Blob>
+blobToDataUrl(blob): Promise<string>
+downloadBlob(blob, filename): void
+parseDrawPositionFromFileName(fileName): DrawPosition | null
+```
+
+## canvas-processor.ts - Canvas処理純粋関数
+
+```typescript
+interface ImageAdjustments {
+  brightness: number;  // -100~100
+  contrast: number;    // -100~100
+  saturation: number;  // -100~100
+}
+
+applyImageAdjustments(imageData, adjustments): void        // 破壊的変更
+quantizeToColorPalette(imageData, selectedColorIds): void  // 破壊的変更
+createProcessedCanvas(img, scale, adjustments, selectedColorIds): HTMLCanvasElement
 ```
 
 ### 処理フロー
 
 ```
-File読込 → displayImage() → convertToPalette() → updateScaledImage()
-              ↓                    ↓                   ↓
-        原画canvas化         色変換処理          scale適用+表示
+createProcessedCanvas()
+  1. リサイズ描画
+  2. applyImageAdjustments() 明るさ・コントラスト・彩度
+  3. quantizeToColorPalette() パレット量子化
+  4. 完成canvas返却
 ```
 
 ### 色変換アルゴリズム
 
 ```typescript
-// RGB Euclidean距離で最近色探索
-findNearestColor(rgb: [r,g,b]) {
-  for (colorEntry of colorpalette) {
-    if (!includePaidColors && colorEntry.premium) continue;
-    distance = √((r-r')² + (g-g')² + (b-b')²);
-    if (distance < minDistance) nearestColor = color;
-  }
-}
+// RGB Euclidean距離（√省略版）
+colorDist2(r1,g1,b1, r2,g2,b2) = (r1-r2)² + (g1-g2)² + (b1-b2)²
 ```
 
-### 保存処理
+## EditorController (controller.ts)
 
-- **Gallery 保存**: canvas.toBlob() → base64 → GalleryStorage.save()
-- **Download**: canvas.toBlob() → URL.createObjectURL() → a.download
-
-### 画像表示制御
+### 状態管理
 
 ```typescript
-// 小画像: 300px内に拡大表示
-if ((w, h <= 300)) scale = min(300 / w, 300 / h);
-// 大画像: auto（縮小表示）
+originalImage: HTMLImageElement | null
+scaledCanvas: HTMLCanvasElement | null
+imageScale: number              // 0.1-1.0
+selectedColorIds: number[]
+brightness/contrast/saturation: number
+imageInspector: ImageInspector | null
+colorPalette: ColorPalette | null
+currentFileName: string | null
+drawPosition: DrawPosition | null
+```
+
+### 公開メソッド
+
+```typescript
+handleFile(file)              // file-handler使用
+onScaleChange(scale)          // canvas-processor使用
+onBrightnessChange(value)
+onContrastChange(value)
+onSaturationChange(value)
+onColorSelectionChange(colorIds)
+clearImage()
+saveToGallery()               // file-handler使用
+downloadImage()               // file-handler使用
+initColorPalette(container)
+updateColorPaletteContainer(isMobile)
+```
+
+### 内部メソッド
+
+```typescript
+displayImage(imageSrc)           // ImageInspector初期化
+updateOriginalImageDisplay()     // 小画像拡大表示制御
+updateScaledImage()              // canvas-processor統合処理呼出
+saveCanvasToGallery(blob)        // GalleryStorage保存+座標付与
+```
+
+### 処理フロー
+
+```
+handleFile()
+  → readFileAsDataUrl()
+  → resizeImageIfNeeded()
+  → displayImage()
+    → updateOriginalImageDisplay()
+    → ImageInspector初期化
+    → initColorPalette()
+    → updateScaledImage()
+      → createProcessedCanvas()  // canvas-processor
 ```
 
 ## ImageEditorUI (ui.ts)
@@ -70,132 +124,107 @@ if ((w, h <= 300)) scale = min(300 / w, 300 / h);
 interface ImageEditorCallbacks {
   onFileHandle: (file: File) => void;
   onScaleChange: (scale: number) => void;
+  onBrightnessChange: (value: number) => void;
+  onContrastChange: (value: number) => void;
+  onSaturationChange: (value: number) => void;
   onClear: () => void;
-  onPaidToggle: (includePaid: boolean) => void;
   onSaveToGallery: () => void;
   onDownload: () => void;
 }
 ```
 
-### UI 構造
+### UI構造（レスポンシブ）
 
-```html
-<div id="wps-image-editor-container">
-  <a href="color_converter" target="_blank">🎨</a>  <!-- 外部ツールリンク -->
-  <div id="wps-image-area">
-    <div id="wps-dropzone-container"></div>        <!-- ImageDropzone -->
-    <div id="wps-image-display" class="hidden">
-      <button id="wps-clear-btn"></button>         <!-- 画像削除 -->
-      <div class="grid grid-cols-2">
-        <img id="wps-original-image">              <!-- 元画像 -->
-        <canvas id="wps-scaled-canvas">            <!-- 処理後canvas -->
-      </div>
-    </div>
-  </div>
-  <div id="wps-controls" class="hidden">
-    <span id="wps-original-size"></span>           <!-- サイズ表示 -->
-    <span id="wps-current-size"></span>
-    <input type="range" id="wps-scale-slider">     <!-- 縮小率 -->
-    <input type="checkbox" id="wps-paid-toggle">   <!-- paid色トグル -->
-    <button id="wps-add-to-gallery"></button>      <!-- Gallery保存 -->
-    <button id="wps-download"></button>            <!-- Download -->
-  </div>
-</div>
+```
+[PC] 2x2グリッド
+├─ 左上: 元画像（#wps-original-area）
+├─ 右上: 処理後画像（#wps-current-area + ImageInspector）
+├─ 左下: ColorPalette（常時表示）
+└─ 右下: 調整スライダー+ボタン
+
+[Mobile] 縦1カラム
+├─ 元画像
+├─ 処理後画像
+├─ ColorPalette（アコーディオン）
+└─ 調整スライダー+ボタン
 ```
 
 ### コンポーネント統合
 
-- **ImageDropzone**: autoHide=true、File 選択後非表示
-- **ImageInspector**: canvas zoom/pan 機能自動付与
+- **ImageDropzone**: autoHide=true
+- **ImageInspector**: canvas zoom/pan自動付与
 
 ## GalleryImageEditor (index.ts)
 
 ### 初期化フロー
 
 ```typescript
-constructor() → render(container) → {
-  ui.createAndGetContainer()
-  new ImageProcessor(uiContainer)
-  ui.setupUI(callbacks) → processor methods bind
-}
-```
-
-### Callbacks 配線
-
-```typescript
-callbacks = {
-  onFileHandle: processor.handleFile,
-  onScaleChange: processor.onScaleChange,
-  // ... 全メソッドbind
-};
+render(container)
+  → ui.createAndGetContainer()
+  → new EditorController(uiContainer)
+  → ui.setupUI(callbacks)  // controller methods bind
 ```
 
 ## 技術仕様
 
-### Canvas 処理
+### Canvas処理
 
 - **imageSmoothingEnabled: false** → ピクセルアート保持
-- **image-rendering: pixelated** → CSS 側でもピクセル保持
-- scale 処理: `ctx.drawImage(src, 0,0,w,h, 0,0,newW,newH)`
+- **image-rendering: pixelated** → CSS側でもピクセル保持
 
-### 色変換制約
+### 色変換
 
-- **colorpalette 依存**: constants/colors.ts
-- **premium filter**: colorEntry.premium 判定
-- **全ピクセル処理**: getImageData → 逐次変換 → putImageData
+- **colorpalette依存**: constants/colors.ts
+- **ImageData破壊的変更**: applyAdjustments/quantize直接変更
+- **距離計算**: √省略版（二乗和のみ）
 
-### ImageInspector 連携
+### 座標情報
 
-```typescript
-originalImage.onload = () => {
-  updateOriginalImageDisplay();
-  imageInspector = new ImageInspector(canvas); // 自動zoom/pan
-  convertToPalette();
-};
+- **ファイル名形式**: `${TLX}-${TLY}-${PxX}-${PxY}.png`
+- **parseDrawPositionFromFileName()**: 正規表現抽出
+- **保存時付与**: drawPosition + drawEnabled=true
+
+### リサイズ確認
+
+- **閾値**: 500px
+- **confirm dialog**: t`${"large_image_resize_confirm"}`
+- **高品質**: imageSmoothingQuality="high"
+
+## 設計パターン
+
+### 純粋関数分離
+
+- **file-handler.ts**: 副作用（File読込/保存/DL）抽出
+- **canvas-processor.ts**: Canvas計算ロジック純粋化
+- **controller.ts**: 状態管理・DOM参照・統合のみ
+
+### 責任分離
+
+```
+UI層（ui.ts）
+  ↓ callbacks
+Controller層（controller.ts）
+  ↓ 関数呼出
+Utils層（file-handler, canvas-processor）
 ```
 
-### Global access
+### 型安全
 
-```typescript
-window.mrWplace.imageEditor.closeModal(); // モーダル閉じる
-window.mrWplace.gallery.show(); // Gallery表示
-```
+- **ImageAdjustments**: 調整パラメータ型定義
+- **DrawPosition**: 座標情報型（storage.ts）
+- **Callbacks**: UI-Controller間インターフェース
 
-## UI/UX
+## パフォーマンス
 
-- **2 カラムレイアウト**: オリジナル（左）+ 処理後（右）
-- **リアルタイム更新**: scale/paid toggle 変更即反映
-- **画像クリア**: confirm 確認後 clearImage()
-- **外部ツール**: 🎨 リンクで color converter 別タブ表示
+- **ImageData直接変更**: getImageData 1回→処理→putImageData 1回
+- **Canvas再利用**: updateScaledImage内で同canvas更新
+- **setTimeout(50ms)**: パレット変更debounce
 
 ## 制約
 
-- **zoom 固定**: 11 固定（coordinate.ts 依存）
-- **colorpalette 依存**: 色変換完全依存
-- **Chrome Extension**: window.mrWplace global 依存
-- **canvas size**: 大画像は自動縮小表示（max-width: 300px）
+- **zoom固定**: 11（coordinate.ts依存）
+- **colorpalette依存**: 色変換完全依存
+- **Chrome Extension**: window.mrWplace global依存
+- **canvas最大表示**: 300px（小画像拡大）
 
-## 処理フロー詳細
-
-```
-1. File drop → FileReader.readAsDataURL()
-2. displayImage() → img.src設定 → onload
-3. convertToPalette() → 全pixel色変換
-4. updateScaledImage() → scale適用
-5. ImageInspector初期化 → zoom/pan有効化
-6. User操作 → callbacks → processor methods
-7. 保存: toBlob() → {Gallery storage | Download}
-```
-
-**Core**: UI/Logic 完全分離、callbacks interface 結合、ImageInspector 統合、colorpalette 色変換、canvas scale 処理
-
-## レイアウト
-
-[上部] 画像エリア
-├─ PC: 2 カラム横並び (lg:grid-cols-2)
-├─ Mobile: 縦並び
-└─ 各画像: 枠囲み + 下部にサイズ表示
-
-[下部] 設定エリア  
-├─ PC: 左(ColorPalette 常時表示) | 右(スライダー+ボタン)
-└─ Mobile: アコーディオンパレット(デフォルト閉) + スライダー+ボタン
+**Core**: UI/Controller/Utils 3層分離、純粋関数抽出、状態管理集約、Canvas処理統合
