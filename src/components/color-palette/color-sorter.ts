@@ -1,37 +1,24 @@
-import { colorpalette } from "../../constants/colors"; // 適切なパスに修正してください
-import type { ColorPaletteOptions } from "./index"; // 適切なパスに修正してください
+import { colorpalette } from "../../constants/colors";
+import type { SortOrder, ColorStats } from "./types";
+import { getColorKey } from "./utils";
 
-// ColorPaletteから利用する型を定義
 type Color = (typeof colorpalette)[0];
-export type SortOrder = "default" | "most-missing" | "least-remaining";
-
-// RGBをキーに変換する関数を共通化
-const getColorKey = (r: number, g: number, b: number): string =>
-  `${r},${g},${b}`;
 
 /**
- * 指定された順序と統計データに基づいて色を並び替えます。
- * @param sortOrder 並び替えの基準
- * @param colorStats 色ごとの統計データ
- * @returns 並び替えられた色の配列
+ * 指定された順序と統計データに基づいて色を並び替える
  */
-export const sortColors = (
+export function sortColors(
   sortOrder: SortOrder,
-  colorStats?: ColorPaletteOptions["colorStats"]
-): Color[] => {
+  colorStats?: Record<string, ColorStats>
+): Color[] {
   let sortedColors = [...colorpalette];
 
-  if (!colorStats) {
-    // 統計データがない場合はデフォルト順（元の配列のコピー）
+  if (!colorStats || sortOrder === "default") {
     return sortedColors;
   }
 
   if (sortOrder === "most-missing") {
-    // 統計あり/なしで分離
-    const withStats: Array<{
-      color: Color;
-      remaining: number;
-    }> = [];
+    const withStats: Array<{ color: Color; remaining: number }> = [];
     const withoutStats: Color[] = [];
 
     sortedColors.forEach((color) => {
@@ -47,10 +34,7 @@ export const sortColors = (
       }
     });
 
-    // 統計あり色を残り降順ソート
     withStats.sort((a, b) => b.remaining - a.remaining);
-
-    // 統計あり + 統計なし（default順）
     return [...withStats.map((w) => w.color), ...withoutStats];
   }
 
@@ -64,17 +48,15 @@ export const sortColors = (
       const statsA = colorStats[keyA];
       const statsB = colorStats[keyB];
 
-      // 統計がない色はInfinity扱いで最後に（元のロジックに従い、0もInfinity扱い）
       const remainingA = statsA ? statsA.total - statsA.matched : Infinity;
       const remainingB = statsB ? statsB.total - statsB.matched : Infinity;
 
       const sortValueA = remainingA === 0 ? Infinity : remainingA;
       const sortValueB = remainingB === 0 ? Infinity : remainingB;
 
-      return sortValueA - sortValueB; // 昇順
+      return sortValueA - sortValueB;
     });
   }
 
-  // sortOrderが"default"の場合、または処理がなかった場合はそのまま返す
   return sortedColors;
-};
+}
