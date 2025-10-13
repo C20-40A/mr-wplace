@@ -5,7 +5,7 @@ export class AutoSpoitStorage {
 
   static async get(): Promise<boolean> {
     const result = await chrome.storage.local.get([this.STORAGE_KEY]);
-    return result[this.STORAGE_KEY] ?? true; // デフォルトON
+    return result[this.STORAGE_KEY] ?? false; // デフォルトOFF
   }
 
   static async set(enabled: boolean): Promise<void> {
