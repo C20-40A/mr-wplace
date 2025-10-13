@@ -8,6 +8,7 @@ import {
   DISABLED_BADGE_HTML,
   getCurrentlySelectedColorId,
   getEnhancedModeLabelKey,
+  SORT_ORDER_OPTIONS,
 } from "./utils";
 import { sortColors } from "./color-sorter";
 import { buildColorGrid, buildControlsHtml } from "./ui";
@@ -22,6 +23,8 @@ export class ColorPalette {
   private currentlySelectedColorId: number | null = null;
   private enhancedMode: EnhancedMode;
   private sortOrder: SortOrder = "default";
+  private boundClickHandler: (e: MouseEvent) => void;
+  private boundDocumentClickHandler: (e: MouseEvent) => void;
 
   constructor(container: HTMLElement, options: ColorPaletteOptions = {}) {
     this.container = container;
@@ -33,6 +36,10 @@ export class ColorPalette {
       ? getCurrentlySelectedColorId()
       : null;
     this.enhancedMode = options.enhancedMode ?? "dot";
+
+    // イベントハンドラーをbind
+    this.boundClickHandler = (e: MouseEvent) => this.handleClick(e);
+    this.boundDocumentClickHandler = (e: MouseEvent) => this.handleDocumentClick(e);
 
     this.render();
     this.setupEventHandlers();
@@ -64,25 +71,25 @@ export class ColorPalette {
 
   private setupEventHandlers(): void {
     // イベント委譲で全イベント処理
-    this.container.addEventListener("click", (e) => {
-      this.handleClick(e);
-    });
+    this.container.addEventListener("click", this.boundClickHandler);
 
     // ドロップダウンを外側クリックで閉じる
-    document.addEventListener("click", (e) => {
-      if (!(e.target as HTMLElement).closest(".sort-order-container")) {
-        const dropdown = this.container.querySelector(
-          ".sort-order-dropdown"
-        ) as HTMLElement;
-        if (dropdown) dropdown.style.display = "none";
-      }
-      if (!(e.target as HTMLElement).closest(".enhanced-mode-container")) {
-        const dropdown = this.container.querySelector(
-          ".enhanced-mode-dropdown"
-        ) as HTMLElement;
-        if (dropdown) dropdown.style.display = "none";
-      }
-    });
+    document.addEventListener("click", this.boundDocumentClickHandler);
+  }
+
+  private handleDocumentClick(e: MouseEvent): void {
+    if (!(e.target as HTMLElement).closest(".sort-order-container")) {
+      const dropdown = this.container.querySelector(
+        ".sort-order-dropdown"
+      ) as HTMLElement;
+      if (dropdown) dropdown.style.display = "none";
+    }
+    if (!(e.target as HTMLElement).closest(".enhanced-mode-container")) {
+      const dropdown = this.container.querySelector(
+        ".enhanced-mode-dropdown"
+      ) as HTMLElement;
+      if (dropdown) dropdown.style.display = "none";
+    }
   }
 
   private handleClick(e: MouseEvent): void {
@@ -168,7 +175,9 @@ export class ColorPalette {
     }
 
     // Enhanced Mode Item
-    const enhancedModeItem = target.closest(".enhanced-mode-item") as HTMLElement;
+    const enhancedModeItem = target.closest(
+      ".enhanced-mode-item"
+    ) as HTMLElement;
     if (enhancedModeItem) {
       e.stopPropagation();
       const mode = enhancedModeItem.dataset.mode as EnhancedMode;
@@ -183,6 +192,7 @@ export class ColorPalette {
     // 色選択
     const colorItem = target.closest(".color-item") as HTMLElement;
     if (colorItem) {
+      e.stopPropagation(); // ドロップダウン閉じるのを防止
       const colorId = parseInt(colorItem.dataset.colorId!);
       this.toggleColor(colorId);
     }
@@ -266,7 +276,11 @@ export class ColorPalette {
 
   private handleSortOrderChange(sort: SortOrder): void {
     this.sortOrder = sort;
-    this.render();
+    // this.render();
+    // 1. カラーグリッドの部分更新
+    this.updateColorGrid();
+    // 2. コントロール表示の部分更新
+    this.updateSortControlsDisplay(sort);
   }
 
   private handleEnhancedModeChange(mode: EnhancedMode): void {
@@ -316,7 +330,52 @@ export class ColorPalette {
   }
 
   destroy(): void {
+    // イベントリスナー削除
+    this.container.removeEventListener("click", this.boundClickHandler);
+    document.removeEventListener("click", this.boundDocumentClickHandler);
+    
+    // DOM削除
     this.container.innerHTML = "";
+  }
+
+  // UIの部分更新
+
+  private updateColorGrid(): void {
+    const sortedColors = sortColors(this.sortOrder, this.options.colorStats);
+    const colorGridHtml = buildColorGrid(
+      this.selectedColorIds,
+      this.currentlySelectedColorId,
+      sortedColors,
+      this.options
+    );
+
+    const gridContainer = this.container.querySelector(".color-palette-grid");
+    if (gridContainer) {
+      // DOMを破壊することなく、中身だけを更新
+      gridContainer.innerHTML = colorGridHtml;
+    }
+  }
+
+  private updateSortControlsDisplay(sort: SortOrder): void {
+    // 1. ボタンのラベル更新
+    const currentName = this.container.querySelector(
+      ".sort-order-current-name"
+    );
+    if (currentName) {
+      const currentOption = SORT_ORDER_OPTIONS.find((o) => o.value === sort);
+      const currentLabelKey = currentOption?.labelKey ?? "sort_order_default";
+      currentName.textContent = t`${currentLabelKey}`;
+    }
+
+    // 2. ドロップダウン内のアイテムの選択状態を更新
+    const items = this.container.querySelectorAll(".sort-order-item");
+    items.forEach((item) => {
+      const itemSort = (item as HTMLElement).dataset.sort as SortOrder;
+      const isSelected = itemSort === sort;
+      const borderColor = isSelected ? "#22c55e" : "#d1d5db";
+      const borderWidth = isSelected ? "2px" : "1px";
+      (item as HTMLElement).style.border = `${borderWidth} solid ${borderColor}`;
+    });
   }
 }
 
