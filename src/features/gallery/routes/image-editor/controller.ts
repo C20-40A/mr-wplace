@@ -26,6 +26,7 @@ export class EditorController {
   private brightness = 0;
   private contrast = 0;
   private saturation = 0;
+  private ditheringEnabled = false;
   private imageInspector: ImageInspector | null = null;
   private colorPalette: ColorPalette | null = null;
   private onSaveSuccess?: () => void;
@@ -84,6 +85,12 @@ export class EditorController {
     this.updateScaledImage();
   }
 
+  onDitheringChange(enabled: boolean): void {
+    console.log("🧑‍🎨 : Dithering changed:", enabled);
+    this.ditheringEnabled = enabled;
+    this.updateScaledImage();
+  }
+
   onColorSelectionChange(colorIds: number[]): void {
     this.selectedColorIds = colorIds;
     // パレット変更時は再描画
@@ -136,6 +143,7 @@ export class EditorController {
     this.brightness = 0;
     this.contrast = 0;
     this.saturation = 0;
+    this.ditheringEnabled = false;
     this.currentFileName = null;
     this.drawPosition = null;
 
@@ -168,6 +176,9 @@ export class EditorController {
     const saturationValue = this.container.querySelector(
       "#wps-saturation-value"
     );
+    const ditheringCheckbox = this.container.querySelector(
+      "#wps-dithering-checkbox"
+    ) as HTMLInputElement;
 
     if (slider) slider.value = "1";
     if (input) input.value = "1";
@@ -178,6 +189,7 @@ export class EditorController {
     if (contrastValue) contrastValue.textContent = "0";
     if (saturationSlider) saturationSlider.value = "0";
     if (saturationValue) saturationValue.textContent = "0";
+    if (ditheringCheckbox) ditheringCheckbox.checked = false;
 
     if (dropzone) dropzone.style.display = "block";
     if (imageDisplay) imageDisplay.style.display = "none";
@@ -337,11 +349,13 @@ export class EditorController {
     };
 
     // 統合処理: リサイズ→調整→パレット（GPU優先）
+    console.log("🧑‍🎨 : Processing with dithering:", this.ditheringEnabled);
     const processedCanvas = await createProcessedCanvas(
       this.originalImage,
       this.imageScale,
       adjustments,
-      this.selectedColorIds
+      this.selectedColorIds,
+      this.ditheringEnabled
     );
 
     // 結果をcanvasに転写

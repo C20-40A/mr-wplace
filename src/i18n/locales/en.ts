@@ -80,6 +80,7 @@ export const enTranslations = {
   brightness: "Brightness",
   contrast: "Contrast",
   saturation: "Saturation",
+  dithering: "Dithering",
   include_paid_colors: "Include paid colors",
   add_to_gallery: "Add to gallery",
   download: "Download",
