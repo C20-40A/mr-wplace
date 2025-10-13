@@ -1,7 +1,9 @@
 import { ColorPalette } from "../../../../components/color-palette";
+import type { SortOrder } from "../../../../components/color-palette/types";
 import { getCurrentTiles } from "../../../../states/currentTile";
 
 let colorPalette: ColorPalette | null = null;
+let lastSortOrder: SortOrder = "default";
 
 export const renderColorFilters = async (
   container: HTMLElement
@@ -65,5 +67,9 @@ export const renderColorFilters = async (
     hasExtraColorsBitmap,
     showColorStats: !!colorStats,
     colorStats,
+    sortOrder: lastSortOrder,
+    onSortOrderChange: (sort) => {
+      lastSortOrder = sort;
+    },
   });
 };
