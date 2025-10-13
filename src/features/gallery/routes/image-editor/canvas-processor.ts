@@ -104,6 +104,82 @@ export function quantizeToColorPalette(
 }
 
 /**
+ * 4x4ベイヤー行列
+ * 正規化済み（-0.5 ~ 0.5）
+ */
+const BAYER_MATRIX_4x4 = [
+  [ 0, 8, 2,10],
+  [12, 4,14, 6],
+  [ 3,11, 1, 9],
+  [15, 7,13, 5]
+].map(row => row.map(v => v / 16 - 0.5));
+
+/**
+ * ベイヤーディザリング + カラーパレット量子化
+ * ImageDataを直接変更（破壊的）
+ */
+export function quantizeWithDithering(
+  imageData: ImageData,
+  selectedColorIds: number[]
+): void {
+  const data = imageData.data;
+  const width = imageData.width;
+  const height = imageData.height;
+
+  // パレットキャッシュ
+  const activeColors = colorpalette.filter((c) =>
+    selectedColorIds.includes(c.id)
+  );
+  const rgbList = activeColors.map((c) => c.rgb);
+
+  // √省略版距離計算
+  function colorDist2(
+    r1: number,
+    g1: number,
+    b1: number,
+    r2: number,
+    g2: number,
+    b2: number
+  ): number {
+    const dr = r1 - r2;
+    const dg = g1 - g2;
+    const db = b1 - b2;
+    return dr * dr + dg * dg + db * db;
+  }
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      
+      // ベイヤー行列から誤差取得
+      const bayerValue = BAYER_MATRIX_4x4[y % 4][x % 4];
+      const ditherAmount = bayerValue * 64; // 誤差強度調整
+
+      // ディザ誤差適用
+      let r = Math.max(0, Math.min(255, data[i] + ditherAmount));
+      let g = Math.max(0, Math.min(255, data[i + 1] + ditherAmount));
+      let b = Math.max(0, Math.min(255, data[i + 2] + ditherAmount));
+
+      // 最近色探索
+      let minDist = Infinity;
+      let nearest: [number, number, number] = rgbList[0];
+      for (let j = 0; j < rgbList.length; j++) {
+        const c = rgbList[j];
+        const d2 = colorDist2(r, g, b, c[0], c[1], c[2]);
+        if (d2 < minDist) {
+          minDist = d2;
+          nearest = c;
+        }
+      }
+
+      data[i] = nearest[0];
+      data[i + 1] = nearest[1];
+      data[i + 2] = nearest[2];
+    }
+  }
+}
+
+/**
  * 画像処理統合：リサイズ→調整→パレット量子化
  * 完成したcanvasを返却
  * GPU処理優先・失敗時CPUフォールバック
@@ -112,7 +188,8 @@ export async function createProcessedCanvas(
   img: HTMLImageElement,
   scale: number,
   adjustments: ImageAdjustments,
-  selectedColorIds: number[]
+  selectedColorIds: number[],
+  ditheringEnabled = false
 ): Promise<HTMLCanvasElement> {
   const originalWidth = img.naturalWidth;
   const originalHeight = img.naturalHeight;
@@ -131,6 +208,7 @@ export async function createProcessedCanvas(
 
   // GPU処理試行
   try {
+    console.log("🧑‍🎨 : Attempting GPU processing, dithering:", ditheringEnabled);
     const imageBitmap = await createImageBitmap(canvas);
     const paletteRGB = colorpalette
       .filter((c) => selectedColorIds.includes(c.id))
@@ -139,7 +217,8 @@ export async function createProcessedCanvas(
     const processedData = await gpuProcessImage(
       imageBitmap,
       adjustments,
-      paletteRGB
+      paletteRGB,
+      ditheringEnabled
     );
     const imageData = new ImageData(
       processedData as Uint8ClampedArray,
@@ -148,6 +227,7 @@ export async function createProcessedCanvas(
     );
     ctx.putImageData(imageData, 0, 0);
 
+    console.log("🧑‍🎨 : GPU processing succeeded");
     return canvas;
   } catch (error) {
     console.log("🧑‍🎨 : GPU processing failed, fallback to CPU:", error);
@@ -155,7 +235,14 @@ export async function createProcessedCanvas(
     // CPU処理フォールバック
     const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
     applyImageAdjustments(imageData, adjustments);
-    quantizeToColorPalette(imageData, selectedColorIds);
+    
+    // ディザ処理切り替え
+    if (ditheringEnabled) {
+      quantizeWithDithering(imageData, selectedColorIds);
+    } else {
+      quantizeToColorPalette(imageData, selectedColorIds);
+    }
+    
     ctx.putImageData(imageData, 0, 0);
     return canvas;
   }

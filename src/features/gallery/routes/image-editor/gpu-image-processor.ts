@@ -1,13 +1,14 @@
 import { ImageAdjustments } from "./canvas-processor";
 
 /**
- * GPU画像処理: brightness/contrast/saturation + パレット量子化
+ * GPU画像処理: brightness/contrast/saturation + パレット量子化 + ディザリング
  * WebGL2非対応時はthrow（上層でcatch→CPUフォールバック）
  */
 export const gpuProcessImage = async (
   sourceBitmap: ImageBitmap,
   adjustments: ImageAdjustments,
-  paletteRGB: Array<[number, number, number]>
+  paletteRGB: Array<[number, number, number]>,
+  ditheringEnabled = false
 ): Promise<Uint8ClampedArray> => {
   const width = sourceBitmap.width;
   const height = sourceBitmap.height;
@@ -84,7 +85,7 @@ export const gpuProcessImage = async (
     outColor = vec4(rgb / 255.0, color.a);
   }`;
 
-  // Phase2: パレット量子化
+  // Phase2: パレット量子化 + ディザリング
   const maxPalette = 64;
   const fsPaletteSource = `#version 300 es
   precision highp float;
@@ -92,11 +93,24 @@ export const gpuProcessImage = async (
   uniform sampler2D uAdjusted;
   uniform int uPaletteCount;
   uniform vec3 uPalette[${maxPalette}];
+  uniform bool uDitheringEnabled;
+  uniform float uBayerMatrix[16];
   out vec4 outColor;
 
   void main(){
     vec4 color = texture(uAdjusted, vTexCoord);
     vec3 rgb = color.rgb * 255.0;
+    
+    // ディザリング適用
+    if (uDitheringEnabled) {
+      vec2 pixelCoord = gl_FragCoord.xy;
+      int x = int(mod(pixelCoord.x, 4.0));
+      int y = int(mod(pixelCoord.y, 4.0));
+      int idx = y * 4 + x;
+      float bayerValue = uBayerMatrix[idx];
+      float ditherAmount = bayerValue * 64.0;
+      rgb = clamp(rgb + ditherAmount, 0.0, 255.0);
+    }
     
     // 最近傍探索
     float minDist = 1e10;
@@ -263,6 +277,24 @@ export const gpuProcessImage = async (
     paletteFlat[i * 3 + 2] = b;
   }
   gl.uniform3fv(gl.getUniformLocation(programPalette, "uPalette"), paletteFlat);
+
+  // ディザリング設定
+  gl.uniform1i(
+    gl.getUniformLocation(programPalette, "uDitheringEnabled"),
+    ditheringEnabled ? 1 : 0
+  );
+
+  // ベイヤー行列（4x4、正規化済み -0.5 ~ 0.5）
+  const bayerMatrix = new Float32Array([
+    0, 8, 2, 10,
+    12, 4, 14, 6,
+    3, 11, 1, 9,
+    15, 7, 13, 5
+  ].map(v => v / 16 - 0.5));
+  gl.uniform1fv(
+    gl.getUniformLocation(programPalette, "uBayerMatrix"),
+    bayerMatrix
+  );
 
   gl.viewport(0, 0, width, height);
   gl.clearColor(0, 0, 0, 0);

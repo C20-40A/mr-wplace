@@ -7,6 +7,7 @@ export interface ImageEditorCallbacks {
   onBrightnessChange: (value: number) => void;
   onContrastChange: (value: number) => void;
   onSaturationChange: (value: number) => void;
+  onDitheringChange: (enabled: boolean) => void;
   onClear: () => void;
   onSaveToGallery: () => void;
   onDownload: () => void;
@@ -144,6 +145,13 @@ export class ImageEditorUI {
                 <input type="range" id="wps-saturation-slider" min="-100" max="100" step="1" value="0" class="range" style="width: 100%;">
               </div>
               
+              <div>
+                <label style="display: flex; align-items: center; font-size: 0.875rem; font-weight: 500; gap: 0.5rem; cursor: pointer;">
+                  <input type="checkbox" id="wps-dithering-checkbox" class="checkbox checkbox-sm">
+                  <span>${"dithering"}</span>
+                </label>
+              </div>
+              
               <div class="flex" style="gap: 0.5rem;">
                 <button id="wps-add-to-gallery" class="btn btn-primary" style="flex: 1;">${"add_to_gallery"}</button>
                 <button id="wps-download" class="btn btn-ghost">${"download"}</button>
@@ -195,6 +203,9 @@ export class ImageEditorUI {
     const saturationValue = this.container.querySelector(
       "#wps-saturation-value"
     );
+    const ditheringCheckbox = this.container.querySelector(
+      "#wps-dithering-checkbox"
+    ) as HTMLInputElement;
     const addToGalleryBtn = this.container.querySelector("#wps-add-to-gallery");
     const downloadBtn = this.container.querySelector("#wps-download");
 
@@ -271,6 +282,12 @@ export class ImageEditorUI {
     saturationSlider?.addEventListener("change", (e) => {
       const value = parseInt((e.target as HTMLInputElement).value);
       this.callbacks?.onSaturationChange(value);
+    });
+
+    // ディザリング
+    ditheringCheckbox?.addEventListener("change", (e) => {
+      const checked = (e.target as HTMLInputElement).checked;
+      this.callbacks?.onDitheringChange(checked);
     });
 
     // ギャラリーに追加
