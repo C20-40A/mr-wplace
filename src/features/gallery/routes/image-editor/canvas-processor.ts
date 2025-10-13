@@ -1,4 +1,5 @@
 import { colorpalette } from "../../../../constants/colors";
+import { gpuProcessImage } from "./gpu-image-processor";
 
 /**
  * 画像調整パラメータ
@@ -105,13 +106,14 @@ export function quantizeToColorPalette(
 /**
  * 画像処理統合：リサイズ→調整→パレット量子化
  * 完成したcanvasを返却
+ * GPU処理優先・失敗時CPUフォールバック
  */
-export function createProcessedCanvas(
+export async function createProcessedCanvas(
   img: HTMLImageElement,
   scale: number,
   adjustments: ImageAdjustments,
   selectedColorIds: number[]
-): HTMLCanvasElement {
+): Promise<HTMLCanvasElement> {
   const originalWidth = img.naturalWidth;
   const originalHeight = img.naturalHeight;
   const newWidth = Math.floor(originalWidth * scale);
@@ -122,24 +124,39 @@ export function createProcessedCanvas(
   canvas.height = newHeight;
 
   const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    throw new Error("Failed to get canvas context");
-  }
+  if (!ctx) throw new Error("Failed to get canvas context");
 
   ctx.imageSmoothingEnabled = false;
-
-  // 1. リサイズ描画
   ctx.drawImage(img, 0, 0, newWidth, newHeight);
 
-  // 2. 調整適用
-  const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
-  applyImageAdjustments(imageData, adjustments);
+  // GPU処理試行
+  try {
+    const imageBitmap = await createImageBitmap(canvas);
+    const paletteRGB = colorpalette
+      .filter((c) => selectedColorIds.includes(c.id))
+      .map((c) => c.rgb);
 
-  // 3. パレット量子化
-  quantizeToColorPalette(imageData, selectedColorIds);
+    const processedData = await gpuProcessImage(
+      imageBitmap,
+      adjustments,
+      paletteRGB
+    );
+    const imageData = new ImageData(
+      processedData as Uint8ClampedArray,
+      newWidth,
+      newHeight
+    );
+    ctx.putImageData(imageData, 0, 0);
 
-  // 4. 書き戻し
-  ctx.putImageData(imageData, 0, 0);
+    return canvas;
+  } catch (error) {
+    console.log("🧑‍🎨 : GPU processing failed, fallback to CPU:", error);
 
-  return canvas;
+    // CPU処理フォールバック
+    const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
+    applyImageAdjustments(imageData, adjustments);
+    quantizeToColorPalette(imageData, selectedColorIds);
+    ctx.putImageData(imageData, 0, 0);
+    return canvas;
+  }
 }
