@@ -15,6 +15,11 @@ import { buildColorGrid, buildControlsHtml } from "./ui";
 
 /**
  * カラーパレット表示コンポーネント
+ * 
+ * NOTE: イベントリスナー管理
+ * - インスタンス生成時にboundハンドラーを作成し、setupEventHandlers()で登録
+ * - destroy()で必ずremoveEventListenerを呼び、メモリリークとイベント重複を防止
+ * - 部分更新（updateColorGrid等）はinnerHTML変更のみでイベントリスナーは維持
  */
 export class ColorPalette {
   private container: HTMLElement;
@@ -36,6 +41,7 @@ export class ColorPalette {
       ? getCurrentlySelectedColorId()
       : null;
     this.enhancedMode = options.enhancedMode ?? "dot";
+    this.sortOrder = options.sortOrder ?? "default";
 
     // イベントハンドラーをbind
     this.boundClickHandler = (e: MouseEvent) => this.handleClick(e);
@@ -281,6 +287,10 @@ export class ColorPalette {
     this.updateColorGrid();
     // 2. コントロール表示の部分更新
     this.updateSortControlsDisplay(sort);
+    // 3. 変更を通知
+    if (this.options.onSortOrderChange) {
+      this.options.onSortOrderChange(sort);
+    }
   }
 
   private handleEnhancedModeChange(mode: EnhancedMode): void {

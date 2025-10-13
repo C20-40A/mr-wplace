@@ -12,6 +12,8 @@ export interface ColorPaletteOptions {
   hasExtraColorsBitmap?: boolean;
   showColorStats?: boolean;
   colorStats?: Record<string, { matched: number; total: number }>;
+  sortOrder?: SortOrder;
+  onSortOrderChange?: (sort: SortOrder) => void;
 }
 
 export interface ColorStats {
