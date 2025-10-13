@@ -1,9 +1,9 @@
 import { ImageEditorUI, ImageEditorCallbacks } from "./ui";
-import { ImageProcessor } from "./editor";
+import { EditorController } from "./controller";
 
 export class GalleryImageEditor {
   private ui: ImageEditorUI;
-  private processor: ImageProcessor | null = null;
+  private controller: EditorController | null = null;
   private onSaveSuccess?: () => void;
 
   constructor() {
@@ -20,20 +20,20 @@ export class GalleryImageEditor {
     const uiContainer = this.ui.createAndGetContainer();
     container.appendChild(uiContainer);
 
-    this.processor = new ImageProcessor(uiContainer);
-    this.processor.setOnSaveSuccess(this.onSaveSuccess);
-    this.ui.setImageProcessor(this.processor);
+    this.controller = new EditorController(uiContainer);
+    this.controller.setOnSaveSuccess(this.onSaveSuccess);
+    this.ui.setController(this.controller);
     
     // コールバック設定
     const callbacks: ImageEditorCallbacks = {
-      onFileHandle: (file) => this.processor?.handleFile(file),
-      onScaleChange: (scale) => this.processor?.onScaleChange(scale),
-      onBrightnessChange: (value) => this.processor?.onBrightnessChange(value),
-      onContrastChange: (value) => this.processor?.onContrastChange(value),
-      onSaturationChange: (value) => this.processor?.onSaturationChange(value),
-      onClear: () => this.processor?.clearImage(),
-      onSaveToGallery: () => this.processor?.saveToGallery(),
-      onDownload: () => this.processor?.downloadImage()
+      onFileHandle: (file) => this.controller?.handleFile(file),
+      onScaleChange: (scale) => this.controller?.onScaleChange(scale),
+      onBrightnessChange: (value) => this.controller?.onBrightnessChange(value),
+      onContrastChange: (value) => this.controller?.onContrastChange(value),
+      onSaturationChange: (value) => this.controller?.onSaturationChange(value),
+      onClear: () => this.controller?.clearImage(),
+      onSaveToGallery: () => this.controller?.saveToGallery(),
+      onDownload: () => this.controller?.downloadImage()
     };
     
     this.ui.setupUI(callbacks);
