@@ -52,13 +52,11 @@ export class TileOverlay {
     coords: { TLX: number; TLY: number; PxX: number; PxY: number },
     imageItem: ImageItem
   ): Promise<void> {
-    const file = await this.dataUrlToFile(
-      imageItem.dataUrl,
-      imageItem.title || "wplace.png"
-    );
+    const response = await fetch(imageItem.dataUrl);
+    const blob = await response.blob();
 
     await this.tileDrawManager.addImageToOverlayLayers(
-      file,
+      blob,
       [coords.TLX, coords.TLY, coords.PxX, coords.PxY],
       imageItem.key
     );
@@ -143,19 +141,9 @@ export class TileOverlay {
           resizeQuality: "high",
         });
 
-        const canvas = new OffscreenCanvas(1000, 1000);
-        const ctx = canvas.getContext("2d");
-        if (!ctx) throw new Error("Failed to get canvas context");
-        ctx.drawImage(resizedImg, 0, 0);
-        const resizedBlob = await canvas.convertToBlob({ type: "image/png" });
-
-        const file = new File([resizedBlob], "snapshot.png", {
-          type: "image/png",
-        });
-
         const snapshotKey = `snapshot_${activeSnapshot.fullKey}`;
         await this.tileDrawManager.addImageToOverlayLayers(
-          file,
+          resizedImg,
           [tileX, tileY, 0, 0],
           snapshotKey
         );
@@ -184,10 +172,11 @@ export class TileOverlay {
   }
 
   private async restoreImage(image: any): Promise<void> {
-    const file = await this.dataUrlToFile(image.dataUrl, "restored.png");
+    const response = await fetch(image.dataUrl);
+    const blob = await response.blob();
 
     await this.tileDrawManager.addImageToOverlayLayers(
-      file,
+      blob,
       [
         image.drawPosition.TLX,
         image.drawPosition.TLY,
@@ -208,15 +197,6 @@ export class TileOverlay {
       }
       this.tileDrawManager.setPerTileColorStats(image.key, tileStatsMap);
     }
-  }
-
-  private async dataUrlToFile(
-    dataUrl: string,
-    filename: string
-  ): Promise<File> {
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
-    return new File([blob], filename, { type: blob.type });
   }
 
   private async updateColorStatsForTileWithCache(

@@ -19,7 +19,7 @@ export class TileDrawManager {
   }
 
   async addImageToOverlayLayers(
-    blob: File,
+    source: File | Blob | ImageBitmap,
     coords: WplaceCoords,
     imageKey: string
   ): Promise<void> {
@@ -27,7 +27,7 @@ export class TileDrawManager {
 
     const { preparedOverlayImages: preparedOverlayImage } =
       await splitImageOnTiles({
-        file: blob,
+        source,
         coords,
         tileSize: this.tileSize,
       });
