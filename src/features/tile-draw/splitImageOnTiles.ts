@@ -5,15 +5,15 @@ import { WplaceCoords } from "./constants";
  * 補助色モード最適化: x1サイズImageBitmap生成（x3拡大はdrawOverlayLayersOnTileで実施）
  */
 export const splitImageOnTiles = async ({
-  file,
+  source,
   coords,
   tileSize,
 }: {
-  file: File;
+  source: File | Blob | ImageBitmap;
   coords: WplaceCoords;
   tileSize: number;
 }): Promise<{ preparedOverlayImages: Record<string, ImageBitmap> }> => {
-  const bitmap = await createImageBitmap(file);
+  const bitmap = source instanceof ImageBitmap ? source : await createImageBitmap(source);
   const [w, h] = [bitmap.width, bitmap.height];
   const preparedOverlayImages: Record<string, ImageBitmap> = {};
 
