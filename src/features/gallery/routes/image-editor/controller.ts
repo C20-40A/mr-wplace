@@ -5,7 +5,7 @@ import { ColorPalette } from "../../../../components/color-palette";
 import { DrawPosition, GalleryItem } from "../../storage";
 import {
   readFileAsDataUrl,
-  resizeImageIfNeeded,
+  showImageSizeDialog,
   createBlobFromCanvas,
   blobToDataUrl,
   downloadBlob,
@@ -52,7 +52,15 @@ export class EditorController {
     }
 
     const dataUrl = await readFileAsDataUrl(file);
-    const processedDataUrl = await resizeImageIfNeeded(dataUrl);
+    const { action, dataUrl: processedDataUrl } = await showImageSizeDialog(dataUrl, this.container);
+
+    if (action === 'addToGallery') {
+      // 直接ギャラリーに追加
+      await this.saveDirectlyToGallery(processedDataUrl);
+      return;
+    }
+
+    // 'resize' または 'edit' の場合は編集画面へ
     this.displayImage(processedDataUrl);
   }
 
@@ -207,6 +215,31 @@ export class EditorController {
       galleryItem.drawPosition = this.drawPosition;
       galleryItem.drawEnabled = true;
       console.log("🧑‍🎨 : Saving with position:", this.drawPosition);
+    }
+
+    await galleryStorage.save(galleryItem);
+    console.log("🧑‍🎨 : ", t`${"saved_to_gallery"}`);
+
+    this.onSaveSuccess?.();
+  }
+
+  private async saveDirectlyToGallery(dataUrl: string): Promise<void> {
+    const key = `gallery_${Date.now()}`;
+
+    const { GalleryStorage } = await import("../../storage");
+    const galleryStorage = new GalleryStorage();
+
+    const galleryItem: GalleryItem = {
+      key: key,
+      timestamp: Date.now(),
+      dataUrl: dataUrl,
+    };
+
+    // 座標情報があれば追加（デフォルト表示ON）
+    if (this.drawPosition) {
+      galleryItem.drawPosition = this.drawPosition;
+      galleryItem.drawEnabled = true;
+      console.log("🧑‍🎨 : Saving directly with position:", this.drawPosition);
     }
 
     await galleryStorage.save(galleryItem);

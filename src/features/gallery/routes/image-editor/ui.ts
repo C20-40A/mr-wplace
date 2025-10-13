@@ -53,13 +53,6 @@ export class ImageEditorUI {
       
       <!-- Image Display Area -->
       <div id="wps-image-display" style="display: none;">
-        <button id="wps-clear-btn" class="btn btn-xs btn-circle btn-ghost" 
-          style="position: absolute; top: 0.5rem; right: 0.5rem; z-index: 10; opacity: 0.6;" 
-          title="${"clear_image"}">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 0.75rem; height: 0.75rem;">
-            <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd"/>
-          </svg>
-        </button>
         
         <!-- 4 Area Grid -->
         <div id="wps-main-grid" style="display: grid; grid-template-columns: 1fr; gap: 0.75rem; height: calc(100vh - 8rem); overflow: hidden;">
@@ -202,7 +195,6 @@ export class ImageEditorUI {
     const saturationValue = this.container.querySelector(
       "#wps-saturation-value"
     );
-    const clearBtn = this.container.querySelector("#wps-clear-btn");
     const addToGalleryBtn = this.container.querySelector("#wps-add-to-gallery");
     const downloadBtn = this.container.querySelector("#wps-download");
 
@@ -279,14 +271,6 @@ export class ImageEditorUI {
     saturationSlider?.addEventListener("change", (e) => {
       const value = parseInt((e.target as HTMLInputElement).value);
       this.callbacks?.onSaturationChange(value);
-    });
-
-    // 画像クリアボタン
-    clearBtn?.addEventListener("click", () => {
-      if (confirm(t`${"clear_image_confirm"}`)) {
-        this.callbacks?.onClear();
-        this.imageDropzone?.show();
-      }
     });
 
     // ギャラリーに追加
