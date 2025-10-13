@@ -5,6 +5,7 @@ export interface ModalConfig {
   id: string;
   title: string;
   maxWidth?: string;
+  containerStyle?: string;
 }
 
 /**
@@ -28,6 +29,7 @@ export abstract class BaseModalUI<T extends Router<any> = any> {
       title: config.title,
       hasBackButton: !!this.router,
       maxWidth: config.maxWidth,
+      containerStyle: config.containerStyle,
       onBack: () => this.router?.navigateBack(),
     });
 

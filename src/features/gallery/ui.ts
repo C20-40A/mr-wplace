@@ -8,6 +8,7 @@ export class GalleryUI extends BaseModalUI<GalleryRouter> {
     return {
       id: "wplace-studio-gallery-modal",
       title: t`${"gallery"}`,
+      containerStyle: "max-height: 90vh;",
     };
   }
 }

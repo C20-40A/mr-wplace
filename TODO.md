@@ -3,8 +3,8 @@
 - Auto color picker は disable にせねば
 - 画像追加の modal の UI 更新
   - レイヤーとかほしい
-- 画像追加も GPU で高速化
 - 起動が遅い(/me, /tile 取得が間に合っていない場合がある)
+- src/features/tile-draw/tileDrawManager.ts は canvas 以外は扱えないのか？高速化したい
 
 # バグ
 
@@ -48,6 +48,7 @@
 
 # DONE v1.6.0
 
+- 画像編集も GPU で高速化
 - フィルター並び替えすると、もっかいフィルターボタンが押せない問題
 - タイルの jump 機能を bookmark に設置
 - パレットのソート順が保持されない
