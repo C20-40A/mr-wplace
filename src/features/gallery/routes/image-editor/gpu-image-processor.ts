@@ -8,7 +8,8 @@ export const gpuProcessImage = async (
   sourceBitmap: ImageBitmap,
   adjustments: ImageAdjustments,
   paletteRGB: Array<[number, number, number]>,
-  ditheringEnabled = false
+  ditheringEnabled = false,
+  ditheringThreshold = 500
 ): Promise<Uint8ClampedArray> => {
   const width = sourceBitmap.width;
   const height = sourceBitmap.height;
@@ -94,15 +95,32 @@ export const gpuProcessImage = async (
   uniform int uPaletteCount;
   uniform vec3 uPalette[${maxPalette}];
   uniform bool uDitheringEnabled;
+  uniform float uSnapThreshold;
   uniform float uBayerMatrix[16];
   out vec4 outColor;
 
   void main(){
     vec4 color = texture(uAdjusted, vTexCoord);
     vec3 rgb = color.rgb * 255.0;
-    
-    // ディザリング適用
-    if (uDitheringEnabled) {
+
+    // ===== パレット近傍判定 =====
+    float minDist = 1e10;
+    vec3 nearest = uPalette[0];
+    for (int i = 0; i < ${maxPalette}; ++i) {
+      if (i >= uPaletteCount) break;
+      vec3 diff = rgb - uPalette[i];
+      float dist2 = dot(diff, diff);
+      if (dist2 < minDist) {
+        minDist = dist2;
+        nearest = uPalette[i];
+      }
+    }
+
+    // ===== 近い色ならスナップ（ディザスキップ） =====
+    bool isNearPalette = (minDist < uSnapThreshold);
+
+    // ===== ディザリング処理 =====
+    if (uDitheringEnabled && !isNearPalette) {
       vec2 pixelCoord = gl_FragCoord.xy;
       int x = int(mod(pixelCoord.x, 4.0));
       int y = int(mod(pixelCoord.y, 4.0));
@@ -110,22 +128,22 @@ export const gpuProcessImage = async (
       float bayerValue = uBayerMatrix[idx];
       float ditherAmount = bayerValue * 64.0;
       rgb = clamp(rgb + ditherAmount, 0.0, 255.0);
-    }
-    
-    // 最近傍探索
-    float minDist = 1e10;
-    vec3 nearest = uPalette[0];
-    for (int i = 0; i < ${maxPalette}; ++i) {
-      if (i >= uPaletteCount) break;
-      vec3 p = uPalette[i];
-      vec3 diff = rgb - p;
-      float dist2 = dot(diff, diff);
-      if (dist2 < minDist) {
-        minDist = dist2;
-        nearest = p;
+
+      // 再度パレット最近傍検索（ディザ後）
+      float minDist2 = 1e10;
+      vec3 nearest2 = uPalette[0];
+      for (int i = 0; i < ${maxPalette}; ++i) {
+        if (i >= uPaletteCount) break;
+        vec3 diff2 = rgb - uPalette[i];
+        float dist22 = dot(diff2, diff2);
+        if (dist22 < minDist2) {
+          minDist2 = dist22;
+          nearest2 = uPalette[i];
+        }
       }
+      nearest = nearest2;
     }
-    
+
     outColor = vec4(nearest / 255.0, color.a);
   }`;
 
@@ -283,14 +301,17 @@ export const gpuProcessImage = async (
     gl.getUniformLocation(programPalette, "uDitheringEnabled"),
     ditheringEnabled ? 1 : 0
   );
+  gl.uniform1f(
+    gl.getUniformLocation(programPalette, "uSnapThreshold"),
+    ditheringThreshold
+  );
 
   // ベイヤー行列（4x4、正規化済み -0.5 ~ 0.5）
-  const bayerMatrix = new Float32Array([
-    0, 8, 2, 10,
-    12, 4, 14, 6,
-    3, 11, 1, 9,
-    15, 7, 13, 5
-  ].map(v => v / 16 - 0.5));
+  const bayerMatrix = new Float32Array(
+    [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(
+      (v) => v / 16 - 0.5
+    )
+  );
   gl.uniform1fv(
     gl.getUniformLocation(programPalette, "uBayerMatrix"),
     bayerMatrix

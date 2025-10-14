@@ -8,6 +8,7 @@ export interface ImageEditorCallbacks {
   onContrastChange: (value: number) => void;
   onSaturationChange: (value: number) => void;
   onDitheringChange: (enabled: boolean) => void;
+  onDitheringThresholdChange: (threshold: number) => void;
   onClear: () => void;
   onSaveToGallery: () => void;
   onDownload: () => void;
@@ -152,6 +153,15 @@ export class ImageEditorUI {
                 </label>
               </div>
               
+              <div>
+                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem;">
+                  <span style="font-size: 0.75rem; color: #9ca3af;">0</span>
+                  <span>Snap Threshold: <span id="wps-dithering-threshold-value">500</span></span>
+                  <span style="font-size: 0.75rem; color: #9ca3af;">1500</span>
+                </label>
+                <input type="range" id="wps-dithering-threshold-slider" min="0" max="1500" step="50" value="500" class="range" style="width: 100%;" disabled>
+              </div>
+              
               <div class="flex" style="gap: 0.5rem;">
                 <button id="wps-add-to-gallery" class="btn btn-primary" style="flex: 1;">${"add_to_gallery"}</button>
                 <button id="wps-download" class="btn btn-ghost">${"download"}</button>
@@ -206,6 +216,12 @@ export class ImageEditorUI {
     const ditheringCheckbox = this.container.querySelector(
       "#wps-dithering-checkbox"
     ) as HTMLInputElement;
+    const ditheringThresholdSlider = this.container.querySelector(
+      "#wps-dithering-threshold-slider"
+    ) as HTMLInputElement;
+    const ditheringThresholdValue = this.container.querySelector(
+      "#wps-dithering-threshold-value"
+    );
     const addToGalleryBtn = this.container.querySelector("#wps-add-to-gallery");
     const downloadBtn = this.container.querySelector("#wps-download");
 
@@ -287,7 +303,23 @@ export class ImageEditorUI {
     // ディザリング
     ditheringCheckbox?.addEventListener("change", (e) => {
       const checked = (e.target as HTMLInputElement).checked;
+      if (ditheringThresholdSlider) {
+        ditheringThresholdSlider.disabled = !checked;
+      }
       this.callbacks?.onDitheringChange(checked);
+    });
+
+    // ディザリング閾値スライダー
+    ditheringThresholdSlider?.addEventListener("input", (e) => {
+      const value = (e.target as HTMLInputElement).value;
+      if (ditheringThresholdValue) {
+        ditheringThresholdValue.textContent = value;
+      }
+    });
+
+    ditheringThresholdSlider?.addEventListener("change", (e) => {
+      const value = parseInt((e.target as HTMLInputElement).value);
+      this.callbacks?.onDitheringThresholdChange(value);
     });
 
     // ギャラリーに追加

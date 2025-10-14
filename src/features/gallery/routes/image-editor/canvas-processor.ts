@@ -108,11 +108,11 @@ export function quantizeToColorPalette(
  * 正規化済み（-0.5 ~ 0.5）
  */
 const BAYER_MATRIX_4x4 = [
-  [ 0, 8, 2,10],
-  [12, 4,14, 6],
-  [ 3,11, 1, 9],
-  [15, 7,13, 5]
-].map(row => row.map(v => v / 16 - 0.5));
+  [0, 8, 2, 10],
+  [12, 4, 14, 6],
+  [3, 11, 1, 9],
+  [15, 7, 13, 5],
+].map((row) => row.map((v) => v / 16 - 0.5));
 
 /**
  * ベイヤーディザリング + カラーパレット量子化
@@ -150,7 +150,7 @@ export function quantizeWithDithering(
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const i = (y * width + x) * 4;
-      
+
       // ベイヤー行列から誤差取得
       const bayerValue = BAYER_MATRIX_4x4[y % 4][x % 4];
       const ditherAmount = bayerValue * 64; // 誤差強度調整
@@ -189,7 +189,8 @@ export async function createProcessedCanvas(
   scale: number,
   adjustments: ImageAdjustments,
   selectedColorIds: number[],
-  ditheringEnabled = false
+  ditheringEnabled = false,
+  ditheringThreshold = 500
 ): Promise<HTMLCanvasElement> {
   const originalWidth = img.naturalWidth;
   const originalHeight = img.naturalHeight;
@@ -218,7 +219,8 @@ export async function createProcessedCanvas(
       imageBitmap,
       adjustments,
       paletteRGB,
-      ditheringEnabled
+      ditheringEnabled,
+      ditheringThreshold
     );
     const imageData = new ImageData(
       processedData as Uint8ClampedArray,
@@ -235,14 +237,14 @@ export async function createProcessedCanvas(
     // CPU処理フォールバック
     const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
     applyImageAdjustments(imageData, adjustments);
-    
+
     // ディザ処理切り替え
     if (ditheringEnabled) {
       quantizeWithDithering(imageData, selectedColorIds);
     } else {
       quantizeToColorPalette(imageData, selectedColorIds);
     }
-    
+
     ctx.putImageData(imageData, 0, 0);
     return canvas;
   }

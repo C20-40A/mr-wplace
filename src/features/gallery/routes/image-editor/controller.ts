@@ -27,6 +27,7 @@ export class EditorController {
   private contrast = 0;
   private saturation = 0;
   private ditheringEnabled = false;
+  private ditheringThreshold = 500;
   private imageInspector: ImageInspector | null = null;
   private colorPalette: ColorPalette | null = null;
   private onSaveSuccess?: () => void;
@@ -53,9 +54,12 @@ export class EditorController {
     }
 
     const dataUrl = await readFileAsDataUrl(file);
-    const { action, dataUrl: processedDataUrl } = await showImageSizeDialog(dataUrl, this.container);
+    const { action, dataUrl: processedDataUrl } = await showImageSizeDialog(
+      dataUrl,
+      this.container
+    );
 
-    if (action === 'addToGallery') {
+    if (action === "addToGallery") {
       // 直接ギャラリーに追加
       await this.saveDirectlyToGallery(processedDataUrl);
       return;
@@ -88,6 +92,11 @@ export class EditorController {
   onDitheringChange(enabled: boolean): void {
     console.log("🧑‍🎨 : Dithering changed:", enabled);
     this.ditheringEnabled = enabled;
+    this.updateScaledImage();
+  }
+
+  onDitheringThresholdChange(threshold: number): void {
+    this.ditheringThreshold = threshold;
     this.updateScaledImage();
   }
 
@@ -144,6 +153,7 @@ export class EditorController {
     this.contrast = 0;
     this.saturation = 0;
     this.ditheringEnabled = false;
+    this.ditheringThreshold = 500;
     this.currentFileName = null;
     this.drawPosition = null;
 
@@ -355,7 +365,8 @@ export class EditorController {
       this.imageScale,
       adjustments,
       this.selectedColorIds,
-      this.ditheringEnabled
+      this.ditheringEnabled,
+      this.ditheringThreshold
     );
 
     // 結果をcanvasに転写
