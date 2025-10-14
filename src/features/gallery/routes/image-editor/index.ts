@@ -32,6 +32,7 @@ export class GalleryImageEditor {
       onContrastChange: (value) => this.controller?.onContrastChange(value),
       onSaturationChange: (value) => this.controller?.onSaturationChange(value),
       onDitheringChange: (enabled) => this.controller?.onDitheringChange(enabled),
+      onDitheringThresholdChange: (threshold) => this.controller?.onDitheringThresholdChange(threshold),
       onClear: () => this.controller?.clearImage(),
       onSaveToGallery: () => this.controller?.saveToGallery(),
       onDownload: () => this.controller?.downloadImage()
