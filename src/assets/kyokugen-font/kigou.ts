@@ -2,6 +2,47 @@ import type { BitmapChar } from "./types";
 
 export const kigou: BitmapChar[] = [
   {
+    char: " ",
+    width: 1,
+    height: 1,
+    data: [[0]],
+  },
+  {
+    char: "　",
+    width: 2,
+    height: 1,
+    data: [[0], [0]],
+  },
+  {
+    char: "'",
+    width: 1,
+    height: 4,
+    data: [[1], [1], [0], [0]],
+  },
+  {
+    char: '"',
+    width: 3,
+    height: 4,
+    data: [
+      [1, 0, 1],
+      [1, 0, 1],
+      [0, 0, 0],
+      [0, 0, 0],
+    ],
+  },
+  {
+    char: ":",
+    width: 1,
+    height: 4,
+    data: [[1], [0], [1], [0]],
+  },
+  {
+    char: ";",
+    width: 1,
+    height: 4,
+    data: [[1], [0], [1], [1]],
+  },
+  {
     char: "!",
     width: 3,
     height: 4,
