@@ -56,9 +56,6 @@ export class PositionInfo {
 
     const { lat, lng, zoom } = position;
     const coords = llzToTilePixel(lat, lng);
-
-    this.infoElement.textContent = `(Tile: ${coords.TLX}, ${
-      coords.TLY
-    } Lat: ${lat.toFixed(5)} Lng: ${lng.toFixed(5)} Zoom: ${zoom.toFixed(3)})`;
+    this.infoElement.textContent = `Coordinates: (${coords.TLX}, ${coords.TLY}, ${coords.PxX}, ${coords.PxY})`;
   }
 }
