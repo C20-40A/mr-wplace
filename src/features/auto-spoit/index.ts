@@ -49,8 +49,8 @@ export class AutoSpoit {
   private async handleKonamiCode(): Promise<void> {
     this.devMode = await AutoSpoitStorage.toggleDevMode();
     const message = this.devMode
-      ? "Developer mode enabled! Auto Spoit feature is now available."
-      : "Developer mode disabled! Auto Spoit feature is will be hidden after UI refresh.";
+      ? "Developer mode enabled"
+      : "Developer mode disabled";
 
     alert(message);
     console.log("🧑‍🎨 : Dev mode toggled:", this.devMode);
@@ -108,7 +108,7 @@ export class AutoSpoit {
     if (!this.enabled) {
       const hasShownWarning = await AutoSpoitStorage.hasShownWarning();
       if (!hasShownWarning) {
-        const warningMessage = t`${'auto_spoit_warning'}`;
+        const warningMessage = t`${"auto_spoit_warning"}`;
 
         const agreed = confirm(warningMessage);
         if (!agreed) {
