@@ -46,7 +46,8 @@ export class TileDrawManager {
 
   async drawOverlayLayersOnTile(
     tileBlob: Blob,
-    tileCoords: TileCoords
+    tileCoords: TileCoords,
+    computeDevice: "gpu" | "cpu" = "gpu"
   ): Promise<Blob> {
     if (this.overlayLayers.length === 0) return tileBlob;
 
@@ -132,7 +133,8 @@ export class TileDrawManager {
         Number(coords[3]),
         mode,
         instance.imageKey,
-        tempStatsMap
+        tempStatsMap,
+        computeDevice
       );
 
       context.drawImage(
@@ -330,7 +332,8 @@ export class TileDrawManager {
     offsetY: number,
     mode: EnhancedMode,
     imageKey: string,
-    tempStatsMap: Map<string, ColorStats>
+    tempStatsMap: Map<string, ColorStats>,
+    compute_device: "gpu" | "cpu" = "gpu"
   ): Promise<ImageBitmap> {
     // dev mode有効時のみクローン作成（getOverlayPixelColor用）
     // 通常時はgpuApplyColorFilter内でclose()されてパフォーマンス最適化
@@ -349,12 +352,25 @@ export class TileDrawManager {
       ? window.mrWplace.colorFilterManager.selectedRGBs
       : undefined;
 
-    // GPUフィルター適用
-    const data = await processGpuColorFilter(processedBitmap, colorFilter);
-
-    // CPUフィルター適用（GPU非対応ブラウザ用フォールバック）
-    // const rawData = convertImageBitmapToUint8ClampedArray(processedBitmap);
-    // const data = processCpuColorFilter(rawData, { filters: colorFilter });
+    let data: Uint8ClampedArray;
+    if (compute_device === "gpu" && colorFilter !== undefined) {
+      try {
+        // GPUフィルター適用
+        data = await processGpuColorFilter(processedBitmap, colorFilter);
+      } catch (error) {
+        console.log("🧑‍🎨 : GPU processing failed, fallback to CPU", error);
+        // CPU フォールバック
+        const rawData = convertImageBitmapToUint8ClampedArray(processedBitmap);
+        data = processCpuColorFilter(rawData, { filters: colorFilter });
+      }
+    } else if (compute_device === "cpu" && colorFilter !== undefined) {
+      // CPUフィルター適用（GPU非対応ブラウザ用フォールバック）
+      const rawData = convertImageBitmapToUint8ClampedArray(processedBitmap);
+      data = processCpuColorFilter(rawData, { filters: colorFilter });
+    } else {
+      // フィルターなしはそのまま取得
+      data = convertImageBitmapToUint8ClampedArray(processedBitmap);
+    }
 
     // 背景ピクセル（事前デコード済み）
     const bgData = new Uint8ClampedArray(bgPixels.buffer);

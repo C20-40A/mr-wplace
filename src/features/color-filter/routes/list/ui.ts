@@ -1,15 +1,21 @@
 import { ColorPalette } from "../../../../components/color-palette";
 import type { SortOrder } from "../../../../components/color-palette/types";
+import { ColorPaletteStorage } from "../../../../components/color-palette/storage";
+import type { ComputeDevice } from "../../../../components/color-palette/storage";
 import { getCurrentTiles } from "../../../../states/currentTile";
 
 let colorPalette: ColorPalette | null = null;
 let lastSortOrder: SortOrder = "default";
+let lastComputeDevice: ComputeDevice = "gpu";
 
 export const renderColorFilters = async (
   container: HTMLElement
 ): Promise<void> => {
   // 既存インスタンス破棄
   if (colorPalette) colorPalette.destroy();
+
+  // ComputeDevice設定読み込み
+  lastComputeDevice = await ColorPaletteStorage.getComputeDevice();
 
   // ColorFilterManagerの現在状態取得
   const colorFilterManager = window.mrWplace?.colorFilterManager;
@@ -70,6 +76,13 @@ export const renderColorFilters = async (
     sortOrder: lastSortOrder,
     onSortOrderChange: (sort) => {
       lastSortOrder = sort;
+    },
+    showComputeDeviceSelect: true,
+    computeDevice: lastComputeDevice,
+    onComputeDeviceChange: async (device) => {
+      lastComputeDevice = device;
+      await ColorPaletteStorage.setComputeDevice(device);
+      console.log(`🧑‍🎨 : Compute device changed:`, device);
     },
   });
 };

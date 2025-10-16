@@ -1,4 +1,5 @@
 import type { EnhancedMode } from "../../features/tile-draw/types";
+import type { ComputeDevice } from "./storage";
 
 export type SortOrder = "default" | "most-missing" | "least-remaining";
 
@@ -14,6 +15,9 @@ export interface ColorPaletteOptions {
   colorStats?: Record<string, { matched: number; total: number }>;
   sortOrder?: SortOrder;
   onSortOrderChange?: (sort: SortOrder) => void;
+  showComputeDeviceSelect?: boolean;
+  onComputeDeviceChange?: (device: ComputeDevice) => void;
+  computeDevice?: ComputeDevice;
 }
 
 export interface ColorStats {

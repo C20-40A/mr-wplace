@@ -207,4 +207,7 @@ export const jaTranslations = {
   sort_order_default: "デフォルト",
   sort_order_most_missing: "残りピクセルが多い",
   sort_order_least_remaining: "残りピクセルが少ない",
+
+  // Compute Device
+  compute_device_label: "処理方式",
 };
