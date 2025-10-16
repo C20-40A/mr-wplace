@@ -45,6 +45,8 @@ abcdefghijklmnopqrstuvwxyz
 
 ぱぴぷぺぽ
 
+ぁぃぅぇぉ
+
 ゃゅょ
 
 アイウエオ
@@ -64,6 +66,8 @@ abcdefghijklmnopqrstuvwxyz
 パピプペポ
 ャュョ
 ッ
+
+ァィゥェォ
 
 ー
 -
