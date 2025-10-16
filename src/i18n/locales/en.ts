@@ -126,6 +126,7 @@ export const enTranslations = {
   tile_coordinate: "Tile Coordinate",
   pixel_coordinate: "Pixel Coordinate",
   lat_lng: "Latitude/Longitude",
+  coordinates: "Coordinates",
   share_description:
     "This image filename contains coordinate information. When you add the downloaded image to the gallery again, it will be automatically placed at the same position.",
   no_position_data: "No position data",
