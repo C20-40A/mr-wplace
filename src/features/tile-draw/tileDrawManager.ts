@@ -3,8 +3,12 @@ import { TILE_DRAW_CONSTANTS, WplaceCoords, TileCoords } from "./constants";
 import { llzToTilePixel } from "../../utils/coordinate";
 import type { TileDrawInstance, ColorStats, EnhancedMode } from "./types";
 import { getAuxiliaryColor, isSameColor, colorToKey } from "./color-processing";
-import { getGridPosition } from "./pixel-processing";
-import { gpuApplyColorFilter } from "./gpu-filter";
+import {
+  convertImageBitmapToUint8ClampedArray,
+  getGridPosition,
+} from "./pixel-processing";
+import { processGpuColorFilter } from "./gpu-color-filter";
+import { processCpuColorFilter } from "./cpu-color-filter";
 
 export class TileDrawManager {
   public tileSize: number;
@@ -42,7 +46,8 @@ export class TileDrawManager {
 
   async drawOverlayLayersOnTile(
     tileBlob: Blob,
-    tileCoords: TileCoords
+    tileCoords: TileCoords,
+    computeDevice: "gpu" | "cpu" = "gpu"
   ): Promise<Blob> {
     if (this.overlayLayers.length === 0) return tileBlob;
 
@@ -98,7 +103,9 @@ export class TileDrawManager {
       finalBgWidth,
       finalBgHeight
     );
-    const tileBitmap = await createImageBitmap(bgImageData);
+    const tileBitmap = await createImageBitmap(bgImageData, {
+      premultiplyAlpha: "none",
+    });
 
     // キャンバス作成（実サイズベース）
     const drawSize = Math.max(finalBgWidth, finalBgHeight) * this.renderScale;
@@ -128,7 +135,8 @@ export class TileDrawManager {
         Number(coords[3]),
         mode,
         instance.imageKey,
-        tempStatsMap
+        tempStatsMap,
+        computeDevice
       );
 
       context.drawImage(
@@ -209,17 +217,7 @@ export class TileDrawManager {
         // ピクセル取得（x1サイズbitmapから直接取得）
         const canvas = new OffscreenCanvas(1, 1);
         const ctx = canvas.getContext("2d")!;
-        ctx.drawImage(
-          bitmap,
-          relX,
-          relY,
-          1,
-          1,
-          0,
-          0,
-          1,
-          1
-        );
+        ctx.drawImage(bitmap, relX, relY, 1, 1, 0, 0, 1, 1);
         const imageData = ctx.getImageData(0, 0, 1, 1);
 
         return {
@@ -336,18 +334,12 @@ export class TileDrawManager {
     offsetY: number,
     mode: EnhancedMode,
     imageKey: string,
-    tempStatsMap: Map<string, ColorStats>
+    tempStatsMap: Map<string, ColorStats>,
+    compute_device: "gpu" | "cpu" = "gpu"
   ): Promise<ImageBitmap> {
-    // dev mode有効時のみクローン作成（getOverlayPixelColor用）
-    // 通常時はgpuApplyColorFilter内でclose()されてパフォーマンス最適化
-    const isDevMode = window.mrWplace?.autoSpoit?.isDevModeEnabled() ?? false;
-    const processedBitmap = isDevMode
-      ? await createImageBitmap(overlayBitmap)
-      : overlayBitmap;
-
     const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
-    const width = processedBitmap.width;
-    const height = processedBitmap.height;
+    const width = overlayBitmap.width;
+    const height = overlayBitmap.height;
 
     // === Phase 1: x1サイズ処理 ===
     // GPU: カラーフィルター適用
@@ -355,7 +347,25 @@ export class TileDrawManager {
       ? window.mrWplace.colorFilterManager.selectedRGBs
       : undefined;
 
-    const data = await gpuApplyColorFilter(processedBitmap, colorFilter);
+    let data: Uint8ClampedArray;
+    if (compute_device === "gpu" && colorFilter !== undefined) {
+      try {
+        // GPUフィルター適用
+        data = await processGpuColorFilter(overlayBitmap, colorFilter);
+      } catch (error) {
+        console.log("🧑‍🎨 : GPU processing failed, fallback to CPU", error);
+        // CPU フォールバック
+        const rawData = convertImageBitmapToUint8ClampedArray(overlayBitmap);
+        data = processCpuColorFilter(rawData, { filters: colorFilter });
+      }
+    } else if (compute_device === "cpu" && colorFilter !== undefined) {
+      // CPUフィルター適用（GPU非対応ブラウザ用フォールバック）
+      const rawData = convertImageBitmapToUint8ClampedArray(overlayBitmap);
+      data = processCpuColorFilter(rawData, { filters: colorFilter });
+    } else {
+      // フィルターなしはそのまま取得
+      data = convertImageBitmapToUint8ClampedArray(overlayBitmap);
+    }
 
     // 背景ピクセル（事前デコード済み）
     const bgData = new Uint8ClampedArray(bgPixels.buffer);
@@ -499,7 +509,7 @@ export class TileDrawManager {
     const finalImageData = new ImageData(scaledData, scaledWidth, scaledHeight);
     finalCtx.putImageData(finalImageData, 0, 0);
 
-    return await createImageBitmap(finalCanvas);
+    return await createImageBitmap(finalCanvas, { premultiplyAlpha: "none" });
   }
 }
 

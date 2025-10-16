@@ -9,6 +9,7 @@ export interface ImageEditorCallbacks {
   onSaturationChange: (value: number) => void;
   onDitheringChange: (enabled: boolean) => void;
   onDitheringThresholdChange: (threshold: number) => void;
+  onGpuToggle: (enabled: boolean) => void;
   onClear: () => void;
   onSaveToGallery: () => void;
   onDownload: () => void;
@@ -57,7 +58,7 @@ export class ImageEditorUI {
       <div id="wps-image-display" style="display: none;">
         
         <!-- 4 Area Grid -->
-        <div id="wps-main-grid" style="display: grid; grid-template-columns: 1fr; gap: 0.75rem; height: calc(100vh - 8rem); overflow: hidden;">
+        <div id="wps-main-grid" style="display: grid; grid-template-columns: 1fr; gap: 0.1rem; height: calc(100vh - 8rem); overflow: hidden;">
           <!-- Original Image Area -->
           <div id="wps-original-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; min-height: 0;">
             <h4 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
@@ -72,7 +73,7 @@ export class ImageEditorUI {
           </div>
           
           <!-- Current Image Area -->
-          <div id="wps-current-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; min-height: 0;">
+          <div id="wps-current-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.1rem; overflow-y: auto; min-height: 0;">
             <h4 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
               ${"current_image"}
               <div style="display:flex; font-size: 0.75rem; color: #4b5563;">
@@ -80,9 +81,13 @@ export class ImageEditorUI {
               </div>
             </h4>
             <div class="flex" style="justify-content: center; position: relative; width: 100%; height: calc(100% - 2.5rem);">
-              <div style="width: 300px; height: 300px; max-width: 100%; max-height: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; overflow: hidden; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+              <div style="min-width: 300px; min-height: 300px; max-width: 100%; max-height: 100%; overflow: hidden; position: relative;;">
                 <canvas id="wps-scaled-canvas" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></canvas>
               </div>
+              <label style="position: absolute; bottom: 0.5rem; right: 0.5rem; display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; cursor: pointer; background: rgba(255, 255, 255, 0.9); padding: 0.25rem 0.5rem; border-radius: 0.25rem; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                <input type="checkbox" id="wps-gpu-toggle" class="checkbox checkbox-xs" checked>
+                <span>⚡GPU Mode</span>
+              </label>
             </div>
           </div>
           
@@ -105,31 +110,25 @@ export class ImageEditorUI {
           
           <!-- Controls Area -->
           <div id="wps-controls-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; min-height: 0;">
-            <h4 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem;">${"adjustments"}</h4>
             <div id="wps-controls-container" style="display: flex; flex-direction: column; gap: 1rem;">
               <div>
-                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem;">
+                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem;">
                   <span style="font-size: 0.75rem; color: #9ca3af;">0.1x</span>
-                  <span>${"size_reduction"}: <span id="wps-scale-value">1.0</span>x</span>
+                  <span>${"size_reduction"}</span>
                   <span style="font-size: 0.75rem; color: #9ca3af;">1.0x</span>
                 </label>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                   <input type="range" id="wps-scale-slider" min="0.1" max="1" step="0.01" value="1" class="range" style="flex: 1;">
-                  <input type="number" id="wps-scale-input" min="0.1" max="1" step="0.01" value="1" style="width: 50px; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; text-align: center;">
+                  <div style="display: flex; align-items: center; gap: 0.25rem;">
+                    <input type="number" id="wps-width-input" min="1" step="1" style="width: 60px; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; text-align: center;">
+                    <span style="font-size: 0.75rem; color: #9ca3af;">×</span>
+                    <input type="number" id="wps-height-input" min="1" step="1" style="width: 60px; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; text-align: center;">
+                  </div>
                 </div>
               </div>
               
               <div>
-                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem;">
-                  <span style="font-size: 0.75rem; color: #9ca3af;">-100</span>
-                  <span>${"brightness"}: <span id="wps-brightness-value">0</span></span>
-                  <span style="font-size: 0.75rem; color: #9ca3af;">100</span>
-                </label>
-                <input type="range" id="wps-brightness-slider" min="-100" max="100" step="1" value="0" class="range" style="width: 100%;">
-              </div>
-              
-              <div>
-                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem;">
+                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500;">
                   <span style="font-size: 0.75rem; color: #9ca3af;">-100</span>
                   <span>${"contrast"}: <span id="wps-contrast-value">0</span></span>
                   <span style="font-size: 0.75rem; color: #9ca3af;">100</span>
@@ -137,29 +136,37 @@ export class ImageEditorUI {
                 <input type="range" id="wps-contrast-slider" min="-100" max="100" step="1" value="0" class="range" style="width: 100%;">
               </div>
               
-              <div>
-                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem;">
-                  <span style="font-size: 0.75rem; color: #9ca3af;">-100</span>
-                  <span>${"saturation"}: <span id="wps-saturation-value">0</span></span>
-                  <span style="font-size: 0.75rem; color: #9ca3af;">100</span>
-                </label>
-                <input type="range" id="wps-saturation-slider" min="-100" max="100" step="1" value="0" class="range" style="width: 100%;">
+              <div style="display: flex; gap: 0.75rem;">
+                <div style="flex: 1;">
+                  <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500;">
+                    <span style="font-size: 0.75rem; color: #9ca3af;">-100</span>
+                    <span>${"brightness"}: <span id="wps-brightness-value">0</span></span>
+                    <span style="font-size: 0.75rem; color: #9ca3af;">100</span>
+                  </label>
+                  <input type="range" id="wps-brightness-slider" min="-100" max="100" step="1" value="0" class="range" style="width: 100%;">
+                </div>
+                
+                <div style="flex: 1;">
+                  <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500;">
+                    <span style="font-size: 0.75rem; color: #9ca3af;">-100</span>
+                    <span>${"saturation"}: <span id="wps-saturation-value">0</span></span>
+                    <span style="font-size: 0.75rem; color: #9ca3af;">100</span>
+                  </label>
+                  <input type="range" id="wps-saturation-slider" min="-100" max="100" step="1" value="0" class="range" style="width: 100%;">
+                </div>
               </div>
               
               <div>
-                <label style="display: flex; align-items: center; font-size: 0.875rem; font-weight: 500; gap: 0.5rem; cursor: pointer;">
+                <label style="display: flex; justify-content: center; align-items: center; font-size: 0.875rem; font-weight: 500; gap: 0.5rem; cursor: pointer;">
                   <input type="checkbox" id="wps-dithering-checkbox" class="checkbox checkbox-sm">
                   <span>${"dithering"}</span>
+                  <span>: <span id="wps-dithering-threshold-value">500</span></span>
                 </label>
-              </div>
-              
-              <div>
-                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem;">
-                  <span style="font-size: 0.75rem; color: #9ca3af;">0</span>
-                  <span>Snap Threshold: <span id="wps-dithering-threshold-value">500</span></span>
-                  <span style="font-size: 0.75rem; color: #9ca3af;">1500</span>
-                </label>
-                <input type="range" id="wps-dithering-threshold-slider" min="0" max="1500" step="50" value="500" class="range" style="width: 100%;" disabled>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <span style="font-size: 0.65rem; color: #9ca3af;">0</span>
+                  <input type="range" id="wps-dithering-threshold-slider" min="0" max="1500" step="50" value="500" class="range" style="flex: 1;" disabled>
+                  <span style="font-size: 0.65rem; color: #9ca3af;">1500</span>
+                </div>
               </div>
               
               <div class="flex" style="gap: 0.5rem;">
@@ -193,10 +200,12 @@ export class ImageEditorUI {
     const slider = this.container.querySelector(
       "#wps-scale-slider"
     ) as HTMLInputElement;
-    const input = this.container.querySelector(
-      "#wps-scale-input"
+    const widthInput = this.container.querySelector(
+      "#wps-width-input"
     ) as HTMLInputElement;
-    const valueDisplay = this.container.querySelector("#wps-scale-value");
+    const heightInput = this.container.querySelector(
+      "#wps-height-input"
+    ) as HTMLInputElement;
     const brightnessSlider = this.container.querySelector(
       "#wps-brightness-slider"
     ) as HTMLInputElement;
@@ -222,43 +231,81 @@ export class ImageEditorUI {
     const ditheringThresholdValue = this.container.querySelector(
       "#wps-dithering-threshold-value"
     );
+    const gpuToggle = this.container.querySelector(
+      "#wps-gpu-toggle"
+    ) as HTMLInputElement;
     const addToGalleryBtn = this.container.querySelector("#wps-add-to-gallery");
     const downloadBtn = this.container.querySelector("#wps-download");
 
-    // サイズ縮小スライダー
+    // スライダー変更時
     slider?.addEventListener("input", (e) => {
-      const value = (e.target as HTMLInputElement).value;
-      const floatValue = parseFloat(value);
-      if (valueDisplay) {
-        valueDisplay.textContent = floatValue.toFixed(2);
-      }
-      if (input) {
-        input.value = value;
+      const scale = parseFloat((e.target as HTMLInputElement).value);
+      const originalWidth = parseInt(widthInput?.dataset.originalWidth || "1");
+      const originalHeight = parseInt(heightInput?.dataset.originalHeight || "1");
+      
+      if (widthInput && heightInput) {
+        widthInput.value = Math.round(originalWidth * scale).toString();
+        heightInput.value = Math.round(originalHeight * scale).toString();
       }
     });
 
     slider?.addEventListener("change", (e) => {
-      const value = parseFloat((e.target as HTMLInputElement).value);
-      this.callbacks?.onScaleChange(value);
+      const scale = parseFloat((e.target as HTMLInputElement).value);
+      this.callbacks?.onScaleChange(scale);
     });
 
-    // サイズ縮小数値入力
-    input?.addEventListener("input", (e) => {
-      let value = parseFloat((e.target as HTMLInputElement).value);
-      // 範囲制限
-      value = Math.max(0.1, Math.min(1, value));
-      if (valueDisplay) {
-        valueDisplay.textContent = value.toFixed(2);
+    // 横幅入力変更時
+    widthInput?.addEventListener("input", (e) => {
+      const width = parseInt((e.target as HTMLInputElement).value) || 1;
+      const originalWidth = parseInt(widthInput.dataset.originalWidth || "1");
+      const originalHeight = parseInt(heightInput?.dataset.originalHeight || "1");
+      
+      // アスペクト比維持（常に固定）
+      if (heightInput) {
+        const aspectRatio = originalHeight / originalWidth;
+        const newHeight = Math.round(width * aspectRatio);
+        heightInput.value = newHeight.toString();
       }
+      
+      // スライダー更新
       if (slider) {
-        slider.value = value.toString();
+        const scale = width / originalWidth;
+        slider.value = Math.max(0.1, Math.min(1, scale)).toString();
       }
     });
 
-    input?.addEventListener("change", (e) => {
-      let value = parseFloat((e.target as HTMLInputElement).value);
-      value = Math.max(0.1, Math.min(1, value));
-      this.callbacks?.onScaleChange(value);
+    widthInput?.addEventListener("change", (e) => {
+      const width = parseInt((e.target as HTMLInputElement).value) || 1;
+      const originalWidth = parseInt(widthInput.dataset.originalWidth || "1");
+      const scale = width / originalWidth;
+      this.callbacks?.onScaleChange(Math.max(0.01, Math.min(1, scale)));
+    });
+
+    // 縦幅入力変更時
+    heightInput?.addEventListener("input", (e) => {
+      const height = parseInt((e.target as HTMLInputElement).value) || 1;
+      const originalWidth = parseInt(widthInput?.dataset.originalWidth || "1");
+      const originalHeight = parseInt(heightInput.dataset.originalHeight || "1");
+      
+      // アスペクト比維持（常に固定）
+      if (widthInput) {
+        const aspectRatio = originalWidth / originalHeight;
+        const newWidth = Math.round(height * aspectRatio);
+        widthInput.value = newWidth.toString();
+      }
+      
+      // スライダー更新
+      if (slider) {
+        const scale = height / originalHeight;
+        slider.value = Math.max(0.1, Math.min(1, scale)).toString();
+      }
+    });
+
+    heightInput?.addEventListener("change", (e) => {
+      const height = parseInt((e.target as HTMLInputElement).value) || 1;
+      const originalHeight = parseInt(heightInput.dataset.originalHeight || "1");
+      const scale = height / originalHeight;
+      this.callbacks?.onScaleChange(Math.max(0.01, Math.min(1, scale)));
     });
 
     // 明るさスライダー
@@ -320,6 +367,12 @@ export class ImageEditorUI {
     ditheringThresholdSlider?.addEventListener("change", (e) => {
       const value = parseInt((e.target as HTMLInputElement).value);
       this.callbacks?.onDitheringThresholdChange(value);
+    });
+
+    // GPUトグル
+    gpuToggle?.addEventListener("change", (e) => {
+      const checked = (e.target as HTMLInputElement).checked;
+      this.callbacks?.onGpuToggle(checked);
     });
 
     // ギャラリーに追加

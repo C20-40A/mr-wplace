@@ -29,3 +29,33 @@ export const getBgPixelIndex = (
 ): number => {
   return (bgY * tileSize + bgX) * 4;
 };
+
+/**
+ * ImageBitmap を OffscreenCanvas 経由で Uint8ClampedArray に変換する非同期関数
+ * @param {ImageBitmap} imageBitmap - 変換対象の ImageBitmap
+ * @returns {Uint8ClampedArray} - 変換されたピクセルデータ
+ */
+export const convertImageBitmapToUint8ClampedArray = (
+  imageBitmap: ImageBitmap
+) => {
+  // OffscreenCanvasを作成
+  const offscreen = new OffscreenCanvas(imageBitmap.width, imageBitmap.height);
+  const context = offscreen.getContext("2d");
+
+  if (!context)
+    throw new Error("OffscreenCanvasのコンテキスト取得に失敗しました");
+
+  // ImageBitmapを描画
+  context.drawImage(imageBitmap, 0, 0);
+
+  // ピクセルデータを取得
+  const imageData = context.getImageData(
+    0,
+    0,
+    imageBitmap.width,
+    imageBitmap.height
+  );
+
+  // Uint8ClampedArray (dataプロパティ) を返す
+  return imageData.data;
+};
