@@ -38,7 +38,6 @@ export class TextDraw {
       path: "assets/fonts/misaki/misaki_gothic.ttf",
       size: 8,
     },
-    k8x12: { type: "ttf", path: "assets/fonts/k8x12/k8x12S.ttf", size: 12 },
     comic_sans_ms_pixel: {
       type: "ttf",
       path: "assets/fonts/comic_sans_ms_pixel/comic_sans_ms_pixel.ttf",
