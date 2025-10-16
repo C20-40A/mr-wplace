@@ -40,7 +40,7 @@ export const createBookmarkModal = (): ModalElements => {
   modalElements.container.style.height = "40rem";
 
   modalElements.container.innerHTML = t`
-    <div class="flex gap-2 mb-4" style="flex-wrap: wrap;">
+    <div class="flex gap-2" style="flex-wrap: wrap; margin-bottom: 0.7rem;">
       <button id="wps-export-btn" class="btn btn-outline btn-sm">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
           <path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
@@ -54,7 +54,7 @@ export const createBookmarkModal = (): ModalElements => {
         ${"import"}
       </button>
       <input type="file" id="wps-import-file" accept=".json" style="display: none;">
-      <div class="flex items-center gap-2 mb-4">
+      <div class="flex items-center gap-2">
         <label style="font-size: 0.875rem; white-space: nowrap;">${"sort_by"}</label>
         <select id="wps-bookmark-sort" class="select select-sm select-bordered">
           <option value="created">${"sort_created"}</option>
@@ -64,11 +64,8 @@ export const createBookmarkModal = (): ModalElements => {
     </div>
 
     <div style="flex: 1; overflow-y: auto; min-height: 0;">
-      <div id="wps-favorites-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div id="wps-favorites-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2">
       </div>
-    </div>
-
-    <div id="wps-favorites-count" class="text-center text-sm text-base-content/80 mt-1">
     </div>
   `;
 
@@ -85,11 +82,8 @@ export const renderBookmarks = (
   sortType: BookmarkSortType = "created"
 ): void => {
   const grid = document.getElementById("wps-favorites-grid") as HTMLElement;
-  const count = document.getElementById("wps-favorites-count") as HTMLElement;
 
-  if (!grid || !count) return;
-
-  count.textContent = t`Total: ${favorites.length}`;
+  if (!grid) return;
 
   if (favorites.length === 0) {
     grid.innerHTML = t`
@@ -121,27 +115,81 @@ export const renderBookmarks = (
   grid.innerHTML = favorites
     .map(
       (fav) => `
-          <div class="wps-favorite-card card bg-base-200 shadow-sm hover:shadow-md cursor-pointer transition-all relative"
-          style="hover:transform: translateY(-2px);"
-               data-id="${fav.id}" data-lat="${fav.lat}" data-lng="${
-        fav.lng
-      }" data-zoom="${fav.zoom}">
-            <button class="wps-delete-btn btn btn-ghost btn-xs btn-circle absolute right-1 top-1 z-10"
-                    data-id="${fav.id}">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-3">
-                <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
-              </svg>
-            </button>
-            <div class="card-body p-3">
-              <h4 class="card-title text-sm line-clamp-2">${fav.name}</h4>
-              <div class="text-xs text-base-content/70 space-y-1">
-                <div>📍 ${fav.lat?.toFixed(3) || "N/A"}, ${
-        fav.lng?.toFixed(3) || "N/A"
-      }</div>
-                <div>📅 ${fav.date}</div>
-              </div>
-            </div>
-          </div>
+  <div
+    class="wps-favorite-card"
+    data-id="${fav.id}"
+    data-lat="${fav.lat}"
+    data-lng="${fav.lng}"
+    data-zoom="${fav.zoom}"
+    style="
+      position: relative;
+      cursor: pointer;
+      background: linear-gradient(180deg, #fafafb 0%, #f3f3f6 100%);
+      border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      padding: 11px 14px 20px 10px;
+      transition: all 0.25s ease;
+      transform: translateY(0);
+      overflow: hidden;
+    "
+    onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.12)';"
+    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.08)';"
+    onmousedown="this.style.transform='translateY(1px) scale(0.98)';"
+    onmouseup="this.style.transform='translateY(-3px) scale(1)';"
+    onTouchStart="this.style.transform='scale(0.9)';"
+    onTouchEnd="this.style.transform='scale(1)';"
+  >
+    <!-- 削除ボタン -->
+    <button
+      class="wps-delete-btn"
+      data-id="${fav.id}"
+      style="
+        position: absolute;
+        right: 6px;
+        top: 6px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        opacity: 0.6;
+        transition: all 0.2s ease;
+        transform: scale(1);
+      "
+      onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)';"
+      onmouseout="this.style.opacity='0.6'; this.style.transform='scale(1)';"
+    >
+      <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 -960 960 960' fill='currentColor' style='width:12px; height:12px;'>
+        <path d='m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z'/>
+      </svg>
+    </button>
+
+    <!-- 本文 -->
+    <h4 style="
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.4;
+      color: #222;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      margin-bottom: 0.3rem;
+    ">
+      ${fav.name}
+    </h4>
+
+    <!-- 座標（左下に控えめに） -->
+    <div style="
+      position: absolute;
+      left: 8px;
+      bottom: 6px;
+      font-size: 11px;
+      color: rgba(0,0,0,0.4);
+      pointer-events: none;
+    ">
+      📍${fav.lat?.toFixed(3) || "N/A"}, ${fav.lng?.toFixed(3) || "N/A"}
+    </div>
+  </div>
         `
     )
     .join("");
