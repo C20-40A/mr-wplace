@@ -84,7 +84,9 @@ export const createCard = (config: CardConfig): string => {
       }
 
       <!-- タイトル部分 -->
-      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 0.3rem;">
+      <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 0.3rem; ${
+        config.badge ? "padding-right: 1rem;" : ""
+      }">
         ${
           config.hasActiveIcon
             ? `

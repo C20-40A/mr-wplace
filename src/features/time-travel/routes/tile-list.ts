@@ -93,7 +93,7 @@ export class TileListRoute {
       id: `${tile.tileX}_${tile.tileY}`,
       title: displayName,
       subtitle: `📍${tile.tileX}, ${tile.tileY}`,
-      badge: `Total: ${tile.count}`,
+      badge: `${tile.count}`,
       hasActiveIcon: !!activeSnapshot,
       onClick: true,
       data: {
