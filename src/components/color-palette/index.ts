@@ -3,6 +3,7 @@ import type { EnhancedMode } from "../../features/tile-draw/types";
 import { ENHANCED_MODE_ICONS } from "../../assets/enhanced-mode-icons";
 import { t } from "../../i18n/manager";
 import type { ColorPaletteOptions, SortOrder } from "./types";
+import type { ComputeDevice } from "./storage";
 import {
   ENABLED_BADGE_HTML,
   DISABLED_BADGE_HTML,
@@ -28,6 +29,7 @@ export class ColorPalette {
   private currentlySelectedColorId: number | null = null;
   private enhancedMode: EnhancedMode;
   private sortOrder: SortOrder = "default";
+  private computeDevice: ComputeDevice;
   private boundClickHandler: (e: MouseEvent) => void;
   private boundDocumentClickHandler: (e: MouseEvent) => void;
 
@@ -42,6 +44,7 @@ export class ColorPalette {
       : null;
     this.enhancedMode = options.enhancedMode ?? "dot";
     this.sortOrder = options.sortOrder ?? "default";
+    this.computeDevice = options.computeDevice ?? "gpu";
 
     // イベントハンドラーをbind
     this.boundClickHandler = (e: MouseEvent) => this.handleClick(e);
@@ -63,8 +66,10 @@ export class ColorPalette {
       this.options.hasExtraColorsBitmap ?? false,
       this.options.showColorStats ?? false,
       this.options.showEnhancedSelect ?? false,
+      this.options.showComputeDeviceSelect ?? false,
       this.sortOrder,
-      this.enhancedMode
+      this.enhancedMode,
+      this.computeDevice
     );
 
     this.container.innerHTML = `
@@ -93,6 +98,12 @@ export class ColorPalette {
     if (!(e.target as HTMLElement).closest(".enhanced-mode-container")) {
       const dropdown = this.container.querySelector(
         ".enhanced-mode-dropdown"
+      ) as HTMLElement;
+      if (dropdown) dropdown.style.display = "none";
+    }
+    if (!(e.target as HTMLElement).closest(".compute-device-container")) {
+      const dropdown = this.container.querySelector(
+        ".compute-device-dropdown"
       ) as HTMLElement;
       if (dropdown) dropdown.style.display = "none";
     }
@@ -190,6 +201,37 @@ export class ColorPalette {
       this.handleEnhancedModeChange(mode);
       const dropdown = this.container.querySelector(
         ".enhanced-mode-dropdown"
+      ) as HTMLElement;
+      if (dropdown) dropdown.style.display = "none";
+      return;
+    }
+
+    // Compute Device Button
+    if (
+      target.closest(".compute-device-button") &&
+      !target.closest(".compute-device-item")
+    ) {
+      e.stopPropagation();
+      const dropdown = this.container.querySelector(
+        ".compute-device-dropdown"
+      ) as HTMLElement;
+      if (dropdown) {
+        const isVisible = dropdown.style.display !== "none";
+        dropdown.style.display = isVisible ? "none" : "block";
+      }
+      return;
+    }
+
+    // Compute Device Item
+    const computeDeviceItem = target.closest(
+      ".compute-device-item"
+    ) as HTMLElement;
+    if (computeDeviceItem) {
+      e.stopPropagation();
+      const device = computeDeviceItem.dataset.device as ComputeDevice;
+      this.handleComputeDeviceChange(device);
+      const dropdown = this.container.querySelector(
+        ".compute-device-dropdown"
       ) as HTMLElement;
       if (dropdown) dropdown.style.display = "none";
       return;
@@ -326,6 +368,35 @@ export class ColorPalette {
 
     if (this.options.onEnhancedModeChange) {
       this.options.onEnhancedModeChange(mode);
+    }
+  }
+
+  private handleComputeDeviceChange(device: ComputeDevice): void {
+    this.computeDevice = device;
+
+    // 現在選択中のデバイス名を更新
+    const currentName = this.container.querySelector(
+      ".compute-device-current-name"
+    );
+    if (currentName) {
+      const deviceLabel = device === "gpu" ? "GPU" : "CPU";
+      currentName.textContent = deviceLabel;
+    }
+
+    // ドロップダウン内のボタン選択状態を更新
+    const buttons = this.container.querySelectorAll(".compute-device-item");
+    buttons.forEach((button) => {
+      const buttonDevice = (button as HTMLElement).dataset.device;
+      const isSelected = buttonDevice === device;
+      const borderColor = isSelected ? "#22c55e" : "#d1d5db";
+      const borderWidth = isSelected ? "2px" : "1px";
+      (
+        button as HTMLElement
+      ).style.border = `${borderWidth} solid ${borderColor}`;
+    });
+
+    if (this.options.onComputeDeviceChange) {
+      this.options.onComputeDeviceChange(device);
     }
   }
 

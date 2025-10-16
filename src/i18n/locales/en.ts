@@ -93,7 +93,6 @@ export const enTranslations = {
   resize_image: "Resize",
   edit_image: "Edit",
   add_to_gallery_directly: "Add directly to gallery",
-  adjustments: "Adjustments",
   select_image: "Select image",
   click_image_to_draw: "Click on the image you want to draw on the map",
   no_draw_images: "No images for drawing.",
@@ -197,15 +196,16 @@ However, please pay careful attention to the following:
 • This is a developer verification feature
 • This feature is not publicly available
 • Use only for testing the color picker functionality
-• This is NOT a BOT that violates the terms of service
 • To avoid misunderstanding, always paint at a natural speed and in a natural way
   (Paint from edges, paint easier areas first, etc. - paint like a human would)
 • Too fast movements or unnatural painting patterns may cause pixel misalignment or misunderstanding
-
-Do you agree to use this feature responsibly and carefully?`,
+`,
 
   // Sort Order
   sort_order_default: "Default",
   sort_order_most_missing: "Most Missing",
   sort_order_least_remaining: "Almost Done",
+
+  // Compute Device
+  compute_device_label: "Processing",
 };

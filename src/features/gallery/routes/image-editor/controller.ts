@@ -28,6 +28,7 @@ export class EditorController {
   private saturation = 0;
   private ditheringEnabled = false;
   private ditheringThreshold = 500;
+  private useGpu = true;
   private imageInspector: ImageInspector | null = null;
   private colorPalette: ColorPalette | null = null;
   private onSaveSuccess?: () => void;
@@ -100,6 +101,12 @@ export class EditorController {
     this.updateScaledImage();
   }
 
+  onGpuToggle(enabled: boolean): void {
+    console.log("🧑‍🎨 : GPU toggle changed:", enabled);
+    this.useGpu = enabled;
+    this.updateScaledImage();
+  }
+
   onColorSelectionChange(colorIds: number[]): void {
     this.selectedColorIds = colorIds;
     // パレット変更時は再描画
@@ -154,6 +161,7 @@ export class EditorController {
     this.saturation = 0;
     this.ditheringEnabled = false;
     this.ditheringThreshold = 500;
+    this.useGpu = true;
     this.currentFileName = null;
     this.drawPosition = null;
 
@@ -166,10 +174,12 @@ export class EditorController {
     const slider = this.container.querySelector(
       "#wps-scale-slider"
     ) as HTMLInputElement;
-    const input = this.container.querySelector(
-      "#wps-scale-input"
+    const widthInput = this.container.querySelector(
+      "#wps-width-input"
     ) as HTMLInputElement;
-    const valueDisplay = this.container.querySelector("#wps-scale-value");
+    const heightInput = this.container.querySelector(
+      "#wps-height-input"
+    ) as HTMLInputElement;
     const brightnessSlider = this.container.querySelector(
       "#wps-brightness-slider"
     ) as HTMLInputElement;
@@ -189,10 +199,19 @@ export class EditorController {
     const ditheringCheckbox = this.container.querySelector(
       "#wps-dithering-checkbox"
     ) as HTMLInputElement;
+    const gpuToggle = this.container.querySelector(
+      "#wps-gpu-toggle"
+    ) as HTMLInputElement;
 
     if (slider) slider.value = "1";
-    if (input) input.value = "1";
-    if (valueDisplay) valueDisplay.textContent = "1.00";
+    if (widthInput) {
+      widthInput.value = "";
+      widthInput.dataset.originalWidth = "";
+    }
+    if (heightInput) {
+      heightInput.value = "";
+      heightInput.dataset.originalHeight = "";
+    }
     if (brightnessSlider) brightnessSlider.value = "0";
     if (brightnessValue) brightnessValue.textContent = "0";
     if (contrastSlider) contrastSlider.value = "0";
@@ -200,6 +219,7 @@ export class EditorController {
     if (saturationSlider) saturationSlider.value = "0";
     if (saturationValue) saturationValue.textContent = "0";
     if (ditheringCheckbox) ditheringCheckbox.checked = false;
+    if (gpuToggle) gpuToggle.checked = true;
 
     if (dropzone) dropzone.style.display = "block";
     if (imageDisplay) imageDisplay.style.display = "none";
@@ -288,6 +308,28 @@ export class EditorController {
       originalImage.onload = () => {
         this.updateOriginalImageDisplay();
 
+        // 画像サイズ入力の初期化
+        const widthInput = this.container.querySelector(
+          "#wps-width-input"
+        ) as HTMLInputElement;
+        const heightInput = this.container.querySelector(
+          "#wps-height-input"
+        ) as HTMLInputElement;
+        
+        if (widthInput && heightInput && this.originalImage) {
+          const originalWidth = this.originalImage.naturalWidth;
+          const originalHeight = this.originalImage.naturalHeight;
+          
+          widthInput.value = originalWidth.toString();
+          heightInput.value = originalHeight.toString();
+          widthInput.dataset.originalWidth = originalWidth.toString();
+          heightInput.dataset.originalHeight = originalHeight.toString();
+          widthInput.max = originalWidth.toString();
+          heightInput.max = originalHeight.toString();
+          
+          console.log("🧑‍🎨 : Initialized size inputs:", originalWidth, "x", originalHeight);
+        }
+
         const canvas = this.container.querySelector(
           "#wps-scaled-canvas"
         ) as HTMLCanvasElement;
@@ -359,14 +401,15 @@ export class EditorController {
     };
 
     // 統合処理: リサイズ→調整→パレット（GPU優先）
-    console.log("🧑‍🎨 : Processing with dithering:", this.ditheringEnabled);
+    console.log("🧑‍🎨 : Processing with dithering:", this.ditheringEnabled, "useGpu:", this.useGpu);
     const processedCanvas = await createProcessedCanvas(
       this.originalImage,
       this.imageScale,
       adjustments,
       this.selectedColorIds,
       this.ditheringEnabled,
-      this.ditheringThreshold
+      this.ditheringThreshold,
+      this.useGpu
     );
 
     // 結果をcanvasに転写

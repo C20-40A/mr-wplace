@@ -2,6 +2,7 @@ import { llzToTilePixel } from "../../utils/coordinate";
 import { TileDrawManager } from "../tile-draw";
 import { ImageItem } from "../gallery/routes/list/components";
 import { GalleryStorage } from "../gallery/storage";
+import { ColorPaletteStorage } from "../../components/color-palette/storage";
 
 export class TileOverlay {
   public tileDrawManager: TileDrawManager;
@@ -64,7 +65,7 @@ export class TileOverlay {
     await this.saveDrawPosition(imageItem.key, coords);
   }
 
-  async drawPixelOnTile(
+  private async drawPixelOnTile(
     tileBlob: Blob,
     tileX: number,
     tileY: number
@@ -83,9 +84,12 @@ export class TileOverlay {
 
     await this.restoreImagesOnTileWithCache(tileX, tileY, targetImages);
 
+    const computeDevice = await ColorPaletteStorage.getComputeDevice();
+
     const result = await this.tileDrawManager.drawOverlayLayersOnTile(
       tileBlob,
-      [tileX, tileY]
+      [tileX, tileY],
+      computeDevice
     );
 
     await this.updateColorStatsForTileWithCache(targetImages);
@@ -139,6 +143,7 @@ export class TileOverlay {
           resizeWidth: 1000,
           resizeHeight: 1000,
           resizeQuality: "high",
+          premultiplyAlpha: "none",
         });
 
         const snapshotKey = `snapshot_${activeSnapshot.fullKey}`;

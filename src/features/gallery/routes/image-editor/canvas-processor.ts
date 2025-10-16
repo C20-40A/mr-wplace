@@ -190,7 +190,8 @@ export async function createProcessedCanvas(
   adjustments: ImageAdjustments,
   selectedColorIds: number[],
   ditheringEnabled = false,
-  ditheringThreshold = 500
+  ditheringThreshold = 500,
+  useGpu = true
 ): Promise<HTMLCanvasElement> {
   const originalWidth = img.naturalWidth;
   const originalHeight = img.naturalHeight;
@@ -207,45 +208,51 @@ export async function createProcessedCanvas(
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(img, 0, 0, newWidth, newHeight);
 
-  // GPU処理試行
-  try {
-    console.log("🧑‍🎨 : Attempting GPU processing, dithering:", ditheringEnabled);
-    const imageBitmap = await createImageBitmap(canvas);
-    const paletteRGB = colorpalette
-      .filter((c) => selectedColorIds.includes(c.id))
-      .map((c) => c.rgb);
+  // GPU処理試行（useGpu=trueの場合のみ）
+  if (useGpu) {
+    try {
+      console.log("🧑‍🎨 : Attempting GPU processing, dithering:", ditheringEnabled);
+      const imageBitmap = await createImageBitmap(canvas, {
+        premultiplyAlpha: "none",
+      });
+      const paletteRGB = colorpalette
+        .filter((c) => selectedColorIds.includes(c.id))
+        .map((c) => c.rgb);
 
-    const processedData = await gpuProcessImage(
-      imageBitmap,
-      adjustments,
-      paletteRGB,
-      ditheringEnabled,
-      ditheringThreshold
-    );
-    const imageData = new ImageData(
-      processedData as Uint8ClampedArray,
-      newWidth,
-      newHeight
-    );
-    ctx.putImageData(imageData, 0, 0);
+      const processedData = await gpuProcessImage(
+        imageBitmap,
+        adjustments,
+        paletteRGB,
+        ditheringEnabled,
+        ditheringThreshold
+      );
+      const imageData = new ImageData(
+        new Uint8ClampedArray(processedData),
+        newWidth,
+        newHeight
+      );
+      ctx.putImageData(imageData, 0, 0);
 
-    console.log("🧑‍🎨 : GPU processing succeeded");
-    return canvas;
-  } catch (error) {
-    console.log("🧑‍🎨 : GPU processing failed, fallback to CPU:", error);
-
-    // CPU処理フォールバック
-    const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
-    applyImageAdjustments(imageData, adjustments);
-
-    // ディザ処理切り替え
-    if (ditheringEnabled) {
-      quantizeWithDithering(imageData, selectedColorIds);
-    } else {
-      quantizeToColorPalette(imageData, selectedColorIds);
+      console.log("🧑‍🎨 : GPU processing succeeded");
+      return canvas;
+    } catch (error) {
+      console.log("🧑‍🎨 : GPU processing failed, fallback to CPU:", error);
     }
-
-    ctx.putImageData(imageData, 0, 0);
-    return canvas;
+  } else {
+    console.log("🧑‍🎨 : CPU processing selected");
   }
+
+  // CPU処理
+  const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
+  applyImageAdjustments(imageData, adjustments);
+
+  // ディザ処理切り替え
+  if (ditheringEnabled) {
+    quantizeWithDithering(imageData, selectedColorIds);
+  } else {
+    quantizeToColorPalette(imageData, selectedColorIds);
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  return canvas;
 }
