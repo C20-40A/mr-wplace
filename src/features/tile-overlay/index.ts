@@ -143,6 +143,7 @@ export class TileOverlay {
           resizeWidth: 1000,
           resizeHeight: 1000,
           resizeQuality: "high",
+          premultiplyAlpha: "none",
         });
 
         const snapshotKey = `snapshot_${activeSnapshot.fullKey}`;

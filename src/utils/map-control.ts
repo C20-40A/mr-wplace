@@ -41,7 +41,9 @@ export async function getPixelColorFromTile(
     return null;
   }
 
-  const bitmap = await createImageBitmap(tileBlob);
+  const bitmap = await createImageBitmap(tileBlob, {
+    premultiplyAlpha: "none",
+  });
 
   const canvas = new OffscreenCanvas(1, 1);
   const ctx = canvas.getContext("2d")!;
