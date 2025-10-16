@@ -3,8 +3,12 @@ import { TILE_DRAW_CONSTANTS, WplaceCoords, TileCoords } from "./constants";
 import { llzToTilePixel } from "../../utils/coordinate";
 import type { TileDrawInstance, ColorStats, EnhancedMode } from "./types";
 import { getAuxiliaryColor, isSameColor, colorToKey } from "./color-processing";
-import { getGridPosition } from "./pixel-processing";
-import { gpuApplyColorFilter } from "./gpu-filter";
+import {
+  convertImageBitmapToUint8ClampedArray,
+  getGridPosition,
+} from "./pixel-processing";
+import { processGpuColorFilter } from "./gpu-color-filter";
+import { processCpuColorFilter } from "./cpu-color-filter";
 
 export class TileDrawManager {
   public tileSize: number;
@@ -209,17 +213,7 @@ export class TileDrawManager {
         // ピクセル取得（x1サイズbitmapから直接取得）
         const canvas = new OffscreenCanvas(1, 1);
         const ctx = canvas.getContext("2d")!;
-        ctx.drawImage(
-          bitmap,
-          relX,
-          relY,
-          1,
-          1,
-          0,
-          0,
-          1,
-          1
-        );
+        ctx.drawImage(bitmap, relX, relY, 1, 1, 0, 0, 1, 1);
         const imageData = ctx.getImageData(0, 0, 1, 1);
 
         return {
@@ -355,7 +349,12 @@ export class TileDrawManager {
       ? window.mrWplace.colorFilterManager.selectedRGBs
       : undefined;
 
-    const data = await gpuApplyColorFilter(processedBitmap, colorFilter);
+    // GPUフィルター適用
+    const data = await processGpuColorFilter(processedBitmap, colorFilter);
+
+    // CPUフィルター適用（GPU非対応ブラウザ用フォールバック）
+    // const rawData = convertImageBitmapToUint8ClampedArray(processedBitmap);
+    // const data = processCpuColorFilter(rawData, { filters: colorFilter });
 
     // 背景ピクセル（事前デコード済み）
     const bgData = new Uint8ClampedArray(bgPixels.buffer);
