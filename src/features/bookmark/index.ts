@@ -76,7 +76,7 @@ export class ExtendedBookmarks {
         const target = e.target as HTMLElement;
         if (!target) return;
 
-        const card = target.closest(".wps-favorite-card") as HTMLElement | null;
+        const card = target.closest(".wps-card") as HTMLElement | null;
         const deleteBtn = target.closest(
           ".wps-delete-btn"
         ) as HTMLElement | null;

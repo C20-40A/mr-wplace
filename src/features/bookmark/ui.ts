@@ -4,6 +4,7 @@ import { createModal, ModalElements } from "../../utils/modal";
 import { IMG_ICON_BOOKMARK } from "../../assets/iconImages";
 import { createResponsiveButton } from "../../components/responsive-button";
 import { createCoordinateJumper } from "./components/coordinate-jumper";
+import { createCard, CardConfig } from "../../components/card";
 
 export const createSaveBookmarkButton = (): HTMLButtonElement => {
   return createResponsiveButton({
@@ -113,85 +114,21 @@ export const renderBookmarks = (
   }
 
   grid.innerHTML = favorites
-    .map(
-      (fav) => `
-  <div
-    class="wps-favorite-card"
-    data-id="${fav.id}"
-    data-lat="${fav.lat}"
-    data-lng="${fav.lng}"
-    data-zoom="${fav.zoom}"
-    style="
-      position: relative;
-      cursor: pointer;
-      background: linear-gradient(180deg, #fafafb 0%, #f3f3f6 100%);
-      border-radius: 10px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-      padding: 11px 14px 20px 10px;
-      transition: all 0.25s ease;
-      transform: translateY(0);
-      overflow: hidden;
-    "
-    onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 4px 10px rgba(0,0,0,0.12)';"
-    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.08)';"
-    onmousedown="this.style.transform='translateY(1px) scale(0.98)';"
-    onmouseup="this.style.transform='translateY(-3px) scale(1)';"
-    onTouchStart="this.style.transform='scale(0.9)';"
-    onTouchEnd="this.style.transform='scale(1)';"
-  >
-    <!-- 削除ボタン -->
-    <button
-      class="wps-delete-btn"
-      data-id="${fav.id}"
-      style="
-        position: absolute;
-        right: 6px;
-        top: 6px;
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        opacity: 0.6;
-        transition: all 0.2s ease;
-        transform: scale(1);
-      "
-      onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)';"
-      onmouseout="this.style.opacity='0.6'; this.style.transform='scale(1)';"
-    >
-      <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 -960 960 960' fill='currentColor' style='width:12px; height:12px;'>
-        <path d='m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z'/>
-      </svg>
-    </button>
-
-    <!-- 本文 -->
-    <h4 style="
-      font-size: 13px;
-      font-weight: 500;
-      line-height: 1.4;
-      color: #222;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      margin-bottom: 0.3rem;
-    ">
-      ${fav.name}
-    </h4>
-
-    <!-- 座標（左下に控えめに） -->
-    <div style="
-      position: absolute;
-      left: 8px;
-      bottom: 6px;
-      font-size: 11px;
-      color: rgba(0,0,0,0.4);
-      pointer-events: none;
-    ">
-      📍${fav.lat?.toFixed(3) || "N/A"}, ${fav.lng?.toFixed(3) || "N/A"}
-    </div>
-  </div>
-        `
-    )
+    .map((fav) => {
+      const cardConfig: CardConfig = {
+        id: fav.id.toString(),
+        title: fav.name,
+        subtitle: `📍${fav.lat?.toFixed(3) || "N/A"}, ${fav.lng?.toFixed(3) || "N/A"}`,
+        onDelete: true,
+        onClick: true,
+        data: {
+          lat: fav.lat.toString(),
+          lng: fav.lng.toString(),
+          zoom: fav.zoom.toString(),
+        },
+      };
+      return createCard(cardConfig);
+    })
     .join("");
 };
 
