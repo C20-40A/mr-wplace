@@ -1,6 +1,5 @@
 # メイン
 
-- src/features/gallery/routes/image-editor/canvas-processor.ts の error
 - 画像編集も GPU/CPU 切り替えしたい
 - ディザリングの UI をもっとコンパクトにする
 - モバイルの画像詳細
@@ -49,6 +48,7 @@
 
 # DONE v1.7.0
 
+- src/features/gallery/routes/image-editor/canvas-processor.ts の error
 - webgl 非対応だと、描画できない
 - 画像編集にディザリング追加（ベイヤーディザリング）
 
