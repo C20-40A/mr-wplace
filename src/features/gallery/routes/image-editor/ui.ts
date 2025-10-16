@@ -9,6 +9,7 @@ export interface ImageEditorCallbacks {
   onSaturationChange: (value: number) => void;
   onDitheringChange: (enabled: boolean) => void;
   onDitheringThresholdChange: (threshold: number) => void;
+  onGpuToggle: (enabled: boolean) => void;
   onClear: () => void;
   onSaveToGallery: () => void;
   onDownload: () => void;
@@ -72,7 +73,7 @@ export class ImageEditorUI {
           </div>
           
           <!-- Current Image Area -->
-          <div id="wps-current-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; min-height: 0;">
+          <div id="wps-current-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.1rem; overflow-y: auto; min-height: 0;">
             <h4 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
               ${"current_image"}
               <div style="display:flex; font-size: 0.75rem; color: #4b5563;">
@@ -80,9 +81,13 @@ export class ImageEditorUI {
               </div>
             </h4>
             <div class="flex" style="justify-content: center; position: relative; width: 100%; height: calc(100% - 2.5rem);">
-              <div style="width: 300px; height: 300px; max-width: 100%; max-height: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; overflow: hidden; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+              <div style="min-width: 300px; min-height: 300px; max-width: 100%; max-height: 100%; overflow: hidden; position: relative;;">
                 <canvas id="wps-scaled-canvas" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></canvas>
               </div>
+              <label style="position: absolute; bottom: 0.5rem; right: 0.5rem; display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; cursor: pointer; background: rgba(255, 255, 255, 0.9); padding: 0.25rem 0.5rem; border-radius: 0.25rem; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                <input type="checkbox" id="wps-gpu-toggle" class="checkbox checkbox-xs" checked>
+                <span>⚡GPU Mode</span>
+              </label>
             </div>
           </div>
           
@@ -220,6 +225,9 @@ export class ImageEditorUI {
     const ditheringThresholdValue = this.container.querySelector(
       "#wps-dithering-threshold-value"
     );
+    const gpuToggle = this.container.querySelector(
+      "#wps-gpu-toggle"
+    ) as HTMLInputElement;
     const addToGalleryBtn = this.container.querySelector("#wps-add-to-gallery");
     const downloadBtn = this.container.querySelector("#wps-download");
 
@@ -318,6 +326,12 @@ export class ImageEditorUI {
     ditheringThresholdSlider?.addEventListener("change", (e) => {
       const value = parseInt((e.target as HTMLInputElement).value);
       this.callbacks?.onDitheringThresholdChange(value);
+    });
+
+    // GPUトグル
+    gpuToggle?.addEventListener("change", (e) => {
+      const checked = (e.target as HTMLInputElement).checked;
+      this.callbacks?.onGpuToggle(checked);
     });
 
     // ギャラリーに追加
