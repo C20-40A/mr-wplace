@@ -143,3 +143,9 @@ Mozilla Public License 2.0
 - [Chrome 拡張機能開発ガイド](https://developer.chrome.com/docs/extensions/)
 - [Web Mercator 投影](https://epsg.io/3857)
 - [DaisyUI](https://daisyui.com/)
+
+## バージョン
+
+### v1.6.5
+
+### v1.6.1

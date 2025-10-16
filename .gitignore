@@ -5,3 +5,5 @@ release/
 
 # devで一時的にcopyしているだけだから不要
 assets/*
+
+keys/
