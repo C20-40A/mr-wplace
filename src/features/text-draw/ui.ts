@@ -21,7 +21,10 @@ export const createTextInputButton = (): HTMLButtonElement => {
 export class TextDrawUI extends BaseModalUI {
   private textInstances: TextInstance[] = [];
   private onDraw?: (text: string, font: string) => Promise<void>;
-  private onMove?: (key: string, direction: 'up' | 'down' | 'left' | 'right') => void;
+  private onMove?: (
+    key: string,
+    direction: "up" | "down" | "left" | "right"
+  ) => void;
   private onDelete?: (key: string) => void;
 
   private leftPanel!: HTMLElement;
@@ -50,11 +53,13 @@ export class TextDrawUI extends BaseModalUI {
 
     // Left: Text list
     this.leftPanel = document.createElement("div");
-    this.leftPanel.style.cssText = "flex: 1; max-height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.5rem;";
+    this.leftPanel.style.cssText =
+      "flex: 1; max-height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.5rem;";
 
     // Right: Input form
     const rightPanel = document.createElement("div");
-    rightPanel.style.cssText = "flex: 1; display: flex; flex-direction: column; gap: 0.5rem;";
+    rightPanel.style.cssText =
+      "flex: 1; display: flex; flex-direction: column; gap: 0.5rem;";
 
     this.input = document.createElement("input");
     this.input.type = "text";
@@ -66,15 +71,17 @@ export class TextDrawUI extends BaseModalUI {
     this.fontSelect.className = "select select-bordered w-full";
     this.fontSelect.style.cssText = "width: 100%;";
     this.fontSelect.innerHTML = `
-      <option value="Bytesized">Bytesized (3x4)</option>
-      <option value="comic_sans_ms_pixel">Comic Sans MS Pixel (6x10)</option>
-      <option value="minikana">🇯🇵 Minikana (4x4)</option>
-      <option value="Misaki">🇯🇵 Misaki (8x8)</option>
-      <option value="k8x12">🇯🇵 k8x12 (8x12)</option>
+      <option value="Bytesized">Bytesized (3x4)(A)</option>
+      <option value="comic_sans_ms_pixel">Comic Sans MS Pixel (6x10)(MultiLang)</option>
+      <option value="kyokugen">🇯🇵 kyokugen(3x3～)(カ)</option>
+      <option value="minikana">🇯🇵 Minikana (4x4)(カ)</option>
+      <option value="Misaki">🇯🇵 Misaki (8x8)(A,ひ,カ,漢)</option>
+      <option value="k8x12">🇯🇵 k8x12 (8x12)(A,ひ,カ,漢)</option>
     `;
 
     const buttonContainer = document.createElement("div");
-    buttonContainer.style.cssText = "display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: auto;";
+    buttonContainer.style.cssText =
+      "display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: auto;";
 
     const drawButton = document.createElement("button");
     drawButton.innerHTML = "✏️ Draw";
@@ -108,14 +115,14 @@ export class TextDrawUI extends BaseModalUI {
   show(
     onDraw: (text: string, font: string) => Promise<void>,
     textInstances: TextInstance[],
-    onMove: (key: string, direction: 'up' | 'down' | 'left' | 'right') => void,
+    onMove: (key: string, direction: "up" | "down" | "left" | "right") => void,
     onDelete: (key: string) => void
   ): void {
     this.onDraw = onDraw;
     this.textInstances = textInstances;
     this.onMove = onMove;
     this.onDelete = onDelete;
-    
+
     this.updateList();
     this.showModal();
     this.input.focus();
@@ -131,14 +138,16 @@ export class TextDrawUI extends BaseModalUI {
     if (this.textInstances.length === 0) {
       const emptyMsg = document.createElement("div");
       emptyMsg.textContent = "No text instances";
-      emptyMsg.style.cssText = "text-align: center; color: #9ca3af; padding: 2rem;";
+      emptyMsg.style.cssText =
+        "text-align: center; color: #9ca3af; padding: 2rem;";
       this.leftPanel.appendChild(emptyMsg);
       return;
     }
 
     this.textInstances.forEach((instance) => {
       const itemContainer = document.createElement("div");
-      itemContainer.style.cssText = "border-bottom: 1px solid #e5e7eb; padding: 0.5rem 0;";
+      itemContainer.style.cssText =
+        "border-bottom: 1px solid #e5e7eb; padding: 0.5rem 0;";
 
       const textContainer = document.createElement("div");
       textContainer.style.cssText = "margin-bottom: 0.25rem;";
@@ -155,28 +164,34 @@ export class TextDrawUI extends BaseModalUI {
       textContainer.appendChild(fontLabel);
 
       const controlsContainer = document.createElement("div");
-      controlsContainer.style.cssText = "display: flex; gap: 0.25rem; align-items: center;";
+      controlsContainer.style.cssText =
+        "display: flex; gap: 0.25rem; align-items: center;";
 
-      const createMoveButton = (direction: 'up' | 'down' | 'left' | 'right', symbol: string) => {
+      const createMoveButton = (
+        direction: "up" | "down" | "left" | "right",
+        symbol: string
+      ) => {
         const btn = document.createElement("button");
         btn.textContent = symbol;
         btn.className = "btn btn-sm";
-        btn.style.cssText = "min-height: 2rem; height: 2rem; padding: 0 0.5rem;";
+        btn.style.cssText =
+          "min-height: 2rem; height: 2rem; padding: 0 0.5rem;";
         btn.onclick = () => {
           this.onMove?.(instance.key, direction);
         };
         return btn;
       };
 
-      controlsContainer.appendChild(createMoveButton('up', '↑'));
-      controlsContainer.appendChild(createMoveButton('down', '↓'));
-      controlsContainer.appendChild(createMoveButton('left', '←'));
-      controlsContainer.appendChild(createMoveButton('right', '→'));
+      controlsContainer.appendChild(createMoveButton("up", "↑"));
+      controlsContainer.appendChild(createMoveButton("down", "↓"));
+      controlsContainer.appendChild(createMoveButton("left", "←"));
+      controlsContainer.appendChild(createMoveButton("right", "→"));
 
       const deleteBtn = document.createElement("button");
       deleteBtn.innerHTML = "🗑️";
       deleteBtn.className = "btn btn-sm";
-      deleteBtn.style.cssText = "min-height: 2rem; height: 2rem; padding: 0 0.5rem; margin-left: auto;";
+      deleteBtn.style.cssText =
+        "min-height: 2rem; height: 2rem; padding: 0 0.5rem; margin-left: auto;";
       deleteBtn.onclick = () => {
         this.onDelete?.(instance.key);
       };
