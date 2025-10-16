@@ -28,6 +28,7 @@ export class EditorController {
   private saturation = 0;
   private ditheringEnabled = false;
   private ditheringThreshold = 500;
+  private useGpu = true;
   private imageInspector: ImageInspector | null = null;
   private colorPalette: ColorPalette | null = null;
   private onSaveSuccess?: () => void;
@@ -100,6 +101,12 @@ export class EditorController {
     this.updateScaledImage();
   }
 
+  onGpuToggle(enabled: boolean): void {
+    console.log("🧑‍🎨 : GPU toggle changed:", enabled);
+    this.useGpu = enabled;
+    this.updateScaledImage();
+  }
+
   onColorSelectionChange(colorIds: number[]): void {
     this.selectedColorIds = colorIds;
     // パレット変更時は再描画
@@ -154,6 +161,7 @@ export class EditorController {
     this.saturation = 0;
     this.ditheringEnabled = false;
     this.ditheringThreshold = 500;
+    this.useGpu = true;
     this.currentFileName = null;
     this.drawPosition = null;
 
@@ -189,6 +197,9 @@ export class EditorController {
     const ditheringCheckbox = this.container.querySelector(
       "#wps-dithering-checkbox"
     ) as HTMLInputElement;
+    const gpuToggle = this.container.querySelector(
+      "#wps-gpu-toggle"
+    ) as HTMLInputElement;
 
     if (slider) slider.value = "1";
     if (input) input.value = "1";
@@ -200,6 +211,7 @@ export class EditorController {
     if (saturationSlider) saturationSlider.value = "0";
     if (saturationValue) saturationValue.textContent = "0";
     if (ditheringCheckbox) ditheringCheckbox.checked = false;
+    if (gpuToggle) gpuToggle.checked = true;
 
     if (dropzone) dropzone.style.display = "block";
     if (imageDisplay) imageDisplay.style.display = "none";
@@ -359,14 +371,15 @@ export class EditorController {
     };
 
     // 統合処理: リサイズ→調整→パレット（GPU優先）
-    console.log("🧑‍🎨 : Processing with dithering:", this.ditheringEnabled);
+    console.log("🧑‍🎨 : Processing with dithering:", this.ditheringEnabled, "useGpu:", this.useGpu);
     const processedCanvas = await createProcessedCanvas(
       this.originalImage,
       this.imageScale,
       adjustments,
       this.selectedColorIds,
       this.ditheringEnabled,
-      this.ditheringThreshold
+      this.ditheringThreshold,
+      this.useGpu
     );
 
     // 結果をcanvasに転写
