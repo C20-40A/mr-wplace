@@ -43,7 +43,7 @@ export class TextDraw {
       path: "assets/fonts/comic_sans_ms_pixel/comic_sans_ms_pixel.ttf",
       size: 16,
     },
-    kyokugen: {
+    c20_pixel: {
       type: "bitmap",
       data: kyokugenData,
     },
