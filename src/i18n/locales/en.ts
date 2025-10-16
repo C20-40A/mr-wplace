@@ -93,7 +93,6 @@ export const enTranslations = {
   resize_image: "Resize",
   edit_image: "Edit",
   add_to_gallery_directly: "Add directly to gallery",
-  adjustments: "Adjustments",
   select_image: "Select image",
   click_image_to_draw: "Click on the image you want to draw on the map",
   no_draw_images: "No images for drawing.",

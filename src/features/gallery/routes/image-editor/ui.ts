@@ -57,7 +57,7 @@ export class ImageEditorUI {
       <div id="wps-image-display" style="display: none;">
         
         <!-- 4 Area Grid -->
-        <div id="wps-main-grid" style="display: grid; grid-template-columns: 1fr; gap: 0.75rem; height: calc(100vh - 8rem); overflow: hidden;">
+        <div id="wps-main-grid" style="display: grid; grid-template-columns: 1fr; gap: 0.1rem; height: calc(100vh - 8rem); overflow: hidden;">
           <!-- Original Image Area -->
           <div id="wps-original-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; min-height: 0;">
             <h4 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
@@ -105,10 +105,9 @@ export class ImageEditorUI {
           
           <!-- Controls Area -->
           <div id="wps-controls-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; min-height: 0;">
-            <h4 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem;">${"adjustments"}</h4>
             <div id="wps-controls-container" style="display: flex; flex-direction: column; gap: 1rem;">
               <div>
-                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem;">
+                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500;">
                   <span style="font-size: 0.75rem; color: #9ca3af;">0.1x</span>
                   <span>${"size_reduction"}: <span id="wps-scale-value">1.0</span>x</span>
                   <span style="font-size: 0.75rem; color: #9ca3af;">1.0x</span>
@@ -120,16 +119,7 @@ export class ImageEditorUI {
               </div>
               
               <div>
-                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem;">
-                  <span style="font-size: 0.75rem; color: #9ca3af;">-100</span>
-                  <span>${"brightness"}: <span id="wps-brightness-value">0</span></span>
-                  <span style="font-size: 0.75rem; color: #9ca3af;">100</span>
-                </label>
-                <input type="range" id="wps-brightness-slider" min="-100" max="100" step="1" value="0" class="range" style="width: 100%;">
-              </div>
-              
-              <div>
-                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem;">
+                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500;">
                   <span style="font-size: 0.75rem; color: #9ca3af;">-100</span>
                   <span>${"contrast"}: <span id="wps-contrast-value">0</span></span>
                   <span style="font-size: 0.75rem; color: #9ca3af;">100</span>
@@ -137,29 +127,37 @@ export class ImageEditorUI {
                 <input type="range" id="wps-contrast-slider" min="-100" max="100" step="1" value="0" class="range" style="width: 100%;">
               </div>
               
-              <div>
-                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem;">
-                  <span style="font-size: 0.75rem; color: #9ca3af;">-100</span>
-                  <span>${"saturation"}: <span id="wps-saturation-value">0</span></span>
-                  <span style="font-size: 0.75rem; color: #9ca3af;">100</span>
-                </label>
-                <input type="range" id="wps-saturation-slider" min="-100" max="100" step="1" value="0" class="range" style="width: 100%;">
+              <div style="display: flex; gap: 0.75rem;">
+                <div style="flex: 1;">
+                  <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500;">
+                    <span style="font-size: 0.75rem; color: #9ca3af;">-100</span>
+                    <span>${"brightness"}: <span id="wps-brightness-value">0</span></span>
+                    <span style="font-size: 0.75rem; color: #9ca3af;">100</span>
+                  </label>
+                  <input type="range" id="wps-brightness-slider" min="-100" max="100" step="1" value="0" class="range" style="width: 100%;">
+                </div>
+                
+                <div style="flex: 1;">
+                  <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500;">
+                    <span style="font-size: 0.75rem; color: #9ca3af;">-100</span>
+                    <span>${"saturation"}: <span id="wps-saturation-value">0</span></span>
+                    <span style="font-size: 0.75rem; color: #9ca3af;">100</span>
+                  </label>
+                  <input type="range" id="wps-saturation-slider" min="-100" max="100" step="1" value="0" class="range" style="width: 100%;">
+                </div>
               </div>
               
               <div>
-                <label style="display: flex; align-items: center; font-size: 0.875rem; font-weight: 500; gap: 0.5rem; cursor: pointer;">
+                <label style="display: flex; justify-content: center; align-items: center; font-size: 0.875rem; font-weight: 500; gap: 0.5rem; cursor: pointer;">
                   <input type="checkbox" id="wps-dithering-checkbox" class="checkbox checkbox-sm">
                   <span>${"dithering"}</span>
+                  <span>: <span id="wps-dithering-threshold-value">500</span></span>
                 </label>
-              </div>
-              
-              <div>
-                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem;">
-                  <span style="font-size: 0.75rem; color: #9ca3af;">0</span>
-                  <span>Snap Threshold: <span id="wps-dithering-threshold-value">500</span></span>
-                  <span style="font-size: 0.75rem; color: #9ca3af;">1500</span>
-                </label>
-                <input type="range" id="wps-dithering-threshold-slider" min="0" max="1500" step="50" value="500" class="range" style="width: 100%;" disabled>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <span style="font-size: 0.65rem; color: #9ca3af;">0</span>
+                  <input type="range" id="wps-dithering-threshold-slider" min="0" max="1500" step="50" value="500" class="range" style="flex: 1;" disabled>
+                  <span style="font-size: 0.65rem; color: #9ca3af;">1500</span>
+                </div>
               </div>
               
               <div class="flex" style="gap: 0.5rem;">

@@ -93,7 +93,6 @@ export const jaTranslations = {
   resize_image: "リサイズする",
   edit_image: "編集する",
   add_to_gallery_directly: "直接ギャラリーに追加",
-  adjustments: "調整",
   select_image: "画像を選択",
   click_image_to_draw: "地図に描画したい画像をクリックしてください",
   no_draw_images: "描画用の画像がありません。",
