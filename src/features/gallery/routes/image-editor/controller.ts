@@ -174,10 +174,12 @@ export class EditorController {
     const slider = this.container.querySelector(
       "#wps-scale-slider"
     ) as HTMLInputElement;
-    const input = this.container.querySelector(
-      "#wps-scale-input"
+    const widthInput = this.container.querySelector(
+      "#wps-width-input"
     ) as HTMLInputElement;
-    const valueDisplay = this.container.querySelector("#wps-scale-value");
+    const heightInput = this.container.querySelector(
+      "#wps-height-input"
+    ) as HTMLInputElement;
     const brightnessSlider = this.container.querySelector(
       "#wps-brightness-slider"
     ) as HTMLInputElement;
@@ -202,8 +204,14 @@ export class EditorController {
     ) as HTMLInputElement;
 
     if (slider) slider.value = "1";
-    if (input) input.value = "1";
-    if (valueDisplay) valueDisplay.textContent = "1.00";
+    if (widthInput) {
+      widthInput.value = "";
+      widthInput.dataset.originalWidth = "";
+    }
+    if (heightInput) {
+      heightInput.value = "";
+      heightInput.dataset.originalHeight = "";
+    }
     if (brightnessSlider) brightnessSlider.value = "0";
     if (brightnessValue) brightnessValue.textContent = "0";
     if (contrastSlider) contrastSlider.value = "0";
@@ -299,6 +307,28 @@ export class EditorController {
 
       originalImage.onload = () => {
         this.updateOriginalImageDisplay();
+
+        // 画像サイズ入力の初期化
+        const widthInput = this.container.querySelector(
+          "#wps-width-input"
+        ) as HTMLInputElement;
+        const heightInput = this.container.querySelector(
+          "#wps-height-input"
+        ) as HTMLInputElement;
+        
+        if (widthInput && heightInput && this.originalImage) {
+          const originalWidth = this.originalImage.naturalWidth;
+          const originalHeight = this.originalImage.naturalHeight;
+          
+          widthInput.value = originalWidth.toString();
+          heightInput.value = originalHeight.toString();
+          widthInput.dataset.originalWidth = originalWidth.toString();
+          heightInput.dataset.originalHeight = originalHeight.toString();
+          widthInput.max = originalWidth.toString();
+          heightInput.max = originalHeight.toString();
+          
+          console.log("🧑‍🎨 : Initialized size inputs:", originalWidth, "x", originalHeight);
+        }
 
         const canvas = this.container.querySelector(
           "#wps-scaled-canvas"

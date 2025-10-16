@@ -1,8 +1,11 @@
 # メイン
 
-- 画像編集も GPU/CPU 切り替えしたい
+- ピクセル文字調整
+- 文言調整
 - 画像追加の modal の UI 更新
   - レイヤーとかほしい
+- position モーダル開いたとき、FAB ボタンは透過したほうが mobile で見やすい
+- positionModal が開いているとき、
 
 # バグ
 
@@ -40,12 +43,12 @@
   - open font でいいのが少ない
   - https://fontstruct.com/gallery/tag/4488/Wingdings
   - noto emoji もやりたい
-- 画像サイズ変更を任意の width にできたほうがいいかも？
-- position モーダル開いたとき、FAB ボタンは透過したほうが mobile で見やすい
 - PC のブックマーク一覧を 4 行ぐらいにしたい。が、その tailwind のメディアクエリがないから、設定が面倒
 
 # DONE v1.6.4
 
+- 画像サイズ 横 x 縦　で設定可能にする
+- 画像編集も GPU/CPU 切り替えしたい
 - モバイルの画像詳細の UI 調整
 - ディザリングの UI をもっとコンパクトにする
 - src/features/gallery/routes/image-editor/canvas-processor.ts の error

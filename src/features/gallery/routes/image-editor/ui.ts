@@ -112,14 +112,18 @@ export class ImageEditorUI {
           <div id="wps-controls-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; min-height: 0;">
             <div id="wps-controls-container" style="display: flex; flex-direction: column; gap: 1rem;">
               <div>
-                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500;">
+                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem;">
                   <span style="font-size: 0.75rem; color: #9ca3af;">0.1x</span>
-                  <span>${"size_reduction"}: <span id="wps-scale-value">1.0</span>x</span>
+                  <span>${"size_reduction"}</span>
                   <span style="font-size: 0.75rem; color: #9ca3af;">1.0x</span>
                 </label>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                   <input type="range" id="wps-scale-slider" min="0.1" max="1" step="0.01" value="1" class="range" style="flex: 1;">
-                  <input type="number" id="wps-scale-input" min="0.1" max="1" step="0.01" value="1" style="width: 50px; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; text-align: center;">
+                  <div style="display: flex; align-items: center; gap: 0.25rem;">
+                    <input type="number" id="wps-width-input" min="1" step="1" style="width: 60px; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; text-align: center;">
+                    <span style="font-size: 0.75rem; color: #9ca3af;">×</span>
+                    <input type="number" id="wps-height-input" min="1" step="1" style="width: 60px; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; text-align: center;">
+                  </div>
                 </div>
               </div>
               
@@ -196,10 +200,12 @@ export class ImageEditorUI {
     const slider = this.container.querySelector(
       "#wps-scale-slider"
     ) as HTMLInputElement;
-    const input = this.container.querySelector(
-      "#wps-scale-input"
+    const widthInput = this.container.querySelector(
+      "#wps-width-input"
     ) as HTMLInputElement;
-    const valueDisplay = this.container.querySelector("#wps-scale-value");
+    const heightInput = this.container.querySelector(
+      "#wps-height-input"
+    ) as HTMLInputElement;
     const brightnessSlider = this.container.querySelector(
       "#wps-brightness-slider"
     ) as HTMLInputElement;
@@ -231,40 +237,75 @@ export class ImageEditorUI {
     const addToGalleryBtn = this.container.querySelector("#wps-add-to-gallery");
     const downloadBtn = this.container.querySelector("#wps-download");
 
-    // サイズ縮小スライダー
+    // スライダー変更時
     slider?.addEventListener("input", (e) => {
-      const value = (e.target as HTMLInputElement).value;
-      const floatValue = parseFloat(value);
-      if (valueDisplay) {
-        valueDisplay.textContent = floatValue.toFixed(2);
-      }
-      if (input) {
-        input.value = value;
+      const scale = parseFloat((e.target as HTMLInputElement).value);
+      const originalWidth = parseInt(widthInput?.dataset.originalWidth || "1");
+      const originalHeight = parseInt(heightInput?.dataset.originalHeight || "1");
+      
+      if (widthInput && heightInput) {
+        widthInput.value = Math.round(originalWidth * scale).toString();
+        heightInput.value = Math.round(originalHeight * scale).toString();
       }
     });
 
     slider?.addEventListener("change", (e) => {
-      const value = parseFloat((e.target as HTMLInputElement).value);
-      this.callbacks?.onScaleChange(value);
+      const scale = parseFloat((e.target as HTMLInputElement).value);
+      this.callbacks?.onScaleChange(scale);
     });
 
-    // サイズ縮小数値入力
-    input?.addEventListener("input", (e) => {
-      let value = parseFloat((e.target as HTMLInputElement).value);
-      // 範囲制限
-      value = Math.max(0.1, Math.min(1, value));
-      if (valueDisplay) {
-        valueDisplay.textContent = value.toFixed(2);
+    // 横幅入力変更時
+    widthInput?.addEventListener("input", (e) => {
+      const width = parseInt((e.target as HTMLInputElement).value) || 1;
+      const originalWidth = parseInt(widthInput.dataset.originalWidth || "1");
+      const originalHeight = parseInt(heightInput?.dataset.originalHeight || "1");
+      
+      // アスペクト比維持（常に固定）
+      if (heightInput) {
+        const aspectRatio = originalHeight / originalWidth;
+        const newHeight = Math.round(width * aspectRatio);
+        heightInput.value = newHeight.toString();
       }
+      
+      // スライダー更新
       if (slider) {
-        slider.value = value.toString();
+        const scale = width / originalWidth;
+        slider.value = Math.max(0.1, Math.min(1, scale)).toString();
       }
     });
 
-    input?.addEventListener("change", (e) => {
-      let value = parseFloat((e.target as HTMLInputElement).value);
-      value = Math.max(0.1, Math.min(1, value));
-      this.callbacks?.onScaleChange(value);
+    widthInput?.addEventListener("change", (e) => {
+      const width = parseInt((e.target as HTMLInputElement).value) || 1;
+      const originalWidth = parseInt(widthInput.dataset.originalWidth || "1");
+      const scale = width / originalWidth;
+      this.callbacks?.onScaleChange(Math.max(0.01, Math.min(1, scale)));
+    });
+
+    // 縦幅入力変更時
+    heightInput?.addEventListener("input", (e) => {
+      const height = parseInt((e.target as HTMLInputElement).value) || 1;
+      const originalWidth = parseInt(widthInput?.dataset.originalWidth || "1");
+      const originalHeight = parseInt(heightInput.dataset.originalHeight || "1");
+      
+      // アスペクト比維持（常に固定）
+      if (widthInput) {
+        const aspectRatio = originalWidth / originalHeight;
+        const newWidth = Math.round(height * aspectRatio);
+        widthInput.value = newWidth.toString();
+      }
+      
+      // スライダー更新
+      if (slider) {
+        const scale = height / originalHeight;
+        slider.value = Math.max(0.1, Math.min(1, scale)).toString();
+      }
+    });
+
+    heightInput?.addEventListener("change", (e) => {
+      const height = parseInt((e.target as HTMLInputElement).value) || 1;
+      const originalHeight = parseInt(heightInput.dataset.originalHeight || "1");
+      const scale = height / originalHeight;
+      this.callbacks?.onScaleChange(Math.max(0.01, Math.min(1, scale)));
     });
 
     // 明るさスライダー
