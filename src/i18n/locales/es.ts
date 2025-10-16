@@ -108,6 +108,7 @@ export const esTranslations = {
   tile_coordinate: "Coordenada de Azulejo",
   pixel_coordinate: "Coordenada de Píxel",
   lat_lng: "Latitud/Longitud",
+  coordinates: "Coordenadas",
   share_description:
     "Este nombre de archivo de imagen contiene información de coordenadas. Cuando agregues la imagen descargada a la galería nuevamente, se colocará automáticamente en la misma posición.",
   no_position_data: "Sin datos de posición",

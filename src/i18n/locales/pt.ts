@@ -107,6 +107,7 @@ export const ptTranslations = {
   tile_coordinate: "Coordenada do Tile",
   pixel_coordinate: "Coordenada do Pixel",
   lat_lng: "Latitude/Longitude",
+  coordinates: "Coordenadas",
   share_description:
     "Este nome de arquivo de imagem contém informações de coordenadas. Quando você adicionar a imagem baixada à galeria novamente, ela será automaticamente colocada na mesma posição.",
   no_position_data: "Sem dados de posição",
