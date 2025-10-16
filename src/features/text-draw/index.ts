@@ -33,11 +33,6 @@ export class TextDraw {
       path: "assets/fonts/Bytesized/Bytesized-Regular.ttf",
       size: 8,
     },
-    minikana: {
-      type: "ttf",
-      path: "assets/fonts/4x4minkana/4x4kanafont.ttf",
-      size: 5,
-    },
     Misaki: {
       type: "ttf",
       path: "assets/fonts/misaki/misaki_gothic.ttf",

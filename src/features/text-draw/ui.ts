@@ -74,7 +74,6 @@ export class TextDrawUI extends BaseModalUI {
       <option value="Bytesized">Bytesized (3x4)(A)</option>
       <option value="comic_sans_ms_pixel">Comic Sans MS Pixel (6x10)(MultiLang)</option>
       <option value="kyokugen">🇯🇵 kyokugen(3x3～)(カ)</option>
-      <option value="minikana">🇯🇵 Minikana (4x4)(カ)</option>
       <option value="Misaki">🇯🇵 Misaki (8x8)(A,ひ,カ,漢)</option>
       <option value="k8x12">🇯🇵 k8x12 (8x12)(A,ひ,カ,漢)</option>
     `;
