@@ -225,7 +225,7 @@ export async function createProcessedCanvas(
       ditheringThreshold
     );
     const imageData = new ImageData(
-      processedData as Uint8ClampedArray,
+      new Uint8ClampedArray(processedData),
       newWidth,
       newHeight
     );
