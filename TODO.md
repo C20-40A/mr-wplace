@@ -1,8 +1,6 @@
 # メイン
 
 - 画像編集も GPU/CPU 切り替えしたい
-- ディザリングの UI をもっとコンパクトにする
-- モバイルの画像詳細
 - 画像追加の modal の UI 更新
   - レイヤーとかほしい
 
@@ -46,8 +44,10 @@
 - position モーダル開いたとき、FAB ボタンは透過したほうが mobile で見やすい
 - PC のブックマーク一覧を 4 行ぐらいにしたい。が、その tailwind のメディアクエリがないから、設定が面倒
 
-# DONE v1.7.0
+# DONE v1.6.4
 
+- モバイルの画像詳細の UI 調整
+- ディザリングの UI をもっとコンパクトにする
 - src/features/gallery/routes/image-editor/canvas-processor.ts の error
 - webgl 非対応だと、描画できない
 - 画像編集にディザリング追加（ベイヤーディザリング）
