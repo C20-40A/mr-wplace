@@ -207,4 +207,7 @@ Do you agree to use this feature responsibly and carefully?`,
   sort_order_default: "Default",
   sort_order_most_missing: "Most Missing",
   sort_order_least_remaining: "Almost Done",
+
+  // Compute Device
+  compute_device_label: "Processing",
 };

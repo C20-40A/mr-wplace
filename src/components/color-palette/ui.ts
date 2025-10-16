@@ -3,6 +3,7 @@ import { t } from "../../i18n/manager";
 import type { EnhancedMode } from "../../features/tile-draw/types";
 import { ENHANCED_MODE_ICONS } from "../../assets/enhanced-mode-icons";
 import type { SortOrder, ColorPaletteOptions } from "./types";
+import type { ComputeDevice } from "./storage";
 import {
   ENABLED_BADGE_HTML,
   DISABLED_BADGE_HTML,
@@ -134,14 +135,54 @@ export function buildEnhancedSelectHtml(enhancedMode: EnhancedMode): string {
 }
 
 /**
+ * ComputeDeviceドロップダウンHTML生成
+ */
+export function buildComputeDeviceSelectHtml(computeDevice: ComputeDevice): string {
+  const devices: Array<{ value: ComputeDevice; label: string }> = [
+    { value: "gpu", label: "GPU" },
+    { value: "cpu", label: "CPU" },
+  ];
+
+  const currentLabel = devices.find((d) => d.value === computeDevice)?.label ?? "GPU";
+
+  return `
+    <div class="compute-device-container" style="position: relative;">
+      <button class="compute-device-button" type="button" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background-color: white; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-size: 0.875rem; color: #374151;">${t`${"compute_device_label"}`}</span>
+        <span class="compute-device-current-name" style="font-size: 0.875rem; font-weight: 600; color: #22c55e;">${currentLabel}</span>
+      </button>
+      <div class="compute-device-dropdown" style="display: none; position: absolute; top: 100%; left: 0; margin-top: 0.25rem; background-color: white; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem; z-index: 1000; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); min-width: 120px;">
+        <div class="compute-device-list" style="display: flex; flex-direction: column; gap: 0.25rem;">
+          ${devices.map((device) => {
+            const isSelected = computeDevice === device.value;
+            const borderColor = isSelected ? "#22c55e" : "#d1d5db";
+            const borderWidth = isSelected ? "2px" : "1px";
+            return `
+              <button class="compute-device-item" 
+                      data-device="${device.value}"
+                      type="button"
+                      style="padding: 0.5rem; border: ${borderWidth} solid ${borderColor}; border-radius: 0.375rem; background-color: white; cursor: pointer; text-align: left; font-size: 0.875rem;">
+                ${device.label}
+              </button>
+            `;
+          }).join("")}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/**
  * コントロールボタン群HTML生成
  */
 export function buildControlsHtml(
   hasExtraColorsBitmap: boolean,
   showColorStats: boolean,
   showEnhancedSelect: boolean,
+  showComputeDeviceSelect: boolean,
   sortOrder: SortOrder,
-  enhancedMode: EnhancedMode
+  enhancedMode: EnhancedMode,
+  computeDevice: ComputeDevice
 ): string {
   const ownedColorsButtonHTML = hasExtraColorsBitmap
     ? `<button class="owned-colors-btn btn btn-outline btn-sm rounded" style="border-color: #a855f7; color: #a855f7;">${t`${"owned_colors_only"}`}</button>`
@@ -155,6 +196,10 @@ export function buildControlsHtml(
     ? buildEnhancedSelectHtml(enhancedMode)
     : "";
 
+  const computeDeviceSelectHTML = showComputeDeviceSelect
+    ? buildComputeDeviceSelectHtml(computeDevice)
+    : "";
+
   return `
     <div class="color-palette-controls flex flex-wrap gap-2 mb-4 px-4 pt-4">
       <button class="enable-all-btn btn btn-outline btn-success btn-sm rounded">${t`${"enable_all"}`}</button>
@@ -163,6 +208,7 @@ export function buildControlsHtml(
       ${ownedColorsButtonHTML}
       ${sortOrderSelectHTML}
       ${enhancedSelectHTML}
+      ${computeDeviceSelectHTML}
     </div>
   `;
 }
