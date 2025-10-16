@@ -4,35 +4,28 @@ import { katakana } from "./katakana";
 import { katakanaDakuten } from "./katakanaDakuten";
 import { hiragana } from "./hiragana";
 import { hiraganaDakuten } from "./hiraganaDakuten";
+import { alphabetUpper } from "./alphabetUpper";
+import { alphabetlower } from "./alphabetLower";
+import { number } from "./number";
 
 export const kyokugenData: BitmapChar[] = [
-  ...katakana,
-  ...katakanaDakuten,
-  ...kigou,
+  ...alphabetUpper,
+  ...alphabetlower,
   ...hiragana,
   ...hiraganaDakuten,
+  ...katakana,
+  ...katakanaDakuten,
+  ...number,
+  ...kigou,
 ];
 export type { BitmapChar } from "./types";
 
 /** 
+ 
+0123456789
 
-アイウエオ
-カキクケコ
-サシスセソ
-タチツテト
-ナニヌネノ
-ハヒフヘホ
-マミムメモ
-ヤユヨ
-ラリルレロ
-ワヲン
-ガギグゲゴ
-ザジズゼゾ
-ダヂヅデド
-バビブベボ
-パピプペポ
-ャュョ
-ッ
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+abcdefghijklmnopqrstuvwxyz
 
 あいうえお
 かきくけこ
@@ -54,6 +47,24 @@ export type { BitmapChar } from "./types";
 
 ゃゅょ
 
+アイウエオ
+カキクケコ
+サシスセソ
+タチツテト
+ナニヌネノ
+ハヒフヘホ
+マミムメモ
+ヤユヨ
+ラリルレロ
+ワヲン
+ガギグゲゴ
+ザジズゼゾ
+ダヂヅデド
+バビブベボ
+パピプペポ
+ャュョ
+ッ
+
 ー
 -
 ！？
@@ -67,5 +78,9 @@ export type { BitmapChar } from "./types";
 ・
 …
 ↑↓→←
+
+' "
+: ;
+,.
 
 */

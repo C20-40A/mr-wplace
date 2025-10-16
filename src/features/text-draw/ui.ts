@@ -71,9 +71,9 @@ export class TextDrawUI extends BaseModalUI {
     this.fontSelect.className = "select select-bordered w-full";
     this.fontSelect.style.cssText = "width: 100%;";
     this.fontSelect.innerHTML = `
-      <option value="Bytesized">Bytesized (3x4)(A)</option>
+      <option value="kyokugen">C20(3x3～)(A,a,ひ,カ,記)</option>
+      <option value="Bytesized">Bytesized (3x4)(A,a)</option>
       <option value="comic_sans_ms_pixel">Comic Sans MS Pixel (6x10)(MultiLang)</option>
-      <option value="kyokugen">🇯🇵 Kyokugen(3x3～)(ひ,カ)</option>
       <option value="Misaki">🇯🇵 Misaki (8x8)(A,ひ,カ,漢)</option>
       <option value="k8x12">🇯🇵 k8x12 (8x12)(A,ひ,カ,漢)</option>
     `;
