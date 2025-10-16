@@ -46,7 +46,7 @@ export const hiraganaDakuten: BitmapChar[] = [
       [0, 0, 0, 1, 0],
       [1, 0, 1, 1, 0],
       [1, 0, 0, 1, 0],
-      [1, 1, 0, 1, 0],
+      [0, 1, 0, 1, 0],
     ],
   },
   {
@@ -56,8 +56,8 @@ export const hiraganaDakuten: BitmapChar[] = [
     data: [
       [0, 0, 1],
       [1, 1, 0],
+      [0, 1, 0],
       [0, 0, 0],
-      [1, 0, 0],
       [1, 1, 0],
     ],
   },
@@ -112,9 +112,9 @@ export const hiraganaDakuten: BitmapChar[] = [
     width: 5,
     height: 5,
     data: [
-      [1, 1, 1, 0, 1],
-      [0, 0, 1, 0, 0],
-      [1, 1, 1, 1, 0],
+      [1, 1, 0, 1, 0],
+      [0, 1, 1, 0, 1],
+      [1, 1, 1, 0, 0],
       [0, 1, 0, 0, 0],
       [0, 0, 1, 0, 0],
     ],

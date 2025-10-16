@@ -343,7 +343,7 @@ export const katakana: BitmapChar[] = [
     width: 4,
     height: 4,
     data: [
-      [0, 1, 1, 0],
+      [1, 1, 1, 0],
       [0, 0, 1, 0],
       [0, 0, 1, 0],
       [1, 1, 1, 1],

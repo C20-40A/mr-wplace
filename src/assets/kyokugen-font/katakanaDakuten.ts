@@ -196,12 +196,11 @@ export const katakanaDakuten: BitmapChar[] = [
   {
     char: "ブ",
     width: 5,
-    height: 6,
+    height: 5,
     data: [
       [0, 0, 0, 0, 1],
       [0, 0, 0, 1, 0],
       [1, 1, 1, 0, 0],
-      [0, 0, 1, 0, 0],
       [0, 0, 1, 0, 0],
       [0, 1, 0, 0, 0],
     ],

@@ -71,7 +71,7 @@ export class TextDrawUI extends BaseModalUI {
     this.fontSelect.className = "select select-bordered w-full";
     this.fontSelect.style.cssText = "width: 100%;";
     this.fontSelect.innerHTML = `
-      <option value="kyokugen">C20(3x3～)(A,a,ひ,カ,記)</option>
+      <option value="c20_pixel">C20 Pixel (3x3～)(A,a,ひ,カ,記)</option>
       <option value="Bytesized">Bytesized (3x4)(A,a)</option>
       <option value="comic_sans_ms_pixel">Comic Sans MS Pixel (6x10)(MultiLang)</option>
       <option value="Misaki">🇯🇵 Misaki (8x8)(A,ひ,カ,漢)</option>
@@ -146,58 +146,90 @@ export class TextDrawUI extends BaseModalUI {
     this.textInstances.forEach((instance) => {
       const itemContainer = document.createElement("div");
       itemContainer.style.cssText =
-        "border-bottom: 1px solid #e5e7eb; padding: 0.5rem 0;";
+        "border-bottom: 1px solid #e5e7eb; padding: 0.25rem 0; position: relative; display: flex; align-items: center; gap: 0.5rem;";
 
+      // Delete button (×) - absolute position at top right
+      const deleteBtn = document.createElement("button");
+      deleteBtn.innerHTML = "×";
+      deleteBtn.style.cssText =
+        "position: absolute; top: 0; right: 0; background: none; border: none; font-size: 1.125rem; line-height: 1; opacity: 0.4; cursor: pointer; padding: 0.125rem 0.25rem;";
+      deleteBtn.onmouseover = () => {
+        deleteBtn.style.opacity = "1";
+      };
+      deleteBtn.onmouseout = () => {
+        deleteBtn.style.opacity = "0.4";
+      };
+      deleteBtn.onclick = () => {
+        this.onDelete?.(instance.key);
+      };
+
+      // Text container - takes up remaining space
       const textContainer = document.createElement("div");
-      textContainer.style.cssText = "margin-bottom: 0.25rem;";
+      textContainer.style.cssText =
+        "flex: 1; min-width: 0; padding-right: 1.5rem;";
 
       const textLabel = document.createElement("div");
       textLabel.textContent = instance.text;
-      textLabel.style.cssText = "font-weight: 500; word-break: break-all;";
+      textLabel.style.cssText =
+        "font-weight: 500; word-break: break-all; font-size: 0.875rem;";
 
       const fontLabel = document.createElement("div");
       fontLabel.textContent = instance.font;
-      fontLabel.style.cssText = "font-size: 0.75rem; color: #6b7280;";
+      fontLabel.style.cssText =
+        "font-size: 0.625rem; color: #9ca3af; margin-top: 0.125rem;";
 
       textContainer.appendChild(textLabel);
       textContainer.appendChild(fontLabel);
 
-      const controlsContainer = document.createElement("div");
-      controlsContainer.style.cssText =
-        "display: flex; gap: 0.25rem; align-items: center;";
+      // D-pad controls - compact
+      const dPadContainer = document.createElement("div");
+      dPadContainer.style.cssText =
+        "display: grid; grid-template-columns: repeat(3, 1.5rem); grid-template-rows: repeat(3, 1.5rem); gap: 1px; flex-shrink: 0;";
 
       const createMoveButton = (
         direction: "up" | "down" | "left" | "right",
-        symbol: string
+        symbol: string,
+        gridColumn: string,
+        gridRow: string
       ) => {
         const btn = document.createElement("button");
         btn.textContent = symbol;
-        btn.className = "btn btn-sm";
-        btn.style.cssText =
-          "min-height: 2rem; height: 2rem; padding: 0 0.5rem;";
+        btn.style.cssText = `
+          background: #f3f4f6;
+          border: 1px solid #e5e7eb;
+          border-radius: 0.125rem;
+          font-size: 0.75rem;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          grid-column: ${gridColumn};
+          grid-row: ${gridRow};
+        `;
+        btn.onmouseover = () => {
+          btn.style.background = "#e5e7eb";
+        };
+        btn.onmouseout = () => {
+          btn.style.background = "#f3f4f6";
+        };
         btn.onclick = () => {
           this.onMove?.(instance.key, direction);
         };
         return btn;
       };
 
-      controlsContainer.appendChild(createMoveButton("up", "↑"));
-      controlsContainer.appendChild(createMoveButton("down", "↓"));
-      controlsContainer.appendChild(createMoveButton("left", "←"));
-      controlsContainer.appendChild(createMoveButton("right", "→"));
+      // D-pad layout:
+      //     [↑]
+      // [←]     [→]
+      //     [↓]
+      dPadContainer.appendChild(createMoveButton("up", "↑", "2", "1"));
+      dPadContainer.appendChild(createMoveButton("left", "←", "1", "2"));
+      dPadContainer.appendChild(createMoveButton("right", "→", "3", "2"));
+      dPadContainer.appendChild(createMoveButton("down", "↓", "2", "3"));
 
-      const deleteBtn = document.createElement("button");
-      deleteBtn.innerHTML = "🗑️";
-      deleteBtn.className = "btn btn-sm";
-      deleteBtn.style.cssText =
-        "min-height: 2rem; height: 2rem; padding: 0 0.5rem; margin-left: auto;";
-      deleteBtn.onclick = () => {
-        this.onDelete?.(instance.key);
-      };
-      controlsContainer.appendChild(deleteBtn);
-
+      itemContainer.appendChild(deleteBtn);
       itemContainer.appendChild(textContainer);
-      itemContainer.appendChild(controlsContainer);
+      itemContainer.appendChild(dPadContainer);
       this.leftPanel.appendChild(itemContainer);
     });
   }
