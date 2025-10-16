@@ -16,7 +16,8 @@ export class GalleryList {
     container: HTMLElement,
     router: GalleryRouter,
     onImageClick?: (item: GalleryItem) => void,
-    onDrawToggle?: (key: string) => Promise<boolean>
+    onDrawToggle?: (key: string) => Promise<boolean>,
+    onCloseModal?: () => void
   ): Promise<void> {
     this.onDrawToggleCallback = onDrawToggle;
     const items = await this.storage.getAll();
@@ -26,11 +27,12 @@ export class GalleryList {
       async (key: string) => {
         await this.storage.delete(key);
         // 再描画
-        this.render(container, router, onImageClick, onDrawToggle);
+        this.render(container, router, onImageClick, onDrawToggle, onCloseModal);
       },
       container,
       () => router.navigate("image-editor"),
-      onImageClick
+      onImageClick,
+      onCloseModal
     );
   }
 

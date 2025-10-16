@@ -8,17 +8,10 @@ export class GalleryListUI {
   private container: HTMLElement | null = null;
 
   private imageGrid: ImageGridComponent | null = null;
+  private onCloseModalCallback?: () => void;
 
   constructor() {
     this.createModal();
-  }
-
-  showModal(): void {
-    this.modal?.showModal();
-  }
-
-  closeModal(): void {
-    this.modal?.close();
   }
 
   render(
@@ -26,10 +19,12 @@ export class GalleryListUI {
     onDelete: (key: string) => void,
     container?: HTMLElement,
     onAddClick?: () => void,
-    onImageClick?: (item: GalleryItem) => void
+    onImageClick?: (item: GalleryItem) => void,
+    onCloseModal?: () => void
   ): void {
     // 外部コンテナが指定された場合はそれを使用
     if (container) this.container = container;
+    this.onCloseModalCallback = onCloseModal;
     this.renderGalleryList(items, onDelete, onImageClick, onAddClick);
   }
 
@@ -83,9 +78,7 @@ export class GalleryListUI {
       },
       onGotoPosition: (item) => {
         const galleryItem = items.find((gItem) => gItem.key === item.key);
-        if (galleryItem) {
-          this.handleGotoPosition(galleryItem);
-        }
+        if (galleryItem) this.handleGotoPosition(galleryItem);
       },
       onAddClick: onAddClick || (() => {}),
       showDeleteButton: true, // list routeは削除ボタン表示
@@ -140,8 +133,10 @@ export class GalleryListUI {
   private async handleGotoPosition(item: GalleryItem): Promise<void> {
     await gotoMapPosition(item);
 
-    // モーダルが存在する場合のみ閉じる（外部コンテナ使用時は閉じない）
-    if (this.modal) this.closeModal();
+    // 親のモーダルを閉じる（コールバック経由）
+    if (this.onCloseModalCallback) {
+      this.onCloseModalCallback();
+    }
   }
 
   destroy(): void {
