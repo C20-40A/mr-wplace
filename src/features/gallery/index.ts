@@ -63,7 +63,8 @@ export class Gallery {
           container,
           this.router,
           (item) => this.showImageDetail(item),
-          this.onDrawToggleCallback
+          this.onDrawToggleCallback,
+          () => this.ui.closeModal()
         );
         break;
       case "image-editor":
