@@ -1,6 +1,8 @@
 # メイン
 
-- webgl 非対応だと、描画できない
+- src/features/gallery/routes/image-editor/canvas-processor.ts の error
+- 画像編集も GPU/CPU 切り替えしたい
+- ディザリングの UI をもっとコンパクトにする
 - モバイルの画像詳細
 - 画像追加の modal の UI 更新
   - レイヤーとかほしい
@@ -47,6 +49,7 @@
 
 # DONE v1.7.0
 
+- webgl 非対応だと、描画できない
 - 画像編集にディザリング追加（ベイヤーディザリング）
 
 # DONE v1.6.0

@@ -210,7 +210,9 @@ export async function createProcessedCanvas(
   // GPU処理試行
   try {
     console.log("🧑‍🎨 : Attempting GPU processing, dithering:", ditheringEnabled);
-    const imageBitmap = await createImageBitmap(canvas);
+    const imageBitmap = await createImageBitmap(canvas, {
+      premultiplyAlpha: "none",
+    });
     const paletteRGB = colorpalette
       .filter((c) => selectedColorIds.includes(c.id))
       .map((c) => c.rgb);

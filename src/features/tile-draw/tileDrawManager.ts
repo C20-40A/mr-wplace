@@ -103,7 +103,9 @@ export class TileDrawManager {
       finalBgWidth,
       finalBgHeight
     );
-    const tileBitmap = await createImageBitmap(bgImageData);
+    const tileBitmap = await createImageBitmap(bgImageData, {
+      premultiplyAlpha: "none",
+    });
 
     // キャンバス作成（実サイズベース）
     const drawSize = Math.max(finalBgWidth, finalBgHeight) * this.renderScale;
@@ -335,16 +337,9 @@ export class TileDrawManager {
     tempStatsMap: Map<string, ColorStats>,
     compute_device: "gpu" | "cpu" = "gpu"
   ): Promise<ImageBitmap> {
-    // dev mode有効時のみクローン作成（getOverlayPixelColor用）
-    // 通常時はgpuApplyColorFilter内でclose()されてパフォーマンス最適化
-    const isDevMode = window.mrWplace?.autoSpoit?.isDevModeEnabled() ?? false;
-    const processedBitmap = isDevMode
-      ? await createImageBitmap(overlayBitmap)
-      : overlayBitmap;
-
     const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
-    const width = processedBitmap.width;
-    const height = processedBitmap.height;
+    const width = overlayBitmap.width;
+    const height = overlayBitmap.height;
 
     // === Phase 1: x1サイズ処理 ===
     // GPU: カラーフィルター適用
@@ -356,20 +351,20 @@ export class TileDrawManager {
     if (compute_device === "gpu" && colorFilter !== undefined) {
       try {
         // GPUフィルター適用
-        data = await processGpuColorFilter(processedBitmap, colorFilter);
+        data = await processGpuColorFilter(overlayBitmap, colorFilter);
       } catch (error) {
         console.log("🧑‍🎨 : GPU processing failed, fallback to CPU", error);
         // CPU フォールバック
-        const rawData = convertImageBitmapToUint8ClampedArray(processedBitmap);
+        const rawData = convertImageBitmapToUint8ClampedArray(overlayBitmap);
         data = processCpuColorFilter(rawData, { filters: colorFilter });
       }
     } else if (compute_device === "cpu" && colorFilter !== undefined) {
       // CPUフィルター適用（GPU非対応ブラウザ用フォールバック）
-      const rawData = convertImageBitmapToUint8ClampedArray(processedBitmap);
+      const rawData = convertImageBitmapToUint8ClampedArray(overlayBitmap);
       data = processCpuColorFilter(rawData, { filters: colorFilter });
     } else {
       // フィルターなしはそのまま取得
-      data = convertImageBitmapToUint8ClampedArray(processedBitmap);
+      data = convertImageBitmapToUint8ClampedArray(overlayBitmap);
     }
 
     // 背景ピクセル（事前デコード済み）
@@ -514,7 +509,7 @@ export class TileDrawManager {
     const finalImageData = new ImageData(scaledData, scaledWidth, scaledHeight);
     finalCtx.putImageData(finalImageData, 0, 0);
 
-    return await createImageBitmap(finalCanvas);
+    return await createImageBitmap(finalCanvas, { premultiplyAlpha: "none" });
   }
 }
 

@@ -13,7 +13,8 @@ export const splitImageOnTiles = async ({
   coords: WplaceCoords;
   tileSize: number;
 }): Promise<{ preparedOverlayImages: Record<string, ImageBitmap> }> => {
-  const bitmap = source instanceof ImageBitmap ? source : await createImageBitmap(source);
+  const bitmap =
+    source instanceof ImageBitmap ? source : await createImageBitmap(source);
   const [w, h] = [bitmap.width, bitmap.height];
   const preparedOverlayImages: Record<string, ImageBitmap> = {};
 
@@ -29,7 +30,8 @@ export const splitImageOnTiles = async ({
         px - coords[2],
         py - coords[3],
         drawW,
-        drawH
+        drawH,
+        { premultiplyAlpha: "none" }
       );
 
       const tx = coords[0] + Math.floor(px / 1000);
