@@ -11,9 +11,7 @@ import { tilePixelToLatLng } from "../../utils/coordinate";
  */
 export const toggleDrawState = async (key: string): Promise<boolean> => {
   const tileOverlay = window.mrWplace?.tileOverlay;
-  if (!tileOverlay) {
-    throw new Error("TileOverlay not available");
-  }
+  if (!tileOverlay) throw new Error("TileOverlay not available");
   return await tileOverlay.toggleImageDrawState(key);
 };
 
@@ -21,9 +19,7 @@ export const toggleDrawState = async (key: string): Promise<boolean> => {
  * マップへ移動
  */
 export const gotoMapPosition = async (item: GalleryItem): Promise<void> => {
-  if (!item.drawPosition) {
-    throw new Error("Item has no drawPosition");
-  }
+  if (!item.drawPosition) throw new Error("Item has no drawPosition");
 
   const { lat, lng } = tilePixelToLatLng(
     item.drawPosition.TLX,
@@ -39,27 +35,21 @@ export const gotoMapPosition = async (item: GalleryItem): Promise<void> => {
  * 画像を位置情報ファイル名でダウンロード
  */
 export const downloadImage = (item: GalleryItem, canvasId: string): void => {
-  if (!item.drawPosition) {
-    throw new Error("Item has no drawPosition");
-  }
+  if (!item.drawPosition) throw new Error("Item has no drawPosition");
 
   const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
-  if (!canvas) {
-    throw new Error("Canvas not found");
-  }
+  if (!canvas) throw new Error("Canvas not found");
 
   canvas.toBlob((blob) => {
-    if (!blob) {
-      throw new Error("Failed to create blob");
-    }
+    if (!blob) throw new Error("Failed to create blob");
 
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    
+
     const { TLX, TLY, PxX, PxY } = item.drawPosition!;
     a.download = `${TLX}-${TLY}-${PxX}-${PxY}.png`;
-    
+
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
