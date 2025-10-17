@@ -125,6 +125,7 @@ export const jaTranslations = {
   tile_coordinate: "タイル座標",
   pixel_coordinate: "ピクセル座標",
   lat_lng: "緯度経度",
+  coordinates: "座標",
   share_description:
     "この画像ファイル名には座標情報が含まれています。ダウンロードした画像を再度ギャラリーに追加すると、自動的に同じ位置に配置されます。",
   no_position_data: "位置情報がありません",
