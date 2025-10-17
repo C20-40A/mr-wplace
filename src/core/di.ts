@@ -51,6 +51,12 @@ export interface TextDrawAPI {
   initTextDraw: () => void;
 }
 
+export interface DrawingLoaderAPI {
+  initDrawingLoader: () => void;
+  show: (message?: string) => void;
+  hide: () => void;
+}
+
 // ========================================
 // DIコンテナ型定義
 // ========================================
@@ -62,6 +68,7 @@ export interface FeatureRegistry {
   timeTravel: TimeTravelAPI;
   bookmark: BookmarkAPI;
   textDraw: TextDrawAPI;
+  drawingLoader: DrawingLoaderAPI;
 }
 
 // ========================================
