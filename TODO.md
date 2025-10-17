@@ -61,7 +61,7 @@
 - 道路引くツール
 - PC のブックマーク一覧を 4 行ぐらいにしたい。が、その tailwind のメディアクエリがないから、設定が面倒
 
-# DONE v1.6.6
+# DONE v1.6.7
 
 - Chrome 拡張を Safari 拡張に convert、ログをみたところ「Safari は ImageDecoder をサポートしていない」ようだ
 - リファクタ(DI 化)
