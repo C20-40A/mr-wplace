@@ -26,7 +26,7 @@ export class SnapshotDetailRoute {
           <canvas id="wps-snapshot-canvas" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);"></canvas>
         </div>
         
-        <div style="height: 60px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <div style="height: 60px; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
           <button id="wps-draw-snapshot-btn" class="btn btn-primary">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
               <path d="M21.731 2.269a2.625 2.625 0 0 0-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 0 0 0-3.712zM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 0 0-1.32 2.214l-.8 2.685a.75.75 0 0 0 .933.933l2.685-.8a5.25 5.25 0 0 0 2.214-1.32l8.4-8.4z" />
