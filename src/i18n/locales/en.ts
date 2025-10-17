@@ -208,4 +208,11 @@ However, please pay careful attention to the following:
 
   // Compute Device
   compute_device_label: "Processing",
+
+  // Tile Merge
+  tile_merge: "Tile Merge",
+  merge_tiles: "Merge Tiles",
+  export_png: "Export PNG",
+  clear_selection: "Clear Selection",
+  selected: "Selected",
 };

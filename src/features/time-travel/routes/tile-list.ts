@@ -7,9 +7,12 @@ import { createCard, CardConfig } from "../../../components/card";
 export class TileListRoute {
   render(container: HTMLElement, router: TimeTravelRouter): void {
     container.innerHTML = t`
-      <div class="mb-2">
+      <div class="mb-2" style="display: flex; gap: 0.5rem;">
         <button id="wps-import-snapshot-btn" class="btn btn-sm btn-neutral">
           ${"import"}
+        </button>
+        <button id="wps-tile-merge-btn" class="btn btn-sm btn-primary">
+          ${"merge_tiles"}
         </button>
       </div>
       <div style="overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.5rem; min-height: 400px;">
@@ -29,6 +32,13 @@ export class TileListRoute {
       .querySelector("#wps-import-snapshot-btn")
       ?.addEventListener("click", () => {
         router.navigate("import-snapshot");
+      });
+
+    // Merge button event
+    container
+      .querySelector("#wps-tile-merge-btn")
+      ?.addEventListener("click", () => {
+        router.navigate("tile-merge");
       });
 
     // Tile list click events

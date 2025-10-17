@@ -209,4 +209,11 @@ export const jaTranslations = {
 
   // Compute Device
   compute_device_label: "処理方式",
+
+  // Tile Merge
+  tile_merge: "タイルマージ",
+  merge_tiles: "タイルをマージ",
+  export_png: "PNG出力",
+  clear_selection: "選択をクリア",
+  selected: "選択中",
 };
