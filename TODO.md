@@ -63,6 +63,8 @@
 
 # DONE v1.6.6
 
+- Chrome 拡張を Safari 拡張に convert、ログをみたところ「Safari は ImageDecoder をサポートしていない」ようだ
+- リファクタ(DI 化)
 - ギャラリーの移動ボタン押したら、modal 閉じる
 - カラーフィルターの UI 向上
 - ブックマークの UI 向上

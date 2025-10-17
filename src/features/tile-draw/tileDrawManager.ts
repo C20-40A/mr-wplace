@@ -9,6 +9,7 @@ import {
 } from "./pixel-processing";
 import { processGpuColorFilter } from "./gpu-color-filter";
 import { processCpuColorFilter } from "./cpu-color-filter";
+import { blobToPixels } from "../../utils/pixel-converters";
 
 export class TileDrawManager {
   public tileSize: number;
@@ -99,7 +100,7 @@ export class TileDrawManager {
     }
 
     const bgImageData = new ImageData(
-      new Uint8ClampedArray(finalBgPixels.buffer),
+      new Uint8ClampedArray(finalBgPixels),
       finalBgWidth,
       finalBgHeight
     );
@@ -512,15 +513,3 @@ export class TileDrawManager {
     return await createImageBitmap(finalCanvas, { premultiplyAlpha: "none" });
   }
 }
-
-const blobToPixels = async (blob: Blob) => {
-  const arrayBuffer = await blob.arrayBuffer();
-  const decoder = new ImageDecoder({ data: arrayBuffer, type: blob.type });
-  const { image } = await decoder.decode();
-  const width = image.displayWidth;
-  const height = image.displayHeight;
-  const buf = new Uint8Array(width * height * 4);
-  await image.copyTo(buf, { format: "RGBA" });
-  image.close();
-  return { pixels: buf, width, height };
-};
