@@ -2,6 +2,7 @@ import { setupElementObserver } from "../../components/element-observer";
 import { findPositionModal } from "../../constants/selectors";
 import { getCurrentPosition } from "../../utils/position";
 import { llzToTilePixel } from "../../utils/coordinate";
+import { t } from "../../i18n/manager";
 
 /**
  * 位置情報モーダルにタイル座標を表示
@@ -56,9 +57,7 @@ export class PositionInfo {
 
     const { lat, lng, zoom } = position;
     const coords = llzToTilePixel(lat, lng);
-
-    this.infoElement.textContent = `(Tile: ${coords.TLX}, ${
-      coords.TLY
-    } Lat: ${lat.toFixed(5)} Lng: ${lng.toFixed(5)} Zoom: ${zoom.toFixed(3)})`;
+    
+    this.infoElement.textContent = t`${"coordinates"} ${coords.TLX}, ${coords.TLY}, ${coords.PxX}, ${coords.PxY}`;
   }
 }
