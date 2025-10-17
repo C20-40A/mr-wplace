@@ -1,8 +1,8 @@
 /**
  * WPlace Studio Dependency Injection Container
- * 
+ *
  * 循環参照を回避し、feature間の依存を管理する軽量DIコンテナ
- * 
+ *
  * 使い方:
  * 1. 各featureのAPI型を定義
  * 2. di.register()で登録
@@ -25,7 +25,11 @@ export interface TileOverlayAPI {
   drawImageAt: (lat: number, lng: number, imageItem: any) => Promise<void>;
   toggleImageDrawState: (imageKey: string) => Promise<boolean>;
   restoreImagesOnTile: (tileX: number, tileY: number) => Promise<void>;
-  drawPixelOnTile: (tileBlob: Blob, tileX: number, tileY: number) => Promise<Blob>;
+  drawPixelOnTile: (
+    tileBlob: Blob,
+    tileX: number,
+    tileY: number
+  ) => Promise<Blob>;
 }
 
 export interface DrawingAPI {

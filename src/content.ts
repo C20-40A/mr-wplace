@@ -1,7 +1,7 @@
 import { I18nManager } from "./i18n/manager";
 import { detectBrowserLanguage } from "./i18n/index";
 import { Toast } from "./components/toast";
-import { ExtendedBookmarks } from "./features/bookmark";
+import { bookmarkAPI } from "./features/bookmark";
 import { TileOverlay } from "./features/tile-overlay";
 import { galleryAPI } from "./features/gallery";
 import { Drawing } from "./features/drawing";
@@ -133,9 +133,10 @@ import { di } from "./core/di";
     // DI Container登録
     di.register("gallery", galleryAPI);
     di.register("textDraw", textDrawAPI);
+    di.register("bookmark", bookmarkAPI);
 
     // Feature初期化
-    new ExtendedBookmarks(); // 1. Bookmark (最後に表示)
+    bookmarkAPI.initBookmark(); // 1. Bookmark (最後に表示)
     const tileOverlay = new TileOverlay();
     const tileSnapshot = new TileSnapshot();
     new TimeTravel(); // 2. TimeTravel
