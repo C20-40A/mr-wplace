@@ -1,23 +1,24 @@
 import { I18nManager } from "./i18n/manager";
 import { detectBrowserLanguage } from "./i18n/index";
 import { Toast } from "./components/toast";
-import { ExtendedBookmarks } from "./features/bookmark";
+import { bookmarkAPI } from "./features/bookmark";
 import { TileOverlay } from "./features/tile-overlay";
-import { Gallery } from "./features/gallery";
+import { galleryAPI } from "./features/gallery";
 import { Drawing } from "./features/drawing";
 import { TileSnapshot } from "./features/time-travel/utils/tile-snapshot";
 import { TimeTravel } from "./features/time-travel";
-import { DrawingLoader } from "./features/drawing-loader";
+import { drawingLoaderAPI } from "./features/drawing-loader";
 import { ColorFilter } from "./features/color-filter";
 import { ColorFilterManager } from "./utils/color-filter-manager";
 import { UserStatus } from "./features/user-status";
 import { WPlaceUserData } from "./types/user-data";
 import { ThemeToggleStorage } from "./features/theme-toggle/storage";
-import { TextDraw } from "./features/text-draw";
+import { textDrawAPI } from "./features/text-draw";
 import { AutoSpoit } from "./features/auto-spoit";
 import { PositionInfo } from "./features/position-info";
 import { colorpalette } from "./constants/colors";
 import { addCurrentTile } from "./states/currentTile";
+import { di } from "./core/di";
 
 (async () => {
   try {
@@ -129,15 +130,22 @@ import { addCurrentTile } from "./states/currentTile";
     // i18n初期化（ブラウザ言語検出）
     await I18nManager.init(detectBrowserLanguage());
 
-    const favorites = new ExtendedBookmarks(); // 1. Bookmark (最後に表示)
+    // DI Container登録
+    di.register("gallery", galleryAPI);
+    di.register("textDraw", textDrawAPI);
+    di.register("bookmark", bookmarkAPI);
+    di.register("drawingLoader", drawingLoaderAPI);
+
+    // Feature初期化
+    bookmarkAPI.initBookmark(); // 1. Bookmark (最後に表示)
     const tileOverlay = new TileOverlay();
     const tileSnapshot = new TileSnapshot();
     new TimeTravel(); // 2. TimeTravel
-    new TextDraw(); // 3. TextDraw
-    const gallery = new Gallery();
-    const drawing = new Drawing(); // 4. Drawing (最初に表示)
-    const drawingLoader = new DrawingLoader();
-    const colorFilter = new ColorFilter();
+    textDrawAPI.initTextDraw(); // 3. TextDraw
+    galleryAPI.initGallery();
+    new Drawing(); // 4. Drawing (最初に表示)
+    drawingLoaderAPI.initDrawingLoader();
+    new ColorFilter();
     const colorFilterManager = new ColorFilterManager();
     const autoSpoit = new AutoSpoit();
     new PositionInfo();
@@ -145,24 +153,16 @@ import { addCurrentTile } from "./states/currentTile";
     // 初期化完了を待つ
     await colorFilterManager.init();
 
-    // データは先行注入済みなので、ここでは何もしない
-
-    // GalleryとTileOverlayの連携設定
-    gallery.setDrawToggleCallback(async (imageKey: string) => {
+    // GalleryとTileOverlayの連携設定（DI経由）
+    galleryAPI.setDrawToggleCallback(async (imageKey: string) => {
       return await tileOverlay.toggleImageDrawState(imageKey);
     });
 
     // Global access for ImageProcessor and Gallery
     window.mrWplace = {
-      gallery,
-      tileOverlay,
-      favorites,
-      drawing,
-      tileSnapshot,
-      drawingLoader,
-      colorFilter,
-      userStatus,
       colorFilterManager,
+      tileOverlay,
+      tileSnapshot,
       autoSpoit,
     };
   } catch (error) {
