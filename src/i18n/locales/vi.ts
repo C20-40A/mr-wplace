@@ -105,6 +105,7 @@ export const viTranslations = {
   image_share: "Chia sẻ hình ảnh",
   tile_coordinate: "Tọa độ ô",
   pixel_coordinate: "Tọa độ pixel",
+  coordinates: "Tọa độ",
   lat_lng: "Vĩ độ/Kinh độ",
   share_description:
     "Tên tệp hình ảnh này chứa thông tin tọa độ. Khi bạn thêm hình ảnh đã tải vào thư viện lại, nó sẽ tự động được đặt ở cùng vị trí.",
