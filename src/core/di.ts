@@ -39,7 +39,10 @@ export interface DrawingAPI {
 
 export interface TimeTravelAPI {
   initTimeTravel: () => void;
-  // 必要に応じて追加
+  show: () => void;
+  showCurrentPosition: () => void;
+  navigateToDetail: (fullKey: string) => void;
+  closeModal: () => void;
 }
 
 export interface BookmarkAPI {

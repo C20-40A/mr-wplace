@@ -6,7 +6,7 @@ import { TileOverlay } from "./features/tile-overlay";
 import { galleryAPI } from "./features/gallery";
 import { Drawing } from "./features/drawing";
 import { TileSnapshot } from "./features/time-travel/utils/tile-snapshot";
-import { TimeTravel } from "./features/time-travel";
+import { timeTravelAPI } from "./features/time-travel";
 import { drawingLoaderAPI } from "./features/drawing-loader";
 import { ColorFilter } from "./features/color-filter";
 import { ColorFilterManager } from "./utils/color-filter-manager";
@@ -135,12 +135,13 @@ import { di } from "./core/di";
     di.register("textDraw", textDrawAPI);
     di.register("bookmark", bookmarkAPI);
     di.register("drawingLoader", drawingLoaderAPI);
+    di.register("timeTravel", timeTravelAPI);
 
     // Feature初期化
     bookmarkAPI.initBookmark(); // 1. Bookmark (最後に表示)
     const tileOverlay = new TileOverlay();
     const tileSnapshot = new TileSnapshot();
-    new TimeTravel(); // 2. TimeTravel
+    timeTravelAPI.initTimeTravel(); // 2. TimeTravel
     textDrawAPI.initTextDraw(); // 3. TextDraw
     galleryAPI.initGallery();
     new Drawing(); // 4. Drawing (最初に表示)

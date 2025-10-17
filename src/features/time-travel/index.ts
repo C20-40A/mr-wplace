@@ -17,105 +17,119 @@ import { SnapshotRoute } from "./routes/snapshot-route";
 import { SnapshotDetailRoute } from "./routes/snapshot-detail";
 import { SnapshotShareRoute } from "./routes/snapshot-share";
 import { ImportSnapshotRoute } from "./routes/import-snapshot";
-import { setTimeTravelInstance } from "./instance";
+import { di, type TimeTravelAPI } from "../../core/di";
 
 /**
  * タイムマシン機能
  * - 現在位置のスナップショット管理
  * - タイル一覧→タイルスナップショット一覧
  */
-export class TimeTravel {
-  public router: TimeTravelRouter;
-  public ui: TimeTravelUI;
-  private tileListRoute: TileListRoute;
-  private currentPositionRoute: SnapshotRoute;
-  private tileSnapshotsRoute: SnapshotRoute;
-  private snapshotDetailRoute: SnapshotDetailRoute;
-  private snapshotShareRoute: SnapshotShareRoute;
-  private importSnapshotRoute: ImportSnapshotRoute;
 
-  constructor() {
-    this.router = new TimeTravelRouter();
-    this.ui = new TimeTravelUI(this.router);
-    this.currentPositionRoute = new SnapshotRoute({ showSaveButton: true });
-    this.tileListRoute = new TileListRoute();
-    this.tileSnapshotsRoute = new SnapshotRoute({ showSaveButton: false });
-    this.snapshotDetailRoute = new SnapshotDetailRoute();
-    this.snapshotShareRoute = new SnapshotShareRoute();
-    this.importSnapshotRoute = new ImportSnapshotRoute();
-    this.init();
-    setTimeTravelInstance(this);
-  }
+// モジュールスコープに保持
+let router: TimeTravelRouter;
+let ui: TimeTravelUI;
+let tileListRoute: TileListRoute;
+let currentPositionRoute: SnapshotRoute;
+let tileSnapshotsRoute: SnapshotRoute;
+let snapshotDetailRoute: SnapshotDetailRoute;
+let snapshotShareRoute: SnapshotShareRoute;
+let importSnapshotRoute: ImportSnapshotRoute;
 
-  private init(): void {
-    // ルーティング設定（Gallery流用）
-    this.router.setOnRouteChange((route) => {
-      this.renderCurrentRoute(route);
-    });
+export const initTimeTravel = (): void => {
+  router = new TimeTravelRouter();
+  ui = new TimeTravelUI(router);
+  currentPositionRoute = new SnapshotRoute({ showSaveButton: true });
+  tileListRoute = new TileListRoute();
+  tileSnapshotsRoute = new SnapshotRoute({ showSaveButton: false });
+  snapshotDetailRoute = new SnapshotDetailRoute();
+  snapshotShareRoute = new SnapshotShareRoute();
+  importSnapshotRoute = new ImportSnapshotRoute();
 
-    const buttonConfigs: ElementConfig[] = [
-      {
-        id: "timetravel-btn",
-        getTargetElement: findPositionModal,
-        createElement: (container) => {
-          const button = createTimeTravelButton();
-          button.id = "timetravel-btn"; // 重複チェック用ID設定
-          button.addEventListener("click", () => this.showCurrentPosition());
-          container.prepend(button);
-        },
+  // ルーティング設定
+  router.setOnRouteChange((route) => {
+    renderCurrentRoute(route);
+  });
+
+  const buttonConfigs: ElementConfig[] = [
+    {
+      id: "timetravel-btn",
+      getTargetElement: findPositionModal,
+      createElement: (container) => {
+        const button = createTimeTravelButton();
+        button.id = "timetravel-btn";
+        button.addEventListener("click", () => showCurrentPosition());
+        container.prepend(button);
       },
-      {
-        id: "timetravel-fab-btn",
-        getTargetElement: findOpacityContainer,
-        createElement: (container) => {
-          const button = createTimeTravelFAB();
-          button.id = "timetravel-fab-btn"; // 重複チェック用ID設定
-          button.addEventListener("click", () => this.show());
-          container.className += " flex flex-col-reverse gap-1";
-          container.appendChild(button);
-        },
+    },
+    {
+      id: "timetravel-fab-btn",
+      getTargetElement: findOpacityContainer,
+      createElement: (container) => {
+        const button = createTimeTravelFAB();
+        button.id = "timetravel-fab-btn";
+        button.addEventListener("click", () => show());
+        container.className += " flex flex-col-reverse gap-1";
+        container.appendChild(button);
       },
-    ];
+    },
+  ];
 
-    setupElementObserver(buttonConfigs);
-    console.log("⏰ TimeTravel button observer initialized");
+  setupElementObserver(buttonConfigs);
+  console.log("⏰ TimeTravel button observer initialized");
+};
+
+const renderCurrentRoute = (route: TimeTravelRoute): void => {
+  const container = ui.getContainer();
+  if (!container) return;
+
+  switch (route) {
+    case "current-position":
+      currentPositionRoute.render(container, router);
+      break;
+    case "tile-list":
+      tileListRoute.render(container, router);
+      break;
+    case "tile-snapshots":
+      tileSnapshotsRoute.render(container, router);
+      break;
+    case "snapshot-detail":
+      snapshotDetailRoute.render(container, router);
+      break;
+    case "snapshot-share":
+      snapshotShareRoute.render(container, router);
+      break;
+    case "import-snapshot":
+      importSnapshotRoute.render(container, router);
+      break;
   }
+};
 
-  private renderCurrentRoute(route: TimeTravelRoute): void {
-    const container = this.ui.getContainer();
-    if (!container) return;
+// 外部インターフェース：FABはタイル一覧からスタート
+export const show = (): void => {
+  router.initialize("tile-list");
+  ui.showModal();
+};
 
-    switch (route) {
-      case "current-position":
-        this.currentPositionRoute.render(container, this.router);
-        break;
-      case "tile-list":
-        this.tileListRoute.render(container, this.router);
-        break;
-      case "tile-snapshots":
-        this.tileSnapshotsRoute.render(container, this.router);
-        break;
-      case "snapshot-detail":
-        this.snapshotDetailRoute.render(container, this.router);
-        break;
-      case "snapshot-share":
-        this.snapshotShareRoute.render(container, this.router);
-        break;
-      case "import-snapshot":
-        this.importSnapshotRoute.render(container, this.router);
-        break;
-    }
-  }
+// 元のボタン用：現在位置のみ表示
+export const showCurrentPosition = (): void => {
+  router.initialize("current-position");
+  ui.showModal();
+};
 
-  // 外部インターフェース：FABはタイル一覧からスタート
-  show(): void {
-    this.router.initialize("tile-list");
-    this.ui.showModal();
-  }
+export const navigateToDetail = (fullKey: string): void => {
+  (router as any).selectedSnapshot = { fullKey };
+  router.navigate("snapshot-detail");
+};
 
-  // 元のボタン用：現在位置のみ表示
-  showCurrentPosition(): void {
-    this.router.initialize("current-position");
-    this.ui.showModal();
-  }
-}
+export const closeModal = (): void => {
+  ui.closeModal();
+};
+
+// API export
+export const timeTravelAPI: TimeTravelAPI = {
+  initTimeTravel,
+  show,
+  showCurrentPosition,
+  navigateToDetail,
+  closeModal,
+};
