@@ -3,6 +3,7 @@ import { getCurrentPosition } from "../../utils/position";
 import { findPositionModal } from "../../constants/selectors";
 import { createDrawButton } from "./ui";
 import { ImageItem } from "../gallery/routes/list/components";
+import { di } from "../../core/di";
 
 /**
  * 画像描画機能の独立モジュール
@@ -26,11 +27,10 @@ export class Drawing {
 
   private openDrawMode(): void {
     console.log("✏️ Opening image selector for drawing");
-    
-    const gallery = window.mrWplace?.gallery;
-    if (!gallery) throw new Error("Gallery not found");
-    
-    gallery.showSelectionMode((selectedItem) => {
+
+    // DI ContainerからGallery取得
+    const { showSelectionMode } = di.get("gallery");
+    showSelectionMode((selectedItem) => {
       this.startDraw(selectedItem);
     });
   }

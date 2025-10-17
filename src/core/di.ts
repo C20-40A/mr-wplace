@@ -16,9 +16,8 @@
 export interface GalleryAPI {
   initGallery: () => void;
   showGallery: () => void;
-  getGalleryImages: () => Promise<any[]>;
-  selectImage: () => Promise<any | null>;
-  toggleImageDraw: (imageKey: string) => Promise<void>;
+  showSelectionMode: (onSelect: (item: any) => void) => void;
+  setDrawToggleCallback: (callback: (key: string) => Promise<boolean>) => void;
 }
 
 export interface TileOverlayAPI {
