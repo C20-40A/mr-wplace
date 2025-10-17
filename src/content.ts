@@ -13,7 +13,7 @@ import { ColorFilterManager } from "./utils/color-filter-manager";
 import { UserStatus } from "./features/user-status";
 import { WPlaceUserData } from "./types/user-data";
 import { ThemeToggleStorage } from "./features/theme-toggle/storage";
-import { TextDraw } from "./features/text-draw";
+import { textDrawAPI } from "./features/text-draw";
 import { AutoSpoit } from "./features/auto-spoit";
 import { PositionInfo } from "./features/position-info";
 import { colorpalette } from "./constants/colors";
@@ -132,13 +132,14 @@ import { di } from "./core/di";
 
     // DI Container登録
     di.register("gallery", galleryAPI);
+    di.register("textDraw", textDrawAPI);
 
     // Feature初期化
     const favorites = new ExtendedBookmarks(); // 1. Bookmark (最後に表示)
     const tileOverlay = new TileOverlay();
     const tileSnapshot = new TileSnapshot();
     new TimeTravel(); // 2. TimeTravel
-    new TextDraw(); // 3. TextDraw
+    textDrawAPI.initTextDraw(); // 3. TextDraw (DI対応)
     galleryAPI.initGallery(); // DI対応
     const drawing = new Drawing(); // 4. Drawing (最初に表示)
     const drawingLoader = new DrawingLoader();
