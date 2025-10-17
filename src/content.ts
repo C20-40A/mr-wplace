@@ -3,7 +3,7 @@ import { detectBrowserLanguage } from "./i18n/index";
 import { Toast } from "./components/toast";
 import { ExtendedBookmarks } from "./features/bookmark";
 import { TileOverlay } from "./features/tile-overlay";
-import { Gallery } from "./features/gallery";
+import { galleryAPI } from "./features/gallery";
 import { Drawing } from "./features/drawing";
 import { TileSnapshot } from "./features/time-travel/utils/tile-snapshot";
 import { TimeTravel } from "./features/time-travel";
@@ -18,6 +18,7 @@ import { AutoSpoit } from "./features/auto-spoit";
 import { PositionInfo } from "./features/position-info";
 import { colorpalette } from "./constants/colors";
 import { addCurrentTile } from "./states/currentTile";
+import { di } from "./core/di";
 
 (async () => {
   try {
@@ -129,12 +130,16 @@ import { addCurrentTile } from "./states/currentTile";
     // i18n初期化（ブラウザ言語検出）
     await I18nManager.init(detectBrowserLanguage());
 
+    // DI Container登録
+    di.register("gallery", galleryAPI);
+
+    // Feature初期化
     const favorites = new ExtendedBookmarks(); // 1. Bookmark (最後に表示)
     const tileOverlay = new TileOverlay();
     const tileSnapshot = new TileSnapshot();
     new TimeTravel(); // 2. TimeTravel
     new TextDraw(); // 3. TextDraw
-    const gallery = new Gallery();
+    galleryAPI.initGallery(); // DI対応
     const drawing = new Drawing(); // 4. Drawing (最初に表示)
     const drawingLoader = new DrawingLoader();
     const colorFilter = new ColorFilter();
@@ -147,14 +152,13 @@ import { addCurrentTile } from "./states/currentTile";
 
     // データは先行注入済みなので、ここでは何もしない
 
-    // GalleryとTileOverlayの連携設定
-    gallery.setDrawToggleCallback(async (imageKey: string) => {
+    // GalleryとTileOverlayの連携設定（DI経由）
+    galleryAPI.setDrawToggleCallback(async (imageKey: string) => {
       return await tileOverlay.toggleImageDrawState(imageKey);
     });
 
     // Global access for ImageProcessor and Gallery
     window.mrWplace = {
-      gallery,
       tileOverlay,
       favorites,
       drawing,

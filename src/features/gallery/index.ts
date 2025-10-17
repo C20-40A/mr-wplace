@@ -8,8 +8,13 @@ import { GalleryImageShare } from "./routes/image-share";
 import { GalleryImageSelector } from "./routes/image-selector";
 import { setupElementObserver } from "../../components/element-observer";
 import { findOpacityContainer } from "../../constants/selectors";
+import type { GalleryAPI } from "../../core/di";
 
-export class Gallery {
+// ========================================
+// 内部実装クラス（外部には公開しない）
+// ========================================
+
+class Gallery {
   private router: GalleryRouter;
   private ui: GalleryUI;
   private listRoute: GalleryList;
@@ -68,7 +73,9 @@ export class Gallery {
         );
         break;
       case "image-editor":
-        this.imageEditorRoute.setOnSaveSuccess(() => this.router.navigateBack());
+        this.imageEditorRoute.setOnSaveSuccess(() =>
+          this.router.navigateBack()
+        );
         this.imageEditorRoute.render(container);
         break;
       case "image-detail":
@@ -159,3 +166,42 @@ export class Gallery {
     this.ui.showModal();
   }
 }
+
+// ========================================
+// DI Container対応 - 関数型API
+// ========================================
+
+let galleryInstance: Gallery | null = null;
+
+const initGallery = (): void => {
+  console.log("🧑‍🎨 : Initializing Gallery");
+  galleryInstance = new Gallery();
+};
+
+const showGallery = (): void => {
+  if (!galleryInstance) throw new Error("Gallery not initialized");
+  galleryInstance.show();
+};
+
+const showSelectionMode = (onSelect: (item: GalleryItem) => void): void => {
+  if (!galleryInstance) throw new Error("Gallery not initialized");
+  galleryInstance.showSelectionMode(onSelect);
+};
+
+const setDrawToggleCallback = (
+  callback: (key: string) => Promise<boolean>
+): void => {
+  if (!galleryInstance) throw new Error("Gallery not initialized");
+  galleryInstance.setDrawToggleCallback(callback);
+};
+
+// ========================================
+// DI Container用公開API（これだけがexportされる）
+// ========================================
+
+export const galleryAPI: GalleryAPI = {
+  initGallery,
+  showGallery,
+  showSelectionMode,
+  setDrawToggleCallback,
+};
