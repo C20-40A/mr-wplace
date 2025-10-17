@@ -3,7 +3,7 @@ import { TimeTravelStorage } from "../storage";
 import { t } from "../../../i18n/manager";
 import { ImageInspector } from "../../../components/image-inspector";
 import { Toast } from "../../../components/toast";
-import { getTimeTravelInstance } from "../instance";
+import { di } from "../../../core/di";
 import { gotoPosition } from "../../../utils/position";
 import { tilePixelToLatLng } from "../../../utils/coordinate";
 
@@ -175,8 +175,8 @@ export class SnapshotDetailRoute {
       fullKey
     );
 
-    const timeTravel = getTimeTravelInstance();
-    timeTravel.ui.closeModal();
+    const timeTravel = di.get("timeTravel");
+    timeTravel.closeModal();
 
     await this.updateButtonStates(fullKey);
     Toast.success(
