@@ -43,6 +43,10 @@ export interface BookmarkAPI {
   // 必要に応じて追加
 }
 
+export interface TextDrawAPI {
+  initTextDraw: () => void;
+}
+
 // ========================================
 // DIコンテナ型定義
 // ========================================
@@ -53,6 +57,7 @@ export interface FeatureRegistry {
   drawing: DrawingAPI;
   timeTravel: TimeTravelAPI;
   bookmark: BookmarkAPI;
+  textDraw: TextDrawAPI;
 }
 
 // ========================================
