@@ -5,147 +5,123 @@
 ![Manifest](https://img.shields.io/badge/Manifest-V3-orange.svg)
 ![License](https://img.shields.io/badge/license-MPL--2.0-blue.svg)
 
-WPlace サイト専用の多機能 Chrome 拡張機能。地図タイル上への画像描画・管理機能を提供します。
+A powerful Chrome extension for WPlace site that provides advanced image drawing and management features on map tiles.
 
-## 🚀 主な機能
+## 🚀 Installation
 
-### ✅ 実装済み機能
+### For Users
 
-- **🎨 画像描画システム**: 地図上の任意座標に画像を描画・ON/OFF 切替
-- **🗺️ 全タイル対応**: fetch 傍受により任意タイル処理（正規表現: `tiles\/(\d+)\/(\d+)\.png`）
-- **📷 ギャラリー管理**: 画像一覧・編集・詳細表示の 3 ルートシステム
-- **🧭 座標変換**: Web Mercator（EPSG:3857）投影・zoom=11 固定
-- **⭐ ブックマーク機能**: 位置・画像の管理・インポート/エクスポート
-- **⏰ Time Travel 機能**: タイルスナップショット保存・変更検知・履歴管理
-- **🌐 多言語対応**: 日本語・英語切替（i18n タグ付きテンプレートリテラル）
-- **🔔 Toast 通知**: DaisyUI ベース統一通知システム
-- **🔗 Router 統一化**: Router<T> + HeaderManager 内蔵システム
-- **📋 Modal 統一化**: createModal() 共通化
+Get Mr. Wplace from the official stores:
 
-## 📁 ファイル構成
+- **Chrome Web Store**: [Install for Chrome](https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej)
+- **Microsoft Edge Add-ons**: [Install for Edge](https://microsoftedge.microsoft.com/addons/detail/mr-wplace/acdodonamhbokadiikkfnnliplijigip)
 
-```
-src/
-├── content.ts                    # main entry: mrWplace class
-├── features/
-│   ├── tile-overlay/             # TileOverlay (TileDrawManager wrapper)
-│   ├── gallery/                  # ギャラリー3ルートシステム
-│   │   ├── router.ts             # GalleryRouter拡張
-│   │   ├── routes/
-│   │   │   ├── list/             # 画像一覧+選択モード
-│   │   │   ├── image-editor/     # アップロード・リサイズ・色変更
-│   │   │   ├── image-detail/     # 画像表示
-│   │   │   └── image-selector/   # 画像選択モーダル
-│   │   └── storage.ts            # Gallery専用ストレージ
-│   ├── bookmark/                 # ブックマーク管理・インポート/エクスポート
-│   ├── time-travel/              # タイムトラベル機能
-│   │   ├── router.ts             # TimeTravelRouter拡張
-│   │   ├── routes/               # current-position/tile-list/tile-snapshots
-│   │   └── utils/tile-snapshot.ts # スナップショット管理
-│   ├── drawing/                  # 描画機能
-│   ├── drawing-loader/           # 描画ローダー
-│   └── fetch-interceptor/        # fetch傍受機能
-├── components/
-│   ├── button-observer.ts        # 統一ボタン管理（4ボタン対応）
-│   ├── toast.ts                  # DaisyUI Toast通知システム
-│   └── image-inspector.ts        # 画像検査コンポーネント
-├── utils/
-│   ├── router.ts                 # Router<T> + HeaderManager基盤クラス
-│   ├── modal.ts                  # createModal()統一化
-│   ├── coordinate.ts             # Web Mercator座標変換
-│   ├── image-storage.ts          # Chrome Storage抽象化（index最適化）
-│   ├── position.ts               # localStorage位置管理
-│   └── wplaceLocalStorage.ts     # WPlace専用ストレージ
-├── i18n/                         # 多言語対応
-│   ├── index.ts                  # コア機能(t関数、Storage連携)
-│   ├── translations.ts           # 日英翻訳辞書
-│   └── manager.ts                # 管理クラス(初期化・切替)
-└── constants/colors.ts           # 色定数
+### For Developers
 
-inject.js                         # 全タイル fetch傍受スクリプト
-```
+#### Prerequisites
 
-## 🔧 技術仕様
+- [Bun](https://bun.sh/) (JavaScript runtime & package manager)
+- Git
 
-### 座標変換システム
+#### Setup Development Environment
 
-- **投影法**: Web Mercator 投影（EPSG:3857）
-- **ズームレベル**: 11 固定（tileSize: 1000px）
-- **計算式**: `scale = 1000 * 2^11 = 2,048,000`
-- **変換フロー**: `緯度経度 → ワールドピクセル → タイル番号(TLX,TLY) + タイル内ピクセル(PxX,PxY)`
+1. **Clone the repository**
 
-### Fetch 傍受仕様
+   ```bash
+   git clone git@github.com:C20-40A/mr-wplace.git
+   cd mr-wplace
+   ```
 
-```javascript
-// inject.js: 正規表現 tiles\/(\d+)\/(\d+)\.png
-const tileX = parseInt(tileMatch[1]);
-const tileY = parseInt(tileMatch[2]);
-// 全タイル処理 → TileOverlay → TileDrawManager → 描画済みblob返却
+2. **Install dependencies**
+
+   ```bash
+   bun install
+   ```
+
+3. **Build the extension**
+
+   ```bash
+   bun run build
+   ```
+
+   This compiles `src/content.ts` → `dist/content.js`
+
+4. **Load in Chrome**
+
+   - Open `chrome://extensions/`
+   - Enable "Developer mode" (toggle in top right)
+   - Click "Load unpacked"
+   - Select the project root folder
+
+5. **Start development mode** (optional)
+   ```bash
+   bun run dev
+   ```
+   This watches for file changes and auto-rebuilds the extension.
+
+## 📦 Building for Production
+
+### Version Management
+
+Before building a release, update the version number using bump commands:
+
+```bash
+# Patch version (1.6.5 → 1.6.6) - for bug fixes
+bun run bump:patch
+
+# Minor version (1.6.5 → 1.7.0) - for new features
+bun run bump:minor
+
+# Major version (1.6.5 → 2.0.0) - for breaking changes
+bun run bump:major
 ```
 
-### i18n システム
+These commands automatically update version numbers in both `package.json` and `manifest.json`.
 
-- **パターン**: タグ付きテンプレートリテラル `t`${'key'}`
-- **Chrome Storage 連携**: popup 変更 →content script 通知 → 自動保存復元
-- **制約**: 語幹変化・複数形・コンテキスト未対応（別キー必要）
+### Create Distribution Package
 
-### Router 統一化
+```bash
+bun run build:release
+```
 
-- **基盤**: `Router<T extends string>` + HeaderManager 内蔵
-- **機能**: i18n キーマッピング → 自動ヘッダー更新
-- **拡張**: TimeTravelRouter/GalleryRouter
+This generates a `.zip` file (e.g., `mr-wplace-v1.6.5.zip`) ready for:
 
-## 📦 セットアップ
+- Chrome Web Store submission
+- Microsoft Edge Add-ons submission
+- Manual distribution
 
-### 開発環境
+## 🛠️ Available Commands
 
-1. `git clone https://github.com/username/wplace-studio.git`
-2. `bun install`
-3. `bun run build` (src/content.ts → dist/content.js 生成)
-4. Chrome Extensions → デベロッパーモード → 「パッケージ化されていない拡張機能を読み込む」
-5. プロジェクトルートフォルダを選択
+| Command                 | Description                                  |
+| ----------------------- | -------------------------------------------- |
+| `bun run build`         | Build extension for development              |
+| `bun run dev`           | Build + watch mode (auto-rebuild on changes) |
+| `bun run build:release` | Create production-ready zip package          |
+| `bun run bump:patch`    | Bump patch version (x.x.X)                   |
+| `bun run bump:minor`    | Bump minor version (x.X.0)                   |
+| `bun run bump:major`    | Bump major version (X.0.0)                   |
 
-### 配布用パッケージ作成
+## 🌟 Features
 
-1. `bun run build:release` で配布パッケージ作成
-2. `mr-wplace-v1.0.0.zip` が生成される
-3. zip ファイルを Chrome Web Store にアップロードまたは開発者向け配布
+- **Gallery**: Upload, edit, and manage images
+- **Drawing**: Draw images on map tiles
+- **Time Travel**: Save and restore tile snapshots
+- **Color Filter**: Apply various color filters and drawing modes
+- **Bookmarks**: Save favorite locations
+- **Multi-language**: Japanese and English support
 
-### 必要な権限
-
-- `storage`: 設定・データ保存
-- `activeTab`: サイトアクセス
-
-## 🎯 使用方法
-
-### 基本フロー
-
-1. **WPlace サイト**を開く
-2. 拡張機能ボタンから機能選択
-3. **Gallery**: 画像アップロード・編集・選択
-4. **Drawing**: 地図上の描画位置クリック
-5. 自動的に複数タイルに画像描画・ON/OFF 切替可能
-
-### 主要機能
-
-- **Gallery**: 3 ルート（list/image-editor/image-detail）
-- **Bookmark**: 位置管理・インポート/エクスポート
-- **Time Travel**: タイルスナップショット・変更検知
-- **多言語**: popup 経由でリアルタイム切替
-
-## 📄 ライセンス
+## 📄 License
 
 Mozilla Public License 2.0
 
-## 🔗 関連リンク
+## 🔗 Related Links
 
-- [WPlace 公式サイト](https://wplace.jp/)
-- [Chrome 拡張機能開発ガイド](https://developer.chrome.com/docs/extensions/)
-- [Web Mercator 投影](https://epsg.io/3857)
+- [WPlace Official Site](https://wplace.jp/)
 - [DaisyUI](https://daisyui.com/)
+- [Chrome Web Store Listing](https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej)
+- [Edge Add-ons Listing](https://microsoftedge.microsoft.com/addons/detail/mr-wplace/acdodonamhbokadiikkfnnliplijigip)
+- [Wplace - Code of Conduct](https://wplace.live/terms/code-of-conduct)
 
-## バージョン
+---
 
-### v1.6.5
-
-### v1.6.1
+**Made with ❤️ for the WPlace community**

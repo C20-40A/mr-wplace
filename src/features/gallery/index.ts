@@ -8,154 +8,151 @@ import { GalleryImageShare } from "./routes/image-share";
 import { GalleryImageSelector } from "./routes/image-selector";
 import { setupElementObserver } from "../../components/element-observer";
 import { findOpacityContainer } from "../../constants/selectors";
+import type { GalleryAPI } from "../../core/di";
 
-export class Gallery {
-  private router: GalleryRouter;
-  private ui: GalleryUI;
-  private listRoute: GalleryList;
-  private imageEditorRoute: GalleryImageEditor;
-  private imageDetailRoute: GalleryImageDetail;
-  private imageShareRoute: GalleryImageShare;
-  private imageSelectorRoute: GalleryImageSelector;
-  private onDrawToggleCallback?: (key: string) => Promise<boolean>;
+// ========================================
+// クロージャモジュール（内部実装）
+// ========================================
 
-  // 状態管理
-  private currentDetailItem?: GalleryItem;
-  private imageSelectorOnSelect?: (item: GalleryItem) => void;
+const createGallery = () => {
+  const router = new GalleryRouter();
+  const ui = new GalleryUI(router);
 
-  constructor() {
-    this.router = new GalleryRouter();
-    this.ui = new GalleryUI(this.router);
-    this.listRoute = new GalleryList();
-    this.imageEditorRoute = new GalleryImageEditor();
-    this.imageDetailRoute = new GalleryImageDetail();
-    this.imageShareRoute = new GalleryImageShare();
-    this.imageSelectorRoute = new GalleryImageSelector();
-    this.init();
-  }
+  // 状態統一
+  const state = {
+    currentDetailItem: undefined as GalleryItem | undefined,
+    onSelect: undefined as ((item: GalleryItem) => void) | undefined,
+    onDrawToggle: undefined as ((key: string) => Promise<boolean>) | undefined,
+  };
 
-  private init(): void {
-    this.router.setOnRouteChange((route) => {
-      this.renderCurrentRoute(route); // コンテンツ更新
-    });
+  // 外部インターフェース（initButton前に定義必須）
+  const show = () => {
+    router.initialize("list");
+    ui.showModal();
+  };
 
+  const showSelectionMode = (onSelect: (item: GalleryItem) => void) => {
+    state.onSelect = onSelect;
+    router.initialize("image-selector");
+    ui.showModal();
+  };
+
+  const setDrawToggleCallback = (
+    callback: (key: string) => Promise<boolean>
+  ) => {
+    state.onDrawToggle = callback;
+  };
+
+  const navigateToImageEditor = () => {
+    router.navigate("image-editor");
+    ui.showModal();
+  };
+
+  const showDetail = (item: GalleryItem) => {
+    state.currentDetailItem = item;
+    router.navigate("image-detail");
+  };
+
+  const routeMap: Record<
+    string,
+    (container: HTMLElement) => void | Promise<void>
+  > = {
+    list: (container) => {
+      const route = new GalleryList();
+      route.render(container, router, showDetail, state.onDrawToggle, () =>
+        ui.closeModal()
+      );
+    },
+
+    "image-editor": (container) => {
+      const route = new GalleryImageEditor();
+      route.setOnSaveSuccess(() => router.navigateBack());
+      route.render(container);
+    },
+
+    "image-detail": async (container) => {
+      if (!state.currentDetailItem) return;
+      const route = new GalleryImageDetail();
+      route.render(container, router, state.currentDetailItem, async (key) => {
+        const { GalleryStorage } = await import("./storage");
+        await new GalleryStorage().delete(key);
+        router.navigateBack();
+      });
+    },
+
+    "image-selector": (container) => {
+      const route = new GalleryImageSelector();
+      route.render(
+        container,
+        router,
+        async (item) => {
+          if (!state.onSelect) return;
+          // inline化: findGalleryItemByKey
+          const { GalleryStorage } = await import("./storage");
+          const items = await new GalleryStorage().getAll();
+          const galleryItem = items.find((i) => i.key === item.key);
+          if (galleryItem) {
+            state.onSelect(galleryItem);
+            ui.closeModal();
+          }
+        },
+        () => router.navigate("image-editor")
+      );
+    },
+
+    "image-share": (container) => {
+      if (!state.currentDetailItem) return;
+      const route = new GalleryImageShare();
+      route.render(container, state.currentDetailItem);
+    },
+  };
+
+  const renderCurrentRoute = async (route: string) => {
+    const container = ui.getContainer();
+    if (!container) return;
+    await routeMap[route]?.(container);
+  };
+
+  const initButton = () => {
     setupElementObserver([
       {
         id: "gallery-btn",
         getTargetElement: findOpacityContainer,
         createElement: (container) => {
           const button = createGalleryButton();
-          button.id = "gallery-btn"; // 重複チェック用ID設定
-          button.addEventListener("click", () => this.show());
+          button.id = "gallery-btn";
+          button.onclick = show;
           container?.appendChild(button);
         },
       },
     ]);
-  }
+  };
 
-  private renderCurrentRoute(route: string): void {
-    const container = this.ui.getContainer();
-    if (!container) return;
+  // 初期化
+  router.setOnRouteChange(renderCurrentRoute);
+  initButton();
 
-    switch (route) {
-      case "list":
-        this.listRoute.render(
-          container,
-          this.router,
-          (item) => this.showImageDetail(item),
-          this.onDrawToggleCallback,
-          () => this.ui.closeModal()
-        );
-        break;
-      case "image-editor":
-        this.imageEditorRoute.setOnSaveSuccess(() => this.router.navigateBack());
-        this.imageEditorRoute.render(container);
-        break;
-      case "image-detail":
-        if (this.currentDetailItem) {
-          this.imageDetailRoute.render(
-            container,
-            this.router,
-            this.currentDetailItem,
-            async (key: string) => {
-              // 削除処理
-              const { GalleryStorage } = await import("./storage");
-              const storage = new GalleryStorage();
-              await storage.delete(key);
+  return {
+    show,
+    showSelectionMode,
+    setDrawToggleCallback,
+    navigateToImageEditor,
+  };
+};
 
-              // 一覧に戻る
-              this.router.navigateBack();
-            }
-          );
-        }
-        break;
-      case "image-selector":
-        this.imageSelectorRoute.render(
-          container,
-          this.router,
-          (item) => {
-            // ImageItem → GalleryItem変換してimageSelectorOnSelect実行
-            if (this.imageSelectorOnSelect) {
-              // ImageItemのkeyでGalleryItemを検索
-              this.findGalleryItemByKey(item.key).then((galleryItem) => {
-                if (galleryItem) {
-                  this.imageSelectorOnSelect!(galleryItem);
-                  // 選択後にmodal閉じる
-                  this.ui.closeModal();
-                }
-              });
-            }
-          },
-          () => this.router.navigate("image-editor") // onAddClick
-        );
-        break;
-      case "image-share":
-        if (this.currentDetailItem) {
-          this.imageShareRoute.render(container, this.currentDetailItem);
-        }
-        break;
-    }
-  }
+// ========================================
+// DI Container用公開API
+// ========================================
 
-  private showImageDetail(item: GalleryItem): void {
-    this.currentDetailItem = item;
-    this.router.navigate("image-detail");
-  }
+// シングルトンインスタンス
+let galleryInstance: ReturnType<typeof createGallery> | null = null;
 
-  // 外部インターフェース
-  show(): void {
-    this.router.initialize("list");
-    this.ui.showModal();
-  }
-
-  showSelectionMode(onSelect: (item: GalleryItem) => void): void {
-    this.imageSelectorOnSelect = onSelect;
-    this.router.initialize("image-selector");
-    this.ui.showModal();
-  }
-
-  /**
-   * 描画切り替えコールバックを設定
-   */
-  setDrawToggleCallback(callback: (key: string) => Promise<boolean>): void {
-    this.onDrawToggleCallback = callback;
-  }
-
-  /**
-   * キーでGalleryItemを検索
-   */
-  private async findGalleryItemByKey(key: string): Promise<GalleryItem | null> {
-    const { GalleryStorage } = await import("./storage");
-    const storage = new GalleryStorage();
-    const items = await storage.getAll();
-    return items.find((item) => item.key === key) || null;
-  }
-
-  /**
-   * Image Editorへ遷移（外部から呼び出し用）
-   */
-  navigateToImageEditor(): void {
-    this.router.navigate("image-editor");
-    this.ui.showModal();
-  }
-}
+export const galleryAPI: GalleryAPI = {
+  initGallery: () => {
+    galleryInstance = createGallery();
+  },
+  showGallery: () => galleryInstance?.show(),
+  showSelectionMode: (onSelect) => galleryInstance?.showSelectionMode(onSelect),
+  setDrawToggleCallback: (callback) =>
+    galleryInstance?.setDrawToggleCallback(callback),
+};
