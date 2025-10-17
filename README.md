@@ -120,6 +120,7 @@ Mozilla Public License 2.0
 - [DaisyUI](https://daisyui.com/)
 - [Chrome Web Store Listing](https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej)
 - [Edge Add-ons Listing](https://microsoftedge.microsoft.com/addons/detail/mr-wplace/acdodonamhbokadiikkfnnliplijigip)
+- [Wplace - Code of Conduct](https://wplace.live/terms/code-of-conduct)
 
 ---
 
