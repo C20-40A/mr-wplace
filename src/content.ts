@@ -135,15 +135,15 @@ import { di } from "./core/di";
     di.register("textDraw", textDrawAPI);
 
     // Feature初期化
-    const favorites = new ExtendedBookmarks(); // 1. Bookmark (最後に表示)
+    new ExtendedBookmarks(); // 1. Bookmark (最後に表示)
     const tileOverlay = new TileOverlay();
     const tileSnapshot = new TileSnapshot();
     new TimeTravel(); // 2. TimeTravel
     textDrawAPI.initTextDraw(); // 3. TextDraw (DI対応)
     galleryAPI.initGallery(); // DI対応
-    const drawing = new Drawing(); // 4. Drawing (最初に表示)
-    const drawingLoader = new DrawingLoader();
-    const colorFilter = new ColorFilter();
+    new Drawing(); // 4. Drawing (最初に表示)
+    new DrawingLoader();
+    new ColorFilter();
     const colorFilterManager = new ColorFilterManager();
     const autoSpoit = new AutoSpoit();
     new PositionInfo();
@@ -160,14 +160,9 @@ import { di } from "./core/di";
 
     // Global access for ImageProcessor and Gallery
     window.mrWplace = {
-      tileOverlay,
-      favorites,
-      drawing,
-      tileSnapshot,
-      drawingLoader,
-      colorFilter,
-      userStatus,
       colorFilterManager,
+      tileOverlay,
+      tileSnapshot,
       autoSpoit,
     };
   } catch (error) {
