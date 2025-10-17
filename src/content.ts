@@ -7,7 +7,7 @@ import { galleryAPI } from "./features/gallery";
 import { Drawing } from "./features/drawing";
 import { TileSnapshot } from "./features/time-travel/utils/tile-snapshot";
 import { TimeTravel } from "./features/time-travel";
-import { DrawingLoader } from "./features/drawing-loader";
+import { drawingLoaderAPI } from "./features/drawing-loader";
 import { ColorFilter } from "./features/color-filter";
 import { ColorFilterManager } from "./utils/color-filter-manager";
 import { UserStatus } from "./features/user-status";
@@ -134,16 +134,17 @@ import { di } from "./core/di";
     di.register("gallery", galleryAPI);
     di.register("textDraw", textDrawAPI);
     di.register("bookmark", bookmarkAPI);
+    di.register("drawingLoader", drawingLoaderAPI);
 
     // Feature初期化
     bookmarkAPI.initBookmark(); // 1. Bookmark (最後に表示)
     const tileOverlay = new TileOverlay();
     const tileSnapshot = new TileSnapshot();
     new TimeTravel(); // 2. TimeTravel
-    textDrawAPI.initTextDraw(); // 3. TextDraw (DI対応)
-    galleryAPI.initGallery(); // DI対応
+    textDrawAPI.initTextDraw(); // 3. TextDraw
+    galleryAPI.initGallery();
     new Drawing(); // 4. Drawing (最初に表示)
-    new DrawingLoader();
+    drawingLoaderAPI.initDrawingLoader();
     new ColorFilter();
     const colorFilterManager = new ColorFilterManager();
     const autoSpoit = new AutoSpoit();
@@ -151,8 +152,6 @@ import { di } from "./core/di";
 
     // 初期化完了を待つ
     await colorFilterManager.init();
-
-    // データは先行注入済みなので、ここでは何もしない
 
     // GalleryとTileOverlayの連携設定（DI経由）
     galleryAPI.setDrawToggleCallback(async (imageKey: string) => {
