@@ -1,3 +1,5 @@
+import { storage } from "@/utils/browser-api";
+
 export interface TileSnapshotInfo {
   tileX: number;
   tileY: number;
@@ -35,7 +37,7 @@ export class TimeTravelStorage {
     console.time("getAllTilesWithSnapshots");
 
     // 1. インデックス取得
-    const indexResult = await chrome.storage.local.get([this.INDEX_KEY]);
+    const indexResult = await storage.get([this.INDEX_KEY]);
 
     // 2. インデックス未作成 → 従来方式で全取得+インデックス作成
     if (!indexResult[this.INDEX_KEY]) {
@@ -78,7 +80,7 @@ export class TimeTravelStorage {
 
   private static async createIndexAndGetAll(): Promise<TileSnapshotInfo[]> {
     // 従来方式: 全キー取得（初回のみ）
-    const result = await chrome.storage.local.get(null);
+    const result = await storage.get(null);
     const snapshotKeys = Object.keys(result).filter((key) =>
       key.startsWith("tile_snapshot_")
     );
@@ -118,7 +120,7 @@ export class TimeTravelStorage {
       snapshots: snapshots.sort((a, b) => b.timestamp - a.timestamp),
       lastUpdated: Date.now(),
     };
-    await chrome.storage.local.set({ [this.INDEX_KEY]: index });
+    await storage.set({ [this.INDEX_KEY]: index });
 
     // TileSnapshotInfo配列生成
     const tiles: TileSnapshotInfo[] = [];
@@ -145,11 +147,11 @@ export class TimeTravelStorage {
     tileX: number,
     tileY: number
   ): Promise<SnapshotInfo[]> {
-    const indexResult = await chrome.storage.local.get([this.INDEX_KEY]);
+    const indexResult = await storage.get([this.INDEX_KEY]);
 
     if (!indexResult[this.INDEX_KEY]) {
       // インデックス未作成の場合は従来方式
-      const result = await chrome.storage.local.get(null);
+      const result = await storage.get(null);
       const snapshots: SnapshotInfo[] = [];
 
       for (const [key, value] of Object.entries(result)) {
@@ -182,7 +184,7 @@ export class TimeTravelStorage {
 
   // 新規スナップショット追加時のインデックス更新
   static async addSnapshotToIndex(snapshot: SnapshotInfo): Promise<void> {
-    const indexResult = await chrome.storage.local.get([this.INDEX_KEY]);
+    const indexResult = await storage.get([this.INDEX_KEY]);
     const index: SnapshotIndex = indexResult[this.INDEX_KEY] || {
       snapshots: [],
       lastUpdated: 0,
@@ -191,14 +193,14 @@ export class TimeTravelStorage {
     index.snapshots.unshift(snapshot);
     index.lastUpdated = Date.now();
 
-    await chrome.storage.local.set({ [this.INDEX_KEY]: index });
+    await storage.set({ [this.INDEX_KEY]: index });
   }
 
   // スナップショット削除時のインデックス更新
   static async removeSnapshotFromIndex(fullKey: string): Promise<void> {
-    await chrome.storage.local.remove(fullKey);
+    await storage.remove(fullKey);
 
-    const indexResult = await chrome.storage.local.get([this.INDEX_KEY]);
+    const indexResult = await storage.get([this.INDEX_KEY]);
     if (!indexResult[this.INDEX_KEY]) return;
 
     const index: SnapshotIndex = indexResult[this.INDEX_KEY];
@@ -207,12 +209,12 @@ export class TimeTravelStorage {
     );
     index.lastUpdated = Date.now();
 
-    await chrome.storage.local.set({ [this.INDEX_KEY]: index });
+    await storage.set({ [this.INDEX_KEY]: index });
   }
 
   // 描画状態管理
   static async getDrawStates(): Promise<SnapshotDrawState[]> {
-    const result = await chrome.storage.local.get([this.DRAW_STATES_KEY]);
+    const result = await storage.get([this.DRAW_STATES_KEY]);
     return result[this.DRAW_STATES_KEY] || [];
   }
 
@@ -226,7 +228,7 @@ export class TimeTravelStorage {
       states.push(drawState);
     }
 
-    await chrome.storage.local.set({ [this.DRAW_STATES_KEY]: states });
+    await storage.set({ [this.DRAW_STATES_KEY]: states });
   }
 
   static async getActiveSnapshotForTile(
@@ -248,7 +250,7 @@ export class TimeTravelStorage {
     if (!state) return false;
 
     state.drawEnabled = !state.drawEnabled;
-    await chrome.storage.local.set({ [this.DRAW_STATES_KEY]: states });
+    await storage.set({ [this.DRAW_STATES_KEY]: states });
     return state.drawEnabled;
   }
 
@@ -261,7 +263,7 @@ export class TimeTravelStorage {
     const enabledStates = states.filter((s) => s.drawEnabled);
 
     for (const state of enabledStates) {
-      const snapshotData = await chrome.storage.local.get([state.fullKey]);
+      const snapshotData = await storage.get([state.fullKey]);
       const rawData = snapshotData[state.fullKey];
       if (rawData) {
         // Uint8Array → File変換

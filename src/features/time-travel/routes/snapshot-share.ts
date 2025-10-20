@@ -1,6 +1,7 @@
 import { TimeTravelRouter } from "../router";
 import { t } from "../../../i18n/manager";
 import { Toast } from "../../../components/toast";
+import { storage } from "@/utils/browser-api";
 
 export class SnapshotShareRoute {
   render(container: HTMLElement, router: TimeTravelRouter): void {
@@ -66,7 +67,7 @@ export class SnapshotShareRoute {
   }
 
   private async loadSnapshotToCanvas(fullKey: string): Promise<void> {
-    const result = await chrome.storage.local.get(fullKey);
+    const result = await storage.get(fullKey);
     if (!result[fullKey]) return;
 
     const uint8Array = new Uint8Array(result[fullKey]);

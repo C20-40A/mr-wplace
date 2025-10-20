@@ -3,6 +3,7 @@ import { TileDrawManager } from "../tile-draw";
 import { ImageItem } from "../gallery/routes/list/components";
 import { GalleryStorage } from "../gallery/storage";
 import { ColorPaletteStorage } from "../../components/color-palette/storage";
+import { storage } from "@/utils/browser-api";
 
 export class TileOverlay {
   public tileDrawManager: TileDrawManager;
@@ -130,7 +131,7 @@ export class TileOverlay {
     );
 
     if (activeSnapshot) {
-      const snapshotData = await chrome.storage.local.get([
+      const snapshotData = await storage.get([
         activeSnapshot.fullKey,
       ]);
       const rawData = snapshotData[activeSnapshot.fullKey];

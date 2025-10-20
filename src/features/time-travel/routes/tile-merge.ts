@@ -2,6 +2,7 @@ import { TimeTravelRouter } from "../router";
 import { TimeTravelStorage, TileSnapshotInfo } from "../storage";
 import { TileNameStorage } from "../tile-name-storage";
 import { t } from "../../../i18n/manager";
+import { storage } from "@/utils/browser-api";
 
 interface TileGroup {
   id: number;
@@ -487,7 +488,7 @@ export class TileMergeRoute {
         ? tile.snapshots.find(s => s.fullKey === selectedSnapshotKey) || tile.snapshots[0]
         : tile.snapshots[0];
 
-      const snapshotData = await chrome.storage.local.get([snapshot.fullKey]);
+      const snapshotData = await storage.get([snapshot.fullKey]);
       const rawData = snapshotData[snapshot.fullKey];
 
       if (rawData) {

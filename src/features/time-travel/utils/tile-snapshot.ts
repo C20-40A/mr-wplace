@@ -1,10 +1,12 @@
+import { storage } from "@/utils/browser-api";
+
 export class TileSnapshot {
   // スナップショット削除（インデックス対応）
   async deleteSnapshot(snapshotId: string): Promise<void> {
     const snapshotKey = `${TileSnapshot.SNAPSHOT_PREFIX}${snapshotId}`;
 
     // 実画像データ削除
-    await chrome.storage.local.remove(snapshotKey);
+    await storage.remove(snapshotKey);
 
     // インデックス更新
     const { TimeTravelStorage } = await import("../storage");
@@ -24,12 +26,12 @@ export class TileSnapshot {
     const arrayBuffer = await processedBlob.arrayBuffer();
     const data = Array.from(new Uint8Array(arrayBuffer));
 
-    await chrome.storage.local.set({ [key]: data });
+    await storage.set({ [key]: data });
   }
 
   async getTmpTile(tileX: number, tileY: number): Promise<Blob | null> {
     const key = `${TileSnapshot.TMP_PREFIX}${tileX}_${tileY}`;
-    const result = await chrome.storage.local.get(key);
+    const result = await storage.get(key);
 
     if (!result[key]) return null;
 
@@ -75,7 +77,7 @@ export class TileSnapshot {
     name?: string
   ): Promise<string> {
     const tmpKey = `${TileSnapshot.TMP_PREFIX}${tileX}_${tileY}`;
-    const result = await chrome.storage.local.get(tmpKey);
+    const result = await storage.get(tmpKey);
 
     if (!result[tmpKey])
       throw new Error(`No tmp data found for tile ${tileX},${tileY}`);
@@ -85,7 +87,7 @@ export class TileSnapshot {
     const snapshotKey = `${TileSnapshot.SNAPSHOT_PREFIX}${snapshotId}`;
 
     // 実画像データ保存
-    await chrome.storage.local.set({ [snapshotKey]: result[tmpKey] });
+    await storage.set({ [snapshotKey]: result[tmpKey] });
 
     // インデックス更新
     const { TimeTravelStorage } = await import("../storage");
@@ -105,7 +107,7 @@ export class TileSnapshot {
 
   async loadSnapshot(snapshotId: string): Promise<Blob> {
     const key = `${TileSnapshot.SNAPSHOT_PREFIX}${snapshotId}`;
-    const result = await chrome.storage.local.get(key);
+    const result = await storage.get(key);
 
     if (!result[key]) throw new Error(`Snapshot not found: ${snapshotId}`);
 
@@ -132,7 +134,7 @@ export class TileSnapshot {
     const snapshotKey = `${TileSnapshot.SNAPSHOT_PREFIX}${snapshotId}`;
     
     // Save to storage
-    await chrome.storage.local.set({ [snapshotKey]: data });
+    await storage.set({ [snapshotKey]: data });
     
     // Update index
     const { TimeTravelStorage } = await import("../storage");

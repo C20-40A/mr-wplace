@@ -6,6 +6,7 @@ import { Toast } from "../../../components/toast";
 import { di } from "../../../core/di";
 import { gotoPosition } from "../../../utils/position";
 import { tilePixelToLatLng } from "../../../utils/coordinate";
+import { storage } from "@/utils/browser-api";
 
 export class SnapshotDetailRoute {
   private imageInspector?: ImageInspector;
@@ -106,7 +107,7 @@ export class SnapshotDetailRoute {
   }
 
   private async loadSnapshot(fullKey: string): Promise<void> {
-    const result = await chrome.storage.local.get(fullKey);
+    const result = await storage.get(fullKey);
     if (!result[fullKey]) throw new Error("Snapshot not found");
 
     const uint8Array = new Uint8Array(result[fullKey]);
@@ -145,7 +146,7 @@ export class SnapshotDetailRoute {
   }
 
   private async drawSnapshot(fullKey: string): Promise<void> {
-    const result = await chrome.storage.local.get(fullKey);
+    const result = await storage.get(fullKey);
     if (!result[fullKey]) throw new Error("Snapshot not found");
 
     const tileX = parseInt(fullKey.split("_")[3]);

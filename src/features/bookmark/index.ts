@@ -2,6 +2,7 @@ import {
   setupElementObserver,
   ElementConfig,
 } from "../../components/element-observer";
+import { storage } from "@/utils/browser-api";
 import { Toast } from "../../components/toast";
 import {
   findOpacityContainer,
@@ -24,11 +25,8 @@ import type { BookmarkAPI } from "../../core/di";
 const SORT_KEY = "wplace-studio-bookmark-sort";
 
 const render = async (): Promise<void> => {
-  const sortType = await new Promise<BookmarkSortType>((resolve) => {
-    chrome.storage.local.get([SORT_KEY], (result) => {
-      resolve(result[SORT_KEY] || "created");
-    });
-  });
+  const result = await storage.get([SORT_KEY]);
+  const sortType = result[SORT_KEY] || "created";
   const favorites = await BookmarkStorage.getBookmarks();
   renderBookmarks(favorites, sortType);
   const sortSelect = document.getElementById(
@@ -135,9 +133,7 @@ const setupModal = (): void => {
     .addEventListener("change", async (e) => {
       const sortType = (e.target as HTMLSelectElement)
         .value as BookmarkSortType;
-      await new Promise<void>((resolve) => {
-        chrome.storage.local.set({ [SORT_KEY]: sortType }, resolve);
-      });
+      await storage.set({ [SORT_KEY]: sortType });
       render();
     });
 };
