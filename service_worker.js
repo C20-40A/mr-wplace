@@ -1,3 +1,5 @@
+const browserAPI = typeof browser !== "undefined" ? browser : chrome;
+
 console.log("🧑‍🎨: service_worker.js loaded");
 
 const ALARM_ID = "mr-wplace-charged";
@@ -8,21 +10,23 @@ const ALARM_MESSAGE_START = "START_CHARGE_ALARM";
 const ALARM_MESSAGE_STOP = "STOP_CHARGE_ALARM";
 const ALARM_MESSAGE_GET_INFO = "GET_ALARM_INFO";
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+browserAPI.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("🧑‍🎨: Service worker received message:", message.type);
   if (message.type === ALARM_MESSAGE_START) {
-    chrome.alarms.create(ALARM_ID, { when: message.when });
+    browserAPI.alarms.create(ALARM_ID, { when: message.when });
     console.log("🧑‍🎨: Charge alarm created at", message.when);
   } else if (message.type === ALARM_MESSAGE_STOP) {
-    chrome.alarms.clear(ALARM_ID);
+    browserAPI.alarms.clear(ALARM_ID);
     console.log("🧑‍🎨: Charge alarm cancelled");
   } else if (message.type === ALARM_MESSAGE_GET_INFO) {
-    chrome.alarms.get(ALARM_ID, (alarm) => {
-      const alarmInfo = alarm ? {
-        name: alarm.name,
-        scheduledTime: alarm.scheduledTime,
-        periodInMinutes: alarm.periodInMinutes
-      } : null;
+    browserAPI.alarms.get(ALARM_ID, (alarm) => {
+      const alarmInfo = alarm
+        ? {
+            name: alarm.name,
+            scheduledTime: alarm.scheduledTime,
+            periodInMinutes: alarm.periodInMinutes,
+          }
+        : null;
       console.log("🧑‍🎨: Alarm info:", alarmInfo);
       sendResponse(alarmInfo);
     });
@@ -30,10 +34,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-chrome.alarms.onAlarm.addListener((alarm) => {
+browserAPI.alarms.onAlarm.addListener((alarm) => {
   console.log("🧑‍🎨: Alarm triggered:", alarm.name);
   if (alarm.name === ALARM_ID) {
-    chrome.notifications.create("charge-ready", {
+    browserAPI.notifications.create("charge-ready", {
       type: "basic",
       iconUrl: "icons/icon128.png",
       title: "Mr. Wplace",

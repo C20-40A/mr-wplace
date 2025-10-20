@@ -1,3 +1,5 @@
+import { storage } from "../utils/browser-api";
+
 // サポート対象ロケール型定義
 export type SupportedLocale = "ja" | "en" | "pt" | "es" | "vi";
 
@@ -21,24 +23,29 @@ let currentLocale: SupportedLocale = "en";
 const STORAGE_KEY = "mr_wplace_locale";
 
 // ストレージから設定を読み込み（成功時true）
-export async function loadLocaleFromStorage(): Promise<boolean> {
-  if (typeof chrome !== "undefined" && chrome.storage) {
-    const result = await chrome.storage.local.get([STORAGE_KEY]);
-    const storedLocale = result[STORAGE_KEY] as SupportedLocale | undefined;
-    if (storedLocale === "ja" || storedLocale === "en" || storedLocale === "pt" || storedLocale === "es" || storedLocale === "vi") {
-      currentLocale = storedLocale;
-      return true;
-    }
+export const loadLocaleFromStorage = async (): Promise<boolean> => {
+  // if(typeof chrome !== "undefined" && chrome.storage)
+  const result = await storage.get([STORAGE_KEY]);
+  const storedLocale = result[STORAGE_KEY] as SupportedLocale | undefined;
+  if (
+    storedLocale === "ja" ||
+    storedLocale === "en" ||
+    storedLocale === "pt" ||
+    storedLocale === "es" ||
+    storedLocale === "vi"
+  ) {
+    currentLocale = storedLocale;
+    return true;
   }
   return false;
-}
+};
 
 // ストレージに設定を保存
-export async function saveLocaleToStorage(locale: SupportedLocale): Promise<void> {
-  if (typeof chrome !== "undefined" && chrome.storage) {
-    await chrome.storage.local.set({ [STORAGE_KEY]: locale });
-  }
-}
+export const saveLocaleToStorage = async (
+  locale: SupportedLocale
+): Promise<void> => {
+  await storage.set({ [STORAGE_KEY]: locale });
+};
 
 // 翻訳辞書
 const translations: LocaleData = {
@@ -50,58 +57,67 @@ const translations: LocaleData = {
 };
 
 // ロケール設定（ストレージ連携版）
-export async function setLocale(locale: SupportedLocale): Promise<void> {
+export const setLocale = async (locale: SupportedLocale): Promise<void> => {
   currentLocale = locale;
   await saveLocaleToStorage(locale);
-}
+};
 
 // 現在のロケール取得
-export function getLocale(): SupportedLocale {
+export const getLocale = (): SupportedLocale => {
   return currentLocale;
-}
+};
 
 // ブラウザ言語検出
-export function detectBrowserLanguage(): SupportedLocale {
+export const detectBrowserLanguage = (): SupportedLocale => {
   const lang = navigator.language.substring(0, 2);
-  if (lang === "ja" || lang === "en" || lang === "pt" || lang === "es" || lang === "vi") {
+  if (
+    lang === "ja" ||
+    lang === "en" ||
+    lang === "pt" ||
+    lang === "es" ||
+    lang === "vi"
+  ) {
     return lang as SupportedLocale;
   }
   return "en";
-}
+};
 
 // 翻訳辞書登録
-export function registerTranslations(
+export const registerTranslations = (
   locale: SupportedLocale,
   data: Translations
-): void {
+): void => {
   Object.assign(translations[locale], data);
-}
+};
 
 // locale対応日付フォーマット関数
-export function formatDate(date: Date, options?: Intl.DateTimeFormatOptions): string {
+export const formatDate = (
+  date: Date,
+  options?: Intl.DateTimeFormatOptions
+): string => {
   const localeMap = {
     ja: "ja-JP",
     en: "en-US",
     pt: "pt-BR",
     es: "es-ES",
-    vi: "vi-VN"
+    vi: "vi-VN",
   };
   return date.toLocaleString(localeMap[currentLocale], options);
-}
+};
 
-export function formatDateShort(date: Date): string {
+export const formatDateShort = (date: Date): string => {
   const localeMap = {
     ja: "ja-JP",
     en: "en-US",
     pt: "pt-BR",
     es: "es-ES",
-    vi: "vi-VN"
+    vi: "vi-VN",
   };
   return date.toLocaleDateString(localeMap[currentLocale]);
-}
+};
 
 // タグ付きテンプレートリテラル関数
-export function t(strings: TemplateStringsArray, ...values: any[]): string {
+export const t = (strings: TemplateStringsArray, ...values: any[]): string => {
   let result = "";
 
   for (let i = 0; i < strings.length; i++) {
@@ -111,9 +127,10 @@ export function t(strings: TemplateStringsArray, ...values: any[]): string {
       const value = values[i];
       // fallback: current locale → en → key name
       if (typeof value === "string") {
-        result += translations[currentLocale][value] 
-          || translations["en"][value] 
-          || value;
+        result +=
+          translations[currentLocale][value] ||
+          translations["en"][value] ||
+          value;
       } else {
         result += value;
       }
@@ -121,4 +138,4 @@ export function t(strings: TemplateStringsArray, ...values: any[]): string {
   }
 
   return result;
-}
+};
