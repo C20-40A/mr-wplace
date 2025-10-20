@@ -20,6 +20,7 @@ import { colorpalette } from "@/constants/colors";
 import { addCurrentTile } from "@/states/currentTile";
 import { di } from "@/core/di";
 import { runtime } from "@/utils/browser-api";
+import { getOverlayPixelColor } from "@/features/tile-draw";
 
 (async () => {
   try {
@@ -81,11 +82,7 @@ import { runtime } from "@/utils/browser-api";
         if (!window.mrWplace?.autoSpoit?.isEnabled()) return;
 
         const { lat, lng } = event.data;
-        const color =
-          await window.mrWplace?.tileOverlay?.tileDrawManager?.getOverlayPixelColor(
-            lat,
-            lng
-          );
+        const color = await getOverlayPixelColor(lat, lng);
 
         console.log("🧑‍🎨 : Overlay pixel color (before check):", color, {
           lat,

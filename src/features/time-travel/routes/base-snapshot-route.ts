@@ -2,6 +2,7 @@ import { TimeTravelStorage, SnapshotInfo } from "../storage";
 import { Toast } from "../../../components/toast";
 import { t, formatDate } from "../../../i18n/manager";
 import { di } from "../../../core/di";
+import { removePreparedOverlayImageByKey } from "@/features/tile-draw";
 
 export abstract class BaseSnapshotRoute {
   protected setupSnapshotEvents(
@@ -83,12 +84,9 @@ export abstract class BaseSnapshotRoute {
   ): Promise<void> {
     if (!confirm(t`${"delete_confirm"}`)) return;
 
-    // TileDrawManager からも削除（描画中の場合）
-    const tileOverlay = window.mrWplace?.tileOverlay;
+    // 描画一覧からも削除（描画中の場合）
     const imageKey = `snapshot_${fullKey}`;
-    if (tileOverlay?.tileDrawManager) {
-      tileOverlay.tileDrawManager.removePreparedOverlayImageByKey(imageKey);
-    }
+    removePreparedOverlayImageByKey(imageKey);
 
     await TimeTravelStorage.removeSnapshotFromIndex(fullKey);
     Toast.success(t`${"deleted_message"}`);

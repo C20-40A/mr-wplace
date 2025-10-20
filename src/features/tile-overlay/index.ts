@@ -1,17 +1,21 @@
 import { llzToTilePixel } from "../../utils/coordinate";
-import { TileDrawManager } from "../tile-draw";
 import { ImageItem } from "../gallery/routes/list/components";
 import { GalleryStorage } from "../gallery/storage";
 import { ColorPaletteStorage } from "../../components/color-palette/storage";
 import { storage } from "@/utils/browser-api";
 import { createResizedImageBitmap } from "@/utils/image-bitmap-compat";
+import {
+  addImageToOverlayLayers,
+  drawOverlayLayersOnTile,
+  getPerTileColorStats,
+  setPerTileColorStats,
+  toggleDrawEnabled,
+} from "@/features/tile-draw";
 
 export class TileOverlay {
-  public tileDrawManager: TileDrawManager;
   private galleryStorage: GalleryStorage;
 
   constructor() {
-    this.tileDrawManager = new TileDrawManager();
     this.galleryStorage = new GalleryStorage();
     this.init();
   }
@@ -58,7 +62,7 @@ export class TileOverlay {
     const response = await fetch(imageItem.dataUrl);
     const blob = await response.blob();
 
-    await this.tileDrawManager.addImageToOverlayLayers(
+    await addImageToOverlayLayers(
       blob,
       [coords.TLX, coords.TLY, coords.PxX, coords.PxY],
       imageItem.key
@@ -88,7 +92,7 @@ export class TileOverlay {
 
     const computeDevice = await ColorPaletteStorage.getComputeDevice();
 
-    const result = await this.tileDrawManager.drawOverlayLayersOnTile(
+    const result = await drawOverlayLayersOnTile(
       tileBlob,
       [tileX, tileY],
       computeDevice
@@ -132,9 +136,7 @@ export class TileOverlay {
     );
 
     if (activeSnapshot) {
-      const snapshotData = await storage.get([
-        activeSnapshot.fullKey,
-      ]);
+      const snapshotData = await storage.get([activeSnapshot.fullKey]);
       const rawData = snapshotData[activeSnapshot.fullKey];
 
       if (rawData) {
@@ -144,11 +146,11 @@ export class TileOverlay {
         const resizedImg = await createResizedImageBitmap(blob, {
           width: 1000,
           height: 1000,
-          quality: "high"
+          quality: "high",
         });
 
         const snapshotKey = `snapshot_${activeSnapshot.fullKey}`;
-        await this.tileDrawManager.addImageToOverlayLayers(
+        await addImageToOverlayLayers(
           resizedImg,
           [tileX, tileY, 0, 0],
           snapshotKey
@@ -172,7 +174,7 @@ export class TileOverlay {
     };
 
     await this.galleryStorage.save(updatedImage);
-    this.tileDrawManager.toggleDrawEnabled(imageKey);
+    toggleDrawEnabled(imageKey);
 
     return updatedImage.drawEnabled;
   }
@@ -181,7 +183,7 @@ export class TileOverlay {
     const response = await fetch(image.dataUrl);
     const blob = await response.blob();
 
-    await this.tileDrawManager.addImageToOverlayLayers(
+    await addImageToOverlayLayers(
       blob,
       [
         image.drawPosition.TLX,
@@ -201,7 +203,7 @@ export class TileOverlay {
           total: new Map(Object.entries((stats as any).total)),
         });
       }
-      this.tileDrawManager.setPerTileColorStats(image.key, tileStatsMap);
+      setPerTileColorStats(image.key, tileStatsMap);
     }
   }
 
@@ -209,7 +211,7 @@ export class TileOverlay {
     targetImages: any[]
   ): Promise<void> {
     for (const image of targetImages) {
-      const perTileStats = this.tileDrawManager.getPerTileColorStats(image.key);
+      const perTileStats = getPerTileColorStats(image.key);
       if (!perTileStats) continue;
 
       await this.galleryStorage.updateTileColorStats(image.key, perTileStats);
