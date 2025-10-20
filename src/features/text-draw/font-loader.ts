@@ -1,5 +1,6 @@
 import { kyokugenData } from "../../assets/kyokugen-font";
 import type { BitmapChar } from "../../assets/kyokugen-font";
+import { runtime } from "@/utils/browser-api";
 
 // ========================================
 // Types
@@ -55,7 +56,7 @@ export const ensureFontLoaded = async (): Promise<void> => {
 
   for (const [name, config] of Object.entries(fonts)) {
     if (config.type === "ttf") {
-      const fontUrl = chrome.runtime.getURL(config.path);
+      const fontUrl = runtime.getURL(config.path);
       const font = new FontFace(name, `url(${fontUrl})`);
       await font.load();
       document.fonts.add(font);

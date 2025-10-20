@@ -46,10 +46,4 @@ browserAPI.alarms.onAlarm.addListener((alarm) => {
   }
 });
 
-// tabs権限はOFFにするから、通知クリックでタブを開くのは無理
-// chrome.notifications.onClicked.addListener((notificationId) => {
-//   console.log("🧑‍🎨: Notification clicked:", notificationId);
-//   if (notificationId === "charge-ready") {
-//     chrome.tabs.create({ url: "https://wplace.live/" });
-//   }
-// });
+// NOTE: tabs権限はOFFにするから、通知クリックでタブを開くのは無理
