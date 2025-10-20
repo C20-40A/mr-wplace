@@ -198,21 +198,15 @@ export async function createProcessedCanvas(
   const newWidth = Math.floor(originalWidth * scale);
   const newHeight = Math.floor(originalHeight * scale);
 
-  const canvas = document.createElement("canvas");
-  canvas.width = newWidth;
-  canvas.height = newHeight;
-
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Failed to get canvas context");
-
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(img, 0, 0, newWidth, newHeight);
-
   // GPU処理試行（useGpu=trueの場合のみ）
   if (useGpu) {
     try {
       console.log("🧑‍🎨 : Attempting GPU processing, dithering:", ditheringEnabled);
-      const imageBitmap = await createImageBitmap(canvas, {
+      // HTMLImageElementから直接ImageBitmap作成（canvas経由せずリサイズ）
+      const imageBitmap = await createImageBitmap(img, {
+        resizeWidth: newWidth,
+        resizeHeight: newHeight,
+        resizeQuality: "pixelated",
         premultiplyAlpha: "none",
       });
       const paletteRGB = colorpalette
@@ -226,6 +220,14 @@ export async function createProcessedCanvas(
         ditheringEnabled,
         ditheringThreshold
       );
+
+      // 結果をcanvasに描画
+      const canvas = document.createElement("canvas");
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Failed to get canvas context");
+
       const imageData = new ImageData(
         new Uint8ClampedArray(processedData),
         newWidth,
@@ -242,8 +244,29 @@ export async function createProcessedCanvas(
     console.log("🧑‍🎨 : CPU processing selected");
   }
 
-  // CPU処理
-  const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
+  // CPU処理（ImageBitmap経由でcanvas汚染を回避）
+  console.log("🧑‍🎨 : Starting CPU processing via ImageBitmap");
+  
+  // HTMLImageElement → ImageBitmap（リサイズ付き、canvas汚染回避）
+  const imageBitmap = await createImageBitmap(img, {
+    resizeWidth: newWidth,
+    resizeHeight: newHeight,
+    resizeQuality: "pixelated",
+    premultiplyAlpha: "none",
+  });
+  
+  // ImageBitmap → ImageData（clean）
+  const tempCanvas = new OffscreenCanvas(newWidth, newHeight);
+  const tempCtx = tempCanvas.getContext("2d");
+  if (!tempCtx) throw new Error("Failed to get temp context");
+  
+  tempCtx.drawImage(imageBitmap, 0, 0);
+  const imageData = tempCtx.getImageData(0, 0, newWidth, newHeight);
+  
+  // ImageBitmap解放
+  imageBitmap.close();
+  
+  // CPU処理適用
   applyImageAdjustments(imageData, adjustments);
 
   // ディザ処理切り替え
@@ -252,6 +275,14 @@ export async function createProcessedCanvas(
   } else {
     quantizeToColorPalette(imageData, selectedColorIds);
   }
+
+  // 新しいclean canvasに描画
+  const canvas = document.createElement("canvas");
+  canvas.width = newWidth;
+  canvas.height = newHeight;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Failed to get canvas context");
 
   ctx.putImageData(imageData, 0, 0);
   return canvas;

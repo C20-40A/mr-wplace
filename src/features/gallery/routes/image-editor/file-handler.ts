@@ -137,19 +137,51 @@ function showThreeChoiceDialog(
 
 /**
  * CanvasからBlob生成
+ * Firefox: canvas汚染(tainted)に対応するためgetImageData経由
  */
 export async function createBlobFromCanvas(
   canvas: HTMLCanvasElement
 ): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (blob) {
-        resolve(blob);
-      } else {
-        reject(new Error("Failed to create blob from canvas"));
-      }
-    }, "image/png");
-  });
+  try {
+    // 通常のtoBlobを試行
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error("toBlob failed"));
+        }
+      }, "image/png");
+    });
+  } catch (error) {
+    console.log("🧑‍🎨 : toBlob failed, using getImageData fallback", error);
+
+    // フォールバック: getImageData経由でBlob作成
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Failed to get canvas context");
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    // 新しいcleanなcanvasを作成
+    const cleanCanvas = document.createElement("canvas");
+    cleanCanvas.width = canvas.width;
+    cleanCanvas.height = canvas.height;
+    const cleanCtx = cleanCanvas.getContext("2d");
+    if (!cleanCtx) throw new Error("Failed to get clean canvas context");
+
+    cleanCtx.putImageData(imageData, 0, 0);
+
+    // clean canvasからtoBlob
+    return new Promise<Blob>((resolve, reject) => {
+      cleanCanvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error("Failed to create blob from clean canvas"));
+        }
+      }, "image/png");
+    });
+  }
 }
 
 /**
