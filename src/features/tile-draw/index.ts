@@ -1,5 +1,10 @@
-export { TileDrawManager } from "./tileDrawManager";
-
-// NOTE
-// - zoom=11固定、3x3グリッド中央ピクセル抽出
-// - #deface色[222,250,206]→チェッカーボード透過
+export {
+  addImageToOverlayLayers,
+  drawOverlayLayersOnTile,
+  getAggregatedColorStats,
+  getOverlayPixelColor,
+  getPerTileColorStats,
+  removePreparedOverlayImageByKey,
+  setPerTileColorStats,
+  toggleDrawEnabled,
+} from "./tile-overlay-renderer";

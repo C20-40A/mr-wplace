@@ -1,4 +1,8 @@
 import { storage } from "@/utils/browser-api";
+import {
+  addImageToOverlayLayers,
+  removePreparedOverlayImageByKey,
+} from "@/features/tile-draw";
 
 export interface TileSnapshotInfo {
   tileX: number;
@@ -257,7 +261,6 @@ export class TimeTravelStorage {
   static async restoreDrawStates(): Promise<void> {
     console.log("🧑‍🎨 : Restoring TimeTravel draw states");
     const tileOverlay = window.mrWplace?.tileOverlay;
-    if (!tileOverlay?.tileDrawManager) return;
 
     const states = await this.getDrawStates();
     const enabledStates = states.filter((s) => s.drawEnabled);
@@ -272,7 +275,7 @@ export class TimeTravelStorage {
         const file = new File([blob], "snapshot.png", { type: "image/png" });
 
         const imageKey = `snapshot_${state.fullKey}`;
-        await tileOverlay.tileDrawManager.addImageToOverlayLayers(
+        await addImageToOverlayLayers(
           file,
           [state.tileX, state.tileY, 0, 0],
           imageKey
@@ -304,11 +307,8 @@ export class TimeTravelStorage {
       // 別のスナップショットが描画中 OR 何も描画されていない → ON
       if (currentState) {
         // 既存の描画を削除
-        const tileOverlay = window.mrWplace?.tileOverlay;
         const oldImageKey = `snapshot_${currentState.fullKey}`;
-        tileOverlay?.tileDrawManager?.removePreparedOverlayImageByKey(
-          oldImageKey
-        );
+        removePreparedOverlayImageByKey(oldImageKey);
 
         // 古い状態をOFFに
         await this.setDrawState({
@@ -327,20 +327,15 @@ export class TimeTravelStorage {
       drawEnabled: newDrawEnabled,
     });
 
-    // 3. TileDrawManagerに反映
-    const tileOverlay = window.mrWplace?.tileOverlay;
+    // 3. 描画に反映
     const imageKey = `snapshot_${fullKey}`;
 
     if (newDrawEnabled) {
       // 描画ON
-      await tileOverlay?.tileDrawManager?.addImageToOverlayLayers(
-        file,
-        [tileX, tileY, 0, 0],
-        imageKey
-      );
+      await addImageToOverlayLayers(file, [tileX, tileY, 0, 0], imageKey);
     } else {
       // 描画OFF
-      tileOverlay?.tileDrawManager?.removePreparedOverlayImageByKey(imageKey);
+      removePreparedOverlayImageByKey(imageKey);
     }
 
     return newDrawEnabled;

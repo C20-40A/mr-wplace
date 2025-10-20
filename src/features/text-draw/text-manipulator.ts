@@ -4,7 +4,7 @@ import { Toast } from "../../components/toast";
 import { ensureFontLoaded } from "./font-loader";
 import { textToBlob } from "./text-renderer";
 import type { TextInstance } from "./ui";
-import type { TileDrawManager } from "../tile-draw/tileDrawManager";
+import type { TileDrawManager } from "../tile-draw/tile-overlay-renderer";
 
 // ========================================
 // Text drawing operations

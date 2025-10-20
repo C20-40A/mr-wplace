@@ -7,6 +7,7 @@ import { di } from "../../../core/di";
 import { gotoPosition } from "../../../utils/position";
 import { tilePixelToLatLng } from "../../../utils/coordinate";
 import { storage } from "@/utils/browser-api";
+import { removePreparedOverlayImageByKey } from "@/features/tile-draw";
 
 export class SnapshotDetailRoute {
   private imageInspector?: ImageInspector;
@@ -224,12 +225,9 @@ export class SnapshotDetailRoute {
   private async deleteSnapshot(fullKey: string): Promise<void> {
     if (!confirm(t`${"delete_confirm"}`)) return;
 
-    // TileDrawManager からも削除（描画中の場合）
-    const tileOverlay = window.mrWplace?.tileOverlay;
+    // 描画一覧からも削除（描画中の場合）
     const imageKey = `snapshot_${fullKey}`;
-    if (tileOverlay?.tileDrawManager) {
-      tileOverlay.tileDrawManager.removePreparedOverlayImageByKey(imageKey);
-    }
+    removePreparedOverlayImageByKey(imageKey);
 
     await TimeTravelStorage.removeSnapshotFromIndex(fullKey);
     Toast.success(t`${"deleted_message"}`);
