@@ -7,6 +7,7 @@ import { TileNameStorage } from "../tile-name-storage";
 import { t } from "../../../i18n/manager";
 import { showNameInputModal } from "../../../utils/modal";
 import { llzToTilePixel, tilePixelToLatLng } from "../../../utils/coordinate";
+import { storage } from "@/utils/browser-api";
 
 interface SnapshotRouteOptions {
   showSaveButton: boolean;
@@ -253,7 +254,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
 
     // tmpタイルを取得
     const tmpKey = `tile_tmp_${this.currentTileX}_${this.currentTileY}`;
-    const result = await chrome.storage.local.get(tmpKey);
+    const result = await storage.get(tmpKey);
 
     if (!result[tmpKey]) {
       canvas.style.display = "none";

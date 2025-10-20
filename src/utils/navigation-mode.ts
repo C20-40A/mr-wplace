@@ -1,3 +1,5 @@
+import { storage } from "@/utils/browser-api";
+
 // Navigation mode type definition
 export type NavigationMode = boolean; // true: smart (flyTo/jumpTo), false: URL
 
@@ -10,7 +12,7 @@ let currentMode: NavigationMode = true;
 // Load from storage
 export async function loadNavigationModeFromStorage(): Promise<void> {
   if (typeof chrome !== "undefined" && chrome.storage) {
-    const result = await chrome.storage.local.get([STORAGE_KEY]);
+    const result = await storage.get([STORAGE_KEY]);
     const storedMode = result[STORAGE_KEY] as NavigationMode;
     if (typeof storedMode === "boolean") {
       currentMode = storedMode;
@@ -23,7 +25,7 @@ export async function saveNavigationModeToStorage(
   mode: NavigationMode
 ): Promise<void> {
   if (typeof chrome !== "undefined" && chrome.storage) {
-    await chrome.storage.local.set({ [STORAGE_KEY]: mode });
+    await storage.set({ [STORAGE_KEY]: mode });
   }
 }
 

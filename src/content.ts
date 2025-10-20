@@ -1,24 +1,24 @@
-import { I18nManager } from "./i18n/manager";
-import { detectBrowserLanguage } from "./i18n/index";
-import { Toast } from "./components/toast";
-import { bookmarkAPI } from "./features/bookmark";
-import { TileOverlay } from "./features/tile-overlay";
-import { galleryAPI } from "./features/gallery";
-import { Drawing } from "./features/drawing";
-import { TileSnapshot } from "./features/time-travel/utils/tile-snapshot";
-import { timeTravelAPI } from "./features/time-travel";
-import { drawingLoaderAPI } from "./features/drawing-loader";
-import { ColorFilter } from "./features/color-filter";
-import { ColorFilterManager } from "./utils/color-filter-manager";
-import { UserStatus } from "./features/user-status";
-import { WPlaceUserData } from "./types/user-data";
-import { ThemeToggleStorage } from "./features/theme-toggle/storage";
-import { textDrawAPI } from "./features/text-draw";
-import { AutoSpoit } from "./features/auto-spoit";
-import { PositionInfo } from "./features/position-info";
-import { colorpalette } from "./constants/colors";
-import { addCurrentTile } from "./states/currentTile";
-import { di } from "./core/di";
+import { I18nManager } from "@/i18n/manager";
+import { detectBrowserLanguage } from "@/i18n/index";
+import { Toast } from "@/components/toast";
+import { bookmarkAPI } from "@/features/bookmark";
+import { TileOverlay } from "@/features/tile-overlay";
+import { galleryAPI } from "@/features/gallery";
+import { Drawing } from "@/features/drawing";
+import { TileSnapshot } from "@/features/time-travel/utils/tile-snapshot";
+import { timeTravelAPI } from "@/features/time-travel";
+import { drawingLoaderAPI } from "@/features/drawing-loader";
+import { ColorFilter } from "@/features/color-filter";
+import { ColorFilterManager } from "@/utils/color-filter-manager";
+import { UserStatus } from "@/features/user-status";
+import { WPlaceUserData } from "@/types/user-data";
+import { ThemeToggleStorage } from "@/features/theme-toggle/storage";
+import { textDrawAPI } from "@/features/text-draw";
+import { AutoSpoit } from "@/features/auto-spoit";
+import { PositionInfo } from "@/features/position-info";
+import { colorpalette } from "@/constants/colors";
+import { addCurrentTile } from "@/states/currentTile";
+import { di } from "@/core/di";
 
 (async () => {
   try {

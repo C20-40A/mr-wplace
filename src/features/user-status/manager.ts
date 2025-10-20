@@ -3,6 +3,7 @@ import { StatusUIComponents } from "./ui/components";
 import { StatusCalculator } from "./services/calculator";
 import { TimerService } from "./services/timer-service";
 import { NotificationModal } from "./ui/notification-modal";
+import { storage } from "@/utils/browser-api";
 
 export class StatusManager {
   private uiComponents = new StatusUIComponents();
@@ -116,27 +117,15 @@ export class StatusManager {
   }
 
   private async getAlarmThreshold(): Promise<number> {
-    return new Promise((resolve) => {
-      chrome.storage.local.get(
-        [StatusManager.ALARM_THRESHOLD_KEY],
-        (result) => {
-          const threshold = result[StatusManager.ALARM_THRESHOLD_KEY];
-          resolve(threshold !== undefined ? threshold : 80);
-        }
-      );
-    });
+    const result = await storage.get([StatusManager.ALARM_THRESHOLD_KEY]);
+    const threshold = result[StatusManager.ALARM_THRESHOLD_KEY];
+    return threshold !== undefined ? threshold : 80;
   }
 
   private async getAlarmEnabledState(): Promise<boolean> {
-    return new Promise((resolve) => {
-      chrome.storage.local.get(
-        [StatusManager.ALARM_ENABLED_STATE_KEY],
-        (result) => {
-          const enabled = result[StatusManager.ALARM_ENABLED_STATE_KEY];
-          resolve(enabled === true);
-        }
-      );
-    });
+    const result = await storage.get([StatusManager.ALARM_ENABLED_STATE_KEY]);
+    const enabled = result[StatusManager.ALARM_ENABLED_STATE_KEY];
+    return enabled === true;
   }
 
   private async getAlarmInfo(): Promise<any> {

@@ -1,13 +1,15 @@
+import { storage } from "@/utils/browser-api";
+
 export class ThemeToggleStorage {
   private static readonly STORAGE_KEY = "mr-wplace-theme";
 
   static async get(): Promise<"light" | "dark"> {
-    const result = await chrome.storage.local.get([this.STORAGE_KEY]);
+    const result = await storage.get([this.STORAGE_KEY]);
     return result[this.STORAGE_KEY] || "light";
   }
 
   static async set(theme: "light" | "dark"): Promise<void> {
-    await chrome.storage.local.set({ [this.STORAGE_KEY]: theme });
+    await storage.set({ [this.STORAGE_KEY]: theme });
   }
 
   static async toggle(): Promise<"light" | "dark"> {

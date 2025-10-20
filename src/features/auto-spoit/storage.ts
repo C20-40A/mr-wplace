@@ -1,15 +1,17 @@
+import { storage } from "@/utils/browser-api";
 export class AutoSpoitStorage {
   private static readonly STORAGE_KEY = "mr-wplace-auto-spoit";
   private static readonly DEV_MODE_KEY = "mr-wplace-auto-spoit-dev-mode";
-  private static readonly WARNING_SHOWN_KEY = "mr-wplace-auto-spoit-warning-shown";
+  private static readonly WARNING_SHOWN_KEY =
+    "mr-wplace-auto-spoit-warning-shown";
 
   static async get(): Promise<boolean> {
-    const result = await chrome.storage.local.get([this.STORAGE_KEY]);
+    const result = await storage.get([this.STORAGE_KEY]);
     return result[this.STORAGE_KEY] ?? false; // デフォルトOFF
   }
 
   static async set(enabled: boolean): Promise<void> {
-    await chrome.storage.local.set({ [this.STORAGE_KEY]: enabled });
+    await storage.set({ [this.STORAGE_KEY]: enabled });
   }
 
   static async toggle(): Promise<boolean> {
@@ -20,12 +22,12 @@ export class AutoSpoitStorage {
   }
 
   static async getDevMode(): Promise<boolean> {
-    const result = await chrome.storage.local.get([this.DEV_MODE_KEY]);
+    const result = await storage.get([this.DEV_MODE_KEY]);
     return result[this.DEV_MODE_KEY] ?? false; // デフォルトOFF
   }
 
   static async setDevMode(enabled: boolean): Promise<void> {
-    await chrome.storage.local.set({ [this.DEV_MODE_KEY]: enabled });
+    await storage.set({ [this.DEV_MODE_KEY]: enabled });
   }
 
   static async toggleDevMode(): Promise<boolean> {
@@ -36,11 +38,11 @@ export class AutoSpoitStorage {
   }
 
   static async hasShownWarning(): Promise<boolean> {
-    const result = await chrome.storage.local.get([this.WARNING_SHOWN_KEY]);
+    const result = await storage.get([this.WARNING_SHOWN_KEY]);
     return result[this.WARNING_SHOWN_KEY] ?? false;
   }
 
   static async setWarningShown(): Promise<void> {
-    await chrome.storage.local.set({ [this.WARNING_SHOWN_KEY]: true });
+    await storage.set({ [this.WARNING_SHOWN_KEY]: true });
   }
 }

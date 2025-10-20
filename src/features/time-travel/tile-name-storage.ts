@@ -1,3 +1,5 @@
+import { storage } from "@/utils/browser-api";
+
 /**
  * タイル名称専用Storage管理
  * 座標(tileX, tileY) → 名称マッピング
@@ -10,22 +12,22 @@ export class TileNameStorage {
   static async setTileName(tileX: number, tileY: number, name: string): Promise<void> {
     const key = this.getKey(tileX, tileY);
     if (name.trim()) {
-      await chrome.storage.local.set({ [key]: name.trim() });
+      await storage.set({ [key]: name.trim() });
     } else {
       // 空文字の場合は削除
-      await chrome.storage.local.remove(key);
+      await storage.remove(key);
     }
   }
 
   static async getTileName(tileX: number, tileY: number): Promise<string | null> {
     const key = this.getKey(tileX, tileY);
-    const result = await chrome.storage.local.get(key);
+    const result = await storage.get(key);
     return result[key] || null;
   }
 
   static async deleteTileName(tileX: number, tileY: number): Promise<void> {
     const key = this.getKey(tileX, tileY);
-    await chrome.storage.local.remove(key);
+    await storage.remove(key);
   }
 
   /**
@@ -33,7 +35,7 @@ export class TileNameStorage {
    */
   static async getTileNames(tiles: { tileX: number; tileY: number }[]): Promise<Map<string, string>> {
     const keys = tiles.map(t => this.getKey(t.tileX, t.tileY));
-    const result = await chrome.storage.local.get(keys);
+    const result = await storage.get(keys);
     
     const nameMap = new Map<string, string>();
     for (const tile of tiles) {

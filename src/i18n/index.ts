@@ -1,4 +1,4 @@
-import { storage } from "../utils/browser-api";
+import { storage } from "@/utils/browser-api";
 
 // サポート対象ロケール型定義
 export type SupportedLocale = "ja" | "en" | "pt" | "es" | "vi";

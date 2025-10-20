@@ -1,5 +1,6 @@
 import { colorpalette } from "../constants/colors";
 import type { EnhancedMode } from "../features/tile-draw/types";
+import { storage } from "@/utils/browser-api";
 
 const STORAGE_KEY = "color-filter-selection";
 const ENHANCED_MODE_STORAGE_KEY = "enhanced-mode";
@@ -94,7 +95,7 @@ export class ColorFilterManager {
 
   private async loadFromStorage(): Promise<void> {
     try {
-      const result = await chrome.storage.local.get(STORAGE_KEY);
+      const result = await storage.get(STORAGE_KEY);
       const savedColorIds = result[STORAGE_KEY];
       this.selectedColorIds = Array.isArray(savedColorIds)
         ? new Set(savedColorIds)
@@ -106,7 +107,7 @@ export class ColorFilterManager {
   }
 
   private async saveToStorage(): Promise<void> {
-    await chrome.storage.local.set({
+    await storage.set({
       [STORAGE_KEY]: Array.from(this.selectedColorIds),
     });
   }
@@ -160,7 +161,7 @@ export class ColorFilterManager {
 
   private async loadEnhancedModeFromStorage(): Promise<void> {
     try {
-      const result = await chrome.storage.local.get(ENHANCED_MODE_STORAGE_KEY);
+      const result = await storage.get(ENHANCED_MODE_STORAGE_KEY);
       const savedMode = result[ENHANCED_MODE_STORAGE_KEY];
       // Validate mode
       const validModes: EnhancedMode[] = [
@@ -180,7 +181,7 @@ export class ColorFilterManager {
   }
 
   private async saveEnhancedModeToStorage(): Promise<void> {
-    await chrome.storage.local.set({
+    await storage.set({
       [ENHANCED_MODE_STORAGE_KEY]: this.enhancedMode,
     });
   }

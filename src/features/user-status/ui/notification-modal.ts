@@ -2,6 +2,7 @@ import { createModal, ModalElements } from "../../../utils/modal";
 import { WPlaceUserData } from "../../../types/user-data";
 import { StatusCalculator } from "../services/calculator";
 import { t } from "../../../i18n/manager";
+import { storage } from "@/utils/browser-api";
 
 interface ChargeData {
   current: number;
@@ -160,27 +161,17 @@ export class NotificationModal {
   }
 
   private async getAlarmEnabledState(): Promise<boolean> {
-    return new Promise((resolve) => {
-      chrome.storage.local.get(
-        [NotificationModal.ALARM_ENABLED_STATE_KEY],
-        (result) => {
-          const enabled = result[NotificationModal.ALARM_ENABLED_STATE_KEY];
-          resolve(enabled === true);
-        }
-      );
-    });
+    const result = await storage.get([
+      NotificationModal.ALARM_ENABLED_STATE_KEY,
+    ]);
+    const enabled = result[NotificationModal.ALARM_ENABLED_STATE_KEY];
+    return enabled === true;
   }
 
   private async getAlarmThreshold(): Promise<number> {
-    return new Promise((resolve) => {
-      chrome.storage.local.get(
-        [NotificationModal.ALARM_THRESHOLD_KEY],
-        (result) => {
-          const threshold = result[NotificationModal.ALARM_THRESHOLD_KEY];
-          resolve(threshold !== undefined ? threshold : 80);
-        }
-      );
-    });
+    const result = await storage.get([NotificationModal.ALARM_THRESHOLD_KEY]);
+    const threshold = result[NotificationModal.ALARM_THRESHOLD_KEY];
+    return threshold !== undefined ? threshold : 80;
   }
 
   private renderContent(): void {
@@ -452,7 +443,7 @@ export class NotificationModal {
       const threshold = this.currentThreshold;
 
       // thresholdとenabled状態をstorageに保存
-      chrome.storage.local.set({
+      await storage.set({
         [NotificationModal.ALARM_THRESHOLD_KEY]: threshold,
         [NotificationModal.ALARM_ENABLED_STATE_KEY]: true,
       });
@@ -478,9 +469,9 @@ export class NotificationModal {
       );
     });
 
-    disableButton.addEventListener("click", () => {
+    disableButton.addEventListener("click", async () => {
       // enabled状態をfalseに保存
-      chrome.storage.local.set({
+      await storage.set({
         [NotificationModal.ALARM_ENABLED_STATE_KEY]: false,
       });
 
@@ -507,7 +498,7 @@ export class NotificationModal {
         )}`;
 
         // storageに保存
-        chrome.storage.local.set({
+        await storage.set({
           [NotificationModal.ALARM_THRESHOLD_KEY]: threshold,
         });
 

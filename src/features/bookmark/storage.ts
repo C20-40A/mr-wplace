@@ -1,22 +1,16 @@
 import { Bookmark } from "./types";
+import { storage } from "@/utils/browser-api";
 
 export class BookmarkStorage {
   private static readonly INDEX_KEY = "wplace_extended_bookmarks";
 
   private static async setValue(value: any): Promise<void> {
-    return new Promise((resolve) => {
-      chrome.storage.local.set({ [this.INDEX_KEY]: value }, () => {
-        resolve();
-      });
-    });
+    await storage.set({ [this.INDEX_KEY]: value });
   }
 
   private static async getValue(): Promise<any> {
-    return new Promise((resolve) => {
-      chrome.storage.local.get([this.INDEX_KEY], (result) => {
-        resolve(result[this.INDEX_KEY]);
-      });
-    });
+    const result = await storage.get([this.INDEX_KEY]);
+    return result[this.INDEX_KEY];
   }
 
   static async getBookmarks(): Promise<Bookmark[]> {
