@@ -4,6 +4,7 @@ import { ImageItem } from "../gallery/routes/list/components";
 import { GalleryStorage } from "../gallery/storage";
 import { ColorPaletteStorage } from "../../components/color-palette/storage";
 import { storage } from "@/utils/browser-api";
+import { createResizedImageBitmap } from "@/utils/image-bitmap-compat";
 
 export class TileOverlay {
   public tileDrawManager: TileDrawManager;
@@ -140,11 +141,10 @@ export class TileOverlay {
         const uint8Array = new Uint8Array(rawData);
         const blob = new Blob([uint8Array], { type: "image/png" });
 
-        const resizedImg = await createImageBitmap(blob, {
-          resizeWidth: 1000,
-          resizeHeight: 1000,
-          resizeQuality: "high",
-          premultiplyAlpha: "none",
+        const resizedImg = await createResizedImageBitmap(blob, {
+          width: 1000,
+          height: 1000,
+          quality: "high"
         });
 
         const snapshotKey = `snapshot_${activeSnapshot.fullKey}`;

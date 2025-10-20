@@ -3,6 +3,7 @@ import { TimeTravelStorage, TileSnapshotInfo } from "../storage";
 import { TileNameStorage } from "../tile-name-storage";
 import { t } from "../../../i18n/manager";
 import { storage } from "@/utils/browser-api";
+import { createCleanImageBitmap } from "@/utils/image-bitmap-compat";
 
 interface TileGroup {
   id: number;
@@ -494,7 +495,7 @@ export class TileMergeRoute {
       if (rawData) {
         const uint8Array = new Uint8Array(rawData);
         const blob = new Blob([uint8Array], { type: "image/png" });
-        const imageBitmap = await createImageBitmap(blob);
+        const imageBitmap = await createCleanImageBitmap(blob);
 
         const x = (coord.tileX - minX) * 1000;
         const y = (coord.tileY - minY) * 1000;

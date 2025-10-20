@@ -1,5 +1,6 @@
 import { colorpalette } from "../../../../constants/colors";
 import { gpuProcessImage } from "./gpu-image-processor";
+import { createResizedImageBitmap } from "@/utils/image-bitmap-compat";
 
 /**
  * 画像調整パラメータ
@@ -203,11 +204,10 @@ export async function createProcessedCanvas(
     try {
       console.log("🧑‍🎨 : Attempting GPU processing, dithering:", ditheringEnabled);
       // HTMLImageElementから直接ImageBitmap作成（canvas経由せずリサイズ）
-      const imageBitmap = await createImageBitmap(img, {
-        resizeWidth: newWidth,
-        resizeHeight: newHeight,
-        resizeQuality: "pixelated",
-        premultiplyAlpha: "none",
+      const imageBitmap = await createResizedImageBitmap(img, {
+        width: newWidth,
+        height: newHeight,
+        quality: "pixelated"
       });
       const paletteRGB = colorpalette
         .filter((c) => selectedColorIds.includes(c.id))
@@ -248,11 +248,10 @@ export async function createProcessedCanvas(
   console.log("🧑‍🎨 : Starting CPU processing via ImageBitmap");
   
   // HTMLImageElement → ImageBitmap（リサイズ付き、canvas汚染回避）
-  const imageBitmap = await createImageBitmap(img, {
-    resizeWidth: newWidth,
-    resizeHeight: newHeight,
-    resizeQuality: "pixelated",
-    premultiplyAlpha: "none",
+  const imageBitmap = await createResizedImageBitmap(img, {
+    width: newWidth,
+    height: newHeight,
+    quality: "pixelated"
   });
   
   // ImageBitmap → ImageData（clean）
