@@ -2,13 +2,14 @@ import { I18nManager, t } from "./i18n/manager";
 import { setLocale, detectBrowserLanguage, type SupportedLocale } from "./i18n/index";
 import { loadNavigationModeFromStorage, getNavigationMode, setNavigationMode, type NavigationMode } from "./utils/navigation-mode";
 import { ThemeToggleStorage } from "./features/theme-toggle/storage";
+import { tabs } from "@/utils/browser-api";
 
-function updateUI(): void {
+const updateUI = (): void => {
   const coffeeLink = document.querySelector(".coffee-link") as HTMLElement;
   if (coffeeLink) {
     coffeeLink.textContent = `☕ ${t`${"buy_me_coffee"}`}`;
   }
-}
+};
 
 document.addEventListener("DOMContentLoaded", async () => {
   const languageSelect = document.getElementById(
@@ -49,12 +50,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateUI();
 
     // content.tsに言語変更を通知
-    const [activeTab] = await chrome.tabs.query({
+    const [activeTab] = await tabs.query({
       active: true,
       currentWindow: true,
     });
     if (activeTab.id) {
-      await chrome.tabs.sendMessage(activeTab.id, {
+      await tabs.sendMessage(activeTab.id, {
         type: "LOCALE_CHANGED",
         locale: newLocale,
       });
@@ -79,12 +80,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     await ThemeToggleStorage.set(newTheme);
 
     // ページリロード
-    const [activeTab] = await chrome.tabs.query({
+    const [activeTab] = await tabs.query({
       active: true,
       currentWindow: true,
     });
     if (activeTab.id) {
-      await chrome.tabs.reload(activeTab.id);
+      await tabs.reload(activeTab.id);
     }
   });
 });

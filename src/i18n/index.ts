@@ -24,7 +24,6 @@ const STORAGE_KEY = "mr_wplace_locale";
 
 // ストレージから設定を読み込み（成功時true）
 export const loadLocaleFromStorage = async (): Promise<boolean> => {
-  // if(typeof chrome !== "undefined" && chrome.storage)
   const result = await storage.get([STORAGE_KEY]);
   const storedLocale = result[STORAGE_KEY] as SupportedLocale | undefined;
   if (

@@ -19,6 +19,7 @@ import { PositionInfo } from "@/features/position-info";
 import { colorpalette } from "@/constants/colors";
 import { addCurrentTile } from "@/states/currentTile";
 import { di } from "@/core/di";
+import { runtime } from "@/utils/browser-api";
 
 (async () => {
   try {
@@ -27,7 +28,7 @@ import { di } from "@/core/di";
     // Fetchインターセプターの注入
     {
       const script = document.createElement("script");
-      script.src = chrome.runtime.getURL("inject.js");
+      script.src = runtime.getURL("inject.js");
       // scriptタグをheadの先頭に挿入
       (document.head || document.documentElement).prepend(script);
       // 読み込まれたら即削除
@@ -35,14 +36,10 @@ import { di } from "@/core/di";
       console.log("🧑‍🎨: Injected fetch interceptor");
     }
 
-    // Chrome拡張機能のストレージAPIが利用可能か確認
-    if (typeof chrome === "undefined" || !chrome.storage)
-      throw new Error("Chrome storage API is not available");
-
     // データをDOM属性で渡す（CSP safe）
     {
       const currentTheme = await ThemeToggleStorage.get();
-      const jsonUrl = chrome.runtime.getURL("assets/mapDarkStyle.json");
+      const jsonUrl = runtime.getURL("assets/mapDarkStyle.json");
 
       const dataElement = document.createElement("div");
       dataElement.id = "__mr_wplace_data__";
@@ -177,7 +174,7 @@ import { di } from "@/core/di";
 })();
 
 // メッセージリスナー（言語切替）
-chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
+runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.type === "LOCALE_CHANGED") {
     // i18nマネージャーの状態を更新
     await I18nManager.init(message.locale);

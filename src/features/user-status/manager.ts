@@ -3,7 +3,7 @@ import { StatusUIComponents } from "./ui/components";
 import { StatusCalculator } from "./services/calculator";
 import { TimerService } from "./services/timer-service";
 import { NotificationModal } from "./ui/notification-modal";
-import { storage } from "@/utils/browser-api";
+import { storage, runtime } from "@/utils/browser-api";
 
 export class StatusManager {
   private uiComponents = new StatusUIComponents();
@@ -129,19 +129,13 @@ export class StatusManager {
   }
 
   private async getAlarmInfo(): Promise<any> {
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ type: "GET_ALARM_INFO" }, (response) => {
-        if (chrome.runtime.lastError) {
-          console.log(
-            "🧑‍🎨: Alarm info error:",
-            chrome.runtime.lastError.message
-          );
-          resolve(null);
-        } else {
-          resolve(response);
-        }
+    const response = await runtime
+      .sendMessage({ type: "GET_ALARM_INFO" })
+      .catch((error) => {
+        console.log("🧑‍🎨: Alarm info error:", error);
+        return null;
       });
-    });
+    return response;
   }
 
   private calculateAlarmTime(charges: any, threshold: number): Date | null {
@@ -204,12 +198,12 @@ export class StatusManager {
 
     if (!newAlarmTime) {
       console.log("🧑‍🎨: Threshold reached, stopping alarm (enable maintained)");
-      chrome.runtime.sendMessage({ type: "STOP_CHARGE_ALARM" });
+      await runtime.sendMessage({ type: "STOP_CHARGE_ALARM" });
       return;
     }
 
-    chrome.runtime.sendMessage({ type: "STOP_CHARGE_ALARM" });
-    chrome.runtime.sendMessage({
+    await runtime.sendMessage({ type: "STOP_CHARGE_ALARM" });
+    await runtime.sendMessage({
       type: "START_CHARGE_ALARM",
       when: newAlarmTime.getTime(),
     });

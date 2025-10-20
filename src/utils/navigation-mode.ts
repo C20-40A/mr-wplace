@@ -10,32 +10,28 @@ const STORAGE_KEY = "mr_wplace_navigation_mode";
 let currentMode: NavigationMode = true;
 
 // Load from storage
-export async function loadNavigationModeFromStorage(): Promise<void> {
-  if (typeof chrome !== "undefined" && chrome.storage) {
-    const result = await storage.get([STORAGE_KEY]);
-    const storedMode = result[STORAGE_KEY] as NavigationMode;
-    if (typeof storedMode === "boolean") {
-      currentMode = storedMode;
-    }
+export const loadNavigationModeFromStorage = async (): Promise<void> => {
+  const result = await storage.get([STORAGE_KEY]);
+  const storedMode = result[STORAGE_KEY] as NavigationMode;
+  if (typeof storedMode === "boolean") {
+    currentMode = storedMode;
   }
-}
+};
 
 // Save to storage
-export async function saveNavigationModeToStorage(
+export const saveNavigationModeToStorage = async (
   mode: NavigationMode
-): Promise<void> {
-  if (typeof chrome !== "undefined" && chrome.storage) {
-    await storage.set({ [STORAGE_KEY]: mode });
-  }
-}
+): Promise<void> => {
+  await storage.set({ [STORAGE_KEY]: mode });
+};
 
 // Set navigation mode (with storage sync)
-export async function setNavigationMode(mode: NavigationMode): Promise<void> {
+export const setNavigationMode = async (mode: NavigationMode): Promise<void> => {
   currentMode = mode;
   await saveNavigationModeToStorage(mode);
-}
+};
 
 // Get current navigation mode
-export function getNavigationMode(): NavigationMode {
+export const getNavigationMode = (): NavigationMode => {
   return currentMode;
-}
+};
