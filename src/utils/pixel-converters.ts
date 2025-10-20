@@ -44,11 +44,25 @@ const blobToPixelsWithCanvas = async (
 };
 
 // ブラウザの対応状況に応じて適切な実装を選択
-export const blobToPixels: (blob: Blob) => Promise<{
-  pixels: Uint8Array<ArrayBufferLike>;
+let useImageDecoder = typeof ImageDecoder !== "undefined";
+
+export const blobToPixels = async (
+  blob: Blob
+): Promise<{
+  pixels: Uint8Array;
   width: number;
   height: number;
-}> =
-  typeof ImageDecoder !== "undefined"
-    ? blobToPixelsWithImageDecoder
-    : blobToPixelsWithCanvas;
+}> => {
+  // ImageDecoderが利用可能な場合、まず試す
+  if (useImageDecoder) {
+    try {
+      return await blobToPixelsWithImageDecoder(blob);
+    } catch (e) {
+      console.log("🧑‍🎨 : ImageDecoder failed, falling back to Canvas", e);
+      useImageDecoder = false; // 次回から直接Canvas版を使う
+      return await blobToPixelsWithCanvas(blob);
+    }
+  }
+  // ImageDecoderが使えない、または以前失敗した場合
+  return await blobToPixelsWithCanvas(blob);
+};
