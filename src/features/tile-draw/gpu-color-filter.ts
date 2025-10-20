@@ -137,7 +137,8 @@ export const processGpuColorFilter = async (
     overlayBitmap
   );
 
-  overlayBitmap.close(); // 転送完了後に解放
+  // texImage2D完了を確実にする
+  gl.finish();
 
   // sampler uniform設定
   const uOverlayLoc = gl.getUniformLocation(program, "uOverlay");
@@ -216,6 +217,9 @@ export const processGpuColorFilter = async (
   gl.deleteFramebuffer(fbo);
   gl.deleteBuffer(quadBuffer);
   gl.deleteProgram(program);
+
+  // ImageBitmap解放（すべての処理完了後）
+  overlayBitmap.close();
 
   return new Uint8ClampedArray(outBuf);
 };

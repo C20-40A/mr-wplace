@@ -176,8 +176,8 @@ export const gpuProcessImage = async (
     sourceBitmap
   );
 
-  // GPU転送完了したのでImageBitmap解放
-  sourceBitmap.close();
+  // texImage2D完了を確実にする
+  gl.finish();
 
   // Phase1: adjustments適用 → 中間テクスチャ
   const intermediateTex = gl.createTexture()!;
@@ -335,6 +335,9 @@ export const gpuProcessImage = async (
   gl.deleteBuffer(quadBuffer);
   gl.deleteProgram(programAdjust);
   gl.deleteProgram(programPalette);
+
+  // ImageBitmap解放（すべての処理完了後）
+  sourceBitmap.close();
 
   // WebGLコンテキスト明示的破棄
   const loseContextExt = gl.getExtension("WEBGL_lose_context");
