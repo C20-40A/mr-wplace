@@ -10,6 +10,10 @@ import {
 import { processGpuColorFilter } from "./gpu-color-filter";
 import { processCpuColorFilter } from "./cpu-color-filter";
 import { blobToPixels } from "../../utils/pixel-converters";
+import { 
+  createImageBitmapFromImageData, 
+  createImageBitmapFromCanvas 
+} from "@/utils/image-bitmap-compat";
 
 export class TileDrawManager {
   public tileSize: number;
@@ -104,9 +108,7 @@ export class TileDrawManager {
       finalBgWidth,
       finalBgHeight
     );
-    const tileBitmap = await createImageBitmap(bgImageData, {
-      premultiplyAlpha: "none",
-    });
+    const tileBitmap = await createImageBitmapFromImageData(bgImageData);
 
     // キャンバス作成（実サイズベース）
     const drawSize = Math.max(finalBgWidth, finalBgHeight) * this.renderScale;
@@ -510,6 +512,6 @@ export class TileDrawManager {
     const finalImageData = new ImageData(scaledData, scaledWidth, scaledHeight);
     finalCtx.putImageData(finalImageData, 0, 0);
 
-    return await createImageBitmap(finalCanvas, { premultiplyAlpha: "none" });
+    return await createImageBitmapFromCanvas(finalCanvas);
   }
 }

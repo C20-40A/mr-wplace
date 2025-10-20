@@ -1,4 +1,5 @@
 import { llzToTilePixel } from "./coordinate";
+import { createCleanImageBitmap } from "./image-bitmap-compat";
 
 // Smart navigation: close distance uses flyTo (smooth), far distance uses jumpTo (instant)
 // Fallback to URL navigation if map instance is not available
@@ -41,9 +42,7 @@ export async function getPixelColorFromTile(
     return null;
   }
 
-  const bitmap = await createImageBitmap(tileBlob, {
-    premultiplyAlpha: "none",
-  });
+  const bitmap = await createCleanImageBitmap(tileBlob);
 
   const canvas = new OffscreenCanvas(1, 1);
   const ctx = canvas.getContext("2d")!;

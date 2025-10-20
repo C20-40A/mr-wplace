@@ -1,4 +1,5 @@
 import { WplaceCoords } from "./constants";
+import { ensureImageBitmap, createCroppedImageBitmap } from "@/utils/image-bitmap-compat";
 
 /**
  * タイル境界をまたぐ画像を複数タイルに分割する標準アルゴリズム。各タイルの処理済みImageBitmapを辞書形式で返却。
@@ -13,8 +14,7 @@ export const splitImageOnTiles = async ({
   coords: WplaceCoords;
   tileSize: number;
 }): Promise<{ preparedOverlayImages: Record<string, ImageBitmap> }> => {
-  const bitmap =
-    source instanceof ImageBitmap ? source : await createImageBitmap(source);
+  const bitmap = await ensureImageBitmap(source);
   const [w, h] = [bitmap.width, bitmap.height];
   const preparedOverlayImages: Record<string, ImageBitmap> = {};
 
@@ -25,14 +25,12 @@ export const splitImageOnTiles = async ({
       const drawW = Math.min(tileSize - (px % tileSize), w - (px - coords[2]));
 
       // GPU直クロップ版
-      const cropped = await createImageBitmap(
-        bitmap,
-        px - coords[2],
-        py - coords[3],
-        drawW,
-        drawH,
-        { premultiplyAlpha: "none" }
-      );
+      const cropped = await createCroppedImageBitmap(bitmap, {
+        sx: px - coords[2],
+        sy: py - coords[3],
+        sw: drawW,
+        sh: drawH
+      });
 
       const tx = coords[0] + Math.floor(px / 1000);
       const ty = coords[1] + Math.floor(py / 1000);
