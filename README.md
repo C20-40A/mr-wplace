@@ -11,10 +11,28 @@ A powerful Chrome extension for WPlace site that provides advanced image drawing
 
 ### For Users
 
+#### Desktop
+
 Get Mr. Wplace from the official stores:
 
 - **Chrome Web Store**: [Install for Chrome](https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej)
 - **Microsoft Edge Add-ons**: [Install for Edge](https://microsoftedge.microsoft.com/addons/detail/mr-wplace/acdodonamhbokadiikkfnnliplijigip)
+
+#### Mobile
+
+**Android (Microsoft Edge Canary)**
+
+1. Open Microsoft Edge Canary
+2. Go to Settings → About Microsoft Edge
+3. Tap the Edge build number (e.g., Edge Canary 125.0.2487.0) 5 times at the bottom to enable developer options
+4. In developer options, tap "Extension install by id"
+5. Enter extension ID: `acdodonamhbokadiikkfnnliplijigip`
+
+**iOS (Orion Browser)**
+
+1. Download [Orion Browser by Kagi](https://apps.apple.com/app/orion-browser-by-kagi/id1484498200) from App Store
+2. Open Orion → Settings → Advanced → Enable "Chrome Extensions" and "Firefox Extensions"
+3. Install the extension from [Chrome Web Store](https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej)
 
 ### For Developers
 
@@ -118,8 +136,6 @@ Mozilla Public License 2.0
 
 - [WPlace Official Site](https://wplace.jp/)
 - [DaisyUI](https://daisyui.com/)
-- [Chrome Web Store Listing](https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej)
-- [Edge Add-ons Listing](https://microsoftedge.microsoft.com/addons/detail/mr-wplace/acdodonamhbokadiikkfnnliplijigip)
 - [Wplace - Code of Conduct](https://wplace.live/terms/code-of-conduct)
 
 ---
