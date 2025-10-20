@@ -10,9 +10,9 @@ import {
 import { processGpuColorFilter } from "./gpu-color-filter";
 import { processCpuColorFilter } from "./cpu-color-filter";
 import { blobToPixels } from "../../utils/pixel-converters";
-import { 
-  createImageBitmapFromImageData, 
-  createImageBitmapFromCanvas 
+import {
+  createImageBitmapFromImageData,
+  createImageBitmapFromCanvas,
 } from "@/utils/image-bitmap-compat";
 
 export class TileDrawManager {
@@ -176,16 +176,6 @@ export class TileDrawManager {
     return instance.drawEnabled;
   }
 
-  clearAllPreparedOverlayImages(): void {
-    this.overlayLayers = [];
-  }
-
-  removeTextDrawInstances(): void {
-    this.overlayLayers = this.overlayLayers.filter(
-      (i) => !i.imageKey.startsWith("text_")
-    );
-  }
-
   async getOverlayPixelColor(
     lat: number,
     lng: number
@@ -233,51 +223,6 @@ export class TileDrawManager {
     }
 
     return null;
-  }
-
-  isDrawingOnTile(tileX: number, tileY: number): boolean {
-    for (const instance of this.overlayLayers) {
-      if (!instance.drawEnabled || !instance.coords) continue;
-
-      const [overlayTileX, overlayTileY] = instance.coords;
-      if (overlayTileX === tileX && overlayTileY === tileY) return true;
-    }
-    return false;
-  }
-
-  getColorStats(
-    imageKey: string
-  ): { matched: Record<string, number>; total: Record<string, number> } | null {
-    const tileStatsMap = this.perTileColorStats.get(imageKey);
-    if (!tileStatsMap || tileStatsMap.size === 0) {
-      return null;
-    }
-
-    // 全タイル合算
-    const aggregated = {
-      matched: new Map<string, number>(),
-      total: new Map<string, number>(),
-    };
-
-    for (const stats of tileStatsMap.values()) {
-      for (const [colorKey, count] of stats.matched.entries()) {
-        aggregated.matched.set(
-          colorKey,
-          (aggregated.matched.get(colorKey) || 0) + count
-        );
-      }
-      for (const [colorKey, count] of stats.total.entries()) {
-        aggregated.total.set(
-          colorKey,
-          (aggregated.total.get(colorKey) || 0) + count
-        );
-      }
-    }
-
-    return {
-      matched: Object.fromEntries(aggregated.matched),
-      total: Object.fromEntries(aggregated.total),
-    };
   }
 
   getPerTileColorStats(imageKey: string): Map<string, ColorStats> | null {
