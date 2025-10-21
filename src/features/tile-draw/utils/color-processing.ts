@@ -1,4 +1,4 @@
-import type { RGB, EnhancedMode } from "./types";
+import type { RGB, EnhancedMode } from "../types";
 
 /**
  * モードに応じた補助色を計算（純粋関数）

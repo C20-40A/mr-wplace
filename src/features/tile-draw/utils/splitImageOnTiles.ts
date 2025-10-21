@@ -1,5 +1,8 @@
-import { WplaceCoords } from "./constants";
-import { ensureImageBitmap, createCroppedImageBitmap } from "@/utils/image-bitmap-compat";
+import { WplaceCoords } from "../constants";
+import {
+  ensureImageBitmap,
+  createCroppedImageBitmap,
+} from "@/utils/image-bitmap-compat";
 
 /**
  * タイル境界をまたぐ画像を複数タイルに分割する標準アルゴリズム。各タイルの処理済みImageBitmapを辞書形式で返却。
@@ -29,7 +32,7 @@ export const splitImageOnTiles = async ({
         sx: px - coords[2],
         sy: py - coords[3],
         sw: drawW,
-        sh: drawH
+        sh: drawH,
       });
 
       const tx = coords[0] + Math.floor(px / 1000);

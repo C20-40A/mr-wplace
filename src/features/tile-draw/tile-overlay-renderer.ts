@@ -1,40 +1,23 @@
-import { splitImageOnTiles } from "./splitImageOnTiles";
-import { TILE_DRAW_CONSTANTS, WplaceCoords, TileCoords } from "./constants";
+import { TILE_DRAW_CONSTANTS, TileCoords } from "./constants";
 import { llzToTilePixel } from "../../utils/coordinate";
 import type { TileDrawInstance, ColorStats, EnhancedMode } from "./types";
-import { getAuxiliaryColor, isSameColor, colorToKey } from "./color-processing";
+import {
+  getAuxiliaryColor,
+  isSameColor,
+  colorToKey,
+} from "./utils/color-processing";
 import {
   convertImageBitmapToUint8ClampedArray,
   getGridPosition,
-} from "./pixel-processing";
-import { processGpuColorFilter } from "./gpu-color-filter";
-import { processCpuColorFilter } from "./cpu-color-filter";
+} from "./utils/pixel-processing";
+import { processGpuColorFilter } from "./utils/gpu-color-filter";
+import { processCpuColorFilter } from "./utils/cpu-color-filter";
 import { blobToPixels } from "../../utils/pixel-converters";
 import {
   createImageBitmapFromImageData,
   createImageBitmapFromCanvas,
 } from "@/utils/image-bitmap-compat";
-
-/**
- * 描画するオーバーレイ画像インスタンス群
- */
-let overlayLayers: TileDrawInstance[] = [];
-
-/**
- * 画像キー別タイル毎色統計情報マップ
- */
-const perTileColorStats = new Map<string, Map<string, ColorStats>>();
-export const getPerTileColorStats = (
-  imageKey: string
-): Map<string, ColorStats> | null => {
-  return perTileColorStats.get(imageKey) || null;
-};
-export const setPerTileColorStats = (
-  imageKey: string,
-  tileStatsMap: Map<string, ColorStats>
-): void => {
-  perTileColorStats.set(imageKey, tileStatsMap);
-};
+import { overlayLayers, perTileColorStats } from "./states";
 
 /**
  * オーバーレイ最終処理
@@ -229,28 +212,6 @@ const applyOverlayProcessing = async (
   return await createImageBitmapFromCanvas(finalCanvas);
 };
 
-export const addImageToOverlayLayers = async (
-  source: File | Blob | ImageBitmap,
-  coords: WplaceCoords,
-  imageKey: string
-): Promise<void> => {
-  removePreparedOverlayImageByKey(imageKey);
-
-  const { preparedOverlayImages: preparedOverlayImage } =
-    await splitImageOnTiles({
-      source,
-      coords,
-      tileSize: TILE_DRAW_CONSTANTS.TILE_SIZE,
-    });
-
-  overlayLayers.push({
-    coords,
-    tiles: preparedOverlayImage,
-    imageKey,
-    drawEnabled: true,
-  });
-};
-
 export const drawOverlayLayersOnTile = async (
   tileBlob: Blob,
   tileCoords: TileCoords,
@@ -366,19 +327,6 @@ export const drawOverlayLayersOnTile = async (
   return result;
 };
 
-export const removePreparedOverlayImageByKey = (imageKey: string): void => {
-  overlayLayers = overlayLayers.filter((i) => i.imageKey !== imageKey);
-  perTileColorStats.delete(imageKey);
-};
-
-export const toggleDrawEnabled = (imageKey: string): boolean => {
-  const instance = overlayLayers.find((i) => i.imageKey === imageKey);
-  if (!instance) return false;
-
-  instance.drawEnabled = !instance.drawEnabled;
-  return instance.drawEnabled;
-};
-
 export const getOverlayPixelColor = async (
   lat: number,
   lng: number
@@ -426,35 +374,4 @@ export const getOverlayPixelColor = async (
   }
 
   return null;
-};
-
-export const getAggregatedColorStats = (
-  imageKeys: string[]
-): Record<string, { matched: number; total: number }> => {
-  const aggregated: Record<string, { matched: number; total: number }> = {};
-
-  for (const imageKey of imageKeys) {
-    const tileStatsMap = perTileColorStats.get(imageKey);
-    if (!tileStatsMap) continue;
-
-    for (const stats of tileStatsMap.values()) {
-      // matched集計
-      for (const [colorKey, count] of stats.matched.entries()) {
-        if (!aggregated[colorKey]) {
-          aggregated[colorKey] = { matched: 0, total: 0 };
-        }
-        aggregated[colorKey].matched += count;
-      }
-
-      // total集計
-      for (const [colorKey, count] of stats.total.entries()) {
-        if (!aggregated[colorKey]) {
-          aggregated[colorKey] = { matched: 0, total: 0 };
-        }
-        aggregated[colorKey].total += count;
-      }
-    }
-  }
-
-  return aggregated;
 };

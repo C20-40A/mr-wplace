@@ -1,5 +1,5 @@
-import { TILE_DRAW_CONSTANTS } from "./constants";
-import type { GridPosition } from "./types";
+import { TILE_DRAW_CONSTANTS } from "../constants";
+import type { GridPosition } from "../types";
 
 /**
  * x3グリッド内での位置判定（純粋関数）
