@@ -42,6 +42,7 @@ export const jaTranslations = {
   sort_by: "並び替え",
   sort_created: "追加順",
   sort_accessed: "アクセス順",
+  sort_tag: "タグ順",
 
   // Import/Export関連
   no_export_bookmarks: "エクスポートするお気に入りがありません",
@@ -223,4 +224,14 @@ export const jaTranslations = {
   calculating: "計算中",
   total_pixels: "総ピクセル数",
   color_distribution: "色分布",
+
+  // Bookmark Tags
+  existing_tags: "既存のタグ",
+  new_tag: "新規タグ作成",
+  remove_tag: "タグをはずす",
+  bookmark_name: "ブックマーク名",
+  tag_name: "タグ名",
+  tag_color: "タグ色",
+  optional: "任意",
+  required: "必須",
 };

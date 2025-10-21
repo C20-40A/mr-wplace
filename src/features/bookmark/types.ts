@@ -4,6 +4,11 @@ export interface Position {
   zoom: number;
 }
 
+export interface Tag {
+  name?: string;
+  color: string;
+}
+
 export interface Bookmark {
   id: number;
   name: string;
@@ -12,4 +17,5 @@ export interface Bookmark {
   zoom: number;
   date: string;
   lastAccessedDate?: string;
+  tag?: Tag;
 }
