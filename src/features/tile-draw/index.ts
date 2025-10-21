@@ -1,10 +1,14 @@
 export {
-  addImageToOverlayLayers,
   drawOverlayLayersOnTile,
-  getAggregatedColorStats,
   getOverlayPixelColor,
+} from "./tile-overlay-renderer";
+
+export {
+  addImageToOverlayLayers,
   getPerTileColorStats,
   removePreparedOverlayImageByKey,
   setPerTileColorStats,
   toggleDrawEnabled,
-} from "./tile-overlay-renderer";
+} from "./states";
+
+export { getAggregatedColorStats } from "./utils/getAggregatedColorStats";
