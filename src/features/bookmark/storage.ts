@@ -1,4 +1,4 @@
-import { Bookmark } from "./types";
+import { Bookmark, Tag } from "./types";
 import { storage } from "@/utils/browser-api";
 
 export class BookmarkStorage {
@@ -37,5 +37,29 @@ export class BookmarkStorage {
       bookmarks[index] = bookmark;
       await this.setValue(JSON.stringify(bookmarks));
     }
+  }
+
+  static async getExistingTags(): Promise<Tag[]> {
+    const bookmarks = await this.getBookmarks();
+    const tagMap = new Map<string, Tag>();
+
+    for (const bookmark of bookmarks) {
+      if (bookmark.tag) {
+        const key = `${bookmark.tag.color}-${bookmark.tag.name || ""}`;
+        if (!tagMap.has(key)) {
+          tagMap.set(key, bookmark.tag);
+        }
+      }
+    }
+
+    const tags = Array.from(tagMap.values());
+    // 名前順ソート
+    tags.sort((a, b) => {
+      const nameA = a.name || "";
+      const nameB = b.name || "";
+      return nameA.localeCompare(nameB);
+    });
+
+    return tags;
   }
 }

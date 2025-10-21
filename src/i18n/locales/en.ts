@@ -42,6 +42,7 @@ export const enTranslations = {
   sort_by: "Sort by",
   sort_created: "Date Added",
   sort_accessed: "Last Accessed",
+  sort_tag: "By Tag",
 
   // Import/Export関連
   no_export_bookmarks: "No favorites to export",
@@ -222,4 +223,14 @@ However, please pay careful attention to the following:
   calculating: "Calculating",
   total_pixels: "Total Pixels",
   color_distribution: "Color Distribution",
+
+  // Bookmark Tags
+  existing_tags: "Existing Tags",
+  new_tag: "Create New Tag",
+  remove_tag: "Remove Tag",
+  bookmark_name: "Bookmark Name",
+  tag_name: "Tag Name",
+  tag_color: "Tag Color",
+  optional: "Optional",
+  required: "Required",
 };
