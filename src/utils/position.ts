@@ -1,7 +1,10 @@
 import { Position } from "../features/bookmark/types";
 import { WplaceLocalStorage } from "./wplaceLocalStorage";
 import { flyToPosition } from "./map-control";
-import { loadNavigationModeFromStorage, getNavigationMode } from "./navigation-mode";
+import {
+  loadNavigationModeFromStorage,
+  getNavigationMode,
+} from "./navigation-mode";
 
 export const getCurrentPosition = (): Position | null => {
   const location = WplaceLocalStorage.getClickedPosition();
@@ -25,4 +28,7 @@ export const gotoPosition = async ({ lat, lng, zoom }: Position) => {
     url.searchParams.set("zoom", zoom.toString());
     window.location.href = url.toString();
   }
+
+  // wplaceのために位置情報を保存
+  window.localStorage.setItem("location", JSON.stringify({ lat, lng, zoom }));
 };
