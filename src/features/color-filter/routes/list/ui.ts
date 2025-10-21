@@ -3,6 +3,7 @@ import type { SortOrder } from "../../../../components/color-palette/types";
 import { ColorPaletteStorage } from "../../../../components/color-palette/storage";
 import type { ComputeDevice } from "../../../../components/color-palette/storage";
 import { getCurrentTiles } from "../../../../states/currentTile";
+import { getAggregatedColorStats } from "@/features/tile-draw";
 
 let colorPalette: ColorPalette | null = null;
 let lastSortOrder: SortOrder = "default";
@@ -50,8 +51,7 @@ export const renderColorFilters = async (
     );
 
     if (targetImageKeys.length > 0) {
-      colorStats =
-        tileOverlay?.tileDrawManager.getAggregatedColorStats(targetImageKeys);
+      colorStats = getAggregatedColorStats(targetImageKeys);
       console.log(`🧑‍🎨 : Aggregated color stats:`, colorStats);
     }
   }
