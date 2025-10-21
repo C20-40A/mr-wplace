@@ -32,13 +32,7 @@ const showModal = (): void => {
 };
 
 const handleDrawText = async (text: string, font: string): Promise<void> => {
-  const tileDrawManager = window.mrWplace?.tileOverlay?.tileDrawManager;
-  if (!tileDrawManager) {
-    Toast.error("TileDrawManager not found");
-    return;
-  }
-
-  const instance = await drawText(text, font, tileDrawManager);
+  const instance = await drawText(text, font);
   if (!instance) return;
 
   textInstances.push(instance);
@@ -53,18 +47,12 @@ const handleMoveText = async (
   const instance = textInstances.find((i) => i.key === key);
   if (!instance) return;
 
-  const tileDrawManager = window.mrWplace?.tileOverlay?.tileDrawManager;
-  if (!tileDrawManager) return;
-
-  await moveText(instance, direction, tileDrawManager);
+  await moveText(instance, direction);
   textDrawUI.updateList(textInstances);
 };
 
 const handleDeleteText = async (key: string): Promise<void> => {
-  const tileDrawManager = window.mrWplace?.tileOverlay?.tileDrawManager;
-  if (!tileDrawManager) return;
-
-  textInstances = deleteText(key, tileDrawManager, textInstances);
+  textInstances = deleteText(key, textInstances);
   Toast.success("Text deleted");
   textDrawUI.updateList(textInstances);
 };

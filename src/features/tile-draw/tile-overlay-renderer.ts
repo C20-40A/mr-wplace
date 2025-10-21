@@ -24,6 +24,17 @@ let overlayLayers: TileDrawInstance[] = [];
  * 画像キー別タイル毎色統計情報マップ
  */
 const perTileColorStats = new Map<string, Map<string, ColorStats>>();
+export const getPerTileColorStats = (
+  imageKey: string
+): Map<string, ColorStats> | null => {
+  return perTileColorStats.get(imageKey) || null;
+};
+export const setPerTileColorStats = (
+  imageKey: string,
+  tileStatsMap: Map<string, ColorStats>
+): void => {
+  perTileColorStats.set(imageKey, tileStatsMap);
+};
 
 /**
  * オーバーレイ最終処理
@@ -415,19 +426,6 @@ export const getOverlayPixelColor = async (
   }
 
   return null;
-};
-
-export const getPerTileColorStats = (
-  imageKey: string
-): Map<string, ColorStats> | null => {
-  return perTileColorStats.get(imageKey) || null;
-};
-
-export const setPerTileColorStats = (
-  imageKey: string,
-  tileStatsMap: Map<string, ColorStats>
-): void => {
-  perTileColorStats.set(imageKey, tileStatsMap);
 };
 
 export const getAggregatedColorStats = (

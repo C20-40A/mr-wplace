@@ -20,7 +20,6 @@ const tileY = parseInt(match[2]);
 ## 画像描画フロー
 
 ```
-UI Button → Gallery Selection → TileOverlay → TileDrawManager → inject.js
 ButtonObserver → ImageSelectorModal → drawImageAt → drawImageOnTiles → 全タイル傍受
 ```
 

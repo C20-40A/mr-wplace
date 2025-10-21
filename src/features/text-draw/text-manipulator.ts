@@ -4,7 +4,10 @@ import { Toast } from "../../components/toast";
 import { ensureFontLoaded } from "./font-loader";
 import { textToBlob } from "./text-renderer";
 import type { TextInstance } from "./ui";
-import type { TileDrawManager } from "../tile-draw/tile-overlay-renderer";
+import {
+  addImageToOverlayLayers,
+  removePreparedOverlayImageByKey,
+} from "@/features/tile-draw";
 
 // ========================================
 // Text drawing operations
@@ -12,8 +15,7 @@ import type { TileDrawManager } from "../tile-draw/tile-overlay-renderer";
 
 export const drawText = async (
   text: string,
-  font: string,
-  tileDrawManager: TileDrawManager
+  font: string
 ): Promise<TextInstance | null> => {
   const position = getCurrentPosition();
   if (!position) {
@@ -28,7 +30,7 @@ export const drawText = async (
   const blob = await textToBlob(text, font);
   const file = new File([blob], "text.png", { type: "image/png" });
 
-  await tileDrawManager.addImageToOverlayLayers(
+  await addImageToOverlayLayers(
     file,
     [coords.TLX, coords.TLY, coords.PxX, coords.PxY],
     key
@@ -51,8 +53,7 @@ export const drawText = async (
 
 export const moveText = async (
   instance: TextInstance,
-  direction: "up" | "down" | "left" | "right",
-  tileDrawManager: TileDrawManager
+  direction: "up" | "down" | "left" | "right"
 ): Promise<void> => {
   const deltaMap = {
     up: { x: 0, y: -1 },
@@ -69,8 +70,8 @@ export const moveText = async (
   const blob = await textToBlob(instance.text, instance.font);
   const file = new File([blob], "text.png", { type: "image/png" });
 
-  tileDrawManager.removePreparedOverlayImageByKey(instance.key);
-  await tileDrawManager.addImageToOverlayLayers(
+  removePreparedOverlayImageByKey(instance.key);
+  await addImageToOverlayLayers(
     file,
     [
       instance.coords.TLX,
@@ -86,10 +87,9 @@ export const moveText = async (
 
 export const deleteText = (
   key: string,
-  tileDrawManager: TileDrawManager,
   textInstances: TextInstance[]
 ): TextInstance[] => {
-  tileDrawManager.removePreparedOverlayImageByKey(key);
+  removePreparedOverlayImageByKey(key);
   console.log("🧑‍🎨 : Text deleted", key);
   return textInstances.filter((i) => i.key !== key);
 };
