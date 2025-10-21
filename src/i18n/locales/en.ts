@@ -215,4 +215,11 @@ However, please pay careful attention to the following:
   export_png: "Export PNG",
   clear_selection: "Clear Selection",
   selected: "Selected",
+
+  // Tile Statistics
+  tile_statistics: "Tile Statistics",
+  statistics: "Statistics",
+  calculating: "Calculating",
+  total_pixels: "Total Pixels",
+  color_distribution: "Color Distribution",
 };

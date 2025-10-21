@@ -1,6 +1,6 @@
 import { Router } from "../../utils/router";
 
-export type TimeTravelRoute = "current-position" | "tile-list" | "tile-snapshots" | "snapshot-detail" | "snapshot-share" | "import-snapshot" | "tile-merge";
+export type TimeTravelRoute = "current-position" | "tile-list" | "tile-snapshots" | "snapshot-detail" | "snapshot-share" | "import-snapshot" | "tile-merge" | "tile-statistics";
 
 export class TimeTravelRouter extends Router<TimeTravelRoute> {
   constructor() {
@@ -12,6 +12,7 @@ export class TimeTravelRouter extends Router<TimeTravelRoute> {
       "snapshot-share": "snapshot_share",
       "import-snapshot": "import",
       "tile-merge": "tile_merge",
+      "tile-statistics": "tile_statistics",
     };
     super("current-position", titleMap);
   }

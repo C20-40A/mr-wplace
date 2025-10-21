@@ -18,6 +18,7 @@ import { SnapshotDetailRoute } from "./routes/snapshot-detail";
 import { SnapshotShareRoute } from "./routes/snapshot-share";
 import { ImportSnapshotRoute } from "./routes/import-snapshot";
 import { TileMergeRoute } from "./routes/tile-merge";
+import { TileStatisticsRoute } from "./routes/tile-statistics";
 import { di, type TimeTravelAPI } from "../../core/di";
 
 /**
@@ -36,6 +37,7 @@ let snapshotDetailRoute: SnapshotDetailRoute;
 let snapshotShareRoute: SnapshotShareRoute;
 let importSnapshotRoute: ImportSnapshotRoute;
 let tileMergeRoute: TileMergeRoute;
+let tileStatisticsRoute: TileStatisticsRoute;
 
 export const initTimeTravel = (): void => {
   router = new TimeTravelRouter();
@@ -47,6 +49,7 @@ export const initTimeTravel = (): void => {
   snapshotShareRoute = new SnapshotShareRoute();
   importSnapshotRoute = new ImportSnapshotRoute();
   tileMergeRoute = new TileMergeRoute();
+  tileStatisticsRoute = new TileStatisticsRoute();
 
   // ルーティング設定
   router.setOnRouteChange((route) => {
@@ -106,6 +109,9 @@ const renderCurrentRoute = (route: TimeTravelRoute): void => {
       break;
     case "tile-merge":
       tileMergeRoute.render(container, router);
+      break;
+    case "tile-statistics":
+      tileStatisticsRoute.render(container, router);
       break;
   }
 };

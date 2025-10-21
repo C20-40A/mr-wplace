@@ -216,4 +216,11 @@ export const jaTranslations = {
   export_png: "PNG出力",
   clear_selection: "選択をクリア",
   selected: "選択中",
+
+  // Tile Statistics
+  tile_statistics: "タイル統計",
+  statistics: "統計",
+  calculating: "計算中",
+  total_pixels: "総ピクセル数",
+  color_distribution: "色分布",
 };
