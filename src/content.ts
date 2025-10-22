@@ -14,6 +14,7 @@ import { UserStatus } from "@/features/user-status";
 import { WPlaceUserData } from "@/types/user-data";
 import { ThemeToggleStorage } from "@/features/theme-toggle/storage";
 import { textDrawAPI } from "@/features/text-draw";
+import { darkThemeAPI } from "@/features/dark-theme";
 import { AutoSpoit } from "@/features/auto-spoit";
 import { PositionInfo } from "@/features/position-info";
 import { initPaintStats } from "@/features/paint-stats";
@@ -137,6 +138,7 @@ import { getOverlayPixelColor } from "@/features/tile-draw";
     timeTravelAPI.initTimeTravel(); // 2. TimeTravel
     textDrawAPI.initTextDraw(); // 3. TextDraw
     galleryAPI.initGallery();
+    await darkThemeAPI.initDarkTheme(); // 5. DarkTheme
     new Drawing(); // 4. Drawing (最初に表示)
     drawingLoaderAPI.initDrawingLoader();
     new ColorFilter();
@@ -170,32 +172,11 @@ import { getOverlayPixelColor } from "@/features/tile-draw";
   }
 })();
 
-// メッセージリスナー（言語切替・テーマ切替）
+// メッセージリスナー（言語切替）
 runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.type === "LOCALE_CHANGED") {
     // i18nマネージャーの状態を更新
     await I18nManager.init(message.locale);
-    return;
-  }
-
-  if (message.type === "THEME_CHANGED") {
-    const newTheme = message.theme as "light" | "dark";
-    console.log("🧑‍🎨 : Theme changed to:", newTheme);
-
-    // data elementの属性更新
-    const dataElement = document.getElementById("__mr_wplace_data__");
-    if (dataElement) {
-      dataElement.setAttribute("data-theme", newTheme);
-    }
-
-    // inject.jsにテーマ変更を通知
-    window.postMessage(
-      {
-        source: "mr-wplace-theme-update",
-        theme: newTheme,
-      },
-      "*"
-    );
     return;
   }
 });

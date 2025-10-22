@@ -15,6 +15,7 @@
 - データセーブモード
 - ギャラリーの画像ってリサイズ後の表示している？アイコン用じゃないと重そう
 - タイルの GoogleDrive とのリンク
+- bookmarks の 🌐 Coordinate Jumper がスクロールしてしまう
 
 # バグ
 
@@ -73,6 +74,7 @@
 - PC のブックマーク一覧を 4 行ぐらいにしたい。が、その tailwind のメディアクエリがないから、設定が面倒
 - exclude_globs にメインのもの以外含める？
   - all_frames false (デフォルト)系は false．まあデフォルトが false だから不要か
+- dark/light テーマの i18n 不要になった
 
 # DONE v1.7.0
 
