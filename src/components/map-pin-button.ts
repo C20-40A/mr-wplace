@@ -137,8 +137,12 @@ export const createMapPinButtonContainer = (): HTMLDivElement => {
 /**
  * マップピン上部のボタングループを取得または作成
  */
-export const getOrCreateMapPinButtonGroup = (pinContainer: Element): HTMLElement => {
-  let group = pinContainer.querySelector("#map-pin-button-group") as HTMLElement;
+export const getOrCreateMapPinButtonGroup = (
+  pinContainer: Element
+): HTMLElement => {
+  let group = pinContainer.querySelector(
+    "#map-pin-button-group"
+  ) as HTMLElement;
   if (!group) {
     group = document.createElement("div");
     group.id = "map-pin-button-group";
@@ -161,14 +165,14 @@ export const getOrCreateMapPinButtonGroup = (pinContainer: Element): HTMLElement
  * グループ内で使用するボタンを作成
  */
 export const createMapPinGroupButton = (config: {
-  icon?: string;        // 絵文字アイコン（オプション）
-  iconSrc?: string;     // 画像アイコンURL（オプション）
+  icon?: string; // 絵文字アイコン（オプション）
+  iconSrc?: string; // 画像アイコンURL（オプション）
   text: string;
   onClick: () => void;
 }): HTMLButtonElement => {
   const button = document.createElement("button");
   button.className = "map-pin-group-button";
-  
+
   button.style.cssText = `
     height: 2.75rem;
     min-width: 2.75rem;
@@ -261,7 +265,12 @@ export const createMapPinGroupButton = (config: {
     button.style.boxShadow = "0 4px 10px rgba(0,0,0,0.25)";
   });
 
-  button.addEventListener("click", config.onClick);
+  button.addEventListener("click", (e) => {
+    // NOTE: これがないと、Buttonクリックした位置にpinが移動してしまう
+    e.stopPropagation(); // イベントの伝播を停止
+    e.preventDefault(); // 標準の動作をキャンセル (念のため)
+    config.onClick();
+  });
 
   return button;
 };
