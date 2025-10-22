@@ -4,7 +4,27 @@ import { colorpalette } from "@/constants/colors";
 
 // selector統一
 const findColorButtons = (): NodeListOf<Element> => {
-  return document.querySelectorAll('button[id^="color-"]');
+  // 1. まず「color-」で始まるIDを持つボタンをすべて取得（DOM負荷を抑える）
+  const allColorButtons = document.querySelectorAll('button[id^="color-"]');
+
+  // 2. JavaScriptで厳密にフィルタリング（パフォーマンスと正確性の向上）
+  const validButtons: Element[] = Array.from(allColorButtons).filter(
+    (button) => {
+      const id = button.getAttribute("id");
+      if (!id) return false;
+
+      // IDが「color-」で始まり、その後に「1回以上の数字」のみが続くかを正規表現でチェック
+      // 例: color-0, color-35, color-64 はOK
+      // 例: color-filter-fab-btn はNG
+      return /^color-\d+$/.test(id);
+    }
+  );
+
+  // NodeListOf<Element>の代わりにElement[]を返していますが、
+  // 呼び出し元（forEachを使用）では問題なく動作します。
+  // TypeScriptの厳密な型を維持するため、NodeListOfに変換して返すことも可能ですが、
+  // シンプルな実装としてElement[]を使用します。
+  return validButtons as unknown as NodeListOf<Element>; // 互換性のために型キャスト
 };
 
 // stats element作成を分離
@@ -14,14 +34,14 @@ const createStatsElement = (remaining: number): HTMLDivElement => {
   div.textContent = remaining.toString();
   div.style.cssText = `
     position: absolute;
-    bottom: 1px;
-    right: 1px;
-    font-size: 9px;
+    top: 2px;
+    left: 2px;
+    font-size: 8px;
     font-weight: 600;
-    color: white;
-    background: linear-gradient(135deg, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.85));
-    padding: 2px 4px;
-    border-radius: 4px;
+    color: rgb(10,10,10);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.7));
+    padding: 2px 3px;
+    border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
     pointer-events: none;
     line-height: 1;
@@ -36,6 +56,12 @@ const attachStatsToButtons = (
   const colorButtons = findColorButtons();
 
   colorButtons.forEach((button) => {
+    // 既存のstats要素があれば削除（再表示時の対応）
+    const existingStats = button.querySelector(".paint-stats-remaining");
+    if (existingStats) {
+      existingStats.remove();
+    }
+
     const id = button.getAttribute("id");
     if (!id) return;
 
@@ -49,15 +75,20 @@ const attachStatsToButtons = (
 
     const remaining = stats.total - stats.matched;
 
-    (button as HTMLElement).style.position = "relative";
-    button.appendChild(createStatsElement(remaining));
+    // remainingが0より大きい場合のみ表示
+    if (remaining > 0) {
+      (button as HTMLElement).style.position = "relative";
+      (button as HTMLElement).style.overflow = "clip";
+      button.appendChild(createStatsElement(remaining));
+    }
   });
 };
 
 // 統計取得
-const getColorStats = async (): Promise<
-  Record<string, { matched: number; total: number }> | null
-> => {
+const getColorStats = async (): Promise<Record<
+  string,
+  { matched: number; total: number }
+> | null> => {
   const currentTiles = getCurrentTiles();
   if (!currentTiles || currentTiles.size === 0) return null;
 
