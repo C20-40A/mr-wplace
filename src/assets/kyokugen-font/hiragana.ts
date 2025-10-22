@@ -284,8 +284,9 @@ export const hiragana: BitmapChar[] = [
   {
     char: "は",
     width: 4,
-    height: 4,
+    height: 5,
     data: [
+      [0, 0, 1, 0],
       [1, 1, 1, 1],
       [1, 0, 1, 0],
       [1, 1, 1, 1],
