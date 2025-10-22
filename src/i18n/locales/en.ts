@@ -239,4 +239,12 @@ However, please pay careful attention to the following:
   geographic_coordinates: "Geographic Coordinates",
   tile_coordinates: "Tile Coordinates",
   jump_to_coordinates: "Jump to Coordinates",
+
+  // Location Search
+  location_search: "Location Search",
+  search_location: "Search Location",
+  enter_place_name: "Enter place name",
+  searching: "Searching...",
+  no_results_found: "No results found",
+  search_results: "Search Results",
 };

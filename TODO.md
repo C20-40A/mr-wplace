@@ -41,8 +41,7 @@
   - スポイト中の色をリアルタイムで強調表示できそう
   - スポイト中の色以外を半透明にするとか
 - 友人帳
-- 逆ジオあってもいいかも
-  - https://nominatim.org/ が利用可能
+
 - テキストの色変更
 - テキスト移動の矢印を十字配置にする
 - ImageGridComponent もう分けていいんじゃね
@@ -77,6 +76,7 @@
 
 # DONE v1.7.0
 
+- 土地検索https://nominatim.org/ が利用
 - fix:bookmarks の 🌐 Coordinate Jumper がスクロールしてしまう
 - タグ順はアクセスしたタグ順にする
 - content.js:1793 🧑‍🎨 : Paint stats: displayed on all color buttons が大量に出ている

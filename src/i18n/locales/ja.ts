@@ -240,4 +240,12 @@ export const jaTranslations = {
   geographic_coordinates: "地理座標",
   tile_coordinates: "タイル座標",
   jump_to_coordinates: "座標へジャンプ",
+
+  // Location Search
+  location_search: "地名検索",
+  search_location: "地名を検索",
+  enter_place_name: "場所名を入力してください",
+  searching: "検索中...",
+  no_results_found: "結果が見つかりませんでした",
+  search_results: "検索結果",
 };
