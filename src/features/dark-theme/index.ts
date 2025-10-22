@@ -18,23 +18,17 @@ class DarkTheme {
   private createButton() {
     this.button = document.createElement("button");
     this.button.textContent = this.currentTheme === "light" ? "☀️" : "🌙";
+    this.button.className = `
+      btn btn-sm btn-circle
+      top-2
+    `;
     this.button.style.cssText = `
       position: fixed;
-      left: 20px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 40px;
-      height: 40px;
-      font-size: 20px;
-      border: 2px solid #000;
-      border-radius: 8px;
-      background: #fff;
-      cursor: pointer;
+      left: 50px;
+      font-size: 18px;
       z-index: 1000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0;
+      width: 32px;
+      height: 32px;
     `;
 
     this.button.addEventListener("click", () => this.toggleTheme());
