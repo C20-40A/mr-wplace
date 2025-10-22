@@ -9,10 +9,15 @@
     "build:release": "bash ./scripts/build-release.sh",
     "bump:major": "node ./scripts/bump-version.js major",
     "bump:minor": "node ./scripts/bump-version.js minor",
-    "bump:patch": "node ./scripts/bump-version.js patch"
+    "bump:patch": "node ./scripts/bump-version.js patch",
+    "test:chrome": "bun run playwright test --headed --project=chromium",
+    "test:firefox": "bun run playwright test --headed --project=firefox",
+    "test:safari": "bun run playwright test --headed --project=webkit"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@types/chrome": "^0.1.4",
+    "@types/node": "^24.9.1",
     "esbuild": "^0.19.0"
   }
 }
