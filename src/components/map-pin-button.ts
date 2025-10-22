@@ -161,7 +161,8 @@ export const getOrCreateMapPinButtonGroup = (pinContainer: Element): HTMLElement
  * グループ内で使用するボタンを作成
  */
 export const createMapPinGroupButton = (config: {
-  icon: string;
+  icon?: string;        // 絵文字アイコン（オプション）
+  iconSrc?: string;     // 画像アイコンURL（オプション）
   text: string;
   onClick: () => void;
 }): HTMLButtonElement => {
@@ -189,15 +190,34 @@ export const createMapPinGroupButton = (config: {
     white-space: nowrap;
   `;
 
-  const iconSpan = document.createElement("span");
-  iconSpan.textContent = config.icon;
-  iconSpan.style.cssText = `
-    font-size: 1.3rem;
+  // アイコン（絵文字または画像）
+  const iconContainer = document.createElement("span");
+  iconContainer.style.cssText = `
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
   `;
+
+  if (config.iconSrc) {
+    // 画像アイコン
+    const img = document.createElement("img");
+    img.src = config.iconSrc;
+    img.alt = config.text;
+    img.style.cssText = `
+      image-rendering: pixelated;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    `;
+    iconContainer.appendChild(img);
+  } else if (config.icon) {
+    // 絵文字アイコン
+    iconContainer.textContent = config.icon;
+    iconContainer.style.fontSize = "1.3rem";
+  }
 
   const textSpan = document.createElement("span");
   textSpan.textContent = config.text;
@@ -210,7 +230,7 @@ export const createMapPinGroupButton = (config: {
     transition: all 0.3s ease;
   `;
 
-  button.append(iconSpan, textSpan);
+  button.append(iconContainer, textSpan);
 
   // Hover effects
   button.addEventListener("mouseenter", () => {

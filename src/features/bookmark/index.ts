@@ -28,6 +28,7 @@ import {
 import { BookmarkRouter } from "./router";
 import { renderCoordinateJumper } from "./routes/coordinate-jumper";
 import type { BookmarkAPI } from "../../core/di";
+// import { IMG_ICON_BOOKMARK } from "@/assets/iconImages";
 
 const SORT_KEY = "wplace-studio-bookmark-sort";
 
@@ -98,11 +99,21 @@ const editBookmark = async (id: number): Promise<void> => {
 
 const renderCurrentRoute = async (route: string): Promise<void> => {
   const listScreen = document.getElementById("wps-bookmark-list-screen");
-  const coordinateJumperScreen = document.getElementById("wps-coordinate-jumper-screen");
-  const locationSearchScreen = document.getElementById("wps-location-search-screen");
+  const coordinateJumperScreen = document.getElementById(
+    "wps-coordinate-jumper-screen"
+  );
+  const locationSearchScreen = document.getElementById(
+    "wps-location-search-screen"
+  );
   const editScreen = document.getElementById("wps-bookmark-edit-screen");
 
-  if (!listScreen || !coordinateJumperScreen || !locationSearchScreen || !editScreen) return;
+  if (
+    !listScreen ||
+    !coordinateJumperScreen ||
+    !locationSearchScreen ||
+    !editScreen
+  )
+    return;
 
   // Hide all screens
   listScreen.style.display = "none";
@@ -164,7 +175,7 @@ const setupModal = (): void => {
     .addEventListener("click", async (e) => {
       const target = e.target as HTMLElement;
       if (!target) return;
-      
+
       const card = target.closest(".wps-card") as HTMLElement | null;
       const deleteBtn = target.closest(".wps-delete-btn") as HTMLElement | null;
       const editBtn = target.closest(".wps-edit-btn") as HTMLElement | null;
@@ -234,25 +245,27 @@ const setupModal = (): void => {
     .querySelector("#wps-existing-tags-container")!
     .addEventListener("click", (e) => {
       const target = e.target as HTMLElement;
-      const tagItem = target.closest(".wps-existing-tag-item") as HTMLElement | null;
-      
+      const tagItem = target.closest(
+        ".wps-existing-tag-item"
+      ) as HTMLElement | null;
+
       if (!tagItem) return;
-      
+
       const editScreen = document.getElementById("wps-bookmark-edit-screen");
       if (!editScreen) return;
-      
+
       const color = tagItem.dataset.color!;
       const name = tagItem.dataset.name || "";
-      
+
       editScreen.dataset.currentTagColor = color;
       editScreen.dataset.currentTagName = name;
-      
+
       // Visual feedback: highlight selected tag
       document.querySelectorAll(".wps-existing-tag-item").forEach((item) => {
         (item as HTMLElement).style.border = "2px solid transparent";
       });
       tagItem.style.border = "2px solid #000";
-      
+
       console.log("🧑‍🎨 : Selected existing tag:", color, name);
     });
 
@@ -265,118 +278,116 @@ const setupModal = (): void => {
     });
 
   // No tag button
-  modal
-    .querySelector("#wps-no-tag-btn")!
-    .addEventListener("click", () => {
-      const editScreen = document.getElementById("wps-bookmark-edit-screen");
-      if (!editScreen) return;
-      
-      editScreen.dataset.currentTagColor = "";
-      editScreen.dataset.currentTagName = "";
-      
-      // Visual feedback: deselect all tags
-      document.querySelectorAll(".wps-existing-tag-item").forEach((item) => {
-        (item as HTMLElement).style.border = "2px solid transparent";
-      });
-      
-      console.log("🧑‍🎨 : Tag removed");
+  modal.querySelector("#wps-no-tag-btn")!.addEventListener("click", () => {
+    const editScreen = document.getElementById("wps-bookmark-edit-screen");
+    if (!editScreen) return;
+
+    editScreen.dataset.currentTagColor = "";
+    editScreen.dataset.currentTagName = "";
+
+    // Visual feedback: deselect all tags
+    document.querySelectorAll(".wps-existing-tag-item").forEach((item) => {
+      (item as HTMLElement).style.border = "2px solid transparent";
     });
+
+    console.log("🧑‍🎨 : Tag removed");
+  });
 
   // Tag back button (step 2 -> step 1)
-  modal
-    .querySelector("#wps-tag-back")!
-    .addEventListener("click", async () => {
-      const { showTagSelection } = await import("./ui");
-      showTagSelection();
-    });
+  modal.querySelector("#wps-tag-back")!.addEventListener("click", async () => {
+    const { showTagSelection } = await import("./ui");
+    showTagSelection();
+  });
 
   // Color picker handler
-  modal
-    .querySelector("#wps-color-picker")!
-    .addEventListener("click", (e) => {
-      const target = e.target as HTMLElement;
-      const colorBtn = target.closest(".wps-color-btn") as HTMLElement | null;
+  modal.querySelector("#wps-color-picker")!.addEventListener("click", (e) => {
+    const target = e.target as HTMLElement;
+    const colorBtn = target.closest(".wps-color-btn") as HTMLElement | null;
 
-      if (!colorBtn) return;
+    if (!colorBtn) return;
 
-      // Remove selection from all buttons
-      document.querySelectorAll(".wps-color-btn").forEach((btn) => {
-        (btn as HTMLElement).style.border = "3px solid transparent";
-      });
-
-      // Add selection to clicked button
-      colorBtn.style.border = "3px solid #000";
+    // Remove selection from all buttons
+    document.querySelectorAll(".wps-color-btn").forEach((btn) => {
+      (btn as HTMLElement).style.border = "3px solid transparent";
     });
+
+    // Add selection to clicked button
+    colorBtn.style.border = "3px solid #000";
+  });
 
   // Save button
-  modal
-    .querySelector("#wps-edit-save")!
-    .addEventListener("click", async () => {
-      const editScreen = document.getElementById("wps-bookmark-edit-screen");
-      const nameInput = document.getElementById("wps-edit-name") as HTMLInputElement;
-      const creationDiv = document.getElementById("wps-edit-tag-creation");
+  modal.querySelector("#wps-edit-save")!.addEventListener("click", async () => {
+    const editScreen = document.getElementById("wps-bookmark-edit-screen");
+    const nameInput = document.getElementById(
+      "wps-edit-name"
+    ) as HTMLInputElement;
+    const creationDiv = document.getElementById("wps-edit-tag-creation");
 
-      if (!editScreen?.dataset.bookmarkId || !nameInput) return;
+    if (!editScreen?.dataset.bookmarkId || !nameInput) return;
 
-      const bookmarkId = parseInt(editScreen.dataset.bookmarkId);
-      const bookmarks = await BookmarkStorage.getBookmarks();
-      const bookmark = bookmarks.find((b) => b.id === bookmarkId);
+    const bookmarkId = parseInt(editScreen.dataset.bookmarkId);
+    const bookmarks = await BookmarkStorage.getBookmarks();
+    const bookmark = bookmarks.find((b) => b.id === bookmarkId);
 
-      if (!bookmark) return;
+    if (!bookmark) return;
 
-      const newName = nameInput.value.trim();
+    const newName = nameInput.value.trim();
 
-      if (!newName) {
-        Toast.error(t`${"bookmark_name"} ${"required"}`);
+    if (!newName) {
+      Toast.error(t`${"bookmark_name"} ${"required"}`);
+      return;
+    }
+
+    bookmark.name = newName;
+
+    // Tag handling
+    const isCreatingNewTag = creationDiv?.style.display === "block";
+
+    if (isCreatingNewTag) {
+      // New tag creation: get from inputs
+      const tagNameInput = document.getElementById(
+        "wps-edit-tag-name"
+      ) as HTMLInputElement;
+      const selectedColorBtn = document.querySelector(
+        ".wps-color-btn[style*='border: 3px solid rgb(0, 0, 0)']"
+      ) as HTMLElement;
+
+      const tagName = tagNameInput?.value.trim();
+      const tagColor = selectedColorBtn?.dataset.color;
+
+      if (tagColor) {
+        bookmark.tag = {
+          color: tagColor,
+          name: tagName || undefined,
+        };
+      } else {
+        Toast.error(t`${"tag_color"} ${"required"}`);
         return;
       }
+    } else {
+      // Existing tag or no tag: get from dataset
+      const tagColor = editScreen.dataset.currentTagColor;
+      const tagName = editScreen.dataset.currentTagName;
 
-      bookmark.name = newName;
-      
-      // Tag handling
-      const isCreatingNewTag = creationDiv?.style.display === "block";
-      
-      if (isCreatingNewTag) {
-        // New tag creation: get from inputs
-        const tagNameInput = document.getElementById("wps-edit-tag-name") as HTMLInputElement;
-        const selectedColorBtn = document.querySelector(".wps-color-btn[style*='border: 3px solid rgb(0, 0, 0)']") as HTMLElement;
-        
-        const tagName = tagNameInput?.value.trim();
-        const tagColor = selectedColorBtn?.dataset.color;
-        
-        if (tagColor) {
-          bookmark.tag = {
-            color: tagColor,
-            name: tagName || undefined,
-          };
-        } else {
-          Toast.error(t`${"tag_color"} ${"required"}`);
-          return;
-        }
+      if (tagColor) {
+        bookmark.tag = {
+          color: tagColor,
+          name: tagName || undefined,
+        };
       } else {
-        // Existing tag or no tag: get from dataset
-        const tagColor = editScreen.dataset.currentTagColor;
-        const tagName = editScreen.dataset.currentTagName;
-        
-        if (tagColor) {
-          bookmark.tag = {
-            color: tagColor,
-            name: tagName || undefined,
-          };
-        } else {
-          bookmark.tag = undefined;
-        }
+        bookmark.tag = undefined;
       }
+    }
 
-      await BookmarkStorage.updateBookmark(bookmark);
-      Toast.success(t`${"saved_message"}`);
+    await BookmarkStorage.updateBookmark(bookmark);
+    Toast.success(t`${"saved_message"}`);
 
-      const { hideEditScreen } = await import("./ui");
-      hideEditScreen();
-      render();
-      
-      console.log("🧑‍🎨 : Bookmark updated:", bookmark);
-    });
+    const { hideEditScreen } = await import("./ui");
+    hideEditScreen();
+    render();
+
+    console.log("🧑‍🎨 : Bookmark updated:", bookmark);
+  });
 };
 
 /**
@@ -384,20 +395,21 @@ const setupModal = (): void => {
  */
 const createMapPinButtons = (container: Element): void => {
   const group = getOrCreateMapPinButtonGroup(container);
-  
+
   // 既存ボタンチェック
   if (group.querySelector("#bookmark-btn")) {
     console.log("🧑‍🎨 : Bookmark button already exists");
     return;
   }
-  
+
   const button = createMapPinGroupButton({
-    icon: "💾",
+    // iconSrc: IMG_ICON_BOOKMARK,
+    icon: "⭐",
     text: t`${"save_location"}`,
     onClick: () => addBookmark(),
   });
   button.id = "bookmark-btn";
-  
+
   group.appendChild(button);
   console.log("🧑‍🎨 : Bookmark button added to group");
 };
@@ -428,10 +440,12 @@ const init = (): void => {
       createElement: (positionModal) => {
         // マップピングループが既に存在する場合はスキップ
         if (document.querySelector("#map-pin-button-group")) {
-          console.log("🧑‍🎨 : Map pin button group already exists, skipping fallback");
+          console.log(
+            "🧑‍🎨 : Map pin button group already exists, skipping fallback"
+          );
           return;
         }
-        
+
         const saveButton = createSaveBookmarkButton();
         saveButton.id = "save-btn-fallback";
         saveButton.addEventListener("click", addBookmark);

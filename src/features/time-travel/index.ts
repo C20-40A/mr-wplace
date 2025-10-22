@@ -26,6 +26,7 @@ import { TileMergeRoute } from "./routes/tile-merge";
 import { TileStatisticsRoute } from "./routes/tile-statistics";
 import { di, type TimeTravelAPI } from "../../core/di";
 import { t } from "@/i18n/manager";
+import { IMG_ICON_TIME_TRAVEL } from "@/assets/iconImages";
 
 /**
  * タイムマシン機能
@@ -67,20 +68,21 @@ export const initTimeTravel = (): void => {
    */
   const createMapPinButtons = (container: Element): void => {
     const group = getOrCreateMapPinButtonGroup(container);
-    
+
     // 既存ボタンチェック
     if (group.querySelector("#timetravel-btn")) {
       console.log("🧑‍🎨 : TimeTravel button already exists");
       return;
     }
-    
+
     const button = createMapPinGroupButton({
-      icon: "⏰",
+      // icon: "⏰",
+      iconSrc: IMG_ICON_TIME_TRAVEL,
       text: t`${"timetravel"}`,
       onClick: () => showCurrentPosition(),
     });
     button.id = "timetravel-btn";
-    
+
     group.appendChild(button);
     console.log("🧑‍🎨 : TimeTravel button added to group");
   };
@@ -110,10 +112,12 @@ export const initTimeTravel = (): void => {
       createElement: (container) => {
         // マップピングループが既に存在する場合はスキップ
         if (document.querySelector("#map-pin-button-group")) {
-          console.log("🧑‍🎨 : Map pin button group already exists, skipping fallback");
+          console.log(
+            "🧑‍🎨 : Map pin button group already exists, skipping fallback"
+          );
           return;
         }
-        
+
         const button = createTimeTravelButton();
         button.id = "timetravel-btn-fallback";
         button.addEventListener("click", () => showCurrentPosition());

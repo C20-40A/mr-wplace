@@ -1,4 +1,7 @@
-import { setupElementObserver, ElementConfig } from "../../components/element-observer";
+import {
+  setupElementObserver,
+  ElementConfig,
+} from "../../components/element-observer";
 import { getCurrentPosition } from "../../utils/position";
 import { findPositionModal, findMapPin } from "../../constants/selectors";
 import { createDrawButton } from "./ui";
@@ -9,26 +12,31 @@ import {
 import { ImageItem } from "../gallery/routes/list/components";
 import { di } from "../../core/di";
 import { t } from "@/i18n/manager";
+// import { IMG_ICON_GALLERY } from "@/assets/iconImages";
 
 /**
  * マップピン周辺にボタンを作成
  */
-const createMapPinButtons = (container: Element, drawInstance: Drawing): void => {
+const createMapPinButtons = (
+  container: Element,
+  drawInstance: Drawing
+): void => {
   const group = getOrCreateMapPinButtonGroup(container);
-  
+
   // 既存ボタンチェック
   if (group.querySelector("#drawing-btn")) {
     console.log("🧑‍🎨 : Drawing button already exists");
     return;
   }
-  
+
   const button = createMapPinGroupButton({
+    // iconSrc: IMG_ICON_GALLERY,
     icon: "🖼️",
     text: t`${"draw"}`,
     onClick: () => drawInstance.openDrawMode(),
   });
   button.id = "drawing-btn";
-  
+
   group.appendChild(button);
   console.log("🧑‍🎨 : Drawing button added to group");
 };
@@ -52,10 +60,12 @@ export class Drawing {
         createElement: (container) => {
           // マップピングループが既に存在する場合はスキップ
           if (document.querySelector("#map-pin-button-group")) {
-            console.log("🧑‍🎨 : Map pin button group already exists, skipping fallback");
+            console.log(
+              "🧑‍🎨 : Map pin button group already exists, skipping fallback"
+            );
             return;
           }
-          
+
           const button = createDrawButton();
           button.id = "draw-btn-fallback";
           button.addEventListener("click", () => this.openDrawMode());
