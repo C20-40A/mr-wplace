@@ -73,6 +73,16 @@ export const findPaintPixelControls = (): Element | null => {
   return null;
 };
 
+export const findColorPalette = (): Element | null => {
+  // 色ボタンの最初の1つを取得し、その親の親の親を取得
+  // <div class="grid ..."> <div class="tooltip"> <button id="color-X"> の構造を想定
+  const firstColorButton = document.querySelector('button[id^="color-"]');
+  if (firstColorButton?.parentElement?.parentElement) {
+    return firstColorButton.parentElement.parentElement; // grid container
+  }
+  return null;
+};
+
 export const findTopLeftControls = (): Element | null => {
   // 1. titleベース検索（多言語対応）
   // EN: "Info", "Zoom in", "Zoom out"
