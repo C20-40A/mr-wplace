@@ -1,3 +1,99 @@
+# maplibregl マップインスタンス取得方法
+
+```javascript
+const mapInstance = document.querySelector("div.absolute.bottom-3.right-3.z-30")
+  .childNodes[0].__click[3].v;
+```
+
+# レイヤー構造
+
+mapInstance.getStyle().layers
+
+ID: background, Type: background
+ID: natural_earth, Type: raster
+...
+ID: pixel-art-layer, Type: raster
+ID: "paint-preview-0.6338469378613869-1817,808" raster(塗り始めると現れる)
+↑ paint: {raster-opacity : 1 raster-resampling : "nearest"}
+iD: pixel-hover, Type: raster
+ID: "paint-crosshair-9088,4041" raster(塗り始めると現れる)
+
+# ピクセルアートのあるレイヤーの取得や変更
+
+```javascript
+mapInstance.getLayer("pixel-art-layer");
+// こうすると非表示
+mapInstance.setLayoutProperty("pixel-hover", "visibility", "none");
+// source取得
+mapInstance.getSource("pixel-art-layer");
+// タイル入れ替え
+mapInstance.getSource("pixel-art-layer").setTiles("画像URL");
+```
+
+# "pixel-art-layer"の詳細
+
+- ID: "pixel-art-layer"
+- タイプ: "raster"
+- タイル URL: tiles: ["https://backend.wplace.live/files/s0/tiles/{x}/{y}.png"] バックエンド URL からラスタータイル画像を取得している
+- ズームレベル: minzoom: 11, maxzoom: 11 (ズームレベル 11 でのみ表示・利用される)
+- タイルサイズ: tileSize: 550
+- イベント: \_eventedParent が存在し、このソースがイベントシステムに統合されている
+- scheme: "xyz" y=0 のタイルがマップの左上にある
+
+# インターセプト
+
+```javascript
+// これでリクエストをインターセプトできる
+mapInstance.setTransformRequest((url) => {
+  console.log(url);
+  return { url };
+});
+```
+
+# source 一覧
+
+mapInstance.getStyle()の sources より
+
+```
+ne2_shaded:
+  maxzoom : 6
+  tileSize : 256
+  tiles : ['https://maps.wplace.live/natural_earth/ne2sr/{z}/{x}/{y}.png']
+  type : "raster"
+openmaptiles :
+  type : "vector"
+  url : "https://maps.wplace.live/planet"
+paint-crosshair-3015,3848:(塗っている途中に現れる)
+  coordinates:[
+    [-74.00390625, 40.76722964451849],
+    [-73.96875000000001, 40.76722964451849],
+    [-73.96875000000001, 40.74059806880479],
+    [-74.00390625, 40.74059806880479]
+  ]
+paint-preview-0.284658944908746-603,769:(塗っている途中に現れる)
+  coordinates: [
+     [-74.00390625, 40.713955826286046],
+     [-73.82812500000001, 40.713955826286046],
+     [-73.82812500000001, 40.847060356071246],
+     [-74.00390625, 40.847060356071246]
+  ]
+  type: "canvas"
+pixel-art-layer :
+  maxzoom : 11
+  minzoom : 11
+  tileSize : 550
+  tiles : ['https://backend.wplace.live/files/s0/tiles/{x}/{y}.png']
+  type : "raster"
+pixel-hover :
+  coordinates : [
+    0: [0, 0]
+    1: [0.00001, 0]
+    2: [0.00001, -0.00001]
+    3: [0, -0.00001]
+  ]
+  type : "canvas"
+```
+
 # カラーパレット取得（スポイト機能）
 
 ```javascript
