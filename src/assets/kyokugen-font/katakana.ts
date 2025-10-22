@@ -57,13 +57,13 @@ export const katakana: BitmapChar[] = [
   },
   {
     char: "カ",
-    width: 3,
+    width: 4,
     height: 4,
     data: [
-      [0, 1, 0],
-      [1, 1, 1],
-      [0, 1, 1],
-      [0, 1, 1],
+      [0, 1, 0, 0],
+      [1, 1, 1, 1],
+      [0, 1, 0, 1],
+      [0, 1, 0, 1],
     ],
   },
   {
@@ -135,10 +135,9 @@ export const katakana: BitmapChar[] = [
   {
     char: "ス",
     width: 3,
-    height: 4,
+    height: 3,
     data: [
-      [1, 1, 1],
-      [0, 0, 1],
+      [1, 1, 0],
       [0, 1, 0],
       [1, 0, 1],
     ],
@@ -215,6 +214,61 @@ export const katakana: BitmapChar[] = [
     data: [
       [1, 0],
       [1, 1],
+      [1, 0],
+    ],
+  },
+  {
+    char: "ナ",
+    width: 3,
+    height: 4,
+    data: [
+      [0, 1, 0],
+      [1, 1, 1],
+      [0, 1, 0],
+      [1, 0, 0],
+    ],
+  },
+  {
+    char: "ニ",
+    width: 3,
+    height: 3,
+    data: [
+      [0, 1, 1],
+      [0, 0, 0],
+      [1, 1, 1],
+    ],
+  },
+  {
+    char: "ヌ",
+    width: 3,
+    height: 5,
+    data: [
+      [1, 1, 1],
+      [0, 0, 1],
+      [1, 0, 1],
+      [0, 1, 0],
+      [1, 0, 1],
+    ],
+  },
+  {
+    char: "ネ",
+    width: 3,
+    height: 5,
+    data: [
+      [0, 1, 0],
+      [1, 1, 1],
+      [0, 0, 1],
+      [1, 1, 0],
+      [0, 1, 0],
+    ],
+  },
+  {
+    char: "ノ",
+    width: 2,
+    height: 3,
+    data: [
+      [0, 1],
+      [0, 1],
       [1, 0],
     ],
   },
@@ -445,12 +499,11 @@ export const katakana: BitmapChar[] = [
   },
   {
     char: "ッ",
-    width: 3,
-    height: 3,
+    width: 2,
+    height: 2,
     data: [
-      [1, 1, 0],
-      [0, 0, 1],
-      [0, 1, 1],
+      [0, 1],
+      [1, 1],
     ],
   },
   {
