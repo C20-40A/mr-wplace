@@ -14,7 +14,6 @@
 - データセーブモード
 - ギャラリーの画像ってリサイズ後の表示している？アイコン用じゃないと重そう
 - タイルの GoogleDrive とのリンク
-- bookmarks の 🌐 Coordinate Jumper がスクロールしてしまう
 
 # バグ
 
@@ -77,6 +76,7 @@
 
 # DONE v1.7.0
 
+- fix:bookmarks の 🌐 Coordinate Jumper がスクロールしてしまう
 - タグ順はアクセスしたタグ順にする
 - content.js:1793 🧑‍🎨 : Paint stats: displayed on all color buttons が大量に出ている
 - 色 pick に残りピクセル表示しているが、0 のときは非表示にする
