@@ -174,7 +174,7 @@ const renderExistingTags = (tags: Tag[], currentTag?: Tag): void => {
         background: ${tag.color};
         flex-shrink: 0;
       "></div>
-      <span>${tag.name || t`("${tag_name}")`}</span>
+      <span>${tag.name || `(${t`${'tag_name'}`})`}</span>
     </div>
   `
     )
@@ -293,15 +293,44 @@ export const renderBookmarks = (
       );
     });
   } else if (sortType === "tag") {
+    // タグごとの最新アクセス日時を計算
+    const tagLatestAccess = new Map<string, number>();
+    
+    favorites.forEach(fav => {
+      if (!fav.tag) return;
+      const tagKey = `${fav.tag.color}:${fav.tag.name || ""}`;
+      const accessTime = fav.lastAccessedDate ? new Date(fav.lastAccessedDate).getTime() : 0;
+      const current = tagLatestAccess.get(tagKey) || 0;
+      if (accessTime > current) {
+        tagLatestAccess.set(tagKey, accessTime);
+      }
+    });
+
     favorites.sort((a, b) => {
       // タグなしは最後
       if (!a.tag && !b.tag) return b.id - a.id;
       if (!a.tag) return 1;
       if (!b.tag) return -1;
-      // タグ名で昇順ソート
+      
+      // 最近アクセスしたタグ順にソート
+      const tagKeyA = `${a.tag.color}:${a.tag.name || ""}`;
+      const tagKeyB = `${b.tag.color}:${b.tag.name || ""}`;
+      const accessTimeA = tagLatestAccess.get(tagKeyA) || 0;
+      const accessTimeB = tagLatestAccess.get(tagKeyB) || 0;
+      
+      if (accessTimeA !== accessTimeB) {
+        return accessTimeB - accessTimeA; // 新しい順
+      }
+      
+      // アクセス日時が同じ場合はタグ名でソート
       const tagNameA = a.tag.name || "";
       const tagNameB = b.tag.name || "";
-      return tagNameA.localeCompare(tagNameB);
+      if (tagNameA !== tagNameB) {
+        return tagNameA.localeCompare(tagNameB);
+      }
+      
+      // 同じタグ内では作成日時順
+      return b.id - a.id;
     });
   }
 
