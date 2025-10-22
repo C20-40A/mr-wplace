@@ -16,6 +16,7 @@ import { ThemeToggleStorage } from "@/features/theme-toggle/storage";
 import { textDrawAPI } from "@/features/text-draw";
 import { AutoSpoit } from "@/features/auto-spoit";
 import { PositionInfo } from "@/features/position-info";
+import { initPaintStats } from "@/features/paint-stats";
 import { colorpalette } from "@/constants/colors";
 import { addCurrentTile } from "@/states/currentTile";
 import { di } from "@/core/di";
@@ -144,6 +145,7 @@ import { getOverlayPixelColor } from "@/features/tile-draw";
     const colorFilterManager = new ColorFilterManager();
     const autoSpoit = new AutoSpoit();
     new PositionInfo();
+    initPaintStats();
 
     // 初期化完了を待つ
     await colorFilterManager.init();
