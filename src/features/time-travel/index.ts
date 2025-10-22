@@ -5,7 +5,12 @@ import {
 import {
   findOpacityContainer,
   findPositionModal,
+  findMapPin,
 } from "../../constants/selectors";
+import {
+  getOrCreateMapPinButtonGroup,
+  createMapPinGroupButton,
+} from "@/components/map-pin-button";
 import { TimeTravelRouter, TimeTravelRoute } from "./router";
 import {
   TimeTravelUI,
@@ -20,6 +25,7 @@ import { ImportSnapshotRoute } from "./routes/import-snapshot";
 import { TileMergeRoute } from "./routes/tile-merge";
 import { TileStatisticsRoute } from "./routes/tile-statistics";
 import { di, type TimeTravelAPI } from "../../core/di";
+import { t } from "@/i18n/manager";
 
 /**
  * タイムマシン機能
@@ -56,17 +62,30 @@ export const initTimeTravel = (): void => {
     renderCurrentRoute(route);
   });
 
+  /**
+   * マップピン周辺にボタンを作成
+   */
+  const createMapPinButtons = (container: Element): void => {
+    const group = getOrCreateMapPinButtonGroup(container);
+    
+    // 既存ボタンチェック
+    if (group.querySelector("#timetravel-btn")) {
+      console.log("🧑‍🎨 : TimeTravel button already exists");
+      return;
+    }
+    
+    const button = createMapPinGroupButton({
+      icon: "⏰",
+      text: t`${"timetravel"}`,
+      onClick: () => showCurrentPosition(),
+    });
+    button.id = "timetravel-btn";
+    
+    group.appendChild(button);
+    console.log("🧑‍🎨 : TimeTravel button added to group");
+  };
+
   const buttonConfigs: ElementConfig[] = [
-    {
-      id: "timetravel-btn",
-      getTargetElement: findPositionModal,
-      createElement: (container) => {
-        const button = createTimeTravelButton();
-        button.id = "timetravel-btn";
-        button.addEventListener("click", () => showCurrentPosition());
-        container.prepend(button);
-      },
-    },
     {
       id: "timetravel-fab-btn",
       getTargetElement: findOpacityContainer,
@@ -76,6 +95,30 @@ export const initTimeTravel = (): void => {
         button.addEventListener("click", () => show());
         container.className += " flex flex-col-reverse gap-1";
         container.appendChild(button);
+      },
+    },
+    // 優先: マップピン周辺にボタン配置
+    {
+      id: "timetravel-map-pin-btn",
+      getTargetElement: findMapPin,
+      createElement: createMapPinButtons,
+    },
+    // フォールバック: position modalにボタン配置
+    {
+      id: "timetravel-btn-fallback",
+      getTargetElement: findPositionModal,
+      createElement: (container) => {
+        // マップピングループが既に存在する場合はスキップ
+        if (document.querySelector("#map-pin-button-group")) {
+          console.log("🧑‍🎨 : Map pin button group already exists, skipping fallback");
+          return;
+        }
+        
+        const button = createTimeTravelButton();
+        button.id = "timetravel-btn-fallback";
+        button.addEventListener("click", () => showCurrentPosition());
+        container.prepend(button);
+        console.log("🧑‍🎨 : Fallback button created in position modal");
       },
     },
   ];

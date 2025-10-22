@@ -15,6 +15,8 @@ export const enTranslations = {
   cancel: "Cancel",
   bookmarks: "bookmarks",
   bookmark: "Bookmark",
+  save_location: "Save Location",
+  draw: "Draw",
   draw_image: "Image",
   text_draw: "Text",
   text_clear: "Clear Text",
