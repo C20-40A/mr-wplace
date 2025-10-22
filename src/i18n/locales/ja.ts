@@ -234,4 +234,10 @@ export const jaTranslations = {
   tag_color: "タグ色",
   optional: "任意",
   required: "必須",
+
+  // Coordinate Jumper
+  coordinate_jumper: "座標ジャンプ",
+  geographic_coordinates: "地理座標",
+  tile_coordinates: "タイル座標",
+  jump_to_coordinates: "座標へジャンプ",
 };
