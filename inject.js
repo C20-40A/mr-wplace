@@ -3,7 +3,6 @@
 
   // 初期化用変数
   let currentTheme = "light";
-  let darkStyleData = null;
   let isInitialized = false;
 
   // fetchの上書き
@@ -17,22 +16,6 @@
     const requestInfo = args[0];
     const url =
       typeof requestInfo === "string" ? requestInfo : requestInfo.url || "";
-
-    // Intercept map style for theme switching
-    if (url === "https://maps.wplace.live/styles/liberty") {
-      if (currentTheme === "dark" && darkStyleData) {
-        console.log("🧑‍🎨 : Switched to dark map style");
-        return new Response(JSON.stringify(darkStyleData), {
-          status: 200,
-          statusText: "OK",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-      }
-      // Light theme or darkStyleData not ready: use default
-      return originalFetch.apply(this, args);
-    }
 
     if (!url || !url.includes("backend.wplace.live")) {
       return originalFetch.apply(this, args);
@@ -180,6 +163,22 @@
     if (event.data.source === "mr-wplace-theme-update") {
       currentTheme = event.data.theme;
       console.log("🧑‍🎨 : Theme updated:", currentTheme);
+      
+      // Apply theme to map
+      if (window.wplaceMap) {
+        if (currentTheme === "dark") {
+          window.wplaceMap.setPaintProperty("background", "background-color", "#111");
+          window.wplaceMap.setPaintProperty("water", "fill-color", "#222");
+          window.wplaceMap.setPaintProperty("landuse", "fill-color", "#333");
+          console.log("🧑‍🎨 : Applied dark theme to map");
+        } else {
+          // Reset to light theme (default values from maplibre)
+          window.wplaceMap.setPaintProperty("background", "background-color", "#f8f4f0");
+          window.wplaceMap.setPaintProperty("water", "fill-color", "#a0c8f0");
+          window.wplaceMap.setPaintProperty("landuse", "fill-color", "#e0e0e0");
+          console.log("🧑‍🎨 : Applied light theme to map");
+        }
+      }
     }
   });
 
@@ -198,7 +197,15 @@
         if (map && typeof map.version === "string") {
           window.wplaceMap = map;
           mapObserver.disconnect();
-          console.log("WPlace map instance captured", map);
+          console.log("🧑‍🎨 : WPlace map instance captured", map);
+
+          // Apply initial theme
+          if (currentTheme === "dark") {
+            map.setPaintProperty("background", "background-color", "#111");
+            map.setPaintProperty("water", "fill-color", "#222");
+            map.setPaintProperty("landuse", "fill-color", "#333");
+            console.log("🧑‍🎨 : Applied initial dark theme to map");
+          }
 
           // Helper function to check dev mode
           const isAutoSpoitDevModeEnabled = () => {
@@ -271,20 +278,10 @@
     subtree: true,
   });
 
-  // DOM属性からデータ読み込み
+  // DOM属性からtheme読み込み
   const dataElement = document.getElementById("__mr_wplace_data__");
   if (dataElement) {
     currentTheme = dataElement.getAttribute("data-theme") || "light";
-    const jsonUrl = dataElement.getAttribute("data-dark-style-url");
-    if (jsonUrl) {
-      try {
-        const response = await originalFetch(jsonUrl);
-        darkStyleData = await response.json();
-        console.log("🧑‍🎨: Dark style data loaded");
-      } catch (error) {
-        console.error("🧑‍🎨: Failed to load dark style:", error);
-      }
-    }
   }
   isInitialized = true;
   console.log("🧑‍🎨: Initialization complete, theme:", currentTheme);

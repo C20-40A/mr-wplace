@@ -45,7 +45,6 @@
       ],
       "resources": [
         "inject.js",
-        "assets/mapDarkStyle.json",
         "assets/fonts/k8x12/k8x12S.ttf",
         "assets/fonts/Bytesized/Bytesized-Regular.ttf",
         "assets/fonts/misaki/misaki_gothic.ttf",
