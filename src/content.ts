@@ -14,7 +14,7 @@ import { UserStatus } from "@/features/user-status";
 import { WPlaceUserData } from "@/types/user-data";
 import { ThemeToggleStorage } from "@/features/theme-toggle/storage";
 import { textDrawAPI } from "@/features/text-draw";
-import { darkThemeAPI } from "@/features/dark-theme";
+import { darkThemeAPI, highContrastAPI } from "@/features/map-filter";
 import { AutoSpoit } from "@/features/auto-spoit";
 import { PositionInfo } from "@/features/position-info";
 import { initPaintStats } from "@/features/paint-stats";
@@ -139,6 +139,7 @@ import { getOverlayPixelColor } from "@/features/tile-draw";
     textDrawAPI.initTextDraw(); // 3. TextDraw
     galleryAPI.initGallery();
     await darkThemeAPI.initDarkTheme(); // 5. DarkTheme
+    await highContrastAPI.initHighContrast(); // 6. HighContrast
     new Drawing(); // 4. Drawing (最初に表示)
     drawingLoaderAPI.initDrawingLoader();
     new ColorFilter();
