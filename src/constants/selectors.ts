@@ -120,3 +120,46 @@ export const findTopLeftControls = (): Element | null => {
   document.body.appendChild(newContainer);
   return newContainer;
 };
+
+/**
+ * マップピン（現在地マーカー）を検索
+ * MapLibre GLの現在地マーカー（青いピン）のみを対象とする
+ */
+export const findMapPin = (): Element | null => {
+  // すべてのmaplibregl-markerを取得
+  const markers = document.querySelectorAll('.maplibregl-marker, .mapboxgl-marker');
+  
+  for (const marker of markers) {
+    // 1. opacity: 1 のマーカーのみ（表示中）
+    const style = (marker as HTMLElement).style;
+    const opacity = style.opacity || '1';
+    if (parseFloat(opacity) < 1) continue;
+    
+    // 2. 現在地マーカー（青いピン）のSVGを持つか確認
+    const svg = marker.querySelector('svg[viewBox="0 0 27 41"]');
+    if (!svg) continue;
+    
+    // 3. 青いピンの特徴的なpathを確認
+    const bluePinPath = svg.querySelector('path[d^="M27,13.5"]');
+    if (!bluePinPath) continue;
+    
+    // 4. 画面内の座標にあるか確認（translate値が妥当な範囲）
+    const transform = style.transform || '';
+    const translateMatch = transform.match(/translate\((-?\d+)px,\s*(-?\d+)px\)/);
+    if (translateMatch) {
+      const x = parseInt(translateMatch[1], 10);
+      const y = parseInt(translateMatch[2], 10);
+      
+      // 画面サイズの範囲内か確認（マージン含む）
+      if (x < -100 || x > window.innerWidth + 100 || 
+          y < -100 || y > window.innerHeight + 100) {
+        continue;
+      }
+    }
+    
+    // すべての条件を満たすマーカーを返す
+    return marker;
+  }
+
+  return null;
+};
