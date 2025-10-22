@@ -20,9 +20,13 @@ import {
   renderBookmarks,
   BookmarkSortType,
 } from "./ui";
+import { BookmarkRouter } from "./router";
+import { renderCoordinateJumper } from "./routes/coordinate-jumper";
 import type { BookmarkAPI } from "../../core/di";
 
 const SORT_KEY = "wplace-studio-bookmark-sort";
+
+let router: BookmarkRouter;
 
 const render = async (): Promise<void> => {
   const result = await storage.get([SORT_KEY]);
@@ -72,7 +76,7 @@ const addBookmark = async (): Promise<void> => {
 };
 
 const openModal = (): void => {
-  render();
+  router.initialize("list");
   (
     document.getElementById("wplace-studio-favorite-modal") as HTMLDialogElement
   ).showModal();
@@ -87,8 +91,54 @@ const editBookmark = async (id: number): Promise<void> => {
   showEditScreen(bookmark);
 };
 
+const renderCurrentRoute = (route: string): void => {
+  const listScreen = document.getElementById("wps-bookmark-list-screen");
+  const coordinateJumperScreen = document.getElementById("wps-coordinate-jumper-screen");
+  const editScreen = document.getElementById("wps-bookmark-edit-screen");
+
+  if (!listScreen || !coordinateJumperScreen || !editScreen) return;
+
+  // Hide all screens
+  listScreen.style.display = "none";
+  coordinateJumperScreen.style.display = "none";
+  editScreen.style.display = "none";
+
+  // Show current route
+  switch (route) {
+    case "list":
+      listScreen.style.display = "flex";
+      render();
+      break;
+    case "coordinate-jumper":
+      coordinateJumperScreen.style.display = "block";
+      renderCoordinateJumper(coordinateJumperScreen);
+      break;
+  }
+};
+
 const setupModal = (): void => {
-  const { modal } = createBookmarkModal();
+  const modalElements = createBookmarkModal();
+  const { modal } = modalElements;
+
+  // Initialize router
+  router = new BookmarkRouter();
+  router.setHeaderElements(
+    modalElements.titleElement,
+    modalElements.backButton
+  );
+  router.setOnRouteChange(renderCurrentRoute);
+
+  // Back button handler
+  modalElements.backButton.addEventListener("click", () => {
+    router.navigateBack();
+  });
+
+  // Coordinate Jumper button
+  modal
+    .querySelector("#wps-coordinate-jumper-btn")!
+    .addEventListener("click", () => {
+      router.navigate("coordinate-jumper");
+    });
 
   modal
     .querySelector("#wps-favorites-grid")!

@@ -233,4 +233,10 @@ However, please pay careful attention to the following:
   tag_color: "Tag Color",
   optional: "Optional",
   required: "Required",
+
+  // Coordinate Jumper
+  coordinate_jumper: "Coordinate Jumper",
+  geographic_coordinates: "Geographic Coordinates",
+  tile_coordinates: "Tile Coordinates",
+  jump_to_coordinates: "Jump to Coordinates",
 };
