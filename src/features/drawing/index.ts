@@ -1,31 +1,73 @@
-import { setupElementObserver } from "../../components/element-observer";
+import { setupElementObserver, ElementConfig } from "../../components/element-observer";
 import { getCurrentPosition } from "../../utils/position";
-import { findPositionModal } from "../../constants/selectors";
+import { findPositionModal, findMapPin } from "../../constants/selectors";
 import { createDrawButton } from "./ui";
+import {
+  getOrCreateMapPinButtonGroup,
+  createMapPinGroupButton,
+} from "@/components/map-pin-button";
 import { ImageItem } from "../gallery/routes/list/components";
 import { di } from "../../core/di";
+import { t } from "@/i18n/manager";
+
+/**
+ * マップピン周辺にボタンを作成
+ */
+const createMapPinButtons = (container: Element, drawInstance: Drawing): void => {
+  const group = getOrCreateMapPinButtonGroup(container);
+  
+  // 既存ボタンチェック
+  if (group.querySelector("#drawing-btn")) {
+    console.log("🧑‍🎨 : Drawing button already exists");
+    return;
+  }
+  
+  const button = createMapPinGroupButton({
+    icon: "🖼️",
+    text: t`${"draw"}`,
+    onClick: () => drawInstance.openDrawMode(),
+  });
+  button.id = "drawing-btn";
+  
+  group.appendChild(button);
+  console.log("🧑‍🎨 : Drawing button added to group");
+};
 
 /**
  * 画像描画機能の独立モジュール
  */
 export class Drawing {
   constructor() {
-    setupElementObserver([
+    const buttonConfigs: ElementConfig[] = [
+      // 優先: マップピン周辺にボタン配置
       {
-        id: "draw-btn",
+        id: "drawing-map-pin-btn",
+        getTargetElement: findMapPin,
+        createElement: (container) => createMapPinButtons(container, this),
+      },
+      // フォールバック: position modalにボタン配置
+      {
+        id: "draw-btn-fallback",
         getTargetElement: findPositionModal,
         createElement: (container) => {
+          // マップピングループが既に存在する場合はスキップ
+          if (document.querySelector("#map-pin-button-group")) {
+            console.log("🧑‍🎨 : Map pin button group already exists, skipping fallback");
+            return;
+          }
+          
           const button = createDrawButton();
-          button.id = "draw-btn"; // 重複チェック用ID設定
+          button.id = "draw-btn-fallback";
           button.addEventListener("click", () => this.openDrawMode());
           container.prepend(button);
-          console.log("Draw button added to", container);
+          console.log("🧑‍🎨 : Fallback button created in position modal");
         },
       },
-    ]);
+    ];
+    setupElementObserver(buttonConfigs);
   }
 
-  private openDrawMode(): void {
+  public openDrawMode(): void {
     console.log("✏️ Opening image selector for drawing");
 
     // DI ContainerからGallery取得

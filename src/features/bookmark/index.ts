@@ -7,7 +7,12 @@ import { Toast } from "../../components/toast";
 import {
   findOpacityContainer,
   findPositionModal,
+  findMapPin,
 } from "../../constants/selectors";
+import {
+  getOrCreateMapPinButtonGroup,
+  createMapPinGroupButton,
+} from "@/components/map-pin-button";
 import { BookmarkStorage } from "./storage";
 import { ImportExportService } from "./import-export";
 import { getCurrentPosition, gotoPosition } from "../../utils/position";
@@ -374,6 +379,29 @@ const setupModal = (): void => {
     });
 };
 
+/**
+ * マップピン周辺にボタンを作成
+ */
+const createMapPinButtons = (container: Element): void => {
+  const group = getOrCreateMapPinButtonGroup(container);
+  
+  // 既存ボタンチェック
+  if (group.querySelector("#bookmark-btn")) {
+    console.log("🧑‍🎨 : Bookmark button already exists");
+    return;
+  }
+  
+  const button = createMapPinGroupButton({
+    icon: "💾",
+    text: t`${"save_location"}`,
+    onClick: () => addBookmark(),
+  });
+  button.id = "bookmark-btn";
+  
+  group.appendChild(button);
+  console.log("🧑‍🎨 : Bookmark button added to group");
+};
+
 const init = (): void => {
   const buttonConfigs: ElementConfig[] = [
     {
@@ -387,14 +415,28 @@ const init = (): void => {
         container.appendChild(button);
       },
     },
+    // 優先: マップピン周辺にボタン配置
     {
-      id: "save-btn",
+      id: "bookmark-map-pin-btn",
+      getTargetElement: findMapPin,
+      createElement: createMapPinButtons,
+    },
+    // フォールバック: position modalにボタン配置
+    {
+      id: "save-btn-fallback",
       getTargetElement: findPositionModal,
       createElement: (positionModal) => {
+        // マップピングループが既に存在する場合はスキップ
+        if (document.querySelector("#map-pin-button-group")) {
+          console.log("🧑‍🎨 : Map pin button group already exists, skipping fallback");
+          return;
+        }
+        
         const saveButton = createSaveBookmarkButton();
-        saveButton.id = "save-btn";
+        saveButton.id = "save-btn-fallback";
         saveButton.addEventListener("click", addBookmark);
         positionModal.prepend(saveButton);
+        console.log("🧑‍🎨 : Fallback button created in position modal");
       },
     },
   ];
