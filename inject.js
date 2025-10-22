@@ -163,19 +163,29 @@
     if (event.data.source === "mr-wplace-theme-update") {
       currentTheme = event.data.theme;
       console.log("🧑‍🎨 : Theme updated:", currentTheme);
-      
+
       // Apply theme to map
       if (window.wplaceMap) {
         if (currentTheme === "dark") {
-          window.wplaceMap.setPaintProperty("background", "background-color", "#111");
+          window.wplaceMap.setPaintProperty(
+            "background",
+            "background-color",
+            "#111"
+          );
           window.wplaceMap.setPaintProperty("water", "fill-color", "#222");
-          window.wplaceMap.setPaintProperty("landuse", "fill-color", "#333");
           console.log("🧑‍🎨 : Applied dark theme to map");
         } else {
           // Reset to light theme (default values from maplibre)
-          window.wplaceMap.setPaintProperty("background", "background-color", "#f8f4f0");
-          window.wplaceMap.setPaintProperty("water", "fill-color", "#a0c8f0");
-          window.wplaceMap.setPaintProperty("landuse", "fill-color", "#e0e0e0");
+          window.wplaceMap.setPaintProperty(
+            "background",
+            "background-color",
+            "#f8f4f0"
+          );
+          window.wplaceMap.setPaintProperty(
+            "water",
+            "fill-color",
+            "rgb(158,189,255)"
+          );
           console.log("🧑‍🎨 : Applied light theme to map");
         }
       }
@@ -210,7 +220,9 @@
           // Helper function to check dev mode
           const isAutoSpoitDevModeEnabled = () => {
             const dataElement = document.getElementById("__mr_wplace_data__");
-            const devMode = dataElement?.getAttribute("data-auto-spoit-dev-mode");
+            const devMode = dataElement?.getAttribute(
+              "data-auto-spoit-dev-mode"
+            );
             return devMode === "true";
           };
 
@@ -218,7 +230,7 @@
           map.on("mousedown", (e) => {
             // Skip if dev mode is disabled
             if (!isAutoSpoitDevModeEnabled()) return;
-            
+
             const { lat, lng } = e.lngLat;
             window.postMessage(
               {
