@@ -91,16 +91,18 @@ const editBookmark = async (id: number): Promise<void> => {
   showEditScreen(bookmark);
 };
 
-const renderCurrentRoute = (route: string): void => {
+const renderCurrentRoute = async (route: string): Promise<void> => {
   const listScreen = document.getElementById("wps-bookmark-list-screen");
   const coordinateJumperScreen = document.getElementById("wps-coordinate-jumper-screen");
+  const locationSearchScreen = document.getElementById("wps-location-search-screen");
   const editScreen = document.getElementById("wps-bookmark-edit-screen");
 
-  if (!listScreen || !coordinateJumperScreen || !editScreen) return;
+  if (!listScreen || !coordinateJumperScreen || !locationSearchScreen || !editScreen) return;
 
   // Hide all screens
   listScreen.style.display = "none";
   coordinateJumperScreen.style.display = "none";
+  locationSearchScreen.style.display = "none";
   editScreen.style.display = "none";
 
   // Show current route
@@ -112,6 +114,11 @@ const renderCurrentRoute = (route: string): void => {
     case "coordinate-jumper":
       coordinateJumperScreen.style.display = "block";
       renderCoordinateJumper(coordinateJumperScreen);
+      break;
+    case "location-search":
+      locationSearchScreen.style.display = "block";
+      const { renderLocationSearch } = await import("./routes/location-search");
+      renderLocationSearch(locationSearchScreen);
       break;
   }
 };
@@ -138,6 +145,13 @@ const setupModal = (): void => {
     .querySelector("#wps-coordinate-jumper-btn")!
     .addEventListener("click", () => {
       router.navigate("coordinate-jumper");
+    });
+
+  // Location Search button
+  modal
+    .querySelector("#wps-location-search-btn")!
+    .addEventListener("click", () => {
+      router.navigate("location-search");
     });
 
   modal
