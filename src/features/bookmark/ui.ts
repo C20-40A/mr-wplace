@@ -43,8 +43,9 @@ export const createBookmarkModal = (): ModalElements => {
 
   modalElements.container.innerHTML = t`
     <!-- List Screen -->
-    <div id="wps-bookmark-list-screen">
-      <div class="flex gap-2" style="flex-wrap: wrap; margin-bottom: 0.7rem;">
+    <div id="wps-bookmark-list-screen" style="display: flex; flex-direction: column; height: 100%;">
+      <!-- Fixed Header: Buttons -->
+      <div class="flex gap-2" style="flex-wrap: wrap; margin-bottom: 0.7rem; flex-shrink: 0;">
         <button id="wps-export-btn" class="btn btn-outline btn-sm">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
             <path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
@@ -68,10 +69,14 @@ export const createBookmarkModal = (): ModalElements => {
         </div>
       </div>
 
+      <!-- Scrollable Content: Bookmarks Grid -->
       <div style="flex: 1; overflow-y: auto; min-height: 0;">
         <div id="wps-favorites-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2">
         </div>
       </div>
+
+      <!-- Fixed Footer: Coordinate Jumper Container -->
+      <div id="wps-coordinate-jumper-container" style="flex-shrink: 0; margin-top: 0.7rem;"></div>
     </div>
 
     <!-- Edit Screen -->
@@ -115,9 +120,9 @@ export const createBookmarkModal = (): ModalElements => {
     </div>
   `;
 
-  // Add coordinate jumper to list screen
-  const listScreen = modalElements.container.querySelector("#wps-bookmark-list-screen");
-  listScreen?.appendChild(createCoordinateJumper());
+  // Add coordinate jumper to fixed footer
+  const jumperContainer = modalElements.container.querySelector("#wps-coordinate-jumper-container");
+  jumperContainer?.appendChild(createCoordinateJumper());
 
   return modalElements;
 };
