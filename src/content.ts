@@ -41,15 +41,13 @@ import { getOverlayPixelColor } from "@/features/tile-draw";
     // データをDOM属性で渡す（CSP safe）
     {
       const currentTheme = await ThemeToggleStorage.get();
-      const jsonUrl = runtime.getURL("assets/mapDarkStyle.json");
 
       const dataElement = document.createElement("div");
       dataElement.id = "__mr_wplace_data__";
       dataElement.setAttribute("data-theme", currentTheme);
-      dataElement.setAttribute("data-dark-style-url", jsonUrl);
       dataElement.style.display = "none";
       (document.head || document.documentElement).prepend(dataElement);
-      console.log("🧑‍🎨: Injected data element with URLs");
+      console.log("🧑‍🎨: Injected data element");
     }
 
     // Global instance初期化（inject.js message listener前）
@@ -172,11 +170,32 @@ import { getOverlayPixelColor } from "@/features/tile-draw";
   }
 })();
 
-// メッセージリスナー（言語切替）
+// メッセージリスナー（言語切替・テーマ切替）
 runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.type === "LOCALE_CHANGED") {
     // i18nマネージャーの状態を更新
     await I18nManager.init(message.locale);
+    return;
+  }
+
+  if (message.type === "THEME_CHANGED") {
+    const newTheme = message.theme as "light" | "dark";
+    console.log("🧑‍🎨 : Theme changed to:", newTheme);
+
+    // data elementの属性更新
+    const dataElement = document.getElementById("__mr_wplace_data__");
+    if (dataElement) {
+      dataElement.setAttribute("data-theme", newTheme);
+    }
+
+    // inject.jsにテーマ変更を通知
+    window.postMessage(
+      {
+        source: "mr-wplace-theme-update",
+        theme: newTheme,
+      },
+      "*"
+    );
     return;
   }
 });

@@ -79,13 +79,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 設定を保存
     await ThemeToggleStorage.set(newTheme);
 
-    // ページリロード
+    // content.tsにテーマ変更を通知
     const [activeTab] = await tabs.query({
       active: true,
       currentWindow: true,
     });
     if (activeTab.id) {
-      await tabs.reload(activeTab.id);
+      await tabs.sendMessage(activeTab.id, {
+        type: "THEME_CHANGED",
+        theme: newTheme,
+      });
     }
   });
 });
