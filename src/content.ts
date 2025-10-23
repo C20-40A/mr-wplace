@@ -31,7 +31,7 @@ import { getOverlayPixelColor } from "@/features/tile-draw";
     // Fetchインターセプターの注入
     {
       const script = document.createElement("script");
-      script.src = runtime.getURL("inject.js");
+      script.src = runtime.getURL("dist/inject.js");
       // scriptタグをheadの先頭に挿入
       (document.head || document.documentElement).prepend(script);
       // 読み込まれたら即削除
