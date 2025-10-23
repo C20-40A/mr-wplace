@@ -41,7 +41,7 @@
         "https://wplace.live/*"
       ],
       "resources": [
-        "inject.js",
+        "dist/inject.js",
         "assets/fonts/k8x12/k8x12S.ttf",
         "assets/fonts/Bytesized/Bytesized-Regular.ttf",
         "assets/fonts/misaki/misaki_gothic.ttf",

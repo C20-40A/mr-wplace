@@ -1,7 +1,7 @@
 # メイン
 
 - 距離を計測する機能
-- 描画位置がずれる致命的な問題
+- 画像削除したとき、描画も消す
 - 画像追加が safari で使えない?
 - フィルターするとカウントがリセットされる
 - tag も export 対象にする
@@ -77,7 +77,7 @@
   - all_frames false (デフォルト)系は false．まあデフォルトが false だから不要か
 - dark/light テーマの i18n 不要になった
 
-# DONE v1.7.0
+# DONE v1.7.2
 
 - 土地検索https://nominatim.org/ が利用
 - fix:bookmarks の 🌐 Coordinate Jumper がスクロールしてしまう
