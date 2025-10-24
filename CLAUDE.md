@@ -1,0 +1,13 @@
+- wplace というサイトの chrome 拡張機能を作成する
+- wplace は地図上に pixel を設置するサイト(pixel は online で share される)
+- code は content がメイン. map instance や fetch へのアクセスは、src/inject.ts
+- ProjectName: mr-wplace
+- ExtensionName: Mr. Wplace
+- try-catch はしない。error は基本的に throw せよ(コードの上層で catch している)
+- log 利用時には console.log("🧑‍🎨 : xxxx")と 🧑‍🎨 のアイコンを表示する
+- 拡張機能のため、tailwind で使える命令が限定的。btn や flex などの必ずあるであろう命令以外は、inline style で記述
+- 関数は function より const & arrow function を優先
+- "@/_": ["src/_"]の alias を使う(e.g. `import { di } from "@/core/di";`)
+- chrome API は、`import { storage } from "@/utils/browser-api";`して利用(storage.get,storage.set,storage.remove,runtime.getURL,runtime.sendMessage,runtime.onMessage,runtime.lastError,tabs.query,tabs.sendMessage,tabs.reload が利用可能)
+- storage.get(),storage.set(),storage.remove()のように使う
+  重要: 最小限実装方針を維持し、1 つずつ問題解決すること
