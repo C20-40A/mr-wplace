@@ -13,12 +13,14 @@ export class GalleryImageSelector {
     container: HTMLElement,
     router: GalleryRouter,
     onSelect: (item: ImageItem) => void,
-    onAddClick?: () => void
+    onAddClick?: () => void,
+    onShowDetail?: (item: ImageItem) => void
   ): Promise<void> {
     await this.ui.render(
       container,
       onSelect,
-      onAddClick
+      onAddClick,
+      onShowDetail
     );
   }
 

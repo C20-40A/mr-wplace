@@ -13,6 +13,7 @@ export class GalleryImageSelectorUI {
   private layerPanel: HTMLElement | null = null;
   private galleryStorage: GalleryStorage;
   private currentOnSelect: ((item: ImageItem) => void) | null = null;
+  private currentOnShowDetail: ((item: ImageItem) => void) | null = null;
 
   constructor() {
     this.galleryStorage = new GalleryStorage();
@@ -24,9 +25,11 @@ export class GalleryImageSelectorUI {
   async render(
     container: HTMLElement,
     onSelect: (item: ImageItem) => void,
-    onAddClick?: () => void
+    onAddClick?: () => void,
+    onShowDetail?: (item: ImageItem) => void
   ): Promise<void> {
     this.currentOnSelect = onSelect; // 保存
+    this.currentOnShowDetail = onShowDetail; // 保存
     container.innerHTML = "";
 
     // レイヤーパネル（単一カラム）
@@ -217,7 +220,7 @@ export class GalleryImageSelectorUI {
     const thumbnail = document.createElement("img");
     thumbnail.src = item.dataUrl;
     thumbnail.style.cssText =
-      "width: 80px; height: 80px; object-fit: cover; border: 2px solid #e5e7eb; border-radius: 0.5rem; display: block;";
+      "width: 80px; height: 80px; object-fit: cover; border: 2px solid #e5e7eb; display: block;";
 
     container.onmouseenter = () => {
       thumbnail.style.transform = "scale(1.05)";
@@ -251,7 +254,6 @@ export class GalleryImageSelectorUI {
       margin-bottom: 0.5rem;
       display: flex;
       align-items: stretch;
-      gap: 0;
       transition: all 0.2s;
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
       overflow: hidden;
@@ -260,7 +262,7 @@ export class GalleryImageSelectorUI {
     // コンテンツエリア（flex: 1）
     const contentArea = document.createElement("div");
     contentArea.style.cssText =
-      "flex: 1; display: flex; align-items: center; gap: 0.5rem; min-width: 0; padding: 0.5rem;";
+      "flex: 1; display: flex; align-items: center; gap: 0.25rem; min-width: 0; padding: 0.4rem;";
 
     // メイン領域（クリック可能）
     const mainArea = document.createElement("div");
@@ -268,10 +270,9 @@ export class GalleryImageSelectorUI {
       flex: 1;
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.4rem;
       cursor: pointer;
-      border-radius: 0.375rem;
-      padding: 0.5rem;
+      padding-left: 0.4rem;
       margin: -0.5rem;
       transition: background 0.15s;
       min-width: 0;
@@ -313,7 +314,7 @@ export class GalleryImageSelectorUI {
     statusBadge.textContent = item.drawEnabled ? "✓ ON" : "✗ OFF";
     statusBadge.style.cssText = `
       font-size: 0.75rem;
-      padding: 0.125rem 0.375rem;
+      padding: 0.1rem 0.2rem;
       border-radius: 0.25rem;
       font-weight: 500;
       background: ${item.drawEnabled ? "#d1fae5" : "#fee2e2"};
@@ -343,7 +344,7 @@ export class GalleryImageSelectorUI {
     // ボタン領域
     const buttonArea = document.createElement("div");
     buttonArea.style.cssText =
-      "display: flex; gap: 0.5rem; flex-shrink: 0; align-items: center;";
+      "display: flex; flex-shrink: 0; align-items: center;";
     buttonArea.onclick = (e) => e.stopPropagation();
 
     // D-pad（画像移動）- コンパクト化
@@ -352,7 +353,6 @@ export class GalleryImageSelectorUI {
       display: grid;
       grid-template-columns: repeat(3, 20px);
       grid-template-rows: repeat(3, 20px);
-      gap: 1px;
     `;
 
     const createMoveImageButton = (
@@ -366,7 +366,6 @@ export class GalleryImageSelectorUI {
       btn.style.cssText = `
         background: #e0f2fe;
         border: 1px solid #bae6fd;
-        border-radius: 0.25rem;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -404,9 +403,9 @@ export class GalleryImageSelectorUI {
     toggleBtn.style.cssText = `
       background: ${item.drawEnabled ? "#dbeafe" : "#f3f4f6"};
       border: 1px solid ${item.drawEnabled ? "#bfdbfe" : "#e5e7eb"};
-      border-radius: 0.25rem;
-      width: 1.75rem;
-      height: 1.75rem;
+      border-radius: 0;
+      width: 100%;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -433,9 +432,9 @@ export class GalleryImageSelectorUI {
     gotoBtn.style.cssText = `
       background: #d1fae5;
       border: 1px solid #a7f3d0;
-      border-radius: 0.25rem;
-      width: 1.75rem;
-      height: 1.75rem;
+      border-radius: 0;
+      width: 100%;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -465,9 +464,9 @@ export class GalleryImageSelectorUI {
     deleteBtn.style.cssText = `
       background: #fee2e2;
       border: 1px solid #fecaca;
-      border-radius: 0.25rem;
-      width: 1.75rem;
-      height: 1.75rem;
+      border-radius: 0;
+      width: 100%;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -494,10 +493,53 @@ export class GalleryImageSelectorUI {
       await this.renderLayerList(undefined);
     };
 
+    // 詳細ボタン
+    const detailBtn = document.createElement("button");
+    detailBtn.innerHTML = "🔍";
+    detailBtn.style.cssText = `
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+      border-radius: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.875rem;
+      transition: all 0.15s;
+    `;
+    detailBtn.onmouseenter = () => {
+      detailBtn.style.background = "#fde68a";
+      detailBtn.style.transform = "scale(1.1)";
+    };
+    detailBtn.onmouseleave = () => {
+      detailBtn.style.background = "#fef3c7";
+      detailBtn.style.transform = "scale(1)";
+    };
+    detailBtn.onclick = () => {
+      if (this.currentOnShowDetail) {
+        this.currentOnShowDetail(this.convertGalleryItemToImageItem(item));
+      }
+    };
+
     buttonArea.appendChild(dPadContainer);
-    buttonArea.appendChild(gotoBtn);
-    buttonArea.appendChild(toggleBtn);
-    buttonArea.appendChild(deleteBtn);
+
+    // 2x2グリッドコンテナ（goto/detail/toggle/delete）
+    const actionGrid = document.createElement("div");
+    actionGrid.style.cssText = `
+      display: grid;
+      grid-template-columns: repeat(2, 1.75rem);
+      grid-template-rows: repeat(2, 1.75rem);
+      margin-left: 0.25rem;
+    `;
+
+    actionGrid.appendChild(gotoBtn);
+    actionGrid.appendChild(detailBtn);
+    actionGrid.appendChild(toggleBtn);
+    actionGrid.appendChild(deleteBtn);
+
+    buttonArea.appendChild(actionGrid);
 
     contentArea.appendChild(mainArea);
     contentArea.appendChild(divider);
