@@ -70,53 +70,72 @@ const handleTileRequest = async (
 
   const tileX = parseInt(tileMatch[1], 10);
   const tileY = parseInt(tileMatch[2], 10);
+  const cacheKey = `${tileX},${tileY}`;
+  const dataSaver = window.mrWplaceDataSaver;
 
-  const response = await originalFetch.apply(window, args);
-  const clonedResponse = response.clone();
+  let tileBlob: Blob;
+  let response: Response;
 
-  try {
-    const blob = await clonedResponse.blob();
+  // Check cache if data saver enabled
+  if (dataSaver?.enabled && dataSaver.tileCache.has(cacheKey)) {
+    console.log("🧑‍🎨 : Cache hit for tile:", cacheKey);
+    tileBlob = dataSaver.tileCache.get(cacheKey)!;
+    // Create response for consistency (headers may be used downstream)
+    response = new Response(tileBlob, {
+      status: 200,
+      statusText: "OK (Cached)",
+      headers: new Headers({ "Content-Type": "image/png" }),
+    });
+  } else {
+    // Fetch from network
+    response = await originalFetch.apply(window, args);
+    const clonedResponse = response.clone();
+    tileBlob = await clonedResponse.blob();
 
-    return new Promise((resolve) => {
-      const blobUUID = crypto.randomUUID();
+    // Save to cache if data saver enabled
+    if (dataSaver?.enabled) {
+      dataSaver.tileCache.set(cacheKey, tileBlob);
+      console.log("🧑‍🎨 : Cached tile:", cacheKey);
+    }
+  }
 
-      // Store callback for processed blob
-      window.tileProcessingQueue = window.tileProcessingQueue || new Map();
-      window.tileProcessingQueue.set(blobUUID, (processedBlob: Blob) => {
-        resolve(
-          new Response(processedBlob, {
-            headers: response.headers,
-            status: response.status,
-            statusText: response.statusText,
-          })
-        );
-      });
+  // Process tile (overlay, snapshot, etc.)
+  return new Promise((resolve) => {
+    const blobUUID = crypto.randomUUID();
 
-      // Send original tile for snapshot (tmp save)
-      window.postMessage(
-        {
-          source: "wplace-studio-snapshot-tmp",
-          tileBlob: blob,
-          tileX: tileX,
-          tileY: tileY,
-        },
-        "*"
-      );
-
-      // Send tile for processing
-      window.postMessage(
-        {
-          source: "wplace-studio-tile",
-          blobID: blobUUID,
-          tileBlob: blob,
-          tileX: tileX,
-          tileY: tileY,
-        },
-        "*"
+    // Store callback for processed blob
+    window.tileProcessingQueue = window.tileProcessingQueue || new Map();
+    window.tileProcessingQueue.set(blobUUID, (processedBlob: Blob) => {
+      resolve(
+        new Response(processedBlob, {
+          headers: response.headers,
+          status: response.status,
+          statusText: response.statusText,
+        })
       );
     });
-  } catch (error) {
-    console.error("Failed to process tile blob:", error);
-    return response;
-  }
+
+    // Send original tile for snapshot (tmp save)
+    window.postMessage(
+      {
+        source: "wplace-studio-snapshot-tmp",
+        tileBlob: tileBlob,
+        tileX: tileX,
+        tileY: tileY,
+      },
+      "*"
+    );
+
+    // Send tile for processing
+    window.postMessage(
+      {
+        source: "wplace-studio-tile",
+        blobID: blobUUID,
+        tileBlob: tileBlob,
+        tileX: tileX,
+        tileY: tileY,
+      },
+      "*"
+    );
+  });
 };

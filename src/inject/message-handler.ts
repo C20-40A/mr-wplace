@@ -22,6 +22,12 @@ export const setupMessageHandler = (getCurrentTheme: () => "light" | "dark"): vo
       handleThemeUpdate(event.data);
       return;
     }
+
+    // Handle data saver updates
+    if (event.data.source === "mr-wplace-data-saver-update") {
+      handleDataSaverUpdate(event.data);
+      return;
+    }
   });
 };
 
@@ -86,5 +92,15 @@ const handleThemeUpdate = (data: { theme: "light" | "dark" }): void => {
 
   if (window.wplaceMap) {
     applyTheme(window.wplaceMap, theme);
+  }
+};
+
+/**
+ * Handle data saver update
+ */
+const handleDataSaverUpdate = (data: { enabled: boolean }): void => {
+  if (window.mrWplaceDataSaver) {
+    window.mrWplaceDataSaver.enabled = data.enabled;
+    console.log("🧑‍🎨 : Data saver updated:", data.enabled);
   }
 };

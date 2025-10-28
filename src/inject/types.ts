@@ -2,6 +2,11 @@ export type TileProcessingCallback = (processedBlob: Blob) => void;
 
 export interface TileProcessingQueue extends Map<string, TileProcessingCallback> {}
 
+export interface DataSaverState {
+  enabled: boolean;
+  tileCache: Map<string, Blob>;
+}
+
 export interface WplaceMap {
   version: string;
   getCenter: () => { lat: number; lng: number };
@@ -15,11 +20,13 @@ export interface WplaceMap {
 export interface WindowWithWplace extends Window {
   wplaceMap?: WplaceMap;
   tileProcessingQueue?: TileProcessingQueue;
+  mrWplaceDataSaver?: DataSaverState;
 }
 
 declare global {
   interface Window {
     wplaceMap?: WplaceMap;
     tileProcessingQueue?: TileProcessingQueue;
+    mrWplaceDataSaver?: DataSaverState;
   }
 }
