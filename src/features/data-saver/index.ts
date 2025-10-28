@@ -77,7 +77,7 @@ class DataSaver {
     this.badge.textContent = "🪫 Data Saver ON";
     this.badge.style.cssText = `
       position: fixed;
-      top: 45;
+      top: 45px;
       left: 50%;
       transform: translateX(-50%);
       background: rgba(46, 204, 113, 0.7);
