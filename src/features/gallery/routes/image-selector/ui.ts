@@ -105,30 +105,34 @@ export class GalleryImageSelectorUI {
       .filter((i) => i.drawPosition)
       .sort((a, b) => (b.layerOrder ?? 0) - (a.layerOrder ?? 0)); // 降順：大→小
 
-    // 未配置画像セクション
-    if (unplacedImages.length > 0) {
-      const unplacedSection = document.createElement("div");
-      unplacedSection.style.cssText = "margin-bottom: 1.5rem;";
+    // 未配置画像セクション（常に表示）
+    const unplacedSection = document.createElement("div");
+    unplacedSection.style.cssText = "margin-bottom: 1.5rem;";
 
-      const sectionTitle = document.createElement("div");
-      sectionTitle.textContent = t`${"unplaced_images"}`;
-      sectionTitle.style.cssText =
-        "font-weight: 600; font-size: 0.875rem; margin-bottom: 0.75rem; color: #374151; padding-left: 0.5rem; border-left: 3px solid #6366f1;";
-      unplacedSection.appendChild(sectionTitle);
+    const sectionTitle = document.createElement("div");
+    sectionTitle.textContent = t`${"unplaced_images"}`;
+    sectionTitle.style.cssText =
+      "font-weight: 600; font-size: 0.875rem; margin-bottom: 0.75rem; color: #374151; padding-left: 0.5rem; border-left: 3px solid #6366f1;";
+    unplacedSection.appendChild(sectionTitle);
 
-      const unplacedGrid = document.createElement("div");
-      unplacedGrid.style.cssText =
-        "display: flex; flex-wrap: wrap; gap: 0.5rem;";
+    const unplacedGrid = document.createElement("div");
+    unplacedGrid.style.cssText =
+      "display: flex; flex-wrap: wrap; gap: 0.5rem;";
 
-      unplacedImages.forEach((item) => {
-        const itemEl = this.createUnplacedItem(item);
-        unplacedGrid.appendChild(itemEl);
-      });
+    unplacedImages.forEach((item) => {
+      const itemEl = this.createUnplacedItem(item);
+      unplacedGrid.appendChild(itemEl);
+    });
 
-      unplacedSection.appendChild(unplacedGrid);
-
-      this.layerPanel.appendChild(unplacedSection);
+    // 「＋」ボタンを追加
+    if (onAddClick) {
+      const addButton = this.createAddImageButton(onAddClick);
+      unplacedGrid.appendChild(addButton);
     }
+
+    unplacedSection.appendChild(unplacedGrid);
+
+    this.layerPanel.appendChild(unplacedSection);
 
     // レイヤー画像セクション
     const layerSection = document.createElement("div");
@@ -152,6 +156,51 @@ export class GalleryImageSelectorUI {
     }
 
     this.layerPanel.appendChild(layerSection);
+  }
+
+  /**
+   * 画像追加ボタン作成
+   */
+  private createAddImageButton(onAddClick: () => void): HTMLElement {
+    const container = document.createElement("div");
+    container.style.cssText = `
+      cursor: pointer;
+      transition: all 0.2s;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      border: 2px dashed #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    `;
+
+    const content = document.createElement("div");
+    content.style.cssText = `
+      width: 80px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      color: #9ca3af;
+      transition: all 0.2s;
+    `;
+    content.textContent = "＋";
+
+    container.onmouseenter = () => {
+      content.style.transform = "scale(1.1)";
+      content.style.color = "#6366f1";
+      container.style.borderColor = "#6366f1";
+    };
+    container.onmouseleave = () => {
+      content.style.transform = "scale(1)";
+      content.style.color = "#9ca3af";
+      container.style.borderColor = "#e5e7eb";
+    };
+    container.onclick = onAddClick;
+
+    container.appendChild(content);
+    return container;
   }
 
   /**
