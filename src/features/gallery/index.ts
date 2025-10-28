@@ -117,7 +117,16 @@ const createGallery = () => {
             ui.closeModal();
           }
         },
-        () => router.navigate("image-editor")
+        () => router.navigate("image-editor"),
+        async (item) => {
+          // 詳細表示コールバック
+          const { GalleryStorage } = await import("./storage");
+          const items = await new GalleryStorage().getAll();
+          const galleryItem = items.find((i) => i.key === item.key);
+          if (galleryItem) {
+            showDetail(galleryItem);
+          }
+        }
       );
     },
 
