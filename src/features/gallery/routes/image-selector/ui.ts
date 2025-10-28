@@ -116,8 +116,7 @@ export class GalleryImageSelectorUI {
     unplacedSection.appendChild(sectionTitle);
 
     const unplacedGrid = document.createElement("div");
-    unplacedGrid.style.cssText =
-      "display: flex; flex-wrap: wrap; gap: 0.5rem;";
+    unplacedGrid.style.cssText = "display: flex; flex-wrap: wrap; gap: 0.5rem;";
 
     unplacedImages.forEach((item) => {
       const itemEl = this.createUnplacedItem(item);
@@ -507,7 +506,7 @@ export class GalleryImageSelectorUI {
     // レイヤー移動ボタン（外側右端）
     const moveContainer = document.createElement("div");
     moveContainer.style.cssText =
-      "display: flex; flex-direction: column; gap: 0.125rem; flex-shrink: 0; padding: 0.5rem 0.375rem; background: #f9fafb; border-left: 1px solid #e5e7eb;";
+      "display: flex; flex-direction: column; flex-shrink: 0; background: #f9fafb; border-left: 1px solid #e5e7eb;";
     moveContainer.onclick = (e) => e.stopPropagation();
 
     const createLayerMoveButton = (
@@ -518,29 +517,31 @@ export class GalleryImageSelectorUI {
       const btn = document.createElement("button");
       btn.textContent = symbol;
       btn.disabled = disabled;
+      const activeBg = "#ffffff"; // アクティブ時の背景色：白
+      const activeText = "#1f2937"; // アクティブ時の文字色：濃いグレー
+      const hoverBg = "#f3f4f6"; // ホバー時の背景色：無効時と同じか、少し濃い薄いグレー
+
       btn.style.cssText = `
-        background: ${disabled ? "#f3f4f6" : "#dbeafe"};
-        border: 1px solid ${disabled ? "#e5e7eb" : "#bfdbfe"};
-        border-radius: 0.25rem;
-        width: 1.5rem;
+        background: ${disabled ? "#f3f4f6" : activeBg};
+        width: 1.2rem;
         display: flex;
         flex: 1;
         align-items: center;
         justify-content: center;
         cursor: ${disabled ? "not-allowed" : "pointer"};
-        font-size: 0.625rem;
-        color: ${disabled ? "#9ca3af" : "#1e40af"};
+        font-size: 0.75rem;
+        color: ${disabled ? "#9ca3af" : activeText};
         font-weight: 600;
-        opacity: ${disabled ? "0.5" : "1"};
+        opacity: ${disabled ? "0.8" : "1"}; 
         transition: all 0.15s;
       `;
       if (!disabled) {
         btn.onmouseenter = () => {
-          btn.style.background = "#bfdbfe";
+          btn.style.background = hoverBg; // ホバー時も白系で少し変化
           btn.style.transform = "scale(1.05)";
         };
         btn.onmouseout = () => {
-          btn.style.background = "#dbeafe";
+          btn.style.background = activeBg; // アウト時にもとに戻す
           btn.style.transform = "scale(1)";
         };
         btn.onclick = async () => {
