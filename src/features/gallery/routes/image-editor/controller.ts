@@ -46,13 +46,8 @@ export class EditorController {
   async handleFile(file: File): Promise<void> {
     if (!file.type.startsWith("image/")) return;
 
-    // ファイル名から座標情報抽出
     this.currentFileName = file.name;
     this.drawPosition = parseDrawPositionFromFileName(file.name);
-
-    if (this.drawPosition) {
-      console.log("🧑‍🎨 : Detected position from filename:", this.drawPosition);
-    }
 
     const dataUrl = await readFileAsDataUrl(file);
     const { action, dataUrl: processedDataUrl } = await showImageSizeDialog(
@@ -61,12 +56,10 @@ export class EditorController {
     );
 
     if (action === "addToGallery") {
-      // 直接ギャラリーに追加
       await this.saveDirectlyToGallery(processedDataUrl);
       return;
     }
 
-    // 'resize' または 'edit' の場合は編集画面へ
     this.displayImage(processedDataUrl);
   }
 
@@ -202,6 +195,18 @@ export class EditorController {
     const gpuToggle = this.container.querySelector(
       "#wps-gpu-toggle"
     ) as HTMLInputElement;
+    const tlxInput = this.container.querySelector(
+      "#wps-coord-tlx"
+    ) as HTMLInputElement;
+    const tlyInput = this.container.querySelector(
+      "#wps-coord-tly"
+    ) as HTMLInputElement;
+    const pxxInput = this.container.querySelector(
+      "#wps-coord-pxx"
+    ) as HTMLInputElement;
+    const pxyInput = this.container.querySelector(
+      "#wps-coord-pxy"
+    ) as HTMLInputElement;
 
     if (slider) slider.value = "1";
     if (widthInput) {
@@ -220,6 +225,10 @@ export class EditorController {
     if (saturationValue) saturationValue.textContent = "0";
     if (ditheringCheckbox) ditheringCheckbox.checked = false;
     if (gpuToggle) gpuToggle.checked = true;
+    if (tlxInput) tlxInput.value = "";
+    if (tlyInput) tlyInput.value = "";
+    if (pxxInput) pxxInput.value = "";
+    if (pxyInput) pxyInput.value = "";
 
     if (dropzone) dropzone.style.display = "block";
     if (imageDisplay) imageDisplay.style.display = "none";
@@ -228,8 +237,48 @@ export class EditorController {
   async saveToGallery(): Promise<void> {
     if (!this.scaledCanvas) return;
 
+    // UIから座標取得
+    const coordPosition = this.getCoordinatesFromUI();
+    if (coordPosition) {
+      this.drawPosition = coordPosition;
+      console.log("🧑‍🎨 : Coordinates from UI:", this.drawPosition);
+    }
+
     const blob = await createBlobFromCanvas(this.scaledCanvas);
     await this.saveCanvasToGallery(blob);
+  }
+
+  private getCoordinatesFromUI(): DrawPosition | null {
+    const tlxInput = this.container.querySelector(
+      "#wps-coord-tlx"
+    ) as HTMLInputElement;
+    const tlyInput = this.container.querySelector(
+      "#wps-coord-tly"
+    ) as HTMLInputElement;
+    const pxxInput = this.container.querySelector(
+      "#wps-coord-pxx"
+    ) as HTMLInputElement;
+    const pxyInput = this.container.querySelector(
+      "#wps-coord-pxy"
+    ) as HTMLInputElement;
+
+    if (!tlxInput || !tlyInput || !pxxInput || !pxyInput) return null;
+
+    const tlx = tlxInput.value.trim();
+    const tly = tlyInput.value.trim();
+    const pxx = pxxInput.value.trim();
+    const pxy = pxyInput.value.trim();
+
+    // 全て空欄の場合はnull
+    if (!tlx && !tly && !pxx && !pxy) return null;
+
+    // 一部のみ入力されている場合、空欄を0として扱う
+    return {
+      TLX: parseInt(tlx || "0"),
+      TLY: parseInt(tly || "0"),
+      PxX: parseInt(pxx || "0"),
+      PxY: parseInt(pxy || "0"),
+    };
   }
 
   async downloadImage(): Promise<void> {
@@ -350,6 +399,9 @@ export class EditorController {
           this.initColorPalette(colorPaletteContainer);
         }
 
+        // 座標UIに自動入力
+        this.updateCoordinateInputs();
+
         // 初期表示: リサイズ→調整→パレット変換
         setTimeout(() => {
           this.updateScaledImage();
@@ -359,6 +411,30 @@ export class EditorController {
 
     if (dropzone) dropzone.style.display = "none";
     if (imageDisplay) imageDisplay.style.display = "block";
+  }
+
+  private updateCoordinateInputs(): void {
+    if (!this.drawPosition) return;
+
+    const tlxInput = this.container.querySelector(
+      "#wps-coord-tlx"
+    ) as HTMLInputElement;
+    const tlyInput = this.container.querySelector(
+      "#wps-coord-tly"
+    ) as HTMLInputElement;
+    const pxxInput = this.container.querySelector(
+      "#wps-coord-pxx"
+    ) as HTMLInputElement;
+    const pxyInput = this.container.querySelector(
+      "#wps-coord-pxy"
+    ) as HTMLInputElement;
+
+    if (tlxInput) tlxInput.value = this.drawPosition.TLX.toString();
+    if (tlyInput) tlyInput.value = this.drawPosition.TLY.toString();
+    if (pxxInput) pxxInput.value = this.drawPosition.PxX.toString();
+    if (pxyInput) pxyInput.value = this.drawPosition.PxY.toString();
+
+    console.log("🧑‍🎨 : Auto-filled coordinates:", this.drawPosition);
   }
 
   private updateOriginalImageDisplay(): void {

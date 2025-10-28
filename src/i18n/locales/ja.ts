@@ -250,4 +250,12 @@ export const jaTranslations = {
   searching: "検索中...",
   no_results_found: "結果が見つかりませんでした",
   search_results: "検索結果",
+
+  // Coordinate Input (Image Editor)
+  coordinate_input_optional: "座標入力（任意）",
+  tile_x: "タイルX",
+  tile_y: "タイルY",
+  pixel_x: "ピクセルX",
+  pixel_y: "ピクセルY",
+  coordinate_input_hint: "座標を入力すると、ギャラリー追加時に自動的にその位置に配置されます",
 };

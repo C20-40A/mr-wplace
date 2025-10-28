@@ -249,4 +249,12 @@ However, please pay careful attention to the following:
   searching: "Searching...",
   no_results_found: "No results found",
   search_results: "Search Results",
+
+  // Coordinate Input (Image Editor)
+  coordinate_input_optional: "Coordinate Input (Optional)",
+  tile_x: "Tile X",
+  tile_y: "Tile Y",
+  pixel_x: "Pixel X",
+  pixel_y: "Pixel Y",
+  coordinate_input_hint: "If you enter coordinates, the image will be automatically placed at that position when added to the gallery",
 };

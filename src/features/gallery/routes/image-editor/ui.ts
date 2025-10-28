@@ -169,6 +169,16 @@ export class ImageEditorUI {
                 </div>
               </div>
               
+              <div>
+                <label style="display: block; font-size: 0.75rem; font-weight: 500; margin-bottom: 0.25rem; color: #6b7280;">${"coordinate_input_optional"}</label>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.25rem;">
+                  <input type="number" id="wps-coord-tlx" placeholder="TLX" min="0" step="1" style="width: 100%; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; text-align: center;">
+                  <input type="number" id="wps-coord-tly" placeholder="TLY" min="0" step="1" style="width: 100%; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; text-align: center;">
+                  <input type="number" id="wps-coord-pxx" placeholder="PxX" min="0" max="999" step="1" style="width: 100%; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; text-align: center;">
+                  <input type="number" id="wps-coord-pxy" placeholder="PxY" min="0" max="999" step="1" style="width: 100%; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; text-align: center;">
+                </div>
+              </div>
+              
               <div class="flex" style="gap: 0.5rem;">
                 <button id="wps-add-to-gallery" class="btn btn-primary" style="flex: 1;">${"add_to_gallery"}</button>
                 <button id="wps-download" class="btn btn-ghost">${"download"}</button>
