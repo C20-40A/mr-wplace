@@ -262,4 +262,9 @@ export const jaTranslations = {
   pixel_x: "ピクセルX",
   pixel_y: "ピクセルY",
   coordinate_input_hint: "座標を入力すると、ギャラリー追加時に自動的にその位置に配置されます",
+
+  // Data Saver
+  data_saver_on: "データセーバー ON",
+  data_saver_off: "データセーバー OFF",
+  data_saver_rendering_paused: "レンダリング停止中",
 };

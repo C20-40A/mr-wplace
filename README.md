@@ -1,6 +1,6 @@
 # Mr. Wplace
 
-![Version](https://img.shields.io/badge/version-1.8.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.8.1-blue.svg)
 ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green.svg)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-orange.svg)
 ![License](https://img.shields.io/badge/license-MPL--2.0-blue.svg)
@@ -122,11 +122,11 @@ This generates a `.zip` file (e.g., `mr-wplace-v1.6.5.zip`) ready for:
 ## 🌟 Features
 
 - **Gallery**: Upload, edit, and manage images
-- **Drawing**: Draw images on map tiles
+- **Drawing**: Draw images/texts on map tiles
 - **Time Travel**: Save and restore tile snapshots
 - **Color Filter**: Apply various color filters and drawing modes
 - **Bookmarks**: Save favorite locations
-- **Multi-language**: Japanese and English support
+- **Dark Theme**: Change map theme
 
 ## 📄 License
 

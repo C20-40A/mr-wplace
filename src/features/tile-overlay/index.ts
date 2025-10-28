@@ -11,6 +11,7 @@ import {
   setPerTileColorStats,
   toggleDrawEnabled,
 } from "@/features/tile-draw";
+import { DataSaverStorage } from "@/features/data-saver/storage";
 
 export class TileOverlay {
   private galleryStorage: GalleryStorage;
@@ -28,6 +29,21 @@ export class TileOverlay {
     window.addEventListener("message", async (event) => {
       if (event.data.source !== "wplace-studio-tile") return;
       const { blobID, tileBlob, tileX, tileY } = event.data;
+
+      const dataSaverEnabled = await DataSaverStorage.get();
+      
+      if (dataSaverEnabled) {
+        console.log("🧑‍🎨 : Data saver enabled - skipping tile processing");
+        window.postMessage(
+          {
+            source: "mr-wplace-processed",
+            blobID,
+            processedBlob: tileBlob,
+          },
+          "*"
+        );
+        return;
+      }
 
       const processedBlob = await this.drawPixelOnTile(tileBlob, tileX, tileY);
 
