@@ -439,12 +439,7 @@ const init = (): void => {
       getTargetElement: findPositionModal,
       createElement: (positionModal) => {
         // マップピングループが既に存在する場合はスキップ
-        if (document.querySelector("#map-pin-button-group")) {
-          console.log(
-            "🧑‍🎨 : Map pin button group already exists, skipping fallback"
-          );
-          return;
-        }
+        if (document.querySelector("#map-pin-button-group")) return;
 
         const saveButton = createSaveBookmarkButton();
         saveButton.id = "save-btn-fallback";

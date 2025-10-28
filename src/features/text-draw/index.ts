@@ -67,20 +67,20 @@ const handleDeleteText = async (key: string): Promise<void> => {
  */
 const createMapPinButtons = (container: Element): void => {
   const group = getOrCreateMapPinButtonGroup(container);
-  
+
   // 既存ボタンチェック
   if (group.querySelector("#text-draw-btn")) {
     console.log("🧑‍🎨 : Text draw button already exists");
     return;
   }
-  
+
   const button = createMapPinGroupButton({
     icon: "✏️",
     text: t`${"text_draw"}`,
     onClick: () => showModal(),
   });
   button.id = "text-draw-btn";
-  
+
   group.appendChild(button);
   console.log("🧑‍🎨 : Text draw button added to group");
 };
@@ -105,11 +105,8 @@ const init = (): void => {
       getTargetElement: findPositionModal,
       createElement: (container) => {
         // マップピングループが既に存在する場合はスキップ
-        if (document.querySelector("#map-pin-button-group")) {
-          console.log("🧑‍🎨 : Map pin button group already exists, skipping fallback");
-          return;
-        }
-        
+        if (document.querySelector("#map-pin-button-group")) return;
+
         const button = createTextInputButton();
         button.id = "text-draw-fallback-btn";
         button.addEventListener("click", () => showModal());
