@@ -13,7 +13,8 @@ export class GalleryImageDetail {
     container: HTMLElement,
     router: GalleryRouter,
     item: GalleryItem,
-    onDelete: (key: string) => void
+    onDelete: (key: string) => void,
+    onEdit?: () => void
   ): void {
     this.currentItem = item;
 
@@ -45,7 +46,11 @@ export class GalleryImageDetail {
             📍 ${t`${"goto_map"}`}
           </button>
           
-          <button id="share-btn" class="btn btn-sm" ${
+          <button id="edit-btn" class="btn btn-sm btn-primary">
+            ✏️ ${t`${"edit"}`}
+          </button>
+          
+          <button id="share-btn" class="btn btn-sm btn-primary" ${
             !item.drawPosition ? 'style="display: none;"' : ""
           }>
             📤 ${t`${"share"}`}
@@ -79,7 +84,7 @@ export class GalleryImageDetail {
     this.loadImageToCanvas(item.dataUrl);
 
     // ボタンイベント設定
-    this.setupButtonEvents(router, onDelete);
+    this.setupButtonEvents(router, onDelete, onEdit);
   }
 
   private loadImageToCanvas(dataUrl: string): void {
@@ -114,7 +119,8 @@ export class GalleryImageDetail {
 
   private setupButtonEvents(
     router: GalleryRouter,
-    onDelete: (key: string) => void
+    onDelete: (key: string) => void,
+    onEdit?: () => void
   ): void {
     if (!this.currentItem) return;
 
@@ -161,6 +167,15 @@ export class GalleryImageDetail {
         router.navigateBack(); // 削除後は一覧に戻る
         Toast.success(t`${"deleted"}`);
       }
+    });
+
+    // 編集ボタン
+    const editBtn = document.getElementById("edit-btn");
+    editBtn?.addEventListener("click", () => {
+      if (!this.currentItem) return;
+
+      onEdit?.();
+      router.navigate("image-editor");
     });
 
     // シェアボタン

@@ -14,6 +14,10 @@ export class GalleryImageEditor {
     this.onSaveSuccess = callback;
   }
 
+  async loadExistingImage(item: any): Promise<void> {
+    await this.controller?.loadExistingImage(item);
+  }
+
   render(container: HTMLElement): void {
     container.innerHTML = '';
     

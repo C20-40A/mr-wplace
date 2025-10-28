@@ -34,6 +34,8 @@ export class EditorController {
   private onSaveSuccess?: () => void;
   private currentFileName: string | null = null;
   private drawPosition: DrawPosition | null = null;
+  private isEditMode = false;
+  private editingItemKey: string | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -43,22 +45,47 @@ export class EditorController {
     this.onSaveSuccess = callback;
   }
 
+  async loadExistingImage(item: GalleryItem): Promise<void> {
+    this.isEditMode = true;
+    this.editingItemKey = item.key;
+    this.drawPosition = item.drawPosition ?? null;
+    this.currentFileName = `edit_${item.key}`;
+
+    console.log("🧑‍🎨 : Loading existing image for edit:", item.key);
+
+    this.displayImage(item.dataUrl);
+    this.updateSaveButtonLabel();
+  }
+
+  private updateSaveButtonLabel(): void {
+    const saveBtn = this.container.querySelector(
+      "#wps-save-btn"
+    ) as HTMLButtonElement;
+    if (!saveBtn) return;
+
+    saveBtn.textContent = this.isEditMode
+      ? `💾 ${t`${"update"}`}`
+      : `💾 ${t`${"save_to_gallery"}"`}`;
+  }
+
   async handleFile(file: File): Promise<void> {
     // JSON形式チェック
     if (file.type === "application/json" || file.name.endsWith(".json")) {
       console.log("🧑‍🎨 : Detected Bluemarble JSON file");
-      const { readFileAsText, parseBluemarbleJson } = await import("./file-handler");
-      
+      const { readFileAsText, parseBluemarbleJson } = await import(
+        "./file-handler"
+      );
+
       const jsonText = await readFileAsText(file);
       const { dataUrl, drawPosition } = await parseBluemarbleJson(jsonText);
-      
+
       this.currentFileName = file.name;
       this.drawPosition = drawPosition;
-      
+
       this.displayImage(dataUrl);
       return;
     }
-    
+
     if (!file.type.startsWith("image/")) return;
 
     this.currentFileName = file.name;
@@ -172,6 +199,8 @@ export class EditorController {
     this.useGpu = true;
     this.currentFileName = null;
     this.drawPosition = null;
+    this.isEditMode = false;
+    this.editingItemKey = null;
 
     const dropzone = this.container.querySelector(
       "#wps-dropzone-container"
@@ -247,6 +276,8 @@ export class EditorController {
 
     if (dropzone) dropzone.style.display = "block";
     if (imageDisplay) imageDisplay.style.display = "none";
+
+    this.updateSaveButtonLabel();
   }
 
   async saveToGallery(): Promise<void> {
@@ -305,16 +336,21 @@ export class EditorController {
 
   private async saveCanvasToGallery(blob: Blob): Promise<void> {
     const base64 = await blobToDataUrl(blob);
-    const key = `gallery_${Date.now()}`;
-
     const { GalleryStorage } = await import("../../storage");
     const galleryStorage = new GalleryStorage();
 
-    const galleryItem: GalleryItem = {
-      key: key,
-      timestamp: Date.now(),
-      dataUrl: base64,
-    };
+    const galleryItem: GalleryItem =
+      this.isEditMode && this.editingItemKey
+        ? {
+            key: this.editingItemKey,
+            timestamp: Date.now(),
+            dataUrl: base64,
+          }
+        : {
+            key: `gallery_${Date.now()}`,
+            timestamp: Date.now(),
+            dataUrl: base64,
+          };
 
     // 座標情報があれば追加（デフォルト表示ON）
     if (this.drawPosition) {
@@ -324,7 +360,10 @@ export class EditorController {
     }
 
     await galleryStorage.save(galleryItem);
-    console.log("🧑‍🎨 : ", t`${"saved_to_gallery"}`);
+    console.log(
+      "🧑‍🎨 : ",
+      this.isEditMode ? t`${"updated"}` : t`${"saved_to_gallery"}`
+    );
 
     this.onSaveSuccess?.();
   }
@@ -379,19 +418,24 @@ export class EditorController {
         const heightInput = this.container.querySelector(
           "#wps-height-input"
         ) as HTMLInputElement;
-        
+
         if (widthInput && heightInput && this.originalImage) {
           const originalWidth = this.originalImage.naturalWidth;
           const originalHeight = this.originalImage.naturalHeight;
-          
+
           widthInput.value = originalWidth.toString();
           heightInput.value = originalHeight.toString();
           widthInput.dataset.originalWidth = originalWidth.toString();
           heightInput.dataset.originalHeight = originalHeight.toString();
           widthInput.max = originalWidth.toString();
           heightInput.max = originalHeight.toString();
-          
-          console.log("🧑‍🎨 : Initialized size inputs:", originalWidth, "x", originalHeight);
+
+          console.log(
+            "🧑‍🎨 : Initialized size inputs:",
+            originalWidth,
+            "x",
+            originalHeight
+          );
         }
 
         const canvas = this.container.querySelector(
@@ -416,6 +460,9 @@ export class EditorController {
 
         // 座標UIに自動入力
         this.updateCoordinateInputs();
+
+        // 保存ボタンラベル更新
+        this.updateSaveButtonLabel();
 
         // 初期表示: リサイズ→調整→パレット変換
         setTimeout(() => {
@@ -492,7 +539,12 @@ export class EditorController {
     };
 
     // 統合処理: リサイズ→調整→パレット（GPU優先）
-    console.log("🧑‍🎨 : Processing with dithering:", this.ditheringEnabled, "useGpu:", this.useGpu);
+    console.log(
+      "🧑‍🎨 : Processing with dithering:",
+      this.ditheringEnabled,
+      "useGpu:",
+      this.useGpu
+    );
     const processedCanvas = await createProcessedCanvas(
       this.originalImage,
       this.imageScale,

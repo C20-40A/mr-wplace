@@ -10,6 +10,7 @@ export const jaTranslations = {
   delete: "削除",
   edit: "編集",
   update: "更新",
+  updated: "更新しました",
   add: "追加",
   select: "選択",
   cancel: "キャンセル",
