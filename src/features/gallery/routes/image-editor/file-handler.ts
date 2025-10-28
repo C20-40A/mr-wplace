@@ -228,3 +228,203 @@ export function parseDrawPositionFromFileName(
     PxY: parseInt(match[4]),
   };
 }
+
+/**
+ * ファイルをテキストとして読み込み
+ */
+export async function readFileAsText(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        resolve(e.target.result as string);
+      } else {
+        reject(new Error("Failed to read file as text"));
+      }
+    };
+    reader.onerror = () => reject(new Error("FileReader error"));
+    reader.readAsText(file);
+  });
+}
+
+/**
+ * Bluemarble JSON形式からdataUrlと座標を抽出
+ * タイル結合処理含む
+ */
+export async function parseBluemarbleJson(
+  jsonText: string
+): Promise<{ dataUrl: string; drawPosition: DrawPosition }> {
+  const json = JSON.parse(jsonText);
+  
+  // 最初のtemplate取得
+  const templateKeys = Object.keys(json.templates);
+  if (templateKeys.length === 0) {
+    throw new Error("No templates found in JSON");
+  }
+  
+  const template = json.templates[templateKeys[0]];
+  
+  // coords parse: "1792, 907, 382, 902" → DrawPosition
+  const coordsParts = template.coords.split(",").map((s: string) => parseInt(s.trim()));
+  if (coordsParts.length !== 4) {
+    throw new Error("Invalid coords format");
+  }
+  
+  const drawPosition: DrawPosition = {
+    TLX: coordsParts[0],
+    TLY: coordsParts[1],
+    PxX: coordsParts[2],
+    PxY: coordsParts[3],
+  };
+  
+  console.log("🧑‍🎨 : Parsed coords:", drawPosition);
+  
+  // tiles結合処理
+  const tiles = template.tiles;
+  const tileEntries = Object.entries(tiles) as Array<[string, string]>;
+  
+  if (tileEntries.length === 0) {
+    throw new Error("No tiles found in template");
+  }
+  
+  // 各tileの位置とサイズ取得
+  interface TileInfo {
+    tx: number;
+    ty: number;
+    offsetX: number;
+    offsetY: number;
+    base64: string;
+    image?: HTMLImageElement;
+    width?: number;
+    height?: number;
+  }
+  
+  const tileInfos: TileInfo[] = tileEntries.map(([key, base64]) => {
+    const parts = key.split(",").map(s => parseInt(s));
+    return {
+      tx: parts[0],
+      ty: parts[1],
+      offsetX: parts[2],
+      offsetY: parts[3],
+      base64,
+    };
+  });
+  
+  // 全tile画像読み込み
+  await Promise.all(
+    tileInfos.map(info => {
+      return new Promise<void>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          // 中央ピクセル抽出: 3x3 → 1x1
+          const originalWidth = img.width;
+          const originalHeight = img.height;
+          const newWidth = Math.floor(originalWidth / 3);
+          const newHeight = Math.floor(originalHeight / 3);
+          
+          console.log("🧑‍🎨 : Extracting center pixels:", originalWidth, "x", originalHeight, "→", newWidth, "x", newHeight);
+          
+          // 元画像からImageData取得
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = originalWidth;
+          tempCanvas.height = originalHeight;
+          const tempCtx = tempCanvas.getContext('2d');
+          if (!tempCtx) {
+            reject(new Error("Failed to get temp canvas context"));
+            return;
+          }
+          tempCtx.drawImage(img, 0, 0);
+          const imageData = tempCtx.getImageData(0, 0, originalWidth, originalHeight);
+          
+          // 中央ピクセル抽出Canvas作成
+          const extractedCanvas = document.createElement('canvas');
+          extractedCanvas.width = newWidth;
+          extractedCanvas.height = newHeight;
+          const extractedCtx = extractedCanvas.getContext('2d');
+          if (!extractedCtx) {
+            reject(new Error("Failed to get extracted canvas context"));
+            return;
+          }
+          const extractedImageData = extractedCtx.createImageData(newWidth, newHeight);
+          
+          // 中央ピクセルのみコピー
+          for (let y = 0; y < newHeight; y++) {
+            for (let x = 0; x < newWidth; x++) {
+              const srcX = x * 3 + 1;
+              const srcY = y * 3 + 1;
+              const srcIndex = (srcY * originalWidth + srcX) * 4;
+              const dstIndex = (y * newWidth + x) * 4;
+              
+              extractedImageData.data[dstIndex] = imageData.data[srcIndex];
+              extractedImageData.data[dstIndex + 1] = imageData.data[srcIndex + 1];
+              extractedImageData.data[dstIndex + 2] = imageData.data[srcIndex + 2];
+              extractedImageData.data[dstIndex + 3] = imageData.data[srcIndex + 3];
+            }
+          }
+          
+          extractedCtx.putImageData(extractedImageData, 0, 0);
+          
+          // 抽出結果をImageに変換
+          const extractedImg = new Image();
+          extractedImg.onload = () => {
+            info.image = extractedImg;
+            info.width = newWidth;
+            info.height = newHeight;
+            resolve();
+          };
+          extractedImg.onerror = () => reject(new Error("Failed to load extracted image"));
+          extractedImg.src = extractedCanvas.toDataURL('image/png');
+        };
+        img.onerror = () => reject(new Error(`Failed to load tile image: ${info.tx},${info.ty}`));
+        
+        // base64形式判定: data:プレフィックス確認
+        const base64Data = info.base64.startsWith("data:") 
+          ? info.base64 
+          : `data:image/png;base64,${info.base64}`;
+        img.src = base64Data;
+      });
+    })
+  );
+  
+  // Canvas範囲計算: coords基準
+  const baseTX = drawPosition.TLX;
+  const baseTY = drawPosition.TLY;
+  const baseOffsetX = drawPosition.PxX;
+  const baseOffsetY = drawPosition.PxY;
+  
+  let maxWidth = 0;
+  let maxHeight = 0;
+  
+  for (const info of tileInfos) {
+    const startX = (info.tx - baseTX) * 1000 + info.offsetX - baseOffsetX;
+    const startY = (info.ty - baseTY) * 1000 + info.offsetY - baseOffsetY;
+    maxWidth = Math.max(maxWidth, startX + (info.width || 0));
+    maxHeight = Math.max(maxHeight, startY + (info.height || 0));
+  }
+  
+  console.log("🧑‍🎨 : Canvas size:", maxWidth, "x", maxHeight);
+  console.log("🧑‍🎨 : Tile count:", tileInfos.length);
+  
+  // Canvas作成・結合
+  const canvas = document.createElement("canvas");
+  canvas.width = maxWidth;
+  canvas.height = maxHeight;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Failed to get canvas context");
+  
+  // 各tile描画: coords基準
+  for (const info of tileInfos) {
+    if (!info.image) continue;
+    
+    const startX = (info.tx - baseTX) * 1000 + info.offsetX - baseOffsetX;
+    const startY = (info.ty - baseTY) * 1000 + info.offsetY - baseOffsetY;
+    
+    ctx.drawImage(info.image, startX, startY);
+    console.log("🧑‍🎨 : Drew tile at", startX, startY, "size", info.width, "x", info.height);
+  }
+  
+  const dataUrl = canvas.toDataURL("image/png");
+  console.log("🧑‍🎨 : Combined image size:", maxWidth, "x", maxHeight);
+  
+  return { dataUrl, drawPosition };
+}
