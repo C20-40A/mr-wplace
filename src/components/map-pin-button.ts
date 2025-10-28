@@ -148,7 +148,7 @@ export const getOrCreateMapPinButtonGroup = (
     group.id = "map-pin-button-group";
     group.style.cssText = `
       position: absolute;
-      bottom: 3.5rem;
+      bottom: 2.8rem;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
