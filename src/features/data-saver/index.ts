@@ -1,4 +1,5 @@
 import { DataSaverStorage } from "./storage";
+import { t } from "@/i18n/manager";
 
 class DataSaver {
   private button: HTMLButtonElement | null = null;
@@ -30,7 +31,7 @@ class DataSaver {
       border-radius: 50%;
       background-color: ${this.enabled ? "#2ecc71" : ""};
       color: white;
-      box-shadow: 0 0 8px ${this.enabled ? "#2ecc71" : "rgba(0,0,0,0.5)"};
+      box-shadow: 0 0 8px ${this.enabled ? "#2ecc71" : ""};
       cursor: pointer;
       transition: all 0.3s ease;
     `;
@@ -53,8 +54,8 @@ class DataSaver {
   private createTooltip() {
     this.tooltip = document.createElement("div");
     this.tooltip.textContent = this.enabled
-      ? "Data Saver: ON"
-      : "Data Saver: OFF";
+      ? t`${"data_saver_on"}`
+      : t`${"data_saver_off"}`;
     this.tooltip.style.cssText = `
       position: fixed;
       top: 50px;
@@ -74,13 +75,13 @@ class DataSaver {
 
   private createBadge() {
     this.badge = document.createElement("div");
-    this.badge.textContent = "🪫 Data Saver ON";
+    this.badge.innerHTML = `🪫 ${t`${"data_saver_on"}`}<br><span style="font-size: 10px; opacity: 0.8;">${t`${"data_saver_rendering_paused"}`}</span>`;
     this.badge.style.cssText = `
       position: fixed;
       top: 45px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(46, 204, 113, 0.7);
+      background: rgba(46, 204, 113, 0.75);
       color: white;
       font-size: 12px;
       padding: 4px 8px;
@@ -90,6 +91,8 @@ class DataSaver {
       transition: opacity 0.3s ease;
       opacity: 0;
       pointer-events: none;
+      text-align: center;
+      line-height: 1.2;
     `;
     document.body.appendChild(this.badge);
   }
@@ -119,14 +122,12 @@ class DataSaver {
 
     this.button.innerHTML = this.enabled ? "🪫" : "📡";
     this.button.style.backgroundColor = this.enabled ? "#2ecc71" : "";
-    this.button.style.boxShadow = this.enabled
-      ? "0 0 8px #2ecc71"
-      : "0 0 8px rgba(0,0,0,0.5)";
+    this.button.style.boxShadow = this.enabled ? "0 0 8px #2ecc71" : "";
 
     this.tooltip.textContent = this.enabled
-      ? "Data Saver: ON"
-      : "Data Saver: OFF";
-    this.badge.textContent = "🪫 Data Saver ON";
+      ? t`${"data_saver_on"}`
+      : t`${"data_saver_off"}`;
+    this.badge.innerHTML = `🪫 ${t`${"data_saver_on"}`}<br><span style="font-size: 10px; opacity: 0.8;">${t`${"data_saver_rendering_paused"}`}</span>`;
     this.badge.style.opacity = this.enabled ? "1" : "0";
   }
 
