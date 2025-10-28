@@ -3,6 +3,10 @@
 ```javascript
 const mapInstance = document.querySelector("div.absolute.bottom-3.right-3.z-30")
   .childNodes[0].__click[3].v;
+
+document.querySelector(
+  "body > div:nth-child(1) > div.disable-pinch-zoom.relative.h-full.overflow-hidden.svelte-6wmtgk > div.absolute.left-2.top-2.z-30.flex.flex-col.gap-3 > div.flex.flex-col.gap-1.max-sm\\:hidden > button:nth-child(1)"
+).__click[1].v; // でもok
 ```
 
 # レイヤー構造

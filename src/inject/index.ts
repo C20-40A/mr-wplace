@@ -7,6 +7,12 @@ import { setupMessageHandler } from "./message-handler";
   let isInitialized = false;
   let currentTheme: "light" | "dark" = "light";
 
+  // Initialize data saver state
+  window.mrWplaceDataSaver = {
+    enabled: false,
+    tileCache: new Map(),
+  };
+
   // Load theme from DOM attribute
   const dataElement = document.getElementById("__mr_wplace_data__");
   if (dataElement) {
