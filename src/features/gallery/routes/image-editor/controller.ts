@@ -44,6 +44,21 @@ export class EditorController {
   }
 
   async handleFile(file: File): Promise<void> {
+    // JSON形式チェック
+    if (file.type === "application/json" || file.name.endsWith(".json")) {
+      console.log("🧑‍🎨 : Detected Bluemarble JSON file");
+      const { readFileAsText, parseBluemarbleJson } = await import("./file-handler");
+      
+      const jsonText = await readFileAsText(file);
+      const { dataUrl, drawPosition } = await parseBluemarbleJson(jsonText);
+      
+      this.currentFileName = file.name;
+      this.drawPosition = drawPosition;
+      
+      this.displayImage(dataUrl);
+      return;
+    }
+    
     if (!file.type.startsWith("image/")) return;
 
     this.currentFileName = file.name;
