@@ -59,12 +59,7 @@ export class Drawing {
         getTargetElement: findPositionModal,
         createElement: (container) => {
           // マップピングループが既に存在する場合はスキップ
-          if (document.querySelector("#map-pin-button-group")) {
-            console.log(
-              "🧑‍🎨 : Map pin button group already exists, skipping fallback"
-            );
-            return;
-          }
+          if (document.querySelector("#map-pin-button-group")) return;
 
           const button = createDrawButton();
           button.id = "draw-btn-fallback";
