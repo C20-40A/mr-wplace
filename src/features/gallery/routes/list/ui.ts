@@ -71,7 +71,7 @@ export class GalleryListUI {
         }
       },
       onDrawToggle: (key) => {
-        this.handleDrawToggle(key, items, onDelete, onImageClick);
+        this.handleDrawToggle(key, onDelete, onImageClick);
       },
       onImageDelete: (key) => {
         onDelete(key);
@@ -91,7 +91,6 @@ export class GalleryListUI {
 
   private async handleDrawToggle(
     key: string,
-    items: GalleryItem[],
     onDelete: (key: string) => void,
     onImageClick?: (item: GalleryItem) => void
   ): Promise<void> {
