@@ -6,6 +6,7 @@ import {
   gotoMapPosition,
   moveImage,
 } from "../../common-actions";
+import { t } from "@/i18n";
 
 export class GalleryImageSelectorUI {
   private imageSelector: ImageSelector | null = null;
@@ -30,28 +31,75 @@ export class GalleryImageSelectorUI {
 
     // レイヤーパネル（単一カラム）
     this.layerPanel = document.createElement("div");
-    this.layerPanel.style.cssText = "max-height: 500px; overflow-y: auto;";
+    this.layerPanel.style.cssText = "overflow-y: auto;";
     container.appendChild(this.layerPanel);
 
-    await this.renderLayerList();
+    await this.renderLayerList(onAddClick);
 
-    // ヒントテキスト（下部）
-    const hint = document.createElement("div");
-    hint.textContent = "地図に描画したい画像をクリックしてください";
-    hint.style.cssText =
-      "margin-top: 1rem; font-size: 0.875rem; color: #6b7280; text-align: center;";
-    container.appendChild(hint);
+    // ヒントテキスト（下部）- 画像がある場合のみ表示
+    const galleryItems = await this.galleryStorage.getAll();
+    if (galleryItems.length > 0) {
+      const hint = document.createElement("div");
+      hint.textContent = t`${"click_image_to_draw"}`;
+      hint.style.cssText =
+        "margin-top: 1rem; font-size: 0.875rem; color: #6b7280; text-align: center;";
+      container.appendChild(hint);
+    }
   }
 
   /**
    * レイヤー一覧を描画（2セクション: 未配置 / レイヤー）
    */
-  private async renderLayerList(): Promise<void> {
+  private async renderLayerList(onAddClick?: () => void): Promise<void> {
     if (!this.layerPanel || !this.currentOnSelect) return;
 
     this.layerPanel.innerHTML = "";
 
     const galleryItems = await this.galleryStorage.getAll();
+
+    // 画像が1枚もない場合の専用UI
+    if (galleryItems.length === 0) {
+      const emptyContainer = document.createElement("div");
+      emptyContainer.style.cssText =
+        "display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 1rem; gap: 1rem;";
+
+      const emptyMessage = document.createElement("div");
+      emptyMessage.textContent = t`${"no_saved_images"}`;
+      emptyMessage.style.cssText =
+        "font-size: 0.875rem; color: #9ca3af; text-align: center;";
+
+      emptyContainer.appendChild(emptyMessage);
+
+      // 追加ボタン（onAddClickがある場合のみ）
+      if (onAddClick) {
+        const addButton = document.createElement("button");
+        addButton.textContent = t`${"image_editor"}`;
+        addButton.style.cssText = `
+          background: #3b82f6;
+          color: white;
+          border: none;
+          border-radius: 0.5rem;
+          padding: 0.5rem 1rem;
+          font-size: 0.875rem;
+          cursor: pointer;
+          transition: all 0.15s;
+        `;
+        addButton.onmouseenter = () => {
+          addButton.style.background = "#2563eb";
+          addButton.style.transform = "scale(1.05)";
+        };
+        addButton.onmouseleave = () => {
+          addButton.style.background = "#3b82f6";
+          addButton.style.transform = "scale(1)";
+        };
+        addButton.onclick = onAddClick;
+
+        emptyContainer.appendChild(addButton);
+      }
+
+      this.layerPanel.appendChild(emptyContainer);
+      return;
+    }
     const unplacedImages = galleryItems.filter((i) => !i.drawPosition);
     const layerImages = galleryItems
       .filter((i) => i.drawPosition)
@@ -63,7 +111,7 @@ export class GalleryImageSelectorUI {
       unplacedSection.style.cssText = "margin-bottom: 1.5rem;";
 
       const sectionTitle = document.createElement("div");
-      sectionTitle.textContent = "未配置画像";
+      sectionTitle.textContent = t`${"unplaced_images"}`;
       sectionTitle.style.cssText =
         "font-weight: 600; font-size: 0.875rem; margin-bottom: 0.75rem; color: #374151; padding-left: 0.5rem; border-left: 3px solid #6366f1;";
       unplacedSection.appendChild(sectionTitle);
@@ -85,14 +133,14 @@ export class GalleryImageSelectorUI {
     // レイヤー画像セクション
     const layerSection = document.createElement("div");
     const layerTitle = document.createElement("div");
-    layerTitle.textContent = "レイヤー";
+    layerTitle.textContent = t`${"layers"}`;
     layerTitle.style.cssText =
       "font-weight: 600; font-size: 0.875rem; margin-bottom: 0.75rem; color: #374151; padding-left: 0.5rem; border-left: 3px solid #10b981;";
     layerSection.appendChild(layerTitle);
 
     if (layerImages.length === 0) {
       const emptyMsg = document.createElement("div");
-      emptyMsg.textContent = "レイヤーなし";
+      emptyMsg.textContent = t`${"no_layers"}`;
       emptyMsg.style.cssText =
         "text-align: center; color: #9ca3af; padding: 2rem; font-size: 0.875rem; background: #f9fafb; border-radius: 0.5rem;";
       layerSection.appendChild(emptyMsg);
@@ -328,7 +376,7 @@ export class GalleryImageSelectorUI {
     };
     toggleBtn.onclick = async () => {
       await toggleDrawState(item.key);
-      await this.renderLayerList();
+      await this.renderLayerList(undefined);
     };
 
     // Gotoボタン
@@ -355,12 +403,12 @@ export class GalleryImageSelectorUI {
       gotoBtn.style.background = "#d1fae5";
       gotoBtn.style.transform = "scale(1)";
     };
-    gotoBtn.onclick = async () => {
+    gotoBtn.onclick = () => {
       const galleryItem = {
         ...item,
         timestamp: item.timestamp,
       };
-      await gotoMapPosition(galleryItem);
+      gotoMapPosition(galleryItem);
     };
 
     // 削除ボタン
@@ -395,7 +443,7 @@ export class GalleryImageSelectorUI {
         drawPosition: undefined,
         drawEnabled: false,
       });
-      await this.renderLayerList();
+      await this.renderLayerList(undefined);
     };
 
     buttonArea.appendChild(dPadContainer);
@@ -448,7 +496,7 @@ export class GalleryImageSelectorUI {
         };
         btn.onclick = async () => {
           await this.galleryStorage.moveLayer(item.key, direction);
-          await this.renderLayerList();
+          await this.renderLayerList(undefined);
         };
       }
       return btn;
