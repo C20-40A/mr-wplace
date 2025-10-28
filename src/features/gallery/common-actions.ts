@@ -2,9 +2,13 @@
  * ギャラリー画像に対する共通アクション
  */
 
-import { GalleryItem } from "./storage";
+import { GalleryItem, GalleryStorage } from "./storage";
 import { gotoPosition } from "../../utils/position";
 import { tilePixelToLatLng } from "../../utils/coordinate";
+import {
+  addImageToOverlayLayers,
+  removePreparedOverlayImageByKey,
+} from "@/features/tile-draw";
 
 /**
  * 描画ON/OFFトグル
@@ -55,4 +59,47 @@ export const downloadImage = (item: GalleryItem, canvasId: string): void => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }, "image/png");
+};
+
+/**
+ * 画像をピクセル単位で移動
+ */
+export const moveImage = async (
+  item: GalleryItem,
+  direction: "up" | "down" | "left" | "right"
+): Promise<void> => {
+  if (!item.drawPosition) throw new Error("Item has no drawPosition");
+
+  const deltaMap = {
+    up: { x: 0, y: -1 },
+    down: { x: 0, y: 1 },
+    left: { x: -1, y: 0 },
+    right: { x: 1, y: 0 },
+  };
+
+  const delta = deltaMap[direction];
+  const newCoords = {
+    TLX: item.drawPosition.TLX,
+    TLY: item.drawPosition.TLY,
+    PxX: item.drawPosition.PxX + delta.x,
+    PxY: item.drawPosition.PxY + delta.y,
+  };
+
+  const galleryStorage = new GalleryStorage();
+  await galleryStorage.save({
+    ...item,
+    drawPosition: newCoords,
+  });
+
+  const response = await fetch(item.dataUrl);
+  const blob = await response.blob();
+
+  removePreparedOverlayImageByKey(item.key);
+  await addImageToOverlayLayers(
+    blob,
+    [newCoords.TLX, newCoords.TLY, newCoords.PxX, newCoords.PxY],
+    item.key
+  );
+
+  console.log("🧑‍🎨 : Image moved", direction, newCoords);
 };
