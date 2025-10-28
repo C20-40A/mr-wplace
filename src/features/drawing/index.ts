@@ -32,7 +32,7 @@ const createMapPinButtons = (
   const button = createMapPinGroupButton({
     // iconSrc: IMG_ICON_GALLERY,
     icon: "🖼️",
-    text: t`${"draw"}`,
+    text: t`${"draw_image"}`,
     onClick: () => drawInstance.openDrawMode(),
   });
   button.id = "drawing-btn";
