@@ -16,7 +16,11 @@ export const setupFetchInterceptor = async (
 
     const requestInfo = args[0];
     const url =
-      typeof requestInfo === "string" ? requestInfo : requestInfo.url || "";
+      typeof requestInfo === "string"
+        ? requestInfo
+        : requestInfo instanceof Request
+          ? requestInfo.url
+          : requestInfo.toString();
 
     if (!url || !url.includes("backend.wplace.live")) {
       return originalFetch.apply(this, args);
@@ -96,6 +100,10 @@ const handleTileRequest = async (
     if (dataSaver?.enabled) {
       dataSaver.tileCache.set(cacheKey, tileBlob);
       console.log("🧑‍🎨 : Cached tile:", cacheKey);
+    } else if (dataSaver && dataSaver.tileCache.has(cacheKey)) {
+      // Update cache if key exists even when data saver is off
+      dataSaver.tileCache.set(cacheKey, tileBlob);
+      console.log("🧑‍🎨 : Updated cached tile:", cacheKey);
     }
   }
 
