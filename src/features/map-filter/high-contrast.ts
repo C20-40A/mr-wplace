@@ -25,12 +25,13 @@ class HighContrast {
     this.button = document.createElement("button");
     this.button.textContent = this.enabled ? "🔆" : "⚪";
     this.button.className = "btn btn-sm btn-circle";
+    // NOTE: z-index: 1000;だとmodalの上に表示される
     this.button.style.cssText = `
       position: fixed;
       left: 50px;
       top: 44px;
       font-size: 18px;
-      z-index: 1000;
+      z-index: 800;
       width: 32px;
       height: 32px;
     `;

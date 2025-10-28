@@ -22,11 +22,12 @@ class DarkTheme {
       btn btn-sm btn-circle
       top-2
     `;
+    // NOTE: z-index: 1000;だとmodalの上に表示される
     this.button.style.cssText = `
       position: fixed;
       left: 50px;
       font-size: 18px;
-      z-index: 1000;
+      z-index: 800;
       width: 32px;
       height: 32px;
     `;
