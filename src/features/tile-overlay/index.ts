@@ -77,12 +77,14 @@ export class TileOverlay {
     tileY: number
   ): Promise<Blob> {
     const images = await this.galleryStorage.getAll();
-    const targetImages = images.filter(
-      (img) =>
-        img.drawEnabled &&
-        img.drawPosition?.TLX === tileX &&
-        img.drawPosition?.TLY === tileY
-    );
+    const targetImages = images
+      .filter(
+        (img) =>
+          img.drawEnabled &&
+          img.drawPosition?.TLX === tileX &&
+          img.drawPosition?.TLY === tileY
+      )
+      .sort((a, b) => (a.layerOrder ?? 0) - (b.layerOrder ?? 0));
 
     console.log(
       `🧑‍🎨 : drawPixelOnTile(${tileX},${tileY}) - found ${targetImages.length} images`
