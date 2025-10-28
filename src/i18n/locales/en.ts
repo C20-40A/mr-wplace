@@ -10,6 +10,7 @@ export const enTranslations = {
   delete: "Delete",
   edit: "Edit",
   update: "Update",
+  updated: "Updated",
   add: "Add",
   select: "Select",
   cancel: "Cancel",

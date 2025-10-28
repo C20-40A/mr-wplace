@@ -21,6 +21,7 @@ const createGallery = () => {
   // 状態統一
   const state = {
     currentDetailItem: undefined as GalleryItem | undefined,
+    editingItem: undefined as GalleryItem | undefined,
     onSelect: undefined as ((item: GalleryItem) => void) | undefined,
     onDrawToggle: undefined as ((key: string) => Promise<boolean>) | undefined,
   };
@@ -50,6 +51,7 @@ const createGallery = () => {
 
   const showDetail = (item: GalleryItem) => {
     state.currentDetailItem = item;
+    state.editingItem = undefined;
     router.navigate("image-detail");
   };
 
@@ -64,20 +66,39 @@ const createGallery = () => {
       );
     },
 
-    "image-editor": (container) => {
+    "image-editor": async (container) => {
       const route = new GalleryImageEditor();
-      route.setOnSaveSuccess(() => router.navigateBack());
+      route.setOnSaveSuccess(() => {
+        state.editingItem = undefined;
+        router.navigateBack();
+      });
       route.render(container);
+      
+      // 編集モード判定
+      if (state.editingItem) {
+        console.log("🧑‍🎨 : Loading existing image for edit", state.editingItem.key);
+        await route.loadExistingImage(state.editingItem);
+      }
     },
 
     "image-detail": async (container) => {
       if (!state.currentDetailItem) return;
       const route = new GalleryImageDetail();
-      route.render(container, router, state.currentDetailItem, async (key) => {
-        const { GalleryStorage } = await import("./storage");
-        await new GalleryStorage().delete(key);
-        router.navigateBack();
-      });
+      route.render(
+        container,
+        router,
+        state.currentDetailItem,
+        async (key) => {
+          const { GalleryStorage } = await import("./storage");
+          await new GalleryStorage().delete(key);
+          state.editingItem = undefined;
+          router.navigateBack();
+        },
+        () => {
+          // 編集ボタンコールバック
+          state.editingItem = state.currentDetailItem;
+        }
+      );
     },
 
     "image-selector": (container) => {
