@@ -100,6 +100,9 @@ export const enTranslations = {
   click_image_to_draw: "Click on the image you want to draw on the map",
   no_draw_images: "No images for drawing.",
   no_saved_images: "No saved images",
+  unplaced_images: "Unplaced Images",
+  layers: "Layers",
+  no_layers: "No layers",
   delete_image_confirm: "Do you want to delete this image?",
 
   // Drawing/Loading
