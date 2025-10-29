@@ -1,13 +1,15 @@
 import { Position } from "../features/bookmark/types";
-import { WplaceLocalStorage } from "./wplaceLocalStorage";
-import { flyToPosition } from "./map-control";
 import {
   loadNavigationModeFromStorage,
   getNavigationMode,
-} from "./navigation-mode";
+} from "../states/navigation-mode";
+
+const LOCATION_KEY = "location";
 
 export const getCurrentPosition = (): Position | null => {
-  const location = WplaceLocalStorage.getClickedPosition();
+  const location: Position = window.localStorage.getItem(LOCATION_KEY)
+    ? JSON.parse(window.localStorage.getItem(LOCATION_KEY)!)
+    : null;
   if (!location) return null;
   return { lat: location.lat, lng: location.lng, zoom: location.zoom };
 };
@@ -19,7 +21,7 @@ export const gotoPosition = async ({ lat, lng, zoom }: Position) => {
 
   if (useFlyTo) {
     // Use smart navigation (flyTo for close distance, jumpTo for far distance)
-    flyToPosition(lat, lng, zoom);
+    window.postMessage({ source: "wplace-studio-flyto", lat, lng, zoom }, "*");
   } else {
     // Use URL navigation (with reload)
     const url = new URL(window.location.href);

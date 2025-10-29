@@ -32,5 +32,4 @@ ButtonObserver → ImageSelectorModal → drawImageAt → drawImageOnTiles → �
 ## 統合パターン
 
 - coordinate.ts: getCurrentPosition() → llzToTilePixel()
-- Gallery: ImageStorage<GalleryImageItem>インデックス最適化
 - Router: 3route system (list/image-editor/image-detail)

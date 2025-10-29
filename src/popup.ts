@@ -1,6 +1,15 @@
 import { I18nManager, t } from "./i18n/manager";
-import { setLocale, detectBrowserLanguage, type SupportedLocale } from "./i18n/index";
-import { loadNavigationModeFromStorage, getNavigationMode, setNavigationMode, type NavigationMode } from "./utils/navigation-mode";
+import {
+  setLocale,
+  detectBrowserLanguage,
+  type SupportedLocale,
+} from "./i18n/index";
+import {
+  loadNavigationModeFromStorage,
+  getNavigationMode,
+  setNavigationMode,
+  type NavigationMode,
+} from "./states/navigation-mode";
 import { tabs } from "@/utils/browser-api";
 
 const updateUI = (): void => {
