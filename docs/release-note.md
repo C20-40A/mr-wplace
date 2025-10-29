@@ -2,9 +2,11 @@
 
 ## インストール方法
 
-- 【PC】 [Chrome ウェブストア](https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej)または[Edge アドオン](https://microsoftedge.microsoft.com/addons/detail/mr-wplace/acdodonamhbokadiikkfnnliplijigip)からワンクリックでインストール
-- 【iOS】 [Orion Browser by Kagi](https://apps.apple.com/jp/app/orion-browser-by-kagi/id1484498200) をインストール → 設定>詳細設定>「Chrome 拡張機能と Firefox 拡張機能」を ON → [Chrome ウェブストア](https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej)からインストール
+```
+- 【PC】 [Chrome ウェブストア](<https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej>)または[Edge アドオン](<https://microsoftedge.microsoft.com/addons/detail/mr-wplace/acdodonamhbokadiikkfnnliplijigip>)からワンクリックでインストール
+- 【iOS】 [Orion Browser by Kagi](<https://apps.apple.com/jp/app/orion-browser-by-kagi/id1484498200>) をインストール → 設定>詳細設定>「Chrome 拡張機能と Firefox 拡張機能」を ON → [Chrome ウェブストア](<https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej>)からインストール
 - 【Android】 EdgeCanary アプリをインストール → 開発者モードにする(設定>「MicrosoftEdge について」> 1 番下のバージョンの数字を５回ぐらいタップ) → 戻って「開発者向けオプション」→「Extension install by id」→`acdodonamhbokadiikkfnnliplijigip` を入力
+```
 
 ---
 
@@ -34,7 +36,7 @@
 
 - ワンクリックでデータセーブモードに切り替えられるようになりました
 - ピクセルアートの更新を停止して、通信量を節約できます
-- モバイル環境や、高頻度の更新が不要な場合にオススメです
+- モバイル環境や、高頻度の更新が不要な場合は ON にしておくのがオススメです
 - また、データセーブ中はフィルターなどの変更ができませんが、処理がかなり高速になります
 
 ## 画像レイヤー機能
