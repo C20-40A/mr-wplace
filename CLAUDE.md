@@ -1,49 +1,163 @@
-- 重要: 最小限実装方針を維持し、1 つずつ問題解決すること
-- wplace というサイトの chrome 拡張機能を作成する
-- wplace は地図上に pixel を設置するサイト(pixel は online で share される)
-- code は content がメイン. map instance や fetch へのアクセスは、src/inject.ts
-- ProjectName: mr-wplace
-- ExtensionName: Mr. Wplace
-- try-catch はしない。error は基本的に throw せよ(コードの上層で catch している)
-- log 利用時には console.log("🧑‍🎨 : xxxx")と 🧑‍🎨 のアイコンを表示する
-- 拡張機能のため、tailwind で使える命令が限定的。btn や flex などの必ずあるであろう命令以外は、inline style で記述
-- 関数は function より const & arrow function を優先
-- "@/_": ["src/_"]の alias を使う(e.g. `import { di } from "@/core/di";`)
-- chrome API は、`import { storage } from "@/utils/browser-api";`して利用(storage.get,storage.set,storage.remove,runtime.getURL,runtime.sendMessage,runtime.onMessage,runtime.lastError,tabs.query,tabs.sendMessage,tabs.reload が利用可能)
-- storage.get(),storage.set(),storage.remove()のように使う
-- i18n は`import { t } from "@/i18n/manager";`して`const text = t`${"key"}`;`で key 設定
+# CLAUDE.md
 
-## ファイル構成
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+**Mr. Wplace** is a Chrome extension for WPlace, an online collaborative pixel placement map. The extension provides advanced drawing, gallery management, and map customization features.
+
+- **Project Name**: mr-wplace
+- **Extension Name**: Mr. Wplace
+- **Target**: Chrome/Edge Manifest V3 extension
+- **Build Tool**: esbuild with Bun runtime
+
+## Architecture
+
+### Entry Points
+
+The extension has 3 main entry points that esbuild bundles:
+
+1. **`src/content.ts`** - Main content script, initializes all features and DI container
+2. **`src/inject.ts`** - Injected into page context for fetch interception and map instance access
+3. **`src/popup.ts`** - Extension popup UI
+
+### Content ↔ Inject Communication
+
+**Critical:** The extension operates in two isolated contexts:
+
+- **Content Script** (`content.ts`): Chrome extension context with access to Chrome APIs
+- **Injected Script** (`inject/index.ts`): Page context with access to WPlace's map instance and fetch API
+
+Communication flow:
 
 ```
-src/
-├── content.ts # エントリー。window.mrWplace初期化
-├── inject.ts # fetch傍受、map instance取得
-├── core/di.ts # DI Container (循環参照回避)
-├── features/ # 機能別ディレクトリ
-├── utils/ # router, modal, coordinate等
-└── i18n/ # 多言語対応
+content.ts → inject script tag → inject/index.ts
+     ↓                                    ↓
+  postMessage ←→ window.addEventListener("message")
 ```
 
-## DI Container
+**Key message sources:**
+
+- `mr-wplace-processed`: Processed tile blob from content → inject
+- `wplace-studio-flyto`: Position navigation request
+- `mr-wplace-theme-update`: Theme change notification
+- `mr-wplace-data-saver-update`: Data saver toggle
+- `wplace-studio-snapshot-tmp`: Tile snapshot storage
+- `mr-wplace-me`: User data from intercepted API
+- `wplace-studio-pixel-click`: Pixel color detection (auto-spoit)
+
+### Dependency Injection (DI Container)
+
+**Location**: `src/core/di.ts`
+
+Features register their APIs in the DI container to avoid circular dependencies:
 
 ```typescript
-// content.ts
+// Registration (in content.ts)
 di.register("gallery", galleryAPI);
 di.register("tileOverlay", tileOverlayAPI);
 
-// 他feature内
+// Usage (in any feature)
 const gallery = di.get("gallery");
 ```
 
-## utils
+All feature APIs are typed in `src/core/di.ts` under `FeatureRegistry`.
 
-- src/utils/browser-api.ts : chromeAPI storage.get(),storage.set(),storage.remove()のように使う(storage.get,storage.set,storage.remove,runtime.getURL,runtime.sendMessage,runtime.onMessage,runtime.lastError,tabs.query,tabs.sendMessage,tabs.reload が利用可能)
-- src/utils/color-filter-manager.ts : 状態管理メイン
-- src/utils/coordinate.ts : llzToTilePixel, tilePixelToLatLng
-- src/utils/image-bitmap-compat.ts : firefox compat 用につくった bitmap 変換
-- src/utils/image-storage.ts : ギャラリーが利用
-- src/utils/modal.ts : 共通 modal 作成
-- src/utils/pixel-converters.ts : blobToPixels
-- src/utils/position.ts : gotoPosition, getCurrentPosition
-- src/utils/router.ts : routing の base
+### File Structure
+
+```
+src/
+├── content.ts              # Main entry, DI registration, message listeners
+├── inject/                 # Page-context scripts
+│   ├── index.ts           # Initialization & coordination
+│   ├── fetch-interceptor.ts  # Intercepts tile & user API calls
+│   ├── map-instance.ts    # Captures WPlace map instance
+│   ├── message-handler.ts # Handles postMessage events
+│   └── theme-manager.ts   # Applies theme to map
+├── core/
+│   └── di.ts              # DI container & API types
+├── features/              # Feature modules (gallery, drawing, etc.)
+├── utils/                 # Shared utilities
+└── i18n/                  # Internationalization
+```
+
+### Key Features
+
+Each feature is self-contained in `src/features/`:
+
+- **gallery**: Image upload, storage, editing
+- **tile-overlay**: Drawing images on map tiles
+- **drawing**: Manual pixel drawing
+- **time-travel**: Tile snapshot & restoration
+- **color-filter**: Color filters & drawing modes
+- **bookmark**: Saved locations
+- **map-filter**: Dark theme, high contrast, data saver
+- **auto-spoit**: Color picker from map
+- **text-draw**: Text rendering on map
+- **position-info**: Current coordinate display
+- **paint-stats**: User painting statistics
+
+## Coding Standards
+
+### Core Rules
+
+1. **Minimal implementation principle** - Solve one problem at a time
+2. **No try-catch** - Throw errors, let upper layers catch
+3. **Arrow functions** - Prefer `const fn = () => {}` over `function fn() {}`
+4. **Path alias** - Use `@/` instead of relative paths: `import { di } from "@/core/di"`
+
+### Logging
+
+Always use the 🧑‍🎨 icon for extension logs:
+
+```typescript
+console.log("🧑‍🎨 : your message");
+```
+
+### Styling
+
+Chrome extensions have limited CSS. Use inline styles when Tailwind classes are uncertain:
+
+```typescript
+button.className = "btn btn-sm"; // Safe Tailwind classes
+button.style.cssText = `position: fixed; z-index: 800;`; // Custom styles
+```
+
+### Chrome APIs
+
+**Never import `chrome` directly.** Use the browser-api wrapper:
+
+```typescript
+import { storage, runtime, tabs } from "@/utils/browser-api";
+
+await storage.get("key");
+await storage.set({ key: "value" });
+await storage.remove("key");
+
+const url = runtime.getURL("dist/inject.js");
+runtime.sendMessage({ type: "reload" });
+runtime.onMessage.addListener(callback);
+
+const currentTab = await tabs.query({ active: true });
+tabs.sendMessage(tabId, message);
+tabs.reload(tabId);
+```
+
+### Internationalization
+
+```typescript
+import { t } from "@/i18n/manager";
+
+const text = t`feature.gallery.title`; // Template literal syntax
+```
+
+## Important Utilities
+
+- `utils/router.ts`: Base Router class with history & i18n header management
+- `utils/modal.ts`: Common modal creation helper
+- `utils/coordinate.ts`: `llzToTilePixel`, `tilePixelToLatLng` conversions
+- `utils/position.ts`: `gotoPosition`, `getCurrentPosition`
+- `utils/color-filter-manager.ts`: Main state management for filters
+- `utils/pixel-converters.ts`: `blobToPixels` for image processing
+- `utils/image-storage.ts`: Gallery image persistence
+- `utils/image-bitmap-compat.ts`: Firefox-compatible bitmap conversion
