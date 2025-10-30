@@ -3,7 +3,7 @@ import { applyTheme } from "./theme-manager";
 /**
  * Setup message event listener for handling various events
  */
-export const setupMessageHandler = (getCurrentTheme: () => "light" | "dark"): void => {
+export const setupMessageHandler = (): void => {
   window.addEventListener("message", (event: MessageEvent) => {
     // Handle processed blob from content script
     if (event.data.source === "mr-wplace-processed") {
@@ -40,14 +40,18 @@ const handleProcessedBlob = (data: any): void => {
 
   if (typeof callback === "function") {
     callback(processedBlob);
-    window.tileProcessingQueue.delete(blobID);
+    window.tileProcessingQueue?.delete(blobID);
   }
 };
 
 /**
  * Handle flyTo/jumpTo requests
  */
-const handleFlyTo = (data: { lat: number; lng: number; zoom: number }): void => {
+const handleFlyTo = (data: {
+  lat: number;
+  lng: number;
+  zoom: number;
+}): void => {
   const { lat, lng, zoom } = data;
 
   // If map instance not available, fallback to URL navigation

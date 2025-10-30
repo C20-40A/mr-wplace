@@ -5,7 +5,6 @@ import { setupMessageHandler } from "./message-handler";
 (async () => {
   // Initialization state
   let isInitialized = false;
-  let currentTheme: "light" | "dark" = "light";
 
   // Initialize data saver state
   window.mrWplaceDataSaver = {
@@ -13,24 +12,16 @@ import { setupMessageHandler } from "./message-handler";
     tileCache: new Map(),
   };
 
-  // Load theme from DOM attribute
-  const dataElement = document.getElementById("__mr_wplace_data__");
-  if (dataElement) {
-    currentTheme = (dataElement.getAttribute("data-theme") || "light") as
-      | "light"
-      | "dark";
-  }
-
   // Setup fetch interceptor
   await setupFetchInterceptor(() => isInitialized);
 
   // Setup message handler
-  setupMessageHandler(() => currentTheme);
+  setupMessageHandler();
 
   // Setup map observer
-  setupMapObserver(currentTheme);
+  setupMapObserver();
 
   // Mark as initialized
   isInitialized = true;
-  console.log("🧑‍🎨: Initialization complete, theme:", currentTheme);
+  console.log("🧑‍🎨: Initialization complete");
 })();
