@@ -42,7 +42,7 @@ content.ts → inject script tag → inject/index.ts
 - `wplace-studio-flyto`: Position navigation request
 - `mr-wplace-theme-update`: Theme change notification
 - `mr-wplace-data-saver-update`: Data saver toggle
-- `wplace-studio-snapshot-tmp`: Tile snapshot storage
+- `wplace-studio-snapshot`: Tile snapshot storage
 - `mr-wplace-me`: User data from intercepted API
 - `wplace-studio-pixel-click`: Pixel color detection (auto-spoit)
 

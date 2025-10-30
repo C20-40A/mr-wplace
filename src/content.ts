@@ -14,7 +14,11 @@ import { UserStatus } from "@/features/user-status";
 import { WPlaceUserData } from "@/types/user-data";
 import { ThemeToggleStorage } from "@/features/theme-toggle/storage";
 import { textDrawAPI } from "@/features/text-draw";
-import { darkThemeAPI, highContrastAPI, dataSaverAPI } from "@/features/map-filter";
+import {
+  darkThemeAPI,
+  highContrastAPI,
+  dataSaverAPI,
+} from "@/features/map-filter";
 import { AutoSpoit } from "@/features/auto-spoit";
 import { PositionInfo } from "@/features/position-info";
 import { initPaintStats } from "@/features/paint-stats";
@@ -59,7 +63,7 @@ import { getOverlayPixelColor } from "@/features/tile-draw";
 
     window.addEventListener("message", async (event) => {
       // console.log("🧑‍🎨: event", event.data.source);
-      if (event.data.source === "wplace-studio-snapshot-tmp") {
+      if (event.data.source === "wplace-studio-snapshot") {
         const { tileBlob, tileX, tileY } = event.data;
         await tileSnapshot.saveTmpTile(tileX, tileY, tileBlob);
 

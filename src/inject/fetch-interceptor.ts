@@ -125,17 +125,6 @@ const handleTileRequest = async (
       );
     });
 
-    // Send original tile for snapshot (tmp save)
-    window.postMessage(
-      {
-        source: "wplace-studio-snapshot-tmp",
-        tileBlob: originalTileBlob,
-        tileX: tileX,
-        tileY: tileY,
-      },
-      "*"
-    );
-
     // Send tile for processing
     window.postMessage(
       {
