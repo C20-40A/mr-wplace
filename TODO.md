@@ -20,7 +20,6 @@
 - 画像追加が safari で使えない?
 - フィルターするとカウントがリセットされる
 - 高速化のため、いくつかの map を record にする
-- wplace-studio-snapshot-tmp 不要では？
 - /me が取れないパターンが多すぎる
 - 描画を最小限 option できるようにする(更新停止,背景比較 OFF,フィルターなし)
 - タイルの GoogleDrive とのリンク
@@ -90,6 +89,8 @@
 - dark/light テーマの i18n 不要になった
 
 # DONE v1.8.2
+
+- wplace-studio-snapshot-tmp 消した
 
 # DONE v1.8.1
 
