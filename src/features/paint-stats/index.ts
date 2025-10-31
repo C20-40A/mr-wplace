@@ -107,7 +107,7 @@ const getColorStats = async (): Promise<Record<
 
   if (targetImageKeys.length === 0) return null;
 
-  const stats = getAggregatedColorStats(targetImageKeys);
+  const stats = await getAggregatedColorStats(targetImageKeys);
   return Object.keys(stats).length > 0 ? stats : null;
 };
 

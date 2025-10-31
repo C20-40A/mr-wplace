@@ -51,7 +51,7 @@ export const renderColorFilters = async (
     );
 
     if (targetImageKeys.length > 0) {
-      colorStats = getAggregatedColorStats(targetImageKeys);
+      colorStats = await getAggregatedColorStats(targetImageKeys);
       console.log(`🧑‍🎨 : Aggregated color stats:`, colorStats);
     }
   }

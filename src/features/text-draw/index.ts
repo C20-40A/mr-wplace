@@ -57,7 +57,7 @@ const handleMoveText = async (
 };
 
 const handleDeleteText = async (key: string): Promise<void> => {
-  textInstances = deleteText(key, textInstances);
+  textInstances = await deleteText(key, textInstances);
   Toast.success("Text deleted");
   textDrawUI.updateList(textInstances);
 };
