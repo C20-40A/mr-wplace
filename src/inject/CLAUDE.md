@@ -17,14 +17,19 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
 ### 変更ファイル
 - `src/inject/tile-processor.ts` (NEW): page context での Canvas 合成ロジック
   - `Image` オブジェクトで dataUrl を直接読み込み (fetch 不要)
+  - **タイル分割処理**: 画像がタイルをまたぐ場合も正しく描画
+    - `imageOverlapsTile()`: 画像がタイルと重なるかチェック
+    - Canvas の `drawImage()` で source/destination rectangle を計算して部分描画
 - `src/inject/fetch-interceptor.ts`: tile 処理を inject 側で完結するように変更
+  - tile fetch 完了時に `wplace-studio-drawing-complete` イベント送信
 - `src/inject/message-handler.ts`: gallery images の受信処理追加
-  - キャッシュクリア + 小さなパンでマップ強制再描画
+  - タイルキャッシュクリア（マップ強制再描画は不要）
 - `src/inject/types.ts`: `mrWplaceGalleryImages` 型定義追加
 - `src/content.ts`: gallery 画像を inject 側に送信する処理追加
   - `sendGalleryImagesToInject()` を export
 - `src/features/tile-overlay/index.ts`: 画像配置時に inject 側を更新
 - `src/features/gallery/index.ts`: 画像削除時に inject 側を更新
+- `src/features/drawing-loader/index.ts`: `wplace-studio-drawing-complete` イベントで hide
 
 ### メリット
 - Firefox の extension context セキュリティ制約を回避
@@ -38,3 +43,18 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
 - `wplace-studio-drawing-complete` イベントは tile fetch 完了時に送信される
 - drawing-loader は描画処理開始から次の tile fetch（WPlace のポーリング）まで表示される
   - 100ms 以上経過した fetch のみ loader を hide (即座の fetch は無視)
+
+### タイル分割処理
+inject 側でタイルをまたぐ画像を正しく描画するため、以下の処理を実装:
+
+1. **重なり判定** (`imageOverlapsTile`):
+   - 画像の開始タイル座標 + ピクセル座標から終了タイル座標を計算
+   - 現在のタイルが画像の範囲内にあるかチェック
+
+2. **部分描画**:
+   - 絶対座標系で画像とタイルの位置を計算
+   - Canvas の `drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)` で部分描画
+   - source rectangle: 画像のどの部分を切り取るか
+   - destination rectangle: タイルのどこに描画するか
+
+これにより、旧実装の `splitImageOnTiles` 相当の処理を inject 側で実現。
