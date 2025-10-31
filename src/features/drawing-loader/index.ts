@@ -11,7 +11,7 @@ export const initDrawingLoader = (): void => {
     if (event.data.source === "wplace-studio-drawing-start") {
       startLoading();
     }
-    if (event.data.source === "mr-wplace-processed") {
+    if (event.data.source === "wplace-studio-drawing-complete") {
       finishLoading();
     }
   });
