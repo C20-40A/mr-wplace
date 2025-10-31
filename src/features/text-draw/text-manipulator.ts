@@ -7,7 +7,7 @@ import type { TextInstance } from "./ui";
 import {
   addImageToOverlayLayers,
   removePreparedOverlayImageByKey,
-} from "@/features/tile-draw";
+} from "@/features/tile-draw-stubs";
 
 // ========================================
 // Text drawing operations

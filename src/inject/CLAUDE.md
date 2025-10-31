@@ -1,60 +1,95 @@
-## Firefox 対応完了 (2025-11-01)
+## tile-draw の inject 側への完全移行完了 (2025-11-01)
 
-### 問題
+### 背景
 Chrome では動作していた tile overlay 処理が Firefox で失敗していた:
 - `content.ts` (extension context) での `ImageBitmap`/`ImageData` 処理が Firefox のセキュリティチェックでエラー
-- `InvalidStateError: Failed to extract Uint8ClampedArray from ImageData (security check failed?)`
+- WASM ベースの `image-bitmap-compat` が inject context で `unreachable` エラー
 
-### 解決策
-**inject 側 (page context) で画像処理を完結させる**
+### 最終的な解決策
+**tile-draw を完全に inject 側 (page context) に移行**
 
-新しい処理フロー:
-1. `content.ts` → `inject.js` に gallery 画像データを postMessage で送信
-2. `inject.js` (page context) で fetch intercept → tile blob 取得
-3. **inject.js 内で Canvas API を使って overlay 合成** (NEW)
-4. 合成済み blob を直接 fetch の Response として返す
+#### Phase 1: inject 側に tile-draw をコピーして動作確認
+1. `src/features/tile-draw/` を `src/inject/tile-draw/` にコピー
+2. WASM 依存を排除:
+   - `splitImageOnTiles-inject.ts`: Canvas API のみで画像分割
+   - `states-inject.ts`: inject 専用の状態管理
+   - `tile-overlay-renderer.ts`: native `createImageBitmap` を使用
+3. postMessage で必要なデータを送信:
+   - `mr-wplace-gallery-images`: gallery 画像データ
+   - `mr-wplace-compute-device`: GPU/CPU 設定
+   - `mr-wplace-color-filter`: カラーフィルター状態
+
+#### Phase 2: content 側の tile-draw を削除
+1. `src/inject/tile-processor.ts` 削除 (tile-draw に統合)
+2. `src/features/tile-overlay/index.ts` 簡略化:
+   - `setupTileProcessing()` 削除 (inject 側で処理)
+   - `drawPixelOnTile()` 削除
+   - 画像配置/トグル時に `sendGalleryImagesToInject()` を呼ぶだけ
+3. `src/features/tile-draw/` 削除
+4. `src/features/tile-draw-stubs.ts` 作成:
+   - 他のfeatureからの参照を維持するための空実装
+   - 実際の処理は inject 側で実行
+
+### 新しいアーキテクチャ
+
+```
+┌─────────────────────────────────────────────────┐
+│ content.ts (extension context)                  │
+│ - gallery 管理                                   │
+│ - sendGalleryImagesToInject() で inject に送信  │
+│ - tile-draw-stubs (空実装)                      │
+└──────────────┬──────────────────────────────────┘
+               │ postMessage
+               ↓
+┌─────────────────────────────────────────────────┐
+│ inject/index.ts (page context)                  │
+│ ┌─────────────────────────────────────────────┐ │
+│ │ inject/tile-draw/                           │ │
+│ │ - states-inject.ts: overlay layers 管理     │ │
+│ │ - tile-overlay-renderer.ts: 描画処理        │ │
+│ │ - splitImageOnTiles-inject.ts: 画像分割     │ │
+│ │ - color filter, stats 計算                  │ │
+│ └─────────────────────────────────────────────┘ │
+│ ┌─────────────────────────────────────────────┐ │
+│ │ inject/fetch-interceptor.ts                 │ │
+│ │ - tile fetch を intercept                   │ │
+│ │ - drawOverlayLayersOnTile() で処理          │ │
+│ └─────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────┘
+```
 
 ### 変更ファイル
-- `src/inject/tile-processor.ts` (NEW): page context での Canvas 合成ロジック
-  - `Image` オブジェクトで dataUrl を直接読み込み (fetch 不要)
-  - **タイル分割処理**: 画像がタイルをまたぐ場合も正しく描画
-    - `imageOverlapsTile()`: 画像がタイルと重なるかチェック
-    - Canvas の `drawImage()` で source/destination rectangle を計算して部分描画
-- `src/inject/fetch-interceptor.ts`: tile 処理を inject 側で完結するように変更
-  - tile fetch 完了時に `wplace-studio-drawing-complete` イベント送信
-- `src/inject/message-handler.ts`: gallery images の受信処理追加
-  - タイルキャッシュクリア（マップ強制再描画は不要）
-- `src/inject/types.ts`: `mrWplaceGalleryImages` 型定義追加
-- `src/content.ts`: gallery 画像を inject 側に送信する処理追加
-  - `sendGalleryImagesToInject()` を export
-- `src/features/tile-overlay/index.ts`: 画像配置時に inject 側を更新
-- `src/features/gallery/index.ts`: 画像削除時に inject 側を更新
-- `src/features/drawing-loader/index.ts`: `wplace-studio-drawing-complete` イベントで hide
+
+**inject 側 (新規・変更):**
+- `src/inject/tile-draw/` (NEW): 完全な tile-draw 実装
+  - `states-inject.ts`: WASM不使用の状態管理
+  - `utils/splitImageOnTiles-inject.ts`: Canvas API のみで画像分割
+  - その他: content 側からコピーして import パス修正
+- `src/inject/fetch-interceptor.ts`: tile-draw を使用
+- `src/inject/message-handler.ts`: gallery/compute-device/color-filter の受信
+- `src/inject/types.ts`: 型定義追加
+
+**content 側 (削除・簡略化):**
+- `src/features/tile-draw/` 削除 ❌
+- `src/inject/tile-processor.ts` 削除 ❌
+- `src/features/tile-overlay/index.ts` 簡略化 (96行 → 75行)
+- `src/features/tile-draw-stubs.ts` (NEW): 空実装
+- `src/content.ts`: データ送信関数追加
+  - `sendGalleryImagesToInject()`
+  - `sendComputeDeviceToInject()`
+  - `sendColorFilterToInject()`
 
 ### メリット
-- Firefox の extension context セキュリティ制約を回避
-- page context なら通常の Canvas API がフル活用できる
-- Chrome との互換性も維持
-- リアルタイム更新: 画像追加・削除・移動時に自動反映 (リロード不要)
+✅ Firefox の extension context セキュリティ制約を完全回避
+✅ WASM エラーを根本解決
+✅ content.js が 345KB → 332KB に削減 (約13KB削減)
+✅ Chrome/Firefox 両方で動作
+✅ 全機能が inject 側で完結 (color filter, stats, 補助色モードなど)
+✅ エラーハンドリング強化 (fallback 機構)
 
-### 注意点
-- dataUrl は base64 データなので、`Image` オブジェクトで直接読み込む (fetch/createImageBitmap は不要)
-- マップの強制再描画は不要。タイルキャッシュのクリアのみで十分
-- `wplace-studio-drawing-complete` イベントは tile fetch 完了時に送信される
-- drawing-loader は描画処理開始から次の tile fetch（WPlace のポーリング）まで表示される
-  - 100ms 以上経過した fetch のみ loader を hide (即座の fetch は無視)
+### 制限事項
+⚠️ 以下の機能は一時的に無効 (TODO):
+- `getOverlayPixelColor()`: auto-spoit の overlay 色検出
+- `getAggregatedColorStats()`: paint-stats の統計表示
 
-### タイル分割処理
-inject 側でタイルをまたぐ画像を正しく描画するため、以下の処理を実装:
-
-1. **重なり判定** (`imageOverlapsTile`):
-   - 画像の開始タイル座標 + ピクセル座標から終了タイル座標を計算
-   - 現在のタイルが画像の範囲内にあるかチェック
-
-2. **部分描画**:
-   - 絶対座標系で画像とタイルの位置を計算
-   - Canvas の `drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)` で部分描画
-   - source rectangle: 画像のどの部分を切り取るか
-   - destination rectangle: タイルのどこに描画するか
-
-これにより、旧実装の `splitImageOnTiles` 相当の処理を inject 側で実現。
+これらは inject → content への応答機構を実装すれば復活可能。

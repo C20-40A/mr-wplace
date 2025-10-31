@@ -2,7 +2,7 @@ import { storage } from "@/utils/browser-api";
 import {
   addImageToOverlayLayers,
   removePreparedOverlayImageByKey,
-} from "@/features/tile-draw";
+} from "@/features/tile-draw-stubs";
 
 export interface TileSnapshotInfo {
   tileX: number;

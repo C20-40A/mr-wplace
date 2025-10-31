@@ -1,4 +1,3 @@
-import { processTileWithOverlay } from "./tile-processor";
 import { drawOverlayLayersOnTile } from "./tile-draw";
 
 /**
@@ -122,40 +121,20 @@ const handleTileRequest = async (
     (dataSaver && cacheExists); // Case 2: data saver OFF but cache key exists
 
   // Process tile with overlays in inject (page context)
-  // Use new tile-draw system with fallback to old processTileWithOverlay
   let processedBlob: Blob;
 
   const computeDevice = window.mrWplaceComputeDevice || "gpu";
-  const useTileDraw = true; // TODO: Make this configurable for gradual rollout
 
   try {
-    if (useTileDraw) {
-      processedBlob = await drawOverlayLayersOnTile(
-        originalTileBlob,
-        [tileX, tileY],
-        computeDevice
-      );
-    } else {
-      processedBlob = await processTileWithOverlay(
-        originalTileBlob,
-        tileX,
-        tileY
-      );
-    }
+    processedBlob = await drawOverlayLayersOnTile(
+      originalTileBlob,
+      [tileX, tileY],
+      computeDevice
+    );
   } catch (error) {
-    console.error(`🧑‍🎨 : Tile processing failed for (${tileX},${tileY}), using fallback:`, error);
-    // Fallback to simple overlay processing
-    try {
-      processedBlob = await processTileWithOverlay(
-        originalTileBlob,
-        tileX,
-        tileY
-      );
-    } catch (fallbackError) {
-      console.error(`🧑‍🎨 : Fallback processing also failed, returning original tile:`, fallbackError);
-      // Last resort: return original tile
-      processedBlob = originalTileBlob;
-    }
+    console.error(`🧑‍🎨 : Tile processing failed for (${tileX},${tileY}), returning original tile:`, error);
+    // Fallback: return original tile
+    processedBlob = originalTileBlob;
   }
 
   // Cache the processed tile if needed
