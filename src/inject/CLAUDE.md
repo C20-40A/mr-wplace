@@ -120,7 +120,65 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
 
 #### 最終ビルドサイズ
 ```
-dist/content.js  332.6kb  (削減: -12.5KB)
+dist/content.js  333.2kb  (削減: -12KB, snapshot 統合により若干増加)
 dist/popup.js     38.9kb  (変更なし)
-dist/inject.js    21.9kb  (全機能統合)
+dist/inject.js    22.9kb  (全機能統合, snapshot 処理追加)
 ```
+
+### 今後の開発における注意事項
+
+#### 新しいオーバーレイ機能を追加する場合
+
+1. **inject/message-handler.ts** にメッセージハンドラー追加:
+   ```typescript
+   if (event.data.source === "mr-wplace-your-feature") {
+     await handleYourFeature(event.data);
+     return;
+   }
+   ```
+
+2. **inject/types.ts** に型定義追加:
+   ```typescript
+   export interface YourFeatureData {
+     key: string;
+     dataUrl: string;
+     // ...
+   }
+   ```
+
+3. **content.ts** にデータ送信関数追加:
+   ```typescript
+   export const sendYourFeatureToInject = async () => {
+     const data = /* データ取得 */;
+     window.postMessage({ source: "mr-wplace-your-feature", data }, "*");
+   };
+   ```
+
+4. **機能側で呼び出し**:
+   ```typescript
+   import { sendYourFeatureToInject } from "@/content";
+   // データ変更後
+   await sendYourFeatureToInject();
+   ```
+
+#### デバッグのコツ
+
+- inject context のデータを確認するには、ブラウザコンソールで直接 `window.mrWplace*` を参照
+- content script のデータは DevTools の Extension タブから確認
+- `🧑‍🎨 :` ログで絞り込むと追跡しやすい
+
+#### 避けるべきパターン
+
+❌ content script で ImageBitmap/ImageData を直接処理
+❌ inject context で WASM を使用
+❌ inject context で Chrome API を使用
+❌ 同期的な postMessage 処理を期待する (必ず非同期)
+
+✅ content は storage 管理のみ
+✅ inject は画像処理と描画のみ
+✅ データ変更時は必ず send*ToInject() を呼ぶ
+✅ async/await で適切に待機
+
+### 完了日: 2025-11-01
+
+全ての描画関連機能 (gallery, snapshots, text-draw, auto-spoit, paint-stats) が inject 側で動作確認済み。
