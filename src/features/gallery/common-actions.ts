@@ -5,10 +5,7 @@
 import { GalleryItem, GalleryStorage } from "./storage";
 import { gotoPosition } from "../../utils/position";
 import { tilePixelToLatLng } from "../../utils/coordinate";
-import {
-  addImageToOverlayLayers,
-  removePreparedOverlayImageByKey,
-} from "@/features/tile-draw-stubs";
+import { sendGalleryImagesToInject } from "@/content";
 
 /**
  * 描画ON/OFFトグル
@@ -91,15 +88,8 @@ export const moveImage = async (
     drawPosition: newCoords,
   });
 
-  const response = await fetch(item.dataUrl);
-  const blob = await response.blob();
-
-  removePreparedOverlayImageByKey(item.key);
-  await addImageToOverlayLayers(
-    blob,
-    [newCoords.TLX, newCoords.TLY, newCoords.PxX, newCoords.PxY],
-    item.key
-  );
+  // Notify inject side to update overlay layers
+  await sendGalleryImagesToInject();
 
   console.log("🧑‍🎨 : Image moved", direction, newCoords);
 };

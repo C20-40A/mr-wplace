@@ -1,8 +1,4 @@
 import { storage } from "@/utils/browser-api";
-import {
-  addImageToOverlayLayers,
-  removePreparedOverlayImageByKey,
-} from "@/features/tile-draw-stubs";
 
 export interface TileSnapshotInfo {
   tileX: number;
@@ -271,15 +267,8 @@ export class TimeTravelStorage {
       if (rawData) {
         // Uint8Array → File変換
         const uint8Array = new Uint8Array(rawData);
-        const blob = new Blob([uint8Array], { type: "image/png" });
-        const file = new File([blob], "snapshot.png", { type: "image/png" });
-
-        const imageKey = `snapshot_${state.fullKey}`;
-        await addImageToOverlayLayers(
-          file,
-          [state.tileX, state.tileY, 0, 0],
-          imageKey
-        );
+        // Snapshot overlay is now handled by inject side
+        // No need to manually add to overlay layers
       }
     }
   }
@@ -330,12 +319,15 @@ export class TimeTravelStorage {
     // 3. 描画に反映
     const imageKey = `snapshot_${fullKey}`;
 
+    // TODO: Integrate snapshot with inject-side tile-draw
+    // Snapshot overlay is not yet integrated with new architecture
     if (newDrawEnabled) {
       // 描画ON
-      await addImageToOverlayLayers(file, [tileX, tileY, 0, 0], imageKey);
+      // await addImageToOverlayLayers(file, [tileX, tileY, 0, 0], imageKey);
+      console.warn("🧑‍🎨 : Snapshot overlay not yet supported in inject-side tile-draw");
     } else {
       // 描画OFF
-      removePreparedOverlayImageByKey(imageKey);
+      // removePreparedOverlayImageByKey(imageKey);
     }
 
     return newDrawEnabled;

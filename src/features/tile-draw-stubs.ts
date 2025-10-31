@@ -1,23 +1,33 @@
 /**
  * Content-side wrappers that communicate with inject-side tile-draw
- * These functions send requests to inject and wait for responses via postMessage
+ *
+ * Architecture:
+ * - All overlay layer management happens in inject side (page context)
+ * - Content side communicates via postMessage for read operations (stats, pixel color)
+ * - Gallery changes are synced via sendGalleryImagesToInject()
  */
 
 let requestIdCounter = 0;
 const generateRequestId = (): string => `req_${Date.now()}_${++requestIdCounter}`;
 
-export const removePreparedOverlayImageByKey = async (imageKey: string): Promise<void> => {
-  console.log(`🧑‍🎨 : removePreparedOverlayImageByKey stub called for ${imageKey}`);
-  // Actual removal handled by inject side via sendGalleryImagesToInject
+/**
+ * Legacy stub - no-op
+ * Actual removal handled by inject side via sendGalleryImagesToInject()
+ */
+export const removePreparedOverlayImageByKey = async (_imageKey: string): Promise<void> => {
+  // No-op: inject side handles this automatically
 };
 
+/**
+ * Legacy stub - no-op
+ * Actual addition handled by inject side via sendGalleryImagesToInject()
+ */
 export const addImageToOverlayLayers = async (
-  source: any,
-  coords: any,
-  imageKey: string
+  _source: any,
+  _coords: any,
+  _imageKey: string
 ): Promise<void> => {
-  console.log(`🧑‍🎨 : addImageToOverlayLayers stub called for ${imageKey}`);
-  // Actual addition handled by inject side via sendGalleryImagesToInject
+  // No-op: inject side handles this automatically
 };
 
 /**
@@ -141,7 +151,15 @@ export const getPerTileColorStatsAll = async (): Promise<
   });
 };
 
-// Legacy stubs (not used but kept for compatibility)
-export const getPerTileColorStats = (imageKey: string): null => null;
-export const setPerTileColorStats = (imageKey: string, tileStatsMap: any): void => {};
-export const toggleDrawEnabled = (imageKey: string): boolean => false;
+/**
+ * Legacy stubs - no-op
+ * These functions are no longer used but kept for backward compatibility
+ */
+export const getPerTileColorStats = (_imageKey: string): null => null;
+export const setPerTileColorStats = (_imageKey: string, _tileStatsMap: any): void => {
+  // No-op: stats are managed by inject side
+};
+export const toggleDrawEnabled = (_imageKey: string): boolean => {
+  // No-op: managed by gallery storage
+  return false;
+};
