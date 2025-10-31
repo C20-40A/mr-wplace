@@ -2,8 +2,7 @@ import { TimeTravelStorage, SnapshotInfo } from "../storage";
 import { Toast } from "../../../components/toast";
 import { t, formatDate } from "../../../i18n/manager";
 import { di } from "../../../core/di";
-// TODO: Snapshot overlay is not yet integrated with inject-side tile-draw
-// import { removePreparedOverlayImageByKey } from "@/features/tile-draw-stubs";
+import { sendSnapshotsToInject } from "@/content";
 
 export abstract class BaseSnapshotRoute {
   protected setupSnapshotEvents(
@@ -85,12 +84,11 @@ export abstract class BaseSnapshotRoute {
   ): Promise<void> {
     if (!confirm(t`${"delete_confirm"}`)) return;
 
-    // 描画一覧からも削除（描画中の場合）
-    // TODO: Integrate snapshot with inject-side tile-draw
-    // const imageKey = `snapshot_${fullKey}`;
-    // removePreparedOverlayImageByKey(imageKey);
-
     await TimeTravelStorage.removeSnapshotFromIndex(fullKey);
+
+    // Update inject side to remove snapshot overlay
+    await sendSnapshotsToInject();
+
     Toast.success(t`${"deleted_message"}`);
     await this.reloadSnapshots(container);
   }

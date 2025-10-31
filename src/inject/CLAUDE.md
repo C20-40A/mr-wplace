@@ -18,6 +18,7 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
    - `mr-wplace-gallery-images`: gallery 画像データ
    - `mr-wplace-compute-device`: GPU/CPU 設定
    - `mr-wplace-color-filter`: カラーフィルター状態
+   - `mr-wplace-snapshots`: time-travel スナップショット
 
 #### Phase 2: content 側の tile-draw を削除
 1. `src/inject/tile-processor.ts` 削除 (tile-draw に統合)
@@ -66,8 +67,8 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
   - `utils/splitImageOnTiles-inject.ts`: Canvas API のみで画像分割
   - その他: content 側からコピーして import パス修正
 - `src/inject/fetch-interceptor.ts`: tile-draw を使用
-- `src/inject/message-handler.ts`: gallery/compute-device/color-filter の受信
-- `src/inject/types.ts`: 型定義追加
+- `src/inject/message-handler.ts`: gallery/compute-device/color-filter/snapshots の受信
+- `src/inject/types.ts`: 型定義追加 (SnapshotImage 等)
 
 **content 側 (削除・簡略化):**
 - `src/features/tile-draw/` 削除 ❌
@@ -78,6 +79,7 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
   - `sendGalleryImagesToInject()`
   - `sendComputeDeviceToInject()`
   - `sendColorFilterToInject()`
+  - `sendSnapshotsToInject()`
 
 ### メリット
 ✅ Firefox の extension context セキュリティ制約を完全回避
@@ -89,16 +91,14 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
 
 ### 制限事項と今後の課題
 
-#### ✅ 復活済み
+#### ✅ 全機能復活済み
 - ✅ `getOverlayPixelColor()`: auto-spoit の overlay 色検出
 - ✅ `getAggregatedColorStats()`: paint-stats / color-filter の統計表示
 - ✅ text-draw: gallery 統合により動作
-
-#### ⚠️ 未対応 (TODO)
-- ⚠️ **time-travel snapshot の overlay 表示**
-  - 現在は gallery とは別システムで管理
-  - inject 側との統合が必要
-  - 回避策: snapshot 機能は削除・閲覧のみ動作、overlay 表示は無効
+- ✅ **time-travel snapshot overlay**: inject 側統合完了
+  - `sendSnapshotsToInject()` で Chrome storage から dataUrl に変換して送信
+  - `handleSnapshotsUpdate()` で overlay layers に追加
+  - 削除/描画切り替え時に自動同期
 
 ### Refactoring 完了 (2025-11-01)
 
@@ -116,7 +116,7 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
 3. **不要な呼び出し削除**:
    - gallery/common-actions.ts: inject 側で自動同期
    - text-draw: gallery 統合
-   - time-travel: TODO コメント追加 (未実装)
+   - time-travel: inject 側統合完了
 
 #### 最終ビルドサイズ
 ```

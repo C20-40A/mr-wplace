@@ -93,6 +93,58 @@ export const sendColorFilterToInject = (colorFilterManager: ColorFilterManager) 
   console.log(`🧑‍🎨 : Sent color filter state to inject side`);
 };
 
+/**
+ * Send active snapshots to inject side for overlay rendering
+ */
+export const sendSnapshotsToInject = async () => {
+  const { TimeTravelStorage } = await import("@/features/time-travel/storage");
+  const { storage } = await import("@/utils/browser-api");
+
+  const drawStates = await TimeTravelStorage.getDrawStates();
+  const enabledStates = drawStates.filter((s) => s.drawEnabled);
+
+  const snapshots: Array<{
+    key: string;
+    dataUrl: string;
+    tileX: number;
+    tileY: number;
+  }> = [];
+
+  for (const state of enabledStates) {
+    const snapshotData = await storage.get([state.fullKey]);
+    const rawData = snapshotData[state.fullKey];
+
+    if (rawData) {
+      // Convert Uint8Array to blob to dataUrl
+      const uint8Array = new Uint8Array(rawData);
+      const blob = new Blob([uint8Array], { type: "image/png" });
+
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+
+      snapshots.push({
+        key: `snapshot_${state.fullKey}`,
+        dataUrl,
+        tileX: state.tileX,
+        tileY: state.tileY,
+      });
+    }
+  }
+
+  window.postMessage(
+    {
+      source: "mr-wplace-snapshots",
+      snapshots,
+    },
+    "*"
+  );
+
+  console.log(`🧑‍🎨 : Sent ${snapshots.length} snapshots to inject side`);
+};
+
 (async () => {
   try {
     console.log("🧑‍🎨: Starting initialization...");

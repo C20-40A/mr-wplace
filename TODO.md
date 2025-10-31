@@ -5,6 +5,7 @@ inject.js:1 Uncaught (in promise) TypeError: Failed to execute 'observe' on 'Mut
 at m (inject.js:1:5765)
 at inject.js:1:7941
 
+- tile 描画が inject 送信で少し遅くなったかも？
 - inject も try catch しないと失敗したとき終わる
 - theme: 'custom-winter'-> 'night' にすれば一発で切り替わるが、動的には切り替わらなそう
 - 矢印移動すると、なぜか新規追加ボタン消える

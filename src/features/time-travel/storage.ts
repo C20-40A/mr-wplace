@@ -1,4 +1,5 @@
 import { storage } from "@/utils/browser-api";
+import { sendSnapshotsToInject } from "@/content";
 
 export interface TileSnapshotInfo {
   tileX: number;
@@ -258,19 +259,8 @@ export class TimeTravelStorage {
     console.log("🧑‍🎨 : Restoring TimeTravel draw states");
     const tileOverlay = window.mrWplace?.tileOverlay;
 
-    const states = await this.getDrawStates();
-    const enabledStates = states.filter((s) => s.drawEnabled);
-
-    for (const state of enabledStates) {
-      const snapshotData = await storage.get([state.fullKey]);
-      const rawData = snapshotData[state.fullKey];
-      if (rawData) {
-        // Uint8Array → File変換
-        const uint8Array = new Uint8Array(rawData);
-        // Snapshot overlay is now handled by inject side
-        // No need to manually add to overlay layers
-      }
-    }
+    // Restore all enabled snapshots - inject side will handle rendering
+    await sendSnapshotsToInject();
   }
 
   static async isSnapshotDrawing(fullKey: string): Promise<boolean> {
@@ -316,19 +306,8 @@ export class TimeTravelStorage {
       drawEnabled: newDrawEnabled,
     });
 
-    // 3. 描画に反映
-    const imageKey = `snapshot_${fullKey}`;
-
-    // TODO: Integrate snapshot with inject-side tile-draw
-    // Snapshot overlay is not yet integrated with new architecture
-    if (newDrawEnabled) {
-      // 描画ON
-      // await addImageToOverlayLayers(file, [tileX, tileY, 0, 0], imageKey);
-      console.warn("🧑‍🎨 : Snapshot overlay not yet supported in inject-side tile-draw");
-    } else {
-      // 描画OFF
-      // removePreparedOverlayImageByKey(imageKey);
-    }
+    // 3. 描画に反映 - inject side に通知
+    await sendSnapshotsToInject();
 
     return newDrawEnabled;
   }

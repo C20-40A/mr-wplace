@@ -7,8 +7,7 @@ import { di } from "../../../core/di";
 import { gotoPosition } from "../../../utils/position";
 import { tilePixelToLatLng } from "../../../utils/coordinate";
 import { storage } from "@/utils/browser-api";
-// TODO: Snapshot overlay is not yet integrated with inject-side tile-draw
-// import { removePreparedOverlayImageByKey } from "@/features/tile-draw-stubs";
+import { sendSnapshotsToInject } from "@/content";
 
 export class SnapshotDetailRoute {
   private imageInspector?: ImageInspector;
@@ -238,12 +237,11 @@ export class SnapshotDetailRoute {
   private async deleteSnapshot(fullKey: string): Promise<void> {
     if (!confirm(t`${"delete_confirm"}`)) return;
 
-    // 描画一覧からも削除（描画中の場合）
-    // TODO: Integrate snapshot with inject-side tile-draw
-    // const imageKey = `snapshot_${fullKey}`;
-    // removePreparedOverlayImageByKey(imageKey);
-
     await TimeTravelStorage.removeSnapshotFromIndex(fullKey);
+
+    // Update inject side to remove snapshot overlay
+    await sendSnapshotsToInject();
+
     Toast.success(t`${"deleted_message"}`);
 
     // 削除後は前画面に戻る
