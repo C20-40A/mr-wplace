@@ -1,5 +1,10 @@
 # メイン
 
+brave で
+inject.js:1 Uncaught (in promise) TypeError: Failed to execute 'observe' on 'MutationObserver': parameter 1 is not of type 'Node'.
+at m (inject.js:1:5765)
+at inject.js:1:7941
+
 - theme: 'custom-winter'-> 'night' にすれば一発で切り替わるが、動的には切り替わらなそう
 - 矢印移動すると、なぜか新規追加ボタン消える
 - 画像編集で拡大はやはりできたほうがいいだろうか

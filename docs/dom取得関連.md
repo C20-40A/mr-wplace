@@ -127,6 +127,10 @@ const selectColor = (id) => {
 };
 ```
 
+# Theme
+
+theme: "custom-winter" | "halloween" | "night"
+
 # ホバーしたときの色の変化
 
 黒(0,0,0)->(82, 82, 82)になった
