@@ -87,9 +87,40 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
 ✅ 全機能が inject 側で完結 (color filter, stats, 補助色モードなど)
 ✅ エラーハンドリング強化 (fallback 機構)
 
-### 制限事項
-⚠️ 以下の機能は一時的に無効 (TODO):
-- `getOverlayPixelColor()`: auto-spoit の overlay 色検出
-- `getAggregatedColorStats()`: paint-stats の統計表示
+### 制限事項と今後の課題
 
-これらは inject → content への応答機構を実装すれば復活可能。
+#### ✅ 復活済み
+- ✅ `getOverlayPixelColor()`: auto-spoit の overlay 色検出
+- ✅ `getAggregatedColorStats()`: paint-stats / color-filter の統計表示
+- ✅ text-draw: gallery 統合により動作
+
+#### ⚠️ 未対応 (TODO)
+- ⚠️ **time-travel snapshot の overlay 表示**
+  - 現在は gallery とは別システムで管理
+  - inject 側との統合が必要
+  - 回避策: snapshot 機能は削除・閲覧のみ動作、overlay 表示は無効
+
+### Refactoring 完了 (2025-11-01)
+
+#### クリーンアップ内容
+1. **不要なファイル削除**:
+   - `src/inject/tile-draw/states.ts` (states-inject.ts を使用)
+   - `src/inject/tile-draw/utils/splitImageOnTiles.ts` (inject 版を使用)
+   - `src/inject/tile-draw/README.md` (古い内容)
+
+2. **stubs のクリーンアップ**:
+   - `tile-draw-stubs.ts` の警告ログ削除
+   - legacy 関数に適切なコメント追加
+   - no-op 関数として明示
+
+3. **不要な呼び出し削除**:
+   - gallery/common-actions.ts: inject 側で自動同期
+   - text-draw: gallery 統合
+   - time-travel: TODO コメント追加 (未実装)
+
+#### 最終ビルドサイズ
+```
+dist/content.js  332.6kb  (削減: -12.5KB)
+dist/popup.js     38.9kb  (変更なし)
+dist/inject.js    21.9kb  (全機能統合)
+```
