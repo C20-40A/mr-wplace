@@ -36,15 +36,28 @@ content.ts → inject script tag → inject/index.ts
   postMessage ←→ window.addEventListener("message")
 ```
 
-**Key message sources:**
+**Key message sources (content → inject):**
 
-- `mr-wplace-processed`: Processed tile blob from content → inject
-- `wplace-studio-flyto`: Position navigation request
+- `mr-wplace-gallery-images`: Gallery images data with draw positions
+- `mr-wplace-snapshots`: Time-travel snapshot overlay data
+- `mr-wplace-compute-device`: GPU/CPU rendering preference
+- `mr-wplace-color-filter`: Color filter state and enhanced mode
 - `mr-wplace-theme-update`: Theme change notification
 - `mr-wplace-data-saver-update`: Data saver toggle
-- `wplace-studio-snapshot`: Tile snapshot storage
-- `mr-wplace-me`: User data from intercepted API
+- `wplace-studio-flyto`: Position navigation request
+- `wplace-studio-snapshot`: Tile snapshot storage (legacy)
 - `wplace-studio-pixel-click`: Pixel color detection (auto-spoit)
+
+**Key message sources (inject → content):**
+
+- `mr-wplace-request-stats`: Request aggregated color statistics
+- `mr-wplace-response-stats`: Color statistics response
+- `mr-wplace-request-pixel-color`: Request overlay pixel color at lat/lng
+- `mr-wplace-response-pixel-color`: Pixel color response
+- `mr-wplace-request-tile-stats`: Request per-tile color statistics
+- `mr-wplace-response-tile-stats`: Tile statistics response
+- `mr-wplace-me`: User data from intercepted API
+- `mr-wplace-processed`: Processed tile blob (legacy)
 
 ### Dependency Injection (DI Container)
 
@@ -73,10 +86,16 @@ src/
 │   ├── fetch-interceptor.ts  # Intercepts tile & user API calls
 │   ├── map-instance.ts    # Captures WPlace map instance
 │   ├── message-handler.ts # Handles postMessage events
-│   └── theme-manager.ts   # Applies theme to map
+│   ├── theme-manager.ts   # Applies theme to map
+│   └── tile-draw/         # 🆕 Tile overlay rendering (moved from features)
+│       ├── index.ts       # Main exports
+│       ├── states-inject.ts  # Overlay layers state management
+│       ├── tile-overlay-renderer.ts  # GPU/CPU rendering
+│       └── utils/         # Image splitting, color processing
 ├── core/
 │   └── di.ts              # DI container & API types
 ├── features/              # Feature modules (gallery, drawing, etc.)
+│   └── tile-draw-stubs.ts # 🆕 Legacy wrapper for inject/tile-draw
 ├── utils/                 # Shared utilities
 └── i18n/                  # Internationalization
 ```
@@ -160,4 +179,156 @@ const text = t`feature.gallery.title`; // Template literal syntax
 - `utils/color-filter-manager.ts`: Main state management for filters
 - `utils/pixel-converters.ts`: `blobToPixels` for image processing
 - `utils/image-storage.ts`: Gallery image persistence
-- `utils/image-bitmap-compat.ts`: Firefox-compatible bitmap conversion
+- ~~`utils/image-bitmap-compat.ts`~~: ❌ Deprecated - Use native `createImageBitmap` in inject context
+
+## Critical Implementation Notes
+
+### Tile Overlay Architecture (2025-11-01)
+
+**IMPORTANT:** All tile overlay rendering now happens in **inject context (page context)**, not content script context.
+
+#### Background
+
+Firefox has stricter security constraints than Chrome for extension contexts. Operations involving `ImageBitmap`, `ImageData`, and WASM in content scripts fail with security errors in Firefox, even though they work in Chrome.
+
+#### Solution
+
+Move all image processing to `src/inject/tile-draw/`:
+
+1. **Content script role** (`src/content.ts`):
+   - Manages data (gallery, snapshots, settings)
+   - Sends data to inject via `postMessage`
+   - Uses stubs for legacy function calls
+
+2. **Inject script role** (`src/inject/tile-draw/`):
+   - Receives data via `message` event listeners
+   - Performs all image processing (split, filter, render)
+   - Uses native Canvas API (no WASM)
+   - Intercepts tile fetch and applies overlays
+
+#### Data Sync Functions
+
+Always call these after modifying overlay-related data:
+
+```typescript
+import { sendGalleryImagesToInject } from "@/content";
+import { sendSnapshotsToInject } from "@/content";
+import { sendColorFilterToInject } from "@/content";
+import { sendComputeDeviceToInject } from "@/content";
+
+// After gallery changes (add, delete, toggle, reorder)
+await sendGalleryImagesToInject();
+
+// After snapshot changes (draw, remove, delete)
+await sendSnapshotsToInject();
+
+// After color filter changes
+await sendColorFilterToInject();
+
+// After compute device changes (GPU/CPU)
+await sendComputeDeviceToInject();
+```
+
+#### Async Request/Response Pattern
+
+For features that need data FROM inject (stats, pixel color):
+
+```typescript
+// In features/tile-draw-stubs.ts
+export const getAggregatedColorStats = async (
+  imageKeys: string[]
+): Promise<ColorStats> => {
+  const requestId = generateRequestId();
+
+  return new Promise((resolve) => {
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-response-stats" &&
+        event.data.requestId === requestId
+      ) {
+        window.removeEventListener("message", handler);
+        resolve(event.data.stats);
+      }
+    };
+
+    window.addEventListener("message", handler);
+    window.postMessage(
+      { source: "mr-wplace-request-stats", imageKeys, requestId },
+      "*"
+    );
+  });
+};
+```
+
+#### Key Constraints
+
+- ❌ **Never use WASM in inject context** - causes `unreachable` errors
+- ❌ **Never use `image-bitmap-compat` in inject** - use native `createImageBitmap`
+- ✅ **Always use Canvas API for image processing in inject**
+- ✅ **Content script only manages storage and UI**
+- ✅ **Inject script handles all rendering and filtering**
+
+#### Files to Modify When Adding Overlay Features
+
+1. `src/inject/message-handler.ts`: Add new message listener
+2. `src/inject/types.ts`: Add type definitions if needed
+3. `src/content.ts`: Add data sync function
+4. Feature code: Call sync function after data changes
+
+See `src/inject/CLAUDE.md` for detailed migration history.
+
+### Known Limitations and Potential Issues
+
+#### Performance Considerations
+
+1. **Large gallery images**: Images are split into tiles and cached. Very large images (>10MB) may cause initial lag.
+2. **Many overlays**: Having 10+ active overlays may impact rendering performance on lower-end devices.
+3. **Snapshot storage**: Snapshots are stored as PNG in Chrome storage. Each snapshot is ~50-200KB. Chrome has a 10MB limit per extension.
+
+#### Browser Compatibility
+
+- ✅ **Chrome/Edge**: Fully supported
+- ✅ **Firefox**: Fully supported (as of 2025-11-01 refactor)
+- ❌ **Safari**: Not tested, likely requires Manifest V2 backport
+
+#### Edge Cases to Watch
+
+1. **Tile cache invalidation**: When overlay data changes, `window.mrWplaceDataSaver.tileCache.clear()` is called. If tiles don't update, check this call.
+
+2. **Message ordering**: `postMessage` is async. If overlays don't appear, check that:
+   - `sendGalleryImagesToInject()` is awaited
+   - Message handler completed before next operation
+
+3. **ImageBitmap lifecycle**: ImageBitmaps are kept in memory in `overlayLayers`. Memory leaks possible if images aren't removed from layers when deleted from gallery.
+
+4. **Snapshot sync timing**: Snapshots are loaded from storage and converted to dataUrl on each sync. If snapshot list is long (>50), this may take 1-2 seconds.
+
+#### Debugging Tips
+
+```typescript
+// Check overlay layers state in inject context
+console.log("🧑‍🎨 : overlayLayers", window.overlayLayers);
+
+// Check gallery images in inject context
+console.log("🧑‍🎨 : galleryImages", window.mrWplaceGalleryImages);
+
+// Check snapshots in inject context
+console.log("🧑‍🎨 : snapshots", window.mrWplaceSnapshots);
+
+// Check tile cache
+console.log("🧑‍🎨 : cache size", window.mrWplaceDataSaver?.tileCache.size);
+
+// Force tile re-render
+if (window.mrWplaceDataSaver?.tileCache) {
+  window.mrWplaceDataSaver.tileCache.clear();
+  console.log("🧑‍🎨 : Cleared tile cache");
+}
+```
+
+#### Potential Future Improvements
+
+1. **Incremental sync**: Instead of sending all gallery images on every change, send only diffs.
+2. **Web Worker**: Move image processing to Web Worker for better performance.
+3. **IndexedDB for snapshots**: Use IndexedDB instead of Chrome storage for larger snapshot capacity.
+4. **Lazy loading**: Only load snapshots for currently visible tiles.
+5. **Compression**: Use WebP instead of PNG for snapshots to reduce storage usage.
