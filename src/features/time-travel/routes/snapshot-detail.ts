@@ -7,7 +7,7 @@ import { di } from "../../../core/di";
 import { gotoPosition } from "../../../utils/position";
 import { tilePixelToLatLng } from "../../../utils/coordinate";
 import { storage } from "@/utils/browser-api";
-import { removePreparedOverlayImageByKey } from "@/features/tile-draw";
+import { removePreparedOverlayImageByKey } from "@/features/tile-draw-stubs";
 
 export class SnapshotDetailRoute {
   private imageInspector?: ImageInspector;

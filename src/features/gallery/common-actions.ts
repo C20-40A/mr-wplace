@@ -8,7 +8,7 @@ import { tilePixelToLatLng } from "../../utils/coordinate";
 import {
   addImageToOverlayLayers,
   removePreparedOverlayImageByKey,
-} from "@/features/tile-draw";
+} from "@/features/tile-draw-stubs";
 
 /**
  * 描画ON/OFFトグル

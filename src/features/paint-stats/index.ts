@@ -1,4 +1,4 @@
-import { getAggregatedColorStats } from "@/features/tile-draw";
+import { getAggregatedColorStats } from "@/features/tile-draw-stubs";
 import { getCurrentTiles } from "@/states/currentTile";
 import { colorpalette } from "@/constants/colors";
 

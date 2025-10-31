@@ -3,7 +3,7 @@ import type { SortOrder } from "../../../../components/color-palette/types";
 import { ColorPaletteStorage } from "../../../../components/color-palette/storage";
 import type { ComputeDevice } from "../../../../components/color-palette/storage";
 import { getCurrentTiles } from "../../../../states/currentTile";
-import { getAggregatedColorStats } from "@/features/tile-draw";
+import { getAggregatedColorStats } from "@/features/tile-draw-stubs";
 
 let colorPalette: ColorPalette | null = null;
 let lastSortOrder: SortOrder = "default";
