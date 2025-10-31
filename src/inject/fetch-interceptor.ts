@@ -1,3 +1,5 @@
+import { processTileWithOverlay } from "./tile-processor";
+
 /**
  * Setup fetch interceptor to handle tile requests and user data
  */
@@ -59,6 +61,10 @@ export const setupFetchInterceptor = async (
 /**
  * Handle tile request interception
  *
+ * NEW APPROACH (Firefox-compatible):
+ * Process tiles directly in inject (page context) using Canvas API
+ * This avoids Firefox extension context ImageBitmap security issues
+ *
  * Caching Strategy:
  * 1. data saver OFF / cache key NOT exists -> No caching. Process tile.
  * 2. data saver OFF / cache key exists -> Process tile and cache the processed result.
@@ -98,43 +104,38 @@ const handleTileRequest = async (
   const clonedResponse = response.clone();
   const originalTileBlob = await clonedResponse.blob();
 
+  // Save snapshot for time travel feature
+  window.postMessage(
+    {
+      source: "wplace-studio-snapshot",
+      tileBlob: originalTileBlob,
+      tileX: tileX,
+      tileY: tileY,
+    },
+    "*"
+  );
+
   // Determine if we should cache the processed result
   const shouldCacheProcessed =
     dataSaver?.enabled || // Case 3: data saver ON (always cache)
     (dataSaver && cacheExists); // Case 2: data saver OFF but cache key exists
 
-  // Process tile (overlay, snapshot, etc.)
-  return new Promise((resolve) => {
-    const blobUUID = crypto.randomUUID();
+  // Process tile with overlays in inject (page context)
+  const processedBlob = await processTileWithOverlay(
+    originalTileBlob,
+    tileX,
+    tileY
+  );
 
-    // Store callback for processed blob
-    window.tileProcessingQueue = window.tileProcessingQueue || new Map();
-    window.tileProcessingQueue.set(blobUUID, (processedBlob: Blob) => {
-      // Cache the processed tile if needed
-      if (shouldCacheProcessed && dataSaver) {
-        dataSaver.tileCache.set(cacheKey, processedBlob);
-        console.log("🧑‍🎨 : Cached processed tile:", cacheKey);
-      }
+  // Cache the processed tile if needed
+  if (shouldCacheProcessed && dataSaver) {
+    dataSaver.tileCache.set(cacheKey, processedBlob);
+    console.log("🧑‍🎨 : Cached processed tile:", cacheKey);
+  }
 
-      resolve(
-        new Response(processedBlob, {
-          headers: response.headers,
-          status: response.status,
-          statusText: response.statusText,
-        })
-      );
-    });
-
-    // Send tile for processing
-    window.postMessage(
-      {
-        source: "wplace-studio-tile",
-        blobID: blobUUID,
-        tileBlob: originalTileBlob,
-        tileX: tileX,
-        tileY: tileY,
-      },
-      "*"
-    );
+  return new Response(processedBlob, {
+    headers: response.headers,
+    status: response.status,
+    statusText: response.statusText,
   });
 };
