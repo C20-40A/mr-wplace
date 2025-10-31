@@ -9,6 +9,8 @@ export {
   removePreparedOverlayImageByKey,
   setPerTileColorStats,
   toggleDrawEnabled,
+  overlayLayers,
+  perTileColorStats,
 } from "./states-inject";
 
 export { getAggregatedColorStats } from "./utils/getAggregatedColorStats";

@@ -1,10 +1,10 @@
 /**
- * Stubs for tile-draw functions that are now handled by inject side
- * These functions are kept for backward compatibility but do nothing
- * as the actual processing happens in inject context
+ * Content-side wrappers that communicate with inject-side tile-draw
+ * These functions send requests to inject and wait for responses via postMessage
  */
 
-import type { ColorStats } from "./tile-draw/types";
+let requestIdCounter = 0;
+const generateRequestId = (): string => `req_${Date.now()}_${++requestIdCounter}`;
 
 export const removePreparedOverlayImageByKey = async (imageKey: string): Promise<void> => {
   console.log(`🧑‍🎨 : removePreparedOverlayImageByKey stub called for ${imageKey}`);
@@ -20,39 +20,128 @@ export const addImageToOverlayLayers = async (
   // Actual addition handled by inject side via sendGalleryImagesToInject
 };
 
-export const getAggregatedColorStats = (
+/**
+ * Request aggregated color stats from inject side
+ */
+export const getAggregatedColorStats = async (
   imageKeys: string[]
-): Record<string, { matched: number; total: number }> => {
-  console.log(`🧑‍🎨 : getAggregatedColorStats stub called for ${imageKeys.length} images`);
-  // TODO: Implement inject-side communication for color stats
-  return {};
+): Promise<Record<string, { matched: number; total: number }>> => {
+  const requestId = generateRequestId();
+
+  return new Promise((resolve) => {
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-response-stats" &&
+        event.data.requestId === requestId
+      ) {
+        window.removeEventListener("message", handler);
+        resolve(event.data.stats);
+      }
+    };
+
+    window.addEventListener("message", handler);
+
+    // Send request to inject
+    window.postMessage(
+      {
+        source: "mr-wplace-request-stats",
+        imageKeys,
+        requestId,
+      },
+      "*"
+    );
+
+    // Timeout after 5 seconds
+    setTimeout(() => {
+      window.removeEventListener("message", handler);
+      console.warn("🧑‍🎨 : Stats request timed out");
+      resolve({});
+    }, 5000);
+  });
 };
 
-export const getPerTileColorStats = (
-  imageKey: string
-): Map<string, ColorStats> | null => {
-  console.log(`🧑‍🎨 : getPerTileColorStats stub called for ${imageKey}`);
-  return null;
-};
-
-export const setPerTileColorStats = (
-  imageKey: string,
-  tileStatsMap: Map<string, ColorStats>
-): void => {
-  console.log(`🧑‍🎨 : setPerTileColorStats stub called for ${imageKey}`);
-  // No-op: stats are handled by inject side
-};
-
-export const toggleDrawEnabled = (imageKey: string): boolean => {
-  console.log(`🧑‍🎨 : toggleDrawEnabled stub called for ${imageKey}`);
-  return false;
-};
-
+/**
+ * Request overlay pixel color from inject side
+ */
 export const getOverlayPixelColor = async (
   lat: number,
   lng: number
 ): Promise<{ r: number; g: number; b: number; a: number } | null> => {
-  console.log("🧑‍🎨 : getOverlayPixelColor stub called - feature temporarily disabled");
-  // TODO: Implement inject-side communication for overlay pixel color
-  return null;
+  const requestId = generateRequestId();
+
+  return new Promise((resolve) => {
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-response-pixel-color" &&
+        event.data.requestId === requestId
+      ) {
+        window.removeEventListener("message", handler);
+        resolve(event.data.color);
+      }
+    };
+
+    window.addEventListener("message", handler);
+
+    // Send request to inject
+    window.postMessage(
+      {
+        source: "mr-wplace-request-pixel-color",
+        lat,
+        lng,
+        requestId,
+      },
+      "*"
+    );
+
+    // Timeout after 5 seconds
+    setTimeout(() => {
+      window.removeEventListener("message", handler);
+      console.warn("🧑‍🎨 : Pixel color request timed out");
+      resolve(null);
+    }, 5000);
+  });
 };
+
+/**
+ * Request per-tile color stats from inject side
+ */
+export const getPerTileColorStatsAll = async (): Promise<
+  Record<string, Record<string, { matched: Record<string, number>; total: Record<string, number> }>>
+> => {
+  const requestId = generateRequestId();
+
+  return new Promise((resolve) => {
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-response-tile-stats" &&
+        event.data.requestId === requestId
+      ) {
+        window.removeEventListener("message", handler);
+        resolve(event.data.stats);
+      }
+    };
+
+    window.addEventListener("message", handler);
+
+    // Send request to inject
+    window.postMessage(
+      {
+        source: "mr-wplace-request-tile-stats",
+        requestId,
+      },
+      "*"
+    );
+
+    // Timeout after 5 seconds
+    setTimeout(() => {
+      window.removeEventListener("message", handler);
+      console.warn("🧑‍🎨 : Tile stats request timed out");
+      resolve({});
+    }, 5000);
+  });
+};
+
+// Legacy stubs (not used but kept for compatibility)
+export const getPerTileColorStats = (imageKey: string): null => null;
+export const setPerTileColorStats = (imageKey: string, tileStatsMap: any): void => {};
+export const toggleDrawEnabled = (imageKey: string): boolean => false;

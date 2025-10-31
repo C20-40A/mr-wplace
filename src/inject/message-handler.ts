@@ -1,5 +1,10 @@
 import { applyTheme } from "./theme-manager";
-import { addImageToOverlayLayers } from "./tile-draw";
+import {
+  addImageToOverlayLayers,
+  getAggregatedColorStats,
+  getOverlayPixelColor,
+  perTileColorStats,
+} from "./tile-draw";
 
 /**
  * Setup message event listener for handling various events
@@ -45,6 +50,22 @@ export const setupMessageHandler = (): void => {
     // Handle color filter manager update
     if (event.data.source === "mr-wplace-color-filter") {
       handleColorFilterUpdate(event.data);
+      return;
+    }
+
+    // Handle requests from content script
+    if (event.data.source === "mr-wplace-request-stats") {
+      handleStatsRequest(event.data);
+      return;
+    }
+
+    if (event.data.source === "mr-wplace-request-pixel-color") {
+      await handlePixelColorRequest(event.data);
+      return;
+    }
+
+    if (event.data.source === "mr-wplace-request-tile-stats") {
+      handleTileStatsRequest(event.data);
       return;
     }
   });
@@ -236,4 +257,76 @@ const handleColorFilterUpdate = (data: {
     window.mrWplaceDataSaver.tileCache.clear();
     console.log("🧑‍🎨 : Cleared tile cache after color filter update");
   }
+};
+
+/**
+ * Handle aggregated color stats request
+ */
+const handleStatsRequest = (data: { imageKeys: string[]; requestId: string }): void => {
+  const stats = getAggregatedColorStats(data.imageKeys);
+
+  window.postMessage(
+    {
+      source: "mr-wplace-response-stats",
+      requestId: data.requestId,
+      stats,
+    },
+    "*"
+  );
+
+  console.log(`🧑‍🎨 : Sent stats for ${data.imageKeys.length} images (request: ${data.requestId})`);
+};
+
+/**
+ * Handle overlay pixel color request
+ */
+const handlePixelColorRequest = async (data: {
+  lat: number;
+  lng: number;
+  requestId: string;
+}): Promise<void> => {
+  const color = await getOverlayPixelColor(data.lat, data.lng);
+
+  window.postMessage(
+    {
+      source: "mr-wplace-response-pixel-color",
+      requestId: data.requestId,
+      color,
+    },
+    "*"
+  );
+
+  console.log(`🧑‍🎨 : Sent pixel color for (${data.lat}, ${data.lng}) (request: ${data.requestId})`);
+};
+
+/**
+ * Handle per-tile color stats request
+ */
+const handleTileStatsRequest = (data: { requestId: string }): void => {
+  // Convert Map to serializable object
+  const statsObject: Record<string, any> = {};
+
+  for (const [imageKey, tileStatsMap] of perTileColorStats.entries()) {
+    const tileStats: Record<string, any> = {};
+
+    for (const [tileKey, stats] of tileStatsMap.entries()) {
+      tileStats[tileKey] = {
+        matched: Object.fromEntries(stats.matched),
+        total: Object.fromEntries(stats.total),
+      };
+    }
+
+    statsObject[imageKey] = tileStats;
+  }
+
+  window.postMessage(
+    {
+      source: "mr-wplace-response-tile-stats",
+      requestId: data.requestId,
+      stats: statsObject,
+    },
+    "*"
+  );
+
+  console.log(`🧑‍🎨 : Sent tile stats (request: ${data.requestId})`);
 };
