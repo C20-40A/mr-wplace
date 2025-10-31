@@ -53,6 +53,12 @@ export const setupMessageHandler = (): void => {
       return;
     }
 
+    // Handle snapshots update from content script
+    if (event.data.source === "mr-wplace-snapshots") {
+      await handleSnapshotsUpdate(event.data);
+      return;
+    }
+
     // Handle requests from content script
     if (event.data.source === "mr-wplace-request-stats") {
       handleStatsRequest(event.data);
@@ -329,4 +335,61 @@ const handleTileStatsRequest = (data: { requestId: string }): void => {
   );
 
   console.log(`🧑‍🎨 : Sent tile stats (request: ${data.requestId})`);
+};
+
+/**
+ * Handle snapshots update from content script
+ * Snapshots are tile-specific overlays for time-travel feature
+ */
+const handleSnapshotsUpdate = async (data: {
+  snapshots: Array<{
+    key: string;
+    dataUrl: string;
+    tileX: number;
+    tileY: number;
+  }>;
+}): Promise<void> => {
+  if (!window.mrWplaceSnapshots) {
+    window.mrWplaceSnapshots = new Map();
+  }
+
+  // Clear and update snapshots
+  window.mrWplaceSnapshots.clear();
+  for (const snapshot of data.snapshots) {
+    window.mrWplaceSnapshots.set(snapshot.key, snapshot);
+  }
+
+  // Add each snapshot to overlay layers
+  for (const snapshot of data.snapshots) {
+    try {
+      const imageElement = new Image();
+      imageElement.src = snapshot.dataUrl;
+
+      await new Promise<void>((resolve, reject) => {
+        imageElement.onload = () => resolve();
+        imageElement.onerror = (e) => reject(new Error(`Failed to load snapshot ${snapshot.key}: ${e}`));
+        setTimeout(() => reject(new Error(`Timeout loading snapshot ${snapshot.key}`)), 5000);
+      });
+
+      const bitmap = await createImageBitmap(imageElement);
+
+      await addImageToOverlayLayers(
+        bitmap,
+        [snapshot.tileX, snapshot.tileY, 0, 0],
+        snapshot.key
+      );
+
+      console.log(`🧑‍🎨 : Added snapshot ${snapshot.key} to overlay at (${snapshot.tileX}, ${snapshot.tileY})`);
+    } catch (error) {
+      console.error(`🧑‍🎨 : Failed to add snapshot ${snapshot.key} to overlay layers:`, error);
+    }
+  }
+
+  // Clear tile cache to force re-rendering with new snapshots
+  if (window.mrWplaceDataSaver?.tileCache) {
+    window.mrWplaceDataSaver.tileCache.clear();
+    console.log("🧑‍🎨 : Cleared tile cache after snapshots update");
+  }
+
+  console.log(`🧑‍🎨 : Snapshots updated: ${data.snapshots.length} active`);
 };

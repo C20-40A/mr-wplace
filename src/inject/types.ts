@@ -14,6 +14,13 @@ export interface GalleryImage {
   layerOrder: number;
 }
 
+export interface SnapshotImage {
+  key: string;
+  dataUrl: string;
+  tileX: number;
+  tileY: number;
+}
+
 export interface ColorFilterState {
   isFilterActive: () => boolean;
   selectedRGBs: number[][] | undefined;
@@ -39,6 +46,7 @@ export interface WindowWithWplace extends Window {
   tileProcessingQueue?: TileProcessingQueue;
   mrWplaceDataSaver?: DataSaverState;
   mrWplaceGalleryImages?: Map<string, GalleryImage>;
+  mrWplaceSnapshots?: Map<string, SnapshotImage>;
   mrWplace?: MrWplaceGlobal;
   mrWplaceComputeDevice?: "gpu" | "cpu";
 }
@@ -49,6 +57,7 @@ declare global {
     tileProcessingQueue?: TileProcessingQueue;
     mrWplaceDataSaver?: DataSaverState;
     mrWplaceGalleryImages?: Map<string, GalleryImage>;
+    mrWplaceSnapshots?: Map<string, SnapshotImage>;
     mrWplace?: MrWplaceGlobal;
     mrWplaceComputeDevice?: "gpu" | "cpu";
   }
