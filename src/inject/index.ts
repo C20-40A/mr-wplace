@@ -12,6 +12,9 @@ import { setupMessageHandler } from "./message-handler";
     tileCache: new Map(),
   };
 
+  // Initialize compute device (default: gpu)
+  window.mrWplaceComputeDevice = "gpu";
+
   // Setup fetch interceptor
   await setupFetchInterceptor(() => isInitialized);
 

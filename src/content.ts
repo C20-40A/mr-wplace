@@ -58,6 +58,41 @@ export const sendGalleryImagesToInject = async () => {
   console.log(`🧑‍🎨 : Sent ${enabledImages.length} gallery images to inject side`);
 };
 
+/**
+ * Send compute device setting to inject side
+ */
+export const sendComputeDeviceToInject = async () => {
+  const { ColorPaletteStorage } = await import("@/components/color-palette/storage");
+  const device = await ColorPaletteStorage.getComputeDevice();
+
+  window.postMessage(
+    {
+      source: "mr-wplace-compute-device",
+      device,
+    },
+    "*"
+  );
+
+  console.log(`🧑‍🎨 : Sent compute device to inject side: ${device}`);
+};
+
+/**
+ * Send color filter state to inject side
+ */
+export const sendColorFilterToInject = (colorFilterManager: ColorFilterManager) => {
+  window.postMessage(
+    {
+      source: "mr-wplace-color-filter",
+      isFilterActive: colorFilterManager.isFilterActive(),
+      selectedRGBs: colorFilterManager.selectedRGBs,
+      enhancedMode: colorFilterManager.getEnhancedMode(),
+    },
+    "*"
+  );
+
+  console.log(`🧑‍🎨 : Sent color filter state to inject side`);
+};
+
 (async () => {
   try {
     console.log("🧑‍🎨: Starting initialization...");
@@ -194,8 +229,10 @@ export const sendGalleryImagesToInject = async () => {
       return result;
     });
 
-    // Send initial gallery images to inject side
+    // Send initial data to inject side
     await sendGalleryImagesToInject();
+    await sendComputeDeviceToInject();
+    sendColorFilterToInject(colorFilterManager);
 
     // Global access for ImageProcessor and Gallery
     window.mrWplace = {

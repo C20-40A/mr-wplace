@@ -1,10 +1,11 @@
 import { applyTheme } from "./theme-manager";
+import { addImageToOverlayLayers } from "./tile-draw";
 
 /**
  * Setup message event listener for handling various events
  */
 export const setupMessageHandler = (): void => {
-  window.addEventListener("message", (event: MessageEvent) => {
+  window.addEventListener("message", async (event: MessageEvent) => {
     // Handle processed blob from content script
     if (event.data.source === "mr-wplace-processed") {
       handleProcessedBlob(event.data);
@@ -31,7 +32,19 @@ export const setupMessageHandler = (): void => {
 
     // Handle gallery images update from content script
     if (event.data.source === "mr-wplace-gallery-images") {
-      handleGalleryImages(event.data);
+      await handleGalleryImages(event.data);
+      return;
+    }
+
+    // Handle compute device update
+    if (event.data.source === "mr-wplace-compute-device") {
+      handleComputeDeviceUpdate(event.data);
+      return;
+    }
+
+    // Handle color filter manager update
+    if (event.data.source === "mr-wplace-color-filter") {
+      handleColorFilterUpdate(event.data);
       return;
     }
   });
@@ -117,16 +130,16 @@ const handleDataSaverUpdate = (data: { enabled: boolean }): void => {
 
 /**
  * Handle gallery images data from content script
- * Store in window for tile processing
+ * Store in window for tile processing and sync to overlay layers
  */
-const handleGalleryImages = (data: {
+const handleGalleryImages = async (data: {
   images: Array<{
     key: string;
     dataUrl: string;
     drawPosition: { TLX: number; TLY: number; PxX: number; PxY: number };
     layerOrder: number;
   }>;
-}): void => {
+}): Promise<void> => {
   if (!window.mrWplaceGalleryImages) {
     window.mrWplaceGalleryImages = new Map();
   }
@@ -137,11 +150,90 @@ const handleGalleryImages = (data: {
     window.mrWplaceGalleryImages.set(img.key, img);
   }
 
+  // Sync to overlay layers for tile-draw system
+  // Sort by layerOrder to maintain proper z-index
+  const sortedImages = data.images.sort((a, b) => a.layerOrder - b.layerOrder);
+
+  let successCount = 0;
+  let failCount = 0;
+
+  for (const img of sortedImages) {
+    try {
+      // Use Image object instead of fetch to avoid WASM issues in inject context
+      const imageElement = new Image();
+      imageElement.src = img.dataUrl;
+
+      await new Promise<void>((resolve, reject) => {
+        imageElement.onload = () => resolve();
+        imageElement.onerror = (e) => reject(new Error(`Failed to load image ${img.key}: ${e}`));
+        // Timeout after 5 seconds
+        setTimeout(() => reject(new Error(`Timeout loading image ${img.key}`)), 5000);
+      });
+
+      // Convert Image to ImageBitmap
+      const bitmap = await createImageBitmap(imageElement);
+
+      await addImageToOverlayLayers(
+        bitmap,
+        [img.drawPosition.TLX, img.drawPosition.TLY, img.drawPosition.PxX, img.drawPosition.PxY],
+        img.key
+      );
+
+      successCount++;
+    } catch (error) {
+      failCount++;
+      console.error(`🧑‍🎨 : Failed to add image ${img.key} to overlay layers:`, error);
+    }
+  }
+
+  console.log(`🧑‍🎨 : Gallery images sync complete - success: ${successCount}, failed: ${failCount}`);
+
   // Clear tile cache to force re-rendering with new images
   if (window.mrWplaceDataSaver?.tileCache) {
     window.mrWplaceDataSaver.tileCache.clear();
     console.log("🧑‍🎨 : Cleared tile cache after gallery update");
   }
 
-  console.log("🧑‍🎨 : Gallery images updated:", data.images.length);
+  console.log("🧑‍🎨 : Gallery images updated and synced to overlay layers:", data.images.length);
+};
+
+/**
+ * Handle compute device update
+ */
+const handleComputeDeviceUpdate = (data: { device: "gpu" | "cpu" }): void => {
+  window.mrWplaceComputeDevice = data.device;
+  console.log("🧑‍🎨 : Compute device updated:", data.device);
+
+  // Clear tile cache to force re-rendering with new device
+  if (window.mrWplaceDataSaver?.tileCache) {
+    window.mrWplaceDataSaver.tileCache.clear();
+    console.log("🧑‍🎨 : Cleared tile cache after compute device update");
+  }
+};
+
+/**
+ * Handle color filter manager update
+ */
+const handleColorFilterUpdate = (data: {
+  isFilterActive: boolean;
+  selectedRGBs?: number[][];
+  enhancedMode: "dot" | "cross" | "fill" | "none";
+}): void => {
+  if (!window.mrWplace) {
+    window.mrWplace = {};
+  }
+
+  window.mrWplace.colorFilterManager = {
+    isFilterActive: () => data.isFilterActive,
+    selectedRGBs: data.selectedRGBs,
+    getEnhancedMode: () => data.enhancedMode,
+  };
+
+  console.log("🧑‍🎨 : Color filter updated:", data);
+
+  // Clear tile cache to force re-rendering with new filter
+  if (window.mrWplaceDataSaver?.tileCache) {
+    window.mrWplaceDataSaver.tileCache.clear();
+    console.log("🧑‍🎨 : Cleared tile cache after color filter update");
+  }
 };

@@ -14,6 +14,16 @@ export interface GalleryImage {
   layerOrder: number;
 }
 
+export interface ColorFilterState {
+  isFilterActive: () => boolean;
+  selectedRGBs: number[][] | undefined;
+  getEnhancedMode: () => "dot" | "cross" | "fill" | "none";
+}
+
+export interface MrWplaceGlobal {
+  colorFilterManager?: ColorFilterState;
+}
+
 export interface WplaceMap {
   version: string;
   getCenter: () => { lat: number; lng: number };
@@ -29,6 +39,8 @@ export interface WindowWithWplace extends Window {
   tileProcessingQueue?: TileProcessingQueue;
   mrWplaceDataSaver?: DataSaverState;
   mrWplaceGalleryImages?: Map<string, GalleryImage>;
+  mrWplace?: MrWplaceGlobal;
+  mrWplaceComputeDevice?: "gpu" | "cpu";
 }
 
 declare global {
@@ -37,5 +49,7 @@ declare global {
     tileProcessingQueue?: TileProcessingQueue;
     mrWplaceDataSaver?: DataSaverState;
     mrWplaceGalleryImages?: Map<string, GalleryImage>;
+    mrWplace?: MrWplaceGlobal;
+    mrWplaceComputeDevice?: "gpu" | "cpu";
   }
 }
