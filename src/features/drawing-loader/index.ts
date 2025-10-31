@@ -27,7 +27,15 @@ const startLoading = (): void => {
 
 const finishLoading = (): void => {
   if (!isLoading) return;
+
+  // Only hide if loading has been active for at least 100ms
+  // This ensures we wait for the next tile polling cycle
   const duration = Date.now() - loadingStartTime;
+  if (duration < 100) {
+    // Too fast - not the polling cycle, ignore
+    return;
+  }
+
   console.log(`🧑‍🎨 : Drawing loader finished (${duration}ms)`);
   isLoading = false;
   ui.hide();

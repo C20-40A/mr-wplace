@@ -70,8 +70,7 @@ export class TileOverlay {
     const coords = llzToTilePixel(lat, lng);
     await this.drawImageWithCoords(coords, imageItem);
 
-    // Hide drawing loader after drawing is complete
-    window.postMessage({ source: "wplace-studio-drawing-complete" }, "*");
+    // Don't hide loader here - wait for next tile fetch to complete
   }
 
   async drawImageWithCoords(

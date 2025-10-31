@@ -35,4 +35,6 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
 ### 注意点
 - dataUrl は base64 データなので、`Image` オブジェクトで直接読み込む (fetch/createImageBitmap は不要)
 - マップの強制再描画は不要。タイルキャッシュのクリアのみで十分
-- `wplace-studio-drawing-complete` イベントで drawing-loader を hide する (inject 側で処理が完結しているため、`mr-wplace-processed` は送信されない)
+- `wplace-studio-drawing-complete` イベントは tile fetch 完了時に送信される
+- drawing-loader は描画処理開始から次の tile fetch（WPlace のポーリング）まで表示される
+  - 100ms 以上経過した fetch のみ loader を hide (即座の fetch は無視)

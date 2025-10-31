@@ -133,6 +133,16 @@ const handleTileRequest = async (
     console.log("🧑‍🎨 : Cached processed tile:", cacheKey);
   }
 
+  // Notify that tile fetch is complete (hide drawing loader)
+  window.postMessage(
+    {
+      source: "wplace-studio-drawing-complete",
+      tileX,
+      tileY,
+    },
+    "*"
+  );
+
   return new Response(processedBlob, {
     headers: response.headers,
     status: response.status,
