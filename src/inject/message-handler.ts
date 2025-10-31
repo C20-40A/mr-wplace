@@ -28,6 +28,12 @@ export const setupMessageHandler = (): void => {
       handleDataSaverUpdate(event.data);
       return;
     }
+
+    // Handle gallery images update from content script
+    if (event.data.source === "mr-wplace-gallery-images") {
+      handleGalleryImages(event.data);
+      return;
+    }
   });
 };
 
@@ -107,4 +113,29 @@ const handleDataSaverUpdate = (data: { enabled: boolean }): void => {
     window.mrWplaceDataSaver.enabled = data.enabled;
     console.log("🧑‍🎨 : Data saver updated:", data.enabled);
   }
+};
+
+/**
+ * Handle gallery images data from content script
+ * Store in window for tile processing
+ */
+const handleGalleryImages = (data: {
+  images: Array<{
+    key: string;
+    dataUrl: string;
+    drawPosition: { TLX: number; TLY: number; PxX: number; PxY: number };
+    layerOrder: number;
+  }>;
+}): void => {
+  if (!window.mrWplaceGalleryImages) {
+    window.mrWplaceGalleryImages = new Map();
+  }
+
+  // Clear and update gallery images
+  window.mrWplaceGalleryImages.clear();
+  for (const img of data.images) {
+    window.mrWplaceGalleryImages.set(img.key, img);
+  }
+
+  console.log("🧑‍🎨 : Gallery images updated:", data.images.length);
 };

@@ -7,6 +7,13 @@ export interface DataSaverState {
   tileCache: Map<string, Blob>;
 }
 
+export interface GalleryImage {
+  key: string;
+  dataUrl: string;
+  drawPosition: { TLX: number; TLY: number; PxX: number; PxY: number };
+  layerOrder: number;
+}
+
 export interface WplaceMap {
   version: string;
   getCenter: () => { lat: number; lng: number };
@@ -21,6 +28,7 @@ export interface WindowWithWplace extends Window {
   wplaceMap?: WplaceMap;
   tileProcessingQueue?: TileProcessingQueue;
   mrWplaceDataSaver?: DataSaverState;
+  mrWplaceGalleryImages?: Map<string, GalleryImage>;
 }
 
 declare global {
@@ -28,5 +36,6 @@ declare global {
     wplaceMap?: WplaceMap;
     tileProcessingQueue?: TileProcessingQueue;
     mrWplaceDataSaver?: DataSaverState;
+    mrWplaceGalleryImages?: Map<string, GalleryImage>;
   }
 }

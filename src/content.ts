@@ -28,6 +28,35 @@ import { di } from "@/core/di";
 import { runtime } from "@/utils/browser-api";
 import { getOverlayPixelColor } from "@/features/tile-draw";
 
+/**
+ * Send gallery images to inject side for tile processing
+ */
+const sendGalleryImagesToInject = async () => {
+  const { GalleryStorage } = await import("@/features/gallery/storage");
+  const galleryStorage = new GalleryStorage();
+  const images = await galleryStorage.getAll();
+
+  const enabledImages = images
+    .filter((img) => img.drawEnabled && img.drawPosition)
+    .sort((a, b) => (a.layerOrder ?? 0) - (b.layerOrder ?? 0))
+    .map((img) => ({
+      key: img.key,
+      dataUrl: img.dataUrl,
+      drawPosition: img.drawPosition!,
+      layerOrder: img.layerOrder ?? 0,
+    }));
+
+  window.postMessage(
+    {
+      source: "mr-wplace-gallery-images",
+      images: enabledImages,
+    },
+    "*"
+  );
+
+  console.log(`🧑‍🎨 : Sent ${enabledImages.length} gallery images to inject side`);
+};
+
 (async () => {
   try {
     console.log("🧑‍🎨: Starting initialization...");
@@ -158,8 +187,14 @@ import { getOverlayPixelColor } from "@/features/tile-draw";
 
     // GalleryとTileOverlayの連携設定（DI経由）
     galleryAPI.setDrawToggleCallback(async (imageKey: string) => {
-      return await tileOverlay.toggleImageDrawState(imageKey);
+      const result = await tileOverlay.toggleImageDrawState(imageKey);
+      // Send updated gallery images to inject side
+      await sendGalleryImagesToInject();
+      return result;
     });
+
+    // Send initial gallery images to inject side
+    await sendGalleryImagesToInject();
 
     // Global access for ImageProcessor and Gallery
     window.mrWplace = {
