@@ -56,9 +56,15 @@ export const processTileWithOverlay = async (
   // Draw overlay images
   for (const img of targetImages) {
     try {
-      const response = await fetch(img.dataUrl);
-      const blob = await response.blob();
-      const overlayImg = await createImageBitmap(blob);
+      // dataUrl is already a base64 data URL or blob URL, load directly as image
+      const overlayImg = new Image();
+      overlayImg.src = img.dataUrl;
+
+      // Wait for image to load
+      await new Promise<void>((resolve, reject) => {
+        overlayImg.onload = () => resolve();
+        overlayImg.onerror = () => reject(new Error(`Failed to load image ${img.key}`));
+      });
 
       const x = img.drawPosition.PxX;
       const y = img.drawPosition.PxY;

@@ -137,5 +137,11 @@ const handleGalleryImages = (data: {
     window.mrWplaceGalleryImages.set(img.key, img);
   }
 
+  // Clear tile cache to force re-rendering with new images
+  if (window.mrWplaceDataSaver?.tileCache) {
+    window.mrWplaceDataSaver.tileCache.clear();
+    console.log("🧑‍🎨 : Cleared tile cache after gallery update");
+  }
+
   console.log("🧑‍🎨 : Gallery images updated:", data.images.length);
 };

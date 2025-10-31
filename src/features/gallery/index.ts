@@ -92,6 +92,11 @@ const createGallery = () => {
           const { GalleryStorage } = await import("./storage");
           await new GalleryStorage().delete(key);
           state.editingItem = undefined;
+
+          // Update inject side after deletion
+          const { sendGalleryImagesToInject } = await import("@/content");
+          await sendGalleryImagesToInject();
+
           router.navigateBack();
         },
         () => {

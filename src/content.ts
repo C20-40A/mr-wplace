@@ -30,8 +30,9 @@ import { getOverlayPixelColor } from "@/features/tile-draw";
 
 /**
  * Send gallery images to inject side for tile processing
+ * IMPORTANT: Call this after any gallery image changes (add, move, toggle, delete)
  */
-const sendGalleryImagesToInject = async () => {
+export const sendGalleryImagesToInject = async () => {
   const { GalleryStorage } = await import("@/features/gallery/storage");
   const galleryStorage = new GalleryStorage();
   const images = await galleryStorage.getAll();
