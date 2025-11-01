@@ -1,6 +1,7 @@
 import { splitImageOnTilesInject } from "./utils/splitImageOnTiles-inject";
 import { TILE_DRAW_CONSTANTS, WplaceCoords } from "./constants";
 import type { TileDrawInstance, ColorStats } from "./types";
+import { computeStatsForImage } from "./utils/computeStatsForImage";
 
 /**
  * Inject-safe version of states.ts
@@ -53,6 +54,46 @@ export const addImageToOverlayLayers = async (
     imageKey,
     drawEnabled: true,
   });
+
+  // バックグラウンドで統計を計算
+  // 非同期で実行し、完了を待たない
+  computeStatsInBackground(imageKey, preparedOverlayImage);
+};
+
+/**
+ * バックグラウンドで統計を計算
+ * タイル描画との競合を避けるため、遅延実行する
+ */
+const computeStatsInBackground = (
+  imageKey: string,
+  tiles: Record<string, ImageBitmap>
+): void => {
+  // data saver ON のときは統計計算をスキップ
+  // （タイルがキャッシュにない場合、fetchが失敗するため）
+  if (window.mrWplaceDataSaver?.enabled) {
+    console.log(`🧑‍🎨 : Skipping background stats computation (data saver is ON)`);
+    return;
+  }
+
+  // タイル描画との競合を避けるため、2秒後に実行
+  setTimeout(() => {
+    // 現在のカラーフィルター設定を取得
+    const colorFilter = window.mrWplace?.colorFilterManager?.isFilterActive()
+      ? window.mrWplace.colorFilterManager.selectedRGBs
+      : undefined;
+
+    // 非同期で統計を計算（エラーは無視）
+    computeStatsForImage(imageKey, tiles, colorFilter)
+      .then((tileStatsMap) => {
+        // 統計をグローバルマップに保存
+        perTileColorStats.set(imageKey, tileStatsMap);
+        console.log(`🧑‍🎨 : Background stats computation complete for ${imageKey}`);
+      })
+      .catch((error) => {
+        // エラーはログに出すが、処理は継続
+        console.warn(`🧑‍🎨 : Background stats computation failed for ${imageKey}:`, error);
+      });
+  }, 2000);
 };
 
 export const toggleDrawEnabled = (imageKey: string): boolean => {
