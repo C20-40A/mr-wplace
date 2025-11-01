@@ -99,6 +99,10 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
   - `sendSnapshotsToInject()` で Chrome storage から dataUrl に変換して送信
   - `handleSnapshotsUpdate()` で overlay layers に追加
   - 削除/描画切り替え時に自動同期
+- ✅ **統計の事前計算**: 画像追加時にバックグラウンドで統計を計算 (2025-11-01)
+  - `computeStatsForImage()` で背景タイルを fetch して統計を計算
+  - カラーフィルター変更時に全画像の統計を再計算
+  - タイルレンダリング時の統計計算と併用
 
 ### Refactoring 完了 (2025-11-01)
 
@@ -179,6 +183,77 @@ dist/inject.js    22.9kb  (全機能統合, snapshot 処理追加)
 ✅ データ変更時は必ず send*ToInject() を呼ぶ
 ✅ async/await で適切に待機
 
+### 統計の事前計算機能 (2025-11-01)
+
+#### 背景
+
+タイルレンダリング時にのみ統計が計算される仕組みでは、以下の問題がありました：
+- 画像配置直後に統計を見ようとしても、タイルがまだレンダリングされていない
+- カラーフィルター画面で統計が表示されない
+- paint-stats が表示されない
+
+#### 解決策
+
+**画像追加時とカラーフィルター変更時に統計を事前計算**
+
+1. **画像追加時** (`states-inject.ts`):
+   - `addImageToOverlayLayers()` で画像が追加されたとき
+   - `computeStatsInBackground()` をバックグラウンドで実行
+   - 各タイルの背景を fetch して統計を計算
+   - `perTileColorStats` に保存
+
+2. **カラーフィルター変更時** (`message-handler.ts`):
+   - `handleColorFilterUpdate()` でフィルターが変更されたとき
+   - `recomputeAllStats()` で全画像の統計を再計算
+
+3. **統計計算ロジック** (`computeStatsForImage.ts`):
+   - 各タイルの背景を `https://backend.wplace.live/tiles/${tileX}/${tileY}.png` から fetch
+   - 画像ピクセルと背景ピクセルを比較
+   - カラーフィルターを適用（必要な場合）
+   - `matched` と `total` カウントを計算
+
+#### 利点
+
+- ✅ 画像配置直後に統計が利用可能
+- ✅ ユーザーがタイルを訪問する前に統計が見られる
+- ✅ カラーフィルター変更時に自動で統計が更新される
+- ✅ バックグラウンドで非同期に実行されるため、UI がブロックされない
+
+#### 制限事項
+
+- 背景タイルを fetch するため、ネットワークリクエストが発生
+- 大きな画像の場合、多くのタイルの fetch が必要
+- 統計計算は非同期で行われるため、即座には利用できない場合がある（通常1-2秒）
+
+#### エラー対策とパフォーマンス改善 (2025-11-01)
+
+**問題1**: 統計計算がタイル描画と競合し、`InvalidStateError: The source image could not be decoded` エラーが発生
+
+**解決策**:
+1. **遅延実行**: 画像追加後、2秒待ってから統計計算を開始（タイル描画を優先）
+2. **順次処理**: タイルを10個ごとに100ms待機して順次処理（並列fetch数を制限）
+3. **タイムアウト**: fetch に5秒のタイムアウトを設定（ハング防止）
+4. **エラーハンドリング強化**:
+   - fetch 失敗時は null を返す（エラーをthrowしない）
+   - デコード失敗時はそのタイルをスキップ
+   - エラーログは警告レベルに下げる（大量のログを防ぐ）
+5. **画像ごとに順次処理**: 複数画像の統計再計算も順次実行（並列実行を避ける）
+
+**問題2**: data saver ON のときに統計計算がエラーになる
+
+**原因**: data saver ON のときは、タイルがキャッシュされるまで fetch できない
+
+**解決策**:
+- **data saver ON 時はスキップ**: 統計の事前計算をスキップ
+- タイルレンダリング時の統計計算は引き続き動作するため、タイルを訪問すれば統計は計算される
+
+#### 実装ファイル
+
+- `src/inject/tile-draw/utils/computeStatsForImage.ts` - 統計計算ロジック
+- `src/inject/tile-draw/states-inject.ts` - 画像追加時の統計計算
+- `src/inject/message-handler.ts` - カラーフィルター変更時の統計再計算
+
 ### 完了日: 2025-11-01
 
 全ての描画関連機能 (gallery, snapshots, text-draw, auto-spoit, paint-stats) が inject 側で動作確認済み。
+統計の事前計算機能が追加され、画像配置直後に統計が利用可能になった。

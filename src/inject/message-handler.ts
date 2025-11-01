@@ -4,7 +4,9 @@ import {
   getAggregatedColorStats,
   getOverlayPixelColor,
   perTileColorStats,
+  overlayLayers,
 } from "./tile-draw";
+import { computeStatsForImage } from "./tile-draw/utils/computeStatsForImage";
 
 /**
  * Setup message event listener for handling various events
@@ -263,6 +265,40 @@ const handleColorFilterUpdate = (data: {
     window.mrWplaceDataSaver.tileCache.clear();
     console.log("🧑‍🎨 : Cleared tile cache after color filter update");
   }
+
+  // カラーフィルター変更時に統計を再計算
+  recomputeAllStats(data.selectedRGBs);
+};
+
+/**
+ * 全画像の統計を再計算
+ * タイル描画との競合を避けるため、遅延実行＆順次処理する
+ */
+const recomputeAllStats = (colorFilter?: number[][]): void => {
+  // data saver ON のときは統計計算をスキップ
+  if (window.mrWplaceDataSaver?.enabled) {
+    console.log(`🧑‍🎨 : Skipping stats recomputation (data saver is ON)`);
+    return;
+  }
+
+  // タイル描画との競合を避けるため、2秒後に実行
+  setTimeout(async () => {
+    console.log(`🧑‍🎨 : Recomputing stats for ${overlayLayers.length} images`);
+
+    // 各画像を順次処理（並列実行を避けて、リソース競合を防ぐ）
+    for (const layer of overlayLayers) {
+      if (!layer.tiles) continue;
+
+      try {
+        // 1画像ずつ順次処理
+        const tileStatsMap = await computeStatsForImage(layer.imageKey, layer.tiles, colorFilter);
+        perTileColorStats.set(layer.imageKey, tileStatsMap);
+        console.log(`🧑‍🎨 : Recomputed stats for ${layer.imageKey}`);
+      } catch (error) {
+        console.warn(`🧑‍🎨 : Failed to recompute stats for ${layer.imageKey}:`, error);
+      }
+    }
+  }, 2000);
 };
 
 /**
