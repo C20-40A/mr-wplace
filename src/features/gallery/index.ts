@@ -68,7 +68,11 @@ const createGallery = () => {
 
     "image-editor": async (container) => {
       const route = new GalleryImageEditor();
-      route.setOnSaveSuccess(() => {
+      route.setOnSaveSuccess(async () => {
+        // Notify inject side to update overlay layers
+        const { sendGalleryImagesToInject } = await import("@/content");
+        await sendGalleryImagesToInject();
+
         state.editingItem = undefined;
         router.navigateBack();
       });

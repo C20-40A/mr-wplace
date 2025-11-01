@@ -290,6 +290,11 @@ const createActionGrid = (
       drawPosition: undefined,
       drawEnabled: false,
     });
+
+    // Notify inject side to update overlay layers
+    const { sendGalleryImagesToInject } = await import("@/content");
+    await sendGalleryImagesToInject();
+
     await onRefresh();
   });
   deleteBtn.style.color = "#991b1b";
@@ -392,6 +397,11 @@ const createMoveContainer = (
       };
       btn.onclick = async () => {
         await galleryStorage.moveLayer(item.key, direction);
+
+        // Notify inject side to update overlay layers
+        const { sendGalleryImagesToInject } = await import("@/content");
+        await sendGalleryImagesToInject();
+
         await onRefresh();
       };
     }
