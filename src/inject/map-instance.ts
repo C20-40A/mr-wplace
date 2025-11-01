@@ -1,5 +1,4 @@
 import type { WplaceMap } from "./types";
-import { applyTheme } from "./theme-manager";
 
 /**
  * Helper function to check if auto spoit dev mode is enabled
