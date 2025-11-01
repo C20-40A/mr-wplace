@@ -26,6 +26,11 @@ export class GalleryList {
       items,
       async (key: string) => {
         await this.storage.delete(key);
+
+        // Notify inject side to update overlay layers
+        const { sendGalleryImagesToInject } = await import("@/content");
+        await sendGalleryImagesToInject();
+
         // 再描画
         this.render(container, router, onImageClick, onDrawToggle, onCloseModal);
       },

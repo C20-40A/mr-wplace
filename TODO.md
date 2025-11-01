@@ -1,6 +1,6 @@
 # メイン
 
-- データセーブモードでも画像の移動ができてしまう → データセーブできてない可能性が高い
+- データセーバー ON でも、レンダリングの更新はできるようにした。レンダリング停止中の表示は消す
 
 brave で
 inject.js:1 Uncaught (in promise) TypeError: Failed to execute 'observe' on 'MutationObserver': parameter 1 is not of type 'Node'.
