@@ -5,6 +5,10 @@ inject.js:1 Uncaught (in promise) TypeError: Failed to execute 'observe' on 'Mut
 at m (inject.js:1:5765)
 at inject.js:1:7941
 
+同一のデザインで縮尺だけが違うものや、全体アーカイブなどはプレビューで見分けがつかない(つきにくい)ので、読み込ませたテンプレートに名前をつけられるようにしたい
+
+- javascript:(function(){const s='#color-1';let b=null;let observer=null;const createButton=(e)=>{if(b)b.remove();b=document.createElement('button');b.textContent='👁️';Object.assign(b.style,{position:'fixed',top:'50%',left:'0',transform:'translateY(-50%)',zIndex:99999,padding:'5px',fontSize:'16px',background:'#333',color:'white',border:'none',cursor:'pointer',borderRadius:'0 5px 5px 0'});b.onclick=()=>e.toggleAttribute('hidden');document.body.appendChild(b);};const runObserver=()=>{if(observer)observer.disconnect();const c=document.querySelector(s);const e=c?.parentElement?.parentElement;if(e){createButton(e);}else if(b){b.remove();b=null;}observer=new MutationObserver((mutationsList,observer)=>{observer.disconnect();runObserver();});observer.observe(document.body,{childList:true,subtree:true});};runObserver();})();これ
+
 - tile 描画が inject 送信で少し遅くなったかも？
 - inject も try catch しないと失敗したとき終わる
 - theme: 'custom-winter'-> 'night' にすれば一発で切り替わるが、動的には切り替わらなそう
