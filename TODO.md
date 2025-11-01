@@ -1,5 +1,7 @@
 # メイン
 
+- データセーブモードでも画像の移動ができてしまう → データセーブできてない可能性が高い
+
 brave で
 inject.js:1 Uncaught (in promise) TypeError: Failed to execute 'observe' on 'MutationObserver': parameter 1 is not of type 'Node'.
 at m (inject.js:1:5765)

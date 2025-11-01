@@ -4,6 +4,10 @@ import { ColorPaletteStorage } from "../../../../components/color-palette/storag
 import type { ComputeDevice } from "../../../../components/color-palette/storage";
 import { getCurrentTiles } from "../../../../states/currentTile";
 import { getAggregatedColorStats } from "@/features/tile-draw-stubs";
+import {
+  sendColorFilterToInject,
+  sendComputeDeviceToInject,
+} from "@/content";
 
 let colorPalette: ColorPalette | null = null;
 let lastSortOrder: SortOrder = "default";
@@ -59,9 +63,13 @@ export const renderColorFilters = async (
   // ColorPaletteコンポーネント表示
   colorPalette = new ColorPalette(container, {
     selectedColorIds: currentSelectedColors,
-    onChange: (colorIds) => {
+    onChange: async (colorIds) => {
       // 色フィルター適用
-      colorFilterManager?.setSelectedColors(colorIds);
+      await colorFilterManager?.setSelectedColors(colorIds);
+      // Send updated filter to inject side
+      if (colorFilterManager) {
+        sendColorFilterToInject(colorFilterManager);
+      }
     },
     showCurrentlySelected: true,
     showEnhancedSelect: true,
@@ -69,6 +77,10 @@ export const renderColorFilters = async (
     onEnhancedModeChange: (mode) => {
       colorFilterManager?.setEnhancedMode(mode);
       console.log(`🧑‍🎨 : Enhanced mode:`, mode);
+      // Send updated filter to inject side
+      if (colorFilterManager) {
+        sendColorFilterToInject(colorFilterManager);
+      }
     },
     hasExtraColorsBitmap,
     showColorStats: !!colorStats,
@@ -83,6 +95,8 @@ export const renderColorFilters = async (
       lastComputeDevice = device;
       await ColorPaletteStorage.setComputeDevice(device);
       console.log(`🧑‍🎨 : Compute device changed:`, device);
+      // Send updated compute device to inject side
+      await sendComputeDeviceToInject();
     },
   });
 };
