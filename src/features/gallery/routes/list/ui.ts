@@ -46,16 +46,23 @@ export class GalleryListUI {
     );
 
     // GalleryItemをImageItemに変換
-    const imageItems: ImageItem[] = items.map((item) => ({
-      key: item.key,
-      dataUrl: item.dataUrl,
-      createdAt: new Date(item.timestamp).toISOString(),
-      drawPosition: item.drawPosition,
-      drawEnabled: item.drawEnabled,
-      hasDrawPosition: !!item.drawPosition,
-      currentColorStats: item.matchedColorStats,
-      totalColorStats: item.totalColorStats,
-    }));
+    const imageItems: ImageItem[] = items.map((item) => {
+      // timestampが無効な場合は現在時刻を使用
+      const timestamp = item.timestamp && !isNaN(item.timestamp)
+        ? item.timestamp
+        : Date.now();
+
+      return {
+        key: item.key,
+        dataUrl: item.dataUrl,
+        createdAt: new Date(timestamp).toISOString(),
+        drawPosition: item.drawPosition,
+        drawEnabled: item.drawEnabled,
+        hasDrawPosition: !!item.drawPosition,
+        currentColorStats: item.matchedColorStats,
+        totalColorStats: item.totalColorStats,
+      };
+    });
 
     // 既存のImageGridComponentがあれば破棄
     if (this.imageGrid) this.imageGrid.destroy();
