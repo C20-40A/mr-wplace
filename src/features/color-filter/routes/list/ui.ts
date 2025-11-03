@@ -1,13 +1,10 @@
-import { ColorPalette } from "../../../../components/color-palette";
-import type { SortOrder } from "../../../../components/color-palette/types";
-import { ColorPaletteStorage } from "../../../../components/color-palette/storage";
-import type { ComputeDevice } from "../../../../components/color-palette/storage";
-import { getCurrentTiles } from "../../../../states/currentTile";
+import { ColorPalette } from "@/components/color-palette";
+import type { SortOrder } from "@/components/color-palette/types";
+import { ColorPaletteStorage } from "@/components/color-palette/storage";
+import type { ComputeDevice } from "@/components/color-palette/storage";
+import { getCurrentTiles } from "@/states/currentTile";
 import { getAggregatedColorStats } from "@/features/tile-draw-stubs";
-import {
-  sendColorFilterToInject,
-  sendComputeDeviceToInject,
-} from "@/content";
+import { sendColorFilterToInject, sendComputeDeviceToInject } from "@/content";
 
 let colorPalette: ColorPalette | null = null;
 let lastSortOrder: SortOrder = "default";
@@ -28,7 +25,7 @@ export const renderColorFilters = async (
   const hasExtraColorsBitmap = colorFilterManager?.getOwnedColorIds() !== null;
 
   // 表示中タイルの統計取得
-  const tileOverlay = window.mrWplace?.tileOverlay;
+  // const tileOverlay = window.mrWplace?.tileOverlay;
   const currentTiles = getCurrentTiles();
 
   let colorStats:

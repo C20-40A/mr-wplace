@@ -3,6 +3,7 @@
 - text 移動ができない
 - 統計処理はできているが、進捗がでてこない
 - データセーバー ON でも、レンダリングの更新はできるようにした。レンダリング停止中の表示は消す
+  画像処理を Web Worker で並列実行
 
 brave で
 inject.js:1 Uncaught (in promise) TypeError: Failed to execute 'observe' on 'MutationObserver': parameter 1 is not of type 'Node'.

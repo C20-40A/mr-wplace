@@ -24,76 +24,54 @@ const createImageBitmapFromCanvas = async (canvas: HTMLCanvasElement): Promise<I
 import { overlayLayers, perTileColorStats } from "./states-inject";
 
 /**
- * オーバーレイ最終処理
- * 1. カラーフィルター適用（x1サイズ）
- * 2. 背景比較+統計計算（x1サイズ）
- * 3. x3拡大
- * 4. モード別処理（x3サイズ：dot/cross/fill/補助色）
+ * Phase 1: カラーフィルター適用（x1サイズ）
+ * GPU/CPUでフィルター処理を行い、フィルター済みピクセルデータを返す
  */
-const applyOverlayProcessing = async (
+const applyColorFilterToOverlay = async (
   overlayBitmap: ImageBitmap,
-  bgPixels: Uint8Array,
+  colorFilter: number[][] | undefined,
+  compute_device: "gpu" | "cpu"
+): Promise<Uint8ClampedArray> => {
+  if (compute_device === "gpu" && colorFilter !== undefined) {
+    try {
+      return await processGpuColorFilter(overlayBitmap, colorFilter);
+    } catch (error) {
+      console.log("🧑‍🎨 : GPU processing failed, fallback to CPU", error);
+      const rawData = convertImageBitmapToUint8ClampedArray(overlayBitmap);
+      return processCpuColorFilter(rawData, { filters: colorFilter });
+    }
+  } else if (compute_device === "cpu" && colorFilter !== undefined) {
+    const rawData = convertImageBitmapToUint8ClampedArray(overlayBitmap);
+    return processCpuColorFilter(rawData, { filters: colorFilter });
+  } else {
+    return convertImageBitmapToUint8ClampedArray(overlayBitmap);
+  }
+};
+
+/**
+ * Phase 2: 背景比較 + 統計計算（x1サイズ）
+ * オーバーレイと背景を比較し、色ごとの統計を計算
+ */
+const computeStatsWithBackground = (
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+  bgData: Uint8ClampedArray,
   bgWidth: number,
   offsetX: number,
   offsetY: number,
-  mode: EnhancedMode,
-  imageKey: string,
-  tempStatsMap: Map<string, ColorStats>,
-  compute_device: "gpu" | "cpu" = "gpu"
-): Promise<ImageBitmap> => {
-  const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
-  const width = overlayBitmap.width;
-  const height = overlayBitmap.height;
-
-  // === Phase 1: x1サイズ処理 ===
-  // GPU: カラーフィルター適用
-  const colorFilter = window.mrWplace?.colorFilterManager?.isFilterActive()
-    ? window.mrWplace.colorFilterManager.selectedRGBs
-    : undefined;
-
-  let data: Uint8ClampedArray;
-  if (compute_device === "gpu" && colorFilter !== undefined) {
-    try {
-      // GPUフィルター適用
-      data = await processGpuColorFilter(overlayBitmap, colorFilter);
-    } catch (error) {
-      console.log("🧑‍🎨 : GPU processing failed, fallback to CPU", error);
-      // CPU フォールバック
-      const rawData = convertImageBitmapToUint8ClampedArray(overlayBitmap);
-      data = processCpuColorFilter(rawData, { filters: colorFilter });
-    }
-  } else if (compute_device === "cpu" && colorFilter !== undefined) {
-    // CPUフィルター適用（GPU非対応ブラウザ用フォールバック）
-    const rawData = convertImageBitmapToUint8ClampedArray(overlayBitmap);
-    data = processCpuColorFilter(rawData, { filters: colorFilter });
-  } else {
-    // フィルターなしはそのまま取得
-    data = convertImageBitmapToUint8ClampedArray(overlayBitmap);
-  }
-
-  // 背景ピクセル（事前デコード済み）
-  const bgData = new Uint8ClampedArray(bgPixels.buffer);
-
-  // 統計初期化（tempStatsMap使用）
-  if (!tempStatsMap.has(imageKey)) {
-    tempStatsMap.set(imageKey, {
-      matched: new Map(),
-      total: new Map(),
-    });
-  }
-  const stats = tempStatsMap.get(imageKey)!;
-
-  // === Phase 1: 背景比較 + 統計計算（x1全ピクセル）===
+  stats: ColorStats
+): void => {
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const i = (y * width + x) * 4;
 
-      // GPU透明化済みピクセルスキップ
+      // 透明化済みピクセルスキップ
       if (data[i + 3] === 0) continue;
 
       const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
 
-      // 背景比較 + 統計計算
+      // 背景比較
       const bgX = offsetX + x;
       const bgY = offsetY + y;
       const bgI = (bgY * bgWidth + bgX) * 4;
@@ -114,106 +92,213 @@ const applyOverlayProcessing = async (
       }
     }
   }
+};
 
-  // === Phase 2+3統合: x3拡大 + モード別処理 ===
+/**
+ * Phase 3: x3拡大 + モード別処理
+ * フィルター済みデータをx3にスケールし、描画モード（dot/cross/fill/補助色）を適用
+ */
+const scaleAndRenderWithMode = (
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+  bgData: Uint8ClampedArray,
+  bgWidth: number,
+  offsetX: number,
+  offsetY: number,
+  mode: EnhancedMode,
+  shouldSkipRendering: boolean
+): Uint8ClampedArray => {
+  const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
   const scaledWidth = width * pixelScale;
   const scaledHeight = height * pixelScale;
-  const scaledData = new Uint8ClampedArray(scaledWidth * scaledHeight * 4); // デフォルト透明
+  const scaledData = new Uint8ClampedArray(scaledWidth * scaledHeight * 4);
 
-  // カラーフィルター色数0なら描画スキップ（統計は取得済み）
-  const shouldSkipRendering =
-    colorFilter !== undefined && colorFilter.length === 0;
+  if (shouldSkipRendering) {
+    return scaledData; // 透明データを返す
+  }
 
-  // x3全ピクセルループ
-  if (!shouldSkipRendering) {
-    for (let y = 0; y < scaledHeight; y++) {
-      for (let x = 0; x < scaledWidth; x++) {
-        // x1座標逆算
-        const x1 = Math.floor(x / pixelScale);
-        const y1 = Math.floor(y / pixelScale);
-        const srcI = (y1 * width + x1) * 4;
+  for (let y = 0; y < scaledHeight; y++) {
+    for (let x = 0; x < scaledWidth; x++) {
+      // x1座標逆算
+      const x1 = Math.floor(x / pixelScale);
+      const y1 = Math.floor(y / pixelScale);
+      const srcI = (y1 * width + x1) * 4;
 
-        // x1データから取得
-        const [r, g, b, a] = [
-          data[srcI],
-          data[srcI + 1],
-          data[srcI + 2],
-          data[srcI + 3],
-        ];
-        if (a === 0) continue; // 透明ならスキップ
+      // x1データから取得
+      const [r, g, b, a] = [
+        data[srcI],
+        data[srcI + 1],
+        data[srcI + 2],
+        data[srcI + 3],
+      ];
+      if (a === 0) continue;
 
-        const i = (y * scaledWidth + x) * 4;
+      const i = (y * scaledWidth + x) * 4;
 
-        const { isCenterPixel, isCrossArm } = getGridPosition(x, y);
-        if (isCenterPixel) {
-          // 中心ピクセルは常に書き込み
+      const { isCenterPixel, isCrossArm } = getGridPosition(x, y);
+      if (isCenterPixel) {
+        // 中心ピクセルは常に書き込み
+        scaledData[i] = r;
+        scaledData[i + 1] = g;
+        scaledData[i + 2] = b;
+        scaledData[i + 3] = a;
+        continue;
+      }
+
+      // 背景色取得
+      const bgX1 = offsetX + x1;
+      const bgY1 = offsetY + y1;
+      const bgI1 = (bgY1 * bgWidth + bgX1) * 4;
+
+      if (bgI1 + 3 >= bgData.length) continue;
+
+      const [bgR, bgG, bgB, bgA] = [
+        bgData[bgI1],
+        bgData[bgI1 + 1],
+        bgData[bgI1 + 2],
+        bgData[bgI1 + 3],
+      ];
+
+      // 背景と同色なら透明化
+      if (isSameColor([r, g, b, 255], [bgR, bgG, bgB, bgA])) continue;
+
+      // モード別処理
+      if (mode === "dot") {
+        // 書き込まない（デフォルト透明のまま）
+      } else if (mode === "cross") {
+        if (isCrossArm) {
           scaledData[i] = r;
           scaledData[i + 1] = g;
           scaledData[i + 2] = b;
           scaledData[i + 3] = a;
-          continue;
         }
-
-        // 背景色取得
-        const bgX1 = offsetX + x1;
-        const bgY1 = offsetY + y1;
-        const bgI1 = (bgY1 * bgWidth + bgX1) * 4;
-
-        if (bgI1 + 3 >= bgData.length) continue;
-
-        const [bgR, bgG, bgB, bgA] = [
-          bgData[bgI1],
-          bgData[bgI1 + 1],
-          bgData[bgI1 + 2],
-          bgData[bgI1 + 3],
-        ];
-
-        // 背景と同色なら透明化（書き込まない）
-        if (isSameColor([r, g, b, 255], [bgR, bgG, bgB, bgA])) continue;
-
-        // モード別処理
-        if (mode === "dot") {
-          // 書き込まない（デフォルト透明のまま）
-        } else if (mode === "cross") {
-          if (isCrossArm) {
-            scaledData[i] = r;
-            scaledData[i + 1] = g;
-            scaledData[i + 2] = b;
-            scaledData[i + 3] = a;
-          }
-        } else if (mode === "fill") {
-          scaledData[i] = r;
-          scaledData[i + 1] = g;
-          scaledData[i + 2] = b;
-          scaledData[i + 3] = a;
-        } else {
-          // 補助色を使うパターン
-          if (isCrossArm) {
-            const [ar, ag, ab] = getAuxiliaryColor(mode, [r, g, b]);
-            scaledData[i] = ar;
-            scaledData[i + 1] = ag;
-            scaledData[i + 2] = ab;
-            scaledData[i + 3] = 255;
-          } else if (mode === "red-border") {
-            // 赤枠モードは腕以外(4隅)も赤
-            scaledData[i] = 255;
-            scaledData[i + 1] = 0;
-            scaledData[i + 2] = 0;
-            scaledData[i + 3] = 255;
-          }
+      } else if (mode === "fill") {
+        scaledData[i] = r;
+        scaledData[i + 1] = g;
+        scaledData[i + 2] = b;
+        scaledData[i + 3] = a;
+      } else {
+        // 補助色を使うパターン
+        if (isCrossArm) {
+          const [ar, ag, ab] = getAuxiliaryColor(mode, [r, g, b]);
+          scaledData[i] = ar;
+          scaledData[i + 1] = ag;
+          scaledData[i + 2] = ab;
+          scaledData[i + 3] = 255;
+        } else if (mode === "red-border") {
+          // 赤枠モードは腕以外(4隅)も赤
+          scaledData[i] = 255;
+          scaledData[i + 1] = 0;
+          scaledData[i + 2] = 0;
+          scaledData[i + 3] = 255;
         }
       }
     }
   }
 
-  // === 最終キャンバス投影 ===（常に実行）
-  const finalCanvas = new OffscreenCanvas(scaledWidth, scaledHeight);
-  const finalCtx = finalCanvas.getContext("2d");
-  if (!finalCtx) throw new Error("Failed to get final context");
-  const finalImageData = new ImageData(scaledData, scaledWidth, scaledHeight);
-  finalCtx.putImageData(finalImageData, 0, 0);
+  return scaledData;
+};
 
-  return await createImageBitmapFromCanvas(finalCanvas);
+/**
+ * Phase 4: ImageBitmap変換
+ * Uint8ClampedArrayをImageBitmapに変換
+ */
+const convertToImageBitmap = async (
+  data: Uint8ClampedArray,
+  width: number,
+  height: number
+): Promise<ImageBitmap> => {
+  const canvas = new OffscreenCanvas(width, height);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Failed to get canvas context");
+
+  const imageData = new ImageData(data, width, height);
+  ctx.putImageData(imageData, 0, 0);
+
+  return await createImageBitmapFromCanvas(canvas);
+};
+
+/**
+ * オーバーレイ最終処理（メイン関数）
+ * 1. カラーフィルター適用（x1サイズ）
+ * 2. 背景比較+統計計算（x1サイズ）
+ * 3. x3拡大 + モード別処理
+ * 4. ImageBitmap変換
+ */
+const applyOverlayProcessing = async (
+  overlayBitmap: ImageBitmap,
+  bgPixels: Uint8Array,
+  bgWidth: number,
+  offsetX: number,
+  offsetY: number,
+  mode: EnhancedMode,
+  imageKey: string,
+  tempStatsMap: Map<string, ColorStats>,
+  compute_device: "gpu" | "cpu" = "gpu"
+): Promise<ImageBitmap> => {
+  const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
+  const width = overlayBitmap.width;
+  const height = overlayBitmap.height;
+
+  // カラーフィルター取得
+  const colorFilter = window.mrWplace?.colorFilterManager?.isFilterActive()
+    ? window.mrWplace.colorFilterManager.selectedRGBs
+    : undefined;
+
+  // Phase 1: カラーフィルター適用
+  const filteredData = await applyColorFilterToOverlay(
+    overlayBitmap,
+    colorFilter,
+    compute_device
+  );
+
+  // 背景データ準備
+  const bgData = new Uint8ClampedArray(bgPixels.buffer);
+
+  // 統計初期化
+  if (!tempStatsMap.has(imageKey)) {
+    tempStatsMap.set(imageKey, {
+      matched: new Map(),
+      total: new Map(),
+    });
+  }
+  const stats = tempStatsMap.get(imageKey)!;
+
+  // Phase 2: 背景比較 + 統計計算
+  computeStatsWithBackground(
+    filteredData,
+    width,
+    height,
+    bgData,
+    bgWidth,
+    offsetX,
+    offsetY,
+    stats
+  );
+
+  // Phase 3: x3拡大 + モード別処理
+  const shouldSkipRendering =
+    colorFilter !== undefined && colorFilter.length === 0;
+
+  const scaledData = scaleAndRenderWithMode(
+    filteredData,
+    width,
+    height,
+    bgData,
+    bgWidth,
+    offsetX,
+    offsetY,
+    mode,
+    shouldSkipRendering
+  );
+
+  // Phase 4: ImageBitmap変換
+  return await convertToImageBitmap(
+    scaledData,
+    width * pixelScale,
+    height * pixelScale
+  );
 };
 
 export const drawOverlayLayersOnTile = async (

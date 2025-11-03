@@ -1,5 +1,5 @@
-import { colorpalette } from "../constants/colors";
-import type { EnhancedMode } from "../features/tile-draw/types";
+import { colorpalette } from "@/constants/colors";
+import type { EnhancedMode } from "@/inject/tile-draw/types";
 import { storage } from "@/utils/browser-api";
 
 const STORAGE_KEY = "color-filter-selection";
