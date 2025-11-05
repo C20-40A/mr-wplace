@@ -19,7 +19,7 @@ export const createUnplacedItem = (
   const thumbnail = document.createElement("img");
   thumbnail.src = item.dataUrl;
   thumbnail.style.cssText =
-    "width: 80px; height: 80px; object-fit: cover; border: 2px solid #e5e7eb; display: block;";
+    "width: 80px; height: 80px; object-fit: cover; border: 2px solid #e5e7eb; display: block; image-rendering: pixelated;";
 
   container.onmouseenter = () => {
     thumbnail.style.transform = "scale(1.05)";
