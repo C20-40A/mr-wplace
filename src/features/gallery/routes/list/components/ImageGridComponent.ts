@@ -1,4 +1,4 @@
-import { t } from "../../../../../i18n/manager";
+import { t } from "@/i18n/manager";
 
 export interface ImageItem {
   key: string;

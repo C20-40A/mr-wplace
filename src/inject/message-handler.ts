@@ -2,6 +2,7 @@ import { applyTheme } from "./theme-manager";
 import {
   addImageToOverlayLayers,
   getAggregatedColorStats,
+  getStatsPerImage,
   getOverlayPixelColor,
   perTileColorStats,
   overlayLayers,
@@ -74,6 +75,11 @@ export const setupMessageHandler = (): void => {
 
     if (event.data.source === "mr-wplace-request-tile-stats") {
       handleTileStatsRequest(event.data);
+      return;
+    }
+
+    if (event.data.source === "mr-wplace-request-image-stats") {
+      handleImageStatsRequest(event.data);
       return;
     }
   });
@@ -371,6 +377,24 @@ const handleTileStatsRequest = (data: { requestId: string }): void => {
   );
 
   console.log(`🧑‍🎨 : Sent tile stats (request: ${data.requestId})`);
+};
+
+/**
+ * Handle image stats request (per-image aggregated stats)
+ */
+const handleImageStatsRequest = (data: { imageKeys: string[]; requestId: string }): void => {
+  const stats = getStatsPerImage(data.imageKeys);
+
+  window.postMessage(
+    {
+      source: "mr-wplace-response-image-stats",
+      requestId: data.requestId,
+      stats,
+    },
+    "*"
+  );
+
+  console.log(`🧑‍🎨 : Sent image stats for ${data.imageKeys.length} images (request: ${data.requestId})`);
 };
 
 /**
