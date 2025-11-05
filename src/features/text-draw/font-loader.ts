@@ -43,6 +43,11 @@ export const fonts: Record<string, FontConfig> = {
     type: "bitmap",
     data: kyokugenData,
   },
+  k8x12: {
+    type: "ttf",
+    path: "assets/fonts/k8x12/k8x12S.ttf",
+    size: 12,
+  },
 };
 
 // ========================================
