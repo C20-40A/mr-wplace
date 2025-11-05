@@ -21,6 +21,20 @@ export interface SnapshotImage {
   tileY: number;
 }
 
+export interface TextLayer {
+  key: string;
+  text: string;
+  font: string;
+  coords: {
+    TLX: number;
+    TLY: number;
+    PxX: number;
+    PxY: number;
+  };
+  dataUrl: string;
+  timestamp: number;
+}
+
 export interface ColorFilterState {
   isFilterActive: () => boolean;
   selectedRGBs: number[][] | undefined;
@@ -47,6 +61,7 @@ export interface WindowWithWplace extends Window {
   mrWplaceDataSaver?: DataSaverState;
   mrWplaceGalleryImages?: Map<string, GalleryImage>;
   mrWplaceSnapshots?: Map<string, SnapshotImage>;
+  mrWplaceTextLayers?: Map<string, TextLayer>;
   mrWplace?: MrWplaceGlobal;
   mrWplaceComputeDevice?: "gpu" | "cpu";
 }
@@ -58,6 +73,7 @@ declare global {
     mrWplaceDataSaver?: DataSaverState;
     mrWplaceGalleryImages?: Map<string, GalleryImage>;
     mrWplaceSnapshots?: Map<string, SnapshotImage>;
+    mrWplaceTextLayers?: Map<string, TextLayer>;
     mrWplace?: MrWplaceGlobal;
     mrWplaceComputeDevice?: "gpu" | "cpu";
   }

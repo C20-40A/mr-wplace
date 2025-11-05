@@ -4,8 +4,8 @@ import { Toast } from "../../components/toast";
 import { ensureFontLoaded } from "./font-loader";
 import { textToBlob } from "./text-renderer";
 import type { TextInstance } from "./ui";
-import { GalleryStorage } from "@/features/gallery/storage";
-import { sendGalleryImagesToInject } from "@/content";
+import { TextLayerStorage } from "./text-layer-storage";
+import { sendTextLayersToInject } from "@/content";
 
 // ========================================
 // Text drawing operations
@@ -34,23 +34,24 @@ export const drawText = async (
     reader.readAsDataURL(blob);
   });
 
-  // Save to gallery storage
-  const galleryStorage = new GalleryStorage();
-  await galleryStorage.save({
+  // Save to text layer storage
+  const textLayerStorage = new TextLayerStorage();
+  await textLayerStorage.save({
     key,
-    dataUrl,
-    drawPosition: {
+    text,
+    font,
+    coords: {
       TLX: coords.TLX,
       TLY: coords.TLY,
       PxX: coords.PxX,
       PxY: coords.PxY,
     },
-    drawEnabled: true,
-    layerOrder: Date.now(),
+    dataUrl,
+    timestamp: Date.now(),
   });
 
   // Notify inject side
-  await sendGalleryImagesToInject();
+  await sendTextLayersToInject();
 
   console.log("🧑‍🎨 : Text drawn at position", coords);
 
@@ -82,14 +83,14 @@ export const moveText = async (
   instance.coords.PxX += delta.x;
   instance.coords.PxY += delta.y;
 
-  // Update gallery storage
-  const galleryStorage = new GalleryStorage();
-  const existing = await galleryStorage.get(instance.key);
+  // Update text layer storage
+  const textLayerStorage = new TextLayerStorage();
+  const existing = await textLayerStorage.get(instance.key);
 
   if (existing) {
-    await galleryStorage.save({
+    await textLayerStorage.save({
       ...existing,
-      drawPosition: {
+      coords: {
         TLX: instance.coords.TLX,
         TLY: instance.coords.TLY,
         PxX: instance.coords.PxX,
@@ -98,7 +99,7 @@ export const moveText = async (
     });
 
     // Notify inject side
-    await sendGalleryImagesToInject();
+    await sendTextLayersToInject();
   }
 
   console.log("🧑‍🎨 : Text moved", direction, instance.coords);
@@ -108,12 +109,12 @@ export const deleteText = async (
   key: string,
   textInstances: TextInstance[]
 ): Promise<TextInstance[]> => {
-  // Delete from gallery storage
-  const galleryStorage = new GalleryStorage();
-  await galleryStorage.delete(key);
+  // Delete from text layer storage
+  const textLayerStorage = new TextLayerStorage();
+  await textLayerStorage.delete(key);
 
   // Notify inject side
-  await sendGalleryImagesToInject();
+  await sendTextLayersToInject();
 
   console.log("🧑‍🎨 : Text deleted", key);
   return textInstances.filter((i) => i.key !== key);

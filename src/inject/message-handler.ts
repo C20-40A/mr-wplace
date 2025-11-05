@@ -82,6 +82,12 @@ export const setupMessageHandler = (): void => {
       handleImageStatsRequest(event.data);
       return;
     }
+
+    // Handle text layers update from content script
+    if (event.data.source === "mr-wplace-text-layers") {
+      await handleTextLayersUpdate(event.data);
+      return;
+    }
   });
 };
 
@@ -452,4 +458,63 @@ const handleSnapshotsUpdate = async (data: {
   }
 
   console.log(`🧑‍🎨 : Snapshots updated: ${data.snapshots.length} active`);
+};
+
+/**
+ * Handle text layers update from content script
+ * Text layers are dynamically placed text overlays
+ */
+const handleTextLayersUpdate = async (data: {
+  textLayers: Array<{
+    key: string;
+    text: string;
+    font: string;
+    coords: { TLX: number; TLY: number; PxX: number; PxY: number };
+    dataUrl: string;
+    timestamp: number;
+  }>;
+}): Promise<void> => {
+  if (!window.mrWplaceTextLayers) {
+    window.mrWplaceTextLayers = new Map();
+  }
+
+  // Clear and update text layers
+  window.mrWplaceTextLayers.clear();
+  for (const textLayer of data.textLayers) {
+    window.mrWplaceTextLayers.set(textLayer.key, textLayer);
+  }
+
+  // Add each text layer to overlay layers
+  for (const textLayer of data.textLayers) {
+    try {
+      const imageElement = new Image();
+      imageElement.src = textLayer.dataUrl;
+
+      await new Promise<void>((resolve, reject) => {
+        imageElement.onload = () => resolve();
+        imageElement.onerror = (e) => reject(new Error(`Failed to load text layer ${textLayer.key}: ${e}`));
+        setTimeout(() => reject(new Error(`Timeout loading text layer ${textLayer.key}`)), 5000);
+      });
+
+      const bitmap = await createImageBitmap(imageElement);
+
+      await addImageToOverlayLayers(
+        bitmap,
+        [textLayer.coords.TLX, textLayer.coords.TLY, textLayer.coords.PxX, textLayer.coords.PxY],
+        textLayer.key
+      );
+
+      console.log(`🧑‍🎨 : Added text layer ${textLayer.key} to overlay at (${textLayer.coords.TLX}, ${textLayer.coords.TLY})`);
+    } catch (error) {
+      console.error(`🧑‍🎨 : Failed to add text layer ${textLayer.key} to overlay layers:`, error);
+    }
+  }
+
+  // Clear tile cache to force re-rendering with new text layers
+  if (window.mrWplaceDataSaver?.tileCache) {
+    window.mrWplaceDataSaver.tileCache.clear();
+    console.log("🧑‍🎨 : Cleared tile cache after text layers update");
+  }
+
+  console.log(`🧑‍🎨 : Text layers updated: ${data.textLayers.length} active`);
 };
