@@ -4,17 +4,11 @@
 - データセーバー ON でも、レンダリングの更新はできるようにした。レンダリング停止中の表示は消す
   画像処理を Web Worker で並列実行
 
-brave で
-inject.js:1 Uncaught (in promise) TypeError: Failed to execute 'observe' on 'MutationObserver': parameter 1 is not of type 'Node'.
-at m (inject.js:1:5765)
-at inject.js:1:7941
-
 同一のデザインで縮尺だけが違うものや、全体アーカイブなどはプレビューで見分けがつかない(つきにくい)ので、読み込ませたテンプレートに名前をつけられるようにしたい
 
 - 画像削除したとき、描画も消す
 - フィルターするとカウントがリセットされる
 - tile 描画が inject 送信で少し遅くなったかも？
-- inject も try catch しないと失敗したとき終わる
 - theme: 'custom-winter'-> 'night' にすれば一発で切り替わるが、動的には切り替わらなそう
 - 画像編集で拡大はやはりできたほうがいいだろうか
 - 未配置画像のエイリアス off にする pixelated
@@ -44,6 +38,7 @@ at inject.js:1:7941
 - テキスト描画＋フィルター周り
 - ギャラリーから画像を削除したとき、空のアイテムが残る
 - /me がないときは所持色のフィルターが効いていない
+- brave でエラーになる？
 
 # マイナー
 
@@ -101,6 +96,7 @@ at inject.js:1:7941
 
 # DONE v1.9.1
 
+- inject も try catch しないと失敗したとき終わる
 - 矢印移動すると、なぜか新規追加ボタン消える
 - paint パレットの toggle
 - firefox 対応
