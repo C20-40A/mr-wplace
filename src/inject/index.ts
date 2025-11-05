@@ -6,25 +6,43 @@ import { setupMessageHandler } from "./message-handler";
   // Initialization state
   let isInitialized = false;
 
-  // Initialize data saver state
-  window.mrWplaceDataSaver = {
-    enabled: false,
-    tileCache: new Map(),
-  };
+  try {
+    // Initialize data saver state
+    window.mrWplaceDataSaver = {
+      enabled: false,
+      tileCache: new Map(),
+    };
 
-  // Initialize compute device (default: gpu)
-  window.mrWplaceComputeDevice = "gpu";
+    // Initialize compute device (default: gpu)
+    window.mrWplaceComputeDevice = "gpu";
 
-  // Setup fetch interceptor
-  await setupFetchInterceptor(() => isInitialized);
+    // Setup fetch interceptor
+    try {
+      await setupFetchInterceptor(() => isInitialized);
+    } catch (error) {
+      console.error("🧑‍🎨: Failed to setup fetch interceptor:", error);
+    }
 
-  // Setup message handler
-  setupMessageHandler();
+    // Setup message handler
+    try {
+      setupMessageHandler();
+    } catch (error) {
+      console.error("🧑‍🎨: Failed to setup message handler:", error);
+    }
 
-  // Setup map observer
-  setupMapObserver();
+    // Setup map observer
+    try {
+      setupMapObserver();
+    } catch (error) {
+      console.error("🧑‍🎨: Failed to setup map observer:", error);
+    }
 
-  // Mark as initialized
-  isInitialized = true;
-  console.log("🧑‍🎨: Initialization complete");
+    // Mark as initialized (even if some features failed)
+    isInitialized = true;
+    console.log("🧑‍🎨: Initialization complete");
+  } catch (error) {
+    console.error("🧑‍🎨: Critical initialization error:", error);
+    // Try to mark as initialized anyway
+    isInitialized = true;
+  }
 })();
