@@ -130,7 +130,7 @@ const createContentArea = (
   const thumbnail = document.createElement("img");
   thumbnail.src = item.dataUrl;
   thumbnail.style.cssText =
-    "width: 48px; height: 48px; object-fit: cover; border-radius: 0.375rem; flex-shrink: 0; border: 1px solid #e5e7eb;";
+    "width: 48px; height: 48px; object-fit: cover; border-radius: 0.375rem; flex-shrink: 0; border: 1px solid #e5e7eb; image-rendering: pixelated;";
 
   // 情報
   const infoContainer = createInfoContainer(item, index);
