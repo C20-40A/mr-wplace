@@ -8,7 +8,6 @@ import {
   getOrCreateMapPinButtonGroup,
   createMapPinGroupButton,
 } from "@/components/map-pin-button";
-import { Toast } from "@/components/toast";
 import type { TextDrawAPI } from "@/core/di";
 import { drawText, moveText, deleteText } from "./text-manipulator";
 import { t } from "@/i18n/manager";
@@ -41,7 +40,6 @@ const handleDrawText = async (text: string, font: string): Promise<void> => {
   if (!instance) return;
 
   textInstances.push(instance);
-  Toast.success("Text drawn");
   textDrawUI.updateList(textInstances);
 };
 
@@ -58,7 +56,6 @@ const handleMoveText = async (
 
 const handleDeleteText = async (key: string): Promise<void> => {
   textInstances = await deleteText(key, textInstances);
-  Toast.success("Text deleted");
   textDrawUI.updateList(textInstances);
 };
 
