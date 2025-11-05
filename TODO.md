@@ -1,7 +1,6 @@
 # メイン
 
 - text 移動ができない
-- 統計処理はできているが、進捗がでてこない
 - データセーバー ON でも、レンダリングの更新はできるようにした。レンダリング停止中の表示は消す
   画像処理を Web Worker で並列実行
 
@@ -11,8 +10,6 @@ at m (inject.js:1:5765)
 at inject.js:1:7941
 
 同一のデザインで縮尺だけが違うものや、全体アーカイブなどはプレビューで見分けがつかない(つきにくい)ので、読み込ませたテンプレートに名前をつけられるようにしたい
-
-- javascript:(function(){const s='#color-1';let b=null;let observer=null;const createButton=(e)=>{if(b)b.remove();b=document.createElement('button');b.textContent='👁️';Object.assign(b.style,{position:'fixed',top:'50%',left:'0',transform:'translateY(-50%)',zIndex:99999,padding:'5px',fontSize:'16px',background:'#333',color:'white',border:'none',cursor:'pointer',borderRadius:'0 5px 5px 0'});b.onclick=()=>e.toggleAttribute('hidden');document.body.appendChild(b);};const runObserver=()=>{if(observer)observer.disconnect();const c=document.querySelector(s);const e=c?.parentElement?.parentElement;if(e){createButton(e);}else if(b){b.remove();b=null;}observer=new MutationObserver((mutationsList,observer)=>{observer.disconnect();runObserver();});observer.observe(document.body,{childList:true,subtree:true});};runObserver();})();これ
 
 - tile 描画が inject 送信で少し遅くなったかも？
 - inject も try catch しないと失敗したとき終わる
@@ -103,6 +100,12 @@ at inject.js:1:7941
 - exclude_globs にメインのもの以外含める？
   - all_frames false (デフォルト)系は false．まあデフォルトが false だから不要か
 - dark/light テーマの i18n 不要になった
+
+# DONE v1.9.1
+
+- paint パレットの toggle
+- firefox 対応
+- 統計処理はできているが、進捗がでてこない
 
 # DONE v1.8.3
 

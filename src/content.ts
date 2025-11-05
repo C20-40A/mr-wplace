@@ -22,6 +22,7 @@ import {
 import { AutoSpoit } from "@/features/auto-spoit";
 import { PositionInfo } from "@/features/position-info";
 import { initPaintStats } from "@/features/paint-stats";
+import { PaletteToggle } from "@/features/palette-toggle";
 import { colorpalette } from "@/constants/colors";
 import { addCurrentTile } from "@/states/currentTile";
 import { di } from "@/core/di";
@@ -268,6 +269,7 @@ export const sendSnapshotsToInject = async () => {
     const colorFilterManager = new ColorFilterManager();
     const autoSpoit = new AutoSpoit();
     new PositionInfo();
+    new PaletteToggle();
     initPaintStats();
 
     // 初期化完了を待つ
