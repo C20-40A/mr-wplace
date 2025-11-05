@@ -13,6 +13,7 @@ import { sendGalleryImagesToInject } from "@/content";
 export const toggleDrawState = async (key: string): Promise<boolean> => {
   const tileOverlay = window.mrWplace?.tileOverlay;
   if (!tileOverlay) throw new Error("TileOverlay not available");
+  // toggleImageDrawState内で既にsendGalleryImagesToInjectを呼んでいる
   return await tileOverlay.toggleImageDrawState(key);
 };
 
