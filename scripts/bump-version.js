@@ -78,6 +78,7 @@ function main() {
   // Update files
   updateJsonVersion(packageJsonPath, newVersion);
   updateJsonVersion(path.join(rootDir, 'manifest.json'), newVersion);
+  updateJsonVersion(path.join(rootDir, 'manifest.template.json'), newVersion);
   updateReadmeVersion(path.join(rootDir, 'README.md'), newVersion);
   
   console.log(`\n🎉 Version bumped from ${currentVersion} to ${newVersion}`);
