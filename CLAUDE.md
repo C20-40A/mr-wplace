@@ -95,8 +95,8 @@ src/
 ├── core/
 │   └── di.ts              # DI container & API types
 ├── features/              # Feature modules (gallery, drawing, etc.)
-│   └── tile-draw-stubs.ts # 🆕 Legacy wrapper for inject/tile-draw
 ├── utils/                 # Shared utilities
+│   └── inject-bridge.ts   # 🆕 Content ↔ Inject communication functions
 └── i18n/                  # Internationalization
 ```
 
@@ -234,7 +234,7 @@ await sendComputeDeviceToInject();
 For features that need data FROM inject (stats, pixel color):
 
 ```typescript
-// In features/tile-draw-stubs.ts
+// In utils/inject-bridge.ts
 export const getAggregatedColorStats = async (
   imageKeys: string[]
 ): Promise<ColorStats> => {

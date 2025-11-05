@@ -27,7 +27,7 @@ import { colorpalette } from "@/constants/colors";
 import { addCurrentTile } from "@/states/currentTile";
 import { di } from "@/core/di";
 import { runtime } from "@/utils/browser-api";
-import { getOverlayPixelColor } from "@/features/tile-draw-stubs";
+import { getOverlayPixelColor } from "@/utils/inject-bridge";
 
 /**
  * Send gallery images to inject side for tile processing

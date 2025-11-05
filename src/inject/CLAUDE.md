@@ -27,8 +27,8 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
    - `drawPixelOnTile()` 削除
    - 画像配置/トグル時に `sendGalleryImagesToInject()` を呼ぶだけ
 3. `src/features/tile-draw/` 削除
-4. `src/features/tile-draw-stubs.ts` 作成:
-   - 他のfeatureからの参照を維持するための空実装
+4. `src/utils/inject-bridge.ts` 作成:
+   - content ↔ inject 通信を管理する関数群
    - 実際の処理は inject 側で実行
 
 ### 新しいアーキテクチャ
@@ -38,7 +38,7 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
 │ content.ts (extension context)                  │
 │ - gallery 管理                                   │
 │ - sendGalleryImagesToInject() で inject に送信  │
-│ - tile-draw-stubs (空実装)                      │
+│ - inject-bridge で inject 側と通信              │
 └──────────────┬──────────────────────────────────┘
                │ postMessage
                ↓
@@ -74,7 +74,7 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
 - `src/features/tile-draw/` 削除 ❌
 - `src/inject/tile-processor.ts` 削除 ❌
 - `src/features/tile-overlay/index.ts` 簡略化 (96行 → 75行)
-- `src/features/tile-draw-stubs.ts` (NEW): 空実装
+- `src/utils/inject-bridge.ts` (NEW): content ↔ inject 通信関数群
 - `src/content.ts`: データ送信関数追加
   - `sendGalleryImagesToInject()`
   - `sendComputeDeviceToInject()`
@@ -112,10 +112,10 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
    - `src/inject/tile-draw/utils/splitImageOnTiles.ts` (inject 版を使用)
    - `src/inject/tile-draw/README.md` (古い内容)
 
-2. **stubs のクリーンアップ**:
-   - `tile-draw-stubs.ts` の警告ログ削除
-   - legacy 関数に適切なコメント追加
-   - no-op 関数として明示
+2. **stubs から inject-bridge へ移行 (2025-11-06)**:
+   - `tile-draw-stubs.ts` 削除、`utils/inject-bridge.ts` に移行
+   - stub (空実装) から bridge (通信ユーティリティ) へ名前変更
+   - content ↔ inject 通信関数として適切に配置
 
 3. **不要な呼び出し削除**:
    - gallery/common-actions.ts: inject 側で自動同期
