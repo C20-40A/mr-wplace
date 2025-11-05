@@ -13,17 +13,31 @@ interface LayerItemParams {
   totalCount: number;
   onSelect: (item: ImageItem) => void;
   onShowDetail: ((item: ImageItem) => void) | null;
-  onRefresh: () => Promise<void>;
+  onUpdateCoords: (key: string) => Promise<void>;
+  onUpdateStatus: (key: string) => Promise<void>;
+  onMoveToUnplaced: (key: string) => Promise<void>;
+  onRefreshOrder: () => Promise<void>;
 }
 
 /**
  * レイヤーアイテム作成
  */
 export const createLayerItem = (params: LayerItemParams): HTMLElement => {
-  const { item, index, totalCount, onSelect, onShowDetail, onRefresh } = params;
+  const {
+    item,
+    index,
+    totalCount,
+    onSelect,
+    onShowDetail,
+    onUpdateCoords,
+    onUpdateStatus,
+    onMoveToUnplaced,
+    onRefreshOrder,
+  } = params;
   const galleryStorage = new GalleryStorage();
 
   const container = document.createElement("div");
+  container.dataset.key = item.key;
   container.style.cssText = `
     background: #fff;
     border: 1px solid #e5e7eb;
@@ -49,7 +63,8 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
     item,
     onShowDetail,
     galleryStorage,
-    onRefresh
+    onUpdateStatus,
+    onMoveToUnplaced
   );
 
   // レイヤー移動ボタン
@@ -58,13 +73,17 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
     index,
     totalCount,
     galleryStorage,
-    onRefresh
+    onRefreshOrder
   );
 
   container.appendChild(contentArea);
   container.appendChild(divider);
   container.appendChild(buttonArea);
   container.appendChild(moveContainer);
+
+  // D-pad追加
+  const dPadContainer = createDPad(item, onUpdateCoords);
+  buttonArea.insertBefore(dPadContainer, buttonArea.firstChild);
 
   return container;
 };
@@ -137,6 +156,7 @@ const createInfoContainer = (item: any, index: number): HTMLElement => {
     "font-weight: 600; font-size: 0.875rem; color: #374151;";
 
   const statusBadge = document.createElement("div");
+  statusBadge.dataset.role = "status";
   statusBadge.textContent = item.drawEnabled ? "✓ ON" : "✗ OFF";
   statusBadge.style.cssText = `
     font-size: 0.75rem;
@@ -152,6 +172,7 @@ const createInfoContainer = (item: any, index: number): HTMLElement => {
 
   // 座標表示
   const coordsText = document.createElement("div");
+  coordsText.dataset.role = "coords";
   coordsText.textContent = `${item.drawPosition.TLX},${item.drawPosition.TLY} (${item.drawPosition.PxX},${item.drawPosition.PxY})`;
   coordsText.style.cssText =
     "font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem; font-family: monospace;";
@@ -167,32 +188,33 @@ const createButtonArea = (
   item: any,
   onShowDetail: ((item: ImageItem) => void) | null,
   galleryStorage: GalleryStorage,
-  onRefresh: () => Promise<void>
+  onUpdateStatus: (key: string) => Promise<void>,
+  onMoveToUnplaced: (key: string) => Promise<void>
 ): HTMLElement => {
   const buttonArea = document.createElement("div");
   buttonArea.style.cssText =
     "display: flex; flex-shrink: 0; align-items: center;";
   buttonArea.onclick = (e) => e.stopPropagation();
 
-  // D-pad
-  const dPadContainer = createDPad(item, onRefresh);
-
   // 2x2グリッド（goto/detail/toggle/delete）
   const actionGrid = createActionGrid(
     item,
     onShowDetail,
     galleryStorage,
-    onRefresh
+    onUpdateStatus,
+    onMoveToUnplaced
   );
 
-  buttonArea.appendChild(dPadContainer);
   buttonArea.appendChild(actionGrid);
 
   return buttonArea;
 };
 
 // D-pad作成
-const createDPad = (item: any, onRefresh: () => Promise<void>): HTMLElement => {
+const createDPad = (
+  item: any,
+  onUpdateCoords: (key: string) => Promise<void>
+): HTMLElement => {
   const dPadContainer = document.createElement("div");
   dPadContainer.style.cssText = `
     display: grid;
@@ -232,7 +254,7 @@ const createDPad = (item: any, onRefresh: () => Promise<void>): HTMLElement => {
     };
     btn.onclick = async () => {
       await moveImage(item, direction);
-      await onRefresh();
+      await onUpdateCoords(item.key);
     };
     return btn;
   };
@@ -250,7 +272,8 @@ const createActionGrid = (
   item: any,
   onShowDetail: ((item: ImageItem) => void) | null,
   galleryStorage: GalleryStorage,
-  onRefresh: () => Promise<void>
+  onUpdateStatus: (key: string) => Promise<void>,
+  onMoveToUnplaced: (key: string) => Promise<void>
 ): HTMLElement => {
   const actionGrid = document.createElement("div");
   actionGrid.style.cssText = `
@@ -279,9 +302,10 @@ const createActionGrid = (
     item.drawEnabled ? "#bfdbfe" : "#e5e7eb",
     async () => {
       await toggleDrawState(item.key);
-      await onRefresh();
+      await onUpdateStatus(item.key);
     }
   );
+  toggleBtn.dataset.role = "toggle";
 
   // 削除ボタン
   const deleteBtn = createButton("×", "#fee2e2", "#fecaca", async () => {
@@ -295,7 +319,7 @@ const createActionGrid = (
     const { sendGalleryImagesToInject } = await import("@/content");
     await sendGalleryImagesToInject();
 
-    await onRefresh();
+    await onMoveToUnplaced(item.key);
   });
   deleteBtn.style.color = "#991b1b";
   deleteBtn.style.fontSize = "1rem";
@@ -353,7 +377,7 @@ const createMoveContainer = (
   index: number,
   totalCount: number,
   galleryStorage: GalleryStorage,
-  onRefresh: () => Promise<void>
+  onRefreshOrder: () => Promise<void>
 ): HTMLElement => {
   const moveContainer = document.createElement("div");
   moveContainer.style.cssText =
@@ -383,7 +407,7 @@ const createMoveContainer = (
       font-size: 0.75rem;
       color: ${disabled ? "#9ca3af" : activeText};
       font-weight: 600;
-      opacity: ${disabled ? "0.8" : "1"}; 
+      opacity: ${disabled ? "0.8" : "1"};
       transition: all 0.15s;
     `;
     if (!disabled) {
@@ -402,7 +426,7 @@ const createMoveContainer = (
         const { sendGalleryImagesToInject } = await import("@/content");
         await sendGalleryImagesToInject();
 
-        await onRefresh();
+        await onRefreshOrder();
       };
     }
     return btn;

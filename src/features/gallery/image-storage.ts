@@ -18,6 +18,26 @@ export class ImageStorage<T extends BaseImageItem> {
     this.indexKey = `${prefix}_index`;
   }
 
+  async get(key: string): Promise<T | undefined> {
+    const dataResult = await storage.get([key]);
+    const data = dataResult[key];
+
+    if (!data) return undefined;
+
+    // 新形式（完全オブジェクト）で保存されている場合
+    if (typeof data === "object" && data.key) {
+      return data as T;
+    }
+
+    // 旧形式（dataUrlのみ）で保存されている場合
+    const timestamp = parseInt(key.replace(`${this.prefix}_`, ""));
+    return {
+      key,
+      timestamp,
+      dataUrl: data || "",
+    } as T;
+  }
+
   async getAll(): Promise<T[]> {
     // 1. インデックス取得
     const indexResult = await storage.get([this.indexKey]);

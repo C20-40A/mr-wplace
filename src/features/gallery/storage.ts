@@ -88,6 +88,16 @@ export class GalleryStorage {
     });
   }
 
+  async get(key: string): Promise<GalleryItem | undefined> {
+    const item = await this.imageStorage.get(key);
+    if (!item) return undefined;
+
+    return {
+      ...item,
+      hasDrawPosition: !!item.drawPosition,
+    };
+  }
+
   async getAll(): Promise<GalleryItem[]> {
     await this.ensureLayerOrders();
     const items = await this.imageStorage.getAll();
