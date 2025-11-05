@@ -233,6 +233,9 @@ const handleGalleryImages = async (data: {
   if (window.mrWplaceDataSaver?.tileCache) {
     window.mrWplaceDataSaver.tileCache.clear();
     console.log("🧑‍🎨 : Cleared tile cache after gallery update");
+
+    // Notify drawing loader to start showing loading indicator
+    window.postMessage({ source: "wplace-studio-drawing-start" }, "*");
   }
 
   console.log("🧑‍🎨 : Gallery images updated and synced to overlay layers:", data.images.length);
@@ -249,6 +252,9 @@ const handleComputeDeviceUpdate = (data: { device: "gpu" | "cpu" }): void => {
   if (window.mrWplaceDataSaver?.tileCache) {
     window.mrWplaceDataSaver.tileCache.clear();
     console.log("🧑‍🎨 : Cleared tile cache after compute device update");
+
+    // Notify drawing loader to start showing loading indicator
+    window.postMessage({ source: "wplace-studio-drawing-start" }, "*");
   }
 };
 
@@ -276,6 +282,9 @@ const handleColorFilterUpdate = (data: {
   if (window.mrWplaceDataSaver?.tileCache) {
     window.mrWplaceDataSaver.tileCache.clear();
     console.log("🧑‍🎨 : Cleared tile cache after color filter update");
+
+    // Notify drawing loader to start showing loading indicator
+    window.postMessage({ source: "wplace-studio-drawing-start" }, "*");
   }
 
   // カラーフィルター変更時に統計を再計算
@@ -455,6 +464,9 @@ const handleSnapshotsUpdate = async (data: {
   if (window.mrWplaceDataSaver?.tileCache) {
     window.mrWplaceDataSaver.tileCache.clear();
     console.log("🧑‍🎨 : Cleared tile cache after snapshots update");
+
+    // Notify drawing loader to start showing loading indicator
+    window.postMessage({ source: "wplace-studio-drawing-start" }, "*");
   }
 
   console.log(`🧑‍🎨 : Snapshots updated: ${data.snapshots.length} active`);
@@ -514,6 +526,9 @@ const handleTextLayersUpdate = async (data: {
   if (window.mrWplaceDataSaver?.tileCache) {
     window.mrWplaceDataSaver.tileCache.clear();
     console.log("🧑‍🎨 : Cleared tile cache after text layers update");
+
+    // Notify drawing loader to start showing loading indicator
+    window.postMessage({ source: "wplace-studio-drawing-start" }, "*");
   }
 
   console.log(`🧑‍🎨 : Text layers updated: ${data.textLayers.length} active`);
