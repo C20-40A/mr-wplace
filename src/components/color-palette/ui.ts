@@ -438,7 +438,7 @@ export function buildControlsHtml(
     : "";
 
   return `
-    <div class="color-palette-controls flex flex-wrap gap-2 mb-4 px-4 pt-4">
+    <div class="color-palette-controls flex flex-wrap gap-2 px-4 pb-2">
       <button class="enable-all-btn btn btn-outline btn-success btn-sm rounded" 
               style="${buttonBaseStyle} 
                      border: 2px solid #22c55e; 
