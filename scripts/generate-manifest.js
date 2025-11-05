@@ -25,7 +25,19 @@ if (browser === "chrome") {
   template.background = {
     scripts: ["service_worker.js"]
   };
-  console.log("🧑‍🎨 : Generated Firefox manifest.json");
+
+  // Firefox requires browser_specific_settings.gecko.id for unsigned extensions
+  template.browser_specific_settings = {
+    gecko: {
+      id: "mr-wplace@wplace.live",
+      strict_min_version: "109.0",
+      data_collection_permissions: {
+        required: ["none"]
+      }
+    }
+  };
+
+  console.log("🧑‍🎨 : Generated Firefox manifest.json with gecko id");
 }
 
 // Write output
