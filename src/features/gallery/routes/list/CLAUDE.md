@@ -6,7 +6,7 @@ The gallery list route displays all saved images in a grid layout with progress 
 
 ## Architecture
 
-### Content ” Inject Communication for Stats
+### Content ï¿½ Inject Communication for Stats
 
 The gallery list operates across two contexts:
 
@@ -24,29 +24,29 @@ The gallery list operates across two contexts:
 
 ```
 GalleryList (content)
-    “
+    ï¿½
 [1] Fetch items from storage
-    “
+    ï¿½
 [2] Filter items with drawPosition
-    “
-[3] Call getStatsPerImage(imageKeys) ’ postMessage
-    “
+    ï¿½
+[3] Call getStatsPerImage(imageKeys) ï¿½ postMessage
+    ï¿½
 inject/message-handler.ts
-    “
+    ï¿½
 [4] handleImageStatsRequest
-    “
+    ï¿½
 [5] getStatsPerImage(imageKeys)
-    “
+    ï¿½
 [6] Aggregate stats from perTileColorStats Map
-    “
+    ï¿½
 [7] postMessage response back to content
-    “
+    ï¿½
 GalleryList receives stats
-    “
+    ï¿½
 [8] Set matchedColorStats & totalColorStats on items
-    “
+    ï¿½
 [9] Pass items to GalleryListUI
-    “
+    ï¿½
 [10] ImageGridComponent renders progress bars
 ```
 
@@ -138,7 +138,7 @@ const handleImageStatsRequest = (data: { imageKeys: string[]; requestId: string 
     "*"
   );
 
-  console.log(`>Ñ<¨ : Sent image stats for ${data.imageKeys.length} images (request: ${data.requestId})`);
+  console.log(`>ï¿½<ï¿½ : Sent image stats for ${data.imageKeys.length} images (request: ${data.requestId})`);
 };
 ```
 
@@ -148,7 +148,7 @@ const handleImageStatsRequest = (data: { imageKeys: string[]; requestId: string 
 
 ### 3. Content-Side Request Function
 
-**File**: `src/features/tile-draw-stubs.ts` (line 154-193)
+**File**: `src/utils/inject-bridge.ts`
 
 ```typescript
 export const getStatsPerImage = async (
@@ -181,7 +181,7 @@ export const getStatsPerImage = async (
     // Timeout after 5 seconds
     setTimeout(() => {
       window.removeEventListener("message", handler);
-      console.warn(">Ñ<¨ : Image stats request timed out");
+      console.warn(">ï¿½<ï¿½ : Image stats request timed out");
       resolve({});
     }, 5000);
   });
@@ -215,7 +215,7 @@ async render(
     const imageKeys = itemsWithDrawPosition.map((item) => item.key);
     const statsPerImage = await getStatsPerImage(imageKeys);
 
-    console.log(">Ñ<¨ : Fetched stats for gallery images:", statsPerImage);
+    console.log(">ï¿½<ï¿½ : Fetched stats for gallery images:", statsPerImage);
 
     // Assign stats to items
     for (const item of itemsWithDrawPosition) {
@@ -290,8 +290,8 @@ interface GalleryItem extends BaseImageItem {
   drawEnabled?: boolean;
   layerOrder?: number;
   // Statistics (populated at render time)
-  matchedColorStats?: Record<string, number>;  // Color key ’ matched pixel count
-  totalColorStats?: Record<string, number>;     // Color key ’ total pixel count
+  matchedColorStats?: Record<string, number>;  // Color key ï¿½ matched pixel count
+  totalColorStats?: Record<string, number>;     // Color key ï¿½ total pixel count
 }
 ```
 
@@ -299,8 +299,8 @@ interface GalleryItem extends BaseImageItem {
 
 ```typescript
 Record<string, {
-  matched: Record<string, number>;  // Color key ’ count
-  total: Record<string, number>;    // Color key ’ count
+  matched: Record<string, number>;  // Color key ï¿½ count
+  total: Record<string, number>;    // Color key ï¿½ count
 }>
 ```
 
@@ -322,7 +322,7 @@ Record<string, {
 
 ```typescript
 Map<string, Map<string, ColorStats>>
-// imageKey ’ tileKey ’ { matched: Map, total: Map }
+// imageKey ï¿½ tileKey ï¿½ { matched: Map, total: Map }
 ```
 
 **Example**:
@@ -353,7 +353,7 @@ Statistics are calculated at multiple points:
 ```typescript
 const computeStatsInBackground = (imageKey: string, tiles: Record<string, ImageBitmap>): void => {
   if (window.mrWplaceDataSaver?.enabled) {
-    console.log(`>Ñ<¨ : Skipping background stats computation (data saver is ON)`);
+    console.log(`>ï¿½<ï¿½ : Skipping background stats computation (data saver is ON)`);
     return;
   }
 
@@ -365,10 +365,10 @@ const computeStatsInBackground = (imageKey: string, tiles: Record<string, ImageB
     computeStatsForImage(imageKey, tiles, colorFilter)
       .then((tileStatsMap) => {
         perTileColorStats.set(imageKey, tileStatsMap);
-        console.log(`>Ñ<¨ : Background stats computation complete for ${imageKey}`);
+        console.log(`>ï¿½<ï¿½ : Background stats computation complete for ${imageKey}`);
       })
       .catch((error) => {
-        console.warn(`>Ñ<¨ : Background stats computation failed for ${imageKey}:`, error);
+        console.warn(`>ï¿½<ï¿½ : Background stats computation failed for ${imageKey}:`, error);
       });
   }, 2000);
 };
@@ -389,7 +389,7 @@ const computeStatsInBackground = (imageKey: string, tiles: Record<string, ImageB
 ```typescript
 const recomputeAllStats = (colorFilter?: number[][]): void => {
   if (window.mrWplaceDataSaver?.enabled) {
-    console.log(`>Ñ<¨ : Skipping stats recomputation (data saver is ON)`);
+    console.log(`>ï¿½<ï¿½ : Skipping stats recomputation (data saver is ON)`);
     return;
   }
 
@@ -399,9 +399,9 @@ const recomputeAllStats = (colorFilter?: number[][]): void => {
       try {
         const tileStatsMap = await computeStatsForImage(layer.imageKey, layer.tiles, colorFilter);
         perTileColorStats.set(layer.imageKey, tileStatsMap);
-        console.log(`>Ñ<¨ : Recomputed stats for ${layer.imageKey}`);
+        console.log(`>ï¿½<ï¿½ : Recomputed stats for ${layer.imageKey}`);
       } catch (error) {
-        console.warn(`>Ñ<¨ : Failed to recompute stats for ${layer.imageKey}:`, error);
+        console.warn(`>ï¿½<ï¿½ : Failed to recompute stats for ${layer.imageKey}:`, error);
       }
     }
   }, 2000);
@@ -449,7 +449,7 @@ If inject context doesn't respond within 5 seconds:
 ```typescript
 setTimeout(() => {
   window.removeEventListener("message", handler);
-  console.warn(">Ñ<¨ : Image stats request timed out");
+  console.warn(">ï¿½<ï¿½ : Image stats request timed out");
   resolve({});  // Return empty object
 }, 5000);
 ```
@@ -469,7 +469,7 @@ if (!item.currentColorStats || !item.totalColorStats) return "";
 When data saver is ON, background statistics calculation is skipped:
 ```typescript
 if (window.mrWplaceDataSaver?.enabled) {
-  console.log(`>Ñ<¨ : Skipping background stats computation (data saver is ON)`);
+  console.log(`>ï¿½<ï¿½ : Skipping background stats computation (data saver is ON)`);
   return;
 }
 ```
@@ -489,7 +489,7 @@ const fetchWithTimeout = async (url: string, timeout = 5000): Promise<Response |
     clearTimeout(timeoutId);
     return response;
   } catch (error) {
-    console.warn(`>Ñ<¨ : Fetch failed for ${url}:`, error);
+    console.warn(`>ï¿½<ï¿½ : Fetch failed for ${url}:`, error);
     return null;
   }
 };
@@ -516,14 +516,14 @@ console.log(perTileColorStats.size);
 
 ### Check Request/Response Flow
 
-Enable verbose logging by watching for >Ñ<¨ emoji:
+Enable verbose logging by watching for >ï¿½<ï¿½ emoji:
 
 ```javascript
 // Content side (gallery list)
-">Ñ<¨ : Fetched stats for gallery images: {...}"
+">ï¿½<ï¿½ : Fetched stats for gallery images: {...}"
 
 // Inject side (message handler)
-">Ñ<¨ : Sent image stats for 3 images (request: req_1699999999999_1)"
+">ï¿½<ï¿½ : Sent image stats for 3 images (request: req_1699999999999_1)"
 ```
 
 ### Check Item Data (Content Context)
@@ -532,7 +532,7 @@ In `src/features/gallery/routes/list/ui.ts:39-46`:
 
 ```typescript
 console.log(
-  ">Ñ<¨ : renderGalleryList items:",
+  ">ï¿½<ï¿½ : renderGalleryList items:",
   items.map((i) => ({
     key: i.key,
     hasCurrentStats: !!i.matchedColorStats,
@@ -547,14 +547,14 @@ In `src/features/gallery/routes/list/components/ImageGridComponent.ts:340-367`:
 
 ```typescript
 console.log(
-  ">Ñ<¨ : createProgressBarHtml",
+  ">ï¿½<ï¿½ : createProgressBarHtml",
   item.key,
   "currentColorStats:", item.currentColorStats,
   "totalColorStats:", item.totalColorStats
 );
 
 console.log(
-  ">Ñ<¨ : Progress",
+  ">ï¿½<ï¿½ : Progress",
   item.key,
   "matched:", matched,
   "total:", total
@@ -671,7 +671,7 @@ When modifying gallery list or statistics:
 - `src/features/gallery/routes/list/index.ts` - Main route logic
 - `src/features/gallery/routes/list/ui.ts` - UI rendering
 - `src/features/gallery/routes/list/components/ImageGridComponent.ts` - Grid component
-- `src/features/tile-draw-stubs.ts` - Content-side request functions
+- `src/utils/inject-bridge.ts` - Content â†” Inject communication bridge
 - `src/inject/tile-draw/utils/getStatsPerImage.ts` - Inject-side aggregation
 - `src/inject/message-handler.ts` - Request/response handling
 
@@ -684,7 +684,7 @@ When modifying gallery list or statistics:
 
 ## Version History
 
-- **2025-11-05**: Fixed progress bar display by implementing inject’content stats sync
+- **2025-11-05**: Fixed progress bar display by implementing injectï¿½content stats sync
 - **2025-11-01**: Initial implementation with background stats calculation (inject-side only)
 
 ## Summary

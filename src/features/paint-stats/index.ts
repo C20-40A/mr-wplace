@@ -1,4 +1,4 @@
-import { getAggregatedColorStats } from "@/features/tile-draw-stubs";
+import { getAggregatedColorStats } from "@/utils/inject-bridge";
 import { getCurrentTiles } from "@/states/currentTile";
 import { colorpalette } from "@/constants/colors";
 

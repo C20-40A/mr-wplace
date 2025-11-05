@@ -1,7 +1,7 @@
 import { GalleryItem, GalleryStorage } from "../../storage";
 import { GalleryRouter } from "../../router";
 import { GalleryListUI } from "./ui";
-import { getStatsPerImage } from "@/features/tile-draw-stubs";
+import { getStatsPerImage } from "@/utils/inject-bridge";
 
 export class GalleryList {
   private storage: GalleryStorage;

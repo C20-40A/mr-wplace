@@ -1,37 +1,19 @@
 /**
- * Content-side wrappers that communicate with inject-side tile-draw
+ * Content ↔ Inject Communication Bridge
  *
- * Architecture:
- * - All overlay layer management happens in inject side (page context)
- * - Content side communicates via postMessage for read operations (stats, pixel color)
- * - Gallery changes are synced via sendGalleryImagesToInject()
+ * This module provides functions to request data from the inject context (page context).
+ * All functions use postMessage for cross-context communication with request/response pattern.
  */
 
 let requestIdCounter = 0;
 const generateRequestId = (): string => `req_${Date.now()}_${++requestIdCounter}`;
 
 /**
- * Legacy stub - no-op
- * Actual removal handled by inject side via sendGalleryImagesToInject()
- */
-export const removePreparedOverlayImageByKey = async (_imageKey: string): Promise<void> => {
-  // No-op: inject side handles this automatically
-};
-
-/**
- * Legacy stub - no-op
- * Actual addition handled by inject side via sendGalleryImagesToInject()
- */
-export const addImageToOverlayLayers = async (
-  _source: any,
-  _coords: any,
-  _imageKey: string
-): Promise<void> => {
-  // No-op: inject side handles this automatically
-};
-
-/**
  * Request aggregated color stats from inject side
+ * Used by: paint-stats, color-filter
+ *
+ * @param imageKeys - Array of image keys to get stats for
+ * @returns Promise resolving to color stats (RGB key → matched/total counts)
  */
 export const getAggregatedColorStats = async (
   imageKeys: string[]
@@ -72,6 +54,11 @@ export const getAggregatedColorStats = async (
 
 /**
  * Request overlay pixel color from inject side
+ * Used by: auto-spoit (pixel color detection)
+ *
+ * @param lat - Latitude coordinate
+ * @param lng - Longitude coordinate
+ * @returns Promise resolving to RGBA color or null if no overlay at position
  */
 export const getOverlayPixelColor = async (
   lat: number,
@@ -114,6 +101,9 @@ export const getOverlayPixelColor = async (
 
 /**
  * Request per-tile color stats from inject side
+ * Returns statistics organized by image key and tile key
+ *
+ * @returns Promise resolving to nested stats structure
  */
 export const getPerTileColorStatsAll = async (): Promise<
   Record<string, Record<string, { matched: Record<string, number>; total: Record<string, number> }>>
@@ -153,7 +143,10 @@ export const getPerTileColorStatsAll = async (): Promise<
 
 /**
  * Request per-image aggregated stats from inject side
- * Returns matched/total counts per image key
+ * Used by: gallery list (progress bars)
+ *
+ * @param imageKeys - Array of image keys to get stats for
+ * @returns Promise resolving to stats per image (image key → color stats)
  */
 export const getStatsPerImage = async (
   imageKeys: string[]
@@ -190,17 +183,4 @@ export const getStatsPerImage = async (
       resolve({});
     }, 5000);
   });
-};
-
-/**
- * Legacy stubs - no-op
- * These functions are no longer used but kept for backward compatibility
- */
-export const getPerTileColorStats = (_imageKey: string): null => null;
-export const setPerTileColorStats = (_imageKey: string, _tileStatsMap: any): void => {
-  // No-op: stats are managed by inject side
-};
-export const toggleDrawEnabled = (_imageKey: string): boolean => {
-  // No-op: managed by gallery storage
-  return false;
 };
