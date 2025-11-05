@@ -14,3 +14,4 @@ export {
 } from "./states-inject";
 
 export { getAggregatedColorStats } from "./utils/getAggregatedColorStats";
+export { getStatsPerImage } from "./utils/getStatsPerImage";

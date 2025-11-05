@@ -1,7 +1,7 @@
 import { GalleryItem } from "../../storage";
 import { ImageGridComponent, ImageItem } from "./components/ImageGridComponent";
 import { gotoMapPosition, toggleDrawState } from "../../common-actions";
-import { t } from "../../../../i18n/manager";
+import { t } from "@/i18n/manager";
 
 export class GalleryListUI {
   private modal: HTMLDialogElement | null = null;
@@ -48,9 +48,8 @@ export class GalleryListUI {
     // GalleryItemをImageItemに変換
     const imageItems: ImageItem[] = items.map((item) => {
       // timestampが無効な場合は現在時刻を使用
-      const timestamp = item.timestamp && !isNaN(item.timestamp)
-        ? item.timestamp
-        : Date.now();
+      const timestamp =
+        item.timestamp && !isNaN(item.timestamp) ? item.timestamp : Date.now();
 
       return {
         key: item.key,

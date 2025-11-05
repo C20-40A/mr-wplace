@@ -1,6 +1,7 @@
 import { GalleryItem, GalleryStorage } from "../../storage";
 import { GalleryRouter } from "../../router";
 import { GalleryListUI } from "./ui";
+import { getStatsPerImage } from "@/features/tile-draw-stubs";
 
 export class GalleryList {
   private storage: GalleryStorage;
@@ -21,6 +22,24 @@ export class GalleryList {
   ): Promise<void> {
     this.onDrawToggleCallback = onDrawToggle;
     const items = await this.storage.getAll();
+
+    // 描画位置がある画像の統計を取得
+    const itemsWithDrawPosition = items.filter((item) => item.drawPosition);
+    if (itemsWithDrawPosition.length > 0) {
+      const imageKeys = itemsWithDrawPosition.map((item) => item.key);
+      const statsPerImage = await getStatsPerImage(imageKeys);
+
+      console.log("🧑‍🎨 : Fetched stats for gallery images:", statsPerImage);
+
+      // 統計データを各アイテムに設定
+      for (const item of itemsWithDrawPosition) {
+        const stats = statsPerImage[item.key];
+        if (stats) {
+          item.matchedColorStats = stats.matched;
+          item.totalColorStats = stats.total;
+        }
+      }
+    }
 
     this.ui.render(
       items,

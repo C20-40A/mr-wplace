@@ -152,6 +152,47 @@ export const getPerTileColorStatsAll = async (): Promise<
 };
 
 /**
+ * Request per-image aggregated stats from inject side
+ * Returns matched/total counts per image key
+ */
+export const getStatsPerImage = async (
+  imageKeys: string[]
+): Promise<Record<string, { matched: Record<string, number>; total: Record<string, number> }>> => {
+  const requestId = generateRequestId();
+
+  return new Promise((resolve) => {
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-response-image-stats" &&
+        event.data.requestId === requestId
+      ) {
+        window.removeEventListener("message", handler);
+        resolve(event.data.stats);
+      }
+    };
+
+    window.addEventListener("message", handler);
+
+    // Send request to inject
+    window.postMessage(
+      {
+        source: "mr-wplace-request-image-stats",
+        imageKeys,
+        requestId,
+      },
+      "*"
+    );
+
+    // Timeout after 5 seconds
+    setTimeout(() => {
+      window.removeEventListener("message", handler);
+      console.warn("🧑‍🎨 : Image stats request timed out");
+      resolve({});
+    }, 5000);
+  });
+};
+
+/**
  * Legacy stubs - no-op
  * These functions are no longer used but kept for backward compatibility
  */
