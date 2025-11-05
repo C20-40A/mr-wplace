@@ -89,8 +89,24 @@ const createMapPinButtons = (container: Element): void => {
 // Initialization
 // ========================================
 
-const init = (): void => {
+const init = async (): Promise<void> => {
+  const { TextLayerStorage } = await import("./text-layer-storage");
+  const { sendTextLayersToInject } = await import("@/content");
+
   textDrawUI = new TextDrawUI();
+
+  // Load existing text layers from storage
+  const textLayerStorage = new TextLayerStorage();
+  const textLayers = await textLayerStorage.getAll();
+  textInstances = textLayers.map((layer) => ({
+    key: layer.key,
+    text: layer.text,
+    font: layer.font,
+    coords: layer.coords,
+  }));
+
+  // Send text layers to inject side
+  await sendTextLayersToInject();
 
   const buttonConfigs: ElementConfig[] = [
     // 優先: マップピン周辺にボタン配置

@@ -146,6 +146,25 @@ export const sendSnapshotsToInject = async () => {
   console.log(`🧑‍🎨 : Sent ${snapshots.length} snapshots to inject side`);
 };
 
+/**
+ * Send text layers to inject side for overlay rendering
+ */
+export const sendTextLayersToInject = async () => {
+  const { TextLayerStorage } = await import("@/features/text-draw/text-layer-storage");
+  const textLayerStorage = new TextLayerStorage();
+  const textLayers = await textLayerStorage.getAll();
+
+  window.postMessage(
+    {
+      source: "mr-wplace-text-layers",
+      textLayers,
+    },
+    "*"
+  );
+
+  console.log(`🧑‍🎨 : Sent ${textLayers.length} text layers to inject side`);
+};
+
 (async () => {
   try {
     console.log("🧑‍🎨: Starting initialization...");
@@ -258,7 +277,7 @@ export const sendSnapshotsToInject = async () => {
     const tileOverlay = new TileOverlay();
     const tileSnapshot = new TileSnapshot();
     timeTravelAPI.initTimeTravel(); // 2. TimeTravel
-    textDrawAPI.initTextDraw(); // 3. TextDraw
+    await textDrawAPI.initTextDraw(); // 3. TextDraw
     galleryAPI.initGallery();
     await darkThemeAPI.initDarkTheme(); // 5. DarkTheme
     await highContrastAPI.initHighContrast(); // 6. HighContrast
