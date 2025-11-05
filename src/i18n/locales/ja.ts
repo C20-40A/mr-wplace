@@ -107,7 +107,7 @@ export const jaTranslations = {
   delete_image_confirm: "この画像を削除しますか？",
 
   // Drawing/Loading関連
-  drawing_image: "画像を描画中...",
+  drawing_image: "更新中...",
   processing_image: "画像を処理中...",
   waiting_for_update: "更新を待っています...",
 
@@ -261,7 +261,8 @@ export const jaTranslations = {
   tile_y: "タイルY",
   pixel_x: "ピクセルX",
   pixel_y: "ピクセルY",
-  coordinate_input_hint: "座標を入力すると、ギャラリー追加時に自動的にその位置に配置されます",
+  coordinate_input_hint:
+    "座標を入力すると、ギャラリー追加時に自動的にその位置に配置されます",
 
   // Data Saver
   data_saver_on: "データセーバー ON",
