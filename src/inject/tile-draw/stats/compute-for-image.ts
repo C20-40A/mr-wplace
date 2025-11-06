@@ -4,9 +4,9 @@ import { blobToPixels } from "../../../utils/pixel-converters";
 import {
   isSameColor,
   colorToKey,
-} from "./color-processing";
-import { processCpuColorFilter } from "./cpu-color-filter";
-import { convertImageBitmapToUint8ClampedArray } from "./pixel-processing";
+} from "../filters/color-processing";
+import { processCpuColorFilter } from "../filters/cpu-filter";
+import { convertImageBitmapToUint8ClampedArray } from "../image-processing/pixel-processing";
 
 /**
  * 画像の全タイルの統計を事前計算する

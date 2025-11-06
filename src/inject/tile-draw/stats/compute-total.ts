@@ -1,4 +1,4 @@
-import { colorToKey } from "./color-processing";
+import { colorToKey } from "../filters/color-processing";
 
 /**
  * 画像から total 統計のみを計算（位置なし、背景との比較なし）

@@ -1,10 +1,10 @@
 import { WplaceCoords } from "../constants";
 
 /**
- * Inject-safe version of splitImageOnTiles
- * Uses native Canvas API instead of WASM-based image-bitmap-compat
+ * Split image into tile-aligned ImageBitmaps
+ * Uses native Canvas API for inject context compatibility
  */
-export const splitImageOnTilesInject = async ({
+export const splitImageOnTiles = async ({
   source,
   coords,
   tileSize,

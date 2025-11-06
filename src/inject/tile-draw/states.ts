@@ -1,11 +1,11 @@
-import { splitImageOnTilesInject } from "./utils/splitImageOnTiles-inject";
+import { splitImageOnTiles } from "./image-processing/split-tiles";
 import { TILE_DRAW_CONSTANTS, WplaceCoords } from "./constants";
 import type { TileDrawInstance, ColorStats } from "./types";
-import { computeStatsForImage } from "./utils/computeStatsForImage";
+import { computeStatsForImage } from "./stats/compute-for-image";
 
 /**
- * Inject-safe version of states.ts
- * Uses Canvas API instead of WASM-based image-bitmap-compat
+ * Tile-draw state management
+ * Handles overlay layers and statistics in inject context
  */
 
 /**
@@ -43,7 +43,7 @@ export const addImageToOverlayLayers = async (
   removePreparedOverlayImageByKey(imageKey);
 
   const { preparedOverlayImages: preparedOverlayImage } =
-    await splitImageOnTilesInject({
+    await splitImageOnTiles({
       source,
       coords,
       tileSize: TILE_DRAW_CONSTANTS.TILE_SIZE,

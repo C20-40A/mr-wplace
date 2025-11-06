@@ -1,3 +1,99 @@
+## Inject Directory Structure Refactoring (2025-11-07)
+
+### Background
+
+After the tile-draw migration (2025-11-01), the inject directory had grown organically and needed structural cleanup:
+- `message-handler.ts` was 593 lines with mixed responsibilities
+- `tile-draw/utils/` had unclear organization (stats, filters, image processing mixed together)
+- Naming inconsistencies (`-inject` suffix on some files)
+
+### Refactoring Goals
+
+1. **Separation of concerns**: Split message-handler into focused modules
+2. **Clear directory structure**: Group related files by functionality
+3. **Consistent naming**: Remove legacy `-inject` suffixes
+4. **Code reusability**: Extract common patterns (image loading)
+
+### New Directory Structure
+
+```
+src/inject/
+├── index.ts                    # Entry point
+├── message-handler.ts          # Routing only (159 lines, down from 593)
+├── handlers/                   # Message handlers by category
+│   ├── overlay-handlers.ts     # Gallery, snapshots, text layers
+│   ├── state-handlers.ts       # Theme, data saver, compute device, color filter
+│   └── request-handlers.ts     # Stats, pixel color requests
+├── tile-draw/
+│   ├── states.ts               # Renamed from states-inject.ts
+│   ├── tile-overlay-renderer.ts
+│   ├── stats/                  # Statistics computation
+│   │   ├── compute-for-image.ts
+│   │   ├── compute-total.ts
+│   │   ├── get-per-image.ts
+│   │   └── get-aggregated.ts
+│   ├── filters/                # Color filtering
+│   │   ├── gpu-filter.ts
+│   │   ├── cpu-filter.ts
+│   │   └── color-processing.ts
+│   └── image-processing/       # Image manipulation
+│       ├── split-tiles.ts      # Renamed from splitImageOnTiles-inject.ts
+│       └── pixel-processing.ts
+├── utils/                      # Inject-wide utilities
+│   └── image-loader.ts         # Common image loading logic
+├── theme-manager.ts
+├── map-instance.ts
+├── fetch-interceptor.ts
+└── types.ts
+```
+
+### Key Changes
+
+1. **Message Handler Simplification**:
+   - Reduced from 593 to 159 lines (73% reduction)
+   - Now only handles routing, delegates to specialized handlers
+   - Clear separation: overlay updates, state updates, requests
+
+2. **Handler Modules**:
+   - `overlay-handlers.ts`: Gallery, snapshots, text layers (all share similar image loading pattern)
+   - `state-handlers.ts`: Theme, data saver, compute device, color filter
+   - `request-handlers.ts`: Stats requests, pixel color requests
+
+3. **Tile-draw Reorganization**:
+   - `stats/`: All statistics computation (4 files)
+   - `filters/`: All color filtering (GPU, CPU, color processing)
+   - `image-processing/`: Image manipulation utilities
+
+4. **Common Utilities**:
+   - `utils/image-loader.ts`: Extracts repeated image loading pattern (dataUrl → Image → ImageBitmap)
+   - Used by all overlay handlers
+
+5. **Naming Cleanup**:
+   - `states-inject.ts` → `states.ts`
+   - `splitImageOnTiles-inject.ts` → `split-tiles.ts`
+   - Removed legacy `-inject` suffixes (all files are in inject context now)
+
+### Build Results
+
+```
+dist/content.js  343.1kb  (was 333KB, +10KB due to added utilities)
+dist/popup.js     38.9kb  (unchanged)
+dist/inject.js    29.3kb  (was 22.9KB, +6.4KB due to separated handlers)
+```
+
+Total size increase: ~16KB, acceptable for improved maintainability.
+
+### Benefits
+
+✅ **Improved maintainability**: Each file has clear, focused responsibility
+✅ **Better discoverability**: Related files grouped by functionality
+✅ **Code reuse**: Common image loading pattern extracted
+✅ **Easier testing**: Smaller, focused modules
+✅ **Clearer naming**: No more confusing `-inject` suffixes
+✅ **Scalability**: Easy to add new handlers or utilities
+
+---
+
 ## tile-draw の inject 側への完全移行完了 (2025-11-01)
 
 ### 背景

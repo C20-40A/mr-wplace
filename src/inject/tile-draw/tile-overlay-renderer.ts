@@ -5,13 +5,13 @@ import {
   getAuxiliaryColor,
   isSameColor,
   colorToKey,
-} from "./utils/color-processing";
+} from "./filters/color-processing";
 import {
   convertImageBitmapToUint8ClampedArray,
   getGridPosition,
-} from "./utils/pixel-processing";
-import { processGpuColorFilter } from "./utils/gpu-color-filter";
-import { processCpuColorFilter } from "./utils/cpu-color-filter";
+} from "./image-processing/pixel-processing";
+import { processGpuColorFilter } from "./filters/gpu-filter";
+import { processCpuColorFilter } from "./filters/cpu-filter";
 import { blobToPixels } from "../../utils/pixel-converters";
 // Inject-safe alternatives to WASM-based image-bitmap-compat
 const createImageBitmapFromImageData = async (imageData: ImageData): Promise<ImageBitmap> => {
@@ -21,7 +21,7 @@ const createImageBitmapFromImageData = async (imageData: ImageData): Promise<Ima
 const createImageBitmapFromCanvas = async (canvas: HTMLCanvasElement): Promise<ImageBitmap> => {
   return await createImageBitmap(canvas);
 };
-import { overlayLayers, perTileColorStats } from "./states-inject";
+import { overlayLayers, perTileColorStats } from "./states";
 
 /**
  * Phase 1: カラーフィルター適用（x1サイズ）
