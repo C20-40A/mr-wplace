@@ -80,7 +80,7 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
   container.appendChild(moveContainer);
 
   // D-pad追加
-  const dPadContainer = createDPad(item);
+  const dPadContainer = createDPad(item, onRefreshOrder);
   buttonArea.insertBefore(dPadContainer, buttonArea.firstChild);
 
   return container;
@@ -211,7 +211,10 @@ const createButtonArea = (
 };
 
 // D-pad作成
-const createDPad = (item: any): HTMLElement => {
+const createDPad = (
+  item: any,
+  onRefreshOrder: () => Promise<void>
+): HTMLElement => {
   const dPadContainer = document.createElement("div");
   dPadContainer.style.cssText = `
     display: grid;
@@ -251,6 +254,7 @@ const createDPad = (item: any): HTMLElement => {
     };
     btn.onclick = async () => {
       await moveImage(item, direction);
+      await onRefreshOrder();
     };
     return btn;
   };
