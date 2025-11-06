@@ -95,6 +95,10 @@ export const esTranslations = {
   file_select: "Seleccionar Archivo",
   image_editor: "Editor de Imágenes",
   image_detail: "Detalle de Imagen",
+  title: "Título",
+  edit_image_title: "Editar Título de Imagen",
+  image_title_placeholder: "Nombre de la imagen (opcional)",
+  title_updated: "Título actualizado",
 
   // Drawing
   draw_enabled: "Dibujo ON",

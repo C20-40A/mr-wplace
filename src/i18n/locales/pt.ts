@@ -94,6 +94,10 @@ export const ptTranslations = {
   file_select: "Selecionar Arquivo",
   image_editor: "Editor de Imagens",
   image_detail: "Detalhe da Imagem",
+  title: "Título",
+  edit_image_title: "Editar Título da Imagem",
+  image_title_placeholder: "Nome da imagem (opcional)",
+  title_updated: "Título atualizado",
 
   // Drawing
   draw_enabled: "Desenho ON",

@@ -4,6 +4,7 @@ import { ImageInspector } from "../../../../components/image-inspector";
 import { gotoMapPosition, toggleDrawState } from "../../common-actions";
 import { t } from "../../../../i18n/manager";
 import { Toast } from "../../../../components/toast";
+import { showNameInputModal } from "@/utils/modal";
 
 export class GalleryImageDetail {
   private currentItem: GalleryItem | null = null;
@@ -39,23 +40,27 @@ export class GalleryImageDetail {
               item.drawEnabled ? t`${"draw_enabled"}` : t`${"draw_disabled"}`
             }
           </button>
-          
+
           <button id="goto-map-btn" class="btn btn-sm btn-primary" ${
             !item.drawPosition ? "disabled" : ""
           }>
             📍 ${t`${"goto_map"}`}
           </button>
-          
+
+          <button id="title-edit-btn" class="btn btn-sm btn-primary">
+            📝 ${t`${"title"}`}
+          </button>
+
           <button id="edit-btn" class="btn btn-sm btn-primary">
             ✏️ ${t`${"edit"}`}
           </button>
-          
+
           <button id="share-btn" class="btn btn-sm btn-primary" ${
             !item.drawPosition ? 'style="display: none;"' : ""
           }>
             📤 ${t`${"share"}`}
           </button>
-          
+
           <button id="delete-btn" class="btn btn-sm btn-error">
             🗑 ${t`${"delete"}`}
           </button>
@@ -155,6 +160,29 @@ export class GalleryImageDetail {
       if (!this.currentItem) return;
 
       await gotoMapPosition(this.currentItem);
+    });
+
+    // タイトル編集ボタン
+    const titleEditBtn = document.getElementById("title-edit-btn");
+    titleEditBtn?.addEventListener("click", async () => {
+      if (!this.currentItem) return;
+
+      const currentTitle = this.currentItem.title || "";
+      const newTitle = await showNameInputModal(
+        t`${"edit_image_title"}`,
+        t`${"image_title_placeholder"}`
+      );
+
+      // キャンセルされた場合はnullが返る
+      if (newTitle === null) return;
+
+      // 新しいタイトルを保存
+      const { GalleryStorage } = await import("../../storage");
+      const storage = new GalleryStorage();
+      await storage.save({ ...this.currentItem, title: newTitle });
+
+      // currentItem更新
+      this.currentItem.title = newTitle;
     });
 
     // 削除ボタン

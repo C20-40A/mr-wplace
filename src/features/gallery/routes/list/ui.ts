@@ -45,6 +45,7 @@ export class GalleryListUI {
       return {
         key: item.key,
         dataUrl: item.dataUrl,
+        title: item.title,
         createdAt: new Date(timestamp).toISOString(),
         drawPosition: item.drawPosition,
         drawEnabled: item.drawEnabled,

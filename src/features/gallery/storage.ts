@@ -9,6 +9,7 @@ export interface DrawPosition {
 }
 
 export interface GalleryItem extends BaseImageItem {
+  title?: string;
   drawPosition?: { TLX: number; TLY: number; PxX: number; PxY: number };
   drawEnabled?: boolean;
   layerOrder?: number;
