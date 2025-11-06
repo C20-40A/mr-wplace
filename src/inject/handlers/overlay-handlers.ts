@@ -1,4 +1,4 @@
-import { addImageToOverlayLayers } from "../tile-draw";
+import { addImageToOverlayLayers, removePreparedOverlayImageByKey } from "../tile-draw";
 import { loadImageBitmap } from "../utils/image-loader";
 
 /**
@@ -17,6 +17,13 @@ export const handleGalleryImages = async (data: {
     window.mrWplaceGalleryImages = new Map();
   }
 
+  // Remove previously tracked gallery images from overlay layers
+  if (window.mrWplaceGalleryImageKeys) {
+    for (const key of window.mrWplaceGalleryImageKeys) {
+      removePreparedOverlayImageByKey(key);
+    }
+  }
+
   // Clear and update gallery images
   window.mrWplaceGalleryImages.clear();
   for (const img of data.images) {
@@ -29,6 +36,7 @@ export const handleGalleryImages = async (data: {
 
   let successCount = 0;
   let failCount = 0;
+  const imageKeys: string[] = [];
 
   for (const img of sortedImages) {
     try {
@@ -40,12 +48,16 @@ export const handleGalleryImages = async (data: {
         img.key
       );
 
+      imageKeys.push(img.key);
       successCount++;
     } catch (error) {
       failCount++;
       console.error(`🧑‍🎨 : Failed to add image ${img.key} to overlay layers:`, error);
     }
   }
+
+  // Save current image keys for next update
+  window.mrWplaceGalleryImageKeys = new Set(imageKeys);
 
   console.log(`🧑‍🎨 : Gallery images sync complete - success: ${successCount}, failed: ${failCount}`);
 
@@ -77,6 +89,13 @@ export const handleSnapshotsUpdate = async (data: {
     window.mrWplaceSnapshots = new Map();
   }
 
+  // Remove previously tracked snapshots from overlay layers
+  if (window.mrWplaceSnapshotKeys) {
+    for (const key of window.mrWplaceSnapshotKeys) {
+      removePreparedOverlayImageByKey(key);
+    }
+  }
+
   // Clear and update snapshots
   window.mrWplaceSnapshots.clear();
   for (const snapshot of data.snapshots) {
@@ -84,6 +103,7 @@ export const handleSnapshotsUpdate = async (data: {
   }
 
   // Add each snapshot to overlay layers
+  const snapshotKeys: string[] = [];
   for (const snapshot of data.snapshots) {
     try {
       const bitmap = await loadImageBitmap(snapshot.dataUrl, snapshot.key);
@@ -96,11 +116,15 @@ export const handleSnapshotsUpdate = async (data: {
         { skip: true } // Don't compute stats for snapshots
       );
 
+      snapshotKeys.push(snapshot.key);
       console.log(`🧑‍🎨 : Added snapshot ${snapshot.key} to overlay at (${snapshot.tileX}, ${snapshot.tileY})`);
     } catch (error) {
       console.error(`🧑‍🎨 : Failed to add snapshot ${snapshot.key} to overlay layers:`, error);
     }
   }
+
+  // Save current snapshot keys for next update
+  window.mrWplaceSnapshotKeys = new Set(snapshotKeys);
 
   // Clear tile cache to force re-rendering with new snapshots
   if (window.mrWplaceDataSaver?.tileCache) {
@@ -132,6 +156,13 @@ export const handleTextLayersUpdate = async (data: {
     window.mrWplaceTextLayers = new Map();
   }
 
+  // Remove previously tracked text layers from overlay layers
+  if (window.mrWplaceTextLayerKeys) {
+    for (const key of window.mrWplaceTextLayerKeys) {
+      removePreparedOverlayImageByKey(key);
+    }
+  }
+
   // Clear and update text layers
   window.mrWplaceTextLayers.clear();
   for (const textLayer of data.textLayers) {
@@ -139,6 +170,7 @@ export const handleTextLayersUpdate = async (data: {
   }
 
   // Add each text layer to overlay layers
+  const textLayerKeys: string[] = [];
   for (const textLayer of data.textLayers) {
     try {
       const bitmap = await loadImageBitmap(textLayer.dataUrl, textLayer.key);
@@ -151,11 +183,15 @@ export const handleTextLayersUpdate = async (data: {
         { skip: true } // Don't compute stats for text layers
       );
 
+      textLayerKeys.push(textLayer.key);
       console.log(`🧑‍🎨 : Added text layer ${textLayer.key} to overlay at (${textLayer.coords.TLX}, ${textLayer.coords.TLY})`);
     } catch (error) {
       console.error(`🧑‍🎨 : Failed to add text layer ${textLayer.key} to overlay layers:`, error);
     }
   }
+
+  // Save current text layer keys for next update
+  window.mrWplaceTextLayerKeys = new Set(textLayerKeys);
 
   // Clear tile cache to force re-rendering with new text layers
   if (window.mrWplaceDataSaver?.tileCache) {

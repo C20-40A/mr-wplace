@@ -60,8 +60,11 @@ export interface WindowWithWplace extends Window {
   tileProcessingQueue?: TileProcessingQueue;
   mrWplaceDataSaver?: DataSaverState;
   mrWplaceGalleryImages?: Map<string, GalleryImage>;
+  mrWplaceGalleryImageKeys?: Set<string>;
   mrWplaceSnapshots?: Map<string, SnapshotImage>;
+  mrWplaceSnapshotKeys?: Set<string>;
   mrWplaceTextLayers?: Map<string, TextLayer>;
+  mrWplaceTextLayerKeys?: Set<string>;
   mrWplace?: MrWplaceGlobal;
   mrWplaceComputeDevice?: "gpu" | "cpu";
 }
@@ -72,8 +75,11 @@ declare global {
     tileProcessingQueue?: TileProcessingQueue;
     mrWplaceDataSaver?: DataSaverState;
     mrWplaceGalleryImages?: Map<string, GalleryImage>;
+    mrWplaceGalleryImageKeys?: Set<string>;
     mrWplaceSnapshots?: Map<string, SnapshotImage>;
+    mrWplaceSnapshotKeys?: Set<string>;
     mrWplaceTextLayers?: Map<string, TextLayer>;
+    mrWplaceTextLayerKeys?: Set<string>;
     mrWplace?: MrWplaceGlobal;
     mrWplaceComputeDevice?: "gpu" | "cpu";
   }
