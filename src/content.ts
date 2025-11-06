@@ -147,6 +147,81 @@ export const sendSnapshotsToInject = async () => {
 };
 
 /**
+ * Handle stats computation notification from inject side
+ * Save computed stats to storage
+ */
+const handleStatsComputed = async (
+  imageKey: string,
+  tileStatsMap: Record<string, { matched: Record<string, number>; total: Record<string, number> }>
+) => {
+  try {
+    const { GalleryStorage } = await import("@/features/gallery/storage");
+    const galleryStorage = new GalleryStorage();
+
+    // Convert object back to Map
+    const statsMap = new Map<string, { matched: Map<string, number>; total: Map<string, number> }>();
+    for (const [tileKey, stats] of Object.entries(tileStatsMap)) {
+      statsMap.set(tileKey, {
+        matched: new Map(Object.entries(stats.matched).map(([k, v]) => [k, v])),
+        total: new Map(Object.entries(stats.total).map(([k, v]) => [k, v])),
+      });
+    }
+
+    await galleryStorage.updateTileColorStats(imageKey, statsMap);
+    console.log(`🧑‍🎨 : Saved stats for ${imageKey} to storage`);
+  } catch (error) {
+    console.error(`🧑‍🎨 : Failed to save stats for ${imageKey}:`, error);
+  }
+};
+
+/**
+ * Handle total stats computation notification from inject side
+ * Save total stats only (for images without position)
+ */
+const handleTotalStatsComputed = async (
+  imageKey: string,
+  totalColorStats: Record<string, number>
+) => {
+  try {
+    const { GalleryStorage } = await import("@/features/gallery/storage");
+    const galleryStorage = new GalleryStorage();
+
+    const image = await galleryStorage.get(imageKey);
+    if (!image) {
+      console.warn(`🧑‍🎨 : Image not found for stats update: ${imageKey}`);
+      return;
+    }
+
+    // Save total stats only
+    await galleryStorage.save({
+      ...image,
+      totalColorStats,
+    });
+
+    console.log(`🧑‍🎨 : Saved total stats for ${imageKey} to storage`);
+  } catch (error) {
+    console.error(`🧑‍🎨 : Failed to save total stats for ${imageKey}:`, error);
+  }
+};
+
+/**
+ * Request total stats computation for a newly saved image
+ * Called after image is saved to storage
+ */
+export const requestTotalStatsComputation = (imageKey: string, dataUrl: string) => {
+  window.postMessage(
+    {
+      source: "mr-wplace-compute-total-stats",
+      imageKey,
+      dataUrl,
+    },
+    "*"
+  );
+
+  console.log(`🧑‍🎨 : Requested total stats computation for ${imageKey}`);
+};
+
+/**
  * Send text layers to inject side for overlay rendering
  */
 export const sendTextLayersToInject = async () => {
@@ -214,6 +289,18 @@ export const sendTextLayersToInject = async () => {
         const userData = event.data.userData as WPlaceUserData;
 
         userStatus.updateFromUserData(userData);
+      }
+
+      // Listen for stats computation from inject.js
+      if (event.data.source === "mr-wplace-stats-computed") {
+        const { imageKey, tileStatsMap } = event.data;
+        await handleStatsComputed(imageKey, tileStatsMap);
+      }
+
+      // Listen for total stats computation from inject.js
+      if (event.data.source === "mr-wplace-total-stats-computed") {
+        const { imageKey, totalColorStats } = event.data;
+        await handleTotalStatsComputed(imageKey, totalColorStats);
       }
 
       // Listen for pixel click from inject.js

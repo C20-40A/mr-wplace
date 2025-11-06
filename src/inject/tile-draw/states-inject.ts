@@ -37,7 +37,8 @@ export const removePreparedOverlayImageByKey = (imageKey: string): void => {
 export const addImageToOverlayLayers = async (
   source: ImageBitmap | HTMLImageElement,
   coords: WplaceCoords,
-  imageKey: string
+  imageKey: string,
+  options: { force?: boolean; skip?: boolean } = {}
 ): Promise<void> => {
   removePreparedOverlayImageByKey(imageKey);
 
@@ -57,7 +58,9 @@ export const addImageToOverlayLayers = async (
 
   // バックグラウンドで統計を計算
   // 非同期で実行し、完了を待たない
-  computeStatsInBackground(imageKey, preparedOverlayImage);
+  if (!options.skip) {
+    computeStatsInBackground(imageKey, preparedOverlayImage, options.force);
+  }
 };
 
 /**
@@ -66,12 +69,19 @@ export const addImageToOverlayLayers = async (
  */
 const computeStatsInBackground = (
   imageKey: string,
-  tiles: Record<string, ImageBitmap>
+  tiles: Record<string, ImageBitmap>,
+  force = false
 ): void => {
   // data saver ON のときは統計計算をスキップ
   // （タイルがキャッシュにない場合、fetchが失敗するため）
   if (window.mrWplaceDataSaver?.enabled) {
     console.log(`🧑‍🎨 : Skipping background stats computation (data saver is ON)`);
+    return;
+  }
+
+  // 既に統計が存在する場合はスキップ（force=true の場合は再計算）
+  if (!force && perTileColorStats.has(imageKey)) {
+    console.log(`🧑‍🎨 : Stats already exist for ${imageKey}, skipping background computation`);
     return;
   }
 
@@ -88,6 +98,16 @@ const computeStatsInBackground = (
         // 統計をグローバルマップに保存
         perTileColorStats.set(imageKey, tileStatsMap);
         console.log(`🧑‍🎨 : Background stats computation complete for ${imageKey}`);
+
+        // content側に統計を通知（storageに保存するため）
+        window.postMessage(
+          {
+            source: "mr-wplace-stats-computed",
+            imageKey,
+            tileStatsMap: convertStatsMapToObject(tileStatsMap),
+          },
+          "*"
+        );
       })
       .catch((error) => {
         // エラーはログに出すが、処理は継続
@@ -102,4 +122,22 @@ export const toggleDrawEnabled = (imageKey: string): boolean => {
 
   instance.drawEnabled = !instance.drawEnabled;
   return instance.drawEnabled;
+};
+
+/**
+ * Convert ColorStats Map to plain object for postMessage serialization
+ */
+const convertStatsMapToObject = (
+  tileStatsMap: Map<string, ColorStats>
+): Record<string, { matched: Record<string, number>; total: Record<string, number> }> => {
+  const result: Record<string, { matched: Record<string, number>; total: Record<string, number> }> = {};
+
+  for (const [tileKey, stats] of tileStatsMap.entries()) {
+    result[tileKey] = {
+      matched: Object.fromEntries(stats.matched),
+      total: Object.fromEntries(stats.total),
+    };
+  }
+
+  return result;
 };
