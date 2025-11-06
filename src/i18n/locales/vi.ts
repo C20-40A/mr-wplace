@@ -64,6 +64,7 @@ export const viTranslations = {
   drag_drop_or_click: "Kéo & thả hoặc nhấp để chọn hình ảnh",
   clear_image: "Xóa hình ảnh",
   original_image: "Hình ảnh gốc",
+  click_or_drop_to_change: "Nhấp hoặc thả để thay đổi",
   current_image: "Hình ảnh hiện tại",
   reset_edit: "Đặt lại chỉnh sửa",
   reset_viewport: "Đặt lại chế độ xem",

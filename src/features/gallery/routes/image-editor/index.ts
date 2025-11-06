@@ -31,6 +31,7 @@ export class GalleryImageEditor {
     // コールバック設定
     const callbacks: ImageEditorCallbacks = {
       onFileHandle: (file) => this.controller?.handleFile(file),
+      onReplaceImage: (file) => this.controller?.replaceImage(file),
       onScaleChange: (scale) => this.controller?.onScaleChange(scale),
       onBrightnessChange: (value) => this.controller?.onBrightnessChange(value),
       onContrastChange: (value) => this.controller?.onContrastChange(value),

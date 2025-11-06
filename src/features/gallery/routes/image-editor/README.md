@@ -80,32 +80,40 @@ drawPosition: DrawPosition | null
 ### 公開メソッド
 
 ```typescript
-handleFile(file)              // file-handler使用
+handleFile(file)              // 初期読込: 調整パラメータリセット
+replaceImage(file)            // 画像置換: 調整パラメータ保持（2025-11-07追加）
 onScaleChange(scale)          // canvas-processor使用
 onBrightnessChange(value)
 onContrastChange(value)
 onSaturationChange(value)
+onDitheringChange(enabled)
+onDitheringThresholdChange(threshold)
+onGpuToggle(enabled)
 onColorSelectionChange(colorIds)
 clearImage()
 saveToGallery()               // file-handler使用
 downloadImage()               // file-handler使用
 initColorPalette(container)
 updateColorPaletteContainer(isMobile)
+loadExistingImage(item)       // ギャラリーからの編集
 ```
 
 ### 内部メソッド
 
 ```typescript
-displayImage(imageSrc)           // ImageInspector初期化
+displayImage(imageSrc)           // 初期表示: ImageInspector初期化、パラメータリセット
+replaceImageDisplay(imageSrc)    // 画像置換: パラメータ保持、再描画のみ（2025-11-07追加）
 updateOriginalImageDisplay()     // 小画像拡大表示制御
 updateScaledImage()              // canvas-processor統合処理呼出
 saveCanvasToGallery(blob)        // GalleryStorage保存+座標付与
+updateCoordinateInputs()         // 座標UI自動入力
+updateSaveButtonLabel()          // 保存/更新ボタンラベル切替
 ```
 
 ### 処理フロー
 
 ```
-handleFile()
+handleFile()  // 初期読込
   → readFileAsDataUrl()
   → resizeImageIfNeeded()
   → displayImage()
@@ -114,6 +122,14 @@ handleFile()
     → initColorPalette()
     → updateScaledImage()
       → createProcessedCanvas()  // canvas-processor
+
+replaceImage()  // 画像置換（2025-11-07追加）
+  → readFileAsDataUrl()
+  → resizeImageIfNeeded()
+  → replaceImageDisplay()  // パラメータ保持
+    → updateOriginalImageDisplay()
+    → updateScaledImage()  // 既存パラメータで再描画
+      → createProcessedCanvas()
 ```
 
 ## ImageEditorUI (ui.ts)
@@ -123,10 +139,14 @@ handleFile()
 ```typescript
 interface ImageEditorCallbacks {
   onFileHandle: (file: File) => void;
+  onReplaceImage: (file: File) => void;  // 画像置き換え（調整パラメータ保持）
   onScaleChange: (scale: number) => void;
   onBrightnessChange: (value: number) => void;
   onContrastChange: (value: number) => void;
   onSaturationChange: (value: number) => void;
+  onDitheringChange: (enabled: boolean) => void;
+  onDitheringThresholdChange: (threshold: number) => void;
+  onGpuToggle: (enabled: boolean) => void;
   onClear: () => void;
   onSaveToGallery: () => void;
   onDownload: () => void;
@@ -138,21 +158,31 @@ interface ImageEditorCallbacks {
 ```
 [PC] 2x2グリッド
 ├─ 左上: 元画像（#wps-original-area）
+│   └─ 画像置き換えゾーン（hover時オーバーレイ表示、クリック/D&D対応）
 ├─ 右上: 処理後画像（#wps-current-area + ImageInspector）
 ├─ 左下: ColorPalette（常時表示）
 └─ 右下: 調整スライダー+ボタン
 
 [Mobile] 縦1カラム
-├─ 元画像
+├─ 元画像（画像置き換え対応）
 ├─ 処理後画像
 ├─ ColorPalette（アコーディオン）
 └─ 調整スライダー+ボタン
 ```
 
+### 画像置き換え機能（2025-11-07追加）
+
+- **元画像エリア**にホバー時、オーバーレイ表示
+- **クリック**でファイル選択ダイアログ表示
+- **ドラッグ&ドロップ**で画像置き換え
+- 置き換え時、現在の調整パラメータ（scale/brightness/contrast/saturation/dithering）を保持
+- `replaceImage()`メソッドで実装（controller.ts:108-145）
+
 ### コンポーネント統合
 
 - **ImageDropzone**: autoHide=true
 - **ImageInspector**: canvas zoom/pan自動付与
+- **画像置き換えゾーン**: #wps-image-replace-zone（ui.ts:408-466）
 
 ## GalleryImageEditor (index.ts)
 

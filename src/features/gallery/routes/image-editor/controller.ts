@@ -105,6 +105,45 @@ export class EditorController {
     this.displayImage(processedDataUrl);
   }
 
+  async replaceImage(file: File): Promise<void> {
+    console.log("🧑‍🎨 : Replacing image with:", file.name);
+
+    // JSON形式チェック
+    if (file.type === "application/json" || file.name.endsWith(".json")) {
+      console.log("🧑‍🎨 : Detected Bluemarble JSON file");
+      const { readFileAsText, parseBluemarbleJson } = await import(
+        "./file-handler"
+      );
+
+      const jsonText = await readFileAsText(file);
+      const { dataUrl, drawPosition } = await parseBluemarbleJson(jsonText);
+
+      this.currentFileName = file.name;
+      this.drawPosition = drawPosition;
+
+      this.replaceImageDisplay(dataUrl);
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) return;
+
+    this.currentFileName = file.name;
+    this.drawPosition = parseDrawPositionFromFileName(file.name);
+
+    const dataUrl = await readFileAsDataUrl(file);
+    const { action, dataUrl: processedDataUrl } = await showImageSizeDialog(
+      dataUrl,
+      this.container
+    );
+
+    if (action === "addToGallery") {
+      await this.saveDirectlyToGallery(processedDataUrl);
+      return;
+    }
+
+    this.replaceImageDisplay(processedDataUrl);
+  }
+
   onScaleChange(scale: number): void {
     this.imageScale = scale;
     this.updateScaledImage();
@@ -481,6 +520,68 @@ export class EditorController {
 
     if (dropzone) dropzone.style.display = "none";
     if (imageDisplay) imageDisplay.style.display = "block";
+  }
+
+  private replaceImageDisplay(imageSrc: string): void {
+    console.log("🧑‍🎨 : Replacing image, keeping current adjustments");
+
+    const originalImage = this.container.querySelector(
+      "#wps-original-image"
+    ) as HTMLImageElement;
+
+    if (originalImage) {
+      originalImage.src = imageSrc;
+      this.originalImage = originalImage;
+
+      originalImage.onload = () => {
+        this.updateOriginalImageDisplay();
+
+        // 画像サイズ入力の更新（元画像サイズ基準）
+        const widthInput = this.container.querySelector(
+          "#wps-width-input"
+        ) as HTMLInputElement;
+        const heightInput = this.container.querySelector(
+          "#wps-height-input"
+        ) as HTMLInputElement;
+        const slider = this.container.querySelector(
+          "#wps-scale-slider"
+        ) as HTMLInputElement;
+
+        if (widthInput && heightInput && this.originalImage) {
+          const originalWidth = this.originalImage.naturalWidth;
+          const originalHeight = this.originalImage.naturalHeight;
+
+          // 現在のscaleを維持してサイズを更新
+          widthInput.value = Math.round(originalWidth * this.imageScale).toString();
+          heightInput.value = Math.round(originalHeight * this.imageScale).toString();
+          widthInput.dataset.originalWidth = originalWidth.toString();
+          widthInput.dataset.originalHeight = originalHeight.toString();
+          widthInput.max = originalWidth.toString();
+          heightInput.max = originalHeight.toString();
+
+          if (slider) {
+            slider.value = this.imageScale.toString();
+          }
+
+          console.log(
+            "🧑‍🎨 : Updated size inputs with scale",
+            this.imageScale,
+            ":",
+            originalWidth,
+            "x",
+            originalHeight
+          );
+        }
+
+        // 座標UIに自動入力
+        this.updateCoordinateInputs();
+
+        // 調整パラメータを保持したまま再描画
+        setTimeout(() => {
+          this.updateScaledImage();
+        }, 50);
+      };
+    }
   }
 
   private updateCoordinateInputs(): void {

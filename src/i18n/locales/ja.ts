@@ -77,6 +77,7 @@ export const jaTranslations = {
   drag_drop_or_click: "画像をドラッグ&ドロップまたはクリックして選択",
   clear_image: "画像をクリア",
   original_image: "元画像",
+  click_or_drop_to_change: "クリックまたはドロップで変更",
   current_image: "現在の画像",
   reset_edit: "編集リセット",
   reset_viewport: "ビューをリセット",
