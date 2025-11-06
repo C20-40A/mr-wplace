@@ -117,6 +117,10 @@ export const jaTranslations = {
   file_select: "ファイルを選択",
   image_editor: "画像を追加",
   image_detail: "画像詳細",
+  title: "タイトル",
+  edit_image_title: "画像タイトルを編集",
+  image_title_placeholder: "画像の名前（任意）",
+  title_updated: "タイトルを更新しました",
 
   // 描画関連
   draw_enabled: "描画ON",

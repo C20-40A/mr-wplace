@@ -117,6 +117,10 @@ export const enTranslations = {
   file_select: "Select File",
   image_editor: "Image Editor",
   image_detail: "Image Detail",
+  title: "Title",
+  edit_image_title: "Edit Image Title",
+  image_title_placeholder: "Image name (optional)",
+  title_updated: "Title updated",
 
   // Drawing
   draw_enabled: "Draw ON",

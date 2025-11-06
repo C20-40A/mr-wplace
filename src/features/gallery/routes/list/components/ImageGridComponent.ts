@@ -124,6 +124,7 @@ export class ImageGridComponent {
       item.hasDrawPosition;
 
     const progressHtml = this.createProgressBarHtml(item);
+    const titleHtml = this.createTitleHtml(item, !!progressHtml);
 
     return `
       <div class="border rounded-lg overflow-hidden shadow relative gallery-item" data-item-key="${
@@ -136,17 +137,13 @@ export class ImageGridComponent {
             : ""
         }
         ${showGotoPositionBtn ? this.createGotoPositionButtonHtml(item) : ""}
-        <img 
-          src="${item.dataUrl}" 
-          alt="Gallery item" 
-          class="w-full h-32 aspect-square object-contain cursor-pointer" 
+        <img
+          src="${item.dataUrl}"
+          alt="Gallery item"
+          class="w-full h-32 aspect-square object-contain cursor-pointer"
           style="image-rendering: pixelated; object-fit: contain;"
         >
-        ${
-          item.title
-            ? `<div class="p-2 text-sm text-gray-600 truncate">${item.title}</div>`
-            : ""
-        }
+        ${titleHtml}
         ${progressHtml}
       </div>
     `;
@@ -331,6 +328,34 @@ export class ImageGridComponent {
         }
       });
     });
+  }
+
+  /**
+   * タイトルのHTMLを生成
+   */
+  private createTitleHtml(item: ImageItem, hasProgress: boolean): string {
+    if (!item.title) return "";
+
+    const bottomPosition = hasProgress ? "3.5rem" : "0.5rem";
+
+    return `
+      <div style="position: absolute; left: 0.5rem; bottom: ${bottomPosition}; z-index: 5;
+                  background-color: rgba(255, 255, 255, 0.95);
+                  backdrop-filter: blur(4px);
+                  padding: 0.25rem 0.5rem;
+                  border-radius: 0.5rem;
+                  font-size: 0.75rem;
+                  color: #1f2937;
+                  font-weight: 500;
+                  max-width: calc(100% - 1rem);
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  white-space: nowrap;
+                  border: 1px solid rgba(0, 0, 0, 0.1);
+                  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);">
+        ${item.title}
+      </div>
+    `;
   }
 
   /**

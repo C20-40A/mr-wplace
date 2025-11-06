@@ -53,22 +53,6 @@ export class GalleryImageSelectorUI {
   }
 
   /**
-   * 座標テキストだけを更新（D-pad移動時）
-   */
-  async updateItemCoordinates(key: string): Promise<void> {
-    const item = await this.galleryStorage.get(key);
-    if (!item?.drawPosition) return;
-
-    const itemEl = this.layerPanel?.querySelector(`[data-key="${key}"]`);
-    if (!itemEl) return;
-
-    const coordsText = itemEl.querySelector('[data-role="coords"]');
-    if (coordsText) {
-      coordsText.textContent = `${item.drawPosition.TLX},${item.drawPosition.TLY} (${item.drawPosition.PxX},${item.drawPosition.PxY})`;
-    }
-  }
-
-  /**
    * ステータスバッジだけを更新（トグル時）
    */
   async updateItemStatus(key: string): Promise<void> {
@@ -162,7 +146,6 @@ export class GalleryImageSelectorUI {
           totalCount: layerImages.length,
           onSelect: this.currentOnSelect!,
           onShowDetail: this.currentOnShowDetail,
-          onUpdateCoords: (key) => this.updateItemCoordinates(key),
           onUpdateStatus: (key) => this.updateItemStatus(key),
           onMoveToUnplaced: (key) => this.moveItemToUnplaced(key),
           onRefreshOrder: () => this.refreshLayerOrder(),
@@ -283,7 +266,6 @@ export class GalleryImageSelectorUI {
           totalCount: layerImages.length,
           onSelect: this.currentOnSelect!,
           onShowDetail: this.currentOnShowDetail,
-          onUpdateCoords: (key) => this.updateItemCoordinates(key),
           onUpdateStatus: (key) => this.updateItemStatus(key),
           onMoveToUnplaced: (key) => this.moveItemToUnplaced(key),
           onRefreshOrder: () => this.refreshLayerOrder(),

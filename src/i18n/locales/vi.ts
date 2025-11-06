@@ -93,6 +93,10 @@ export const viTranslations = {
   file_select: "Chọn tệp",
   image_editor: "Trình chỉnh sửa hình ảnh",
   image_detail: "Chi tiết hình ảnh",
+  title: "Tiêu đề",
+  edit_image_title: "Chỉnh sửa tiêu đề hình ảnh",
+  image_title_placeholder: "Tên hình ảnh (tùy chọn)",
+  title_updated: "Đã cập nhật tiêu đề",
 
   // Drawing
   draw_enabled: "Vẽ BẬT",

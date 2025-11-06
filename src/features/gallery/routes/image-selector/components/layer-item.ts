@@ -13,7 +13,6 @@ interface LayerItemParams {
   totalCount: number;
   onSelect: (item: ImageItem) => void;
   onShowDetail: ((item: ImageItem) => void) | null;
-  onUpdateCoords: (key: string) => Promise<void>;
   onUpdateStatus: (key: string) => Promise<void>;
   onMoveToUnplaced: (key: string) => Promise<void>;
   onRefreshOrder: () => Promise<void>;
@@ -29,7 +28,6 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
     totalCount,
     onSelect,
     onShowDetail,
-    onUpdateCoords,
     onUpdateStatus,
     onMoveToUnplaced,
     onRefreshOrder,
@@ -82,7 +80,7 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
   container.appendChild(moveContainer);
 
   // D-pad追加
-  const dPadContainer = createDPad(item, onUpdateCoords);
+  const dPadContainer = createDPad(item);
   buttonArea.insertBefore(dPadContainer, buttonArea.firstChild);
 
   return container;
@@ -170,15 +168,17 @@ const createInfoContainer = (item: any, index: number): HTMLElement => {
   layerInfo.appendChild(indexLabel);
   layerInfo.appendChild(statusBadge);
 
-  // 座標表示
-  const coordsText = document.createElement("div");
-  coordsText.dataset.role = "coords";
-  coordsText.textContent = `${item.drawPosition.TLX},${item.drawPosition.TLY} (${item.drawPosition.PxX},${item.drawPosition.PxY})`;
-  coordsText.style.cssText =
-    "font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem; font-family: monospace;";
-
   infoContainer.appendChild(layerInfo);
-  infoContainer.appendChild(coordsText);
+
+  // タイトル表示（タイトルがある場合のみ）
+  if (item.title) {
+    const titleText = document.createElement("div");
+    titleText.dataset.role = "title";
+    titleText.textContent = item.title;
+    titleText.style.cssText =
+      "font-size: 0.75rem; color: #4b5563; margin-top: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;";
+    infoContainer.appendChild(titleText);
+  }
 
   return infoContainer;
 };
@@ -211,10 +211,7 @@ const createButtonArea = (
 };
 
 // D-pad作成
-const createDPad = (
-  item: any,
-  onUpdateCoords: (key: string) => Promise<void>
-): HTMLElement => {
+const createDPad = (item: any): HTMLElement => {
   const dPadContainer = document.createElement("div");
   dPadContainer.style.cssText = `
     display: grid;
@@ -254,7 +251,6 @@ const createDPad = (
     };
     btn.onclick = async () => {
       await moveImage(item, direction);
-      await onUpdateCoords(item.key);
     };
     return btn;
   };

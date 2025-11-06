@@ -1,9 +1,9 @@
 import {
   setupElementObserver,
   ElementConfig,
-} from "../../components/element-observer";
+} from "@/components/element-observer";
 import { storage } from "@/utils/browser-api";
-import { Toast } from "../../components/toast";
+import { Toast } from "@/components/toast";
 import {
   findOpacityContainer,
   findPositionModal,
@@ -15,9 +15,9 @@ import {
 } from "@/components/map-pin-button";
 import { BookmarkStorage } from "./storage";
 import { ImportExportService } from "./import-export";
-import { getCurrentPosition, gotoPosition } from "../../utils/position";
-import { showNameInputModal } from "../../utils/modal";
-import { t, formatDateShort } from "../../i18n/manager";
+import { getCurrentPosition, gotoPosition } from "@/utils/position";
+import { showNameInputModal } from "@/utils/modal";
+import { t, formatDateShort } from "@/i18n/manager";
 import {
   createBookmarkButton,
   createBookmarkModal,
@@ -27,7 +27,7 @@ import {
 } from "./ui";
 import { BookmarkRouter } from "./router";
 import { renderCoordinateJumper } from "./routes/coordinate-jumper";
-import type { BookmarkAPI } from "../../core/di";
+import type { BookmarkAPI } from "@/core/di";
 // import { IMG_ICON_BOOKMARK } from "@/assets/iconImages";
 
 const SORT_KEY = "wplace-studio-bookmark-sort";
