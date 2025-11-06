@@ -34,6 +34,14 @@ export const removePreparedOverlayImageByKey = (imageKey: string): void => {
   perTileColorStats.delete(imageKey);
 };
 
+/**
+ * すべてのオーバーレイレイヤーをクリア
+ */
+export const clearAllOverlayLayers = (): void => {
+  overlayLayers = [];
+  perTileColorStats.clear();
+};
+
 export const addImageToOverlayLayers = async (
   source: ImageBitmap | HTMLImageElement,
   coords: WplaceCoords,
