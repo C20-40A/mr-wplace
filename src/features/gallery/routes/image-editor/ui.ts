@@ -3,6 +3,7 @@ import { ImageDropzone } from "../../../../components/image-dropzone";
 
 export interface ImageEditorCallbacks {
   onFileHandle: (file: File) => void;
+  onReplaceImage: (file: File) => void;
   onScaleChange: (scale: number) => void;
   onBrightnessChange: (value: number) => void;
   onContrastChange: (value: number) => void;
@@ -39,6 +40,7 @@ export class ImageEditorUI {
     this.callbacks = callbacks;
     this.createUI();
     this.setupImageDropzone();
+    this.setupImageReplacement();
     this.setupScaleControl();
     this.setupResponsive();
   }
@@ -47,10 +49,6 @@ export class ImageEditorUI {
     if (!this.container) return;
 
     this.container.innerHTML = t`
-      <a href="https://pepoafonso.github.io/color_converter_wplace/index.html" target="_blank" 
-      style="position: absolute; bottom: 0.5rem; right: 0.5rem; z-index: 10; font-size: 1.5rem;"
-      title="Wplace Color Converter">🎨</a>
-      
       <!-- Dropzone -->
       <div id="wps-dropzone-container" style="border: 2px dashed #d1d5db; border-radius: 0.5rem; height: 20rem;"></div>
       
@@ -63,30 +61,30 @@ export class ImageEditorUI {
           <div id="wps-original-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; min-height: 0;">
             <h4 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
               ${"original_image"}
-              <div style="font-size: 0.75rem; color: #4b5563;">
-                <span id="wps-original-size"></span>
-              </div>
+              <span id="wps-original-size" style="font-size: 0.75rem; color: #4b5563;"></span>
             </h4>
-            <div class="flex" style="justify-content: center;">
+            <div id="wps-image-replace-zone" style="position: relative; cursor: pointer; display: flex; justify-content: center;">
               <img id="wps-original-image" style="border: 1px solid #e5e7eb; border-radius: 0.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 100%; height: auto; object-fit: contain; image-rendering: pixelated; image-rendering: crisp-edges;" alt="Original">
+              <div id="wps-replace-overlay" style="position: absolute; inset: 0; background: rgba(0,0,0,0.7); border-radius: 0.25rem; display: none; align-items: center; justify-content: center; color: white; font-size: 0.875rem; text-align: center; padding: 1rem;">
+                📁 ${"click_or_drop_to_change"}
+              </div>
+              <input type="file" id="wps-replace-file-input" accept="image/*,.json" style="display: none;">
             </div>
           </div>
           
           <!-- Current Image Area -->
-          <div id="wps-current-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.1rem; overflow-y: auto; min-height: 0;">
+          <div id="wps-current-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; min-height: 0;">
             <h4 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
               ${"current_image"}
-              <div style="display:flex; font-size: 0.75rem; color: #4b5563;">
-                <span id="wps-current-size"></span>
-              </div>
+              <span id="wps-current-size" style="font-size: 0.75rem; color: #4b5563;"></span>
             </h4>
             <div class="flex" style="justify-content: center; position: relative; width: 100%; height: calc(100% - 2.5rem);">
-              <div style="min-width: 300px; min-height: 300px; max-width: 100%; max-height: 100%; overflow: hidden; position: relative;;">
+              <div style="min-width: 300px; min-height: 300px; max-width: 100%; max-height: 100%; overflow: hidden; position: relative;">
                 <canvas id="wps-scaled-canvas" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></canvas>
               </div>
-              <label style="position: absolute; bottom: 0.5rem; right: 0.5rem; display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; cursor: pointer; background: rgba(255, 255, 255, 0.9); padding: 0.25rem 0.5rem; border-radius: 0.25rem; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+              <label style="position: absolute; bottom: 0.25rem; right: 0.25rem; display: flex; align-items: center; gap: 0.25rem; font-size: 0.7rem; cursor: pointer; background: rgba(255, 255, 255, 0.8); padding: 0.2rem 0.4rem; border-radius: 0.25rem; opacity: 0.6; transition: opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.6'">
                 <input type="checkbox" id="wps-gpu-toggle" class="checkbox checkbox-xs" checked>
-                <span>⚡GPU Mode</span>
+                <span>⚡GPU</span>
               </label>
             </div>
           </div>
@@ -399,6 +397,66 @@ export class ImageEditorUI {
 
   setController(controller: any): void {
     this.controller = controller;
+  }
+
+  private setupImageReplacement(): void {
+    if (!this.container || !this.callbacks) return;
+
+    const replaceZone = this.container.querySelector("#wps-image-replace-zone") as HTMLElement;
+    const overlay = this.container.querySelector("#wps-replace-overlay") as HTMLElement;
+    const fileInput = this.container.querySelector("#wps-replace-file-input") as HTMLInputElement;
+
+    if (!replaceZone || !overlay || !fileInput) return;
+
+    // ホバーでオーバーレイ表示
+    replaceZone.addEventListener("mouseenter", () => {
+      overlay.style.display = "flex";
+    });
+
+    replaceZone.addEventListener("mouseleave", () => {
+      overlay.style.display = "none";
+    });
+
+    // クリックでファイル選択
+    replaceZone.addEventListener("click", () => {
+      fileInput.click();
+    });
+
+    // ファイル選択時
+    fileInput.addEventListener("change", (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        this.callbacks?.onReplaceImage(file);
+        fileInput.value = ""; // リセット
+      }
+    });
+
+    // ドラッグ&ドロップ
+    replaceZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      overlay.style.display = "flex";
+      overlay.style.background = "rgba(59, 130, 246, 0.8)"; // 青色にハイライト
+    });
+
+    replaceZone.addEventListener("dragleave", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      overlay.style.background = "rgba(0,0,0,0.7)";
+      overlay.style.display = "none";
+    });
+
+    replaceZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      overlay.style.display = "none";
+      overlay.style.background = "rgba(0,0,0,0.7)";
+
+      const file = e.dataTransfer?.files?.[0];
+      if (file && (file.type.startsWith("image/") || file.name.endsWith(".json"))) {
+        this.callbacks?.onReplaceImage(file);
+      }
+    });
   }
 
   private setupResponsive(): void {

@@ -77,6 +77,7 @@ export const enTranslations = {
   drag_drop_or_click: "Drag & drop or click to select image",
   clear_image: "Clear image",
   original_image: "Original image",
+  click_or_drop_to_change: "Click or drop to change",
   current_image: "Current image",
   reset_edit: "Reset edit",
   reset_viewport: "Reset View",

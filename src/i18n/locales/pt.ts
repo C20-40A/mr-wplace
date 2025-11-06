@@ -65,6 +65,7 @@ export const ptTranslations = {
   drag_drop_or_click: "Arraste e solte ou clique para selecionar imagem",
   clear_image: "Limpar imagem",
   original_image: "Imagem original",
+  click_or_drop_to_change: "Clique ou solte para alterar",
   current_image: "Imagem atual",
   reset_edit: "Resetar edição",
   reset_viewport: "Resetar Visualização",

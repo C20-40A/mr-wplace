@@ -66,6 +66,7 @@ export const esTranslations = {
   drag_drop_or_click: "Arrastra y suelta o haz clic para seleccionar imagen",
   clear_image: "Limpiar imagen",
   original_image: "Imagen original",
+  click_or_drop_to_change: "Haz clic o suelta para cambiar",
   current_image: "Imagen actual",
   reset_edit: "Restablecer edición",
   reset_viewport: "Restablecer Vista",
