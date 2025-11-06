@@ -51,9 +51,12 @@ const applyColorFilterToOverlay = async (
 /**
  * Phase 2: 背景比較 + 統計計算（x1サイズ）
  * オーバーレイと背景を比較し、色ごとの統計を計算
+ * total: 元画像の色でカウント（カラーフィルター無関係）
+ * matched: フィルター適用後の色でカウント
  */
 const computeStatsWithBackground = (
-  data: Uint8ClampedArray,
+  originalData: Uint8ClampedArray,
+  filteredData: Uint8ClampedArray,
   width: number,
   height: number,
   bgData: Uint8ClampedArray,
@@ -66,12 +69,29 @@ const computeStatsWithBackground = (
     for (let x = 0; x < width; x++) {
       const i = (y * width + x) * 4;
 
-      // 透明化済みピクセルスキップ
-      if (data[i + 3] === 0) continue;
+      // 透明ピクセルをスキップ（元画像基準）
+      if (originalData[i + 3] === 0) continue;
 
-      const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
+      // total: 元画像の色でカウント（カラーフィルター無関係）
+      const [origR, origG, origB] = [
+        originalData[i],
+        originalData[i + 1],
+        originalData[i + 2]
+      ];
+      const totalColorKey = colorToKey([origR, origG, origB]);
+      stats.total.set(totalColorKey, (stats.total.get(totalColorKey) || 0) + 1);
 
-      // 背景比較
+      // matched: フィルター適用後の色でカウント
+      // フィルター適用後に透明になったピクセルはスキップ
+      if (filteredData[i + 3] === 0) continue;
+
+      const [filteredR, filteredG, filteredB] = [
+        filteredData[i],
+        filteredData[i + 1],
+        filteredData[i + 2]
+      ];
+
+      // 背景比較（フィルター適用後の色で）
       const bgX = offsetX + x;
       const bgY = offsetY + y;
       const bgI = (bgY * bgWidth + bgX) * 4;
@@ -82,13 +102,11 @@ const computeStatsWithBackground = (
         bgData[bgI + 3],
       ];
 
-      const colorMatches = isSameColor([r, g, b, 255], [bgR, bgG, bgB, bgA]);
+      const colorMatches = isSameColor([filteredR, filteredG, filteredB, 255], [bgR, bgG, bgB, bgA]);
 
-      // 統計計算
-      const colorKey = colorToKey([r, g, b]);
-      stats.total.set(colorKey, (stats.total.get(colorKey) || 0) + 1);
       if (colorMatches) {
-        stats.matched.set(colorKey, (stats.matched.get(colorKey) || 0) + 1);
+        const matchedColorKey = colorToKey([filteredR, filteredG, filteredB]);
+        stats.matched.set(matchedColorKey, (stats.matched.get(matchedColorKey) || 0) + 1);
       }
     }
   }
@@ -246,6 +264,9 @@ const applyOverlayProcessing = async (
     ? window.mrWplace.colorFilterManager.selectedRGBs
     : undefined;
 
+  // 元のオーバーレイデータを取得（total統計用）
+  const originalData = convertImageBitmapToUint8ClampedArray(overlayBitmap);
+
   // Phase 1: カラーフィルター適用
   const filteredData = await applyColorFilterToOverlay(
     overlayBitmap,
@@ -267,6 +288,7 @@ const applyOverlayProcessing = async (
 
   // Phase 2: 背景比較 + 統計計算
   computeStatsWithBackground(
+    originalData,
     filteredData,
     width,
     height,

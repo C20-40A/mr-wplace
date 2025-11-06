@@ -64,15 +64,18 @@ export const computeStatsForImage = async (
       // Uint8Array を Uint8ClampedArray に変換
       const bgData = new Uint8ClampedArray(bgPixels);
 
-      // オーバーレイ画像のピクセルを取得
-      let overlayData: Uint8ClampedArray = convertImageBitmapToUint8ClampedArray(tileBitmap);
+      // オーバーレイ画像のピクセルを取得（フィルター適用前）
+      const originalOverlayData: Uint8ClampedArray = convertImageBitmapToUint8ClampedArray(tileBitmap);
 
-      // カラーフィルター適用（必要な場合）
+      // フィルター適用後のデータ（matched 計算用）
+      let filteredOverlayData: Uint8ClampedArray;
       if (colorFilter !== undefined && colorFilter.length > 0) {
-        // 型アサーション: colorFilter は [number, number, number][] として扱う
-        overlayData = processCpuColorFilter(overlayData, {
+        // カラーフィルター適用
+        filteredOverlayData = processCpuColorFilter(originalOverlayData, {
           filters: colorFilter as [number, number, number][]
         });
+      } else {
+        filteredOverlayData = originalOverlayData;
       }
 
       // 統計初期化
@@ -89,10 +92,27 @@ export const computeStatsForImage = async (
         for (let x = 0; x < width; x++) {
           const i = (y * width + x) * 4;
 
-          // 透明ピクセルをスキップ
-          if (overlayData[i + 3] === 0) continue;
+          // 透明ピクセルをスキップ（元画像基準）
+          if (originalOverlayData[i + 3] === 0) continue;
 
-          const [r, g, b] = [overlayData[i], overlayData[i + 1], overlayData[i + 2]];
+          // total: 元画像の色でカウント（カラーフィルター無関係）
+          const [origR, origG, origB] = [
+            originalOverlayData[i],
+            originalOverlayData[i + 1],
+            originalOverlayData[i + 2]
+          ];
+          const totalColorKey = colorToKey([origR, origG, origB]);
+          stats.total.set(totalColorKey, (stats.total.get(totalColorKey) || 0) + 1);
+
+          // matched: フィルター適用後の色でカウント
+          // フィルター適用後に透明になったピクセルはスキップ
+          if (filteredOverlayData[i + 3] === 0) continue;
+
+          const [filteredR, filteredG, filteredB] = [
+            filteredOverlayData[i],
+            filteredOverlayData[i + 1],
+            filteredOverlayData[i + 2]
+          ];
 
           // 背景ピクセルを取得
           const bgX = offsetX + x;
@@ -108,14 +128,12 @@ export const computeStatsForImage = async (
             bgData[bgI + 3],
           ];
 
-          // 色の一致を判定
-          const colorMatches = isSameColor([r, g, b, 255], [bgR, bgG, bgB, bgA]);
+          // 色の一致を判定（フィルター適用後の色で）
+          const colorMatches = isSameColor([filteredR, filteredG, filteredB, 255], [bgR, bgG, bgB, bgA]);
 
-          // 統計を更新
-          const colorKey = colorToKey([r, g, b]);
-          stats.total.set(colorKey, (stats.total.get(colorKey) || 0) + 1);
           if (colorMatches) {
-            stats.matched.set(colorKey, (stats.matched.get(colorKey) || 0) + 1);
+            const matchedColorKey = colorToKey([filteredR, filteredG, filteredB]);
+            stats.matched.set(matchedColorKey, (stats.matched.get(matchedColorKey) || 0) + 1);
           }
         }
       }
