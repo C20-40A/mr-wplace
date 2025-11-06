@@ -337,15 +337,6 @@ export class ImageGridComponent {
    * 進捗バーのHTMLを生成
    */
   private createProgressBarHtml(item: ImageItem): string {
-    console.log(
-      "🧑‍🎨 : createProgressBarHtml",
-      item.key,
-      "currentColorStats:",
-      item.currentColorStats,
-      "totalColorStats:",
-      item.totalColorStats
-    );
-
     if (!item.currentColorStats || !item.totalColorStats) return "";
 
     const matched = Object.values(item.currentColorStats).reduce(
@@ -355,15 +346,6 @@ export class ImageGridComponent {
     const total = Object.values(item.totalColorStats).reduce(
       (sum, count) => sum + count,
       0
-    );
-
-    console.log(
-      "🧑‍🎨 : Progress",
-      item.key,
-      "matched:",
-      matched,
-      "total:",
-      total
     );
 
     if (total === 0) return "";

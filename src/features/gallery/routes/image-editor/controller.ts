@@ -365,6 +365,10 @@ export class EditorController {
       this.isEditMode ? t`${"updated"}` : t`${"saved_to_gallery"}`
     );
 
+    // Request total stats computation for the image
+    const { requestTotalStatsComputation } = await import("@/content");
+    requestTotalStatsComputation(galleryItem.key, galleryItem.dataUrl);
+
     this.onSaveSuccess?.();
   }
 
@@ -389,6 +393,10 @@ export class EditorController {
 
     await galleryStorage.save(galleryItem);
     console.log("🧑‍🎨 : ", t`${"saved_to_gallery"}`);
+
+    // Request total stats computation for the image
+    const { requestTotalStatsComputation } = await import("@/content");
+    requestTotalStatsComputation(galleryItem.key, galleryItem.dataUrl);
 
     this.onSaveSuccess?.();
   }

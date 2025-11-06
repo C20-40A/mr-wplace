@@ -36,15 +36,6 @@ export class GalleryListUI {
   ): void {
     if (!this.container) return;
 
-    console.log(
-      "🧑‍🎨 : renderGalleryList items:",
-      items.map((i) => ({
-        key: i.key,
-        hasCurrentStats: !!i.matchedColorStats,
-        hasTotalStats: !!i.totalColorStats,
-      }))
-    );
-
     // GalleryItemをImageItemに変換
     const imageItems: ImageItem[] = items.map((item) => {
       // timestampが無効な場合は現在時刻を使用

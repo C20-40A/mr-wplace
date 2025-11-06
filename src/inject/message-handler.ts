@@ -8,6 +8,7 @@ import {
   overlayLayers,
 } from "./tile-draw";
 import { computeStatsForImage } from "./tile-draw/utils/computeStatsForImage";
+import { computeTotalStatsFromImage } from "./tile-draw/utils/computeTotalStatsFromImage";
 
 /**
  * Setup message event listener for handling various events
@@ -80,6 +81,12 @@ export const setupMessageHandler = (): void => {
 
     if (event.data.source === "mr-wplace-request-image-stats") {
       handleImageStatsRequest(event.data);
+      return;
+    }
+
+    // Handle compute total stats request (position-independent)
+    if (event.data.source === "mr-wplace-compute-total-stats") {
+      await handleComputeTotalStats(event.data);
       return;
     }
 
@@ -315,6 +322,24 @@ const recomputeAllStats = (colorFilter?: number[][]): void => {
         const tileStatsMap = await computeStatsForImage(layer.imageKey, layer.tiles, colorFilter);
         perTileColorStats.set(layer.imageKey, tileStatsMap);
         console.log(`🧑‍🎨 : Recomputed stats for ${layer.imageKey}`);
+
+        // content側に統計を通知（storageに保存するため）
+        const statsObject: Record<string, { matched: Record<string, number>; total: Record<string, number> }> = {};
+        for (const [tileKey, stats] of tileStatsMap.entries()) {
+          statsObject[tileKey] = {
+            matched: Object.fromEntries(stats.matched),
+            total: Object.fromEntries(stats.total),
+          };
+        }
+
+        window.postMessage(
+          {
+            source: "mr-wplace-stats-computed",
+            imageKey: layer.imageKey,
+            tileStatsMap: statsObject,
+          },
+          "*"
+        );
       } catch (error) {
         console.warn(`🧑‍🎨 : Failed to recompute stats for ${layer.imageKey}:`, error);
       }
@@ -448,10 +473,12 @@ const handleSnapshotsUpdate = async (data: {
 
       const bitmap = await createImageBitmap(imageElement);
 
+      // Snapshots don't need stats computation (no progress tracking)
       await addImageToOverlayLayers(
         bitmap,
         [snapshot.tileX, snapshot.tileY, 0, 0],
-        snapshot.key
+        snapshot.key,
+        { skip: true } // Don't compute stats for snapshots
       );
 
       console.log(`🧑‍🎨 : Added snapshot ${snapshot.key} to overlay at (${snapshot.tileX}, ${snapshot.tileY})`);
@@ -510,10 +537,12 @@ const handleTextLayersUpdate = async (data: {
 
       const bitmap = await createImageBitmap(imageElement);
 
+      // Text layers don't need stats computation (no progress tracking)
       await addImageToOverlayLayers(
         bitmap,
         [textLayer.coords.TLX, textLayer.coords.TLY, textLayer.coords.PxX, textLayer.coords.PxY],
-        textLayer.key
+        textLayer.key,
+        { skip: true } // Don't compute stats for text layers
       );
 
       console.log(`🧑‍🎨 : Added text layer ${textLayer.key} to overlay at (${textLayer.coords.TLX}, ${textLayer.coords.TLY})`);
@@ -532,4 +561,33 @@ const handleTextLayersUpdate = async (data: {
   }
 
   console.log(`🧑‍🎨 : Text layers updated: ${data.textLayers.length} active`);
+};
+
+/**
+ * Handle compute total stats request (position-independent)
+ * Compute total stats from image dataUrl without position information
+ */
+const handleComputeTotalStats = async (data: {
+  imageKey: string;
+  dataUrl: string;
+}): Promise<void> => {
+  try {
+    console.log(`🧑‍🎨 : Computing total stats for ${data.imageKey}`);
+    const result = await computeTotalStatsFromImage(data.dataUrl);
+
+    // Send result back to content side
+    window.postMessage(
+      {
+        source: "mr-wplace-total-stats-computed",
+        imageKey: data.imageKey,
+        totalColorStats: result.total,
+        totalPixels: result.totalPixels,
+      },
+      "*"
+    );
+
+    console.log(`🧑‍🎨 : Total stats computed for ${data.imageKey}: ${result.totalPixels} pixels`);
+  } catch (error) {
+    console.error(`🧑‍🎨 : Failed to compute total stats for ${data.imageKey}:`, error);
+  }
 };
