@@ -1,4 +1,4 @@
-import { perTileColorStats } from "../states-inject";
+import { perTileColorStats } from "../states";
 
 export const getAggregatedColorStats = (
   imageKeys: string[]

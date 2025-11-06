@@ -81,22 +81,29 @@ All feature APIs are typed in `src/core/di.ts` under `FeatureRegistry`.
 ```
 src/
 ├── content.ts              # Main entry, DI registration, message listeners
-├── inject/                 # Page-context scripts
+├── inject/                 # Page-context scripts (see inject/CLAUDE.md for details)
 │   ├── index.ts           # Initialization & coordination
-│   ├── fetch-interceptor.ts  # Intercepts tile & user API calls
+│   ├── message-handler.ts # Message routing (159 lines, refactored 2025-11-07)
+│   ├── handlers/          # Message handlers by category
+│   │   ├── overlay-handlers.ts   # Gallery, snapshots, text
+│   │   ├── state-handlers.ts     # Theme, filters, settings
+│   │   └── request-handlers.ts   # Stats, pixel color requests
+│   ├── tile-draw/         # Tile overlay rendering (moved from features 2025-11-01)
+│   │   ├── states.ts      # Overlay layers state management
+│   │   ├── tile-overlay-renderer.ts  # GPU/CPU rendering
+│   │   ├── stats/         # Statistics computation
+│   │   ├── filters/       # Color filtering (GPU/CPU)
+│   │   └── image-processing/  # Image manipulation
+│   ├── utils/             # Inject-wide utilities
+│   │   └── image-loader.ts    # Common image loading
+│   ├── fetch-interceptor.ts   # Intercepts tile & user API calls
 │   ├── map-instance.ts    # Captures WPlace map instance
-│   ├── message-handler.ts # Handles postMessage events
-│   ├── theme-manager.ts   # Applies theme to map
-│   └── tile-draw/         # 🆕 Tile overlay rendering (moved from features)
-│       ├── index.ts       # Main exports
-│       ├── states-inject.ts  # Overlay layers state management
-│       ├── tile-overlay-renderer.ts  # GPU/CPU rendering
-│       └── utils/         # Image splitting, color processing
+│   └── theme-manager.ts   # Applies theme to map
 ├── core/
 │   └── di.ts              # DI container & API types
 ├── features/              # Feature modules (gallery, drawing, etc.)
 ├── utils/                 # Shared utilities
-│   └── inject-bridge.ts   # 🆕 Content ↔ Inject communication functions
+│   └── inject-bridge.ts   # Content ↔ Inject communication functions
 └── i18n/                  # Internationalization
 ```
 

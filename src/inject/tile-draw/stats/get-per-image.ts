@@ -1,4 +1,4 @@
-import { perTileColorStats } from "../states-inject";
+import { perTileColorStats } from "../states";
 
 /**
  * 画像ごとの集計統計を取得

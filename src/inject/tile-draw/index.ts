@@ -11,7 +11,7 @@ export {
   toggleDrawEnabled,
   overlayLayers,
   perTileColorStats,
-} from "./states-inject";
+} from "./states";
 
-export { getAggregatedColorStats } from "./utils/getAggregatedColorStats";
-export { getStatsPerImage } from "./utils/getStatsPerImage";
+export { getAggregatedColorStats } from "./stats/get-aggregated";
+export { getStatsPerImage } from "./stats/get-per-image";
