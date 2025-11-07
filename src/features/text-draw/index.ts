@@ -67,7 +67,7 @@ const createMapPinButtons = (container: Element): void => {
 
   // 既存ボタンチェック
   if (group.querySelector("#text-draw-btn")) {
-    console.log("🧑‍🎨 : Text draw button already exists");
+    // console.log("🧑‍🎨 : Text draw button already exists");
     return;
   }
 

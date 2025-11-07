@@ -71,7 +71,7 @@ export const initTimeTravel = (): void => {
 
     // 既存ボタンチェック
     if (group.querySelector("#timetravel-btn")) {
-      console.log("🧑‍🎨 : TimeTravel button already exists");
+      // console.log("🧑‍🎨 : TimeTravel button already exists");
       return;
     }
 
