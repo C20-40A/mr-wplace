@@ -1,10 +1,6 @@
-import { TILE_DRAW_CONSTANTS } from "../constants";
-import type { ColorStats } from "../types";
+import type { ColorStats } from "@/types/image";
 import { blobToPixels } from "../../../utils/pixel-converters";
-import {
-  isSameColor,
-  colorToKey,
-} from "../filters/color-processing";
+import { isSameColor, colorToKey } from "../filters/color-processing";
 import { processCpuColorFilter } from "../filters/cpu-filter";
 import { convertImageBitmapToUint8ClampedArray } from "../image-processing/pixel-processing";
 
@@ -19,7 +15,11 @@ export const computeStatsForImage = async (
 ): Promise<Map<string, ColorStats>> => {
   const tileStatsMap = new Map<string, ColorStats>();
 
-  console.log(`🧑‍🎨 : Computing stats for image ${imageKey}, ${Object.keys(tiles).length} tiles`);
+  console.log(
+    `🧑‍🎨 : Computing stats for image ${imageKey}, ${
+      Object.keys(tiles).length
+    } tiles`
+  );
 
   // タイルエントリーを配列化
   const tileEntries = Object.entries(tiles);
@@ -40,7 +40,9 @@ export const computeStatsForImage = async (
       const offsetX = parseInt(parts[2]);
       const offsetY = parseInt(parts[3]);
 
-      const coordStr = `${tileX.toString().padStart(4, "0")},${tileY.toString().padStart(4, "0")}`;
+      const coordStr = `${tileX.toString().padStart(4, "0")},${tileY
+        .toString()
+        .padStart(4, "0")}`;
 
       // 背景タイルを fetch
       const bgBlob = await fetchBackgroundTile(tileX, tileY);
@@ -58,21 +60,25 @@ export const computeStatsForImage = async (
         bgPixels = result.pixels;
         bgWidth = result.width;
       } catch (decodeError) {
-        console.log(`🧑‍🎨 : Skipping stats for tile ${coordStr} (decode failed):`, decodeError);
+        console.log(
+          `🧑‍🎨 : Skipping stats for tile ${coordStr} (decode failed):`,
+          decodeError
+        );
         continue;
       }
       // Uint8Array を Uint8ClampedArray に変換
       const bgData = new Uint8ClampedArray(bgPixels);
 
       // オーバーレイ画像のピクセルを取得（フィルター適用前）
-      const originalOverlayData: Uint8ClampedArray = convertImageBitmapToUint8ClampedArray(tileBitmap);
+      const originalOverlayData: Uint8ClampedArray =
+        convertImageBitmapToUint8ClampedArray(tileBitmap);
 
       // フィルター適用後のデータ（matched 計算用）
       let filteredOverlayData: Uint8ClampedArray;
       if (colorFilter !== undefined && colorFilter.length > 0) {
         // カラーフィルター適用
         filteredOverlayData = processCpuColorFilter(originalOverlayData, {
-          filters: colorFilter as [number, number, number][]
+          filters: colorFilter as [number, number, number][],
         });
       } else {
         filteredOverlayData = originalOverlayData;
@@ -99,10 +105,13 @@ export const computeStatsForImage = async (
           const [origR, origG, origB] = [
             originalOverlayData[i],
             originalOverlayData[i + 1],
-            originalOverlayData[i + 2]
+            originalOverlayData[i + 2],
           ];
           const totalColorKey = colorToKey([origR, origG, origB]);
-          stats.total.set(totalColorKey, (stats.total.get(totalColorKey) || 0) + 1);
+          stats.total.set(
+            totalColorKey,
+            (stats.total.get(totalColorKey) || 0) + 1
+          );
 
           // matched: フィルター適用後の色でカウント
           // フィルター適用後に透明になったピクセルはスキップ
@@ -111,7 +120,7 @@ export const computeStatsForImage = async (
           const [filteredR, filteredG, filteredB] = [
             filteredOverlayData[i],
             filteredOverlayData[i + 1],
-            filteredOverlayData[i + 2]
+            filteredOverlayData[i + 2],
           ];
 
           // 背景ピクセルを取得
@@ -129,11 +138,21 @@ export const computeStatsForImage = async (
           ];
 
           // 色の一致を判定（フィルター適用後の色で）
-          const colorMatches = isSameColor([filteredR, filteredG, filteredB, 255], [bgR, bgG, bgB, bgA]);
+          const colorMatches = isSameColor(
+            [filteredR, filteredG, filteredB, 255],
+            [bgR, bgG, bgB, bgA]
+          );
 
           if (colorMatches) {
-            const matchedColorKey = colorToKey([filteredR, filteredG, filteredB]);
-            stats.matched.set(matchedColorKey, (stats.matched.get(matchedColorKey) || 0) + 1);
+            const matchedColorKey = colorToKey([
+              filteredR,
+              filteredG,
+              filteredB,
+            ]);
+            stats.matched.set(
+              matchedColorKey,
+              (stats.matched.get(matchedColorKey) || 0) + 1
+            );
           }
         }
       }
@@ -146,7 +165,9 @@ export const computeStatsForImage = async (
     }
   }
 
-  console.log(`🧑‍🎨 : Stats computation complete for image ${imageKey}: ${tileStatsMap.size} tiles`);
+  console.log(
+    `🧑‍🎨 : Stats computation complete for image ${imageKey}: ${tileStatsMap.size} tiles`
+  );
   return tileStatsMap;
 };
 
@@ -154,7 +175,10 @@ export const computeStatsForImage = async (
  * 背景タイルをfetchする
  * エラー時は null を返す（エラーをthrowしない）
  */
-const fetchBackgroundTile = async (tileX: number, tileY: number): Promise<Blob | null> => {
+const fetchBackgroundTile = async (
+  tileX: number,
+  tileY: number
+): Promise<Blob | null> => {
   // タイムアウト用のAbortController
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 5000);

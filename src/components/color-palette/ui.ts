@@ -1,6 +1,6 @@
 import { colorpalette } from "../../constants/colors";
 import { t } from "../../i18n/manager";
-import type { EnhancedMode } from "../../features/tile-draw/types";
+import type { EnhancedMode } from "@/types/image";
 import { ENHANCED_MODE_ICONS } from "../../assets/enhanced-mode-icons";
 import type { SortOrder, ColorPaletteOptions } from "./types";
 import type { ComputeDevice } from "./storage";
