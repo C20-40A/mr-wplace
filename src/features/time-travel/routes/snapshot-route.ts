@@ -128,17 +128,54 @@ export class SnapshotRoute extends BaseSnapshotRoute {
         </div>
       </div>
 
-      <!-- 左右分割レイアウト -->
-      <div style="display: flex; gap: 12px; height: calc(80vh - 180px);">
-        <!-- 左: スナップショット一覧 (3) -->
-        <div style="flex: 3; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 4px; padding: 8px;">
+      <!-- レスポンシブレイアウト -->
+      <style>
+        .snapshot-layout {
+          display: flex;
+          gap: 12px;
+          height: calc(80vh - 180px);
+        }
+        .snapshot-list-container {
+          flex: 3;
+          overflow-y: auto;
+          border: 1px solid #e5e7eb;
+          border-radius: 4px;
+          padding: 8px;
+        }
+        .current-tile-container {
+          flex: 2;
+          display: flex;
+          flex-direction: column;
+          border: 1px solid #e5e7eb;
+          border-radius: 4px;
+          padding: 8px;
+        }
+        @media (max-width: 768px) {
+          .snapshot-layout {
+            flex-direction: column;
+            height: auto;
+          }
+          .current-tile-container {
+            flex: none;
+            min-height: 300px;
+            order: -1;
+          }
+          .snapshot-list-container {
+            flex: none;
+            min-height: 400px;
+          }
+        }
+      </style>
+      <div class="snapshot-layout">
+        <!-- スナップショット一覧 -->
+        <div class="snapshot-list-container">
           <div id="wps-snapshots-list">
             <div class="text-sm text-gray-500 text-center p-4">${t`${"loading"}`}</div>
           </div>
         </div>
 
-        <!-- 右: 現在タイル画像 + 保存ボタン (2) -->
-        <div style="flex: 2; display: flex; flex-direction: column; border: 1px solid #e5e7eb; border-radius: 4px; padding: 8px;">
+        <!-- 現在タイル画像 + 保存ボタン（モバイルでは上に表示） -->
+        <div class="current-tile-container">
           <div id="current-tile-image-container" style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background-color: #f9fafb; min-height: 0;">
             <canvas id="wps-current-tile-canvas" style="max-width: 100%; max-height: 100%; object-fit: contain;"></canvas>
             <div id="no-image-message" class="text-sm text-gray-500" style="display: none; position: absolute;">Tile image not loaded</div>
