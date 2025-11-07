@@ -39,10 +39,12 @@ export const jaTranslations = {
   import_failed: "インポートに失敗しました",
   reset_failed: "リセットに失敗しました",
   gallery_reset_success: "ギャラリーをリセットしました",
-  no_images_to_export: "エクスポートする画像がありません（座標付き画像が必要です）",
+  no_images_to_export:
+    "エクスポートする画像がありません（座標付き画像が必要です）",
   no_valid_images_in_zip: "ZIP内に有効な画像が見つかりませんでした",
   confirm_import: "インポートしますか？新しい画像がギャラリーに追加されます。",
-  confirm_reset: "ギャラリーの全画像をリセットしますか？この操作は取り消せません。",
+  confirm_reset:
+    "ギャラリーの全画像をリセットしますか？この操作は取り消せません。",
 
   // メッセージ関連
   loading: "読み込み中...",
@@ -292,5 +294,5 @@ export const jaTranslations = {
   data_saver: "データセーバー",
   data_saver_on: "データセーバー ON",
   data_saver_off: "データセーバー OFF",
-  data_saver_rendering_paused: "レンダリング停止中",
+  data_saver_rendering_paused: "画像更新停止中",
 };
