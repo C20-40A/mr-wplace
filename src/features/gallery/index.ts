@@ -59,10 +59,14 @@ const createGallery = () => {
     string,
     (container: HTMLElement) => void | Promise<void>
   > = {
-    list: (container) => {
+    list: async (container) => {
       const route = new GalleryList();
-      route.render(container, router, showDetail, state.onDrawToggle, () =>
-        ui.closeModal()
+      await route.render(
+        container,
+        router,
+        showDetail,
+        state.onDrawToggle,
+        () => ui.closeModal()
       );
     },
 

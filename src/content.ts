@@ -411,11 +411,17 @@ export const sendTextLayersToInject = async () => {
   }
 })();
 
-// メッセージリスナー（言語切替）
+// メッセージリスナー（言語切替、ギャラリー更新）
 runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.type === "LOCALE_CHANGED") {
     // i18nマネージャーの状態を更新
     await I18nManager.init(message.locale);
+    return;
+  }
+
+  if (message.type === "GALLERY_UPDATED") {
+    // ギャラリーデータが更新されたらinject側に同期
+    await sendGalleryImagesToInject();
     return;
   }
 });

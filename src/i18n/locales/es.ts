@@ -21,6 +21,25 @@ export const esTranslations = {
   export: "Exportar",
   import: "Importar",
 
+  // Gallery Export/Import
+  gallery_data: "Datos de Galería",
+  import_gallery: "Importar Galería",
+  export_gallery: "Exportar Galería",
+  reset_gallery: "Restablecer Galería",
+  exporting: "Exportando...",
+  importing: "Importando...",
+  resetting: "Restableciendo...",
+  export_success: "{count} imágenes exportadas",
+  export_failed: "Error al exportar",
+  import_success: "{count} imágenes importadas",
+  import_failed: "Error al importar",
+  reset_failed: "Error al restablecer",
+  gallery_reset_success: "La galería ha sido restablecida",
+  no_images_to_export: "No hay imágenes para exportar (se requieren imágenes con coordenadas)",
+  no_valid_images_in_zip: "No se encontraron imágenes válidas en el archivo ZIP",
+  confirm_import: "¿Estás seguro de que quieres importar? Se agregarán nuevas imágenes a tu galería.",
+  confirm_reset: "¿Estás seguro de que quieres restablecer todas las imágenes de la galería? Esta acción no se puede deshacer.",
+
   // Messages
   loading: "Cargando...",
   no_items: "Sin elementos",

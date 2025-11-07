@@ -91,6 +91,16 @@
         background: #000000;
         color: #ffffff;
       }
+
+      button:hover {
+        background: #000000 !important;
+        color: #ffffff !important;
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
     </style>
   </head>
   <body>
@@ -121,6 +131,25 @@
         <option value="true">Map Jump 🚁</option>
         <option value="false">URL Jump 🔗</option>
       </select>
+    </div>
+
+    <div class="setting-group">
+      <label class="setting-label">
+        <span class="icon">🖼️</span>
+        <span id="gallery-data-label">Gallery Data</span>
+      </label>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button id="export-gallery-btn" style="width: 100%; padding: 6px 8px; border: 1px solid #000000; background: #f0f0f0; color: #000000; font-size: 14px; font-family: 'Courier New', monospace; cursor: pointer; font-weight: bold;">
+          📤 <span id="export-btn-label">Export</span>
+        </button>
+        <button id="import-gallery-btn" style="width: 100%; padding: 6px 8px; border: 1px solid #000000; background: #f0f0f0; color: #000000; font-size: 14px; font-family: 'Courier New', monospace; cursor: pointer; font-weight: bold;">
+          📥 <span id="import-btn-label">Import</span>
+        </button>
+        <button id="reset-gallery-btn" style="width: 100%; padding: 6px 8px; border: 1px solid #000000; background: #ffffff; color: #cc0000; font-size: 14px; font-family: 'Courier New', monospace; cursor: pointer; font-weight: bold;">
+          🗑️ <span id="reset-btn-label">Reset Gallery</span>
+        </button>
+        <input type="file" id="import-gallery-file" accept=".zip" style="display: none;" />
+      </div>
     </div>
 
     <div class="coffee-support">

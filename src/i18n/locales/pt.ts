@@ -21,6 +21,25 @@ export const ptTranslations = {
   export: "Exportar",
   import: "Importar",
 
+  // Gallery Export/Import
+  gallery_data: "Dados da Galeria",
+  import_gallery: "Importar Galeria",
+  export_gallery: "Exportar Galeria",
+  reset_gallery: "Redefinir Galeria",
+  exporting: "Exportando...",
+  importing: "Importando...",
+  resetting: "Redefinindo...",
+  export_success: "{count} imagens exportadas",
+  export_failed: "Falha ao exportar",
+  import_success: "{count} imagens importadas",
+  import_failed: "Falha ao importar",
+  reset_failed: "Falha ao redefinir",
+  gallery_reset_success: "A galeria foi redefinida",
+  no_images_to_export: "Nenhuma imagem para exportar (imagens com coordenadas necessárias)",
+  no_valid_images_in_zip: "Nenhuma imagem válida encontrada no arquivo ZIP",
+  confirm_import: "Tem certeza de que deseja importar? Novas imagens serão adicionadas à sua galeria.",
+  confirm_reset: "Tem certeza de que deseja redefinir todas as imagens da galeria? Esta ação não pode ser desfeita.",
+
   // Messages
   loading: "Carregando...",
   no_items: "Sem itens",
