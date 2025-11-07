@@ -56,12 +56,12 @@ const createBadge = (): void => {
     top: 45px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(46, 204, 113, 0.75);
+    background: rgba(88, 88, 88, 0.75);
     color: white;
     font-size: 12px;
     padding: 4px 8px;
     border-radius: 9999px;
-    box-shadow: 0 0 8px rgba(46, 204, 113, 0.6);
+    box-shadow: 0 0 8px rgba(77, 77, 77, 0.6);
     z-index: 45;
     transition: opacity 0.3s ease;
     opacity: ${enabled ? "1" : "0"};
