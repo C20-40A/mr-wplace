@@ -10,6 +10,12 @@ import {
   setNavigationMode,
   type NavigationMode,
 } from "./states/navigation-mode";
+import {
+  loadTileBoundariesFromStorage,
+  getTileBoundaries,
+  setTileBoundaries,
+  type TileBoundariesVisible,
+} from "./states/tile-boundaries";
 import { tabs } from "@/utils/browser-api";
 import { GalleryStorage } from "@/features/gallery/storage";
 import {
@@ -43,6 +49,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const navigationSelect = document.getElementById(
     "navigation-select"
   ) as HTMLSelectElement;
+  const tileBoundariesSelect = document.getElementById(
+    "tile-boundaries-select"
+  ) as HTMLSelectElement;
 
   // i18n初期化（ブラウザ言語検出）
   await I18nManager.init(detectBrowserLanguage());
@@ -52,8 +61,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadNavigationModeFromStorage();
   const currentMode = getNavigationMode();
 
+  // tile boundaries初期化
+  await loadTileBoundariesFromStorage();
+  const currentTileBoundaries = getTileBoundaries();
+
   languageSelect.value = currentLocale;
   navigationSelect.value = currentMode.toString();
+  tileBoundariesSelect.value = currentTileBoundaries.toString();
   updateUI();
 
   // 言語変更イベント
@@ -87,6 +101,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // 設定を保存
     await setNavigationMode(newMode);
+  });
+
+  // タイル境界変更イベント
+  tileBoundariesSelect.addEventListener("change", async (event) => {
+    const target = event.target as HTMLSelectElement;
+    const newVisible = target.value === "true";
+
+    // 設定を保存
+    await setTileBoundaries(newVisible);
+
+    // content.tsに通知
+    await notifyContentScript({
+      type: "TILE_BOUNDARIES_CHANGED",
+      visible: newVisible,
+    });
   });
 
   // Gallery export/import/reset

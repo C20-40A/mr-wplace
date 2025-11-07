@@ -240,6 +240,25 @@ export const sendTextLayersToInject = async () => {
   console.log(`🧑‍🎨 : Sent ${textLayers.length} text layers to inject side`);
 };
 
+/**
+ * Send tile boundaries visibility to inject side
+ */
+export const sendTileBoundariesToInject = async () => {
+  const { loadTileBoundariesFromStorage, getTileBoundaries } = await import("@/states/tile-boundaries");
+  await loadTileBoundariesFromStorage();
+  const visible = getTileBoundaries();
+
+  window.postMessage(
+    {
+      source: "mr-wplace-tile-boundaries-update",
+      visible,
+    },
+    "*"
+  );
+
+  console.log(`🧑‍🎨 : Sent tile boundaries visibility to inject side: ${visible}`);
+};
+
 (async () => {
   try {
     console.log("🧑‍🎨: Starting initialization...");
@@ -393,6 +412,7 @@ export const sendTextLayersToInject = async () => {
     await sendGalleryImagesToInject();
     await sendComputeDeviceToInject();
     sendColorFilterToInject(colorFilterManager);
+    await sendTileBoundariesToInject();
 
     // Global access for ImageProcessor and Gallery
     window.mrWplace = {
@@ -422,6 +442,12 @@ runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   if (message.type === "GALLERY_UPDATED") {
     // ギャラリーデータが更新されたらinject側に同期
     await sendGalleryImagesToInject();
+    return;
+  }
+
+  if (message.type === "TILE_BOUNDARIES_CHANGED") {
+    // タイル境界表示設定が変更されたらinject側に通知
+    await sendTileBoundariesToInject();
     return;
   }
 });

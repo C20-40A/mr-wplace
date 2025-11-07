@@ -398,7 +398,7 @@ const createMapPinButtons = (container: Element): void => {
 
   // 既存ボタンチェック
   if (group.querySelector("#bookmark-btn")) {
-    console.log("🧑‍🎨 : Bookmark button already exists");
+    // console.log("🧑‍🎨 : Bookmark button already exists");
     return;
   }
 

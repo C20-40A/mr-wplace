@@ -8,6 +8,7 @@ import {
   handleDataSaverUpdate,
   handleComputeDeviceUpdate,
   handleColorFilterUpdate,
+  handleTileBoundariesUpdate,
 } from "./handlers/state-handlers";
 import {
   handleStatsRequest,
@@ -54,6 +55,11 @@ export const setupMessageHandler = (): void => {
 
     if (source === "mr-wplace-color-filter") {
       handleColorFilterUpdate(event.data);
+      return;
+    }
+
+    if (source === "mr-wplace-tile-boundaries-update") {
+      handleTileBoundariesUpdate(event.data);
       return;
     }
 

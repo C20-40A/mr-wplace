@@ -25,7 +25,7 @@ const createMapPinButtons = (
 
   // 既存ボタンチェック
   if (group.querySelector("#drawing-btn")) {
-    console.log("🧑‍🎨 : Drawing button already exists");
+    // console.log("🧑‍🎨 : Drawing button already exists");
     return;
   }
 

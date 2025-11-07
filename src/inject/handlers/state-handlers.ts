@@ -75,6 +75,16 @@ export const handleColorFilterUpdate = (data: {
 };
 
 /**
+ * Handle tile boundaries visibility update
+ */
+export const handleTileBoundariesUpdate = (data: { visible: boolean }): void => {
+  if (window.wplaceMap) {
+    window.wplaceMap.showTileBoundaries = data.visible;
+    console.log("🧑‍🎨 : Tile boundaries updated:", data.visible);
+  }
+};
+
+/**
  * 全画像の統計を再計算
  * タイル描画との競合を避けるため、遅延実行＆順次処理する
  */
