@@ -1,151 +1,130 @@
+import {
+  setupElementObserver,
+  ElementConfig,
+} from "@/components/element-observer";
+import { findMyLocationContainer } from "@/constants/selectors";
 import { DataSaverStorage } from "./storage";
 import { t } from "@/i18n/manager";
 
-class DataSaver {
-  private button: HTMLButtonElement | null = null;
-  private badge: HTMLDivElement | null = null;
-  private tooltip: HTMLDivElement | null = null;
-  private enabled = false;
+let enabled = false;
+let button: HTMLButtonElement | null = null;
+let badge: HTMLDivElement | null = null;
 
-  async init() {
-    this.enabled = await DataSaverStorage.get();
-    this.createButton();
-    this.createBadge();
-    this.createTooltip();
-    this.applyState(this.enabled);
-  }
+const createButton = (container: Element): void => {
+  if (container.querySelector("#data-saver-btn")) return;
 
-  private createButton() {
-    this.button = document.createElement("button");
-    this.button.innerHTML = this.enabled ? "🪫" : "📡";
-    this.button.className = "btn btn-sm btn-circle";
-    this.button.style.cssText = `
-      position: fixed;
-      top: 10px;
-      right: 65px;
-      font-size: 18px;
-      z-index: 800;
-      width: 36px;
-      height: 36px;
-      border: none;
-      border-radius: 50%;
-      background-color: ${this.enabled ? "#2ecc71" : ""};
-      color: white;
-      box-shadow: 0 0 8px ${this.enabled ? "#2ecc71" : ""};
-      cursor: pointer;
-      transition: all 0.3s ease;
-    `;
+  button = document.createElement("button");
+  button.id = "data-saver-btn";
+  button.innerHTML = enabled ? "🪫" : "📡";
+  button.className = "btn btn-lg sm:btn-xl btn-square shadow-md z-30";
+  button.title = enabled ? t`${"data_saver_on"}` : t`${"data_saver_off"}`;
+  button.style.cssText = `
+    font-size: 24px;
+    background-color: ${enabled ? "#2ecc71" : ""};
+    box-shadow: 0 0 8px ${enabled ? "#2ecc71" : ""};
+    transition: all 0.3s ease;
+  `;
 
-    // ホバーアニメーション
-    this.button.addEventListener("mouseenter", () => {
-      if (this.button) this.button.style.transform = "scale(1.15)";
-      if (this.tooltip) this.tooltip.style.opacity = "1";
-    });
-    this.button.addEventListener("mouseleave", () => {
-      if (this.button) this.button.style.transform = "scale(1)";
-      if (this.tooltip) this.tooltip.style.opacity = "0";
-    });
+  button.addEventListener("mouseenter", () => {
+    if (button) button.style.transform = "scale(1.1)";
+  });
+  button.addEventListener("mouseleave", () => {
+    if (button) button.style.transform = "scale(1)";
+  });
 
-    this.button.addEventListener("click", () => this.toggle());
-    document.body.appendChild(this.button);
-    console.log("🧑‍🎨 : Data saver button created");
-  }
+  button.addEventListener("click", toggle);
+  container.className += " flex flex-col-reverse gap-1";
+  container.appendChild(button);
+  console.log("🧑‍🎨 : Data saver button created");
+};
 
-  private createTooltip() {
-    this.tooltip = document.createElement("div");
-    this.tooltip.textContent = this.enabled
-      ? t`${"data_saver_on"}`
-      : t`${"data_saver_off"}`;
-    this.tooltip.style.cssText = `
-      position: fixed;
-      top: 50px;
-      right: 55px;
-      background: rgba(0,0,0,0.75);
-      color: white;
-      font-size: 12px;
-      padding: 4px 8px;
-      border-radius: 6px;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      z-index: 801;
-    `;
-    document.body.appendChild(this.tooltip);
-  }
+const createBadge = (): void => {
+  if (document.querySelector("#data-saver-badge")) return;
 
-  private createBadge() {
-    this.badge = document.createElement("div");
-    this.badge.innerHTML = `🪫 ${t`${"data_saver_on"}`}<br><span style="font-size: 10px; opacity: 0.8;">${t`${"data_saver_rendering_paused"}`}</span>`;
-    this.badge.style.cssText = `
-      position: fixed;
-      top: 45px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(46, 204, 113, 0.75);
-      color: white;
-      font-size: 12px;
-      padding: 4px 8px;
-      border-radius: 9999px;
-      box-shadow: 0 0 8px rgba(46, 204, 113, 0.6);
-      z-index: 45;
-      transition: opacity 0.3s ease;
-      opacity: 0;
-      pointer-events: none;
-      text-align: center;
-      line-height: 1.2;
-    `;
-    document.body.appendChild(this.badge);
-  }
+  badge = document.createElement("div");
+  badge.id = "data-saver-badge";
+  badge.innerHTML = `🪫 ${t`${"data_saver_on"}`}<br><span style="font-size: 10px; opacity: 0.8;">${t`${"data_saver_rendering_paused"}`}</span>`;
+  badge.style.cssText = `
+    position: fixed;
+    top: 45px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(46, 204, 113, 0.75);
+    color: white;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 9999px;
+    box-shadow: 0 0 8px rgba(46, 204, 113, 0.6);
+    z-index: 45;
+    transition: opacity 0.3s ease;
+    opacity: ${enabled ? "1" : "0"};
+    pointer-events: none;
+    text-align: center;
+    line-height: 1.2;
+  `;
+  document.body.appendChild(badge);
+};
 
-  private async toggle() {
-    this.enabled = !this.enabled;
-    await DataSaverStorage.set(this.enabled);
-    this.animatePulse();
-    this.applyState(this.enabled);
-    console.log("🧑‍🎨 : Data saver toggled:", this.enabled);
-  }
+const toggle = async (): Promise<void> => {
+  enabled = !enabled;
+  await DataSaverStorage.set(enabled);
+  animatePulse();
+  applyState(enabled);
+  console.log("🧑‍🎨 : Data saver toggled:", enabled);
+};
 
-  private animatePulse() {
-    if (!this.button) return;
-    this.button.animate(
-      [
-        { boxShadow: "0 0 8px #2ecc71" },
-        { boxShadow: "0 0 16px #2ecc71" },
-        { boxShadow: "0 0 8px #2ecc71" },
-      ],
-      { duration: 600, easing: "ease-in-out" }
-    );
-  }
+const animatePulse = (): void => {
+  if (!button) return;
+  button.animate(
+    [
+      { boxShadow: "0 0 8px #2ecc71" },
+      { boxShadow: "0 0 16px #2ecc71" },
+      { boxShadow: "0 0 8px #2ecc71" },
+    ],
+    { duration: 600, easing: "ease-in-out" }
+  );
+};
 
-  private updateUI() {
-    if (!this.button || !this.badge || !this.tooltip) return;
+const updateUI = (): void => {
+  if (!button || !badge) return;
 
-    this.button.innerHTML = this.enabled ? "🪫" : "📡";
-    this.button.style.backgroundColor = this.enabled ? "#2ecc71" : "";
-    this.button.style.boxShadow = this.enabled ? "0 0 8px #2ecc71" : "";
+  button.innerHTML = enabled ? "🪫" : "📡";
+  button.title = enabled ? t`${"data_saver_on"}` : t`${"data_saver_off"}`;
+  button.style.backgroundColor = enabled ? "#2ecc71" : "";
+  button.style.boxShadow = enabled ? "0 0 8px #2ecc71" : "";
 
-    this.tooltip.textContent = this.enabled
-      ? t`${"data_saver_on"}`
-      : t`${"data_saver_off"}`;
-    this.badge.innerHTML = `🪫 ${t`${"data_saver_on"}`}<br><span style="font-size: 10px; opacity: 0.8;">${t`${"data_saver_rendering_paused"}`}</span>`;
-    this.badge.style.opacity = this.enabled ? "1" : "0";
-  }
+  badge.innerHTML = `🪫 ${t`${"data_saver_on"}`}<br><span style="font-size: 10px; opacity: 0.8;">${t`${"data_saver_rendering_paused"}`}</span>`;
+  badge.style.opacity = enabled ? "1" : "0";
+};
 
-  private applyState(enabled: boolean) {
-    this.updateUI();
-    window.postMessage(
-      {
-        source: "mr-wplace-data-saver-update",
-        enabled,
-      },
-      "*"
-    );
-  }
-}
+const applyState = (enabled: boolean): void => {
+  updateUI();
+  window.postMessage(
+    {
+      source: "mr-wplace-data-saver-update",
+      enabled,
+    },
+    "*"
+  );
+};
+
+const init = async (): Promise<void> => {
+  enabled = await DataSaverStorage.get();
+
+  const buttonConfigs: ElementConfig[] = [
+    {
+      id: "data-saver-btn",
+      getTargetElement: findMyLocationContainer,
+      createElement: createButton,
+    },
+  ];
+
+  setupElementObserver(buttonConfigs);
+  createBadge();
+  applyState(enabled);
+  console.log("🧑‍🎨 : Data saver initialized");
+};
 
 export const dataSaverAPI = {
-  initDataSaver: async () => {
-    const instance = new DataSaver();
-    await instance.init();
-  },
+  initDataSaver: init,
 };
