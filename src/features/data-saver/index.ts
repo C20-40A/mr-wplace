@@ -5,6 +5,10 @@ import {
 import { findMyLocationContainer } from "@/constants/selectors";
 import { DataSaverStorage } from "./storage";
 import { t } from "@/i18n/manager";
+import {
+  IMG_ICON_DATA_SAVER_OFF,
+  IMG_ICON_DATA_SAVER_ON,
+} from "@/assets/iconImages";
 
 let enabled = false;
 let button: HTMLButtonElement | null = null;
@@ -15,11 +19,14 @@ const createButton = (container: Element): void => {
 
   button = document.createElement("button");
   button.id = "data-saver-btn";
-  button.innerHTML = enabled ? "🪫" : "📡";
   button.className = "btn btn-lg sm:btn-xl btn-square shadow-md z-30";
   button.title = enabled ? t`${"data_saver_on"}` : t`${"data_saver_off"}`;
+
+  const iconSrc = enabled ? IMG_ICON_DATA_SAVER_ON : IMG_ICON_DATA_SAVER_OFF;
+  button.innerHTML = `
+    <img src="${iconSrc}" alt="${t`${"data_saver"}`}" style="image-rendering: pixelated; width: calc(var(--spacing)*9); height: calc(var(--spacing)*9);">
+  `;
   button.style.cssText = `
-    font-size: 24px;
     background-color: ${enabled ? "#2ecc71" : ""};
     box-shadow: 0 0 8px ${enabled ? "#2ecc71" : ""};
     transition: all 0.3s ease;
@@ -88,10 +95,16 @@ const animatePulse = (): void => {
 const updateUI = (): void => {
   if (!button || !badge) return;
 
-  button.innerHTML = enabled ? "🪫" : "📡";
   button.title = enabled ? t`${"data_saver_on"}` : t`${"data_saver_off"}`;
   button.style.backgroundColor = enabled ? "#2ecc71" : "";
   button.style.boxShadow = enabled ? "0 0 8px #2ecc71" : "";
+
+  // Update icon image based on state
+  const iconSrc = enabled ? IMG_ICON_DATA_SAVER_ON : IMG_ICON_DATA_SAVER_OFF;
+  const img = button.querySelector("img");
+  if (img) {
+    img.src = iconSrc;
+  }
 
   badge.innerHTML = `🪫 ${t`${"data_saver_on"}`}<br><span style="font-size: 10px; opacity: 0.8;">${t`${"data_saver_rendering_paused"}`}</span>`;
   badge.style.opacity = enabled ? "1" : "0";

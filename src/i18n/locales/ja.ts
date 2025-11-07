@@ -289,6 +289,7 @@ export const jaTranslations = {
     "座標を入力すると、ギャラリー追加時に自動的にその位置に配置されます",
 
   // Data Saver
+  data_saver: "データセーバー",
   data_saver_on: "データセーバー ON",
   data_saver_off: "データセーバー OFF",
   data_saver_rendering_paused: "レンダリング停止中",

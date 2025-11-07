@@ -171,4 +171,10 @@ export const esTranslations = {
   disable_alarm: "Desactivar Alarma",
   add_to_calendar_title: "Añadir a Google Calendar",
   wplace_charged_event: "WPlace Cargado ⚡",
+
+  // Data Saver
+  data_saver: "Ahorro de Datos",
+  data_saver_on: "Ahorro de Datos ACTIVADO",
+  data_saver_off: "Ahorro de Datos DESACTIVADO",
+  data_saver_rendering_paused: "Renderizado Pausado",
 };

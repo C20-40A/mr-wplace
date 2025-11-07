@@ -169,4 +169,10 @@ export const viTranslations = {
   disable_alarm: "Tắt báo thức",
   add_to_calendar_title: "Google Calendar",
   wplace_charged_event: "WPlace đã sạc ⚡",
+
+  // Data Saver
+  data_saver: "Tiết kiệm dữ liệu",
+  data_saver_on: "Tiết kiệm dữ liệu BẬT",
+  data_saver_off: "Tiết kiệm dữ liệu TẮT",
+  data_saver_rendering_paused: "Đang tạm dừng kết xuất",
 };
