@@ -1,5 +1,5 @@
 import { ImageStorage, BaseImageItem } from "./image-storage";
-import type { ColorStats } from "../tile-draw/types";
+import type { ColorStats } from "@/types/image";
 
 export interface DrawPosition {
   TLX: number;
@@ -92,22 +92,13 @@ export class GalleryStorage {
   async get(key: string): Promise<GalleryItem | undefined> {
     const item = await this.imageStorage.get(key);
     if (!item) return undefined;
-
-    return {
-      ...item,
-      hasDrawPosition: !!item.drawPosition,
-    };
+    return item;
   }
 
   async getAll(): Promise<GalleryItem[]> {
     await this.ensureLayerOrders();
     const items = await this.imageStorage.getAll();
-
-    // hasDrawPositionを計算して追加
-    return items.map((item) => ({
-      ...item,
-      hasDrawPosition: !!item.drawPosition,
-    }));
+    return items;
   }
 
   async save(item: GalleryItem): Promise<void> {
