@@ -22,6 +22,12 @@ ID: "paint-preview-0.6338469378613869-1817,808" raster(塗り始めると現れ�
 iD: pixel-hover, Type: raster
 ID: "paint-crosshair-9088,4041" raster(塗り始めると現れる)
 
+# タイル境界表示
+
+```js
+mapInstance.showTileBoundaries = true;
+```
+
 # ピクセルアートのあるレイヤーの取得や変更
 
 ```javascript
