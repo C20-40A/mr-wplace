@@ -287,6 +287,7 @@ However, please pay careful attention to the following:
   coordinate_input_hint: "If you enter coordinates, the image will be automatically placed at that position when added to the gallery",
 
   // Data Saver
+  data_saver: "Data Saver",
   data_saver_on: "Data Saver ON",
   data_saver_off: "Data Saver OFF",
   data_saver_rendering_paused: "Rendering Paused",

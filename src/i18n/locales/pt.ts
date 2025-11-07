@@ -176,4 +176,10 @@ export const ptTranslations = {
   theme_light: "Tema Claro",
   theme_dark: "Tema Escuro",
   theme_switched: "Tema alterado",
+
+  // Data Saver
+  data_saver: "Economizador de Dados",
+  data_saver_on: "Economizador de Dados ATIVADO",
+  data_saver_off: "Economizador de Dados DESATIVADO",
+  data_saver_rendering_paused: "Renderização Pausada",
 };
