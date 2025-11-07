@@ -1,5 +1,5 @@
 import { colorpalette } from "../../constants/colors";
-import type { EnhancedMode } from "../../features/tile-draw/types";
+import type { EnhancedMode } from "@/types/image";
 import { ENHANCED_MODE_ICONS } from "../../assets/enhanced-mode-icons";
 import { t } from "../../i18n/manager";
 import type { ColorPaletteOptions, SortOrder } from "./types";
@@ -16,7 +16,7 @@ import { buildColorGrid, buildControlsHtml } from "./ui";
 
 /**
  * カラーパレット表示コンポーネント
- * 
+ *
  * NOTE: イベントリスナー管理
  * - インスタンス生成時にboundハンドラーを作成し、setupEventHandlers()で登録
  * - destroy()で必ずremoveEventListenerを呼び、メモリリークとイベント重複を防止
@@ -48,7 +48,8 @@ export class ColorPalette {
 
     // イベントハンドラーをbind
     this.boundClickHandler = (e: MouseEvent) => this.handleClick(e);
-    this.boundDocumentClickHandler = (e: MouseEvent) => this.handleDocumentClick(e);
+    this.boundDocumentClickHandler = (e: MouseEvent) =>
+      this.handleDocumentClick(e);
 
     this.render();
     this.setupEventHandlers();
@@ -414,7 +415,7 @@ export class ColorPalette {
     // イベントリスナー削除
     this.container.removeEventListener("click", this.boundClickHandler);
     document.removeEventListener("click", this.boundDocumentClickHandler);
-    
+
     // DOM削除
     this.container.innerHTML = "";
   }
@@ -455,7 +456,9 @@ export class ColorPalette {
       const isSelected = itemSort === sort;
       const borderColor = isSelected ? "#22c55e" : "#d1d5db";
       const borderWidth = isSelected ? "2px" : "1px";
-      (item as HTMLElement).style.border = `${borderWidth} solid ${borderColor}`;
+      (
+        item as HTMLElement
+      ).style.border = `${borderWidth} solid ${borderColor}`;
     });
   }
 }

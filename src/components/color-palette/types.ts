@@ -1,4 +1,4 @@
-import type { EnhancedMode } from "../../features/tile-draw/types";
+import type { EnhancedMode } from "@/types/image";
 import type { ComputeDevice } from "./storage";
 
 export type SortOrder = "default" | "most-missing" | "least-remaining";
