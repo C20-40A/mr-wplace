@@ -8,7 +8,7 @@ import {
   findOpacityContainer,
   findPositionModal,
   findMapPin,
-} from "../../constants/selectors";
+} from "@/constants/selectors";
 import {
   getOrCreateMapPinButtonGroup,
   createMapPinGroupButton,
