@@ -4,15 +4,12 @@ import { gotoMapPosition, toggleDrawState } from "../../common-actions";
 import { t } from "@/i18n/manager";
 
 export class GalleryListUI {
-  private modal: HTMLDialogElement | null = null;
   private container: HTMLElement | null = null;
 
   private imageGrid: ImageGridComponent | null = null;
   private onCloseModalCallback?: () => void;
 
-  constructor() {
-    this.createModal();
-  }
+  constructor() {}
 
   render(
     items: GalleryItem[],
@@ -22,22 +19,42 @@ export class GalleryListUI {
     onImageClick?: (item: GalleryItem) => void,
     onCloseModal?: () => void
   ): void {
-    // 外部コンテナが指定された場合はそれを使用
-    if (container) this.container = container;
+    if (!container) return;
+
+    this.container = container;
     this.onCloseModalCallback = onCloseModal;
-    this.renderGalleryList(items, onDelete, onImageClick, onAddClick);
+
+    this.renderGalleryList(container, items, onDelete, onImageClick, onAddClick);
   }
 
   private renderGalleryList(
+    container: HTMLElement,
     items: GalleryItem[],
     onDelete: (key: string) => void,
     onImageClick?: (item: GalleryItem) => void,
     onAddClick?: () => void
   ): void {
-    if (!this.container) return;
+
+    // Sort items by layerOrder (drawPosition items first, sorted by layerOrder, then items without drawPosition)
+    const sortedItems = [...items].sort((a, b) => {
+      const aHasDrawPos = !!a.drawPosition;
+      const bHasDrawPos = !!b.drawPosition;
+
+      // Items with drawPosition come first
+      if (aHasDrawPos && !bHasDrawPos) return -1;
+      if (!aHasDrawPos && bHasDrawPos) return 1;
+
+      // Both have drawPosition: sort by layerOrder
+      if (aHasDrawPos && bHasDrawPos) {
+        return (a.layerOrder ?? 0) - (b.layerOrder ?? 0);
+      }
+
+      // Both don't have drawPosition: keep original order (by timestamp)
+      return b.timestamp - a.timestamp;
+    });
 
     // GalleryItemをImageItemに変換
-    const imageItems: ImageItem[] = items.map((item) => {
+    const imageItems: ImageItem[] = sortedItems.map((item) => {
       // timestampが無効な場合は現在時刻を使用
       const timestamp =
         item.timestamp && !isNaN(item.timestamp) ? item.timestamp : Date.now();
@@ -59,7 +76,7 @@ export class GalleryListUI {
     if (this.imageGrid) this.imageGrid.destroy();
 
     // 新しいImageGridComponentを作成
-    this.imageGrid = new ImageGridComponent(this.container, {
+    this.imageGrid = new ImageGridComponent(container, {
       items: imageItems,
       isSelectionMode: false, // list routeは選択モードなし
       onImageClick: (item) => {
@@ -97,34 +114,12 @@ export class GalleryListUI {
     // 画面を再描画
     const galleryStorage = new (await import("../../storage")).GalleryStorage();
     const updatedItems = await galleryStorage.getAll();
-    this.renderGalleryList(updatedItems, onDelete, onImageClick);
+
+    if (this.container) {
+      this.renderGalleryList(this.container, updatedItems, onDelete, onImageClick);
+    }
 
     console.log(`🎯 Draw toggle: ${key} -> ${newDrawEnabled}`);
-  }
-
-  private createModal(): void {
-    this.modal = document.createElement("dialog");
-    this.modal.className = "modal";
-    this.modal.innerHTML = t`
-      <div class="modal-box max-w-6xl relative">
-        <form method="dialog">
-          <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-        </form>
-        
-        <h3 class="text-lg font-bold mb-4">${"gallery"}</h3>
-        
-        <div id="wps-gallery-container" style="min-height: 400px;">
-          <!-- ギャラリー一覧がここに表示されます -->
-        </div>
-      </div>
-      
-      <form method="dialog" class="modal-backdrop">
-        <button>${"close"}</button>
-      </form>
-    `;
-
-    document.body.appendChild(this.modal);
-    this.container = document.getElementById("wps-gallery-container");
   }
 
   private async handleGotoPosition(item: GalleryItem): Promise<void> {

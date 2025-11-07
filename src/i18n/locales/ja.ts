@@ -25,6 +25,25 @@ export const jaTranslations = {
   export: "エクスポート",
   import: "インポート",
 
+  // Gallery Export/Import関連
+  gallery_data: "ギャラリーデータ",
+  import_gallery: "ギャラリーをインポート",
+  export_gallery: "ギャラリーをエクスポート",
+  reset_gallery: "ギャラリーをリセット",
+  exporting: "エクスポート中...",
+  importing: "インポート中...",
+  resetting: "リセット中...",
+  export_success: "{count}件の画像をエクスポートしました",
+  export_failed: "エクスポートに失敗しました",
+  import_success: "{count}件の画像をインポートしました",
+  import_failed: "インポートに失敗しました",
+  reset_failed: "リセットに失敗しました",
+  gallery_reset_success: "ギャラリーをリセットしました",
+  no_images_to_export: "エクスポートする画像がありません（座標付き画像が必要です）",
+  no_valid_images_in_zip: "ZIP内に有効な画像が見つかりませんでした",
+  confirm_import: "インポートしますか？新しい画像がギャラリーに追加されます。",
+  confirm_reset: "ギャラリーの全画像をリセットしますか？この操作は取り消せません。",
+
   // メッセージ関連
   loading: "読み込み中...",
   no_items: "アイテムがありません",

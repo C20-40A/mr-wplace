@@ -25,6 +25,25 @@ export const enTranslations = {
   export: "Export",
   import: "Import",
 
+  // Gallery Export/Import
+  gallery_data: "Gallery Data",
+  import_gallery: "Import Gallery",
+  export_gallery: "Export Gallery",
+  reset_gallery: "Reset Gallery",
+  exporting: "Exporting...",
+  importing: "Importing...",
+  resetting: "Resetting...",
+  export_success: "Exported {count} images",
+  export_failed: "Export failed",
+  import_success: "Imported {count} images",
+  import_failed: "Import failed",
+  reset_failed: "Reset failed",
+  gallery_reset_success: "Gallery has been reset",
+  no_images_to_export: "No images to export (images with coordinates required)",
+  no_valid_images_in_zip: "No valid images found in ZIP file",
+  confirm_import: "Are you sure you want to import? This will add new images to your gallery.",
+  confirm_reset: "Are you sure you want to reset all gallery images? This action cannot be undone.",
+
   // Messages
   loading: "Loading...",
   no_items: "No items",
