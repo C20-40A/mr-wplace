@@ -106,6 +106,7 @@ export const jaTranslations = {
   brightness: "明るさ",
   contrast: "コントラスト",
   saturation: "彩度",
+  sharpness: "シャープネス",
   dithering: "ディザリング",
   include_paid_colors: "Paid色を含む",
   add_to_gallery: "ギャラリーに追加",
