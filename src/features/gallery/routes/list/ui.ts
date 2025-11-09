@@ -24,7 +24,13 @@ export class GalleryListUI {
     this.container = container;
     this.onCloseModalCallback = onCloseModal;
 
-    this.renderGalleryList(container, items, onDelete, onImageClick, onAddClick);
+    this.renderGalleryList(
+      container,
+      items,
+      onDelete,
+      onImageClick,
+      onAddClick
+    );
   }
 
   private renderGalleryList(
@@ -34,23 +40,16 @@ export class GalleryListUI {
     onImageClick?: (item: GalleryItem) => void,
     onAddClick?: () => void
   ): void {
-
     // Sort items by layerOrder (drawPosition items first, sorted by layerOrder, then items without drawPosition)
     const sortedItems = [...items].sort((a, b) => {
       const aHasDrawPos = !!a.drawPosition;
       const bHasDrawPos = !!b.drawPosition;
 
-      // Items with drawPosition come first
-      if (aHasDrawPos && !bHasDrawPos) return -1;
-      if (!aHasDrawPos && bHasDrawPos) return 1;
-
       // Both have drawPosition: sort by layerOrder
-      if (aHasDrawPos && bHasDrawPos) {
-        return (a.layerOrder ?? 0) - (b.layerOrder ?? 0);
-      }
+      if (aHasDrawPos && bHasDrawPos)
+        return (b.layerOrder ?? 0) - (a.layerOrder ?? 0);
 
-      // Both don't have drawPosition: keep original order (by timestamp)
-      return b.timestamp - a.timestamp;
+      return 0;
     });
 
     // GalleryItemをImageItemに変換
@@ -116,7 +115,12 @@ export class GalleryListUI {
     const updatedItems = await galleryStorage.getAll();
 
     if (this.container) {
-      this.renderGalleryList(this.container, updatedItems, onDelete, onImageClick);
+      this.renderGalleryList(
+        this.container,
+        updatedItems,
+        onDelete,
+        onImageClick
+      );
     }
 
     console.log(`🎯 Draw toggle: ${key} -> ${newDrawEnabled}`);
