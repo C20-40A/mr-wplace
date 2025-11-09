@@ -36,6 +36,8 @@ export class GalleryImageEditor {
       onBrightnessChange: (value) => this.controller?.onBrightnessChange(value),
       onContrastChange: (value) => this.controller?.onContrastChange(value),
       onSaturationChange: (value) => this.controller?.onSaturationChange(value),
+      onSharpnessToggle: (enabled) => this.controller?.onSharpnessToggle(enabled),
+      onSharpnessChange: (value) => this.controller?.onSharpnessChange(value),
       onDitheringChange: (enabled) => this.controller?.onDitheringChange(enabled),
       onDitheringThresholdChange: (threshold) => this.controller?.onDitheringThresholdChange(threshold),
       onGpuToggle: (enabled) => this.controller?.onGpuToggle(enabled),

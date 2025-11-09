@@ -8,6 +8,8 @@ export interface ImageEditorCallbacks {
   onBrightnessChange: (value: number) => void;
   onContrastChange: (value: number) => void;
   onSaturationChange: (value: number) => void;
+  onSharpnessToggle: (enabled: boolean) => void;
+  onSharpnessChange: (value: number) => void;
   onDitheringChange: (enabled: boolean) => void;
   onDitheringThresholdChange: (threshold: number) => void;
   onGpuToggle: (enabled: boolean) => void;
@@ -152,20 +154,35 @@ export class ImageEditorUI {
                   <input type="range" id="wps-saturation-slider" min="-100" max="100" step="1" value="0" class="range" style="width: 100%;">
                 </div>
               </div>
-              
-              <div>
-                <label style="display: flex; justify-content: center; align-items: center; font-size: 0.875rem; font-weight: 500; gap: 0.5rem; cursor: pointer;">
-                  <input type="checkbox" id="wps-dithering-checkbox" class="checkbox checkbox-sm">
-                  <span>${"dithering"}</span>
-                  <span>: <span id="wps-dithering-threshold-value">500</span></span>
-                </label>
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                  <span style="font-size: 0.65rem; color: #9ca3af;">0</span>
-                  <input type="range" id="wps-dithering-threshold-slider" min="0" max="1500" step="50" value="500" class="range" style="flex: 1;" disabled>
-                  <span style="font-size: 0.65rem; color: #9ca3af;">1500</span>
+
+              <div style="display: flex; gap: 0.75rem;">
+                <div style="flex: 1;">
+                  <label style="display: flex; justify-content: center; align-items: center; font-size: 0.875rem; font-weight: 500; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" id="wps-dithering-checkbox" class="checkbox checkbox-sm">
+                    <span>${"dithering"}</span>
+                    <span>: <span id="wps-dithering-threshold-value">500</span></span>
+                  </label>
+                  <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <span style="font-size: 0.65rem; color: #9ca3af;">0</span>
+                    <input type="range" id="wps-dithering-threshold-slider" min="0" max="1500" step="50" value="500" class="range" style="flex: 1;" disabled>
+                    <span style="font-size: 0.65rem; color: #9ca3af;">1500</span>
+                  </div>
+                </div>
+
+                <div style="flex: 1;">
+                  <label style="display: flex; justify-content: center; align-items: center; font-size: 0.875rem; font-weight: 500; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" id="wps-sharpness-checkbox" class="checkbox checkbox-sm">
+                    <span>${"sharpness"}</span>
+                    <span>: <span id="wps-sharpness-value">0</span></span>
+                  </label>
+                  <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <span style="font-size: 0.65rem; color: #9ca3af;">0</span>
+                    <input type="range" id="wps-sharpness-slider" min="0" max="100" step="1" value="0" class="range" style="flex: 1;" disabled>
+                    <span style="font-size: 0.65rem; color: #9ca3af;">100</span>
+                  </div>
                 </div>
               </div>
-              
+
               <div>
                 <label style="display: block; font-size: 0.75rem; font-weight: 500; margin-bottom: 0.25rem; color: #6b7280;">${"coordinate_input_optional"}</label>
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.25rem;">
@@ -230,6 +247,13 @@ export class ImageEditorUI {
     const saturationValue = this.container.querySelector(
       "#wps-saturation-value"
     );
+    const sharpnessCheckbox = this.container.querySelector(
+      "#wps-sharpness-checkbox"
+    ) as HTMLInputElement;
+    const sharpnessSlider = this.container.querySelector(
+      "#wps-sharpness-slider"
+    ) as HTMLInputElement;
+    const sharpnessValue = this.container.querySelector("#wps-sharpness-value");
     const ditheringCheckbox = this.container.querySelector(
       "#wps-dithering-checkbox"
     ) as HTMLInputElement;
@@ -361,6 +385,28 @@ export class ImageEditorUI {
     saturationSlider?.addEventListener("change", (e) => {
       const value = parseInt((e.target as HTMLInputElement).value);
       this.callbacks?.onSaturationChange(value);
+    });
+
+    // シャープネス
+    sharpnessCheckbox?.addEventListener("change", (e) => {
+      const checked = (e.target as HTMLInputElement).checked;
+      if (sharpnessSlider) {
+        sharpnessSlider.disabled = !checked;
+      }
+      this.callbacks?.onSharpnessToggle(checked);
+    });
+
+    // シャープネススライダー
+    sharpnessSlider?.addEventListener("input", (e) => {
+      const value = (e.target as HTMLInputElement).value;
+      if (sharpnessValue) {
+        sharpnessValue.textContent = value;
+      }
+    });
+
+    sharpnessSlider?.addEventListener("change", (e) => {
+      const value = parseInt((e.target as HTMLInputElement).value);
+      this.callbacks?.onSharpnessChange(value);
     });
 
     // ディザリング

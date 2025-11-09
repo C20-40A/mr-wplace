@@ -93,6 +93,8 @@ export const esTranslations = {
   brightness: "Brillo",
   contrast: "Contraste",
   saturation: "Saturación",
+  sharpness: "Nitidez",
+  dithering: "Tramado",
   include_paid_colors: "Incluir colores de pago",
   add_to_gallery: "Añadir a galería",
   download: "Descargar",

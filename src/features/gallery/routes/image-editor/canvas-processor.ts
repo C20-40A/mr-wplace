@@ -9,10 +9,11 @@ export interface ImageAdjustments {
   brightness: number; // -100 ~ 100
   contrast: number; // -100 ~ 100
   saturation: number; // -100 ~ 100
+  sharpness: number; // 0 ~ 100
 }
 
 /**
- * 明るさ・コントラスト・彩度調整を適用
+ * 明るさ・コントラスト・彩度・シャープネス調整を適用
  * ImageDataを直接変更（破壊的）
  */
 export function applyImageAdjustments(
@@ -20,7 +21,7 @@ export function applyImageAdjustments(
   adjustments: ImageAdjustments
 ): void {
   const data = imageData.data;
-  const { brightness, contrast, saturation } = adjustments;
+  const { brightness, contrast, saturation, sharpness } = adjustments;
 
   const brightnessValue = brightness * 2.55;
   const contrastFactor = (259 * (contrast + 255)) / (255 * (259 - contrast));
@@ -47,6 +48,58 @@ export function applyImageAdjustments(
     data[i] = r;
     data[i + 1] = g;
     data[i + 2] = b;
+  }
+
+  // シャープネス処理（3x3畳み込みフィルター）
+  if (sharpness > 0) {
+    applySharpness(imageData, sharpness);
+  }
+}
+
+/**
+ * シャープネスフィルター適用（アンチエイリアス除去）
+ * 8方向3x3畳み込みカーネルでエッジを強調し、中間色を除去
+ */
+function applySharpness(imageData: ImageData, amount: number): void {
+  const width = imageData.width;
+  const height = imageData.height;
+  const data = imageData.data;
+
+  // 元のデータをコピー（破壊を避けるため）
+  const original = new Uint8ClampedArray(data);
+
+  // シャープネス強度を0-1の範囲に正規化
+  const strength = amount / 100;
+
+  // 8方向シャープネスカーネル（正規化済み、合計=1）
+  // -s  -s  -s
+  // -s  1+8s -s
+  // -s  -s  -s
+  const centerWeight = 1 + 8 * strength;
+  const edgeWeight = -strength;
+
+  // 画像の各ピクセルに畳み込みフィルターを適用
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      for (let c = 0; c < 3; c++) { // RGB（アルファは除く）
+        const idx = (y * width + x) * 4 + c;
+
+        // 8方向の畳み込み
+        const sum =
+          original[((y - 1) * width + (x - 1)) * 4 + c] * edgeWeight + // 左上
+          original[((y - 1) * width + x) * 4 + c] * edgeWeight +       // 上
+          original[((y - 1) * width + (x + 1)) * 4 + c] * edgeWeight + // 右上
+          original[(y * width + (x - 1)) * 4 + c] * edgeWeight +       // 左
+          original[idx] * centerWeight +                                // 中心
+          original[(y * width + (x + 1)) * 4 + c] * edgeWeight +       // 右
+          original[((y + 1) * width + (x - 1)) * 4 + c] * edgeWeight + // 左下
+          original[((y + 1) * width + x) * 4 + c] * edgeWeight +       // 下
+          original[((y + 1) * width + (x + 1)) * 4 + c] * edgeWeight;  // 右下
+
+        // クランプして代入
+        data[idx] = Math.max(0, Math.min(255, sum));
+      }
+    }
   }
 }
 

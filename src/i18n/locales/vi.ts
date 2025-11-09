@@ -91,6 +91,8 @@ export const viTranslations = {
   brightness: "Độ sáng",
   contrast: "Độ tương phản",
   saturation: "Độ bão hòa",
+  sharpness: "Độ sắc nét",
+  dithering: "Phối màu",
   include_paid_colors: "Bao gồm màu trả phí",
   add_to_gallery: "Thêm vào thư viện",
   download: "Tải xuống",

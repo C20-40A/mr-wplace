@@ -26,6 +26,8 @@ export class EditorController {
   private brightness = 0;
   private contrast = 0;
   private saturation = 0;
+  private sharpnessEnabled = false;
+  private sharpness = 0;
   private ditheringEnabled = false;
   private ditheringThreshold = 500;
   private useGpu = true;
@@ -164,6 +166,17 @@ export class EditorController {
     this.updateScaledImage();
   }
 
+  onSharpnessToggle(enabled: boolean): void {
+    console.log("🧑‍🎨 : Sharpness toggled:", enabled);
+    this.sharpnessEnabled = enabled;
+    this.updateScaledImage();
+  }
+
+  onSharpnessChange(value: number): void {
+    this.sharpness = value;
+    this.updateScaledImage();
+  }
+
   onDitheringChange(enabled: boolean): void {
     console.log("🧑‍🎨 : Dithering changed:", enabled);
     this.ditheringEnabled = enabled;
@@ -233,6 +246,8 @@ export class EditorController {
     this.brightness = 0;
     this.contrast = 0;
     this.saturation = 0;
+    this.sharpnessEnabled = false;
+    this.sharpness = 0;
     this.ditheringEnabled = false;
     this.ditheringThreshold = 500;
     this.useGpu = true;
@@ -272,6 +287,13 @@ export class EditorController {
     const saturationValue = this.container.querySelector(
       "#wps-saturation-value"
     );
+    const sharpnessCheckbox = this.container.querySelector(
+      "#wps-sharpness-checkbox"
+    ) as HTMLInputElement;
+    const sharpnessSlider = this.container.querySelector(
+      "#wps-sharpness-slider"
+    ) as HTMLInputElement;
+    const sharpnessValue = this.container.querySelector("#wps-sharpness-value");
     const ditheringCheckbox = this.container.querySelector(
       "#wps-dithering-checkbox"
     ) as HTMLInputElement;
@@ -306,6 +328,12 @@ export class EditorController {
     if (contrastValue) contrastValue.textContent = "0";
     if (saturationSlider) saturationSlider.value = "0";
     if (saturationValue) saturationValue.textContent = "0";
+    if (sharpnessCheckbox) sharpnessCheckbox.checked = false;
+    if (sharpnessSlider) {
+      sharpnessSlider.value = "0";
+      sharpnessSlider.disabled = true;
+    }
+    if (sharpnessValue) sharpnessValue.textContent = "0";
     if (ditheringCheckbox) ditheringCheckbox.checked = false;
     if (gpuToggle) gpuToggle.checked = true;
     if (tlxInput) tlxInput.value = "";
@@ -645,6 +673,7 @@ export class EditorController {
       brightness: this.brightness,
       contrast: this.contrast,
       saturation: this.saturation,
+      sharpness: this.sharpnessEnabled ? this.sharpness : 0,
     };
 
     // 統合処理: リサイズ→調整→パレット（GPU優先）

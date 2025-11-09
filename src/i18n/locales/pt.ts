@@ -92,6 +92,8 @@ export const ptTranslations = {
   brightness: "Brilho",
   contrast: "Contraste",
   saturation: "Saturação",
+  sharpness: "Nitidez",
+  dithering: "Pontilhamento",
   include_paid_colors: "Incluir cores pagas",
   add_to_gallery: "Adicionar à galeria",
   download: "Download",
