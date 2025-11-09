@@ -90,10 +90,10 @@ export class ImageEditorUI {
           </div>
           
           <!-- Color Palette Area -->
-          <div id="wps-palette-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; min-height: 0;">
+          <div id="wps-palette-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow-y: auto; min-height: 0;">
             <!-- Mobile: Accordion -->
             <details id="wps-palette-accordion" style="display: none;">
-              <summary style="font-size: 0.875rem; font-weight: 500; cursor: pointer; list-style: none; margin-bottom: 0.75rem;">
+              <summary style="font-size: 0.875rem; font-weight: 500; cursor: pointer; list-style: none; margin: 0.5rem;">
                 Color Palette
                 <span style="float: right;">▼</span>
               </summary>
@@ -101,7 +101,6 @@ export class ImageEditorUI {
             </details>
             <!-- Desktop: Always visible -->
             <div id="wps-palette-desktop" style="display: block;">
-              <h4 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem;">Color Palette</h4>
               <div id="wps-color-palette-container"></div>
             </div>
           </div>
@@ -250,8 +249,10 @@ export class ImageEditorUI {
     slider?.addEventListener("input", (e) => {
       const scale = parseFloat((e.target as HTMLInputElement).value);
       const originalWidth = parseInt(widthInput?.dataset.originalWidth || "1");
-      const originalHeight = parseInt(heightInput?.dataset.originalHeight || "1");
-      
+      const originalHeight = parseInt(
+        heightInput?.dataset.originalHeight || "1"
+      );
+
       if (widthInput && heightInput) {
         widthInput.value = Math.round(originalWidth * scale).toString();
         heightInput.value = Math.round(originalHeight * scale).toString();
@@ -267,15 +268,17 @@ export class ImageEditorUI {
     widthInput?.addEventListener("input", (e) => {
       const width = parseInt((e.target as HTMLInputElement).value) || 1;
       const originalWidth = parseInt(widthInput.dataset.originalWidth || "1");
-      const originalHeight = parseInt(heightInput?.dataset.originalHeight || "1");
-      
+      const originalHeight = parseInt(
+        heightInput?.dataset.originalHeight || "1"
+      );
+
       // アスペクト比維持（常に固定）
       if (heightInput) {
         const aspectRatio = originalHeight / originalWidth;
         const newHeight = Math.round(width * aspectRatio);
         heightInput.value = newHeight.toString();
       }
-      
+
       // スライダー更新
       if (slider) {
         const scale = width / originalWidth;
@@ -294,15 +297,17 @@ export class ImageEditorUI {
     heightInput?.addEventListener("input", (e) => {
       const height = parseInt((e.target as HTMLInputElement).value) || 1;
       const originalWidth = parseInt(widthInput?.dataset.originalWidth || "1");
-      const originalHeight = parseInt(heightInput.dataset.originalHeight || "1");
-      
+      const originalHeight = parseInt(
+        heightInput.dataset.originalHeight || "1"
+      );
+
       // アスペクト比維持（常に固定）
       if (widthInput) {
         const aspectRatio = originalWidth / originalHeight;
         const newWidth = Math.round(height * aspectRatio);
         widthInput.value = newWidth.toString();
       }
-      
+
       // スライダー更新
       if (slider) {
         const scale = height / originalHeight;
@@ -312,7 +317,9 @@ export class ImageEditorUI {
 
     heightInput?.addEventListener("change", (e) => {
       const height = parseInt((e.target as HTMLInputElement).value) || 1;
-      const originalHeight = parseInt(heightInput.dataset.originalHeight || "1");
+      const originalHeight = parseInt(
+        heightInput.dataset.originalHeight || "1"
+      );
       const scale = height / originalHeight;
       this.callbacks?.onScaleChange(Math.max(0.01, Math.min(1, scale)));
     });
@@ -402,9 +409,15 @@ export class ImageEditorUI {
   private setupImageReplacement(): void {
     if (!this.container || !this.callbacks) return;
 
-    const replaceZone = this.container.querySelector("#wps-image-replace-zone") as HTMLElement;
-    const overlay = this.container.querySelector("#wps-replace-overlay") as HTMLElement;
-    const fileInput = this.container.querySelector("#wps-replace-file-input") as HTMLInputElement;
+    const replaceZone = this.container.querySelector(
+      "#wps-image-replace-zone"
+    ) as HTMLElement;
+    const overlay = this.container.querySelector(
+      "#wps-replace-overlay"
+    ) as HTMLElement;
+    const fileInput = this.container.querySelector(
+      "#wps-replace-file-input"
+    ) as HTMLInputElement;
 
     if (!replaceZone || !overlay || !fileInput) return;
 
@@ -453,7 +466,10 @@ export class ImageEditorUI {
       overlay.style.background = "rgba(0,0,0,0.7)";
 
       const file = e.dataTransfer?.files?.[0];
-      if (file && (file.type.startsWith("image/") || file.name.endsWith(".json"))) {
+      if (
+        file &&
+        (file.type.startsWith("image/") || file.name.endsWith(".json"))
+      ) {
         this.callbacks?.onReplaceImage(file);
       }
     });
@@ -474,8 +490,8 @@ export class ImageEditorUI {
       ) as HTMLElement;
 
       if (mainGrid) {
-        mainGrid.style.gridTemplateColumns = isDesktop ? "1fr 1fr" : "1fr";
-        mainGrid.style.height = isDesktop ? "calc(100vh - 8rem)" : "auto";
+        mainGrid.style.gridTemplateColumns = isDesktop ? "3fr 4fr" : "1fr";
+        mainGrid.style.height = isDesktop ? "80vh" : "auto";
       }
 
       if (accordion) {
