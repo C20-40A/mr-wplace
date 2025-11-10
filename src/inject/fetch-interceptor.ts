@@ -65,11 +65,15 @@ export const setupFetchInterceptor = async (
  * Process tiles directly in inject (page context) using Canvas API
  * This avoids Firefox extension context ImageBitmap security issues
  *
- * Caching Strategy:
+ * Caching Strategy with IndexedDB:
  * 1. data saver OFF / cache key NOT exists -> No caching. Process tile.
  * 2. data saver OFF / cache key exists -> Process tile and cache the processed result.
  * 3. data saver ON / cache key NOT exists -> Fetch, process, and cache the processed result.
  * 4. data saver ON / cache key exists -> Return cached processed tile directly (no fetch/process).
+ *
+ * Cache storage:
+ * - Memory Map: for fast access during session
+ * - IndexedDB: for persistent cache across reloads
  */
 const handleTileRequest = async (
   originalFetch: typeof fetch,
@@ -86,12 +90,30 @@ const handleTileRequest = async (
   const tileY = parseInt(tileMatch[2], 10);
   const cacheKey = `${tileX},${tileY}`;
   const dataSaver = window.mrWplaceDataSaver;
-  const cacheExists = dataSaver?.tileCache.has(cacheKey) ?? false;
+
+  // Check memory cache first
+  let cacheExists = dataSaver?.tileCache.has(cacheKey) ?? false;
+  let cachedBlob: Blob | null = null;
+
+  // If not in memory, check IndexedDB
+  if (!cacheExists && dataSaver?.tileCacheDB) {
+    try {
+      cachedBlob = await dataSaver.tileCacheDB.getCachedTile(cacheKey);
+      if (cachedBlob) {
+        // Load into memory cache for faster access
+        dataSaver.tileCache.set(cacheKey, cachedBlob);
+        cacheExists = true;
+      }
+    } catch (error) {
+      console.warn("🧑‍🎨 : Failed to load from IndexedDB:", error);
+    }
+  } else if (cacheExists) {
+    cachedBlob = dataSaver!.tileCache.get(cacheKey)!;
+  }
 
   // Case 4: data saver ON + cache exists -> Return cached processed tile
-  if (dataSaver?.enabled && cacheExists) {
+  if (dataSaver?.enabled && cacheExists && cachedBlob) {
     console.log("🧑‍🎨 : Returning cached processed tile:", cacheKey);
-    const cachedBlob = dataSaver.tileCache.get(cacheKey)!;
     return new Response(cachedBlob, {
       status: 200,
       statusText: "OK (Cached Processed)",
@@ -139,8 +161,22 @@ const handleTileRequest = async (
 
   // Cache the processed tile if needed
   if (shouldCacheProcessed && dataSaver) {
+    // Save to memory cache
     dataSaver.tileCache.set(cacheKey, processedBlob);
-    console.log("🧑‍🎨 : Cached processed tile:", cacheKey);
+
+    // Save to IndexedDB for persistence
+    if (dataSaver.tileCacheDB) {
+      try {
+        await dataSaver.tileCacheDB.setCachedTile(
+          cacheKey,
+          processedBlob,
+          dataSaver.maxCacheSize
+        );
+        console.log("🧑‍🎨 : Cached processed tile to IndexedDB:", cacheKey);
+      } catch (error) {
+        console.warn("🧑‍🎨 : Failed to cache to IndexedDB:", error);
+      }
+    }
   }
 
   // Notify that tile fetch is complete (hide drawing loader)

@@ -3,7 +3,7 @@
 ## インストール方法
 
 ```
-- 【PC】 [Chrome ウェブストア](<https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej>)または[Edge アドオン](<https://microsoftedge.microsoft.com/addons/detail/mr-wplace/acdodonamhbokadiikkfnnliplijigip>)からワンクリックでインストール
+- 【PC】 [Chrome ウェブストア](<https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej>)または[Edge アドオン](<https://microsoftedge.microsoft.com/addons/detail/mr-wplace/acdodonamhbokadiikkfnnliplijigip>)または[Firefoxアドオン](<https://addons.mozilla.org/ja/firefox/addon/mr-wplace>)からワンクリックでインストール
 - 【iOS】 [Orion Browser by Kagi](<https://apps.apple.com/jp/app/orion-browser-by-kagi/id1484498200>) をインストール → 設定>詳細設定>「Chrome 拡張機能と Firefox 拡張機能」を ON → [Chrome ウェブストア](<https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej>)からインストール
 - 【Android】 EdgeCanary アプリをインストール → 開発者モードにする(設定>「MicrosoftEdge について」> 1 番下のバージョンの数字を５回ぐらいタップ) → 戻って「開発者向けオプション」→「Extension install by id」→`acdodonamhbokadiikkfnnliplijigip` を入力
 ```
@@ -27,6 +27,53 @@
 ・ 経度緯度と wplace 座標の相互変換&ジャンプする機能
 ・ 自動スポイト機能は開発モードに限定(コナミコマンド入力禁止)
 ・ その他 UI の大幅な更新
+
+---
+
+# 🧑‍🎨Mr. Wplace(v1.9.1)リリースノート
+
+## パレットの表示/非表示
+
+- ペイント画面でパレットを非表示にできるようになりました
+- スマホでのペイントがしやすくなります
+- 現在選択中の色がアイコンの右上に表示されます
+
+## 画像の名称
+
+- 画像に名称をつけられるようになりました
+- 一覧の画面で、どの画像か見分けやすくなります
+
+## 画像の変更
+
+- 画像を入れ替えられるようになりました
+- ギャラリー → 編集 → 左上にドラッグアンドドロップ
+- 細部を調整した画像を（座標そのままで）差し替えたい時に便利です
+
+## ギャラリーバックアップ
+
+- ギャラリーの画像をまとめて出力/入力できるようにしました
+- 移行したりほかのデバイスで使いたいときに便利
+- ポップアップから利用可能
+- zip で入力/出力されます
+
+## タイル境界表示
+
+- タイルの境界を赤く表示できます
+- wplace に残っていた開発向け機能を有効にしています
+
+## firefox 対応
+
+- 想定していたより多くの課題があったため、対応に時間がかかりました
+- 描画処理の移設など、コードの構造を大きく変えたため、デグレなどしているかもしれません
+
+## UI 調整/バグ修正
+
+- 色フィルター ON にすると、その色の色統計しか出てこない問題の修正
+- データセーバーのアイコンの UI を変更
+- 一部テキストが描画できない問題の修正
+- 画像削除/レイヤー未配置にしたとき描画が残るバグの修正
+- 画像移動ボタンを押すと新規画像追加ボタンが消える問題の修正
+- 描画中のローダーの挙動と UI の調整
 
 ---
 

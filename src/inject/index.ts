@@ -1,16 +1,22 @@
 import { setupFetchInterceptor } from "./fetch-interceptor";
 import { setupMapObserver } from "./map-instance";
 import { setupMessageHandler } from "./message-handler";
+import { tileCacheDB } from "./cache-storage";
 
 (async () => {
   // Initialization state
   let isInitialized = false;
 
   try {
+    // Initialize IndexedDB
+    await tileCacheDB.init();
+
     // Initialize data saver state
     window.mrWplaceDataSaver = {
       enabled: false,
       tileCache: new Map(),
+      maxCacheSize: 100, // Default value, will be synced from content script
+      tileCacheDB,
     };
 
     // Initialize compute device (default: gpu)
