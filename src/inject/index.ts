@@ -3,52 +3,56 @@ import { setupMapObserver } from "./map-instance";
 import { setupMessageHandler } from "./message-handler";
 import { tileCacheDB } from "./cache-storage";
 
-(async () => {
-  // Initialization state
-  let isInitialized = false;
+// CRITICAL: Setup fetch interceptor IMMEDIATELY and SYNCHRONOUSLY
+// to catch /me requests before WPlace app code runs
+(() => {
+  console.log("🧑‍🎨: Setting up fetch interceptor (sync)...");
 
+  // Initialize data saver state synchronously
+  window.mrWplaceDataSaver = {
+    enabled: false,
+    tileCache: new Map(),
+    maxCacheSize: 100, // Default value, will be synced from content script
+    tileCacheDB, // IndexedDB will be initialized asynchronously later
+  };
+
+  // Initialize compute device (default: gpu)
+  window.mrWplaceComputeDevice = "gpu";
+
+  // Setup fetch interceptor synchronously (no await)
   try {
-    // Initialize IndexedDB
-    await tileCacheDB.init();
+    setupFetchInterceptor();
+    console.log("🧑‍🎨: Fetch interceptor ready");
+  } catch (error) {
+    console.error("🧑‍🎨: Failed to setup fetch interceptor:", error);
+  }
+})();
 
-    // Initialize data saver state
-    window.mrWplaceDataSaver = {
-      enabled: false,
-      tileCache: new Map(),
-      maxCacheSize: 100, // Default value, will be synced from content script
-      tileCacheDB,
-    };
+// Initialize other features asynchronously in parallel
+(async () => {
+  try {
+    console.log("🧑‍🎨: Starting async initialization...");
 
-    // Initialize compute device (default: gpu)
-    window.mrWplaceComputeDevice = "gpu";
+    // Run initialization tasks in parallel
+    await Promise.all([
+      // Initialize IndexedDB
+      tileCacheDB.init().catch((error) => {
+        console.error("🧑‍🎨: Failed to init IndexedDB:", error);
+      }),
 
-    // Setup fetch interceptor
-    try {
-      await setupFetchInterceptor(() => isInitialized);
-    } catch (error) {
-      console.error("🧑‍🎨: Failed to setup fetch interceptor:", error);
-    }
+      // Setup message handler
+      Promise.resolve(setupMessageHandler()).catch((error) => {
+        console.error("🧑‍🎨: Failed to setup message handler:", error);
+      }),
 
-    // Setup message handler
-    try {
-      setupMessageHandler();
-    } catch (error) {
-      console.error("🧑‍🎨: Failed to setup message handler:", error);
-    }
+      // Setup map observer
+      Promise.resolve(setupMapObserver()).catch((error) => {
+        console.error("🧑‍🎨: Failed to setup map observer:", error);
+      }),
+    ]);
 
-    // Setup map observer
-    try {
-      setupMapObserver();
-    } catch (error) {
-      console.error("🧑‍🎨: Failed to setup map observer:", error);
-    }
-
-    // Mark as initialized (even if some features failed)
-    isInitialized = true;
-    console.log("🧑‍🎨: Initialization complete");
+    console.log("🧑‍🎨: Async initialization complete");
   } catch (error) {
     console.error("🧑‍🎨: Critical initialization error:", error);
-    // Try to mark as initialized anyway
-    isInitialized = true;
   }
 })();

@@ -287,8 +287,20 @@ export const sendTileBoundariesToInject = async () => {
       script.src = runtime.getURL("dist/inject.js");
       // scriptタグをheadの先頭に挿入
       (document.head || document.documentElement).prepend(script);
-      // 読み込まれたら即削除
-      script.onload = () => script.remove();
+
+      // Wait for inject script to load and setup fetch interceptor
+      await new Promise<void>((resolve) => {
+        script.onload = () => {
+          script.remove();
+          // Add a small delay to ensure synchronous code in inject.js has executed
+          setTimeout(resolve, 10);
+        };
+        script.onerror = () => {
+          console.error("🧑‍🎨: Failed to load inject.js");
+          resolve(); // Continue anyway
+        };
+      });
+
       console.log("🧑‍🎨: Injected fetch interceptor");
     }
 

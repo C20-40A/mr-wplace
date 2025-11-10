@@ -2,18 +2,12 @@ import { drawOverlayLayersOnTile } from "./tile-draw";
 
 /**
  * Setup fetch interceptor to handle tile requests and user data
+ * CRITICAL: Must be called synchronously to catch early /me requests
  */
-export const setupFetchInterceptor = async (
-  isInitialized: () => boolean
-): Promise<void> => {
+export const setupFetchInterceptor = (): void => {
   const originalFetch = window.fetch;
 
   window.fetch = async function (...args): Promise<Response> {
-    // Wait for initialization
-    while (!isInitialized()) {
-      await new Promise((resolve) => setTimeout(resolve, 10));
-    }
-
     const requestInfo = args[0];
     const url =
       typeof requestInfo === "string"
@@ -43,7 +37,7 @@ export const setupFetchInterceptor = async (
           "*"
         );
       } catch (error) {
-        console.error("Failed to parse /me response:", error);
+        console.error("🧑‍🎨: Failed to parse /me response:", error);
       }
 
       return response;
