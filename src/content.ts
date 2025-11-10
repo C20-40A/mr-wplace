@@ -95,6 +95,24 @@ export const sendColorFilterToInject = (colorFilterManager: ColorFilterManager) 
 };
 
 /**
+ * Send cache size setting to inject side
+ */
+export const sendCacheSizeToInject = async () => {
+  const { DataSaverStorage } = await import("@/features/data-saver/storage");
+  const maxCacheSize = await DataSaverStorage.getMaxCacheSize();
+
+  window.postMessage(
+    {
+      source: "mr-wplace-cache-size-update",
+      maxCacheSize,
+    },
+    "*"
+  );
+
+  console.log(`🧑‍🎨 : Sent cache size to inject side: ${maxCacheSize}`);
+};
+
+/**
  * Send active snapshots to inject side for overlay rendering
  */
 export const sendSnapshotsToInject = async () => {
@@ -413,6 +431,7 @@ export const sendTileBoundariesToInject = async () => {
     await sendComputeDeviceToInject();
     sendColorFilterToInject(colorFilterManager);
     await sendTileBoundariesToInject();
+    await sendCacheSizeToInject();
 
     // Global access for ImageProcessor and Gallery
     window.mrWplace = {

@@ -6,9 +6,11 @@ import {
 import {
   handleThemeUpdate,
   handleDataSaverUpdate,
+  handleCacheSizeUpdate,
   handleComputeDeviceUpdate,
   handleColorFilterUpdate,
   handleTileBoundariesUpdate,
+  handleCacheClear,
 } from "./handlers/state-handlers";
 import {
   handleStatsRequest,
@@ -48,6 +50,11 @@ export const setupMessageHandler = (): void => {
       return;
     }
 
+    if (source === "mr-wplace-cache-size-update") {
+      handleCacheSizeUpdate(event.data);
+      return;
+    }
+
     if (source === "mr-wplace-compute-device") {
       handleComputeDeviceUpdate(event.data);
       return;
@@ -60,6 +67,11 @@ export const setupMessageHandler = (): void => {
 
     if (source === "mr-wplace-tile-boundaries-update") {
       handleTileBoundariesUpdate(event.data);
+      return;
+    }
+
+    if (source === "mr-wplace-cache-clear") {
+      handleCacheClear();
       return;
     }
 

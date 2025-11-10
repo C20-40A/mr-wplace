@@ -25,6 +25,16 @@ export const handleDataSaverUpdate = (data: { enabled: boolean }): void => {
 };
 
 /**
+ * Handle data saver cache size update
+ */
+export const handleCacheSizeUpdate = (data: { maxCacheSize: number }): void => {
+  if (window.mrWplaceDataSaver) {
+    window.mrWplaceDataSaver.maxCacheSize = data.maxCacheSize;
+    console.log("🧑‍🎨 : Cache size updated:", data.maxCacheSize);
+  }
+};
+
+/**
  * Handle compute device update
  */
 export const handleComputeDeviceUpdate = (data: { device: "gpu" | "cpu" }): void => {
@@ -81,6 +91,16 @@ export const handleTileBoundariesUpdate = (data: { visible: boolean }): void => 
   if (window.wplaceMap) {
     window.wplaceMap.showTileBoundaries = data.visible;
     console.log("🧑‍🎨 : Tile boundaries updated:", data.visible);
+  }
+};
+
+/**
+ * Handle cache clear request
+ */
+export const handleCacheClear = (): void => {
+  if (window.mrWplaceDataSaver?.tileCache) {
+    window.mrWplaceDataSaver.tileCache.clear();
+    console.log("🧑‍🎨 : Memory cache cleared");
   }
 };
 

@@ -5,6 +5,13 @@ export interface TileProcessingQueue extends Map<string, TileProcessingCallback>
 export interface DataSaverState {
   enabled: boolean;
   tileCache: Map<string, Blob>;
+  maxCacheSize: number;
+  tileCacheDB?: {
+    getCachedTile: (key: string) => Promise<Blob | null>;
+    setCachedTile: (key: string, blob: Blob, maxSize: number) => Promise<void>;
+    clearCache: () => Promise<void>;
+    getCacheSize: () => Promise<number>;
+  };
 }
 
 export interface GalleryImage {
