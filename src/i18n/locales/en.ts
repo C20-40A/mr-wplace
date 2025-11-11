@@ -292,4 +292,12 @@ However, please pay careful attention to the following:
   data_saver_on: "Data Saver ON",
   data_saver_off: "Data Saver OFF",
   data_saver_rendering_paused: "Rendering Paused",
+  storage_usage: "Storage Usage",
+  cache_usage: "Cache Usage",
+  offline_cache_settings: "Offline Cache Settings",
+  maximum_cache_size: "Maximum Cache Size",
+  clear_all_cache: "Clear All Cache",
+  clearing: "Clearing...",
+  cache_cleared: "Cache Cleared!",
+  tiles: "tiles",
 };

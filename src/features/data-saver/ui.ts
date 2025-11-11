@@ -1,6 +1,7 @@
 import { DataSaverStorage } from "./storage";
 import { tileCacheDB } from "./cache-storage";
 import { sendCacheSizeToInject } from "@/content";
+import { t } from "@/i18n/manager";
 
 /**
  * Show settings modal for cache management
@@ -8,11 +9,12 @@ import { sendCacheSizeToInject } from "@/content";
 export const showSettingsModal = async (): Promise<void> => {
   const maxCacheSize = await DataSaverStorage.getMaxCacheSize();
   const currentCacheSize = await tileCacheDB.getCacheSize();
+  const storageEstimate = await navigator.storage.estimate();
 
-  const modal = createModal(maxCacheSize, currentCacheSize);
+  const modal = createModal(maxCacheSize, currentCacheSize, storageEstimate);
   document.body.appendChild(modal);
 
-  setupModalHandlers(modal, maxCacheSize);
+  setupModalHandlers(modal);
   modal.showModal();
 };
 
@@ -21,13 +23,15 @@ export const showSettingsModal = async (): Promise<void> => {
  */
 const createModal = (
   maxCacheSize: number,
-  currentCacheSize: number
+  currentCacheSize: number,
+  storageEstimate: StorageEstimate
 ): HTMLDialogElement => {
-  const cachePercentage = Math.round((currentCacheSize / maxCacheSize) * 100);
+  const usageBytes = storageEstimate.usage || 0;
+  const usageMB = (usageBytes / 1024 / 1024).toFixed(1);
 
   const modal = document.createElement("dialog");
   modal.className = "modal";
-  modal.innerHTML = `
+  modal.innerHTML = t`
     <div class="modal-box max-w-2xl">
       <!-- Header -->
       <div class="flex items-center gap-3 mb-6">
@@ -38,29 +42,37 @@ const createModal = (
           </svg>
         </div>
         <div>
-          <h3 class="font-bold text-xl">Offline Cache Settings</h3>
+          <h3 class="font-bold text-xl">${`offline_cache_settings`}</h3>
         </div>
       </div>
 
-      <!-- Progress Bar -->
+      <!-- Storage Usage -->
+      <div class="mb-2">
+        <div class="flex justify-between text-sm">
+          <span>${`storage_usage`}</span>
+          <span class="font-semibold">${usageMB} MB</span>
+        </div>
+      </div>
+
+      <!-- Cache Usage -->
       <div class="mb-6">
         <div class="flex justify-between text-sm mb-2">
-          <span>Cache Usage</span>
-          <span class="font-semibold">${currentCacheSize} / ${maxCacheSize} tiles</span>
+          <span>${t`cache_usage`}</span>
+          <span class="font-semibold">${currentCacheSize} / ${maxCacheSize} ${`tiles`}</span>
         </div>
-        <progress class="progress ${getProgressClass(cachePercentage)} w-full" value="${currentCacheSize}" max="${maxCacheSize}"></progress>
+        <progress class="progress progress-primary w-full" value="${currentCacheSize}" max="${maxCacheSize}"></progress>
       </div>
 
       <!-- Cache Size Slider -->
       <div class="form-control mb-6">
         <label class="label">
-          <span class="label-text font-semibold">Maximum Cache Size</span>
+          <span class="label-text font-semibold">${`maximum_cache_size`}</span>
         </label>
         <div class="flex items-center gap-4">
           <input id="cache-size-slider" type="range" min="10" max="1000" value="${maxCacheSize}"
                  class="range range-primary" step="10" style="flex: 1 1 auto; min-width: 0;" />
           <div class="text-right" style="flex-shrink: 0;">
-            <div class="text-lg font-bold" id="cache-size-value">${maxCacheSize} tiles</div>
+            <div class="text-lg font-bold" id="cache-size-value">${maxCacheSize} ${`tiles`}</div>
           </div>
         </div>
       </div>
@@ -71,18 +83,15 @@ const createModal = (
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
             <path fill-rule="evenodd" d="M16.5 4.478v.227a48.816 48.816 0 013.878.512.75.75 0 11-.256 1.478l-.209-.035-1.005 13.07a3 3 0 01-2.991 2.77H8.084a3 3 0 01-2.991-2.77L4.087 6.66l-.209.035a.75.75 0 01-.256-1.478A48.567 48.567 0 017.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.951a52.662 52.662 0 013.369 0c1.603.051 2.815 1.387 2.815 2.951zm-6.136-1.452a51.196 51.196 0 013.273 0C14.39 3.05 15 3.684 15 4.478v.113a49.488 49.488 0 00-6 0v-.113c0-.794.609-1.428 1.364-1.452zm-.355 5.945a.75.75 0 10-1.5.058l.347 9a.75.75 0 101.499-.058l-.346-9zm5.48.058a.75.75 0 10-1.498-.058l-.347 9a.75.75 0 001.5.058l.345-9z" clip-rule="evenodd" />
           </svg>
-          Clear All Cache
+          ${`clear_all_cache`}
         </button>
       </div>
 
       <!-- Footer Buttons -->
       <div class="modal-action mt-6">
-        <button id="cancel-btn" class="btn btn-ghost">Cancel</button>
+        <button id="cancel-btn" class="btn btn-ghost">${`cancel`}</button>
         <button id="save-btn" class="btn btn-primary gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
-            <path fill-rule="evenodd" d="M19.916 4.626a.75.75 0 01.208 1.04l-9 13.5a.75.75 0 01-1.154.114l-6-6a.75.75 0 011.06-1.06l5.353 5.353 8.493-12.739a.75.75 0 011.04-.208z" clip-rule="evenodd" />
-          </svg>
-          Save Settings
+          ${`save`}
         </button>
       </div>
     </div>
@@ -95,28 +104,16 @@ const createModal = (
 };
 
 /**
- * Get progress bar class based on percentage
- */
-const getProgressClass = (percentage: number): string => {
-  return "progress-primary";
-};
-
-/**
  * Setup all modal event handlers
  */
-const setupModalHandlers = (
-  modal: HTMLDialogElement,
-  initialMaxCacheSize: number
-): void => {
+const setupModalHandlers = (modal: HTMLDialogElement): void => {
   const slider = modal.querySelector("#cache-size-slider") as HTMLInputElement;
   const valueDisplay = modal.querySelector(
     "#cache-size-value"
   ) as HTMLDivElement;
   const saveBtn = modal.querySelector("#save-btn") as HTMLButtonElement;
   const cancelBtn = modal.querySelector("#cancel-btn") as HTMLButtonElement;
-  const backdropBtn = modal.querySelector(
-    "#backdrop-btn"
-  ) as HTMLButtonElement;
+  const backdropBtn = modal.querySelector("#backdrop-btn") as HTMLButtonElement;
   const clearCacheBtn = modal.querySelector(
     "#clear-cache-btn"
   ) as HTMLButtonElement;
@@ -124,7 +121,7 @@ const setupModalHandlers = (
   // Slider input handler
   slider.addEventListener("input", () => {
     const value = parseInt(slider.value, 10);
-    valueDisplay.textContent = `${value} tiles`;
+    valueDisplay.textContent = `${value} ${t`tiles`}`;
   });
 
   // Clear cache handler
@@ -158,16 +155,14 @@ const handleClearCache = async (
   modal: HTMLDialogElement,
   clearCacheBtn: HTMLButtonElement
 ): Promise<void> => {
-  const confirmed = confirm(
-    "⚠️ This will delete all cached tiles.\n\nYou'll need to re-download tiles when browsing.\n\nContinue?"
-  );
+  const confirmed = confirm("⚠️ Continue?");
 
   if (!confirmed) return;
 
   clearCacheBtn.disabled = true;
   clearCacheBtn.innerHTML = `
     <span class="loading loading-spinner loading-sm"></span>
-    Clearing...
+    ${t`clearing`}
   `;
 
   try {
@@ -190,7 +185,7 @@ const handleClearCache = async (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
         <path fill-rule="evenodd" d="M19.916 4.626a.75.75 0 01.208 1.04l-9 13.5a.75.75 0 01-1.154.114l-6-6a.75.75 0 011.06-1.06l5.353 5.353 8.493-12.739a.75.75 0 011.04-.208z" clip-rule="evenodd" />
       </svg>
-      Cache Cleared!
+      ${t`cache_cleared`}
     `;
 
     setTimeout(() => {
@@ -204,7 +199,7 @@ const handleClearCache = async (
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
         <path fill-rule="evenodd" d="M16.5 4.478v.227a48.816 48.816 0 013.878.512.75.75 0 11-.256 1.478l-.209-.035-1.005 13.07a3 3 0 01-2.991 2.77H8.084a3 3 0 01-2.991-2.77L4.087 6.66l-.209.035a.75.75 0 01-.256-1.478A48.567 48.567 0 017.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.951a52.662 52.662 0 013.369 0c1.603.051 2.815 1.387 2.815 2.951zm-6.136-1.452a51.196 51.196 0 013.273 0C14.39 3.05 15 3.684 15 4.478v.113a49.488 49.488 0 00-6 0v-.113c0-.794.609-1.428 1.364-1.452zm-.355 5.945a.75.75 0 10-1.5.058l.347 9a.75.75 0 101.499-.058l-.346-9zm5.48.058a.75.75 0 10-1.498-.058l-.347 9a.75.75 0 001.5.058l.345-9z" clip-rule="evenodd" />
       </svg>
-      Clear All Cache
+      ${t`clear_all_cache`}
     `;
     alert("Failed to clear cache. Please try again.");
   }
