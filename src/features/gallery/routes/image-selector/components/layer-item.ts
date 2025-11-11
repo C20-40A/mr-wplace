@@ -243,6 +243,7 @@ const createDPad = (
       transition: all 0.15s;
       grid-column: ${gridColumn};
       grid-row: ${gridRow};
+      user-select: none;
     `;
     btn.onmouseenter = () => {
       btn.style.background = "#bae6fd";
