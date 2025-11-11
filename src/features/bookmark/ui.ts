@@ -503,8 +503,14 @@ export const renderBookmarks = (
         return tagNameA.localeCompare(tagNameB);
       }
 
-      // 同じタグ内では作成日時順
-      return b.id - a.id;
+      // 同じタグ内ではアクセス順
+      if (!a.lastAccessedDate && !b.lastAccessedDate) return b.id - a.id;
+      if (!a.lastAccessedDate) return 1;
+      if (!b.lastAccessedDate) return -1;
+      return (
+        new Date(b.lastAccessedDate).getTime() -
+        new Date(a.lastAccessedDate).getTime()
+      );
     });
   }
 
