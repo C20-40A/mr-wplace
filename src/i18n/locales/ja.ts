@@ -296,4 +296,12 @@ export const jaTranslations = {
   data_saver_on: "データセーバー ON",
   data_saver_off: "データセーバー OFF",
   data_saver_rendering_paused: "画像更新停止中",
+  storage_usage: "ストレージ使用量",
+  cache_usage: "キャッシュ使用量",
+  offline_cache_settings: "オフラインキャッシュ設定",
+  maximum_cache_size: "最大キャッシュサイズ",
+  clear_all_cache: "すべてのキャッシュをクリア",
+  clearing: "クリア中...",
+  cache_cleared: "キャッシュをクリアしました!",
+  tiles: "タイル",
 };
