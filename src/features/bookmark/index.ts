@@ -243,9 +243,74 @@ const setupModal = (): void => {
   // Existing tags selection
   modal
     .querySelector("#wps-existing-tags-container")!
-    .addEventListener("click", (e) => {
+    .addEventListener("click", async (e) => {
       const target = e.target as HTMLElement;
-      const tagItem = target.closest(
+
+      console.log("🧑‍🎨 : Clicked element:", target);
+
+      // Check if edit button was clicked
+      const editBtn = target.closest(".wps-tag-edit-btn") as HTMLElement | null;
+      if (editBtn) {
+        console.log("🧑‍🎨 : Edit button clicked!");
+        e.stopPropagation();
+
+        const color = editBtn.dataset.color!;
+        const name = editBtn.dataset.name || "";
+        const tag: import("./types").Tag = { color, name: name || undefined };
+
+        const { showTagEditModal } = await import("./ui");
+
+        // Show modal with callbacks
+        showTagEditModal(
+          tag,
+          // onSave callback
+          async (oldTag, newTag) => {
+            await BookmarkStorage.updateTag(oldTag, newTag);
+            Toast.success(t`${"saved_message"}`);
+
+            // Refresh the edit screen if it's open
+            const editScreen = document.getElementById("wps-bookmark-edit-screen");
+            if (editScreen?.style.display === "block") {
+              const { showEditScreen } = await import("./ui");
+              const bookmarkId = parseInt(editScreen.dataset.bookmarkId!);
+              const bookmarks = await BookmarkStorage.getBookmarks();
+              const bookmark = bookmarks.find((b) => b.id === bookmarkId);
+              if (bookmark) showEditScreen(bookmark);
+            }
+
+            render();
+            console.log("🧑‍🎨 : Tag updated:", oldTag, "->", newTag);
+          },
+          // onDelete callback
+          async (tagToDelete) => {
+            if (!confirm(t`${"tag_delete_confirm"}`)) return;
+
+            await BookmarkStorage.deleteTag(tagToDelete);
+            Toast.success(t`${"deleted_message"}`);
+
+            // Refresh the edit screen if it's open
+            const editScreen = document.getElementById("wps-bookmark-edit-screen");
+            if (editScreen?.style.display === "block") {
+              const { showEditScreen } = await import("./ui");
+              const bookmarkId = parseInt(editScreen.dataset.bookmarkId!);
+              const bookmarks = await BookmarkStorage.getBookmarks();
+              const bookmark = bookmarks.find((b) => b.id === bookmarkId);
+              if (bookmark) showEditScreen(bookmark);
+            }
+
+            render();
+            console.log("🧑‍🎨 : Tag deleted:", tagToDelete);
+          }
+        );
+
+        return;
+      }
+
+      // Otherwise, handle tag selection (only if clicking on the clickable area)
+      const clickableArea = target.closest(".wps-tag-item-clickable") as HTMLElement | null;
+      if (!clickableArea) return;
+
+      const tagItem = clickableArea.closest(
         ".wps-existing-tag-item"
       ) as HTMLElement | null;
 
@@ -264,7 +329,7 @@ const setupModal = (): void => {
       document.querySelectorAll(".wps-existing-tag-item").forEach((item) => {
         (item as HTMLElement).style.border = "2px solid transparent";
       });
-      tagItem.style.border = "2px solid #000";
+      tagItem.style.border = "2px solid oklch(var(--bc))";
 
       console.log("🧑‍🎨 : Selected existing tag:", color, name);
     });
