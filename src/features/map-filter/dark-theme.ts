@@ -2,7 +2,7 @@ import { ThemeToggleStorage } from "@/features/theme-toggle/storage";
 
 class DarkTheme {
   private button: HTMLButtonElement | null = null;
-  private currentTheme: "light" | "dark" = "light";
+  private currentTheme: "custom-winter" | "dark" = "custom-winter";
 
   async init() {
     // 現在のtheme読み込み
@@ -17,7 +17,7 @@ class DarkTheme {
 
   private createButton() {
     this.button = document.createElement("button");
-    this.button.textContent = this.currentTheme === "light" ? "☀️" : "🌙";
+    this.button.textContent = this.currentTheme === "custom-winter" ? "☀️" : "🌙";
     this.button.className = `
       btn btn-sm btn-circle
       top-2
@@ -39,7 +39,7 @@ class DarkTheme {
   }
 
   private async toggleTheme() {
-    const newTheme = this.currentTheme === "light" ? "dark" : "light";
+    const newTheme = this.currentTheme === "custom-winter" ? "dark" : "custom-winter";
     this.currentTheme = newTheme;
 
     // Storage保存
@@ -47,7 +47,7 @@ class DarkTheme {
 
     // ボタン更新
     if (this.button) {
-      this.button.textContent = newTheme === "light" ? "☀️" : "🌙";
+      this.button.textContent = newTheme === "custom-winter" ? "☀️" : "🌙";
     }
 
     // inject.jsに通知
@@ -56,7 +56,12 @@ class DarkTheme {
     console.log("🧑‍🎨 : Theme toggled to:", newTheme);
   }
 
-  private applyTheme(theme: "light" | "dark") {
+  private applyTheme(theme: "custom-winter" | "dark") {
+    // UIテーマの適用
+    localStorage.setItem("theme", theme);
+    document.documentElement.setAttribute("data-theme", theme);
+
+    // inject.jsに通知
     window.postMessage(
       {
         source: "mr-wplace-theme-update",
