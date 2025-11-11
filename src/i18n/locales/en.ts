@@ -264,6 +264,10 @@ However, please pay careful attention to the following:
   tag_color: "Tag Color",
   optional: "Optional",
   required: "Required",
+  edit_tag: "Edit Tag",
+  tag_edit_title: "Edit Tag",
+  tag_edit_description: "All bookmarks using this tag will be updated",
+  tag_delete_confirm: "Delete this tag? The tag will be removed from all bookmarks using it.",
 
   // Coordinate Jumper
   coordinate_jumper: "Coordinate Jumper",

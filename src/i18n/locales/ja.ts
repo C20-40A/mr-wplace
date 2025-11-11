@@ -267,6 +267,10 @@ export const jaTranslations = {
   tag_color: "タグ色",
   optional: "任意",
   required: "必須",
+  edit_tag: "タグを編集",
+  tag_edit_title: "タグ編集",
+  tag_edit_description: "このタグを使用しているすべてのブックマークが更新されます",
+  tag_delete_confirm: "このタグを削除しますか？タグを使用しているブックマークからタグが削除されます。",
 
   // Coordinate Jumper
   coordinate_jumper: "座標ジャンプ",

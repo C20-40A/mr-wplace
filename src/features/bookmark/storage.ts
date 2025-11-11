@@ -62,4 +62,44 @@ export class BookmarkStorage {
 
     return tags;
   }
+
+  static async updateTag(oldTag: Tag, newTag: Tag): Promise<void> {
+    const bookmarks = await this.getBookmarks();
+    let updated = false;
+
+    for (const bookmark of bookmarks) {
+      if (
+        bookmark.tag &&
+        bookmark.tag.color === oldTag.color &&
+        (bookmark.tag.name || "") === (oldTag.name || "")
+      ) {
+        bookmark.tag = newTag;
+        updated = true;
+      }
+    }
+
+    if (updated) {
+      await this.setValue(JSON.stringify(bookmarks));
+    }
+  }
+
+  static async deleteTag(tag: Tag): Promise<void> {
+    const bookmarks = await this.getBookmarks();
+    let updated = false;
+
+    for (const bookmark of bookmarks) {
+      if (
+        bookmark.tag &&
+        bookmark.tag.color === tag.color &&
+        (bookmark.tag.name || "") === (tag.name || "")
+      ) {
+        bookmark.tag = undefined;
+        updated = true;
+      }
+    }
+
+    if (updated) {
+      await this.setValue(JSON.stringify(bookmarks));
+    }
+  }
 }
