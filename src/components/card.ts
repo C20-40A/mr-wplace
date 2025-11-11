@@ -28,13 +28,12 @@ export const createCard = (config: CardConfig): string => {
 
   return `
     <div
-      class="wps-card"
+      class="wps-card bg-base-200"
       data-id="${config.id}"
       ${dataAttrs}
       style="
         position: relative;
         cursor: ${config.onClick ? "pointer" : "default"};
-        background: linear-gradient(180deg, #fafafb 0%, #f3f3f6 100%);
         border-radius: 10px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         padding: 11px 14px 20px 10px;
@@ -147,11 +146,10 @@ export const createCard = (config: CardConfig): string => {
         `
             : ""
         }
-        <h4 style="
+        <h4 class="text-base-content" style="
           font-size: 13px;
           font-weight: 500;
           line-height: 1.4;
-          color: #222;
           overflow: hidden;
           text-overflow: ellipsis;
           display: -webkit-box;
@@ -189,12 +187,11 @@ export const createCard = (config: CardConfig): string => {
         config.subtitle
           ? `
         <!-- サブタイトル（座標など） -->
-        <div style="
+        <div class="text-base-content/40" style="
           position: absolute;
           left: 8px;
           bottom: 6px;
           font-size: 11px;
-          color: rgba(0,0,0,0.4);
           pointer-events: none;
         ">
           ${config.subtitle}

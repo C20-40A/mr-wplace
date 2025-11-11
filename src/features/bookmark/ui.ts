@@ -106,7 +106,7 @@ export const createBookmarkModal = (): ModalElements => {
         <!-- Step 1: Tag Selection -->
         <div id="wps-edit-tag-selection" style="display: block; margin-bottom: 1rem;">
           <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">${"existing_tags"}</label>
-          <div id="wps-existing-tags-container" style="max-height: 200px; overflow-y: auto; margin-bottom: 0.5rem; border: 1px solid #e5e5e5; border-radius: 8px; padding: 0.5rem;"></div>
+          <div id="wps-existing-tags-container" class="border-base-300" style="max-height: 200px; overflow-y: auto; margin-bottom: 0.5rem; border: 1px solid; border-radius: 8px; padding: 0.5rem;"></div>
           <div style="display: flex; gap: 0.5rem;">
             <button id="wps-new-tag-btn" class="btn btn-outline btn-sm">${"new_tag"}</button>
             <button id="wps-no-tag-btn" class="btn btn-outline btn-sm">${"remove_tag"}</button>
@@ -163,7 +163,7 @@ const renderExistingTags = (tags: Tag[], currentTag?: Tag): void => {
   container.innerHTML = tags
     .map(
       (tag) => `
-    <div class="wps-existing-tag-item" 
+    <div class="wps-existing-tag-item"
          data-color="${tag.color}"
          data-name="${tag.name || ""}"
          style="
@@ -174,14 +174,14 @@ const renderExistingTags = (tags: Tag[], currentTag?: Tag): void => {
            border: 2px solid ${
              tag.color === currentTag?.color &&
              (tag.name || "") === (currentTag?.name || "")
-               ? "#000"
+               ? "oklch(var(--bc))"
                : "transparent"
            };
            border-radius: 8px;
            cursor: pointer;
            margin-bottom: 4px;
          "
-         onmouseover="this.style.background='#f5f5f5';"
+         onmouseover="this.style.background='oklch(var(--b2))';"
          onmouseout="this.style.background='transparent';">
       <div style="
         width: 24px;

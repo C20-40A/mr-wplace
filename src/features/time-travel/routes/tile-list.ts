@@ -15,9 +15,9 @@ export class TileListRoute {
           ${"merge_tiles"}
         </button>
       </div>
-      <div style="overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.5rem; min-height: 400px;">
+      <div style="overflow-y: auto; padding: 0.5rem; min-height: 400px;">
         <div id="wps-tile-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2">
-          <div class="text-sm text-gray-500 text-center p-4" style="grid-column: 1 / -1;">${"loading"}</div>
+          <div class="text-sm text-base-content/60 text-center p-4" style="grid-column: 1 / -1;">${"loading"}</div>
         </div>
       </div>
     `;
@@ -69,7 +69,7 @@ export class TileListRoute {
       const listContainer = container.querySelector("#wps-tile-list");
       if (listContainer) {
         if (tiles.length === 0) {
-          listContainer.innerHTML = `<div class="text-sm text-gray-500 text-center p-4" style="grid-column: 1 / -1;">${t`${"no_items"}`}</div>`;
+          listContainer.innerHTML = `<div class="text-sm text-base-content/60 text-center p-4" style="grid-column: 1 / -1;">${t`${"no_items"}`}</div>`;
         } else {
           const renderedTiles = await Promise.all(
             tiles.map((tile) => this.renderTileCard(tile, tileNames))
@@ -81,7 +81,7 @@ export class TileListRoute {
       console.error("🧑‍🎨 : Failed to load tile list:", error);
       const listContainer = container.querySelector("#wps-tile-list");
       if (listContainer) {
-        listContainer.innerHTML = `<div class="text-sm text-red-500 text-center p-4" style="grid-column: 1 / -1;">Failed to load tiles</div>`;
+        listContainer.innerHTML = `<div class="text-sm text-error text-center p-4" style="grid-column: 1 / -1;">Failed to load tiles</div>`;
       }
     }
   }
