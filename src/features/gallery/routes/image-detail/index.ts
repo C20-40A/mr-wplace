@@ -81,6 +81,12 @@ export class GalleryImageDetail {
             item.drawPosition?.PxY ?? 0
           }" style="width: 60px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 4px;"></label>
           <button id="update-coords-btn" class="btn btn-sm" style="height: 24px; min-height: 24px; padding: 0 12px;">🔄 ${t`${"update"}`}</button>
+          <button id="copy-coords-btn" class="btn btn-sm btn-ghost" style="height: 24px; min-height: 24px; padding: 0 8px;" title="Copy">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+          </button>
         </div>
       </div>
     `;
@@ -261,6 +267,23 @@ export class GalleryImageDetail {
       };
 
       Toast.success(t`${"coordinates_updated"}`);
+    });
+
+    // 座標コピーボタン
+    const copyCoordsBtn = document.getElementById("copy-coords-btn");
+    copyCoordsBtn?.addEventListener("click", async () => {
+      if (!this.currentItem?.drawPosition) return;
+
+      const { TLX, TLY, PxX, PxY } = this.currentItem.drawPosition;
+      const coordText = `${TLX}-${TLY}-${PxX}-${PxY}`;
+
+      try {
+        await navigator.clipboard.writeText(coordText);
+        Toast.success(t`${"copied"}`);
+      } catch (err) {
+        console.error("🧑‍🎨 : Failed to copy coordinates", err);
+        Toast.error("Failed to copy");
+      }
     });
   }
 }
