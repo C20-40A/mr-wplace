@@ -93,39 +93,38 @@ export function buildSortOrderSelectHtml(sortOrder: SortOrder): string {
 
   return `
     <div class="sort-order-container" style="position: relative;">
-      <button class="sort-order-button" type="button" 
-              style="padding: 0.2rem 0.4rem; 
-                     border: 2px solid #d1d5db; 
-                     border-radius: 0.5rem; 
-                     background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
-                     cursor: pointer; 
-                     display: flex; 
-                     align-items: center; 
+      <button class="sort-order-button" type="button"
+              style="padding: 0.2rem 0.4rem;
+                     border: 2px solid #d1d5db;
+                     border-radius: 0.5rem;
+                     cursor: pointer;
+                     display: flex;
+                     align-items: center;
                      gap: 0.5rem;
                      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
                      user-select: none;
                      -webkit-tap-highlight-color: transparent;"
-              onmouseenter="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0, 0, 0, 0.15)'; this.style.borderColor='#22c55e';"
-              onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'; this.style.borderColor='#d1d5db';"
+              onmouseenter="this.style.boxShadow='0 4px 8px rgba(0, 0, 0, 0.15)'; this.style.borderColor='#22c55e';"
+              onmouseleave="this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'; this.style.borderColor='#d1d5db';"
               onmousedown="this.style.transform='scale(0.98)';"
-              onmouseup="this.style.transform='translateY(-1px)';"
+              onmouseup="this.style.transform='scale(1)';"
               ontouchstart="this.style.transform='scale(0.98)'; this.style.boxShadow='0 1px 2px rgba(0, 0, 0, 0.1)';"
               ontouchend="this.style.transform='scale(1)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)';">
-        <span style="font-size: 0.875rem; color: #374151;">${t`${"sort_by"}`}</span>
+        <span style="font-size: 0.875rem;">${t`${"sort_by"}`}</span>
         <span class="sort-order-current-name" style="font-size: 0.875rem; font-weight: 600; color: #22c55e; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">${t`${currentLabelKey}`}</span>
       </button>
-      <div class="sort-order-dropdown" 
-           style="display: none; 
-                  position: absolute; 
-                  top: 100%; 
-                  left: 0; 
-                  margin-top: 0.5rem; 
-                  background-color: white; 
-                  border: 2px solid #e5e7eb; 
-                  border-radius: 0.5rem; 
-                  padding: 0.375rem; 
-                  z-index: 1000; 
+      <div class="sort-order-dropdown"
+           style="display: none;
+                  position: absolute;
+                  top: 100%;
+                  left: 0;
+                  margin-top: 0.5rem;
+                  background-color: var(--color-base-200, #f9fafb);
+                  border: 2px solid var(--color-base-content, #e5e7eb);
+                  border-radius: 0.5rem;
+                  padding: 0.375rem;
+                  z-index: 1000;
                   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
                   min-width: 180px;
                   animation: slideDown 0.2s ease-out;
@@ -134,29 +133,30 @@ export function buildSortOrderSelectHtml(sortOrder: SortOrder): string {
         <div class="sort-order-list" style="display: flex; flex-direction: column; gap: 0.25rem;">
           ${SORT_ORDER_OPTIONS.map((option) => {
             const isSelected = sortOrder === option.value;
-            const borderColor = isSelected ? "#22c55e" : "#e5e7eb";
+            const borderColor = isSelected ? "#22c55e" : "var(--color-base-content, #e5e7eb)";
             const borderWidth = isSelected ? "2px" : "1px";
-            const backgroundColor = isSelected ? "#f0fdf4" : "white";
+            const bgColor = isSelected ? "var(--color-primary, #22c55e)" : "var(--color-base-300, #f9fafb)";
+            const textColor = isSelected ? "var(--color-primary-content, #fff)" : "var(--color-base-content, inherit)";
             return `
-              <button class="sort-order-item" 
+              <button class="sort-order-item"
                       data-sort="${option.value}"
                       type="button"
-                      style="padding: 0.5rem 0.75rem; 
-                             border: ${borderWidth} solid ${borderColor}; 
-                             border-radius: 0.375rem; 
-                             background-color: ${backgroundColor};
-                             cursor: pointer; 
-                             text-align: left; 
+                      style="padding: 0.5rem 0.75rem;
+                             background-color: ${bgColor};
+                             border: ${borderWidth} solid ${borderColor};
+                             border-radius: 0.375rem;
+                             cursor: pointer;
+                             text-align: left;
                              font-size: 0.875rem;
                              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                              font-weight: ${isSelected ? "600" : "400"};
-                             color: ${isSelected ? "#22c55e" : "#374151"};
+                             color: ${textColor};
                              user-select: none;
                              -webkit-tap-highlight-color: transparent;"
                       onmouseenter="this.style.backgroundColor='${
-                        isSelected ? "#dcfce7" : "#f9fafb"
+                        isSelected ? "var(--color-primary, #dcfce7)" : "var(--color-base-200, #f0f0f0)"
                       }'; this.style.transform='translateX(4px)'; this.style.borderColor='#22c55e';"
-                      onmouseleave="this.style.backgroundColor='${backgroundColor}'; this.style.transform='translateX(0)'; this.style.borderColor='${borderColor}';"
+                      onmouseleave="this.style.backgroundColor='${bgColor}'; this.style.transform='translateX(0)'; this.style.borderColor='${borderColor}';"
                       onmousedown="this.style.transform='scale(0.98)';"
                       onmouseup="this.style.transform='translateX(4px)';"
                       ontouchstart="this.style.transform='scale(0.98)';"
@@ -179,24 +179,23 @@ export function buildEnhancedSelectHtml(enhancedMode: EnhancedMode): string {
 
   return `
     <div class="enhanced-mode-container" style="position: relative;">
-      <button class="enhanced-mode-button" type="button" 
-              style="padding: 0.2rem 0.4rem; 
-                     border: 2px solid #d1d5db; 
-                     border-radius: 0.5rem; 
-                     background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
-                     cursor: pointer; 
-                     display: flex; 
-                     align-items: center; 
-                     gap: 0.5rem; 
+      <button class="enhanced-mode-button" type="button"
+              style="padding: 0.2rem 0.4rem;
+                     border: 2px solid #d1d5db;
+                     border-radius: 0.5rem;
+                     cursor: pointer;
+                     display: flex;
+                     align-items: center;
+                     gap: 0.5rem;
                      width: 100%;
                      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
                      user-select: none;
                      -webkit-tap-highlight-color: transparent;"
-              onmouseenter="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0, 0, 0, 0.15)'; this.style.borderColor='#22c55e';"
-              onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'; this.style.borderColor='#d1d5db';"
+              onmouseenter="this.style.boxShadow='0 4px 8px rgba(0, 0, 0, 0.15)'; this.style.borderColor='#22c55e';"
+              onmouseleave="this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'; this.style.borderColor='#d1d5db';"
               onmousedown="this.style.transform='scale(0.98)';"
-              onmouseup="this.style.transform='translateY(-1px)';"
+              onmouseup="this.style.transform='scale(1)';"
               ontouchstart="this.style.transform='scale(0.98)'; this.style.boxShadow='0 1px 2px rgba(0, 0, 0, 0.1)';"
               ontouchend="this.style.transform='scale(1)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)';">
         <img class="enhanced-mode-current-icon" 
@@ -207,24 +206,24 @@ export function buildEnhancedSelectHtml(enhancedMode: EnhancedMode): string {
                     image-rendering: pixelated;
                     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
                     transition: transform 0.2s ease;" />
-        <span style="font-size: 0.875rem; color: #374151;">${t`${"enhanced_mode_label"}`}</span>
+        <span style="font-size: 0.875rem;">${t`${"enhanced_mode_label"}`}</span>
         <span class="enhanced-mode-current-name" 
               style="font-size: 0.875rem; 
                      font-weight: 600; 
                      color: #22c55e;
                      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">${t`${labelKey}`}</span>
       </button>
-      <div class="enhanced-mode-dropdown" 
-           style="display: none; 
-                  position: absolute; 
-                  top: 100%; 
-                  left: 0; 
-                  margin-top: 0.5rem; 
-                  background-color: white; 
-                  border: 2px solid #e5e7eb; 
-                  border-radius: 0.5rem; 
-                  padding: 0.5rem; 
-                  z-index: 1000; 
+      <div class="enhanced-mode-dropdown"
+           style="display: none;
+                  position: absolute;
+                  top: 100%;
+                  left: 0;
+                  margin-top: 0.5rem;
+                  background-color: var(--color-base-200, #f9fafb);
+                  border: 2px solid var(--color-base-content, #e5e7eb);
+                  border-radius: 0.5rem;
+                  padding: 0.5rem;
+                  z-index: 1000;
                   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
                   animation: slideDown 0.2s ease-out;
                   transform-origin: top;
@@ -232,22 +231,23 @@ export function buildEnhancedSelectHtml(enhancedMode: EnhancedMode): string {
         <div class="enhanced-mode-grid" style="display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));">
           ${ENHANCED_MODE_OPTIONS.map((mode) => {
             const isSelected = enhancedMode === mode.value;
-            const borderColor = isSelected ? "#22c55e" : "#e5e7eb";
+            const borderColor = isSelected ? "#22c55e" : "var(--color-base-content, #e5e7eb)";
             const borderWidth = isSelected ? "3px" : "2px";
-            const backgroundColor = isSelected ? "#f0fdf4" : "white";
+            const bgColor = isSelected ? "var(--color-primary, #22c55e)" : "var(--color-base-300, transparent)";
+            const textColor = isSelected ? "var(--color-primary-content, #22c55e)" : "var(--color-base-content, #6b7280)";
             return `
-              <button class="enhanced-mode-item" 
+              <button class="enhanced-mode-item"
                       data-mode="${mode.value}"
                       type="button"
                       title="${t`${mode.labelKey}`}"
-                      style="padding: 0.5rem; 
-                             border: ${borderWidth} solid ${borderColor}; 
-                             border-radius: 0.5rem; 
-                             background-color: ${backgroundColor};
-                             cursor: pointer; 
-                             display: flex; 
-                             flex-direction: column; 
-                             align-items: center; 
+                      style="padding: 0.5rem;
+                             background-color: ${bgColor};
+                             border: ${borderWidth} solid ${borderColor};
+                             border-radius: 0.5rem;
+                             cursor: pointer;
+                             display: flex;
+                             flex-direction: column;
+                             align-items: center;
                              gap: 0.5rem;
                              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                              user-select: none;
@@ -258,15 +258,15 @@ export function buildEnhancedSelectHtml(enhancedMode: EnhancedMode): string {
                       onmouseup="this.style.transform='scale(1.05) translateY(-2px)';"
                       ontouchstart="this.style.transform='scale(0.95)';"
                       ontouchend="this.style.transform='scale(1)';">
-                <img src="${ENHANCED_MODE_ICONS[mode.value]}" 
-                     alt="${mode.value}" 
-                     style="width: 28px; 
-                            height: 28px; 
+                <img src="${ENHANCED_MODE_ICONS[mode.value]}"
+                     alt="${mode.value}"
+                     style="width: 28px;
+                            height: 28px;
                             image-rendering: pixelated;
                             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
                             transition: transform 0.2s ease;" />
-                <span style="font-size: 0.625rem; 
-                             color: ${isSelected ? "#22c55e" : "#6b7280"}; 
+                <span style="font-size: 0.625rem;
+                             color: ${textColor};
                              text-align: center;
                              font-weight: ${
                                isSelected ? "600" : "400"
@@ -297,43 +297,42 @@ export function buildComputeDeviceSelectHtml(
 
   return `
     <div class="compute-device-container" style="position: relative;">
-      <button class="compute-device-button" type="button" 
-              style="padding: 0.2rem 0.4rem; 
-                     border: 2px solid #d1d5db; 
-                     border-radius: 0.5rem; 
-                     background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
-                     cursor: pointer; 
-                     display: flex; 
-                     align-items: center; 
+      <button class="compute-device-button" type="button"
+              style="padding: 0.2rem 0.4rem;
+                     border: 2px solid #d1d5db;
+                     border-radius: 0.5rem;
+                     cursor: pointer;
+                     display: flex;
+                     align-items: center;
                      gap: 0.5rem;
                      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
                      user-select: none;
                      -webkit-tap-highlight-color: transparent;"
-              onmouseenter="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0, 0, 0, 0.15)'; this.style.borderColor='#22c55e';"
-              onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'; this.style.borderColor='#d1d5db';"
+              onmouseenter="this.style.boxShadow='0 4px 8px rgba(0, 0, 0, 0.15)'; this.style.borderColor='#22c55e';"
+              onmouseleave="this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'; this.style.borderColor='#d1d5db';"
               onmousedown="this.style.transform='scale(0.98)';"
-              onmouseup="this.style.transform='translateY(-1px)';"
+              onmouseup="this.style.transform='scale(1)';"
               ontouchstart="this.style.transform='scale(0.98)'; this.style.boxShadow='0 1px 2px rgba(0, 0, 0, 0.1)';"
               ontouchend="this.style.transform='scale(1)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)';">
-        <span style="font-size: 0.875rem; color: #374151;">${t`${"compute_device_label"}`}</span>
+        <span style="font-size: 0.875rem;">${t`${"compute_device_label"}`}</span>
         <span class="compute-device-current-name" 
               style="font-size: 0.875rem; 
                      font-weight: 600; 
                      color: #22c55e;
                      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">${currentLabel}</span>
       </button>
-      <div class="compute-device-dropdown" 
-           style="display: none; 
-                  position: absolute; 
-                  top: 100%; 
-                  left: 0; 
-                  margin-top: 0.5rem; 
-                  background-color: white; 
-                  border: 2px solid #e5e7eb; 
-                  border-radius: 0.5rem; 
-                  padding: 0.375rem; 
-                  z-index: 1000; 
+      <div class="compute-device-dropdown"
+           style="display: none;
+                  position: absolute;
+                  top: 100%;
+                  left: 0;
+                  margin-top: 0.5rem;
+                  background-color: var(--color-base-200, #f9fafb);
+                  border: 2px solid var(--color-base-content, #e5e7eb);
+                  border-radius: 0.5rem;
+                  padding: 0.375rem;
+                  z-index: 1000;
                   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
                   min-width: 100px;
                   animation: slideDown 0.2s ease-out;
@@ -343,32 +342,33 @@ export function buildComputeDeviceSelectHtml(
           ${devices
             .map((device) => {
               const isSelected = computeDevice === device.value;
-              const borderColor = isSelected ? "#22c55e" : "#e5e7eb";
+              const borderColor = isSelected ? "#22c55e" : "var(--color-base-content, #e5e7eb)";
               const borderWidth = isSelected ? "2px" : "1px";
-              const backgroundColor = isSelected ? "#f0fdf4" : "white";
+              const bgColor = isSelected ? "var(--color-primary, #22c55e)" : "var(--color-base-300, #f9fafb)";
+              const textColor = isSelected ? "var(--color-primary-content, #fff)" : "var(--color-base-content, inherit)";
               return `
-              <button class="compute-device-item" 
+              <button class="compute-device-item"
                       data-device="${device.value}"
                       type="button"
-                      style="padding: 0.2rem 0.4rem; 
-                             border: ${borderWidth} solid ${borderColor}; 
-                             border-radius: 0.375rem; 
-                             background-color: ${backgroundColor};
-                             cursor: pointer; 
-                             text-align: left; 
+                      style="padding: 0.2rem 0.4rem;
+                             background-color: ${bgColor};
+                             border: ${borderWidth} solid ${borderColor};
+                             border-radius: 0.375rem;
+                             cursor: pointer;
+                             text-align: left;
                              font-size: 0.875rem;
                              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                              display: flex;
                              align-items: center;
                              gap: 0.5rem;
                              font-weight: ${isSelected ? "600" : "400"};
-                             color: ${isSelected ? "#22c55e" : "#374151"};
+                             color: ${textColor};
                              user-select: none;
                              -webkit-tap-highlight-color: transparent;"
                       onmouseenter="this.style.backgroundColor='${
-                        isSelected ? "#dcfce7" : "#f9fafb"
+                        isSelected ? "var(--color-primary, #dcfce7)" : "var(--color-base-200, #f0f0f0)"
                       }'; this.style.transform='translateX(4px)'; this.style.borderColor='#22c55e';"
-                      onmouseleave="this.style.backgroundColor='${backgroundColor}'; this.style.transform='translateX(0)'; this.style.borderColor='${borderColor}';"
+                      onmouseleave="this.style.backgroundColor='${bgColor}'; this.style.transform='translateX(0)'; this.style.borderColor='${borderColor}';"
                       onmousedown="this.style.transform='scale(0.98)';"
                       onmouseup="this.style.transform='translateX(4px)';"
                       ontouchstart="this.style.transform='scale(0.98)';"
@@ -412,15 +412,14 @@ export function buildControlsHtml(
   `;
 
   const ownedColorsButtonHTML = hasExtraColorsBitmap
-    ? `<button class="owned-colors-btn btn btn-outline btn-sm rounded" 
-               style="${buttonBaseStyle} 
-                      border: 2px solid #a855f7; 
-                      color: #a855f7;
-                      background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);"
-               onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(168, 85, 247, 0.3)'; this.style.backgroundColor='#faf5ff';"
-               onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'; this.style.background='linear-gradient(135deg, #ffffff 0%, #faf5ff 100%)';"
+    ? `<button class="owned-colors-btn btn btn-outline btn-sm rounded"
+               style="${buttonBaseStyle}
+                      border: 2px solid var(--color-secondary, #9333ea);
+                      color: var(--color-secondary, #9333ea);
+               onmouseenter="this.style.backgroundColor='var(--color-base-300, #f0f0f0)'; this.style.borderColor='var(--color-secondary, #9333ea)';"
+               onmouseleave="this.style.backgroundColor='transparent'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)';"
                onmousedown="this.style.transform='scale(0.95)';"
-               onmouseup="this.style.transform='translateY(-2px)';"
+               onmouseup="this.style.transform='scale(1)';"
                ontouchstart="this.style.transform='scale(0.95)';"
                ontouchend="this.style.transform='scale(1)';">${t`${"owned_colors_only"}`}</button>`
     : "";
@@ -439,37 +438,36 @@ export function buildControlsHtml(
 
   return `
     <div class="color-palette-controls flex flex-wrap gap-2 px-4 pb-2">
-      <button class="enable-all-btn btn btn-outline btn-success btn-sm rounded" 
-              style="${buttonBaseStyle} 
-                     border: 2px solid #22c55e; 
-                     color: #22c55e;
-                     background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);"
-              onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(34, 197, 94, 0.3)'; this.style.backgroundColor='#dcfce7';"
-              onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'; this.style.background='linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)';"
+      <button class="enable-all-btn btn btn-outline btn-sm rounded"
+              style="${buttonBaseStyle}
+                     background-color: transparent;
+                     border: 2px solid var(--color-success, #22c55e);
+                     color: var(--color-success, #22c55e);
+              onmouseenter="this.style.backgroundColor='var(--color-base-300, #f0f0f0)'; this.style.borderColor='var(--color-success, #22c55e)'; this.style.color='var(--color-success, #22c55e)';"
+              onmouseleave="this.style.backgroundColor='transparent'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'; this.style.color='var(--color-success, #22c55e)';"
               onmousedown="this.style.transform='scale(0.95)';"
-              onmouseup="this.style.transform='translateY(-2px)';"
+              onmouseup="this.style.transform='scale(1)';"
               ontouchstart="this.style.transform='scale(0.95)';"
               ontouchend="this.style.transform='scale(1)';">${t`${"enable_all"}`}</button>
-      <button class="disable-all-btn btn btn-outline btn-error btn-sm rounded" 
-              style="${buttonBaseStyle} 
-                     border: 2px solid #ef4444; 
-                     color: #ef4444;
-                     background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);"
-              onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(239, 68, 68, 0.3)'; this.style.backgroundColor='#fee2e2';"
-              onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'; this.style.background='linear-gradient(135deg, #ffffff 0%, #fef2f2 100%)';"
+      <button class="disable-all-btn btn btn-outline btn-sm rounded"
+              style="${buttonBaseStyle}
+                     background-color: transparent;
+                     border: 2px solid var(--color-error, #ef4444);
+                     color: var(--color-error, #ef4444);
+              onmouseenter="this.style.backgroundColor='var(--color-base-300, #f0f0f0)'; this.style.borderColor='var(--color-error, #ef4444)'; this.style.color='var(--color-error, #ef4444)';"
+              onmouseleave="this.style.backgroundColor='transparent'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'; this.style.color='var(--color-error, #ef4444)';"
               onmousedown="this.style.transform='scale(0.95)';"
-              onmouseup="this.style.transform='translateY(-2px)';"
+              onmouseup="this.style.transform='scale(1)';"
               ontouchstart="this.style.transform='scale(0.95)';"
               ontouchend="this.style.transform='scale(1)';">${t`${"disable_all"}`}</button>
-      <button class="free-colors-btn btn btn-outline btn-sm rounded" 
-              style="${buttonBaseStyle} 
-                     border: 2px solid #3b82f6; 
-                     color: #3b82f6;
-                     background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);"
-              onmouseenter="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(59, 130, 246, 0.3)'; this.style.backgroundColor='#dbeafe';"
-              onmouseleave="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'; this.style.background='linear-gradient(135deg, #ffffff 0%, #eff6ff 100%)';"
+      <button class="free-colors-btn btn btn-outline btn-sm rounded"
+              style="${buttonBaseStyle}
+                     border: 2px solid var(--color-info, #2563eb);
+                     color: var(--color-info, #2563eb);
+              onmouseenter="this.style.backgroundColor='var(--color-base-300, #f0f0f0)'; this.style.borderColor='var(--color-info, #2563eb)';"
+              onmouseleave="this.style.backgroundColor='transparent'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)';"
               onmousedown="this.style.transform='scale(0.95)';"
-              onmouseup="this.style.transform='translateY(-2px)';"
+              onmouseup="this.style.transform='scale(1)';"
               ontouchstart="this.style.transform='scale(0.95)';"
               ontouchend="this.style.transform='scale(1)';">${t`${"free_colors_only"}`}</button>
       ${ownedColorsButtonHTML}
