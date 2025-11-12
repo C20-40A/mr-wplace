@@ -69,6 +69,15 @@ export const jaTranslations = {
   sort_tag: "タグ順",
 
   // Import/Export関連
+  import_export: "インポート/エクスポート",
+  import_description: "JSONファイルからブックマークをインポート",
+  export_all: "全てエクスポート",
+  export_all_description: "全てのブックマークをエクスポート",
+  export_by_tag: "タグを選んでエクスポート",
+  export_by_tag_description: "選択したタグのブックマークのみエクスポート",
+  export_selected_tags: "選択したタグをエクスポート",
+  no_tags_available: "タグがありません",
+  no_name: "名前なし",
   no_export_bookmarks: "エクスポートするお気に入りがありません",
   bookmarks_exported: "件のお気に入りをエクスポートしました",
   file_input_not_found: "ファイル入力が見つかりません",

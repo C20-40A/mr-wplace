@@ -67,6 +67,15 @@ export const enTranslations = {
   sort_tag: "By Tag",
 
   // Import/Export関連
+  import_export: "Import/Export",
+  import_description: "Import bookmarks from JSON file",
+  export_all: "Export All",
+  export_all_description: "Export all bookmarks",
+  export_by_tag: "Export by Tag",
+  export_by_tag_description: "Export bookmarks with selected tags only",
+  export_selected_tags: "Export Selected Tags",
+  no_tags_available: "No tags available",
+  no_name: "No name",
   no_export_bookmarks: "No favorites to export",
   bookmarks_exported: " favorites exported",
   file_input_not_found: "File input not found",
