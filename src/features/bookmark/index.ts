@@ -207,18 +207,27 @@ const setupModal = (): void => {
     });
 
   modal
-    .querySelector("#wps-export-btn")!
+    .querySelector("#wps-import-export-btn")!
     .addEventListener("click", async () => {
-      const result = await ImportExportService.exportFavorites();
-      Toast.success(result.message);
-    });
-
-  modal
-    .querySelector("#wps-import-btn")!
-    .addEventListener("click", async () => {
-      const result = await ImportExportService.importFavorites();
-      Toast.success(result.message);
-      if (result.shouldRender) render();
+      const { showImportExportDialog } = await import("./ui");
+      showImportExportDialog(
+        // onImport
+        async () => {
+          const result = await ImportExportService.importFavorites();
+          Toast.success(result.message);
+          if (result.shouldRender) render();
+        },
+        // onExport
+        async () => {
+          const result = await ImportExportService.exportFavorites();
+          Toast.success(result.message);
+        },
+        // onExportByTag
+        async (tags) => {
+          const result = await ImportExportService.exportFavoritesByTags(tags);
+          Toast.success(result.message);
+        }
+      );
     });
 
   modal
