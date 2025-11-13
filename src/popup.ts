@@ -8,13 +8,11 @@ import {
   loadNavigationModeFromStorage,
   getNavigationMode,
   setNavigationMode,
-  type NavigationMode,
 } from "./states/navigation-mode";
 import {
   loadTileBoundariesFromStorage,
   getTileBoundaries,
   setTileBoundaries,
-  type TileBoundariesVisible,
 } from "./states/tile-boundaries";
 import { tabs } from "@/utils/browser-api";
 import { GalleryStorage } from "@/features/gallery/storage";
@@ -40,6 +38,58 @@ const updateUI = (): void => {
   if (exportBtnLabel) exportBtnLabel.textContent = t`${"export"}`;
   if (importBtnLabel) importBtnLabel.textContent = t`${"import"}`;
   if (resetBtnLabel) resetBtnLabel.textContent = t`${"reset_gallery"}`;
+};
+
+// Check if mapInstance exists and hide features that require it
+const checkMapInstanceAndUpdateUI = async (): Promise<void> => {
+  try {
+    const [activeTab] = await tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+
+    if (!activeTab.id) {
+      console.log("🧑‍🎨 : No active tab found");
+      return;
+    }
+
+    // Execute script to check if window.wplaceMap exists
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: activeTab.id },
+      func: () => {
+        return typeof (window as any).wplaceMap !== "undefined";
+      },
+    });
+
+    const hasMapInstance = results?.[0]?.result ?? false;
+
+    console.log("🧑‍🎨 : Map instance exists:", hasMapInstance);
+
+    // Hide navigation and tile boundaries settings if no map instance
+    const navigationGroup = document.getElementById("navigation-select")?.closest(".setting-group") as HTMLElement;
+    const tileBoundariesGroup = document.getElementById("tile-boundaries-select")?.closest(".setting-group") as HTMLElement;
+
+    if (navigationGroup) {
+      navigationGroup.style.display = hasMapInstance ? "block" : "none";
+    }
+
+    if (tileBoundariesGroup) {
+      tileBoundariesGroup.style.display = hasMapInstance ? "block" : "none";
+    }
+  } catch (error) {
+    console.error("🧑‍🎨 : Failed to check map instance:", error);
+    // On error, hide the features to be safe
+    const navigationGroup = document.getElementById("navigation-select")?.closest(".setting-group") as HTMLElement;
+    const tileBoundariesGroup = document.getElementById("tile-boundaries-select")?.closest(".setting-group") as HTMLElement;
+
+    if (navigationGroup) {
+      navigationGroup.style.display = "none";
+    }
+
+    if (tileBoundariesGroup) {
+      tileBoundariesGroup.style.display = "none";
+    }
+  }
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -69,6 +119,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   navigationSelect.value = currentMode.toString();
   tileBoundariesSelect.value = currentTileBoundaries.toString();
   updateUI();
+
+  // Check if mapInstance exists and hide features that require it
+  await checkMapInstanceAndUpdateUI();
 
   // 言語変更イベント
   languageSelect.addEventListener("change", async (event) => {
@@ -122,7 +175,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const exportBtn = document.getElementById("export-gallery-btn");
   const importBtn = document.getElementById("import-gallery-btn");
   const resetBtn = document.getElementById("reset-gallery-btn");
-  const fileInput = document.getElementById("import-gallery-file") as HTMLInputElement;
+  const fileInput = document.getElementById(
+    "import-gallery-file"
+  ) as HTMLInputElement;
 
   if (exportBtn) {
     exportBtn.addEventListener("click", async () => {
@@ -154,7 +209,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 // Gallery export handler
 const handleExport = async (): Promise<void> => {
-  const exportBtn = document.getElementById("export-gallery-btn") as HTMLButtonElement;
+  const exportBtn = document.getElementById(
+    "export-gallery-btn"
+  ) as HTMLButtonElement;
   if (!exportBtn) return;
 
   try {
@@ -192,7 +249,9 @@ const handleExport = async (): Promise<void> => {
     alert(t`${"export_failed"}`);
   } finally {
     // Re-enable button
-    const exportBtn = document.getElementById("export-gallery-btn") as HTMLButtonElement;
+    const exportBtn = document.getElementById(
+      "export-gallery-btn"
+    ) as HTMLButtonElement;
     if (exportBtn) {
       exportBtn.disabled = false;
       exportBtn.innerHTML = `📤 <span id="export-btn-label">${t`${"export"}`}</span>`;
@@ -206,7 +265,9 @@ const handleImport = async (file: File): Promise<void> => {
   const confirmed = confirm(t`${"confirm_import"}`);
   if (!confirmed) return;
 
-  const importBtn = document.getElementById("import-gallery-btn") as HTMLButtonElement;
+  const importBtn = document.getElementById(
+    "import-gallery-btn"
+  ) as HTMLButtonElement;
   if (!importBtn) return;
 
   try {
@@ -227,7 +288,9 @@ const handleImport = async (file: File): Promise<void> => {
     const storage = new GalleryStorage();
     for (const item of items) {
       const timestamp = Date.now();
-      const key = `gallery_${timestamp}_${Math.random().toString(36).slice(2, 9)}`;
+      const key = `gallery_${timestamp}_${Math.random()
+        .toString(36)
+        .slice(2, 9)}`;
 
       await storage.save({
         key,
@@ -246,9 +309,7 @@ const handleImport = async (file: File): Promise<void> => {
     // Notify inject side to update overlay layers
     await notifyContentScript({ type: "GALLERY_UPDATED" });
 
-    alert(
-      t`${"import_success"}`.replace("{count}", items.length.toString())
-    );
+    alert(t`${"import_success"}`.replace("{count}", items.length.toString()));
 
     console.log(`🧑‍🎨 : Imported ${items.length} gallery images`);
   } catch (error) {
@@ -256,7 +317,9 @@ const handleImport = async (file: File): Promise<void> => {
     alert(t`${"import_failed"}`);
   } finally {
     // Re-enable button
-    const importBtn = document.getElementById("import-gallery-btn") as HTMLButtonElement;
+    const importBtn = document.getElementById(
+      "import-gallery-btn"
+    ) as HTMLButtonElement;
     if (importBtn) {
       importBtn.disabled = false;
       importBtn.innerHTML = `📥 <span id="import-btn-label">${t`${"import"}`}</span>`;
@@ -270,13 +333,14 @@ const handleReset = async (): Promise<void> => {
   const confirmed = confirm(t`${"confirm_reset"}`);
   if (!confirmed) return;
 
-  const resetBtn = document.getElementById("reset-gallery-btn") as HTMLButtonElement;
+  const resetBtn = document.getElementById(
+    "reset-gallery-btn"
+  ) as HTMLButtonElement;
   if (!resetBtn) return;
 
   try {
     // Disable button
     resetBtn.disabled = true;
-    const originalLabel = resetBtn.innerHTML;
     resetBtn.innerHTML = `⏳ ${t`${"resetting"}`}`;
 
     // Delete all gallery items
@@ -298,7 +362,9 @@ const handleReset = async (): Promise<void> => {
     alert(t`${"reset_failed"}`);
   } finally {
     // Re-enable button
-    const resetBtn = document.getElementById("reset-gallery-btn") as HTMLButtonElement;
+    const resetBtn = document.getElementById(
+      "reset-gallery-btn"
+    ) as HTMLButtonElement;
     if (resetBtn) {
       resetBtn.disabled = false;
       resetBtn.innerHTML = `🗑️ <span id="reset-btn-label">${t`${"reset_gallery"}`}</span>`;
