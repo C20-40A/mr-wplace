@@ -63,7 +63,6 @@ export const jaTranslations = {
   enter_bookmark_name: "ブックマーク名を入力してください:",
   location_point: "地点",
   bookmark_list: "ブックマーク一覧",
-  sort_by: "並び替え",
   sort_created: "追加順",
   sort_accessed: "アクセス順",
   sort_tag: "タグ順",
@@ -278,8 +277,10 @@ export const jaTranslations = {
   required: "必須",
   edit_tag: "タグを編集",
   tag_edit_title: "タグ編集",
-  tag_edit_description: "このタグを使用しているすべてのブックマークが更新されます",
-  tag_delete_confirm: "このタグを削除しますか？タグを使用しているブックマークからタグが削除されます。",
+  tag_edit_description:
+    "このタグを使用しているすべてのブックマークが更新されます",
+  tag_delete_confirm:
+    "このタグを削除しますか？タグを使用しているブックマークからタグが削除されます。",
 
   // Coordinate Jumper
   coordinate_jumper: "座標ジャンプ",

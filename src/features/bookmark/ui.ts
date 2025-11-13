@@ -64,7 +64,6 @@ export const createBookmarkModal = (): ModalElements => {
         </button>
         <input type="file" id="wps-import-file" accept=".json" style="display: none;">
         <div class="flex items-center gap-2">
-          <label style="font-size: 0.875rem; white-space: nowrap;">${"sort_by"}</label>
           <select id="wps-bookmark-sort" class="select select-sm select-bordered">
             <option value="created">${"sort_created"}</option>
             <option value="accessed">${"sort_accessed"}</option>
@@ -304,7 +303,9 @@ export const showTagEditModal = (
       <!-- Tag Name -->
       <div style="margin-bottom: 1rem;">
         <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">${t`${"tag_name"}`} (${t`${"optional"}`})</label>
-        <input id="wps-tag-edit-name" type="text" class="input input-bordered w-full" value="${tag.name || ""}" />
+        <input id="wps-tag-edit-name" type="text" class="input input-bordered w-full" value="${
+          tag.name || ""
+        }" />
       </div>
 
       <!-- Tag Color -->
@@ -322,7 +323,9 @@ export const showTagEditModal = (
                 height: 40px;
                 border-radius: 8px;
                 background: ${color.value};
-                border: 3px solid ${color.value === tag.color ? "#000" : "transparent"};
+                border: 3px solid ${
+                  color.value === tag.color ? "#000" : "transparent"
+                };
                 cursor: pointer;
                 transition: all 0.2s;
               "
@@ -355,55 +358,72 @@ export const showTagEditModal = (
   const originalTag: Tag = { color: tag.color, name: tag.name };
 
   // Color picker handler
-  modal.querySelector("#wps-tag-edit-color-picker")!.addEventListener("click", (e) => {
-    const target = e.target as HTMLElement;
-    const colorBtn = target.closest(".wps-tag-edit-color-btn") as HTMLElement | null;
+  modal
+    .querySelector("#wps-tag-edit-color-picker")!
+    .addEventListener("click", (e) => {
+      const target = e.target as HTMLElement;
+      const colorBtn = target.closest(
+        ".wps-tag-edit-color-btn"
+      ) as HTMLElement | null;
 
-    if (!colorBtn) return;
+      if (!colorBtn) return;
 
-    modal.querySelectorAll(".wps-tag-edit-color-btn").forEach((btn) => {
-      (btn as HTMLElement).style.border = "3px solid transparent";
+      modal.querySelectorAll(".wps-tag-edit-color-btn").forEach((btn) => {
+        (btn as HTMLElement).style.border = "3px solid transparent";
+      });
+
+      colorBtn.style.border = "3px solid #000";
     });
-
-    colorBtn.style.border = "3px solid #000";
-  });
 
   // Save button
-  modal.querySelector("#wps-tag-edit-save-btn")!.addEventListener("click", () => {
-    console.log("🧑‍🎨 : Save button clicked in modal");
+  modal
+    .querySelector("#wps-tag-edit-save-btn")!
+    .addEventListener("click", () => {
+      console.log("🧑‍🎨 : Save button clicked in modal");
 
-    const nameInput = modal.querySelector("#wps-tag-edit-name") as HTMLInputElement;
+      const nameInput = modal.querySelector(
+        "#wps-tag-edit-name"
+      ) as HTMLInputElement;
 
-    // Find selected color button by checking all buttons
-    let selectedColor: string | null = null;
-    modal.querySelectorAll(".wps-tag-edit-color-btn").forEach((btn) => {
-      const style = (btn as HTMLElement).style.border;
-      console.log("🧑‍🎨 : Button border style:", style, "data-color:", (btn as HTMLElement).dataset.color);
-      if (style.includes("rgb(0, 0, 0)") || style.includes("#000") || style.includes("black")) {
-        selectedColor = (btn as HTMLElement).dataset.color || null;
+      // Find selected color button by checking all buttons
+      let selectedColor: string | null = null;
+      modal.querySelectorAll(".wps-tag-edit-color-btn").forEach((btn) => {
+        const style = (btn as HTMLElement).style.border;
+        console.log(
+          "🧑‍🎨 : Button border style:",
+          style,
+          "data-color:",
+          (btn as HTMLElement).dataset.color
+        );
+        if (
+          style.includes("rgb(0, 0, 0)") ||
+          style.includes("#000") ||
+          style.includes("black")
+        ) {
+          selectedColor = (btn as HTMLElement).dataset.color || null;
+        }
+      });
+
+      const newName = nameInput.value.trim();
+
+      console.log("🧑‍🎨 : newName:", newName, "selectedColor:", selectedColor);
+
+      if (!selectedColor) {
+        console.error("🧑‍🎨 : No color selected!");
+        alert("色を選択してください");
+        return;
       }
+
+      const newTag: Tag = {
+        color: selectedColor,
+        name: newName || undefined,
+      };
+
+      console.log("🧑‍🎨 : Calling onSave with:", originalTag, "->", newTag);
+      onSave(originalTag, newTag);
+      modal.close();
+      modal.remove();
     });
-
-    const newName = nameInput.value.trim();
-
-    console.log("🧑‍🎨 : newName:", newName, "selectedColor:", selectedColor);
-
-    if (!selectedColor) {
-      console.error("🧑‍🎨 : No color selected!");
-      alert("色を選択してください");
-      return;
-    }
-
-    const newTag: Tag = {
-      color: selectedColor,
-      name: newName || undefined,
-    };
-
-    console.log("🧑‍🎨 : Calling onSave with:", originalTag, "->", newTag);
-    onSave(originalTag, newTag);
-    modal.close();
-    modal.remove();
-  });
 
   // Delete button
   modal.querySelector("#wps-tag-delete-btn")!.addEventListener("click", () => {
@@ -413,10 +433,12 @@ export const showTagEditModal = (
   });
 
   // Cancel button
-  modal.querySelector("#wps-tag-edit-cancel-btn")!.addEventListener("click", () => {
-    modal.close();
-    modal.remove();
-  });
+  modal
+    .querySelector("#wps-tag-edit-cancel-btn")!
+    .addEventListener("click", () => {
+      modal.close();
+      modal.remove();
+    });
 
   // Close on backdrop click
   modal.addEventListener("close", () => {
@@ -596,9 +618,15 @@ export const showImportExportDialog = async (
                     ).length;
                     return `
                       <label class="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-base-200" style="margin-bottom: 0.25rem;">
-                        <input type="checkbox" class="checkbox checkbox-sm wps-tag-checkbox" data-color="${tag.color}" data-name="${tag.name || ""}" />
-                        <div style="width: 20px; height: 20px; border-radius: 4px; background: ${tag.color}; flex-shrink: 0;"></div>
-                        <span style="flex: 1;">${tag.name || t`${"no_name"}`}</span>
+                        <input type="checkbox" class="checkbox checkbox-sm wps-tag-checkbox" data-color="${
+                          tag.color
+                        }" data-name="${tag.name || ""}" />
+                        <div style="width: 20px; height: 20px; border-radius: 4px; background: ${
+                          tag.color
+                        }; flex-shrink: 0;"></div>
+                        <span style="flex: 1;">${
+                          tag.name || t`${"no_name"}`
+                        }</span>
                         <span style="font-size: 0.75rem; color: oklch(var(--bc) / 0.6);">(${count})</span>
                       </label>
                     `;
@@ -629,23 +657,29 @@ export const showImportExportDialog = async (
   modal.showModal();
 
   // Import button
-  modal.querySelector("#wps-dialog-import-btn")?.addEventListener("click", () => {
-    modal.close();
-    modal.remove();
-    onImport();
-  });
+  modal
+    .querySelector("#wps-dialog-import-btn")
+    ?.addEventListener("click", () => {
+      modal.close();
+      modal.remove();
+      onImport();
+    });
 
   // Export all button
-  modal.querySelector("#wps-dialog-export-all-btn")?.addEventListener("click", () => {
-    modal.close();
-    modal.remove();
-    onExport();
-  });
+  modal
+    .querySelector("#wps-dialog-export-all-btn")
+    ?.addEventListener("click", () => {
+      modal.close();
+      modal.remove();
+      onExport();
+    });
 
   // Tag checkbox handler
   const updateExportTagButton = () => {
     const checkboxes = modal.querySelectorAll(".wps-tag-checkbox:checked");
-    const exportTagBtn = modal.querySelector("#wps-dialog-export-tag-btn") as HTMLButtonElement;
+    const exportTagBtn = modal.querySelector(
+      "#wps-dialog-export-tag-btn"
+    ) as HTMLButtonElement;
     if (exportTagBtn) {
       exportTagBtn.disabled = checkboxes.length === 0;
     }
@@ -656,25 +690,31 @@ export const showImportExportDialog = async (
   });
 
   // Export by tag button
-  modal.querySelector("#wps-dialog-export-tag-btn")?.addEventListener("click", () => {
-    const selectedTags: Tag[] = [];
-    modal.querySelectorAll(".wps-tag-checkbox:checked").forEach((checkbox) => {
-      const el = checkbox as HTMLInputElement;
-      selectedTags.push({
-        color: el.dataset.color!,
-        name: el.dataset.name || undefined,
-      });
+  modal
+    .querySelector("#wps-dialog-export-tag-btn")
+    ?.addEventListener("click", () => {
+      const selectedTags: Tag[] = [];
+      modal
+        .querySelectorAll(".wps-tag-checkbox:checked")
+        .forEach((checkbox) => {
+          const el = checkbox as HTMLInputElement;
+          selectedTags.push({
+            color: el.dataset.color!,
+            name: el.dataset.name || undefined,
+          });
+        });
+      modal.close();
+      modal.remove();
+      onExportByTag(selectedTags);
     });
-    modal.close();
-    modal.remove();
-    onExportByTag(selectedTags);
-  });
 
   // Close button
-  modal.querySelector("#wps-dialog-close-btn")?.addEventListener("click", () => {
-    modal.close();
-    modal.remove();
-  });
+  modal
+    .querySelector("#wps-dialog-close-btn")
+    ?.addEventListener("click", () => {
+      modal.close();
+      modal.remove();
+    });
 
   // Close on backdrop click
   modal.addEventListener("close", () => {

@@ -41,8 +41,10 @@ export const enTranslations = {
   gallery_reset_success: "Gallery has been reset",
   no_images_to_export: "No images to export (images with coordinates required)",
   no_valid_images_in_zip: "No valid images found in ZIP file",
-  confirm_import: "Are you sure you want to import? This will add new images to your gallery.",
-  confirm_reset: "Are you sure you want to reset all gallery images? This action cannot be undone.",
+  confirm_import:
+    "Are you sure you want to import? This will add new images to your gallery.",
+  confirm_reset:
+    "Are you sure you want to reset all gallery images? This action cannot be undone.",
 
   // Messages
   loading: "Loading...",
@@ -61,7 +63,6 @@ export const enTranslations = {
   enter_bookmark_name: "Please enter bookmark name:",
   location_point: "Point",
   bookmark_list: "Bookmark List",
-  sort_by: "Sort by",
   sort_created: "Date Added",
   sort_accessed: "Last Accessed",
   sort_tag: "By Tag",
@@ -276,7 +277,8 @@ However, please pay careful attention to the following:
   edit_tag: "Edit Tag",
   tag_edit_title: "Edit Tag",
   tag_edit_description: "All bookmarks using this tag will be updated",
-  tag_delete_confirm: "Delete this tag? The tag will be removed from all bookmarks using it.",
+  tag_delete_confirm:
+    "Delete this tag? The tag will be removed from all bookmarks using it.",
 
   // Coordinate Jumper
   coordinate_jumper: "Coordinate Jumper",
@@ -298,7 +300,8 @@ However, please pay careful attention to the following:
   tile_y: "Tile Y",
   pixel_x: "Pixel X",
   pixel_y: "Pixel Y",
-  coordinate_input_hint: "If you enter coordinates, the image will be automatically placed at that position when added to the gallery",
+  coordinate_input_hint:
+    "If you enter coordinates, the image will be automatically placed at that position when added to the gallery",
 
   // Data Saver
   data_saver: "Data Saver",
