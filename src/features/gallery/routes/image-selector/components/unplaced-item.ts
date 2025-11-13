@@ -18,7 +18,7 @@ export const createUnplacedItem = (
 
   const thumbnail = document.createElement("img");
   thumbnail.className = "unplaced-thumb border-2 border-base-300";
-  thumbnail.src = item.dataUrl;
+  thumbnail.src = item.thumbnail || item.dataUrl;
   thumbnail.style.cssText =
     "width: 80px; height: 80px; object-fit: cover; display: block; image-rendering: pixelated; transition: transform 0.2s, border-color 0.2s;";
 
