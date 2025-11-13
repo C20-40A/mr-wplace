@@ -4,6 +4,7 @@ export interface BaseImageItem {
   key: string;
   timestamp: number;
   dataUrl: string;
+  thumbnail?: string; // 200x200px thumbnail for UI performance
 }
 
 interface ImageIndex<T> {
@@ -24,18 +25,32 @@ export class ImageStorage<T extends BaseImageItem> {
 
     if (!data) return undefined;
 
+    let item: T;
+
     // 新形式（完全オブジェクト）で保存されている場合
     if (typeof data === "object" && data.key) {
-      return data as T;
+      item = data as T;
+    } else {
+      // 旧形式（dataUrlのみ）で保存されている場合
+      const timestamp = parseInt(key.replace(`${this.prefix}_`, ""));
+      item = {
+        key,
+        timestamp,
+        dataUrl: data || "",
+      } as T;
     }
 
-    // 旧形式（dataUrlのみ）で保存されている場合
-    const timestamp = parseInt(key.replace(`${this.prefix}_`, ""));
-    return {
-      key,
-      timestamp,
-      dataUrl: data || "",
-    } as T;
+    // サムネイルがない場合は生成
+    if (!item.thumbnail && item.dataUrl) {
+      const thumbnail = await this.generateThumbnail(item.dataUrl);
+      if (thumbnail) {
+        item = { ...item, thumbnail };
+        // サムネイルを保存
+        await this.save(item);
+      }
+    }
+
+    return item;
   }
 
   async getAll(): Promise<T[]> {
@@ -53,7 +68,7 @@ export class ImageStorage<T extends BaseImageItem> {
     const dataResult = await storage.get(keys);
 
     // 4. ImageItem配列構築
-    return index.items.map((meta) => {
+    const items = index.items.map((meta) => {
       const data = dataResult[meta.key];
       // 新形式（完全オブジェクト）で保存されている場合
       if (typeof data === "object" && data.key) {
@@ -65,9 +80,41 @@ export class ImageStorage<T extends BaseImageItem> {
         dataUrl: data || "",
       } as T;
     });
+
+    // 5. サムネイルがない画像を検出して生成
+    const itemsNeedingThumbnails = items.filter(
+      (item) => !item.thumbnail && item.dataUrl
+    );
+
+    if (itemsNeedingThumbnails.length > 0) {
+      console.log(
+        `🧑‍🎨 : Generating thumbnails for ${itemsNeedingThumbnails.length} images...`
+      );
+
+      // 並列でサムネイル生成
+      await Promise.all(
+        itemsNeedingThumbnails.map(async (item) => {
+          const thumbnail = await this.generateThumbnail(item.dataUrl);
+          if (thumbnail) {
+            item.thumbnail = thumbnail;
+            await this.save(item);
+          }
+        })
+      );
+    }
+
+    return items;
   }
 
   async save(item: T): Promise<void> {
+    // サムネイルがない場合は生成
+    if (!item.thumbnail && item.dataUrl) {
+      const thumbnail = await this.generateThumbnail(item.dataUrl);
+      if (thumbnail) {
+        item = { ...item, thumbnail };
+      }
+    }
+
     // 1. 実データ保存（完全なオブジェクト）
     await storage.set({ [item.key]: item });
 
@@ -139,5 +186,58 @@ export class ImageStorage<T extends BaseImageItem> {
     index.lastUpdated = Date.now();
 
     await storage.set({ [this.indexKey]: index });
+  }
+
+  /**
+   * サムネイル生成 (200x200px)
+   * 小さい画像（200px以下）の場合はnullを返す
+   */
+  async generateThumbnail(dataUrl: string): Promise<string | null> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const THUMBNAIL_SIZE = 200;
+
+        // 小さい画像はサムネイル不要
+        if (img.width <= THUMBNAIL_SIZE && img.height <= THUMBNAIL_SIZE) {
+          resolve(null);
+          return;
+        }
+
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(null);
+          return;
+        }
+
+        // アスペクト比を保持してリサイズ
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > THUMBNAIL_SIZE) {
+            height = (height * THUMBNAIL_SIZE) / width;
+            width = THUMBNAIL_SIZE;
+          }
+        } else {
+          if (height > THUMBNAIL_SIZE) {
+            width = (width * THUMBNAIL_SIZE) / height;
+            height = THUMBNAIL_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // ピクセルアートの場合はimageSmoothingを無効化
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.onerror = () => resolve(null);
+      img.src = dataUrl;
+    });
   }
 }

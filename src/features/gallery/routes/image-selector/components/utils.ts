@@ -12,6 +12,7 @@ export const convertGalleryItemToImageItem = (item: any): ImageItem => {
   return {
     key: item.key,
     dataUrl: item.dataUrl,
+    thumbnail: item.thumbnail,
     title: item.title,
     createdAt: new Date(timestamp).toISOString(),
     drawEnabled: item.drawEnabled,
