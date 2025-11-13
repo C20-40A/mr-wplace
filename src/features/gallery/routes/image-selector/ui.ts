@@ -45,9 +45,8 @@ export class GalleryImageSelectorUI {
     const galleryItems = await this.galleryStorage.getAll();
     if (galleryItems.length > 0) {
       const hint = document.createElement("div");
+      hint.className = "text-sm text-base-content/60 text-center mt-4";
       hint.textContent = t`${"click_image_to_draw"}`;
-      hint.style.cssText =
-        "margin-top: 1rem; font-size: 0.875rem; color: #6b7280; text-align: center;";
       container.appendChild(hint);
     }
   }
@@ -68,21 +67,32 @@ export class GalleryImageSelectorUI {
       return;
     }
 
-    const statusBadge = itemEl.querySelector('[data-role="status"]') as HTMLElement;
+    const statusBadge = itemEl.querySelector(
+      '[data-role="status"]'
+    ) as HTMLElement;
     if (statusBadge) {
       statusBadge.textContent = item.drawEnabled ? "✓ ON" : "✗ OFF";
-      statusBadge.style.background = item.drawEnabled ? "#d1fae5" : "#fee2e2";
-      statusBadge.style.color = item.drawEnabled ? "#065f46" : "#991b1b";
+      statusBadge.className = item.drawEnabled
+        ? "badge badge-success badge-sm"
+        : "badge badge-error badge-sm";
     }
 
-    const toggleBtn = itemEl.querySelector('[data-role="toggle"]') as HTMLElement;
+    const toggleBtn = itemEl.querySelector(
+      '[data-role="toggle"]'
+    ) as HTMLElement;
     if (toggleBtn) {
       toggleBtn.innerHTML = item.drawEnabled ? "👁" : "🚫";
-      toggleBtn.style.background = item.drawEnabled ? "#dbeafe" : "#f3f4f6";
-      toggleBtn.style.border = `1px solid ${item.drawEnabled ? "#bfdbfe" : "#e5e7eb"}`;
+      toggleBtn.className = item.drawEnabled
+        ? "btn btn-xs btn-primary"
+        : "btn btn-xs btn-ghost";
     }
 
-    console.log("🧑‍🎨 : Updated status for", key, "drawEnabled:", item.drawEnabled);
+    console.log(
+      "🧑‍🎨 : Updated status for",
+      key,
+      "drawEnabled:",
+      item.drawEnabled
+    );
   }
 
   /**
@@ -134,9 +144,9 @@ export class GalleryImageSelectorUI {
 
     if (layerImages.length === 0) {
       const emptyMsg = document.createElement("div");
+      emptyMsg.className =
+        "text-sm text-base-content/60 text-center p-8 bg-base-200 rounded-lg";
       emptyMsg.textContent = t`${"no_layers"}`;
-      emptyMsg.style.cssText =
-        "text-align: center; color: #9ca3af; padding: 2rem; font-size: 0.875rem; background: #f9fafb; border-radius: 0.5rem;";
       layerSection.appendChild(emptyMsg);
     } else {
       layerImages.forEach((item, index) => {
@@ -149,6 +159,7 @@ export class GalleryImageSelectorUI {
           onUpdateStatus: (key) => this.updateItemStatus(key),
           onMoveToUnplaced: (key) => this.moveItemToUnplaced(key),
           onRefreshOrder: () => this.refreshLayerOrder(),
+          galleryStorage: this.galleryStorage,
         });
         layerSection.appendChild(itemEl);
       });
@@ -172,34 +183,16 @@ export class GalleryImageSelectorUI {
         "display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 1rem; gap: 1rem;";
 
       const emptyMessage = document.createElement("div");
+      emptyMessage.className = "text-sm text-base-content/60 text-center";
       emptyMessage.textContent = t`${"no_saved_images"}`;
-      emptyMessage.style.cssText =
-        "font-size: 0.875rem; color: #9ca3af; text-align: center;";
 
       emptyContainer.appendChild(emptyMessage);
 
       // 追加ボタン（currentOnAddClickがある場合のみ）
       if (this.currentOnAddClick) {
         const addButton = document.createElement("button");
+        addButton.className = "btn btn-sm btn-primary";
         addButton.textContent = t`${"image_editor"}`;
-        addButton.style.cssText = `
-          background: #3b82f6;
-          color: white;
-          border: none;
-          border-radius: 0.5rem;
-          padding: 0.5rem 1rem;
-          font-size: 0.875rem;
-          cursor: pointer;
-          transition: all 0.15s;
-        `;
-        addButton.onmouseenter = () => {
-          addButton.style.background = "#2563eb";
-          addButton.style.transform = "scale(1.05)";
-        };
-        addButton.onmouseleave = () => {
-          addButton.style.background = "#3b82f6";
-          addButton.style.transform = "scale(1)";
-        };
         addButton.onclick = this.currentOnAddClick;
 
         emptyContainer.appendChild(addButton);
@@ -218,9 +211,9 @@ export class GalleryImageSelectorUI {
     unplacedSection.style.cssText = "margin-bottom: 1.5rem;";
 
     const sectionTitle = document.createElement("div");
+    sectionTitle.className =
+      "text-sm font-semibold mb-3 pl-2 border-l-4 border-primary";
     sectionTitle.textContent = t`${"unplaced_images"}`;
-    sectionTitle.style.cssText =
-      "font-weight: 600; font-size: 0.875rem; margin-bottom: 0.75rem; color: #374151; padding-left: 0.5rem; border-left: 3px solid #6366f1;";
     unplacedSection.appendChild(sectionTitle);
 
     const unplacedGrid = document.createElement("div");
@@ -247,16 +240,16 @@ export class GalleryImageSelectorUI {
     const layerSection = document.createElement("div");
     layerSection.className = "layer-section";
     const layerTitle = document.createElement("div");
+    layerTitle.className =
+      "text-sm font-semibold mb-3 pl-2 border-l-4 border-success";
     layerTitle.textContent = t`${"layers"}`;
-    layerTitle.style.cssText =
-      "font-weight: 600; font-size: 0.875rem; margin-bottom: 0.75rem; color: #374151; padding-left: 0.5rem; border-left: 3px solid #10b981;";
     layerSection.appendChild(layerTitle);
 
     if (layerImages.length === 0) {
       const emptyMsg = document.createElement("div");
+      emptyMsg.className =
+        "text-sm text-base-content/60 text-center p-8 bg-base-200 rounded-lg";
       emptyMsg.textContent = t`${"no_layers"}`;
-      emptyMsg.style.cssText =
-        "text-align: center; color: #9ca3af; padding: 2rem; font-size: 0.875rem; background: #f9fafb; border-radius: 0.5rem;";
       layerSection.appendChild(emptyMsg);
     } else {
       layerImages.forEach((item, index) => {
@@ -269,6 +262,7 @@ export class GalleryImageSelectorUI {
           onUpdateStatus: (key) => this.updateItemStatus(key),
           onMoveToUnplaced: (key) => this.moveItemToUnplaced(key),
           onRefreshOrder: () => this.refreshLayerOrder(),
+          galleryStorage: this.galleryStorage,
         });
         layerSection.appendChild(itemEl);
       });

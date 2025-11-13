@@ -9,26 +9,19 @@ export const createUnplacedItem = (
   onSelect: (item: ImageItem) => void
 ): HTMLElement => {
   const container = document.createElement("div");
+  container.className = "unplaced-item";
   container.style.cssText = `
     cursor: pointer;
-    transition: all 0.2s;
     border-radius: 0.5rem;
     overflow: hidden;
   `;
 
   const thumbnail = document.createElement("img");
+  thumbnail.className = "unplaced-thumb border-2 border-base-300";
   thumbnail.src = item.dataUrl;
   thumbnail.style.cssText =
-    "width: 80px; height: 80px; object-fit: cover; border: 2px solid #e5e7eb; display: block; image-rendering: pixelated;";
+    "width: 80px; height: 80px; object-fit: cover; display: block; image-rendering: pixelated; transition: transform 0.2s, border-color 0.2s;";
 
-  container.onmouseenter = () => {
-    thumbnail.style.transform = "scale(1.05)";
-    thumbnail.style.borderColor = "#6366f1";
-  };
-  container.onmouseleave = () => {
-    thumbnail.style.transform = "scale(1)";
-    thumbnail.style.borderColor = "#e5e7eb";
-  };
   container.onclick = () => {
     onSelect(convertGalleryItemToImageItem(item));
   };
