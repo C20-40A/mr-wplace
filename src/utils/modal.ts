@@ -1,4 +1,5 @@
 import { t } from "../i18n/manager";
+import { Router } from "./router";
 
 export interface ModalOptions {
   id: string;
@@ -7,6 +8,7 @@ export interface ModalOptions {
   maxWidth?: string;
   onBack?: () => void;
   containerStyle?: string;
+  router?: Router<any>;
 }
 
 export interface ModalElements {
@@ -85,11 +87,16 @@ export const createModal = (options: ModalOptions): ModalElements => {
   const {
     id,
     title,
-    hasBackButton = false,
+    hasBackButton: explicitHasBackButton,
     maxWidth = "64rem",
-    onBack,
+    onBack: explicitOnBack,
     containerStyle,
+    router,
   } = options;
+
+  // routerがある場合は自動でbackボタンを有効化
+  const hasBackButton = explicitHasBackButton ?? !!router;
+  const onBack = explicitOnBack ?? (router ? () => router.navigateBack() : undefined);
 
   const modal = document.createElement("dialog");
   modal.id = id;
@@ -134,6 +141,11 @@ export const createModal = (options: ModalOptions): ModalElements => {
 
   if (onBack) {
     backButton?.addEventListener("click", onBack);
+  }
+
+  // routerがある場合は自動でheader要素を設定
+  if (router) {
+    router.setHeaderElements(titleElement, backButton);
   }
 
   return {
