@@ -5,7 +5,6 @@ export const createColorIsolateButton = (
 ): HTMLButtonElement => {
   const button = document.createElement("button");
   button.className = "btn btn-sm btn-circle btn-ghost";
-  button.title = "色を分離表示"; // TODO: i18n化
 
   // カラーフィルター分離アイコンSVG
   button.innerHTML = `
