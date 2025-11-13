@@ -285,10 +285,6 @@ export class TimeTravelStorage {
     } else {
       // 別のスナップショットが描画中 OR 何も描画されていない → ON
       if (currentState) {
-        // 既存の描画を削除
-        const oldImageKey = `snapshot_${currentState.fullKey}`;
-        removePreparedOverlayImageByKey(oldImageKey);
-
         // 古い状態をOFFに
         await this.setDrawState({
           ...currentState,
@@ -306,7 +302,7 @@ export class TimeTravelStorage {
       drawEnabled: newDrawEnabled,
     });
 
-    // 3. 描画に反映 - inject side に通知
+    // 3. 描画に反映 - inject side に通知（削除も含めて inject side で処理される）
     await sendSnapshotsToInject();
 
     return newDrawEnabled;
