@@ -1,7 +1,6 @@
 import { GalleryItem } from "../../storage";
 import { ImageGridComponent, ImageItem } from "./components/ImageGridComponent";
 import { gotoMapPosition, toggleDrawState } from "../../common-actions";
-import { t } from "@/i18n/manager";
 
 export class GalleryListUI {
   private container: HTMLElement | null = null;
