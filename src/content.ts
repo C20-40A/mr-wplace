@@ -20,6 +20,7 @@ import {
   dataSaverAPI,
 } from "@/features/map-filter";
 import { AutoSpoit } from "@/features/auto-spoit";
+import { ColorIsolate } from "@/features/color-isolate";
 import { PositionInfo } from "@/features/position-info";
 import { initPaintStats } from "@/features/paint-stats";
 import { PaletteToggle } from "@/features/palette-toggle";
@@ -423,6 +424,7 @@ export const sendTileBoundariesToInject = async () => {
     new ColorFilter();
     const colorFilterManager = new ColorFilterManager();
     const autoSpoit = new AutoSpoit();
+    new ColorIsolate();
     new PositionInfo();
     new PaletteToggle();
     initPaintStats();
