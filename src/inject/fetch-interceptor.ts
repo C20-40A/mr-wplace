@@ -16,6 +16,17 @@ export const setupFetchInterceptor = (): void => {
         ? requestInfo.url
         : requestInfo.toString();
 
+    // Block Sentry requests to avoid sending extension bugs to WPlace's Sentry
+    if (url && (url.includes("sentry.io") || url.includes("sentry"))) {
+      console.log("🧑‍🎨: Blocked Sentry request:", url);
+      // Return empty successful response to avoid errors
+      return new Response(null, {
+        status: 200,
+        statusText: "OK (Blocked by Mr. Wplace)",
+        headers: new Headers({ "Content-Type": "application/json" }),
+      });
+    }
+
     if (!url || !url.includes("backend.wplace.live")) {
       return originalFetch.apply(this, args);
     }
@@ -148,7 +159,10 @@ const handleTileRequest = async (
       computeDevice
     );
   } catch (error) {
-    console.error(`🧑‍🎨 : Tile processing failed for (${tileX},${tileY}), returning original tile:`, error);
+    console.error(
+      `🧑‍🎨 : Tile processing failed for (${tileX},${tileY}), returning original tile:`,
+      error
+    );
     // Fallback: return original tile
     processedBlob = originalTileBlob;
   }
