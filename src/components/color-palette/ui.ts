@@ -111,7 +111,6 @@ export function buildSortOrderSelectHtml(sortOrder: SortOrder): string {
               onmouseup="this.style.transform='scale(1)';"
               ontouchstart="this.style.transform='scale(0.98)'; this.style.boxShadow='0 1px 2px rgba(0, 0, 0, 0.1)';"
               ontouchend="this.style.transform='scale(1)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)';">
-        <span style="font-size: 0.875rem;">${t`${"sort_by"}`}</span>
         <span class="sort-order-current-name" style="font-size: 0.875rem; font-weight: 600; color: #22c55e; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">${t`${currentLabelKey}`}</span>
       </button>
       <div class="sort-order-dropdown"
@@ -133,10 +132,16 @@ export function buildSortOrderSelectHtml(sortOrder: SortOrder): string {
         <div class="sort-order-list" style="display: flex; flex-direction: column; gap: 0.25rem;">
           ${SORT_ORDER_OPTIONS.map((option) => {
             const isSelected = sortOrder === option.value;
-            const borderColor = isSelected ? "#22c55e" : "var(--color-base-content, #e5e7eb)";
+            const borderColor = isSelected
+              ? "#22c55e"
+              : "var(--color-base-content, #e5e7eb)";
             const borderWidth = isSelected ? "2px" : "1px";
-            const bgColor = isSelected ? "var(--color-primary, #22c55e)" : "var(--color-base-300, #f9fafb)";
-            const textColor = isSelected ? "var(--color-primary-content, #fff)" : "var(--color-base-content, inherit)";
+            const bgColor = isSelected
+              ? "var(--color-primary, #22c55e)"
+              : "var(--color-base-300, #f9fafb)";
+            const textColor = isSelected
+              ? "var(--color-primary-content, #fff)"
+              : "var(--color-base-content, inherit)";
             return `
               <button class="sort-order-item"
                       data-sort="${option.value}"
@@ -154,7 +159,9 @@ export function buildSortOrderSelectHtml(sortOrder: SortOrder): string {
                              user-select: none;
                              -webkit-tap-highlight-color: transparent;"
                       onmouseenter="this.style.backgroundColor='${
-                        isSelected ? "var(--color-primary, #dcfce7)" : "var(--color-base-200, #f0f0f0)"
+                        isSelected
+                          ? "var(--color-primary, #dcfce7)"
+                          : "var(--color-base-200, #f0f0f0)"
                       }'; this.style.transform='translateX(4px)'; this.style.borderColor='#22c55e';"
                       onmouseleave="this.style.backgroundColor='${bgColor}'; this.style.transform='translateX(0)'; this.style.borderColor='${borderColor}';"
                       onmousedown="this.style.transform='scale(0.98)';"
@@ -231,10 +238,16 @@ export function buildEnhancedSelectHtml(enhancedMode: EnhancedMode): string {
         <div class="enhanced-mode-grid" style="display: grid; gap: 0.5rem; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));">
           ${ENHANCED_MODE_OPTIONS.map((mode) => {
             const isSelected = enhancedMode === mode.value;
-            const borderColor = isSelected ? "#22c55e" : "var(--color-base-content, #e5e7eb)";
+            const borderColor = isSelected
+              ? "#22c55e"
+              : "var(--color-base-content, #e5e7eb)";
             const borderWidth = isSelected ? "3px" : "2px";
-            const bgColor = isSelected ? "var(--color-primary, #22c55e)" : "var(--color-base-300, transparent)";
-            const textColor = isSelected ? "var(--color-primary-content, #22c55e)" : "var(--color-base-content, #6b7280)";
+            const bgColor = isSelected
+              ? "var(--color-primary, #22c55e)"
+              : "var(--color-base-300, transparent)";
+            const textColor = isSelected
+              ? "var(--color-primary-content, #22c55e)"
+              : "var(--color-base-content, #6b7280)";
             return `
               <button class="enhanced-mode-item"
                       data-mode="${mode.value}"
@@ -342,10 +355,16 @@ export function buildComputeDeviceSelectHtml(
           ${devices
             .map((device) => {
               const isSelected = computeDevice === device.value;
-              const borderColor = isSelected ? "#22c55e" : "var(--color-base-content, #e5e7eb)";
+              const borderColor = isSelected
+                ? "#22c55e"
+                : "var(--color-base-content, #e5e7eb)";
               const borderWidth = isSelected ? "2px" : "1px";
-              const bgColor = isSelected ? "var(--color-primary, #22c55e)" : "var(--color-base-300, #f9fafb)";
-              const textColor = isSelected ? "var(--color-primary-content, #fff)" : "var(--color-base-content, inherit)";
+              const bgColor = isSelected
+                ? "var(--color-primary, #22c55e)"
+                : "var(--color-base-300, #f9fafb)";
+              const textColor = isSelected
+                ? "var(--color-primary-content, #fff)"
+                : "var(--color-base-content, inherit)";
               return `
               <button class="compute-device-item"
                       data-device="${device.value}"
@@ -366,7 +385,9 @@ export function buildComputeDeviceSelectHtml(
                              user-select: none;
                              -webkit-tap-highlight-color: transparent;"
                       onmouseenter="this.style.backgroundColor='${
-                        isSelected ? "var(--color-primary, #dcfce7)" : "var(--color-base-200, #f0f0f0)"
+                        isSelected
+                          ? "var(--color-primary, #dcfce7)"
+                          : "var(--color-base-200, #f0f0f0)"
                       }'; this.style.transform='translateX(4px)'; this.style.borderColor='#22c55e';"
                       onmouseleave="this.style.backgroundColor='${bgColor}'; this.style.transform='translateX(0)'; this.style.borderColor='${borderColor}';"
                       onmousedown="this.style.transform='scale(0.98)';"
