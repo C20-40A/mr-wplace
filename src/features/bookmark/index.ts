@@ -33,12 +33,26 @@ import type { BookmarkAPI } from "@/core/di";
 const SORT_KEY = "wplace-studio-bookmark-sort";
 
 let router: BookmarkRouter;
+let selectedTagFilters: Set<string> = new Set();
 
 const render = async (): Promise<void> => {
   const result = await storage.get([SORT_KEY]);
   const sortType = result[SORT_KEY] || "created";
   const favorites = await BookmarkStorage.getBookmarks();
-  renderBookmarks(favorites, sortType);
+  const existingTags = await BookmarkStorage.getExistingTags();
+
+  // Render tag filters
+  const { renderTagFilters } = await import("./ui");
+  renderTagFilters(existingTags, favorites, selectedTagFilters, (tagKey: string) => {
+    if (selectedTagFilters.has(tagKey)) {
+      selectedTagFilters.delete(tagKey);
+    } else {
+      selectedTagFilters.add(tagKey);
+    }
+    render();
+  });
+
+  renderBookmarks(favorites, sortType, selectedTagFilters);
   const sortSelect = document.getElementById(
     "wps-bookmark-sort"
   ) as HTMLSelectElement;
