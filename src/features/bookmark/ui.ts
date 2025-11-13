@@ -72,6 +72,13 @@ export const createBookmarkModal = (): ModalElements => {
         </div>
       </div>
 
+      <!-- Tag Filter -->
+      <div id="wps-tag-filter-container" style="margin-bottom: 0.7rem; flex-shrink: 0; display: none;">
+        <div style="overflow-x: auto; overflow-y: hidden; white-space: nowrap; padding-bottom: 0.25rem;">
+          <div id="wps-tag-filter-buttons" style="display: inline-flex; gap: 0.5rem;"></div>
+        </div>
+      </div>
+
       <!-- Scrollable Content: Bookmarks Grid -->
       <div style="flex: 1; overflow-y: auto; min-height: 0;">
         <div id="wps-favorites-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2">
@@ -446,15 +453,101 @@ export const showTagEditModal = (
   });
 };
 
+export const renderTagFilters = (
+  tags: Tag[],
+  bookmarks: Bookmark[],
+  selectedTagFilters: Set<string>,
+  onTagFilterChange: (tagKey: string) => void
+): void => {
+  const container = document.getElementById("wps-tag-filter-container");
+  const buttonsContainer = document.getElementById("wps-tag-filter-buttons");
+
+  if (!container || !buttonsContainer) return;
+
+  // Hide container if no tags
+  if (tags.length === 0) {
+    container.style.display = "none";
+    return;
+  }
+
+  // タグごとの最新アクセス日時を計算
+  const tagLatestAccess = new Map<string, number>();
+
+  bookmarks.forEach((bookmark) => {
+    if (!bookmark.tag) return;
+    const tagKey = `${bookmark.tag.color}:${bookmark.tag.name || ""}`;
+    const accessTime = bookmark.lastAccessedDate
+      ? new Date(bookmark.lastAccessedDate).getTime()
+      : 0;
+    const current = tagLatestAccess.get(tagKey) || 0;
+    if (accessTime > current) {
+      tagLatestAccess.set(tagKey, accessTime);
+    }
+  });
+
+  // タグを最新アクセス順にソート
+  const sortedTags = [...tags].sort((a, b) => {
+    const tagKeyA = `${a.color}:${a.name || ""}`;
+    const tagKeyB = `${b.color}:${b.name || ""}`;
+    const accessTimeA = tagLatestAccess.get(tagKeyA) || 0;
+    const accessTimeB = tagLatestAccess.get(tagKeyB) || 0;
+
+    if (accessTimeA !== accessTimeB) {
+      return accessTimeB - accessTimeA; // 新しい順
+    }
+
+    // アクセス日時が同じ場合はタグ名でソート
+    const tagNameA = a.name || "";
+    const tagNameB = b.name || "";
+    return tagNameA.localeCompare(tagNameB);
+  });
+
+  container.style.display = "block";
+  buttonsContainer.innerHTML = sortedTags
+    .map((tag) => {
+      const tagKey = `${tag.color}:${tag.name || ""}`;
+      const isSelected = selectedTagFilters.has(tagKey);
+      return `
+        <button
+          class="wps-tag-filter-btn btn btn-sm ${isSelected ? "btn-primary" : "btn-outline"}"
+          data-tag-key="${tagKey}"
+          style="flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.5rem;">
+          <div style="width: 16px; height: 16px; border-radius: 4px; background: ${tag.color};"></div>
+          <span>${tag.name || t`${"no_name"}`}</span>
+        </button>
+      `;
+    })
+    .join("");
+
+  // Add click handlers
+  buttonsContainer.querySelectorAll(".wps-tag-filter-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tagKey = (btn as HTMLElement).dataset.tagKey!;
+      onTagFilterChange(tagKey);
+    });
+  });
+};
+
 export const renderBookmarks = (
   favorites: Bookmark[],
-  sortType: BookmarkSortType = "created"
+  sortType: BookmarkSortType = "created",
+  selectedTagFilters: Set<string> = new Set()
 ): void => {
   const grid = document.getElementById("wps-favorites-grid") as HTMLElement;
 
   if (!grid) return;
 
-  if (favorites.length === 0) {
+  // Filter bookmarks by selected tags
+  let filteredFavorites = favorites;
+  if (selectedTagFilters.size > 0) {
+    filteredFavorites = favorites.filter((fav) => {
+      if (!fav.tag) return false;
+      const tagKey = `${fav.tag.color}:${fav.tag.name || ""}`;
+      return selectedTagFilters.has(tagKey);
+    });
+  }
+
+  if (filteredFavorites.length === 0) {
     grid.innerHTML = t`
         <div class="text-center" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-12 mx-auto mb-4 text-base-content/50">
@@ -469,9 +562,9 @@ export const renderBookmarks = (
 
   // Sort bookmarks
   if (sortType === "created") {
-    favorites.sort((a, b) => b.id - a.id);
+    filteredFavorites.sort((a, b) => b.id - a.id);
   } else if (sortType === "accessed") {
-    favorites.sort((a, b) => {
+    filteredFavorites.sort((a, b) => {
       if (!a.lastAccessedDate && !b.lastAccessedDate) return b.id - a.id;
       if (!a.lastAccessedDate) return 1;
       if (!b.lastAccessedDate) return -1;
@@ -484,7 +577,7 @@ export const renderBookmarks = (
     // タグごとの最新アクセス日時を計算
     const tagLatestAccess = new Map<string, number>();
 
-    favorites.forEach((fav) => {
+    filteredFavorites.forEach((fav) => {
       if (!fav.tag) return;
       const tagKey = `${fav.tag.color}:${fav.tag.name || ""}`;
       const accessTime = fav.lastAccessedDate
@@ -496,7 +589,7 @@ export const renderBookmarks = (
       }
     });
 
-    favorites.sort((a, b) => {
+    filteredFavorites.sort((a, b) => {
       // タグなしは最後
       if (!a.tag && !b.tag) return b.id - a.id;
       if (!a.tag) return 1;
@@ -530,7 +623,7 @@ export const renderBookmarks = (
     });
   }
 
-  grid.innerHTML = favorites
+  grid.innerHTML = filteredFavorites
     .map((fav) => {
       const cardConfig: CardConfig = {
         id: fav.id.toString(),
