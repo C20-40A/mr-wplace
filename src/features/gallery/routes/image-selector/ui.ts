@@ -275,7 +275,30 @@ export class GalleryImageSelectorUI {
    * コンポーネントをクリーンアップ
    */
   destroy(): void {
+    console.log("🧑‍🎨 : Destroying GalleryImageSelectorUI...");
+
+    // すべてのボタンのイベントリスナーをクリア
+    if (this.layerPanel) {
+      // すべてのボタンを取得してクローンで置き換え（イベントリスナー削除）
+      const buttons = this.layerPanel.querySelectorAll("button");
+      buttons.forEach((btn) => {
+        const clone = btn.cloneNode(true) as HTMLButtonElement;
+        btn.replaceWith(clone);
+      });
+
+      // layerPanel 自体をクリア
+      this.layerPanel.innerHTML = "";
+      this.layerPanel = null;
+    }
+
     this.imageSelector?.destroy();
     this.imageSelector = null;
+
+    // コールバック参照をクリア
+    this.currentOnSelect = null;
+    this.currentOnShowDetail = null;
+    this.currentOnAddClick = null;
+
+    console.log("🧑‍🎨 : GalleryImageSelectorUI destroyed");
   }
 }

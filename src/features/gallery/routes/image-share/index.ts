@@ -112,4 +112,9 @@ export class GalleryImageShare {
     };
     img.src = dataUrl;
   }
+
+  destroy(): void {
+    // GalleryImageShare は静的HTMLのみなので特に破棄処理なし
+    console.log("🧑‍🎨 : GalleryImageShare destroyed (no-op)");
+  }
 }
