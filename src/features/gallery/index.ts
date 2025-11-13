@@ -6,6 +6,7 @@ import { GalleryImageEditor } from "./routes/image-editor";
 import { GalleryImageDetail } from "./routes/image-detail";
 import { GalleryImageShare } from "./routes/image-share";
 import { GalleryImageSelector } from "./routes/image-selector";
+import { ImageItem } from "./routes/list/components";
 import { setupElementObserver } from "../../components/element-observer";
 import { findOpacityContainer } from "../../constants/selectors";
 import type { GalleryAPI } from "../../core/di";
@@ -25,6 +26,9 @@ const createGallery = () => {
     onSelect: undefined as ((item: GalleryItem) => void) | undefined,
     onDrawToggle: undefined as ((key: string) => Promise<boolean>) | undefined,
   };
+
+  // 現在アクティブなルートインスタンスを保持
+  let currentRouteInstance: { destroy?: () => void } | null = null;
 
   // 外部インターフェース（initButton前に定義必須）
   const show = () => {
@@ -61,6 +65,7 @@ const createGallery = () => {
   > = {
     list: async (container) => {
       const route = new GalleryList();
+      currentRouteInstance = route; // インスタンスを保存
       await route.render(
         container,
         router,
@@ -72,6 +77,7 @@ const createGallery = () => {
 
     "image-editor": async (container) => {
       const route = new GalleryImageEditor();
+      currentRouteInstance = route; // インスタンスを保存
       route.setOnSaveSuccess(async () => {
         // Notify inject side to update overlay layers
         const { sendGalleryImagesToInject } = await import("@/content");
@@ -81,7 +87,7 @@ const createGallery = () => {
         router.navigateBack();
       });
       route.render(container);
-      
+
       // 編集モード判定
       if (state.editingItem) {
         console.log("🧑‍🎨 : Loading existing image for edit", state.editingItem.key);
@@ -92,6 +98,7 @@ const createGallery = () => {
     "image-detail": async (container) => {
       if (!state.currentDetailItem) return;
       const route = new GalleryImageDetail();
+      currentRouteInstance = route; // インスタンスを保存
       route.render(
         container,
         router,
@@ -116,10 +123,10 @@ const createGallery = () => {
 
     "image-selector": (container) => {
       const route = new GalleryImageSelector();
+      currentRouteInstance = route; // インスタンスを保存
       route.render(
         container,
-        router,
-        async (item) => {
+        async (item: ImageItem) => {
           if (!state.onSelect) return;
           // inline化: findGalleryItemByKey
           const { GalleryStorage } = await import("./storage");
@@ -131,7 +138,7 @@ const createGallery = () => {
           }
         },
         () => router.navigate("image-editor"),
-        async (item) => {
+        async (item: ImageItem) => {
           // 詳細表示コールバック
           const { GalleryStorage } = await import("./storage");
           const items = await new GalleryStorage().getAll();
@@ -146,11 +153,19 @@ const createGallery = () => {
     "image-share": (container) => {
       if (!state.currentDetailItem) return;
       const route = new GalleryImageShare();
+      currentRouteInstance = route; // インスタンスを保存
       route.render(container, state.currentDetailItem);
     },
   };
 
   const renderCurrentRoute = async (route: string) => {
+    // 古いルートを破棄
+    if (currentRouteInstance?.destroy) {
+      console.log("🧑‍🎨 : Destroying previous route instance");
+      currentRouteInstance.destroy();
+      currentRouteInstance = null;
+    }
+
     const container = ui.getContainer();
     if (!container) return;
     await routeMap[route]?.(container);

@@ -37,7 +37,8 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
   } = params;
 
   const container = document.createElement("div");
-  container.className = "layer-item-container bg-base-100 border border-base-300 rounded-lg mb-2 shadow-sm";
+  container.className =
+    "layer-item-container bg-base-100 border border-base-300 rounded-lg mb-2 shadow-sm";
   container.dataset.key = item.key;
   container.style.cssText = `
     display: flex;
@@ -341,7 +342,8 @@ const createMoveContainer = (
 ): HTMLElement => {
   const moveContainer = document.createElement("div");
   moveContainer.className = "bg-base-200 border-l border-base-300";
-  moveContainer.style.cssText = "display: flex; flex-direction: column; flex-shrink: 0;";
+  moveContainer.style.cssText =
+    "display: flex; flex-direction: column; flex-shrink: 0;";
   moveContainer.onclick = (e) => e.stopPropagation();
 
   const createLayerMoveButton = (
@@ -350,7 +352,9 @@ const createMoveContainer = (
     disabled: boolean
   ) => {
     const btn = document.createElement("button");
-    btn.className = disabled ? "btn btn-xs btn-disabled" : "btn btn-xs btn-ghost";
+    btn.className = disabled
+      ? "btn btn-xs btn-disabled"
+      : "btn btn-xs btn-ghost";
     btn.textContent = symbol;
     btn.disabled = disabled;
 

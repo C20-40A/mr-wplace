@@ -45,7 +45,20 @@ export class GalleryImageEditor {
       onSaveToGallery: () => this.controller?.saveToGallery(),
       onDownload: () => this.controller?.downloadImage()
     };
-    
+
     this.ui.setupUI(callbacks);
+  }
+
+  destroy(): void {
+    console.log("🧑‍🎨 : Destroying GalleryImageEditor...");
+
+    if (this.controller) {
+      // Controller 内の ImageInspector, ColorPalette は自動破棄される
+      this.controller = null;
+    }
+
+    this.onSaveSuccess = undefined;
+
+    console.log("🧑‍🎨 : GalleryImageEditor destroyed");
   }
 }

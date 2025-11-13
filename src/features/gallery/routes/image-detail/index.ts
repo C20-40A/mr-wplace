@@ -286,4 +286,17 @@ export class GalleryImageDetail {
       }
     });
   }
+
+  destroy(): void {
+    console.log("🧑‍🎨 : Destroying GalleryImageDetail...");
+
+    if (this.imageInspector) {
+      this.imageInspector.destroy();
+      this.imageInspector = null;
+    }
+
+    this.currentItem = null;
+
+    console.log("🧑‍🎨 : GalleryImageDetail destroyed");
+  }
 }

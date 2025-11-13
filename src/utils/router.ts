@@ -52,6 +52,10 @@ export class Router<T extends string> {
     this.headerElements = { titleElement, backButton };
   }
 
+  clearHeaderElements(): void {
+    this.headerElements = null;
+  }
+
   setTitleMap(titleMap: Record<T, string>): void {
     this.titleMap = titleMap;
   }
