@@ -151,7 +151,7 @@ export const PREDEFINED_COLORS = [
   { name: "Gray", value: "#6b7280" },
 ];
 
-const renderExistingTags = (tags: Tag[], currentTag?: Tag): void => {
+export const renderExistingTags = (tags: Tag[], currentTag?: Tag): void => {
   const container = document.getElementById("wps-existing-tags-container");
   if (!container) return;
 
@@ -160,9 +160,18 @@ const renderExistingTags = (tags: Tag[], currentTag?: Tag): void => {
     return;
   }
 
+  const isSelected = (tag: Tag): boolean => {
+    return (
+      tag.color === currentTag?.color &&
+      (tag.name || "") === (currentTag?.name || "")
+    );
+  };
+
   container.innerHTML = tags
     .map(
-      (tag) => `
+      (tag) => {
+        const selected = isSelected(tag);
+        return `
     <div class="wps-existing-tag-item"
          data-color="${tag.color}"
          data-name="${tag.name || ""}"
@@ -171,14 +180,13 @@ const renderExistingTags = (tags: Tag[], currentTag?: Tag): void => {
            align-items: center;
            gap: 8px;
            padding: 8px;
-           border: 2px solid ${
-             tag.color === currentTag?.color &&
-             (tag.name || "") === (currentTag?.name || "")
-               ? "oklch(var(--bc))"
-               : "transparent"
-           };
+           border: ${selected ? "3px" : "2px"} solid ${
+          selected ? "oklch(var(--p))" : "oklch(var(--bc) / 0.1)"
+        };
+           background: ${selected ? "oklch(var(--p) / 0.1)" : "transparent"};
            border-radius: 8px;
-           margin-bottom: 4px;
+           margin-bottom: 6px;
+           transition: all 0.2s ease;
          ">
       <div class="wps-tag-item-clickable" style="
         display: flex;
@@ -189,7 +197,7 @@ const renderExistingTags = (tags: Tag[], currentTag?: Tag): void => {
         padding: 4px;
         border-radius: 4px;
       "
-      onmouseover="this.style.background='oklch(var(--b2))';"
+      onmouseover="if (!${selected}) this.style.background='oklch(var(--b2))';"
       onmouseout="this.style.background='transparent';">
         <div style="
           width: 24px;
@@ -197,8 +205,22 @@ const renderExistingTags = (tags: Tag[], currentTag?: Tag): void => {
           border-radius: 4px;
           background: ${tag.color};
           flex-shrink: 0;
-        "></div>
-        <span style="flex: 1;">${tag.name || `(${t`${"tag_name"}`})`}</span>
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        ">
+          ${
+            selected
+              ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="white" style="width: 16px; height: 16px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));">
+            <path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/>
+          </svg>`
+              : ""
+          }
+        </div>
+        <span style="flex: 1; font-weight: ${
+          selected ? "600" : "400"
+        };">${tag.name || `(${t`${"tag_name"}`})`}</span>
       </div>
       <button
         class="wps-tag-edit-btn btn btn-ghost btn-xs"
@@ -211,7 +233,8 @@ const renderExistingTags = (tags: Tag[], currentTag?: Tag): void => {
         </svg>
       </button>
     </div>
-  `
+  `;
+      }
     )
     .join("");
 };
