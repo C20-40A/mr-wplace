@@ -66,6 +66,10 @@ export const enTranslations = {
   sort_created: "Date Added",
   sort_accessed: "Last Accessed",
   sort_tag: "By Tag",
+  sort_distance: "By Distance",
+  sort_last_updated: "Recently Saved",
+  sort_name: "By Name",
+  sort_tile_count: "By Tile Count",
 
   // Import/Export関連
   import_export: "Import/Export",

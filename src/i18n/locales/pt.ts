@@ -57,6 +57,13 @@ export const ptTranslations = {
   enter_bookmark_name: "Por favor, insira o nome do favorito:",
   location_point: "Ponto",
   bookmark_list: "Lista de Favoritos",
+  sort_created: "Data de Adição",
+  sort_accessed: "Último Acesso",
+  sort_tag: "Por Tag",
+  sort_distance: "Por Distância",
+  sort_last_updated: "Salvos Recentemente",
+  sort_name: "Por Nome",
+  sort_tile_count: "Por Quantidade de Tiles",
 
   // Import/Export関連
   no_export_bookmarks: "Sem favoritos para exportar",

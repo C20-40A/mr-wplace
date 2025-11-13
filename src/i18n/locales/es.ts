@@ -57,6 +57,13 @@ export const esTranslations = {
   enter_bookmark_name: "Por favor, introduce el nombre del favorito:",
   location_point: "Punto",
   bookmark_list: "Lista de Favoritos",
+  sort_created: "Fecha de Adición",
+  sort_accessed: "Último Acceso",
+  sort_tag: "Por Etiqueta",
+  sort_distance: "Por Distancia",
+  sort_last_updated: "Guardados Recientemente",
+  sort_name: "Por Nombre",
+  sort_tile_count: "Por Cantidad de Azulejos",
 
   // Import/Export関連
   no_export_bookmarks: "Sin favoritos para exportar",

@@ -56,6 +56,13 @@ export const viTranslations = {
   enter_bookmark_name: "Vui lòng nhập tên đánh dấu:",
   location_point: "Điểm",
   bookmark_list: "Danh sách đánh dấu",
+  sort_created: "Ngày thêm",
+  sort_accessed: "Lần truy cập gần nhất",
+  sort_tag: "Theo thẻ",
+  sort_distance: "Theo khoảng cách",
+  sort_last_updated: "Đã lưu gần đây",
+  sort_name: "Theo tên",
+  sort_tile_count: "Theo số lượng ô",
 
   // Import/Export
   no_export_bookmarks: "Không có mục yêu thích để xuất",
