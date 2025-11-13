@@ -6,6 +6,7 @@ import {
   moveImage,
 } from "../../../common-actions";
 import { convertGalleryItemToImageItem } from "./utils";
+import { sendGalleryImagesToInject } from "@/content";
 
 interface LayerItemParams {
   item: any;
@@ -16,6 +17,7 @@ interface LayerItemParams {
   onUpdateStatus: (key: string) => Promise<void>;
   onMoveToUnplaced: (key: string) => Promise<void>;
   onRefreshOrder: () => Promise<void>;
+  galleryStorage: GalleryStorage;
 }
 
 /**
@@ -31,21 +33,18 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
     onUpdateStatus,
     onMoveToUnplaced,
     onRefreshOrder,
+    galleryStorage,
   } = params;
-  const galleryStorage = new GalleryStorage();
 
   const container = document.createElement("div");
+  container.className = "layer-item-container bg-base-100 border border-base-300 rounded-lg mb-2 shadow-sm";
   container.dataset.key = item.key;
   container.style.cssText = `
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 0.5rem;
-    margin-bottom: 0.5rem;
     display: flex;
     align-items: stretch;
-    transition: all 0.2s;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
     overflow: hidden;
+    will-change: transform;
   `;
 
   // コンテンツエリア
@@ -53,8 +52,8 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
 
   // Divider
   const divider = document.createElement("div");
-  divider.style.cssText =
-    "width: 1px; background: #e5e7eb; align-self: stretch; margin: 0.25rem";
+  divider.className = "bg-base-300";
+  divider.style.cssText = "width: 1px; align-self: stretch; margin: 0.25rem";
 
   // ボタン領域
   const buttonArea = createButtonArea(
@@ -98,37 +97,29 @@ const createContentArea = (
     "flex: 1; display: flex; align-items: center; gap: 0.25rem; min-width: 0; padding: 0.4rem;";
 
   const mainArea = document.createElement("div");
+  mainArea.className = "layer-item-main";
   mainArea.style.cssText = `
 		flex: 1;
 		display: flex;
 		align-items: center;
 		gap: 0.4rem;
 		cursor: pointer;
-		margin: -0.4rem; 
+		margin: -0.4rem;
 		padding: 0.4rem;
-		transition: background 0.15s;
+		transition: background 0.15s, transform 0.15s;
 		min-width: 0;
 	`;
 
-  mainArea.onmouseenter = () => {
-    mainArea.style.background = "#f3f4f6";
-    container.style.transform = "translateY(-1px)";
-    container.style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.1)";
-  };
-  mainArea.onmouseleave = () => {
-    mainArea.style.background = "transparent";
-    container.style.transform = "translateY(0)";
-    container.style.boxShadow = "0 1px 2px rgba(0, 0, 0, 0.05)";
-  };
   mainArea.onclick = () => {
     onSelect(convertGalleryItemToImageItem(item));
   };
 
   // サムネイル
   const thumbnail = document.createElement("img");
+  thumbnail.className = "border border-base-300 rounded-md";
   thumbnail.src = item.dataUrl;
   thumbnail.style.cssText =
-    "width: 48px; height: 48px; object-fit: cover; border-radius: 0.375rem; flex-shrink: 0; border: 1px solid #e5e7eb; image-rendering: pixelated;";
+    "width: 48px; height: 48px; object-fit: cover; flex-shrink: 0; image-rendering: pixelated;";
 
   // 情報
   const infoContainer = createInfoContainer(item, index);
@@ -149,21 +140,15 @@ const createInfoContainer = (item: any, index: number): HTMLElement => {
   layerInfo.style.cssText = "display: flex; align-items: center; gap: 0.5rem;";
 
   const indexLabel = document.createElement("div");
+  indexLabel.className = "text-sm font-semibold text-base-content";
   indexLabel.textContent = `#${index + 1}`;
-  indexLabel.style.cssText =
-    "font-weight: 600; font-size: 0.875rem; color: #374151;";
 
   const statusBadge = document.createElement("div");
+  statusBadge.className = item.drawEnabled
+    ? "badge badge-success badge-sm"
+    : "badge badge-error badge-sm";
   statusBadge.dataset.role = "status";
   statusBadge.textContent = item.drawEnabled ? "✓ ON" : "✗ OFF";
-  statusBadge.style.cssText = `
-    font-size: 0.75rem;
-    padding: 0.1rem 0.2rem;
-    border-radius: 0.25rem;
-    font-weight: 500;
-    background: ${item.drawEnabled ? "#d1fae5" : "#fee2e2"};
-    color: ${item.drawEnabled ? "#065f46" : "#991b1b"};
-  `;
 
   layerInfo.appendChild(indexLabel);
   layerInfo.appendChild(statusBadge);
@@ -173,10 +158,9 @@ const createInfoContainer = (item: any, index: number): HTMLElement => {
   // タイトル表示（タイトルがある場合のみ）
   if (item.title) {
     const titleText = document.createElement("div");
+    titleText.className = "text-xs text-base-content/70 mt-1 truncate";
     titleText.dataset.role = "title";
     titleText.textContent = item.title;
-    titleText.style.cssText =
-      "font-size: 0.75rem; color: #4b5563; margin-top: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;";
     infoContainer.appendChild(titleText);
   }
 
@@ -229,30 +213,19 @@ const createDPad = (
     gridRow: string
   ) => {
     const btn = document.createElement("button");
+    btn.className = "btn btn-xs btn-info";
     btn.textContent = symbol;
     btn.style.cssText = `
-      background: #e0f2fe;
-      border: 1px solid #bae6fd;
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
       font-size: 0.75rem;
-      color: #0369a1;
       font-weight: 600;
       transition: all 0.15s;
       grid-column: ${gridColumn};
       grid-row: ${gridRow};
       user-select: none;
     `;
-    btn.onmouseenter = () => {
-      btn.style.background = "#bae6fd";
-      btn.style.transform = "scale(1.05)";
-    };
-    btn.onmouseleave = () => {
-      btn.style.background = "#e0f2fe";
-      btn.style.transform = "scale(1)";
-    };
     btn.onclick = async () => {
       await moveImage(item, direction);
       await onRefreshOrder();
@@ -285,12 +258,12 @@ const createActionGrid = (
   `;
 
   // Gotoボタン
-  const gotoBtn = createButton("📍", "#d1fae5", "#a7f3d0", () => {
+  const gotoBtn = createButton("📍", "btn-success", () => {
     gotoMapPosition(item);
   });
 
   // 詳細ボタン
-  const detailBtn = createButton("🔍", "#fef3c7", "#fde68a", () => {
+  const detailBtn = createButton("🔍", "btn-warning", () => {
     if (onShowDetail) {
       onShowDetail(convertGalleryItemToImageItem(item));
     }
@@ -299,8 +272,7 @@ const createActionGrid = (
   // トグルボタン
   const toggleBtn = createButton(
     item.drawEnabled ? "👁" : "🚫",
-    item.drawEnabled ? "#dbeafe" : "#f3f4f6",
-    item.drawEnabled ? "#bfdbfe" : "#e5e7eb",
+    item.drawEnabled ? "btn-primary" : "btn-ghost",
     async () => {
       await toggleDrawState(item.key);
       await onUpdateStatus(item.key);
@@ -309,7 +281,7 @@ const createActionGrid = (
   toggleBtn.dataset.role = "toggle";
 
   // 削除ボタン
-  const deleteBtn = createButton("×", "#fee2e2", "#fecaca", async () => {
+  const deleteBtn = createButton("×", "btn-error", async () => {
     await galleryStorage.save({
       ...item,
       drawPosition: undefined,
@@ -317,12 +289,10 @@ const createActionGrid = (
     });
 
     // Notify inject side to update overlay layers
-    const { sendGalleryImagesToInject } = await import("@/content");
     await sendGalleryImagesToInject();
 
     await onMoveToUnplaced(item.key);
   });
-  deleteBtn.style.color = "#991b1b";
   deleteBtn.style.fontSize = "1rem";
 
   actionGrid.appendChild(gotoBtn);
@@ -336,33 +306,22 @@ const createActionGrid = (
 // ボタン作成ヘルパー
 const createButton = (
   content: string,
-  bg: string,
-  hoverBg: string,
+  btnClass: string,
   onClick: () => void | Promise<void>
 ): HTMLButtonElement => {
   const btn = document.createElement("button");
+  btn.className = `btn btn-xs ${btnClass}`;
   btn.innerHTML = content;
   btn.style.cssText = `
-    background: ${bg};
-    border: 1px solid ${hoverBg};
     border-radius: 0;
     width: 100%;
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
     font-size: 0.875rem;
     transition: all 0.15s;
   `;
-  btn.onmouseenter = () => {
-    btn.style.background = hoverBg;
-    btn.style.transform = "scale(1.1)";
-  };
-  btn.onmouseleave = () => {
-    btn.style.background = bg;
-    btn.style.transform = "scale(1)";
-  };
   btn.onclick = () => {
     const result = onClick();
     if (result instanceof Promise) {
@@ -381,8 +340,8 @@ const createMoveContainer = (
   onRefreshOrder: () => Promise<void>
 ): HTMLElement => {
   const moveContainer = document.createElement("div");
-  moveContainer.style.cssText =
-    "display: flex; flex-direction: column; flex-shrink: 0; background: #f9fafb; border-left: 1px solid #e5e7eb;";
+  moveContainer.className = "bg-base-200 border-l border-base-300";
+  moveContainer.style.cssText = "display: flex; flex-direction: column; flex-shrink: 0;";
   moveContainer.onclick = (e) => e.stopPropagation();
 
   const createLayerMoveButton = (
@@ -391,40 +350,26 @@ const createMoveContainer = (
     disabled: boolean
   ) => {
     const btn = document.createElement("button");
+    btn.className = disabled ? "btn btn-xs btn-disabled" : "btn btn-xs btn-ghost";
     btn.textContent = symbol;
     btn.disabled = disabled;
-    const activeBg = "#ffffff";
-    const activeText = "#1f2937";
-    const hoverBg = "#f3f4f6";
 
     btn.style.cssText = `
-      background: ${disabled ? "#f3f4f6" : activeBg};
       width: 1.2rem;
       display: flex;
       flex: 1;
       align-items: center;
       justify-content: center;
-      cursor: ${disabled ? "not-allowed" : "pointer"};
       font-size: 0.75rem;
-      color: ${disabled ? "#9ca3af" : activeText};
       font-weight: 600;
-      opacity: ${disabled ? "0.8" : "1"};
-      transition: all 0.15s;
+      transition: transform 0.15s;
+      will-change: transform;
     `;
     if (!disabled) {
-      btn.onmouseenter = () => {
-        btn.style.background = hoverBg;
-        btn.style.transform = "scale(1.05)";
-      };
-      btn.onmouseout = () => {
-        btn.style.background = activeBg;
-        btn.style.transform = "scale(1)";
-      };
       btn.onclick = async () => {
         await galleryStorage.moveLayer(item.key, direction);
 
         // Notify inject side to update overlay layers
-        const { sendGalleryImagesToInject } = await import("@/content");
         await sendGalleryImagesToInject();
 
         await onRefreshOrder();
