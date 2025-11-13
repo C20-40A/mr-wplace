@@ -62,8 +62,7 @@ export const esTranslations = {
   sort_tag: "Por Etiqueta",
   sort_distance: "Por Distancia",
   sort_last_updated: "Guardados Recientemente",
-  sort_name: "Por Nombre",
-  sort_tile_count: "Por Cantidad de Azulejos",
+  sort_layer: "Orden de Capa",
 
   // Import/Export関連
   no_export_bookmarks: "Sin favoritos para exportar",

@@ -62,8 +62,7 @@ export const ptTranslations = {
   sort_tag: "Por Tag",
   sort_distance: "Por Distância",
   sort_last_updated: "Salvos Recentemente",
-  sort_name: "Por Nome",
-  sort_tile_count: "Por Quantidade de Tiles",
+  sort_layer: "Ordem de Camada",
 
   // Import/Export関連
   no_export_bookmarks: "Sem favoritos para exportar",

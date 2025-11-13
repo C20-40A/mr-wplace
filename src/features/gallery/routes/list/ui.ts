@@ -1,6 +1,9 @@
 import { GalleryItem } from "../../storage";
 import { ImageGridComponent, ImageItem } from "./components/ImageGridComponent";
 import { gotoMapPosition, toggleDrawState } from "../../common-actions";
+import { t } from "@/i18n";
+
+export type GallerySortType = "layer" | "distance" | "created";
 
 export class GalleryListUI {
   private container: HTMLElement | null = null;
@@ -16,7 +19,9 @@ export class GalleryListUI {
     container?: HTMLElement,
     onAddClick?: () => void,
     onImageClick?: (item: GalleryItem) => void,
-    onCloseModal?: () => void
+    onCloseModal?: () => void,
+    sortType?: GallerySortType,
+    onSortChange?: (sortType: GallerySortType) => void
   ): void {
     if (!container) return;
 
@@ -28,7 +33,9 @@ export class GalleryListUI {
       items,
       onDelete,
       onImageClick,
-      onAddClick
+      onAddClick,
+      sortType,
+      onSortChange
     );
   }
 
@@ -37,19 +44,41 @@ export class GalleryListUI {
     items: GalleryItem[],
     onDelete: (key: string) => void,
     onImageClick?: (item: GalleryItem) => void,
-    onAddClick?: () => void
+    onAddClick?: () => void,
+    sortType?: GallerySortType,
+    onSortChange?: (sortType: GallerySortType) => void
   ): void {
-    // Sort items by layerOrder (drawPosition items first, sorted by layerOrder, then items without drawPosition)
-    const sortedItems = [...items].sort((a, b) => {
-      const aHasDrawPos = !!a.drawPosition;
-      const bHasDrawPos = !!b.drawPosition;
+    // Clear container
+    container.innerHTML = "";
 
-      // Both have drawPosition: sort by layerOrder
-      if (aHasDrawPos && bHasDrawPos)
-        return (b.layerOrder ?? 0) - (a.layerOrder ?? 0);
+    // Create sort dropdown
+    const sortContainer = document.createElement("div");
+    sortContainer.className = "flex items-center gap-2 mb-4";
+    sortContainer.innerHTML = `
+      <select id="wps-gallery-sort" class="select select-sm select-bordered">
+        <option value="layer">${t`${"sort_layer"}`}</option>
+        <option value="distance">${t`${"sort_distance"}`}</option>
+        <option value="created">${t`${"sort_created"}`}</option>
+      </select>
+    `;
+    container.appendChild(sortContainer);
 
-      return 0;
-    });
+    const sortSelect = sortContainer.querySelector(
+      "#wps-gallery-sort"
+    ) as HTMLSelectElement;
+    if (sortType) sortSelect.value = sortType;
+    if (onSortChange) {
+      sortSelect.addEventListener("change", (e) => {
+        onSortChange((e.target as HTMLSelectElement).value as GallerySortType);
+      });
+    }
+
+    // Create grid container
+    const gridContainer = document.createElement("div");
+    container.appendChild(gridContainer);
+
+    // Sort items - no sorting here, handled by parent
+    const sortedItems = [...items];
 
     // GalleryItemをImageItemに変換
     const imageItems: ImageItem[] = sortedItems.map((item) => {
@@ -75,7 +104,7 @@ export class GalleryListUI {
     if (this.imageGrid) this.imageGrid.destroy();
 
     // 新しいImageGridComponentを作成
-    this.imageGrid = new ImageGridComponent(container, {
+    this.imageGrid = new ImageGridComponent(gridContainer, {
       items: imageItems,
       isSelectionMode: false, // list routeは選択モードなし
       onImageClick: (item) => {
@@ -85,7 +114,7 @@ export class GalleryListUI {
         }
       },
       onDrawToggle: (key) => {
-        this.handleDrawToggle(key, onDelete, onImageClick);
+        this.handleDrawToggle(key, onDelete, onImageClick, sortType, onSortChange);
       },
       onImageDelete: (key) => {
         onDelete(key);
@@ -106,7 +135,9 @@ export class GalleryListUI {
   private async handleDrawToggle(
     key: string,
     onDelete: (key: string) => void,
-    onImageClick?: (item: GalleryItem) => void
+    onImageClick?: (item: GalleryItem) => void,
+    sortType?: GallerySortType,
+    onSortChange?: (sortType: GallerySortType) => void
   ): Promise<void> {
     const newDrawEnabled = await toggleDrawState(key);
 
@@ -119,7 +150,10 @@ export class GalleryListUI {
         this.container,
         updatedItems,
         onDelete,
-        onImageClick
+        onImageClick,
+        undefined,
+        sortType,
+        onSortChange
       );
     }
 

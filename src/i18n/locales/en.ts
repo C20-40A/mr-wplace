@@ -68,8 +68,7 @@ export const enTranslations = {
   sort_tag: "By Tag",
   sort_distance: "By Distance",
   sort_last_updated: "Recently Saved",
-  sort_name: "By Name",
-  sort_tile_count: "By Tile Count",
+  sort_layer: "Layer Order",
 
   // Import/Export関連
   import_export: "Import/Export",

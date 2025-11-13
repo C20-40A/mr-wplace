@@ -61,8 +61,7 @@ export const viTranslations = {
   sort_tag: "Theo thẻ",
   sort_distance: "Theo khoảng cách",
   sort_last_updated: "Đã lưu gần đây",
-  sort_name: "Theo tên",
-  sort_tile_count: "Theo số lượng ô",
+  sort_layer: "Thứ tự lớp",
 
   // Import/Export
   no_export_bookmarks: "Không có mục yêu thích để xuất",
