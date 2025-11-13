@@ -348,11 +348,10 @@ const setupModal = (): void => {
       editScreen.dataset.currentTagColor = color;
       editScreen.dataset.currentTagName = name;
 
-      // Visual feedback: highlight selected tag
-      document.querySelectorAll(".wps-existing-tag-item").forEach((item) => {
-        (item as HTMLElement).style.border = "2px solid transparent";
-      });
-      tagItem.style.border = "2px solid oklch(var(--bc))";
+      // Re-render tags to update visual feedback
+      const existingTags = await BookmarkStorage.getExistingTags();
+      const { renderExistingTags } = await import("./ui");
+      renderExistingTags(existingTags, { color, name: name || undefined });
 
       console.log("🧑‍🎨 : Selected existing tag:", color, name);
     });
@@ -366,17 +365,17 @@ const setupModal = (): void => {
     });
 
   // No tag button
-  modal.querySelector("#wps-no-tag-btn")!.addEventListener("click", () => {
+  modal.querySelector("#wps-no-tag-btn")!.addEventListener("click", async () => {
     const editScreen = document.getElementById("wps-bookmark-edit-screen");
     if (!editScreen) return;
 
     editScreen.dataset.currentTagColor = "";
     editScreen.dataset.currentTagName = "";
 
-    // Visual feedback: deselect all tags
-    document.querySelectorAll(".wps-existing-tag-item").forEach((item) => {
-      (item as HTMLElement).style.border = "2px solid transparent";
-    });
+    // Re-render tags to update visual feedback (no tag selected)
+    const existingTags = await BookmarkStorage.getExistingTags();
+    const { renderExistingTags } = await import("./ui");
+    renderExistingTags(existingTags, undefined);
 
     console.log("🧑‍🎨 : Tag removed");
   });
