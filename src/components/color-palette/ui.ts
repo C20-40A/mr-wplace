@@ -91,6 +91,13 @@ export function buildSortOrderSelectHtml(sortOrder: SortOrder): string {
   const currentOption = SORT_ORDER_OPTIONS.find((o) => o.value === sortOrder);
   const currentLabelKey = currentOption?.labelKey ?? "sort_order_default";
 
+  const sortIconSvg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; flex-shrink: 0;">
+      <path d="M3 6h18M7 12h10M11 18h2"/>
+      <path d="M18 6l3 3-3 3"/>
+    </svg>
+  `.trim();
+
   return `
     <div class="sort-order-container" style="position: relative;">
       <button class="sort-order-button" type="button"
@@ -111,6 +118,7 @@ export function buildSortOrderSelectHtml(sortOrder: SortOrder): string {
               onmouseup="this.style.transform='scale(1)';"
               ontouchstart="this.style.transform='scale(0.98)'; this.style.boxShadow='0 1px 2px rgba(0, 0, 0, 0.1)';"
               ontouchend="this.style.transform='scale(1)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)';">
+        <span style="display: flex; align-items: center; color: #22c55e;">${sortIconSvg}</span>
         <span class="sort-order-current-name" style="font-size: 0.875rem; font-weight: 600; color: #22c55e; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">${t`${currentLabelKey}`}</span>
       </button>
       <div class="sort-order-dropdown"
