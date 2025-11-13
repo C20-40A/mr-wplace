@@ -123,18 +123,14 @@ export const sendSnapshotsToInject = async () => {
   const drawStates = await TimeTravelStorage.getDrawStates();
   const enabledStates = drawStates.filter((s) => s.drawEnabled);
 
-  const snapshots: Array<{
-    key: string;
-    dataUrl: string;
-    tileX: number;
-    tileY: number;
-  }> = [];
+  // Convert snapshots in parallel
+  const snapshots = await Promise.all(
+    enabledStates.map(async (state) => {
+      const snapshotData = await storage.get([state.fullKey]);
+      const rawData = snapshotData[state.fullKey];
 
-  for (const state of enabledStates) {
-    const snapshotData = await storage.get([state.fullKey]);
-    const rawData = snapshotData[state.fullKey];
+      if (!rawData) return null;
 
-    if (rawData) {
       // Convert Uint8Array to blob to dataUrl
       const uint8Array = new Uint8Array(rawData);
       const blob = new Blob([uint8Array], { type: "image/png" });
@@ -145,14 +141,14 @@ export const sendSnapshotsToInject = async () => {
         reader.readAsDataURL(blob);
       });
 
-      snapshots.push({
+      return {
         key: `snapshot_${state.fullKey}`,
         dataUrl,
         tileX: state.tileX,
         tileY: state.tileY,
-      });
-    }
-  }
+      };
+    })
+  ).then((results) => results.filter((s): s is NonNullable<typeof s> => s !== null));
 
   window.postMessage(
     {
@@ -414,11 +410,7 @@ export const sendTileBoundariesToInject = async () => {
     const tileOverlay = new TileOverlay();
     const tileSnapshot = new TileSnapshot();
     timeTravelAPI.initTimeTravel(); // 2. TimeTravel
-    await textDrawAPI.initTextDraw(); // 3. TextDraw
     galleryAPI.initGallery();
-    await darkThemeAPI.initDarkTheme(); // 5. DarkTheme
-    await highContrastAPI.initHighContrast(); // 6. HighContrast
-    await dataSaverAPI.initDataSaver(); // 7. DataSaver
     new Drawing(); // 4. Drawing (最初に表示)
     drawingLoaderAPI.initDrawingLoader();
     new ColorFilter();
@@ -428,6 +420,14 @@ export const sendTileBoundariesToInject = async () => {
     new PositionInfo();
     new PaletteToggle();
     initPaintStats();
+
+    // Initialize async features in parallel
+    await Promise.all([
+      textDrawAPI.initTextDraw(), // 3. TextDraw
+      darkThemeAPI.initDarkTheme(), // 5. DarkTheme
+      highContrastAPI.initHighContrast(), // 6. HighContrast
+      dataSaverAPI.initDataSaver(), // 7. DataSaver
+    ]);
 
     // 初期化完了を待つ
     await colorFilterManager.init();
@@ -440,12 +440,14 @@ export const sendTileBoundariesToInject = async () => {
       return result;
     });
 
-    // Send initial data to inject side
-    await sendGalleryImagesToInject();
-    await sendComputeDeviceToInject();
+    // Send initial data to inject side (in parallel)
+    await Promise.all([
+      sendGalleryImagesToInject(),
+      sendComputeDeviceToInject(),
+      sendTileBoundariesToInject(),
+      sendCacheSizeToInject(),
+    ]);
     sendColorFilterToInject(colorFilterManager);
-    await sendTileBoundariesToInject();
-    await sendCacheSizeToInject();
 
     // Global access for ImageProcessor and Gallery
     window.mrWplace = {
