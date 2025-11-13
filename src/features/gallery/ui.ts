@@ -1,7 +1,7 @@
 import { GalleryRouter } from "./router";
 import { t } from "../../i18n";
-import { BaseModalUI, ModalConfig } from "../../components/base-modal-ui";
-import { IMG_ICON_GALLERY } from "../../assets/iconImages";
+import { BaseModalUI, ModalConfig } from "@/components/base-modal-ui";
+import { IMG_ICON_GALLERY } from "@/assets/iconImages";
 
 export class GalleryUI extends BaseModalUI<GalleryRouter> {
   getModalConfig(): ModalConfig {

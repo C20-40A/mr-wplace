@@ -1,5 +1,5 @@
 import { Router } from "../utils/router";
-import { createModal, ModalElements } from "../utils/modal";
+import { createModal, ModalElements } from "@/utils/modal";
 
 export interface ModalConfig {
   id: string;
