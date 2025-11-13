@@ -81,8 +81,13 @@ export class ImageEditorUI {
               <span id="wps-current-size" style="font-size: 0.75rem; color: #4b5563;"></span>
             </h4>
             <div class="flex" style="justify-content: center; position: relative; width: 100%; height: calc(100% - 2.5rem);">
-              <div style="min-width: 300px; min-height: 300px; max-width: 100%; max-height: 100%; overflow: hidden; position: relative;">
+              <!-- Desktop: Canvas with ImageInspector -->
+              <div id="wps-canvas-container" style="min-width: 300px; min-height: 300px; max-width: 100%; max-height: 100%; overflow: hidden; position: relative; display: block;">
                 <canvas id="wps-scaled-canvas" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></canvas>
+              </div>
+              <!-- Mobile: Simple image -->
+              <div id="wps-image-container" style="display: none; width: 100%; max-width: 100%;">
+                <img id="wps-scaled-image" style="width: 100%; height: auto; image-rendering: pixelated; image-rendering: crisp-edges;" alt="Current">
               </div>
               <label style="position: absolute; bottom: 0.25rem; right: 0.25rem; display: flex; align-items: center; gap: 0.25rem; font-size: 0.7rem; cursor: pointer; background: rgba(255, 255, 255, 0.8); padding: 0.2rem 0.4rem; border-radius: 0.25rem; opacity: 0.6; transition: opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.6'">
                 <input type="checkbox" id="wps-gpu-toggle" class="checkbox checkbox-xs" checked>
@@ -135,7 +140,7 @@ export class ImageEditorUI {
                 <input type="range" id="wps-contrast-slider" min="-100" max="100" step="1" value="0" class="range" style="width: 100%;">
               </div>
               
-              <div style="display: flex; gap: 0.75rem;">
+              <div id="wps-brightness-saturation-container" style="display: flex; gap: 0.75rem;">
                 <div style="flex: 1;">
                   <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500;">
                     <span style="font-size: 0.75rem; color: #9ca3af;">-100</span>
@@ -144,7 +149,7 @@ export class ImageEditorUI {
                   </label>
                   <input type="range" id="wps-brightness-slider" min="-100" max="100" step="1" value="0" class="range" style="width: 100%;">
                 </div>
-                
+
                 <div style="flex: 1;">
                   <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500;">
                     <span style="font-size: 0.75rem; color: #9ca3af;">-100</span>
@@ -155,7 +160,7 @@ export class ImageEditorUI {
                 </div>
               </div>
 
-              <div style="display: flex; gap: 0.75rem;">
+              <div id="wps-dithering-sharpness-container" style="display: flex; gap: 0.75rem;">
                 <div style="flex: 1;">
                   <label style="display: flex; justify-content: center; align-items: center; font-size: 0.875rem; font-weight: 500; gap: 0.5rem; cursor: pointer;">
                     <input type="checkbox" id="wps-dithering-checkbox" class="checkbox checkbox-sm">
@@ -534,10 +539,38 @@ export class ImageEditorUI {
       const desktopPalette = this.container?.querySelector(
         "#wps-palette-desktop"
       ) as HTMLElement;
+      const originalArea = this.container?.querySelector(
+        "#wps-original-area"
+      ) as HTMLElement;
+      const currentArea = this.container?.querySelector(
+        "#wps-current-area"
+      ) as HTMLElement;
+      const controlsArea = this.container?.querySelector(
+        "#wps-controls-area"
+      ) as HTMLElement;
+      const canvasContainer = this.container?.querySelector(
+        "#wps-canvas-container"
+      ) as HTMLElement;
+      const imageContainer = this.container?.querySelector(
+        "#wps-image-container"
+      ) as HTMLElement;
+      const brightnessSaturationContainer = this.container?.querySelector(
+        "#wps-brightness-saturation-container"
+      ) as HTMLElement;
+      const ditheringSharpnessContainer = this.container?.querySelector(
+        "#wps-dithering-sharpness-container"
+      ) as HTMLElement;
 
       if (mainGrid) {
-        mainGrid.style.gridTemplateColumns = isDesktop ? "3fr 4fr" : "1fr";
-        mainGrid.style.height = isDesktop ? "80vh" : "auto";
+        if (isDesktop) {
+          mainGrid.style.display = "grid";
+          mainGrid.style.gridTemplateColumns = "3fr 4fr";
+          mainGrid.style.height = "80vh";
+        } else {
+          mainGrid.style.display = "flex";
+          mainGrid.style.flexDirection = "column";
+          mainGrid.style.height = "auto";
+        }
       }
 
       if (accordion) {
@@ -548,8 +581,44 @@ export class ImageEditorUI {
         desktopPalette.style.display = isDesktop ? "block" : "none";
       }
 
+      // モバイル端末では画像エリアとコントロールエリアのスクロールを無効化してスワイプ操作を可能に
+      if (originalArea) {
+        originalArea.style.overflowY = isDesktop ? "auto" : "visible";
+      }
+
+      if (currentArea) {
+        currentArea.style.overflowY = isDesktop ? "auto" : "visible";
+      }
+
+      if (controlsArea) {
+        controlsArea.style.overflowY = isDesktop ? "auto" : "visible";
+      }
+
+      // モバイル環境ではcanvasの代わりに通常の画像を表示
+      if (canvasContainer) {
+        canvasContainer.style.display = isDesktop ? "block" : "none";
+      }
+
+      if (imageContainer) {
+        imageContainer.style.display = isDesktop ? "none" : "block";
+      }
+
+      // モバイル環境では明るさ/彩度とディザリング/シャープネスを縦並びに
+      if (brightnessSaturationContainer) {
+        brightnessSaturationContainer.style.flexDirection = isDesktop
+          ? "row"
+          : "column";
+      }
+
+      if (ditheringSharpnessContainer) {
+        ditheringSharpnessContainer.style.flexDirection = isDesktop
+          ? "row"
+          : "column";
+      }
+
       if (this.controller) {
         this.controller.updateColorPaletteContainer(!isDesktop);
+        this.controller.updateImageDisplayMode(isDesktop);
       }
     };
 

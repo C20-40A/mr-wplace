@@ -38,6 +38,7 @@ export class EditorController {
   private drawPosition: DrawPosition | null = null;
   private isEditMode = false;
   private editingItemKey: string | null = null;
+  private isDesktopMode = true;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -516,7 +517,8 @@ export class EditorController {
         const canvas = this.container.querySelector(
           "#wps-scaled-canvas"
         ) as HTMLCanvasElement;
-        if (canvas) {
+        // デスクトップ環境のみImageInspector初期化
+        if (canvas && this.isDesktopMode) {
           this.imageInspector = new ImageInspector(canvas);
         }
 
@@ -656,18 +658,38 @@ export class EditorController {
     }
   }
 
+  updateImageDisplayMode(isDesktop: boolean): void {
+    this.isDesktopMode = isDesktop;
+
+    // モード切り替え時にImageInspectorの初期化/破棄
+    const canvas = this.container.querySelector(
+      "#wps-scaled-canvas"
+    ) as HTMLCanvasElement;
+
+    if (isDesktop && canvas && !this.imageInspector) {
+      this.imageInspector = new ImageInspector(canvas);
+    } else if (!isDesktop && this.imageInspector) {
+      // モバイルモードではImageInspectorを破棄
+      this.imageInspector = null;
+    }
+
+    // 画像を再描画
+    this.updateScaledImage();
+  }
+
   private async updateScaledImage(): Promise<void> {
     if (!this.originalImage) return;
 
     const canvas = this.container.querySelector(
       "#wps-scaled-canvas"
     ) as HTMLCanvasElement;
+    const image = this.container.querySelector(
+      "#wps-scaled-image"
+    ) as HTMLImageElement;
     const originalSizeDisplay =
       this.container.querySelector("#wps-original-size");
     const currentSizeDisplay =
       this.container.querySelector("#wps-current-size");
-
-    if (!canvas) return;
 
     const adjustments: ImageAdjustments = {
       brightness: this.brightness,
@@ -693,12 +715,25 @@ export class EditorController {
       this.useGpu
     );
 
-    // 結果をcanvasに転写
-    canvas.width = processedCanvas.width;
-    canvas.height = processedCanvas.height;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.drawImage(processedCanvas, 0, 0);
+    // デスクトップモード: canvas更新
+    if (canvas && this.isDesktopMode) {
+      canvas.width = processedCanvas.width;
+      canvas.height = processedCanvas.height;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(processedCanvas, 0, 0);
+      }
+      this.scaledCanvas = canvas;
+
+      if (this.imageInspector) {
+        this.imageInspector.resetViewport();
+      }
+    }
+
+    // モバイルモード: img更新
+    if (image && !this.isDesktopMode) {
+      image.src = processedCanvas.toDataURL();
+      this.scaledCanvas = processedCanvas;
     }
 
     if (originalSizeDisplay) {
@@ -706,12 +741,6 @@ export class EditorController {
     }
     if (currentSizeDisplay) {
       currentSizeDisplay.textContent = `${processedCanvas.width} x ${processedCanvas.height}`;
-    }
-
-    this.scaledCanvas = canvas;
-
-    if (this.imageInspector) {
-      this.imageInspector.resetViewport();
     }
   }
 }
