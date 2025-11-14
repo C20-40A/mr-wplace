@@ -11,6 +11,7 @@ export interface DataSaverState {
     setCachedTile: (key: string, blob: Blob, maxSize: number) => Promise<void>;
     clearCache: () => Promise<void>;
     getCacheSize: () => Promise<number>;
+    deleteTile: (key: string) => Promise<void>;
   };
 }
 

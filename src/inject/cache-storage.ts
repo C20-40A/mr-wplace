@@ -219,3 +219,31 @@ class TileCacheDB {
 }
 
 export const tileCacheDB = new TileCacheDB();
+
+/**
+ * Invalidate cache for a specific tile
+ * Removes from both memory cache and IndexedDB
+ */
+export const invalidateTileCache = async (cacheKey: string): Promise<void> => {
+  const dataSaver = window.mrWplaceDataSaver;
+  if (!dataSaver) {
+    console.warn("🧑‍🎨 : dataSaver not initialized");
+    return;
+  }
+
+  // Remove from memory cache
+  if (dataSaver.tileCache.has(cacheKey)) {
+    dataSaver.tileCache.delete(cacheKey);
+    console.log("🧑‍🎨 : Removed tile from memory cache:", cacheKey);
+  }
+
+  // Remove from IndexedDB
+  if (dataSaver.tileCacheDB) {
+    try {
+      await dataSaver.tileCacheDB.deleteTile(cacheKey);
+      console.log("🧑‍🎨 : Removed tile from IndexedDB:", cacheKey);
+    } catch (error) {
+      console.warn("🧑‍🎨 : Failed to remove tile from IndexedDB:", error);
+    }
+  }
+};
