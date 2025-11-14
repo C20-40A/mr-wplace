@@ -1,8 +1,40 @@
+# フローの整理
+
+1. 画像配置時 (初回)
+
+drawing/index.ts (Start drawing)
+↓
+tileOverlay.drawImageAt()
+↓
+sendGalleryImagesToInject() (全画像を inject に送信)
+↓
+handleGalleryImages() (inject 側で画像を準備)
+↓
+addImageToOverlayLayers() (タイル分割、overlayLayers に追加)
+
+ここではまだタイルは描画されていない。overlayLayers
+に画像を準備しただけ。
+
+2. タイル読み込み時 (fetch が発生)
+
+ユーザーがマップを移動
+↓
+WPlace がタイルを fetch
+↓
+fetch-interceptor.ts が intercept
+↓
+handleTileRequest()
+↓
+drawOverlayLayersOnTile() ← ここで初めてタイルに描画される!
+↓
+invalidateTileCache() ← ここでキャッシュ削除
+
 ## Inject Directory Structure Refactoring (2025-11-07)
 
 ### Background
 
 After the tile-draw migration (2025-11-01), the inject directory had grown organically and needed structural cleanup:
+
 - `message-handler.ts` was 593 lines with mixed responsibilities
 - `tile-draw/utils/` had unclear organization (stats, filters, image processing mixed together)
 - Naming inconsistencies (`-inject` suffix on some files)
@@ -50,21 +82,25 @@ src/inject/
 ### Key Changes
 
 1. **Message Handler Simplification**:
+
    - Reduced from 593 to 159 lines (73% reduction)
    - Now only handles routing, delegates to specialized handlers
    - Clear separation: overlay updates, state updates, requests
 
 2. **Handler Modules**:
+
    - `overlay-handlers.ts`: Gallery, snapshots, text layers (all share similar image loading pattern)
    - `state-handlers.ts`: Theme, data saver, compute device, color filter
    - `request-handlers.ts`: Stats requests, pixel color requests
 
 3. **Tile-draw Reorganization**:
+
    - `stats/`: All statistics computation (4 files)
    - `filters/`: All color filtering (GPU, CPU, color processing)
    - `image-processing/`: Image manipulation utilities
 
 4. **Common Utilities**:
+
    - `utils/image-loader.ts`: Extracts repeated image loading pattern (dataUrl → Image → ImageBitmap)
    - Used by all overlay handlers
 
@@ -97,14 +133,18 @@ Total size increase: ~16KB, acceptable for improved maintainability.
 ## tile-draw の inject 側への完全移行完了 (2025-11-01)
 
 ### 背景
+
 Chrome では動作していた tile overlay 処理が Firefox で失敗していた:
+
 - `content.ts` (extension context) での `ImageBitmap`/`ImageData` 処理が Firefox のセキュリティチェックでエラー
 - WASM ベースの `image-bitmap-compat` が inject context で `unreachable` エラー
 
 ### 最終的な解決策
+
 **tile-draw を完全に inject 側 (page context) に移行**
 
 #### Phase 1: inject 側に tile-draw をコピーして動作確認
+
 1. `src/features/tile-draw/` を `src/inject/tile-draw/` にコピー
 2. WASM 依存を排除:
    - `splitImageOnTiles-inject.ts`: Canvas API のみで画像分割
@@ -117,6 +157,7 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
    - `mr-wplace-snapshots`: time-travel スナップショット
 
 #### Phase 2: content 側の tile-draw を削除
+
 1. `src/inject/tile-processor.ts` 削除 (tile-draw に統合)
 2. `src/features/tile-overlay/index.ts` 簡略化:
    - `setupTileProcessing()` 削除 (inject 側で処理)
@@ -158,8 +199,9 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
 ### 変更ファイル
 
 **inject 側 (新規・変更):**
+
 - `src/inject/tile-draw/` (NEW): 完全な tile-draw 実装
-  - `states-inject.ts`: WASM不使用の状態管理
+  - `states-inject.ts`: WASM 不使用の状態管理
   - `utils/splitImageOnTiles-inject.ts`: Canvas API のみで画像分割
   - その他: content 側からコピーして import パス修正
 - `src/inject/fetch-interceptor.ts`: tile-draw を使用
@@ -167,9 +209,10 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
 - `src/inject/types.ts`: 型定義追加 (SnapshotImage 等)
 
 **content 側 (削除・簡略化):**
+
 - `src/features/tile-draw/` 削除 ❌
 - `src/inject/tile-processor.ts` 削除 ❌
-- `src/features/tile-overlay/index.ts` 簡略化 (96行 → 75行)
+- `src/features/tile-overlay/index.ts` 簡略化 (96 行 → 75 行)
 - `src/utils/inject-bridge.ts` (NEW): content ↔ inject 通信関数群
 - `src/content.ts`: データ送信関数追加
   - `sendGalleryImagesToInject()`
@@ -178,9 +221,10 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
   - `sendSnapshotsToInject()`
 
 ### メリット
+
 ✅ Firefox の extension context セキュリティ制約を完全回避
 ✅ WASM エラーを根本解決
-✅ content.js が 345KB → 332KB に削減 (約13KB削減)
+✅ content.js が 345KB → 332KB に削減 (約 13KB 削減)
 ✅ Chrome/Firefox 両方で動作
 ✅ 全機能が inject 側で完結 (color filter, stats, 補助色モードなど)
 ✅ エラーハンドリング強化 (fallback 機構)
@@ -188,6 +232,7 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
 ### 制限事項と今後の課題
 
 #### ✅ 全機能復活済み
+
 - ✅ `getOverlayPixelColor()`: auto-spoit の overlay 色検出
 - ✅ `getAggregatedColorStats()`: paint-stats / color-filter の統計表示
 - ✅ text-draw: gallery 統合により動作
@@ -203,12 +248,15 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
 ### Refactoring 完了 (2025-11-01)
 
 #### クリーンアップ内容
+
 1. **不要なファイル削除**:
+
    - `src/inject/tile-draw/states.ts` (states-inject.ts を使用)
    - `src/inject/tile-draw/utils/splitImageOnTiles.ts` (inject 版を使用)
    - `src/inject/tile-draw/README.md` (古い内容)
 
 2. **stubs から inject-bridge へ移行 (2025-11-06)**:
+
    - `tile-draw-stubs.ts` 削除、`utils/inject-bridge.ts` に移行
    - stub (空実装) から bridge (通信ユーティリティ) へ名前変更
    - content ↔ inject 通信関数として適切に配置
@@ -219,6 +267,7 @@ Chrome では動作していた tile overlay 処理が Firefox で失敗して�
    - time-travel: inject 側統合完了
 
 #### 最終ビルドサイズ
+
 ```
 dist/content.js  333.2kb  (削減: -12KB, snapshot 統合により若干増加)
 dist/popup.js     38.9kb  (変更なし)
@@ -230,6 +279,7 @@ dist/inject.js    22.9kb  (全機能統合, snapshot 処理追加)
 #### 新しいオーバーレイ機能を追加する場合
 
 1. **inject/message-handler.ts** にメッセージハンドラー追加:
+
    ```typescript
    if (event.data.source === "mr-wplace-your-feature") {
      await handleYourFeature(event.data);
@@ -238,6 +288,7 @@ dist/inject.js    22.9kb  (全機能統合, snapshot 処理追加)
    ```
 
 2. **inject/types.ts** に型定義追加:
+
    ```typescript
    export interface YourFeatureData {
      key: string;
@@ -247,6 +298,7 @@ dist/inject.js    22.9kb  (全機能統合, snapshot 処理追加)
    ```
 
 3. **content.ts** にデータ送信関数追加:
+
    ```typescript
    export const sendYourFeatureToInject = async () => {
      const data = /* データ取得 */;
@@ -276,7 +328,7 @@ dist/inject.js    22.9kb  (全機能統合, snapshot 処理追加)
 
 ✅ content は storage 管理のみ
 ✅ inject は画像処理と描画のみ
-✅ データ変更時は必ず send*ToInject() を呼ぶ
+✅ データ変更時は必ず send\*ToInject() を呼ぶ
 ✅ async/await で適切に待機
 
 ### 統計の事前計算機能 (2025-11-01)
@@ -284,6 +336,7 @@ dist/inject.js    22.9kb  (全機能統合, snapshot 処理追加)
 #### 背景
 
 タイルレンダリング時にのみ統計が計算される仕組みでは、以下の問題がありました：
+
 - 画像配置直後に統計を見ようとしても、タイルがまだレンダリングされていない
 - カラーフィルター画面で統計が表示されない
 - paint-stats が表示されない
@@ -293,12 +346,14 @@ dist/inject.js    22.9kb  (全機能統合, snapshot 処理追加)
 **画像追加時とカラーフィルター変更時に統計を事前計算**
 
 1. **画像追加時** (`states-inject.ts`):
+
    - `addImageToOverlayLayers()` で画像が追加されたとき
    - `computeStatsInBackground()` をバックグラウンドで実行
    - 各タイルの背景を fetch して統計を計算
    - `perTileColorStats` に保存
 
 2. **カラーフィルター変更時** (`message-handler.ts`):
+
    - `handleColorFilterUpdate()` でフィルターが変更されたとき
    - `recomputeAllStats()` で全画像の統計を再計算
 
@@ -319,27 +374,29 @@ dist/inject.js    22.9kb  (全機能統合, snapshot 処理追加)
 
 - 背景タイルを fetch するため、ネットワークリクエストが発生
 - 大きな画像の場合、多くのタイルの fetch が必要
-- 統計計算は非同期で行われるため、即座には利用できない場合がある（通常1-2秒）
+- 統計計算は非同期で行われるため、即座には利用できない場合がある（通常 1-2 秒）
 
 #### エラー対策とパフォーマンス改善 (2025-11-01)
 
-**問題1**: 統計計算がタイル描画と競合し、`InvalidStateError: The source image could not be decoded` エラーが発生
+**問題 1**: 統計計算がタイル描画と競合し、`InvalidStateError: The source image could not be decoded` エラーが発生
 
 **解決策**:
-1. **遅延実行**: 画像追加後、2秒待ってから統計計算を開始（タイル描画を優先）
-2. **順次処理**: タイルを10個ごとに100ms待機して順次処理（並列fetch数を制限）
-3. **タイムアウト**: fetch に5秒のタイムアウトを設定（ハング防止）
+
+1. **遅延実行**: 画像追加後、2 秒待ってから統計計算を開始（タイル描画を優先）
+2. **順次処理**: タイルを 10 個ごとに 100ms 待機して順次処理（並列 fetch 数を制限）
+3. **タイムアウト**: fetch に 5 秒のタイムアウトを設定（ハング防止）
 4. **エラーハンドリング強化**:
-   - fetch 失敗時は null を返す（エラーをthrowしない）
+   - fetch 失敗時は null を返す（エラーを throw しない）
    - デコード失敗時はそのタイルをスキップ
    - エラーログは警告レベルに下げる（大量のログを防ぐ）
 5. **画像ごとに順次処理**: 複数画像の統計再計算も順次実行（並列実行を避ける）
 
-**問題2**: data saver ON のときに統計計算がエラーになる
+**問題 2**: data saver ON のときに統計計算がエラーになる
 
 **原因**: data saver ON のときは、タイルがキャッシュされるまで fetch できない
 
 **解決策**:
+
 - **data saver ON 時はスキップ**: 統計の事前計算をスキップ
 - タイルレンダリング時の統計計算は引き続き動作するため、タイルを訪問すれば統計は計算される
 

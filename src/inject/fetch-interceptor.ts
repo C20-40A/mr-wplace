@@ -152,7 +152,7 @@ const handleTileRequest = async (
 
   // Case 4: data saver ON + cache exists -> Return cached processed tile
   if (dataSaver?.enabled && cacheExists && cachedBlob) {
-    console.log("🧑‍🎨 : Returning cached processed tile:", cacheKey);
+    // console.log("🧑‍🎨 : Returning cached processed tile:", cacheKey);
     return new Response(cachedBlob, {
       status: 200,
       statusText: "OK (Cached Processed)",
