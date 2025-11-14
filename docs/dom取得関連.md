@@ -16,6 +16,40 @@ for (const el of document.querySelectorAll("*")) {
 }
 ```
 
+# キャンバス上の色取得
+
+```js
+const src = document.querySelector("canvas.maplibregl-canvas");
+
+const dump = document.createElement("canvas");
+dump.width = src.width;
+dump.height = src.height;
+const ctx = dump.getContext("2d");
+
+// 毎フレームコピー
+function refresh() {
+  ctx.drawImage(src, 0, 0);
+  requestAnimationFrame(refresh);
+}
+refresh();
+
+// pixel 読み取り
+src.addEventListener("mousemove", (e) => {
+  const rect = src.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  const d = ctx.getImageData(x, y, 1, 1).data;
+  console.log(`(${x},${y})`, d);
+});
+```
+
+しかし、これでの実装は現実的でない。
+理由は、
+
+- hover 時に不可逆的に色が変わる
+- 同じピクセルでも hover したときの４隅のカーソルの色などが違うので、色の対応表も作れない
+
 # navigator geolocation
 
 ```js
