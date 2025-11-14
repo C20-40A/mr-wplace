@@ -3,7 +3,6 @@ import { t } from "@/i18n/manager";
 export interface ImageItem {
   key: string;
   dataUrl: string;
-  thumbnail?: string;
   title?: string;
   createdAt?: string;
   drawPosition?: { TLX: number; TLY: number; PxX: number; PxY: number };
@@ -139,7 +138,7 @@ export class ImageGridComponent {
         }
         ${showGotoPositionBtn ? this.createGotoPositionButtonHtml(item) : ""}
         <img
-          src="${item.thumbnail || item.dataUrl}"
+          src="${item.dataUrl}"
           alt="Gallery item"
           class="w-full h-32 aspect-square object-contain cursor-pointer"
           style="image-rendering: pixelated; object-fit: contain;"
