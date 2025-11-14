@@ -91,7 +91,7 @@
   - all_frames false (デフォルト)系は false．まあデフォルトが false だから不要か
 - dark/light テーマの i18n 不要になった
 
-# DONE v1.10.1
+# DONE v1.10.0
 
 - テーマ変更したらリロード
 - 描画カウント修正
