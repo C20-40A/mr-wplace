@@ -6,6 +6,8 @@ export const TILE_DRAW_CONSTANTS = {
   RENDER_SCALE: 3,
   /** Tile size in pixels */
   TILE_SIZE: 1000,
+  /** Checkerboard pattern size for unplaced-only mode */
+  CHECKERBOARD_SIZE: 2,
 } as const;
 
 export type WplaceCoords = [

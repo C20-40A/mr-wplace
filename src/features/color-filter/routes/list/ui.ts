@@ -4,11 +4,12 @@ import { ColorPaletteStorage } from "@/components/color-palette/storage";
 import type { ComputeDevice } from "@/components/color-palette/storage";
 import { getCurrentTiles } from "@/states/currentTile";
 import { getAggregatedColorStats } from "@/utils/inject-bridge";
-import { sendColorFilterToInject, sendComputeDeviceToInject } from "@/content";
+import { sendColorFilterToInject, sendComputeDeviceToInject, sendShowUnplacedOnlyToInject } from "@/content";
 
 let colorPalette: ColorPalette | null = null;
 let lastSortOrder: SortOrder = "default";
 let lastComputeDevice: ComputeDevice = "gpu";
+let lastShowUnplacedOnly: boolean = false;
 
 export const renderColorFilters = async (
   container: HTMLElement
@@ -18,6 +19,9 @@ export const renderColorFilters = async (
 
   // ComputeDevice設定読み込み
   lastComputeDevice = await ColorPaletteStorage.getComputeDevice();
+
+  // ShowUnplacedOnly設定読み込み
+  lastShowUnplacedOnly = await ColorPaletteStorage.getShowUnplacedOnly();
 
   // ColorFilterManagerの現在状態取得
   const colorFilterManager = window.mrWplace?.colorFilterManager;
@@ -94,6 +98,15 @@ export const renderColorFilters = async (
       console.log(`🧑‍🎨 : Compute device changed:`, device);
       // Send updated compute device to inject side
       await sendComputeDeviceToInject();
+    },
+    showUnplacedOnlyToggle: true,
+    showUnplacedOnly: lastShowUnplacedOnly,
+    onShowUnplacedOnlyChange: async (enabled) => {
+      lastShowUnplacedOnly = enabled;
+      await ColorPaletteStorage.setShowUnplacedOnly(enabled);
+      console.log(`🧑‍🎨 : Show unplaced only changed:`, enabled);
+      // Send updated setting to inject side
+      await sendShowUnplacedOnlyToInject();
     },
   });
 };

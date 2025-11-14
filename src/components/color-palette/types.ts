@@ -18,6 +18,9 @@ export interface ColorPaletteOptions {
   showComputeDeviceSelect?: boolean;
   onComputeDeviceChange?: (device: ComputeDevice) => void;
   computeDevice?: ComputeDevice;
+  showUnplacedOnlyToggle?: boolean;
+  onShowUnplacedOnlyChange?: (enabled: boolean) => void;
+  showUnplacedOnly?: boolean;
 }
 
 export interface ColorStats {

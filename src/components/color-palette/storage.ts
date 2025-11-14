@@ -4,6 +4,7 @@ import { storage } from "@/utils/browser-api";
 export type ComputeDevice = "gpu" | "cpu";
 
 const COMPUTE_DEVICE_KEY = `${STORAGE_KEYS.prefix}compute_device`;
+const SHOW_UNPLACED_ONLY_KEY = `${STORAGE_KEYS.prefix}show_unplaced_only`;
 
 export class ColorPaletteStorage {
   static async getComputeDevice(): Promise<ComputeDevice> {
@@ -14,5 +15,15 @@ export class ColorPaletteStorage {
   static async setComputeDevice(device: ComputeDevice): Promise<void> {
     await storage.set({ [COMPUTE_DEVICE_KEY]: device });
     console.log("🧑‍🎨 : Compute device saved:", device);
+  }
+
+  static async getShowUnplacedOnly(): Promise<boolean> {
+    const result = await storage.get([SHOW_UNPLACED_ONLY_KEY]);
+    return result[SHOW_UNPLACED_ONLY_KEY] ?? false;
+  }
+
+  static async setShowUnplacedOnly(enabled: boolean): Promise<void> {
+    await storage.set({ [SHOW_UNPLACED_ONLY_KEY]: enabled });
+    console.log("🧑‍🎨 : Show unplaced only saved:", enabled);
   }
 }

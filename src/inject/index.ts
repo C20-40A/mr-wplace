@@ -19,6 +19,9 @@ import { tileCacheDB } from "./cache-storage";
   // Initialize compute device (default: gpu)
   window.mrWplaceComputeDevice = "gpu";
 
+  // Initialize show unplaced only (default: false)
+  window.mrWplaceShowUnplacedOnly = false;
+
   // Setup fetch interceptor synchronously (no await)
   try {
     setupFetchInterceptor();

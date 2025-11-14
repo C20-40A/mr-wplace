@@ -52,6 +52,23 @@ export const handleComputeDeviceUpdate = (data: { device: "gpu" | "cpu" }): void
 };
 
 /**
+ * Handle show unplaced only update
+ */
+export const handleShowUnplacedOnlyUpdate = (data: { enabled: boolean }): void => {
+  window.mrWplaceShowUnplacedOnly = data.enabled;
+  console.log("🧑‍🎨 : Show unplaced only updated:", data.enabled);
+
+  // Clear tile cache to force re-rendering with new mode
+  if (window.mrWplaceDataSaver?.tileCache) {
+    window.mrWplaceDataSaver.tileCache.clear();
+    console.log("🧑‍🎨 : Cleared tile cache after show unplaced only update");
+
+    // Notify drawing loader to start showing loading indicator
+    window.postMessage({ source: "wplace-studio-drawing-start" }, "*");
+  }
+};
+
+/**
  * Handle color filter manager update
  */
 export const handleColorFilterUpdate = (data: {

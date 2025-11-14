@@ -8,6 +8,7 @@ import {
   handleDataSaverUpdate,
   handleCacheSizeUpdate,
   handleComputeDeviceUpdate,
+  handleShowUnplacedOnlyUpdate,
   handleColorFilterUpdate,
   handleTileBoundariesUpdate,
   handleCacheClear,
@@ -57,6 +58,11 @@ export const setupMessageHandler = (): void => {
 
     if (source === "mr-wplace-compute-device") {
       handleComputeDeviceUpdate(event.data);
+      return;
+    }
+
+    if (source === "mr-wplace-show-unplaced-only") {
+      handleShowUnplacedOnlyUpdate(event.data);
       return;
     }
 

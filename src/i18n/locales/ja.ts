@@ -255,6 +255,9 @@ export const jaTranslations = {
   // Compute Device
   compute_device_label: "処理方式",
 
+  // Show Unplaced Only
+  show_unplaced_only: "未配置のみ",
+
   // Tile Merge
   tile_merge: "タイルマージ",
   merge_tiles: "タイルをマージ",

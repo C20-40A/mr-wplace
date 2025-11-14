@@ -417,6 +417,42 @@ export function buildComputeDeviceSelectHtml(
 }
 
 /**
+ * Show Unplaced Only トグルHTML生成
+ */
+export function buildShowUnplacedOnlyToggleHtml(enabled: boolean): string {
+  const bgColor = enabled ? "var(--color-success, #22c55e)" : "var(--color-base-300, #e5e7eb)";
+  const textColor = enabled ? "var(--color-primary-content, #fff)" : "var(--color-base-content, #6b7280)";
+  const icon = enabled ? "👁️" : "👁️‍🗨️";
+
+  return `
+    <button class="show-unplaced-only-toggle btn btn-sm rounded"
+            type="button"
+            style="padding: 0.2rem 0.4rem;
+                   border: 2px solid ${enabled ? "#22c55e" : "#d1d5db"};
+                   border-radius: 0.5rem;
+                   cursor: pointer;
+                   display: flex;
+                   align-items: center;
+                   gap: 0.5rem;
+                   background-color: ${bgColor};
+                   color: ${textColor};
+                   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                   user-select: none;
+                   -webkit-tap-highlight-color: transparent;"
+            onmouseenter="this.style.boxShadow='0 4px 8px rgba(0, 0, 0, 0.15)'; this.style.borderColor='#22c55e';"
+            onmouseleave="this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'; this.style.borderColor='${enabled ? "#22c55e" : "#d1d5db"}';"
+            onmousedown="this.style.transform='scale(0.95)';"
+            onmouseup="this.style.transform='scale(1)';"
+            ontouchstart="this.style.transform='scale(0.95)';"
+            ontouchend="this.style.transform='scale(1)';">
+      <span style="font-size: 1rem; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));">${icon}</span>
+      <span style="font-size: 0.875rem; font-weight: 600;">${t`${"show_unplaced_only"}`}</span>
+    </button>
+  `;
+}
+
+/**
  * コントロールボタン群HTML生成
  */
 export function buildControlsHtml(
@@ -426,7 +462,9 @@ export function buildControlsHtml(
   showComputeDeviceSelect: boolean,
   sortOrder: SortOrder,
   enhancedMode: EnhancedMode,
-  computeDevice: ComputeDevice
+  computeDevice: ComputeDevice,
+  showUnplacedOnlyToggle: boolean = false,
+  showUnplacedOnly: boolean = false
 ): string {
   const buttonBaseStyle = `
     padding: 0.625rem 1.25rem;
@@ -463,6 +501,10 @@ export function buildControlsHtml(
 
   const computeDeviceSelectHTML = showComputeDeviceSelect
     ? buildComputeDeviceSelectHtml(computeDevice)
+    : "";
+
+  const showUnplacedOnlyToggleHTML = showUnplacedOnlyToggle
+    ? buildShowUnplacedOnlyToggleHtml(showUnplacedOnly)
     : "";
 
   return `
@@ -503,6 +545,7 @@ export function buildControlsHtml(
       ${sortOrderSelectHTML}
       ${enhancedSelectHTML}
       ${computeDeviceSelectHTML}
+      ${showUnplacedOnlyToggleHTML}
     </div>
     <style>
       @keyframes slideDown {
