@@ -113,21 +113,6 @@ export class GalleryStorage {
     return this.imageStorage.save(item);
   }
 
-  /**
-   * 画像のサムネイルを更新（画像差し替え時に使用）
-   */
-  async updateThumbnail(key: string, dataUrl: string): Promise<void> {
-    const item = await this.get(key);
-    if (!item) throw new Error(`Image not found: ${key}`);
-
-    const thumbnail = await this.imageStorage.generateThumbnail(dataUrl);
-    await this.save({
-      ...item,
-      dataUrl,
-      thumbnail: thumbnail || undefined,
-    });
-  }
-
   async delete(key: string): Promise<void> {
     return this.imageStorage.delete(key);
   }

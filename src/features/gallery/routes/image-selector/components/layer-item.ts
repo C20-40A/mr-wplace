@@ -118,7 +118,7 @@ const createContentArea = (
   // サムネイル
   const thumbnail = document.createElement("img");
   thumbnail.className = "border border-base-300 rounded-md";
-  thumbnail.src = item.thumbnail || item.dataUrl;
+  thumbnail.src = item.dataUrl;
   thumbnail.style.cssText =
     "width: 48px; height: 48px; object-fit: cover; flex-shrink: 0; image-rendering: pixelated;";
 
