@@ -118,8 +118,7 @@ export class ColorIsolate {
 
     // 指定した色のみをenableにする
     await colorFilterManager.setSelectedColors([colorId]);
-    // 高速切り替え時は統計再計算をスキップ
-    sendColorFilterToInject(colorFilterManager, true);
+    sendColorFilterToInject(colorFilterManager);
     console.log("🧑‍🎨 : Color isolate updated to color ID:", colorId);
   }
 
@@ -150,8 +149,7 @@ export class ColorIsolate {
       if (selectedColorId !== null) {
         this.lastSelectedColorId = selectedColorId;
         await colorFilterManager.setSelectedColors([selectedColorId]);
-        // 高速切り替え時は統計再計算をスキップ
-        sendColorFilterToInject(colorFilterManager, true);
+        sendColorFilterToInject(colorFilterManager);
         console.log("🧑‍🎨 : Color isolate enabled for color ID:", selectedColorId);
 
         // localStorage監視を開始
@@ -169,8 +167,7 @@ export class ColorIsolate {
       // OFF: 元の選択色に戻す
       this.stopMonitoring();
       await colorFilterManager.setSelectedColors(this.originalSelectedColors);
-      // オフ時は統計を再計算（元の状態に戻す）
-      sendColorFilterToInject(colorFilterManager, false);
+      sendColorFilterToInject(colorFilterManager);
       console.log("🧑‍🎨 : Color isolate disabled, restored original colors");
     }
   }

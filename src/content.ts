@@ -98,8 +98,7 @@ export const sendShowUnplacedOnlyToInject = (enabled: boolean) => {
  * Send color filter state to inject side
  */
 export const sendColorFilterToInject = (
-  colorFilterManager: ColorFilterManager,
-  skipStatsRecompute = false
+  colorFilterManager: ColorFilterManager
 ) => {
   window.postMessage(
     {
@@ -107,12 +106,11 @@ export const sendColorFilterToInject = (
       isFilterActive: colorFilterManager.isFilterActive(),
       selectedRGBs: colorFilterManager.selectedRGBs,
       enhancedMode: colorFilterManager.getEnhancedMode(),
-      skipStatsRecompute,
     },
     "*"
   );
 
-  console.log(`🧑‍🎨 : Sent color filter state to inject side (skipStatsRecompute: ${skipStatsRecompute})`);
+  console.log(`🧑‍🎨 : Sent color filter state to inject side`);
 };
 
 /**
@@ -358,10 +356,12 @@ export const sendTileBoundariesToInject = async () => {
       }
 
       // Listen for stats computation from inject.js
-      if (event.data.source === "mr-wplace-stats-computed") {
-        const { imageKey, tileStatsMap } = event.data;
-        await handleStatsComputed(imageKey, tileStatsMap);
-      }
+      // NOTE: 統計の事前計算は削除されたため、このメッセージは送信されなくなった
+      // 統計はタイルレンダリング時に計算され、inject側のperTileColorStatsに保存される
+      // if (event.data.source === "mr-wplace-stats-computed") {
+      //   const { imageKey, tileStatsMap } = event.data;
+      //   await handleStatsComputed(imageKey, tileStatsMap);
+      // }
 
       // Listen for total stats computation from inject.js
       if (event.data.source === "mr-wplace-total-stats-computed") {
