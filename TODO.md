@@ -90,7 +90,7 @@
   - all_frames false (デフォルト)系は false．まあデフォルトが false だから不要か
 - dark/light テーマの i18n 不要になった
 
-# DONE v1.9.2
+# DONE v1.10.1
 
 - paint するときは、該当タイルのキャッシュを削除
 - 通知しきい値のテキストダークテーマ対応

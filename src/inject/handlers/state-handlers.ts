@@ -1,6 +1,4 @@
 import { applyTheme } from "../theme-manager";
-import { overlayLayers, perTileColorStats } from "../tile-draw";
-import { computeStatsForImage } from "../tile-draw/stats/compute-for-image";
 
 /**
  * Handle theme update
@@ -57,7 +55,6 @@ export const handleColorFilterUpdate = (data: {
   isFilterActive: boolean;
   selectedRGBs?: number[][];
   enhancedMode: "dot" | "cross" | "fill" | "none";
-  skipStatsRecompute?: boolean;
 }): void => {
   if (!window.mrWplace) {
     window.mrWplace = {};
@@ -71,10 +68,8 @@ export const handleColorFilterUpdate = (data: {
 
   console.log("🧑‍🎨 : Color filter updated:", data);
 
-  // カラーフィルター変更時に統計を再計算（高速切り替え時はスキップ）
-  if (!data.skipStatsRecompute) {
-    recomputeAllStats(data.selectedRGBs);
-  }
+  // 統計は必要に応じてタイルレンダリング時に計算されるため、
+  // 事前の再計算は行わない（不要なタイルfetchを避ける）
 };
 
 /**
@@ -95,53 +90,4 @@ export const handleCacheClear = (): void => {
     window.mrWplaceDataSaver.tileCache.clear();
     console.log("🧑‍🎨 : Memory cache cleared");
   }
-};
-
-/**
- * 全画像の統計を再計算
- * タイル描画との競合を避けるため、遅延実行＆順次処理する
- */
-const recomputeAllStats = (colorFilter?: number[][]): void => {
-  // data saver ON のときは統計計算をスキップ
-  if (window.mrWplaceDataSaver?.enabled) {
-    console.log(`🧑‍🎨 : Skipping stats recomputation (data saver is ON)`);
-    return;
-  }
-
-  // タイル描画との競合を避けるため、2秒後に実行
-  setTimeout(async () => {
-    console.log(`🧑‍🎨 : Recomputing stats for ${overlayLayers.length} images`);
-
-    // 各画像を順次処理（並列実行を避けて、リソース競合を防ぐ）
-    for (const layer of overlayLayers) {
-      if (!layer.tiles) continue;
-
-      try {
-        // 1画像ずつ順次処理
-        const tileStatsMap = await computeStatsForImage(layer.imageKey, layer.tiles, colorFilter);
-        perTileColorStats.set(layer.imageKey, tileStatsMap);
-        console.log(`🧑‍🎨 : Recomputed stats for ${layer.imageKey}`);
-
-        // content側に統計を通知（storageに保存するため）
-        const statsObject: Record<string, { matched: Record<string, number>; total: Record<string, number> }> = {};
-        for (const [tileKey, stats] of tileStatsMap.entries()) {
-          statsObject[tileKey] = {
-            matched: Object.fromEntries(stats.matched),
-            total: Object.fromEntries(stats.total),
-          };
-        }
-
-        window.postMessage(
-          {
-            source: "mr-wplace-stats-computed",
-            imageKey: layer.imageKey,
-            tileStatsMap: statsObject,
-          },
-          "*"
-        );
-      } catch (error) {
-        console.warn(`🧑‍🎨 : Failed to recompute stats for ${layer.imageKey}:`, error);
-      }
-    }
-  }, 2000);
 };
