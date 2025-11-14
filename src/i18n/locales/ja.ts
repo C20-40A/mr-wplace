@@ -68,6 +68,8 @@ export const jaTranslations = {
   sort_tag: "タグ順",
   sort_distance: "距離が近い順",
   sort_last_updated: "最近保存した順",
+  sort_tile_count: "タイル数が多い順",
+  sort_name: "名前順",
   sort_layer: "レイヤー順",
 
   // Import/Export関連

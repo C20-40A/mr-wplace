@@ -30,10 +30,10 @@ export class TileListRoute {
           ${"merge_tiles"}
         </button>
         <select id="wps-tile-sort" class="select select-sm select-bordered ml-auto">
-          <option value="distance">${"sort_distance"}</option>
-          <option value="last_updated">${"sort_last_updated"}</option>
-          <option value="tile_count">${"sort_tile_count"}</option>
-          <option value="name">${"sort_name"}</option>
+          <option value="distance">${t`${"sort_distance"}`}</option>
+          <option value="last_updated">${t`${"sort_last_updated"}`}</option>
+          <option value="tile_count">${t`${"sort_tile_count"}`}</option>
+          <option value="name">${t`${"sort_name"}`}</option>
         </select>
       </div>
       <div style="overflow-y: auto; padding: 0.5rem; min-height: 400px;">
