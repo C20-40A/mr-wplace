@@ -25,6 +25,27 @@ export const enTranslations = {
   export: "Export",
   import: "Import",
 
+  // Gallery Export/Import
+  gallery_data: "Gallery Data",
+  import_gallery: "Import Gallery",
+  export_gallery: "Export Gallery",
+  reset_gallery: "Reset Gallery",
+  exporting: "Exporting...",
+  importing: "Importing...",
+  resetting: "Resetting...",
+  export_success: "Exported {count} images",
+  export_failed: "Export failed",
+  import_success: "Imported {count} images",
+  import_failed: "Import failed",
+  reset_failed: "Reset failed",
+  gallery_reset_success: "Gallery has been reset",
+  no_images_to_export: "No images to export (images with coordinates required)",
+  no_valid_images_in_zip: "No valid images found in ZIP file",
+  confirm_import:
+    "Are you sure you want to import? This will add new images to your gallery.",
+  confirm_reset:
+    "Are you sure you want to reset all gallery images? This action cannot be undone.",
+
   // Messages
   loading: "Loading...",
   no_items: "No items",
@@ -42,12 +63,25 @@ export const enTranslations = {
   enter_bookmark_name: "Please enter bookmark name:",
   location_point: "Point",
   bookmark_list: "Bookmark List",
-  sort_by: "Sort by",
   sort_created: "Date Added",
   sort_accessed: "Last Accessed",
   sort_tag: "By Tag",
+  sort_distance: "By Distance",
+  sort_last_updated: "Recently Saved",
+  sort_tile_count: "By Tile Count",
+  sort_name: "By Name",
+  sort_layer: "Layer Order",
 
   // Import/Export関連
+  import_export: "Import/Export",
+  import_description: "Import bookmarks from JSON file",
+  export_all: "Export All",
+  export_all_description: "Export all bookmarks",
+  export_by_tag: "Export by Tag",
+  export_by_tag_description: "Export bookmarks with selected tags only",
+  export_selected_tags: "Export Selected Tags",
+  no_tags_available: "No tags available",
+  no_name: "No name",
   no_export_bookmarks: "No favorites to export",
   bookmarks_exported: " favorites exported",
   file_input_not_found: "File input not found",
@@ -77,6 +111,7 @@ export const enTranslations = {
   drag_drop_or_click: "Drag & drop or click to select image",
   clear_image: "Clear image",
   original_image: "Original image",
+  click_or_drop_to_change: "Click or drop to change",
   current_image: "Current image",
   reset_edit: "Reset edit",
   reset_viewport: "Reset View",
@@ -84,6 +119,7 @@ export const enTranslations = {
   brightness: "Brightness",
   contrast: "Contrast",
   saturation: "Saturation",
+  sharpness: "Sharpness",
   dithering: "Dithering",
   include_paid_colors: "Include paid colors",
   add_to_gallery: "Add to gallery",
@@ -116,6 +152,10 @@ export const enTranslations = {
   file_select: "Select File",
   image_editor: "Image Editor",
   image_detail: "Image Detail",
+  title: "Title",
+  edit_image_title: "Edit Image Title",
+  image_title_placeholder: "Image name (optional)",
+  title_updated: "Title updated",
 
   // Drawing
   draw_enabled: "Draw ON",
@@ -150,6 +190,7 @@ export const enTranslations = {
   free_colors_only: "Free Colors",
   owned_colors_only: "Owned Colors",
   enhanced: "Enhanced",
+  show_selected_color_only: "Show Selected Color Only",
 
   // User Status (Notification Modal)
   user_status_details: "User Status Details",
@@ -216,6 +257,9 @@ However, please pay careful attention to the following:
   // Compute Device
   compute_device_label: "Processing",
 
+  // Show Unplaced Only
+  show_unplaced_only: "Unplaced Only",
+
   // Tile Merge
   tile_merge: "Tile Merge",
   merge_tiles: "Merge Tiles",
@@ -239,6 +283,11 @@ However, please pay careful attention to the following:
   tag_color: "Tag Color",
   optional: "Optional",
   required: "Required",
+  edit_tag: "Edit Tag",
+  tag_edit_title: "Edit Tag",
+  tag_edit_description: "All bookmarks using this tag will be updated",
+  tag_delete_confirm:
+    "Delete this tag? The tag will be removed from all bookmarks using it.",
 
   // Coordinate Jumper
   coordinate_jumper: "Coordinate Jumper",
@@ -260,10 +309,20 @@ However, please pay careful attention to the following:
   tile_y: "Tile Y",
   pixel_x: "Pixel X",
   pixel_y: "Pixel Y",
-  coordinate_input_hint: "If you enter coordinates, the image will be automatically placed at that position when added to the gallery",
+  coordinate_input_hint:
+    "If you enter coordinates, the image will be automatically placed at that position when added to the gallery",
 
   // Data Saver
+  data_saver: "Data Saver",
   data_saver_on: "Data Saver ON",
   data_saver_off: "Data Saver OFF",
   data_saver_rendering_paused: "Rendering Paused",
+  storage_usage: "Storage Usage",
+  cache_usage: "Cache Usage",
+  offline_cache_settings: "Offline Cache Settings",
+  maximum_cache_size: "Maximum Cache Size",
+  clear_all_cache: "Clear All Cache",
+  clearing: "Clearing...",
+  cache_cleared: "Cache Cleared!",
+  tiles: "tiles",
 };

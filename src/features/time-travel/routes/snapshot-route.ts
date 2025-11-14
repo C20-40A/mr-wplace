@@ -72,9 +72,14 @@ export class SnapshotRoute extends BaseSnapshotRoute {
 
   private renderSaveButton(): string {
     return `
-      <div style="margin-top: 8px;">
-        <button id="wps-save-current-snapshot-btn" class="btn btn-primary w-full">
+      <div style="margin-top: 8px; display: flex; gap: 8px;">
+        <button id="wps-save-current-snapshot-btn" class="btn btn-primary" style="flex: 1;">
           ${t`${"save_current_snapshot"}`}
+        </button>
+        <button id="wps-download-current-tile-btn" class="btn btn-outline" style="padding: 8px;" title="Download current tile image">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+            <path fill-rule="evenodd" d="M12 2.25a.75.75 0 01.75.75v11.69l3.22-3.22a.75.75 0 111.06 1.06l-4.5 4.5a.75.75 0 01-1.06 0l-4.5-4.5a.75.75 0 111.06-1.06l3.22 3.22V3a.75.75 0 01.75-.75zm-9 13.5a.75.75 0 01.75.75v2.25a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5V16.5a.75.75 0 011.5 0v2.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V16.5a.75.75 0 01.75-.75z" clip-rule="evenodd" />
+          </svg>
         </button>
       </div>
     `;
@@ -123,17 +128,54 @@ export class SnapshotRoute extends BaseSnapshotRoute {
         </div>
       </div>
 
-      <!-- 左右分割レイアウト -->
-      <div style="display: flex; gap: 12px; height: calc(80vh - 180px);">
-        <!-- 左: スナップショット一覧 (3) -->
-        <div style="flex: 3; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 4px; padding: 8px;">
+      <!-- レスポンシブレイアウト -->
+      <style>
+        .snapshot-layout {
+          display: flex;
+          gap: 12px;
+          height: calc(80vh - 180px);
+        }
+        .snapshot-list-container {
+          flex: 3;
+          overflow-y: auto;
+          border: 1px solid #e5e7eb;
+          border-radius: 4px;
+          padding: 8px;
+        }
+        .current-tile-container {
+          flex: 2;
+          display: flex;
+          flex-direction: column;
+          border: 1px solid #e5e7eb;
+          border-radius: 4px;
+          padding: 8px;
+        }
+        @media (max-width: 768px) {
+          .snapshot-layout {
+            flex-direction: column;
+            height: auto;
+          }
+          .current-tile-container {
+            flex: none;
+            min-height: 300px;
+            order: -1;
+          }
+          .snapshot-list-container {
+            flex: none;
+            min-height: 400px;
+          }
+        }
+      </style>
+      <div class="snapshot-layout">
+        <!-- スナップショット一覧 -->
+        <div class="snapshot-list-container">
           <div id="wps-snapshots-list">
             <div class="text-sm text-gray-500 text-center p-4">${t`${"loading"}`}</div>
           </div>
         </div>
 
-        <!-- 右: 現在タイル画像 + 保存ボタン (2) -->
-        <div style="flex: 2; display: flex; flex-direction: column; border: 1px solid #e5e7eb; border-radius: 4px; padding: 8px;">
+        <!-- 現在タイル画像 + 保存ボタン（モバイルでは上に表示） -->
+        <div class="current-tile-container">
           <div id="current-tile-image-container" style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background-color: #f9fafb; min-height: 0;">
             <canvas id="wps-current-tile-canvas" style="max-width: 100%; max-height: 100%; object-fit: contain;"></canvas>
             <div id="no-image-message" class="text-sm text-gray-500" style="display: none; position: absolute;">Tile image not loaded</div>
@@ -156,6 +198,13 @@ export class SnapshotRoute extends BaseSnapshotRoute {
         .querySelector("#wps-save-current-snapshot-btn")
         ?.addEventListener("click", async () => {
           await this.saveCurrentSnapshot(container);
+        });
+
+      // ダウンロードボタンのイベント
+      container
+        .querySelector("#wps-download-current-tile-btn")
+        ?.addEventListener("click", () => {
+          this.downloadCurrentTile();
         });
     }
 
@@ -234,6 +283,47 @@ export class SnapshotRoute extends BaseSnapshotRoute {
       this.currentTileY
     );
     await gotoPosition({ lat, lng, zoom: 11 });
+  }
+
+  private downloadCurrentTile(): void {
+    if (this.currentTileX === undefined || this.currentTileY === undefined) {
+      Toast.error("Location unavailable");
+      return;
+    }
+
+    const canvas = document.getElementById(
+      "wps-current-tile-canvas"
+    ) as HTMLCanvasElement;
+
+    if (!canvas || canvas.style.display === "none") {
+      Toast.error("Tile image not loaded");
+      return;
+    }
+
+    // Canvas をPNGとしてダウンロード
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        Toast.error("Failed to create image");
+        return;
+      }
+
+      const now = new Date();
+      const timestamp = now
+        .toISOString()
+        .replace(/T/, "_")
+        .replace(/\..+/, "")
+        .replace(/:/g, "-");
+      const filename = `tile_${this.currentTileX}_${this.currentTileY}_${timestamp}.png`;
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      Toast.success("Tile image downloaded");
+    }, "image/png");
   }
 
   private async loadCurrentTileImage(): Promise<void> {

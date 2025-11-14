@@ -1,5 +1,5 @@
 import { colorpalette } from "../../constants/colors";
-import type { EnhancedMode } from "../../features/tile-draw/types";
+import type { EnhancedMode } from "@/types/image";
 import { ENHANCED_MODE_ICONS } from "../../assets/enhanced-mode-icons";
 import { t } from "../../i18n/manager";
 import type { ColorPaletteOptions, SortOrder } from "./types";
@@ -16,7 +16,7 @@ import { buildColorGrid, buildControlsHtml } from "./ui";
 
 /**
  * カラーパレット表示コンポーネント
- * 
+ *
  * NOTE: イベントリスナー管理
  * - インスタンス生成時にboundハンドラーを作成し、setupEventHandlers()で登録
  * - destroy()で必ずremoveEventListenerを呼び、メモリリークとイベント重複を防止
@@ -30,6 +30,7 @@ export class ColorPalette {
   private enhancedMode: EnhancedMode;
   private sortOrder: SortOrder = "default";
   private computeDevice: ComputeDevice;
+  private showUnplacedOnly: boolean;
   private boundClickHandler: (e: MouseEvent) => void;
   private boundDocumentClickHandler: (e: MouseEvent) => void;
 
@@ -45,10 +46,12 @@ export class ColorPalette {
     this.enhancedMode = options.enhancedMode ?? "dot";
     this.sortOrder = options.sortOrder ?? "default";
     this.computeDevice = options.computeDevice ?? "gpu";
+    this.showUnplacedOnly = options.showUnplacedOnly ?? false;
 
     // イベントハンドラーをbind
     this.boundClickHandler = (e: MouseEvent) => this.handleClick(e);
-    this.boundDocumentClickHandler = (e: MouseEvent) => this.handleDocumentClick(e);
+    this.boundDocumentClickHandler = (e: MouseEvent) =>
+      this.handleDocumentClick(e);
 
     this.render();
     this.setupEventHandlers();
@@ -69,7 +72,9 @@ export class ColorPalette {
       this.options.showComputeDeviceSelect ?? false,
       this.sortOrder,
       this.enhancedMode,
-      this.computeDevice
+      this.computeDevice,
+      this.options.showUnplacedOnlyToggle ?? false,
+      this.showUnplacedOnly
     );
 
     this.container.innerHTML = `
@@ -237,6 +242,13 @@ export class ColorPalette {
       return;
     }
 
+    // Show Unplaced Only Toggle
+    if (target.closest(".show-unplaced-only-toggle")) {
+      e.stopPropagation();
+      this.handleShowUnplacedOnlyToggle();
+      return;
+    }
+
     // 色選択
     const colorItem = target.closest(".color-item") as HTMLElement;
     if (colorItem) {
@@ -400,6 +412,34 @@ export class ColorPalette {
     }
   }
 
+  private handleShowUnplacedOnlyToggle(): void {
+    this.showUnplacedOnly = !this.showUnplacedOnly;
+
+    // ボタンの表示を更新
+    const toggleButton = this.container.querySelector(
+      ".show-unplaced-only-toggle"
+    ) as HTMLElement;
+    if (toggleButton) {
+      const bgColor = this.showUnplacedOnly ? "var(--color-success, #22c55e)" : "var(--color-base-300, #e5e7eb)";
+      const textColor = this.showUnplacedOnly ? "var(--color-primary-content, #fff)" : "var(--color-base-content, #6b7280)";
+      const borderColor = this.showUnplacedOnly ? "#22c55e" : "#d1d5db";
+      const icon = this.showUnplacedOnly ? "👁️" : "👁️‍🗨️";
+
+      toggleButton.style.backgroundColor = bgColor;
+      toggleButton.style.color = textColor;
+      toggleButton.style.borderColor = borderColor;
+
+      const iconSpan = toggleButton.querySelector("span:first-child");
+      if (iconSpan) {
+        iconSpan.textContent = icon;
+      }
+    }
+
+    if (this.options.onShowUnplacedOnlyChange) {
+      this.options.onShowUnplacedOnlyChange(this.showUnplacedOnly);
+    }
+  }
+
   // Public API
   getSelectedColors(): number[] {
     return Array.from(this.selectedColorIds);
@@ -414,7 +454,7 @@ export class ColorPalette {
     // イベントリスナー削除
     this.container.removeEventListener("click", this.boundClickHandler);
     document.removeEventListener("click", this.boundDocumentClickHandler);
-    
+
     // DOM削除
     this.container.innerHTML = "";
   }
@@ -455,7 +495,9 @@ export class ColorPalette {
       const isSelected = itemSort === sort;
       const borderColor = isSelected ? "#22c55e" : "#d1d5db";
       const borderWidth = isSelected ? "2px" : "1px";
-      (item as HTMLElement).style.border = `${borderWidth} solid ${borderColor}`;
+      (
+        item as HTMLElement
+      ).style.border = `${borderWidth} solid ${borderColor}`;
     });
   }
 }

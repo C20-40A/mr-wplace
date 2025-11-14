@@ -19,14 +19,16 @@ export const loadNavigationModeFromStorage = async (): Promise<void> => {
 };
 
 // Save to storage
-export const saveNavigationModeToStorage = async (
+const saveNavigationModeToStorage = async (
   mode: NavigationMode
 ): Promise<void> => {
   await storage.set({ [STORAGE_KEY]: mode });
 };
 
 // Set navigation mode (with storage sync)
-export const setNavigationMode = async (mode: NavigationMode): Promise<void> => {
+export const setNavigationMode = async (
+  mode: NavigationMode
+): Promise<void> => {
   currentMode = mode;
   await saveNavigationModeToStorage(mode);
 };

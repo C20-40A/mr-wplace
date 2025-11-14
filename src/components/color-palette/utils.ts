@@ -1,4 +1,4 @@
-import type { EnhancedMode } from "../../features/tile-draw/types";
+import type { EnhancedMode } from "@/types/image";
 import type { ColorStats, EnhancedModeOption, SortOrderOption } from "./types";
 
 // HTML定数

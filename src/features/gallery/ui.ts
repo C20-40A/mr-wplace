@@ -1,15 +1,49 @@
 import { GalleryRouter } from "./router";
 import { t } from "../../i18n";
-import { BaseModalUI, ModalConfig } from "../../components/base-modal-ui";
-import { IMG_ICON_GALLERY } from "../../assets/iconImages";
+import { createModal, ModalElements } from "@/utils/modal";
+import { IMG_ICON_GALLERY } from "@/assets/iconImages";
 
-export class GalleryUI extends BaseModalUI<GalleryRouter> {
-  getModalConfig(): ModalConfig {
-    return {
+export class GalleryUI {
+  private modalElements: ModalElements;
+  private onModalClose?: () => void;
+  private closeHandlerRegistered = false;
+
+  constructor(private router: GalleryRouter) {
+    this.modalElements = createModal({
       id: "wplace-studio-gallery-modal",
       title: t`${"gallery"}`,
       containerStyle: "max-height: 90vh;",
-    };
+      router: this.router,
+    });
+  }
+
+  /**
+   * モーダルが閉じられたときのコールバックを設定
+   */
+  setOnModalClose(callback: () => void): void {
+    this.onModalClose = callback;
+
+    // close イベントリスナーを登録（一度だけ登録）
+    if (!this.closeHandlerRegistered) {
+      this.closeHandlerRegistered = true;
+
+      this.modalElements.modal.addEventListener("close", () => {
+        console.log("🧑‍🎨 : Gallery modal closed, cleaning up...");
+        this.onModalClose?.();
+      });
+    }
+  }
+
+  showModal(): void {
+    this.modalElements.modal.showModal();
+  }
+
+  closeModal(): void {
+    this.modalElements.modal.close();
+  }
+
+  getContainer(): HTMLElement {
+    return this.modalElements.container;
   }
 }
 

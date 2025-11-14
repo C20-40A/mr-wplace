@@ -2,43 +2,64 @@
 
 set -e
 
-echo "🚀 Building Mr. Wplace release package..."
+echo "🚀 Building Mr. Wplace release packages..."
 
 # Get version from package.json
 VERSION=$(node -pe "require('./package.json').version")
-PACKAGE_NAME="mr-wplace-v${VERSION}"
 
-# Build the extension
+# Build base extension
 echo "📦 Building extension..."
 bun run build
 
-# Create release directory
-echo "📁 Creating release directory..."
-rm -rf release
-mkdir -p release
+# Function to create browser-specific package
+create_package() {
+  local BROWSER=$1
+  local PACKAGE_NAME="mr-wplace-v${VERSION}-${BROWSER}"
 
-# Copy required files
-echo "📋 Copying files..."
-cp manifest.json release/
-cp popup.html release/
-cp service_worker.js release/
-mkdir -p release/dist
-cp dist/content.js release/dist/
-cp dist/popup.js release/dist/
-cp dist/inject.js release/dist/
-cp -r icons release/
-cp -r _locales release/
-cp -r public/* release/
+  echo ""
+  echo "📦 Creating ${BROWSER} package..."
 
-# Create zip package
-echo "🗜️ Creating zip package..."
-cd release
-zip -r "../${PACKAGE_NAME}.zip" .
-cd ..
+  # Create release directory
+  echo "📁 Creating release directory..."
+  rm -rf release-${BROWSER}
+  mkdir -p release-${BROWSER}
 
-# Show results
-echo "✅ Release package created successfully!"
-echo "📦 Package: ${PACKAGE_NAME}.zip"
-echo "📏 Size: $(ls -lh ${PACKAGE_NAME}.zip | awk '{print $5}')"
-echo "📂 Files included:"
-unzip -l "${PACKAGE_NAME}.zip" | tail -n +4 | head -n -2
+  # Generate browser-specific manifest
+  echo "📝 Generating ${BROWSER} manifest..."
+  node ./scripts/generate-manifest.js ${BROWSER} release-${BROWSER}/manifest.json
+
+  # Copy required files
+  echo "📋 Copying files..."
+  cp popup.html release-${BROWSER}/
+  cp service_worker.js release-${BROWSER}/
+  mkdir -p release-${BROWSER}/dist
+  cp dist/content.js release-${BROWSER}/dist/
+  cp dist/popup.js release-${BROWSER}/dist/
+  cp dist/inject.js release-${BROWSER}/dist/
+  cp -r icons release-${BROWSER}/
+  cp -r _locales release-${BROWSER}/
+  cp -r public/* release-${BROWSER}/
+
+  # Create zip package
+  echo "🗜️ Creating zip package..."
+  cd release-${BROWSER}
+  zip -r "../${PACKAGE_NAME}.zip" . > /dev/null
+  cd ..
+
+  echo "✅ ${BROWSER} package created: ${PACKAGE_NAME}.zip"
+  echo "📏 Size: $(ls -lh ${PACKAGE_NAME}.zip | awk '{print $5}')"
+}
+
+# Create packages for both browsers
+create_package "chrome"
+create_package "firefox"
+
+# Cleanup
+echo ""
+echo "🧹 Cleaning up..."
+rm -rf release-chrome release-firefox
+
+echo ""
+echo "✅ All release packages created successfully!"
+echo "📦 Chrome: mr-wplace-v${VERSION}-chrome.zip"
+echo "📦 Firefox: mr-wplace-v${VERSION}-firefox.zip"

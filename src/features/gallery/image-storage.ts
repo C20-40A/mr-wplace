@@ -18,6 +18,30 @@ export class ImageStorage<T extends BaseImageItem> {
     this.indexKey = `${prefix}_index`;
   }
 
+  async get(key: string): Promise<T | undefined> {
+    const dataResult = await storage.get([key]);
+    const data = dataResult[key];
+
+    if (!data) return undefined;
+
+    let item: T;
+
+    // 新形式（完全オブジェクト）で保存されている場合
+    if (typeof data === "object" && data.key) {
+      item = data as T;
+    } else {
+      // 旧形式（dataUrlのみ）で保存されている場合
+      const timestamp = parseInt(key.replace(`${this.prefix}_`, ""));
+      item = {
+        key,
+        timestamp,
+        dataUrl: data || "",
+      } as T;
+    }
+
+    return item;
+  }
+
   async getAll(): Promise<T[]> {
     // 1. インデックス取得
     const indexResult = await storage.get([this.indexKey]);
@@ -33,7 +57,7 @@ export class ImageStorage<T extends BaseImageItem> {
     const dataResult = await storage.get(keys);
 
     // 4. ImageItem配列構築
-    return index.items.map((meta) => {
+    const items = index.items.map((meta) => {
       const data = dataResult[meta.key];
       // 新形式（完全オブジェクト）で保存されている場合
       if (typeof data === "object" && data.key) {
@@ -45,13 +69,15 @@ export class ImageStorage<T extends BaseImageItem> {
         dataUrl: data || "",
       } as T;
     });
+
+    return items;
   }
 
   async save(item: T): Promise<void> {
-    // 1. 実データ保存（完全なオブジェクト）
+    // 実データ保存（完全なオブジェクト）
     await storage.set({ [item.key]: item });
 
-    // 2. インデックス更新
+    // インデックス更新
     await this.updateIndex(item.key, item.timestamp);
   }
 

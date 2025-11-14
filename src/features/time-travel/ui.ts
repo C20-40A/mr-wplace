@@ -1,6 +1,6 @@
 import { t } from "../../i18n/manager";
 import { TimeTravelRouter } from "./router";
-import { BaseModalUI, ModalConfig } from "../../components/base-modal-ui";
+import { createModal, ModalElements } from "@/utils/modal";
 import { IMG_ICON_TIME_TRAVEL } from "../../assets/iconImages";
 import { createResponsiveButton } from "../../components/responsive-button";
 
@@ -24,12 +24,27 @@ export const createTimeTravelFAB = (): HTMLButtonElement => {
   return button;
 };
 
-export class TimeTravelUI extends BaseModalUI<TimeTravelRouter> {
-  getModalConfig(): ModalConfig {
-    return {
+export class TimeTravelUI {
+  private modalElements: ModalElements;
+
+  constructor(private router: TimeTravelRouter) {
+    this.modalElements = createModal({
       id: "wplace-studio-timetravel-modal",
       title: t`${"timetravel_modal_title"}`,
       maxWidth: "80rem",
-    };
+      router: this.router,
+    });
+  }
+
+  showModal(): void {
+    this.modalElements.modal.showModal();
+  }
+
+  closeModal(): void {
+    this.modalElements.modal.close();
+  }
+
+  getContainer(): HTMLElement {
+    return this.modalElements.container;
   }
 }

@@ -218,8 +218,8 @@ export const processGpuColorFilter = async (
   gl.deleteBuffer(quadBuffer);
   gl.deleteProgram(program);
 
-  // ImageBitmap解放（すべての処理完了後）
-  overlayBitmap.close();
+  // NOTE: overlayBitmap.close() は呼ばない
+  // この ImageBitmap は instance.tiles に保存されていて、複数回再利用される可能性があるため
 
   return new Uint8ClampedArray(outBuf);
 };

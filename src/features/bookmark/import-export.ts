@@ -89,6 +89,51 @@ export class ImportExportService {
     };
   }
 
+  static async exportFavoritesByTags(tags: import("./types").Tag[]): Promise<ExportResult> {
+    const allBookmarks = await BookmarkStorage.getBookmarks();
+
+    const filteredBookmarks = allBookmarks.filter((bookmark) => {
+      if (!bookmark.tag) return false;
+      return tags.some(
+        (tag) =>
+          tag.color === bookmark.tag!.color &&
+          (tag.name || "") === (bookmark.tag!.name || "")
+      );
+    });
+
+    if (filteredBookmarks.length === 0) {
+      return {
+        success: false,
+        message: t`${"no_export_bookmarks"}`,
+      };
+    }
+
+    const exportData = {
+      version: "1.0",
+      exportDate: new Date().toISOString(),
+      count: filteredBookmarks.length,
+      favorites: filteredBookmarks,
+      source: "mr-wplace",
+      tags: tags,
+    };
+
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: "application/json" });
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(dataBlob);
+    const tagNames = tags.map((tag) => tag.name || "no-name").join("-");
+    link.download = `wplace-studio-favorites-${tagNames}-${
+      new Date().toISOString().split("T")[0]
+    }.json`;
+    link.click();
+
+    return {
+      success: true,
+      message: `${filteredBookmarks.length}${t`${"bookmarks_exported"}`}`,
+    };
+  }
+
   static importFavorites(): Promise<ImportResult> {
     return new Promise((resolve) => {
       const fileInput = document.getElementById(

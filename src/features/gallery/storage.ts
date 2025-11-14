@@ -1,5 +1,5 @@
-import { ImageStorage, BaseImageItem } from "../../utils/image-storage";
-import type { ColorStats } from "../tile-draw/types";
+import { ImageStorage, BaseImageItem } from "./image-storage";
+import type { ColorStats } from "@/types/image";
 
 export interface DrawPosition {
   TLX: number;
@@ -9,6 +9,7 @@ export interface DrawPosition {
 }
 
 export interface GalleryItem extends BaseImageItem {
+  title?: string;
   drawPosition?: { TLX: number; TLY: number; PxX: number; PxY: number };
   drawEnabled?: boolean;
   layerOrder?: number;
@@ -30,13 +31,17 @@ export class GalleryStorage {
    */
   private async ensureLayerOrders(): Promise<void> {
     const items = await this.imageStorage.getAll();
-    const itemsWithDrawPosition = items.filter(i => i.drawPosition);
-    const needsUpdate = itemsWithDrawPosition.some(i => i.layerOrder === undefined);
-    
+    const itemsWithDrawPosition = items.filter((i) => i.drawPosition);
+    const needsUpdate = itemsWithDrawPosition.some(
+      (i) => i.layerOrder === undefined
+    );
+
     if (!needsUpdate) return;
-    
+
     // timestamp順でlayerOrder設定
-    const sorted = itemsWithDrawPosition.sort((a, b) => a.timestamp - b.timestamp);
+    const sorted = itemsWithDrawPosition.sort(
+      (a, b) => a.timestamp - b.timestamp
+    );
     for (let i = 0; i < sorted.length; i++) {
       if (sorted[i].layerOrder === undefined) {
         await this.imageStorage.save({ ...sorted[i], layerOrder: i });
@@ -84,15 +89,16 @@ export class GalleryStorage {
     });
   }
 
+  async get(key: string): Promise<GalleryItem | undefined> {
+    const item = await this.imageStorage.get(key);
+    if (!item) return undefined;
+    return item;
+  }
+
   async getAll(): Promise<GalleryItem[]> {
     await this.ensureLayerOrders();
     const items = await this.imageStorage.getAll();
-
-    // hasDrawPositionを計算して追加
-    return items.map((item) => ({
-      ...item,
-      hasDrawPosition: !!item.drawPosition,
-    }));
+    return items;
   }
 
   async save(item: GalleryItem): Promise<void> {
@@ -100,7 +106,7 @@ export class GalleryStorage {
     if (item.drawPosition && item.layerOrder === undefined) {
       const items = await this.imageStorage.getAll();
       const maxOrder = items
-        .filter(i => i.drawPosition && i.layerOrder !== undefined)
+        .filter((i) => i.drawPosition && i.layerOrder !== undefined)
         .reduce((max, i) => Math.max(max, i.layerOrder!), -1);
       item.layerOrder = maxOrder + 1;
     }
@@ -114,23 +120,23 @@ export class GalleryStorage {
   /**
    * レイヤー順序変更
    */
-  async moveLayer(imageKey: string, direction: 'up' | 'down'): Promise<void> {
+  async moveLayer(imageKey: string, direction: "up" | "down"): Promise<void> {
     const items = await this.getAll();
     const layerImages = items
-      .filter(i => i.drawPosition)
+      .filter((i) => i.drawPosition)
       .sort((a, b) => (a.layerOrder ?? 0) - (b.layerOrder ?? 0));
-    
-    const index = layerImages.findIndex(i => i.key === imageKey);
+
+    const index = layerImages.findIndex((i) => i.key === imageKey);
     if (index === -1) return;
-    
-    const targetIndex = direction === 'up' ? index + 1 : index - 1;
+
+    const targetIndex = direction === "up" ? index + 1 : index - 1;
     if (targetIndex < 0 || targetIndex >= layerImages.length) return;
-    
+
     // layerOrder入れ替え
     const temp = layerImages[index].layerOrder;
     layerImages[index].layerOrder = layerImages[targetIndex].layerOrder;
     layerImages[targetIndex].layerOrder = temp;
-    
+
     // 保存
     await this.imageStorage.save(layerImages[index]);
     await this.imageStorage.save(layerImages[targetIndex]);

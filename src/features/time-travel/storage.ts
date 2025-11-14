@@ -1,8 +1,5 @@
 import { storage } from "@/utils/browser-api";
-import {
-  addImageToOverlayLayers,
-  removePreparedOverlayImageByKey,
-} from "@/features/tile-draw";
+import { sendSnapshotsToInject } from "@/content";
 
 export interface TileSnapshotInfo {
   tileX: number;
@@ -262,26 +259,8 @@ export class TimeTravelStorage {
     console.log("🧑‍🎨 : Restoring TimeTravel draw states");
     const tileOverlay = window.mrWplace?.tileOverlay;
 
-    const states = await this.getDrawStates();
-    const enabledStates = states.filter((s) => s.drawEnabled);
-
-    for (const state of enabledStates) {
-      const snapshotData = await storage.get([state.fullKey]);
-      const rawData = snapshotData[state.fullKey];
-      if (rawData) {
-        // Uint8Array → File変換
-        const uint8Array = new Uint8Array(rawData);
-        const blob = new Blob([uint8Array], { type: "image/png" });
-        const file = new File([blob], "snapshot.png", { type: "image/png" });
-
-        const imageKey = `snapshot_${state.fullKey}`;
-        await addImageToOverlayLayers(
-          file,
-          [state.tileX, state.tileY, 0, 0],
-          imageKey
-        );
-      }
-    }
+    // Restore all enabled snapshots - inject side will handle rendering
+    await sendSnapshotsToInject();
   }
 
   static async isSnapshotDrawing(fullKey: string): Promise<boolean> {
@@ -306,10 +285,6 @@ export class TimeTravelStorage {
     } else {
       // 別のスナップショットが描画中 OR 何も描画されていない → ON
       if (currentState) {
-        // 既存の描画を削除
-        const oldImageKey = `snapshot_${currentState.fullKey}`;
-        removePreparedOverlayImageByKey(oldImageKey);
-
         // 古い状態をOFFに
         await this.setDrawState({
           ...currentState,
@@ -327,16 +302,8 @@ export class TimeTravelStorage {
       drawEnabled: newDrawEnabled,
     });
 
-    // 3. 描画に反映
-    const imageKey = `snapshot_${fullKey}`;
-
-    if (newDrawEnabled) {
-      // 描画ON
-      await addImageToOverlayLayers(file, [tileX, tileY, 0, 0], imageKey);
-    } else {
-      // 描画OFF
-      removePreparedOverlayImageByKey(imageKey);
-    }
+    // 3. 描画に反映 - inject side に通知（削除も含めて inject side で処理される）
+    await sendSnapshotsToInject();
 
     return newDrawEnabled;
   }

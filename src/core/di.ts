@@ -51,7 +51,7 @@ export interface BookmarkAPI {
 }
 
 export interface TextDrawAPI {
-  initTextDraw: () => void;
+  initTextDraw: () => Promise<void>;
 }
 
 export interface DrawingLoaderAPI {

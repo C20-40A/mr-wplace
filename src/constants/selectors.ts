@@ -128,38 +128,64 @@ export const findTopLeftControls = (): Element | null => {
 export const findMapPin = (): Element | null => {
   // すべてのmaplibregl-markerを取得
   const markers = document.querySelectorAll('.maplibregl-marker, .mapboxgl-marker');
-  
+
   for (const marker of markers) {
     // 1. opacity: 1 のマーカーのみ（表示中）
     const style = (marker as HTMLElement).style;
     const opacity = style.opacity || '1';
     if (parseFloat(opacity) < 1) continue;
-    
+
     // 2. 現在地マーカー（青いピン）のSVGを持つか確認
     const svg = marker.querySelector('svg[viewBox="0 0 27 41"]');
     if (!svg) continue;
-    
+
     // 3. 青いピンの特徴的なpathを確認
     const bluePinPath = svg.querySelector('path[d^="M27,13.5"]');
     if (!bluePinPath) continue;
-    
+
     // 4. 画面内の座標にあるか確認（translate値が妥当な範囲）
     const transform = style.transform || '';
     const translateMatch = transform.match(/translate\((-?\d+)px,\s*(-?\d+)px\)/);
     if (translateMatch) {
       const x = parseInt(translateMatch[1], 10);
       const y = parseInt(translateMatch[2], 10);
-      
+
       // 画面サイズの範囲内か確認（マージン含む）
-      if (x < -100 || x > window.innerWidth + 100 || 
+      if (x < -100 || x > window.innerWidth + 100 ||
           y < -100 || y > window.innerHeight + 100) {
         continue;
       }
     }
-    
+
     // すべての条件を満たすマーカーを返す
     return marker;
   }
 
   return null;
+};
+
+/**
+ * "My location" ボタンのコンテナを検索（右下）
+ */
+export const findMyLocationContainer = (): Element | null => {
+  // 1. "My location" / "Minha localização" ボタンを検索 → 親要素取得
+  const myLocationButton = document.querySelector(
+    'button[title="My location"], button[title="Minha localização"]'
+  );
+  if (myLocationButton?.parentElement) return myLocationButton.parentElement;
+
+  // 2. container直接検索
+  const container = document.querySelector(".absolute.bottom-3.right-3.z-30");
+  if (container) return container;
+
+  // 3. 見つからない場合は新規作成
+  const containerId = "mr-wplace-bottom-right-container";
+  const existingContainer = document.querySelector(`#${containerId}`);
+  if (existingContainer) return existingContainer;
+
+  const newContainer = document.createElement("div");
+  newContainer.className = "absolute bottom-3 right-3 z-30 flex flex-col gap-1";
+  newContainer.id = containerId;
+  document.body.appendChild(newContainer);
+  return newContainer;
 };

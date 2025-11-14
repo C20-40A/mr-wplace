@@ -1,23 +1,23 @@
 import {
   setupElementObserver,
   ElementConfig,
-} from "../../components/element-observer";
+} from "@/components/element-observer";
 import { storage } from "@/utils/browser-api";
-import { Toast } from "../../components/toast";
+import { Toast } from "@/components/toast";
 import {
   findOpacityContainer,
   findPositionModal,
   findMapPin,
-} from "../../constants/selectors";
+} from "@/constants/selectors";
 import {
   getOrCreateMapPinButtonGroup,
   createMapPinGroupButton,
 } from "@/components/map-pin-button";
 import { BookmarkStorage } from "./storage";
 import { ImportExportService } from "./import-export";
-import { getCurrentPosition, gotoPosition } from "../../utils/position";
-import { showNameInputModal } from "../../utils/modal";
-import { t, formatDateShort } from "../../i18n/manager";
+import { getCurrentPosition, gotoPosition } from "@/utils/position";
+import { showNameInputModal } from "@/utils/modal";
+import { t, formatDateShort } from "@/i18n/manager";
 import {
   createBookmarkButton,
   createBookmarkModal,
@@ -27,18 +27,32 @@ import {
 } from "./ui";
 import { BookmarkRouter } from "./router";
 import { renderCoordinateJumper } from "./routes/coordinate-jumper";
-import type { BookmarkAPI } from "../../core/di";
+import type { BookmarkAPI } from "@/core/di";
 // import { IMG_ICON_BOOKMARK } from "@/assets/iconImages";
 
 const SORT_KEY = "wplace-studio-bookmark-sort";
 
 let router: BookmarkRouter;
+let selectedTagFilters: Set<string> = new Set();
 
 const render = async (): Promise<void> => {
   const result = await storage.get([SORT_KEY]);
   const sortType = result[SORT_KEY] || "created";
   const favorites = await BookmarkStorage.getBookmarks();
-  renderBookmarks(favorites, sortType);
+  const existingTags = await BookmarkStorage.getExistingTags();
+
+  // Render tag filters
+  const { renderTagFilters } = await import("./ui");
+  renderTagFilters(existingTags, favorites, selectedTagFilters, (tagKey: string) => {
+    if (selectedTagFilters.has(tagKey)) {
+      selectedTagFilters.delete(tagKey);
+    } else {
+      selectedTagFilters.add(tagKey);
+    }
+    render();
+  });
+
+  renderBookmarks(favorites, sortType, selectedTagFilters);
   const sortSelect = document.getElementById(
     "wps-bookmark-sort"
   ) as HTMLSelectElement;
@@ -207,18 +221,27 @@ const setupModal = (): void => {
     });
 
   modal
-    .querySelector("#wps-export-btn")!
+    .querySelector("#wps-import-export-btn")!
     .addEventListener("click", async () => {
-      const result = await ImportExportService.exportFavorites();
-      Toast.success(result.message);
-    });
-
-  modal
-    .querySelector("#wps-import-btn")!
-    .addEventListener("click", async () => {
-      const result = await ImportExportService.importFavorites();
-      Toast.success(result.message);
-      if (result.shouldRender) render();
+      const { showImportExportDialog } = await import("./ui");
+      showImportExportDialog(
+        // onImport
+        async () => {
+          const result = await ImportExportService.importFavorites();
+          Toast.success(result.message);
+          if (result.shouldRender) render();
+        },
+        // onExport
+        async () => {
+          const result = await ImportExportService.exportFavorites();
+          Toast.success(result.message);
+        },
+        // onExportByTag
+        async (tags) => {
+          const result = await ImportExportService.exportFavoritesByTags(tags);
+          Toast.success(result.message);
+        }
+      );
     });
 
   modal
@@ -243,9 +266,74 @@ const setupModal = (): void => {
   // Existing tags selection
   modal
     .querySelector("#wps-existing-tags-container")!
-    .addEventListener("click", (e) => {
+    .addEventListener("click", async (e) => {
       const target = e.target as HTMLElement;
-      const tagItem = target.closest(
+
+      console.log("🧑‍🎨 : Clicked element:", target);
+
+      // Check if edit button was clicked
+      const editBtn = target.closest(".wps-tag-edit-btn") as HTMLElement | null;
+      if (editBtn) {
+        console.log("🧑‍🎨 : Edit button clicked!");
+        e.stopPropagation();
+
+        const color = editBtn.dataset.color!;
+        const name = editBtn.dataset.name || "";
+        const tag: import("./types").Tag = { color, name: name || undefined };
+
+        const { showTagEditModal } = await import("./ui");
+
+        // Show modal with callbacks
+        showTagEditModal(
+          tag,
+          // onSave callback
+          async (oldTag, newTag) => {
+            await BookmarkStorage.updateTag(oldTag, newTag);
+            Toast.success(t`${"saved_message"}`);
+
+            // Refresh the edit screen if it's open
+            const editScreen = document.getElementById("wps-bookmark-edit-screen");
+            if (editScreen?.style.display === "block") {
+              const { showEditScreen } = await import("./ui");
+              const bookmarkId = parseInt(editScreen.dataset.bookmarkId!);
+              const bookmarks = await BookmarkStorage.getBookmarks();
+              const bookmark = bookmarks.find((b) => b.id === bookmarkId);
+              if (bookmark) showEditScreen(bookmark);
+            }
+
+            render();
+            console.log("🧑‍🎨 : Tag updated:", oldTag, "->", newTag);
+          },
+          // onDelete callback
+          async (tagToDelete) => {
+            if (!confirm(t`${"tag_delete_confirm"}`)) return;
+
+            await BookmarkStorage.deleteTag(tagToDelete);
+            Toast.success(t`${"deleted_message"}`);
+
+            // Refresh the edit screen if it's open
+            const editScreen = document.getElementById("wps-bookmark-edit-screen");
+            if (editScreen?.style.display === "block") {
+              const { showEditScreen } = await import("./ui");
+              const bookmarkId = parseInt(editScreen.dataset.bookmarkId!);
+              const bookmarks = await BookmarkStorage.getBookmarks();
+              const bookmark = bookmarks.find((b) => b.id === bookmarkId);
+              if (bookmark) showEditScreen(bookmark);
+            }
+
+            render();
+            console.log("🧑‍🎨 : Tag deleted:", tagToDelete);
+          }
+        );
+
+        return;
+      }
+
+      // Otherwise, handle tag selection (only if clicking on the clickable area)
+      const clickableArea = target.closest(".wps-tag-item-clickable") as HTMLElement | null;
+      if (!clickableArea) return;
+
+      const tagItem = clickableArea.closest(
         ".wps-existing-tag-item"
       ) as HTMLElement | null;
 
@@ -260,11 +348,10 @@ const setupModal = (): void => {
       editScreen.dataset.currentTagColor = color;
       editScreen.dataset.currentTagName = name;
 
-      // Visual feedback: highlight selected tag
-      document.querySelectorAll(".wps-existing-tag-item").forEach((item) => {
-        (item as HTMLElement).style.border = "2px solid transparent";
-      });
-      tagItem.style.border = "2px solid #000";
+      // Re-render tags to update visual feedback
+      const existingTags = await BookmarkStorage.getExistingTags();
+      const { renderExistingTags } = await import("./ui");
+      renderExistingTags(existingTags, { color, name: name || undefined });
 
       console.log("🧑‍🎨 : Selected existing tag:", color, name);
     });
@@ -278,17 +365,17 @@ const setupModal = (): void => {
     });
 
   // No tag button
-  modal.querySelector("#wps-no-tag-btn")!.addEventListener("click", () => {
+  modal.querySelector("#wps-no-tag-btn")!.addEventListener("click", async () => {
     const editScreen = document.getElementById("wps-bookmark-edit-screen");
     if (!editScreen) return;
 
     editScreen.dataset.currentTagColor = "";
     editScreen.dataset.currentTagName = "";
 
-    // Visual feedback: deselect all tags
-    document.querySelectorAll(".wps-existing-tag-item").forEach((item) => {
-      (item as HTMLElement).style.border = "2px solid transparent";
-    });
+    // Re-render tags to update visual feedback (no tag selected)
+    const existingTags = await BookmarkStorage.getExistingTags();
+    const { renderExistingTags } = await import("./ui");
+    renderExistingTags(existingTags, undefined);
 
     console.log("🧑‍🎨 : Tag removed");
   });
@@ -398,7 +485,7 @@ const createMapPinButtons = (container: Element): void => {
 
   // 既存ボタンチェック
   if (group.querySelector("#bookmark-btn")) {
-    console.log("🧑‍🎨 : Bookmark button already exists");
+    // console.log("🧑‍🎨 : Bookmark button already exists");
     return;
   }
 

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_appName__",
-  "version": "1.8.1",
+  "version": "1.10.1",
   "description": "__MSG_appDescription__",
   "default_locale": "en",
   "permissions": [
@@ -12,7 +12,10 @@
     "notifications"
   ],
   "background": {
-    "service_worker": "service_worker.js"
+    "service_worker": "service_worker.js",
+    "scripts": [
+      "service_worker.js"
+    ]
   },
   "action": {
     "default_title": "__MSG_popupTitle__",

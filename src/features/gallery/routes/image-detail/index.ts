@@ -4,6 +4,7 @@ import { ImageInspector } from "../../../../components/image-inspector";
 import { gotoMapPosition, toggleDrawState } from "../../common-actions";
 import { t } from "../../../../i18n/manager";
 import { Toast } from "../../../../components/toast";
+import { showNameInputModal } from "@/utils/modal";
 
 export class GalleryImageDetail {
   private currentItem: GalleryItem | null = null;
@@ -39,23 +40,27 @@ export class GalleryImageDetail {
               item.drawEnabled ? t`${"draw_enabled"}` : t`${"draw_disabled"}`
             }
           </button>
-          
+
           <button id="goto-map-btn" class="btn btn-sm btn-primary" ${
             !item.drawPosition ? "disabled" : ""
           }>
             📍 ${t`${"goto_map"}`}
           </button>
-          
+
+          <button id="title-edit-btn" class="btn btn-sm btn-primary">
+            📝 ${t`${"title"}`}
+          </button>
+
           <button id="edit-btn" class="btn btn-sm btn-primary">
             ✏️ ${t`${"edit"}`}
           </button>
-          
+
           <button id="share-btn" class="btn btn-sm btn-primary" ${
             !item.drawPosition ? 'style="display: none;"' : ""
           }>
             📤 ${t`${"share"}`}
           </button>
-          
+
           <button id="delete-btn" class="btn btn-sm btn-error">
             🗑 ${t`${"delete"}`}
           </button>
@@ -76,6 +81,12 @@ export class GalleryImageDetail {
             item.drawPosition?.PxY ?? 0
           }" style="width: 60px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 4px;"></label>
           <button id="update-coords-btn" class="btn btn-sm" style="height: 24px; min-height: 24px; padding: 0 12px;">🔄 ${t`${"update"}`}</button>
+          <button id="copy-coords-btn" class="btn btn-sm btn-ghost" style="height: 24px; min-height: 24px; padding: 0 8px;" title="Copy">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+          </button>
         </div>
       </div>
     `;
@@ -157,6 +168,29 @@ export class GalleryImageDetail {
       await gotoMapPosition(this.currentItem);
     });
 
+    // タイトル編集ボタン
+    const titleEditBtn = document.getElementById("title-edit-btn");
+    titleEditBtn?.addEventListener("click", async () => {
+      if (!this.currentItem) return;
+
+      const currentTitle = this.currentItem.title || "";
+      const newTitle = await showNameInputModal(
+        t`${"edit_image_title"}`,
+        t`${"image_title_placeholder"}`
+      );
+
+      // キャンセルされた場合はnullが返る
+      if (newTitle === null) return;
+
+      // 新しいタイトルを保存
+      const { GalleryStorage } = await import("../../storage");
+      const storage = new GalleryStorage();
+      await storage.save({ ...this.currentItem, title: newTitle });
+
+      // currentItem更新
+      this.currentItem.title = newTitle;
+    });
+
     // 削除ボタン
     const deleteBtn = document.getElementById("delete-btn");
     deleteBtn?.addEventListener("click", () => {
@@ -234,5 +268,35 @@ export class GalleryImageDetail {
 
       Toast.success(t`${"coordinates_updated"}`);
     });
+
+    // 座標コピーボタン
+    const copyCoordsBtn = document.getElementById("copy-coords-btn");
+    copyCoordsBtn?.addEventListener("click", async () => {
+      if (!this.currentItem?.drawPosition) return;
+
+      const { TLX, TLY, PxX, PxY } = this.currentItem.drawPosition;
+      const coordText = `${TLX}-${TLY}-${PxX}-${PxY}`;
+
+      try {
+        await navigator.clipboard.writeText(coordText);
+        Toast.success(t`${"copied"}`);
+      } catch (err) {
+        console.error("🧑‍🎨 : Failed to copy coordinates", err);
+        Toast.error("Failed to copy");
+      }
+    });
+  }
+
+  destroy(): void {
+    console.log("🧑‍🎨 : Destroying GalleryImageDetail...");
+
+    if (this.imageInspector) {
+      this.imageInspector.destroy();
+      this.imageInspector = null;
+    }
+
+    this.currentItem = null;
+
+    console.log("🧑‍🎨 : GalleryImageDetail destroyed");
   }
 }

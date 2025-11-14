@@ -31,10 +31,13 @@ export class GalleryImageEditor {
     // コールバック設定
     const callbacks: ImageEditorCallbacks = {
       onFileHandle: (file) => this.controller?.handleFile(file),
+      onReplaceImage: (file) => this.controller?.replaceImage(file),
       onScaleChange: (scale) => this.controller?.onScaleChange(scale),
       onBrightnessChange: (value) => this.controller?.onBrightnessChange(value),
       onContrastChange: (value) => this.controller?.onContrastChange(value),
       onSaturationChange: (value) => this.controller?.onSaturationChange(value),
+      onSharpnessToggle: (enabled) => this.controller?.onSharpnessToggle(enabled),
+      onSharpnessChange: (value) => this.controller?.onSharpnessChange(value),
       onDitheringChange: (enabled) => this.controller?.onDitheringChange(enabled),
       onDitheringThresholdChange: (threshold) => this.controller?.onDitheringThresholdChange(threshold),
       onGpuToggle: (enabled) => this.controller?.onGpuToggle(enabled),
@@ -42,7 +45,20 @@ export class GalleryImageEditor {
       onSaveToGallery: () => this.controller?.saveToGallery(),
       onDownload: () => this.controller?.downloadImage()
     };
-    
+
     this.ui.setupUI(callbacks);
+  }
+
+  destroy(): void {
+    console.log("🧑‍🎨 : Destroying GalleryImageEditor...");
+
+    if (this.controller) {
+      // Controller 内の ImageInspector, ColorPalette は自動破棄される
+      this.controller = null;
+    }
+
+    this.onSaveSuccess = undefined;
+
+    console.log("🧑‍🎨 : GalleryImageEditor destroyed");
   }
 }

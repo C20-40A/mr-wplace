@@ -1,4 +1,161 @@
+# これで、クリックハンドラーが見つかるクリックしたときのみ
+
+```js
+for (const el of document.querySelectorAll("*")) {
+  const h = el.__click;
+  if (typeof h === "function") {
+    el.__click = (...args) => {
+      try {
+        // 呼び出し時に、内部の y(j) 結果を監視
+        const m = h.toString().match(/yr\s*=\s*y\((\w+)\)/);
+        console.log("click handler found:", h, m);
+      } catch (e) {}
+      return h.apply(this, args);
+    };
+  }
+}
+```
+
+# キャンバス上の色取得
+
+```js
+const src = document.querySelector("canvas.maplibregl-canvas");
+
+const dump = document.createElement("canvas");
+dump.width = src.width;
+dump.height = src.height;
+const ctx = dump.getContext("2d");
+
+// 毎フレームコピー
+function refresh() {
+  ctx.drawImage(src, 0, 0);
+  requestAnimationFrame(refresh);
+}
+refresh();
+
+// pixel 読み取り
+src.addEventListener("mousemove", (e) => {
+  const rect = src.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  const d = ctx.getImageData(x, y, 1, 1).data;
+  console.log(`(${x},${y})`, d);
+});
+```
+
+しかし、これでの実装は現実的でない。
+理由は、
+
+- hover 時に不可逆的に色が変わる
+- 同じピクセルでも hover したときの４隅のカーソルの色などが違うので、色の対応表も作れない
+
+# navigator geolocation
+
+```js
+navigator.geolocation.getCurrentPosition();
+```
+
+# 自動デバッグ
+
+```js
+debug(
+  document.querySelector("div.absolute.bottom-3.right-3.z-30").childNodes[0]
+    .__click
+);
+```
+
+それからブレークポイント進めて、`yr`したらとれる
+
+# paint リクエストのコードはこれ
+
+```js
+    async paint(e, t) {
+        const n = $n(e, i => `t=(${i.tile[0]},${i.tile[1]}),s=${i.season}`)
+          , r = Zn("2025-09_pawtect");
+        if (!r)
+            throw new Error("paint request while pawtect experiment not found");
+        const d = (await Promise.all(Object.values(n).map(i => {
+            const [l,f] = i[0].tile
+              , w = i[0].season
+              , _ = {
+                colors: i.map(Y => Y.colorIdx),
+                coords: i.flatMap(Y => Y.pixel),
+                fp: t
+            }
+              , j = JSON.stringify(_);
+            return this.request(`/s${w}/pixel/${l}/${f}`, {
+                method: "POST",
+                body: j,
+                headers: {
+                    "x-pawtect-token": r.variant !== "disabled" ? Pe(j) : "",
+                    "x-pawtect-variant": r.variant
+                },
+                credentials: "include"
+            })
+        }
+        ))).filter(i => i.status !== 200);
+        if (d.length) {
+            const i = d[0];
+            if (i.status === 401)
+                throw new Error(Me());
+            if (i.status === 403) {
+                if (i.headers.get("cf-mitigated") === "challenge")
+                    throw new Error(Lt());
+                const l = await i.json();
+                if ((l == null ? void 0 : l.error) === "refresh")
+                    throw new Error(Ut());
+                if ((l == null ? void 0 : l.error) === "color-not-owned")
+                    throw new Error(bn());
+                if ((l == null ? void 0 : l.error) === "event-pixel-present")
+                    throw new Error(Dn());
+                z.refresh()
+            } else if (i.status === 451) {
+                const l = await d[0].json();
+                l == null || l.err;
+                const f = l == null ? void 0 : l.suspension;
+                if (f === "ban")
+                    throw new Error(mn());
+                if (f === "timeout") {
+                    const w = new Date(Date.now() + ((l == null ? void 0 : l.durationMs) ?? 0));
+                    throw new Error(pn({
+                        until: w.toLocaleString()
+                    }))
+                } else
+                    throw new Error(o())
+            } else
+                throw new Error(o())
+        }
+    }
+```
+
+# モデレーター向けのもあった
+
+credential 必要
+
+```js
+    async getPixelAreaInfo({season: e, tile: [t,n], p0: [r,s], p1: [d,i]}) {
+        const l = await this.request(`/moderator/pixel-area/s${e}/${t}/${n}?x0=${r}&y0=${s}&x1=${d}&y1=${i}`, {
+            credentials: "include"
+        });
+        if (l.status !== 200) {
+            const _ = await l.text();
+            throw console.error("Error while fetching pixel area info", _),
+            new Error(o())
+        }
+        const f = await l.arrayBuffer()
+          , w = new DataView(f);
+        return {
+            paintedBy: Array.from({
+                length: f.byteLength / 4
+            }, (_, j) => w.getUint32(j * 4, !0))
+        }
+    }
+```
+
 # maplibregl マップインスタンス取得方法
+
+使えなくなった
 
 ```javascript
 const mapInstance = document.querySelector("div.absolute.bottom-3.right-3.z-30")
@@ -21,6 +178,12 @@ ID: "paint-preview-0.6338469378613869-1817,808" raster(塗り始めると現れ�
 ↑ paint: {raster-opacity : 1 raster-resampling : "nearest"}
 iD: pixel-hover, Type: raster
 ID: "paint-crosshair-9088,4041" raster(塗り始めると現れる)
+
+# タイル境界表示
+
+```js
+mapInstance.showTileBoundaries = true;
+```
 
 # ピクセルアートのあるレイヤーの取得や変更
 
@@ -126,6 +289,10 @@ const selectColor = (id) => {
   }
 };
 ```
+
+# Theme
+
+theme: "custom-winter" | "halloween" | "night"
 
 # ホバーしたときの色の変化
 

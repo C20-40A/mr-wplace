@@ -4,10 +4,8 @@ import { Toast } from "../../components/toast";
 import { ensureFontLoaded } from "./font-loader";
 import { textToBlob } from "./text-renderer";
 import type { TextInstance } from "./ui";
-import {
-  addImageToOverlayLayers,
-  removePreparedOverlayImageByKey,
-} from "@/features/tile-draw";
+import { TextLayerStorage } from "./text-layer-storage";
+import { sendTextLayersToInject } from "@/content";
 
 // ========================================
 // Text drawing operations
@@ -28,13 +26,32 @@ export const drawText = async (
 
   await ensureFontLoaded();
   const blob = await textToBlob(text, font);
-  const file = new File([blob], "text.png", { type: "image/png" });
 
-  await addImageToOverlayLayers(
-    file,
-    [coords.TLX, coords.TLY, coords.PxX, coords.PxY],
-    key
-  );
+  // Convert blob to dataUrl
+  const dataUrl = await new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.readAsDataURL(blob);
+  });
+
+  // Save to text layer storage
+  const textLayerStorage = new TextLayerStorage();
+  await textLayerStorage.save({
+    key,
+    text,
+    font,
+    coords: {
+      TLX: coords.TLX,
+      TLY: coords.TLY,
+      PxX: coords.PxX,
+      PxY: coords.PxY,
+    },
+    dataUrl,
+    timestamp: Date.now(),
+  });
+
+  // Notify inject side
+  await sendTextLayersToInject();
 
   console.log("🧑‍🎨 : Text drawn at position", coords);
 
@@ -66,30 +83,39 @@ export const moveText = async (
   instance.coords.PxX += delta.x;
   instance.coords.PxY += delta.y;
 
-  await ensureFontLoaded();
-  const blob = await textToBlob(instance.text, instance.font);
-  const file = new File([blob], "text.png", { type: "image/png" });
+  // Update text layer storage
+  const textLayerStorage = new TextLayerStorage();
+  const existing = await textLayerStorage.get(instance.key);
 
-  removePreparedOverlayImageByKey(instance.key);
-  await addImageToOverlayLayers(
-    file,
-    [
-      instance.coords.TLX,
-      instance.coords.TLY,
-      instance.coords.PxX,
-      instance.coords.PxY,
-    ],
-    instance.key
-  );
+  if (existing) {
+    await textLayerStorage.save({
+      ...existing,
+      coords: {
+        TLX: instance.coords.TLX,
+        TLY: instance.coords.TLY,
+        PxX: instance.coords.PxX,
+        PxY: instance.coords.PxY,
+      },
+    });
+
+    // Notify inject side
+    await sendTextLayersToInject();
+  }
 
   console.log("🧑‍🎨 : Text moved", direction, instance.coords);
 };
 
-export const deleteText = (
+export const deleteText = async (
   key: string,
   textInstances: TextInstance[]
-): TextInstance[] => {
-  removePreparedOverlayImageByKey(key);
+): Promise<TextInstance[]> => {
+  // Delete from text layer storage
+  const textLayerStorage = new TextLayerStorage();
+  await textLayerStorage.delete(key);
+
+  // Notify inject side
+  await sendTextLayersToInject();
+
   console.log("🧑‍🎨 : Text deleted", key);
   return textInstances.filter((i) => i.key !== key);
 };

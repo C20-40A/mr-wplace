@@ -1,6 +1,6 @@
 import { t } from "../../i18n/manager";
 import { ColorFilterRouter } from "./router";
-import { BaseModalUI, ModalConfig } from "../../components/base-modal-ui";
+import { createModal, ModalElements } from "@/utils/modal";
 import { IMG_ICON_COLOR_FILTER } from "../../assets/iconImages";
 
 export const createColorFilterFAB = (): HTMLButtonElement => {
@@ -13,11 +13,26 @@ export const createColorFilterFAB = (): HTMLButtonElement => {
   return button;
 };
 
-export class ColorFilterModal extends BaseModalUI<ColorFilterRouter> {
-  getModalConfig(): ModalConfig {
-    return {
+export class ColorFilterModal {
+  private modalElements: ModalElements;
+
+  constructor(private router: ColorFilterRouter) {
+    this.modalElements = createModal({
       id: "wplace-studio-color-filter-modal",
       title: t`${"color_filter"}`,
-    };
+      router: this.router,
+    });
+  }
+
+  showModal(): void {
+    this.modalElements.modal.showModal();
+  }
+
+  closeModal(): void {
+    this.modalElements.modal.close();
+  }
+
+  getContainer(): HTMLElement {
+    return this.modalElements.container;
   }
 }

@@ -1,6 +1,6 @@
 import { createResponsiveButton } from "../../components/responsive-button";
 import { t } from "../../i18n/manager";
-import { BaseModalUI, ModalConfig } from "../../components/base-modal-ui";
+import { createModal, ModalElements } from "@/utils/modal";
 
 export interface TextInstance {
   key: string;
@@ -18,7 +18,8 @@ export const createTextInputButton = (): HTMLButtonElement => {
   });
 };
 
-export class TextDrawUI extends BaseModalUI {
+export class TextDrawUI {
+  private modalElements: ModalElements;
   private textInstances: TextInstance[] = [];
   private onDraw?: (text: string, font: string) => Promise<void>;
   private onMove?: (
@@ -32,20 +33,16 @@ export class TextDrawUI extends BaseModalUI {
   private fontSelect!: HTMLSelectElement;
 
   constructor() {
-    super();
-    this.buildUI();
-  }
-
-  getModalConfig(): ModalConfig {
-    return {
+    this.modalElements = createModal({
       id: "wplace-studio-text-draw-modal",
       title: t`${"text_draw"}`,
       maxWidth: "600px",
-    };
+    });
+    this.buildUI();
   }
 
   private buildUI(): void {
-    const container = this.getContainer();
+    const container = this.modalElements.container;
     if (!container) return;
 
     const contentContainer = document.createElement("div");
@@ -125,6 +122,10 @@ export class TextDrawUI extends BaseModalUI {
     this.updateList();
     this.showModal();
     this.input.focus();
+  }
+
+  private showModal(): void {
+    this.modalElements.modal.showModal();
   }
 
   updateList(textInstances?: TextInstance[]): void {
