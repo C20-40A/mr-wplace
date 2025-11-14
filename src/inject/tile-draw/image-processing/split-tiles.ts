@@ -1,24 +1,21 @@
 import { WplaceCoords } from "../constants";
-import {
-  ensureImageBitmap,
-  createCroppedImageBitmap,
-} from "@/utils/image-bitmap-compat";
 
 /**
- * タイル境界をまたぐ画像を複数タイルに分割する標準アルゴリズム。各タイルの処理済みImageBitmapを辞書形式で返却。
- * 補助色モード最適化: x1サイズImageBitmap生成（x3拡大はdrawOverlayLayersOnTileで実施）
+ * Split image into tile-aligned ImageBitmaps
+ * Uses native Canvas API for inject context compatibility
  */
 export const splitImageOnTiles = async ({
   source,
   coords,
   tileSize,
 }: {
-  source: File | Blob | ImageBitmap;
+  source: ImageBitmap | HTMLImageElement;
   coords: WplaceCoords;
   tileSize: number;
 }): Promise<{ preparedOverlayImages: Record<string, ImageBitmap> }> => {
-  const bitmap = await ensureImageBitmap(source);
-  const [w, h] = [bitmap.width, bitmap.height];
+  // Get source dimensions
+  const w = source instanceof ImageBitmap ? source.width : source.naturalWidth;
+  const h = source instanceof ImageBitmap ? source.height : source.naturalHeight;
   const preparedOverlayImages: Record<string, ImageBitmap> = {};
 
   for (let py = coords[3]; py < h + coords[3]; ) {
@@ -27,13 +24,31 @@ export const splitImageOnTiles = async ({
     for (let px = coords[2]; px < w + coords[2]; ) {
       const drawW = Math.min(tileSize - (px % tileSize), w - (px - coords[2]));
 
-      // GPU直クロップ版
-      const cropped = await createCroppedImageBitmap(bitmap, {
-        sx: px - coords[2],
-        sy: py - coords[3],
-        sw: drawW,
-        sh: drawH,
-      });
+      // Use native Canvas API for cropping (no WASM)
+      const canvas = document.createElement('canvas');
+      canvas.width = drawW;
+      canvas.height = drawH;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        throw new Error('Failed to get canvas context');
+      }
+
+      // Draw the cropped portion
+      ctx.drawImage(
+        source,
+        px - coords[2], // sx
+        py - coords[3], // sy
+        drawW,           // sw
+        drawH,           // sh
+        0,               // dx
+        0,               // dy
+        drawW,           // dw
+        drawH            // dh
+      );
+
+      // Convert to ImageBitmap
+      const cropped = await createImageBitmap(canvas);
 
       const tx = coords[0] + Math.floor(px / 1000);
       const ty = coords[1] + Math.floor(py / 1000);

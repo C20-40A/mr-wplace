@@ -383,17 +383,17 @@ export class NotificationModal {
         <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 12px;">${t`${"charge_alarm"}`}</h4>
         
         <div style="margin-bottom: 16px;">
-          <label style="font-size: 14px; font-weight: 500; color: #374151; display: block; margin-bottom: 8px;">
+          <label style="font-size: 14px; font-weight: 500; display: block; margin-bottom: 8px;">
             ${t`${"notification_threshold"}`}: <span id="thresholdValue">${
       this.currentThreshold
-    }</span>% <span id="thresholdPixels" style="color: #6b7280;">(${thresholdPixels}/${max})</span>
+    }</span>% <span id="thresholdPixels">(${thresholdPixels}/${max})</span>
           </label>
           <input type="range" id="chargeThreshold" min="10" max="100" value="${
             this.currentThreshold
           }" step="5" 
                  style="width: 100%; margin-bottom: 8px;">
           <div style="display: flex; gap: 8px; align-items: center;">
-            <div id="estimatedTime" style="flex: 1; font-size: 12px; color: #6b7280; background-color: #f9fafb; padding: 6px 8px; border-radius: 4px; border: 1px solid #e5e7eb;">
+            <div id="estimatedTime" style="flex: 1; font-size: 12px; padding: 6px 8px; border-radius: 4px; border: 1px solid #e5e7eb;">
               ${t`${"estimated_time"}`}: ${thresholdTime}
             </div>
             <button id="addToCalendar" style="background-color: #3b82f6; color: white; padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; white-space: nowrap; display: ${

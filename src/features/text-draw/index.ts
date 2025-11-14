@@ -8,7 +8,6 @@ import {
   getOrCreateMapPinButtonGroup,
   createMapPinGroupButton,
 } from "@/components/map-pin-button";
-import { Toast } from "@/components/toast";
 import type { TextDrawAPI } from "@/core/di";
 import { drawText, moveText, deleteText } from "./text-manipulator";
 import { t } from "@/i18n/manager";
@@ -41,7 +40,6 @@ const handleDrawText = async (text: string, font: string): Promise<void> => {
   if (!instance) return;
 
   textInstances.push(instance);
-  Toast.success("Text drawn");
   textDrawUI.updateList(textInstances);
 };
 
@@ -57,8 +55,7 @@ const handleMoveText = async (
 };
 
 const handleDeleteText = async (key: string): Promise<void> => {
-  textInstances = deleteText(key, textInstances);
-  Toast.success("Text deleted");
+  textInstances = await deleteText(key, textInstances);
   textDrawUI.updateList(textInstances);
 };
 
@@ -70,7 +67,7 @@ const createMapPinButtons = (container: Element): void => {
 
   // 既存ボタンチェック
   if (group.querySelector("#text-draw-btn")) {
-    console.log("🧑‍🎨 : Text draw button already exists");
+    // console.log("🧑‍🎨 : Text draw button already exists");
     return;
   }
 
@@ -89,8 +86,24 @@ const createMapPinButtons = (container: Element): void => {
 // Initialization
 // ========================================
 
-const init = (): void => {
+const init = async (): Promise<void> => {
+  const { TextLayerStorage } = await import("./text-layer-storage");
+  const { sendTextLayersToInject } = await import("@/content");
+
   textDrawUI = new TextDrawUI();
+
+  // Load existing text layers from storage
+  const textLayerStorage = new TextLayerStorage();
+  const textLayers = await textLayerStorage.getAll();
+  textInstances = textLayers.map((layer) => ({
+    key: layer.key,
+    text: layer.text,
+    font: layer.font,
+    coords: layer.coords,
+  }));
+
+  // Send text layers to inject side
+  await sendTextLayersToInject();
 
   const buttonConfigs: ElementConfig[] = [
     // 優先: マップピン周辺にボタン配置

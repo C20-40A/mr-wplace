@@ -25,6 +25,27 @@ export const jaTranslations = {
   export: "エクスポート",
   import: "インポート",
 
+  // Gallery Export/Import関連
+  gallery_data: "ギャラリーデータ",
+  import_gallery: "ギャラリーをインポート",
+  export_gallery: "ギャラリーをエクスポート",
+  reset_gallery: "ギャラリーをリセット",
+  exporting: "エクスポート中...",
+  importing: "インポート中...",
+  resetting: "リセット中...",
+  export_success: "{count}件の画像をエクスポートしました",
+  export_failed: "エクスポートに失敗しました",
+  import_success: "{count}件の画像をインポートしました",
+  import_failed: "インポートに失敗しました",
+  reset_failed: "リセットに失敗しました",
+  gallery_reset_success: "ギャラリーをリセットしました",
+  no_images_to_export:
+    "エクスポートする画像がありません（座標付き画像が必要です）",
+  no_valid_images_in_zip: "ZIP内に有効な画像が見つかりませんでした",
+  confirm_import: "インポートしますか？新しい画像がギャラリーに追加されます。",
+  confirm_reset:
+    "ギャラリーの全画像をリセットしますか？この操作は取り消せません。",
+
   // メッセージ関連
   loading: "読み込み中...",
   no_items: "アイテムがありません",
@@ -42,12 +63,25 @@ export const jaTranslations = {
   enter_bookmark_name: "ブックマーク名を入力してください:",
   location_point: "地点",
   bookmark_list: "ブックマーク一覧",
-  sort_by: "並び替え",
   sort_created: "追加順",
   sort_accessed: "アクセス順",
   sort_tag: "タグ順",
+  sort_distance: "距離が近い順",
+  sort_last_updated: "最近保存した順",
+  sort_tile_count: "タイル数が多い順",
+  sort_name: "名前順",
+  sort_layer: "レイヤー順",
 
   // Import/Export関連
+  import_export: "インポート/エクスポート",
+  import_description: "JSONファイルからブックマークをインポート",
+  export_all: "全てエクスポート",
+  export_all_description: "全てのブックマークをエクスポート",
+  export_by_tag: "タグを選んでエクスポート",
+  export_by_tag_description: "選択したタグのブックマークのみエクスポート",
+  export_selected_tags: "選択したタグをエクスポート",
+  no_tags_available: "タグがありません",
+  no_name: "名前なし",
   no_export_bookmarks: "エクスポートするお気に入りがありません",
   bookmarks_exported: "件のお気に入りをエクスポートしました",
   file_input_not_found: "ファイル入力が見つかりません",
@@ -77,6 +111,7 @@ export const jaTranslations = {
   drag_drop_or_click: "画像をドラッグ&ドロップまたはクリックして選択",
   clear_image: "画像をクリア",
   original_image: "元画像",
+  click_or_drop_to_change: "クリックまたはドロップで変更",
   current_image: "現在の画像",
   reset_edit: "編集リセット",
   reset_viewport: "ビューをリセット",
@@ -84,6 +119,7 @@ export const jaTranslations = {
   brightness: "明るさ",
   contrast: "コントラスト",
   saturation: "彩度",
+  sharpness: "シャープネス",
   dithering: "ディザリング",
   include_paid_colors: "Paid色を含む",
   add_to_gallery: "ギャラリーに追加",
@@ -107,7 +143,7 @@ export const jaTranslations = {
   delete_image_confirm: "この画像を削除しますか？",
 
   // Drawing/Loading関連
-  drawing_image: "画像を描画中...",
+  drawing_image: "更新中...",
   processing_image: "画像を処理中...",
   waiting_for_update: "更新を待っています...",
 
@@ -116,6 +152,10 @@ export const jaTranslations = {
   file_select: "ファイルを選択",
   image_editor: "画像を追加",
   image_detail: "画像詳細",
+  title: "タイトル",
+  edit_image_title: "画像タイトルを編集",
+  image_title_placeholder: "画像の名前（任意）",
+  title_updated: "タイトルを更新しました",
 
   // 描画関連
   draw_enabled: "描画ON",
@@ -217,6 +257,9 @@ export const jaTranslations = {
   // Compute Device
   compute_device_label: "処理方式",
 
+  // Show Unplaced Only
+  show_unplaced_only: "未配置のみ",
+
   // Tile Merge
   tile_merge: "タイルマージ",
   merge_tiles: "タイルをマージ",
@@ -240,6 +283,12 @@ export const jaTranslations = {
   tag_color: "タグ色",
   optional: "任意",
   required: "必須",
+  edit_tag: "タグを編集",
+  tag_edit_title: "タグ編集",
+  tag_edit_description:
+    "このタグを使用しているすべてのブックマークが更新されます",
+  tag_delete_confirm:
+    "このタグを削除しますか？タグを使用しているブックマークからタグが削除されます。",
 
   // Coordinate Jumper
   coordinate_jumper: "座標ジャンプ",
@@ -261,10 +310,20 @@ export const jaTranslations = {
   tile_y: "タイルY",
   pixel_x: "ピクセルX",
   pixel_y: "ピクセルY",
-  coordinate_input_hint: "座標を入力すると、ギャラリー追加時に自動的にその位置に配置されます",
+  coordinate_input_hint:
+    "座標を入力すると、ギャラリー追加時に自動的にその位置に配置されます",
 
   // Data Saver
+  data_saver: "データセーバー",
   data_saver_on: "データセーバー ON",
   data_saver_off: "データセーバー OFF",
-  data_saver_rendering_paused: "レンダリング停止中",
+  data_saver_rendering_paused: "画像更新停止中",
+  storage_usage: "ストレージ使用量",
+  cache_usage: "キャッシュ使用量",
+  offline_cache_settings: "オフラインキャッシュ設定",
+  maximum_cache_size: "最大キャッシュサイズ",
+  clear_all_cache: "すべてのキャッシュをクリア",
+  clearing: "クリア中...",
+  cache_cleared: "キャッシュをクリアしました!",
+  tiles: "タイル",
 };

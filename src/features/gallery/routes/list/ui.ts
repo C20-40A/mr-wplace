@@ -1,18 +1,17 @@
 import { GalleryItem } from "../../storage";
 import { ImageGridComponent, ImageItem } from "./components/ImageGridComponent";
 import { gotoMapPosition, toggleDrawState } from "../../common-actions";
-import { t } from "../../../../i18n/manager";
+import { t } from "@/i18n";
+
+export type GallerySortType = "layer" | "distance" | "created";
 
 export class GalleryListUI {
-  private modal: HTMLDialogElement | null = null;
   private container: HTMLElement | null = null;
 
   private imageGrid: ImageGridComponent | null = null;
   private onCloseModalCallback?: () => void;
 
-  constructor() {
-    this.createModal();
-  }
+  constructor() {}
 
   render(
     items: GalleryItem[],
@@ -20,48 +19,91 @@ export class GalleryListUI {
     container?: HTMLElement,
     onAddClick?: () => void,
     onImageClick?: (item: GalleryItem) => void,
-    onCloseModal?: () => void
+    onCloseModal?: () => void,
+    sortType?: GallerySortType,
+    onSortChange?: (sortType: GallerySortType) => void
   ): void {
-    // 外部コンテナが指定された場合はそれを使用
-    if (container) this.container = container;
+    if (!container) return;
+
+    this.container = container;
     this.onCloseModalCallback = onCloseModal;
-    this.renderGalleryList(items, onDelete, onImageClick, onAddClick);
+
+    this.renderGalleryList(
+      container,
+      items,
+      onDelete,
+      onImageClick,
+      onAddClick,
+      sortType,
+      onSortChange
+    );
   }
 
   private renderGalleryList(
+    container: HTMLElement,
     items: GalleryItem[],
     onDelete: (key: string) => void,
     onImageClick?: (item: GalleryItem) => void,
-    onAddClick?: () => void
+    onAddClick?: () => void,
+    sortType?: GallerySortType,
+    onSortChange?: (sortType: GallerySortType) => void
   ): void {
-    if (!this.container) return;
+    // Clear container
+    container.innerHTML = "";
 
-    console.log(
-      "🧑‍🎨 : renderGalleryList items:",
-      items.map((i) => ({
-        key: i.key,
-        hasCurrentStats: !!i.matchedColorStats,
-        hasTotalStats: !!i.totalColorStats,
-      }))
-    );
+    // Create sort dropdown
+    const sortContainer = document.createElement("div");
+    sortContainer.className = "flex items-center gap-2 mb-4";
+    sortContainer.innerHTML = `
+      <select id="wps-gallery-sort" class="select select-sm select-bordered">
+        <option value="layer">${t`${"sort_layer"}`}</option>
+        <option value="distance">${t`${"sort_distance"}`}</option>
+        <option value="created">${t`${"sort_created"}`}</option>
+      </select>
+    `;
+    container.appendChild(sortContainer);
+
+    const sortSelect = sortContainer.querySelector(
+      "#wps-gallery-sort"
+    ) as HTMLSelectElement;
+    if (sortType) sortSelect.value = sortType;
+    if (onSortChange) {
+      sortSelect.addEventListener("change", (e) => {
+        onSortChange((e.target as HTMLSelectElement).value as GallerySortType);
+      });
+    }
+
+    // Create grid container
+    const gridContainer = document.createElement("div");
+    container.appendChild(gridContainer);
+
+    // Sort items - no sorting here, handled by parent
+    const sortedItems = [...items];
 
     // GalleryItemをImageItemに変換
-    const imageItems: ImageItem[] = items.map((item) => ({
-      key: item.key,
-      dataUrl: item.dataUrl,
-      createdAt: new Date(item.timestamp).toISOString(),
-      drawPosition: item.drawPosition,
-      drawEnabled: item.drawEnabled,
-      hasDrawPosition: !!item.drawPosition,
-      currentColorStats: item.matchedColorStats,
-      totalColorStats: item.totalColorStats,
-    }));
+    const imageItems: ImageItem[] = sortedItems.map((item) => {
+      // timestampが無効な場合は現在時刻を使用
+      const timestamp =
+        item.timestamp && !isNaN(item.timestamp) ? item.timestamp : Date.now();
+
+      return {
+        key: item.key,
+        dataUrl: item.dataUrl,
+        title: item.title,
+        createdAt: new Date(timestamp).toISOString(),
+        drawPosition: item.drawPosition,
+        drawEnabled: item.drawEnabled,
+        hasDrawPosition: !!item.drawPosition,
+        currentColorStats: item.matchedColorStats,
+        totalColorStats: item.totalColorStats,
+      };
+    });
 
     // 既存のImageGridComponentがあれば破棄
     if (this.imageGrid) this.imageGrid.destroy();
 
     // 新しいImageGridComponentを作成
-    this.imageGrid = new ImageGridComponent(this.container, {
+    this.imageGrid = new ImageGridComponent(gridContainer, {
       items: imageItems,
       isSelectionMode: false, // list routeは選択モードなし
       onImageClick: (item) => {
@@ -71,7 +113,7 @@ export class GalleryListUI {
         }
       },
       onDrawToggle: (key) => {
-        this.handleDrawToggle(key, onDelete, onImageClick);
+        this.handleDrawToggle(key, onDelete, onImageClick, sortType, onSortChange);
       },
       onImageDelete: (key) => {
         onDelete(key);
@@ -92,41 +134,29 @@ export class GalleryListUI {
   private async handleDrawToggle(
     key: string,
     onDelete: (key: string) => void,
-    onImageClick?: (item: GalleryItem) => void
+    onImageClick?: (item: GalleryItem) => void,
+    sortType?: GallerySortType,
+    onSortChange?: (sortType: GallerySortType) => void
   ): Promise<void> {
     const newDrawEnabled = await toggleDrawState(key);
 
     // 画面を再描画
     const galleryStorage = new (await import("../../storage")).GalleryStorage();
     const updatedItems = await galleryStorage.getAll();
-    this.renderGalleryList(updatedItems, onDelete, onImageClick);
+
+    if (this.container) {
+      this.renderGalleryList(
+        this.container,
+        updatedItems,
+        onDelete,
+        onImageClick,
+        undefined,
+        sortType,
+        onSortChange
+      );
+    }
 
     console.log(`🎯 Draw toggle: ${key} -> ${newDrawEnabled}`);
-  }
-
-  private createModal(): void {
-    this.modal = document.createElement("dialog");
-    this.modal.className = "modal";
-    this.modal.innerHTML = t`
-      <div class="modal-box max-w-6xl relative">
-        <form method="dialog">
-          <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-        </form>
-        
-        <h3 class="text-lg font-bold mb-4">${"gallery"}</h3>
-        
-        <div id="wps-gallery-container" style="min-height: 400px;">
-          <!-- ギャラリー一覧がここに表示されます -->
-        </div>
-      </div>
-      
-      <form method="dialog" class="modal-backdrop">
-        <button>${"close"}</button>
-      </form>
-    `;
-
-    document.body.appendChild(this.modal);
-    this.container = document.getElementById("wps-gallery-container");
   }
 
   private async handleGotoPosition(item: GalleryItem): Promise<void> {

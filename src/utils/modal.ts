@@ -1,4 +1,5 @@
-import { t } from "../i18n/manager";
+import { t } from "@/i18n/manager";
+import { Router } from "./router";
 
 export interface ModalOptions {
   id: string;
@@ -7,6 +8,7 @@ export interface ModalOptions {
   maxWidth?: string;
   onBack?: () => void;
   containerStyle?: string;
+  router?: Router<any>;
 }
 
 export interface ModalElements {
@@ -14,6 +16,7 @@ export interface ModalElements {
   titleElement: HTMLElement;
   backButton: HTMLElement;
   container: HTMLElement;
+  destroy: () => void;
 }
 
 /**
@@ -30,7 +33,7 @@ export const showNameInputModal = (
     modal.innerHTML = `
       <div class="modal-box">
         <h3 class="font-bold text-lg mb-4">${title}</h3>
-        <input id="name-input" type="text" placeholder="${placeholder}" 
+        <input id="name-input" type="text" placeholder="${placeholder}"
                class="input input-bordered w-full mb-4" />
         <div class="modal-action">
           <button id="cancel-btn" class="btn">Cancel</button>
@@ -51,29 +54,51 @@ export const showNameInputModal = (
       "#backdrop-btn"
     ) as HTMLButtonElement;
 
-    const cleanup = () => {
-      modal.remove();
-    };
+    let resolved = false;
 
     const handleSave = () => {
+      if (resolved) return;
+      resolved = true;
       const value = nameInput.value.trim();
-      cleanup();
+      modal.close();
       resolve(value ?? "");
     };
 
     const handleCancel = () => {
-      cleanup();
+      if (resolved) return;
+      resolved = true;
+      modal.close();
       resolve(null);
+    };
+
+    const handleKeydown = (e: KeyboardEvent) => {
+      if (e.key === "Enter") handleSave();
+      if (e.key === "Escape") handleCancel();
     };
 
     saveBtn.addEventListener("click", handleSave);
     cancelBtn.addEventListener("click", handleCancel);
     backdropBtn.addEventListener("click", handleCancel);
+    nameInput.addEventListener("keydown", handleKeydown);
 
-    // Enter押下で保存
-    nameInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") handleSave();
-      if (e.key === "Escape") handleCancel();
+    // close イベントで完全破棄
+    modal.addEventListener("close", () => {
+      console.log("🧑‍🎨 : Name input modal closed, cleaning up...");
+
+      // イベントリスナー解除
+      saveBtn.removeEventListener("click", handleSave);
+      cancelBtn.removeEventListener("click", handleCancel);
+      backdropBtn.removeEventListener("click", handleCancel);
+      nameInput.removeEventListener("keydown", handleKeydown);
+
+      // DOM 削除
+      modal.remove();
+
+      // resolveされていない場合はキャンセル扱い
+      if (!resolved) {
+        resolved = true;
+        resolve(null);
+      }
     });
 
     modal.showModal();
@@ -85,11 +110,17 @@ export const createModal = (options: ModalOptions): ModalElements => {
   const {
     id,
     title,
-    hasBackButton = false,
+    hasBackButton: explicitHasBackButton,
     maxWidth = "64rem",
-    onBack,
+    onBack: explicitOnBack,
     containerStyle,
+    router,
   } = options;
+
+  // routerがある場合は自動でbackボタンを有効化
+  const hasBackButton = explicitHasBackButton ?? !!router;
+  const onBack =
+    explicitOnBack ?? (router ? () => router.navigateBack() : undefined);
 
   const modal = document.createElement("dialog");
   modal.id = id;
@@ -109,7 +140,7 @@ export const createModal = (options: ModalOptions): ModalElements => {
           </button>
           <h3 id="${id}-title" class="font-bold text-lg">${title}</h3>
         </div>
-        <button class="btn btn-sm btn-ghost" onclick="this.closest('dialog').close()">
+        <button id="${id}-close-btn" class="btn btn-sm btn-ghost">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
             <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd" />
           </svg>
@@ -122,7 +153,7 @@ export const createModal = (options: ModalOptions): ModalElements => {
       </div>
     </div>
     <form method="dialog" class="modal-backdrop">
-      <button>close</button>
+      <button id="${id}-backdrop-btn">close</button>
     </form>
   `;
 
@@ -131,15 +162,57 @@ export const createModal = (options: ModalOptions): ModalElements => {
   const titleElement = modal.querySelector(`#${id}-title`) as HTMLElement;
   const backButton = modal.querySelector(`#${id}-back-btn`) as HTMLElement;
   const container = modal.querySelector(`#${id}-content`) as HTMLElement;
+  const closeButton = modal.querySelector(
+    `#${id}-close-btn`
+  ) as HTMLButtonElement;
+  const backdropButton = modal.querySelector(
+    `#${id}-backdrop-btn`
+  ) as HTMLButtonElement;
 
+  // イベントハンドラーを関数として保持（removeEventListenerで使用するため）
+  const handleBack = onBack || (() => {});
+  const handleClose = () => modal.close();
+
+  // 一度だけ登録（once オプション使用不可のため、手動管理）
   if (onBack) {
-    backButton?.addEventListener("click", onBack);
+    backButton?.addEventListener("click", handleBack);
   }
+
+  closeButton.addEventListener("click", handleClose);
+  backdropButton.addEventListener("click", handleClose);
+
+  // routerがある場合は自動でheader要素を設定
+  if (router) {
+    router.setHeaderElements(titleElement, backButton);
+  }
+
+  // destroy メソッド（完全破棄用 - 通常は使わない）
+  const destroy = () => {
+    console.log("🧑‍🎨 : Modal destroyed completely");
+
+    // イベントリスナー解除
+    if (onBack) {
+      backButton?.removeEventListener("click", handleBack);
+    }
+    closeButton.removeEventListener("click", handleClose);
+    backdropButton.removeEventListener("click", handleClose);
+
+    // router の参照クリア
+    if (router && typeof router.clearHeaderElements === "function") {
+      router.clearHeaderElements();
+    }
+
+    // DOM 削除
+    if (modal.parentElement) {
+      modal.remove();
+    }
+  };
 
   return {
     modal,
     titleElement,
     backButton,
     container,
+    destroy,
   };
 };

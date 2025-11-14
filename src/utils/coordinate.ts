@@ -1,4 +1,4 @@
-export function llzToTilePixel(lat: number, lng: number) {
+export const llzToTilePixel = (lat: number, lng: number) => {
   const tileSize = 1000;
   const zoom = 11;
 
@@ -22,15 +22,15 @@ export function llzToTilePixel(lat: number, lng: number) {
   const PxY = Math.floor(worldY - TLY * tileSize);
 
   return { TLX, TLY, PxX, PxY, worldX, worldY };
-}
+};
 
 // タイル座標から緯度経度への逆変換
-export function tilePixelToLatLng(
+export const tilePixelToLatLng = (
   tileX: number,
   tileY: number,
   pxX?: number,
   pxY?: number
-) {
+) => {
   const tileSize = 1000;
   const zoom = 11;
   const N = tileSize * Math.pow(2, zoom); // 世界全体のピクセル数
@@ -45,4 +45,4 @@ export function tilePixelToLatLng(
     (Math.atan(Math.sinh(Math.PI * (1 - (2 * worldY) / N))) * 180) / Math.PI;
 
   return { lat, lng };
-}
+};

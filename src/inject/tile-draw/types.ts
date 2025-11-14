@@ -1,15 +1,5 @@
-import { WplaceCoords } from "./constants";
-
-/** Enhanced描画モード */
-export type EnhancedMode =
-  | "dot"
-  | "cross"
-  | "red-cross"
-  | "cyan-cross"
-  | "dark-cross"
-  | "complement-cross"
-  | "fill"
-  | "red-border";
+import type { EnhancedMode } from "@/types/image";
+import type { WplaceCoords } from "./constants";
 
 /** Enhanced設定 */
 export interface EnhancedConfig {

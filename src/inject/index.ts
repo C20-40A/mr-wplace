@@ -1,36 +1,61 @@
 import { setupFetchInterceptor } from "./fetch-interceptor";
 import { setupMapObserver } from "./map-instance";
 import { setupMessageHandler } from "./message-handler";
+import { tileCacheDB } from "./cache-storage";
 
-(async () => {
-  // Initialization state
-  let isInitialized = false;
-  let currentTheme: "light" | "dark" = "light";
+// CRITICAL: Setup fetch interceptor IMMEDIATELY and SYNCHRONOUSLY
+// to catch /me requests before WPlace app code runs
+(() => {
+  console.log("🧑‍🎨: Setting up fetch interceptor (sync)...");
 
-  // Initialize data saver state
+  // Initialize data saver state synchronously
   window.mrWplaceDataSaver = {
     enabled: false,
     tileCache: new Map(),
+    maxCacheSize: 100, // Default value, will be synced from content script
+    tileCacheDB, // IndexedDB will be initialized asynchronously later
   };
 
-  // Load theme from DOM attribute
-  const dataElement = document.getElementById("__mr_wplace_data__");
-  if (dataElement) {
-    currentTheme = (dataElement.getAttribute("data-theme") || "light") as
-      | "light"
-      | "dark";
+  // Initialize compute device (default: gpu)
+  window.mrWplaceComputeDevice = "gpu";
+
+  // Initialize show unplaced only (default: false)
+  window.mrWplaceShowUnplacedOnly = false;
+
+  // Setup fetch interceptor synchronously (no await)
+  try {
+    setupFetchInterceptor();
+    console.log("🧑‍🎨: Fetch interceptor ready");
+  } catch (error) {
+    console.error("🧑‍🎨: Failed to setup fetch interceptor:", error);
   }
+})();
 
-  // Setup fetch interceptor
-  await setupFetchInterceptor(() => isInitialized);
+// Initialize other features asynchronously in parallel
+(async () => {
+  try {
+    console.log("🧑‍🎨: Starting async initialization...");
 
-  // Setup message handler
-  setupMessageHandler(() => currentTheme);
+    // Run initialization tasks in parallel
+    await Promise.all([
+      // Initialize IndexedDB
+      tileCacheDB.init().catch((error) => {
+        console.error("🧑‍🎨: Failed to init IndexedDB:", error);
+      }),
 
-  // Setup map observer
-  setupMapObserver(currentTheme);
+      // Setup message handler
+      Promise.resolve(setupMessageHandler()).catch((error) => {
+        console.error("🧑‍🎨: Failed to setup message handler:", error);
+      }),
 
-  // Mark as initialized
-  isInitialized = true;
-  console.log("🧑‍🎨: Initialization complete, theme:", currentTheme);
+      // Setup map observer
+      Promise.resolve(setupMapObserver()).catch((error) => {
+        console.error("🧑‍🎨: Failed to setup map observer:", error);
+      }),
+    ]);
+
+    console.log("🧑‍🎨: Async initialization complete");
+  } catch (error) {
+    console.error("🧑‍🎨: Critical initialization error:", error);
+  }
 })();

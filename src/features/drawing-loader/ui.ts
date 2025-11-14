@@ -1,4 +1,4 @@
-import { t } from "../../i18n/manager";
+import { t } from "@/i18n/manager";
 
 /**
  * 画像描画ローディング表示UI
@@ -14,41 +14,42 @@ export class DrawingLoaderUI {
 
   private createLoaderElement(): void {
     // ローディング要素作成
-    this.loaderElement = document.createElement('div');
-    this.loaderElement.id = 'wplace-drawing-loader';
+    this.loaderElement = document.createElement("div");
+    this.loaderElement.id = "wplace-drawing-loader";
     this.loaderElement.style.cssText = `
       position: fixed;
-      top: 50%;
+      top: 50px;
       left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      padding: 20px 30px;
-      border-radius: 10px;
-      font-size: 16px;
-      z-index: 10000;
+      transform: translateX(-50%);
       text-align: center;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      z-index: 10000;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
       display: none;
+      backdrop-filter: blur(4px);
     `;
 
     // スピナー + テキスト
     this.loaderElement.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
         <div style="
           border: 2px solid transparent;
           border-top: 2px solid white;
           border-radius: 50%;
-          width: 20px;
-          height: 20px;
+          width: 14px;
+          height: 14px;
           animation: spin 1s linear infinite;
         "></div>
-        <span id="wplace-loader-text">${t`${'drawing_image'}`}</span>
+        <span id="wplace-loader-text">${t`${"drawing_image"}`}</span>
       </div>
     `;
 
     // スピナーアニメーション追加
-    const style = document.createElement('style');
+    const style = document.createElement("style");
     style.textContent = `
       @keyframes spin {
         0% { transform: rotate(0deg); }
@@ -63,20 +64,22 @@ export class DrawingLoaderUI {
 
   show(message?: string): void {
     if (!this.loaderElement) return;
-    
+
     if (message) {
-      const textElement = this.loaderElement.querySelector('#wplace-loader-text');
+      const textElement = this.loaderElement.querySelector(
+        "#wplace-loader-text"
+      );
       if (textElement) {
         textElement.textContent = message;
       }
     }
-    
-    this.loaderElement.style.display = 'block';
+
+    this.loaderElement.style.display = "block";
   }
 
   hide(): void {
     if (!this.loaderElement) return;
-    this.loaderElement.style.display = 'none';
+    this.loaderElement.style.display = "none";
   }
 
   destroy(): void {
@@ -88,14 +91,14 @@ export class DrawingLoaderUI {
 
   // 便利メソッド
   showDrawing(): void {
-    this.show(t`${'drawing_image'}`);
+    this.show(t`${"drawing_image"}`);
   }
 
   showProcessing(): void {
-    this.show(t`${'processing_image'}`);
+    this.show(t`${"processing_image"}`);
   }
 
   showWaiting(): void {
-    this.show(t`${'waiting_for_update'}`);
+    this.show(t`${"waiting_for_update"}`);
   }
 }

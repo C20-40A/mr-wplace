@@ -3,10 +3,13 @@ import { ImageDropzone } from "../../../../components/image-dropzone";
 
 export interface ImageEditorCallbacks {
   onFileHandle: (file: File) => void;
+  onReplaceImage: (file: File) => void;
   onScaleChange: (scale: number) => void;
   onBrightnessChange: (value: number) => void;
   onContrastChange: (value: number) => void;
   onSaturationChange: (value: number) => void;
+  onSharpnessToggle: (enabled: boolean) => void;
+  onSharpnessChange: (value: number) => void;
   onDitheringChange: (enabled: boolean) => void;
   onDitheringThresholdChange: (threshold: number) => void;
   onGpuToggle: (enabled: boolean) => void;
@@ -39,6 +42,7 @@ export class ImageEditorUI {
     this.callbacks = callbacks;
     this.createUI();
     this.setupImageDropzone();
+    this.setupImageReplacement();
     this.setupScaleControl();
     this.setupResponsive();
   }
@@ -47,10 +51,6 @@ export class ImageEditorUI {
     if (!this.container) return;
 
     this.container.innerHTML = t`
-      <a href="https://pepoafonso.github.io/color_converter_wplace/index.html" target="_blank" 
-      style="position: absolute; bottom: 0.5rem; right: 0.5rem; z-index: 10; font-size: 1.5rem;"
-      title="Wplace Color Converter">🎨</a>
-      
       <!-- Dropzone -->
       <div id="wps-dropzone-container" style="border: 2px dashed #d1d5db; border-radius: 0.5rem; height: 20rem;"></div>
       
@@ -63,39 +63,44 @@ export class ImageEditorUI {
           <div id="wps-original-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; min-height: 0;">
             <h4 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
               ${"original_image"}
-              <div style="font-size: 0.75rem; color: #4b5563;">
-                <span id="wps-original-size"></span>
-              </div>
+              <span id="wps-original-size" style="font-size: 0.75rem; color: #4b5563;"></span>
             </h4>
-            <div class="flex" style="justify-content: center;">
+            <div id="wps-image-replace-zone" style="position: relative; cursor: pointer; display: flex; justify-content: center;">
               <img id="wps-original-image" style="border: 1px solid #e5e7eb; border-radius: 0.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 100%; height: auto; object-fit: contain; image-rendering: pixelated; image-rendering: crisp-edges;" alt="Original">
+              <div id="wps-replace-overlay" style="position: absolute; inset: 0; background: rgba(0,0,0,0.7); border-radius: 0.25rem; display: none; align-items: center; justify-content: center; color: white; font-size: 0.875rem; text-align: center; padding: 1rem;">
+                📁 ${"click_or_drop_to_change"}
+              </div>
+              <input type="file" id="wps-replace-file-input" accept="image/*,.json" style="display: none;">
             </div>
           </div>
           
           <!-- Current Image Area -->
-          <div id="wps-current-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.1rem; overflow-y: auto; min-height: 0;">
+          <div id="wps-current-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; min-height: 0;">
             <h4 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
               ${"current_image"}
-              <div style="display:flex; font-size: 0.75rem; color: #4b5563;">
-                <span id="wps-current-size"></span>
-              </div>
+              <span id="wps-current-size" style="font-size: 0.75rem; color: #4b5563;"></span>
             </h4>
             <div class="flex" style="justify-content: center; position: relative; width: 100%; height: calc(100% - 2.5rem);">
-              <div style="min-width: 300px; min-height: 300px; max-width: 100%; max-height: 100%; overflow: hidden; position: relative;;">
+              <!-- Desktop: Canvas with ImageInspector -->
+              <div id="wps-canvas-container" style="min-width: 300px; min-height: 300px; max-width: 100%; max-height: 100%; overflow: hidden; position: relative; display: block;">
                 <canvas id="wps-scaled-canvas" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></canvas>
               </div>
-              <label style="position: absolute; bottom: 0.5rem; right: 0.5rem; display: flex; align-items: center; gap: 0.25rem; font-size: 0.75rem; cursor: pointer; background: rgba(255, 255, 255, 0.9); padding: 0.25rem 0.5rem; border-radius: 0.25rem; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+              <!-- Mobile: Simple image -->
+              <div id="wps-image-container" style="display: none; width: 100%; max-width: 100%;">
+                <img id="wps-scaled-image" style="width: 100%; height: auto; image-rendering: pixelated; image-rendering: crisp-edges;" alt="Current">
+              </div>
+              <label style="position: absolute; bottom: 0.25rem; right: 0.25rem; display: flex; align-items: center; gap: 0.25rem; font-size: 0.7rem; cursor: pointer; background: rgba(255, 255, 255, 0.8); padding: 0.2rem 0.4rem; border-radius: 0.25rem; opacity: 0.6; transition: opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.6'">
                 <input type="checkbox" id="wps-gpu-toggle" class="checkbox checkbox-xs" checked>
-                <span>⚡GPU Mode</span>
+                <span>⚡GPU</span>
               </label>
             </div>
           </div>
           
           <!-- Color Palette Area -->
-          <div id="wps-palette-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; min-height: 0;">
+          <div id="wps-palette-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow-y: auto; min-height: 0;">
             <!-- Mobile: Accordion -->
             <details id="wps-palette-accordion" style="display: none;">
-              <summary style="font-size: 0.875rem; font-weight: 500; cursor: pointer; list-style: none; margin-bottom: 0.75rem;">
+              <summary style="font-size: 0.875rem; font-weight: 500; cursor: pointer; list-style: none; margin: 0.5rem;">
                 Color Palette
                 <span style="float: right;">▼</span>
               </summary>
@@ -103,7 +108,6 @@ export class ImageEditorUI {
             </details>
             <!-- Desktop: Always visible -->
             <div id="wps-palette-desktop" style="display: block;">
-              <h4 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem;">Color Palette</h4>
               <div id="wps-color-palette-container"></div>
             </div>
           </div>
@@ -136,7 +140,7 @@ export class ImageEditorUI {
                 <input type="range" id="wps-contrast-slider" min="-100" max="100" step="1" value="0" class="range" style="width: 100%;">
               </div>
               
-              <div style="display: flex; gap: 0.75rem;">
+              <div id="wps-brightness-saturation-container" style="display: flex; gap: 0.75rem;">
                 <div style="flex: 1;">
                   <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500;">
                     <span style="font-size: 0.75rem; color: #9ca3af;">-100</span>
@@ -145,7 +149,7 @@ export class ImageEditorUI {
                   </label>
                   <input type="range" id="wps-brightness-slider" min="-100" max="100" step="1" value="0" class="range" style="width: 100%;">
                 </div>
-                
+
                 <div style="flex: 1;">
                   <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500;">
                     <span style="font-size: 0.75rem; color: #9ca3af;">-100</span>
@@ -155,20 +159,35 @@ export class ImageEditorUI {
                   <input type="range" id="wps-saturation-slider" min="-100" max="100" step="1" value="0" class="range" style="width: 100%;">
                 </div>
               </div>
-              
-              <div>
-                <label style="display: flex; justify-content: center; align-items: center; font-size: 0.875rem; font-weight: 500; gap: 0.5rem; cursor: pointer;">
-                  <input type="checkbox" id="wps-dithering-checkbox" class="checkbox checkbox-sm">
-                  <span>${"dithering"}</span>
-                  <span>: <span id="wps-dithering-threshold-value">500</span></span>
-                </label>
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                  <span style="font-size: 0.65rem; color: #9ca3af;">0</span>
-                  <input type="range" id="wps-dithering-threshold-slider" min="0" max="1500" step="50" value="500" class="range" style="flex: 1;" disabled>
-                  <span style="font-size: 0.65rem; color: #9ca3af;">1500</span>
+
+              <div id="wps-dithering-sharpness-container" style="display: flex; gap: 0.75rem;">
+                <div style="flex: 1;">
+                  <label style="display: flex; justify-content: center; align-items: center; font-size: 0.875rem; font-weight: 500; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" id="wps-dithering-checkbox" class="checkbox checkbox-sm">
+                    <span>${"dithering"}</span>
+                    <span>: <span id="wps-dithering-threshold-value">500</span></span>
+                  </label>
+                  <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <span style="font-size: 0.65rem; color: #9ca3af;">0</span>
+                    <input type="range" id="wps-dithering-threshold-slider" min="0" max="1500" step="50" value="500" class="range" style="flex: 1;" disabled>
+                    <span style="font-size: 0.65rem; color: #9ca3af;">1500</span>
+                  </div>
+                </div>
+
+                <div style="flex: 1;">
+                  <label style="display: flex; justify-content: center; align-items: center; font-size: 0.875rem; font-weight: 500; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" id="wps-sharpness-checkbox" class="checkbox checkbox-sm">
+                    <span>${"sharpness"}</span>
+                    <span>: <span id="wps-sharpness-value">0</span></span>
+                  </label>
+                  <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <span style="font-size: 0.65rem; color: #9ca3af;">0</span>
+                    <input type="range" id="wps-sharpness-slider" min="0" max="100" step="1" value="0" class="range" style="flex: 1;" disabled>
+                    <span style="font-size: 0.65rem; color: #9ca3af;">100</span>
+                  </div>
                 </div>
               </div>
-              
+
               <div>
                 <label style="display: block; font-size: 0.75rem; font-weight: 500; margin-bottom: 0.25rem; color: #6b7280;">${"coordinate_input_optional"}</label>
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.25rem;">
@@ -233,6 +252,13 @@ export class ImageEditorUI {
     const saturationValue = this.container.querySelector(
       "#wps-saturation-value"
     );
+    const sharpnessCheckbox = this.container.querySelector(
+      "#wps-sharpness-checkbox"
+    ) as HTMLInputElement;
+    const sharpnessSlider = this.container.querySelector(
+      "#wps-sharpness-slider"
+    ) as HTMLInputElement;
+    const sharpnessValue = this.container.querySelector("#wps-sharpness-value");
     const ditheringCheckbox = this.container.querySelector(
       "#wps-dithering-checkbox"
     ) as HTMLInputElement;
@@ -252,8 +278,10 @@ export class ImageEditorUI {
     slider?.addEventListener("input", (e) => {
       const scale = parseFloat((e.target as HTMLInputElement).value);
       const originalWidth = parseInt(widthInput?.dataset.originalWidth || "1");
-      const originalHeight = parseInt(heightInput?.dataset.originalHeight || "1");
-      
+      const originalHeight = parseInt(
+        heightInput?.dataset.originalHeight || "1"
+      );
+
       if (widthInput && heightInput) {
         widthInput.value = Math.round(originalWidth * scale).toString();
         heightInput.value = Math.round(originalHeight * scale).toString();
@@ -269,15 +297,17 @@ export class ImageEditorUI {
     widthInput?.addEventListener("input", (e) => {
       const width = parseInt((e.target as HTMLInputElement).value) || 1;
       const originalWidth = parseInt(widthInput.dataset.originalWidth || "1");
-      const originalHeight = parseInt(heightInput?.dataset.originalHeight || "1");
-      
+      const originalHeight = parseInt(
+        heightInput?.dataset.originalHeight || "1"
+      );
+
       // アスペクト比維持（常に固定）
       if (heightInput) {
         const aspectRatio = originalHeight / originalWidth;
         const newHeight = Math.round(width * aspectRatio);
         heightInput.value = newHeight.toString();
       }
-      
+
       // スライダー更新
       if (slider) {
         const scale = width / originalWidth;
@@ -296,15 +326,17 @@ export class ImageEditorUI {
     heightInput?.addEventListener("input", (e) => {
       const height = parseInt((e.target as HTMLInputElement).value) || 1;
       const originalWidth = parseInt(widthInput?.dataset.originalWidth || "1");
-      const originalHeight = parseInt(heightInput.dataset.originalHeight || "1");
-      
+      const originalHeight = parseInt(
+        heightInput.dataset.originalHeight || "1"
+      );
+
       // アスペクト比維持（常に固定）
       if (widthInput) {
         const aspectRatio = originalWidth / originalHeight;
         const newWidth = Math.round(height * aspectRatio);
         widthInput.value = newWidth.toString();
       }
-      
+
       // スライダー更新
       if (slider) {
         const scale = height / originalHeight;
@@ -314,7 +346,9 @@ export class ImageEditorUI {
 
     heightInput?.addEventListener("change", (e) => {
       const height = parseInt((e.target as HTMLInputElement).value) || 1;
-      const originalHeight = parseInt(heightInput.dataset.originalHeight || "1");
+      const originalHeight = parseInt(
+        heightInput.dataset.originalHeight || "1"
+      );
       const scale = height / originalHeight;
       this.callbacks?.onScaleChange(Math.max(0.01, Math.min(1, scale)));
     });
@@ -356,6 +390,28 @@ export class ImageEditorUI {
     saturationSlider?.addEventListener("change", (e) => {
       const value = parseInt((e.target as HTMLInputElement).value);
       this.callbacks?.onSaturationChange(value);
+    });
+
+    // シャープネス
+    sharpnessCheckbox?.addEventListener("change", (e) => {
+      const checked = (e.target as HTMLInputElement).checked;
+      if (sharpnessSlider) {
+        sharpnessSlider.disabled = !checked;
+      }
+      this.callbacks?.onSharpnessToggle(checked);
+    });
+
+    // シャープネススライダー
+    sharpnessSlider?.addEventListener("input", (e) => {
+      const value = (e.target as HTMLInputElement).value;
+      if (sharpnessValue) {
+        sharpnessValue.textContent = value;
+      }
+    });
+
+    sharpnessSlider?.addEventListener("change", (e) => {
+      const value = parseInt((e.target as HTMLInputElement).value);
+      this.callbacks?.onSharpnessChange(value);
     });
 
     // ディザリング
@@ -401,6 +457,75 @@ export class ImageEditorUI {
     this.controller = controller;
   }
 
+  private setupImageReplacement(): void {
+    if (!this.container || !this.callbacks) return;
+
+    const replaceZone = this.container.querySelector(
+      "#wps-image-replace-zone"
+    ) as HTMLElement;
+    const overlay = this.container.querySelector(
+      "#wps-replace-overlay"
+    ) as HTMLElement;
+    const fileInput = this.container.querySelector(
+      "#wps-replace-file-input"
+    ) as HTMLInputElement;
+
+    if (!replaceZone || !overlay || !fileInput) return;
+
+    // ホバーでオーバーレイ表示
+    replaceZone.addEventListener("mouseenter", () => {
+      overlay.style.display = "flex";
+    });
+
+    replaceZone.addEventListener("mouseleave", () => {
+      overlay.style.display = "none";
+    });
+
+    // クリックでファイル選択
+    replaceZone.addEventListener("click", () => {
+      fileInput.click();
+    });
+
+    // ファイル選択時
+    fileInput.addEventListener("change", (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        this.callbacks?.onReplaceImage(file);
+        fileInput.value = ""; // リセット
+      }
+    });
+
+    // ドラッグ&ドロップ
+    replaceZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      overlay.style.display = "flex";
+      overlay.style.background = "rgba(59, 130, 246, 0.8)"; // 青色にハイライト
+    });
+
+    replaceZone.addEventListener("dragleave", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      overlay.style.background = "rgba(0,0,0,0.7)";
+      overlay.style.display = "none";
+    });
+
+    replaceZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      overlay.style.display = "none";
+      overlay.style.background = "rgba(0,0,0,0.7)";
+
+      const file = e.dataTransfer?.files?.[0];
+      if (
+        file &&
+        (file.type.startsWith("image/") || file.name.endsWith(".json"))
+      ) {
+        this.callbacks?.onReplaceImage(file);
+      }
+    });
+  }
+
   private setupResponsive(): void {
     const updateLayout = () => {
       const isDesktop = window.innerWidth >= 1024;
@@ -414,10 +539,38 @@ export class ImageEditorUI {
       const desktopPalette = this.container?.querySelector(
         "#wps-palette-desktop"
       ) as HTMLElement;
+      const originalArea = this.container?.querySelector(
+        "#wps-original-area"
+      ) as HTMLElement;
+      const currentArea = this.container?.querySelector(
+        "#wps-current-area"
+      ) as HTMLElement;
+      const controlsArea = this.container?.querySelector(
+        "#wps-controls-area"
+      ) as HTMLElement;
+      const canvasContainer = this.container?.querySelector(
+        "#wps-canvas-container"
+      ) as HTMLElement;
+      const imageContainer = this.container?.querySelector(
+        "#wps-image-container"
+      ) as HTMLElement;
+      const brightnessSaturationContainer = this.container?.querySelector(
+        "#wps-brightness-saturation-container"
+      ) as HTMLElement;
+      const ditheringSharpnessContainer = this.container?.querySelector(
+        "#wps-dithering-sharpness-container"
+      ) as HTMLElement;
 
       if (mainGrid) {
-        mainGrid.style.gridTemplateColumns = isDesktop ? "1fr 1fr" : "1fr";
-        mainGrid.style.height = isDesktop ? "calc(100vh - 8rem)" : "auto";
+        if (isDesktop) {
+          mainGrid.style.display = "grid";
+          mainGrid.style.gridTemplateColumns = "3fr 4fr";
+          mainGrid.style.height = "80vh";
+        } else {
+          mainGrid.style.display = "flex";
+          mainGrid.style.flexDirection = "column";
+          mainGrid.style.height = "auto";
+        }
       }
 
       if (accordion) {
@@ -428,8 +581,44 @@ export class ImageEditorUI {
         desktopPalette.style.display = isDesktop ? "block" : "none";
       }
 
+      // モバイル端末では画像エリアとコントロールエリアのスクロールを無効化してスワイプ操作を可能に
+      if (originalArea) {
+        originalArea.style.overflowY = isDesktop ? "auto" : "visible";
+      }
+
+      if (currentArea) {
+        currentArea.style.overflowY = isDesktop ? "auto" : "visible";
+      }
+
+      if (controlsArea) {
+        controlsArea.style.overflowY = isDesktop ? "auto" : "visible";
+      }
+
+      // モバイル環境ではcanvasの代わりに通常の画像を表示
+      if (canvasContainer) {
+        canvasContainer.style.display = isDesktop ? "block" : "none";
+      }
+
+      if (imageContainer) {
+        imageContainer.style.display = isDesktop ? "none" : "block";
+      }
+
+      // モバイル環境では明るさ/彩度とディザリング/シャープネスを縦並びに
+      if (brightnessSaturationContainer) {
+        brightnessSaturationContainer.style.flexDirection = isDesktop
+          ? "row"
+          : "column";
+      }
+
+      if (ditheringSharpnessContainer) {
+        ditheringSharpnessContainer.style.flexDirection = isDesktop
+          ? "row"
+          : "column";
+      }
+
       if (this.controller) {
         this.controller.updateColorPaletteContainer(!isDesktop);
+        this.controller.updateImageDisplayMode(isDesktop);
       }
     };
 

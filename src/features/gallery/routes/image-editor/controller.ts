@@ -26,6 +26,8 @@ export class EditorController {
   private brightness = 0;
   private contrast = 0;
   private saturation = 0;
+  private sharpnessEnabled = false;
+  private sharpness = 0;
   private ditheringEnabled = false;
   private ditheringThreshold = 500;
   private useGpu = true;
@@ -36,6 +38,7 @@ export class EditorController {
   private drawPosition: DrawPosition | null = null;
   private isEditMode = false;
   private editingItemKey: string | null = null;
+  private isDesktopMode = true;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -105,6 +108,45 @@ export class EditorController {
     this.displayImage(processedDataUrl);
   }
 
+  async replaceImage(file: File): Promise<void> {
+    console.log("🧑‍🎨 : Replacing image with:", file.name);
+
+    // JSON形式チェック
+    if (file.type === "application/json" || file.name.endsWith(".json")) {
+      console.log("🧑‍🎨 : Detected Bluemarble JSON file");
+      const { readFileAsText, parseBluemarbleJson } = await import(
+        "./file-handler"
+      );
+
+      const jsonText = await readFileAsText(file);
+      const { dataUrl, drawPosition } = await parseBluemarbleJson(jsonText);
+
+      this.currentFileName = file.name;
+      this.drawPosition = drawPosition;
+
+      this.replaceImageDisplay(dataUrl);
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) return;
+
+    this.currentFileName = file.name;
+    this.drawPosition = parseDrawPositionFromFileName(file.name);
+
+    const dataUrl = await readFileAsDataUrl(file);
+    const { action, dataUrl: processedDataUrl } = await showImageSizeDialog(
+      dataUrl,
+      this.container
+    );
+
+    if (action === "addToGallery") {
+      await this.saveDirectlyToGallery(processedDataUrl);
+      return;
+    }
+
+    this.replaceImageDisplay(processedDataUrl);
+  }
+
   onScaleChange(scale: number): void {
     this.imageScale = scale;
     this.updateScaledImage();
@@ -122,6 +164,17 @@ export class EditorController {
 
   onSaturationChange(value: number): void {
     this.saturation = value;
+    this.updateScaledImage();
+  }
+
+  onSharpnessToggle(enabled: boolean): void {
+    console.log("🧑‍🎨 : Sharpness toggled:", enabled);
+    this.sharpnessEnabled = enabled;
+    this.updateScaledImage();
+  }
+
+  onSharpnessChange(value: number): void {
+    this.sharpness = value;
     this.updateScaledImage();
   }
 
@@ -194,6 +247,8 @@ export class EditorController {
     this.brightness = 0;
     this.contrast = 0;
     this.saturation = 0;
+    this.sharpnessEnabled = false;
+    this.sharpness = 0;
     this.ditheringEnabled = false;
     this.ditheringThreshold = 500;
     this.useGpu = true;
@@ -233,6 +288,13 @@ export class EditorController {
     const saturationValue = this.container.querySelector(
       "#wps-saturation-value"
     );
+    const sharpnessCheckbox = this.container.querySelector(
+      "#wps-sharpness-checkbox"
+    ) as HTMLInputElement;
+    const sharpnessSlider = this.container.querySelector(
+      "#wps-sharpness-slider"
+    ) as HTMLInputElement;
+    const sharpnessValue = this.container.querySelector("#wps-sharpness-value");
     const ditheringCheckbox = this.container.querySelector(
       "#wps-dithering-checkbox"
     ) as HTMLInputElement;
@@ -267,6 +329,12 @@ export class EditorController {
     if (contrastValue) contrastValue.textContent = "0";
     if (saturationSlider) saturationSlider.value = "0";
     if (saturationValue) saturationValue.textContent = "0";
+    if (sharpnessCheckbox) sharpnessCheckbox.checked = false;
+    if (sharpnessSlider) {
+      sharpnessSlider.value = "0";
+      sharpnessSlider.disabled = true;
+    }
+    if (sharpnessValue) sharpnessValue.textContent = "0";
     if (ditheringCheckbox) ditheringCheckbox.checked = false;
     if (gpuToggle) gpuToggle.checked = true;
     if (tlxInput) tlxInput.value = "";
@@ -365,6 +433,10 @@ export class EditorController {
       this.isEditMode ? t`${"updated"}` : t`${"saved_to_gallery"}`
     );
 
+    // Request total stats computation for the image
+    const { requestTotalStatsComputation } = await import("@/content");
+    requestTotalStatsComputation(galleryItem.key, galleryItem.dataUrl);
+
     this.onSaveSuccess?.();
   }
 
@@ -389,6 +461,10 @@ export class EditorController {
 
     await galleryStorage.save(galleryItem);
     console.log("🧑‍🎨 : ", t`${"saved_to_gallery"}`);
+
+    // Request total stats computation for the image
+    const { requestTotalStatsComputation } = await import("@/content");
+    requestTotalStatsComputation(galleryItem.key, galleryItem.dataUrl);
 
     this.onSaveSuccess?.();
   }
@@ -441,7 +517,8 @@ export class EditorController {
         const canvas = this.container.querySelector(
           "#wps-scaled-canvas"
         ) as HTMLCanvasElement;
-        if (canvas) {
+        // デスクトップ環境のみImageInspector初期化
+        if (canvas && this.isDesktopMode) {
           this.imageInspector = new ImageInspector(canvas);
         }
 
@@ -473,6 +550,68 @@ export class EditorController {
 
     if (dropzone) dropzone.style.display = "none";
     if (imageDisplay) imageDisplay.style.display = "block";
+  }
+
+  private replaceImageDisplay(imageSrc: string): void {
+    console.log("🧑‍🎨 : Replacing image, keeping current adjustments");
+
+    const originalImage = this.container.querySelector(
+      "#wps-original-image"
+    ) as HTMLImageElement;
+
+    if (originalImage) {
+      originalImage.src = imageSrc;
+      this.originalImage = originalImage;
+
+      originalImage.onload = () => {
+        this.updateOriginalImageDisplay();
+
+        // 画像サイズ入力の更新（元画像サイズ基準）
+        const widthInput = this.container.querySelector(
+          "#wps-width-input"
+        ) as HTMLInputElement;
+        const heightInput = this.container.querySelector(
+          "#wps-height-input"
+        ) as HTMLInputElement;
+        const slider = this.container.querySelector(
+          "#wps-scale-slider"
+        ) as HTMLInputElement;
+
+        if (widthInput && heightInput && this.originalImage) {
+          const originalWidth = this.originalImage.naturalWidth;
+          const originalHeight = this.originalImage.naturalHeight;
+
+          // 現在のscaleを維持してサイズを更新
+          widthInput.value = Math.round(originalWidth * this.imageScale).toString();
+          heightInput.value = Math.round(originalHeight * this.imageScale).toString();
+          widthInput.dataset.originalWidth = originalWidth.toString();
+          widthInput.dataset.originalHeight = originalHeight.toString();
+          widthInput.max = originalWidth.toString();
+          heightInput.max = originalHeight.toString();
+
+          if (slider) {
+            slider.value = this.imageScale.toString();
+          }
+
+          console.log(
+            "🧑‍🎨 : Updated size inputs with scale",
+            this.imageScale,
+            ":",
+            originalWidth,
+            "x",
+            originalHeight
+          );
+        }
+
+        // 座標UIに自動入力
+        this.updateCoordinateInputs();
+
+        // 調整パラメータを保持したまま再描画
+        setTimeout(() => {
+          this.updateScaledImage();
+        }, 50);
+      };
+    }
   }
 
   private updateCoordinateInputs(): void {
@@ -519,23 +658,44 @@ export class EditorController {
     }
   }
 
+  updateImageDisplayMode(isDesktop: boolean): void {
+    this.isDesktopMode = isDesktop;
+
+    // モード切り替え時にImageInspectorの初期化/破棄
+    const canvas = this.container.querySelector(
+      "#wps-scaled-canvas"
+    ) as HTMLCanvasElement;
+
+    if (isDesktop && canvas && !this.imageInspector) {
+      this.imageInspector = new ImageInspector(canvas);
+    } else if (!isDesktop && this.imageInspector) {
+      // モバイルモードではImageInspectorを破棄
+      this.imageInspector = null;
+    }
+
+    // 画像を再描画
+    this.updateScaledImage();
+  }
+
   private async updateScaledImage(): Promise<void> {
     if (!this.originalImage) return;
 
     const canvas = this.container.querySelector(
       "#wps-scaled-canvas"
     ) as HTMLCanvasElement;
+    const image = this.container.querySelector(
+      "#wps-scaled-image"
+    ) as HTMLImageElement;
     const originalSizeDisplay =
       this.container.querySelector("#wps-original-size");
     const currentSizeDisplay =
       this.container.querySelector("#wps-current-size");
 
-    if (!canvas) return;
-
     const adjustments: ImageAdjustments = {
       brightness: this.brightness,
       contrast: this.contrast,
       saturation: this.saturation,
+      sharpness: this.sharpnessEnabled ? this.sharpness : 0,
     };
 
     // 統合処理: リサイズ→調整→パレット（GPU優先）
@@ -555,12 +715,25 @@ export class EditorController {
       this.useGpu
     );
 
-    // 結果をcanvasに転写
-    canvas.width = processedCanvas.width;
-    canvas.height = processedCanvas.height;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.drawImage(processedCanvas, 0, 0);
+    // デスクトップモード: canvas更新
+    if (canvas && this.isDesktopMode) {
+      canvas.width = processedCanvas.width;
+      canvas.height = processedCanvas.height;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(processedCanvas, 0, 0);
+      }
+      this.scaledCanvas = canvas;
+
+      if (this.imageInspector) {
+        this.imageInspector.resetViewport();
+      }
+    }
+
+    // モバイルモード: img更新
+    if (image && !this.isDesktopMode) {
+      image.src = processedCanvas.toDataURL();
+      this.scaledCanvas = processedCanvas;
     }
 
     if (originalSizeDisplay) {
@@ -568,12 +741,6 @@ export class EditorController {
     }
     if (currentSizeDisplay) {
       currentSizeDisplay.textContent = `${processedCanvas.width} x ${processedCanvas.height}`;
-    }
-
-    this.scaledCanvas = canvas;
-
-    if (this.imageInspector) {
-      this.imageInspector.resetViewport();
     }
   }
 }

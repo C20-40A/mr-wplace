@@ -1,38 +1,132 @@
-import { applyTheme } from "./theme-manager";
+import {
+  handleGalleryImages,
+  handleSnapshotsUpdate,
+  handleTextLayersUpdate,
+} from "./handlers/overlay-handlers";
+import {
+  handleThemeUpdate,
+  handleDataSaverUpdate,
+  handleCacheSizeUpdate,
+  handleComputeDeviceUpdate,
+  handleShowUnplacedOnlyUpdate,
+  handleColorFilterUpdate,
+  handleTileBoundariesUpdate,
+  handleCacheClear,
+} from "./handlers/state-handlers";
+import {
+  handleStatsRequest,
+  handlePixelColorRequest,
+  handleTileStatsRequest,
+  handleImageStatsRequest,
+  handleComputeTotalStats,
+} from "./handlers/request-handlers";
 
 /**
  * Setup message event listener for handling various events
  */
-export const setupMessageHandler = (getCurrentTheme: () => "light" | "dark"): void => {
-  window.addEventListener("message", (event: MessageEvent) => {
-    // Handle processed blob from content script
-    if (event.data.source === "mr-wplace-processed") {
+export const setupMessageHandler = (): void => {
+  window.addEventListener("message", async (event: MessageEvent) => {
+    const { source } = event.data;
+
+    // Legacy processed blob handler
+    if (source === "mr-wplace-processed") {
       handleProcessedBlob(event.data);
       return;
     }
 
-    // Handle flyTo requests from content script
-    if (event.data.source === "wplace-studio-flyto") {
+    // Navigation handler
+    if (source === "wplace-studio-flyto") {
       handleFlyTo(event.data);
       return;
     }
 
-    // Handle theme updates
-    if (event.data.source === "mr-wplace-theme-update") {
+    // State update handlers
+    if (source === "mr-wplace-theme-update") {
       handleThemeUpdate(event.data);
       return;
     }
 
-    // Handle data saver updates
-    if (event.data.source === "mr-wplace-data-saver-update") {
+    if (source === "mr-wplace-data-saver-update") {
       handleDataSaverUpdate(event.data);
+      return;
+    }
+
+    if (source === "mr-wplace-cache-size-update") {
+      handleCacheSizeUpdate(event.data);
+      return;
+    }
+
+    if (source === "mr-wplace-compute-device") {
+      handleComputeDeviceUpdate(event.data);
+      return;
+    }
+
+    if (source === "mr-wplace-show-unplaced-only") {
+      handleShowUnplacedOnlyUpdate(event.data);
+      return;
+    }
+
+    if (source === "mr-wplace-color-filter") {
+      handleColorFilterUpdate(event.data);
+      return;
+    }
+
+    if (source === "mr-wplace-tile-boundaries-update") {
+      handleTileBoundariesUpdate(event.data);
+      return;
+    }
+
+    if (source === "mr-wplace-cache-clear") {
+      handleCacheClear();
+      return;
+    }
+
+    // Overlay update handlers
+    if (source === "mr-wplace-gallery-images") {
+      await handleGalleryImages(event.data);
+      return;
+    }
+
+    if (source === "mr-wplace-snapshots") {
+      await handleSnapshotsUpdate(event.data);
+      return;
+    }
+
+    if (source === "mr-wplace-text-layers") {
+      await handleTextLayersUpdate(event.data);
+      return;
+    }
+
+    // Request handlers
+    if (source === "mr-wplace-request-stats") {
+      handleStatsRequest(event.data);
+      return;
+    }
+
+    if (source === "mr-wplace-request-pixel-color") {
+      await handlePixelColorRequest(event.data);
+      return;
+    }
+
+    if (source === "mr-wplace-request-tile-stats") {
+      handleTileStatsRequest(event.data);
+      return;
+    }
+
+    if (source === "mr-wplace-request-image-stats") {
+      handleImageStatsRequest(event.data);
+      return;
+    }
+
+    if (source === "mr-wplace-compute-total-stats") {
+      await handleComputeTotalStats(event.data);
       return;
     }
   });
 };
 
 /**
- * Handle processed blob callback
+ * Handle processed blob callback (legacy)
  */
 const handleProcessedBlob = (data: any): void => {
   const { blobID, processedBlob } = data;
@@ -40,14 +134,18 @@ const handleProcessedBlob = (data: any): void => {
 
   if (typeof callback === "function") {
     callback(processedBlob);
-    window.tileProcessingQueue.delete(blobID);
+    window.tileProcessingQueue?.delete(blobID);
   }
 };
 
 /**
  * Handle flyTo/jumpTo requests
  */
-const handleFlyTo = (data: { lat: number; lng: number; zoom: number }): void => {
+const handleFlyTo = (data: {
+  lat: number;
+  lng: number;
+  zoom: number;
+}): void => {
   const { lat, lng, zoom } = data;
 
   // If map instance not available, fallback to URL navigation
@@ -80,27 +178,5 @@ const handleFlyTo = (data: { lat: number; lng: number; zoom: number }): void => 
   } else {
     console.log("🧑‍🎨 : Using jumpTo (far distance)");
     window.wplaceMap.jumpTo({ center: [lng, lat], zoom });
-  }
-};
-
-/**
- * Handle theme update
- */
-const handleThemeUpdate = (data: { theme: "light" | "dark" }): void => {
-  const theme = data.theme;
-  console.log("🧑‍🎨 : Theme updated:", theme);
-
-  if (window.wplaceMap) {
-    applyTheme(window.wplaceMap, theme);
-  }
-};
-
-/**
- * Handle data saver update
- */
-const handleDataSaverUpdate = (data: { enabled: boolean }): void => {
-  if (window.mrWplaceDataSaver) {
-    window.mrWplaceDataSaver.enabled = data.enabled;
-    console.log("🧑‍🎨 : Data saver updated:", data.enabled);
   }
 };

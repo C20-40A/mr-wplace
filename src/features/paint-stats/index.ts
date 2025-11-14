@@ -1,4 +1,4 @@
-import { getAggregatedColorStats } from "@/features/tile-draw";
+import { getAggregatedColorStats } from "@/utils/inject-bridge";
 import { getCurrentTiles } from "@/states/currentTile";
 import { colorpalette } from "@/constants/colors";
 
@@ -107,7 +107,7 @@ const getColorStats = async (): Promise<Record<
 
   if (targetImageKeys.length === 0) return null;
 
-  const stats = getAggregatedColorStats(targetImageKeys);
+  const stats = await getAggregatedColorStats(targetImageKeys);
   return Object.keys(stats).length > 0 ? stats : null;
 };
 

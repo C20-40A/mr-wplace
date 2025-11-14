@@ -1,5 +1,4 @@
 import type { WplaceMap } from "./types";
-import { applyTheme } from "./theme-manager";
 
 /**
  * Helper function to check if auto spoit dev mode is enabled
@@ -46,7 +45,7 @@ const getMapInstance = (): WplaceMap | null => {
 /**
  * Setup map instance observer and capture it
  */
-export const setupMapObserver = (initialTheme: "light" | "dark"): void => {
+export const setupMapObserver = (): void => {
   const mapObserver = new MutationObserver(() => {
     const map = getMapInstance();
     if (!map) return;
@@ -54,11 +53,6 @@ export const setupMapObserver = (initialTheme: "light" | "dark"): void => {
     window.wplaceMap = map;
     mapObserver.disconnect();
     console.log("🧑‍🎨 : WPlace map instance captured", map);
-
-    // Apply initial theme
-    if (initialTheme === "dark") {
-      applyTheme(map, "dark");
-    }
 
     // Setup mouse events for pixel detection
     setupPixelDetection(map);
