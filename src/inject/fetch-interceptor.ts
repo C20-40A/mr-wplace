@@ -1,4 +1,5 @@
 import { drawOverlayLayersOnTile } from "./tile-draw";
+import { invalidateTileCache } from "./cache-storage";
 
 /**
  * Setup fetch interceptor to handle tile requests and user data
@@ -52,6 +53,39 @@ export const setupFetchInterceptor = (): void => {
       }
 
       return response;
+    }
+
+    // Intercept pixel paint POST to invalidate cache
+    // URL pattern: https://backend.wplace.live/s0/pixel/<tileX>/<tileY>
+    if (url.includes("/s0/pixel/")) {
+      const requestInfo = args[0];
+      const method =
+        typeof requestInfo === "string"
+          ? args[1]?.method
+          : requestInfo instanceof Request
+          ? requestInfo.method
+          : undefined;
+
+      if (method === "POST") {
+        const pixelMatch = url.match(/\/s0\/pixel\/(\d+)\/(\d+)/);
+        if (pixelMatch) {
+          const tileX = parseInt(pixelMatch[1], 10);
+          const tileY = parseInt(pixelMatch[2], 10);
+          const cacheKey = `${tileX},${tileY}`;
+
+          console.log("🧑‍🎨: Detected pixel paint POST:", cacheKey);
+
+          // Execute the original fetch first
+          const response = await originalFetch.apply(this, args);
+
+          // Invalidate cache for the painted tile (fire and forget)
+          invalidateTileCache(cacheKey).catch((error) => {
+            console.warn("🧑‍🎨: Failed to invalidate tile cache:", error);
+          });
+
+          return response;
+        }
+      }
     }
 
     // Intercept all tile requests
