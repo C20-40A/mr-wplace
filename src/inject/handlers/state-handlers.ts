@@ -3,13 +3,15 @@ import { applyTheme } from "../theme-manager";
 /**
  * Handle theme update
  */
+let isThemeLoaded = false;
 export const handleThemeUpdate = (data: { theme: "light" | "dark" }): void => {
   const theme = data.theme;
   console.log("🧑‍🎨 : Theme updated:", theme);
+  if (window.wplaceMap) applyTheme(window.wplaceMap, theme);
 
-  if (window.wplaceMap) {
-    applyTheme(window.wplaceMap, theme);
-  }
+  // 初回にテーマがロードされるので、それ以降のテーマ変更時にページリロードする
+  if (isThemeLoaded) location.reload();
+  if (!isThemeLoaded) isThemeLoaded = true;
 };
 
 /**
@@ -35,7 +37,9 @@ export const handleCacheSizeUpdate = (data: { maxCacheSize: number }): void => {
 /**
  * Handle compute device update
  */
-export const handleComputeDeviceUpdate = (data: { device: "gpu" | "cpu" }): void => {
+export const handleComputeDeviceUpdate = (data: {
+  device: "gpu" | "cpu";
+}): void => {
   window.mrWplaceComputeDevice = data.device;
   console.log("🧑‍🎨 : Compute device updated:", data.device);
 };
@@ -43,7 +47,9 @@ export const handleComputeDeviceUpdate = (data: { device: "gpu" | "cpu" }): void
 /**
  * Handle show unplaced only update
  */
-export const handleShowUnplacedOnlyUpdate = (data: { enabled: boolean }): void => {
+export const handleShowUnplacedOnlyUpdate = (data: {
+  enabled: boolean;
+}): void => {
   window.mrWplaceShowUnplacedOnly = data.enabled;
   console.log("🧑‍🎨 : Show unplaced only updated:", data.enabled);
 };
@@ -75,7 +81,9 @@ export const handleColorFilterUpdate = (data: {
 /**
  * Handle tile boundaries visibility update
  */
-export const handleTileBoundariesUpdate = (data: { visible: boolean }): void => {
+export const handleTileBoundariesUpdate = (data: {
+  visible: boolean;
+}): void => {
   if (window.wplaceMap) {
     window.wplaceMap.showTileBoundaries = data.visible;
     console.log("🧑‍🎨 : Tile boundaries updated:", data.visible);
