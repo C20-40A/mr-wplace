@@ -80,11 +80,9 @@ export const sendComputeDeviceToInject = async () => {
 
 /**
  * Send show unplaced only setting to inject side
+ * Note: This is a transient state, not persisted to storage
  */
-export const sendShowUnplacedOnlyToInject = async () => {
-  const { ColorPaletteStorage } = await import("@/components/color-palette/storage");
-  const enabled = await ColorPaletteStorage.getShowUnplacedOnly();
-
+export const sendShowUnplacedOnlyToInject = (enabled: boolean) => {
   window.postMessage(
     {
       source: "mr-wplace-show-unplaced-only",
