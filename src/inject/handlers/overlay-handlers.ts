@@ -1,17 +1,14 @@
-import { addImageToOverlayLayers, removePreparedOverlayImageByKey } from "../tile-draw";
+import { addImageToOverlayLayers, removePreparedOverlayImageByKey, setPerTileColorStats } from "../tile-draw";
 import { loadImageBitmap } from "../utils/image-loader";
+import type { GalleryImage } from "../types";
 
 /**
  * Handle gallery images data from content script
  * Store in window for tile processing and sync to overlay layers
+ * Also restores stored statistics from previous sessions
  */
 export const handleGalleryImages = async (data: {
-  images: Array<{
-    key: string;
-    dataUrl: string;
-    drawPosition: { TLX: number; TLY: number; PxX: number; PxY: number };
-    layerOrder: number;
-  }>;
+  images: Array<GalleryImage>;
 }): Promise<void> => {
   if (!window.mrWplaceGalleryImages) {
     window.mrWplaceGalleryImages = new Map();
@@ -47,6 +44,21 @@ export const handleGalleryImages = async (data: {
         [img.drawPosition.TLX, img.drawPosition.TLY, img.drawPosition.PxX, img.drawPosition.PxY],
         img.key
       );
+
+      // Restore stored statistics if available
+      if (img.perTileColorStats) {
+        const tileStatsMap = new Map<string, { matched: Map<string, number>; total: Map<string, number> }>();
+
+        for (const [tileKey, stats] of Object.entries(img.perTileColorStats)) {
+          tileStatsMap.set(tileKey, {
+            matched: new Map(Object.entries(stats.matched)),
+            total: new Map(Object.entries(stats.total)),
+          });
+        }
+
+        setPerTileColorStats(img.key, tileStatsMap);
+        console.log(`🧑‍🎨 : Restored statistics for ${img.key} (${tileStatsMap.size} tiles)`);
+      }
 
       imageKeys.push(img.key);
       successCount++;
