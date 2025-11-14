@@ -1,4 +1,4 @@
-# Mr. Wplace
+[# Mr. Wplace
 
 ![Version](https://img.shields.io/badge/version-1.9.1-blue.svg)
 ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green.svg)
@@ -17,6 +17,7 @@ Get Mr. Wplace from the official stores:
 
 - **Chrome Web Store**: [Install for Chrome](https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej)
 - **Microsoft Edge Add-ons**: [Install for Edge](https://microsoftedge.microsoft.com/addons/detail/mr-wplace/acdodonamhbokadiikkfnnliplijigip)
+- **Firefox Add-ons**: [Install for Firefox](https://addons.mozilla.org/ja/firefox/addon/mr-wplace/)
 
 #### Mobile
 
