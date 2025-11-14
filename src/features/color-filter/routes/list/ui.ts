@@ -9,7 +9,7 @@ import { sendColorFilterToInject, sendComputeDeviceToInject, sendShowUnplacedOnl
 let colorPalette: ColorPalette | null = null;
 let lastSortOrder: SortOrder = "default";
 let lastComputeDevice: ComputeDevice = "gpu";
-let lastShowUnplacedOnly: boolean = false;
+let lastShowUnplacedOnly: boolean = false; // Not persisted, resets on page reload
 
 export const renderColorFilters = async (
   container: HTMLElement
@@ -20,8 +20,7 @@ export const renderColorFilters = async (
   // ComputeDevice設定読み込み
   lastComputeDevice = await ColorPaletteStorage.getComputeDevice();
 
-  // ShowUnplacedOnly設定読み込み
-  lastShowUnplacedOnly = await ColorPaletteStorage.getShowUnplacedOnly();
+  // ShowUnplacedOnly is now a transient state (not loaded from storage)
 
   // ColorFilterManagerの現在状態取得
   const colorFilterManager = window.mrWplace?.colorFilterManager;
@@ -101,12 +100,11 @@ export const renderColorFilters = async (
     },
     showUnplacedOnlyToggle: true,
     showUnplacedOnly: lastShowUnplacedOnly,
-    onShowUnplacedOnlyChange: async (enabled) => {
+    onShowUnplacedOnlyChange: (enabled) => {
       lastShowUnplacedOnly = enabled;
-      await ColorPaletteStorage.setShowUnplacedOnly(enabled);
       console.log(`🧑‍🎨 : Show unplaced only changed:`, enabled);
-      // Send updated setting to inject side
-      await sendShowUnplacedOnlyToInject();
+      // Send updated setting to inject side (transient state, not persisted)
+      sendShowUnplacedOnlyToInject(enabled);
     },
   });
 };
