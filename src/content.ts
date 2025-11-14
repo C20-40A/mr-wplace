@@ -97,18 +97,22 @@ export const sendShowUnplacedOnlyToInject = (enabled: boolean) => {
 /**
  * Send color filter state to inject side
  */
-export const sendColorFilterToInject = (colorFilterManager: ColorFilterManager) => {
+export const sendColorFilterToInject = (
+  colorFilterManager: ColorFilterManager,
+  skipStatsRecompute = false
+) => {
   window.postMessage(
     {
       source: "mr-wplace-color-filter",
       isFilterActive: colorFilterManager.isFilterActive(),
       selectedRGBs: colorFilterManager.selectedRGBs,
       enhancedMode: colorFilterManager.getEnhancedMode(),
+      skipStatsRecompute,
     },
     "*"
   );
 
-  console.log(`🧑‍🎨 : Sent color filter state to inject side`);
+  console.log(`🧑‍🎨 : Sent color filter state to inject side (skipStatsRecompute: ${skipStatsRecompute})`);
 };
 
 /**

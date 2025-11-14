@@ -188,6 +188,7 @@ export const enTranslations = {
   free_colors_only: "Free Colors",
   owned_colors_only: "Owned Colors",
   enhanced: "Enhanced",
+  show_selected_color_only: "Show Selected Color Only",
 
   // User Status (Notification Modal)
   user_status_details: "User Status Details",
