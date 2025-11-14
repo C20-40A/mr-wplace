@@ -42,10 +42,26 @@ export const applyTheme = (map: WplaceMap, theme: "light" | "dark"): void => {
 
     // Landcover
     map.setPaintProperty("park", "fill-color", "#d8e8c8");
-    map.setPaintProperty("park_outline", "line-color", "rgba(228, 241, 215, 1)");
-    map.setPaintProperty("landcover_grass", "fill-color", "rgba(176, 213, 154, 1)");
-    map.setPaintProperty("landcover_sand", "fill-color", "rgba(247, 239, 195, 1)");
-    map.setPaintProperty("landcover_ice", "fill-color", "rgba(224, 236, 236, 1)");
+    map.setPaintProperty(
+      "park_outline",
+      "line-color",
+      "rgba(228, 241, 215, 1)"
+    );
+    map.setPaintProperty(
+      "landcover_grass",
+      "fill-color",
+      "rgba(176, 213, 154, 1)"
+    );
+    map.setPaintProperty(
+      "landcover_sand",
+      "fill-color",
+      "rgba(247, 239, 195, 1)"
+    );
+    map.setPaintProperty(
+      "landcover_ice",
+      "fill-color",
+      "rgba(224, 236, 236, 1)"
+    );
 
     // Roads (restore original interpolate/colors)
     map.setPaintProperty("road_motorway", "line-color", [
