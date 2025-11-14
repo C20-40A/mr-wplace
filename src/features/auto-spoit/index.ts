@@ -118,6 +118,9 @@ export class AutoSpoit {
         await AutoSpoitStorage.setWarningShown();
         console.log("🧑‍🎨 : Auto spoit warning shown and agreed");
       }
+      alert(
+        "Sorry! This feature is currently unavailable due to changes in the wplace codebase😇"
+      );
     }
 
     this.enabled = await AutoSpoitStorage.toggle();
