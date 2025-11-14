@@ -60,16 +60,6 @@ export const handleGalleryImages = async (data: {
   window.mrWplaceGalleryImageKeys = new Set(imageKeys);
 
   console.log(`🧑‍🎨 : Gallery images sync complete - success: ${successCount}, failed: ${failCount}`);
-
-  // Clear tile cache to force re-rendering with new images
-  if (window.mrWplaceDataSaver?.tileCache) {
-    window.mrWplaceDataSaver.tileCache.clear();
-    console.log("🧑‍🎨 : Cleared tile cache after gallery update");
-
-    // Notify drawing loader to start showing loading indicator
-    window.postMessage({ source: "wplace-studio-drawing-start" }, "*");
-  }
-
   console.log("🧑‍🎨 : Gallery images updated and synced to overlay layers:", data.images.length);
 };
 
@@ -125,15 +115,6 @@ export const handleSnapshotsUpdate = async (data: {
 
   // Save current snapshot keys for next update
   window.mrWplaceSnapshotKeys = new Set(snapshotKeys);
-
-  // Clear tile cache to force re-rendering with new snapshots
-  if (window.mrWplaceDataSaver?.tileCache) {
-    window.mrWplaceDataSaver.tileCache.clear();
-    console.log("🧑‍🎨 : Cleared tile cache after snapshots update");
-
-    // Notify drawing loader to start showing loading indicator
-    window.postMessage({ source: "wplace-studio-drawing-start" }, "*");
-  }
 
   console.log(`🧑‍🎨 : Snapshots updated: ${data.snapshots.length} active`);
 };
@@ -192,15 +173,6 @@ export const handleTextLayersUpdate = async (data: {
 
   // Save current text layer keys for next update
   window.mrWplaceTextLayerKeys = new Set(textLayerKeys);
-
-  // Clear tile cache to force re-rendering with new text layers
-  if (window.mrWplaceDataSaver?.tileCache) {
-    window.mrWplaceDataSaver.tileCache.clear();
-    console.log("🧑‍🎨 : Cleared tile cache after text layers update");
-
-    // Notify drawing loader to start showing loading indicator
-    window.postMessage({ source: "wplace-studio-drawing-start" }, "*");
-  }
 
   console.log(`🧑‍🎨 : Text layers updated: ${data.textLayers.length} active`);
 };

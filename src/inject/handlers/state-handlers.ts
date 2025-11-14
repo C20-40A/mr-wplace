@@ -40,15 +40,6 @@ export const handleCacheSizeUpdate = (data: { maxCacheSize: number }): void => {
 export const handleComputeDeviceUpdate = (data: { device: "gpu" | "cpu" }): void => {
   window.mrWplaceComputeDevice = data.device;
   console.log("🧑‍🎨 : Compute device updated:", data.device);
-
-  // Clear tile cache to force re-rendering with new device
-  if (window.mrWplaceDataSaver?.tileCache) {
-    window.mrWplaceDataSaver.tileCache.clear();
-    console.log("🧑‍🎨 : Cleared tile cache after compute device update");
-
-    // Notify drawing loader to start showing loading indicator
-    window.postMessage({ source: "wplace-studio-drawing-start" }, "*");
-  }
 };
 
 /**
@@ -57,15 +48,6 @@ export const handleComputeDeviceUpdate = (data: { device: "gpu" | "cpu" }): void
 export const handleShowUnplacedOnlyUpdate = (data: { enabled: boolean }): void => {
   window.mrWplaceShowUnplacedOnly = data.enabled;
   console.log("🧑‍🎨 : Show unplaced only updated:", data.enabled);
-
-  // Clear tile cache to force re-rendering with new mode
-  if (window.mrWplaceDataSaver?.tileCache) {
-    window.mrWplaceDataSaver.tileCache.clear();
-    console.log("🧑‍🎨 : Cleared tile cache after show unplaced only update");
-
-    // Notify drawing loader to start showing loading indicator
-    window.postMessage({ source: "wplace-studio-drawing-start" }, "*");
-  }
 };
 
 /**
@@ -87,15 +69,6 @@ export const handleColorFilterUpdate = (data: {
   };
 
   console.log("🧑‍🎨 : Color filter updated:", data);
-
-  // Clear tile cache to force re-rendering with new filter
-  if (window.mrWplaceDataSaver?.tileCache) {
-    window.mrWplaceDataSaver.tileCache.clear();
-    console.log("🧑‍🎨 : Cleared tile cache after color filter update");
-
-    // Notify drawing loader to start showing loading indicator
-    window.postMessage({ source: "wplace-studio-drawing-start" }, "*");
-  }
 
   // カラーフィルター変更時に統計を再計算
   recomputeAllStats(data.selectedRGBs);
