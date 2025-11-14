@@ -13,14 +13,6 @@ import {
 import { processGpuColorFilter } from "./filters/gpu-filter";
 import { processCpuColorFilter } from "./filters/cpu-filter";
 import { blobToPixels } from "../../utils/pixel-converters";
-// Inject-safe alternatives to WASM-based image-bitmap-compat
-const createImageBitmapFromImageData = async (imageData: ImageData): Promise<ImageBitmap> => {
-  return await createImageBitmap(imageData);
-};
-
-const createImageBitmapFromCanvas = async (canvas: HTMLCanvasElement): Promise<ImageBitmap> => {
-  return await createImageBitmap(canvas);
-};
 import { overlayLayers, perTileColorStats } from "./states";
 
 /**
@@ -70,7 +62,7 @@ const drawSolidBackground = (
   width: number,
   height: number
 ): void => {
-  ctx.fillStyle = "#e8e8e8";  // rgb(232, 232, 232)
+  ctx.fillStyle = "#e8e8e8"; // rgb(232, 232, 232)
   ctx.fillRect(0, 0, width, height);
 };
 
@@ -80,7 +72,7 @@ const drawSolidBackground = (
  */
 const applyColorFilterToOverlay = async (
   overlayBitmap: ImageBitmap,
-  colorFilter: number[][] | undefined,
+  colorFilter: [number, number, number][] | undefined,
   compute_device: "gpu" | "cpu"
 ): Promise<Uint8ClampedArray> => {
   if (compute_device === "gpu" && colorFilter !== undefined) {
@@ -104,6 +96,8 @@ const applyColorFilterToOverlay = async (
  * オーバーレイと背景を比較し、色ごとの統計を計算
  * total: 元画像の色でカウント（カラーフィルター無関係）
  * matched: フィルター適用後の色でカウント
+ *
+ * NOTE: totalは全ピクセルをカウント、matchedは背景範囲内のみ
  */
 const computeStatsWithBackground = (
   originalData: Uint8ClampedArray,
@@ -127,7 +121,7 @@ const computeStatsWithBackground = (
       const [origR, origG, origB] = [
         originalData[i],
         originalData[i + 1],
-        originalData[i + 2]
+        originalData[i + 2],
       ];
       const totalColorKey = colorToKey([origR, origG, origB]);
       stats.total.set(totalColorKey, (stats.total.get(totalColorKey) || 0) + 1);
@@ -139,13 +133,18 @@ const computeStatsWithBackground = (
       const [filteredR, filteredG, filteredB] = [
         filteredData[i],
         filteredData[i + 1],
-        filteredData[i + 2]
+        filteredData[i + 2],
       ];
 
-      // 背景比較（フィルター適用後の色で）
+      // 背景位置を計算
       const bgX = offsetX + x;
       const bgY = offsetY + y;
       const bgI = (bgY * bgWidth + bgX) * 4;
+
+      // 背景の範囲外のピクセルはスキップ（matchedのみ）
+      if (bgI + 3 >= bgData.length) continue;
+
+      // 背景比較（フィルター適用後の色で）
       const [bgR, bgG, bgB, bgA] = [
         bgData[bgI],
         bgData[bgI + 1],
@@ -153,11 +152,17 @@ const computeStatsWithBackground = (
         bgData[bgI + 3],
       ];
 
-      const colorMatches = isSameColor([filteredR, filteredG, filteredB, 255], [bgR, bgG, bgB, bgA]);
+      const colorMatches = isSameColor(
+        [filteredR, filteredG, filteredB, 255],
+        [bgR, bgG, bgB, bgA]
+      );
 
       if (colorMatches) {
         const matchedColorKey = colorToKey([filteredR, filteredG, filteredB]);
-        stats.matched.set(matchedColorKey, (stats.matched.get(matchedColorKey) || 0) + 1);
+        stats.matched.set(
+          matchedColorKey,
+          (stats.matched.get(matchedColorKey) || 0) + 1
+        );
       }
     }
   }
@@ -328,14 +333,8 @@ const convertToImageBitmap = async (
   width: number,
   height: number
 ): Promise<ImageBitmap> => {
-  const canvas = new OffscreenCanvas(width, height);
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Failed to get canvas context");
-
   const imageData = new ImageData(data, width, height);
-  ctx.putImageData(imageData, 0, 0);
-
-  return await createImageBitmapFromCanvas(canvas);
+  return await createImageBitmap(imageData);
 };
 
 /**
@@ -456,7 +455,12 @@ export const drawOverlayLayersOnTile = async (
   // ポーリング累積防止: 同タイルのみ統計delete
   for (const { instance } of matchingTiles) {
     const imageStatsMap = perTileColorStats.get(instance.imageKey);
-    imageStatsMap?.delete(coordStr);
+    if (imageStatsMap?.has(coordStr)) {
+      console.log(
+        `🧑‍🎨 : Deleting existing stats for tile ${coordStr}, image ${instance.imageKey}`
+      );
+      imageStatsMap.delete(coordStr);
+    }
   }
 
   // 一時統計マップ: 複数タイルまたがり対応
@@ -488,7 +492,7 @@ export const drawOverlayLayersOnTile = async (
     finalBgWidth,
     finalBgHeight
   );
-  const tileBitmap = await createImageBitmapFromImageData(bgImageData);
+  const tileBitmap = await createImageBitmap(bgImageData);
 
   // キャンバス作成（実サイズベース）
   const drawSize =
