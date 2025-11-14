@@ -79,6 +79,24 @@ export const sendComputeDeviceToInject = async () => {
 };
 
 /**
+ * Send show unplaced only setting to inject side
+ */
+export const sendShowUnplacedOnlyToInject = async () => {
+  const { ColorPaletteStorage } = await import("@/components/color-palette/storage");
+  const enabled = await ColorPaletteStorage.getShowUnplacedOnly();
+
+  window.postMessage(
+    {
+      source: "mr-wplace-show-unplaced-only",
+      enabled,
+    },
+    "*"
+  );
+
+  console.log(`🧑‍🎨 : Sent show unplaced only to inject side: ${enabled}`);
+};
+
+/**
  * Send color filter state to inject side
  */
 export const sendColorFilterToInject = (colorFilterManager: ColorFilterManager) => {

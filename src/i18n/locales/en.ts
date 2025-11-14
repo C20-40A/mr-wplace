@@ -254,6 +254,9 @@ However, please pay careful attention to the following:
   // Compute Device
   compute_device_label: "Processing",
 
+  // Show Unplaced Only
+  show_unplaced_only: "Unplaced Only",
+
   // Tile Merge
   tile_merge: "Tile Merge",
   merge_tiles: "Merge Tiles",

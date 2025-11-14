@@ -74,6 +74,7 @@ export interface WindowWithWplace extends Window {
   mrWplaceTextLayerKeys?: Set<string>;
   mrWplace?: MrWplaceGlobal;
   mrWplaceComputeDevice?: "gpu" | "cpu";
+  mrWplaceShowUnplacedOnly?: boolean;
 }
 
 declare global {
@@ -89,5 +90,6 @@ declare global {
     mrWplaceTextLayerKeys?: Set<string>;
     mrWplace?: MrWplaceGlobal;
     mrWplaceComputeDevice?: "gpu" | "cpu";
+    mrWplaceShowUnplacedOnly?: boolean;
   }
 }

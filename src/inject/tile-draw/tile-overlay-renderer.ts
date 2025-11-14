@@ -24,6 +24,18 @@ const createImageBitmapFromCanvas = async (canvas: HTMLCanvasElement): Promise<I
 import { overlayLayers, perTileColorStats } from "./states";
 
 /**
+ * Draw solid background for unplaced-only mode
+ */
+const drawSolidBackground = (
+  ctx: OffscreenCanvasRenderingContext2D,
+  width: number,
+  height: number
+): void => {
+  ctx.fillStyle = "#e8e8e8";  // rgb(232, 232, 232)
+  ctx.fillRect(0, 0, width, height);
+};
+
+/**
  * Phase 1: カラーフィルター適用（x1サイズ）
  * GPU/CPUでフィルター処理を行い、フィルター済みピクセルデータを返す
  */
@@ -125,7 +137,8 @@ const scaleAndRenderWithMode = (
   offsetX: number,
   offsetY: number,
   mode: EnhancedMode,
-  shouldSkipRendering: boolean
+  shouldSkipRendering: boolean,
+  showUnplacedOnly: boolean = false
 ): Uint8ClampedArray => {
   const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
   const scaledWidth = width * pixelScale;
@@ -155,14 +168,6 @@ const scaleAndRenderWithMode = (
       const i = (y * scaledWidth + x) * 4;
 
       const { isCenterPixel, isCrossArm } = getGridPosition(x, y);
-      if (isCenterPixel) {
-        // 中心ピクセルは常に書き込み
-        scaledData[i] = r;
-        scaledData[i + 1] = g;
-        scaledData[i + 2] = b;
-        scaledData[i + 3] = a;
-        continue;
-      }
 
       // 背景色取得
       const bgX1 = offsetX + x1;
@@ -178,38 +183,95 @@ const scaleAndRenderWithMode = (
         bgData[bgI1 + 3],
       ];
 
-      // 背景と同色なら透明化
-      if (isSameColor([r, g, b, 255], [bgR, bgG, bgB, bgA])) continue;
+      const colorMatches = isSameColor([r, g, b, 255], [bgR, bgG, bgB, bgA]);
 
-      // モード別処理
-      if (mode === "dot") {
-        // 書き込まない（デフォルト透明のまま）
-      } else if (mode === "cross") {
-        if (isCrossArm) {
+      // Show unplaced only モード: ロジック反転
+      if (showUnplacedOnly) {
+        // 背景と一致するピクセル (配置済み) は透明化、不一致 (未配置) のみ描画
+        if (colorMatches) continue;
+
+        // 中心ピクセルは常に書き込み
+        if (isCenterPixel) {
           scaledData[i] = r;
           scaledData[i + 1] = g;
           scaledData[i + 2] = b;
           scaledData[i + 3] = a;
+          continue;
         }
-      } else if (mode === "fill") {
-        scaledData[i] = r;
-        scaledData[i + 1] = g;
-        scaledData[i + 2] = b;
-        scaledData[i + 3] = a;
+
+        // モード別処理（通常と同じ）
+        if (mode === "dot") {
+          // 書き込まない
+        } else if (mode === "cross") {
+          if (isCrossArm) {
+            scaledData[i] = r;
+            scaledData[i + 1] = g;
+            scaledData[i + 2] = b;
+            scaledData[i + 3] = a;
+          }
+        } else if (mode === "fill") {
+          scaledData[i] = r;
+          scaledData[i + 1] = g;
+          scaledData[i + 2] = b;
+          scaledData[i + 3] = a;
+        } else {
+          // 補助色を使うパターン
+          if (isCrossArm) {
+            const [ar, ag, ab] = getAuxiliaryColor(mode, [r, g, b]);
+            scaledData[i] = ar;
+            scaledData[i + 1] = ag;
+            scaledData[i + 2] = ab;
+            scaledData[i + 3] = 255;
+          } else if (mode === "red-border") {
+            scaledData[i] = 255;
+            scaledData[i + 1] = 0;
+            scaledData[i + 2] = 0;
+            scaledData[i + 3] = 255;
+          }
+        }
       } else {
-        // 補助色を使うパターン
-        if (isCrossArm) {
-          const [ar, ag, ab] = getAuxiliaryColor(mode, [r, g, b]);
-          scaledData[i] = ar;
-          scaledData[i + 1] = ag;
-          scaledData[i + 2] = ab;
-          scaledData[i + 3] = 255;
-        } else if (mode === "red-border") {
-          // 赤枠モードは腕以外(4隅)も赤
-          scaledData[i] = 255;
-          scaledData[i + 1] = 0;
-          scaledData[i + 2] = 0;
-          scaledData[i + 3] = 255;
+        // 通常モード: 背景と一致したら透明化、不一致なら描画
+        if (colorMatches) continue;
+
+        // 中心ピクセルは常に書き込み
+        if (isCenterPixel) {
+          scaledData[i] = r;
+          scaledData[i + 1] = g;
+          scaledData[i + 2] = b;
+          scaledData[i + 3] = a;
+          continue;
+        }
+
+        // モード別処理
+        if (mode === "dot") {
+          // 書き込まない（デフォルト透明のまま）
+        } else if (mode === "cross") {
+          if (isCrossArm) {
+            scaledData[i] = r;
+            scaledData[i + 1] = g;
+            scaledData[i + 2] = b;
+            scaledData[i + 3] = a;
+          }
+        } else if (mode === "fill") {
+          scaledData[i] = r;
+          scaledData[i + 1] = g;
+          scaledData[i + 2] = b;
+          scaledData[i + 3] = a;
+        } else {
+          // 補助色を使うパターン
+          if (isCrossArm) {
+            const [ar, ag, ab] = getAuxiliaryColor(mode, [r, g, b]);
+            scaledData[i] = ar;
+            scaledData[i + 1] = ag;
+            scaledData[i + 2] = ab;
+            scaledData[i + 3] = 255;
+          } else if (mode === "red-border") {
+            // 赤枠モードは腕以外(4隅)も赤
+            scaledData[i] = 255;
+            scaledData[i + 1] = 0;
+            scaledData[i + 2] = 0;
+            scaledData[i + 3] = 255;
+          }
         }
       }
     }
@@ -303,6 +365,8 @@ const applyOverlayProcessing = async (
   const shouldSkipRendering =
     colorFilter !== undefined && colorFilter.length === 0;
 
+  const showUnplacedOnly = window.mrWplaceShowUnplacedOnly ?? false;
+
   const scaledData = scaleAndRenderWithMode(
     filteredData,
     width,
@@ -312,7 +376,8 @@ const applyOverlayProcessing = async (
     offsetX,
     offsetY,
     mode,
-    shouldSkipRendering
+    shouldSkipRendering,
+    showUnplacedOnly
   );
 
   // Phase 4: ImageBitmap変換
@@ -394,8 +459,14 @@ export const drawOverlayLayersOnTile = async (
   if (!context) throw new Error("tile canvas context not found");
   context.imageSmoothingEnabled = false;
 
-  // 元タイル画像を下地化（デコード済みImageBitmap）
-  context.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
+  // Show unplaced only モード時は単色背景を描画
+  const showUnplacedOnly = window.mrWplaceShowUnplacedOnly ?? false;
+  if (showUnplacedOnly) {
+    drawSolidBackground(context, drawSize, drawSize);
+  } else {
+    // 元タイル画像を下地化（デコード済みImageBitmap）
+    context.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
+  }
 
   // 描画モードを取得
   const colorFilterManager = window.mrWplace?.colorFilterManager;
