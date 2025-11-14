@@ -1,6 +1,5 @@
 # メイン
 
-- 通知しきい値のテキストダークテーマ対応 notification_threshold src/features/user-status/ui/notification-modal.ts の 386
 - タイルが描画されないことがある。removePreparedOverlayImageByKey 　が not defined が原因だったが、ちゃんと直っているだろうか
 - 描画カウントおかしい
 - 登録済みの画像を描画 OFF にするとプログレスバーなどが表示されなくなる
@@ -92,6 +91,7 @@
 
 # DONE v1.9.2
 
+- 通知しきい値のテキストダークテーマ対応
 - 描画しきれていない残りのピクセルがどこにあるかわかりにくい。複雑な画像の場合。未配置のみ表示をつける
 - ギャラリーの並び替え
 - タイル一覧並び替え
