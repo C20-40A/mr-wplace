@@ -13,7 +13,7 @@ const STORE_NAME = "tiles";
 const DB_VERSION = 1;
 
 interface CachedTile {
-  blob: Blob;
+  arrayBuffer: ArrayBuffer; // Store as ArrayBuffer instead of Blob for IndexedDB persistence
   lastAccessed: number;
 }
 
@@ -66,9 +66,11 @@ class TileCacheDB {
       request.onsuccess = () => {
         const cached = request.result as CachedTile | undefined;
         if (cached) {
+          // Convert ArrayBuffer back to Blob
+          const blob = new Blob([cached.arrayBuffer], { type: "image/png" });
           // Update last accessed time
-          store.put({ blob: cached.blob, lastAccessed: Date.now() }, key);
-          resolve(cached.blob);
+          store.put({ arrayBuffer: cached.arrayBuffer, lastAccessed: Date.now() }, key);
+          resolve(blob);
         } else {
           resolve(null);
         }
@@ -83,13 +85,16 @@ class TileCacheDB {
     await this.init();
     if (!this.db) return;
 
+    // Convert Blob to ArrayBuffer for reliable IndexedDB storage
+    const arrayBuffer = await blob.arrayBuffer();
+
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(STORE_NAME, "readwrite");
       const store = transaction.objectStore(STORE_NAME);
 
       // Add new tile
       const addRequest = store.put(
-        { blob, lastAccessed: Date.now() } as CachedTile,
+        { arrayBuffer, lastAccessed: Date.now() } as CachedTile,
         key
       );
 
