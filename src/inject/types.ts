@@ -20,6 +20,11 @@ export interface GalleryImage {
   dataUrl: string;
   drawPosition: { TLX: number; TLY: number; PxX: number; PxY: number };
   layerOrder: number;
+  // Stored statistics for restoration after reload
+  perTileColorStats?: Record<
+    string,
+    { matched: Record<string, number>; total: Record<string, number> }
+  >;
 }
 
 export interface SnapshotImage {

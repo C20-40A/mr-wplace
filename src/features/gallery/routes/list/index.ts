@@ -18,7 +18,10 @@ export class GalleryList {
     this.ui = new GalleryListUI();
   }
 
-  private sortItems(items: GalleryItem[], sortType: GallerySortType): GalleryItem[] {
+  private sortItems(
+    items: GalleryItem[],
+    sortType: GallerySortType
+  ): GalleryItem[] {
     const sorted = [...items];
 
     switch (sortType) {
@@ -90,6 +93,7 @@ export class GalleryList {
   ): Promise<void> {
     this.onDrawToggleCallback = onDrawToggle;
     const items = await this.storage.getAll();
+    console.log("🧑‍🎨 : Fetched gallery items:", items);
 
     // ソート設定を取得
     const result = await browserStorage.get([SORT_KEY]);
@@ -99,7 +103,9 @@ export class GalleryList {
     const sortedItems = this.sortItems(items, sortType);
 
     // 描画位置がある画像の統計を取得
-    const itemsWithDrawPosition = sortedItems.filter((item) => item.drawPosition);
+    const itemsWithDrawPosition = sortedItems.filter(
+      (item) => item.drawPosition
+    );
     if (itemsWithDrawPosition.length > 0) {
       const imageKeys = itemsWithDrawPosition.map((item) => item.key);
       const statsPerImage = await getStatsPerImage(imageKeys);
@@ -126,7 +132,13 @@ export class GalleryList {
         await sendGalleryImagesToInject();
 
         // 再描画
-        this.render(container, router, onImageClick, onDrawToggle, onCloseModal);
+        this.render(
+          container,
+          router,
+          onImageClick,
+          onDrawToggle,
+          onCloseModal
+        );
       },
       container,
       () => router.navigate("image-editor"),
@@ -137,7 +149,13 @@ export class GalleryList {
         // ソート設定を保存
         await browserStorage.set({ [SORT_KEY]: newSortType });
         // 再描画
-        this.render(container, router, onImageClick, onDrawToggle, onCloseModal);
+        this.render(
+          container,
+          router,
+          onImageClick,
+          onDrawToggle,
+          onCloseModal
+        );
       }
     );
   }

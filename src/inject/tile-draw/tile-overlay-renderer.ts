@@ -24,6 +24,45 @@ const createImageBitmapFromCanvas = async (canvas: HTMLCanvasElement): Promise<I
 import { overlayLayers, perTileColorStats } from "./states";
 
 /**
+ * Notify content script to save statistics to storage
+ * This is called after tile rendering completes and statistics are updated
+ */
+const notifyStatsUpdate = (
+  tempStatsMap: Map<string, ColorStats>,
+  tileKey: string
+): void => {
+  // Convert each image's stats to a serializable format
+  for (const [imageKey, stats] of tempStatsMap.entries()) {
+    // Get all stats for this image
+    const imageStatsMap = perTileColorStats.get(imageKey);
+    if (!imageStatsMap) continue;
+
+    // Convert Map to plain object for postMessage
+    const tileStatsObject: Record<
+      string,
+      { matched: Record<string, number>; total: Record<string, number> }
+    > = {};
+
+    for (const [tileKey, tileStats] of imageStatsMap.entries()) {
+      tileStatsObject[tileKey] = {
+        matched: Object.fromEntries(tileStats.matched),
+        total: Object.fromEntries(tileStats.total),
+      };
+    }
+
+    // Send to content script
+    window.postMessage(
+      {
+        source: "mr-wplace-stats-updated",
+        imageKey,
+        tileStatsMap: tileStatsObject,
+      },
+      "*"
+    );
+  }
+};
+
+/**
  * Draw solid background for unplaced-only mode
  */
 const drawSolidBackground = (
@@ -503,6 +542,12 @@ export const drawOverlayLayersOnTile = async (
       perTileColorStats.set(imageKey, new Map());
     }
     perTileColorStats.get(imageKey)!.set(coordStr, stats);
+  }
+
+  // Notify content script to save statistics to storage
+  // Do this asynchronously to avoid blocking tile rendering
+  if (tempStatsMap.size > 0) {
+    notifyStatsUpdate(tempStatsMap, coordStr);
   }
 
   const result = await canvas.convertToBlob({ type: "image/png" });

@@ -33,6 +33,7 @@ import { getOverlayPixelColor } from "@/utils/inject-bridge";
 /**
  * Send gallery images to inject side for tile processing
  * IMPORTANT: Call this after any gallery image changes (add, move, toggle, delete)
+ * Also sends stored statistics for restoration after reload
  */
 export const sendGalleryImagesToInject = async () => {
   const { GalleryStorage } = await import("@/features/gallery/storage");
@@ -47,6 +48,8 @@ export const sendGalleryImagesToInject = async () => {
       dataUrl: img.dataUrl,
       drawPosition: img.drawPosition!,
       layerOrder: img.layerOrder ?? 0,
+      // Include stored statistics for restoration
+      perTileColorStats: img.perTileColorStats,
     }));
 
   window.postMessage(
@@ -355,13 +358,13 @@ export const sendTileBoundariesToInject = async () => {
         userStatus.updateFromUserData(userData);
       }
 
-      // Listen for stats computation from inject.js
-      // NOTE: 統計の事前計算は削除されたため、このメッセージは送信されなくなった
-      // 統計はタイルレンダリング時に計算され、inject側のperTileColorStatsに保存される
-      // if (event.data.source === "mr-wplace-stats-computed") {
-      //   const { imageKey, tileStatsMap } = event.data;
-      //   await handleStatsComputed(imageKey, tileStatsMap);
-      // }
+      // Listen for stats update from inject.js (after tile rendering)
+      // This is called when a tile is rendered and statistics are computed
+      // Statistics are saved to storage for persistence across reloads
+      if (event.data.source === "mr-wplace-stats-updated") {
+        const { imageKey, tileStatsMap } = event.data;
+        await handleStatsComputed(imageKey, tileStatsMap);
+      }
 
       // Listen for total stats computation from inject.js
       if (event.data.source === "mr-wplace-total-stats-computed") {

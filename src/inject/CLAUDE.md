@@ -331,82 +331,185 @@ dist/inject.js    22.9kb  (全機能統合, snapshot 処理追加)
 ✅ データ変更時は必ず send\*ToInject() を呼ぶ
 ✅ async/await で適切に待機
 
-### 統計の事前計算機能 (2025-11-01)
+### 統計データの永続化 (2025-11-14)
 
 #### 背景
 
-タイルレンダリング時にのみ統計が計算される仕組みでは、以下の問題がありました：
+**問題**: コミット `26b8319` (2025-11-14) で統計の事前計算機能が削除された結果、統計データがリロードで消えるようになった。
 
-- 画像配置直後に統計を見ようとしても、タイルがまだレンダリングされていない
-- カラーフィルター画面で統計が表示されない
-- paint-stats が表示されない
+削除理由:
+- バックグラウンド計算が不要なタイル fetch を大量に発生させる
+- ネットワーク負荷とパフォーマンス問題
+
+削除により発生した問題:
+- 統計はタイルレンダリング時のみ計算される
+- inject context の `perTileColorStats` Map に保存される（メモリのみ）
+- Chrome storage には保存されない
+- **リロードで統計が消える**
 
 #### 解決策
 
-**画像追加時とカラーフィルター変更時に統計を事前計算**
+**案1と案2の組み合わせ**を実装:
 
-1. **画像追加時** (`states-inject.ts`):
+1. **初回ロード時**: ストレージから統計を復元して inject に送信
+2. **タイル訪問時**: 統計を計算してストレージに保存
 
-   - `addImageToOverlayLayers()` で画像が追加されたとき
-   - `computeStatsInBackground()` をバックグラウンドで実行
-   - 各タイルの背景を fetch して統計を計算
-   - `perTileColorStats` に保存
+これにより、不要なタイル fetch を避けつつ、統計データを永続化。
 
-2. **カラーフィルター変更時** (`message-handler.ts`):
+#### 実装内容
 
-   - `handleColorFilterUpdate()` でフィルターが変更されたとき
-   - `recomputeAllStats()` で全画像の統計を再計算
+**1. 初回ロード時の統計復元**
 
-3. **統計計算ロジック** (`computeStatsForImage.ts`):
-   - 各タイルの背景を `https://backend.wplace.live/tiles/${tileX}/${tileY}.png` から fetch
-   - 画像ピクセルと背景ピクセルを比較
-   - カラーフィルターを適用（必要な場合）
-   - `matched` と `total` カウントを計算
+**content script** (`src/content.ts:38-64`):
+```typescript
+export const sendGalleryImagesToInject = async () => {
+  // ...
+  const enabledImages = images
+    .filter((img) => img.drawEnabled && img.drawPosition)
+    .map((img) => ({
+      key: img.key,
+      dataUrl: img.dataUrl,
+      drawPosition: img.drawPosition!,
+      layerOrder: img.layerOrder ?? 0,
+      // Include stored statistics for restoration
+      perTileColorStats: img.perTileColorStats,
+    }));
+  // ...
+};
+```
 
-#### 利点
+**inject script** (`src/inject/handlers/overlay-handlers.ts:48-61`):
+```typescript
+// Restore stored statistics if available
+if (img.perTileColorStats) {
+  const tileStatsMap = new Map<string, { matched: Map<string, number>; total: Map<string, number> }>();
 
-- ✅ 画像配置直後に統計が利用可能
-- ✅ ユーザーがタイルを訪問する前に統計が見られる
-- ✅ カラーフィルター変更時に自動で統計が更新される
-- ✅ バックグラウンドで非同期に実行されるため、UI がブロックされない
+  for (const [tileKey, stats] of Object.entries(img.perTileColorStats)) {
+    tileStatsMap.set(tileKey, {
+      matched: new Map(Object.entries(stats.matched)),
+      total: new Map(Object.entries(stats.total)),
+    });
+  }
 
-#### 制限事項
+  setPerTileColorStats(img.key, tileStatsMap);
+  console.log(`🧑‍🎨 : Restored statistics for ${img.key} (${tileStatsMap.size} tiles)`);
+}
+```
 
-- 背景タイルを fetch するため、ネットワークリクエストが発生
-- 大きな画像の場合、多くのタイルの fetch が必要
-- 統計計算は非同期で行われるため、即座には利用できない場合がある（通常 1-2 秒）
+**2. タイル訪問時の統計保存**
 
-#### エラー対策とパフォーマンス改善 (2025-11-01)
+**inject script** (`src/inject/tile-draw/tile-overlay-renderer.ts:26-63`):
+```typescript
+/**
+ * Notify content script to save statistics to storage
+ */
+const notifyStatsUpdate = (
+  tempStatsMap: Map<string, ColorStats>,
+  tileKey: string
+): void => {
+  for (const [imageKey, stats] of tempStatsMap.entries()) {
+    const imageStatsMap = perTileColorStats.get(imageKey);
+    if (!imageStatsMap) continue;
 
-**問題 1**: 統計計算がタイル描画と競合し、`InvalidStateError: The source image could not be decoded` エラーが発生
+    // Convert Map to plain object for postMessage
+    const tileStatsObject: Record<
+      string,
+      { matched: Record<string, number>; total: Record<string, number> }
+    > = {};
 
-**解決策**:
+    for (const [tileKey, tileStats] of imageStatsMap.entries()) {
+      tileStatsObject[tileKey] = {
+        matched: Object.fromEntries(tileStats.matched),
+        total: Object.fromEntries(tileStats.total),
+      };
+    }
 
-1. **遅延実行**: 画像追加後、2 秒待ってから統計計算を開始（タイル描画を優先）
-2. **順次処理**: タイルを 10 個ごとに 100ms 待機して順次処理（並列 fetch 数を制限）
-3. **タイムアウト**: fetch に 5 秒のタイムアウトを設定（ハング防止）
-4. **エラーハンドリング強化**:
-   - fetch 失敗時は null を返す（エラーを throw しない）
-   - デコード失敗時はそのタイルをスキップ
-   - エラーログは警告レベルに下げる（大量のログを防ぐ）
-5. **画像ごとに順次処理**: 複数画像の統計再計算も順次実行（並列実行を避ける）
+    // Send to content script
+    window.postMessage(
+      {
+        source: "mr-wplace-stats-updated",
+        imageKey,
+        tileStatsMap: tileStatsObject,
+      },
+      "*"
+    );
+  }
+};
+```
 
-**問題 2**: data saver ON のときに統計計算がエラーになる
+**inject script** (`src/inject/tile-draw/tile-overlay-renderer.ts:508-512`):
+```typescript
+// Notify content script to save statistics to storage
+// Do this asynchronously to avoid blocking tile rendering
+if (tempStatsMap.size > 0) {
+  notifyStatsUpdate(tempStatsMap, coordStr);
+}
+```
 
-**原因**: data saver ON のときは、タイルがキャッシュされるまで fetch できない
+**content script** (`src/content.ts:189-211, 361-367`):
+```typescript
+// Listen for stats update from inject.js (after tile rendering)
+if (event.data.source === "mr-wplace-stats-updated") {
+  const { imageKey, tileStatsMap } = event.data;
+  await handleStatsComputed(imageKey, tileStatsMap);
+}
 
-**解決策**:
+const handleStatsComputed = async (
+  imageKey: string,
+  tileStatsMap: Record<string, { matched: Record<string, number>; total: Record<string, number> }>
+) => {
+  // Convert object back to Map
+  const statsMap = new Map<...>();
+  // ...
+  await galleryStorage.updateTileColorStats(imageKey, statsMap);
+  console.log(`🧑‍🎨 : Saved stats for ${imageKey} to storage`);
+};
+```
 
-- **data saver ON 時はスキップ**: 統計の事前計算をスキップ
-- タイルレンダリング時の統計計算は引き続き動作するため、タイルを訪問すれば統計は計算される
+#### 動作の流れ
+
+```
+【初回ロード時】
+1. content.ts: sendGalleryImagesToInject()
+2. → inject: handleGalleryImages()
+3. → ストレージの統計を perTileColorStats に復元
+4. → すぐに統計が表示可能 ✅
+
+【タイル訪問時】
+1. inject: タイルレンダリング
+2. → 統計を計算
+3. → mr-wplace-stats-updated メッセージ送信
+4. → content: handleStatsComputed()
+5. → galleryStorage.updateTileColorStats()
+6. → ストレージに保存 ✅
+7. → 次回リロード時に復元される
+```
+
+#### メリット
+
+✅ **リロード後も統計が残る**
+✅ **不要なタイルfetchが発生しない**（削除された事前計算は使わない）
+✅ **タイル訪問時に自動で最新の統計に更新される**
+✅ **カラーフィルター変更にも対応**（タイル再訪問時に再計算される）
+✅ **パフォーマンス問題なし**
 
 #### 実装ファイル
 
-- `src/inject/tile-draw/utils/computeStatsForImage.ts` - 統計計算ロジック
-- `src/inject/tile-draw/states-inject.ts` - 画像追加時の統計計算
-- `src/inject/message-handler.ts` - カラーフィルター変更時の統計再計算
+- `src/content.ts` - sendGalleryImagesToInject(), handleStatsComputed()
+- `src/inject/handlers/overlay-handlers.ts` - handleGalleryImages() (統計復元)
+- `src/inject/tile-draw/tile-overlay-renderer.ts` - notifyStatsUpdate()
+- `src/inject/types.ts` - GalleryImage 型に perTileColorStats 追加
+- `src/features/gallery/storage.ts` - updateTileColorStats() (既存)
 
-### 完了日: 2025-11-01
+#### ビルドサイズ
 
-全ての描画関連機能 (gallery, snapshots, text-draw, auto-spoit, paint-stats) が inject 側で動作確認済み。
-統計の事前計算機能が追加され、画像配置直後に統計が利用可能になった。
+```
+dist/content.js  406.3kb  (増加: +73KB due to statistics persistence logic)
+dist/popup.js    157.2kb  (変更なし)
+dist/inject.js    31.4kb  (増加: +8.5KB due to statistics notification)
+```
+
+### 完了日: 2025-11-14
+
+統計データの永続化機能が実装され、リロード後も統計が保持されるようになった。
+不要なタイル fetch を避けつつ、タイル訪問時に自動で統計をストレージに保存する仕組みを実現。
