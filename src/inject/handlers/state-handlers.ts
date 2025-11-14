@@ -57,6 +57,7 @@ export const handleColorFilterUpdate = (data: {
   isFilterActive: boolean;
   selectedRGBs?: number[][];
   enhancedMode: "dot" | "cross" | "fill" | "none";
+  skipStatsRecompute?: boolean;
 }): void => {
   if (!window.mrWplace) {
     window.mrWplace = {};
@@ -70,8 +71,10 @@ export const handleColorFilterUpdate = (data: {
 
   console.log("🧑‍🎨 : Color filter updated:", data);
 
-  // カラーフィルター変更時に統計を再計算
-  recomputeAllStats(data.selectedRGBs);
+  // カラーフィルター変更時に統計を再計算（高速切り替え時はスキップ）
+  if (!data.skipStatsRecompute) {
+    recomputeAllStats(data.selectedRGBs);
+  }
 };
 
 /**

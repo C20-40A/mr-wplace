@@ -2,6 +2,7 @@ import { setupElementObserver } from "../../components/element-observer";
 import { findPaintPixelControls } from "../../constants/selectors";
 import { createColorIsolateButton } from "./ui";
 import { sendColorFilterToInject } from "../../content";
+import { t } from "@/i18n/manager";
 
 export class ColorIsolate {
   private enabled: boolean = false;
@@ -70,7 +71,7 @@ export class ColorIsolate {
         createElement: (container) => {
           const tooltip = document.createElement("div");
           tooltip.className = "tooltip";
-          tooltip.setAttribute("data-tip", "選択中の色のみ表示");
+          tooltip.setAttribute("data-tip", t`show_selected_color_only`);
 
           this.button = createColorIsolateButton(this.enabled);
           this.button.id = "color-isolate-btn";
@@ -117,7 +118,8 @@ export class ColorIsolate {
 
     // 指定した色のみをenableにする
     await colorFilterManager.setSelectedColors([colorId]);
-    sendColorFilterToInject(colorFilterManager);
+    // 高速切り替え時は統計再計算をスキップ
+    sendColorFilterToInject(colorFilterManager, true);
     console.log("🧑‍🎨 : Color isolate updated to color ID:", colorId);
   }
 
@@ -148,7 +150,8 @@ export class ColorIsolate {
       if (selectedColorId !== null) {
         this.lastSelectedColorId = selectedColorId;
         await colorFilterManager.setSelectedColors([selectedColorId]);
-        sendColorFilterToInject(colorFilterManager);
+        // 高速切り替え時は統計再計算をスキップ
+        sendColorFilterToInject(colorFilterManager, true);
         console.log("🧑‍🎨 : Color isolate enabled for color ID:", selectedColorId);
 
         // localStorage監視を開始
@@ -166,7 +169,8 @@ export class ColorIsolate {
       // OFF: 元の選択色に戻す
       this.stopMonitoring();
       await colorFilterManager.setSelectedColors(this.originalSelectedColors);
-      sendColorFilterToInject(colorFilterManager);
+      // オフ時は統計を再計算（元の状態に戻す）
+      sendColorFilterToInject(colorFilterManager, false);
       console.log("🧑‍🎨 : Color isolate disabled, restored original colors");
     }
   }
