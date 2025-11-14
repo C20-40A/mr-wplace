@@ -1,4 +1,4 @@
-[# Mr. Wplace
+# Mr. Wplace
 
 ![Version](https://img.shields.io/badge/version-1.10.0-blue.svg)
 ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green.svg)

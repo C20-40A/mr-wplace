@@ -9,11 +9,15 @@ export const esTranslations = {
   save: "Guardar",
   delete: "Eliminar",
   edit: "Editar",
+  update: "Actualizar",
+  updated: "Actualizado",
   add: "Añadir",
   select: "Seleccionar",
   cancel: "Cancelar",
   bookmarks: "favoritos",
   bookmark: "Favorito",
+  save_location: "Guardar Ubicación",
+  draw: "Dibujar",
   draw_image: "Imagen",
   text_draw: "Texto",
   text_clear: "Borrar Texto",
@@ -62,9 +66,20 @@ export const esTranslations = {
   sort_tag: "Por Etiqueta",
   sort_distance: "Por Distancia",
   sort_last_updated: "Guardados Recientemente",
+  sort_tile_count: "Por Cantidad de Bloques",
+  sort_name: "Por Nombre",
   sort_layer: "Orden de Capa",
 
-  // Import/Export関連
+  // Import/Export
+  import_export: "Importar/Exportar",
+  import_description: "Importar favoritos desde archivo JSON",
+  export_all: "Exportar Todo",
+  export_all_description: "Exportar todos los favoritos",
+  export_by_tag: "Exportar por Etiqueta",
+  export_by_tag_description: "Exportar solo favoritos con etiquetas seleccionadas",
+  export_selected_tags: "Exportar Etiquetas Seleccionadas",
+  no_tags_available: "No hay etiquetas disponibles",
+  no_name: "Sin nombre",
   no_export_bookmarks: "Sin favoritos para exportar",
   bookmarks_exported: " favoritos exportados",
   file_input_not_found: "Entrada de archivo no encontrada",
@@ -82,6 +97,10 @@ export const esTranslations = {
   timetravel_tile_snapshots: "Instantáneas de Azulejos",
   save_current_snapshot: "Guardar Instantánea Actual",
   snapshot_detail: "Detalle de Instantánea",
+  snapshot_share: "Compartir Instantánea",
+  snapshot_timestamp: "Marca de Tiempo de Instantánea",
+  snapshot_share_description:
+    "Este nombre de archivo contiene información de coordenadas y marca de tiempo. Cuando lo reimportes desde la lista de bloques, se registrará como una instantánea en la misma posición y hora.",
   return_to_current: "Volver a Actual",
   enter_snapshot_name:
     "Introduce el nombre de la instantánea (vacío para marca de tiempo):",
@@ -106,10 +125,20 @@ export const esTranslations = {
   download: "Descargar",
   clear_image_confirm: "¿Limpiar imagen y volver al estado inicial?",
   saved_to_gallery: "Imagen guardada en galería",
+  large_image_resize_confirm:
+    "El tamaño de la imagen es grande y puede causar procesamiento lento.\n¿Te gustaría cambiar el tamaño de la imagen?",
+  current_size: "Tamaño actual",
+  resize_to: "Cambiar tamaño a",
+  resize_image: "Cambiar tamaño",
+  edit_image: "Editar",
+  add_to_gallery_directly: "Añadir directamente a galería",
   select_image: "Seleccionar imagen",
   click_image_to_draw: "Haz clic en la imagen que quieres dibujar en el mapa",
   no_draw_images: "Sin imágenes para dibujar.",
   no_saved_images: "Sin imágenes guardadas",
+  unplaced_images: "Imágenes Sin Colocar",
+  layers: "Capas",
+  no_layers: "Sin capas",
   delete_image_confirm: "¿Quieres eliminar esta imagen?",
 
   // Drawing/Loading
@@ -134,6 +163,8 @@ export const esTranslations = {
   draw_this_tile: "Dibujar este tile",
   enabled: "Habilitado",
   disabled: "Deshabilitado",
+  invalid_coordinates: "Coordenadas inválidas",
+  coordinates_updated: "Coordenadas actualizadas",
   goto_map: "Ir al Mapa",
   share: "Compartir",
   image_share: "Compartir Imagen",
@@ -155,7 +186,10 @@ export const esTranslations = {
   color_filter: "Filtro de Color",
   enable_all: "Activar Todos",
   disable_all: "Desactivar Todos",
+  free_colors_only: "Solo Colores Gratis",
+  owned_colors_only: "Solo Colores Poseídos",
   enhanced: "Mejorado",
+  show_selected_color_only: "Mostrar Solo Color Seleccionado",
 
   // User Status (Notification Modal)
   user_status_details: "Detalles del Estado del Usuario",
@@ -177,12 +211,117 @@ export const esTranslations = {
   already_reached: "Ya alcanzado",
   enable_alarm: "Activar Alarma",
   disable_alarm: "Desactivar Alarma",
-  add_to_calendar_title: "Añadir a Google Calendar",
+  add_to_calendar_title: "Google Calendar",
   wplace_charged_event: "WPlace Cargado ⚡",
+
+  // Theme Toggle
+  theme_toggle: "Cambiar Tema",
+  theme_light: "Tema Claro",
+  theme_dark: "Tema Oscuro",
+  theme_switched: "Tema cambiado",
+
+  // Enhanced Draw Modes
+  enhanced_mode_label: "Modo de Dibujo",
+  enhanced_mode_dot: "Punto",
+  enhanced_mode_cross: "Cruz",
+  enhanced_mode_fill: "Rellenar",
+  enhanced_mode_red_cross: "Cruz Roja",
+  enhanced_mode_cyan_cross: "Cruz Cian",
+  enhanced_mode_dark_cross: "Cruz Oscura",
+  enhanced_mode_complement_cross: "Cruz Complementaria",
+  enhanced_mode_red_border: "Borde Rojo",
+
+  // Auto Spoit
+  auto_spoit: "Selector de Color Automático",
+  auto_spoit_tooltip: "Selector de color automático",
+  auto_spoit_warning: `【Selector de Color Automático - Aviso Importante】
+
+Esta es una función simple que hace que "hacer clic repetidamente en el botón i para elegir colores" sea un poco más fácil.
+Sin embargo, presta mucha atención a lo siguiente:
+
+⚠ Aviso
+• Esta es una función de verificación del desarrollador
+• Esta función no está disponible públicamente
+• Usar solo para probar la funcionalidad del selector de colores
+• Para evitar malentendidos, siempre pinta a velocidad natural y de manera natural
+  (Pinta desde los bordes, pinta áreas más fáciles primero, etc. - pinta como lo haría un humano)
+• Movimientos demasiado rápidos o patrones de pintura no naturales pueden causar desalineación de píxeles o malentendidos
+`,
+
+  // Sort Order
+  sort_order_default: "Predeterminado",
+  sort_order_most_missing: "Más Faltantes",
+  sort_order_least_remaining: "Casi Completo",
+
+  // Compute Device
+  compute_device_label: "Procesamiento",
+
+  // Show Unplaced Only
+  show_unplaced_only: "Solo Sin Colocar",
+
+  // Tile Merge
+  tile_merge: "Fusionar Bloques",
+  merge_tiles: "Fusionar Bloques",
+  export_png: "Exportar PNG",
+  clear_selection: "Limpiar Selección",
+  selected: "Seleccionado",
+
+  // Tile Statistics
+  tile_statistics: "Estadísticas de Bloques",
+  statistics: "Estadísticas",
+  calculating: "Calculando",
+  total_pixels: "Total de Píxeles",
+  color_distribution: "Distribución de Colores",
+
+  // Bookmark Tags
+  existing_tags: "Etiquetas Existentes",
+  new_tag: "Crear Nueva Etiqueta",
+  remove_tag: "Quitar Etiqueta",
+  bookmark_name: "Nombre del Favorito",
+  tag_name: "Nombre de Etiqueta",
+  tag_color: "Color de Etiqueta",
+  optional: "Opcional",
+  required: "Obligatorio",
+  edit_tag: "Editar Etiqueta",
+  tag_edit_title: "Editar Etiqueta",
+  tag_edit_description: "Todos los favoritos que usan esta etiqueta serán actualizados",
+  tag_delete_confirm:
+    "¿Eliminar esta etiqueta? La etiqueta será eliminada de todos los favoritos que la usan.",
+
+  // Coordinate Jumper
+  coordinate_jumper: "Salto de Coordenadas",
+  geographic_coordinates: "Coordenadas Geográficas",
+  tile_coordinates: "Coordenadas de Bloques",
+  jump_to_coordinates: "Saltar a Coordenadas",
+
+  // Location Search
+  location_search: "Búsqueda de Ubicación",
+  search_location: "Buscar Ubicación",
+  enter_place_name: "Introduce el nombre del lugar",
+  searching: "Buscando...",
+  no_results_found: "No se encontraron resultados",
+  search_results: "Resultados de Búsqueda",
+
+  // Coordinate Input (Image Editor)
+  coordinate_input_optional: "Entrada de Coordenadas (Opcional)",
+  tile_x: "Bloque X",
+  tile_y: "Bloque Y",
+  pixel_x: "Píxel X",
+  pixel_y: "Píxel Y",
+  coordinate_input_hint:
+    "Si introduces coordenadas, la imagen se colocará automáticamente en esa posición al añadirse a la galería",
 
   // Data Saver
   data_saver: "Ahorro de Datos",
   data_saver_on: "Ahorro de Datos ACTIVADO",
   data_saver_off: "Ahorro de Datos DESACTIVADO",
   data_saver_rendering_paused: "Renderizado Pausado",
+  storage_usage: "Uso de Almacenamiento",
+  cache_usage: "Uso de Caché",
+  offline_cache_settings: "Configuración de Caché Sin Conexión",
+  maximum_cache_size: "Tamaño Máximo de Caché",
+  clear_all_cache: "Limpiar Toda la Caché",
+  clearing: "Limpiando...",
+  cache_cleared: "¡Caché Limpiada!",
+  tiles: "bloques",
 };
