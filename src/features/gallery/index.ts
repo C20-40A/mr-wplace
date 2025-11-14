@@ -186,8 +186,18 @@ const createGallery = () => {
     ]);
   };
 
+  // モーダルが閉じられたときのクリーンアップ処理を設定
+  const cleanupOnModalClose = () => {
+    if (currentRouteInstance?.destroy) {
+      console.log("🧑‍🎨 : Cleaning up route instance on modal close");
+      currentRouteInstance.destroy();
+      currentRouteInstance = null;
+    }
+  };
+
   // 初期化
   router.setOnRouteChange(renderCurrentRoute);
+  ui.setOnModalClose(cleanupOnModalClose);
   initButton();
 
   return {

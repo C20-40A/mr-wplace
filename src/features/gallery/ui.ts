@@ -5,6 +5,8 @@ import { IMG_ICON_GALLERY } from "@/assets/iconImages";
 
 export class GalleryUI {
   private modalElements: ModalElements;
+  private onModalClose?: () => void;
+  private closeHandlerRegistered = false;
 
   constructor(private router: GalleryRouter) {
     this.modalElements = createModal({
@@ -13,6 +15,23 @@ export class GalleryUI {
       containerStyle: "max-height: 90vh;",
       router: this.router,
     });
+  }
+
+  /**
+   * モーダルが閉じられたときのコールバックを設定
+   */
+  setOnModalClose(callback: () => void): void {
+    this.onModalClose = callback;
+
+    // close イベントリスナーを登録（一度だけ登録）
+    if (!this.closeHandlerRegistered) {
+      this.closeHandlerRegistered = true;
+
+      this.modalElements.modal.addEventListener("close", () => {
+        console.log("🧑‍🎨 : Gallery modal closed, cleaning up...");
+        this.onModalClose?.();
+      });
+    }
   }
 
   showModal(): void {

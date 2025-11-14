@@ -277,13 +277,19 @@ export class GalleryImageSelectorUI {
   destroy(): void {
     console.log("🧑‍🎨 : Destroying GalleryImageSelectorUI...");
 
-    // すべてのボタンのイベントリスナーをクリア
+    // すべてのイベントリスナーとDOM要素をクリア
     if (this.layerPanel) {
-      // すべてのボタンを取得してクローンで置き換え（イベントリスナー削除）
-      const buttons = this.layerPanel.querySelectorAll("button");
-      buttons.forEach((btn) => {
-        const clone = btn.cloneNode(true) as HTMLButtonElement;
-        btn.replaceWith(clone);
+      // すべてのイベントリスナーを削除してからDOMを削除
+      const allElements = this.layerPanel.querySelectorAll("*");
+      allElements.forEach((el) => {
+        // onclick プロパティをクリア
+        if (el instanceof HTMLElement) {
+          el.onclick = null;
+        }
+        // will-change などのGPUレイヤーをクリーンアップ
+        if (el instanceof HTMLElement && el.style) {
+          el.style.willChange = "auto";
+        }
       });
 
       // layerPanel 自体をクリア
