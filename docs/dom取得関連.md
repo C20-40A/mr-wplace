@@ -1,3 +1,79 @@
+# maplibregl の仕組み
+
+```js
+1. ユーザーの操作などで地図の表示範囲が変更されると、その範囲に触れる Tile 群を計算して得ます。
+2. 得られた Tile 群のデータをロードします。これは即ち .mvt ファイルをダウンロードして読み込み、内容を Bucket に変換することです。ここで WebGL ならではの重要なことは、図形の座標データの実体は Bucket が持つのではなく、WebGL の（GPU上の）「頂点バッファ」と呼ばれる領域にコピーすることです。そして Bucket は、各図形の座標群として、この「頂点バッファへのインデックス」を持ちます。
+3. Bucket のロードは非同期で行われるため、ロードが完了したときに Mapbox 側に通知を出し、再描画を促します。
+4. Mapbox の描画命令が呼ばれると、ロード済みの Tile 群が対象になります。
+5. Mapbox は Painter に Tile の描画を依頼します。
+6. Painter は、Layer から描画に必要なスタイル情報を得て、それを使用し Tile 内のすべての図形を WebGL を使って描画します。座標データはすでに GPU の頂点バッファにあります。ただしこれは画面座標ではなく、タイル内の相対座標なので、画面座標へ変換して描画します。この変換処理も WebGL で、つまり GPU で行わせています。
+```
+
+# 現在の制約
+
+```js
+- maplibreglのインスタンスはwindowから取得不可能
+- したがって、map.addLayer()的なものは使えない
+- canvasの子要素はない
+- Painter->webglのdraw呼び出しをhookする
+```
+
+# これで webgl の「UI」 を hook できる
+
+```js
+HTMLCanvasElement.prototype.getContext = new Proxy(
+  HTMLCanvasElement.prototype.getContext,
+  {
+    apply(target, thisArg, args) {
+      const gl = Reflect.apply(target, thisArg, args);
+      console.log(gl);
+      return gl;
+    },
+  }
+);
+```
+
+やるなら、もっと低レベルか
+
+# gl.shaderSource をフックする
+
+```js
+(function () {
+  const proto = WebGL2RenderingContext.prototype;
+  const original = proto.shaderSource;
+
+  proto.shaderSource = function (shader, source) {
+    console.log("[Shader]", source.slice(0, 150)); // 一部だけログ
+    return original.call(this, shader, source);
+  };
+})();
+```
+
+# gl.uniform\* をフック
+
+```js
+(function () {
+  const proto = WebGL2RenderingContext.prototype;
+  const fn = proto.uniformMatrix4fv;
+  proto.uniformMatrix4fv = function (location, transpose, value) {
+    console.log("[uniformMatrix4fv]", location, value);
+    return fn.call(this, location, transpose, value);
+  };
+})();
+```
+
+# texImage2D をフック
+
+```js
+(function () {
+  const orig = WebGL2RenderingContext.prototype.texImage2D;
+  WebGL2RenderingContext.prototype.texImage2D = function () {
+    console.log("[texture]", arguments);
+    return orig.apply(this, arguments);
+  };
+})();
+```
+
 # これで、クリックハンドラーが見つかるクリックしたときのみ
 
 ```js
