@@ -1,5 +1,6 @@
 import { drawOverlayLayersOnTile } from "./tile-draw";
 import { invalidateTileCache } from "./cache-storage";
+import { handleUserStatusUpdate } from "./handlers/user-status-handler";
 
 /**
  * Setup fetch interceptor to handle tile requests and user data
@@ -41,13 +42,9 @@ export const setupFetchInterceptor = (): void => {
       try {
         const jsonData = await clonedResponse.json();
         console.log("🧑‍🎨: Parsed json:", jsonData);
-        window.postMessage(
-          {
-            source: "mr-wplace-me",
-            userData: jsonData,
-          },
-          "*"
-        );
+
+        // Handle user status directly in inject context
+        handleUserStatusUpdate(jsonData);
       } catch (error) {
         console.error("🧑‍🎨: Failed to parse /me response:", error);
       }

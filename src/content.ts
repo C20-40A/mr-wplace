@@ -10,9 +10,8 @@ import { timeTravelAPI } from "@/features/time-travel";
 import { drawingLoaderAPI } from "@/features/drawing-loader";
 import { ColorFilter } from "@/features/color-filter";
 import { ColorFilterManager } from "@/utils/color-filter-manager";
-import { UserStatus } from "@/features/user-status";
-import { WPlaceUserData } from "@/types/user-data";
 import { ThemeToggleStorage } from "@/features/theme-toggle/storage";
+import { NotificationModal } from "@/features/user-status/ui/notification-modal";
 import { textDrawAPI } from "@/features/text-draw";
 import {
   darkThemeAPI,
@@ -337,6 +336,12 @@ export const sendTileBoundariesToInject = async () => {
     // Global instance初期化（inject.js message listener前）
     window.mrWplace = {} as any;
 
+    // TileSnapshot initialization (needed for message listener)
+    const tileSnapshot = new TileSnapshot();
+
+    // NotificationModal initialization (for user status modal)
+    const notificationModal = new NotificationModal();
+
     // Listen for messages from inject.js
     let lastPixelClickColorId: number | null = null;
 
@@ -350,12 +355,11 @@ export const sendTileBoundariesToInject = async () => {
         addCurrentTile(tileX, tileY);
       }
 
-      // Listen for user data from inject.js
-      if (event.data.source === "mr-wplace-me") {
-        console.log("🧑‍🎨: Received user data:", event.data.userData);
-        const userData = event.data.userData as WPlaceUserData;
-
-        userStatus.updateFromUserData(userData);
+      // User data is now handled directly in inject context
+      // But we still handle modal open requests
+      if (event.data.source === "mr-wplace-open-user-modal") {
+        const userData = event.data.userData;
+        notificationModal.show(userData);
       }
 
       // Listen for stats update from inject.js (after tile rendering)
@@ -414,10 +418,6 @@ export const sendTileBoundariesToInject = async () => {
     }
     console.log("🧑‍🎨: DOM ready, proceeding with initialization");
 
-    // UserStatus初期化
-    const userStatus = new UserStatus();
-    userStatus.init();
-
     // i18n初期化（ブラウザ言語検出）
     await I18nManager.init(detectBrowserLanguage());
 
@@ -431,7 +431,6 @@ export const sendTileBoundariesToInject = async () => {
     // Feature初期化
     bookmarkAPI.initBookmark(); // 1. Bookmark (最後に表示)
     const tileOverlay = new TileOverlay();
-    const tileSnapshot = new TileSnapshot();
     timeTravelAPI.initTimeTravel(); // 2. TimeTravel
     galleryAPI.initGallery();
     new Drawing(); // 4. Drawing (最初に表示)
@@ -473,12 +472,13 @@ export const sendTileBoundariesToInject = async () => {
     sendColorFilterToInject(colorFilterManager);
 
     // Global access for ImageProcessor and Gallery
-    window.mrWplace = {
+    // IMPORTANT: Use Object.assign to preserve existing properties (e.g., wplaceChargeData)
+    Object.assign(window.mrWplace, {
       colorFilterManager,
       tileOverlay,
       tileSnapshot,
       autoSpoit,
-    };
+    });
   } catch (error) {
     console.error("🧑‍🎨: Failed to initialize", error);
     if (error instanceof Error) {
