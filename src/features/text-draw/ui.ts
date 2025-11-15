@@ -177,7 +177,7 @@ export class TextDrawUI {
       const fontLabel = document.createElement("div");
       fontLabel.textContent = instance.font;
       fontLabel.style.cssText =
-        "font-size: 0.625rem; color: #9ca3af; margin-top: 0.125rem;";
+        "font-size: 0.625rem; margin-top: 0.125rem; opacity: 0.6;";
 
       textContainer.appendChild(textLabel);
       textContainer.appendChild(fontLabel);
@@ -196,7 +196,6 @@ export class TextDrawUI {
         const btn = document.createElement("button");
         btn.textContent = symbol;
         btn.style.cssText = `
-          background: #f3f4f6;
           border: 1px solid #e5e7eb;
           border-radius: 0.125rem;
           font-size: 0.75rem;
@@ -208,10 +207,10 @@ export class TextDrawUI {
           grid-row: ${gridRow};
         `;
         btn.onmouseover = () => {
-          btn.style.background = "#e5e7eb";
+          btn.style.outline = "2px solid #3b82f6";
         };
         btn.onmouseout = () => {
-          btn.style.background = "#f3f4f6";
+          btn.style.outline = "none";
         };
         btn.onclick = () => {
           this.onMove?.(instance.key, direction);
