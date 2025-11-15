@@ -1,3 +1,8 @@
+/**
+ * User status UI components for inject context
+ * Based on src/features/user-status/ui/components.ts
+ */
+
 export class StatusUIComponents {
   createContainer(): HTMLElement {
     const container = document.createElement("div");

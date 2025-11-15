@@ -2,6 +2,7 @@
 
 - 不具合報告フォーム
 - 紹介文や画像を更新
+- アラームの注意文表示
 - 並列になったから、アイコンの並びが不安定だ
 - 登録済みの画像を描画 OFF にするとプログレスバーなどが表示されなくなる
 - src/inject/handlers/state-handlers.ts の型エラー修正
@@ -92,6 +93,10 @@
 - exclude_globs にメインのもの以外含める？
   - all_frames false (デフォルト)系は false．まあデフォルトが false だから不要か
 - dark/light テーマの i18n 不要になった
+
+# DONE v1.10.2
+
+- /me に intercept できていても、content が ready でないため、send できない(userStatus を早期に初期化)
 
 # DONE v1.10.1
 
