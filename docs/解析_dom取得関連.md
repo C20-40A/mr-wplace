@@ -117,8 +117,26 @@ src.addEventListener("mousemove", (e) => {
 
   const d = ctx.getImageData(x, y, 1, 1).data;
   console.log(`(${x},${y})`, d);
+
+  // 赤のホバー色
+  const isTargetColor =
+    d[0] === 235 && d[1] === 82 && d[2] === 82 && d[3] === 255;
+
+  if (isTargetColor) {
+    console.log("TargetColor");
+    const clickEvent = new MouseEvent("click", {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      clientX: e.clientX,
+      clientY: e.clientY,
+    });
+    src.dispatchEvent(clickEvent);
+  }
 });
 ```
+
+赤なら: 235, 82, 82, 255 とかになる。
 
 しかし、これでの実装は現実的でない。
 理由は、
