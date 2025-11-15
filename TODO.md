@@ -93,6 +93,7 @@
 
 # DONE v1.10.2
 
+- dark theme だとテキスト移動矢印見えない問題の修正
 - 色の変換方式複数追加
 - 表示/非表示を local storage にいれておく
 - /me に intercept できていても、content が ready でないため、send できない(userStatus を早期に初期化)
