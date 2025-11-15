@@ -1,5 +1,6 @@
 import { setupElementObserver } from "@/components/element-observer";
 import { findPaintPixelControls } from "@/constants/selectors";
+import { PaletteToggleStorage } from "./storage";
 
 const COLOR_SELECTOR = "#color-1";
 
@@ -13,8 +14,12 @@ export class PaletteToggle {
     this.init();
   }
 
-  private init(): void {
+  private async init(): Promise<void> {
     console.log("🧑‍🎨 : Palette toggle initialized");
+
+    // Load saved state
+    this.isHidden = await PaletteToggleStorage.get();
+
     this.setupUI();
     this.observeColorChanges();
   }
@@ -67,7 +72,7 @@ export class PaletteToggle {
           this.button.id = "palette-toggle-btn";
           this.button.className = "btn btn-sm btn-ghost";
           this.button.title = "Toggle color palette visibility";
-          this.button.onclick = () => this.toggle();
+          this.button.onclick = () => void this.toggle();
 
           // Add eye icon
           const eyeIcon = this.createEyeIcon(true);
@@ -90,13 +95,16 @@ export class PaletteToggle {
           wrapper.appendChild(this.colorDisplay);
           container.appendChild(wrapper);
 
+          // Restore palette state when button is created
+          this.applyPaletteStateIfNeeded();
+
           console.log("🧑‍🎨 : Palette toggle button created");
         },
       },
     ]);
   }
 
-  private toggle(): void {
+  private async toggle(): Promise<void> {
     const paletteContainer = this.findPaletteContainer();
     if (!paletteContainer) {
       console.log("🧑‍🎨 : Palette container not found");
@@ -115,6 +123,9 @@ export class PaletteToggle {
       console.log("🧑‍🎨 : Palette hidden");
     }
 
+    // Save state to storage
+    await PaletteToggleStorage.set(this.isHidden);
+
     // Update button icon
     if (this.button) {
       this.button.innerHTML = "";
@@ -126,6 +137,30 @@ export class PaletteToggle {
     if (this.colorDisplay) {
       this.colorDisplay.style.display = this.isHidden ? "block" : "none";
     }
+  }
+
+  private applyPaletteStateIfNeeded(): void {
+    if (!this.isHidden) return;
+
+    const paletteContainer = this.findPaletteContainer();
+    if (!paletteContainer) return;
+
+    // Apply hidden state
+    paletteContainer.setAttribute("hidden", "");
+
+    // Update button icon
+    if (this.button) {
+      this.button.innerHTML = "";
+      const eyeIcon = this.createEyeIcon(!this.isHidden);
+      this.button.appendChild(eyeIcon);
+    }
+
+    // Update color display visibility
+    if (this.colorDisplay) {
+      this.colorDisplay.style.display = "block";
+    }
+
+    console.log("🧑‍🎨 : Palette state restored (hidden)");
   }
 
   private updateCurrentColor(): void {

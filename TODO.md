@@ -26,7 +26,6 @@
 - 高速化のため、いくつかの map を record にする
 - i18n の不足部分
 - タイル一覧もタグほしい
-- なんかチャージの残りが表示されない場合あるかも
 
 # バグ
 
@@ -96,6 +95,7 @@
 
 # DONE v1.10.2
 
+- 表示/非表示を local storage にいれておく
 - /me に intercept できていても、content が ready でないため、send できない(userStatus を早期に初期化)
 
 # DONE v1.10.1
