@@ -1,4 +1,4 @@
-import { ImageAdjustments } from "./canvas-processor";
+import { ImageAdjustments, QuantizationMethod } from "./canvas-processor";
 
 /**
  * GPU画像処理: brightness/contrast/saturation + パレット量子化 + ディザリング
@@ -9,7 +9,8 @@ export const gpuProcessImage = async (
   adjustments: ImageAdjustments,
   paletteRGB: Array<[number, number, number]>,
   ditheringEnabled = false,
-  ditheringThreshold = 500
+  ditheringThreshold = 500,
+  quantizationMethod: QuantizationMethod = "rgb-euclidean"
 ): Promise<Uint8ClampedArray> => {
   const width = sourceBitmap.width;
   const height = sourceBitmap.height;
@@ -137,7 +138,71 @@ export const gpuProcessImage = async (
   uniform bool uDitheringEnabled;
   uniform float uSnapThreshold;
   uniform float uBayerMatrix[16];
+  uniform int uQuantizationMethod; // 0: RGB Euclidean, 1: Weighted RGB, 2: Lab
   out vec4 outColor;
+
+  // RGB (0-255) → Lab 色空間変換
+  vec3 rgbToLab(vec3 rgb) {
+    // 1. RGB → sRGB (0-1 正規化)
+    vec3 srgb = rgb / 255.0;
+
+    // 2. sRGB → 線形RGB (ガンマ補正解除)
+    vec3 linear;
+    for (int i = 0; i < 3; i++) {
+      float c = srgb[i];
+      linear[i] = (c <= 0.04045) ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4);
+    }
+
+    // 3. 線形RGB → XYZ (D65白色点)
+    float x = linear.r * 0.4124564 + linear.g * 0.3575761 + linear.b * 0.1804375;
+    float y = linear.r * 0.2126729 + linear.g * 0.7151522 + linear.b * 0.072175;
+    float z = linear.r * 0.0193339 + linear.g * 0.119192 + linear.b * 0.9503041;
+
+    // 4. XYZ → Lab (D65白色点で正規化)
+    float xn = 0.95047;
+    float yn = 1.0;
+    float zn = 1.08883;
+
+    float fx = x / xn;
+    float fy = y / yn;
+    float fz = z / zn;
+
+    float delta = 6.0 / 29.0;
+    float t0 = delta * delta * delta;
+    float m = (1.0 / 3.0) * delta * delta;
+
+    // f関数
+    float fxResult = (fx > t0) ? pow(fx, 1.0 / 3.0) : fx / (3.0 * m) + 4.0 / 29.0;
+    float fyResult = (fy > t0) ? pow(fy, 1.0 / 3.0) : fy / (3.0 * m) + 4.0 / 29.0;
+    float fzResult = (fz > t0) ? pow(fz, 1.0 / 3.0) : fz / (3.0 * m) + 4.0 / 29.0;
+
+    float L = 116.0 * fyResult - 16.0;
+    float a = 500.0 * (fxResult - fyResult);
+    float b = 200.0 * (fyResult - fzResult);
+
+    return vec3(L, a, b);
+  }
+
+  // 色距離計算（量子化方法に応じて）
+  float colorDistance(vec3 rgb1, vec3 rgb2) {
+    if (uQuantizationMethod == 0) {
+      // RGB Euclidean 距離の2乗
+      vec3 diff = rgb1 - rgb2;
+      return dot(diff, diff);
+    } else if (uQuantizationMethod == 1) {
+      // 重み付き RGB 距離の2乗
+      vec3 diff = rgb1 - rgb2;
+      vec3 weights = vec3(0.3, 0.59, 0.11); // R, G, B
+      vec3 weightedDiff = diff * diff * weights;
+      return weightedDiff.r + weightedDiff.g + weightedDiff.b;
+    } else {
+      // Lab色空間での距離
+      vec3 lab1 = rgbToLab(rgb1);
+      vec3 lab2 = rgbToLab(rgb2);
+      vec3 diff = lab1 - lab2;
+      return dot(diff, diff);
+    }
+  }
 
   void main(){
     vec4 color = texture(uAdjusted, vTexCoord);
@@ -148,10 +213,9 @@ export const gpuProcessImage = async (
     vec3 nearest = uPalette[0];
     for (int i = 0; i < ${maxPalette}; ++i) {
       if (i >= uPaletteCount) break;
-      vec3 diff = rgb - uPalette[i];
-      float dist2 = dot(diff, diff);
-      if (dist2 < minDist) {
-        minDist = dist2;
+      float dist = colorDistance(rgb, uPalette[i]);
+      if (dist < minDist) {
+        minDist = dist;
         nearest = uPalette[i];
       }
     }
@@ -174,10 +238,9 @@ export const gpuProcessImage = async (
       vec3 nearest2 = uPalette[0];
       for (int i = 0; i < ${maxPalette}; ++i) {
         if (i >= uPaletteCount) break;
-        vec3 diff2 = rgb - uPalette[i];
-        float dist22 = dot(diff2, diff2);
-        if (dist22 < minDist2) {
-          minDist2 = dist22;
+        float dist2 = colorDistance(rgb, uPalette[i]);
+        if (dist2 < minDist2) {
+          minDist2 = dist2;
           nearest2 = uPalette[i];
         }
       }
@@ -402,6 +465,18 @@ export const gpuProcessImage = async (
   gl.uniform1f(
     gl.getUniformLocation(programPalette, "uSnapThreshold"),
     ditheringThreshold
+  );
+
+  // 量子化方法設定
+  const quantizationMethodInt =
+    quantizationMethod === "weighted-rgb"
+      ? 1
+      : quantizationMethod === "lab"
+      ? 2
+      : 0;
+  gl.uniform1i(
+    gl.getUniformLocation(programPalette, "uQuantizationMethod"),
+    quantizationMethodInt
   );
 
   // ベイヤー行列（4x4、正規化済み -0.5 ~ 0.5）

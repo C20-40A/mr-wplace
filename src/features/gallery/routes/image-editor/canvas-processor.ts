@@ -13,6 +13,124 @@ export interface ImageAdjustments {
 }
 
 /**
+ * 量子化方法
+ */
+export type QuantizationMethod = "rgb-euclidean" | "weighted-rgb" | "lab";
+
+/**
+ * RGB (0-255) → Lab 色空間変換
+ * Lab色空間は人間の視覚に基づいた知覚均等な色空間
+ */
+function rgbToLab(r: number, g: number, b: number): [number, number, number] {
+  // 1. RGB → sRGB (0-1 正規化)
+  let rNorm = r / 255;
+  let gNorm = g / 255;
+  let bNorm = b / 255;
+
+  // 2. sRGB → 線形RGB (ガンマ補正解除)
+  const toLinear = (c: number): number => {
+    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  };
+  rNorm = toLinear(rNorm);
+  gNorm = toLinear(gNorm);
+  bNorm = toLinear(bNorm);
+
+  // 3. 線形RGB → XYZ (D65白色点)
+  const x = rNorm * 0.4124564 + gNorm * 0.3575761 + bNorm * 0.1804375;
+  const y = rNorm * 0.2126729 + gNorm * 0.7151522 + bNorm * 0.072175;
+  const z = rNorm * 0.0193339 + gNorm * 0.119192 + bNorm * 0.9503041;
+
+  // 4. XYZ → Lab (D65白色点で正規化)
+  const xn = 0.95047; // D65白色点
+  const yn = 1.0;
+  const zn = 1.08883;
+
+  const fx = x / xn;
+  const fy = y / yn;
+  const fz = z / zn;
+
+  const delta = 6 / 29;
+  const t0 = delta * delta * delta;
+  const m = (1 / 3) * delta * delta;
+
+  const f = (t: number): number => {
+    return t > t0 ? Math.pow(t, 1 / 3) : t / (3 * m) + 4 / 29;
+  };
+
+  const L = 116 * f(fy) - 16;
+  const a = 500 * (f(fx) - f(fy));
+  const bLab = 200 * (f(fy) - f(fz));
+
+  return [L, a, bLab];
+}
+
+/**
+ * RGB Euclidean 距離の2乗（デフォルト、高速）
+ * 平方根の計算を省略し、最も単純な色の物理的距離を計算
+ */
+function colorDistRgbEuclidean2(
+  r1: number,
+  g1: number,
+  b1: number,
+  r2: number,
+  g2: number,
+  b2: number
+): number {
+  const dr = r1 - r2;
+  const dg = g1 - g2;
+  const db = b1 - b2;
+  return dr * dr + dg * dg + db * db;
+}
+
+/**
+ * 重み付き RGB Euclidean 距離の2乗
+ * 人間の目の感度（緑 > 赤 > 青）を考慮した重み付け
+ * 視覚的品質が向上し、より自然な色合いになる
+ */
+function colorDistWeightedRgb2(
+  r1: number,
+  g1: number,
+  b1: number,
+  r2: number,
+  g2: number,
+  b2: number
+): number {
+  const dr = r1 - r2;
+  const dg = g1 - g2;
+  const db = b1 - b2;
+
+  // 人間の目の感度に基づく重み (緑に最も敏感)
+  const wr = 0.3; // 赤の重み
+  const wg = 0.59; // 緑の重み (最大)
+  const wb = 0.11; // 青の重み (最小)
+
+  return wr * dr * dr + wg * dg * dg + wb * db * db;
+}
+
+/**
+ * Lab色空間でのEuclidean距離
+ * 最も正確に人間が感じる色差を表現
+ * 最高品質の量子化結果が得られ、色の段差（バンディング）が目立ちにくい
+ */
+function colorDistLab(
+  r1: number,
+  g1: number,
+  b1: number,
+  r2: number,
+  g2: number,
+  b2: number
+): number {
+  const [L1, a1, b1Lab] = rgbToLab(r1, g1, b1);
+  const [L2, a2, b2Lab] = rgbToLab(r2, g2, b2);
+
+  const dL = L1 - L2;
+  const da = a1 - a2;
+  const db = b1Lab - b2Lab;
+
+  return dL * dL + da * da + db * db;
+}
+
+/**
  * 明るさ・コントラスト・彩度・シャープネス調整を適用
  * ImageDataを直接変更（破壊的）
  */
@@ -109,7 +227,8 @@ function applySharpness(imageData: ImageData, amount: number): void {
  */
 export function quantizeToColorPalette(
   imageData: ImageData,
-  selectedColorIds: number[]
+  selectedColorIds: number[],
+  method: QuantizationMethod = "rgb-euclidean"
 ): void {
   const data = imageData.data;
 
@@ -119,20 +238,13 @@ export function quantizeToColorPalette(
   );
   const rgbList = activeColors.map((c) => c.rgb);
 
-  // √省略版距離計算
-  function colorDist2(
-    r1: number,
-    g1: number,
-    b1: number,
-    r2: number,
-    g2: number,
-    b2: number
-  ): number {
-    const dr = r1 - r2;
-    const dg = g1 - g2;
-    const db = b1 - b2;
-    return dr * dr + dg * dg + db * db;
-  }
+  // 量子化方法に応じた色距離計算関数を選択
+  const colorDistFn =
+    method === "weighted-rgb"
+      ? colorDistWeightedRgb2
+      : method === "lab"
+      ? colorDistLab
+      : colorDistRgbEuclidean2;
 
   for (let i = 0; i < data.length; i += 4) {
     const r = data[i];
@@ -144,9 +256,9 @@ export function quantizeToColorPalette(
     let nearest: [number, number, number] = rgbList[0];
     for (let j = 0; j < rgbList.length; j++) {
       const c = rgbList[j];
-      const d2 = colorDist2(r, g, b, c[0], c[1], c[2]);
-      if (d2 < minDist) {
-        minDist = d2;
+      const dist = colorDistFn(r, g, b, c[0], c[1], c[2]);
+      if (dist < minDist) {
+        minDist = dist;
         nearest = c;
       }
     }
@@ -174,7 +286,9 @@ const BAYER_MATRIX_4x4 = [
  */
 export function quantizeWithDithering(
   imageData: ImageData,
-  selectedColorIds: number[]
+  selectedColorIds: number[],
+  ditheringThreshold: number,
+  method: QuantizationMethod = "rgb-euclidean"
 ): void {
   const data = imageData.data;
   const width = imageData.width;
@@ -186,20 +300,13 @@ export function quantizeWithDithering(
   );
   const rgbList = activeColors.map((c) => c.rgb);
 
-  // √省略版距離計算
-  function colorDist2(
-    r1: number,
-    g1: number,
-    b1: number,
-    r2: number,
-    g2: number,
-    b2: number
-  ): number {
-    const dr = r1 - r2;
-    const dg = g1 - g2;
-    const db = b1 - b2;
-    return dr * dr + dg * dg + db * db;
-  }
+  // 量子化方法に応じた色距離計算関数を選択
+  const colorDistFn =
+    method === "weighted-rgb"
+      ? colorDistWeightedRgb2
+      : method === "lab"
+      ? colorDistLab
+      : colorDistRgbEuclidean2;
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -207,7 +314,7 @@ export function quantizeWithDithering(
 
       // ベイヤー行列から誤差取得
       const bayerValue = BAYER_MATRIX_4x4[y % 4][x % 4];
-      const ditherAmount = bayerValue * 64; // 誤差強度調整
+      const ditherAmount = bayerValue * (ditheringThreshold / 10); // 誤差強度調整
 
       // ディザ誤差適用
       let r = Math.max(0, Math.min(255, data[i] + ditherAmount));
@@ -219,9 +326,9 @@ export function quantizeWithDithering(
       let nearest: [number, number, number] = rgbList[0];
       for (let j = 0; j < rgbList.length; j++) {
         const c = rgbList[j];
-        const d2 = colorDist2(r, g, b, c[0], c[1], c[2]);
-        if (d2 < minDist) {
-          minDist = d2;
+        const dist = colorDistFn(r, g, b, c[0], c[1], c[2]);
+        if (dist < minDist) {
+          minDist = dist;
           nearest = c;
         }
       }
@@ -245,7 +352,8 @@ export async function createProcessedCanvas(
   selectedColorIds: number[],
   ditheringEnabled = false,
   ditheringThreshold = 500,
-  useGpu = true
+  useGpu = true,
+  quantizationMethod: QuantizationMethod = "rgb-euclidean"
 ): Promise<HTMLCanvasElement> {
   const originalWidth = img.naturalWidth;
   const originalHeight = img.naturalHeight;
@@ -255,7 +363,7 @@ export async function createProcessedCanvas(
   // GPU処理試行（useGpu=trueの場合のみ）
   if (useGpu) {
     try {
-      console.log("🧑‍🎨 : Attempting GPU processing, dithering:", ditheringEnabled);
+      console.log("🧑‍🎨 : Attempting GPU processing, dithering:", ditheringEnabled, "quantization:", quantizationMethod);
       // HTMLImageElementから直接ImageBitmap作成（canvas経由せずリサイズ）
       const imageBitmap = await createResizedImageBitmap(img, {
         width: newWidth,
@@ -271,7 +379,8 @@ export async function createProcessedCanvas(
         adjustments,
         paletteRGB,
         ditheringEnabled,
-        ditheringThreshold
+        ditheringThreshold,
+        quantizationMethod
       );
 
       // 結果をcanvasに描画
@@ -323,9 +432,9 @@ export async function createProcessedCanvas(
 
   // ディザ処理切り替え
   if (ditheringEnabled) {
-    quantizeWithDithering(imageData, selectedColorIds);
+    quantizeWithDithering(imageData, selectedColorIds, ditheringThreshold, quantizationMethod);
   } else {
-    quantizeToColorPalette(imageData, selectedColorIds);
+    quantizeToColorPalette(imageData, selectedColorIds, quantizationMethod);
   }
 
   // 新しいclean canvasに描画

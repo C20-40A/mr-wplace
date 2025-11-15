@@ -40,6 +40,7 @@ export class GalleryImageEditor {
       onSharpnessChange: (value) => this.controller?.onSharpnessChange(value),
       onDitheringChange: (enabled) => this.controller?.onDitheringChange(enabled),
       onDitheringThresholdChange: (threshold) => this.controller?.onDitheringThresholdChange(threshold),
+      onQuantizationMethodChange: (method) => this.controller?.onQuantizationMethodChange(method),
       onGpuToggle: (enabled) => this.controller?.onGpuToggle(enabled),
       onClear: () => this.controller?.clearImage(),
       onSaveToGallery: () => this.controller?.saveToGallery(),

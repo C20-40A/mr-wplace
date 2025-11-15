@@ -11,7 +11,7 @@ import {
   downloadBlob,
   parseDrawPositionFromFileName,
 } from "./file-handler";
-import { createProcessedCanvas, ImageAdjustments } from "./canvas-processor";
+import { createProcessedCanvas, ImageAdjustments, QuantizationMethod } from "./canvas-processor";
 
 /**
  * 画像エディタController
@@ -30,6 +30,7 @@ export class EditorController {
   private sharpness = 0;
   private ditheringEnabled = false;
   private ditheringThreshold = 500;
+  private quantizationMethod: QuantizationMethod = "rgb-euclidean";
   private useGpu = true;
   private imageInspector: ImageInspector | null = null;
   private colorPalette: ColorPalette | null = null;
@@ -195,6 +196,12 @@ export class EditorController {
     this.updateScaledImage();
   }
 
+  onQuantizationMethodChange(method: QuantizationMethod): void {
+    console.log("🧑‍🎨 : Quantization method changed:", method);
+    this.quantizationMethod = method;
+    this.updateScaledImage();
+  }
+
   onColorSelectionChange(colorIds: number[]): void {
     this.selectedColorIds = colorIds;
     // パレット変更時は再描画
@@ -251,6 +258,7 @@ export class EditorController {
     this.sharpness = 0;
     this.ditheringEnabled = false;
     this.ditheringThreshold = 500;
+    this.quantizationMethod = "rgb-euclidean";
     this.useGpu = true;
     this.currentFileName = null;
     this.drawPosition = null;
@@ -702,6 +710,8 @@ export class EditorController {
     console.log(
       "🧑‍🎨 : Processing with dithering:",
       this.ditheringEnabled,
+      "quantization:",
+      this.quantizationMethod,
       "useGpu:",
       this.useGpu
     );
@@ -712,7 +722,8 @@ export class EditorController {
       this.selectedColorIds,
       this.ditheringEnabled,
       this.ditheringThreshold,
-      this.useGpu
+      this.useGpu,
+      this.quantizationMethod
     );
 
     // デスクトップモード: canvas更新

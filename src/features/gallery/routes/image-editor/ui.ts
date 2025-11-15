@@ -1,5 +1,6 @@
 import { t } from "../../../../i18n/manager";
 import { ImageDropzone } from "../../../../components/image-dropzone";
+import { QuantizationMethod } from "./canvas-processor";
 
 export interface ImageEditorCallbacks {
   onFileHandle: (file: File) => void;
@@ -12,6 +13,7 @@ export interface ImageEditorCallbacks {
   onSharpnessChange: (value: number) => void;
   onDitheringChange: (enabled: boolean) => void;
   onDitheringThresholdChange: (threshold: number) => void;
+  onQuantizationMethodChange: (method: QuantizationMethod) => void;
   onGpuToggle: (enabled: boolean) => void;
   onClear: () => void;
   onSaveToGallery: () => void;
@@ -189,7 +191,16 @@ export class ImageEditorUI {
               </div>
 
               <div>
-                <label style="display: block; font-size: 0.75rem; font-weight: 500; margin-bottom: 0.25rem; color: #6b7280;">${"coordinate_input_optional"}</label>
+                <label style="display: block; font-size: 0.75rem; font-weight: 500; margin-bottom: 0.25rem;">${"quantization_method"}</label>
+                <select id="wps-quantization-method" class="select select-sm w-full" style="font-size: 0.75rem;">
+                  <option value="rgb-euclidean">${"quantization_rgb_euclidean"}</option>
+                  <option value="weighted-rgb">${"quantization_weighted_rgb"}</option>
+                  <option value="lab">${"quantization_lab"}</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="display: block; font-size: 0.75rem; font-weight: 500; margin-bottom: 0.25rem;">${"coordinate_input_optional"}</label>
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.25rem;">
                   <input type="number" id="wps-coord-tlx" placeholder="TLX" min="0" step="1" style="width: 100%; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; text-align: center;">
                   <input type="number" id="wps-coord-tly" placeholder="TLY" min="0" step="1" style="width: 100%; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; text-align: center;">
@@ -268,6 +279,9 @@ export class ImageEditorUI {
     const ditheringThresholdValue = this.container.querySelector(
       "#wps-dithering-threshold-value"
     );
+    const quantizationMethodSelect = this.container.querySelector(
+      "#wps-quantization-method"
+    ) as HTMLSelectElement;
     const gpuToggle = this.container.querySelector(
       "#wps-gpu-toggle"
     ) as HTMLInputElement;
@@ -434,6 +448,13 @@ export class ImageEditorUI {
     ditheringThresholdSlider?.addEventListener("change", (e) => {
       const value = parseInt((e.target as HTMLInputElement).value);
       this.callbacks?.onDitheringThresholdChange(value);
+    });
+
+    // 量子化方法
+    quantizationMethodSelect?.addEventListener("change", (e) => {
+      const method = (e.target as HTMLSelectElement)
+        .value as QuantizationMethod;
+      this.callbacks?.onQuantizationMethodChange(method);
     });
 
     // GPUトグル
