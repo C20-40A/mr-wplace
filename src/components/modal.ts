@@ -1,5 +1,5 @@
 import { t } from "@/i18n/manager";
-import { Router } from "./router";
+import { Router } from "../utils/router";
 
 export interface ModalOptions {
   id: string;

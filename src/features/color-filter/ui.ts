@@ -1,6 +1,6 @@
 import { t } from "../../i18n/manager";
 import { ColorFilterRouter } from "./router";
-import { createModal, ModalElements } from "@/utils/modal";
+import { createModal, ModalElements } from "@/components/modal";
 import { IMG_ICON_COLOR_FILTER } from "../../assets/iconImages";
 
 export const createColorFilterFAB = (): HTMLButtonElement => {

@@ -1,6 +1,6 @@
 import { Bookmark, Tag } from "./types";
 import { t } from "../../i18n/manager";
-import { createModal, ModalElements } from "../../utils/modal";
+import { createModal, ModalElements } from "../../components/modal";
 import { IMG_ICON_BOOKMARK } from "../../assets/iconImages";
 import { createResponsiveButton } from "../../components/responsive-button";
 import { createCard, CardConfig } from "../../components/card";
@@ -168,10 +168,9 @@ export const renderExistingTags = (tags: Tag[], currentTag?: Tag): void => {
   };
 
   container.innerHTML = tags
-    .map(
-      (tag) => {
-        const selected = isSelected(tag);
-        return `
+    .map((tag) => {
+      const selected = isSelected(tag);
+      return `
     <div class="wps-existing-tag-item"
          data-color="${tag.color}"
          data-name="${tag.name || ""}"
@@ -181,8 +180,8 @@ export const renderExistingTags = (tags: Tag[], currentTag?: Tag): void => {
            gap: 8px;
            padding: 8px;
            border: ${selected ? "3px" : "2px"} solid ${
-          selected ? "oklch(var(--p))" : "oklch(var(--bc) / 0.1)"
-        };
+        selected ? "oklch(var(--p))" : "oklch(var(--bc) / 0.1)"
+      };
            background: ${selected ? "oklch(var(--p) / 0.1)" : "transparent"};
            border-radius: 8px;
            margin-bottom: 6px;
@@ -218,9 +217,9 @@ export const renderExistingTags = (tags: Tag[], currentTag?: Tag): void => {
               : ""
           }
         </div>
-        <span style="flex: 1; font-weight: ${
-          selected ? "600" : "400"
-        };">${tag.name || `(${t`${"tag_name"}`})`}</span>
+        <span style="flex: 1; font-weight: ${selected ? "600" : "400"};">${
+        tag.name || `(${t`${"tag_name"}`})`
+      }</span>
       </div>
       <button
         class="wps-tag-edit-btn btn btn-ghost btn-xs"
@@ -234,8 +233,7 @@ export const renderExistingTags = (tags: Tag[], currentTag?: Tag): void => {
       </button>
     </div>
   `;
-      }
-    )
+    })
     .join("");
 };
 
@@ -532,10 +530,14 @@ export const renderTagFilters = (
       const isSelected = selectedTagFilters.has(tagKey);
       return `
         <button
-          class="wps-tag-filter-btn btn btn-sm ${isSelected ? "btn-primary" : "btn-outline"}"
+          class="wps-tag-filter-btn btn btn-sm ${
+            isSelected ? "btn-primary" : "btn-outline"
+          }"
           data-tag-key="${tagKey}"
           style="flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.5rem;">
-          <div style="width: 16px; height: 16px; border-radius: 4px; background: ${tag.color};"></div>
+          <div style="width: 16px; height: 16px; border-radius: 4px; background: ${
+            tag.color
+          };"></div>
           <span>${tag.name || t`${"no_name"}`}</span>
         </button>
       `;

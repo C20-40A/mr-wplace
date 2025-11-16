@@ -5,7 +5,7 @@ import { getCurrentPosition, gotoPosition } from "../../../utils/position";
 import { TimeTravelStorage } from "../storage";
 import { TileNameStorage } from "../tile-name-storage";
 import { t } from "../../../i18n/manager";
-import { showNameInputModal } from "../../../utils/modal";
+import { showNameInputModal } from "../../../components/modal";
 import { llzToTilePixel, tilePixelToLatLng } from "../../../utils/coordinate";
 import { storage } from "@/utils/browser-api";
 

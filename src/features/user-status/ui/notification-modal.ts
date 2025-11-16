@@ -1,4 +1,4 @@
-import { createModal, ModalElements } from "../../../utils/modal";
+import { createModal, ModalElements } from "../../../components/modal";
 import { WPlaceUserData } from "../../../types/user-data";
 import { StatusCalculator } from "../services/calculator";
 import { t } from "../../../i18n/manager";

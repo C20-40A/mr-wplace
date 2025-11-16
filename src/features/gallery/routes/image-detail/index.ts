@@ -4,7 +4,7 @@ import { ImageInspector } from "../../../../components/image-inspector";
 import { gotoMapPosition, toggleDrawState } from "../../common-actions";
 import { t } from "../../../../i18n/manager";
 import { Toast } from "../../../../components/toast";
-import { showNameInputModal } from "@/utils/modal";
+import { showNameInputModal } from "@/components/modal";
 
 export class GalleryImageDetail {
   private currentItem: GalleryItem | null = null;
