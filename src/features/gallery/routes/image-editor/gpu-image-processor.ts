@@ -1,6 +1,57 @@
 import { ImageAdjustments, QuantizationMethod } from "./canvas-processor";
 
 /**
+ * RGB (0-255) → Lab 色空間変換（GPU処理用）
+ * canvas-processor.tsと同じアルゴリズム
+ */
+const rgbToLab = (
+  r: number,
+  g: number,
+  b: number
+): [number, number, number] => {
+  // 1. RGB → sRGB (0-1 正規化)
+  let rNorm = r / 255;
+  let gNorm = g / 255;
+  let bNorm = b / 255;
+
+  // 2. sRGB → 線形RGB (ガンマ補正解除)
+  const toLinear = (c: number): number => {
+    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  };
+  rNorm = toLinear(rNorm);
+  gNorm = toLinear(gNorm);
+  bNorm = toLinear(bNorm);
+
+  // 3. 線形RGB → XYZ (D65白色点)
+  const x = rNorm * 0.4124564 + gNorm * 0.3575761 + bNorm * 0.1804375;
+  const y = rNorm * 0.2126729 + gNorm * 0.7151522 + bNorm * 0.072175;
+  const z = rNorm * 0.0193339 + gNorm * 0.119192 + bNorm * 0.9503041;
+
+  // 4. XYZ → Lab (D65白色点で正規化)
+  const xn = 0.95047;
+  const yn = 1.0;
+  const zn = 1.08883;
+
+  const fx = x / xn;
+  const fy = y / yn;
+  const fz = z / zn;
+
+  const delta = 6 / 29;
+  const t0 = delta * delta * delta;
+  const m = (1 / 3) * delta * delta;
+
+  const f = (t: number): number => {
+    return t > t0 ? Math.pow(t, 1 / 3) : t / (3 * m) + 4 / 29;
+  };
+
+  const L = 116 * f(fy) - 16;
+  const a = 500 * (f(fx) - f(fy));
+  const bLab = 200 * (f(fy) - f(fz));
+
+  return [L, a, bLab];
+};
+
+/**
  * GPU画像処理: brightness/contrast/saturation + パレット量子化 + ディザリング
  * WebGL2非対応時はthrow（上層でcatch→CPUフォールバック）
  */
@@ -135,6 +186,7 @@ export const gpuProcessImage = async (
   uniform sampler2D uAdjusted;
   uniform int uPaletteCount;
   uniform vec3 uPalette[${maxPalette}];
+  uniform vec3 uPaletteLab[${maxPalette}]; // 事前計算済みパレットLab
   uniform bool uDitheringEnabled;
   uniform float uSnapThreshold;
   uniform float uBayerMatrix[16];
@@ -184,7 +236,8 @@ export const gpuProcessImage = async (
   }
 
   // 色距離計算（量子化方法に応じて）
-  float colorDistance(vec3 rgb1, vec3 rgb2) {
+  // paletteLab: 事前計算済みパレット色のLab値（Labモード時のみ使用）
+  float colorDistance(vec3 rgb1, vec3 rgb2, vec3 paletteLab) {
     if (uQuantizationMethod == 0) {
       // RGB Euclidean 距離の2乗
       vec3 diff = rgb1 - rgb2;
@@ -196,10 +249,9 @@ export const gpuProcessImage = async (
       vec3 weightedDiff = diff * diff * weights;
       return weightedDiff.r + weightedDiff.g + weightedDiff.b;
     } else {
-      // Lab色空間での距離
+      // Lab色空間での距離（パレット色は事前計算済みを使用）
       vec3 lab1 = rgbToLab(rgb1);
-      vec3 lab2 = rgbToLab(rgb2);
-      vec3 diff = lab1 - lab2;
+      vec3 diff = lab1 - paletteLab;
       return dot(diff, diff);
     }
   }
@@ -213,7 +265,7 @@ export const gpuProcessImage = async (
     vec3 nearest = uPalette[0];
     for (int i = 0; i < ${maxPalette}; ++i) {
       if (i >= uPaletteCount) break;
-      float dist = colorDistance(rgb, uPalette[i]);
+      float dist = colorDistance(rgb, uPalette[i], uPaletteLab[i]);
       if (dist < minDist) {
         minDist = dist;
         nearest = uPalette[i];
@@ -238,7 +290,7 @@ export const gpuProcessImage = async (
       vec3 nearest2 = uPalette[0];
       for (int i = 0; i < ${maxPalette}; ++i) {
         if (i >= uPaletteCount) break;
-        float dist2 = colorDistance(rgb, uPalette[i]);
+        float dist2 = colorDistance(rgb, uPalette[i], uPaletteLab[i]);
         if (dist2 < minDist2) {
           minDist2 = dist2;
           nearest2 = uPalette[i];
@@ -449,13 +501,21 @@ export const gpuProcessImage = async (
   );
 
   const paletteFlat = new Float32Array(maxPalette * 3);
+  const paletteLabFlat = new Float32Array(maxPalette * 3);
   for (let i = 0; i < sendCount; i++) {
     const [r, g, b] = paletteRGB[i];
     paletteFlat[i * 3 + 0] = r;
     paletteFlat[i * 3 + 1] = g;
     paletteFlat[i * 3 + 2] = b;
+
+    // パレット色のLab変換（事前計算）
+    const [L, a, bLab] = rgbToLab(r, g, b);
+    paletteLabFlat[i * 3 + 0] = L;
+    paletteLabFlat[i * 3 + 1] = a;
+    paletteLabFlat[i * 3 + 2] = bLab;
   }
   gl.uniform3fv(gl.getUniformLocation(programPalette, "uPalette"), paletteFlat);
+  gl.uniform3fv(gl.getUniformLocation(programPalette, "uPaletteLab"), paletteLabFlat);
 
   // ディザリング設定
   gl.uniform1i(
