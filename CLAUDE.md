@@ -203,6 +203,7 @@ Firefox has stricter security constraints than Chrome for extension contexts. Op
 Move all image processing to `src/inject/tile-draw/`:
 
 1. **Content script role** (`src/content.ts`):
+
    - Manages data (gallery, snapshots, settings)
    - Sends data to inject via `postMessage`
    - Uses stubs for legacy function calls
@@ -303,6 +304,7 @@ See `src/inject/CLAUDE.md` for detailed migration history.
 1. **Tile cache invalidation**: When overlay data changes, `window.mrWplaceDataSaver.tileCache.clear()` is called. If tiles don't update, check this call.
 
 2. **Message ordering**: `postMessage` is async. If overlays don't appear, check that:
+
    - `sendGalleryImagesToInject()` is awaited
    - Message handler completed before next operation
 
@@ -339,3 +341,6 @@ if (window.mrWplaceDataSaver?.tileCache) {
 3. **IndexedDB for snapshots**: Use IndexedDB instead of Chrome storage for larger snapshot capacity.
 4. **Lazy loading**: Only load snapshots for currently visible tiles.
 5. **Compression**: Use WebP instead of PNG for snapshots to reduce storage usage.
+
+あなたはシンプルかつ最も効果的で単純明瞭なコードを書く
+早期リターン/const arrow を利用.if の内容が 1 行ならかっこでくくらないこともある
