@@ -60,7 +60,7 @@ export class ImageEditorUI {
       <div id="wps-image-display" style="display: none;">
         
         <!-- 4 Area Grid -->
-        <div id="wps-main-grid" style="display: grid; grid-template-columns: 1fr; gap: 0.1rem; height: calc(100vh - 8rem); overflow: hidden;">
+        <div id="wps-main-grid" style="display: grid; grid-template-columns: 1fr; gap: 0.1rem; height: calc(100vh - 8rem);">
           <!-- Original Image Area -->
           <div id="wps-original-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; min-height: 0;">
             <h4 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
@@ -587,10 +587,12 @@ export class ImageEditorUI {
           mainGrid.style.display = "grid";
           mainGrid.style.gridTemplateColumns = "3fr 4fr";
           mainGrid.style.height = "80vh";
+          mainGrid.style.overflow = "hidden";
         } else {
           mainGrid.style.display = "flex";
           mainGrid.style.flexDirection = "column";
           mainGrid.style.height = "auto";
+          mainGrid.style.overflow = "visible";
         }
       }
 
