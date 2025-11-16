@@ -238,12 +238,14 @@ export function quantizeToColorPalette(
   );
   const rgbList = activeColors.map((c) => c.rgb);
 
+  // Labモードの場合、パレット色のLab変換を事前計算
+  const paletteLab =
+    method === "lab" ? rgbList.map(([r, g, b]) => rgbToLab(r, g, b)) : [];
+
   // 量子化方法に応じた色距離計算関数を選択
   const colorDistFn =
     method === "weighted-rgb"
       ? colorDistWeightedRgb2
-      : method === "lab"
-      ? colorDistLab
       : colorDistRgbEuclidean2;
 
   for (let i = 0; i < data.length; i += 4) {
@@ -254,12 +256,30 @@ export function quantizeToColorPalette(
     // 最近色探索
     let minDist = Infinity;
     let nearest: [number, number, number] = rgbList[0];
-    for (let j = 0; j < rgbList.length; j++) {
-      const c = rgbList[j];
-      const dist = colorDistFn(r, g, b, c[0], c[1], c[2]);
-      if (dist < minDist) {
-        minDist = dist;
-        nearest = c;
+
+    if (method === "lab") {
+      // Labモード: ピクセルのみLab変換、パレットは事前計算済みを使用
+      const [L, a, bLab] = rgbToLab(r, g, b);
+      for (let j = 0; j < rgbList.length; j++) {
+        const [pL, pA, pB] = paletteLab[j];
+        const dL = L - pL;
+        const dA = a - pA;
+        const dB = bLab - pB;
+        const dist = dL * dL + dA * dA + dB * dB;
+        if (dist < minDist) {
+          minDist = dist;
+          nearest = rgbList[j];
+        }
+      }
+    } else {
+      // RGB/Weighted RGBモード
+      for (let j = 0; j < rgbList.length; j++) {
+        const c = rgbList[j];
+        const dist = colorDistFn(r, g, b, c[0], c[1], c[2]);
+        if (dist < minDist) {
+          minDist = dist;
+          nearest = c;
+        }
       }
     }
 
@@ -300,12 +320,14 @@ export function quantizeWithDithering(
   );
   const rgbList = activeColors.map((c) => c.rgb);
 
+  // Labモードの場合、パレット色のLab変換を事前計算
+  const paletteLab =
+    method === "lab" ? rgbList.map(([r, g, b]) => rgbToLab(r, g, b)) : [];
+
   // 量子化方法に応じた色距離計算関数を選択
   const colorDistFn =
     method === "weighted-rgb"
       ? colorDistWeightedRgb2
-      : method === "lab"
-      ? colorDistLab
       : colorDistRgbEuclidean2;
 
   for (let y = 0; y < height; y++) {
@@ -324,12 +346,30 @@ export function quantizeWithDithering(
       // 最近色探索
       let minDist = Infinity;
       let nearest: [number, number, number] = rgbList[0];
-      for (let j = 0; j < rgbList.length; j++) {
-        const c = rgbList[j];
-        const dist = colorDistFn(r, g, b, c[0], c[1], c[2]);
-        if (dist < minDist) {
-          minDist = dist;
-          nearest = c;
+
+      if (method === "lab") {
+        // Labモード: ピクセルのみLab変換、パレットは事前計算済みを使用
+        const [L, a, bLab] = rgbToLab(r, g, b);
+        for (let j = 0; j < rgbList.length; j++) {
+          const [pL, pA, pB] = paletteLab[j];
+          const dL = L - pL;
+          const dA = a - pA;
+          const dB = bLab - pB;
+          const dist = dL * dL + dA * dA + dB * dB;
+          if (dist < minDist) {
+            minDist = dist;
+            nearest = rgbList[j];
+          }
+        }
+      } else {
+        // RGB/Weighted RGBモード
+        for (let j = 0; j < rgbList.length; j++) {
+          const c = rgbList[j];
+          const dist = colorDistFn(r, g, b, c[0], c[1], c[2]);
+          if (dist < minDist) {
+            minDist = dist;
+            nearest = c;
+          }
         }
       }
 
