@@ -126,7 +126,7 @@ export const createModal = (options: ModalOptions): ModalElements => {
   modal.id = id;
   modal.className = "modal";
   modal.innerHTML = t`
-    <div class="modal-box" style="width: 91.666667%; max-width: ${maxWidth}; ${containerStyle}">
+    <div class="modal-box" style="width: 91.666667%; max-width: ${maxWidth}; max-height: 90dvh; display: flex; flex-direction: column; ${containerStyle}">
       <!-- Header -->
       <div class="flex justify-between items-center mb-4">
         <div class="flex items-center gap-2">
@@ -148,7 +148,7 @@ export const createModal = (options: ModalOptions): ModalElements => {
       </div>
 
       <!-- Content Area -->
-      <div id="${id}-content" style="min-height: 200px; max-height: 80vh; overflow: auto;">
+      <div id="${id}-content" style="min-height: 200px; max-height: 70dvh; overflow: auto;">
         <!-- ルート別コンテンツがここに挿入される -->
       </div>
     </div>
