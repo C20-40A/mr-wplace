@@ -52,6 +52,46 @@ export const setupFetchInterceptor = (): void => {
       return response;
     }
 
+    // Intercept pixel info GET requests (for "Painted by" data)
+    // URL pattern: https://backend.wplace.live/s0/pixel/<tileX>/<tileY>?x=<x>&y=<y>
+    if (url.includes("/pixel/") && url.includes("?x=") && url.includes("&y=")) {
+      console.log("🧑‍🎨: Intercepting pixel info GET:", url);
+      const response = await originalFetch.apply(this, args);
+      const clonedResponse = response.clone();
+
+      try {
+        const jsonData = await clonedResponse.json();
+        console.log("🧑‍🎨: Pixel info data:", jsonData);
+
+        // Send painted by user data to content script
+        if (jsonData.paintedBy) {
+          const userData = {
+            id: jsonData.paintedBy.id,
+            name: jsonData.paintedBy.name,
+            allianceId: jsonData.paintedBy.allianceId,
+            allianceName: jsonData.paintedBy.allianceName,
+            equippedFlag: jsonData.paintedBy.equippedFlag,
+            picture: jsonData.paintedBy.picture,
+          };
+          window.postMessage(
+            {
+              source: "mr-wplace-painted-by-user",
+              userData,
+            },
+            "*"
+          );
+          console.log(
+            "🧑‍🎨: Sent paintedBy user data to content script:",
+            userData
+          );
+        }
+      } catch (error) {
+        console.error("🧑‍🎨: Failed to parse pixel info response:", error);
+      }
+
+      return response;
+    }
+
     // Intercept pixel paint POST to invalidate cache
     // URL pattern: https://backend.wplace.live/s0/pixel/<tileX>/<tileY>
     if (url.includes("/s0/pixel/")) {

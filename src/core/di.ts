@@ -60,6 +60,10 @@ export interface DrawingLoaderAPI {
   hide: () => void;
 }
 
+export interface FriendsBookAPI {
+  initFriendsBook: () => void;
+}
+
 // ========================================
 // DIコンテナ型定義
 // ========================================
@@ -72,6 +76,7 @@ export interface FeatureRegistry {
   bookmark: BookmarkAPI;
   textDraw: TextDrawAPI;
   drawingLoader: DrawingLoaderAPI;
+  friendsBook: FriendsBookAPI;
 }
 
 // ========================================

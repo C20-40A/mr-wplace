@@ -54,6 +54,17 @@ export interface ColorFilterState {
   getEnhancedMode: () => "dot" | "cross" | "fill" | "none";
 }
 
+export interface PaintedByUser {
+  id: number;
+  name: string;
+  allianceId?: number;
+  allianceName?: string;
+  equippedFlag: number;
+  picture?: string;
+  discord?: string;
+  discordId?: string;
+}
+
 export interface MrWplaceGlobal {
   colorFilterManager?: ColorFilterState;
 }
@@ -81,6 +92,7 @@ export interface WindowWithWplace extends Window {
   mrWplace?: MrWplaceGlobal;
   mrWplaceComputeDevice?: "gpu" | "cpu";
   mrWplaceShowUnplacedOnly?: boolean;
+  mrWplaceTempPaintedByUser?: PaintedByUser;
 }
 
 declare global {
@@ -97,5 +109,6 @@ declare global {
     mrWplace?: MrWplaceGlobal;
     mrWplaceComputeDevice?: "gpu" | "cpu";
     mrWplaceShowUnplacedOnly?: boolean;
+    mrWplaceTempPaintedByUser?: PaintedByUser;
   }
 }

@@ -8,6 +8,7 @@ import { Drawing } from "@/features/drawing";
 import { TileSnapshot } from "@/features/time-travel/utils/tile-snapshot";
 import { timeTravelAPI } from "@/features/time-travel";
 import { drawingLoaderAPI } from "@/features/drawing-loader";
+import { friendsBookAPI } from "@/features/friends-book";
 import { ColorFilter } from "@/features/color-filter";
 import { ColorFilterManager } from "@/utils/color-filter-manager";
 import { ThemeToggleStorage } from "@/features/theme-toggle/storage";
@@ -427,9 +428,11 @@ export const sendTileBoundariesToInject = async () => {
     di.register("bookmark", bookmarkAPI);
     di.register("drawingLoader", drawingLoaderAPI);
     di.register("timeTravel", timeTravelAPI);
+    di.register("friendsBook", friendsBookAPI);
 
     // Feature初期化
     bookmarkAPI.initBookmark(); // 1. Bookmark (最後に表示)
+    friendsBookAPI.initFriendsBook(); // Friends book
     const tileOverlay = new TileOverlay();
     timeTravelAPI.initTimeTravel(); // 2. TimeTravel
     galleryAPI.initGallery();
