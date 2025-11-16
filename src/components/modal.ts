@@ -181,6 +181,27 @@ export const createModal = (options: ModalOptions): ModalElements => {
   closeButton.addEventListener("click", handleClose);
   backdropButton.addEventListener("click", handleClose);
 
+  // モーダルclose時に自動クリーンアップ
+  modal.addEventListener("close", () => {
+    console.log("🧑‍🎨 : Modal closed, cleaning up event listeners...");
+
+    // コンテンツエリアのすべての要素のイベントリスナーをクリーンアップ
+    // 注: HTMLはクリアしない（modalは再利用されるため）
+    if (container) {
+      const allElements = container.querySelectorAll("*");
+      allElements.forEach((el) => {
+        if (el instanceof HTMLElement) {
+          // イベントリスナー参照をクリア
+          el.onclick = null;
+          // GPUレイヤーをクリーンアップ
+          if (el.style) {
+            el.style.willChange = "auto";
+          }
+        }
+      });
+    }
+  });
+
   // routerがある場合は自動でheader要素を設定
   if (router) {
     router.setHeaderElements(titleElement, backButton);
