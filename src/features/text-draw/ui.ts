@@ -1,6 +1,6 @@
 import { createResponsiveButton } from "../../components/responsive-button";
 import { t } from "../../i18n/manager";
-import { createModal, ModalElements } from "@/utils/modal";
+import { createModal, ModalElements } from "@/components/modal";
 
 export interface TextInstance {
   key: string;

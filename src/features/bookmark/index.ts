@@ -16,7 +16,7 @@ import {
 import { BookmarkStorage } from "./storage";
 import { ImportExportService } from "./import-export";
 import { getCurrentPosition, gotoPosition } from "@/utils/position";
-import { showNameInputModal } from "@/utils/modal";
+import { showNameInputModal } from "@/components/modal";
 import { t, formatDateShort } from "@/i18n/manager";
 import {
   createBookmarkButton,
@@ -43,14 +43,19 @@ const render = async (): Promise<void> => {
 
   // Render tag filters
   const { renderTagFilters } = await import("./ui");
-  renderTagFilters(existingTags, favorites, selectedTagFilters, (tagKey: string) => {
-    if (selectedTagFilters.has(tagKey)) {
-      selectedTagFilters.delete(tagKey);
-    } else {
-      selectedTagFilters.add(tagKey);
+  renderTagFilters(
+    existingTags,
+    favorites,
+    selectedTagFilters,
+    (tagKey: string) => {
+      if (selectedTagFilters.has(tagKey)) {
+        selectedTagFilters.delete(tagKey);
+      } else {
+        selectedTagFilters.add(tagKey);
+      }
+      render();
     }
-    render();
-  });
+  );
 
   renderBookmarks(favorites, sortType, selectedTagFilters);
   const sortSelect = document.getElementById(
@@ -292,7 +297,9 @@ const setupModal = (): void => {
             Toast.success(t`${"saved_message"}`);
 
             // Refresh the edit screen if it's open
-            const editScreen = document.getElementById("wps-bookmark-edit-screen");
+            const editScreen = document.getElementById(
+              "wps-bookmark-edit-screen"
+            );
             if (editScreen?.style.display === "block") {
               const { showEditScreen } = await import("./ui");
               const bookmarkId = parseInt(editScreen.dataset.bookmarkId!);
@@ -312,7 +319,9 @@ const setupModal = (): void => {
             Toast.success(t`${"deleted_message"}`);
 
             // Refresh the edit screen if it's open
-            const editScreen = document.getElementById("wps-bookmark-edit-screen");
+            const editScreen = document.getElementById(
+              "wps-bookmark-edit-screen"
+            );
             if (editScreen?.style.display === "block") {
               const { showEditScreen } = await import("./ui");
               const bookmarkId = parseInt(editScreen.dataset.bookmarkId!);
@@ -330,7 +339,9 @@ const setupModal = (): void => {
       }
 
       // Otherwise, handle tag selection (only if clicking on the clickable area)
-      const clickableArea = target.closest(".wps-tag-item-clickable") as HTMLElement | null;
+      const clickableArea = target.closest(
+        ".wps-tag-item-clickable"
+      ) as HTMLElement | null;
       if (!clickableArea) return;
 
       const tagItem = clickableArea.closest(
@@ -365,20 +376,22 @@ const setupModal = (): void => {
     });
 
   // No tag button
-  modal.querySelector("#wps-no-tag-btn")!.addEventListener("click", async () => {
-    const editScreen = document.getElementById("wps-bookmark-edit-screen");
-    if (!editScreen) return;
+  modal
+    .querySelector("#wps-no-tag-btn")!
+    .addEventListener("click", async () => {
+      const editScreen = document.getElementById("wps-bookmark-edit-screen");
+      if (!editScreen) return;
 
-    editScreen.dataset.currentTagColor = "";
-    editScreen.dataset.currentTagName = "";
+      editScreen.dataset.currentTagColor = "";
+      editScreen.dataset.currentTagName = "";
 
-    // Re-render tags to update visual feedback (no tag selected)
-    const existingTags = await BookmarkStorage.getExistingTags();
-    const { renderExistingTags } = await import("./ui");
-    renderExistingTags(existingTags, undefined);
+      // Re-render tags to update visual feedback (no tag selected)
+      const existingTags = await BookmarkStorage.getExistingTags();
+      const { renderExistingTags } = await import("./ui");
+      renderExistingTags(existingTags, undefined);
 
-    console.log("🧑‍🎨 : Tag removed");
-  });
+      console.log("🧑‍🎨 : Tag removed");
+    });
 
   // Tag back button (step 2 -> step 1)
   modal.querySelector("#wps-tag-back")!.addEventListener("click", async () => {

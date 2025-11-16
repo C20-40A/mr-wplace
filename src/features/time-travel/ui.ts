@@ -1,6 +1,6 @@
 import { t } from "../../i18n/manager";
 import { TimeTravelRouter } from "./router";
-import { createModal, ModalElements } from "@/utils/modal";
+import { createModal, ModalElements } from "@/components/modal";
 import { IMG_ICON_TIME_TRAVEL } from "../../assets/iconImages";
 import { createResponsiveButton } from "../../components/responsive-button";
 
