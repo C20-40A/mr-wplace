@@ -183,22 +183,14 @@ export const createModal = (options: ModalOptions): ModalElements => {
 
   // モーダルclose時に自動クリーンアップ
   modal.addEventListener("close", () => {
-    console.log("🧑‍🎨 : Modal closed, cleaning up event listeners...");
+    console.log("🧑‍🎨 : Modal closed, cleaning up...");
 
-    // コンテンツエリアのすべての要素のイベントリスナーをクリーンアップ
-    // 注: HTMLはクリアしない（modalは再利用されるため）
+    // コンテンツを一旦保存して完全にクリア、その後復元
+    // これにより onclick だけでなく addEventListener で登録されたリスナーも完全にクリア
     if (container) {
-      const allElements = container.querySelectorAll("*");
-      allElements.forEach((el) => {
-        if (el instanceof HTMLElement) {
-          // イベントリスナー参照をクリア
-          el.onclick = null;
-          // GPUレイヤーをクリーンアップ
-          if (el.style) {
-            el.style.willChange = "auto";
-          }
-        }
-      });
+      const html = container.innerHTML;
+      container.innerHTML = "";
+      container.innerHTML = html;
     }
   });
 
