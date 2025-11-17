@@ -96,7 +96,7 @@
   - all_frames false (デフォルト)系は false．まあデフォルトが false だから不要か
 - dark/light テーマの i18n 不要になった
 
-# DONE v1.10.2
+# DONE v1.11.0
 
 - アラームの注意文表示
 - 友人帳の import/export
