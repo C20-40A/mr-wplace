@@ -338,4 +338,7 @@ export const esTranslations = {
   create: "Crear",
   no_friends: "Sin amigos",
   sort_added: "Fecha de Adición",
+  import_merge_confirm:
+    "amigos para importar?\nSe fusionará con datos existentes (mismo ID será sobrescrito).",
+  import_merge_description: "Los datos existentes se mantendrán.",
 };

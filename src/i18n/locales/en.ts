@@ -354,4 +354,7 @@ export const enTranslations = {
   create: "Create",
   no_friends: "No friends",
   sort_added: "Date Added",
+  import_merge_confirm:
+    "friends to import?\nWill merge with existing data (same ID will be overwritten).",
+  import_merge_description: "Existing data will be retained.",
 };
