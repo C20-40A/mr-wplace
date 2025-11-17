@@ -216,6 +216,7 @@ export const esTranslations = {
   scheduled: "Programado",
   no_alarm_set: "😴 Sin Alarma Configurada",
   charge_alarm: "🔔 Alarma de Carga",
+  alarm_browser_warning: "※ No se notificará si se cierra el navegador",
   loading_alarm_settings: "Cargando configuración de alarma...",
   notification_threshold: "Umbral de Notificación",
   estimated_time: "Tiempo estimado",

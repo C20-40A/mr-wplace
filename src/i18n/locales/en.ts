@@ -212,6 +212,7 @@ export const enTranslations = {
   scheduled: "Scheduled",
   no_alarm_set: "😴 No Alarm Set",
   charge_alarm: "🔔 Charge Alarm",
+  alarm_browser_warning: "※ Notifications will not work if browser is closed",
   loading_alarm_settings: "Loading alarm settings...",
   notification_threshold: "Notification Threshold",
   estimated_time: "Estimated time",
