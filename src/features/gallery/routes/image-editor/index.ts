@@ -20,14 +20,14 @@ export class GalleryImageEditor {
 
   render(container: HTMLElement): void {
     container.innerHTML = '';
-    
+
     const uiContainer = this.ui.createAndGetContainer();
     container.appendChild(uiContainer);
 
     this.controller = new EditorController(uiContainer);
     this.controller.setOnSaveSuccess(this.onSaveSuccess);
     this.ui.setController(this.controller);
-    
+
     // コールバック設定
     const callbacks: ImageEditorCallbacks = {
       onFileHandle: (file) => this.controller?.handleFile(file),
@@ -48,6 +48,9 @@ export class GalleryImageEditor {
     };
 
     this.ui.setupUI(callbacks);
+
+    // 初期タイトル設定（新規追加モード）
+    this.controller.updateTitle();
   }
 
   destroy(): void {

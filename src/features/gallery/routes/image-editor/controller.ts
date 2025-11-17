@@ -70,6 +70,20 @@ export class EditorController {
     saveBtn.textContent = this.isEditMode
       ? `💾 ${t`${"update"}`}`
       : `💾 ${t`${"save_to_gallery"}"`}`;
+
+    // タイトルも更新
+    this.updateTitle();
+  }
+
+  updateTitle(): void {
+    const titleElement = document.querySelector(
+      "#wplace-studio-gallery-modal-title"
+    ) as HTMLElement;
+    if (!titleElement) return;
+
+    titleElement.textContent = this.isEditMode
+      ? t`${"edit_image_mode"}`
+      : t`${"add_image"}`;
   }
 
   async handleFile(file: File): Promise<void> {
