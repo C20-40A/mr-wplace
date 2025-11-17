@@ -180,21 +180,59 @@ export class GalleryImageSelectorUI {
     if (galleryItems.length === 0) {
       const emptyContainer = document.createElement("div");
       emptyContainer.style.cssText =
-        "display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 1rem; gap: 1rem;";
+        "display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 2rem; gap: 2rem; min-height: 300px;";
 
-      const emptyMessage = document.createElement("div");
-      emptyMessage.className = "text-sm text-base-content/60 text-center";
-      emptyMessage.textContent = t`${"no_saved_images"}`;
+      // SVGアイコン
+      const iconSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      iconSvg.setAttribute("fill", "none");
+      iconSvg.setAttribute("viewBox", "0 0 24 24");
+      iconSvg.setAttribute("stroke-width", "1");
+      iconSvg.setAttribute("stroke", "currentColor");
+      iconSvg.style.cssText = "width: 6rem; height: 6rem; opacity: 0.3;";
 
-      emptyContainer.appendChild(emptyMessage);
+      const iconPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      iconPath.setAttribute("stroke-linecap", "round");
+      iconPath.setAttribute("stroke-linejoin", "round");
+      iconPath.setAttribute("d", "M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z");
+
+      iconSvg.appendChild(iconPath);
+      emptyContainer.appendChild(iconSvg);
+
+      // メッセージ
+      const messageContainer = document.createElement("div");
+      messageContainer.style.cssText = "text-align: center; max-width: 400px;";
+
+      const emptyMessage = document.createElement("p");
+      emptyMessage.style.cssText = "font-size: 1rem; margin-bottom: 0.5rem;";
+      emptyMessage.textContent = t`${"empty_gallery_message"}`;
+
+      messageContainer.appendChild(emptyMessage);
+      emptyContainer.appendChild(messageContainer);
 
       // 追加ボタン（currentOnAddClickがある場合のみ）
       if (this.currentOnAddClick) {
         const addButton = document.createElement("button");
-        addButton.className = "btn btn-sm btn-primary";
-        addButton.textContent = t`${"image_editor"}`;
-        addButton.onclick = this.currentOnAddClick;
+        addButton.className = "btn btn-primary btn-lg";
+        addButton.style.cssText = "padding: 1rem 2rem; font-size: 1.125rem; gap: 0.75rem;";
 
+        // ボタンのSVGアイコン
+        const buttonSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        buttonSvg.setAttribute("viewBox", "0 0 24 24");
+        buttonSvg.setAttribute("fill", "currentColor");
+        buttonSvg.style.cssText = "width: 1.5rem; height: 1.5rem;";
+
+        const buttonPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        buttonPath.setAttribute("fill-rule", "evenodd");
+        buttonPath.setAttribute("d", "M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z");
+        buttonPath.setAttribute("clip-rule", "evenodd");
+
+        buttonSvg.appendChild(buttonPath);
+        addButton.appendChild(buttonSvg);
+
+        const buttonText = document.createTextNode(t`${"add_first_image"}`);
+        addButton.appendChild(buttonText);
+
+        addButton.onclick = this.currentOnAddClick;
         emptyContainer.appendChild(addButton);
       }
 

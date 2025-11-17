@@ -142,6 +142,8 @@ export const jaTranslations = {
   click_image_to_draw: "地図に描画したい画像をクリックしてください",
   no_draw_images: "描画用の画像がありません。",
   no_saved_images: "保存された画像がありません",
+  empty_gallery_message: "マップに画像を表示するには、まず画像を追加してください",
+  add_first_image: "最初の画像を追加",
   unplaced_images: "未配置画像",
   layers: "レイヤー",
   no_layers: "レイヤーなし",

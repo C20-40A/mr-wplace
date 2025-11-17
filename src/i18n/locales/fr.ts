@@ -142,6 +142,8 @@ export const frTranslations = {
   click_image_to_draw: "Cliquez sur l'image que vous souhaitez dessiner sur la carte",
   no_draw_images: "Aucune image pour le dessin.",
   no_saved_images: "Aucune image enregistrée",
+  empty_gallery_message: "Pour afficher une image sur la carte, veuillez d'abord ajouter une image",
+  add_first_image: "Ajouter la Première Image",
   unplaced_images: "Images non placées",
   layers: "Calques",
   no_layers: "Aucun calque",
