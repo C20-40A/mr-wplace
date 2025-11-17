@@ -160,14 +160,14 @@ const renderCurrentRoute = (route: TimeTravelRoute): void => {
 
 // 外部インターフェース：FABはタイル一覧からスタート
 export const show = (): void => {
+  ui.showModal(); // モーダルを先に作成
   router.initialize("tile-list");
-  ui.showModal();
 };
 
 // 元のボタン用：現在位置のみ表示
 export const showCurrentPosition = (): void => {
+  ui.showModal(); // モーダルを先に作成
   router.initialize("current-position");
-  ui.showModal();
 };
 
 export const navigateToDetail = (fullKey: string): void => {

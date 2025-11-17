@@ -25,26 +25,36 @@ export const createTimeTravelFAB = (): HTMLButtonElement => {
 };
 
 export class TimeTravelUI {
-  private modalElements: ModalElements;
+  private modalElements: ModalElements | null = null;
 
-  constructor(private router: TimeTravelRouter) {
+  constructor(private router: TimeTravelRouter) {}
+
+  showModal(): void {
+    // モーダルが既に存在している場合は削除（毎回作り直す）
+    if (this.modalElements?.modal.parentElement) {
+      this.modalElements.modal.remove();
+      this.modalElements = null;
+    }
+
+    // 新しいモーダルを作成
     this.modalElements = createModal({
       id: "wplace-studio-timetravel-modal",
       title: t`${"timetravel_modal_title"}`,
       maxWidth: "80rem",
       router: this.router,
     });
-  }
 
-  showModal(): void {
     this.modalElements.modal.showModal();
   }
 
   closeModal(): void {
-    this.modalElements.modal.close();
+    this.modalElements?.modal.close();
   }
 
   getContainer(): HTMLElement {
+    if (!this.modalElements) {
+      throw new Error("Modal not initialized. Call showModal() first.");
+    }
     return this.modalElements.container;
   }
 }

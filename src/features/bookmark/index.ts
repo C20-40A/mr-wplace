@@ -101,6 +101,15 @@ const addBookmark = async (): Promise<void> => {
 };
 
 const openModal = (): void => {
+  // モーダルが既に存在する場合は削除（毎回作り直す）
+  const existingModal = document.getElementById("wplace-studio-favorite-modal");
+  if (existingModal) {
+    existingModal.remove();
+  }
+
+  // モーダルを新規作成
+  setupModal();
+
   router.initialize("list");
   (
     document.getElementById("wplace-studio-favorite-modal") as HTMLDialogElement
@@ -550,7 +559,7 @@ const init = (): void => {
     },
   ];
   setupElementObserver(buttonConfigs);
-  setupModal();
+  // setupModal は openModal で呼ばれるようになったので、ここでは呼ばない
   console.log("🧑‍🎨 : Bookmark initialized");
 };
 

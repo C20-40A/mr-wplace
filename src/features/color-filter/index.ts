@@ -50,8 +50,8 @@ export class ColorFilter {
   }
 
   private showModal(): void {
+    this.colorFilterModal.showModal(); // モーダルを先に作成
     this.router.initialize("color-filter");
-    this.colorFilterModal.showModal();
   }
 
   public hideModal(): void {

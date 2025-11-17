@@ -181,9 +181,28 @@ export const createModal = (options: ModalOptions): ModalElements => {
   closeButton.addEventListener("click", handleClose);
   backdropButton.addEventListener("click", handleClose);
 
-  // モーダルclose時のログ（クリーンアップはしない - モーダルは再利用される）
+  // モーダルclose時に完全破壊（パフォーマンス優先のため毎回作り直す設計）
   modal.addEventListener("close", () => {
-    console.log("🧑‍🎨 : Modal closed");
+    console.log("🧑‍🎨 : Modal closed, destroying...");
+
+    // イベントリスナー解除
+    if (onBack) {
+      backButton?.removeEventListener("click", handleBack);
+    }
+    closeButton.removeEventListener("click", handleClose);
+    backdropButton.removeEventListener("click", handleClose);
+
+    // router の参照クリア
+    if (router && typeof router.clearHeaderElements === "function") {
+      router.clearHeaderElements();
+    }
+
+    // DOM削除
+    setTimeout(() => {
+      if (modal.parentElement) {
+        modal.remove();
+      }
+    }, 0);
   });
 
   // routerがある場合は自動でheader要素を設定
