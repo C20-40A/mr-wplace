@@ -235,15 +235,7 @@ const editFriend = async (id: number): Promise<void> => {
  * モーダルを開く
  */
 const openModal = (): void => {
-  // モーダルが既に存在する場合は削除（毎回作り直す）
-  const existingModal = document.getElementById("friends-book-modal");
-  if (existingModal) {
-    existingModal.remove();
-  }
-
-  // モーダルを新規作成
   setupModal();
-
   render();
   const modal = document.getElementById(
     "friends-book-modal"

@@ -19,13 +19,6 @@ export class ColorFilterModal {
   constructor(private router: ColorFilterRouter) {}
 
   showModal(): void {
-    // モーダルが既に存在している場合は削除（毎回作り直す）
-    if (this.modalElements?.modal.parentElement) {
-      this.modalElements.modal.remove();
-      this.modalElements = null;
-    }
-
-    // 新しいモーダルを作成
     this.modalElements = createModal({
       id: "wplace-studio-color-filter-modal",
       title: t`${"color_filter"}`,
