@@ -21,11 +21,19 @@ import {
   importGalleryFromZip,
   downloadBlob,
 } from "@/utils/gallery-export";
+import { FEEDBACK_FORM_URL } from "@/constants/url";
+import { BUY_ME_COFFEE_IMAGE } from "./assets/buyMeACoffee";
 
 const updateUI = (): void => {
-  const coffeeLink = document.querySelector(".coffee-link") as HTMLElement;
-  if (coffeeLink) {
-    coffeeLink.textContent = `☕ ${t`${"buy_me_coffee"}`}`;
+  // Update feedback form URL based on current locale
+  const feedbackLink = document.getElementById(
+    "feedback-link"
+  ) as HTMLAnchorElement;
+  if (feedbackLink) {
+    const currentLocale = I18nManager.getCurrentLocale();
+    // Narrow the locale to the known keys of FEEDBACK_FORM_URL before indexing
+    const localeKey = currentLocale as keyof typeof FEEDBACK_FORM_URL;
+    feedbackLink.href = FEEDBACK_FORM_URL[localeKey] || FEEDBACK_FORM_URL.en;
   }
 
   // Update gallery data labels
@@ -66,8 +74,12 @@ const checkMapInstanceAndUpdateUI = async (): Promise<void> => {
     console.log("🧑‍🎨 : Map instance exists:", hasMapInstance);
 
     // Hide navigation and tile boundaries settings if no map instance
-    const navigationGroup = document.getElementById("navigation-select")?.closest(".setting-group") as HTMLElement;
-    const tileBoundariesGroup = document.getElementById("tile-boundaries-select")?.closest(".setting-group") as HTMLElement;
+    const navigationGroup = document
+      .getElementById("navigation-select")
+      ?.closest(".setting-group") as HTMLElement;
+    const tileBoundariesGroup = document
+      .getElementById("tile-boundaries-select")
+      ?.closest(".setting-group") as HTMLElement;
 
     if (navigationGroup) {
       navigationGroup.style.display = hasMapInstance ? "block" : "none";
@@ -79,8 +91,12 @@ const checkMapInstanceAndUpdateUI = async (): Promise<void> => {
   } catch (error) {
     console.error("🧑‍🎨 : Failed to check map instance:", error);
     // On error, hide the features to be safe
-    const navigationGroup = document.getElementById("navigation-select")?.closest(".setting-group") as HTMLElement;
-    const tileBoundariesGroup = document.getElementById("tile-boundaries-select")?.closest(".setting-group") as HTMLElement;
+    const navigationGroup = document
+      .getElementById("navigation-select")
+      ?.closest(".setting-group") as HTMLElement;
+    const tileBoundariesGroup = document
+      .getElementById("tile-boundaries-select")
+      ?.closest(".setting-group") as HTMLElement;
 
     if (navigationGroup) {
       navigationGroup.style.display = "none";
@@ -102,6 +118,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const tileBoundariesSelect = document.getElementById(
     "tile-boundaries-select"
   ) as HTMLSelectElement;
+
+  // Set Buy Me a Coffee image
+  const coffeeImg = document.getElementById("coffee-img") as HTMLImageElement;
+  if (coffeeImg && BUY_ME_COFFEE_IMAGE) coffeeImg.src = BUY_ME_COFFEE_IMAGE;
 
   // i18n初期化（ブラウザ言語検出）
   await I18nManager.init(detectBrowserLanguage());

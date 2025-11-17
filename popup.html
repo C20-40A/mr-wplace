@@ -76,7 +76,7 @@
         border-top: 1px solid #000000;
       }
 
-      .coffee-link {
+      .support-link {
         display: inline-block;
         color: #000000;
         text-decoration: none;
@@ -87,9 +87,24 @@
         font-weight: bold;
       }
 
-      .coffee-link:hover {
+      .support-link:hover {
         background: #000000;
         color: #ffffff;
+      }
+
+      .coffee-btn {
+        display: inline-block;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        padding: 0;
+        margin: 0 8px;
+      }
+
+      .coffee-btn img {
+        display: block;
+        height: 36px;
+        width: auto;
       }
 
       button:hover {
@@ -149,27 +164,80 @@
         <span class="icon">🖼️</span>
         <span id="gallery-data-label">Gallery Data</span>
       </label>
-      <div style="display: flex; flex-direction: column; gap: 8px;">
-        <button id="export-gallery-btn" style="width: 100%; padding: 6px 8px; border: 1px solid #000000; background: #f0f0f0; color: #000000; font-size: 14px; font-family: 'Courier New', monospace; cursor: pointer; font-weight: bold;">
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <button
+          id="export-gallery-btn"
+          style="
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #000000;
+            background: #f0f0f0;
+            color: #000000;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            font-weight: bold;
+          "
+        >
           📤 <span id="export-btn-label">Export</span>
         </button>
-        <button id="import-gallery-btn" style="width: 100%; padding: 6px 8px; border: 1px solid #000000; background: #f0f0f0; color: #000000; font-size: 14px; font-family: 'Courier New', monospace; cursor: pointer; font-weight: bold;">
+        <button
+          id="import-gallery-btn"
+          style="
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #000000;
+            background: #f0f0f0;
+            color: #000000;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            font-weight: bold;
+          "
+        >
           📥 <span id="import-btn-label">Import</span>
         </button>
-        <button id="reset-gallery-btn" style="width: 100%; padding: 6px 8px; border: 1px solid #000000; background: #ffffff; color: #cc0000; font-size: 14px; font-family: 'Courier New', monospace; cursor: pointer; font-weight: bold;">
+        <button
+          id="reset-gallery-btn"
+          style="
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #000000;
+            background: #ffffff;
+            color: #cc0000;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            font-weight: bold;
+          "
+        >
           🗑️ <span id="reset-btn-label">Reset Gallery</span>
         </button>
-        <input type="file" id="import-gallery-file" accept=".zip" style="display: none;" />
+        <input
+          type="file"
+          id="import-gallery-file"
+          accept=".zip"
+          style="display: none"
+        />
       </div>
     </div>
 
     <div class="coffee-support">
       <a
+        id="feedback-link"
+        href="#"
+        target="_blank"
+        class="support-link"
+        style="margin-bottom: 12px"
+      >
+        📝 Bug Report
+      </a>
+      <a
         href="https://buymeacoffee.com/c20_40a"
         target="_blank"
-        class="coffee-link"
+        class="coffee-btn"
       >
-        ☕ Buy me a coffee
+        <img id="coffee-img" src="" alt="Buy Me A Coffee" />
       </a>
     </div>
 
