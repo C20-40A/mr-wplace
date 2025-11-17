@@ -321,4 +321,21 @@ export const esTranslations = {
   clearing: "Limpiando...",
   cache_cleared: "¡Caché Limpiada!",
   tiles: "bloques",
+
+  // Friends Book
+  friends_book: "Amigos",
+  add_to_friends: "Añadir a Amigos",
+  add_friend: "Añadir Amigo",
+  edit_friend: "Editar Amigo",
+  description: "Descripción",
+  description_placeholder: "Ingrese descripción...",
+  tag: "Etiqueta",
+  tags: "Etiquetas",
+  create_new_tag: "Crear Nueva Etiqueta",
+  clear_tag: "Borrar Etiqueta",
+  tag_name_placeholder: "ej: Amigo, Rival...",
+  select_color: "Seleccionar Color",
+  create: "Crear",
+  no_friends: "Sin amigos",
+  sort_added: "Fecha de Adición",
 };

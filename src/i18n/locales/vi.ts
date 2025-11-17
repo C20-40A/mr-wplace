@@ -315,4 +315,21 @@ export const viTranslations = {
   clearing: "Đang xóa...",
   cache_cleared: "Đã xóa bộ nhớ cache!",
   tiles: "ô",
+
+  // Friends Book
+  friends_book: "Danh sách bạn bè",
+  add_to_friends: "Thêm vào bạn bè",
+  add_friend: "Thêm bạn",
+  edit_friend: "Chỉnh sửa bạn",
+  description: "Mô tả",
+  description_placeholder: "Nhập mô tả...",
+  tag: "Thẻ",
+  tags: "Các thẻ",
+  create_new_tag: "Tạo thẻ mới",
+  clear_tag: "Xóa thẻ",
+  tag_name_placeholder: "vd: Bạn bè, Đối thủ...",
+  select_color: "Chọn màu",
+  create: "Tạo",
+  no_friends: "Không có bạn bè",
+  sort_added: "Ngày thêm",
 };
