@@ -279,7 +279,7 @@ export class NotificationModal {
           </div>
           <div class="flex justify-between">
             <span>${t`${"next_level"}`} (${nextLevel}):</span>
-            <span class="font-mono text-blue-600">${new Intl.NumberFormat().format(
+            <span class="font-mono>${new Intl.NumberFormat().format(
               remainingPixels
             )} px</span>
           </div>
@@ -360,7 +360,7 @@ export class NotificationModal {
 
     return `
       <div style="background-color: #f3f4f6; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #d1d5db;">
-        <div style="font-size: 13px; color: #6b7280; font-weight: 500;">${t`${"no_alarm_set"}`}</div>
+        <div style="font-size: 13px; font-weight: 500;">${t`${"no_alarm_set"}`}</div>
       </div>
     `;
   }
@@ -369,7 +369,7 @@ export class NotificationModal {
     return `
       <div id="alarm-section-container" class="mb-6 border-t pt-4" style="border-top: 1px solid #e5e7eb; margin-bottom: 24px; padding-top: 16px;">
         <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 12px;">🔔 ${t`${"charge_alarm"}`}</h4>
-        <div style="display: flex; align-items: center; justify-content: center; padding: 24px; color: #6b7280;">
+        <div style="display: flex; align-items: center; justify-content: center; padding: 24px;">
           <span>${t`${"loading_alarm_settings"}`}</span>
         </div>
       </div>
@@ -384,25 +384,35 @@ export class NotificationModal {
       ? "inline-block"
       : "none";
 
-    const { max } = this.getChargeData();
+    const { current, max } = this.getChargeData();
     const thresholdPixels = Math.floor((max * this.currentThreshold) / 100);
     const thresholdTime = this.calculateThresholdTime(this.currentThreshold);
     const isThresholdReached = thresholdTime === t`${"already_reached"}`;
 
     return `
       <div style="margin-bottom: 24px;">
-        <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 12px;">${t`${"charge_alarm"}`}</h4>
-        
+        <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">${t`${"charge_alarm"}`}</h4>
+        <div style="font-size: 12px; margin-bottom: 12px;">
+          ${t`${"alarm_browser_warning"}`}
+        </div>
+
         <div style="margin-bottom: 16px;">
           <label style="font-size: 14px; font-weight: 500; display: block; margin-bottom: 8px;">
             ${t`${"notification_threshold"}`}: <span id="thresholdValue">${
       this.currentThreshold
-    }</span>% <span id="thresholdPixels">(${thresholdPixels}/${max})</span>
+    }</span>%
           </label>
           <input type="range" id="chargeThreshold" min="10" max="100" value="${
             this.currentThreshold
-          }" step="5" 
+          }" step="5"
                  style="width: 100%; margin-bottom: 8px;">
+          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+            <input type="number" id="thresholdInput" min="${Math.ceil(
+              current
+            )}" max="${max}" value="${thresholdPixels}"
+                   style="width: 80px; padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-family: monospace; font-size: 13px;">
+            <span style="font-size: 13px;">/ ${max}</span>
+          </div>
           <div style="display: flex; gap: 8px; align-items: center;">
             <div id="estimatedTime" style="flex: 1; font-size: 12px; padding: 6px 8px; border-radius: 4px; border: 1px solid #e5e7eb;">
               ${t`${"estimated_time"}`}: ${thresholdTime}
@@ -414,7 +424,7 @@ export class NotificationModal {
             </button>
           </div>
         </div>
-        
+
         <div id="alarm-status-content">
           ${this.createAlarmStatusHTML()}
         </div>
@@ -438,7 +448,9 @@ export class NotificationModal {
       "chargeThreshold"
     ) as HTMLInputElement;
     const thresholdValue = document.getElementById("thresholdValue");
-    const thresholdPixels = document.getElementById("thresholdPixels");
+    const thresholdInput = document.getElementById(
+      "thresholdInput"
+    ) as HTMLInputElement;
     const estimatedTime = document.getElementById("estimatedTime");
     const addToCalendarButton = document.getElementById("addToCalendar");
 
@@ -488,16 +500,26 @@ export class NotificationModal {
       console.log("🧑‍🎨: Alarm disabled");
     });
 
-    if (thresholdSlider && thresholdValue && estimatedTime && thresholdPixels) {
-      const updateThresholdDisplay = async () => {
-        const threshold = parseInt(thresholdSlider.value);
-        this.currentThreshold = threshold;
-
+    if (thresholdSlider && thresholdValue && estimatedTime && thresholdInput) {
+      const updateThresholdDisplay = async (source: "slider" | "input") => {
         const { current, max } = this.getChargeData();
-        const pixels = Math.floor((max * threshold) / 100);
+        let threshold: number;
+        let pixels: number;
 
+        if (source === "slider") {
+          threshold = parseInt(thresholdSlider.value);
+          pixels = Math.floor((max * threshold) / 100);
+          thresholdInput.value = pixels.toString();
+        } else {
+          pixels = parseInt(thresholdInput.value);
+          pixels = Math.max(Math.ceil(current), Math.min(max, pixels));
+          thresholdInput.value = pixels.toString();
+          threshold = Math.round((pixels / max) * 100);
+          thresholdSlider.value = threshold.toString();
+        }
+
+        this.currentThreshold = threshold;
         thresholdValue.textContent = threshold.toString();
-        thresholdPixels.textContent = `(${pixels}/${max})`;
         estimatedTime.textContent = `${t`${"estimated_time"}`}: ${this.calculateThresholdTime(
           threshold
         )}`;
@@ -530,7 +552,12 @@ export class NotificationModal {
         }
       };
 
-      thresholdSlider.addEventListener("input", updateThresholdDisplay);
+      thresholdSlider.addEventListener("input", () =>
+        updateThresholdDisplay("slider")
+      );
+      thresholdInput.addEventListener("input", () =>
+        updateThresholdDisplay("input")
+      );
     }
 
     if (addToCalendarButton) {

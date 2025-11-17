@@ -211,6 +211,7 @@ export const viTranslations = {
   scheduled: "Đã lên lịch",
   no_alarm_set: "😴 Chưa đặt báo thức",
   charge_alarm: "🔔 Báo thức sạc",
+  alarm_browser_warning: "※ Sẽ không thông báo nếu đóng trình duyệt",
   loading_alarm_settings: "Đang tải cài đặt báo thức...",
   notification_threshold: "Ngưỡng thông báo",
   estimated_time: "Thời gian ước tính",

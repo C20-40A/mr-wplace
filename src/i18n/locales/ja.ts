@@ -211,6 +211,7 @@ export const jaTranslations = {
   scheduled: "予定時刻",
   no_alarm_set: "😴 アラーム未設定",
   charge_alarm: "🔔 アラーム",
+  alarm_browser_warning: "※ ブラウザを閉じると通知されません",
   loading_alarm_settings: "アラーム設定を読み込み中...",
   notification_threshold: "通知しきい値",
   estimated_time: "予想時刻",

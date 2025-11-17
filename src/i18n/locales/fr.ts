@@ -212,6 +212,7 @@ export const frTranslations = {
   scheduled: "Programmé",
   no_alarm_set: "😴 Aucune alarme définie",
   charge_alarm: "🔔 Alarme de charge",
+  alarm_browser_warning: "※ Aucune notification si le navigateur est fermé",
   loading_alarm_settings: "Chargement des paramètres d'alarme...",
   notification_threshold: "Seuil de notification",
   estimated_time: "Temps estimé",

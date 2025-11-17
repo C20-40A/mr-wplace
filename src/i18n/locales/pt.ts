@@ -213,6 +213,7 @@ export const ptTranslations = {
   scheduled: "Agendado",
   no_alarm_set: "😴 Sem Alarme Definido",
   charge_alarm: "🔔 Alarme de Carga",
+  alarm_browser_warning: "※ Não será notificado se fechar o navegador",
   loading_alarm_settings: "Carregando configurações de alarme...",
   notification_threshold: "Limite de Notificação",
   estimated_time: "Tempo estimado",
