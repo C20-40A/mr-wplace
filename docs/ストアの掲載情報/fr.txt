@@ -1,0 +1,27 @@
+🚀 Boîte à outils multifonctionnelle Mr. Wplace
+
+🔔 Notifications lors de l'accumulation de peinture
+• Recevez des notifications lorsque la peinture s'accumule (peut être activé/désactivé)
+• Définissez des notifications selon votre moment préféré de 10% à 100%
+• Peut également utiliser des liens Google Agenda
+
+✏ Dessiner du texte
+• Dessinez du texte sous forme de points sur la carte
+• Prend en charge plusieurs styles de texte
+
+🎨 Dessiner des images sur la carte
+• Affichez les pixels nécessaires pour dessiner les images téléchargées sur la carte
+• Consultez la liste des œuvres d'art dans la galerie
+• Basculement facile de l'affichage des œuvres et déplacement vers les positions des œuvres
+• Affichez les pixels manquants de manière facile à voir
+• Appliquez des filtres de couleur pour afficher les images
+• Partagez et chargez des images en cours de travail avec des informations de localisation
+
+⭐ Favoris illimités
+• Enregistrez des emplacements illimités avec des noms personnalisés
+• Importez/exportez des listes de favoris
+
+⏰ Restaurer les œuvres d'art aux états passés
+• Enregistrez les images actuellement dessinées sur les tuiles de la carte
+• Affichez les états passés sur la carte pour réparer rapidement les œuvres vandalisées
+• Consultez les tuiles enregistrées dans une liste
