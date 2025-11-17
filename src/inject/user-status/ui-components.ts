@@ -16,7 +16,7 @@ export class StatusUIComponents {
       align-items: flex-start;
       gap: 8px;
       pointer-events: all;
-      background-color: white;
+      background-color: var(--color-base-100);
       border-radius: 12px;
       padding: 4px 12px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -29,11 +29,11 @@ export class StatusUIComponents {
     container.id = "user-status-container";
 
     container.addEventListener("mouseenter", () => {
-      container.style.backgroundColor = "#f8f9fa";
+      container.style.backgroundColor = "var(--color-base-200)";
       container.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
     });
     container.addEventListener("mouseleave", () => {
-      container.style.backgroundColor = "white";
+      container.style.backgroundColor = "var(--color-base-100)";
       container.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
     });
 
@@ -43,7 +43,6 @@ export class StatusUIComponents {
   createNextLevelBadge(): HTMLElement {
     const badge = document.createElement("div");
     badge.style.cssText = `
-      color: #333;
       display: none;
       line-height: 1.4;
     `;
@@ -53,7 +52,6 @@ export class StatusUIComponents {
   createChargeCountdown(): HTMLElement {
     const countdown = document.createElement("div");
     countdown.style.cssText = `
-      color: #333;
       display: none;
       line-height: 1.4;
     `;

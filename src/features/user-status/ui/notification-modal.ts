@@ -108,7 +108,22 @@ export class NotificationModal {
     const alarmTime = this.calculateAlarmTime(threshold);
     if (!alarmTime) return t`${"already_reached"}`;
 
-    return alarmTime.toLocaleTimeString("ja-JP", {
+    const now = new Date();
+    const isToday =
+      alarmTime.getFullYear() === now.getFullYear() &&
+      alarmTime.getMonth() === now.getMonth() &&
+      alarmTime.getDate() === now.getDate();
+
+    if (isToday) {
+      return alarmTime.toLocaleTimeString("ja-JP", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+
+    return alarmTime.toLocaleString("ja-JP", {
+      month: "2-digit",
+      day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
     });

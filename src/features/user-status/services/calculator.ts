@@ -1,14 +1,13 @@
 export class StatusCalculator {
   calculateNextLevelPixels(level: number, pixelsPainted: number): number {
     const nextLevelPixels = Math.ceil(
-      Math.pow(Math.floor(level) * Math.pow(30, 0.65), 1 / 0.65) - 
-      pixelsPainted
+      Math.pow(Math.floor(level) * Math.pow(30, 0.65), 1 / 0.65) - pixelsPainted
     );
     return Math.max(0, nextLevelPixels);
   }
 
   generateProgressGaugeHtml(
-    remainingPixels: number, 
+    remainingPixels: number,
     currentLevel: number
   ): string {
     const nextLevel = Math.floor(currentLevel) + 1;
@@ -28,7 +27,7 @@ export class StatusCalculator {
 
     const progressWidth = Math.floor(progressRatio * 40);
     const gaugeHtml = `
-      <div style="display:inline-block;width:40px;height:6px;background-color:#E5E7EB;border-radius:3px;position:relative;margin-right:4px;">
+      <div style="display:inline-block;width:40px;height:6px;background-color: var(--color-base-300);border-radius:3px;position:relative;margin-right:4px;">
         <div style="width:${progressWidth}px;height:6px;background-color:#3B82F6;border-radius:3px;position:absolute;top:0;left:0;"></div>
       </div>
     `;
@@ -36,7 +35,11 @@ export class StatusCalculator {
     return `${gaugeHtml} +${new Intl.NumberFormat().format(remainingPixels)}px`;
   }
 
-  calculateTimeToFull(charges: { count: number; max: number; cooldownMs: number }): {
+  calculateTimeToFull(charges: {
+    count: number;
+    max: number;
+    cooldownMs: number;
+  }): {
     current: number;
     max: number;
     cooldownMs: number;
@@ -52,7 +55,7 @@ export class StatusCalculator {
       current: currentCharges,
       max: maxCharges,
       cooldownMs,
-      timeToFullMs
+      timeToFullMs,
     };
   }
 
@@ -78,13 +81,16 @@ export class StatusCalculator {
     const progressPercent = Math.floor(progressRatio * 100);
 
     return `
-      <div style="display:block;width:100%;height:6px;background-color:#E5E7EB;border-radius:3px;position:relative;">
+      <div style="display:block;width:100%;height:6px;background-color: var(--color-base-300);border-radius:3px;position:relative;">
         <div style="width:${progressPercent}%;height:6px;background-color:#FCD34D;border-radius:3px;position:absolute;top:0;left:0;"></div>
       </div>
     `;
   }
 
-  generateLevelGaugeOnly(remainingPixels: number, currentLevel: number): string {
+  generateLevelGaugeOnly(
+    remainingPixels: number,
+    currentLevel: number
+  ): string {
     const nextLevel = Math.floor(currentLevel) + 1;
     const totalPixelsForNextLevel = Math.ceil(
       Math.pow(nextLevel * Math.pow(30, 0.65), 1 / 0.65)
@@ -103,7 +109,7 @@ export class StatusCalculator {
     const progressPercent = Math.floor(progressRatio * 100);
 
     return `
-      <div style="display:block;width:100%;height:6px;background-color:#E5E7EB;border-radius:3px;position:relative;">
+      <div style="display:block;width:100%;height:6px;background-color: var(--color-base-300);border-radius:3px;position:relative;">
         <div style="width:${progressPercent}%;height:6px;background-color:#3B82F6;border-radius:3px;position:absolute;top:0;left:0;"></div>
       </div>
     `;
