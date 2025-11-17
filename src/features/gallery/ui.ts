@@ -17,13 +17,6 @@ export class GalleryUI {
   }
 
   showModal(): void {
-    // モーダルが既に存在している場合は削除（毎回作り直す）
-    if (this.modalElements?.modal.parentElement) {
-      this.modalElements.modal.remove();
-      this.modalElements = null;
-    }
-
-    // 新しいモーダルを作成
     this.modalElements = createModal({
       id: "wplace-studio-gallery-modal",
       title: t`${"gallery"}`,
@@ -31,9 +24,7 @@ export class GalleryUI {
       router: this.router,
     });
 
-    // close イベントリスナーを登録
     this.modalElements.modal.addEventListener("close", () => {
-      console.log("🧑‍🎨 : Gallery modal closed, cleaning up...");
       this.onModalClose?.();
     });
 

@@ -117,6 +117,12 @@ export const createModal = (options: ModalOptions): ModalElements => {
     router,
   } = options;
 
+  // 既存の同じIDのモーダルを削除（毎回作り直す設計）
+  const existingModal = document.getElementById(id);
+  if (existingModal) {
+    existingModal.remove();
+  }
+
   // routerがある場合は自動でbackボタンを有効化
   const hasBackButton = explicitHasBackButton ?? !!router;
   const onBack =
