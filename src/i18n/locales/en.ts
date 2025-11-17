@@ -253,6 +253,14 @@ export const enTranslations = {
   // • Too fast movements or unnatural painting patterns may cause pixel misalignment or misunderstanding
   // `,
 
+  auto_dotter_warning: `
+• This is an experimental feature that "automatically presses Space when hovering over red areas"
+• This is a developer verification feature
+• Use only for testing purposes
+• Too fast or unnatural painting may cause misunderstanding as BOT behavior
+• Use at your own risk
+`,
+
   // Sort Order
   sort_order_default: "Default",
   sort_order_most_missing: "Most Missing",

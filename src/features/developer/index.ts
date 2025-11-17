@@ -7,7 +7,8 @@ import { createAutoCanvasClickButton } from "./auto-canvas-click-ui";
 import { createKonamiCodeDetector } from "./konami-detector";
 import { t } from "../../i18n/manager";
 import { ColorFilterManager } from "@/utils/color-filter-manager";
-import { sendColorFilterToInject } from "@/content";
+import { sendColorFilterToInject, sendShowUnplacedOnlyToInject } from "@/content";
+import type { ColorIsolate } from "@/features/color-isolate";
 
 export class AutoSpoit {
   private enabled: boolean = true;
@@ -16,9 +17,11 @@ export class AutoSpoit {
   private autoCanvasClickEnabled: boolean = false;
   private autoCanvasClickButton: HTMLButtonElement | null = null;
   private colorFilterManager: ColorFilterManager;
+  private colorIsolate: ColorIsolate;
 
-  constructor(colorFilterManager: ColorFilterManager) {
+  constructor(colorFilterManager: ColorFilterManager, colorIsolate: ColorIsolate) {
     this.colorFilterManager = colorFilterManager;
+    this.colorIsolate = colorIsolate;
     this.init();
   }
 
@@ -174,6 +177,21 @@ export class AutoSpoit {
   }
 
   async toggleAutoCanvasClick(): Promise<void> {
+    // 有効化しようとしている場合、初回警告チェック
+    if (!this.autoCanvasClickEnabled) {
+      const hasShownWarning = await AutoCanvasClickStorage.hasShownWarning();
+      if (!hasShownWarning) {
+        const warningMessage = t`${"auto_dotter_warning"}`;
+        const agreed = confirm(warningMessage);
+        if (!agreed) {
+          console.log("🧑‍🎨 : Auto canvas click activation cancelled by user");
+          return;
+        }
+        await AutoCanvasClickStorage.setWarningShown();
+        console.log("🧑‍🎨 : Auto canvas click warning shown and agreed");
+      }
+    }
+
     this.autoCanvasClickEnabled = await AutoCanvasClickStorage.toggle();
     console.log("🧑‍🎨 : Auto canvas click toggled:", this.autoCanvasClickEnabled);
 
@@ -183,8 +201,24 @@ export class AutoSpoit {
       sendColorFilterToInject(this.colorFilterManager);
       console.log("🧑‍🎨 : Enhanced mode set to red-border");
 
+      // Enable color isolate
+      await this.colorIsolate.enable();
+      console.log("🧑‍🎨 : Color isolate enabled");
+
+      // Enable show unplaced only
+      sendShowUnplacedOnlyToInject(true);
+      console.log("🧑‍🎨 : Show unplaced only enabled");
+
       this.sendAutoCanvasClickStart();
     } else {
+      // Disable color isolate
+      await this.colorIsolate.disable();
+      console.log("🧑‍🎨 : Color isolate disabled");
+
+      // Disable show unplaced only
+      sendShowUnplacedOnlyToInject(false);
+      console.log("🧑‍🎨 : Show unplaced only disabled");
+
       this.sendAutoCanvasClickStop();
     }
 

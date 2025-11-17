@@ -1,7 +1,6 @@
 # メイン
 
-- ThemeToggleStorage.get()が 8.8 秒かかっている
-- [WARNING] Duplicate key "new_tag" in object literal [duplicate-object-key]
+- 友人帳の import/export
 - 予想時刻に日付追加
 - アーカイブ詳細が見切れる
 - URL ジャンプできない
@@ -14,7 +13,6 @@
 - 初回起動が遅い
 - データセーバーの説明テキストほしい
 - sendGalleryImagesToInject のパフォーマンス測定
-- 友人帳
 - 画像処理を Web Worker で並列実行
 - 追加したばかりの画像、描画モードがドットスタートになっている。現在の描画モードにしたい
 - 選択したテキスト storage 保存のほうがやっぱいいかも
@@ -33,6 +31,7 @@
 - 画像編集で色カウントあると便利
 - ブックマーク開いた後、ちょい重くなる。なんか destroy されてないかも
 - 現在位置のアーカイブで import
+- ThemeToggleStorage.get()が 8.8 秒かかっている
 
 # バグ
 
@@ -100,6 +99,7 @@
 
 # DONE v1.10.2
 
+- 友人帳
 - 不具合報告フォーム
 - Android 実機で、modal の高さが見切れる
 - 量子化の option 追加でパフォーマンス落ちたので修正
