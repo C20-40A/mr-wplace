@@ -117,12 +117,6 @@ export const createModal = (options: ModalOptions): ModalElements => {
     router,
   } = options;
 
-  // 既存の同じIDのモーダルを削除（毎回作り直す設計）
-  const existingModal = document.getElementById(id);
-  if (existingModal) {
-    existingModal.remove();
-  }
-
   // routerがある場合は自動でbackボタンを有効化
   const hasBackButton = explicitHasBackButton ?? !!router;
   const onBack =
@@ -187,55 +181,31 @@ export const createModal = (options: ModalOptions): ModalElements => {
   closeButton.addEventListener("click", handleClose);
   backdropButton.addEventListener("click", handleClose);
 
-  // モーダルclose時に完全破壊（パフォーマンス優先のため毎回作り直す設計）
-  modal.addEventListener("close", () => {
-    console.log("🧑‍🎨 : Modal closed, destroying...");
-
+  // クリーンアップ処理（共通化）
+  const cleanup = () => {
     // イベントリスナー解除
-    if (onBack) {
-      backButton?.removeEventListener("click", handleBack);
-    }
+    if (onBack) backButton?.removeEventListener("click", handleBack);
     closeButton.removeEventListener("click", handleClose);
     backdropButton.removeEventListener("click", handleClose);
 
     // router の参照クリア
-    if (router && typeof router.clearHeaderElements === "function") {
-      router.clearHeaderElements();
-    }
+    if (router?.clearHeaderElements) router.clearHeaderElements();
 
     // DOM削除
-    setTimeout(() => {
-      if (modal.parentElement) {
-        modal.remove();
-      }
-    }, 0);
-  });
+    modal.remove();
+  };
+
+  // close時に自動破壊
+  modal.addEventListener("close", cleanup);
 
   // routerがある場合は自動でheader要素を設定
   if (router) {
     router.setHeaderElements(titleElement, backButton);
   }
 
-  // destroy メソッド（完全破棄用 - 通常は使わない）
+  // destroy メソッド（手動破壊用）
   const destroy = () => {
-    console.log("🧑‍🎨 : Modal destroyed completely");
-
-    // イベントリスナー解除
-    if (onBack) {
-      backButton?.removeEventListener("click", handleBack);
-    }
-    closeButton.removeEventListener("click", handleClose);
-    backdropButton.removeEventListener("click", handleClose);
-
-    // router の参照クリア
-    if (router && typeof router.clearHeaderElements === "function") {
-      router.clearHeaderElements();
-    }
-
-    // DOM 削除
-    if (modal.parentElement) {
-      modal.remove();
-    }
+    modal.close(); // closeイベントでcleanupが呼ばれる
   };
 
   return {
