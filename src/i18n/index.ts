@@ -1,7 +1,7 @@
 import { storage } from "@/utils/browser-api";
 
 // サポート対象ロケール型定義
-export type SupportedLocale = "ja" | "en" | "pt" | "es" | "vi";
+export type SupportedLocale = "ja" | "en" | "pt" | "es" | "vi" | "fr" | "ru";
 
 // 翻訳辞書の型定義
 export interface Translations {
@@ -14,6 +14,8 @@ export interface LocaleData {
   pt: Translations;
   es: Translations;
   vi: Translations;
+  fr: Translations;
+  ru: Translations;
 }
 
 // 現在のロケール管理
@@ -31,7 +33,9 @@ export const loadLocaleFromStorage = async (): Promise<boolean> => {
     storedLocale === "en" ||
     storedLocale === "pt" ||
     storedLocale === "es" ||
-    storedLocale === "vi"
+    storedLocale === "vi" ||
+    storedLocale === "fr" ||
+    storedLocale === "ru"
   ) {
     currentLocale = storedLocale;
     return true;
@@ -53,6 +57,8 @@ const translations: LocaleData = {
   pt: {},
   es: {},
   vi: {},
+  fr: {},
+  ru: {},
 };
 
 // ロケール設定（ストレージ連携版）
@@ -74,7 +80,9 @@ export const detectBrowserLanguage = (): SupportedLocale => {
     lang === "en" ||
     lang === "pt" ||
     lang === "es" ||
-    lang === "vi"
+    lang === "vi" ||
+    lang === "fr" ||
+    lang === "ru"
   ) {
     return lang as SupportedLocale;
   }
@@ -100,6 +108,8 @@ export const formatDate = (
     pt: "pt-BR",
     es: "es-ES",
     vi: "vi-VN",
+    fr: "fr-FR",
+    ru: "ru-RU",
   };
   return date.toLocaleString(localeMap[currentLocale], options);
 };
@@ -111,6 +121,8 @@ export const formatDateShort = (date: Date): string => {
     pt: "pt-BR",
     es: "es-ES",
     vi: "vi-VN",
+    fr: "fr-FR",
+    ru: "ru-RU",
   };
   return date.toLocaleDateString(localeMap[currentLocale]);
 };
