@@ -9,6 +9,8 @@ export interface TextInstance {
   coords: { TLX: number; TLY: number; PxX: number; PxY: number };
 }
 
+const FONT_STORAGE_KEY = "text_draw_selected_font";
+
 export const createTextInputButton = (): HTMLButtonElement => {
   return createResponsiveButton({
     iconText: "✏️",
@@ -67,6 +69,15 @@ export class TextDrawUI {
       <option value="Misaki">🇯🇵 Misaki (8x8)(A,ひ,カ,漢)</option>
       <option value="k8x12">🇯🇵 k8x12 (8x12)(A,ひ,カ,漢)</option>
     `;
+
+    // Restore saved font selection
+    const savedFont = localStorage.getItem(FONT_STORAGE_KEY);
+    if (savedFont) this.fontSelect.value = savedFont;
+
+    // Save font selection on change
+    this.fontSelect.addEventListener("change", () => {
+      localStorage.setItem(FONT_STORAGE_KEY, this.fontSelect.value);
+    });
 
     const buttonContainer = document.createElement("div");
     buttonContainer.style.cssText =
