@@ -1,6 +1,6 @@
 import { setupElementObserver } from "../../components/element-observer";
-import { findPaintPixelControls } from "../../constants/selectors";
-import { createAutoSpoitButton } from "./ui";
+// import { findPaintPixelControls } from "../../constants/selectors";
+// import { createAutoSpoitButton } from "./ui";
 import { AutoSpoitStorage } from "./storage";
 import { createKonamiCodeDetector } from "./konami-detector";
 import { t } from "../../i18n/manager";
@@ -75,23 +75,22 @@ export class AutoSpoit {
     }
 
     setupElementObserver([
-      {
-        id: "auto-spoit-btn",
-        getTargetElement: findPaintPixelControls,
-        createElement: (container) => {
-          const tooltip = document.createElement("div");
-          tooltip.className = "tooltip";
-          tooltip.setAttribute("data-tip", "Toggle auto color picker");
-
-          this.button = createAutoSpoitButton(this.enabled);
-          this.button.id = "auto-spoit-btn";
-          this.button.addEventListener("click", () => this.toggle());
-
-          tooltip.appendChild(this.button);
-          container.appendChild(tooltip);
-          console.log("🧑‍🎨 : Auto spoit button added");
-        },
-      },
+      // NOTE: この機能は現在利用不可のためコメントアウト
+      // {
+      //   id: "auto-spoit-btn",
+      //   getTargetElement: findPaintPixelControls,
+      //   createElement: (container) => {
+      //     const tooltip = document.createElement("div");
+      //     tooltip.className = "tooltip";
+      //     tooltip.setAttribute("data-tip", "Toggle auto color picker");
+      //     this.button = createAutoSpoitButton(this.enabled);
+      //     this.button.id = "auto-spoit-btn";
+      //     this.button.addEventListener("click", () => this.toggle());
+      //     tooltip.appendChild(this.button);
+      //     container.appendChild(tooltip);
+      //     console.log("🧑‍🎨 : Auto spoit button added");
+      //   },
+      // },
     ]);
   }
 

@@ -1,5 +1,7 @@
 # メイン
 
+- ThemeToggleStorage.get()が 8.8 秒かかっている
+- [WARNING] Duplicate key "new_tag" in object literal [duplicate-object-key]
 - 予想時刻に日付追加
 - アーカイブ詳細が見切れる
 - URL ジャンプできない
