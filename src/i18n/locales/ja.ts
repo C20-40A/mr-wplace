@@ -121,7 +121,7 @@ export const jaTranslations = {
   saturation: "彩度",
   sharpness: "シャープネス",
   dithering: "ディザリング",
-  quantization_method: "量子化方法",
+  quantization_method: "色の変換方法",
   quantization_rgb_euclidean: "RGB距離（高速・デフォルト）",
   quantization_weighted_rgb: "重み付きRGB（中速・自然）",
   quantization_lab: "Lab色空間（低速・高品質）",

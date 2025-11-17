@@ -111,9 +111,21 @@ export const showAddFriendDialog = async (userData: {
       const renderTagSelection = async () => {
         const existingTags = await FriendsBookStorage.getExistingTags();
 
+        // 選択中のタグが既存タグリストにない場合は追加（新規作成タグ用）
+        const isNewTag =
+          selectedTag &&
+          !existingTags.some(
+            (tag) =>
+              tag.color === selectedTag?.color && tag.name === selectedTag.name
+          );
+        const displayTags =
+          isNewTag && selectedTag
+            ? [...existingTags, selectedTag]
+            : existingTags;
+
         tagSelectionArea.innerHTML = t`
           <div class="flex flex-wrap gap-1 mb-1">
-            ${existingTags
+            ${displayTags
               .map(
                 (tag) => `
               <button
@@ -136,10 +148,10 @@ export const showAddFriendDialog = async (userData: {
               )
               .join("")}
           </div>
-          <button id="new-tag-btn" class="btn btn-xs btn-ghost">+ ${`new_tag`}</button>
+          <button id="new-tag-btn" class="btn btn-xs btn-ghost">+ ${"new_tag"}</button>
           ${
             selectedTag
-              ? `<button id="clear-tag-btn" class="btn btn-xs btn-ghost ml-1">${`clear_tag`}</button>`
+              ? t`<button id="clear-tag-btn" class="btn btn-xs btn-ghost ml-1">${"clear_tag"}</button>`
               : ""
           }
         `;
@@ -260,19 +272,7 @@ const showNewTagDialog = (): Promise<Tag | null> => {
           <label class="label py-1">
             <span class="label-text text-xs">${`select_color`}</span>
           </label>
-          <div class="flex flex-wrap gap-1.5" id="color-picker">
-            ${TAG_COLORS.map(
-              (color, i) => `
-              <button
-                class="color-btn w-6 h-6 rounded-full ${
-                  i === 0 ? "ring-2 ring-offset-1 ring-black" : ""
-                }"
-                data-color="${color}"
-                style="background: ${color};"
-              ></button>
-            `
-            ).join("")}
-          </div>
+          <div class="flex flex-wrap gap-1.5" id="color-picker"></div>
         </div>
 
         <div class="modal-action mt-3">
@@ -299,14 +299,27 @@ const showNewTagDialog = (): Promise<Tag | null> => {
 
     let selectedColor = TAG_COLORS[0];
 
+    // カラーボタンを動的にレンダリング
+    colorPicker.innerHTML = TAG_COLORS.map(
+      (color, i) => `
+        <button
+          class="color-btn rounded-full ${
+            i === 0 ? "ring-2 ring-offset-1 ring-black" : ""
+          }"
+          data-color="${color}"
+          style="background: ${color}; width: 1.5rem; height: 1.5rem; flex-shrink: 0;"
+        ></button>
+      `
+    ).join("");
+
     // カラーボタンのイベント
     colorPicker.querySelectorAll(".color-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         colorPicker.querySelectorAll(".color-btn").forEach((b) => {
-          b.className = "color-btn w-6 h-6 rounded-full";
+          b.className = "color-btn rounded-full";
         });
         btn.className =
-          "color-btn w-6 h-6 rounded-full ring-2 ring-offset-1 ring-black";
+          "color-btn rounded-full ring-2 ring-offset-1 ring-black";
         selectedColor = (btn as HTMLElement).dataset.color!;
       });
     });
