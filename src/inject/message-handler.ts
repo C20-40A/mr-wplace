@@ -20,6 +20,10 @@ import {
   handleImageStatsRequest,
   handleComputeTotalStats,
 } from "./handlers/request-handlers";
+import {
+  startAutoCanvasClick,
+  stopAutoCanvasClick,
+} from "./auto-canvas-click";
 
 /**
  * Setup message event listener for handling various events
@@ -120,6 +124,17 @@ export const setupMessageHandler = (): void => {
 
     if (source === "mr-wplace-compute-total-stats") {
       await handleComputeTotalStats(event.data);
+      return;
+    }
+
+    // Auto canvas click handlers
+    if (source === "mr-wplace-auto-canvas-click-start") {
+      startAutoCanvasClick();
+      return;
+    }
+
+    if (source === "mr-wplace-auto-canvas-click-stop") {
+      stopAutoCanvasClick();
       return;
     }
   });
