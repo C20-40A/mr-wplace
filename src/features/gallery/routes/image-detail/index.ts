@@ -27,7 +27,7 @@ export class GalleryImageDetail {
 
     container.innerHTML = `
       <div style="height: 100%; display: flex; flex-direction: column;">
-        <div id="image-detail-container" style="flex: 1; position: relative; min-height: 60vh; overflow: auto;">
+        <div id="image-detail-container" style="flex: 1; position: relative; min-height: 60vh; overflow-y: auto; overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;">
           <canvas id="image-detail-canvas" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);"></canvas>
         </div>
         

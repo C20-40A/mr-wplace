@@ -20,7 +20,7 @@ export class ImportSnapshotRoute {
     container.innerHTML = t`
       <div class="p-4" style="display: flex; flex-direction: column; gap: 16px;">
         <div class="border-2 border-dashed border-gray-300 rounded">
-          <div id="import-dropzone" style="max-height: 30vh; overflow: auto; padding: 1.5rem"></div>
+          <div id="import-dropzone" style="max-height: 30vh; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 1.5rem"></div>
         </div>
         
         <div class="grid grid-cols-2 gap-4">

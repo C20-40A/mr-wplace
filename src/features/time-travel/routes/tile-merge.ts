@@ -136,7 +136,7 @@ export class TileMergeRoute {
       <div style="display: flex; gap: 0.5rem; align-items: center;">
         <span class="text-sm font-bold">${t`${"merge_tiles"}`}: ${this.groups.length} groups</span>
       </div>
-      <div style="overflow: auto; border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.5rem; min-height: 400px;">
+      <div style="overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.5rem; min-height: 400px;">
         <div id="wps-group-list" class="grid grid-cols-1 gap-2">
           ${this.groups.map(g => this.renderGroupCard(g)).join("")}
         </div>
@@ -214,7 +214,7 @@ export class TileMergeRoute {
           ${t`${"selected"}`}: <strong>0</strong> / ${group.tiles.length}
         </span>
       </div>
-      <div style="overflow: auto; border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 1rem; min-height: 500px;">
+      <div style="overflow-y: auto; overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 1rem; min-height: 500px;">
         <div id="wps-tile-grid" style="
           display: grid;
           grid-template-columns: repeat(${width}, 80px);

@@ -57,7 +57,7 @@ export class TileStatisticsRoute {
         <div style="font-size: 1.5rem;">${totalPixels.toLocaleString()}</div>
       </div>
       <div style="font-weight: bold; margin-bottom: 0.5rem;">${t`${"color_distribution"}`}</div>
-      <div style="max-height: 60vh; overflow-y: auto;">
+      <div style="max-height: 60vh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;">
     `;
 
     for (const item of statistics) {

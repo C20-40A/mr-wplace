@@ -149,6 +149,8 @@ button.className = "btn btn-sm"; // Safe Tailwind classes
 button.style.cssText = `position: fixed; z-index: 800;`; // Custom styles
 ```
 
+**Mobile scrolling fix**: Always include `-webkit-overflow-scrolling: touch; overscroll-behavior: contain;` for overflow scroll elements to ensure Android compatibility.
+
 ### Chrome APIs
 
 **Never import `chrome` directly.** Use the browser-api wrapper:
