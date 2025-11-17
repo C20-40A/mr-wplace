@@ -142,6 +142,8 @@ export const ruTranslations = {
   click_image_to_draw: "Нажмите на изображение, которое хотите нарисовать на карте",
   no_draw_images: "Нет изображений для рисования.",
   no_saved_images: "Нет сохраненных изображений",
+  empty_gallery_message: "Чтобы отобразить изображение на карте, сначала добавьте изображение",
+  add_first_image: "Добавить Первое Изображение",
   unplaced_images: "Неразмещенные изображения",
   layers: "Слои",
   no_layers: "Нет слоев",

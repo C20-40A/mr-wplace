@@ -3,9 +3,9 @@
     "message": "Mr. Wplace"
   },
   "appDescription": {
-    "message": "WPlace専用全部入りツールキット - チャージ通知、画像描画、無限ブックマーク、アーカイブ参照、その他多数"
+    "message": "WPlace用の多機能ツールキット - 画像描画、ブックマーク管理、タイル復元など!"
   },
   "popupTitle": {
-    "message": "Mr. Wplace"
+    "message": "Mr. Wplace 設定"
   }
 }

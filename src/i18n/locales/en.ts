@@ -142,6 +142,8 @@ export const enTranslations = {
   click_image_to_draw: "Click on the image you want to draw on the map",
   no_draw_images: "No images for drawing.",
   no_saved_images: "No saved images",
+  empty_gallery_message: "To display an image on the map, please add an image first",
+  add_first_image: "Add First Image",
   unplaced_images: "Unplaced Images",
   layers: "Layers",
   no_layers: "No layers",

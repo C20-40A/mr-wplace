@@ -74,18 +74,23 @@ export class ImageGridComponent {
    * 空の状態を表示
    */
   private renderEmptyState(): void {
+    // 空の状態では常に大きなprimaryボタンを表示
     const addButtonHtml = this.options.showAddButton
-      ? this.options.emptyStateButtonStyle === "primary"
-        ? this.createPrimaryAddButtonHtml()
-        : this.createAddButtonHtml()
+      ? this.createPrimaryAddButtonHtml()
       : "";
 
     this.container.innerHTML = `
-      <div class="text-center text-gray-500 py-8">
-        <p>${this.options.emptyStateMessage}</p>
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 2rem; gap: 2rem; min-height: 300px;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" style="width: 6rem; height: 6rem; opacity: 0.3;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+        </svg>
+
+        <div style="text-align: center; max-width: 400px;">
+          <p style="font-size: 1rem; margin-bottom: 0.5rem;">${t`${"empty_gallery_message"}`}</p>
+        </div>
+
+        ${addButtonHtml}
       </div>
-      
-      ${addButtonHtml}
     `;
 
     this.attachAddButtonListener();
@@ -231,13 +236,14 @@ export class ImageGridComponent {
   private createPrimaryAddButtonHtml(): string {
     const buttonText = this.options.emptyStateButtonText
       ? t`${this.options.emptyStateButtonText}`
-      : "+";
+      : t`${"add_first_image"}`;
     return `
-      <div class="text-center mt-4">
-        <button id="wps-gallery-add-btn" class="btn btn-primary">
-          ${buttonText}
-        </button>
-      </div>
+      <button id="wps-gallery-add-btn" class="btn btn-primary btn-lg" style="padding: 1rem 2rem; font-size: 1.125rem; gap: 0.75rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 1.5rem; height: 1.5rem;">
+          <path fill-rule="evenodd" d="M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z" clip-rule="evenodd"/>
+        </svg>
+        ${buttonText}
+      </button>
     `;
   }
 

@@ -143,6 +143,8 @@ export const ptTranslations = {
   click_image_to_draw: "Clique na imagem que deseja desenhar no mapa",
   no_draw_images: "Sem imagens para desenhar.",
   no_saved_images: "Sem imagens salvas",
+  empty_gallery_message: "Para exibir uma imagem no mapa, primeiro adicione uma imagem",
+  add_first_image: "Adicionar Primeira Imagem",
   unplaced_images: "Imagens Não Colocadas",
   layers: "Camadas",
   no_layers: "Sem camadas",
