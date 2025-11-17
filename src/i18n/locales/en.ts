@@ -239,19 +239,19 @@ export const enTranslations = {
   // Auto Spoit
   auto_spoit: "Auto Color Picker",
   auto_spoit_tooltip: "Auto color picker",
-  auto_spoit_warning: `【Auto Color Picker - Important Notice】
+  //   auto_spoit_warning: `【Auto Color Picker - Important Notice】
 
-This is a simple feature that just makes "repeatedly clicking the i button to pick colors" a bit easier.
-However, please pay careful attention to the following:
+  // This is a simple feature that just makes "repeatedly clicking the i button to pick colors" a bit easier.
+  // However, please pay careful attention to the following:
 
-⚠ Notice
-• This is a developer verification feature
-• This feature is not publicly available
-• Use only for testing the color picker functionality
-• To avoid misunderstanding, always paint at a natural speed and in a natural way
-  (Paint from edges, paint easier areas first, etc. - paint like a human would)
-• Too fast movements or unnatural painting patterns may cause pixel misalignment or misunderstanding
-`,
+  // ⚠ Notice
+  // • This is a developer verification feature
+  // • This feature is not publicly available
+  // • Use only for testing the color picker functionality
+  // • To avoid misunderstanding, always paint at a natural speed and in a natural way
+  //   (Paint from edges, paint easier areas first, etc. - paint like a human would)
+  // • Too fast movements or unnatural painting patterns may cause pixel misalignment or misunderstanding
+  // `,
 
   // Sort Order
   sort_order_default: "Default",
@@ -280,7 +280,6 @@ However, please pay careful attention to the following:
 
   // Bookmark Tags
   existing_tags: "Existing Tags",
-  new_tag: "Create New Tag",
   remove_tag: "Remove Tag",
   bookmark_name: "Bookmark Name",
   tag_name: "Tag Name",

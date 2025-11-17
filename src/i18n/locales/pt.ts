@@ -39,10 +39,13 @@ export const ptTranslations = {
   import_failed: "Falha ao importar",
   reset_failed: "Falha ao redefinir",
   gallery_reset_success: "A galeria foi redefinida",
-  no_images_to_export: "Nenhuma imagem para exportar (imagens com coordenadas necessárias)",
+  no_images_to_export:
+    "Nenhuma imagem para exportar (imagens com coordenadas necessárias)",
   no_valid_images_in_zip: "Nenhuma imagem válida encontrada no arquivo ZIP",
-  confirm_import: "Tem certeza de que deseja importar? Novas imagens serão adicionadas à sua galeria.",
-  confirm_reset: "Tem certeza de que deseja redefinir todas as imagens da galeria? Esta ação não pode ser desfeita.",
+  confirm_import:
+    "Tem certeza de que deseja importar? Novas imagens serão adicionadas à sua galeria.",
+  confirm_reset:
+    "Tem certeza de que deseja redefinir todas as imagens da galeria? Esta ação não pode ser desfeita.",
 
   // Messages
   loading: "Carregando...",
@@ -237,19 +240,6 @@ export const ptTranslations = {
   // Auto Spoit
   auto_spoit: "Seletor de Cor Automático",
   auto_spoit_tooltip: "Seletor de cor automático",
-  auto_spoit_warning: `【Seletor de Cor Automático - Aviso Importante】
-
-Este é um recurso simples que apenas torna "clicar repetidamente no botão i para escolher cores" um pouco mais fácil.
-No entanto, preste muita atenção ao seguinte:
-
-⚠ Aviso
-• Este é um recurso de verificação do desenvolvedor
-• Este recurso não está disponível publicamente
-• Use apenas para testar a funcionalidade do seletor de cores
-• Para evitar mal-entendidos, sempre pinte em velocidade natural e de maneira natural
-  (Pinte das bordas, pinte áreas mais fáceis primeiro, etc. - pinte como um humano faria)
-• Movimentos muito rápidos ou padrões de pintura não naturais podem causar desalinhamento de pixels ou mal-entendidos
-`,
 
   // Sort Order
   sort_order_default: "Padrão",

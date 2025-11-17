@@ -39,10 +39,14 @@ export const esTranslations = {
   import_failed: "Error al importar",
   reset_failed: "Error al restablecer",
   gallery_reset_success: "La galería ha sido restablecida",
-  no_images_to_export: "No hay imágenes para exportar (se requieren imágenes con coordenadas)",
-  no_valid_images_in_zip: "No se encontraron imágenes válidas en el archivo ZIP",
-  confirm_import: "¿Estás seguro de que quieres importar? Se agregarán nuevas imágenes a tu galería.",
-  confirm_reset: "¿Estás seguro de que quieres restablecer todas las imágenes de la galería? Esta acción no se puede deshacer.",
+  no_images_to_export:
+    "No hay imágenes para exportar (se requieren imágenes con coordenadas)",
+  no_valid_images_in_zip:
+    "No se encontraron imágenes válidas en el archivo ZIP",
+  confirm_import:
+    "¿Estás seguro de que quieres importar? Se agregarán nuevas imágenes a tu galería.",
+  confirm_reset:
+    "¿Estás seguro de que quieres restablecer todas las imágenes de la galería? Esta acción no se puede deshacer.",
 
   // Messages
   loading: "Cargando...",
@@ -76,7 +80,8 @@ export const esTranslations = {
   export_all: "Exportar Todo",
   export_all_description: "Exportar todos los favoritos",
   export_by_tag: "Exportar por Etiqueta",
-  export_by_tag_description: "Exportar solo favoritos con etiquetas seleccionadas",
+  export_by_tag_description:
+    "Exportar solo favoritos con etiquetas seleccionadas",
   export_selected_tags: "Exportar Etiquetas Seleccionadas",
   no_tags_available: "No hay etiquetas disponibles",
   no_name: "Sin nombre",
@@ -238,19 +243,6 @@ export const esTranslations = {
   // Auto Spoit
   auto_spoit: "Selector de Color Automático",
   auto_spoit_tooltip: "Selector de color automático",
-  auto_spoit_warning: `【Selector de Color Automático - Aviso Importante】
-
-Esta es una función simple que hace que "hacer clic repetidamente en el botón i para elegir colores" sea un poco más fácil.
-Sin embargo, presta mucha atención a lo siguiente:
-
-⚠ Aviso
-• Esta es una función de verificación del desarrollador
-• Esta función no está disponible públicamente
-• Usar solo para probar la funcionalidad del selector de colores
-• Para evitar malentendidos, siempre pinta a velocidad natural y de manera natural
-  (Pinta desde los bordes, pinta áreas más fáciles primero, etc. - pinta como lo haría un humano)
-• Movimientos demasiado rápidos o patrones de pintura no naturales pueden causar desalineación de píxeles o malentendidos
-`,
 
   // Sort Order
   sort_order_default: "Predeterminado",
@@ -288,7 +280,8 @@ Sin embargo, presta mucha atención a lo siguiente:
   required: "Obligatorio",
   edit_tag: "Editar Etiqueta",
   tag_edit_title: "Editar Etiqueta",
-  tag_edit_description: "Todos los favoritos que usan esta etiqueta serán actualizados",
+  tag_edit_description:
+    "Todos los favoritos que usan esta etiqueta serán actualizados",
   tag_delete_confirm:
     "¿Eliminar esta etiqueta? La etiqueta será eliminada de todos los favoritos que la usan.",
 
