@@ -28,13 +28,18 @@ export class NotificationModal {
     this.userData = userData;
     this.isFirstRender = true;
 
-    if (!this.modalElements) {
-      this.modalElements = createModal({
-        id: "user-status-notification-modal",
-        title: t`${"user_status_details"}`,
-        maxWidth: "32rem",
-      });
+    // モーダルが既に存在している場合は削除（毎回作り直す）
+    if (this.modalElements?.modal.parentElement) {
+      this.modalElements.modal.remove();
+      this.modalElements = undefined;
     }
+
+    // 新しいモーダルを作成
+    this.modalElements = createModal({
+      id: "user-status-notification-modal",
+      title: t`${"user_status_details"}`,
+      maxWidth: "32rem",
+    });
 
     // 即座にモーダル表示（アラーム部分はローディング状態）
     this.renderContent();
@@ -44,6 +49,7 @@ export class NotificationModal {
     // 非同期で状態取得→更新
     this.loadAlarmState();
 
+    // close時のクリーンアップ（モーダルは既にcreateModalのclose時に破壊される）
     this.modalElements.modal.addEventListener("close", () => {
       this.stopPeriodicUpdate();
     });

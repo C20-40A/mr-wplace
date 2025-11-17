@@ -32,14 +32,14 @@ const createGallery = () => {
 
   // 外部インターフェース（initButton前に定義必須）
   const show = () => {
+    ui.showModal(); // モーダルを先に作成
     router.initialize("list");
-    ui.showModal();
   };
 
   const showSelectionMode = (onSelect: (item: GalleryItem) => void) => {
     state.onSelect = onSelect;
+    ui.showModal(); // モーダルを先に作成
     router.initialize("image-selector");
-    ui.showModal();
   };
 
   const setDrawToggleCallback = (
@@ -49,8 +49,8 @@ const createGallery = () => {
   };
 
   const navigateToImageEditor = () => {
+    ui.showModal(); // モーダルを先に作成
     router.navigate("image-editor");
-    ui.showModal();
   };
 
   const showDetail = (item: GalleryItem) => {

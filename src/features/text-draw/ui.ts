@@ -19,7 +19,7 @@ export const createTextInputButton = (): HTMLButtonElement => {
 };
 
 export class TextDrawUI {
-  private modalElements: ModalElements;
+  private modalElements: ModalElements | null = null;
   private textInstances: TextInstance[] = [];
   private onDraw?: (text: string, font: string) => Promise<void>;
   private onMove?: (
@@ -32,18 +32,11 @@ export class TextDrawUI {
   private input!: HTMLInputElement;
   private fontSelect!: HTMLSelectElement;
 
-  constructor() {
-    this.modalElements = createModal({
-      id: "wplace-studio-text-draw-modal",
-      title: t`${"text_draw"}`,
-      maxWidth: "600px",
-    });
-    this.buildUI();
-  }
+  constructor() {}
 
   private buildUI(): void {
+    if (!this.modalElements) return;
     const container = this.modalElements.container;
-    if (!container) return;
 
     const contentContainer = document.createElement("div");
     contentContainer.style.cssText = "display: flex; gap: 1rem;";
@@ -119,12 +112,26 @@ export class TextDrawUI {
     this.onMove = onMove;
     this.onDelete = onDelete;
 
-    this.updateList();
-    this.showModal();
+    this.showModal(); // モーダルを先に作成（buildUIが呼ばれる）
+    this.updateList(); // その後リスト更新
     this.input.focus();
   }
 
   private showModal(): void {
+    // モーダルが既に存在している場合は削除（毎回作り直す）
+    if (this.modalElements?.modal.parentElement) {
+      this.modalElements.modal.remove();
+      this.modalElements = null;
+    }
+
+    // 新しいモーダルを作成
+    this.modalElements = createModal({
+      id: "wplace-studio-text-draw-modal",
+      title: t`${"text_draw"}`,
+      maxWidth: "600px",
+    });
+
+    this.buildUI();
     this.modalElements.modal.showModal();
   }
 
