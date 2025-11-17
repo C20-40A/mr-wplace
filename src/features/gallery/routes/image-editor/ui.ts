@@ -133,13 +133,24 @@ export class ImageEditorUI {
                 </div>
               </div>
               
-              <div>
-                <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500;">
-                  <span style="font-size: 0.75rem; color: #9ca3af;">-100</span>
-                  <span>${"contrast"}: <span id="wps-contrast-value">0</span></span>
-                  <span style="font-size: 0.75rem; color: #9ca3af;">100</span>
-                </label>
-                <input type="range" id="wps-contrast-slider" min="-100" max="100" step="1" value="0" class="range" style="width: 100%;">
+              <div id="wps-contrast-quantization-container" style="display: flex; gap: 0.75rem;">
+                <div style="flex: 1;">
+                  <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500;">
+                    <span style="font-size: 0.75rem; color: #9ca3af;">-100</span>
+                    <span>${"contrast"}: <span id="wps-contrast-value">0</span></span>
+                    <span style="font-size: 0.75rem; color: #9ca3af;">100</span>
+                  </label>
+                  <input type="range" id="wps-contrast-slider" min="-100" max="100" step="1" value="0" class="range" style="width: 100%;">
+                </div>
+
+                <div style="flex: 1;">
+                  <label style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem; text-align: center;">${"quantization_method"}</label>
+                  <select id="wps-quantization-method" class="select select-sm w-full" style="font-size: 0.75rem;">
+                    <option value="rgb-euclidean">${"quantization_rgb_euclidean"}</option>
+                    <option value="weighted-rgb">${"quantization_weighted_rgb"}</option>
+                    <option value="lab">${"quantization_lab"}</option>
+                  </select>
+                </div>
               </div>
               
               <div id="wps-brightness-saturation-container" style="display: flex; gap: 0.75rem;">
@@ -188,15 +199,6 @@ export class ImageEditorUI {
                     <span style="font-size: 0.65rem; color: #9ca3af;">100</span>
                   </div>
                 </div>
-              </div>
-
-              <div>
-                <label style="display: block; font-size: 0.75rem; font-weight: 500; margin-bottom: 0.25rem;">${"quantization_method"}</label>
-                <select id="wps-quantization-method" class="select select-sm w-full" style="font-size: 0.75rem;">
-                  <option value="rgb-euclidean">${"quantization_rgb_euclidean"}</option>
-                  <option value="weighted-rgb">${"quantization_weighted_rgb"}</option>
-                  <option value="lab">${"quantization_lab"}</option>
-                </select>
               </div>
 
               <div>
@@ -575,6 +577,9 @@ export class ImageEditorUI {
       const imageContainer = this.container?.querySelector(
         "#wps-image-container"
       ) as HTMLElement;
+      const contrastQuantizationContainer = this.container?.querySelector(
+        "#wps-contrast-quantization-container"
+      ) as HTMLElement;
       const brightnessSaturationContainer = this.container?.querySelector(
         "#wps-brightness-saturation-container"
       ) as HTMLElement;
@@ -626,7 +631,13 @@ export class ImageEditorUI {
         imageContainer.style.display = isDesktop ? "none" : "block";
       }
 
-      // モバイル環境では明るさ/彩度とディザリング/シャープネスを縦並びに
+      // モバイル環境ではコントラスト/量子化方法、明るさ/彩度、ディザリング/シャープネスを縦並びに
+      if (contrastQuantizationContainer) {
+        contrastQuantizationContainer.style.flexDirection = isDesktop
+          ? "row"
+          : "column";
+      }
+
       if (brightnessSaturationContainer) {
         brightnessSaturationContainer.style.flexDirection = isDesktop
           ? "row"
