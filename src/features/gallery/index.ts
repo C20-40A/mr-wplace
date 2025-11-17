@@ -49,6 +49,7 @@ const createGallery = () => {
   };
 
   const navigateToImageEditor = () => {
+    state.editingItem = undefined; // 新規追加モードを保証
     ui.showModal(); // モーダルを先に作成
     router.navigate("image-editor");
   };
@@ -64,6 +65,7 @@ const createGallery = () => {
     (container: HTMLElement) => void | Promise<void>
   > = {
     list: async (container) => {
+      state.editingItem = undefined; // listに戻るときは編集モードをクリア
       const route = new GalleryList();
       currentRouteInstance = route; // インスタンスを保存
       await route.render(
@@ -193,6 +195,7 @@ const createGallery = () => {
       currentRouteInstance.destroy();
       currentRouteInstance = null;
     }
+    state.editingItem = undefined; // 編集モード状態をクリア
   };
 
   // 初期化
