@@ -3,6 +3,7 @@ import { FriendsBookStorage } from "./storage";
 import { t } from "@/i18n/manager";
 import { createModal, ModalElements } from "@/components/modal";
 import { minidenticon } from "@/utils/miniidenticon";
+import { IMG_ICON_BOOK } from "@/assets/iconImages";
 
 const TAG_COLORS = [
   "#ef4444",
@@ -43,7 +44,9 @@ export const showAddFriendDialog = async (userData: {
           <!-- ユーザー情報表示 -->
           <div class="bg-base-200 rounded-lg p-2 mb-3">
             <div class="flex items-center gap-2">
-              <span class="font-medium text-red-500 text-sm">${userData.name}</span>
+              <span class="font-medium text-red-500 text-sm">${
+                userData.name
+              }</span>
               <span class="text-xs opacity-70">#${userData.id}</span>
             </div>
             ${
@@ -448,7 +451,6 @@ export const renderFriends = (
       if (friend.picture) {
         avatarImage = `<img src="${friend.picture}" class="rounded-full w-8 h-8" style="image-rendering: pixelated;" />`;
       } else {
-        // Generate minidenticon SVG using user ID
         const svg = minidenticon(friend.id.toString());
         avatarImage = `<div class="rounded-full w-8 h-8 overflow-hidden">${svg}</div>`;
       }
