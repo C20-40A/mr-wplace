@@ -34,10 +34,10 @@ export const showAddFriendDialog = async (userData: {
 
       const modal = document.createElement("dialog");
       modal.className = "modal";
-      modal.innerHTML = `
+      modal.innerHTML = t`
         <div class="modal-box" style="max-width: 24rem;">
           <h3 class="font-bold text-base mb-3">
-            ${isExisting ? t`edit_friend` : t`add_friend`}
+            ${isExisting ? `edit_friend` : `add_friend`}
           </h3>
 
           <!-- ユーザー情報表示 -->
@@ -58,7 +58,7 @@ export const showAddFriendDialog = async (userData: {
           <!-- タグ選択エリア -->
           <div class="mb-3">
             <label class="label py-1">
-              <span class="label-text text-xs">${t`tag`}</span>
+              <span class="label-text text-xs">${`tag`}</span>
             </label>
             <div id="tag-selection-area"></div>
           </div>
@@ -66,21 +66,21 @@ export const showAddFriendDialog = async (userData: {
           <!-- 説明入力 -->
           <div class="mb-3">
             <label class="label py-1">
-              <span class="label-text text-xs">${t`description`}</span>
+              <span class="label-text text-xs">${`description`}</span>
             </label>
             <input
               id="friend-memo-input"
               type="text"
               class="input input-bordered input-sm w-full text-xs"
-              placeholder="${t`description_placeholder`}"
+              placeholder="${`description_placeholder`}"
               value="${existingFriend?.memo || ""}"
             />
           </div>
 
           <div class="modal-action mt-3">
-            <button id="cancel-btn" class="btn btn-sm">${t`cancel`}</button>
+            <button id="cancel-btn" class="btn btn-sm">${`cancel`}</button>
             <button id="save-friend-btn" class="btn btn-sm btn-primary">
-              ${isExisting ? t`update` : t`add`}
+              ${isExisting ? `update` : `add`}
             </button>
           </div>
         </div>
@@ -111,7 +111,7 @@ export const showAddFriendDialog = async (userData: {
       const renderTagSelection = async () => {
         const existingTags = await FriendsBookStorage.getExistingTags();
 
-        tagSelectionArea.innerHTML = `
+        tagSelectionArea.innerHTML = t`
           <div class="flex flex-wrap gap-1 mb-1">
             ${existingTags
               .map(
@@ -130,16 +130,16 @@ export const showAddFriendDialog = async (userData: {
                 <span style="width: 8px; height: 8px; background: ${
                   tag.color
                 }; border-radius: 50%; display: inline-block;"></span>
-                <span class="text-xs">${tag.name || t`tag`}</span>
+                <span class="text-xs">${tag.name || `tag`}</span>
               </button>
             `
               )
               .join("")}
           </div>
-          <button id="new-tag-btn" class="btn btn-xs btn-ghost">+ ${t`new_tag`}</button>
+          <button id="new-tag-btn" class="btn btn-xs btn-ghost">+ ${`new_tag`}</button>
           ${
             selectedTag
-              ? `<button id="clear-tag-btn" class="btn btn-xs btn-ghost ml-1">${t`clear_tag`}</button>`
+              ? `<button id="clear-tag-btn" class="btn btn-xs btn-ghost ml-1">${`clear_tag`}</button>`
               : ""
           }
         `;
@@ -240,25 +240,25 @@ const showNewTagDialog = (): Promise<Tag | null> => {
   return new Promise((resolve) => {
     const modal = document.createElement("dialog");
     modal.className = "modal";
-    modal.innerHTML = `
+    modal.innerHTML = t`
       <div class="modal-box" style="max-width: 20rem;">
-        <h3 class="font-bold text-base mb-3">${t`create_new_tag`}</h3>
+        <h3 class="font-bold text-base mb-3">${`create_new_tag`}</h3>
 
         <div class="mb-3">
           <label class="label py-1">
-            <span class="label-text text-xs">${t`tag_name_placeholder`}</span>
+            <span class="label-text text-xs">${`tag_name_placeholder`}</span>
           </label>
           <input
             id="tag-name-input"
             type="text"
             class="input input-sm input-bordered w-full text-xs"
-            placeholder="${t`tag_name_placeholder`}"
+            placeholder="${`tag_name_placeholder`}"
           />
         </div>
 
         <div class="mb-3">
           <label class="label py-1">
-            <span class="label-text text-xs">${t`select_color`}</span>
+            <span class="label-text text-xs">${`select_color`}</span>
           </label>
           <div class="flex flex-wrap gap-1.5" id="color-picker">
             ${TAG_COLORS.map(
@@ -276,8 +276,8 @@ const showNewTagDialog = (): Promise<Tag | null> => {
         </div>
 
         <div class="modal-action mt-3">
-          <button id="cancel-btn" class="btn btn-sm">${t`cancel`}</button>
-          <button id="save-tag-btn" class="btn btn-sm btn-primary">${t`create`}</button>
+          <button id="cancel-btn" class="btn btn-sm">${`cancel`}</button>
+          <button id="save-tag-btn" class="btn btn-sm btn-primary">${`create`}</button>
         </div>
       </div>
       <form method="dialog" class="modal-backdrop">
@@ -482,7 +482,10 @@ export const renderFriends = (
             ${
               friend.memo
                 ? `
-              <div class="text-xs opacity-80 mb-1 truncate" title="${friend.memo.replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}">
+              <div class="text-xs opacity-80 mb-1 truncate" title="${friend.memo
+                .replace(/"/g, "&quot;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")}">
                 ${friend.memo.replace(/</g, "&lt;").replace(/>/g, "&gt;")}
               </div>
             `
@@ -612,41 +615,41 @@ export const showImportExportDialog = async (
 
   const modal = document.createElement("dialog");
   modal.className = "modal";
-  modal.innerHTML = `
+  modal.innerHTML = t`
     <div class="modal-box" style="max-width: 32rem;">
-      <h3 class="font-bold text-lg mb-4">${t`import_export`}</h3>
+      <h3 class="font-bold text-lg mb-4">${`import_export`}</h3>
 
       <!-- Import Section -->
       <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid oklch(var(--bc) / 0.2); border-radius: 8px;">
-        <h4 style="font-weight: 600; margin-bottom: 0.5rem;">${t`import`}</h4>
-        <p style="font-size: 0.875rem; color: oklch(var(--bc) / 0.6); margin-bottom: 0.75rem;">${t`import_description`}</p>
+        <h4 style="font-weight: 600; margin-bottom: 0.5rem;">${`import`}</h4>
+        <p style="font-size: 0.875rem; color: oklch(var(--bc) / 0.6); margin-bottom: 0.75rem;">${`import_description`}</p>
         <button id="friends-dialog-import-btn" class="btn btn-primary btn-sm w-full">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
             <path d="M260-160q-91 0-155.5-63T40-377q0-78 47-139t123-78q25-92 100-149t170-57q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 75-52.5 127.5T740-160H520q-33 0-56.5-23.5T440-240v-206l-64 62-56-56 160-160 160 160-56 56-64-62v206h220q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-83 0-141.5 58.5T280-520h-20q-58 0-99 41t-41 99q0 58 41 99t99 41h100v80H260Z"/>
           </svg>
-          ${t`import`} (CSV)
+          ${`import`} (CSV)
         </button>
       </div>
 
       <!-- Export Section -->
       <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid oklch(var(--bc) / 0.2); border-radius: 8px;">
-        <h4 style="font-weight: 600; margin-bottom: 0.5rem;">${t`export`}</h4>
-        <p style="font-size: 0.875rem; color: oklch(var(--bc) / 0.6); margin-bottom: 0.75rem;">${t`export_all_description`}</p>
+        <h4 style="font-weight: 600; margin-bottom: 0.5rem;">${`export`}</h4>
+        <p style="font-size: 0.875rem; color: oklch(var(--bc) / 0.6); margin-bottom: 0.75rem;">${`export_all_description`}</p>
         <button id="friends-dialog-export-all-btn" class="btn btn-primary btn-sm w-full">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
             <path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
           </svg>
-          ${t`export_all`} (${allFriends.length})
+          ${`export_all`} (${allFriends.length})
         </button>
       </div>
 
       <!-- Export by Tag Section -->
       <div style="padding: 1rem; border: 1px solid oklch(var(--bc) / 0.2); border-radius: 8px;">
-        <h4 style="font-weight: 600; margin-bottom: 0.5rem;">${t`export_by_tag`}</h4>
-        <p style="font-size: 0.875rem; color: oklch(var(--bc) / 0.6); margin-bottom: 0.75rem;">${t`export_by_tag_description`}</p>
+        <h4 style="font-weight: 600; margin-bottom: 0.5rem;">${`export_by_tag`}</h4>
+        <p style="font-size: 0.875rem; color: oklch(var(--bc) / 0.6); margin-bottom: 0.75rem;">${`export_by_tag_description`}</p>
         ${
           existingTags.length === 0
-            ? `<p style="text-align: center; color: oklch(var(--bc) / 0.4); padding: 1rem;">${t`no_tags_available`}</p>`
+            ? `<p style="text-align: center; color: oklch(var(--bc) / 0.4); padding: 1rem;">${`no_tags_available`}</p>`
             : `
               <div id="friends-export-tag-list" style="max-height: 200px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; margin-bottom: 0.75rem;">
                 ${existingTags
@@ -657,7 +660,7 @@ export const showImportExportDialog = async (
                         f.tag.color === tag.color &&
                         (f.tag.name || "") === (tag.name || "")
                     ).length;
-                    return `
+                    return t`
                       <label class="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-base-200" style="margin-bottom: 0.25rem;">
                         <input type="checkbox" class="checkbox checkbox-sm friends-tag-checkbox" data-color="${
                           tag.color
@@ -665,9 +668,7 @@ export const showImportExportDialog = async (
                         <div style="width: 20px; height: 20px; border-radius: 4px; background: ${
                           tag.color
                         }; flex-shrink: 0;"></div>
-                        <span style="flex: 1;">${
-                          tag.name || t`no_name`
-                        }</span>
+                        <span style="flex: 1;">${tag.name || `no_name`}</span>
                         <span style="font-size: 0.75rem; color: oklch(var(--bc) / 0.6);">(${count})</span>
                       </label>
                     `;
@@ -678,7 +679,7 @@ export const showImportExportDialog = async (
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
                   <path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
                 </svg>
-                ${t`export_selected_tags`}
+                ${`export_selected_tags`}
               </button>
             `
         }
@@ -686,7 +687,7 @@ export const showImportExportDialog = async (
 
       <!-- Close Button -->
       <div class="modal-action">
-        <button id="friends-dialog-close-btn" class="btn btn-outline btn-sm">${t`close`}</button>
+        <button id="friends-dialog-close-btn" class="btn btn-outline btn-sm">${`close`}</button>
       </div>
     </div>
     <form method="dialog" class="modal-backdrop">
