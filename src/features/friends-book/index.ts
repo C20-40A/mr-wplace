@@ -150,7 +150,7 @@ const createFriendsBookFAB = (): void => {
   button.style.cssText =
     "position: absolute; right: 60px; z-index: 800; transition: transform 0.2s;";
   button.innerHTML = `
-    <img src="${IMG_ICON_BOOK}" style="width: calc(var(--spacing)*9); height: calc(var(--spacing)*9); image-rendering: pixelated;" />
+    <img src="${IMG_ICON_BOOK}" style="width: calc(var(--spacing)*7); height: calc(var(--spacing)*7); image-rendering: pixelated;" />
   `;
   button.title = t`friends_book`;
 
