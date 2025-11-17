@@ -1,7 +1,9 @@
 import { setupElementObserver } from "../../components/element-observer";
-// import { findPaintPixelControls } from "../../constants/selectors";
+import { findPaintPixelControls } from "../../constants/selectors";
 // import { createAutoSpoitButton } from "./ui";
 import { AutoSpoitStorage } from "./storage";
+import { AutoCanvasClickStorage } from "./auto-canvas-click-storage";
+import { createAutoCanvasClickButton } from "./auto-canvas-click-ui";
 import { createKonamiCodeDetector } from "./konami-detector";
 import { t } from "../../i18n/manager";
 
@@ -9,6 +11,8 @@ export class AutoSpoit {
   private enabled: boolean = true;
   private devMode: boolean = false;
   private button: HTMLButtonElement | null = null;
+  private autoCanvasClickEnabled: boolean = false;
+  private autoCanvasClickButton: HTMLButtonElement | null = null;
 
   constructor() {
     this.init();
@@ -17,6 +21,7 @@ export class AutoSpoit {
   private async init(): Promise<void> {
     this.enabled = await AutoSpoitStorage.get();
     this.devMode = await AutoSpoitStorage.getDevMode();
+    this.autoCanvasClickEnabled = await AutoCanvasClickStorage.get();
 
     // Update DOM attribute for inject.js
     this.updateDevModeAttribute();
@@ -29,6 +34,11 @@ export class AutoSpoit {
     console.log("🧑‍🎨 : Konami code detector initialized");
 
     this.setupUI();
+
+    // Start auto canvas click if enabled
+    if (this.autoCanvasClickEnabled) {
+      this.sendAutoCanvasClickStart();
+    }
   }
 
   private updateDevModeAttribute(): void {
@@ -71,11 +81,17 @@ export class AutoSpoit {
       if (existingButton) {
         existingButton.parentElement?.remove();
       }
+      const existingAutoCanvasClickButton = document.getElementById(
+        "auto-canvas-click-btn"
+      );
+      if (existingAutoCanvasClickButton) {
+        existingAutoCanvasClickButton.parentElement?.remove();
+      }
       return;
     }
 
     setupElementObserver([
-      // NOTE: この機能は現在利用不可のためコメントアウト
+      // NOTE: auto-spoitは現在利用不可のためコメントアウト
       // {
       //   id: "auto-spoit-btn",
       //   getTargetElement: findPaintPixelControls,
@@ -91,6 +107,25 @@ export class AutoSpoit {
       //     console.log("🧑‍🎨 : Auto spoit button added");
       //   },
       // },
+      {
+        id: "auto-canvas-click-btn",
+        getTargetElement: findPaintPixelControls,
+        createElement: (container) => {
+          const tooltip = document.createElement("div");
+          tooltip.className = "tooltip";
+          tooltip.setAttribute("data-tip", "Toggle auto canvas click");
+          this.autoCanvasClickButton = createAutoCanvasClickButton(
+            this.autoCanvasClickEnabled
+          );
+          this.autoCanvasClickButton.id = "auto-canvas-click-btn";
+          this.autoCanvasClickButton.addEventListener("click", () =>
+            this.toggleAutoCanvasClick()
+          );
+          tooltip.appendChild(this.autoCanvasClickButton);
+          container.appendChild(tooltip);
+          console.log("🧑‍🎨 : Auto canvas click button added");
+        },
+      },
     ]);
   }
 
@@ -131,5 +166,44 @@ export class AutoSpoit {
       this.button.classList.toggle("text-base-content", !this.enabled);
       this.button.style.opacity = this.enabled ? "1" : "0.5";
     }
+  }
+
+  async toggleAutoCanvasClick(): Promise<void> {
+    this.autoCanvasClickEnabled = await AutoCanvasClickStorage.toggle();
+    console.log(
+      "🧑‍🎨 : Auto canvas click toggled:",
+      this.autoCanvasClickEnabled
+    );
+
+    if (this.autoCanvasClickEnabled) {
+      this.sendAutoCanvasClickStart();
+    } else {
+      this.sendAutoCanvasClickStop();
+    }
+
+    if (this.autoCanvasClickButton) {
+      // ボタンの見た目を更新
+      this.autoCanvasClickButton.classList.toggle(
+        "text-primary",
+        this.autoCanvasClickEnabled
+      );
+      this.autoCanvasClickButton.classList.toggle(
+        "text-base-content",
+        !this.autoCanvasClickEnabled
+      );
+      this.autoCanvasClickButton.style.opacity = this.autoCanvasClickEnabled
+        ? "1"
+        : "0.5";
+    }
+  }
+
+  private sendAutoCanvasClickStart(): void {
+    window.postMessage({ source: "mr-wplace-auto-canvas-click-start" }, "*");
+    console.log("🧑‍🎨 : Sent auto canvas click start message");
+  }
+
+  private sendAutoCanvasClickStop(): void {
+    window.postMessage({ source: "mr-wplace-auto-canvas-click-stop" }, "*");
+    console.log("🧑‍🎨 : Sent auto canvas click stop message");
   }
 }
