@@ -5,172 +5,186 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mr. WPlace Settings</title>
     <style>
-      * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
+
       body {
         width: 320px;
         min-height: 200px;
         margin: 0;
         padding: 20px;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: #1a1a1a;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+          sans-serif;
+        background: radial-gradient(circle at top left, #2b2b2b 0%, #000 70%);
+        color: #f5f5f5;
       }
+
+      /* ★ ガラス + 黒金フレーム */
       .container {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
+        background: rgba(18, 18, 18, 0.6);
+        backdrop-filter: blur(18px) saturate(160%);
+        border-radius: 18px;
         padding: 20px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(212, 175, 55, 0.25);
+        box-shadow: 0 0 20px rgba(212, 175, 55, 0.25),
+          inset 0 0 25px rgba(0, 0, 0, 0.5);
       }
+
       .header {
         text-align: center;
         margin-bottom: 24px;
         padding-bottom: 16px;
-        border-bottom: 2px solid #f0f0f0;
+        border-bottom: 1px solid rgba(212, 175, 55, 0.3);
       }
+
       .header h2 {
         margin: 0;
-        font-size: 20px;
+        font-size: 22px;
         font-weight: 700;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #f6e27f 0%, #d4af37 80%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        background-clip: text;
+        letter-spacing: 0.5px;
       }
+
+      /* ★ 設定ブロック */
       .setting-group {
-        background: #fafafa;
-        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(212, 175, 55, 0.15);
+        border-radius: 14px;
         padding: 14px;
-        margin-bottom: 12px;
-        transition: all 0.2s ease;
+        margin-bottom: 14px;
+        transition: all 0.25s ease;
       }
       .setting-group:hover {
-        background: #f5f5f5;
+        background: rgba(255, 215, 0, 0.05);
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 3px 15px rgba(212, 175, 55, 0.2);
       }
+
       .setting-label {
         display: flex;
         align-items: center;
         font-size: 13px;
         font-weight: 600;
         margin-bottom: 8px;
-        color: #333;
+        color: #f0e6d2;
       }
+
       .icon {
         font-size: 16px;
         margin-right: 8px;
-        filter: grayscale(0.3);
+        filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.5));
       }
+
+      /* ★ Select（金枠） */
       select {
         width: 100%;
         padding: 8px 12px;
-        border: 2px solid #e0e0e0;
+        border: 1px solid rgba(212, 175, 55, 0.4);
         border-radius: 8px;
-        background: #fff;
-        color: #333;
+        background: rgba(0, 0, 0, 0.6);
+        color: #f8f3d9;
         font-size: 13px;
         font-weight: 500;
         cursor: pointer;
         transition: all 0.2s ease;
       }
-      select:hover { border-color: #667eea; }
+      select:hover {
+        border-color: #d4af37;
+      }
       select:focus {
         outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.3);
       }
+
+      /* ★ ボタン（黒金メタル） */
       button {
         width: 100%;
         padding: 10px 14px;
-        border: none;
         border-radius: 8px;
         font-size: 13px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s ease;
       }
-      button:active { transform: scale(0.98); }
-      button:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        transform: none !important;
+
+      button:active {
+        transform: scale(0.96);
       }
+
       .btn-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: #fff;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        background: linear-gradient(135deg, #d4af37 0%, #b38600 100%);
+        color: #000;
+        box-shadow: 0 4px 14px rgba(212, 175, 55, 0.45);
       }
       .btn-primary:hover {
-        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
-        transform: translateY(-1px);
+        filter: brightness(1.05);
+        box-shadow: 0 6px 18px rgba(212, 175, 55, 0.6);
       }
+
       .btn-secondary {
-        background: #fff;
-        color: #667eea;
-        border: 2px solid #667eea;
+        background: rgba(255, 255, 255, 0.05);
+        color: #d4af37;
+        border: 1px solid #d4af37;
       }
       .btn-secondary:hover {
-        background: #667eea;
-        color: #fff;
+        background: rgba(212, 175, 55, 0.15);
       }
+
       .btn-danger {
-        background: #fff;
-        color: #e53e3e;
-        border: 2px solid #e53e3e;
+        background: rgba(255, 255, 255, 0.05);
+        color: #ff6b6b;
+        border: 1px solid #ff6b6b;
       }
       .btn-danger:hover {
-        background: #e53e3e;
-        color: #fff;
+        background: rgba(255, 107, 107, 0.15);
       }
+
       .btn-group {
         display: flex;
         flex-direction: column;
         gap: 8px;
       }
+
+      /* ★ サポート欄 */
       .coffee-support {
         text-align: center;
-        margin-top: 20px;
+        margin-top: 24px;
         padding-top: 16px;
-        border-top: 2px solid #f0f0f0;
+        border-top: 1px solid rgba(212, 175, 55, 0.25);
       }
+
       .support-link {
         display: inline-block;
-        color: #667eea;
+        color: #d4af37;
         text-decoration: none;
         font-size: 12px;
         font-weight: 600;
         padding: 8px 16px;
         border-radius: 8px;
-        background: #f7fafc;
+        background: rgba(255, 255, 255, 0.06);
         margin-bottom: 12px;
-        transition: all 0.2s ease;
+        border: 1px solid rgba(212, 175, 55, 0.25);
+        transition: 0.25s;
       }
       .support-link:hover {
-        background: #667eea;
-        color: #fff;
+        background: rgba(212, 175, 55, 0.15);
         transform: translateY(-1px);
       }
-      .coffee-btn {
-        display: inline-block;
-        border: none;
-        background: transparent;
-        cursor: pointer;
-        padding: 0;
-        transition: transform 0.2s ease;
-      }
-      .coffee-btn:hover { transform: scale(1.05); }
+
       .coffee-btn img {
         display: block;
         height: 36px;
-        width: auto;
       }
     </style>
   </head>
+
   <body>
     <div class="container">
       <div class="header">
-        <h2>🎨 Mr.WPlace</h2>
+        <h2>✨ Mr.WPlace</h2>
       </div>
 
       <div class="setting-group">
@@ -215,16 +229,19 @@
           <span id="gallery-data-label">Gallery Data</span>
         </label>
         <div class="btn-group">
-          <button id="export-gallery-btn" class="btn-primary">
-            📤 <span id="export-btn-label">Export</span>
-          </button>
+          <button id="export-gallery-btn" class="btn-primary">📤 Export</button>
           <button id="import-gallery-btn" class="btn-secondary">
-            📥 <span id="import-btn-label">Import</span>
+            📥 Import
           </button>
           <button id="reset-gallery-btn" class="btn-danger">
-            🗑️ <span id="reset-btn-label">Reset Gallery</span>
+            🗑️ Reset Gallery
           </button>
-          <input type="file" id="import-gallery-file" accept=".zip" style="display: none" />
+          <input
+            type="file"
+            id="import-gallery-file"
+            accept=".zip"
+            style="display: none"
+          />
         </div>
       </div>
 
@@ -232,7 +249,11 @@
         <a id="feedback-link" href="#" target="_blank" class="support-link">
           📝 Bug Report
         </a>
-        <a href="https://buymeacoffee.com/c20_40a" target="_blank" class="coffee-btn">
+        <a
+          href="https://buymeacoffee.com/c20_40a"
+          target="_blank"
+          class="coffee-btn"
+        >
           <img id="coffee-img" src="" alt="Buy Me A Coffee" />
         </a>
       </div>
