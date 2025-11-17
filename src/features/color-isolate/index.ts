@@ -89,6 +89,16 @@ export class ColorIsolate {
     return this.enabled;
   }
 
+  async enable(): Promise<void> {
+    if (this.enabled) return;
+    await this.toggle();
+  }
+
+  async disable(): Promise<void> {
+    if (!this.enabled) return;
+    await this.toggle();
+  }
+
   private startMonitoring(): void {
     // 100msごとにlocalStorageをチェック
     this.storageCheckInterval = window.setInterval(() => {
