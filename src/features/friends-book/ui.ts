@@ -3,7 +3,6 @@ import { FriendsBookStorage } from "./storage";
 import { t } from "@/i18n/manager";
 import { createModal, ModalElements } from "@/components/modal";
 import { minidenticon } from "@/utils/miniidenticon";
-import { IMG_ICON_BOOK } from "@/assets/iconImages";
 
 const TAG_COLORS = [
   "#ef4444",
@@ -365,16 +364,16 @@ export const createFriendsBookModal = (): ModalElements => {
   modalElements.container.style.flexDirection = "column";
   modalElements.container.style.height = "40rem";
 
-  modalElements.container.innerHTML = `
+  modalElements.container.innerHTML = t`
     <!-- Friends List Screen -->
     <div id="friends-list-screen" style="display: flex; flex-direction: column; height: 100%;">
       <!-- Fixed Header: Sort & Filters -->
       <div class="flex gap-2" style="flex-wrap: wrap; margin-bottom: 0.7rem; flex-shrink: 0;">
         <div class="flex items-center gap-2">
           <select id="friends-sort" class="select select-sm select-bordered">
-            <option value="added">${t`sort_added`}</option>
-            <option value="name">${t`sort_name`}</option>
-            <option value="tag">${t`sort_tag`}</option>
+            <option value="added">${`sort_added`}</option>
+            <option value="name">${`sort_name`}</option>
+            <option value="tag">${`sort_tag`}</option>
           </select>
         </div>
       </div>
