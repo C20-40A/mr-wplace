@@ -2,26 +2,17 @@ import { Friend, Tag } from "./types";
 import { FriendsBookStorage } from "./storage";
 import { t } from "@/i18n/manager";
 import { createModal, ModalElements } from "@/components/modal";
-import { createCard, CardConfig } from "@/components/card";
 import { minidenticon } from "@/utils/miniidenticon";
 
 const TAG_COLORS = [
   "#ef4444",
-  "#f97316",
   "#f59e0b",
-  "#eab308",
   "#84cc16",
-  "#22c55e",
   "#10b981",
-  "#14b8a6",
   "#06b6d4",
-  "#0ea5e9",
   "#3b82f6",
-  "#6366f1",
   "#8b5cf6",
-  "#a855f7",
   "#d946ef",
-  "#ec4899",
   "#f43f5e",
 ];
 
@@ -44,51 +35,49 @@ export const showAddFriendDialog = async (userData: {
       const modal = document.createElement("dialog");
       modal.className = "modal";
       modal.innerHTML = `
-        <div class="modal-box" style="max-width: 28rem;">
-          <h3 class="font-bold text-lg mb-4">
-            ${isExisting ? "友人を編集" : "友人帳に追加"}
+        <div class="modal-box" style="max-width: 24rem;">
+          <h3 class="font-bold text-base mb-3">
+            ${isExisting ? t`edit_friend` : t`add_friend`}
           </h3>
 
           <!-- ユーザー情報表示 -->
-          <div class="bg-base-200 rounded-lg p-3 mb-4">
-            <div class="flex items-center gap-2 mb-2">
-              <span class="font-medium text-red-500">${userData.name}</span>
-              <span class="text-sm opacity-70">#${userData.id}</span>
+          <div class="bg-base-200 rounded-lg p-2 mb-3">
+            <div class="flex items-center gap-2">
+              <span class="font-medium text-red-500 text-sm">${userData.name}</span>
+              <span class="text-xs opacity-70">#${userData.id}</span>
             </div>
             ${
               userData.allianceName
-                ? `<div class="text-sm opacity-70">同盟: ${userData.allianceName}</div>`
+                ? `<div class="text-xs opacity-70 mt-0.5">${userData.allianceName}</div>`
                 : ""
             }
           </div>
 
           <!-- タグ選択エリア -->
-          <div class="mb-4">
-            <label class="label">
-              <span class="label-text">タグ</span>
+          <div class="mb-3">
+            <label class="label py-1">
+              <span class="label-text text-xs">${t`tag`}</span>
             </label>
-            <div id="tag-selection-area">
-              <!-- タグ選択UI がここに挿入される -->
-            </div>
+            <div id="tag-selection-area"></div>
           </div>
 
           <!-- メモ入力 -->
-          <div class="mb-4">
-            <label class="label">
-              <span class="label-text">メモ</span>
+          <div class="mb-3">
+            <label class="label py-1">
+              <span class="label-text text-xs">${t`memo`}</span>
             </label>
             <textarea
               id="friend-memo-input"
-              class="textarea textarea-bordered w-full"
-              placeholder="メモを入力..."
-              rows="3"
+              class="textarea textarea-bordered textarea-sm w-full text-xs"
+              placeholder="${t`memo_placeholder`}"
+              rows="2"
             >${existingFriend?.memo || ""}</textarea>
           </div>
 
-          <div class="modal-action">
-            <button id="cancel-btn" class="btn">キャンセル</button>
-            <button id="save-friend-btn" class="btn btn-primary">
-              ${isExisting ? "更新" : "追加"}
+          <div class="modal-action mt-3">
+            <button id="cancel-btn" class="btn btn-sm">${t`cancel`}</button>
+            <button id="save-friend-btn" class="btn btn-sm btn-primary">
+              ${isExisting ? t`update` : t`add`}
             </button>
           </div>
         </div>
@@ -120,12 +109,12 @@ export const showAddFriendDialog = async (userData: {
         const existingTags = await FriendsBookStorage.getExistingTags();
 
         tagSelectionArea.innerHTML = `
-          <div class="flex flex-wrap gap-2 mb-2">
+          <div class="flex flex-wrap gap-1 mb-1">
             ${existingTags
               .map(
                 (tag) => `
               <button
-                class="tag-btn btn btn-sm ${
+                class="tag-btn btn btn-xs ${
                   selectedTag?.color === tag.color &&
                   selectedTag?.name === tag.name
                     ? "btn-primary"
@@ -135,19 +124,19 @@ export const showAddFriendDialog = async (userData: {
                 data-name="${tag.name || ""}"
                 style="border-color: ${tag.color};"
               >
-                <span style="width: 12px; height: 12px; background: ${
+                <span style="width: 8px; height: 8px; background: ${
                   tag.color
                 }; border-radius: 50%; display: inline-block;"></span>
-                ${tag.name || "タグ"}
+                <span class="text-xs">${tag.name || t`tag`}</span>
               </button>
             `
               )
               .join("")}
           </div>
-          <button id="new-tag-btn" class="btn btn-sm btn-ghost">+ 新しいタグ</button>
+          <button id="new-tag-btn" class="btn btn-xs btn-ghost">+ ${t`new_tag`}</button>
           ${
             selectedTag
-              ? '<button id="clear-tag-btn" class="btn btn-sm btn-ghost ml-2">タグをクリア</button>'
+              ? `<button id="clear-tag-btn" class="btn btn-xs btn-ghost ml-1">${t`clear_tag`}</button>`
               : ""
           }
         `;
@@ -249,30 +238,32 @@ const showNewTagDialog = (): Promise<Tag | null> => {
     const modal = document.createElement("dialog");
     modal.className = "modal";
     modal.innerHTML = `
-      <div class="modal-box" style="max-width: 24rem;">
-        <h3 class="font-bold text-lg mb-4">新しいタグを作成</h3>
+      <div class="modal-box" style="max-width: 20rem;">
+        <h3 class="font-bold text-base mb-3">${t`create_new_tag`}</h3>
 
-        <div class="mb-4">
-          <label class="label">
-            <span class="label-text">タグ名（オプション）</span>
+        <div class="mb-3">
+          <label class="label py-1">
+            <span class="label-text text-xs">${t`tag_name_placeholder`}</span>
           </label>
           <input
             id="tag-name-input"
             type="text"
-            class="input input-bordered w-full"
-            placeholder="例: 友達、ライバル、etc..."
+            class="input input-sm input-bordered w-full text-xs"
+            placeholder="${t`tag_name_placeholder`}"
           />
         </div>
 
-        <div class="mb-4">
-          <label class="label">
-            <span class="label-text">色を選択</span>
+        <div class="mb-3">
+          <label class="label py-1">
+            <span class="label-text text-xs">${t`select_color`}</span>
           </label>
-          <div class="flex flex-wrap gap-2" id="color-picker">
+          <div class="flex flex-wrap gap-1.5" id="color-picker">
             ${TAG_COLORS.map(
               (color, i) => `
               <button
-                class="color-btn w-8 h-8 rounded-full ${i === 0 ? "ring-2 ring-offset-2 ring-black" : ""}"
+                class="color-btn w-6 h-6 rounded-full ${
+                  i === 0 ? "ring-2 ring-offset-1 ring-black" : ""
+                }"
                 data-color="${color}"
                 style="background: ${color};"
               ></button>
@@ -281,9 +272,9 @@ const showNewTagDialog = (): Promise<Tag | null> => {
           </div>
         </div>
 
-        <div class="modal-action">
-          <button id="cancel-btn" class="btn">キャンセル</button>
-          <button id="save-tag-btn" class="btn btn-primary">作成</button>
+        <div class="modal-action mt-3">
+          <button id="cancel-btn" class="btn btn-sm">${t`cancel`}</button>
+          <button id="save-tag-btn" class="btn btn-sm btn-primary">${t`create`}</button>
         </div>
       </div>
       <form method="dialog" class="modal-backdrop">
@@ -309,9 +300,10 @@ const showNewTagDialog = (): Promise<Tag | null> => {
     colorPicker.querySelectorAll(".color-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         colorPicker.querySelectorAll(".color-btn").forEach((b) => {
-          b.className = "color-btn w-8 h-8 rounded-full";
+          b.className = "color-btn w-6 h-6 rounded-full";
         });
-        btn.className = "color-btn w-8 h-8 rounded-full ring-2 ring-offset-2 ring-black";
+        btn.className =
+          "color-btn w-6 h-6 rounded-full ring-2 ring-offset-1 ring-black";
         selectedColor = (btn as HTMLElement).dataset.color!;
       });
     });
@@ -361,7 +353,7 @@ const showNewTagDialog = (): Promise<Tag | null> => {
 export const createFriendsBookModal = (): ModalElements => {
   const modalElements = createModal({
     id: "friends-book-modal",
-    title: "友人帳",
+    title: t`friends_book`,
     maxWidth: "64rem",
     containerStyle: "min-height: 35rem;",
   });
@@ -377,9 +369,9 @@ export const createFriendsBookModal = (): ModalElements => {
       <div class="flex gap-2" style="flex-wrap: wrap; margin-bottom: 0.7rem; flex-shrink: 0;">
         <div class="flex items-center gap-2">
           <select id="friends-sort" class="select select-sm select-bordered">
-            <option value="added">追加順</option>
-            <option value="name">名前順</option>
-            <option value="tag">タグ順</option>
+            <option value="added">${t`sort_added`}</option>
+            <option value="name">${t`sort_name`}</option>
+            <option value="tag">${t`sort_tag`}</option>
           </select>
         </div>
       </div>
@@ -393,7 +385,7 @@ export const createFriendsBookModal = (): ModalElements => {
 
       <!-- Scrollable Content: Friends Grid -->
       <div style="flex: 1; overflow-y: auto; min-height: 0;">
-        <div id="friends-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div id="friends-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2">
         </div>
       </div>
     </div>
@@ -444,7 +436,7 @@ export const renderFriends = (
   if (sortedFriends.length === 0) {
     grid.innerHTML = `
       <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #999;">
-        <p>友人が登録されていません</p>
+        <p>${t`no_friends`}</p>
       </div>
     `;
     return;
@@ -454,58 +446,73 @@ export const renderFriends = (
     .map((friend) => {
       let avatarImage: string;
       if (friend.picture) {
-        avatarImage = `<img src="${friend.picture}" class="rounded-full w-10 h-10" />`;
+        avatarImage = `<img src="${friend.picture}" class="rounded-full w-8 h-8" style="image-rendering: pixelated;" />`;
       } else {
         // Generate minidenticon SVG using user ID
         const svg = minidenticon(friend.id.toString());
-        avatarImage = `<div class="rounded-full w-10 h-10 overflow-hidden">${svg}</div>`;
+        avatarImage = `<div class="rounded-full w-8 h-8 overflow-hidden">${svg}</div>`;
       }
-
-      const memoTooltip = friend.memo ? `title="${friend.memo.replace(/"/g, "&quot;")}"` : "";
 
       return `
         <div class="friends-card card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
              data-id="${friend.id}">
-          <div class="card-body p-3">
+          <div class="card-body p-2">
             <!-- User Info -->
-            <div class="flex items-center gap-2">
-              <div class="avatar">
+            <div class="flex items-center gap-2 mb-1">
+              <div class="avatar flex-shrink-0">
                 ${avatarImage}
               </div>
               <div class="flex-1 min-w-0">
-                <h3 class="font-bold text-base truncate" ${memoTooltip}>${friend.name}</h3>
+                <h3 class="font-bold text-sm truncate">${friend.name}</h3>
                 <p class="text-xs opacity-70">#${friend.id}${
-          friend.allianceName ? ` · ${friend.allianceName}` : ""
-        }</p>
+        friend.allianceName ? ` · ${friend.allianceName}` : ""
+      }</p>
               </div>
             </div>
 
-            <!-- Tag -->
+            <!-- Memo -->
             ${
-              friend.tag
+              friend.memo
                 ? `
-              <div class="mt-2">
-                <div class="badge badge-sm gap-1" style="background: ${friend.tag.color}20; border-color: ${friend.tag.color};">
-                  <div style="width: 8px; height: 8px; border-radius: 50%; background: ${friend.tag.color};"></div>
-                  ${friend.tag.name || "タグ"}
-                </div>
+              <div class="text-xs opacity-80 mb-1 line-clamp-2" style="min-height: 2.5rem;">
+                ${friend.memo.replace(/</g, "&lt;").replace(/>/g, "&gt;")}
               </div>
             `
-                : ""
+                : `<div style="min-height: 2.5rem;"></div>`
             }
 
-            <!-- Actions -->
-            <div class="flex gap-1 justify-end mt-2">
-              <button class="friends-edit-btn btn btn-ghost btn-xs" data-id="${friend.id}">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-3">
-                  <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
-                </svg>
-              </button>
-              <button class="friends-delete-btn btn btn-ghost btn-xs text-error" data-id="${friend.id}">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-3">
-                  <path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/>
-                </svg>
-              </button>
+            <!-- Tag & Actions -->
+            <div class="flex items-center justify-between gap-1">
+              ${
+                friend.tag
+                  ? `
+                <div class="badge badge-sm gap-1" style="background: ${
+                  friend.tag.color
+                }20; border-color: ${friend.tag.color};">
+                  <div style="width: 6px; height: 6px; border-radius: 50%; background: ${
+                    friend.tag.color
+                  };"></div>
+                  <span class="text-xs">${friend.tag.name || t`tag`}</span>
+                </div>
+              `
+                  : `<div></div>`
+              }
+              <div class="flex gap-1">
+                <button class="friends-edit-btn btn btn-ghost btn-xs" data-id="${
+                  friend.id
+                }">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-3">
+                    <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
+                  </svg>
+                </button>
+                <button class="friends-delete-btn btn btn-ghost btn-xs text-error" data-id="${
+                  friend.id
+                }">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-3">
+                    <path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -524,7 +531,9 @@ export const renderFriendsTagFilters = (
   onTagClick: (tagKey: string) => void
 ): void => {
   const container = document.getElementById("friends-tag-filter-container");
-  const buttonsContainer = document.getElementById("friends-tag-filter-buttons");
+  const buttonsContainer = document.getElementById(
+    "friends-tag-filter-buttons"
+  );
 
   if (!container || !buttonsContainer) return;
 
@@ -552,22 +561,32 @@ export const renderFriendsTagFilters = (
 
       return `
         <button
-          class="friends-tag-filter-btn btn btn-sm ${isSelected ? "btn-primary" : "btn-outline"}"
+          class="friends-tag-filter-btn btn btn-sm ${
+            isSelected ? "btn-primary" : "btn-outline"
+          }"
           data-tag-key="${tagKey}"
-          style="border-color: ${tag.color}; ${isSelected ? `background: ${tag.color}; border-color: ${tag.color};` : ""}"
+          style="border-color: ${tag.color}; ${
+        isSelected
+          ? `background: ${tag.color}; border-color: ${tag.color};`
+          : ""
+      }"
         >
-          <span style="width: 12px; height: 12px; background: ${tag.color}; border-radius: 50%; display: inline-block;"></span>
-          ${tag.name || "タグ"} (${count})
+          <span style="width: 12px; height: 12px; background: ${
+            tag.color
+          }; border-radius: 50%; display: inline-block;"></span>
+          ${tag.name || t`tag`} (${count})
         </button>
       `;
     })
     .join("");
 
   // イベントリスナー
-  buttonsContainer.querySelectorAll(".friends-tag-filter-btn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const tagKey = (btn as HTMLElement).dataset.tagKey!;
-      onTagClick(tagKey);
+  buttonsContainer
+    .querySelectorAll(".friends-tag-filter-btn")
+    .forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tagKey = (btn as HTMLElement).dataset.tagKey!;
+        onTagClick(tagKey);
+      });
     });
-  });
 };
