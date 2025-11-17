@@ -329,4 +329,22 @@ However, please pay careful attention to the following:
   clearing: "Clearing...",
   cache_cleared: "Cache Cleared!",
   tiles: "tiles",
+
+  // Friends Book
+  friends_book: "Friends",
+  add_to_friends: "Add to Friends",
+  add_friend: "Add Friend",
+  edit_friend: "Edit Friend",
+  memo: "Memo",
+  memo_placeholder: "Enter memo...",
+  tag: "Tag",
+  tags: "Tags",
+  new_tag: "New Tag",
+  create_new_tag: "Create New Tag",
+  clear_tag: "Clear Tag",
+  tag_name_placeholder: "e.g. Friend, Rival...",
+  select_color: "Select Color",
+  create: "Create",
+  no_friends: "No friends",
+  sort_added: "Date Added",
 };

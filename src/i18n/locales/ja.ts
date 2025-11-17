@@ -330,4 +330,22 @@ export const jaTranslations = {
   clearing: "クリア中...",
   cache_cleared: "キャッシュをクリアしました!",
   tiles: "タイル",
+
+  // Friends Book
+  friends_book: "友人帳",
+  add_to_friends: "友人帳に追加",
+  add_friend: "友人を追加",
+  edit_friend: "友人を編集",
+  memo: "メモ",
+  memo_placeholder: "メモを入力...",
+  tag: "タグ",
+  tags: "タグ",
+  new_tag: "新しいタグ",
+  create_new_tag: "新しいタグを作成",
+  clear_tag: "タグをクリア",
+  tag_name_placeholder: "例: 友達、ライバル、etc...",
+  select_color: "色を選択",
+  create: "作成",
+  no_friends: "友人が登録されていません",
+  sort_added: "追加順",
 };

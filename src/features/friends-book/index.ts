@@ -13,6 +13,7 @@ import {
 import { FriendsBookStorage } from "./storage";
 import { Toast } from "@/components/toast";
 import { storage } from "@/utils/browser-api";
+import { t } from "@/i18n/manager";
 
 /**
  * "Painted by:" 要素を検索
@@ -63,16 +64,16 @@ const createAddToFriendsButton = async (container: Element): Promise<void> => {
       <path d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80Zm-360-80q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm80-80h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T440-640q0-33-23.5-56.5T360-720q-33 0-56.5 23.5T280-640q0 33 23.5 56.5T360-560Zm0-80Zm0 400Z"/>
     </svg>
   `;
-  button.title = "友人帳に追加";
+  button.title = t`add_to_friends`;
 
   button.addEventListener("click", async () => {
     if (!lastPaintedByUser) {
-      Toast.error("ユーザー情報を取得できませんでした");
+      Toast.error(t`location_unavailable`);
       return;
     }
 
     await showAddFriendDialog(lastPaintedByUser);
-    Toast.success(`${lastPaintedByUser.name} を友人帳に追加しました`);
+    Toast.success(t`saved_message`);
   });
 
   // ボタンを "..." ボタンの前に挿入
@@ -101,7 +102,7 @@ const createAddToFriendsButton = async (container: Element): Promise<void> => {
         tagBadge.style.cssText = `background: ${friend.tag.color}20; border-color: ${friend.tag.color};`;
         tagBadge.innerHTML = `
           <div style="width: 8px; height: 8px; border-radius: 50%; background: ${friend.tag.color};"></div>
-          ${friend.tag.name || "タグ"}
+          ${friend.tag.name || t`tag`}
         `;
         paintedBySpan.replaceWith(tagBadge);
       }
@@ -109,7 +110,15 @@ const createAddToFriendsButton = async (container: Element): Promise<void> => {
 
     // メモがあれば名前にtooltipを追加
     if (friend?.memo) {
-      const userNameSpan = container.querySelector(".font-medium.text-red-500.flex.gap-1\\.5, .font-medium.text-emerald-500.flex.gap-1\\.5, .font-medium.text-blue-500.flex.gap-1\\.5");
+      // ユーザー名要素を探す: .font-medium かつ flex かつ gap-1.5 を持つspan
+      const allSpans = Array.from(container.querySelectorAll("span.font-medium.flex"));
+      const userNameSpan = allSpans.find((span) => {
+        // gap-1.5 クラスを持ち、内部に #付きIDを含むspanを探す
+        const hasGapClass = Array.from(span.classList).some(cls => cls.includes("gap-"));
+        const hasUserId = span.textContent?.includes(`#${lastPaintedByUser.id}`);
+        return hasGapClass && hasUserId;
+      });
+
       if (userNameSpan) {
         userNameSpan.classList.add("tooltip");
         userNameSpan.setAttribute("data-tip", friend.memo);
@@ -134,7 +143,7 @@ const createFriendsBookFAB = (container: Element): void => {
       <path d="M40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm720 0v-120q0-44-24.5-84.5T666-434q51 6 96 20.5t84 35.5q36 20 55 44.5t19 53.5v120H760ZM360-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm400-160q0 66-47 113t-113 47q-11 0-28-2.5t-28-5.5q27-32 41.5-71t14.5-81q0-42-14.5-81T544-792q14-5 28-6.5t28-1.5q66 0 113 47t47 113ZM120-240h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T440-640q0-33-23.5-56.5T360-720q-33 0-56.5 23.5T280-640q0 33 23.5 56.5T360-560Zm0 320Zm0-400Z"/>
     </svg>
   `;
-  button.title = "友人帳";
+  button.title = t`friends_book`;
 
   button.addEventListener("mouseenter", () => {
     button.style.transform = "scale(1.1)";
@@ -181,10 +190,10 @@ const render = async (): Promise<void> => {
  * 友人を削除
  */
 const deleteFriend = async (id: number): Promise<void> => {
-  if (!confirm("本当にこの友人を削除しますか？")) return;
+  if (!confirm(t`delete_confirm`)) return;
   await FriendsBookStorage.removeFriend(id);
   render();
-  Toast.success("削除しました");
+  Toast.success(t`deleted_message`);
 };
 
 /**

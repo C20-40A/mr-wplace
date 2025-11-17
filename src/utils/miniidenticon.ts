@@ -1,3 +1,4 @@
+// SEE: https://github.com/laurentpayot/minidenticons/blob/main/minidenticons.js
 // 9 different colors only for easy distinction (also a sweet spot for collisions)
 const COLORS_NB = 9;
 const DEFAULT_SATURATION = 95;
