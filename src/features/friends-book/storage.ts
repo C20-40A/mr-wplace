@@ -106,4 +106,43 @@ export class FriendsBookStorage {
       await this.setValue(JSON.stringify(friends));
     }
   }
+
+  static async importFriends(
+    friends: Friend[],
+    mode: "merge" | "replace"
+  ): Promise<void> {
+    if (mode === "replace") {
+      await this.setValue(JSON.stringify(friends));
+      return;
+    }
+
+    // merge: 既存の友人と統合（IDが同じものは上書き）
+    const existingFriends = await this.getFriends();
+    const friendMap = new Map<number, Friend>();
+
+    // 既存の友人をマップに追加
+    for (const friend of existingFriends) {
+      friendMap.set(friend.id, friend);
+    }
+
+    // インポートされた友人で上書き/追加
+    for (const friend of friends) {
+      friendMap.set(friend.id, friend);
+    }
+
+    const mergedFriends = Array.from(friendMap.values());
+    await this.setValue(JSON.stringify(mergedFriends));
+  }
+
+  static async exportFriendsByTags(tags: Tag[]): Promise<Friend[]> {
+    const friends = await this.getFriends();
+    return friends.filter((friend) => {
+      if (!friend.tag) return false;
+      return tags.some(
+        (tag) =>
+          tag.color === friend.tag!.color &&
+          (tag.name || "") === (friend.tag!.name || "")
+      );
+    });
+  }
 }

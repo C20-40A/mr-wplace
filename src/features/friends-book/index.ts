@@ -7,6 +7,7 @@ import {
   createFriendsBookModal,
   renderFriends,
   renderFriendsTagFilters,
+  showImportExportDialog,
   FriendsSortType,
 } from "./ui";
 import { FriendsBookStorage } from "./storage";
@@ -14,6 +15,8 @@ import { Toast } from "@/components/toast";
 import { storage } from "@/utils/browser-api";
 import { t } from "@/i18n/manager";
 import { IMG_ICON_BOOK } from "@/assets/iconImages";
+import { friendsToCSV, csvToFriends, downloadCSV } from "./csv-utils";
+import { Friend, Tag } from "./types";
 
 /**
  * "Painted by:" 要素を検索
@@ -244,6 +247,70 @@ const openModal = (): void => {
 };
 
 /**
+ * CSVをインポート
+ */
+const handleImport = async (csv: string): Promise<void> => {
+  try {
+    const friends = csvToFriends(csv);
+
+    if (friends.length === 0) {
+      Toast.error(t`import_failed`);
+      return;
+    }
+
+    // 統合モードで確認
+    const existingFriends = await FriendsBookStorage.getFriends();
+    const message =
+      existingFriends.length > 0
+        ? `${friends.length} ${t`import_merge_confirm`}\n${t`import_merge_description`}`
+        : `${friends.length} ${t`import_confirm`}`;
+
+    if (!confirm(message)) return;
+
+    const mode = existingFriends.length > 0 ? "merge" : "replace";
+    await FriendsBookStorage.importFriends(friends, mode);
+    render();
+    Toast.success(`${friends.length} ${t`import_success`}`);
+  } catch (error) {
+    console.error("🧑‍🎨 : Import failed", error);
+    Toast.error(t`import_failed`);
+  }
+};
+
+/**
+ * 全友人をエクスポート
+ */
+const handleExport = async (): Promise<void> => {
+  const friends = await FriendsBookStorage.getFriends();
+  if (friends.length === 0) {
+    Toast.error(t`no_friends`);
+    return;
+  }
+
+  const csv = friendsToCSV(friends);
+  const timestamp = new Date().toISOString().split("T")[0];
+  downloadCSV(csv, `wplace-friends-${timestamp}.csv`);
+  Toast.success(`${friends.length} ${t`export_success`}`);
+};
+
+/**
+ * タグ別エクスポート
+ */
+const handleExportByTag = async (tags: Tag[]): Promise<void> => {
+  const friends = await FriendsBookStorage.exportFriendsByTags(tags);
+  if (friends.length === 0) {
+    Toast.error(t`no_friends`);
+    return;
+  }
+
+  const csv = friendsToCSV(friends);
+  const timestamp = new Date().toISOString().split("T")[0];
+  const tagNames = tags.map((t) => t.name || "tag").join("-");
+  downloadCSV(csv, `wplace-friends-${tagNames}-${timestamp}.csv`);
+  Toast.success(`${friends.length} ${t`export_success`}`);
+};
+
+/**
  * モーダルをセットアップ
  */
 const setupModal = (): void => {
@@ -256,6 +323,13 @@ const setupModal = (): void => {
       const sortType = (e.target as HTMLSelectElement).value as FriendsSortType;
       await storage.set({ [SORT_KEY]: sortType });
       render();
+    });
+
+  // Import/Export ボタン
+  modal
+    .querySelector("#friends-import-export-btn")
+    ?.addEventListener("click", () => {
+      showImportExportDialog(handleImport, handleExport, handleExportByTag);
     });
 
   // カードクリック（編集・削除）
