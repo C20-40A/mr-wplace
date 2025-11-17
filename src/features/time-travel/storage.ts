@@ -1,6 +1,11 @@
 import { storage } from "@/utils/browser-api";
 import { sendSnapshotsToInject } from "@/utils/inject-bridge";
 
+// タイルスナップショットの visible 状態を localStorage に保存するかどうか
+// true: 保存する（リロード後も描画状態を維持）
+// false: 保存しない（リロード後は全て非表示）
+const PERSIST_DRAW_STATE = false;
+
 export interface TileSnapshotInfo {
   tileX: number;
   tileY: number;
@@ -215,11 +220,13 @@ export class TimeTravelStorage {
 
   // 描画状態管理
   static async getDrawStates(): Promise<SnapshotDrawState[]> {
+    if (!PERSIST_DRAW_STATE) return [];
     const result = await storage.get([this.DRAW_STATES_KEY]);
     return result[this.DRAW_STATES_KEY] || [];
   }
 
   static async setDrawState(drawState: SnapshotDrawState): Promise<void> {
+    if (!PERSIST_DRAW_STATE) return;
     const states = await this.getDrawStates();
     const index = states.findIndex((s) => s.fullKey === drawState.fullKey);
 
@@ -245,6 +252,7 @@ export class TimeTravelStorage {
   }
 
   static async toggleDrawState(fullKey: string): Promise<boolean> {
+    if (!PERSIST_DRAW_STATE) return false;
     const states = await this.getDrawStates();
     const state = states.find((s) => s.fullKey === fullKey);
 
@@ -256,6 +264,7 @@ export class TimeTravelStorage {
   }
 
   static async restoreDrawStates(): Promise<void> {
+    if (!PERSIST_DRAW_STATE) return;
     console.log("🧑‍🎨 : Restoring TimeTravel draw states");
     const tileOverlay = window.mrWplace?.tileOverlay;
 
