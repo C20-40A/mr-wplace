@@ -184,3 +184,52 @@ export const getStatsPerImage = async (
     }, 5000);
   });
 };
+
+/**
+ * Send active snapshots to inject side for overlay rendering
+ * Used by: time-travel feature
+ */
+export const sendSnapshotsToInject = async () => {
+  const { TimeTravelStorage } = await import("@/features/time-travel/storage");
+  const { storage } = await import("@/utils/browser-api");
+
+  const drawStates = await TimeTravelStorage.getDrawStates();
+  const enabledStates = drawStates.filter((s) => s.drawEnabled);
+
+  // Convert snapshots in parallel
+  const snapshots = await Promise.all(
+    enabledStates.map(async (state) => {
+      const snapshotData = await storage.get([state.fullKey]);
+      const rawData = snapshotData[state.fullKey];
+
+      if (!rawData) return null;
+
+      // Convert Uint8Array to blob to dataUrl
+      const uint8Array = new Uint8Array(rawData);
+      const blob = new Blob([uint8Array], { type: "image/png" });
+
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+
+      return {
+        key: `snapshot_${state.fullKey}`,
+        dataUrl,
+        tileX: state.tileX,
+        tileY: state.tileY,
+      };
+    })
+  ).then((results) => results.filter((s): s is NonNullable<typeof s> => s !== null));
+
+  window.postMessage(
+    {
+      source: "mr-wplace-snapshots",
+      snapshots,
+    },
+    "*"
+  );
+
+  console.log(`🧑‍🎨 : Sent ${snapshots.length} snapshots to inject side`);
+};

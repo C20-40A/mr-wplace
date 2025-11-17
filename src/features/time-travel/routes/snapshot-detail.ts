@@ -7,7 +7,7 @@ import { di } from "../../../core/di";
 import { gotoPosition } from "../../../utils/position";
 import { tilePixelToLatLng } from "../../../utils/coordinate";
 import { storage } from "@/utils/browser-api";
-import { sendSnapshotsToInject } from "@/content";
+import { sendSnapshotsToInject } from "@/utils/inject-bridge";
 
 export class SnapshotDetailRoute {
   private imageInspector?: ImageInspector;

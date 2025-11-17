@@ -1,5 +1,5 @@
 import { storage } from "@/utils/browser-api";
-import { sendSnapshotsToInject } from "@/content";
+import { sendSnapshotsToInject } from "@/utils/inject-bridge";
 
 export interface TileSnapshotInfo {
   tileX: number;
