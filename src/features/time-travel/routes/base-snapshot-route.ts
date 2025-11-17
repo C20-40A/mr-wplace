@@ -2,7 +2,7 @@ import { TimeTravelStorage, SnapshotInfo } from "../storage";
 import { Toast } from "../../../components/toast";
 import { t, formatDate } from "../../../i18n/manager";
 import { di } from "../../../core/di";
-import { sendSnapshotsToInject } from "@/content";
+import { sendSnapshotsToInject } from "@/utils/inject-bridge";
 
 export abstract class BaseSnapshotRoute {
   protected setupSnapshotEvents(
