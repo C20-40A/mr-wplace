@@ -111,7 +111,7 @@ const createAddToFriendsButton = async (container: Element): Promise<void> => {
       }
     }
 
-    // メモがあれば名前にtooltipを追加
+    // 説明があれば名前にtooltipを追加
     if (friend?.memo) {
       // ユーザー名要素を探す: .font-medium かつ flex かつ gap-1.5 を持つspan
       const allSpans = Array.from(

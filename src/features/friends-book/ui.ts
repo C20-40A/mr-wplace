@@ -63,17 +63,18 @@ export const showAddFriendDialog = async (userData: {
             <div id="tag-selection-area"></div>
           </div>
 
-          <!-- メモ入力 -->
+          <!-- 説明入力 -->
           <div class="mb-3">
             <label class="label py-1">
-              <span class="label-text text-xs">${t`memo`}</span>
+              <span class="label-text text-xs">${t`description`}</span>
             </label>
-            <textarea
+            <input
               id="friend-memo-input"
-              class="textarea textarea-bordered textarea-sm w-full text-xs"
-              placeholder="${t`memo_placeholder`}"
-              rows="2"
-            >${existingFriend?.memo || ""}</textarea>
+              type="text"
+              class="input input-bordered input-sm w-full text-xs"
+              placeholder="${t`description_placeholder`}"
+              value="${existingFriend?.memo || ""}"
+            />
           </div>
 
           <div class="modal-action mt-3">
@@ -92,7 +93,7 @@ export const showAddFriendDialog = async (userData: {
 
       const memoInput = modal.querySelector(
         "#friend-memo-input"
-      ) as HTMLTextAreaElement;
+      ) as HTMLInputElement;
       const saveBtn = modal.querySelector(
         "#save-friend-btn"
       ) as HTMLButtonElement;
@@ -471,15 +472,15 @@ export const renderFriends = (
               </div>
             </div>
 
-            <!-- Memo -->
+            <!-- Description -->
             ${
               friend.memo
                 ? `
-              <div class="text-xs opacity-80 mb-1 line-clamp-2" style="min-height: 2.5rem;">
+              <div class="text-xs opacity-80 mb-1 truncate" title="${friend.memo.replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}">
                 ${friend.memo.replace(/</g, "&lt;").replace(/>/g, "&gt;")}
               </div>
             `
-                : `<div style="min-height: 2.5rem;"></div>`
+                : `<div class="text-xs mb-1" style="height: 1.25rem;"></div>`
             }
 
             <!-- Tag & Actions -->

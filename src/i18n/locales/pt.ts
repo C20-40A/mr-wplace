@@ -317,4 +317,21 @@ export const ptTranslations = {
   clearing: "Limpando...",
   cache_cleared: "Cache Limpo!",
   tiles: "blocos",
+
+  // Friends Book
+  friends_book: "Amigos",
+  add_to_friends: "Adicionar aos Amigos",
+  add_friend: "Adicionar Amigo",
+  edit_friend: "Editar Amigo",
+  description: "Descrição",
+  description_placeholder: "Digite a descrição...",
+  tag: "Tag",
+  tags: "Tags",
+  create_new_tag: "Criar Nova Tag",
+  clear_tag: "Limpar Tag",
+  tag_name_placeholder: "ex: Amigo, Rival...",
+  select_color: "Selecionar Cor",
+  create: "Criar",
+  no_friends: "Nenhum amigo",
+  sort_added: "Data de Adição",
 };
