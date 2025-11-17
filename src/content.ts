@@ -19,7 +19,7 @@ import {
   highContrastAPI,
   dataSaverAPI,
 } from "@/features/map-filter";
-import { AutoSpoit } from "@/features/auto-spoit";
+import { AutoSpoit } from "@/features/developer";
 import { ColorIsolate } from "@/features/color-isolate";
 import { PositionInfo } from "@/features/position-info";
 import { initPaintStats } from "@/features/paint-stats";
@@ -28,7 +28,10 @@ import { colorpalette } from "@/constants/colors";
 import { addCurrentTile } from "@/states/currentTile";
 import { di } from "@/core/di";
 import { runtime } from "@/utils/browser-api";
-import { getOverlayPixelColor, sendSnapshotsToInject } from "@/utils/inject-bridge";
+import {
+  getOverlayPixelColor,
+  sendSnapshotsToInject,
+} from "@/utils/inject-bridge";
 
 /**
  * Send gallery images to inject side for tile processing
@@ -60,14 +63,18 @@ export const sendGalleryImagesToInject = async () => {
     "*"
   );
 
-  console.log(`🧑‍🎨 : Sent ${enabledImages.length} gallery images to inject side`);
+  console.log(
+    `🧑‍🎨 : Sent ${enabledImages.length} gallery images to inject side`
+  );
 };
 
 /**
  * Send compute device setting to inject side
  */
 export const sendComputeDeviceToInject = async () => {
-  const { ColorPaletteStorage } = await import("@/components/color-palette/storage");
+  const { ColorPaletteStorage } = await import(
+    "@/components/color-palette/storage"
+  );
   const device = await ColorPaletteStorage.getComputeDevice();
 
   window.postMessage(
@@ -140,14 +147,20 @@ export const sendCacheSizeToInject = async () => {
  */
 const handleStatsComputed = async (
   imageKey: string,
-  tileStatsMap: Record<string, { matched: Record<string, number>; total: Record<string, number> }>
+  tileStatsMap: Record<
+    string,
+    { matched: Record<string, number>; total: Record<string, number> }
+  >
 ) => {
   try {
     const { GalleryStorage } = await import("@/features/gallery/storage");
     const galleryStorage = new GalleryStorage();
 
     // Convert object back to Map
-    const statsMap = new Map<string, { matched: Map<string, number>; total: Map<string, number> }>();
+    const statsMap = new Map<
+      string,
+      { matched: Map<string, number>; total: Map<string, number> }
+    >();
     for (const [tileKey, stats] of Object.entries(tileStatsMap)) {
       statsMap.set(tileKey, {
         matched: new Map(Object.entries(stats.matched).map(([k, v]) => [k, v])),
@@ -196,7 +209,10 @@ const handleTotalStatsComputed = async (
  * Request total stats computation for a newly saved image
  * Called after image is saved to storage
  */
-export const requestTotalStatsComputation = (imageKey: string, dataUrl: string) => {
+export const requestTotalStatsComputation = (
+  imageKey: string,
+  dataUrl: string
+) => {
   window.postMessage(
     {
       source: "mr-wplace-compute-total-stats",
@@ -213,7 +229,9 @@ export const requestTotalStatsComputation = (imageKey: string, dataUrl: string) 
  * Send text layers to inject side for overlay rendering
  */
 export const sendTextLayersToInject = async () => {
-  const { TextLayerStorage } = await import("@/features/text-draw/text-layer-storage");
+  const { TextLayerStorage } = await import(
+    "@/features/text-draw/text-layer-storage"
+  );
   const textLayerStorage = new TextLayerStorage();
   const textLayers = await textLayerStorage.getAll();
 
@@ -232,7 +250,9 @@ export const sendTextLayersToInject = async () => {
  * Send tile boundaries visibility to inject side
  */
 export const sendTileBoundariesToInject = async () => {
-  const { loadTileBoundariesFromStorage, getTileBoundaries } = await import("@/states/tile-boundaries");
+  const { loadTileBoundariesFromStorage, getTileBoundaries } = await import(
+    "@/states/tile-boundaries"
+  );
   await loadTileBoundariesFromStorage();
   const visible = getTileBoundaries();
 
@@ -244,7 +264,9 @@ export const sendTileBoundariesToInject = async () => {
     "*"
   );
 
-  console.log(`🧑‍🎨 : Sent tile boundaries visibility to inject side: ${visible}`);
+  console.log(
+    `🧑‍🎨 : Sent tile boundaries visibility to inject side: ${visible}`
+  );
 };
 
 (async () => {
