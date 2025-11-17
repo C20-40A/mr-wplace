@@ -181,17 +181,9 @@ export const createModal = (options: ModalOptions): ModalElements => {
   closeButton.addEventListener("click", handleClose);
   backdropButton.addEventListener("click", handleClose);
 
-  // モーダルclose時に自動クリーンアップ
+  // モーダルclose時のログ（クリーンアップはしない - モーダルは再利用される）
   modal.addEventListener("close", () => {
-    console.log("🧑‍🎨 : Modal closed, cleaning up...");
-
-    // コンテンツを一旦保存して完全にクリア、その後復元
-    // これにより onclick だけでなく addEventListener で登録されたリスナーも完全にクリア
-    if (container) {
-      const html = container.innerHTML;
-      container.innerHTML = "";
-      container.innerHTML = html;
-    }
+    console.log("🧑‍🎨 : Modal closed");
   });
 
   // routerがある場合は自動でheader要素を設定
