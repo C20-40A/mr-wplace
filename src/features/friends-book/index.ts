@@ -2,7 +2,6 @@ import {
   setupElementObserver,
   ElementConfig,
 } from "@/components/element-observer";
-import { findMyLocationContainer } from "@/constants/selectors";
 import {
   showAddFriendDialog,
   createFriendsBookModal,
@@ -103,7 +102,9 @@ const createAddToFriendsButton = async (container: Element): Promise<void> => {
         tagBadge.className = "badge badge-sm gap-1";
         tagBadge.style.cssText = `background: ${friend.tag.color}20; border-color: ${friend.tag.color};`;
         tagBadge.innerHTML = `
-          <div style="width: 8px; height: 8px; border-radius: 50%; background: ${friend.tag.color};"></div>
+          <div style="width: 8px; height: 8px; border-radius: 50%; background: ${
+            friend.tag.color
+          };"></div>
           ${friend.tag.name || t`tag`}
         `;
         paintedBySpan.replaceWith(tagBadge);
@@ -113,11 +114,17 @@ const createAddToFriendsButton = async (container: Element): Promise<void> => {
     // メモがあれば名前にtooltipを追加
     if (friend?.memo) {
       // ユーザー名要素を探す: .font-medium かつ flex かつ gap-1.5 を持つspan
-      const allSpans = Array.from(container.querySelectorAll("span.font-medium.flex"));
+      const allSpans = Array.from(
+        container.querySelectorAll("span.font-medium.flex")
+      );
       const userNameSpan = allSpans.find((span) => {
         // gap-1.5 クラスを持ち、内部に #付きIDを含むspanを探す
-        const hasGapClass = Array.from(span.classList).some(cls => cls.includes("gap-"));
-        const hasUserId = span.textContent?.includes(`#${lastPaintedByUser.id}`);
+        const hasGapClass = Array.from(span.classList).some((cls) =>
+          cls.includes("gap-")
+        );
+        const hasUserId = span.textContent?.includes(
+          `#${lastPaintedByUser.id}`
+        );
         return hasGapClass && hasUserId;
       });
 
@@ -132,14 +139,16 @@ const createAddToFriendsButton = async (container: Element): Promise<void> => {
 };
 
 /**
- * 友人帳FABボタンを作成（右下）
+ * 友人帳FABボタンを作成（画面右上）
  */
-const createFriendsBookFAB = (container: Element): void => {
-  if (container.querySelector("#friends-book-fab")) return;
+const createFriendsBookFAB = (): void => {
+  if (document.querySelector("#friends-book-fab")) return;
 
   const button = document.createElement("button");
   button.id = "friends-book-fab";
-  button.className = "btn btn-lg sm:btn-xl btn-square shadow-md z-30";
+  button.className = "btn btn-square shadow-md top-2";
+  button.style.cssText =
+    "position: absolute; right: 60px; z-index: 800; transition: transform 0.2s;";
   button.innerHTML = `
     <img src="${IMG_ICON_BOOK}" style="width: calc(var(--spacing)*9); height: calc(var(--spacing)*9); image-rendering: pixelated;" />
   `;
@@ -154,12 +163,7 @@ const createFriendsBookFAB = (container: Element): void => {
 
   button.addEventListener("click", openModal);
 
-  // flex-col-reverseで並びを逆にしているため、最初に追加すると視覚的に最後（下）に表示される
-  // 視覚的に最初（上）に表示するには、最後に追加する必要がある
-  if (!container.classList.contains("flex")) {
-    container.className += " flex flex-col-reverse gap-1";
-  }
-  container.appendChild(button);
+  document.body.appendChild(button);
   console.log("🧑‍🎨 : Friends book FAB created");
 };
 
@@ -175,18 +179,25 @@ const render = async (): Promise<void> => {
   const friends = await FriendsBookStorage.getFriends();
   const existingTags = await FriendsBookStorage.getExistingTags();
 
-  renderFriendsTagFilters(existingTags, friends, selectedTagFilters, (tagKey: string) => {
-    if (selectedTagFilters.has(tagKey)) {
-      selectedTagFilters.delete(tagKey);
-    } else {
-      selectedTagFilters.add(tagKey);
+  renderFriendsTagFilters(
+    existingTags,
+    friends,
+    selectedTagFilters,
+    (tagKey: string) => {
+      if (selectedTagFilters.has(tagKey)) {
+        selectedTagFilters.delete(tagKey);
+      } else {
+        selectedTagFilters.add(tagKey);
+      }
+      render();
     }
-    render();
-  });
+  );
 
   renderFriends(friends, sortType, selectedTagFilters);
 
-  const sortSelect = document.getElementById("friends-sort") as HTMLSelectElement;
+  const sortSelect = document.getElementById(
+    "friends-sort"
+  ) as HTMLSelectElement;
   if (sortSelect) sortSelect.value = sortType;
 };
 
@@ -225,7 +236,9 @@ const editFriend = async (id: number): Promise<void> => {
  */
 const openModal = (): void => {
   render();
-  const modal = document.getElementById("friends-book-modal") as HTMLDialogElement;
+  const modal = document.getElementById(
+    "friends-book-modal"
+  ) as HTMLDialogElement;
   if (modal) modal.showModal();
 };
 
@@ -236,11 +249,13 @@ const setupModal = (): void => {
   const { modal } = createFriendsBookModal();
 
   // ソート変更
-  modal.querySelector("#friends-sort")!.addEventListener("change", async (e) => {
-    const sortType = (e.target as HTMLSelectElement).value as FriendsSortType;
-    await storage.set({ [SORT_KEY]: sortType });
-    render();
-  });
+  modal
+    .querySelector("#friends-sort")!
+    .addEventListener("change", async (e) => {
+      const sortType = (e.target as HTMLSelectElement).value as FriendsSortType;
+      await storage.set({ [SORT_KEY]: sortType });
+      render();
+    });
 
   // カードクリック（編集・削除）
   modal.querySelector("#friends-grid")!.addEventListener("click", async (e) => {
@@ -248,7 +263,9 @@ const setupModal = (): void => {
     if (!target) return;
 
     const editBtn = target.closest(".friends-edit-btn") as HTMLElement | null;
-    const deleteBtn = target.closest(".friends-delete-btn") as HTMLElement | null;
+    const deleteBtn = target.closest(
+      ".friends-delete-btn"
+    ) as HTMLElement | null;
 
     if (editBtn?.dataset.id) {
       editFriend(parseInt(editBtn.dataset.id));
@@ -267,15 +284,13 @@ const init = (): void => {
       getTargetElement: findPaintedByContainer,
       createElement: createAddToFriendsButton,
     },
-    {
-      id: "friends-book-fab",
-      getTargetElement: findMyLocationContainer,
-      createElement: createFriendsBookFAB,
-    },
   ];
 
   setupElementObserver(buttonConfigs);
   setupModal();
+
+  // FABボタンを画面右上に配置
+  createFriendsBookFAB();
 
   // Listen for painted by user data from inject
   window.addEventListener("message", (event) => {
