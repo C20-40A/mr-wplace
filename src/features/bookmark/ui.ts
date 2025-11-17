@@ -74,13 +74,13 @@ export const createBookmarkModal = (): ModalElements => {
 
       <!-- Tag Filter -->
       <div id="wps-tag-filter-container" style="margin-bottom: 0.7rem; flex-shrink: 0; display: none;">
-        <div style="overflow-x: auto; overflow-y: hidden; white-space: nowrap; padding-bottom: 0.25rem;">
+        <div style="overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; white-space: nowrap; padding-bottom: 0.25rem;">
           <div id="wps-tag-filter-buttons" style="display: inline-flex; gap: 0.5rem;"></div>
         </div>
       </div>
 
       <!-- Scrollable Content: Bookmarks Grid -->
-      <div style="flex: 1; overflow-y: auto; min-height: 0;">
+      <div style="flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0;">
         <div id="wps-favorites-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2">
         </div>
       </div>
@@ -106,7 +106,7 @@ export const createBookmarkModal = (): ModalElements => {
         <!-- Step 1: Tag Selection -->
         <div id="wps-edit-tag-selection" style="display: block; margin-bottom: 1rem;">
           <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">${"existing_tags"}</label>
-          <div id="wps-existing-tags-container" class="border-base-300" style="max-height: 200px; overflow-y: auto; margin-bottom: 0.5rem; border: 1px solid; border-radius: 8px; padding: 0.5rem;"></div>
+          <div id="wps-existing-tags-container" class="border-base-300" style="max-height: 200px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; margin-bottom: 0.5rem; border: 1px solid; border-radius: 8px; padding: 0.5rem;"></div>
           <div style="display: flex; gap: 0.5rem;">
             <button id="wps-new-tag-btn" class="btn btn-outline btn-sm">${"new_tag"}</button>
             <button id="wps-no-tag-btn" class="btn btn-outline btn-sm">${"remove_tag"}</button>
@@ -725,7 +725,7 @@ export const showImportExportDialog = async (
           existingTags.length === 0
             ? `<p style="text-align: center; color: oklch(var(--bc) / 0.4); padding: 1rem;">${t`${"no_tags_available"}`}</p>`
             : `
-              <div id="wps-export-tag-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 0.75rem;">
+              <div id="wps-export-tag-list" style="max-height: 200px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; margin-bottom: 0.75rem;">
                 ${existingTags
                   .map((tag) => {
                     const count = allBookmarks.filter(

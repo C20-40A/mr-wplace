@@ -62,7 +62,7 @@ export class ImageEditorUI {
         <!-- 4 Area Grid -->
         <div id="wps-main-grid" style="display: grid; grid-template-columns: 1fr; gap: 0.1rem; height: calc(100vh - 8rem);">
           <!-- Original Image Area -->
-          <div id="wps-original-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; min-height: 0;">
+          <div id="wps-original-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0;">
             <h4 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
               ${"original_image"}
               <span id="wps-original-size" style="font-size: 0.75rem; color: #4b5563;"></span>
@@ -77,7 +77,7 @@ export class ImageEditorUI {
           </div>
           
           <!-- Current Image Area -->
-          <div id="wps-current-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; min-height: 0;">
+          <div id="wps-current-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0;">
             <h4 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
               ${"current_image"}
               <span id="wps-current-size" style="font-size: 0.75rem; color: #4b5563;"></span>
@@ -99,7 +99,7 @@ export class ImageEditorUI {
           </div>
           
           <!-- Color Palette Area -->
-          <div id="wps-palette-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow-y: auto; min-height: 0;">
+          <div id="wps-palette-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0;">
             <!-- Mobile: Accordion -->
             <details id="wps-palette-accordion" style="display: none;">
               <summary style="font-size: 0.875rem; font-weight: 500; cursor: pointer; list-style: none; margin: 0.5rem;">
@@ -115,7 +115,7 @@ export class ImageEditorUI {
           </div>
           
           <!-- Controls Area -->
-          <div id="wps-controls-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; min-height: 0;">
+          <div id="wps-controls-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0;">
             <div id="wps-controls-container" style="display: flex; flex-direction: column; gap: 1rem;">
               <div>
                 <label style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem;">

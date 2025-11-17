@@ -380,13 +380,13 @@ export const createFriendsBookModal = (): ModalElements => {
 
       <!-- Tag Filter -->
       <div id="friends-tag-filter-container" style="margin-bottom: 0.7rem; flex-shrink: 0; display: none;">
-        <div style="overflow-x: auto; overflow-y: hidden; white-space: nowrap; padding-bottom: 0.25rem;">
+        <div style="overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; white-space: nowrap; padding-bottom: 0.25rem;">
           <div id="friends-tag-filter-buttons" style="display: inline-flex; gap: 0.5rem;"></div>
         </div>
       </div>
 
       <!-- Scrollable Content: Friends Grid -->
-      <div style="flex: 1; overflow-y: auto; min-height: 0;">
+      <div style="flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0;">
         <div id="friends-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2">
         </div>
       </div>

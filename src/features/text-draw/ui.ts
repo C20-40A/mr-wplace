@@ -44,7 +44,7 @@ export class TextDrawUI {
     // Left: Text list
     this.leftPanel = document.createElement("div");
     this.leftPanel.style.cssText =
-      "flex: 1; max-height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.5rem;";
+      "flex: 1; max-height: 400px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.5rem;";
 
     // Right: Input form
     const rightPanel = document.createElement("div");

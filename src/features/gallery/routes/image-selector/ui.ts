@@ -36,7 +36,7 @@ export class GalleryImageSelectorUI {
 
     // レイヤーパネル（単一カラム）
     this.layerPanel = document.createElement("div");
-    this.layerPanel.style.cssText = "overflow-y: auto;";
+    this.layerPanel.style.cssText = "overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;";
     container.appendChild(this.layerPanel);
 
     await this.renderLayerList();
