@@ -41,8 +41,10 @@ export const viTranslations = {
   gallery_reset_success: "Thư viện đã được đặt lại",
   no_images_to_export: "Không có hình ảnh để xuất (cần hình ảnh có tọa độ)",
   no_valid_images_in_zip: "Không tìm thấy hình ảnh hợp lệ trong tệp ZIP",
-  confirm_import: "Bạn có chắc chắn muốn nhập? Hình ảnh mới sẽ được thêm vào thư viện của bạn.",
-  confirm_reset: "Bạn có chắc chắn muốn đặt lại tất cả hình ảnh trong thư viện? Hành động này không thể hoàn tác.",
+  confirm_import:
+    "Bạn có chắc chắn muốn nhập? Hình ảnh mới sẽ được thêm vào thư viện của bạn.",
+  confirm_reset:
+    "Bạn có chắc chắn muốn đặt lại tất cả hình ảnh trong thư viện? Hành động này không thể hoàn tác.",
 
   // Messages
   loading: "Đang tải...",
@@ -236,19 +238,6 @@ export const viTranslations = {
   // Auto Spoit
   auto_spoit: "Chọn màu tự động",
   auto_spoit_tooltip: "Chọn màu tự động",
-  auto_spoit_warning: `【Chọn Màu Tự động - Thông báo quan trọng】
-
-Đây là một tính năng đơn giản giúp "nhấp nút i liên tục để chọn màu" dễ dàng hơn một chút.
-Tuy nhiên, vui lòng chú ý đến những điều sau:
-
-⚠ Thông báo
-• Đây là tính năng xác minh của nhà phát triển
-• Tính năng này không có sẵn công khai
-• Chỉ sử dụng để kiểm tra chức năng chọn màu
-• Để tránh hiểu lầm, luôn vẽ với tốc độ tự nhiên và theo cách tự nhiên
-  (Vẽ từ cạnh, vẽ những vùng dễ trước, v.v. - vẽ như con người)
-• Chuyển động quá nhanh hoặc mẫu vẽ không tự nhiên có thể gây lệch pixel hoặc hiểu lầm
-`,
 
   // Sort Order
   sort_order_default: "Mặc định",

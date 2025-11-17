@@ -414,7 +414,7 @@ export const sendTileBoundariesToInject = async () => {
     drawingLoaderAPI.initDrawingLoader();
     new ColorFilter();
     const colorFilterManager = new ColorFilterManager();
-    const autoSpoit = new AutoSpoit();
+    const autoSpoit = new AutoSpoit(colorFilterManager);
     new ColorIsolate();
     new PositionInfo();
     new PaletteToggle();

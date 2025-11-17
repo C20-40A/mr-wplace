@@ -6,6 +6,8 @@ import { AutoCanvasClickStorage } from "./auto-canvas-click-storage";
 import { createAutoCanvasClickButton } from "./auto-canvas-click-ui";
 import { createKonamiCodeDetector } from "./konami-detector";
 import { t } from "../../i18n/manager";
+import { ColorFilterManager } from "@/utils/color-filter-manager";
+import { sendColorFilterToInject } from "@/content";
 
 export class AutoSpoit {
   private enabled: boolean = true;
@@ -13,8 +15,10 @@ export class AutoSpoit {
   private button: HTMLButtonElement | null = null;
   private autoCanvasClickEnabled: boolean = false;
   private autoCanvasClickButton: HTMLButtonElement | null = null;
+  private colorFilterManager: ColorFilterManager;
 
-  constructor() {
+  constructor(colorFilterManager: ColorFilterManager) {
+    this.colorFilterManager = colorFilterManager;
     this.init();
   }
 
@@ -140,18 +144,19 @@ export class AutoSpoit {
   async toggle(): Promise<void> {
     // 有効化しようとしている場合、初回警告チェック
     if (!this.enabled) {
-      const hasShownWarning = await AutoSpoitStorage.hasShownWarning();
-      if (!hasShownWarning) {
-        const warningMessage = t`${"auto_spoit_warning"}`;
+      // 使えないから不要
+      // const hasShownWarning = await AutoSpoitStorage.hasShownWarning();
+      // if (!hasShownWarning) {
+      //   const warningMessage = t`${"auto_spoit_warning"}`;
 
-        const agreed = confirm(warningMessage);
-        if (!agreed) {
-          console.log("🧑‍🎨 : Auto spoit activation cancelled by user");
-          return;
-        }
-        await AutoSpoitStorage.setWarningShown();
-        console.log("🧑‍🎨 : Auto spoit warning shown and agreed");
-      }
+      //   const agreed = confirm(warningMessage);
+      //   if (!agreed) {
+      //     console.log("🧑‍🎨 : Auto spoit activation cancelled by user");
+      //     return;
+      //   }
+      //   await AutoSpoitStorage.setWarningShown();
+      //   console.log("🧑‍🎨 : Auto spoit warning shown and agreed");
+      // }
       alert(
         "Sorry! This feature is currently unavailable due to changes in the wplace codebase😇"
       );
@@ -170,12 +175,14 @@ export class AutoSpoit {
 
   async toggleAutoCanvasClick(): Promise<void> {
     this.autoCanvasClickEnabled = await AutoCanvasClickStorage.toggle();
-    console.log(
-      "🧑‍🎨 : Auto canvas click toggled:",
-      this.autoCanvasClickEnabled
-    );
+    console.log("🧑‍🎨 : Auto canvas click toggled:", this.autoCanvasClickEnabled);
 
     if (this.autoCanvasClickEnabled) {
+      // Set enhanced mode to red-border
+      this.colorFilterManager.setEnhancedMode("red-border");
+      sendColorFilterToInject(this.colorFilterManager);
+      console.log("🧑‍🎨 : Enhanced mode set to red-border");
+
       this.sendAutoCanvasClickStart();
     } else {
       this.sendAutoCanvasClickStop();
