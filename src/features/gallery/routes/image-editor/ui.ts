@@ -60,12 +60,12 @@ export class ImageEditorUI {
       <div id="wps-image-display" style="display: none;">
         
         <!-- 4 Area Grid -->
-        <div id="wps-main-grid" style="display: grid; grid-template-columns: 1fr; gap: 0.1rem; height: calc(100vh - 8rem);">
+        <div id="wps-main-grid" style="display: grid; grid-template-columns: 1fr; grid-template-rows: 3fr 4fr; gap: 0.1rem; height: calc(100vh - 8rem);">
           <!-- Original Image Area -->
           <div id="wps-original-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0;">
             <h4 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
               ${"original_image"}
-              <span id="wps-original-size" style="font-size: 0.75rem; color: #4b5563;"></span>
+              <span id="wps-original-size" style="font-size: 0.75rem;"></span>
             </h4>
             <div id="wps-image-replace-zone" style="position: relative; cursor: pointer; display: flex; justify-content: center;">
               <img id="wps-original-image" style="border: 1px solid #e5e7eb; border-radius: 0.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 100%; height: auto; object-fit: contain; image-rendering: pixelated; image-rendering: crisp-edges;" alt="Original">
@@ -80,7 +80,7 @@ export class ImageEditorUI {
           <div id="wps-current-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0;">
             <h4 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
               ${"current_image"}
-              <span id="wps-current-size" style="font-size: 0.75rem; color: #4b5563;"></span>
+              <span id="wps-current-size" style="font-size: 0.75rem;"></span>
             </h4>
             <div class="flex" style="justify-content: center; position: relative; width: 100%; height: calc(100% - 2.5rem);">
               <!-- Desktop: Canvas with ImageInspector -->
@@ -91,7 +91,7 @@ export class ImageEditorUI {
               <div id="wps-image-container" style="display: none; width: 100%; max-width: 100%;">
                 <img id="wps-scaled-image" style="width: 100%; height: auto; image-rendering: pixelated; image-rendering: crisp-edges;" alt="Current">
               </div>
-              <label style="position: absolute; bottom: 0.25rem; right: 0.25rem; display: flex; align-items: center; gap: 0.25rem; font-size: 0.7rem; cursor: pointer; background: rgba(255, 255, 255, 0.8); padding: 0.2rem 0.4rem; border-radius: 0.25rem; opacity: 0.6; transition: opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.6'">
+              <label style="position: absolute; bottom: 0.25rem; right: 0.25rem; display: flex; align-items: center; gap: 0.25rem; font-size: 0.7rem; cursor: pointer; background: var(--color-base-300); padding: 0.2rem 0.4rem; border-radius: 0.25rem; opacity: 0.6; transition: opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.6'">
                 <input type="checkbox" id="wps-gpu-toggle" class="checkbox checkbox-xs" checked>
                 <span>⚡GPU</span>
               </label>
