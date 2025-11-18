@@ -261,7 +261,6 @@ export const showAddFriendDialog = async (userData?: {
           picture: userData?.picture,
           memo: memo || undefined,
           tag: selectedTag,
-          addedDate: existingFriend?.addedDate || Date.now(),
         };
 
         if (isExisting) {
@@ -504,20 +503,25 @@ export const renderFriends = (
   }
 
   // ソート
-  const sortedFriends = [...filteredFriends].sort((a, b) => {
-    switch (sortType) {
-      case "name":
-        return a.name.localeCompare(b.name);
-      case "tag": {
-        const tagA = a.tag ? `${a.tag.name || ""}${a.tag.color}` : "zzz";
-        const tagB = b.tag ? `${b.tag.name || ""}${b.tag.color}` : "zzz";
-        return tagA.localeCompare(tagB);
+  let sortedFriends: Friend[];
+  if (sortType === "added") {
+    // 配列順 = 追加順（新しいものほど末尾）なので、逆順にして新しい順に表示
+    sortedFriends = [...filteredFriends].reverse();
+  } else {
+    sortedFriends = [...filteredFriends].sort((a, b) => {
+      switch (sortType) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "tag": {
+          const tagA = a.tag ? `${a.tag.name || ""}${a.tag.color}` : "zzz";
+          const tagB = b.tag ? `${b.tag.name || ""}${b.tag.color}` : "zzz";
+          return tagA.localeCompare(tagB);
+        }
+        default:
+          return 0;
       }
-      case "added":
-      default:
-        return b.addedDate - a.addedDate;
-    }
-  });
+    });
+  }
 
   if (sortedFriends.length === 0) {
     grid.innerHTML = t`

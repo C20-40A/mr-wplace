@@ -1,5 +1,9 @@
 # メイン
 
+- friends book に ID 若い順とかあってもいい
+- friends book の added date いらんかも
+- bookmarks も ONLINE 同期
+- bookmarks や tiles は mobile だとスクロールできない
 - ギャラリーからも、画像描画できると初心者に親切
 - 画像編集画面/タイル詳細画面で見切れる
 - 画像編集画面のタイトル
