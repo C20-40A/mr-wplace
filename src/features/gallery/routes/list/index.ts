@@ -4,7 +4,7 @@ import { GalleryListUI, GallerySortType } from "./ui";
 import { getStatsPerImage } from "@/utils/inject-bridge";
 import { storage as browserStorage } from "@/utils/browser-api";
 import { getCurrentPosition } from "@/utils/position";
-import { llzToTilePixel } from "@/utils/coordinate";
+import { latLngToTilePixel } from "@/utils/coordinate";
 
 const SORT_KEY = "wplace-studio-gallery-sort";
 
@@ -47,7 +47,7 @@ export class GalleryList {
         if (!currentPos) return sorted;
 
         // 現在位置をタイル座標に変換
-        const { TLX: currentTileX, TLY: currentTileY } = llzToTilePixel(
+        const { TLX: currentTileX, TLY: currentTileY } = latLngToTilePixel(
           currentPos.lat,
           currentPos.lng
         );

@@ -6,7 +6,10 @@ import { TimeTravelStorage } from "../storage";
 import { TileNameStorage } from "../tile-name-storage";
 import { t } from "../../../i18n/manager";
 import { showNameInputModal } from "../../../components/modal";
-import { llzToTilePixel, tilePixelToLatLng } from "../../../utils/coordinate";
+import {
+  latLngToTilePixel,
+  tilePixelToLatLng,
+} from "../../../utils/coordinate";
 import { storage } from "@/utils/browser-api";
 
 interface SnapshotRouteOptions {
@@ -93,7 +96,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     if (currentRoute === "current-position" || !selectedTile) {
       const position = getCurrentPosition();
       if (position) {
-        const coords = llzToTilePixel(position.lat, position.lng);
+        const coords = latLngToTilePixel(position.lat, position.lng);
         this.currentTileX = coords.TLX;
         this.currentTileY = coords.TLY;
       } else {

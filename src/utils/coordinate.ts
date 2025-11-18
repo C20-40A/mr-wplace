@@ -1,48 +1,36 @@
-export const llzToTilePixel = (lat: number, lng: number) => {
-  const tileSize = 1000;
-  const zoom = 11;
+import {
+  latLonToTileAndPixel,
+  pixelsToMeters,
+  metersToLatLon,
+  TILE_SIZE,
+} from "./geo-converter";
 
-  // 世界ピクセル座標（tileSize * 2^z が世界全体のピクセル幅/高さ）
-  const scale = tileSize * Math.pow(2, zoom);
-
-  // 経度→X は線形
-  const worldX = ((lng + 180) / 360) * scale;
-
-  // 緯度→Y はメルカトル（XYZは上原点なので0.5-...）
-  const sinLat = Math.sin((lat * Math.PI) / 180);
-  const worldY =
-    (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI)) * scale;
-
-  // タイル番号（左上=TL）
-  const TLX = Math.floor(worldX / tileSize);
-  const TLY = Math.floor(worldY / tileSize);
-
-  // タイル内ピクセル
-  const PxX = Math.floor(worldX - TLX * tileSize);
-  const PxY = Math.floor(worldY - TLY * tileSize);
-
-  return { TLX, TLY, PxX, PxY, worldX, worldY };
+/**
+ * 緯度・経度からタイルインデックスとタイル内ピクセル座標へ変換
+ */
+export const latLngToTilePixel = (lat: number, lng: number) => {
+  const { tile, pixel } = latLonToTileAndPixel(lat, lng);
+  return { TLX: tile[0], TLY: tile[1], PxX: pixel[0], PxY: pixel[1] };
 };
 
-// タイル座標から緯度経度への逆変換
+/**
+ * タイル座標とタイル内ピクセルオフセットから緯度・経度へ逆変換
+ */
 export const tilePixelToLatLng = (
   tileX: number,
   tileY: number,
   pxX?: number,
   pxY?: number
 ) => {
-  const tileSize = 1000;
-  const zoom = 11;
-  const N = tileSize * Math.pow(2, zoom); // 世界全体のピクセル数
+  // 1. ワールドピクセル座標を計算: タイル座標 * TILE_SIZE + タイル内オフセット
+  const worldX = tileX * TILE_SIZE + (pxX ?? 0);
+  const worldY = tileY * TILE_SIZE + (pxY ?? 0);
 
-  // ワールドピクセル座標（タイル左上 + タイル内オフセット）
-  const worldX = tileX * tileSize + (pxX ?? 0);
-  const worldY = tileY * tileSize + (pxY ?? 0);
+  // 2. ピクセル座標からメルカトル図法のメートル座標へ変換
+  const [metersX, metersY] = pixelsToMeters(worldX, worldY);
 
-  // Web Mercator 逆変換
-  const lng = (worldX / N) * 360 - 180;
-  const lat =
-    (Math.atan(Math.sinh(Math.PI * (1 - (2 * worldY) / N))) * 180) / Math.PI;
+  // 3. メートル座標から緯度・経度へ逆変換
+  const [lat, lng] = metersToLatLon(metersX, metersY);
 
   return { lat, lng };
 };

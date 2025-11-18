@@ -1,7 +1,7 @@
 import { setupElementObserver } from "@/components/element-observer";
 import { findPositionModal } from "@/constants/selectors";
 import { getCurrentPosition } from "@/utils/position";
-import { llzToTilePixel } from "@/utils/coordinate";
+import { latLngToTilePixel } from "@/utils/coordinate";
 import { t } from "@/i18n/manager";
 import { Toast } from "@/components/toast";
 
@@ -59,7 +59,7 @@ export class PositionInfo {
       if (!position) return;
 
       const { lat, lng } = position;
-      const coords = llzToTilePixel(lat, lng);
+      const coords = latLngToTilePixel(lat, lng);
       const coordText = `${coords.TLX}-${coords.TLY}-${coords.PxX}-${coords.PxY}`;
 
       try {
@@ -96,7 +96,7 @@ export class PositionInfo {
     }
 
     const { lat, lng } = position;
-    const coords = llzToTilePixel(lat, lng);
+    const coords = latLngToTilePixel(lat, lng);
 
     this.infoElement.textContent = t`${"coordinates"} ${coords.TLX}-${
       coords.TLY

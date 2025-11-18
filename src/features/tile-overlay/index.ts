@@ -1,4 +1,4 @@
-import { llzToTilePixel } from "../../utils/coordinate";
+import { latLngToTilePixel } from "../../utils/coordinate";
 import { ImageItem } from "../gallery/routes/list/components";
 import { GalleryStorage } from "../gallery/storage";
 
@@ -16,7 +16,7 @@ export class TileOverlay {
   ): Promise<void> {
     window.postMessage({ source: "wplace-studio-drawing-start" }, "*");
 
-    const coords = llzToTilePixel(lat, lng);
+    const coords = latLngToTilePixel(lat, lng);
     await this.drawImageWithCoords(coords, imageItem);
 
     // Don't hide loader here - wait for next tile fetch to complete

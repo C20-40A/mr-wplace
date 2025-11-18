@@ -1,4 +1,4 @@
-import { llzToTilePixel, tilePixelToLatLng } from "@/utils/coordinate";
+import { latLngToTilePixel, tilePixelToLatLng } from "@/utils/coordinate";
 import { gotoPosition } from "@/utils/position";
 import { t } from "@/i18n/manager";
 
@@ -74,10 +74,18 @@ export const renderCoordinateJumper = (container: HTMLElement): void => {
   // Input elements
   const latInput = container.querySelector("#wps-jump-lat") as HTMLInputElement;
   const lngInput = container.querySelector("#wps-jump-lng") as HTMLInputElement;
-  const tileXInput = container.querySelector("#wps-jump-tile-x") as HTMLInputElement;
-  const tileYInput = container.querySelector("#wps-jump-tile-y") as HTMLInputElement;
-  const pixelXInput = container.querySelector("#wps-jump-pixel-x") as HTMLInputElement;
-  const pixelYInput = container.querySelector("#wps-jump-pixel-y") as HTMLInputElement;
+  const tileXInput = container.querySelector(
+    "#wps-jump-tile-x"
+  ) as HTMLInputElement;
+  const tileYInput = container.querySelector(
+    "#wps-jump-tile-y"
+  ) as HTMLInputElement;
+  const pixelXInput = container.querySelector(
+    "#wps-jump-pixel-x"
+  ) as HTMLInputElement;
+  const pixelYInput = container.querySelector(
+    "#wps-jump-pixel-y"
+  ) as HTMLInputElement;
   const jumpBtn = container.querySelector("#wps-jump-btn") as HTMLButtonElement;
 
   let isUpdating = false; // Prevent circular updates
@@ -91,7 +99,7 @@ export const renderCoordinateJumper = (container: HTMLElement): void => {
     const lng = parseFloat(lngInput.value);
 
     if (!isNaN(lat) && !isNaN(lng)) {
-      const coords = llzToTilePixel(lat, lng);
+      const coords = latLngToTilePixel(lat, lng);
       tileXInput.value = coords.TLX.toString();
       tileYInput.value = coords.TLY.toString();
       pixelXInput.value = coords.PxX.toString();

@@ -1,9 +1,10 @@
 // -----------------------------------------------
 // 定数
 // -----------------------------------------------
-const TILE_SIZE = 256; // タイルのピクセルサイズ (デフォルト値)
+// export const TILE_SIZE = 256; // タイルのピクセルサイズ (デフォルト値)
+export const TILE_SIZE = 1000; // タイルのピクセルサイズ
 const REGION_SIZE_TILES = 4; // 地域のタイルサイズ (例: 4x4タイル)
-const ZOOM_LEVEL = 11; // デフォルトのズームレベル (デフォルト値)
+export const ZOOM_LEVEL = 11; // デフォルトのズームレベル (デフォルト値)
 // 地球の半径 (メートル)
 // 6378137mはWGS 84における長半径
 const EARTH_RADIUS_METERS = 6378137;
@@ -35,7 +36,10 @@ const latLonToMeters = (lat: number, lon: number): [number, number] => {
 // meters -> lat/lon
 // メルカトル図法のメートル座標から緯度・経度へ変換
 // -----------------------------------------------
-const metersToLatLon = (metersX: number, metersY: number): [number, number] => {
+export const metersToLatLon = (
+  metersX: number,
+  metersY: number
+): [number, number] => {
   const lon: number = (metersX / EARTH_HALF_CIRCUMFERENCE_METERS) * 180;
 
   // Y座標から緯度への逆変換
@@ -51,17 +55,17 @@ const metersToLatLon = (metersX: number, metersY: number): [number, number] => {
 // resolution (zoom -> meters/pixel)
 // ズームレベルに応じた解像度 (1ピクセルあたりのメートル数) を計算
 // -----------------------------------------------
-const resolution = (zoom: number): number =>
+const resolution = (zoom: number = ZOOM_LEVEL): number =>
   initialResolution / Math.pow(2, zoom);
 
 // -----------------------------------------------
 // pixels -> meters
 // ピクセル座標からメルカトル図法のメートル座標へ変換
 // -----------------------------------------------
-const pixelsToMeters = (
+export const pixelsToMeters = (
   pixelX: number,
   pixelY: number,
-  zoom: number
+  zoom: number = ZOOM_LEVEL
 ): [number, number] => {
   const res: number = resolution(zoom);
   // (0,0)が中心ではなく、左上原点からのピクセル座標と解像度からメートル座標を計算
@@ -77,7 +81,7 @@ const pixelsToMeters = (
 const metersToPixels = (
   metersX: number,
   metersY: number,
-  zoom: number
+  zoom: number = ZOOM_LEVEL
 ): [number, number] => {
   const res: number = resolution(zoom);
   const pixelX: number = (metersX + EARTH_HALF_CIRCUMFERENCE_METERS) / res;
@@ -92,7 +96,7 @@ const metersToPixels = (
 const latLonToPixels = (
   lat: number,
   lon: number,
-  zoom: number
+  zoom: number = ZOOM_LEVEL
 ): [number, number] => {
   const [metersX, metersY]: [number, number] = latLonToMeters(lat, lon);
   return metersToPixels(metersX, metersY, zoom);
@@ -105,7 +109,7 @@ const latLonToPixels = (
 const latLonToPixelsFloor = (
   lat: number,
   lon: number,
-  zoom: number
+  zoom: number = ZOOM_LEVEL
 ): [number, number] => {
   const [px, py]: [number, number] = latLonToPixels(lat, lon, zoom);
   return [Math.floor(px), Math.floor(py)];
@@ -153,7 +157,7 @@ export const pixelsToTileLocal = (
 const tileBounds = (
   tileX: number,
   tileY: number,
-  zoom: number
+  zoom: number = ZOOM_LEVEL
 ): { min: [number, number]; max: [number, number] } => {
   const [minMX, minMY]: [number, number] = pixelsToMeters(
     tileX * TILE_SIZE,
@@ -176,7 +180,7 @@ const tileBounds = (
 // tile -> lat/lon bounding box
 // タイルインデックスから緯度・経度のバウンディングボックスへ変換
 // -----------------------------------------------
-export const tileBoundsLatLon = (
+const tileBoundsLatLon = (
   tileX: number,
   tileY: number,
   zoom: number = ZOOM_LEVEL
@@ -199,7 +203,7 @@ export const tileBoundsLatLon = (
 const metersToTile = (
   metersX: number,
   metersY: number,
-  zoom: number
+  zoom: number = ZOOM_LEVEL
 ): [number, number] => {
   const [pixelX, pixelY]: [number, number] = metersToPixels(
     metersX,
@@ -240,7 +244,7 @@ export const latLonToTileAndPixel = (
 const pixelBounds = (
   pixelX: number,
   pixelY: number,
-  zoom: number
+  zoom: number = ZOOM_LEVEL
 ): { min: [number, number]; max: [number, number] } => {
   return {
     min: pixelsToMeters(pixelX, pixelY, zoom),
