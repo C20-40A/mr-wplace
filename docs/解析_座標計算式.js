@@ -1,283 +1,362 @@
-// 必要な定数や外部依存プロパティを引数として追加
-const latLonToMeters = (a, d, hs) => {
-  const x = (d / 180) * hs;
-  const k =
-    ((Math.log(Math.tan(((90 + a) * Math.PI) / 360)) / (Math.PI / 180)) * hs) /
+const TILE_SIZE = 256;
+const ZOOM = 11;
+const EARTH_RADIUS_METERS = (2 * Math.PI * 6378137) / 2;
+const initialResolution = (2 * EARTH_RADIUS_METERS) / TILE_SIZE;
+
+// -----------------------------------------------
+// lat/lon -> meters
+// -----------------------------------------------
+const latLonToMeters = (lat, lon, earthHalfCircumferenceMeters) => {
+  const metersX = (lon / 180) * earthHalfCircumferenceMeters;
+
+  const metersY =
+    ((Math.log(Math.tan(((90 + lat) * Math.PI) / 360)) / (Math.PI / 180)) *
+      earthHalfCircumferenceMeters) /
     180;
-  return [x, k];
+
+  return [metersX, metersY];
 };
 
-const metersToLatLon = (a, d, hs) => {
-  const x = (a / hs) * 180;
-  let k = (d / hs) * 180;
-  k =
+// -----------------------------------------------
+// meters -> lat/lon
+// -----------------------------------------------
+const metersToLatLon = (metersX, metersY, earthHalfCircumferenceMeters) => {
+  const lon = (metersX / earthHalfCircumferenceMeters) * 180;
+
+  let lat = (metersY / earthHalfCircumferenceMeters) * 180;
+  lat =
     (180 / Math.PI) *
-    (2 * Math.atan(Math.exp((k * Math.PI) / 180)) - Math.PI / 2);
-  return [k, x];
+    (2 * Math.atan(Math.exp((lat * Math.PI) / 180)) - Math.PI / 2);
+
+  return [lat, lon];
 };
 
-const pixelsToMeters = (a, d, x, resolution, hs) => {
-  // resolution(x)を外部から渡されたresolution関数で呼び出す
-  const k = resolution(x);
-  const D = a * k - hs;
-  const b = hs - d * k;
-  return [D, b];
-};
-
-const pixelsToLatLon = (
-  a,
-  d,
-  x,
-  pixelsToMeters,
-  metersToLatLon,
+// -----------------------------------------------
+// pixels -> meters
+// -----------------------------------------------
+const pixelsToMeters = (
+  pixelX,
+  pixelY,
+  zoom,
   resolution,
-  hs
+  earthHalfCircumferenceMeters
 ) => {
-  // 依存メソッドも引数として受け取る
-  const [k, D] = pixelsToMeters(a, d, x, resolution, hs);
-  return metersToLatLon(k, D, hs);
+  const res = resolution(zoom);
+  const metersX = pixelX * res - earthHalfCircumferenceMeters;
+  const metersY = earthHalfCircumferenceMeters - pixelY * res;
+  return [metersX, metersY];
 };
 
+// -----------------------------------------------
+// meters -> pixels
+// -----------------------------------------------
+const metersToPixels = (
+  metersX,
+  metersY,
+  zoom,
+  resolution,
+  earthHalfCircumferenceMeters
+) => {
+  const res = resolution(zoom);
+  const pixelX = (metersX + earthHalfCircumferenceMeters) / res;
+  const pixelY = (earthHalfCircumferenceMeters - metersY) / res;
+  return [pixelX, pixelY];
+};
+
+// -----------------------------------------------
+// lat/lon -> pixels (Floor)
+// -----------------------------------------------
+const latLonToPixelsFloor = (
+  lat,
+  lon,
+  zoom,
+  latLonToPixels,
+  resolution,
+  earthHalfCircumferenceMeters
+) => {
+  const [px, py] = latLonToPixels(
+    lat,
+    lon,
+    zoom,
+    resolution,
+    earthHalfCircumferenceMeters
+  );
+  return [Math.floor(px), Math.floor(py)];
+};
+
+// -----------------------------------------------
+// lat/lon -> pixels
+// -----------------------------------------------
 const latLonToPixels = (
-  a,
-  d,
-  x,
-  latLonToMeters,
-  metersToPixels,
+  lat,
+  lon,
+  zoom,
   resolution,
-  hs
+  earthHalfCircumferenceMeters
 ) => {
-  const [k, D] = latLonToMeters(a, d, hs);
-  return metersToPixels(k, D, x, resolution, hs);
+  const [metersX, metersY] = latLonToMeters(
+    lat,
+    lon,
+    earthHalfCircumferenceMeters
+  );
+  return metersToPixels(
+    metersX,
+    metersY,
+    zoom,
+    resolution,
+    earthHalfCircumferenceMeters
+  );
 };
 
-const latLonToPixelsFloor = (a, d, x, latLonToPixels, resolution, hs) => {
-  const [k, D] = latLonToPixels(a, d, x, resolution, hs);
-  return [Math.floor(k), Math.floor(D)];
+// -----------------------------------------------
+// lat/lon -> tile index
+// -----------------------------------------------
+const latLonToTile = (
+  lat,
+  lon,
+  zoom,
+  tileSize,
+  earthHalfCircumferenceMeters,
+  resolution
+) => {
+  const [pixelX, pixelY] = latLonToPixels(
+    lat,
+    lon,
+    zoom,
+    resolution,
+    earthHalfCircumferenceMeters
+  );
+
+  return [Math.floor(pixelX / tileSize), Math.floor(pixelY / tileSize)];
 };
 
-const metersToPixels = (a, d, x, resolution, hs) => {
-  // resolution(x)を外部から渡されたresolution関数で呼び出す
-  const k = resolution(x);
-  const D = (a + hs) / k;
-  const b = (hs - d) / k;
-  return [D, b];
+// -----------------------------------------------
+// pixels -> tile index
+// -----------------------------------------------
+const pixelsToTile = (pixelX, pixelY, tileSize) => {
+  return [Math.floor(pixelX / tileSize), Math.floor(pixelY / tileSize)];
 };
 
-const latLonToTile = (a, d, x, latLonToMeters, metersToTile, hs) => {
-  const [k, D] = latLonToMeters(a, d, hs);
-  return metersToTile(k, D, x);
+// -----------------------------------------------
+// pixels -> tile + local pixel
+// -----------------------------------------------
+const pixelsToTileLocal = (pixelX, pixelY, tileSize) => {
+  return {
+    tile: pixelsToTile(pixelX, pixelY, tileSize),
+    pixel: [pixelX % tileSize, pixelY % tileSize],
+  };
 };
 
-const metersToTile = (
-  a,
-  d,
-  x,
-  metersToPixels,
-  pixelsToTile,
+// -----------------------------------------------
+// tile -> meters bounding box
+// -----------------------------------------------
+const tileBounds = (
+  tileX,
+  tileY,
+  zoom,
+  pixelsToMeters,
   resolution,
-  hs,
+  earthHalfCircumferenceMeters,
   tileSize
 ) => {
-  // 依存メソッドも引数として受け取る
-  const [k, D] = metersToPixels(a, d, x, resolution, hs);
-  return pixelsToTile(k, D, tileSize);
-};
-
-const pixelsToTile = (a, d, tileSize) => {
-  // this.tileSizeを引数として受け取る
-  const x = Math.ceil(a / tileSize) - 1;
-  const k = Math.ceil(d / tileSize) - 1;
-  return [x, k];
-};
-
-const pixelsToTileLocal = (a, d, pixelsToTile, tileSize) => {
-  return {
-    tile: pixelsToTile(a, d, tileSize),
-    pixel: [Math.floor(a) % tileSize, Math.floor(d) % tileSize],
-  };
-};
-
-const tileBounds = (a, d, x, pixelsToMeters, resolution, hs, tileSize) => {
-  // this.tileSizeを引数として受け取る
-  const [k, D] = pixelsToMeters(a * tileSize, d * tileSize, x, resolution, hs);
-  const [b, s] = pixelsToMeters(
-    (a + 1) * tileSize,
-    (d + 1) * tileSize,
-    x,
+  const [minMX, minMY] = pixelsToMeters(
+    tileX * tileSize,
+    tileY * tileSize,
+    zoom,
     resolution,
-    hs
+    earthHalfCircumferenceMeters
   );
+
+  const [maxMX, maxMY] = pixelsToMeters(
+    (tileX + 1) * tileSize,
+    (tileY + 1) * tileSize,
+    zoom,
+    resolution,
+    earthHalfCircumferenceMeters
+  );
+
   return {
-    min: [k, D],
-    max: [b, s],
+    min: [minMX, minMY],
+    max: [maxMX, maxMY],
   };
 };
 
+// -----------------------------------------------
+// tile -> lat/lon bounding box
+// -----------------------------------------------
 const tileBoundsLatLon = (
-  a,
-  d,
-  x,
+  tileX,
+  tileY,
+  zoom,
   tileBounds,
   metersToLatLon,
   resolution,
-  hs,
+  earthHalfCircumferenceMeters,
   tileSize
 ) => {
-  // 依存メソッドも引数として受け取る
-  const k = tileBounds(a, d, x, pixelsToMeters, resolution, hs, tileSize);
+  const b = tileBounds(
+    tileX,
+    tileY,
+    zoom,
+    pixelsToMeters,
+    resolution,
+    earthHalfCircumferenceMeters,
+    tileSize
+  );
+
   return {
-    min: metersToLatLon(k.min[0], k.min[1], hs),
-    max: metersToLatLon(k.max[0], k.max[1], hs),
+    min: metersToLatLon(b.min[0], b.min[1], earthHalfCircumferenceMeters),
+    max: metersToLatLon(b.max[0], b.max[1], earthHalfCircumferenceMeters),
   };
 };
 
-const resolution = (a, initialResolution) => {
-  // this.initialResolutionを引数として受け取る
-  return initialResolution / 2 ** a;
+// -----------------------------------------------
+// resolution (zoom -> meters/pixel)
+// -----------------------------------------------
+const resolution = (zoom, initialResolution) => {
+  return initialResolution / Math.pow(2, zoom);
 };
 
+// -----------------------------------------------
+// lat/lon -> tile + pixel local index
+// -----------------------------------------------
 const latLonToTileAndPixel = (
-  a,
-  d,
-  x,
+  lat,
+  lon,
+  zoom,
   latLonToMeters,
   metersToTile,
   metersToPixels,
   resolution,
-  hs,
+  earthHalfCircumferenceMeters,
   tileSize
 ) => {
-  const [k, D] = latLonToMeters(a, d, hs);
-  // 依存メソッドには必要な引数を渡す
-  const [b, s] = metersToTile(
-    k,
-    D,
-    x,
+  const [metersX, metersY] = latLonToMeters(
+    lat,
+    lon,
+    earthHalfCircumferenceMeters
+  );
+
+  const [tileX, tileY] = metersToTile(
+    metersX,
+    metersY,
+    zoom,
     metersToPixels,
     pixelsToTile,
     resolution,
-    hs,
+    earthHalfCircumferenceMeters,
     tileSize
   );
-  const [O, V] = metersToPixels(k, D, x, resolution, hs);
+
+  const [pixelX, pixelY] = metersToPixels(
+    metersX,
+    metersY,
+    zoom,
+    resolution,
+    earthHalfCircumferenceMeters
+  );
+
   return {
-    tile: [b, s],
-    pixel: [Math.floor(O) % tileSize, Math.floor(V) % tileSize],
+    tile: [tileX, tileY],
+    pixel: [Math.floor(pixelX) % tileSize, Math.floor(pixelY) % tileSize],
   };
 };
 
-const pixelBounds = (a, d, x, pixelsToMeters, resolution, hs) => {
+// -----------------------------------------------
+// pixel -> meters bounding
+// -----------------------------------------------
+const pixelBounds = (
+  pixelX,
+  pixelY,
+  zoom,
+  pixelsToMeters,
+  resolution,
+  earthHalfCircumferenceMeters
+) => {
   return {
-    min: pixelsToMeters(a, d, x, resolution, hs),
-    max: pixelsToMeters(a + 1, d + 1, x, resolution, hs),
+    min: pixelsToMeters(
+      pixelX,
+      pixelY,
+      zoom,
+      resolution,
+      earthHalfCircumferenceMeters
+    ),
+    max: pixelsToMeters(
+      pixelX + 1,
+      pixelY + 1,
+      zoom,
+      resolution,
+      earthHalfCircumferenceMeters
+    ),
   };
 };
 
+// -----------------------------------------------
+// pixel -> lat/lon bounding box（補正付き）
+// -----------------------------------------------
 const pixelToBoundsLatLon = (
-  a,
-  d,
-  x,
+  pixelX,
+  pixelY,
+  zoom,
   pixelBounds,
   metersToLatLon,
   pixelsToMeters,
   resolution,
-  hs
+  earthHalfCircumferenceMeters
 ) => {
-  // 依存メソッドも引数として受け取る
-  const k = pixelBounds(a, d, x, pixelsToMeters, resolution, hs);
-  const D = 0.001885;
-  const b = (k.max[0] - k.min[0]) * D;
-  const s = (k.max[1] - k.min[1]) * D;
+  const b = pixelBounds(
+    pixelX,
+    pixelY,
+    zoom,
+    pixelsToMeters,
+    resolution,
+    earthHalfCircumferenceMeters
+  );
 
-  // 変数の代入をアロー関数内で実行
-  k.min[0] -= b;
-  k.max[0] -= b;
-  k.min[1] -= s;
-  k.max[1] -= s;
+  const adjust = 0.001885;
+  const widthMeters = (b.max[0] - b.min[0]) * adjust;
+  const heightMeters = (b.max[1] - b.min[1]) * adjust;
+
+  b.min[0] -= widthMeters;
+  b.max[0] -= widthMeters;
+  b.min[1] -= heightMeters;
+  b.max[1] -= heightMeters;
 
   return {
-    min: metersToLatLon(k.min[0], k.min[1], hs),
-    max: metersToLatLon(k.max[0], k.max[1], hs),
+    min: metersToLatLon(b.min[0], b.min[1], earthHalfCircumferenceMeters),
+    max: metersToLatLon(b.max[0], b.max[1], earthHalfCircumferenceMeters),
   };
 };
 
-const latLonToTileBoundsLatLon = (
-  a,
-  d,
-  x,
-  latLonToMeters,
-  metersToTile,
-  tileBoundsLatLon,
-  resolution,
-  hs,
-  tileSize
-) => {
-  // 依存メソッドも引数として受け取る
-  const [k, D] = latLonToMeters(a, d, hs);
-  const [b, s] = metersToTile(
-    k,
-    D,
-    x,
-    metersToPixels,
-    pixelsToTile,
-    resolution,
-    hs,
-    tileSize
-  );
-  return tileBoundsLatLon(
-    b,
-    s,
-    x,
-    tileBounds,
-    metersToLatLon,
-    resolution,
-    hs,
-    tileSize
-  );
-};
-
-const latLonToPixelBoundsLatLon = (
-  a,
-  d,
-  x,
-  latLonToMeters,
-  metersToPixels,
-  pixelToBoundsLatLon,
-  resolution,
-  hs
-) => {
-  // 依存メソッドも引数として受け取る
-  const [k, D] = latLonToMeters(a, d, hs);
-  const [b, s] = metersToPixels(k, D, x, resolution, hs);
-  return pixelToBoundsLatLon(
-    Math.floor(b),
-    Math.floor(s),
-    x,
-    pixelBounds,
-    metersToLatLon,
-    pixelsToMeters,
-    resolution,
-    hs
-  );
-};
-
+// -----------------------------------------------
+// lat/lon -> region + pixel local index
+// -----------------------------------------------
 const latLonToRegionAndPixel = (
-  a,
-  d,
-  x,
+  lat,
+  lon,
+  zoom,
   latLonToPixelsFloor,
   tileSize,
-  wa_regionSize,
+  regionSizeTiles,
   resolution,
-  hs,
-  k = wa_regionSize
+  earthHalfCircumferenceMeters
 ) => {
-  // 依存メソッド/プロパティも引数として受け取る
-  const [D, b] = latLonToPixelsFloor(a, d, x, latLonToPixels, resolution, hs);
-  const s = tileSize * k;
+  const [pixelX, pixelY] = latLonToPixelsFloor(
+    lat,
+    lon,
+    zoom,
+    latLonToPixels,
+    resolution,
+    earthHalfCircumferenceMeters
+  );
+
+  const regionPixelSpan = tileSize * regionSizeTiles;
+
   return {
-    region: [Math.floor(D / s), Math.floor(b / s)],
-    pixel: [D % s, b % s],
+    region: [
+      Math.floor(pixelX / regionPixelSpan),
+      Math.floor(pixelY / regionPixelSpan),
+    ],
+    pixel: [pixelX % regionPixelSpan, pixelY % regionPixelSpan],
   };
 };
