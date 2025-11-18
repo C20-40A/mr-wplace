@@ -5,7 +5,7 @@ import { t } from "@/i18n/manager";
 import { createCard, CardConfig } from "@/components/card";
 import { storage } from "@/utils/browser-api";
 import { getCurrentPosition } from "@/utils/position";
-import { llzToTilePixel } from "@/utils/coordinate";
+import { latLngToTilePixel } from "@/utils/coordinate";
 
 type TileSortType = "distance" | "last_updated" | "tile_count" | "name";
 const TILE_SORT_KEY = "wplace-studio-tile-sort";
@@ -107,7 +107,7 @@ export class TileListRoute {
         if (!currentPos) return sorted;
 
         // 現在位置をタイル座標に変換
-        const { TLX: currentTileX, TLY: currentTileY } = llzToTilePixel(
+        const { TLX: currentTileX, TLY: currentTileY } = latLngToTilePixel(
           currentPos.lat,
           currentPos.lng
         );

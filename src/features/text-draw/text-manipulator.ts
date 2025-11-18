@@ -1,5 +1,5 @@
 import { getCurrentPosition } from "../../utils/position";
-import { llzToTilePixel } from "../../utils/coordinate";
+import { latLngToTilePixel } from "../../utils/coordinate";
 import { Toast } from "../../components/toast";
 import { ensureFontLoaded } from "./font-loader";
 import { textToBlob } from "./text-renderer";
@@ -21,7 +21,7 @@ export const drawText = async (
     return null;
   }
 
-  const coords = llzToTilePixel(position.lat, position.lng);
+  const coords = latLngToTilePixel(position.lat, position.lng);
   const key = `text_${Date.now()}`;
 
   await ensureFontLoaded();

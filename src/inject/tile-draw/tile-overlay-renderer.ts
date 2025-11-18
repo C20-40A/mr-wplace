@@ -1,5 +1,5 @@
 import { TILE_DRAW_CONSTANTS, TileCoords } from "./constants";
-import { llzToTilePixel } from "../../utils/coordinate";
+import { latLngToTilePixel } from "../../utils/coordinate";
 import type { TileDrawInstance, ColorStats, EnhancedMode } from "./types";
 import {
   getAuxiliaryColor,
@@ -562,7 +562,7 @@ export const getOverlayPixelColor = async (
   lat: number,
   lng: number
 ): Promise<{ r: number; g: number; b: number; a: number } | null> => {
-  const coords = llzToTilePixel(lat, lng);
+  const coords = latLngToTilePixel(lat, lng);
   const coordPrefix = `${coords.TLX.toString().padStart(
     4,
     "0"
