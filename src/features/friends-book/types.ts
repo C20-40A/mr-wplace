@@ -12,5 +12,4 @@ export interface Friend {
   picture?: string; // アイコン画像 base64 (optional)
   memo?: string; // 自由メモ
   tag?: Tag; // タグ
-  addedDate: number; // unixtime
 }

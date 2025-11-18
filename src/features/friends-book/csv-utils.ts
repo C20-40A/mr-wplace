@@ -51,7 +51,7 @@ const parseCsvLine = (line: string): string[] => {
  */
 export const friendsToCSV = (friends: Friend[]): string => {
   const header =
-    "id,name,equippedFlag,allianceId,allianceName,memo,tagColor,tagName,addedDate";
+    "id,name,equippedFlag,allianceId,allianceName,memo,tagColor,tagName";
   const rows = friends.map((friend) => {
     return [
       escapeCsv(friend.id),
@@ -62,7 +62,6 @@ export const friendsToCSV = (friends: Friend[]): string => {
       escapeCsv(friend.memo),
       escapeCsv(friend.tag?.color),
       escapeCsv(friend.tag?.name),
-      escapeCsv(friend.addedDate),
     ].join(",");
   });
 
@@ -79,12 +78,15 @@ export const csvToFriends = (csv: string): Friend[] => {
   const header = lines[0];
   const dataLines = lines.slice(1);
 
-  // ヘッダー検証
-  const expectedHeader =
-    "id,name,equippedFlag,allianceId,allianceName,memo,tagColor,tagName,addedDate";
-  if (header !== expectedHeader) {
+  // ヘッダー検証（後方互換性のため新旧両方を許容）
+  const newHeader =
+    "id,name,equippedFlag,allianceId,allianceName,memo,tagColor,tagName";
+  const oldHeader = newHeader + ",addedDate";
+  const hasAddedDate = header === oldHeader;
+
+  if (header !== newHeader && header !== oldHeader) {
     throw new Error(
-      "Invalid CSV format. Expected header: " + expectedHeader
+      "Invalid CSV format. Expected header: " + newHeader + " or " + oldHeader
     );
   }
 
@@ -105,9 +107,9 @@ export const csvToFriends = (csv: string): Friend[] => {
       const memo = fields[5] || undefined;
       const tagColor = fields[6] || undefined;
       const tagName = fields[7] || undefined;
-      const addedDate = parseInt(fields[8], 10);
+      // fields[8] (addedDate) は無視
 
-      if (isNaN(id) || !name || isNaN(equippedFlag) || isNaN(addedDate)) {
+      if (isNaN(id) || !name || isNaN(equippedFlag)) {
         console.warn(`🧑‍🎨 : Skipping invalid CSV line ${i + 2}: ${line}`);
         continue;
       }
@@ -125,7 +127,6 @@ export const csvToFriends = (csv: string): Friend[] => {
         allianceName,
         memo,
         tag,
-        addedDate,
       });
     } catch (error) {
       console.warn(

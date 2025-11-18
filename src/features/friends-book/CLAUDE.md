@@ -74,10 +74,9 @@ interface Friend {
   equippedFlag: number;    // 装備フラグ
   allianceId?: number;     // 同盟ID (optional)
   allianceName?: string;   // 同盟名 (optional)
-  iconUrl?: string;        // アイコン画像URL (optional, 未実装)
+  picture?: string;        // アイコン画像 base64 (optional)
   memo?: string;           // 自由メモ
   tag?: Tag;               // タグ
-  addedDate: number;       // 追加日時 (unixtime)
 }
 ```
 
@@ -146,12 +145,11 @@ interface Tag {
 - クリックでON/OFFトグル
 
 #### 友人カード
-- アバター（名前の頭文字）
+- アバター（ユーザーIDベースの生成アイコン）
 - ユーザー名、ID
 - 同盟名（あれば）
 - メモ（あれば）
 - タグバッジ（あれば）
-- 追加日時
 - 編集・削除ボタン
 
 ## Storage 操作
@@ -229,10 +227,10 @@ window.addEventListener("message", (event) => {
 
 同じ色と名前の組み合わせは同一タグとして扱われる。
 
-### 4. unixtime の使用
+### 4. 追加順の管理
 
-`addedDate` は `Date.now()` で保存。
-表示時は `new Date(friend.addedDate).toLocaleDateString()` で変換。
+配列の順序 = 追加順。新しく追加された友人は配列の末尾に追加される。
+ソート「追加順」では配列を逆順 (`.reverse()`) にして新しい友人を上に表示。
 
 ## デバッグ
 
@@ -265,6 +263,14 @@ window.mrWplaceTempPaintedByUser // undefined (使用していない)
 - ✅ 友人との遭遇履歴
 - ✅ Import/Export 機能（bookmark と同様）
 - ✅ 検索機能
+
+## 変更履歴
+
+### 2025-11-19: `addedDate` フィールドを削除
+
+- 内部的に `addedDate` フィールドを削除し、配列順で追加順を管理
+- CSV import/export は後方互換性を保持（古いCSVも読み込み可能）
+- localstorageに残っている古いデータも問題なく動作
 
 ## 完成日
 
