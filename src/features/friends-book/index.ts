@@ -325,6 +325,12 @@ const setupModal = (): void => {
       render();
     });
 
+  // 友人追加ボタン
+  modal.querySelector("#friends-add-btn")?.addEventListener("click", async () => {
+    await showAddFriendDialog();
+    render();
+  });
+
   // Import/Export ボタン
   modal
     .querySelector("#friends-import-export-btn")
