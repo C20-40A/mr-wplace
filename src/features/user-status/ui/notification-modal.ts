@@ -359,7 +359,7 @@ export class NotificationModal {
     }
 
     return `
-      <div style="background-color: #f3f4f6; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #d1d5db;">
+      <div style="padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #d1d5db;">
         <div style="font-size: 13px; font-weight: 500;">${t`${"no_alarm_set"}`}</div>
       </div>
     `;
