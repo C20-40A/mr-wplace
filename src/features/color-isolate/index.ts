@@ -29,7 +29,11 @@ export class ColorIsolate {
       if (!paintModal && this.enabled) {
         // モーダルが閉じた場合、監視を一時停止
         this.pauseMonitoring();
-      } else if (paintModal && this.enabled && this.storageCheckInterval === null) {
+      } else if (
+        paintModal &&
+        this.enabled &&
+        this.storageCheckInterval === null
+      ) {
         // モーダルが開いた場合、監視を再開
         this.resumeMonitoring();
       }
@@ -43,9 +47,13 @@ export class ColorIsolate {
 
   private findPaintModal(): Element | null {
     // Paint pixelヘッダーを探す
-    const headers = Array.from(document.querySelectorAll('h2'));
-    const paintHeader = headers.find(h2 => h2.textContent?.includes('Paint pixel'));
-    return paintHeader ? paintHeader.closest('.rounded-t-box, .modal-box, [role="dialog"]') : null;
+    const headers = Array.from(document.querySelectorAll("h2"));
+    const paintHeader = headers.find((h2) =>
+      h2.textContent?.includes("Paint pixel")
+    );
+    return paintHeader
+      ? paintHeader.closest('.rounded-t-box, .modal-box, [role="dialog"]')
+      : null;
   }
 
   private pauseMonitoring(): void {
@@ -71,7 +79,7 @@ export class ColorIsolate {
         createElement: (container) => {
           const tooltip = document.createElement("div");
           tooltip.className = "tooltip";
-          tooltip.setAttribute("data-tip", t`show_selected_color_only`);
+          tooltip.setAttribute("data-tip", t`${"show_selected_color_only"}`);
 
           this.button = createColorIsolateButton(this.enabled);
           this.button.id = "color-isolate-btn";
@@ -103,10 +111,15 @@ export class ColorIsolate {
     // 100msごとにlocalStorageをチェック
     this.storageCheckInterval = window.setInterval(() => {
       const selectedColorStr = window.localStorage.getItem("selected-color");
-      const currentColorId = selectedColorStr ? parseInt(selectedColorStr) : null;
+      const currentColorId = selectedColorStr
+        ? parseInt(selectedColorStr)
+        : null;
 
       // 前回と異なる色が選択された場合のみ更新
-      if (currentColorId !== null && currentColorId !== this.lastSelectedColorId) {
+      if (
+        currentColorId !== null &&
+        currentColorId !== this.lastSelectedColorId
+      ) {
         this.lastSelectedColorId = currentColorId;
         this.updateIsolatedColor(currentColorId);
       }
@@ -154,13 +167,18 @@ export class ColorIsolate {
       this.originalSelectedColors = colorFilterManager.getSelectedColors();
 
       const selectedColorStr = window.localStorage.getItem("selected-color");
-      const selectedColorId = selectedColorStr ? parseInt(selectedColorStr) : null;
+      const selectedColorId = selectedColorStr
+        ? parseInt(selectedColorStr)
+        : null;
 
       if (selectedColorId !== null) {
         this.lastSelectedColorId = selectedColorId;
         await colorFilterManager.setSelectedColors([selectedColorId]);
         sendColorFilterToInject(colorFilterManager);
-        console.log("🧑‍🎨 : Color isolate enabled for color ID:", selectedColorId);
+        console.log(
+          "🧑‍🎨 : Color isolate enabled for color ID:",
+          selectedColorId
+        );
 
         // localStorage監視を開始
         this.startMonitoring();
