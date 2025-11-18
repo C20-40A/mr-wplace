@@ -91,7 +91,6 @@ function showThreeChoiceDialog(
     const dialogOverlay = document.createElement("div");
     dialogOverlay.id = "wps-dialog-overlay";
     dialogOverlay.style.cssText = `
-      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
@@ -101,17 +100,16 @@ function showThreeChoiceDialog(
       justify-content: center;
       z-index: 1000;
     `;
-    dialogOverlay.style.backgroundColor = "var(--color-base-200)";
 
     dialogOverlay.innerHTML = `
-      <div style="padding: 2rem; border-radius: 0.5rem; text-align: center; max-width: 90%; background-color: var(--color-base-200);">
-        <p style="font-weight: bold; margin-bottom: 1rem;">${t`${"large_image_resize_confirm"}`}</p>
-        <p style="font-size: 0.875rem; margin-bottom: 0.5rem;">${t`${"current_size"}`}: ${width} x ${height}px</p>
-        <p style="font-size: 0.875rem; margin-bottom: 2rem;">${t`${"resize_to"}`}: ${maxSize}px</p>
-        <div style="display: flex; flex-direction: column; gap: 0.5rem; max-width: 300px; margin: 0 auto;">
-          <button id="wps-dialog-resize" class="btn btn-primary">${t`${"resize_image"}`}</button>
-          <button id="wps-dialog-edit" class="btn">${t`${"edit_image"}`}</button>
-          <button id="wps-dialog-add" class="btn btn-ghost" style="font-size: 0.75rem;">${t`${"add_to_gallery_directly"}`}</button>
+      <div style="padding: 3rem 2rem; border-radius: 0.5rem; text-align: center; max-width: 90%; min-height: 50vh; display: flex; flex-direction: column; justify-content: center;">
+        <p style="font-weight: bold; margin-bottom: 1.5rem; font-size: 1.125rem;">${t`${"large_image_resize_confirm"}`}</p>
+        <p style="font-size: 0.875rem; margin-bottom: 0.75rem;">${t`${"current_size"}`}: ${width} x ${height}px</p>
+        <p style="font-size: 0.875rem; margin-bottom: 3rem;">${t`${"resize_to"}`}: ${maxSize}px</p>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; max-width: 300px; margin: 0 auto;">
+          <button id="wps-dialog-resize" class="btn btn-primary" style="min-height: 3rem;">${t`${"resize_image"}`}</button>
+          <button id="wps-dialog-edit" class="btn" style="min-height: 3rem;">${t`${"edit_image"}`}</button>
+          <button id="wps-dialog-add" class="btn btn-ghost" style="font-size: 0.75rem; min-height: 2.5rem;">${t`${"add_to_gallery_directly"}`}</button>
         </div>
       </div>
     `;
