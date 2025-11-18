@@ -362,4 +362,7 @@ export const enTranslations = {
   import_merge_confirm:
     "friends to import?\nWill merge with existing data (same ID will be overwritten).",
   import_merge_description: "Existing data will be retained.",
+  import_friends_description: "Import player list from CSV file",
+  export_all_friends_description: "Export all friends as CSV file",
+  export_friends_by_tag_description: "Export only friends with selected tags as CSV",
 };

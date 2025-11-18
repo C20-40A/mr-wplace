@@ -734,7 +734,7 @@ export const showImportExportDialog = async (
                         b.tag.color === tag.color &&
                         (b.tag.name || "") === (tag.name || "")
                     ).length;
-                    return `
+                    return t`
                       <label class="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-base-200" style="margin-bottom: 0.25rem;">
                         <input type="checkbox" class="checkbox checkbox-sm wps-tag-checkbox" data-color="${
                           tag.color

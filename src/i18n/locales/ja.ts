@@ -142,7 +142,8 @@ export const jaTranslations = {
   click_image_to_draw: "地図に描画したい画像をクリックしてください",
   no_draw_images: "描画用の画像がありません。",
   no_saved_images: "保存された画像がありません",
-  empty_gallery_message: "マップに画像を表示するには、まず画像を追加してください",
+  empty_gallery_message:
+    "マップに画像を表示するには、まず画像を追加してください",
   add_first_image: "最初の画像を追加",
   unplaced_images: "未配置画像",
   layers: "レイヤー",
@@ -358,9 +359,12 @@ export const jaTranslations = {
   tag_name_placeholder: "例: 友達、ライバル、etc...",
   select_color: "色を選択",
   create: "作成",
-  no_friends: "友人が登録されていません",
+  no_friends: "友人がいません",
   sort_added: "追加順",
   import_merge_confirm:
     "件の友人をインポートしますか？\n既存のデータと統合されます（同じIDは上書き）。",
   import_merge_description: "既存のデータは保持されます。",
+  import_friends_description: "CSVファイルからプレイヤーリストをインポート",
+  export_all_friends_description: "全ての友人をCSVファイルでエクスポート",
+  export_friends_by_tag_description: "選択したタグの友人のみCSVでエクスポート",
 };
