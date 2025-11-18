@@ -723,8 +723,8 @@ export const showImportExportDialog = async (
         <p style="font-size: 0.875rem; color: oklch(var(--bc) / 0.6); margin-bottom: 0.75rem;">${`${"export_by_tag_description"}`}</p>
         ${
           existingTags.length === 0
-            ? `<p style="text-align: center; color: oklch(var(--bc) / 0.4); padding: 1rem;">${`${"no_tags_available"}`}</p>`
-            : `
+            ? t`<p style="text-align: center; color: oklch(var(--bc) / 0.4); padding: 1rem;">${`${"no_tags_available"}`}</p>`
+            : t`
               <div id="wps-export-tag-list" style="max-height: 200px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; margin-bottom: 0.75rem;">
                 ${existingTags
                   .map((tag) => {

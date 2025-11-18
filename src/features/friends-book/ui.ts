@@ -19,7 +19,7 @@ const TAG_COLORS = [
 /**
  * 友人追加ダイアログを表示
  */
-export const showAddFriendDialog = async (userData: {
+export const showAddFriendDialog = async (userData?: {
   id: number;
   name: string;
   equippedFlag: number;
@@ -29,8 +29,13 @@ export const showAddFriendDialog = async (userData: {
 }): Promise<void> => {
   return new Promise((resolve) => {
     // 既に友人リストに存在するかチェック
-    FriendsBookStorage.getFriendById(userData.id).then((existingFriend) => {
+    const checkPromise = userData
+      ? FriendsBookStorage.getFriendById(userData.id)
+      : Promise.resolve(null);
+
+    checkPromise.then((existingFriend) => {
       const isExisting = !!existingFriend;
+      const isNewMode = !userData; // 新規追加モード
 
       const modal = document.createElement("dialog");
       modal.className = "modal";
@@ -40,7 +45,38 @@ export const showAddFriendDialog = async (userData: {
             ${isExisting ? `edit_friend` : `add_friend`}
           </h3>
 
-          <!-- ユーザー情報表示 -->
+          <!-- ID/名前入力 (新規追加モードまたは編集モード) -->
+          ${
+            isNewMode || isExisting
+              ? t`
+          <div class="mb-3">
+            <label class="label py-1">
+              <span class="label-text text-xs">${"user_id"}</span>
+            </label>
+            <input
+              id="friend-id-input"
+              type="number"
+              class="input input-bordered input-sm w-full text-xs"
+              placeholder="${"user_id_placeholder"}"
+              value="${userData?.id || ""}"
+              ${!isNewMode ? "" : ""}
+            />
+          </div>
+          <div class="mb-3">
+            <label class="label py-1">
+              <span class="label-text text-xs">${"user_name"}</span>
+            </label>
+            <input
+              id="friend-name-input"
+              type="text"
+              class="input input-bordered input-sm w-full text-xs"
+              placeholder="${"user_name_placeholder"}"
+              value="${userData?.name || ""}"
+            />
+          </div>
+          `
+              : t`
+          <!-- ユーザー情報表示 (新規追加ではない場合) -->
           <div class="bg-base-200 rounded-lg p-2 mb-3">
             <div class="flex items-center gap-2">
               <span class="font-medium text-red-500 text-sm">${
@@ -54,6 +90,8 @@ export const showAddFriendDialog = async (userData: {
                 : ""
             }
           </div>
+          `
+          }
 
           <!-- タグ選択エリア -->
           <div class="mb-3">
@@ -91,6 +129,12 @@ export const showAddFriendDialog = async (userData: {
 
       document.body.appendChild(modal);
 
+      const idInput = modal.querySelector(
+        "#friend-id-input"
+      ) as HTMLInputElement | null;
+      const nameInput = modal.querySelector(
+        "#friend-name-input"
+      ) as HTMLInputElement | null;
       const memoInput = modal.querySelector(
         "#friend-memo-input"
       ) as HTMLInputElement;
@@ -192,15 +236,29 @@ export const showAddFriendDialog = async (userData: {
         if (resolved) return;
         resolved = true;
 
+        // ID/名前の取得（入力フィールドがある場合はそちらを優先）
+        const friendId = idInput
+          ? parseInt(idInput.value.trim())
+          : userData?.id || 0;
+        const friendName = nameInput
+          ? nameInput.value.trim()
+          : userData?.name || "";
+
+        if (!friendId || !friendName) {
+          alert(t`please_enter_id_and_name`);
+          resolved = false;
+          return;
+        }
+
         const memo = memoInput.value.trim();
 
         const friend: Friend = {
-          id: userData.id,
-          name: userData.name,
-          equippedFlag: userData.equippedFlag,
-          allianceId: userData.allianceId,
-          allianceName: userData.allianceName,
-          picture: userData.picture,
+          id: friendId,
+          name: friendName,
+          equippedFlag: userData?.equippedFlag || 0,
+          allianceId: userData?.allianceId,
+          allianceName: userData?.allianceName,
+          picture: userData?.picture,
           memo: memo || undefined,
           tag: selectedTag,
           addedDate: existingFriend?.addedDate || Date.now(),
@@ -383,6 +441,12 @@ export const createFriendsBookModal = (): ModalElements => {
     <div id="friends-list-screen" style="display: flex; flex-direction: column; height: 100%;">
       <!-- Fixed Header: Sort & Filters -->
       <div class="flex gap-2" style="flex-wrap: wrap; margin-bottom: 0.7rem; flex-shrink: 0;">
+        <button id="friends-add-btn" class="btn btn-primary btn-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
+            <path d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80Zm-360-80q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm80-80h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T440-640q0-33-23.5-56.5T360-720q-33 0-56.5 23.5T280-640q0 33 23.5 56.5T360-560Zm0-80Zm0 400Z"/>
+          </svg>
+          ${"add_friend"}
+        </button>
         <button id="friends-import-export-btn" class="btn btn-outline btn-sm">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
             <path d="M440-367v-465l-64 64-56-57 160-160 160 160-56 57-64-64v465h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
@@ -662,8 +726,8 @@ export const showImportExportDialog = async (
         <p style="font-size: 0.875rem; color: oklch(var(--bc) / 0.6); margin-bottom: 0.75rem;">${`export_friends_by_tag_description`}</p>
         ${
           existingTags.length === 0
-            ? `<p style="text-align: center; color: oklch(var(--bc) / 0.4); padding: 1rem;">${`no_tags_available`}</p>`
-            : `
+            ? t`<p style="text-align: center; color: oklch(var(--bc) / 0.4); padding: 1rem;">${`no_tags_available`}</p>`
+            : t`
               <div id="friends-export-tag-list" style="max-height: 200px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; margin-bottom: 0.75rem;">
                 ${existingTags
                   .map((tag) => {
