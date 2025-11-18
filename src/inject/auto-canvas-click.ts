@@ -8,14 +8,24 @@ let rafId: number | null = null;
 let sourceCanvas: HTMLCanvasElement | null = null;
 let dumpCanvas: HTMLCanvasElement | null = null;
 let dumpCtx: CanvasRenderingContext2D | null = null;
+let isSpacePressed = false; // スペースキーの押下状態を追跡
 
 // ターゲットカラーリスト
 // MapLibre GLの描画は常にRGBA形式 (R, G, B, Alpha)
-const TARGET_COLORS: [number, number, number, number][] = [
+
+// keydownトリガー用（255,0,0,255を含まない）
+const TRIGGER_COLORS: [number, number, number, number][] = [
   [235, 82, 82, 255], // rgb(235, 82, 82)
   [254, 101, 101, 255], // rgb(254, 101, 101)
   [153, 0, 0, 255], // rgb(153, 0, 0)
-  // [255, 0, 0, 255] は安定しないためコメントアウト
+];
+
+// keydown継続用（255,0,0,255を含む）
+const CONTINUE_COLORS: [number, number, number, number][] = [
+  [235, 82, 82, 255], // rgb(235, 82, 82)
+  [254, 101, 101, 255], // rgb(254, 101, 101)
+  [153, 0, 0, 255], // rgb(153, 0, 0)
+  [255, 0, 0, 255], // rgb(255, 0, 0) - 継続時のみ判定
 ];
 
 const initCanvases = (): boolean => {
@@ -70,36 +80,49 @@ const handleMouseMove = (e: MouseEvent): void => {
 
   const d = dumpCtx.getImageData(x_draw, y_draw, 1, 1).data;
 
-  const isTargetColor = TARGET_COLORS.some(
-    (target) =>
-      d[0] === target[0] && d[1] === target[1] && d[2] === target[2] && d[3] === target[3]
-  );
+  // スペースが押されていない状態 → トリガー色のみチェック
+  if (!isSpacePressed) {
+    const isTriggerColor = TRIGGER_COLORS.some(
+      (target) =>
+        d[0] === target[0] && d[1] === target[1] && d[2] === target[2] && d[3] === target[3]
+    );
 
-  if (!isTargetColor) return;
+    if (isTriggerColor) {
+      const keyDownEvent = new KeyboardEvent("keydown", {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        key: " ",
+        code: "Space",
+        keyCode: 32,
+      });
+      sourceCanvas.dispatchEvent(keyDownEvent);
+      isSpacePressed = true;
+      console.log("🧑‍🎨 : Trigger color detected, Space key pressed");
+    }
+  } else {
+    // スペースが押されている状態 → 継続色（255,0,0,255を含む）でチェック
+    const isContinueColor = CONTINUE_COLORS.some(
+      (target) =>
+        d[0] === target[0] && d[1] === target[1] && d[2] === target[2] && d[3] === target[3]
+    );
 
-  // 自動でSpaceキー押下をシミュレート
-  const keyDownEvent = new KeyboardEvent("keydown", {
-    bubbles: true,
-    cancelable: true,
-    view: window,
-    key: " ",
-    code: "Space",
-    keyCode: 32,
-  });
-
-  const keyUpEvent = new KeyboardEvent("keyup", {
-    bubbles: true,
-    cancelable: true,
-    view: window,
-    key: " ",
-    code: "Space",
-    keyCode: 32,
-  });
-
-  console.log("🧑‍🎨 : Target color detected, simulating Space keypress");
-
-  sourceCanvas.dispatchEvent(keyDownEvent);
-  sourceCanvas.dispatchEvent(keyUpEvent);
+    if (!isContinueColor) {
+      // 継続色でなくなったら → スペースを離す
+      const keyUpEvent = new KeyboardEvent("keyup", {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        key: " ",
+        code: "Space",
+        keyCode: 32,
+      });
+      sourceCanvas.dispatchEvent(keyUpEvent);
+      isSpacePressed = false;
+      console.log("🧑‍🎨 : Non-continue color detected, Space key released");
+    }
+    // 継続色なら何もしない（押したまま維持）
+  }
 };
 
 export const startAutoCanvasClick = (): void => {
@@ -137,6 +160,21 @@ export const stopAutoCanvasClick = (): void => {
   // Remove mouse move listener
   if (sourceCanvas) {
     sourceCanvas.removeEventListener("mousemove", handleMouseMove);
+  }
+
+  // スペースが押されたままなら離す
+  if (isSpacePressed && sourceCanvas) {
+    const keyUpEvent = new KeyboardEvent("keyup", {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      key: " ",
+      code: "Space",
+      keyCode: 32,
+    });
+    sourceCanvas.dispatchEvent(keyUpEvent);
+    isSpacePressed = false;
+    console.log("🧑‍🎨 : Space key released on stop");
   }
 };
 
