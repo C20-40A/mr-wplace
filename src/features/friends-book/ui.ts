@@ -456,9 +456,9 @@ export const renderFriends = (
   });
 
   if (sortedFriends.length === 0) {
-    grid.innerHTML = `
+    grid.innerHTML = t`
       <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #999;">
-        <p>${t`no_friends`}</p>
+        <p>${`no_friends`}</p>
       </div>
     `;
     return;
@@ -635,7 +635,7 @@ export const showImportExportDialog = async (
       <!-- Import Section -->
       <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid oklch(var(--bc) / 0.2); border-radius: 8px;">
         <h4 style="font-weight: 600; margin-bottom: 0.5rem;">${`import`}</h4>
-        <p style="font-size: 0.875rem; color: oklch(var(--bc) / 0.6); margin-bottom: 0.75rem;">${`import_description`}</p>
+        <p style="font-size: 0.875rem; color: oklch(var(--bc) / 0.6); margin-bottom: 0.75rem;">${`import_friends_description`}</p>
         <button id="friends-dialog-import-btn" class="btn btn-primary btn-sm w-full">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
             <path d="M260-160q-91 0-155.5-63T40-377q0-78 47-139t123-78q25-92 100-149t170-57q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 75-52.5 127.5T740-160H520q-33 0-56.5-23.5T440-240v-206l-64 62-56-56 160-160 160 160-56 56-64-62v206h220q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-83 0-141.5 58.5T280-520h-20q-58 0-99 41t-41 99q0 58 41 99t99 41h100v80H260Z"/>
@@ -647,7 +647,7 @@ export const showImportExportDialog = async (
       <!-- Export Section -->
       <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid oklch(var(--bc) / 0.2); border-radius: 8px;">
         <h4 style="font-weight: 600; margin-bottom: 0.5rem;">${`export`}</h4>
-        <p style="font-size: 0.875rem; color: oklch(var(--bc) / 0.6); margin-bottom: 0.75rem;">${`export_all_description`}</p>
+        <p style="font-size: 0.875rem; color: oklch(var(--bc) / 0.6); margin-bottom: 0.75rem;">${`export_all_friends_description`}</p>
         <button id="friends-dialog-export-all-btn" class="btn btn-primary btn-sm w-full">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
             <path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
@@ -659,7 +659,7 @@ export const showImportExportDialog = async (
       <!-- Export by Tag Section -->
       <div style="padding: 1rem; border: 1px solid oklch(var(--bc) / 0.2); border-radius: 8px;">
         <h4 style="font-weight: 600; margin-bottom: 0.5rem;">${`export_by_tag`}</h4>
-        <p style="font-size: 0.875rem; color: oklch(var(--bc) / 0.6); margin-bottom: 0.75rem;">${`export_by_tag_description`}</p>
+        <p style="font-size: 0.875rem; color: oklch(var(--bc) / 0.6); margin-bottom: 0.75rem;">${`export_friends_by_tag_description`}</p>
         ${
           existingTags.length === 0
             ? `<p style="text-align: center; color: oklch(var(--bc) / 0.4); padding: 1rem;">${`no_tags_available`}</p>`
