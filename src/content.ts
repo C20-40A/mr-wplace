@@ -442,6 +442,7 @@ export const sendTileBoundariesToInject = async () => {
     // Send initial data to inject side (in parallel)
     await Promise.all([
       sendGalleryImagesToInject(),
+      sendSnapshotsToInject(),
       sendComputeDeviceToInject(),
       sendTileBoundariesToInject(),
       sendCacheSizeToInject(),
