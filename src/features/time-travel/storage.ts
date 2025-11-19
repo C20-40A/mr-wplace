@@ -4,7 +4,7 @@ import { sendSnapshotsToInject } from "@/utils/inject-bridge";
 // タイルスナップショットの visible 状態を localStorage に保存するかどうか
 // true: 保存する（リロード後も描画状態を維持）
 // false: 保存しない（リロード後は全て非表示）
-const PERSIST_DRAW_STATE = false;
+const PERSIST_DRAW_STATE = true;
 
 export interface TileSnapshotInfo {
   tileX: number;
@@ -37,9 +37,6 @@ export interface SnapshotDrawState {
 export class TimeTravelStorage {
   private static readonly INDEX_KEY = "tile_snapshots_index";
   private static readonly DRAW_STATES_KEY = "timetravel_draw_states";
-
-  // セッション内のみ保持する描画状態（PERSIST_DRAW_STATE = false の場合）
-  private static sessionDrawStates: SnapshotDrawState[] = [];
 
   // 全スナップショット保有タイル一覧取得（インデックス最適化版）
   static async getAllTilesWithSnapshots(): Promise<TileSnapshotInfo[]> {
@@ -223,26 +220,11 @@ export class TimeTravelStorage {
 
   // 描画状態管理
   static async getDrawStates(): Promise<SnapshotDrawState[]> {
-    if (!PERSIST_DRAW_STATE) {
-      // 永続化しないが、セッション内では状態を保持
-      return this.sessionDrawStates;
-    }
     const result = await storage.get([this.DRAW_STATES_KEY]);
     return result[this.DRAW_STATES_KEY] || [];
   }
 
   static async setDrawState(drawState: SnapshotDrawState): Promise<void> {
-    if (!PERSIST_DRAW_STATE) {
-      // メモリのみに保存
-      const index = this.sessionDrawStates.findIndex((s) => s.fullKey === drawState.fullKey);
-      if (index >= 0) {
-        this.sessionDrawStates[index] = drawState;
-      } else {
-        this.sessionDrawStates.push(drawState);
-      }
-      return;
-    }
-
     const states = await this.getDrawStates();
     const index = states.findIndex((s) => s.fullKey === drawState.fullKey);
 
@@ -274,30 +256,10 @@ export class TimeTravelStorage {
     if (!state) return false;
 
     state.drawEnabled = !state.drawEnabled;
-
-    if (!PERSIST_DRAW_STATE) {
-      // メモリのみ更新（既に参照が書き換わっているので何もしない）
-      return state.drawEnabled;
-    }
-
     await storage.set({ [this.DRAW_STATES_KEY]: states });
     return state.drawEnabled;
   }
 
-  static async restoreDrawStates(): Promise<void> {
-    if (!PERSIST_DRAW_STATE) {
-      // 永続化しない場合、セッション状態（初期は空）を inject に送信
-      console.log("🧑‍🎨 : Syncing TimeTravel session states (no persistence)");
-      await sendSnapshotsToInject();
-      return;
-    }
-
-    console.log("🧑‍🎨 : Restoring TimeTravel draw states");
-    const tileOverlay = window.mrWplace?.tileOverlay;
-
-    // Restore all enabled snapshots - inject side will handle rendering
-    await sendSnapshotsToInject();
-  }
 
   static async isSnapshotDrawing(fullKey: string): Promise<boolean> {
     const states = await this.getDrawStates();
