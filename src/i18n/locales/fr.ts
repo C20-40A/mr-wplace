@@ -351,6 +351,7 @@ export const frTranslations = {
   create: "Créer",
   no_friends: "Aucun ami",
   sort_added: "Date d'ajout",
+  sort_id: "ID",
   import_merge_confirm:
     "amis à importer ?\nSera fusionné avec les données existantes (le même ID sera écrasé).",
   import_merge_description: "Les données existantes seront conservées.",
