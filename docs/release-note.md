@@ -5,6 +5,10 @@
 ```
 - 【PC】 [Chrome ウェブストア](<https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej>)または[Edge アドオン](<https://microsoftedge.microsoft.com/addons/detail/mr-wplace/acdodonamhbokadiikkfnnliplijigip>)または[Firefoxアドオン](<https://addons.mozilla.org/ja/firefox/addon/mr-wplace>)からワンクリックでインストール
 - 【iOS】 [Orion Browser by Kagi](<https://apps.apple.com/jp/app/orion-browser-by-kagi/id1484498200>) をインストール → 設定>詳細設定>「Chrome 拡張機能と Firefox 拡張機能」を ON → [Chrome ウェブストア](<https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej>)からインストール
+- 【Android】 EdgeCanary アプリをインストールして、[Edge アドオン](https://microsoftedge.microsoft.com/addons/detail/mr-wplace/acdodonamhbokadiikkfnnliplijigip)にアクセスすると自動インストール。または、Firefox Nightly for Developers アプリをインストールして、[Firefox アドオン](https://addons.mozilla.org/ja/firefox/addon/mr-wplace)からワンクリックでインストール
+```
+
+```
 - 【Android】 EdgeCanary アプリをインストール → 開発者モードにする(設定>「MicrosoftEdge について」> 1 番下のバージョンの数字を５回ぐらいタップ) → 戻って「開発者向けオプション」→「Extension install by id」→`acdodonamhbokadiikkfnnliplijigip` を入力
 ```
 
