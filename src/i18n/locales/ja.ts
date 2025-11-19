@@ -50,7 +50,6 @@ export const jaTranslations = {
   loading: "読み込み中...",
   no_items: "アイテムがありません",
   delete_confirm: "本当に削除しますか？",
-  saved_message: "を保存しました",
   deleted_message: "削除しました",
 
   // ブックマーク

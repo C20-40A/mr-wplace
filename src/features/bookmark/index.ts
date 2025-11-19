@@ -97,7 +97,6 @@ const addBookmark = async (): Promise<void> => {
     zoom: position.zoom || 14,
     date: formatDateShort(new Date()),
   });
-  Toast.success(t`"${name}" ${"saved_message"}`);
 };
 
 const openModal = (): void => {
@@ -295,7 +294,6 @@ const setupModal = (): void => {
           // onSave callback
           async (oldTag, newTag) => {
             await BookmarkStorage.updateTag(oldTag, newTag);
-            Toast.success(t`${"saved_message"}`);
 
             // Refresh the edit screen if it's open
             const editScreen = document.getElementById(
@@ -481,7 +479,6 @@ const setupModal = (): void => {
     }
 
     await BookmarkStorage.updateBookmark(bookmark);
-    Toast.success(t`${"saved_message"}`);
 
     const { hideEditScreen } = await import("./ui");
     hideEditScreen();

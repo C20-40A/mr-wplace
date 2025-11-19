@@ -1,5 +1,7 @@
 # メイン
 
+- 紹介文更新 - 友人帳やら未描画のみのひょうじやら
+- paint modal に filter や描画モードの switch あってもいい
 - bookmarks も ONLINE 同期
 - bookmarks や tiles は mobile だとスクロールできない
 - ギャラリーからも、画像描画できると初心者に親切

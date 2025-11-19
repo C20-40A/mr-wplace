@@ -77,7 +77,6 @@ const createAddToFriendsButton = async (container: Element): Promise<void> => {
     }
 
     await showAddFriendDialog(lastPaintedByUser);
-    Toast.success(t`saved_message`);
   });
 
   // ボタンを "..." ボタンの前に挿入
