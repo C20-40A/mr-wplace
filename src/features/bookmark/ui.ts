@@ -80,7 +80,7 @@ export const createBookmarkModal = (): ModalElements => {
       </div>
 
       <!-- Scrollable Content: Bookmarks Grid -->
-      <div style="flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0;">
+      <div style="flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; min-height: 0;">
         <div id="wps-favorites-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2">
         </div>
       </div>
