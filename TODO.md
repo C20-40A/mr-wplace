@@ -1,5 +1,9 @@
 # メイン
 
+- Paint pixel は非表示
+- friends 取り込みが、「件のお気に入りを...」になっている。また、上書き取り込みのリロード不要だ。
+- equippedFlag がないと取り込めない？　 allianceId とか allianceName は不要なようだが
+- auto canvas click は selected color も keydown 対象にする
 - 紹介文更新 - 友人帳やら未描画のみのひょうじやら
 - paint modal に filter や描画モードの switch あってもいい
 - bookmarks も ONLINE 同期
@@ -48,6 +52,7 @@
 # マイナー
 
 - 画像編集画面のタイトル
+- 色境界のみディザリング
 - タイルをまとめて export -> 処理落ちする
 - カラーフィルター全部 off のとき何か表示したほうが新設
 - 画像の事前カウント

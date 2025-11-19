@@ -56,13 +56,19 @@ export const sendGalleryImagesToInject = async () => {
       perTileColorStats: img.perTileColorStats,
     }));
 
-  window.postMessage(
-    {
-      source: "mr-wplace-gallery-images",
-      images: enabledImages,
-    },
-    "*"
+  const messageData = {
+    source: "mr-wplace-gallery-images",
+    images: enabledImages,
+  };
+
+  // Log data size for performance monitoring
+  const dataSize = JSON.stringify(messageData).length;
+  const dataSizeMB = (dataSize / 1024 / 1024).toFixed(2);
+  console.log(
+    `🧑‍🎨 : Sending ${enabledImages.length} gallery images to inject side (${dataSizeMB}MB)`
   );
+
+  window.postMessage(messageData, "*");
 
   console.log(
     `🧑‍🎨 : Sent ${enabledImages.length} gallery images to inject side`
@@ -272,6 +278,12 @@ export const sendTileBoundariesToInject = async () => {
 
 (async () => {
   try {
+    // Log initial memory usage (Chrome only)
+    const initialMemory = (performance as any).memory?.usedJSHeapSize;
+    if (initialMemory) {
+      console.log(`🧑‍🎨: Initial memory usage: ${(initialMemory / 1024 / 1024).toFixed(2)}MB`);
+    }
+
     console.log("🧑‍🎨: Starting initialization...");
 
     // Fetchインターセプターの注入
@@ -459,6 +471,14 @@ export const sendTileBoundariesToInject = async () => {
       tileSnapshot,
       autoSpoit,
     });
+
+    // Log final memory usage (Chrome only)
+    const finalMemory = (performance as any).memory?.usedJSHeapSize;
+    if (finalMemory && initialMemory) {
+      const memoryIncrease = finalMemory - initialMemory;
+      console.log(`🧑‍🎨: Final memory usage: ${(finalMemory / 1024 / 1024).toFixed(2)}MB`);
+      console.log(`🧑‍🎨: Memory increase: ${(memoryIncrease / 1024 / 1024).toFixed(2)}MB`);
+    }
   } catch (error) {
     console.error("🧑‍🎨: Failed to initialize", error);
     if (error instanceof Error) {

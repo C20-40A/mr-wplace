@@ -33,6 +33,7 @@ export const handleGalleryImages = async (data: {
 
   let successCount = 0;
   let failCount = 0;
+  let totalTileCount = 0;
   const imageKeys: string[] = [];
 
   for (const img of sortedImages) {
@@ -44,6 +45,15 @@ export const handleGalleryImages = async (data: {
         [img.drawPosition.TLX, img.drawPosition.TLY, img.drawPosition.PxX, img.drawPosition.PxY],
         img.key
       );
+
+      // Count tiles for this image
+      const { overlayLayers } = await import("../tile-draw");
+      const thisImageLayer = overlayLayers.find((layer) => layer.imageKey === img.key);
+      if (thisImageLayer) {
+        const tileCount = Object.keys(thisImageLayer.tiles).length;
+        totalTileCount += tileCount;
+        console.log(`🧑‍🎨 : Image ${img.key} split into ${tileCount} tiles (${bitmap.width}x${bitmap.height}px)`);
+      }
 
       // Restore stored statistics if available
       if (img.perTileColorStats) {
@@ -71,8 +81,14 @@ export const handleGalleryImages = async (data: {
   // Save current image keys for next update
   window.mrWplaceGalleryImageKeys = new Set(imageKeys);
 
-  console.log(`🧑‍🎨 : Gallery images sync complete - success: ${successCount}, failed: ${failCount}`);
+  console.log(`🧑‍🎨 : Gallery images sync complete - success: ${successCount}, failed: ${failCount}, total tiles: ${totalTileCount}`);
   console.log("🧑‍🎨 : Gallery images updated and synced to overlay layers:", data.images.length);
+
+  // Log memory usage after processing (Chrome only)
+  const memoryAfterProcessing = (performance as any).memory?.usedJSHeapSize;
+  if (memoryAfterProcessing) {
+    console.log(`🧑‍🎨 (inject): Memory after gallery processing: ${(memoryAfterProcessing / 1024 / 1024).toFixed(2)}MB`);
+  }
 };
 
 /**

@@ -223,13 +223,19 @@ export const sendSnapshotsToInject = async () => {
     })
   ).then((results) => results.filter((s): s is NonNullable<typeof s> => s !== null));
 
-  window.postMessage(
-    {
-      source: "mr-wplace-snapshots",
-      snapshots,
-    },
-    "*"
+  const messageData = {
+    source: "mr-wplace-snapshots",
+    snapshots,
+  };
+
+  // Log data size for performance monitoring
+  const dataSize = JSON.stringify(messageData).length;
+  const dataSizeMB = (dataSize / 1024 / 1024).toFixed(2);
+  console.log(
+    `🧑‍🎨 : Sending ${snapshots.length} snapshots to inject side (${dataSizeMB}MB)`
   );
+
+  window.postMessage(messageData, "*");
 
   console.log(`🧑‍🎨 : Sent ${snapshots.length} snapshots to inject side`);
 };
