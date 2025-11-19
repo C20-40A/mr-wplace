@@ -423,16 +423,10 @@ export class ColorPalette {
       const bgColor = this.showUnplacedOnly ? "var(--color-success, #22c55e)" : "var(--color-base-300, #e5e7eb)";
       const textColor = this.showUnplacedOnly ? "var(--color-primary-content, #fff)" : "var(--color-base-content, #6b7280)";
       const borderColor = this.showUnplacedOnly ? "#22c55e" : "#d1d5db";
-      const icon = this.showUnplacedOnly ? "👁️" : "👁️‍🗨️";
 
       toggleButton.style.backgroundColor = bgColor;
       toggleButton.style.color = textColor;
       toggleButton.style.borderColor = borderColor;
-
-      const iconSpan = toggleButton.querySelector("span:first-child");
-      if (iconSpan) {
-        iconSpan.textContent = icon;
-      }
     }
 
     if (this.options.onShowUnplacedOnlyChange) {
