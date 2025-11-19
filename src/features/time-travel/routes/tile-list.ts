@@ -36,7 +36,7 @@ export class TileListRoute {
           <option value="name">${t`${"sort_name"}`}</option>
         </select>
       </div>
-      <div style="overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 0.5rem; min-height: 400px;">
+      <div style="overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; padding: 0.5rem; min-height: 400px;">
         <div id="wps-tile-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2">
           <div class="text-sm text-base-content/60 text-center p-4" style="grid-column: 1 / -1;">${"loading"}</div>
         </div>

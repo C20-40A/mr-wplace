@@ -40,6 +40,7 @@ export const createCard = (config: CardConfig): string => {
         transition: all 0.25s ease;
         transform: translateY(0);
         overflow: hidden;
+        touch-action: auto;
       "
       ${
         config.onClick
