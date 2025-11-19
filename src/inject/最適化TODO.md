@@ -132,15 +132,59 @@ Android/Edge環境で起動時にアプリが強制終了する。
    - `inject/index.ts:38-41`: inject script 起動時のメモリ使用量
    - `inject/index.ts:65-71`: inject script 起動完了後のメモリ使用量と増加量
 
+**実測結果（2025-11-20）**:
+
+**ケース1: 小さな画像（35枚、ほとんど400px以下）**
+- Content script: 54.73MB → 80.66MB (**+25.93MB**)
+- Inject script: 60.74MB → 63.36MB (**+2.62MB**)
+- ギャラリー処理後: 49.12MB
+- データサイズ: 0.37MB (35枚)
+- スナップショット: 0.96MB (5個)
+- **合計タイル数: 38タイル**
+- **結論: 問題なし**
+
+**ケース2: 大きな画像含む（37枚）**
+- Content script: 121.48MB → 195.71MB (**+74.23MB**)
+- Inject script: 122.52MB → 122.52MB (**+0.00MB** ← 非同期処理中のため未完)
+- データサイズ: **2.94MB** (37枚)
+- **結論: 大きな画像を含むとメモリ消費が3倍に増加**
+
+**推定**:
+- 5000x5000px画像を10枚配置した場合、ケース2の傾向から **+200MB以上** のメモリ増加が予想される
+- Android環境のメモリ制限（256〜512MB）を超える可能性が高い
+
 **次のステップ**:
-- Chrome Developer Toolsのコンソールでログを確認
-- 実際のメモリ消費量を把握
-- ボトルネックを特定してPhase 2の最適化に進む
+- ~~Chrome Developer Toolsのコンソールでログを確認~~ ✅ 完了
+- ~~実際のメモリ消費量を把握~~ ✅ 完了
+- ボトルネックを特定してPhase 2の最適化に進む → **タイル分割の遅延実行が必須**
 
 ### Phase 2: 最適化実装（未着手）
-1. タイル分割の遅延実行（最優先）
+1. タイル分割の遅延実行（最優先） ← **実測から必須と判明**
 2. 統計データの遅延送信
 3. スナップショットの遅延ロード
+
+---
+
+## 🐛 修正済みのバグ（2025-11-20）
+
+### ✅ Text Layerの統計保存エラー
+
+**問題**:
+- text layerのタイル描画時に統計が計算され、`handleStatsComputed()` に送信される
+- しかし `GalleryStorage` には text layer が存在しないため、エラーが発生
+- 大量のエラーログが発生し、Sentryのレート制限に引っかかる
+
+**修正内容** (`src/content.ts:165-168`):
+```typescript
+// Skip text layers and snapshots (they don't need persistent stats)
+if (imageKey.startsWith("text_") || imageKey.startsWith("snapshot_")) {
+  return;
+}
+```
+
+**理由**:
+- text layerとsnapshotは統計を永続化する必要がない（一時的なオーバーレイのため）
+- gallery画像のみ統計を保存すればよい
 
 ---
 

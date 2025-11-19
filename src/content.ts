@@ -151,6 +151,8 @@ export const sendCacheSizeToInject = async () => {
 /**
  * Handle stats computation notification from inject side
  * Save computed stats to storage
+ *
+ * Note: Only saves stats for gallery images, not text layer
  */
 const handleStatsComputed = async (
   imageKey: string,
@@ -160,6 +162,9 @@ const handleStatsComputed = async (
   >
 ) => {
   try {
+    // Skip text layers
+    if (imageKey.startsWith("text_")) return;
+
     const { GalleryStorage } = await import("@/features/gallery/storage");
     const galleryStorage = new GalleryStorage();
 
@@ -281,7 +286,11 @@ export const sendTileBoundariesToInject = async () => {
     // Log initial memory usage (Chrome only)
     const initialMemory = (performance as any).memory?.usedJSHeapSize;
     if (initialMemory) {
-      console.log(`🧑‍🎨: Initial memory usage: ${(initialMemory / 1024 / 1024).toFixed(2)}MB`);
+      console.log(
+        `🧑‍🎨: Initial memory usage: ${(initialMemory / 1024 / 1024).toFixed(
+          2
+        )}MB`
+      );
     }
 
     console.log("🧑‍🎨: Starting initialization...");
@@ -476,8 +485,12 @@ export const sendTileBoundariesToInject = async () => {
     const finalMemory = (performance as any).memory?.usedJSHeapSize;
     if (finalMemory && initialMemory) {
       const memoryIncrease = finalMemory - initialMemory;
-      console.log(`🧑‍🎨: Final memory usage: ${(finalMemory / 1024 / 1024).toFixed(2)}MB`);
-      console.log(`🧑‍🎨: Memory increase: ${(memoryIncrease / 1024 / 1024).toFixed(2)}MB`);
+      console.log(
+        `🧑‍🎨: Final memory usage: ${(finalMemory / 1024 / 1024).toFixed(2)}MB`
+      );
+      console.log(
+        `🧑‍🎨: Memory increase: ${(memoryIncrease / 1024 / 1024).toFixed(2)}MB`
+      );
     }
   } catch (error) {
     console.error("🧑‍🎨: Failed to initialize", error);
