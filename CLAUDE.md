@@ -36,28 +36,18 @@ content.ts → inject script tag → inject/index.ts
   postMessage ←→ window.addEventListener("message")
 ```
 
-**Key message sources (content → inject):**
+**Key messages (content → inject):**
+- `mr-wplace-gallery-images`: Gallery images with draw positions
+- `mr-wplace-snapshots`: Time-travel snapshot overlays
+- `mr-wplace-color-filter`: Color filter state
+- `mr-wplace-theme-update`: Theme changes
+- `wplace-studio-flyto`: Position navigation
 
-- `mr-wplace-gallery-images`: Gallery images data with draw positions
-- `mr-wplace-snapshots`: Time-travel snapshot overlay data
-- `mr-wplace-compute-device`: GPU/CPU rendering preference
-- `mr-wplace-color-filter`: Color filter state and enhanced mode
-- `mr-wplace-theme-update`: Theme change notification
-- `mr-wplace-data-saver-update`: Data saver toggle
-- `wplace-studio-flyto`: Position navigation request
-- `wplace-studio-snapshot`: Tile snapshot storage (legacy)
-- `wplace-studio-pixel-click`: Pixel color detection (auto-spoit)
-
-**Key message sources (inject → content):**
-
-- `mr-wplace-request-stats`: Request aggregated color statistics
-- `mr-wplace-response-stats`: Color statistics response
-- `mr-wplace-request-pixel-color`: Request overlay pixel color at lat/lng
-- `mr-wplace-response-pixel-color`: Pixel color response
-- `mr-wplace-request-tile-stats`: Request per-tile color statistics
-- `mr-wplace-response-tile-stats`: Tile statistics response
-- `mr-wplace-me`: User data from intercepted API
-- `mr-wplace-processed`: Processed tile blob (legacy)
+**Key messages (inject → content):**
+- `mr-wplace-request-stats` / `response-stats`: Color statistics
+- `mr-wplace-request-pixel-color` / `response-pixel-color`: Overlay pixel color
+- `mr-wplace-stats-updated`: Save statistics to storage
+- `mr-wplace-me`: User data from API
 
 ### Dependency Injection (DI Container)
 
@@ -80,30 +70,20 @@ All feature APIs are typed in `src/core/di.ts` under `FeatureRegistry`.
 
 ```
 src/
-├── content.ts              # Main entry, DI registration, message listeners
-├── inject/                 # Page-context scripts (see inject/CLAUDE.md for details)
-│   ├── index.ts           # Initialization & coordination
-│   ├── message-handler.ts # Message routing (159 lines, refactored 2025-11-07)
-│   ├── handlers/          # Message handlers by category
-│   │   ├── overlay-handlers.ts   # Gallery, snapshots, text
-│   │   ├── state-handlers.ts     # Theme, filters, settings
-│   │   └── request-handlers.ts   # Stats, pixel color requests
-│   ├── tile-draw/         # Tile overlay rendering (moved from features 2025-11-01)
-│   │   ├── states.ts      # Overlay layers state management
-│   │   ├── tile-overlay-renderer.ts  # GPU/CPU rendering
+├── content.ts              # Main entry, DI registration
+├── inject/                 # Page-context scripts (see inject/CLAUDE.md)
+│   ├── handlers/          # Message handlers (overlay, state, request)
+│   ├── tile-draw/         # Tile overlay rendering
 │   │   ├── stats/         # Statistics computation
 │   │   ├── filters/       # Color filtering (GPU/CPU)
 │   │   └── image-processing/  # Image manipulation
-│   ├── utils/             # Inject-wide utilities
-│   │   └── image-loader.ts    # Common image loading
-│   ├── fetch-interceptor.ts   # Intercepts tile & user API calls
-│   ├── map-instance.ts    # Captures WPlace map instance
-│   └── theme-manager.ts   # Applies theme to map
-├── core/
-│   └── di.ts              # DI container & API types
+│   ├── user-status/       # User status management
+│   ├── fetch-interceptor.ts   # Intercepts tile & user API
+│   └── map-instance.ts    # Captures WPlace map instance
+├── core/di.ts             # DI container & API types
 ├── features/              # Feature modules (gallery, drawing, etc.)
-├── utils/                 # Shared utilities
-│   └── inject-bridge.ts   # Content ↔ Inject communication functions
+├── utils/
+│   └── inject-bridge.ts   # Content ↔ Inject communication
 └── i18n/                  # Internationalization
 ```
 
@@ -116,12 +96,15 @@ Each feature is self-contained in `src/features/`:
 - **drawing**: Manual pixel drawing
 - **time-travel**: Tile snapshot & restoration
 - **color-filter**: Color filters & drawing modes
+- **color-isolate**: Color isolation mode
 - **bookmark**: Saved locations
-- **map-filter**: Dark theme, high contrast, data saver
-- **auto-spoit**: Color picker from map
+- **map-filter**: Dark theme, high contrast
+- **data-saver**: Data saving mode
 - **text-draw**: Text rendering on map
 - **position-info**: Current coordinate display
 - **paint-stats**: User painting statistics
+- **show-unplaced-only**: Show unplaced pixels only
+- **friends-book**: Friends management
 
 ## Coding Standards
 
@@ -181,39 +164,31 @@ const text = t`feature.gallery.title`; // Template literal syntax
 
 ## Important Utilities
 
-- `utils/router.ts`: Base Router class with history & i18n header management
+- `utils/router.ts`: Base Router class with history & i18n header
 - `utils/modal.ts`: Common modal creation helper
-- `utils/coordinate.ts`: `llzToTilePixel`, `tilePixelToLatLng` conversions
-- `utils/position.ts`: `gotoPosition`, `getCurrentPosition`
-- `utils/color-filter-manager.ts`: Main state management for filters
-- `utils/pixel-converters.ts`: `blobToPixels` for image processing
+- `utils/coordinate.ts`: Coordinate conversions (`llzToTilePixel`, `tilePixelToLatLng`)
+- `utils/position.ts`: Position navigation (`gotoPosition`, `getCurrentPosition`)
+- `utils/color-filter-manager.ts`: Color filter state management
 - `utils/image-storage.ts`: Gallery image persistence
-- ~~`utils/image-bitmap-compat.ts`~~: ❌ Deprecated - Use native `createImageBitmap` in inject context
+- `utils/inject-bridge.ts`: Content ↔ Inject communication helpers
 
 ## Critical Implementation Notes
 
-### Tile Overlay Architecture (2025-11-01)
+### Tile Overlay Architecture
 
-**IMPORTANT:** All tile overlay rendering now happens in **inject context (page context)**, not content script context.
+**IMPORTANT:** All tile overlay rendering happens in **inject context (page context)**, not content script context.
 
-#### Background
+**Reason:** Firefox's security constraints prevent `ImageBitmap`/`ImageData` operations in extension context.
 
-Firefox has stricter security constraints than Chrome for extension contexts. Operations involving `ImageBitmap`, `ImageData`, and WASM in content scripts fail with security errors in Firefox, even though they work in Chrome.
+#### Content vs Inject Roles
 
-#### Solution
-
-Move all image processing to `src/inject/tile-draw/`:
-
-1. **Content script role** (`src/content.ts`):
-
-   - Manages data (gallery, snapshots, settings)
+1. **Content script** (`src/content.ts`):
+   - Manages storage (gallery, snapshots, settings)
    - Sends data to inject via `postMessage`
-   - Uses stubs for legacy function calls
 
-2. **Inject script role** (`src/inject/tile-draw/`):
-   - Receives data via `message` event listeners
-   - Performs all image processing (split, filter, render)
-   - Uses native Canvas API (no WASM)
+2. **Inject script** (`src/inject/tile-draw/`):
+   - Receives data via message listeners
+   - Performs image processing (split, filter, render)
    - Intercepts tile fetch and applies overlays
 
 #### Data Sync Functions
@@ -224,126 +199,67 @@ Always call these after modifying overlay-related data:
 import { sendGalleryImagesToInject } from "@/content";
 import { sendSnapshotsToInject } from "@/content";
 import { sendColorFilterToInject } from "@/content";
-import { sendComputeDeviceToInject } from "@/content";
 
-// After gallery changes (add, delete, toggle, reorder)
+// After gallery changes
 await sendGalleryImagesToInject();
 
-// After snapshot changes (draw, remove, delete)
+// After snapshot changes
 await sendSnapshotsToInject();
 
 // After color filter changes
 await sendColorFilterToInject();
-
-// After compute device changes (GPU/CPU)
-await sendComputeDeviceToInject();
 ```
 
 #### Async Request/Response Pattern
 
-For features that need data FROM inject (stats, pixel color):
+For features that need data FROM inject (stats, pixel color), use the helpers in `utils/inject-bridge.ts`:
 
 ```typescript
-// In utils/inject-bridge.ts
-export const getAggregatedColorStats = async (
-  imageKeys: string[]
-): Promise<ColorStats> => {
-  const requestId = generateRequestId();
+import { getAggregatedColorStats } from "@/utils/inject-bridge";
 
-  return new Promise((resolve) => {
-    const handler = (event: MessageEvent) => {
-      if (
-        event.data.source === "mr-wplace-response-stats" &&
-        event.data.requestId === requestId
-      ) {
-        window.removeEventListener("message", handler);
-        resolve(event.data.stats);
-      }
-    };
-
-    window.addEventListener("message", handler);
-    window.postMessage(
-      { source: "mr-wplace-request-stats", imageKeys, requestId },
-      "*"
-    );
-  });
-};
+const stats = await getAggregatedColorStats(imageKeys);
 ```
 
 #### Key Constraints
 
-- ❌ **Never use WASM in inject context** - causes `unreachable` errors
-- ❌ **Never use `image-bitmap-compat` in inject** - use native `createImageBitmap`
-- ✅ **Always use Canvas API for image processing in inject**
-- ✅ **Content script only manages storage and UI**
-- ✅ **Inject script handles all rendering and filtering**
+- ❌ **Never use WASM in inject context**
+- ❌ **Never process images in content script**
+- ✅ **Use Canvas API for image processing in inject**
+- ✅ **Content manages storage, inject handles rendering**
 
-#### Files to Modify When Adding Overlay Features
+See `src/inject/CLAUDE.md` for detailed architecture and migration history.
 
-1. `src/inject/message-handler.ts`: Add new message listener
-2. `src/inject/types.ts`: Add type definitions if needed
-3. `src/content.ts`: Add data sync function
-4. Feature code: Call sync function after data changes
+### Statistics Persistence
 
-See `src/inject/CLAUDE.md` for detailed migration history.
+**Statistics are automatically saved and restored:**
 
-### Known Limitations and Potential Issues
+1. **On load**: Statistics are restored from Chrome storage to inject context
+2. **On tile visit**: Statistics are computed and saved to storage
+3. **On reload**: Statistics persist across browser restarts
 
-#### Performance Considerations
+No manual intervention needed. See `src/inject/CLAUDE.md` for implementation details.
 
-1. **Large gallery images**: Images are split into tiles and cached. Very large images (>10MB) may cause initial lag.
-2. **Many overlays**: Having 10+ active overlays may impact rendering performance on lower-end devices.
-3. **Snapshot storage**: Snapshots are stored as PNG in Chrome storage. Each snapshot is ~50-200KB. Chrome has a 10MB limit per extension.
+### Common Issues
 
-#### Browser Compatibility
+**Overlays don't update after data change:**
+- Ensure `sendGalleryImagesToInject()` is awaited
+- Check tile cache is cleared: `window.mrWplaceDataSaver?.tileCache.clear()`
 
-- ✅ **Chrome/Edge**: Fully supported
-- ✅ **Firefox**: Fully supported (as of 2025-11-01 refactor)
-- ❌ **Safari**: Not tested, likely requires Manifest V2 backport
+**Statistics not showing:**
+- Visit tiles first to compute statistics
+- Statistics are computed incrementally as you navigate
 
-#### Edge Cases to Watch
-
-1. **Tile cache invalidation**: When overlay data changes, `window.mrWplaceDataSaver.tileCache.clear()` is called. If tiles don't update, check this call.
-
-2. **Message ordering**: `postMessage` is async. If overlays don't appear, check that:
-
-   - `sendGalleryImagesToInject()` is awaited
-   - Message handler completed before next operation
-
-3. **ImageBitmap lifecycle**: ImageBitmaps are kept in memory in `overlayLayers`. Memory leaks possible if images aren't removed from layers when deleted from gallery.
-
-4. **Snapshot sync timing**: Snapshots are loaded from storage and converted to dataUrl on each sync. If snapshot list is long (>50), this may take 1-2 seconds.
-
-#### Debugging Tips
-
+**Debugging:**
 ```typescript
-// Check overlay layers state in inject context
+// Check inject state in browser console
 console.log("🧑‍🎨 : overlayLayers", window.overlayLayers);
-
-// Check gallery images in inject context
-console.log("🧑‍🎨 : galleryImages", window.mrWplaceGalleryImages);
-
-// Check snapshots in inject context
-console.log("🧑‍🎨 : snapshots", window.mrWplaceSnapshots);
-
-// Check tile cache
 console.log("🧑‍🎨 : cache size", window.mrWplaceDataSaver?.tileCache.size);
-
-// Force tile re-render
-if (window.mrWplaceDataSaver?.tileCache) {
-  window.mrWplaceDataSaver.tileCache.clear();
-  console.log("🧑‍🎨 : Cleared tile cache");
-}
 ```
 
-#### Potential Future Improvements
+---
 
-1. **Incremental sync**: Instead of sending all gallery images on every change, send only diffs.
-2. **Web Worker**: Move image processing to Web Worker for better performance.
-3. **IndexedDB for snapshots**: Use IndexedDB instead of Chrome storage for larger snapshot capacity.
-4. **Lazy loading**: Only load snapshots for currently visible tiles.
-5. **Compression**: Use WebP instead of PNG for snapshots to reduce storage usage.
-
-あなたはシンプルかつ最も効果的で単純明瞭なコードを書く
-早期リターン/const arrow を利用.if の内容が 1 行ならかっこでくくらないこともある
-トーストは基本的に利用しない
+**Coding Style:**
+- シンプルかつ最も効果的で単純明瞭なコードを書く
+- 早期リターン/const arrow を利用
+- if の内容が1行ならかっこでくくらないこともある
+- トーストは基本的に利用しない
