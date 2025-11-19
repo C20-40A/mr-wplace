@@ -12,6 +12,7 @@ import {
   sendShowUnplacedOnlyToInject,
 } from "@/content";
 import type { ColorIsolate } from "@/features/color-isolate";
+import { setShowUnplacedOnly } from "@/states/showUnplacedOnly";
 
 export class AutoSpoit {
   private enabled: boolean = true;
@@ -212,6 +213,7 @@ export class AutoSpoit {
       console.log("🧑‍🎨 : Color isolate enabled");
 
       // Enable show unplaced only
+      setShowUnplacedOnly(true);
       sendShowUnplacedOnlyToInject(true);
       console.log("🧑‍🎨 : Show unplaced only enabled");
 
@@ -222,6 +224,7 @@ export class AutoSpoit {
       console.log("🧑‍🎨 : Color isolate disabled");
 
       // Disable show unplaced only
+      setShowUnplacedOnly(false);
       sendShowUnplacedOnlyToInject(false);
       console.log("🧑‍🎨 : Show unplaced only disabled");
 

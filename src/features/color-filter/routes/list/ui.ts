@@ -5,11 +5,11 @@ import type { ComputeDevice } from "@/components/color-palette/storage";
 import { getCurrentTiles } from "@/states/currentTile";
 import { getAggregatedColorStats } from "@/utils/inject-bridge";
 import { sendColorFilterToInject, sendComputeDeviceToInject, sendShowUnplacedOnlyToInject } from "@/content";
+import { getShowUnplacedOnly, setShowUnplacedOnly } from "@/states/showUnplacedOnly";
 
 let colorPalette: ColorPalette | null = null;
 let lastSortOrder: SortOrder = "default";
 let lastComputeDevice: ComputeDevice = "gpu";
-let lastShowUnplacedOnly: boolean = false; // Not persisted, resets on page reload
 
 export const renderColorFilters = async (
   container: HTMLElement
@@ -99,9 +99,9 @@ export const renderColorFilters = async (
       await sendComputeDeviceToInject();
     },
     showUnplacedOnlyToggle: true,
-    showUnplacedOnly: lastShowUnplacedOnly,
+    showUnplacedOnly: getShowUnplacedOnly(),
     onShowUnplacedOnlyChange: (enabled) => {
-      lastShowUnplacedOnly = enabled;
+      setShowUnplacedOnly(enabled);
       console.log(`🧑‍🎨 : Show unplaced only changed:`, enabled);
       // Send updated setting to inject side (transient state, not persisted)
       sendShowUnplacedOnlyToInject(enabled);

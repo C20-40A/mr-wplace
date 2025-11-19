@@ -24,6 +24,7 @@ import { ColorIsolate } from "@/features/color-isolate";
 import { PositionInfo } from "@/features/position-info";
 import { initPaintStats } from "@/features/paint-stats";
 import { PaletteToggle } from "@/features/palette-toggle";
+import { ShowUnplacedOnly } from "@/features/show-unplaced-only";
 import { colorpalette } from "@/constants/colors";
 import { addCurrentTile } from "@/states/currentTile";
 import { di } from "@/core/di";
@@ -418,6 +419,7 @@ export const sendTileBoundariesToInject = async () => {
     const autoSpoit = new AutoSpoit(colorFilterManager, colorIsolate);
     new PositionInfo();
     new PaletteToggle();
+    new ShowUnplacedOnly();
     initPaintStats();
 
     // Initialize async features in parallel
