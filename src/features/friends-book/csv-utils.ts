@@ -75,14 +75,13 @@ export const csvToFriends = (csv: string): Friend[] => {
   const lines = csv.trim().split("\n");
   if (lines.length <= 1) return [];
 
-  const header = lines[0];
+  const header = lines[0].trim();
   const dataLines = lines.slice(1);
 
   // ヘッダー検証（後方互換性のため新旧両方を許容）
   const newHeader =
     "id,name,equippedFlag,allianceId,allianceName,memo,tagColor,tagName";
   const oldHeader = newHeader + ",addedDate";
-  const hasAddedDate = header === oldHeader;
 
   if (header !== newHeader && header !== oldHeader) {
     throw new Error(
@@ -188,4 +187,15 @@ export const selectCSVFile = (): Promise<string> => {
     input.click();
     document.body.removeChild(input);
   });
+};
+
+/**
+ * CSV URL からデータを fetch
+ */
+export const fetchCSVFromUrl = async (url: string): Promise<string> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch CSV: ${response.statusText}`);
+  }
+  return await response.text();
 };
