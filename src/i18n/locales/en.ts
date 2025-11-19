@@ -370,4 +370,14 @@ export const enTranslations = {
   import_friends_description: "Import player list from CSV file",
   export_all_friends_description: "Export all friends as CSV file",
   export_friends_by_tag_description: "Export only friends with selected tags as CSV",
+  online_sync: "Online Import",
+  online_sync_description:
+    "Import friend list from CSV URL (e.g. Google Sheets published URL)",
+  sync_merge: "Merge Import",
+  sync_replace: "Replace Import",
+  please_enter_sync_url: "Please enter import URL",
+  sync_failed: "Import failed",
+  sync_replace_confirm:
+    "Are you sure you want to replace all friends?\nAll existing friends will be deleted and replaced with data from the URL.",
+  open_url: "Open URL",
 };

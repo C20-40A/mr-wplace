@@ -372,4 +372,14 @@ export const jaTranslations = {
   import_friends_description: "CSVファイルからプレイヤーリストをインポート",
   export_all_friends_description: "全ての友人をCSVファイルでエクスポート",
   export_friends_by_tag_description: "選択したタグの友人のみCSVでエクスポート",
+  online_sync: "オンライン取り込み",
+  online_sync_description:
+    "GoogleスプレッドシートなどのCSV URLから友人リストを取り込み",
+  sync_merge: "追加取り込み",
+  sync_replace: "上書き取り込み",
+  please_enter_sync_url: "取り込み元のURLを入力してください",
+  sync_failed: "取り込みに失敗しました",
+  sync_replace_confirm:
+    "本当に上書き取り込みしますか？\n既存の友人リストは全て削除され、URLのデータで置き換えられます。",
+  open_url: "URLを開く",
 };

@@ -693,12 +693,42 @@ export const showImportExportDialog = async (
 ): Promise<void> => {
   const allFriends = await FriendsBookStorage.getFriends();
   const existingTags = await FriendsBookStorage.getExistingTags();
+  const savedSyncUrl = await FriendsBookStorage.getSyncUrl();
 
   const modal = document.createElement("dialog");
   modal.className = "modal";
   modal.innerHTML = t`
     <div class="modal-box" style="max-width: 32rem;">
       <h3 class="font-bold text-lg mb-4">${`import_export`}</h3>
+
+      <!-- Online Sync Section -->
+      <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid oklch(var(--bc) / 0.2); border-radius: 8px;">
+        <h4 style="font-weight: 600; margin-bottom: 0.5rem;">${`online_sync`}</h4>
+        <p style="font-size: 0.875rem; color: oklch(var(--bc) / 0.6); margin-bottom: 0.75rem;">${`online_sync_description`}</p>
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+          <input id="friends-sync-url-input" type="text" placeholder="https://docs.google.com/spreadsheets/..."
+            value="${savedSyncUrl}" class="input input-sm input-bordered" style="flex: 1; font-size: 0.75rem;" />
+          <button id="friends-sync-url-open-btn" class="btn btn-sm btn-ghost btn-square" title="${`open_url`}">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
+              <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/>
+            </svg>
+          </button>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button id="friends-sync-merge-btn" class="btn btn-primary btn-sm" style="flex: 1;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
+              <path d="M440-183v-274L200-596v274l240 139Zm80 0 240-139v-274L520-457v274Zm-40-343 237-137-237-137-237 137 237 137ZM160-252q-19-11-29.5-29T120-321v-318q0-22 10.5-40t29.5-29l280-161q19-11 40-11t40 11l280 161q19 11 29.5 29t10.5 40v318q0 22-10.5 40T800-252L520-91q-19 11-40 11t-40-11L160-252Z"/>
+            </svg>
+            ${`sync_merge`}
+          </button>
+          <button id="friends-sync-replace-btn" class="btn btn-outline btn-sm" style="flex: 1;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
+              <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h357l-80 80H200v560h560v-278l80-80v358q0 33-23.5 56.5T760-120H200Zm280-360ZM360-360v-170l367-367q12-12 27-18t30-6q16 0 30.5 6t26.5 18l56 57q11 12 17 26.5t6 29.5q0 15-5.5 29.5T897-728L530-360H360Zm481-424-56-56 56 56ZM440-440h56l232-232-28-28-29-28-231 231v57Zm260-260-29-28 29 28 28 28-28-28Z"/>
+            </svg>
+            ${`sync_replace`}
+          </button>
+        </div>
+      </div>
 
       <!-- Import Section -->
       <div style="margin-bottom: 1.5rem; padding: 1rem; border: 1px solid oklch(var(--bc) / 0.2); border-radius: 8px;">
@@ -836,6 +866,76 @@ export const showImportExportDialog = async (
       modal.close();
       modal.remove();
       onExportByTag(selectedTags);
+    });
+
+  // Sync URL input - save on change
+  const syncUrlInput = modal.querySelector(
+    "#friends-sync-url-input"
+  ) as HTMLInputElement;
+  syncUrlInput?.addEventListener("blur", async () => {
+    const url = syncUrlInput.value.trim();
+    await FriendsBookStorage.setSyncUrl(url);
+  });
+
+  // Open URL button
+  modal
+    .querySelector("#friends-sync-url-open-btn")
+    ?.addEventListener("click", () => {
+      const url = syncUrlInput?.value.trim();
+      if (url) {
+        window.open(url, "_blank");
+      }
+    });
+
+  // Merge sync button
+  modal
+    .querySelector("#friends-sync-merge-btn")
+    ?.addEventListener("click", async () => {
+      const url = syncUrlInput?.value.trim();
+      if (!url) {
+        alert(t`${"please_enter_sync_url"}`);
+        return;
+      }
+
+      modal.close();
+      modal.remove();
+
+      try {
+        const { fetchCSVFromUrl } = await import("./csv-utils");
+        const csv = await fetchCSVFromUrl(url);
+        await onImport(csv);
+      } catch (error) {
+        console.error("🧑‍🎨 : Sync merge failed", error);
+        alert(t`${"sync_failed"}` + ": " + (error as Error).message);
+      }
+    });
+
+  // Replace sync button
+  modal
+    .querySelector("#friends-sync-replace-btn")
+    ?.addEventListener("click", async () => {
+      const url = syncUrlInput?.value.trim();
+      if (!url) {
+        alert(t`${"please_enter_sync_url"}`);
+        return;
+      }
+
+      const confirmed = confirm(t`${"sync_replace_confirm"}`);
+      if (!confirmed) return;
+
+      modal.close();
+      modal.remove();
+
+      try {
+        const { fetchCSVFromUrl, csvToFriends } = await import("./csv-utils");
+        const csv = await fetchCSVFromUrl(url);
+        const friends = csvToFriends(csv);
+        await FriendsBookStorage.importFriends(friends, "replace");
+        location.reload();
+      } catch (error) {
+        console.error("🧑‍🎨 : Sync replace failed", error);
+        alert(t`${"sync_failed"}` + ": " + (error as Error).message);
+      }
     });
 
   // Close button

@@ -3,6 +3,7 @@ import { storage } from "@/utils/browser-api";
 
 export class FriendsBookStorage {
   private static readonly STORAGE_KEY = "mr_wplace_friends_book";
+  private static readonly SYNC_URL_KEY = "mr_wplace_friends_book_sync_url";
 
   private static async setValue(value: any): Promise<void> {
     await storage.set({ [this.STORAGE_KEY]: value });
@@ -11,6 +12,15 @@ export class FriendsBookStorage {
   private static async getValue(): Promise<any> {
     const result = await storage.get([this.STORAGE_KEY]);
     return result[this.STORAGE_KEY];
+  }
+
+  static async getSyncUrl(): Promise<string> {
+    const result = await storage.get([this.SYNC_URL_KEY]);
+    return result[this.SYNC_URL_KEY] || "";
+  }
+
+  static async setSyncUrl(url: string): Promise<void> {
+    await storage.set({ [this.SYNC_URL_KEY]: url });
   }
 
   static async getFriends(): Promise<Friend[]> {

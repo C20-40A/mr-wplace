@@ -126,7 +126,7 @@ const createAddToFriendsButton = async (container: Element): Promise<void> => {
           cls.includes("gap-")
         );
         const hasUserId = span.textContent?.includes(
-          `#${lastPaintedByUser.id}`
+          `#${lastPaintedByUser?.id}`
         );
         return hasGapClass && hasUserId;
       });
@@ -262,15 +262,17 @@ const handleImport = async (csv: string): Promise<void> => {
     const existingFriends = await FriendsBookStorage.getFriends();
     const message =
       existingFriends.length > 0
-        ? `${friends.length} ${t`import_merge_confirm`}\n${t`import_merge_description`}`
-        : `${friends.length} ${t`import_confirm`}`;
+        ? t`${
+            friends.length
+          } ${`import_merge_confirm`}\n${`import_merge_description`}`
+        : t`${friends.length} ${`import_confirm`}`;
 
     if (!confirm(message)) return;
 
     const mode = existingFriends.length > 0 ? "merge" : "replace";
     await FriendsBookStorage.importFriends(friends, mode);
     render();
-    Toast.success(`${friends.length} ${t`import_success`}`);
+    Toast.success(t`${friends.length} ${`import_success`}`);
   } catch (error) {
     console.error("🧑‍🎨 : Import failed", error);
     Toast.error(t`import_failed`);
@@ -290,7 +292,7 @@ const handleExport = async (): Promise<void> => {
   const csv = friendsToCSV(friends);
   const timestamp = new Date().toISOString().split("T")[0];
   downloadCSV(csv, `wplace-friends-${timestamp}.csv`);
-  Toast.success(`${friends.length} ${t`export_success`}`);
+  Toast.success(t`${friends.length} ${`export_success`}`);
 };
 
 /**
@@ -307,7 +309,7 @@ const handleExportByTag = async (tags: Tag[]): Promise<void> => {
   const timestamp = new Date().toISOString().split("T")[0];
   const tagNames = tags.map((t) => t.name || "tag").join("-");
   downloadCSV(csv, `wplace-friends-${tagNames}-${timestamp}.csv`);
-  Toast.success(`${friends.length} ${t`export_success`}`);
+  Toast.success(t`${friends.length} ${`export_success`}`);
 };
 
 /**
@@ -326,10 +328,12 @@ const setupModal = (): void => {
     });
 
   // 友人追加ボタン
-  modal.querySelector("#friends-add-btn")?.addEventListener("click", async () => {
-    await showAddFriendDialog();
-    render();
-  });
+  modal
+    .querySelector("#friends-add-btn")
+    ?.addEventListener("click", async () => {
+      await showAddFriendDialog();
+      render();
+    });
 
   // Import/Export ボタン
   modal

@@ -13,6 +13,7 @@ WPlaceの他のユーザーを「友人帳」に登録・管理する機能。�
 - **ソート**: 追加順、名前順、タグ順で並び替え
 - **フィルター**: タグでフィルタリング
 - **編集・削除**: 友人情報の編集・削除
+- **オンライン同期**: CSV URLから友人リストを同期（追加同期・上書き同期）
 
 ## アーキテクチャ
 
@@ -92,6 +93,7 @@ interface Tag {
 ### Storage Key
 
 - `mr_wplace_friends_book`: 友人リストを JSON 配列として保存
+- `mr_wplace_friends_book_sync_url`: CSV同期URLを保存
 
 ## UI Components
 
@@ -152,6 +154,23 @@ interface Tag {
 - タグバッジ（あれば）
 - 編集・削除ボタン
 
+### 6. Import/Export & オンライン同期モーダル
+
+**場所**: `ui.ts` - `showImportExportDialog()`
+
+#### オンライン同期セクション
+- CSV URL入力欄（localStorageに自動保存）
+- URLを開くボタン（新しいタブで開く）
+- 追加同期ボタン（既存データと統合、同じIDは上書き）
+- 上書き同期ボタン（既存データを全削除して置き換え、確認あり）
+
+#### Import セクション
+- ローカルCSVファイルからインポート
+
+#### Export セクション
+- 全友人をCSVでエクスポート
+- タグでフィルタリングしてエクスポート
+
 ## Storage 操作
 
 ### FriendsBookStorage クラス
@@ -164,6 +183,10 @@ interface Tag {
 - `getExistingTags()`: 使用中のタグ一覧を取得
 - `updateTag(oldTag, newTag)`: タグを一括更新
 - `deleteTag(tag)`: タグを削除（友人からも削除）
+- `getSyncUrl()`: 保存されたCSV同期URLを取得
+- `setSyncUrl(url)`: CSV同期URLを保存
+- `importFriends(friends, mode)`: 友人をインポート（merge/replace）
+- `exportFriendsByTags(tags)`: タグでフィルタリングして友人をエクスポート
 
 ## postMessage 通信
 
@@ -265,6 +288,13 @@ window.mrWplaceTempPaintedByUser // undefined (使用していない)
 - ✅ 検索機能
 
 ## 変更履歴
+
+### 2025-11-19: オンライン同期機能を追加
+
+- CSV URLを保存してオンライン同期が可能に（主にGoogleスプレッドシートを想定）
+- 追加同期（マージ）と上書き同期の2種類をサポート
+- URLを開くボタンも追加
+- Import/Exportモーダルに統合
 
 ### 2025-11-19: `addedDate` フィールドを削除
 
