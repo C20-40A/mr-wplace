@@ -346,3 +346,4 @@ if (window.mrWplaceDataSaver?.tileCache) {
 
 あなたはシンプルかつ最も効果的で単純明瞭なコードを書く
 早期リターン/const arrow を利用.if の内容が 1 行ならかっこでくくらないこともある
+トーストは基本的に利用しない

@@ -52,7 +52,6 @@ export const esTranslations = {
   loading: "Cargando...",
   no_items: "Sin elementos",
   delete_confirm: "¿Estás seguro de que quieres eliminar?",
-  saved_message: "guardado",
   deleted_message: "Eliminado",
 
   // Bookmarks
@@ -146,7 +145,8 @@ export const esTranslations = {
   click_image_to_draw: "Haz clic en la imagen que quieres dibujar en el mapa",
   no_draw_images: "Sin imágenes para dibujar.",
   no_saved_images: "Sin imágenes guardadas",
-  empty_gallery_message: "Para mostrar una imagen en el mapa, primero agregue una imagen",
+  empty_gallery_message:
+    "Para mostrar una imagen en el mapa, primero agregue una imagen",
   add_first_image: "Agregar Primera Imagen",
   unplaced_images: "Imágenes Sin Colocar",
   layers: "Capas",

@@ -50,7 +50,6 @@ export const enTranslations = {
   loading: "Loading...",
   no_items: "No items",
   delete_confirm: "Are you sure you want to delete?",
-  saved_message: "saved",
   deleted_message: "Deleted",
 
   // Bookmarks
@@ -142,7 +141,8 @@ export const enTranslations = {
   click_image_to_draw: "Click on the image you want to draw on the map",
   no_draw_images: "No images for drawing.",
   no_saved_images: "No saved images",
-  empty_gallery_message: "To display an image on the map, please add an image first",
+  empty_gallery_message:
+    "To display an image on the map, please add an image first",
   add_first_image: "Add First Image",
   unplaced_images: "Unplaced Images",
   layers: "Layers",
@@ -370,7 +370,8 @@ export const enTranslations = {
   import_merge_description: "Existing data will be retained.",
   import_friends_description: "Import player list from CSV file",
   export_all_friends_description: "Export all friends as CSV file",
-  export_friends_by_tag_description: "Export only friends with selected tags as CSV",
+  export_friends_by_tag_description:
+    "Export only friends with selected tags as CSV",
   online_sync: "Online Import",
   online_sync_description:
     "Import friend list from CSV URL (e.g. Google Sheets published URL)",

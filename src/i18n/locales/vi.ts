@@ -50,7 +50,6 @@ export const viTranslations = {
   loading: "Đang tải...",
   no_items: "Không có mục nào",
   delete_confirm: "Bạn có chắc muốn xóa?",
-  saved_message: "đã lưu",
   deleted_message: "Đã xóa",
 
   // Bookmarks
@@ -141,7 +140,8 @@ export const viTranslations = {
   click_image_to_draw: "Nhấp vào hình ảnh bạn muốn vẽ trên bản đồ",
   no_draw_images: "Không có hình ảnh để vẽ.",
   no_saved_images: "Không có hình ảnh đã lưu",
-  empty_gallery_message: "Để hiển thị hình ảnh trên bản đồ, vui lòng thêm hình ảnh trước",
+  empty_gallery_message:
+    "Để hiển thị hình ảnh trên bản đồ, vui lòng thêm hình ảnh trước",
   add_first_image: "Thêm Hình Ảnh Đầu Tiên",
   unplaced_images: "Hình ảnh Chưa Đặt",
   layers: "Lớp",

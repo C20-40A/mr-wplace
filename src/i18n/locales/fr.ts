@@ -50,14 +50,14 @@ export const frTranslations = {
   loading: "Chargement...",
   no_items: "Aucun élément",
   delete_confirm: "Voulez-vous vraiment supprimer ?",
-  saved_message: "enregistré",
   deleted_message: "Supprimé",
 
   // Bookmarks
   no_bookmarks: "Aucun favori",
   add_bookmark_instruction:
     'Cliquez sur la carte et utilisez le bouton "Favori" pour ajouter',
-  location_unavailable: "Impossible de récupérer les informations de localisation.",
+  location_unavailable:
+    "Impossible de récupérer les informations de localisation.",
   location_unavailable_instruction:
     "Impossible de récupérer les informations de localisation. Veuillez cliquer sur la carte puis enregistrer.",
   enter_bookmark_name: "Veuillez entrer le nom du favori :",
@@ -78,7 +78,8 @@ export const frTranslations = {
   export_all: "Tout exporter",
   export_all_description: "Exporter tous les favoris",
   export_by_tag: "Exporter par étiquette",
-  export_by_tag_description: "Exporter uniquement les favoris avec les étiquettes sélectionnées",
+  export_by_tag_description:
+    "Exporter uniquement les favoris avec les étiquettes sélectionnées",
   export_selected_tags: "Exporter les étiquettes sélectionnées",
   no_tags_available: "Aucune étiquette disponible",
   no_name: "Sans nom",
@@ -104,7 +105,8 @@ export const frTranslations = {
   snapshot_share_description:
     "Ce nom de fichier contient les informations de coordonnées et d'horodatage. Lorsque vous le réimportez depuis la liste des tuiles, il sera enregistré en tant qu'instantané à la même position et au même moment.",
   return_to_current: "Retour à l'actuel",
-  enter_snapshot_name: "Entrez le nom de l'instantané (vide pour l'horodatage) :",
+  enter_snapshot_name:
+    "Entrez le nom de l'instantané (vide pour l'horodatage) :",
   enter_tile_name: "Entrez le nom de la tuile (vide pour les coordonnées) :",
 
   // Image Editor
@@ -139,10 +141,12 @@ export const frTranslations = {
   edit_image_mode: "Modifier l'image",
   add_to_gallery_directly: "Ajouter directement à la galerie",
   select_image: "Sélectionner une image",
-  click_image_to_draw: "Cliquez sur l'image que vous souhaitez dessiner sur la carte",
+  click_image_to_draw:
+    "Cliquez sur l'image que vous souhaitez dessiner sur la carte",
   no_draw_images: "Aucune image pour le dessin.",
   no_saved_images: "Aucune image enregistrée",
-  empty_gallery_message: "Pour afficher une image sur la carte, veuillez d'abord ajouter une image",
+  empty_gallery_message:
+    "Pour afficher une image sur la carte, veuillez d'abord ajouter une image",
   add_first_image: "Ajouter la Première Image",
   unplaced_images: "Images non placées",
   layers: "Calques",
@@ -288,7 +292,8 @@ export const frTranslations = {
   required: "Requis",
   edit_tag: "Modifier l'étiquette",
   tag_edit_title: "Modifier l'étiquette",
-  tag_edit_description: "Tous les favoris utilisant cette étiquette seront mis à jour",
+  tag_edit_description:
+    "Tous les favoris utilisant cette étiquette seront mis à jour",
   tag_delete_confirm:
     "Supprimer cette étiquette ? L'étiquette sera retirée de tous les favoris qui l'utilisent.",
 
