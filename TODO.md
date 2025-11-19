@@ -1,6 +1,5 @@
 # メイン
 
-- friends book に ID 若い順とかあってもいい
 - bookmarks も ONLINE 同期
 - bookmarks や tiles は mobile だとスクロールできない
 - ギャラリーからも、画像描画できると初心者に親切
@@ -101,6 +100,7 @@
 
 # DONE v1.11.3
 
+- friends book に ID 若い順
 - friends book の added date 削除
 - 友人帳の CSV オンライン取り込み機能
 - 友人帳の人、手動で設定可能にする

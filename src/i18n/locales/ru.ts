@@ -351,6 +351,7 @@ export const ruTranslations = {
   create: "Создать",
   no_friends: "Нет друзей",
   sort_added: "Дата добавления",
+  sort_id: "ID",
   import_merge_confirm:
     "друзей для импорта?\nБудет объединено с существующими данными (тот же ID будет перезаписан).",
   import_merge_description: "Существующие данные будут сохранены.",

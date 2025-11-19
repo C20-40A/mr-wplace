@@ -342,6 +342,7 @@ export const viTranslations = {
   create: "Tạo",
   no_friends: "Không có bạn bè",
   sort_added: "Ngày thêm",
+  sort_id: "ID",
   import_merge_confirm:
     "bạn bè để nhập?\nSẽ hợp nhất với dữ liệu hiện có (ID giống nhau sẽ bị ghi đè).",
   import_merge_description: "Dữ liệu hiện có sẽ được giữ lại.",

@@ -344,6 +344,7 @@ export const ptTranslations = {
   create: "Criar",
   no_friends: "Nenhum amigo",
   sort_added: "Data de Adição",
+  sort_id: "ID",
   import_merge_confirm:
     "amigos para importar?\nSerá mesclado com dados existentes (mesmo ID será sobrescrito).",
   import_merge_description: "Os dados existentes serão mantidos.",

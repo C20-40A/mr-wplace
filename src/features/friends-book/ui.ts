@@ -457,6 +457,7 @@ export const createFriendsBookModal = (): ModalElements => {
             <option value="added">${`sort_added`}</option>
             <option value="name">${`sort_name`}</option>
             <option value="tag">${`sort_tag`}</option>
+            <option value="id">${`sort_id`}</option>
           </select>
         </div>
       </div>
@@ -479,7 +480,7 @@ export const createFriendsBookModal = (): ModalElements => {
   return modalElements;
 };
 
-export type FriendsSortType = "added" | "name" | "tag";
+export type FriendsSortType = "added" | "name" | "tag" | "id";
 
 /**
  * 友人リストをレンダリング
@@ -517,6 +518,8 @@ export const renderFriends = (
           const tagB = b.tag ? `${b.tag.name || ""}${b.tag.color}` : "zzz";
           return tagA.localeCompare(tagB);
         }
+        case "id":
+          return a.id - b.id;
         default:
           return 0;
       }

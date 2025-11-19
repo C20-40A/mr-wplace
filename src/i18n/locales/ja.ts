@@ -366,6 +366,7 @@ export const jaTranslations = {
   create: "作成",
   no_friends: "友人がいません",
   sort_added: "追加順",
+  sort_id: "ID順",
   import_merge_confirm:
     "件の友人をインポートしますか？\n既存のデータと統合されます（同じIDは上書き）。",
   import_merge_description: "既存のデータは保持されます。",
