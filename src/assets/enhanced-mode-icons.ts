@@ -1,7 +1,7 @@
 /**
  * EnhancedConfig各モードのビジュアルヒント定義
  * 3x3グリッドのピクセルパターンをSVGで表現
- * 
+ *
  * 色定義:
  * - オーバーレイ色(黒): #000000
  * - 明るいグレー: #9ca3af
@@ -15,14 +15,14 @@
 
 // 色定数
 const COLORS = {
-  BLACK: '#000000',       // 黒(基本オーバーレイ)
-  LIGHT_GRAY: '#9ca3af',  // 明るいグレー
-  DARK_GRAY: '#374151',   // 暗いグレー
-  TRANSPARENT: '#ffffff', // 透過(白)
-  RED: '#ef4444',         // 赤
-  CYAN: '#06b6d4',        // シアン
-  YELLOW: '#eab308',      // 黄色
-  BLUE: '#3b82f6',        // 青(黄色の補色)
+  BLACK: "#000000", // 黒(基本オーバーレイ)
+  LIGHT_GRAY: "#9ca3af", // 明るいグレー
+  DARK_GRAY: "#374151", // 暗いグレー
+  TRANSPARENT: "#ffffff", // 透過(白)
+  RED: "#ef4444", // 赤
+  CYAN: "#06b6d4", // シアン
+  YELLOW: "#eab308", // 黄色
+  BLUE: "#3b82f6", // 青(黄色の補色)
 } as const;
 
 /**
@@ -32,15 +32,20 @@ const COLORS = {
 const createGridSVG = (pattern: string[][]): string => {
   const cellSize = 3;
   const totalSize = 9;
-  
-  const rects = pattern.flatMap((row, y) =>
-    row.map((color, x) =>
-      color !== 'transparent'
-        ? `<rect x="${x * cellSize}" y="${y * cellSize}" width="${cellSize}" height="${cellSize}" fill="${color}"/>`
-        : ''
+
+  const rects = pattern
+    .flatMap((row, y) =>
+      row.map((color, x) =>
+        color !== "transparent"
+          ? `<rect x="${x * cellSize}" y="${
+              y * cellSize
+            }" width="${cellSize}" height="${cellSize}" fill="${color}"/>`
+          : ""
+      )
     )
-  ).filter(r => r).join('');
-  
+    .filter((r) => r)
+    .join("");
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${totalSize}" height="${totalSize}" viewBox="0 0 ${totalSize} ${totalSize}">${rects}</svg>`;
 };
 
@@ -56,9 +61,9 @@ const toDataURI = (svg: string): string => {
 // □■□
 // □□□
 const DOT_PATTERN = [
-  ['transparent', 'transparent', 'transparent'],
-  ['transparent', COLORS.BLACK, 'transparent'],
-  ['transparent', 'transparent', 'transparent'],
+  ["transparent", "transparent", "transparent"],
+  ["transparent", COLORS.BLACK, "transparent"],
+  ["transparent", "transparent", "transparent"],
 ];
 
 // cross: 同色十字
@@ -66,9 +71,9 @@ const DOT_PATTERN = [
 // ■■■
 // □■□
 const CROSS_PATTERN = [
-  ['transparent', COLORS.BLACK, 'transparent'],
+  ["transparent", COLORS.BLACK, "transparent"],
   [COLORS.BLACK, COLORS.BLACK, COLORS.BLACK],
-  ['transparent', COLORS.BLACK, 'transparent'],
+  ["transparent", COLORS.BLACK, "transparent"],
 ];
 
 // fill: 全塗りつぶし
@@ -86,9 +91,9 @@ const FILL_PATTERN = [
 // 赤■赤
 // □赤□
 const RED_CROSS_PATTERN = [
-  ['transparent', COLORS.RED, 'transparent'],
+  ["transparent", COLORS.RED, "transparent"],
   [COLORS.RED, COLORS.BLACK, COLORS.RED],
-  ['transparent', COLORS.RED, 'transparent'],
+  ["transparent", COLORS.RED, "transparent"],
 ];
 
 // cyan-cross: 中央黒+上下左右シアン
@@ -96,9 +101,9 @@ const RED_CROSS_PATTERN = [
 // シ■シ
 // □シ□
 const CYAN_CROSS_PATTERN = [
-  ['transparent', COLORS.CYAN, 'transparent'],
+  ["transparent", COLORS.CYAN, "transparent"],
   [COLORS.CYAN, COLORS.BLACK, COLORS.CYAN],
-  ['transparent', COLORS.CYAN, 'transparent'],
+  ["transparent", COLORS.CYAN, "transparent"],
 ];
 
 // dark-cross: 中央明るいグレー+上下左右暗いグレー
@@ -106,9 +111,9 @@ const CYAN_CROSS_PATTERN = [
 // 暗明暗
 // □暗□
 const DARK_CROSS_PATTERN = [
-  ['transparent', COLORS.DARK_GRAY, 'transparent'],
+  ["transparent", COLORS.DARK_GRAY, "transparent"],
   [COLORS.DARK_GRAY, COLORS.LIGHT_GRAY, COLORS.DARK_GRAY],
-  ['transparent', COLORS.DARK_GRAY, 'transparent'],
+  ["transparent", COLORS.DARK_GRAY, "transparent"],
 ];
 
 // complement-cross: 中央青(黄色の補色)+上下左右黄色
@@ -116,9 +121,9 @@ const DARK_CROSS_PATTERN = [
 // 黄青黄
 // □黄□
 const COMPLEMENT_CROSS_PATTERN = [
-  ['transparent', COLORS.YELLOW, 'transparent'],
+  ["transparent", COLORS.YELLOW, "transparent"],
   [COLORS.YELLOW, COLORS.BLUE, COLORS.YELLOW],
-  ['transparent', COLORS.YELLOW, 'transparent'],
+  ["transparent", COLORS.YELLOW, "transparent"],
 ];
 
 // red-border: 中央黒+周囲8ドット赤
@@ -136,11 +141,29 @@ export const ENHANCED_MODE_ICONS = {
   dot: toDataURI(createGridSVG(DOT_PATTERN)),
   cross: toDataURI(createGridSVG(CROSS_PATTERN)),
   fill: toDataURI(createGridSVG(FILL_PATTERN)),
-  'red-cross': toDataURI(createGridSVG(RED_CROSS_PATTERN)),
-  'cyan-cross': toDataURI(createGridSVG(CYAN_CROSS_PATTERN)),
-  'dark-cross': toDataURI(createGridSVG(DARK_CROSS_PATTERN)),
-  'complement-cross': toDataURI(createGridSVG(COMPLEMENT_CROSS_PATTERN)),
-  'red-border': toDataURI(createGridSVG(RED_BORDER_PATTERN)),
+  "red-cross": toDataURI(createGridSVG(RED_CROSS_PATTERN)),
+  "cyan-cross": toDataURI(createGridSVG(CYAN_CROSS_PATTERN)),
+  "dark-cross": toDataURI(createGridSVG(DARK_CROSS_PATTERN)),
+  "complement-cross": toDataURI(createGridSVG(COMPLEMENT_CROSS_PATTERN)),
+  "red-border": toDataURI(createGridSVG(RED_BORDER_PATTERN)),
 } as const;
 
 export type EnhancedModeType = keyof typeof ENHANCED_MODE_ICONS;
+
+export const SHOW_UNPLACED_ONLY_ICON_SVG = `
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- グリッド背景 -->
+  <rect x="4" y="4" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  
+  <!-- 配置済みピクセル（塗りつぶし） -->
+  <rect x="6" y="6" width="3" height="3" fill="currentColor" opacity="0.3"/>
+  <rect x="11" y="6" width="3" height="3" fill="currentColor" opacity="0.3"/>
+  <rect x="6" y="11" width="3" height="3" fill="currentColor" opacity="0.3"/>
+  
+  <!-- 未配置ピクセル（枠のみ、強調） -->
+  <rect x="16" y="6" width="3" height="3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="11" y="11" width="3" height="3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="16" y="11" width="3" height="3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="6" y="16" width="3" height="3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="16" y="16" width="3" height="3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+</svg>`;

@@ -1,13 +1,16 @@
-import { setupElementObserver } from "../../components/element-observer";
-import { findPaintPixelControls } from "../../constants/selectors";
+import { setupElementObserver } from "@/components/element-observer";
+import { findPaintPixelControls } from "@/constants/selectors";
 // import { createAutoSpoitButton } from "./ui";
 import { AutoSpoitStorage } from "./storage";
 import { AutoCanvasClickStorage } from "./auto-canvas-click-storage";
 import { createAutoCanvasClickButton } from "./auto-canvas-click-ui";
 import { createKonamiCodeDetector } from "./konami-detector";
-import { t } from "../../i18n/manager";
+import { t } from "@/i18n/manager";
 import { ColorFilterManager } from "@/utils/color-filter-manager";
-import { sendColorFilterToInject, sendShowUnplacedOnlyToInject } from "@/content";
+import {
+  sendColorFilterToInject,
+  sendShowUnplacedOnlyToInject,
+} from "@/content";
 import type { ColorIsolate } from "@/features/color-isolate";
 
 export class AutoSpoit {
@@ -19,7 +22,10 @@ export class AutoSpoit {
   private colorFilterManager: ColorFilterManager;
   private colorIsolate: ColorIsolate;
 
-  constructor(colorFilterManager: ColorFilterManager, colorIsolate: ColorIsolate) {
+  constructor(
+    colorFilterManager: ColorFilterManager,
+    colorIsolate: ColorIsolate
+  ) {
     this.colorFilterManager = colorFilterManager;
     this.colorIsolate = colorIsolate;
     this.init();
