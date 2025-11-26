@@ -2,6 +2,9 @@ import { setupFetchInterceptor } from "./fetch-interceptor";
 import { setupMapObserver } from "./map-instance";
 import { setupMessageHandler } from "./message-handler";
 import { tileCacheDB } from "./cache-storage";
+import { openDatabase } from "./db/schema";
+import { LayerRepository } from "./db/layer-repository";
+import { createMigrationWorker, WorkerMessenger } from "./workers/messaging";
 
 // CRITICAL: Setup fetch interceptor IMMEDIATELY and SYNCHRONOUSLY
 // to catch /me requests before WPlace app code runs
@@ -21,6 +24,13 @@ import { tileCacheDB } from "./cache-storage";
 
   // Initialize show unplaced only (default: false)
   window.mrWplaceShowUnplacedOnly = false;
+
+  // Initialize mrWplace global object
+  window.mrWplace = {
+    colorFilterManager: undefined,
+    layerRepository: undefined,
+    workerMessenger: undefined
+  };
 
   // Setup fetch interceptor synchronously (no await)
   try {
@@ -44,10 +54,39 @@ import { tileCacheDB } from "./cache-storage";
 
     // Run initialization tasks in parallel
     await Promise.all([
-      // Initialize IndexedDB
+      // Initialize IndexedDB (legacy tile cache)
       tileCacheDB.init().catch((error) => {
         console.error("🧑‍🎨: Failed to init IndexedDB:", error);
       }),
+
+      // Initialize migration architecture (Worker + Repository)
+      (async () => {
+        try {
+          console.log("🧑‍🎨: Initializing migration architecture...");
+
+          // Open IndexedDB for migration
+          const db = await openDatabase();
+          console.log("🧑‍🎨: Migration database opened");
+
+          // Create LayerRepository
+          const repository = new LayerRepository(db);
+
+          // Create Worker and Messenger
+          const worker = createMigrationWorker();
+          const messenger = new WorkerMessenger(worker);
+
+          // Link Worker to Repository
+          repository.setWorker(worker);
+
+          // Store in global object
+          window.mrWplace!.layerRepository = repository;
+          window.mrWplace!.workerMessenger = messenger;
+
+          console.log("🧑‍🎨: Migration architecture initialized");
+        } catch (error) {
+          console.error("🧑‍🎨: Failed to init migration architecture:", error);
+        }
+      })(),
 
       // Setup message handler
       Promise.resolve(setupMessageHandler()).catch((error) => {

@@ -67,6 +67,8 @@ export interface PaintedByUser {
 
 export interface MrWplaceGlobal {
   colorFilterManager?: ColorFilterState;
+  layerRepository?: import("./db/layer-repository").LayerRepository;
+  workerMessenger?: import("./workers/messaging").WorkerMessenger;
 }
 
 export interface WplaceMap {
