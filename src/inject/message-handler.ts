@@ -125,7 +125,7 @@ export const setupMessageHandler = (): void => {
     }
 
     if (source === "mr-wplace-request-image-stats") {
-      handleImageStatsRequest(event.data);
+      await handleImageStatsRequest(event.data);
       return;
     }
 

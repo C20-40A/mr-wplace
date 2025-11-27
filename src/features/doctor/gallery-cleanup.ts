@@ -30,17 +30,31 @@ export class GalleryCleanup {
   }
 
   /**
-   * Delete one gallery key from Chrome storage
+   * Remove dataUrl from gallery item (keep metadata and stats)
+   * This implements hybrid storage: metadata in Chrome, blob in IndexedDB
    */
   private static async cleanupOne(
     key: string,
     index: number,
     total: number
   ): Promise<void> {
-    await storage.remove([key]);
+    // Get current item
+    const result = await storage.get([key]);
+    const item = result[key];
+
+    if (!item || typeof item !== "object") {
+      console.warn(`🧑‍🎨 [Doctor] Item ${key} not found or invalid, skipping`);
+      return;
+    }
+
+    // Remove only dataUrl (keep metadata and stats)
+    const { dataUrl, ...metadata } = item;
+
+    // Save metadata back (without dataUrl)
+    await storage.set({ [key]: metadata });
 
     console.log(
-      `🧑‍🎨 [Doctor] Cleaned ${index + 1}/${total}: ${key.substring(0, 30)}...`
+      `🧑‍🎨 [Doctor] Cleaned dataUrl from ${index + 1}/${total}: ${key.substring(0, 30)}...`
     );
 
     // Wait before next deletion to avoid Chrome freeze

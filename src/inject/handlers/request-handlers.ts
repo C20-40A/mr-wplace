@@ -80,20 +80,68 @@ export const handleTileStatsRequest = (data: { requestId: string }): void => {
 
 /**
  * Handle image stats request (per-image aggregated stats)
+ * Hybrid: Get from memory (overlayLayers) + IndexedDB (statistics store)
  */
-export const handleImageStatsRequest = (data: { imageKeys: string[]; requestId: string }): void => {
-  const stats = getStatsPerImage(data.imageKeys);
+export const handleImageStatsRequest = async (data: { imageKeys: string[]; requestId: string }): Promise<void> => {
+  // Get stats from memory (overlay layers)
+  const memoryStats = getStatsPerImage(data.imageKeys);
+
+  // Get stats from IndexedDB for missing keys
+  const missingKeys = data.imageKeys.filter((key) => !memoryStats[key]);
+
+  if (missingKeys.length > 0) {
+    console.log(`🧑‍🎨 : Fetching stats for ${missingKeys.length} images from IndexedDB...`);
+    const indexedDBStats = await fetchStatsFromIndexedDB(missingKeys);
+
+    // Merge with memory stats
+    for (const [key, stats] of Object.entries(indexedDBStats)) {
+      memoryStats[key] = stats;
+    }
+  }
 
   window.postMessage(
     {
       source: "mr-wplace-response-image-stats",
       requestId: data.requestId,
-      stats,
+      stats: memoryStats,
     },
     "*"
   );
 
   console.log(`🧑‍🎨 : Sent image stats for ${data.imageKeys.length} images (request: ${data.requestId})`);
+};
+
+/**
+ * Fetch stats from IndexedDB statistics store
+ */
+const fetchStatsFromIndexedDB = async (
+  imageKeys: string[]
+): Promise<Record<string, { matched: Record<string, number>; total: Record<string, number> }>> => {
+  const repository = window.mrWplace?.layerRepository;
+  if (!repository) {
+    console.warn("🧑‍🎨 : LayerRepository not available for stats fetch");
+    return {};
+  }
+
+  const result: Record<string, { matched: Record<string, number>; total: Record<string, number> }> = {};
+
+  for (const key of imageKeys) {
+    try {
+      const stats = await repository.getStatistics(key);
+      if (stats) {
+        result[key] = {
+          matched: stats.matchedColorStats || {},
+          total: stats.totalColorStats || {},
+        };
+      }
+    } catch (error) {
+      console.error(`🧑‍🎨 : Failed to fetch stats for ${key} from IndexedDB:`, error);
+    }
+  }
+
+  console.log(`🧑‍🎨 : Fetched stats for ${Object.keys(result).length}/${imageKeys.length} images from IndexedDB`);
+
+  return result;
 };
 
 /**
