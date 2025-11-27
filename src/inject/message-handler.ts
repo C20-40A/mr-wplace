@@ -2,6 +2,7 @@ import {
   handleGalleryImages,
   handleSnapshotsUpdate,
   handleTextLayersUpdate,
+  handleLayerSave,
 } from "./handlers/overlay-handlers";
 import {
   handleThemeUpdate,
@@ -98,6 +99,12 @@ export const setupMessageHandler = (): void => {
 
     if (source === "mr-wplace-text-layers") {
       await handleTextLayersUpdate(event.data);
+      return;
+    }
+
+    // Migration architecture handlers
+    if (source === "mr-wplace-layer-save") {
+      await handleLayerSave(event.data);
       return;
     }
 

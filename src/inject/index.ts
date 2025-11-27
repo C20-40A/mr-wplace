@@ -71,7 +71,7 @@ import { createMigrationWorker, WorkerMessenger } from "./workers/messaging";
           // Create LayerRepository
           const repository = new LayerRepository(db);
 
-          // Create Worker and Messenger
+          // Create Worker and Messenger (using Blob URL - works in inject context)
           const worker = createMigrationWorker();
           const messenger = new WorkerMessenger(worker);
 
@@ -82,7 +82,8 @@ import { createMigrationWorker, WorkerMessenger } from "./workers/messaging";
           window.mrWplace!.layerRepository = repository;
           window.mrWplace!.workerMessenger = messenger;
 
-          console.log("🧑‍🎨: Migration architecture initialized");
+          console.log("🧑‍🎨: Migration architecture initialized successfully");
+          console.log("🧑‍🎨: Worker running in separate thread for optimal performance");
         } catch (error) {
           console.error("🧑‍🎨: Failed to init migration architecture:", error);
         }

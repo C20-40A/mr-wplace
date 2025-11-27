@@ -204,3 +204,68 @@ export const handleTextLayersUpdate = async (data: {
 
   console.log(`🧑‍🎨 : Text layers updated: ${data.textLayers.length} active`);
 };
+
+/**
+ * Handle layer save request from content script
+ * Saves layer to IndexedDB via LayerRepository
+ */
+export const handleLayerSave = async (data: {
+  layer: {
+    id: string;
+    type: 'gallery' | 'text' | 'snapshot';
+    visible: boolean;
+    zIndex: number;
+    opacity: number;
+    coords: { TLX: number; TLY: number; PxX: number; PxY: number };
+    bounds: { top: number; left: number; right: number; bottom: number };
+    isOptimized: boolean;
+    title?: string;
+    timestamp: number;
+    layerOrder?: number;
+    text?: string;
+    font?: string;
+    snapshotName?: string;
+  };
+  dataUrl: string;
+}): Promise<void> => {
+  const repository = window.mrWplace?.layerRepository;
+
+  if (!repository) {
+    console.warn('🧑‍🎨 : LayerRepository not initialized, skipping layer save');
+    return;
+  }
+
+  try {
+    // Convert dataUrl to Blob
+    const response = await fetch(data.dataUrl);
+    const blob = await response.blob();
+
+    // Save to IndexedDB
+    await repository.saveLayer(data.layer, blob);
+
+    console.log(`🧑‍🎨 : Saved layer ${data.layer.id} to IndexedDB`);
+
+    // Send success response
+    window.postMessage(
+      {
+        source: 'mr-wplace-layer-save-response',
+        layerId: data.layer.id,
+        success: true
+      },
+      '*'
+    );
+  } catch (error) {
+    console.error(`🧑‍🎨 : Failed to save layer ${data.layer.id}:`, error);
+
+    // Send error response
+    window.postMessage(
+      {
+        source: 'mr-wplace-layer-save-response',
+        layerId: data.layer.id,
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      },
+      '*'
+    );
+  }
+};

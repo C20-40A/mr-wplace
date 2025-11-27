@@ -449,11 +449,54 @@ export class EditorController {
       console.log("🧑‍🎨 : Saving with position:", this.drawPosition);
     }
 
+    // Save to Chrome Storage
     await galleryStorage.save(galleryItem);
     console.log(
       "🧑‍🎨 : ",
       this.isEditMode ? t`${"updated"}` : t`${"saved_to_gallery"}`
     );
+
+    // Save to IndexedDB (only if it has drawPosition)
+    if (this.drawPosition) {
+      try {
+        const { saveLayerToIndexedDB } = await import("@/content");
+        const canvas = this.scaledCanvas;
+        if (!canvas) {
+          console.warn("🧑‍🎨 : No canvas to get image dimensions");
+        }
+
+        await saveLayerToIndexedDB(
+          {
+            id: galleryItem.key,
+            type: 'gallery',
+            visible: true,
+            zIndex: galleryItem.layerOrder ?? 0,
+            opacity: 1,
+            coords: {
+              TLX: this.drawPosition.TLX,
+              TLY: this.drawPosition.TLY,
+              PxX: this.drawPosition.PxX,
+              PxY: this.drawPosition.PxY,
+            },
+            bounds: {
+              top: this.drawPosition.TLY,
+              left: this.drawPosition.TLX,
+              right: this.drawPosition.TLX + Math.floor((canvas?.width || 0) / 1000),
+              bottom: this.drawPosition.TLY + Math.floor((canvas?.height || 0) / 1000),
+            },
+            isOptimized: false,
+            title: galleryItem.title,
+            timestamp: galleryItem.timestamp,
+            layerOrder: galleryItem.layerOrder,
+          },
+          base64
+        );
+        console.log("🧑‍🎨 : Saved to IndexedDB:", galleryItem.key);
+      } catch (error) {
+        console.error("🧑‍🎨 : Failed to save to IndexedDB:", error);
+        // Continue even if IndexedDB save fails
+      }
+    }
 
     // Request total stats computation for the image
     const { requestTotalStatsComputation } = await import("@/content");
@@ -481,8 +524,52 @@ export class EditorController {
       console.log("🧑‍🎨 : Saving directly with position:", this.drawPosition);
     }
 
+    // Save to Chrome Storage
     await galleryStorage.save(galleryItem);
     console.log("🧑‍🎨 : ", t`${"saved_to_gallery"}`);
+
+    // Save to IndexedDB (only if it has drawPosition)
+    if (this.drawPosition) {
+      try {
+        const { saveLayerToIndexedDB } = await import("@/content");
+
+        // Get image dimensions from dataUrl
+        const img = new Image();
+        img.src = dataUrl;
+        await new Promise((resolve) => { img.onload = resolve; });
+
+        await saveLayerToIndexedDB(
+          {
+            id: galleryItem.key,
+            type: 'gallery',
+            visible: true,
+            zIndex: galleryItem.layerOrder ?? 0,
+            opacity: 1,
+            coords: {
+              TLX: this.drawPosition.TLX,
+              TLY: this.drawPosition.TLY,
+              PxX: this.drawPosition.PxX,
+              PxY: this.drawPosition.PxY,
+            },
+            bounds: {
+              top: this.drawPosition.TLY,
+              left: this.drawPosition.TLX,
+              right: this.drawPosition.TLX + Math.floor(img.width / 1000),
+              bottom: this.drawPosition.TLY + Math.floor(img.height / 1000),
+            },
+            isOptimized: false,
+            title: galleryItem.title,
+            timestamp: galleryItem.timestamp,
+            layerOrder: galleryItem.layerOrder,
+          },
+          dataUrl
+        );
+        console.log("🧑‍🎨 : Saved to IndexedDB:", galleryItem.key);
+      } catch (error) {
+        console.error("🧑‍🎨 : Failed to save to IndexedDB:", error);
+        // Continue even if IndexedDB save fails
+      }
+    }
 
     // Request total stats computation for the image
     const { requestTotalStatsComputation } = await import("@/content");

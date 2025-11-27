@@ -172,15 +172,318 @@ export class WorkerMessenger {
 }
 
 /**
- * Create a migration worker instance
+ * Create a migration worker instance using Blob URL
+ * This works in inject context without requiring chrome.runtime.getURL
  */
 export const createMigrationWorker = (): Worker => {
-  const worker = new Worker(
-    new URL('./migration.worker.ts', import.meta.url),
-    { type: 'module' }
-  );
+  // Inline worker code as a string
+  // This avoids the need for chrome.runtime.getURL which is unavailable in inject context
+  const workerCode = `
+// Migration Worker - Inline version
+// This is the same code as migration.worker.ts but bundled inline
 
-  console.log('🧑‍🎨 : Migration worker created');
+const DB_NAME = 'mr-wplace-v2';
+const DB_VERSION = 1;
+const STORES = {
+  LAYERS: 'layers',
+  LEGACY_BLOBS: 'legacy_blobs',
+  OPTIMIZED_TILES: 'optimized_tiles',
+  STATISTICS: 'statistics'
+};
+
+class MigrationWorker {
+  constructor() {
+    this.queue = [];
+    this.isProcessing = false;
+    this.db = null;
+  }
+
+  async init() {
+    console.log('🧑‍🎨 : [Worker] Initializing migration worker');
+    try {
+      this.db = await this.openDatabase();
+      console.log('🧑‍🎨 : [Worker] IndexedDB opened successfully');
+    } catch (error) {
+      console.error('🧑‍🎨 : [Worker] Failed to open IndexedDB:', error);
+      throw error;
+    }
+  }
+
+  async openDatabase() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains(STORES.LAYERS)) {
+          const layersStore = db.createObjectStore(STORES.LAYERS, { keyPath: 'id' });
+          layersStore.createIndex('type', 'type', { unique: false });
+          layersStore.createIndex('visible', 'visible', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORES.LEGACY_BLOBS)) {
+          db.createObjectStore(STORES.LEGACY_BLOBS, { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains(STORES.OPTIMIZED_TILES)) {
+          const tilesStore = db.createObjectStore(STORES.OPTIMIZED_TILES, {
+            keyPath: ['layerId', 'tileKey']
+          });
+          tilesStore.createIndex('layerId', 'layerId', { unique: false });
+          tilesStore.createIndex('tileKey', 'tileKey', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORES.STATISTICS)) {
+          db.createObjectStore(STORES.STATISTICS, { keyPath: 'layerId' });
+        }
+      };
+    });
+  }
+
+  enqueue(task) {
+    if (this.queue.some(t => t.layerId === task.layerId)) {
+      console.log(\`🧑‍🎨 : [Worker] Task \${task.layerId} already in queue, skipping\`);
+      return;
+    }
+    this.queue.push(task);
+    this.queue.sort((a, b) => a.priority - b.priority);
+    console.log(\`🧑‍🎨 : [Worker] Task \${task.layerId} added to queue (priority: \${task.priority})\`);
+    this.processQueue();
+  }
+
+  cancel(layerId) {
+    const index = this.queue.findIndex(t => t.layerId === layerId);
+    if (index !== -1) {
+      this.queue.splice(index, 1);
+      console.log(\`🧑‍🎨 : [Worker] Task \${layerId} cancelled\`);
+    }
+  }
+
+  async processQueue() {
+    if (this.isProcessing || this.queue.length === 0) return;
+    this.isProcessing = true;
+
+    while (this.queue.length > 0) {
+      const task = this.queue.shift();
+      const startTime = performance.now();
+
+      try {
+        console.log(\`🧑‍🎨 : [Worker] Processing \${task.layerId}\`);
+        const tileCount = await this.migrateLayer(task);
+        const processingTime = performance.now() - startTime;
+
+        self.postMessage({
+          type: 'MIGRATION_COMPLETE',
+          layerId: task.layerId,
+          success: true,
+          stats: { tileCount, processingTime }
+        });
+
+        console.log(\`🧑‍🎨 : [Worker] Completed \${task.layerId} (\${tileCount} tiles, \${processingTime.toFixed(0)}ms)\`);
+      } catch (error) {
+        console.error(\`🧑‍🎨 : [Worker] Failed to migrate \${task.layerId}:\`, error);
+        self.postMessage({
+          type: 'MIGRATION_COMPLETE',
+          layerId: task.layerId,
+          success: false,
+          error: error.message
+        });
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    this.isProcessing = false;
+  }
+
+  async migrateLayer(task) {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const legacyData = await this.getLegacyBlob(task.layerId);
+    if (!legacyData) throw new Error(\`Legacy data not found for \${task.layerId}\`);
+
+    const bitmap = await createImageBitmap(legacyData.blob);
+    try {
+      const tiles = await this.splitImageOnTiles(bitmap, task.coords, legacyData.width, legacyData.height);
+      await this.saveOptimizedTiles(task.layerId, tiles);
+      await this.updateLayerMetadata(task.layerId, { isOptimized: true });
+
+      for (const tileBitmap of Object.values(tiles)) {
+        tileBitmap.close();
+      }
+
+      return Object.keys(tiles).length;
+    } finally {
+      bitmap.close();
+    }
+  }
+
+  async getLegacyBlob(layerId) {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction([STORES.LEGACY_BLOBS], 'readonly');
+      const store = tx.objectStore(STORES.LEGACY_BLOBS);
+      const request = store.get(layerId);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async splitImageOnTiles(source, coords, width, height) {
+    const tileSize = 1000;
+    const tiles = {};
+
+    for (let py = coords.PxY; py < height + coords.PxY; ) {
+      const drawH = Math.min(tileSize - (py % tileSize), height - (py - coords.PxY));
+
+      for (let px = coords.PxX; px < width + coords.PxX; ) {
+        const drawW = Math.min(tileSize - (px % tileSize), width - (px - coords.PxX));
+
+        const canvas = new OffscreenCanvas(drawW, drawH);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Failed to get canvas context');
+
+        ctx.drawImage(source, px - coords.PxX, py - coords.PxY, drawW, drawH, 0, 0, drawW, drawH);
+
+        const imageData = ctx.getImageData(0, 0, drawW, drawH);
+        if (this.hasVisibleContent(imageData)) {
+          const tileBitmap = await createImageBitmap(canvas);
+          const tx = coords.TLX + Math.floor(px / 1000);
+          const ty = coords.TLY + Math.floor(py / 1000);
+          const tileKey = \`\${tx.toString().padStart(4, '0')},\${ty.toString().padStart(4, '0')},\${(px % 1000).toString().padStart(3, '0')},\${(py % 1000).toString().padStart(3, '0')}\`;
+          tiles[tileKey] = tileBitmap;
+        }
+
+        px += drawW;
+      }
+      py += drawH;
+    }
+
+    return tiles;
+  }
+
+  hasVisibleContent(imageData) {
+    const data = imageData.data;
+    const threshold = 10;
+    let visiblePixels = 0;
+
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] > 0) {
+        visiblePixels++;
+        if (visiblePixels >= threshold) return true;
+      }
+    }
+
+    return false;
+  }
+
+  async saveOptimizedTiles(layerId, tiles) {
+    const savedTiles = [];
+
+    try {
+      for (const [tileKey, bitmap] of Object.entries(tiles)) {
+        const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Failed to get canvas context');
+
+        ctx.drawImage(bitmap, 0, 0);
+        const blob = await canvas.convertToBlob({ type: 'image/png' });
+        await this.saveSingleTile(layerId, tileKey, blob, bitmap.width, bitmap.height);
+        savedTiles.push(tileKey);
+      }
+    } catch (error) {
+      console.error(\`🧑‍🎨 : [Worker] Failed to save tiles, rolling back\`, error);
+      for (const tileKey of savedTiles) {
+        await this.deleteSingleTile(layerId, tileKey);
+      }
+      throw error;
+    }
+  }
+
+  async saveSingleTile(layerId, tileKey, blob, width, height) {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction([STORES.OPTIMIZED_TILES], 'readwrite');
+      const store = tx.objectStore(STORES.OPTIMIZED_TILES);
+      const data = { layerId, tileKey, blob, width, height, timestamp: Date.now() };
+      const request = store.put(data);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async deleteSingleTile(layerId, tileKey) {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction([STORES.OPTIMIZED_TILES], 'readwrite');
+      const store = tx.objectStore(STORES.OPTIMIZED_TILES);
+      const request = store.delete([layerId, tileKey]);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async updateLayerMetadata(layerId, updates) {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction([STORES.LAYERS], 'readwrite');
+      const store = tx.objectStore(STORES.LAYERS);
+      const getRequest = store.get(layerId);
+
+      getRequest.onsuccess = () => {
+        const layer = getRequest.result;
+        if (!layer) {
+          reject(new Error(\`Layer \${layerId} not found\`));
+          return;
+        }
+
+        const updated = { ...layer, ...updates };
+        const putRequest = store.put(updated);
+        putRequest.onsuccess = () => resolve();
+        putRequest.onerror = () => reject(putRequest.error);
+      };
+
+      getRequest.onerror = () => reject(getRequest.error);
+    });
+  }
+}
+
+// Worker instance
+const worker = new MigrationWorker();
+
+// Message handler
+self.addEventListener('message', async (event) => {
+  const { type, data } = event.data;
+
+  try {
+    switch (type) {
+      case 'MIGRATE_REQUEST':
+        if (!worker.db) {
+          await worker.init();
+        }
+        worker.enqueue({
+          layerId: data.layerId,
+          priority: data.priority,
+          coords: data.coords,
+          bounds: data.bounds
+        });
+        break;
+
+      case 'CANCEL_MIGRATION':
+        worker.cancel(data.layerId);
+        break;
+
+      default:
+        console.warn(\`🧑‍🎨 : [Worker] Unknown message type: \${type}\`);
+    }
+  } catch (error) {
+    console.error('🧑‍🎨 : [Worker] Error handling message:', error);
+  }
+});
+
+console.log('🧑‍🎨 : [Worker] Migration worker loaded');
+`;
+
+  // Create Blob URL from inline code
+  const blob = new Blob([workerCode], { type: 'application/javascript' });
+  const workerUrl = URL.createObjectURL(blob);
+  const worker = new Worker(workerUrl);
+
+  console.log('🧑‍🎨 : Migration worker created (inline Blob)');
 
   return worker;
 };
