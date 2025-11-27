@@ -19,7 +19,14 @@
 - ✅ メッセージルーティング
 - ✅ グローバル変数への登録
 
-## 🎯 現在の動作状況
+## 🎯 Phase 4 実装状況 (2025-11-27)
+
+### ✅ 完了した機能
+
+**Gallery と IndexedDB の統合:**
+- Gallery 保存時に Chrome Storage + IndexedDB (legacy_blobs) に保存
+- content.ts に `saveLayerToIndexedDB()` 追加
+- inject 側の `handleLayerSave()` で Repository 経由で保存
 
 ### ✅ 動作する機能
 

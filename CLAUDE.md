@@ -72,12 +72,10 @@ All feature APIs are typed in `src/core/di.ts` under `FeatureRegistry`.
 src/
 ├── content.ts              # Main entry, DI registration
 ├── inject/                 # Page-context scripts (see inject/CLAUDE.md)
+│   ├── db/                # IndexedDB schema & Repository Pattern
+│   ├── workers/           # Web Worker (migration, optimization)
 │   ├── handlers/          # Message handlers (overlay, state, request)
 │   ├── tile-draw/         # Tile overlay rendering
-│   │   ├── stats/         # Statistics computation
-│   │   ├── filters/       # Color filtering (GPU/CPU)
-│   │   └── image-processing/  # Image manipulation
-│   ├── user-status/       # User status management
 │   ├── fetch-interceptor.ts   # Intercepts tile & user API
 │   └── map-instance.ts    # Captures WPlace map instance
 ├── core/di.ts             # DI container & API types
