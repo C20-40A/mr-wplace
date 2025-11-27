@@ -1,6 +1,7 @@
 import { setupFetchInterceptor } from "./fetch-interceptor";
 import { setupMapObserver } from "./map-instance";
 import { setupMessageHandler } from "./message-handler";
+import { setupDoctorHandlers } from "./handlers/doctor-handlers";
 import { tileCacheDB } from "./cache-storage";
 import { openDatabase } from "./db/schema";
 import { LayerRepository } from "./db/layer-repository";
@@ -92,6 +93,11 @@ import { createMigrationWorker, WorkerMessenger } from "./workers/messaging";
       // Setup message handler
       Promise.resolve(setupMessageHandler()).catch((error) => {
         console.error("🧑‍🎨: Failed to setup message handler:", error);
+      }),
+
+      // Setup doctor handlers (for storage health checks)
+      Promise.resolve(setupDoctorHandlers()).catch((error) => {
+        console.error("🧑‍🎨: Failed to setup doctor handlers:", error);
       }),
 
       // Setup map observer

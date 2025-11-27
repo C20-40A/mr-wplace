@@ -185,8 +185,9 @@ class MigrationWorker {
         self.postMessage(response);
       }
 
-      // Wait a bit to allow GC
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait to allow GC (longer for low priority tasks)
+      const delay = task.priority === 0 ? 100 : 500; // High: 100ms, Low: 500ms
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
 
     this.isProcessing = false;

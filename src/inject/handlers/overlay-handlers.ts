@@ -3,6 +3,114 @@ import { loadImageBitmap } from "../utils/image-loader";
 import type { GalleryImage } from "../types";
 
 /**
+ * Save gallery item to IndexedDB and request Worker migration
+ * SAFETY: Only saves metadata + blob, Worker does heavy processing in background
+ */
+const saveGalleryToIndexedDB = async (
+  img: GalleryImage,
+  bitmap: ImageBitmap
+): Promise<void> => {
+  const repository = window.mrWplace?.layerRepository;
+  const worker = window.mrWplace?.workerMessenger?.worker;
+
+  if (!repository) {
+    console.warn("🧑‍🎨 : LayerRepository not available, skipping IndexedDB save");
+    return;
+  }
+
+  try {
+    // Check if layer already exists
+    const existingLayer = await repository.getLayerMetadata(img.key);
+    if (existingLayer) {
+      // Layer exists, but might not be optimized yet
+      if (!existingLayer.isOptimized && worker) {
+        // Request migration in background (low priority)
+        requestWorkerMigration(worker, img.key, existingLayer);
+      }
+      return;
+    }
+
+    // Convert ImageBitmap to Blob (use already loaded bitmap)
+    const blob = await bitmapToBlob(bitmap);
+
+    // Calculate bounds
+    const TLX = img.drawPosition.TLX;
+    const TLY = img.drawPosition.TLY;
+    const PxX = img.drawPosition.PxX;
+    const PxY = img.drawPosition.PxY;
+
+    const bounds = {
+      top: TLY * 1000 + PxY,
+      left: TLX * 1000 + PxX,
+      right: TLX * 1000 + PxX + bitmap.width,
+      bottom: TLY * 1000 + PxY + bitmap.height,
+    };
+
+    const layerMetadata = {
+      id: img.key,
+      type: "gallery" as const,
+      visible: true,
+      zIndex: img.layerOrder,
+      opacity: 1,
+      coords: { TLX, TLY, PxX, PxY },
+      bounds,
+      isOptimized: false,
+      timestamp: Date.now(),
+    };
+
+    // Save to IndexedDB (only metadata + blob, no tile splitting)
+    // saveLayer calculates dimensions from blob automatically
+    await repository.saveLayer(layerMetadata, blob);
+
+    console.log(`🧑‍🎨 : Saved ${img.key} to IndexedDB`);
+
+    // Request Worker migration in background (low priority)
+    if (worker) {
+      requestWorkerMigration(worker, img.key, layerMetadata);
+    }
+  } catch (error) {
+    console.error(`🧑‍🎨 : Failed to save ${img.key} to IndexedDB:`, error);
+  }
+};
+
+/**
+ * Convert ImageBitmap to Blob
+ */
+const bitmapToBlob = async (bitmap: ImageBitmap): Promise<Blob> => {
+  const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Failed to get canvas context");
+  }
+  ctx.drawImage(bitmap, 0, 0);
+  return await canvas.convertToBlob({ type: "image/png" });
+};
+
+/**
+ * Request Worker migration (background processing)
+ */
+const requestWorkerMigration = (
+  worker: Worker,
+  layerId: string,
+  layer: {
+    coords: { TLX: number; TLY: number; PxX: number; PxY: number };
+    bounds: { top: number; left: number; right: number; bottom: number };
+  }
+): void => {
+  worker.postMessage({
+    type: "MIGRATE_REQUEST",
+    data: {
+      layerId,
+      priority: 1, // Low priority (background migration)
+      coords: layer.coords,
+      bounds: layer.bounds,
+    },
+  });
+
+  console.log(`🧑‍🎨 : Requested background migration for ${layerId}`);
+};
+
+/**
  * Handle gallery images data from content script
  * Store in window for tile processing and sync to overlay layers
  * Also restores stored statistics from previous sessions
@@ -54,6 +162,10 @@ export const handleGalleryImages = async (data: {
         totalTileCount += tileCount;
         console.log(`🧑‍🎨 : Image ${img.key} split into ${tileCount} tiles (${bitmap.width}x${bitmap.height}px)`);
       }
+
+      // Save to IndexedDB if not already saved
+      // This ensures existing gallery items are migrated to IndexedDB
+      await saveGalleryToIndexedDB(img, bitmap);
 
       // Restore stored statistics if available
       if (img.perTileColorStats) {

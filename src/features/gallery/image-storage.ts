@@ -70,7 +70,95 @@ export class ImageStorage<T extends BaseImageItem> {
       } as T;
     });
 
+    // 5. Hybrid: Fetch missing dataUrls from IndexedDB
+    await this.fetchMissingDataUrlsFromIndexedDB(items);
+
     return items;
+  }
+
+  /**
+   * Fetch missing dataUrls from IndexedDB (hybrid storage)
+   * Chrome storage: metadata only (lightweight)
+   * IndexedDB: dataUrl (heavy data)
+   */
+  private async fetchMissingDataUrlsFromIndexedDB(items: T[]): Promise<void> {
+    const missingKeys = items
+      .filter((item) => !item.dataUrl || item.dataUrl === "")
+      .map((item) => item.key);
+
+    if (missingKeys.length === 0) {
+      return;
+    }
+
+    console.log(
+      `🧑‍🎨 : Fetching ${missingKeys.length} missing dataUrls from IndexedDB...`
+    );
+
+    // Fetch from IndexedDB via inject context
+    const dataUrls = await this.fetchDataUrlsFromIndexedDB(missingKeys);
+
+    // Update items with fetched dataUrls
+    for (const item of items) {
+      if (dataUrls.has(item.key)) {
+        item.dataUrl = dataUrls.get(item.key)!;
+      }
+    }
+
+    console.log(
+      `🧑‍🎨 : Fetched ${dataUrls.size}/${missingKeys.length} dataUrls from IndexedDB`
+    );
+  }
+
+  /**
+   * Request dataUrls from IndexedDB via inject context
+   */
+  private async fetchDataUrlsFromIndexedDB(
+    keys: string[]
+  ): Promise<Map<string, string>> {
+    return new Promise((resolve) => {
+      const result = new Map<string, string>();
+      let receivedCount = 0;
+
+      const handler = (event: MessageEvent) => {
+        if (event.data.source === "mr-wplace-gallery-dataurl-response") {
+          const { key, dataUrl } = event.data;
+
+          if (dataUrl) {
+            result.set(key, dataUrl);
+          }
+
+          receivedCount++;
+
+          // All responses received
+          if (receivedCount >= keys.length) {
+            window.removeEventListener("message", handler);
+            resolve(result);
+          }
+        }
+      };
+
+      window.addEventListener("message", handler);
+
+      // Send requests for each key
+      for (const key of keys) {
+        window.postMessage(
+          {
+            source: "mr-wplace-gallery-dataurl-request",
+            key,
+          },
+          "*"
+        );
+      }
+
+      // Timeout after 10s
+      setTimeout(() => {
+        window.removeEventListener("message", handler);
+        console.warn(
+          `🧑‍🎨 : IndexedDB dataUrl fetch timeout (${receivedCount}/${keys.length} received)`
+        );
+        resolve(result);
+      }, 10000);
+    });
   }
 
   async save(item: T): Promise<void> {

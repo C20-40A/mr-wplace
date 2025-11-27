@@ -33,6 +33,7 @@ import {
   getOverlayPixelColor,
   sendSnapshotsToInject,
 } from "@/utils/inject-bridge";
+import { doctorAPI } from "@/features/doctor";
 
 /**
  * Send gallery images to inject side for tile processing
@@ -83,7 +84,7 @@ export const sendGalleryImagesToInject = async () => {
 export const saveLayerToIndexedDB = async (
   layer: {
     id: string;
-    type: 'gallery' | 'text' | 'snapshot';
+    type: "gallery" | "text" | "snapshot";
     visible: boolean;
     zIndex: number;
     opacity: number;
@@ -102,36 +103,39 @@ export const saveLayerToIndexedDB = async (
   return new Promise((resolve, reject) => {
     const handler = (event: MessageEvent) => {
       if (
-        event.data.source === 'mr-wplace-layer-save-response' &&
+        event.data.source === "mr-wplace-layer-save-response" &&
         event.data.layerId === layer.id
       ) {
-        window.removeEventListener('message', handler);
+        window.removeEventListener("message", handler);
 
         if (event.data.success) {
           console.log(`🧑‍🎨 : Layer ${layer.id} saved to IndexedDB successfully`);
           resolve();
         } else {
-          console.error(`🧑‍🎨 : Failed to save layer ${layer.id}:`, event.data.error);
-          reject(new Error(event.data.error || 'Unknown error'));
+          console.error(
+            `🧑‍🎨 : Failed to save layer ${layer.id}:`,
+            event.data.error
+          );
+          reject(new Error(event.data.error || "Unknown error"));
         }
       }
     };
 
-    window.addEventListener('message', handler);
+    window.addEventListener("message", handler);
 
     // Send save request
     window.postMessage(
       {
-        source: 'mr-wplace-layer-save',
+        source: "mr-wplace-layer-save",
         layer,
         dataUrl,
       },
-      '*'
+      "*"
     );
 
     // Timeout after 30s
     setTimeout(() => {
-      window.removeEventListener('message', handler);
+      window.removeEventListener("message", handler);
       reject(new Error(`Timeout waiting for layer ${layer.id} save response`));
     }, 30000);
   });
@@ -357,6 +361,14 @@ export const sendTileBoundariesToInject = async () => {
 
     console.log("🧑‍🎨: Starting initialization...");
 
+    // Run storage cleanup in background (5 seconds after initialization)
+    // SAFETY: Only deletes gallery_* keys, one at a time, 500ms delay
+    setTimeout(() => {
+      doctorAPI.checkAndCleanup().catch((error) => {
+        console.error("🧑‍🎨 [Doctor] Cleanup failed (non-critical):", error);
+      });
+    }, 5000);
+
     // Fetchインターセプターの注入
     {
       const script = document.createElement("script");
@@ -382,7 +394,11 @@ export const sendTileBoundariesToInject = async () => {
 
     // データをDOM属性で渡す（CSP safe）
     {
+      console.log("🧑‍🎨: Injecting data element...");
+      const themeStart = performance.now();
       const currentTheme = await ThemeToggleStorage.get();
+      const themeEnd = performance.now();
+      console.log(`🧑‍🎨: ThemeToggleStorage.get() took ${(themeEnd - themeStart).toFixed(2)}ms`);
 
       const dataElement = document.createElement("div");
       dataElement.id = "__mr_wplace_data__";
@@ -536,7 +552,7 @@ export const sendTileBoundariesToInject = async () => {
 
     // Global access for ImageProcessor and Gallery
     // IMPORTANT: Use Object.assign to preserve existing properties (e.g., wplaceChargeData)
-    Object.assign(window.mrWplace, {
+    Object.assign(window.mrWplace!, {
       colorFilterManager,
       tileOverlay,
       tileSnapshot,
