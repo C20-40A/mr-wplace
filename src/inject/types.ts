@@ -20,6 +20,7 @@ export interface GalleryImage {
   dataUrl: string;
   drawPosition: { TLX: number; TLY: number; PxX: number; PxY: number };
   layerOrder: number;
+  drawEnabled?: boolean; // False if image is disabled in gallery
   // Stored statistics for restoration after reload
   perTileColorStats?: Record<
     string,

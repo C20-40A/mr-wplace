@@ -45,34 +45,38 @@ export const sendGalleryImagesToInject = async () => {
   const galleryStorage = new GalleryStorage();
   const images = await galleryStorage.getAll();
 
-  const enabledImages = images
-    .filter((img) => img.drawEnabled && img.drawPosition)
+  // Send ALL images with drawPosition (including disabled ones)
+  // Inject side will handle IndexedDB storage for all items
+  // But only add enabled items to overlay layers
+  const allImages = images
+    .filter((img) => img.drawPosition)
     .sort((a, b) => (a.layerOrder ?? 0) - (b.layerOrder ?? 0))
     .map((img) => ({
       key: img.key,
       dataUrl: img.dataUrl,
       drawPosition: img.drawPosition!,
       layerOrder: img.layerOrder ?? 0,
+      drawEnabled: img.drawEnabled ?? true, // Include drawEnabled flag
       // Include stored statistics for restoration
       perTileColorStats: img.perTileColorStats,
     }));
 
   const messageData = {
     source: "mr-wplace-gallery-images",
-    images: enabledImages,
+    images: allImages,
   };
 
   // Log data size for performance monitoring
   const dataSize = JSON.stringify(messageData).length;
   const dataSizeMB = (dataSize / 1024 / 1024).toFixed(2);
   console.log(
-    `🧑‍🎨 : Sending ${enabledImages.length} gallery images to inject side (${dataSizeMB}MB)`
+    `🧑‍🎨 : Sending ${allImages.length} gallery images to inject side (${dataSizeMB}MB)`
   );
 
   window.postMessage(messageData, "*");
 
   console.log(
-    `🧑‍🎨 : Sent ${enabledImages.length} gallery images to inject side`
+    `🧑‍🎨 : Sent ${allImages.length} gallery images to inject side`
   );
 };
 

@@ -148,23 +148,28 @@ export const handleGalleryImages = async (data: {
     try {
       const bitmap = await loadImageBitmap(img.dataUrl, img.key);
 
-      await addImageToOverlayLayers(
-        bitmap,
-        [img.drawPosition.TLX, img.drawPosition.TLY, img.drawPosition.PxX, img.drawPosition.PxY],
-        img.key
-      );
+      // Only add to overlay layers if drawEnabled is true
+      if (img.drawEnabled !== false) {
+        await addImageToOverlayLayers(
+          bitmap,
+          [img.drawPosition.TLX, img.drawPosition.TLY, img.drawPosition.PxX, img.drawPosition.PxY],
+          img.key
+        );
 
-      // Count tiles for this image
-      const { overlayLayers } = await import("../tile-draw");
-      const thisImageLayer = overlayLayers.find((layer) => layer.imageKey === img.key);
-      if (thisImageLayer) {
-        const tileCount = Object.keys(thisImageLayer.tiles).length;
-        totalTileCount += tileCount;
-        console.log(`🧑‍🎨 : Image ${img.key} split into ${tileCount} tiles (${bitmap.width}x${bitmap.height}px)`);
+        // Count tiles for this image
+        const { overlayLayers } = await import("../tile-draw");
+        const thisImageLayer = overlayLayers.find((layer) => layer.imageKey === img.key);
+        if (thisImageLayer) {
+          const tileCount = Object.keys(thisImageLayer.tiles).length;
+          totalTileCount += tileCount;
+          console.log(`🧑‍🎨 : Image ${img.key} split into ${tileCount} tiles (${bitmap.width}x${bitmap.height}px)`);
+        }
+      } else {
+        console.log(`🧑‍🎨 : Image ${img.key} is disabled, skipping overlay layers (but saving to IndexedDB)`);
       }
 
-      // Save to IndexedDB if not already saved
-      // This ensures existing gallery items are migrated to IndexedDB
+      // Save to IndexedDB for ALL items (both enabled and disabled)
+      // This ensures complete backup of gallery data
       await saveGalleryToIndexedDB(img, bitmap);
 
       // Restore stored statistics if available

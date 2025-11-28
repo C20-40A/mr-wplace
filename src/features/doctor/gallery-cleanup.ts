@@ -48,12 +48,35 @@ export class GalleryCleanup {
     // Save metadata back (without dataUrl)
     await storage.set({ [key]: metadata });
 
+    // Mark as cleaned in index
+    await this.markAsCleaned(key);
+
     console.log(
       `🧑‍🎨 [Doctor] Cleaned dataUrl from ${index + 1}/${total}: ${key.substring(0, 30)}...`
     );
 
     // Wait before next deletion to avoid Chrome freeze
     await new Promise((resolve) => setTimeout(resolve, this.DELAY_MS));
+  }
+
+  /**
+   * Mark item as cleaned in gallery_index
+   */
+  private static async markAsCleaned(key: string): Promise<void> {
+    const result = await storage.get(["gallery_index"]);
+    const index = result["gallery_index"];
+
+    if (!index || !index.items) {
+      console.warn(`🧑‍🎨 [Doctor] Index not found, cannot mark as cleaned`);
+      return;
+    }
+
+    const item = index.items.find((i: { key: string }) => i.key === key);
+    if (item) {
+      item.cleaned = true;
+      index.lastUpdated = Date.now();
+      await storage.set({ gallery_index: index });
+    }
   }
 
   /**

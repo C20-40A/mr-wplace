@@ -7,7 +7,9 @@ export interface BaseImageItem {
 }
 
 interface ImageIndex<T> {
-  items: Array<Pick<T, "key" | "timestamp">>;
+  items: Array<Pick<T, "key" | "timestamp"> & {
+    cleaned?: boolean; // Doctor cleanup済みフラグ
+  }>;
   lastUpdated: number;
 }
 

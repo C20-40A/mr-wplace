@@ -13,9 +13,8 @@ import type { DiagnosisResult } from "./types";
 export class StorageDoctor {
   /**
    * Get all gallery_* keys from Chrome storage (from gallery_index)
-   * This is lightweight - only loads the index, not the full data
    */
-  private static async getGalleryKeys(): Promise<string[]> {
+  private static async getAllGalleryKeys(): Promise<string[]> {
     const result = await storage.get(["gallery_index"]);
     const index = result["gallery_index"];
 
@@ -23,8 +22,26 @@ export class StorageDoctor {
       return [];
     }
 
-    // Return keys from index (metadata only, no dataUrl)
+    // Return all keys
     return index.items.map((item: { key: string }) => item.key);
+  }
+
+  /**
+   * Get gallery_* keys that need cleanup from Chrome storage (from gallery_index)
+   * This is ultra-lightweight - only loads the index and checks cleaned flag
+   */
+  private static async getGalleryKeysNeedingCleanup(): Promise<string[]> {
+    const result = await storage.get(["gallery_index"]);
+    const index = result["gallery_index"];
+
+    if (!index || !index.items) {
+      return [];
+    }
+
+    // Return only keys that haven't been cleaned yet (cleaned !== true)
+    return index.items
+      .filter((item: { key: string; cleaned?: boolean }) => !item.cleaned)
+      .map((item: { key: string }) => item.key);
   }
 
   /**
@@ -35,7 +52,7 @@ export class StorageDoctor {
     drawEnabled: number;
     drawDisabled: number;
   }> {
-    const keys = await this.getGalleryKeys();
+    const keys = await this.getAllGalleryKeys();
 
     if (keys.length === 0) {
       return { total: 0, drawEnabled: 0, drawDisabled: 0 };
@@ -99,41 +116,14 @@ export class StorageDoctor {
   }
 
   /**
-   * Find cleanup candidates (gallery items that exist in both Chrome storage and IndexedDB)
+   * Find cleanup candidates (items with cleaned !== true in index)
+   * Ultra-lightweight - only reads index, no IndexedDB checks needed
    */
   private static async findCleanupCandidates(): Promise<string[]> {
-    const galleryKeys = await this.getGalleryKeys();
-
-    if (galleryKeys.length === 0) {
-      return [];
-    }
+    const candidates = await this.getGalleryKeysNeedingCleanup();
 
     console.log(
-      `🧑‍🎨 [Doctor] Found ${galleryKeys.length} gallery items in Chrome storage`
-    );
-    console.log(`🧑‍🎨 [Doctor] Checking IndexedDB...`);
-
-    const candidates: string[] = [];
-
-    // Check each key one by one (avoid parallel requests)
-    for (let i = 0; i < galleryKeys.length; i++) {
-      const key = galleryKeys[i];
-      const exists = await this.checkIndexedDB(key);
-
-      if (exists) {
-        candidates.push(key);
-      }
-
-      // Log progress every 50 items
-      if ((i + 1) % 50 === 0) {
-        console.log(
-          `🧑‍🎨 [Doctor] Checked ${i + 1}/${galleryKeys.length} items...`
-        );
-      }
-    }
-
-    console.log(
-      `🧑‍🎨 [Doctor] Found ${candidates.length} items in IndexedDB (cleanup candidates)`
+      `🧑‍🎨 [Doctor] Found ${candidates.length} items needing cleanup (checked index only)`
     );
 
     return candidates;
