@@ -8,30 +8,14 @@ import type { CleanupResult, CleanupProgress } from "./types";
  * SAFETY:
  * - Only deletes gallery_* keys
  * - One key at a time (500ms delay between deletions)
- * - Idempotent (safe to run multiple times)
+ * - Safe to run multiple times (runs every startup, lightweight diagnosis)
  */
 export class GalleryCleanup {
-  private static readonly CLEANUP_FLAG_KEY = "mr-wplace-doctor-cleanup-v1";
   private static readonly DELAY_MS = 500; // Wait 500ms between deletions
 
   /**
-   * Check if cleanup has already been performed
-   */
-  static async isCleanupDone(): Promise<boolean> {
-    const result = await storage.get([this.CLEANUP_FLAG_KEY]);
-    return !!result[this.CLEANUP_FLAG_KEY];
-  }
-
-  /**
-   * Mark cleanup as complete
-   */
-  private static async markCleanupDone(): Promise<void> {
-    await storage.set({ [this.CLEANUP_FLAG_KEY]: true });
-  }
-
-  /**
-   * Remove dataUrl from gallery item (keep metadata and stats)
-   * This implements hybrid storage: metadata in Chrome, blob in IndexedDB
+   * Remove dataUrl from gallery item and generate thumbnail
+   * This implements hybrid storage: metadata + thumbnail in Chrome, blob in IndexedDB
    */
   private static async cleanupOne(
     key: string,
@@ -47,7 +31,18 @@ export class GalleryCleanup {
       return;
     }
 
-    // Remove only dataUrl (keep metadata and stats)
+    // Generate thumbnail if not exists
+    if (!item.thumbnail) {
+      const thumbnail = await this.generateThumbnail(key);
+      if (thumbnail) {
+        item.thumbnail = thumbnail;
+        console.log(
+          `🧑‍🎨 [Doctor] Generated thumbnail for ${index + 1}/${total}: ${key.substring(0, 30)}...`
+        );
+      }
+    }
+
+    // Remove only dataUrl (keep metadata, stats, and thumbnail)
     const { dataUrl, ...metadata } = item;
 
     // Save metadata back (without dataUrl)
@@ -59,6 +54,41 @@ export class GalleryCleanup {
 
     // Wait before next deletion to avoid Chrome freeze
     await new Promise((resolve) => setTimeout(resolve, this.DELAY_MS));
+  }
+
+  /**
+   * Generate thumbnail via inject context
+   */
+  private static async generateThumbnail(key: string): Promise<string | null> {
+    return new Promise((resolve) => {
+      const handler = (event: MessageEvent) => {
+        if (
+          event.data.source === "mr-wplace-thumbnail-response" &&
+          event.data.key === key
+        ) {
+          window.removeEventListener("message", handler);
+          resolve(event.data.thumbnail);
+        }
+      };
+
+      window.addEventListener("message", handler);
+
+      // Send thumbnail request to inject
+      window.postMessage(
+        {
+          source: "mr-wplace-thumbnail-request",
+          key,
+        },
+        "*"
+      );
+
+      // Timeout after 5s
+      setTimeout(() => {
+        window.removeEventListener("message", handler);
+        console.warn(`🧑‍🎨 [Doctor] Thumbnail generation timeout for ${key}`);
+        resolve(null);
+      }, 5000);
+    });
   }
 
   /**
@@ -92,9 +122,6 @@ export class GalleryCleanup {
       }
     }
 
-    // Mark as done
-    await this.markCleanupDone();
-
     const durationMs = performance.now() - startTime;
 
     console.log(
@@ -122,13 +149,5 @@ export class GalleryCleanup {
       durationMs,
       freedMB: diagnosisResult.estimatedFreedMB,
     };
-  }
-
-  /**
-   * Reset cleanup flag (for testing/debugging)
-   */
-  static async resetCleanupFlag(): Promise<void> {
-    await storage.remove([this.CLEANUP_FLAG_KEY]);
-    console.log("🧑‍🎨 [Doctor] Cleanup flag reset");
   }
 }

@@ -59,10 +59,22 @@ export class ImageStorage<T extends BaseImageItem> {
     // 4. ImageItem配列構築
     const items = index.items.map((meta) => {
       const data = dataResult[meta.key];
+
+      // データが存在しない場合（Doctor が削除した後など）
+      if (!data) {
+        // メタデータのみで復元（dataUrl は後で IndexedDB から取得）
+        return {
+          key: meta.key,
+          timestamp: meta.timestamp,
+          dataUrl: "",
+        } as T;
+      }
+
       // 新形式（完全オブジェクト）で保存されている場合
       if (typeof data === "object" && data.key) {
         return data as T;
       }
+
       // 旧形式（dataUrlのみ）で保存されている場合
       return {
         ...meta,
@@ -78,20 +90,52 @@ export class ImageStorage<T extends BaseImageItem> {
 
   /**
    * Fetch missing dataUrls from IndexedDB (hybrid storage)
-   * Chrome storage: metadata only (lightweight)
-   * IndexedDB: dataUrl (heavy data)
+   * Chrome storage: metadata + thumbnail (lightweight)
+   * IndexedDB: full image (heavy data)
+   *
+   * Priority:
+   * 1. Use existing dataUrl (full image)
+   * 2. Use thumbnail if available (fast)
+   * 3. Fetch from IndexedDB (fallback)
    */
   private async fetchMissingDataUrlsFromIndexedDB(items: T[]): Promise<void> {
-    const missingKeys = items
-      .filter((item) => !item.dataUrl || item.dataUrl === "")
-      .map((item) => item.key);
+    let thumbnailCount = 0;
+    let missingKeys: string[] = [];
+    let hasDataUrlCount = 0;
+
+    // Check each item
+    for (const item of items) {
+      // Already has full dataUrl? Skip
+      if (item.dataUrl && item.dataUrl !== "") {
+        hasDataUrlCount++;
+        continue;
+      }
+
+      // Has thumbnail? Use it
+      if ((item as any).thumbnail) {
+        item.dataUrl = (item as any).thumbnail;
+        thumbnailCount++;
+        continue;
+      }
+
+      // No dataUrl and no thumbnail? Need to fetch from IndexedDB
+      missingKeys.push(item.key);
+    }
+
+    console.log(
+      `🧑‍🎨 [Gallery] Data status: ${hasDataUrlCount} with dataUrl, ${thumbnailCount} using thumbnails, ${missingKeys.length} need IndexedDB fetch`
+    );
+
+    if (thumbnailCount > 0) {
+      console.log(`🧑‍🎨 : Using thumbnails for ${thumbnailCount} items`);
+    }
 
     if (missingKeys.length === 0) {
       return;
     }
 
     console.log(
-      `🧑‍🎨 : Fetching ${missingKeys.length} missing dataUrls from IndexedDB...`
+      `🧑‍🎨 : Fetching ${missingKeys.length} missing dataUrls from IndexedDB (no thumbnail)...`
     );
 
     // Fetch from IndexedDB via inject context
@@ -105,7 +149,7 @@ export class ImageStorage<T extends BaseImageItem> {
     }
 
     console.log(
-      `🧑‍🎨 : Fetched ${dataUrls.size}/${missingKeys.length} dataUrls from IndexedDB`
+      `🧑‍🎨 : Fetched ${dataUrls.size}/${missingKeys.length} full images from IndexedDB`
     );
   }
 

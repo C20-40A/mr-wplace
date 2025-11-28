@@ -173,6 +173,100 @@ const blobToDataUrl = (blob: Blob): Promise<string> => {
 };
 
 /**
+ * Handle thumbnail generation request
+ * Generate 128x128 thumbnail from IndexedDB blob
+ */
+const handleThumbnailRequest = async (key: string): Promise<void> => {
+  try {
+    const db = await openDatabase();
+    const blob = await getLegacyBlob(db, key);
+
+    if (!blob) {
+      // Send empty response
+      window.postMessage(
+        {
+          source: "mr-wplace-thumbnail-response",
+          key,
+          thumbnail: null,
+        },
+        "*"
+      );
+      return;
+    }
+
+    // Generate thumbnail
+    const thumbnail = await generateThumbnail(blob);
+
+    // Send response back to content script
+    window.postMessage(
+      {
+        source: "mr-wplace-thumbnail-response",
+        key,
+        thumbnail,
+      },
+      "*"
+    );
+  } catch (error) {
+    console.error(`🧑‍🎨 : Failed to generate thumbnail for ${key}:`, error);
+
+    // Send failure response
+    window.postMessage(
+      {
+        source: "mr-wplace-thumbnail-response",
+        key,
+        thumbnail: null,
+      },
+      "*"
+    );
+  }
+};
+
+/**
+ * Generate 128x128 thumbnail from blob
+ */
+const generateThumbnail = async (blob: Blob): Promise<string> => {
+  const THUMBNAIL_SIZE = 128;
+
+  // Create ImageBitmap
+  const bitmap = await createImageBitmap(blob);
+
+  // Calculate scaled dimensions (maintain aspect ratio)
+  let width = bitmap.width;
+  let height = bitmap.height;
+
+  if (width > height) {
+    if (width > THUMBNAIL_SIZE) {
+      height = (height * THUMBNAIL_SIZE) / width;
+      width = THUMBNAIL_SIZE;
+    }
+  } else {
+    if (height > THUMBNAIL_SIZE) {
+      width = (width * THUMBNAIL_SIZE) / height;
+      height = THUMBNAIL_SIZE;
+    }
+  }
+
+  // Create canvas and draw scaled image
+  const canvas = new OffscreenCanvas(width, height);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Failed to get canvas context");
+  }
+
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+
+  // Convert to JPEG (smaller size)
+  const thumbnailBlob = await canvas.convertToBlob({
+    type: "image/jpeg",
+    quality: 0.7,
+  });
+
+  // Convert to dataUrl
+  return await blobToDataUrl(thumbnailBlob);
+};
+
+/**
  * Setup doctor message handlers
  */
 export const setupDoctorHandlers = (): void => {
@@ -186,6 +280,12 @@ export const setupDoctorHandlers = (): void => {
     if (event.data.source === "mr-wplace-gallery-dataurl-request") {
       const { key } = event.data;
       handleGalleryDataUrlRequest(key);
+    }
+
+    // Handle thumbnail generation request
+    if (event.data.source === "mr-wplace-thumbnail-request") {
+      const { key } = event.data;
+      handleThumbnailRequest(key);
     }
   });
 

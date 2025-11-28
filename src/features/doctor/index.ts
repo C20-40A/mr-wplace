@@ -28,25 +28,24 @@ export const doctorAPI = {
    * Deletes gallery_* keys from Chrome storage one by one
    *
    * SAFETY:
-   * - Only runs once (idempotent)
+   * - Runs every time (diagnose is lightweight ~0.5s)
    * - 500ms delay between deletions
    * - Only deletes gallery_* keys
    */
   async checkAndCleanup(): Promise<CleanupResult | null> {
-    // Check if already cleaned
-    if (await GalleryCleanup.isCleanupDone()) {
-      console.log("🧑‍🎨 [Doctor] Cleanup already done, skipping");
-      return null;
-    }
+    console.log("🧑‍🎨 [Doctor] checkAndCleanup() started");
 
-    // Perform diagnosis
+    // Perform diagnosis (lightweight, runs every time)
+    console.log("🧑‍🎨 [Doctor] Running diagnosis...");
     const diagnosis = await StorageDoctor.diagnose();
 
     // No cleanup needed
     if (diagnosis.cleanupCandidates.length === 0) {
-      console.log("🧑‍🎨 [Doctor] No cleanup needed");
+      console.log("🧑‍🎨 [Doctor] No cleanup needed (0 candidates)");
       return null;
     }
+
+    console.log(`🧑‍🎨 [Doctor] Starting cleanup for ${diagnosis.cleanupCandidates.length} items...`);
 
     // Perform cleanup
     const result = await GalleryCleanup.performCleanup(diagnosis.cleanupCandidates, {
@@ -57,10 +56,4 @@ export const doctorAPI = {
     return result;
   },
 
-  /**
-   * Reset cleanup flag (for testing/debugging)
-   */
-  async resetCleanupFlag(): Promise<void> {
-    await GalleryCleanup.resetCleanupFlag();
-  },
 };
