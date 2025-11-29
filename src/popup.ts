@@ -237,12 +237,12 @@ const handleExport = async (): Promise<void> => {
   try {
     // Disable button
     exportBtn.disabled = true;
-    const originalLabel = exportBtn.innerHTML;
+    // const originalLabel = exportBtn.innerHTML;
     exportBtn.innerHTML = `⏳ ${t`${"exporting"}`}`;
 
-    // Get all gallery items
+    // Get all gallery items (full images for export)
     const storage = new GalleryStorage();
-    const items = await storage.getAll();
+    const items = await storage.getAll({ fullImage: true });
 
     // Filter items with drawPosition
     const itemsToExport = items.filter((item) => item.drawPosition);

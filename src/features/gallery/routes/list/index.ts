@@ -93,7 +93,7 @@ export class GalleryList {
   ): Promise<void> {
     this.onDrawToggleCallback = onDrawToggle;
     const items = await this.storage.getAll();
-    console.log("🧑‍🎨 : Fetched gallery items:", items);
+    console.log("🧑‍🎨 : Fetched gallery items (thumbnails):", items);
 
     // ソート設定を取得
     const result = await browserStorage.get([SORT_KEY]);

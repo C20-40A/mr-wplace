@@ -1,5 +1,6 @@
 # メイン
 
+- sendGalleryImagesToInject なんとかする
 - 透明ピクセルが取り込まれてしまう
 - merge タイル画面の dark theme
 - 直接取り込みしたときの色問題

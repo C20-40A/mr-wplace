@@ -105,7 +105,7 @@ export class GalleryStorage {
     });
   }
 
-  async get(key: string, options?: { fullImage?: boolean }): Promise<GalleryItem | undefined> {
+  async get(key: string): Promise<GalleryItem | undefined> {
     const dataResult = await storage.get([key]);
     const data = dataResult[key];
 
@@ -130,8 +130,8 @@ export class GalleryStorage {
       } as GalleryItem;
     }
 
-    // fullImage: true の場合、IndexedDBから完全な画像を取得
-    if (options?.fullImage && (!item.dataUrl || item.dataUrl === "")) {
+    // Always fetch full image from IndexedDB
+    if (!item.dataUrl || item.dataUrl === "") {
       const dataUrl = await fetchFullImageFromIndexedDB(key);
       if (dataUrl) {
         item.dataUrl = dataUrl;
@@ -147,7 +147,7 @@ export class GalleryStorage {
   /**
    * Get all items without ensureLayerOrders (raw access for internal use)
    */
-  private async getAllItemsRaw(): Promise<GalleryItem[]> {
+  private async getAllItemsRaw(options?: { fullImage?: boolean }): Promise<GalleryItem[]> {
     // 1. インデックス取得
     const indexResult = await storage.get([this.indexKey]);
 
@@ -191,15 +191,28 @@ export class GalleryStorage {
       } as GalleryItem;
     });
 
-    // 5. Hybrid: Fetch missing dataUrls from IndexedDB
-    await this.fetchMissingDataUrlsFromIndexedDB(items);
+    // 5. Default: Use thumbnail (fast), or fetch full image if requested (slow)
+    if (options?.fullImage) {
+      // Full image mode: Fetch from IndexedDB
+      await this.fetchMissingDataUrlsFromIndexedDB(items);
+    } else {
+      // Default: Use thumbnail if available, otherwise use empty string
+      for (const item of items) {
+        if (!item.dataUrl || item.dataUrl === "") {
+          if ((item as any).thumbnail) {
+            item.dataUrl = (item as any).thumbnail;
+          }
+          // If no thumbnail, keep empty string (no IndexedDB fetch)
+        }
+      }
+    }
 
     return items;
   }
 
-  async getAll(): Promise<GalleryItem[]> {
+  async getAll(options?: { fullImage?: boolean }): Promise<GalleryItem[]> {
     await this.ensureLayerOrders();
-    return this.getAllItemsRaw();
+    return this.getAllItemsRaw(options);
   }
 
   /**

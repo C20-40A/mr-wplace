@@ -55,10 +55,10 @@ const createGallery = () => {
   };
 
   const showDetail = async (item: GalleryItem) => {
-    // Fetch full image from IndexedDB (not thumbnail)
+    // Fetch full image from IndexedDB
     const { GalleryStorage } = await import("./storage");
     const storage = new GalleryStorage();
-    const fullImageItem = await storage.get(item.key, { fullImage: true });
+    const fullImageItem = await storage.get(item.key);
 
     state.currentDetailItem = fullImageItem || item; // Fallback to thumbnail if fetch fails
     state.editingItem = undefined;
