@@ -186,7 +186,7 @@ export const handleGalleryImages = async (data: {
 
   for (const img of sortedImages) {
     try {
-      // Priority: 1. IndexedDB (full image), 2. dataUrl (old data), 3. Skip (reject thumbnails)
+      // Priority: 1. IndexedDB (full image), 2. dataUrl (if not thumbnail), 3. Skip
       let dataUrl: string | null = null;
 
       // Try IndexedDB first (always)
@@ -194,13 +194,14 @@ export const handleGalleryImages = async (data: {
       if (fullDataUrl) {
         dataUrl = fullDataUrl;
         console.log(`🧑‍🎨 : Using IndexedDB full image for ${img.key}`);
-      } else if (img.dataUrl && img.dataUrl.length >= 10000) {
-        // Fallback: use dataUrl only if it's full image (not thumbnail)
-        // Threshold: 10KB (thumbnails are typically <5KB, full images >10KB)
+      } else if (img.dataUrl && !img.isThumbnail) {
+        // Fallback: use dataUrl only if it's NOT a thumbnail
+        // This supports old data (before Doctor cleanup) and small images
         dataUrl = img.dataUrl;
         console.log(`🧑‍🎨 : Using dataUrl (${(img.dataUrl.length / 1024).toFixed(1)}KB) for ${img.key}`);
       } else {
-        console.warn(`🧑‍🎨 : No full image available for ${img.key} (dataUrl: ${img.dataUrl?.length || 0} bytes), skipping`);
+        const reason = img.isThumbnail ? "thumbnail" : "no dataUrl";
+        console.warn(`🧑‍🎨 : No full image available for ${img.key} (${reason}), skipping`);
         continue; // Skip this image - cannot draw with thumbnail
       }
 

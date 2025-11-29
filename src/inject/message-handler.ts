@@ -22,6 +22,9 @@ import {
   handleComputeTotalStats,
 } from "./handlers/request-handlers";
 import {
+  setupDoctorHandlers,
+} from "./handlers/doctor-handlers";
+import {
   startAutoCanvasClick,
   stopAutoCanvasClick,
 } from "./auto-canvas-click";
@@ -30,6 +33,9 @@ import {
  * Setup message event listener for handling various events
  */
 export const setupMessageHandler = (): void => {
+  // Setup doctor handlers (IndexedDB request/response)
+  setupDoctorHandlers();
+
   window.addEventListener("message", async (event: MessageEvent) => {
     const { source } = event.data;
 

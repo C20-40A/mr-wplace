@@ -12,7 +12,8 @@ export interface DrawPosition {
 export interface GalleryItem {
   key: string;
   timestamp: number;
-  dataUrl: string;
+  dataUrl?: string;
+  thumbnail?: string;
   title?: string;
   drawPosition?: { TLX: number; TLY: number; PxX: number; PxY: number };
   drawEnabled?: boolean;
@@ -199,8 +200,8 @@ export class GalleryStorage {
       // Default: Use thumbnail if available, otherwise use empty string
       for (const item of items) {
         if (!item.dataUrl || item.dataUrl === "") {
-          if ((item as any).thumbnail) {
-            item.dataUrl = (item as any).thumbnail;
+          if (item.thumbnail) {
+            item.dataUrl = item.thumbnail;
           }
           // If no thumbnail, keep empty string (no IndexedDB fetch)
         }

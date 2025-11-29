@@ -51,15 +51,21 @@ export const sendGalleryImagesToInject = async () => {
   const allImages = images
     .filter((img) => img.drawPosition)
     .sort((a, b) => (a.layerOrder ?? 0) - (b.layerOrder ?? 0))
-    .map((img) => ({
-      key: img.key,
-      dataUrl: img.dataUrl,
-      drawPosition: img.drawPosition!,
-      layerOrder: img.layerOrder ?? 0,
-      drawEnabled: img.drawEnabled ?? true, // Include drawEnabled flag
-      // Include stored statistics for restoration
-      perTileColorStats: img.perTileColorStats,
-    }));
+    .map((img) => {
+      // Check if dataUrl is thumbnail (has thumbnail field and dataUrl matches it)
+      const isThumbnail = !!img.thumbnail && img.dataUrl === img.thumbnail;
+
+      return {
+        key: img.key,
+        dataUrl: img.dataUrl,
+        isThumbnail, // Flag to help inject side distinguish thumbnail from real dataUrl
+        drawPosition: img.drawPosition!,
+        layerOrder: img.layerOrder ?? 0,
+        drawEnabled: img.drawEnabled ?? true, // Include drawEnabled flag
+        // Include stored statistics for restoration
+        perTileColorStats: img.perTileColorStats,
+      };
+    });
 
   const messageData = {
     source: "mr-wplace-gallery-images",
