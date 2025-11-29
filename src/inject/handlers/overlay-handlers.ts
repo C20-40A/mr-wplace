@@ -3,6 +3,46 @@ import { loadImageBitmap } from "../utils/image-loader";
 import type { GalleryImage } from "../types";
 
 /**
+ * Fetch full image from IndexedDB via postMessage
+ *
+ * NOTE: This implementation is needed in inject context (page context)
+ * Cannot import from content context utilities (@/utils/indexed-db-bridge.ts)
+ * Content and inject contexts are isolated - no direct module imports allowed
+ *
+ * For content context code, use: import { fetchFullImageFromIndexedDB } from "@/utils/indexed-db-bridge"
+ */
+const fetchFullImageFromIndexedDB = async (key: string): Promise<string | null> => {
+  return new Promise((resolve) => {
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-gallery-dataurl-response" &&
+        event.data.key === key
+      ) {
+        window.removeEventListener("message", handler);
+        resolve(event.data.dataUrl);
+      }
+    };
+
+    window.addEventListener("message", handler);
+
+    window.postMessage(
+      {
+        source: "mr-wplace-gallery-dataurl-request",
+        key,
+      },
+      "*"
+    );
+
+    // Timeout after 10s
+    setTimeout(() => {
+      window.removeEventListener("message", handler);
+      console.warn(`🧑‍🎨 : IndexedDB full image fetch timeout for ${key}`);
+      resolve(null);
+    }, 10000);
+  });
+};
+
+/**
  * Save gallery item to IndexedDB and request Worker migration
  * SAFETY: Only saves metadata + blob, Worker does heavy processing in background
  */
@@ -146,7 +186,21 @@ export const handleGalleryImages = async (data: {
 
   for (const img of sortedImages) {
     try {
-      const bitmap = await loadImageBitmap(img.dataUrl, img.key);
+      // If dataUrl is empty or very small (thumbnail), fetch full image from IndexedDB
+      let dataUrl = img.dataUrl;
+      if (!dataUrl || dataUrl.length < 1000) {
+        console.log(`🧑‍🎨 : ${img.key} has no/small dataUrl (${dataUrl?.length || 0} bytes), fetching from IndexedDB...`);
+        const fullDataUrl = await fetchFullImageFromIndexedDB(img.key);
+        if (fullDataUrl) {
+          dataUrl = fullDataUrl;
+          console.log(`🧑‍🎨 : Fetched full image from IndexedDB for ${img.key}`);
+        } else {
+          console.warn(`🧑‍🎨 : Failed to fetch full image from IndexedDB for ${img.key}, using provided data`);
+          dataUrl = img.dataUrl; // Fallback to original (may be thumbnail)
+        }
+      }
+
+      const bitmap = await loadImageBitmap(dataUrl, img.key);
 
       // Only add to overlay layers if drawEnabled is true
       if (img.drawEnabled !== false) {

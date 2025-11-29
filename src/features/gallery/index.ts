@@ -54,8 +54,13 @@ const createGallery = () => {
     router.navigate("image-editor");
   };
 
-  const showDetail = (item: GalleryItem) => {
-    state.currentDetailItem = item;
+  const showDetail = async (item: GalleryItem) => {
+    // Fetch full image from IndexedDB (not thumbnail)
+    const { GalleryStorage } = await import("./storage");
+    const storage = new GalleryStorage();
+    const fullImageItem = await storage.get(item.key, { fullImage: true });
+
+    state.currentDetailItem = fullImageItem || item; // Fallback to thumbnail if fetch fails
     state.editingItem = undefined;
     router.navigate("image-detail");
   };

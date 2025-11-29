@@ -1,4 +1,5 @@
 import { storage } from "@/utils/browser-api";
+import { generateThumbnailFromIndexedDB } from "@/utils/indexed-db-bridge";
 import type { CleanupResult, CleanupProgress } from "./types";
 
 /**
@@ -33,7 +34,7 @@ export class GalleryCleanup {
 
     // Generate thumbnail if not exists
     if (!item.thumbnail) {
-      const thumbnail = await this.generateThumbnail(key);
+      const thumbnail = await generateThumbnailFromIndexedDB(key);
       if (thumbnail) {
         item.thumbnail = thumbnail;
         console.log(
@@ -77,41 +78,6 @@ export class GalleryCleanup {
       index.lastUpdated = Date.now();
       await storage.set({ gallery_index: index });
     }
-  }
-
-  /**
-   * Generate thumbnail via inject context
-   */
-  private static async generateThumbnail(key: string): Promise<string | null> {
-    return new Promise((resolve) => {
-      const handler = (event: MessageEvent) => {
-        if (
-          event.data.source === "mr-wplace-thumbnail-response" &&
-          event.data.key === key
-        ) {
-          window.removeEventListener("message", handler);
-          resolve(event.data.thumbnail);
-        }
-      };
-
-      window.addEventListener("message", handler);
-
-      // Send thumbnail request to inject
-      window.postMessage(
-        {
-          source: "mr-wplace-thumbnail-request",
-          key,
-        },
-        "*"
-      );
-
-      // Timeout after 5s
-      setTimeout(() => {
-        window.removeEventListener("message", handler);
-        console.warn(`🧑‍🎨 [Doctor] Thumbnail generation timeout for ${key}`);
-        resolve(null);
-      }, 5000);
-    });
   }
 
   /**
