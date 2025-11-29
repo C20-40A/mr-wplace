@@ -41,7 +41,7 @@ import { doctorAPI } from "@/features/doctor";
  * Also sends stored statistics for restoration after reload
  */
 export const sendGalleryImagesToInject = async () => {
-  const { GalleryStorage } = await import("@/features/gallery/storage");
+  const { GalleryStorage } = await import("@/states/galleryStorage");
   const galleryStorage = new GalleryStorage();
   const images = await galleryStorage.getAll(); // Send thumbnails only (lightweight)
 
@@ -81,9 +81,7 @@ export const sendGalleryImagesToInject = async () => {
 
   window.postMessage(messageData, "*");
 
-  console.log(
-    `🧑‍🎨 : Sent ${allImages.length} gallery images to inject side`
-  );
+  console.log(`🧑‍🎨 : Sent ${allImages.length} gallery images to inject side`);
 };
 
 /**
@@ -241,7 +239,7 @@ const handleStatsComputed = async (
     // Skip text layers
     if (imageKey.startsWith("text_")) return;
 
-    const { GalleryStorage } = await import("@/features/gallery/storage");
+    const { GalleryStorage } = await import("@/states/galleryStorage");
     const galleryStorage = new GalleryStorage();
 
     // Convert object back to Map
@@ -272,7 +270,7 @@ const handleTotalStatsComputed = async (
   totalColorStats: Record<string, number>
 ) => {
   try {
-    const { GalleryStorage } = await import("@/features/gallery/storage");
+    const { GalleryStorage } = await import("@/states/galleryStorage");
     const galleryStorage = new GalleryStorage();
 
     const image = await galleryStorage.get(imageKey);
@@ -408,7 +406,11 @@ export const sendTileBoundariesToInject = async () => {
       const themeStart = performance.now();
       const currentTheme = await ThemeToggleStorage.get();
       const themeEnd = performance.now();
-      console.log(`🧑‍🎨: ThemeToggleStorage.get() took ${(themeEnd - themeStart).toFixed(2)}ms`);
+      console.log(
+        `🧑‍🎨: ThemeToggleStorage.get() took ${(themeEnd - themeStart).toFixed(
+          2
+        )}ms`
+      );
 
       const dataElement = document.createElement("div");
       dataElement.id = "__mr_wplace_data__";

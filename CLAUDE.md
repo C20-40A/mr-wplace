@@ -37,6 +37,7 @@ content.ts → inject script tag → inject/index.ts
 ```
 
 **Key messages (content → inject):**
+
 - `mr-wplace-gallery-images`: Gallery images with draw positions
 - `mr-wplace-snapshots`: Time-travel snapshot overlays
 - `mr-wplace-color-filter`: Color filter state
@@ -44,6 +45,7 @@ content.ts → inject script tag → inject/index.ts
 - `wplace-studio-flyto`: Position navigation
 
 **Key messages (inject → content):**
+
 - `mr-wplace-request-stats` / `response-stats`: Color statistics
 - `mr-wplace-request-pixel-color` / `response-pixel-color`: Overlay pixel color
 - `mr-wplace-stats-updated`: Save statistics to storage
@@ -181,6 +183,7 @@ const text = t`feature.gallery.title`; // Template literal syntax
 #### Content vs Inject Roles
 
 1. **Content script** (`src/content.ts`):
+
    - Manages storage (gallery, snapshots, settings)
    - Sends data to inject via `postMessage`
 
@@ -240,24 +243,55 @@ No manual intervention needed. See `src/inject/CLAUDE.md` for implementation det
 ### Common Issues
 
 **Overlays don't update after data change:**
+
 - Ensure `sendGalleryImagesToInject()` is awaited
 - Check tile cache is cleared: `window.mrWplaceDataSaver?.tileCache.clear()`
 
 **Statistics not showing:**
+
 - Visit tiles first to compute statistics
 - Statistics are computed incrementally as you navigate
 
 **Debugging:**
+
 ```typescript
 // Check inject state in browser console
 console.log("🧑‍🎨 : overlayLayers", window.overlayLayers);
 console.log("🧑‍🎨 : cache size", window.mrWplaceDataSaver?.tileCache.size);
 ```
 
+### GalleryItem
+
+you can use GalleryStorage & Types
+
+```ts
+import { GalleryStorage, GalleryItem } from "@/states/galleryStorage";
+```
+
+```ts
+export interface GalleryItem {
+  key: string;
+  timestamp: number;
+  dataUrl?: string;
+  thumbnail?: string;
+  title?: string;
+  drawPosition?: { TLX: number; TLY: number; PxX: number; PxY: number };
+  drawEnabled?: boolean;
+  layerOrder?: number;
+  matchedColorStats?: Record<string, number>;
+  totalColorStats?: Record<string, number>;
+  perTileColorStats?: Record<
+    string,
+    { matched: Record<string, number>; total: Record<string, number> }
+  >;
+}
+```
+
 ---
 
 **Coding Style:**
+
 - シンプルかつ最も効果的で単純明瞭なコードを書く
 - 早期リターン/const arrow を利用
-- if の内容が1行ならかっこでくくらないこともある
+- if の内容が 1 行ならかっこでくくらないこともある
 - トーストは基本的に利用しない

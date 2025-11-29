@@ -1,1 +1,4 @@
-export { ImageGridComponent, type ImageItem, type ImageGridOptions } from './ImageGridComponent';
+export {
+  ImageGridComponent,
+  type ImageGridOptions,
+} from "./ImageGridComponent";

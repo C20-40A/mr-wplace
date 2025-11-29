@@ -15,7 +15,7 @@ import {
   setTileBoundaries,
 } from "./states/tile-boundaries";
 import { tabs } from "@/utils/browser-api";
-import { GalleryStorage } from "@/features/gallery/storage";
+import { GalleryStorage } from "@/states/galleryStorage";
 import {
   exportGalleryToZip,
   importGalleryFromZip,

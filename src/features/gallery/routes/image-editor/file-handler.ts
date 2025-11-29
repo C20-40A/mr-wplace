@@ -1,5 +1,5 @@
 import { t } from "@/i18n/manager";
-import { DrawPosition } from "../../storage";
+import { DrawPosition } from "../../../../states/galleryStorage";
 
 /**
  * ファイルをDataURL形式で読み込み

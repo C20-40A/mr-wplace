@@ -1,6 +1,9 @@
+import { GalleryItem } from "@/states/galleryStorage";
+
 export type TileProcessingCallback = (processedBlob: Blob) => void;
 
-export interface TileProcessingQueue extends Map<string, TileProcessingCallback> {}
+export interface TileProcessingQueue
+  extends Map<string, TileProcessingCallback> {}
 
 export interface DataSaverState {
   enabled: boolean;
@@ -19,19 +22,15 @@ export interface DataSaverState {
  * Gallery image data sent from content script to inject context via postMessage
  * This is a subset of GalleryItem from content context
  */
-export interface GalleryImage {
-  key: string;
-  dataUrl?: string; // Optional because it may be undefined for Doctor-cleaned items
-  isThumbnail?: boolean; // True if dataUrl is a thumbnail (not suitable for drawing)
-  drawPosition: { TLX: number; TLY: number; PxX: number; PxY: number };
-  layerOrder: number;
-  drawEnabled?: boolean; // False if image is disabled in gallery
-  // Stored statistics for restoration after reload
-  perTileColorStats?: Record<
-    string,
-    { matched: Record<string, number>; total: Record<string, number> }
-  >;
-}
+export type GalleryImage = Pick<
+  GalleryItem,
+  | "key"
+  | "dataUrl"
+  | "drawPosition"
+  | "layerOrder"
+  | "drawEnabled"
+  | "perTileColorStats"
+>;
 
 export interface SnapshotImage {
   key: string;

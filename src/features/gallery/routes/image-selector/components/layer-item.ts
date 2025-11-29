@@ -1,5 +1,4 @@
-import type { ImageItem } from "../../list/components";
-import { GalleryStorage } from "../../../storage";
+import { GalleryStorage, GalleryItem } from "@/states/galleryStorage";
 import {
   toggleDrawState,
   gotoMapPosition,
@@ -12,8 +11,8 @@ interface LayerItemParams {
   item: any;
   index: number;
   totalCount: number;
-  onSelect: (item: ImageItem) => void;
-  onShowDetail: ((item: ImageItem) => void) | null;
+  onSelect: (item: GalleryItem) => void;
+  onShowDetail: ((item: GalleryItem) => void) | null;
   onUpdateStatus: (key: string) => Promise<void>;
   onMoveToUnplaced: (key: string) => Promise<void>;
   onRefreshOrder: () => Promise<void>;
@@ -49,7 +48,7 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
   `;
 
   // コンテンツエリア
-  const contentArea = createContentArea(item, index, onSelect, container);
+  const contentArea = createContentArea(item, index, onSelect);
 
   // Divider
   const divider = document.createElement("div");
@@ -90,8 +89,7 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
 const createContentArea = (
   item: any,
   index: number,
-  onSelect: (item: ImageItem) => void,
-  container: HTMLElement
+  onSelect: (item: GalleryItem) => void
 ): HTMLElement => {
   const contentArea = document.createElement("div");
   contentArea.style.cssText =
@@ -118,7 +116,7 @@ const createContentArea = (
   // サムネイル
   const thumbnail = document.createElement("img");
   thumbnail.className = "border border-base-300 rounded-md";
-  thumbnail.src = item.dataUrl;
+  thumbnail.src = item.thumbnail || item.dataUrl;
   thumbnail.style.cssText =
     "width: 48px; height: 48px; object-fit: cover; flex-shrink: 0; image-rendering: pixelated;";
 
@@ -171,7 +169,7 @@ const createInfoContainer = (item: any, index: number): HTMLElement => {
 // ボタン領域作成
 const createButtonArea = (
   item: any,
-  onShowDetail: ((item: ImageItem) => void) | null,
+  onShowDetail: ((item: GalleryItem) => void) | null,
   galleryStorage: GalleryStorage,
   onUpdateStatus: (key: string) => Promise<void>,
   onMoveToUnplaced: (key: string) => Promise<void>
@@ -245,7 +243,7 @@ const createDPad = (
 // アクショングリッド作成
 const createActionGrid = (
   item: any,
-  onShowDetail: ((item: ImageItem) => void) | null,
+  onShowDetail: ((item: GalleryItem) => void) | null,
   galleryStorage: GalleryStorage,
   onUpdateStatus: (key: string) => Promise<void>,
   onMoveToUnplaced: (key: string) => Promise<void>

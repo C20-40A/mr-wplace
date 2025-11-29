@@ -92,7 +92,7 @@ const getColorStats = async (): Promise<Record<
   const currentTiles = getCurrentTiles();
   if (!currentTiles || currentTiles.size === 0) return null;
 
-  const { GalleryStorage } = await import("@/features/gallery/storage");
+  const { GalleryStorage } = await import("@/states/galleryStorage");
   const galleryStorage = new GalleryStorage();
   const allImages = await galleryStorage.getAll();
 

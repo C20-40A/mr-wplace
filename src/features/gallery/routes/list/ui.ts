@@ -1,5 +1,5 @@
-import { GalleryItem } from "../../storage";
-import { ImageGridComponent, ImageItem } from "./components/ImageGridComponent";
+import { GalleryItem } from "@/states/galleryStorage";
+import { ImageGridComponent } from "./components/ImageGridComponent";
 import { gotoMapPosition, toggleDrawState } from "../../common-actions";
 import { t } from "@/i18n";
 
@@ -77,34 +77,12 @@ export class GalleryListUI {
     const gridContainer = document.createElement("div");
     container.appendChild(gridContainer);
 
-    // Sort items - no sorting here, handled by parent
-    const sortedItems = [...items];
-
-    // GalleryItemをImageItemに変換
-    const imageItems: ImageItem[] = sortedItems.map((item) => {
-      // timestampが無効な場合は現在時刻を使用
-      const timestamp =
-        item.timestamp && !isNaN(item.timestamp) ? item.timestamp : Date.now();
-
-      return {
-        key: item.key,
-        dataUrl: item.dataUrl,
-        title: item.title,
-        createdAt: new Date(timestamp).toISOString(),
-        drawPosition: item.drawPosition,
-        drawEnabled: item.drawEnabled,
-        hasDrawPosition: !!item.drawPosition,
-        currentColorStats: item.matchedColorStats,
-        totalColorStats: item.totalColorStats,
-      };
-    });
-
     // 既存のImageGridComponentがあれば破棄
     if (this.imageGrid) this.imageGrid.destroy();
 
     // 新しいImageGridComponentを作成
     this.imageGrid = new ImageGridComponent(gridContainer, {
-      items: imageItems,
+      items,
       isSelectionMode: false, // list routeは選択モードなし
       onImageClick: (item) => {
         const galleryItem = items.find((gItem) => gItem.key === item.key);
@@ -113,7 +91,13 @@ export class GalleryListUI {
         }
       },
       onDrawToggle: (key) => {
-        this.handleDrawToggle(key, onDelete, onImageClick, sortType, onSortChange);
+        this.handleDrawToggle(
+          key,
+          onDelete,
+          onImageClick,
+          sortType,
+          onSortChange
+        );
       },
       onImageDelete: (key) => {
         onDelete(key);
@@ -141,7 +125,9 @@ export class GalleryListUI {
     const newDrawEnabled = await toggleDrawState(key);
 
     // 画面を再描画
-    const galleryStorage = new (await import("../../storage")).GalleryStorage();
+    const galleryStorage = new (
+      await import("../../../../states/galleryStorage")
+    ).GalleryStorage();
     const updatedItems = await galleryStorage.getAll();
 
     if (this.container) {

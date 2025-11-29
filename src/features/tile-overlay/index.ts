@@ -1,6 +1,6 @@
 import { latLngToTilePixel } from "../../utils/coordinate";
 import { ImageItem } from "../gallery/routes/list/components";
-import { GalleryStorage } from "../gallery/storage";
+import { GalleryStorage } from "../../states/galleryStorage";
 
 export class TileOverlay {
   private galleryStorage: GalleryStorage;

@@ -1,4 +1,4 @@
-import { GalleryItem, GalleryStorage } from "../../storage";
+import { GalleryItem, GalleryStorage } from "@/states/galleryStorage";
 import { GalleryRouter } from "../../router";
 import { GalleryListUI, GallerySortType } from "./ui";
 import { getStatsPerImage } from "@/utils/inject-bridge";

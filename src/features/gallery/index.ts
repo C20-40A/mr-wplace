@@ -1,4 +1,4 @@
-import { GalleryItem } from "./storage";
+import { GalleryItem } from "../../states/galleryStorage";
 import { GalleryRouter } from "./router";
 import { createGalleryButton, GalleryUI } from "./ui";
 import { GalleryList } from "./routes/list";
@@ -6,7 +6,6 @@ import { GalleryImageEditor } from "./routes/image-editor";
 import { GalleryImageDetail } from "./routes/image-detail";
 import { GalleryImageShare } from "./routes/image-share";
 import { GalleryImageSelector } from "./routes/image-selector";
-import { ImageItem } from "./routes/list/components";
 import { setupElementObserver } from "../../components/element-observer";
 import { findOpacityContainer } from "../../constants/selectors";
 import type { GalleryAPI } from "../../core/di";
@@ -56,7 +55,7 @@ const createGallery = () => {
 
   const showDetail = async (item: GalleryItem) => {
     // Fetch full image from IndexedDB
-    const { GalleryStorage } = await import("./storage");
+    const { GalleryStorage } = await import("../../states/galleryStorage");
     const storage = new GalleryStorage();
     const fullImageItem = await storage.get(item.key);
 
@@ -97,7 +96,10 @@ const createGallery = () => {
 
       // 編集モード判定
       if (state.editingItem) {
-        console.log("🧑‍🎨 : Loading existing image for edit", state.editingItem.key);
+        console.log(
+          "🧑‍🎨 : Loading existing image for edit",
+          state.editingItem.key
+        );
         await route.loadExistingImage(state.editingItem);
       }
     },
@@ -111,7 +113,9 @@ const createGallery = () => {
         router,
         state.currentDetailItem,
         async (key) => {
-          const { GalleryStorage } = await import("./storage");
+          const { GalleryStorage } = await import(
+            "../../states/galleryStorage"
+          );
           await new GalleryStorage().delete(key);
           state.editingItem = undefined;
 
@@ -133,10 +137,12 @@ const createGallery = () => {
       currentRouteInstance = route; // インスタンスを保存
       route.render(
         container,
-        async (item: ImageItem) => {
+        async (item: GalleryItem) => {
           if (!state.onSelect) return;
           // inline化: findGalleryItemByKey
-          const { GalleryStorage } = await import("./storage");
+          const { GalleryStorage } = await import(
+            "../../states/galleryStorage"
+          );
           const items = await new GalleryStorage().getAll();
           const galleryItem = items.find((i) => i.key === item.key);
           if (galleryItem) {
@@ -145,9 +151,11 @@ const createGallery = () => {
           }
         },
         () => router.navigate("image-editor"),
-        async (item: ImageItem) => {
+        async (item: GalleryItem) => {
           // 詳細表示コールバック
-          const { GalleryStorage } = await import("./storage");
+          const { GalleryStorage } = await import(
+            "../../states/galleryStorage"
+          );
           const items = await new GalleryStorage().getAll();
           const galleryItem = items.find((i) => i.key === item.key);
           if (galleryItem) {

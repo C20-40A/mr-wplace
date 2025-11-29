@@ -137,7 +137,9 @@ export class GalleryStorage {
       if (dataUrl) {
         item.dataUrl = dataUrl;
       } else {
-        console.warn(`🧑‍🎨 : Failed to fetch full image for ${key} from IndexedDB`);
+        console.warn(
+          `🧑‍🎨 : Failed to fetch full image for ${key} from IndexedDB`
+        );
         item.dataUrl = item.dataUrl || "";
       }
     }
@@ -148,14 +150,14 @@ export class GalleryStorage {
   /**
    * Get all items without ensureLayerOrders (raw access for internal use)
    */
-  private async getAllItemsRaw(options?: { fullImage?: boolean }): Promise<GalleryItem[]> {
+  private async getAllItemsRaw(options?: {
+    fullImage?: boolean;
+  }): Promise<GalleryItem[]> {
     // 1. インデックス取得
     const indexResult = await storage.get([this.indexKey]);
 
     // 2. インデックス未作成 → 従来方式で全取得+インデックス作成
-    if (!indexResult[this.indexKey]) {
-      return this.createIndexAndGetAll();
-    }
+    if (!indexResult[this.indexKey]) return this.createIndexAndGetAll();
 
     // 3. インデックスからキー一覧取得 → 実データ取得
     const index: GalleryIndex = indexResult[this.indexKey];
@@ -192,21 +194,8 @@ export class GalleryStorage {
       } as GalleryItem;
     });
 
-    // 5. Default: Use thumbnail (fast), or fetch full image if requested (slow)
-    if (options?.fullImage) {
-      // Full image mode: Fetch from IndexedDB
-      await this.fetchMissingDataUrlsFromIndexedDB(items);
-    } else {
-      // Default: Use thumbnail if available, otherwise use empty string
-      for (const item of items) {
-        if (!item.dataUrl || item.dataUrl === "") {
-          if (item.thumbnail) {
-            item.dataUrl = item.thumbnail;
-          }
-          // If no thumbnail, keep empty string (no IndexedDB fetch)
-        }
-      }
-    }
+    // 5. fetch full image from IndexedDB if requested (slow)
+    if (options?.fullImage) await this.fetchMissingDataUrlsFromIndexedDB(items);
 
     return items;
   }
@@ -226,7 +215,9 @@ export class GalleryStorage {
    * 2. Use thumbnail if available (fast)
    * 3. Fetch from IndexedDB (fallback)
    */
-  private async fetchMissingDataUrlsFromIndexedDB(items: GalleryItem[]): Promise<void> {
+  private async fetchMissingDataUrlsFromIndexedDB(
+    items: GalleryItem[]
+  ): Promise<void> {
     let thumbnailCount = 0;
     let missingKeys: string[] = [];
     let hasDataUrlCount = 0;
@@ -284,7 +275,9 @@ export class GalleryStorage {
   /**
    * Request dataUrls from IndexedDB via inject context
    */
-  private async fetchDataUrlsFromIndexedDB(keys: string[]): Promise<Map<string, string>> {
+  private async fetchDataUrlsFromIndexedDB(
+    keys: string[]
+  ): Promise<Map<string, string>> {
     return new Promise((resolve) => {
       const result = new Map<string, string>();
       let receivedCount = 0;

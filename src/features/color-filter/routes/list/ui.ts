@@ -4,8 +4,15 @@ import { ColorPaletteStorage } from "@/components/color-palette/storage";
 import type { ComputeDevice } from "@/components/color-palette/storage";
 import { getCurrentTiles } from "@/states/currentTile";
 import { getAggregatedColorStats } from "@/utils/inject-bridge";
-import { sendColorFilterToInject, sendComputeDeviceToInject, sendShowUnplacedOnlyToInject } from "@/content";
-import { getShowUnplacedOnly, setShowUnplacedOnly } from "@/states/showUnplacedOnly";
+import {
+  sendColorFilterToInject,
+  sendComputeDeviceToInject,
+  sendShowUnplacedOnlyToInject,
+} from "@/content";
+import {
+  getShowUnplacedOnly,
+  setShowUnplacedOnly,
+} from "@/states/showUnplacedOnly";
 
 let colorPalette: ColorPalette | null = null;
 let lastSortOrder: SortOrder = "default";
@@ -36,7 +43,9 @@ export const renderColorFilters = async (
     | undefined;
 
   if (currentTiles && currentTiles.size > 0) {
-    const { GalleryStorage } = await import("../../../gallery/storage");
+    const { GalleryStorage } = await import(
+      "../../../../states/galleryStorage"
+    );
     const galleryStorage = new GalleryStorage();
     const allImages = await galleryStorage.getAll();
 

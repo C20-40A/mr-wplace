@@ -1,5 +1,5 @@
 import JSZip from "jszip";
-import type { GalleryItem, DrawPosition } from "@/features/gallery/storage";
+import type { GalleryItem, DrawPosition } from "@/states/galleryStorage";
 
 /**
  * Sanitize title for use in filename
@@ -49,9 +49,7 @@ export const exportGalleryToZip = async (
     throw new Error("No images with draw position to export");
   }
 
-  console.log(
-    `🧑‍🎨 : Exporting ${itemsToExport.length} images to ZIP`
-  );
+  console.log(`🧑‍🎨 : Exporting ${itemsToExport.length} images to ZIP`);
 
   // Add images to ZIP
   for (const item of itemsToExport) {
@@ -91,12 +89,17 @@ export const exportGalleryToZip = async (
  */
 const parseFilename = (
   filename: string
-): { title: string; drawPosition: DrawPosition; layerOrder?: number } | null => {
+): {
+  title: string;
+  drawPosition: DrawPosition;
+  layerOrder?: number;
+} | null => {
   // Remove directory path if present
   const basename = filename.split("/").pop()!;
 
   // Try pattern with layerOrder and NO title first: {number}__{number}_{number}_{number}_{number}.{ext}
-  const patternNoTitle = /^(\d+)__(-?\d+)_(-?\d+)_(-?\d+)_(-?\d+)\.(png|jpg|jpeg|webp)$/i;
+  const patternNoTitle =
+    /^(\d+)__(-?\d+)_(-?\d+)_(-?\d+)_(-?\d+)\.(png|jpg|jpeg|webp)$/i;
   const matchNoTitle = basename.match(patternNoTitle);
 
   if (matchNoTitle) {
@@ -115,7 +118,8 @@ const parseFilename = (
   }
 
   // Try pattern with layerOrder and title: {number}_{non-underscore-chars}_{number}_{number}_{number}_{number}.{ext}
-  const patternWithTitle = /^(\d+)_([^_]+)_(-?\d+)_(-?\d+)_(-?\d+)_(-?\d+)\.(png|jpg|jpeg|webp)$/i;
+  const patternWithTitle =
+    /^(\d+)_([^_]+)_(-?\d+)_(-?\d+)_(-?\d+)_(-?\d+)\.(png|jpg|jpeg|webp)$/i;
   const matchWithTitle = basename.match(patternWithTitle);
 
   if (matchWithTitle) {
@@ -134,7 +138,8 @@ const parseFilename = (
   }
 
   // Fallback: Old format without layerOrder: {anything}_{number}_{number}_{number}_{number}.{ext}
-  const patternOld = /^(.+?)_(-?\d+)_(-?\d+)_(-?\d+)_(-?\d+)\.(png|jpg|jpeg|webp)$/i;
+  const patternOld =
+    /^(.+?)_(-?\d+)_(-?\d+)_(-?\d+)_(-?\d+)\.(png|jpg|jpeg|webp)$/i;
   const matchOld = basename.match(patternOld);
 
   if (!matchOld) return null;
@@ -142,7 +147,9 @@ const parseFilename = (
   const [, titlePart, TLX, TLY, PxX, PxY] = matchOld;
 
   // Clean up title (remove "image_N" if it was auto-generated)
-  const title = titlePart.match(/^image_\d+$/) ? "" : titlePart.replace(/_/g, " ");
+  const title = titlePart.match(/^image_\d+$/)
+    ? ""
+    : titlePart.replace(/_/g, " ");
 
   return {
     title,
@@ -179,14 +186,16 @@ export const importGalleryFromZip = async (
     layerOrder?: number;
   }> = [];
 
-  console.log(
-    `🧑‍🎨 : Loading ZIP with ${Object.keys(zip.files).length} files`
-  );
+  console.log(`🧑‍🎨 : Loading ZIP with ${Object.keys(zip.files).length} files`);
 
   // Process each file in ZIP
   for (const [filename, file] of Object.entries(zip.files)) {
     // Skip directories and hidden files
-    if (file.dir || filename.startsWith(".") || filename.startsWith("__MACOSX")) {
+    if (
+      file.dir ||
+      filename.startsWith(".") ||
+      filename.startsWith("__MACOSX")
+    ) {
       continue;
     }
 
@@ -199,9 +208,7 @@ export const importGalleryFromZip = async (
     // Parse filename to extract draw position
     const parsed = parseFilename(filename);
     if (!parsed) {
-      console.warn(
-        `🧑‍🎨 : Skipping file with invalid format: ${filename}`
-      );
+      console.warn(`🧑‍🎨 : Skipping file with invalid format: ${filename}`);
       continue;
     }
 
@@ -222,7 +229,11 @@ export const importGalleryFromZip = async (
     });
 
     console.log(
-      `🧑‍🎨 : Imported ${filename} → layerOrder: ${parsed.layerOrder ?? "auto"}, title: "${parsed.title}", pos: ${parsed.drawPosition.TLX},${parsed.drawPosition.TLY}`
+      `🧑‍🎨 : Imported ${filename} → layerOrder: ${
+        parsed.layerOrder ?? "auto"
+      }, title: "${parsed.title}", pos: ${parsed.drawPosition.TLX},${
+        parsed.drawPosition.TLY
+      }`
     );
   }
 

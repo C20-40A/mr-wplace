@@ -1,25 +1,14 @@
 import { t } from "@/i18n/manager";
-
-export interface ImageItem {
-  key: string;
-  dataUrl: string;
-  title?: string;
-  createdAt?: string;
-  drawPosition?: { TLX: number; TLY: number; PxX: number; PxY: number };
-  drawEnabled?: boolean;
-  hasDrawPosition?: boolean;
-  currentColorStats?: Record<string, number>;
-  totalColorStats?: Record<string, number>;
-}
+import { GalleryItem } from "@/states/galleryStorage";
 
 export interface ImageGridOptions {
-  items: ImageItem[];
+  items: GalleryItem[];
   isSelectionMode?: boolean;
-  onImageClick?: (item: ImageItem) => void;
-  onImageSelect?: (item: ImageItem) => void;
+  onImageClick?: (item: GalleryItem) => void;
+  onImageSelect?: (item: GalleryItem) => void;
   onImageDelete?: (key: string) => void;
   onDrawToggle?: (key: string) => void; // 描画状態切り替えコールバック
-  onGotoPosition?: (item: ImageItem) => void; // マップ移動コールバック
+  onGotoPosition?: (item: GalleryItem) => void; // マップ移動コールバック
   showDeleteButton?: boolean;
   showAddButton?: boolean;
   showDrawToggleButton?: boolean; // 描画切り替えボタンを表示するか
@@ -118,7 +107,7 @@ export class ImageGridComponent {
   /**
    * 画像アイテムのHTMLを生成
    */
-  private createImageItemHtml(item: ImageItem): string {
+  private createImageItemHtml(item: GalleryItem): string {
     const showDeleteBtn =
       this.options.showDeleteButton && !this.options.isSelectionMode;
     const showDrawToggleBtn =
@@ -126,7 +115,7 @@ export class ImageGridComponent {
     const showGotoPositionBtn =
       this.options.showGotoPositionButton &&
       !this.options.isSelectionMode &&
-      item.hasDrawPosition;
+      item.drawPosition;
 
     const progressHtml = this.createProgressBarHtml(item);
     const titleHtml = this.createTitleHtml(item, !!progressHtml);
@@ -137,13 +126,13 @@ export class ImageGridComponent {
       }">
         ${showDeleteBtn ? this.createDeleteButtonHtml(item.key) : ""}
         ${
-          showDrawToggleBtn && item.hasDrawPosition
+          showDrawToggleBtn && item.drawPosition
             ? this.createDrawToggleButtonHtml(item)
             : ""
         }
         ${showGotoPositionBtn ? this.createGotoPositionButtonHtml(item) : ""}
         <img
-          src="${item.dataUrl}"
+          src="${item.thumbnail || item.dataUrl}"
           alt="Gallery item"
           class="w-full h-32 aspect-square object-contain cursor-pointer"
           style="image-rendering: pixelated; object-fit: contain;"
@@ -173,7 +162,7 @@ export class ImageGridComponent {
   /**
    * マップピンボタンのHTMLを生成
    */
-  private createGotoPositionButtonHtml(item: ImageItem): string {
+  private createGotoPositionButtonHtml(item: GalleryItem): string {
     return `
       <button 
         class="btn btn-xs btn-circle btn-ghost opacity-70 hover:opacity-100 border border-gray-200 shadow-sm" 
@@ -187,7 +176,7 @@ export class ImageGridComponent {
       </button>
     `;
   }
-  private createDrawToggleButtonHtml(item: ImageItem): string {
+  private createDrawToggleButtonHtml(item: GalleryItem): string {
     const isEnabled = item.drawEnabled;
     const eyeStyle = isEnabled ? "color: #16a34a;" : "color: #9ca3af;";
     const bgStyle = isEnabled
@@ -339,7 +328,7 @@ export class ImageGridComponent {
   /**
    * タイトルのHTMLを生成
    */
-  private createTitleHtml(item: ImageItem, hasProgress: boolean): string {
+  private createTitleHtml(item: GalleryItem, hasProgress: boolean): string {
     if (!item.title) return "";
 
     const bottomPosition = hasProgress ? "3.5rem" : "0.5rem";
@@ -367,10 +356,10 @@ export class ImageGridComponent {
   /**
    * 進捗バーのHTMLを生成
    */
-  private createProgressBarHtml(item: ImageItem): string {
-    if (!item.currentColorStats || !item.totalColorStats) return "";
+  private createProgressBarHtml(item: GalleryItem): string {
+    if (!item.matchedColorStats || !item.totalColorStats) return "";
 
-    const matched = Object.values(item.currentColorStats).reduce(
+    const matched = Object.values(item.matchedColorStats).reduce(
       (sum, count) => sum + count,
       0
     );

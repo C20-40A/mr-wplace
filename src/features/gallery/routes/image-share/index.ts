@@ -1,4 +1,4 @@
-import { GalleryItem } from "../../storage";
+import { GalleryItem } from "../../../../states/galleryStorage";
 import { tilePixelToLatLng } from "../../../../utils/coordinate";
 import { downloadImage } from "../../common-actions";
 import { t } from "../../../../i18n/manager";

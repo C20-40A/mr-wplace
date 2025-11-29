@@ -2,7 +2,7 @@
  * ギャラリー画像に対する共通アクション
  */
 
-import { GalleryItem, GalleryStorage } from "./storage";
+import { GalleryItem, GalleryStorage } from "../../states/galleryStorage";
 import { gotoPosition } from "../../utils/position";
 import { tilePixelToLatLng } from "../../utils/coordinate";
 import { sendGalleryImagesToInject } from "@/content";

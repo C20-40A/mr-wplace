@@ -1,6 +1,5 @@
 import { ImageSelector } from "../../components/ImageSelector";
-import { ImageItem } from "../list/components";
-import { GalleryStorage } from "../../storage";
+import { GalleryStorage, GalleryItem } from "@/states/galleryStorage";
 import { t } from "@/i18n";
 import {
   createAddImageButton,
@@ -12,8 +11,8 @@ export class GalleryImageSelectorUI {
   private imageSelector: ImageSelector | null = null;
   private layerPanel: HTMLElement | null = null;
   private galleryStorage: GalleryStorage;
-  private currentOnSelect: ((item: ImageItem) => void) | null = null;
-  private currentOnShowDetail: ((item: ImageItem) => void) | null = null;
+  private currentOnSelect: ((item: GalleryItem) => void) | null = null;
+  private currentOnShowDetail: ((item: GalleryItem) => void) | null = null;
   private currentOnAddClick: (() => void) | null = null;
 
   constructor() {
@@ -25,9 +24,9 @@ export class GalleryImageSelectorUI {
    */
   async render(
     container: HTMLElement,
-    onSelect: (item: ImageItem) => void,
+    onSelect: (item: GalleryItem) => void,
     onAddClick?: () => void,
-    onShowDetail?: (item: ImageItem) => void
+    onShowDetail?: (item: GalleryItem) => void
   ): Promise<void> {
     this.currentOnSelect = onSelect;
     this.currentOnShowDetail = onShowDetail ?? null;
@@ -36,7 +35,8 @@ export class GalleryImageSelectorUI {
 
     // レイヤーパネル（単一カラム）
     this.layerPanel = document.createElement("div");
-    this.layerPanel.style.cssText = "overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;";
+    this.layerPanel.style.cssText =
+      "overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;";
     container.appendChild(this.layerPanel);
 
     await this.renderLayerList();
@@ -183,17 +183,26 @@ export class GalleryImageSelectorUI {
         "display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 2rem; gap: 2rem; min-height: 300px;";
 
       // SVGアイコン
-      const iconSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      const iconSvg = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "svg"
+      );
       iconSvg.setAttribute("fill", "none");
       iconSvg.setAttribute("viewBox", "0 0 24 24");
       iconSvg.setAttribute("stroke-width", "1");
       iconSvg.setAttribute("stroke", "currentColor");
       iconSvg.style.cssText = "width: 6rem; height: 6rem; opacity: 0.3;";
 
-      const iconPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      const iconPath = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "path"
+      );
       iconPath.setAttribute("stroke-linecap", "round");
       iconPath.setAttribute("stroke-linejoin", "round");
-      iconPath.setAttribute("d", "M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z");
+      iconPath.setAttribute(
+        "d",
+        "M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
+      );
 
       iconSvg.appendChild(iconPath);
       emptyContainer.appendChild(iconSvg);
@@ -213,17 +222,27 @@ export class GalleryImageSelectorUI {
       if (this.currentOnAddClick) {
         const addButton = document.createElement("button");
         addButton.className = "btn btn-primary btn-lg";
-        addButton.style.cssText = "padding: 1rem 2rem; font-size: 1.125rem; gap: 0.75rem;";
+        addButton.style.cssText =
+          "padding: 1rem 2rem; font-size: 1.125rem; gap: 0.75rem;";
 
         // ボタンのSVGアイコン
-        const buttonSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        const buttonSvg = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "svg"
+        );
         buttonSvg.setAttribute("viewBox", "0 0 24 24");
         buttonSvg.setAttribute("fill", "currentColor");
         buttonSvg.style.cssText = "width: 1.5rem; height: 1.5rem;";
 
-        const buttonPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        const buttonPath = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "path"
+        );
         buttonPath.setAttribute("fill-rule", "evenodd");
-        buttonPath.setAttribute("d", "M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z");
+        buttonPath.setAttribute(
+          "d",
+          "M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z"
+        );
         buttonPath.setAttribute("clip-rule", "evenodd");
 
         buttonSvg.appendChild(buttonPath);

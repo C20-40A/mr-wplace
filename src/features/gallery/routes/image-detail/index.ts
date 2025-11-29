@@ -1,4 +1,4 @@
-import { GalleryItem } from "../../storage";
+import { GalleryItem } from "../../../../states/galleryStorage";
 import { GalleryRouter } from "../../router";
 import { ImageInspector } from "../../../../components/image-inspector";
 import { gotoMapPosition, toggleDrawState } from "../../common-actions";
@@ -183,7 +183,9 @@ export class GalleryImageDetail {
       if (newTitle === null) return;
 
       // 新しいタイトルを保存
-      const { GalleryStorage } = await import("../../storage");
+      const { GalleryStorage } = await import(
+        "../../../../states/galleryStorage"
+      );
       const storage = new GalleryStorage();
       await storage.save({ ...this.currentItem, title: newTitle });
 

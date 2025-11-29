@@ -2,7 +2,7 @@ import { t } from "../../../../i18n/manager";
 import { colorpalette } from "../../../../constants/colors";
 import { ImageInspector } from "../../../../components/image-inspector";
 import { ColorPalette } from "../../../../components/color-palette";
-import { DrawPosition, GalleryItem } from "../../storage";
+import { DrawPosition, GalleryItem } from "../../../../states/galleryStorage";
 import {
   readFileAsDataUrl,
   showImageSizeDialog,
@@ -11,7 +11,11 @@ import {
   downloadBlob,
   parseDrawPositionFromFileName,
 } from "./file-handler";
-import { createProcessedCanvas, ImageAdjustments, QuantizationMethod } from "./canvas-processor";
+import {
+  createProcessedCanvas,
+  ImageAdjustments,
+  QuantizationMethod,
+} from "./canvas-processor";
 
 /**
  * 画像エディタController
@@ -426,7 +430,9 @@ export class EditorController {
 
   private async saveCanvasToGallery(blob: Blob): Promise<void> {
     const base64 = await blobToDataUrl(blob);
-    const { GalleryStorage } = await import("../../storage");
+    const { GalleryStorage } = await import(
+      "../../../../states/galleryStorage"
+    );
     const galleryStorage = new GalleryStorage();
 
     const galleryItem: GalleryItem =
@@ -468,7 +474,7 @@ export class EditorController {
         await saveLayerToIndexedDB(
           {
             id: galleryItem.key,
-            type: 'gallery',
+            type: "gallery",
             visible: true,
             zIndex: galleryItem.layerOrder ?? 0,
             opacity: 1,
@@ -481,8 +487,11 @@ export class EditorController {
             bounds: {
               top: this.drawPosition.TLY,
               left: this.drawPosition.TLX,
-              right: this.drawPosition.TLX + Math.floor((canvas?.width || 0) / 1000),
-              bottom: this.drawPosition.TLY + Math.floor((canvas?.height || 0) / 1000),
+              right:
+                this.drawPosition.TLX + Math.floor((canvas?.width || 0) / 1000),
+              bottom:
+                this.drawPosition.TLY +
+                Math.floor((canvas?.height || 0) / 1000),
             },
             isOptimized: false,
             title: galleryItem.title,
@@ -508,7 +517,9 @@ export class EditorController {
   private async saveDirectlyToGallery(dataUrl: string): Promise<void> {
     const key = `gallery_${Date.now()}`;
 
-    const { GalleryStorage } = await import("../../storage");
+    const { GalleryStorage } = await import(
+      "../../../../states/galleryStorage"
+    );
     const galleryStorage = new GalleryStorage();
 
     const galleryItem: GalleryItem = {
@@ -536,12 +547,14 @@ export class EditorController {
         // Get image dimensions from dataUrl
         const img = new Image();
         img.src = dataUrl;
-        await new Promise((resolve) => { img.onload = resolve; });
+        await new Promise((resolve) => {
+          img.onload = resolve;
+        });
 
         await saveLayerToIndexedDB(
           {
             id: galleryItem.key,
-            type: 'gallery',
+            type: "gallery",
             visible: true,
             zIndex: galleryItem.layerOrder ?? 0,
             opacity: 1,
@@ -691,8 +704,12 @@ export class EditorController {
           const originalHeight = this.originalImage.naturalHeight;
 
           // 現在のscaleを維持してサイズを更新
-          widthInput.value = Math.round(originalWidth * this.imageScale).toString();
-          heightInput.value = Math.round(originalHeight * this.imageScale).toString();
+          widthInput.value = Math.round(
+            originalWidth * this.imageScale
+          ).toString();
+          heightInput.value = Math.round(
+            originalHeight * this.imageScale
+          ).toString();
           widthInput.dataset.originalWidth = originalWidth.toString();
           widthInput.dataset.originalHeight = originalHeight.toString();
           widthInput.max = originalWidth.toString();
