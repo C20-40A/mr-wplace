@@ -1,5 +1,5 @@
 import { GalleryImageSelectorUI } from "./ui";
-import { ImageItem } from "../list/components";
+import type { GalleryItem } from "@/states/galleryStorage";
 
 export class GalleryImageSelector {
   private ui: GalleryImageSelectorUI;
@@ -10,9 +10,9 @@ export class GalleryImageSelector {
 
   async render(
     container: HTMLElement,
-    onSelect: (item: ImageItem) => void,
+    onSelect: (item: GalleryItem) => void,
     onAddClick?: () => void,
-    onShowDetail?: (item: ImageItem) => void
+    onShowDetail?: (item: GalleryItem) => void
   ): Promise<void> {
     await this.ui.render(container, onSelect, onAddClick, onShowDetail);
   }

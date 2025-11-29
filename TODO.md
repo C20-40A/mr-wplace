@@ -1,5 +1,6 @@
 # メイン
 
+- fix type error
 - src/features/gallery/routes/list/index.ts で統計とっているのが謎
 - sendGalleryImagesToInject なんとかする
 - 透明ピクセルが取り込まれてしまう

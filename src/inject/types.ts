@@ -1,4 +1,4 @@
-import { GalleryItem } from "@/states/galleryStorage";
+import type { GalleryItem } from "@/states/galleryStorage";
 
 export type TileProcessingCallback = (processedBlob: Blob) => void;
 
@@ -17,20 +17,6 @@ export interface DataSaverState {
     deleteTile: (key: string) => Promise<void>;
   };
 }
-
-/**
- * Gallery image data sent from content script to inject context via postMessage
- * This is a subset of GalleryItem from content context
- */
-export type GalleryImage = Pick<
-  GalleryItem,
-  | "key"
-  | "dataUrl"
-  | "drawPosition"
-  | "layerOrder"
-  | "drawEnabled"
-  | "perTileColorStats"
->;
 
 export interface SnapshotImage {
   key: string;
@@ -90,7 +76,7 @@ export interface WindowWithWplace extends Window {
   wplaceMap?: WplaceMap;
   tileProcessingQueue?: TileProcessingQueue;
   mrWplaceDataSaver?: DataSaverState;
-  mrWplaceGalleryImages?: Map<string, GalleryImage>;
+  mrWplaceGalleryImages?: Map<string, GalleryItem>;
   mrWplaceGalleryImageKeys?: Set<string>;
   mrWplaceSnapshots?: Map<string, SnapshotImage>;
   mrWplaceSnapshotKeys?: Set<string>;
@@ -107,7 +93,7 @@ declare global {
     wplaceMap?: WplaceMap;
     tileProcessingQueue?: TileProcessingQueue;
     mrWplaceDataSaver?: DataSaverState;
-    mrWplaceGalleryImages?: Map<string, GalleryImage>;
+    mrWplaceGalleryImages?: Map<string, GalleryItem>;
     mrWplaceGalleryImageKeys?: Set<string>;
     mrWplaceSnapshots?: Map<string, SnapshotImage>;
     mrWplaceSnapshotKeys?: Set<string>;

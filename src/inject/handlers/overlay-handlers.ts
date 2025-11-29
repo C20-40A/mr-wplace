@@ -1,6 +1,10 @@
-import { addImageToOverlayLayers, removePreparedOverlayImageByKey, setPerTileColorStats } from "../tile-draw";
+import type { GalleryItem } from "@/states/galleryStorage";
+import {
+  addImageToOverlayLayers,
+  removePreparedOverlayImageByKey,
+  setPerTileColorStats,
+} from "../tile-draw";
 import { loadImageBitmap } from "../utils/image-loader";
-import type { GalleryImage } from "../types";
 
 /**
  * Fetch full image from IndexedDB via postMessage
@@ -11,7 +15,9 @@ import type { GalleryImage } from "../types";
  *
  * For content context code, use: import { fetchFullImageFromIndexedDB } from "@/utils/indexed-db-bridge"
  */
-const fetchFullImageFromIndexedDB = async (key: string): Promise<string | null> => {
+const fetchFullImageFromIndexedDB = async (
+  key: string
+): Promise<string | null> => {
   return new Promise((resolve) => {
     const handler = (event: MessageEvent) => {
       if (
@@ -47,7 +53,7 @@ const fetchFullImageFromIndexedDB = async (key: string): Promise<string | null> 
  * SAFETY: Only saves metadata + blob, Worker does heavy processing in background
  */
 const saveGalleryToIndexedDB = async (
-  img: GalleryImage,
+  img: GalleryItem,
   bitmap: ImageBitmap
 ): Promise<void> => {
   const repository = window.mrWplace?.layerRepository;
@@ -156,7 +162,7 @@ const requestWorkerMigration = (
  * Also restores stored statistics from previous sessions
  */
 export const handleGalleryImages = async (data: {
-  images: Array<GalleryImage>;
+  images: Array<GalleryItem>;
 }): Promise<void> => {
   if (!window.mrWplaceGalleryImages) {
     window.mrWplaceGalleryImages = new Map();
@@ -194,14 +200,19 @@ export const handleGalleryImages = async (data: {
       if (fullDataUrl) {
         dataUrl = fullDataUrl;
         console.log(`🧑‍🎨 : Using IndexedDB full image for ${img.key}`);
-      } else if (img.dataUrl && !img.isThumbnail) {
+      } else if (img.dataUrl) {
         // Fallback: use dataUrl only if it's NOT a thumbnail
         // This supports old data (before Doctor cleanup) and small images
         dataUrl = img.dataUrl;
-        console.log(`🧑‍🎨 : Using dataUrl (${(img.dataUrl.length / 1024).toFixed(1)}KB) for ${img.key}`);
+        console.log(
+          `🧑‍🎨 : Using dataUrl (${(img.dataUrl.length / 1024).toFixed(
+            1
+          )}KB) for ${img.key}`
+        );
       } else {
-        const reason = img.isThumbnail ? "thumbnail" : "no dataUrl";
-        console.warn(`🧑‍🎨 : No full image available for ${img.key} (${reason}), skipping`);
+        console.warn(
+          `🧑‍🎨 : No full image available for ${img.key} (no dataUrl), skipping`
+        );
         continue; // Skip this image - cannot draw with thumbnail
       }
 
@@ -211,20 +222,31 @@ export const handleGalleryImages = async (data: {
       if (img.drawEnabled !== false) {
         await addImageToOverlayLayers(
           bitmap,
-          [img.drawPosition.TLX, img.drawPosition.TLY, img.drawPosition.PxX, img.drawPosition.PxY],
+          [
+            img.drawPosition.TLX,
+            img.drawPosition.TLY,
+            img.drawPosition.PxX,
+            img.drawPosition.PxY,
+          ],
           img.key
         );
 
         // Count tiles for this image
         const { overlayLayers } = await import("../tile-draw");
-        const thisImageLayer = overlayLayers.find((layer) => layer.imageKey === img.key);
+        const thisImageLayer = overlayLayers.find(
+          (layer) => layer.imageKey === img.key
+        );
         if (thisImageLayer) {
           const tileCount = Object.keys(thisImageLayer.tiles).length;
           totalTileCount += tileCount;
-          console.log(`🧑‍🎨 : Image ${img.key} split into ${tileCount} tiles (${bitmap.width}x${bitmap.height}px)`);
+          console.log(
+            `🧑‍🎨 : Image ${img.key} split into ${tileCount} tiles (${bitmap.width}x${bitmap.height}px)`
+          );
         }
       } else {
-        console.log(`🧑‍🎨 : Image ${img.key} is disabled, skipping overlay layers (but saving to IndexedDB)`);
+        console.log(
+          `🧑‍🎨 : Image ${img.key} is disabled, skipping overlay layers (but saving to IndexedDB)`
+        );
       }
 
       // Save to IndexedDB for ALL items (both enabled and disabled)
@@ -233,7 +255,10 @@ export const handleGalleryImages = async (data: {
 
       // Restore stored statistics if available
       if (img.perTileColorStats) {
-        const tileStatsMap = new Map<string, { matched: Map<string, number>; total: Map<string, number> }>();
+        const tileStatsMap = new Map<
+          string,
+          { matched: Map<string, number>; total: Map<string, number> }
+        >();
 
         for (const [tileKey, stats] of Object.entries(img.perTileColorStats)) {
           tileStatsMap.set(tileKey, {
@@ -243,27 +268,43 @@ export const handleGalleryImages = async (data: {
         }
 
         setPerTileColorStats(img.key, tileStatsMap);
-        console.log(`🧑‍🎨 : Restored statistics for ${img.key} (${tileStatsMap.size} tiles)`);
+        console.log(
+          `🧑‍🎨 : Restored statistics for ${img.key} (${tileStatsMap.size} tiles)`
+        );
       }
 
       imageKeys.push(img.key);
       successCount++;
     } catch (error) {
       failCount++;
-      console.error(`🧑‍🎨 : Failed to add image ${img.key} to overlay layers:`, error);
+      console.error(
+        `🧑‍🎨 : Failed to add image ${img.key} to overlay layers:`,
+        error
+      );
     }
   }
 
   // Save current image keys for next update
   window.mrWplaceGalleryImageKeys = new Set(imageKeys);
 
-  console.log(`🧑‍🎨 : Gallery images sync complete - success: ${successCount}, failed: ${failCount}, total tiles: ${totalTileCount}`);
-  console.log("🧑‍🎨 : Gallery images updated and synced to overlay layers:", data.images.length);
+  console.log(
+    `🧑‍🎨 : Gallery images sync complete - success: ${successCount}, failed: ${failCount}, total tiles: ${totalTileCount}`
+  );
+  console.log(
+    "🧑‍🎨 : Gallery images updated and synced to overlay layers:",
+    data.images.length
+  );
 
   // Log memory usage after processing (Chrome only)
   const memoryAfterProcessing = (performance as any).memory?.usedJSHeapSize;
   if (memoryAfterProcessing) {
-    console.log(`🧑‍🎨 (inject): Memory after gallery processing: ${(memoryAfterProcessing / 1024 / 1024).toFixed(2)}MB`);
+    console.log(
+      `🧑‍🎨 (inject): Memory after gallery processing: ${(
+        memoryAfterProcessing /
+        1024 /
+        1024
+      ).toFixed(2)}MB`
+    );
   }
 };
 
@@ -311,9 +352,14 @@ export const handleSnapshotsUpdate = async (data: {
       );
 
       snapshotKeys.push(snapshot.key);
-      console.log(`🧑‍🎨 : Added snapshot ${snapshot.key} to overlay at (${snapshot.tileX}, ${snapshot.tileY})`);
+      console.log(
+        `🧑‍🎨 : Added snapshot ${snapshot.key} to overlay at (${snapshot.tileX}, ${snapshot.tileY})`
+      );
     } catch (error) {
-      console.error(`🧑‍🎨 : Failed to add snapshot ${snapshot.key} to overlay layers:`, error);
+      console.error(
+        `🧑‍🎨 : Failed to add snapshot ${snapshot.key} to overlay layers:`,
+        error
+      );
     }
   }
 
@@ -363,15 +409,25 @@ export const handleTextLayersUpdate = async (data: {
       // Text layers don't need stats computation (no progress tracking)
       await addImageToOverlayLayers(
         bitmap,
-        [textLayer.coords.TLX, textLayer.coords.TLY, textLayer.coords.PxX, textLayer.coords.PxY],
+        [
+          textLayer.coords.TLX,
+          textLayer.coords.TLY,
+          textLayer.coords.PxX,
+          textLayer.coords.PxY,
+        ],
         textLayer.key,
         { skip: true } // Don't compute stats for text layers
       );
 
       textLayerKeys.push(textLayer.key);
-      console.log(`🧑‍🎨 : Added text layer ${textLayer.key} to overlay at (${textLayer.coords.TLX}, ${textLayer.coords.TLY})`);
+      console.log(
+        `🧑‍🎨 : Added text layer ${textLayer.key} to overlay at (${textLayer.coords.TLX}, ${textLayer.coords.TLY})`
+      );
     } catch (error) {
-      console.error(`🧑‍🎨 : Failed to add text layer ${textLayer.key} to overlay layers:`, error);
+      console.error(
+        `🧑‍🎨 : Failed to add text layer ${textLayer.key} to overlay layers:`,
+        error
+      );
     }
   }
 
@@ -388,7 +444,7 @@ export const handleTextLayersUpdate = async (data: {
 export const handleLayerSave = async (data: {
   layer: {
     id: string;
-    type: 'gallery' | 'text' | 'snapshot';
+    type: "gallery" | "text" | "snapshot";
     visible: boolean;
     zIndex: number;
     opacity: number;
@@ -407,7 +463,7 @@ export const handleLayerSave = async (data: {
   const repository = window.mrWplace?.layerRepository;
 
   if (!repository) {
-    console.warn('🧑‍🎨 : LayerRepository not initialized, skipping layer save');
+    console.warn("🧑‍🎨 : LayerRepository not initialized, skipping layer save");
     return;
   }
 
@@ -424,11 +480,11 @@ export const handleLayerSave = async (data: {
     // Send success response
     window.postMessage(
       {
-        source: 'mr-wplace-layer-save-response',
+        source: "mr-wplace-layer-save-response",
         layerId: data.layer.id,
-        success: true
+        success: true,
       },
-      '*'
+      "*"
     );
   } catch (error) {
     console.error(`🧑‍🎨 : Failed to save layer ${data.layer.id}:`, error);
@@ -436,12 +492,12 @@ export const handleLayerSave = async (data: {
     // Send error response
     window.postMessage(
       {
-        source: 'mr-wplace-layer-save-response',
+        source: "mr-wplace-layer-save-response",
         layerId: data.layer.id,
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       },
-      '*'
+      "*"
     );
   }
 };
