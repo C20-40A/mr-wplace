@@ -11,6 +11,7 @@ The gallery list route displays all saved images in a grid layout with progress 
 The gallery list operates across two contexts:
 
 1. **Content Script Context** (`src/content.ts`)
+
    - Manages gallery storage (Chrome storage API)
    - Renders UI components
    - Requests statistics from inject context
@@ -108,6 +109,7 @@ export const getStatsPerImage = (
 **Purpose**: Aggregates tile-level statistics into image-level statistics.
 
 **Data Source**: `perTileColorStats` Map, populated by:
+
 - `computeStatsInBackground()` when images are added
 - `recomputeAllStats()` when color filter changes
 - Tile rendering statistics (fallback)
@@ -117,6 +119,7 @@ export const getStatsPerImage = (
 **File**: `src/inject/message-handler.ts`
 
 **Listener registration** (line 81-84):
+
 ```typescript
 if (event.data.source === "mr-wplace-request-image-stats") {
   handleImageStatsRequest(event.data);
@@ -125,8 +128,12 @@ if (event.data.source === "mr-wplace-request-image-stats") {
 ```
 
 **Handler implementation** (line 382-398):
+
 ```typescript
-const handleImageStatsRequest = (data: { imageKeys: string[]; requestId: string }): void => {
+const handleImageStatsRequest = (data: {
+  imageKeys: string[];
+  requestId: string;
+}): void => {
   const stats = getStatsPerImage(data.imageKeys);
 
   window.postMessage(
@@ -138,11 +145,13 @@ const handleImageStatsRequest = (data: { imageKeys: string[]; requestId: string 
     "*"
   );
 
-  console.log(`>�<� : Sent image stats for ${data.imageKeys.length} images (request: ${data.requestId})`);
+  console.log(`>�
+<� : Sent image stats for ${data.imageKeys.length} images (request: ${data.requestId})`);
 };
 ```
 
 **Message Format**:
+
 - Request: `{ source: "mr-wplace-request-image-stats", imageKeys: string[], requestId: string }`
 - Response: `{ source: "mr-wplace-response-image-stats", requestId: string, stats: Record<...> }`
 
@@ -181,7 +190,8 @@ export const getStatsPerImage = async (
     // Timeout after 5 seconds
     setTimeout(() => {
       window.removeEventListener("message", handler);
-      console.warn(">�<� : Image stats request timed out");
+      console.warn(">�
+<� : Image stats request timed out");
       resolve({});
     }, 5000);
   });
@@ -189,6 +199,7 @@ export const getStatsPerImage = async (
 ```
 
 **Features**:
+
 - Async/await interface for easy usage
 - Request ID matching to handle concurrent requests
 - 5-second timeout with fallback to empty object
@@ -215,7 +226,8 @@ async render(
     const imageKeys = itemsWithDrawPosition.map((item) => item.key);
     const statsPerImage = await getStatsPerImage(imageKeys);
 
-    console.log(">�<� : Fetched stats for gallery images:", statsPerImage);
+    console.log(">�
+<� : Fetched stats for gallery images:", statsPerImage);
 
     // Assign stats to items
     for (const item of itemsWithDrawPosition) {
@@ -232,6 +244,7 @@ async render(
 ```
 
 **Logic**:
+
 1. Fetch all items from storage
 2. Filter items that have `drawPosition` (placed on map)
 3. Extract image keys and request stats from inject
@@ -239,6 +252,7 @@ async render(
 5. Pass enhanced items to UI for rendering
 
 **Why filter by drawPosition?**
+
 - Images without draw position are not in overlay layers
 - They have no statistics to display
 - Requesting stats for non-placed images would return empty data
@@ -247,30 +261,8 @@ async render(
 
 **File**: `src/features/gallery/routes/list/components/ImageGridComponent.ts`
 
-**Progress bar rendering** (line 339-397):
-```typescript
-private createProgressBarHtml(item: ImageItem): string {
-  if (!item.currentColorStats || !item.totalColorStats) return "";
-
-  const matched = Object.values(item.currentColorStats).reduce((sum, count) => sum + count, 0);
-  const total = Object.values(item.totalColorStats).reduce((sum, count) => sum + count, 0);
-
-  if (total === 0) return "";
-
-  const percentage = (matched / total) * 100;
-  const remaining = total - matched;
-  const timeStr = this.formatEstimatedTime(remaining);
-
-  return `<div style="...">
-    <span>${percentage.toFixed(1)}%</span>
-    <div class="progress-bar" style="width: ${percentage.toFixed(1)}%"></div>
-    <span>${matched.toLocaleString()}/${total.toLocaleString()}</span>
-    <span>${remaining}px(${timeStr})</span>
-  </div>`;
-}
-```
-
 **Display Components**:
+
 - **Percentage**: `(matched / total) * 100`
 - **Progress bar**: Visual indicator with gradient
 - **Pixel counts**: `matched/total` formatted with commas
@@ -279,32 +271,20 @@ private createProgressBarHtml(item: ImageItem): string {
 
 ## Data Structures
 
-### GalleryItem (storage)
-
-```typescript
-interface GalleryItem extends BaseImageItem {
-  key: string;
-  dataUrl: string;
-  timestamp: number;
-  drawPosition?: { TLX: number; TLY: number; PxX: number; PxY: number };
-  drawEnabled?: boolean;
-  layerOrder?: number;
-  // Statistics (populated at render time)
-  matchedColorStats?: Record<string, number>;  // Color key � matched pixel count
-  totalColorStats?: Record<string, number>;     // Color key � total pixel count
-}
-```
-
 ### Stats Response Format
 
-```typescript
-Record<string, {
-  matched: Record<string, number>;  // Color key � count
-  total: Record<string, number>;    // Color key � count
-}>
+```ts
+Record<
+  string,
+  {
+    matched: Record<string, number>; // Color key � count
+    total: Record<string, number>; // Color key � count
+  }
+>;
 ```
 
 **Example**:
+
 ```json
 {
   "image_1699999999999": {
@@ -321,11 +301,12 @@ Record<string, {
 ### perTileColorStats (inject)
 
 ```typescript
-Map<string, Map<string, ColorStats>>
+Map<string, Map<string, ColorStats>>;
 // imageKey � tileKey � { matched: Map, total: Map }
 ```
 
 **Example**:
+
 ```javascript
 perTileColorStats = Map {
   "image_1699999999999" => Map {
@@ -351,9 +332,13 @@ Statistics are calculated at multiple points:
 **File**: `src/inject/tile-draw/states-inject.ts:66-96`
 
 ```typescript
-const computeStatsInBackground = (imageKey: string, tiles: Record<string, ImageBitmap>): void => {
+const computeStatsInBackground = (
+  imageKey: string,
+  tiles: Record<string, ImageBitmap>
+): void => {
   if (window.mrWplaceDataSaver?.enabled) {
-    console.log(`>�<� : Skipping background stats computation (data saver is ON)`);
+    console.log(`>�
+<� : Skipping background stats computation (data saver is ON)`);
     return;
   }
 
@@ -365,16 +350,22 @@ const computeStatsInBackground = (imageKey: string, tiles: Record<string, ImageB
     computeStatsForImage(imageKey, tiles, colorFilter)
       .then((tileStatsMap) => {
         perTileColorStats.set(imageKey, tileStatsMap);
-        console.log(`>�<� : Background stats computation complete for ${imageKey}`);
+        console.log(`>�
+<� : Background stats computation complete for ${imageKey}`);
       })
       .catch((error) => {
-        console.warn(`>�<� : Background stats computation failed for ${imageKey}:`, error);
+        console.warn(
+          `>�
+<� : Background stats computation failed for ${imageKey}:`,
+          error
+        );
       });
   }, 2000);
 };
 ```
 
 **Characteristics**:
+
 - Runs 2 seconds after image is added (avoids conflict with tile rendering)
 - Fetches background tiles from `https://backend.wplace.live/tiles/${tileX}/${tileY}.png`
 - Processes tiles sequentially (10 tiles, 100ms wait between batches)
@@ -389,7 +380,8 @@ const computeStatsInBackground = (imageKey: string, tiles: Record<string, ImageB
 ```typescript
 const recomputeAllStats = (colorFilter?: number[][]): void => {
   if (window.mrWplaceDataSaver?.enabled) {
-    console.log(`>�<� : Skipping stats recomputation (data saver is ON)`);
+    console.log(`>�
+<� : Skipping stats recomputation (data saver is ON)`);
     return;
   }
 
@@ -397,11 +389,20 @@ const recomputeAllStats = (colorFilter?: number[][]): void => {
     for (const layer of overlayLayers) {
       if (!layer.tiles) continue;
       try {
-        const tileStatsMap = await computeStatsForImage(layer.imageKey, layer.tiles, colorFilter);
+        const tileStatsMap = await computeStatsForImage(
+          layer.imageKey,
+          layer.tiles,
+          colorFilter
+        );
         perTileColorStats.set(layer.imageKey, tileStatsMap);
-        console.log(`>�<� : Recomputed stats for ${layer.imageKey}`);
+        console.log(`>�
+<� : Recomputed stats for ${layer.imageKey}`);
       } catch (error) {
-        console.warn(`>�<� : Failed to recompute stats for ${layer.imageKey}:`, error);
+        console.warn(
+          `>�
+<� : Failed to recompute stats for ${layer.imageKey}:`,
+          error
+        );
       }
     }
   }, 2000);
@@ -409,6 +410,7 @@ const recomputeAllStats = (colorFilter?: number[][]): void => {
 ```
 
 **Characteristics**:
+
 - Recalculates all image stats with new filter
 - Sequential processing (one image at a time)
 - 2-second delay before starting
@@ -446,10 +448,12 @@ Statistics are also calculated during actual tile rendering as a fallback mechan
 ### 1. Timeout Fallback
 
 If inject context doesn't respond within 5 seconds:
+
 ```typescript
 setTimeout(() => {
   window.removeEventListener("message", handler);
-  console.warn(">�<� : Image stats request timed out");
+  console.warn(">�
+<� : Image stats request timed out");
   resolve({});  // Return empty object
 }, 5000);
 ```
@@ -467,9 +471,11 @@ if (!item.currentColorStats || !item.totalColorStats) return "";
 ### 3. Data Saver Mode
 
 When data saver is ON, background statistics calculation is skipped:
+
 ```typescript
 if (window.mrWplaceDataSaver?.enabled) {
-  console.log(`>�<� : Skipping background stats computation (data saver is ON)`);
+  console.log(`>�
+<� : Skipping background stats computation (data saver is ON)`);
   return;
 }
 ```
@@ -479,8 +485,12 @@ if (window.mrWplaceDataSaver?.enabled) {
 ### 4. Network Errors
 
 Background tile fetch may fail:
+
 ```typescript
-const fetchWithTimeout = async (url: string, timeout = 5000): Promise<Response | null> => {
+const fetchWithTimeout = async (
+  url: string,
+  timeout = 5000
+): Promise<Response | null> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -489,7 +499,11 @@ const fetchWithTimeout = async (url: string, timeout = 5000): Promise<Response |
     clearTimeout(timeoutId);
     return response;
   } catch (error) {
-    console.warn(`>�<� : Fetch failed for ${url}:`, error);
+    console.warn(
+      `>�
+<� : Fetch failed for ${url}:`,
+      error
+    );
     return null;
   }
 };
@@ -516,14 +530,17 @@ console.log(perTileColorStats.size);
 
 ### Check Request/Response Flow
 
-Enable verbose logging by watching for >�<� emoji:
+Enable verbose logging by watching for >�
+<� emoji:
 
 ```javascript
 // Content side (gallery list)
-">�<� : Fetched stats for gallery images: {...}"
+">�
+<� : Fetched stats for gallery images: {...}"
 
 // Inject side (message handler)
-">�<� : Sent image stats for 3 images (request: req_1699999999999_1)"
+">�
+<� : Sent image stats for 3 images (request: req_1699999999999_1)"
 ```
 
 ### Check Item Data (Content Context)
@@ -532,7 +549,8 @@ In `src/features/gallery/routes/list/ui.ts:39-46`:
 
 ```typescript
 console.log(
-  ">�<� : renderGalleryList items:",
+  ">�
+<� : renderGalleryList items:",
   items.map((i) => ({
     key: i.key,
     hasCurrentStats: !!i.matchedColorStats,
@@ -547,14 +565,16 @@ In `src/features/gallery/routes/list/components/ImageGridComponent.ts:340-367`:
 
 ```typescript
 console.log(
-  ">�<� : createProgressBarHtml",
+  ">�
+<� : createProgressBarHtml",
   item.key,
   "currentColorStats:", item.currentColorStats,
   "totalColorStats:", item.totalColorStats
 );
 
 console.log(
-  ">�<� : Progress",
+  ">�
+<� : Progress",
   item.key,
   "matched:", matched,
   "total:", total
@@ -592,6 +612,7 @@ Images spanning 50+ tiles may take 10-20 seconds to calculate statistics.
 Background statistics require fetching tiles from backend.
 
 **Failure Cases**:
+
 - Backend is down
 - Network is slow/unstable
 - Tiles don't exist (outside map bounds)
@@ -611,10 +632,12 @@ Instead of recalculating all stats on color filter change, only recalculate chan
 Store calculated statistics in IndexedDB with timestamp.
 
 **Benefits**:
+
 - Instant progress display on page load
 - Reduce network requests
 
 **Challenges**:
+
 - Need invalidation strategy (map changes)
 - Storage space (50KB+ per large image)
 
@@ -623,10 +646,12 @@ Store calculated statistics in IndexedDB with timestamp.
 Move statistics calculation to Web Worker.
 
 **Benefits**:
+
 - Non-blocking UI
 - Parallel processing
 
 **Challenges**:
+
 - Cannot access `window.mrWplace*` globals
 - Need message-passing architecture
 
@@ -635,6 +660,7 @@ Move statistics calculation to Web Worker.
 Show partial progress as statistics are calculated tile-by-tile.
 
 **Benefits**:
+
 - Better UX (progress bar appears gradually)
 - User sees feedback immediately
 
@@ -645,6 +671,7 @@ Show partial progress as statistics are calculated tile-by-tile.
 Prioritize background tile fetches for currently visible images in the gallery.
 
 **Benefits**:
+
 - Statistics appear faster for what user is looking at
 - Better perceived performance
 

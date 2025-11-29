@@ -10,23 +10,10 @@ The gallery feature allows users to save, edit, and manage images for drawing on
 
 Users can assign an optional title/name to gallery images for easier identification.
 
-#### Data Model
-
-**Location**: `src/features/gallery/storage.ts:11-24`
-
-```typescript
-export interface GalleryItem extends BaseImageItem {
-  title?: string;  // Optional image name
-  drawPosition?: { TLX: number; TLY: number; PxX: number; PxY: number };
-  drawEnabled?: boolean;
-  layerOrder?: number;
-  // ... statistics fields
-}
-```
-
 #### UI Components
 
 1. **Image Detail Screen** (`src/features/gallery/routes/image-detail/index.ts:50-52`)
+
    - 📝 Title button in button area
    - Opens modal for title input using `showNameInputModal`
    - Saves title to storage
@@ -40,24 +27,27 @@ export interface GalleryItem extends BaseImageItem {
 #### Implementation Details
 
 **Title Edit Flow**:
+
 ```
+
 User clicks 📝 Title button
-  ↓
+↓
 showNameInputModal opens
-  ↓
+↓
 User enters/edits title (or leaves empty)
-  ↓
+↓
 Modal returns string (title) or null (cancelled)
-  ↓
+↓
 If not cancelled: save to storage via GalleryStorage.save()
-  ↓
+↓
 Update currentItem.title
-  ↓
+↓
 Show "Title updated" toast
+
 ```
 
 **Title Display**:
-- Gallery list passes `title` from `GalleryItem` to `ImageItem`
+
 - `ImageGridComponent` renders title if present
 - Title appears below image, above progress bar
 - Text truncates with ellipsis if too long
@@ -104,15 +94,18 @@ await storage.save({ ...item, title: newTitle });
 ## Related Files
 
 ### Core Implementation
+
 - `src/features/gallery/storage.ts` - Data model
 - `src/features/gallery/routes/image-detail/index.ts` - Title editing UI
 - `src/features/gallery/routes/list/ui.ts` - Data transformation
 - `src/features/gallery/routes/list/components/ImageGridComponent.ts` - Title display
 
 ### Utilities
+
 - `src/utils/modal.ts` - `showNameInputModal` function
 
 ### i18n
+
 - `src/i18n/locales/ja.ts` - Japanese translations
 - `src/i18n/locales/en.ts` - English translations
 - `src/i18n/locales/es.ts` - Spanish translations

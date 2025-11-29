@@ -1,9 +1,10 @@
-import { ImageGridComponent, ImageItem } from "../routes/list/components";
+import { ImageGridComponent } from "../routes/list/components";
 import { t } from "../../../i18n/manager";
+import type { GalleryItem } from "@/states/galleryStorage";
 
 export interface ImageSelectorOptions {
-  items: ImageItem[];
-  onSelect: (item: ImageItem) => void;
+  items: GalleryItem[];
+  onSelect: (item: GalleryItem) => void;
   onAddClick?: () => void;
   showInstruction?: boolean;
   instructionMessage?: string;
@@ -35,11 +36,15 @@ export class ImageSelector {
   render(container: HTMLElement): void {
     // 全画像を表示（未描画画像も描画対象として選択可能）
     const items = this.options.items;
-    
+
     // コンテナHTMLを設定
     container.innerHTML = `
       <!-- 説明 -->
-      ${this.options.showInstruction ? this.createInstructionHtml(items.length > 0) : ''}
+      ${
+        this.options.showInstruction
+          ? this.createInstructionHtml(items.length > 0)
+          : ""
+      }
 
       <!-- 画像グリッドコンテナ -->
       <div id="image-selector-grid" class="flex-1 overflow-y-auto relative">
@@ -54,8 +59,8 @@ export class ImageSelector {
    * 説明文のHTMLを生成
    */
   private createInstructionHtml(hasItems: boolean): string {
-    if (!hasItems) return '';
-    
+    if (!hasItems) return "";
+
     return `
       <div class="mb-4 p-3 bg-info/10 rounded-lg">
         <p class="text-sm text-info">
@@ -71,8 +76,10 @@ export class ImageSelector {
   /**
    * 画像グリッドを設定
    */
-  private setupImageGrid(container: HTMLElement, items: ImageItem[]): void {
-    const gridContainer = container.querySelector("#image-selector-grid") as HTMLElement;
+  private setupImageGrid(container: HTMLElement, items: GalleryItem[]): void {
+    const gridContainer = container.querySelector(
+      "#image-selector-grid"
+    ) as HTMLElement;
     if (!gridContainer) return;
 
     // 既存のグリッドがあれば破棄

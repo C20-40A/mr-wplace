@@ -12,6 +12,7 @@
 // ========================================
 // Feature API型定義
 // ========================================
+import type { GalleryItem } from "@/states/galleryStorage";
 
 export interface GalleryAPI {
   initGallery: () => void;
@@ -22,7 +23,11 @@ export interface GalleryAPI {
 
 export interface TileOverlayAPI {
   initTileOverlay: () => void;
-  drawImageAt: (lat: number, lng: number, imageItem: any) => Promise<void>;
+  drawImageAt: (
+    lat: number,
+    lng: number,
+    galleryItem: GalleryItem
+  ) => Promise<void>;
   toggleImageDrawState: (imageKey: string) => Promise<boolean>;
   restoreImagesOnTile: (tileX: number, tileY: number) => Promise<void>;
   drawPixelOnTile: (

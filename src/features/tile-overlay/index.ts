@@ -1,6 +1,5 @@
-import { latLngToTilePixel } from "../../utils/coordinate";
-import { ImageItem } from "../gallery/routes/list/components";
-import { GalleryStorage } from "../../states/galleryStorage";
+import { latLngToTilePixel } from "@/utils/coordinate";
+import { GalleryItem, GalleryStorage } from "@/states/galleryStorage";
 
 export class TileOverlay {
   private galleryStorage: GalleryStorage;
@@ -12,21 +11,21 @@ export class TileOverlay {
   async drawImageAt(
     lat: number,
     lng: number,
-    imageItem: ImageItem
+    galleryItem: GalleryItem
   ): Promise<void> {
     window.postMessage({ source: "wplace-studio-drawing-start" }, "*");
 
     const coords = latLngToTilePixel(lat, lng);
-    await this.drawImageWithCoords(coords, imageItem);
+    await this.drawImageWithCoords(coords, galleryItem);
 
     // Don't hide loader here - wait for next tile fetch to complete
   }
 
   async drawImageWithCoords(
     coords: { TLX: number; TLY: number; PxX: number; PxY: number },
-    imageItem: ImageItem
+    galleryItem: GalleryItem
   ): Promise<void> {
-    await this.saveDrawPosition(imageItem.key, coords);
+    await this.saveDrawPosition(galleryItem.key, coords);
 
     // Update inject side with new gallery images
     // Inject side will handle addImageToOverlayLayers

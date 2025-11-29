@@ -3,7 +3,8 @@
  */
 export const createAddImageButton = (onAddClick: () => void): HTMLElement => {
   const container = document.createElement("div");
-  container.className = "add-image-btn border-2 border-dashed border-base-300 rounded-lg";
+  container.className =
+    "add-image-btn border-2 border-dashed border-base-300 rounded-lg";
   container.style.cssText = `
     cursor: pointer;
     transition: border-color 0.2s;

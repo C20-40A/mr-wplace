@@ -1,12 +1,11 @@
-import type { ImageItem } from "../../list/components";
-import { convertGalleryItemToImageItem } from "./utils";
+import type { GalleryItem } from "@/states/galleryStorage";
 
 /**
  * 未配置画像アイテム作成
  */
 export const createUnplacedItem = (
   item: any,
-  onSelect: (item: ImageItem) => void
+  onSelect: (item: GalleryItem) => void
 ): HTMLElement => {
   const container = document.createElement("div");
   container.className = "unplaced-item";
@@ -23,7 +22,7 @@ export const createUnplacedItem = (
     "width: 80px; height: 80px; object-fit: cover; display: block; image-rendering: pixelated; transition: transform 0.2s, border-color 0.2s;";
 
   container.onclick = () => {
-    onSelect(convertGalleryItemToImageItem(item));
+    onSelect(item);
   };
 
   container.appendChild(thumbnail);

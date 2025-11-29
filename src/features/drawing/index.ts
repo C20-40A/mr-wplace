@@ -9,10 +9,9 @@ import {
   getOrCreateMapPinButtonGroup,
   createMapPinGroupButton,
 } from "@/components/map-pin-button";
-import { ImageItem } from "../gallery/routes/list/components";
 import { di } from "../../core/di";
 import { t } from "@/i18n/manager";
-// import { IMG_ICON_GALLERY } from "@/assets/iconImages";
+import type { GalleryItem } from "@/states/galleryStorage";
 
 /**
  * マップピン周辺にボタンを作成
@@ -82,25 +81,25 @@ export class Drawing {
     });
   }
 
-  private startDraw(imageItem: ImageItem): void {
-    console.log("🎨 Start drawing with:", imageItem);
+  private startDraw(galleryItem: GalleryItem): void {
+    console.log("🎨 Start drawing with:", galleryItem);
 
     const position = getCurrentPosition();
     if (!position) throw new Error("Current position not available");
 
-    this.drawImageOnMap(position.lat, position.lng, imageItem);
+    this.drawImageOnMap(position.lat, position.lng, galleryItem);
   }
 
   public async drawImageOnMap(
     lat: number,
     lng: number,
-    imageItem: ImageItem
+    galleryItem: GalleryItem
   ): Promise<void> {
-    console.log("📍 Drawing at:", lat, lng, "Image:", imageItem.key);
+    console.log("📍 Drawing at:", lat, lng, "Image:", galleryItem.key);
 
     const tileOverlay = window.mrWplace?.tileOverlay;
     if (!tileOverlay) throw new Error("TileOverlay not found");
 
-    await tileOverlay.drawImageAt(lat, lng, imageItem);
+    await tileOverlay.drawImageAt(lat, lng, galleryItem);
   }
 }

@@ -4,7 +4,6 @@ import {
   gotoMapPosition,
   moveImage,
 } from "../../../common-actions";
-import { convertGalleryItemToImageItem } from "./utils";
 import { sendGalleryImagesToInject } from "@/content";
 
 interface LayerItemParams {
@@ -87,7 +86,7 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
 
 // コンテンツエリア作成
 const createContentArea = (
-  item: any,
+  item: GalleryItem,
   index: number,
   onSelect: (item: GalleryItem) => void
 ): HTMLElement => {
@@ -110,13 +109,13 @@ const createContentArea = (
 	`;
 
   mainArea.onclick = () => {
-    onSelect(convertGalleryItemToImageItem(item));
+    onSelect(item);
   };
 
   // サムネイル
   const thumbnail = document.createElement("img");
   thumbnail.className = "border border-base-300 rounded-md";
-  thumbnail.src = item.thumbnail || item.dataUrl;
+  thumbnail.src = item.thumbnail ?? item.dataUrl ?? "";
   thumbnail.style.cssText =
     "width: 48px; height: 48px; object-fit: cover; flex-shrink: 0; image-rendering: pixelated;";
 
@@ -263,9 +262,7 @@ const createActionGrid = (
 
   // 詳細ボタン
   const detailBtn = createButton("🔍", "btn-warning", () => {
-    if (onShowDetail) {
-      onShowDetail(convertGalleryItemToImageItem(item));
-    }
+    if (onShowDetail) onShowDetail(item);
   });
 
   // トグルボタン

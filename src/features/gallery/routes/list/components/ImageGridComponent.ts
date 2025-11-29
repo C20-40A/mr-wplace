@@ -1,5 +1,5 @@
 import { t } from "@/i18n/manager";
-import { GalleryItem } from "@/states/galleryStorage";
+import type { GalleryItem } from "@/states/galleryStorage";
 
 export interface ImageGridOptions {
   items: GalleryItem[];
