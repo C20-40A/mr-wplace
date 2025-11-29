@@ -43,7 +43,7 @@ import { doctorAPI } from "@/features/doctor";
 export const sendGalleryImagesToInject = async () => {
   const { GalleryStorage } = await import("@/features/gallery/storage");
   const galleryStorage = new GalleryStorage();
-  const images = await galleryStorage.getAll({ fullImage: true });
+  const images = await galleryStorage.getAll(); // Send thumbnails only (lightweight)
 
   // Send ALL images with drawPosition (including disabled ones)
   // Inject side will handle IndexedDB storage for all items
