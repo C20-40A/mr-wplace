@@ -24,9 +24,9 @@ inject/
 
 ### types.ts
 
-- TileProcessingCallback 型
-- WplaceMap インターフェース
-- Window 拡張定義
+- Type definitions for inject context
+- Window extensions (wplaceMap, mrWplaceDataSaver, etc.)
+- Type-only imports from content (e.g., `GalleryItem`)
 
 ### fetch-interceptor.ts
 
@@ -48,42 +48,43 @@ inject/
 
 ### message-handler.ts
 
-- mr-wplace-processed: 処理済み blob 受信
-- wplace-studio-flyto: 地図移動リクエスト
-- mr-wplace-theme-update: テーマ変更通知
+- Centralized postMessage handler
+- Delegates to handlers/ modules
+- Handles: gallery, snapshots, text layers, theme, state updates
 
 ## Message Flow
 
 ```
-inject.js → postMessage → content.ts → postMessage → inject.js
+content.ts → postMessage → inject → handlers/ → state update
+inject → postMessage → content.ts → Chrome storage
 ```
 
-### Outgoing Messages (inject → content)
+### Key Messages (content → inject)
 
-- `wplace-studio-tile`: タイル処理リクエスト
-- `wplace-studio-snapshot`: スナップショット保存
-- `wplace-studio-pixel-click`: ピクセルクリック座標
-- `mr-wplace-me`: ユーザーデータ
+- `mr-wplace-gallery-images`: Gallery data sync
+- `mr-wplace-snapshots`: Snapshot overlays
+- `mr-wplace-text-layers`: Text overlays
+- `mr-wplace-theme-update`: Theme changes
+- `mr-wplace-color-filter`: Color filter state
+- `wplace-studio-flyto`: Map navigation
 
-### Incoming Messages (content → inject)
+### Key Messages (inject → content)
 
-- `mr-wplace-processed`: 処理済みタイル blob
-- `wplace-studio-flyto`: 地図移動
-- `mr-wplace-theme-update`: テーマ更新
+- `mr-wplace-me`: User data from /me API
+- `mr-wplace-response-stats`: Color statistics
+- `mr-wplace-stats-updated`: Save stats to storage
 
 ## Technical Constraints
 
-- ページコンテキスト実行（DOM・window 直接アクセス可）
-- content script とは postMessage 経由通信のみ
-- fetch ハイジャック: Promise 返却で非同期処理
-- マップインスタンス: DOM 要素.\_\_click[3].v から取得
+- Runs in page context (direct DOM/window access)
+- No Chrome APIs (use postMessage to content script)
+- No direct module imports from content (type-only imports OK)
+- Fetch hijacking: async Promise return required
 
 ## Initialization Flow
 
-```typescript
-1. DOM属性からテーマ読み込み
-2. setupFetchInterceptor() fetch上書き
-3. setupMessageHandler() イベントリスナー設定
-4. setupMapObserver() マップ監視開始
-5. isInitialized = true
-```
+1. Load theme from DOM attributes
+2. `setupFetchInterceptor()`: override window.fetch
+3. `setupMessageHandler()`: register event listeners
+4. `setupMapObserver()`: start map observation
+5. `window.mrWplace` initialization (inject-specific fields)

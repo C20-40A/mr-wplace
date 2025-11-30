@@ -1,36 +1,57 @@
-# フローの整理
+# Inject Context Architecture
 
-## 1. 画像配置時 (初回)
+## Data Flow
 
-content.ts: Gallery 保存
-  → Chrome Storage + IndexedDB (legacy_blobs) に保存
-  → sendGalleryImagesToInject() で inject に通知
-  → handleGalleryImages() で overlayLayers に追加
-  → Worker に MIGRATE_REQUEST 送信（バックグラウンド最適化）
+### 1. Gallery Save Flow
+```
+content: save to Chrome Storage (metadata + thumbnail) + IndexedDB (full image)
+  → sendGalleryImagesToInject() sends GalleryItem[]
+  → inject: handleGalleryImages()
+    → IndexedDB check (full image) → fallback to dataUrl
+    → addImageToOverlayLayers() + saveGalleryToIndexedDB()
+    → Worker MIGRATE_REQUEST (background tile splitting)
+```
 
-## 2. タイル描画時 (fetch 発生)
-
-fetch-interceptor が intercept
+### 2. Tile Draw Flow
+```
+fetch-interceptor intercepts tiles/{x}/{y}.png
   → handleTileRequest()
-  → drawOverlayLayersOnTile() でオーバーレイ合成
-  → 統計計算、キャッシュ保存
+  → drawOverlayLayersOnTile() composite overlay
+  → compute stats + cache save
+```
 
-## 3. Migration Architecture (2025-11-27)
+## Storage & Types
+
+**Hybrid Storage Strategy:**
+- Chrome Storage: metadata + thumbnail (lightweight, KB)
+- IndexedDB: full image + optimized tiles (heavy, MB+)
+
+**Type System:**
+- `GalleryItem` (src/states/galleryStorage.ts): unified type for content & inject
+- inject uses `import type { GalleryItem }` (type-only import, no runtime code)
+- Message via postMessage: `GalleryItem[]` sent from content to inject
+
+**Global State:**
+- `window.mrWplace`: shared between content & inject contexts
+- content fields: `tileOverlay`, `tileSnapshot`, `colorFilterManager`
+- inject fields: `layerRepository`, `workerMessenger` (optional)
+
+## Migration Architecture
 
 **IndexedDB (mr-wplace-v2):**
-- `layers` - メタデータ (visible, zIndex, coords, isOptimized)
-- `legacy_blobs` - 元画像 (Blob)
-- `optimized_tiles` - 分割済みタイル (1000x1000 Blob)
+- `layers`: metadata (visible, zIndex, coords, isOptimized)
+- `legacy_blobs`: original image (Blob)
+- `optimized_tiles`: split tiles (1000x1000 Blob)
 
 **Repository Pattern (db/layer-repository.ts):**
-- `getTile()` - 高速パス (optimized) / フォールバック (legacy)
-- `saveLayer()` - レイヤー保存
-- LRU cache (最大100枚)
+- `getTile()`: optimized path / legacy fallback
+- `saveLayer()`: save layer metadata + blob
+- LRU cache (max 100 tiles)
 
 **Worker (workers/migration.worker.ts):**
-- 別スレッドで画像をタイル分割
-- OffscreenCanvas で処理
-- 透明タイルはスキップ (Sparse Optimization)
+- Background tile splitting (OffscreenCanvas)
+- Sparse optimization (skip transparent tiles)
+- Priority queue (0=high, 1=low)
 
 ## Directory Structure
 
@@ -56,40 +77,35 @@ src/inject/
 
 ---
 
-## 重要な制約
+## Design Principles
 
-❌ **避けるべきパターン:**
-- content script で ImageBitmap/ImageData を直接処理
-- inject context で WASM を使用
-- inject context で Chrome API を使用
+**Context Separation:**
+- Content: storage management, Chrome APIs
+- Inject: image processing, rendering, fetch interception
+- Communication: `postMessage` only (no direct module imports between contexts)
 
-✅ **推奨パターン:**
-- content は storage 管理のみ
-- inject は画像処理と描画のみ
-- データ変更時は必ず send*ToInject() を呼ぶ
-
-## 新機能追加時のガイド
-
-**1. inject/message-handler.ts にハンドラー追加:**
+**Data Sync Pattern:**
 ```typescript
-if (event.data.source === "mr-wplace-your-feature") {
-  await handleYourFeature(event.data);
-}
+// After data change in content
+await storage.save(item);
+await sendGalleryImagesToInject(); // Sync to inject
 ```
 
-**2. content.ts に送信関数追加:**
+**Type Import (inject only):**
 ```typescript
-export const sendYourFeatureToInject = async () => {
-  window.postMessage({ source: "mr-wplace-your-feature", data }, "*");
-};
+import type { GalleryItem } from "../../states/galleryStorage"; // OK (type-only)
+// import { GalleryStorage } from "..."; // NG (runtime import not allowed)
 ```
 
-## 歴史
+**Adding New Features:**
+1. Add handler in `inject/handlers/*.ts`
+2. Register in `inject/message-handler.ts`
+3. Add sender in `content.ts` (e.g., `sendXxxToInject()`)
 
-**tile-draw inject 移行 (2025-11-01)**: Firefox セキュリティ制約回避のため全画像処理を inject 側に移行
+## History
 
-**Directory Refactoring (2025-11-07)**: message-handler 分割、tile-draw 整理
-
-**統計永続化 (2025-11-14)**: タイル訪問時に統計計算・保存、リロード後も統計保持
-
-**Migration Architecture (2025-11-27)**: IndexedDB + Repository + Worker 導入、バックグラウンド最適化
+- **2025-11-01**: tile-draw moved to inject (Firefox security constraints)
+- **2025-11-07**: handlers directory refactoring
+- **2025-11-14**: statistics persistence (tile-based caching)
+- **2025-11-27**: Migration Architecture (IndexedDB + Repository + Worker)
+- **2025-12-01**: Type unification (`GalleryItem`), Hybrid Storage (thumbnail + full image)
