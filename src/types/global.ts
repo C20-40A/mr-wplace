@@ -18,6 +18,9 @@ interface mrWplace {
   wplaceChargeData?: RuntimeChargeData;
   tileSnapshot: TileSnapshot;
   autoSpoit?: AutoSpoit;
+  // Inject context fields (optional - only available in inject context)
+  layerRepository?: any; // import("../inject/db/layer-repository").LayerRepository
+  workerMessenger?: any; // import("../inject/workers/messaging").WorkerMessenger
 }
 
 declare global {

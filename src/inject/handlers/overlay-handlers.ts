@@ -1,4 +1,4 @@
-import type { GalleryItem } from "@/states/galleryStorage";
+import type { GalleryItem } from "../../states/galleryStorage";
 import {
   addImageToOverlayLayers,
   removePreparedOverlayImageByKey,
@@ -57,7 +57,7 @@ const saveGalleryToIndexedDB = async (
   bitmap: ImageBitmap
 ): Promise<void> => {
   const repository = window.mrWplace?.layerRepository;
-  const worker = window.mrWplace?.workerMessenger?.worker;
+  const workerMessenger = window.mrWplace?.workerMessenger;
 
   if (!repository) {
     console.warn("🧑‍🎨 : LayerRepository not available, skipping IndexedDB save");
@@ -80,6 +80,11 @@ const saveGalleryToIndexedDB = async (
     const blob = await bitmapToBlob(bitmap);
 
     // Calculate bounds
+    if (!img.drawPosition) {
+      console.warn(`🧑‍🎨 : No drawPosition for ${img.key}, skipping`);
+      return;
+    }
+
     const TLX = img.drawPosition.TLX;
     const TLY = img.drawPosition.TLY;
     const PxX = img.drawPosition.PxX;
@@ -111,8 +116,8 @@ const saveGalleryToIndexedDB = async (
     console.log(`🧑‍🎨 : Saved ${img.key} to IndexedDB`);
 
     // Request Worker migration in background (low priority)
-    if (worker) {
-      requestWorkerMigration(worker, img.key, layerMetadata);
+    if (workerMessenger) {
+      requestWorkerMigration(workerMessenger, img.key, layerMetadata);
     }
   } catch (error) {
     console.error(`🧑‍🎨 : Failed to save ${img.key} to IndexedDB:`, error);
@@ -136,14 +141,14 @@ const bitmapToBlob = async (bitmap: ImageBitmap): Promise<Blob> => {
  * Request Worker migration (background processing)
  */
 const requestWorkerMigration = (
-  worker: Worker,
+  workerMessenger: import("../workers/messaging").WorkerMessenger,
   layerId: string,
   layer: {
     coords: { TLX: number; TLY: number; PxX: number; PxY: number };
     bounds: { top: number; left: number; right: number; bottom: number };
   }
 ): void => {
-  worker.postMessage({
+  workerMessenger.send({
     type: "MIGRATE_REQUEST",
     data: {
       layerId,
@@ -183,7 +188,7 @@ export const handleGalleryImages = async (data: {
 
   // Sync to overlay layers for tile-draw system
   // Sort by layerOrder to maintain proper z-index
-  const sortedImages = data.images.sort((a, b) => a.layerOrder - b.layerOrder);
+  const sortedImages = data.images.sort((a, b) => (a.layerOrder ?? 0) - (b.layerOrder ?? 0));
 
   let successCount = 0;
   let failCount = 0;
@@ -220,6 +225,11 @@ export const handleGalleryImages = async (data: {
 
       // Only add to overlay layers if drawEnabled is true
       if (img.drawEnabled !== false) {
+        if (!img.drawPosition) {
+          console.warn(`🧑‍🎨 : No drawPosition for ${img.key}, skipping overlay`);
+          continue;
+        }
+
         await addImageToOverlayLayers(
           bitmap,
           [
@@ -236,7 +246,7 @@ export const handleGalleryImages = async (data: {
         const thisImageLayer = overlayLayers.find(
           (layer) => layer.imageKey === img.key
         );
-        if (thisImageLayer) {
+        if (thisImageLayer && thisImageLayer.tiles) {
           const tileCount = Object.keys(thisImageLayer.tiles).length;
           totalTileCount += tileCount;
           console.log(

@@ -1,4 +1,4 @@
-import type { GalleryItem } from "@/states/galleryStorage";
+import type { GalleryItem } from "../states/galleryStorage";
 
 export type TileProcessingCallback = (processedBlob: Blob) => void;
 
@@ -41,8 +41,9 @@ export interface TextLayer {
 
 export interface ColorFilterState {
   isFilterActive: () => boolean;
-  selectedRGBs: number[][] | undefined;
+  selectedRGBs: [number, number, number][] | undefined;
   getEnhancedMode: () => "dot" | "cross" | "fill" | "none";
+  setExtraColorsBitmap?: (bitmap: ImageBitmap | null) => void;
 }
 
 export interface PaintedByUser {
@@ -56,12 +57,6 @@ export interface PaintedByUser {
   discordId?: string;
 }
 
-export interface MrWplaceGlobal {
-  colorFilterManager?: ColorFilterState;
-  layerRepository?: import("./db/layer-repository").LayerRepository;
-  workerMessenger?: import("./workers/messaging").WorkerMessenger;
-}
-
 export interface WplaceMap {
   version: string;
   getCenter: () => { lat: number; lng: number };
@@ -70,22 +65,6 @@ export interface WplaceMap {
   jumpTo: (options: { center: [number, number]; zoom: number }) => void;
   setPaintProperty: (layer: string, property: string, value: any) => void;
   on: (event: string, handler: (e: any) => void) => void;
-}
-
-export interface WindowWithWplace extends Window {
-  wplaceMap?: WplaceMap;
-  tileProcessingQueue?: TileProcessingQueue;
-  mrWplaceDataSaver?: DataSaverState;
-  mrWplaceGalleryImages?: Map<string, GalleryItem>;
-  mrWplaceGalleryImageKeys?: Set<string>;
-  mrWplaceSnapshots?: Map<string, SnapshotImage>;
-  mrWplaceSnapshotKeys?: Set<string>;
-  mrWplaceTextLayers?: Map<string, TextLayer>;
-  mrWplaceTextLayerKeys?: Set<string>;
-  mrWplace?: MrWplaceGlobal;
-  mrWplaceComputeDevice?: "gpu" | "cpu";
-  mrWplaceShowUnplacedOnly?: boolean;
-  mrWplaceTempPaintedByUser?: PaintedByUser;
 }
 
 declare global {
@@ -99,7 +78,6 @@ declare global {
     mrWplaceSnapshotKeys?: Set<string>;
     mrWplaceTextLayers?: Map<string, TextLayer>;
     mrWplaceTextLayerKeys?: Set<string>;
-    mrWplace?: MrWplaceGlobal;
     mrWplaceComputeDevice?: "gpu" | "cpu";
     mrWplaceShowUnplacedOnly?: boolean;
     mrWplaceTempPaintedByUser?: PaintedByUser;

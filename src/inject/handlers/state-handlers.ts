@@ -1,3 +1,4 @@
+import { EnhancedMode } from "@/types/image";
 import { applyTheme } from "../theme-manager";
 
 /**
@@ -59,13 +60,10 @@ export const handleShowUnplacedOnlyUpdate = (data: {
  */
 export const handleColorFilterUpdate = (data: {
   isFilterActive: boolean;
-  selectedRGBs?: number[][];
-  enhancedMode: "dot" | "cross" | "fill" | "none";
+  selectedRGBs?: [number, number, number][];
+  enhancedMode: EnhancedMode;
 }): void => {
-  if (!window.mrWplace) {
-    window.mrWplace = {};
-  }
-
+  if (!window.mrWplace) throw new Error("mrWplace is not defined");
   window.mrWplace.colorFilterManager = {
     isFilterActive: () => data.isFilterActive,
     selectedRGBs: data.selectedRGBs,
@@ -85,7 +83,7 @@ export const handleTileBoundariesUpdate = (data: {
   visible: boolean;
 }): void => {
   if (window.wplaceMap) {
-    window.wplaceMap.showTileBoundaries = data.visible;
+    (window.wplaceMap as any).showTileBoundaries = data.visible;
     console.log("🧑‍🎨 : Tile boundaries updated:", data.visible);
   }
 };

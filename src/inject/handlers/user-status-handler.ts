@@ -39,9 +39,7 @@ export const handleUserStatusUpdate = (userData: UserData): void => {
   console.log("🧑‍🎨: Handling user status update in inject context:", userData);
 
   // Ensure window.mrWplace exists
-  if (!window.mrWplace) {
-    window.mrWplace = {} as any;
-  }
+  if (!window.mrWplace) throw new Error("mrWplace is not defined");
 
   // Initialize status manager if not exists
   initStatusManager();

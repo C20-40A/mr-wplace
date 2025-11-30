@@ -30,7 +30,7 @@ import { createMigrationWorker, WorkerMessenger } from "./workers/messaging";
   window.mrWplace = {
     colorFilterManager: undefined,
     layerRepository: undefined,
-    workerMessenger: undefined
+    workerMessenger: undefined,
   };
 
   // Setup fetch interceptor synchronously (no await)
@@ -48,7 +48,13 @@ import { createMigrationWorker, WorkerMessenger } from "./workers/messaging";
     // Log initial memory usage (Chrome only)
     const initialMemory = (performance as any).memory?.usedJSHeapSize;
     if (initialMemory) {
-      console.log(`🧑‍🎨 (inject): Initial memory usage: ${(initialMemory / 1024 / 1024).toFixed(2)}MB`);
+      console.log(
+        `🧑‍🎨 (inject): Initial memory usage: ${(
+          initialMemory /
+          1024 /
+          1024
+        ).toFixed(2)}MB`
+      );
     }
 
     console.log("🧑‍🎨: Starting async initialization...");
@@ -84,7 +90,9 @@ import { createMigrationWorker, WorkerMessenger } from "./workers/messaging";
           window.mrWplace!.workerMessenger = messenger;
 
           console.log("🧑‍🎨: Migration architecture initialized successfully");
-          console.log("🧑‍🎨: Worker running in separate thread for optimal performance");
+          console.log(
+            "🧑‍🎨: Worker running in separate thread for optimal performance"
+          );
         } catch (error) {
           console.error("🧑‍🎨: Failed to init migration architecture:", error);
         }
@@ -112,8 +120,16 @@ import { createMigrationWorker, WorkerMessenger } from "./workers/messaging";
     const finalMemory = (performance as any).memory?.usedJSHeapSize;
     if (finalMemory && initialMemory) {
       const memoryIncrease = finalMemory - initialMemory;
-      console.log(`🧑‍🎨 (inject): Final memory usage: ${(finalMemory / 1024 / 1024).toFixed(2)}MB`);
-      console.log(`🧑‍🎨 (inject): Memory increase: ${(memoryIncrease / 1024 / 1024).toFixed(2)}MB`);
+      console.log(
+        `🧑‍🎨 (inject): Final memory usage: ${(finalMemory / 1024 / 1024).toFixed(
+          2
+        )}MB`
+      );
+      console.log(
+        `🧑‍🎨 (inject): Memory increase: ${(memoryIncrease / 1024 / 1024).toFixed(
+          2
+        )}MB`
+      );
     }
   } catch (error) {
     console.error("🧑‍🎨: Critical initialization error:", error);
