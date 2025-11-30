@@ -71,22 +71,13 @@ export class StatusManager {
     this.chargeCountdown.style.display = "block";
   }
 
-  updateFromUserData(userData: WPlaceUserData): void {
+  async updateFromUserData(userData: WPlaceUserData): Promise<void> {
     console.log("🧑‍🎨: StatusManager updating from userData (inject context)");
     this.currentUserData = userData;
 
-    // Update ColorFilterManager with extraColorsBitmap
-    if (window.mrWplace?.colorFilterManager) {
-      if (typeof window.mrWplace.colorFilterManager.setExtraColorsBitmap === "function") {
-        window.mrWplace.colorFilterManager.setExtraColorsBitmap(
-          userData.extraColorsBitmap
-        );
-        console.log(
-          "🧑‍🎨: Set extraColorsBitmap:",
-          userData.extraColorsBitmap
-        );
-      }
-    }
+    // Update ColorFilterState with extraColorsBitmap
+    const { setExtraColorsBitmap } = await import("../states/colorFilterState");
+    setExtraColorsBitmap(userData.extraColorsBitmap);
 
     if (userData.level !== undefined && userData.pixelsPainted !== undefined) {
       const remainingPixels = this.calculator.calculateNextLevelPixels(

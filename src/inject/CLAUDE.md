@@ -33,7 +33,7 @@ fetch-interceptor intercepts tiles/{x}/{y}.png
 
 **Global State:**
 - `window.mrWplace`: shared between content & inject contexts
-- content fields: `tileOverlay`, `tileSnapshot`, `colorFilterManager`
+- content fields: `tileOverlay`, `tileSnapshot`
 - inject fields: `layerRepository`, `workerMessenger` (optional)
 
 ## Migration Architecture
@@ -63,6 +63,9 @@ src/inject/
 ├── workers/                    # Web Worker (2025-11-27)
 │   ├── migration.worker.ts    # タイル分割処理
 │   └── messaging.ts           # Worker 通信
+├── states/                     # State management (2025-12-01)
+│   ├── README.md              # State pattern documentation
+│   └── colorFilterState.ts    # Color filter state
 ├── handlers/                   # Message handlers
 │   ├── overlay-handlers.ts    # Gallery, snapshots, text
 │   ├── state-handlers.ts      # Theme, data saver, filter
@@ -97,10 +100,17 @@ import type { GalleryItem } from "../../states/galleryStorage"; // OK (type-only
 // import { GalleryStorage } from "..."; // NG (runtime import not allowed)
 ```
 
+**State Management (inject):**
+- Store states in `src/inject/states/*.ts` instead of `window` object
+- Each state module exports: type, getter(s), setter(s)
+- Example: `colorFilterState.ts` replaces `window.mrWplace.colorFilterManager`
+- Benefits: type safety, testability, no window pollution
+
 **Adding New Features:**
 1. Add handler in `inject/handlers/*.ts`
 2. Register in `inject/message-handler.ts`
 3. Add sender in `content.ts` (e.g., `sendXxxToInject()`)
+4. If state needed across inject files, add to `inject/states/*.ts`
 
 ## History
 
@@ -109,3 +119,4 @@ import type { GalleryItem } from "../../states/galleryStorage"; // OK (type-only
 - **2025-11-14**: statistics persistence (tile-based caching)
 - **2025-11-27**: Migration Architecture (IndexedDB + Repository + Worker)
 - **2025-12-01**: Type unification (`GalleryItem`), Hybrid Storage (thumbnail + full image)
+- **2025-12-01**: State management refactoring (`inject/states/` replaces `window.mrWplace.*`)

@@ -1,5 +1,6 @@
 import { EnhancedMode } from "@/types/image";
 import { applyTheme } from "../theme-manager";
+import { updateColorFilterState } from "../states/colorFilterState";
 
 /**
  * Handle theme update
@@ -63,14 +64,11 @@ export const handleColorFilterUpdate = (data: {
   selectedRGBs?: [number, number, number][];
   enhancedMode: EnhancedMode;
 }): void => {
-  if (!window.mrWplace) throw new Error("mrWplace is not defined");
-  window.mrWplace.colorFilterManager = {
-    isFilterActive: () => data.isFilterActive,
+  updateColorFilterState({
+    isFilterActive: data.isFilterActive,
     selectedRGBs: data.selectedRGBs,
-    getEnhancedMode: () => data.enhancedMode,
-  };
-
-  console.log("🧑‍🎨 : Color filter updated:", data);
+    enhancedMode: data.enhancedMode,
+  });
 
   // 統計は必要に応じてタイルレンダリング時に計算されるため、
   // 事前の再計算は行わない（不要なタイルfetchを避ける）

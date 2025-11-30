@@ -360,9 +360,10 @@ const applyOverlayProcessing = async (
   const height = overlayBitmap.height;
 
   // カラーフィルター取得
-  const colorFilter = window.mrWplace?.colorFilterManager?.isFilterActive()
-    ? window.mrWplace.colorFilterManager.selectedRGBs
-    : undefined;
+  const { isColorFilterActive, getSelectedRGBs } = await import(
+    "../states/colorFilterState"
+  );
+  const colorFilter = isColorFilterActive() ? getSelectedRGBs() : undefined;
 
   // 元のオーバーレイデータを取得（total統計用）
   const originalData = convertImageBitmapToUint8ClampedArray(overlayBitmap);
@@ -512,8 +513,8 @@ export const drawOverlayLayersOnTile = async (
   }
 
   // 描画モードを取得
-  const colorFilterManager = window.mrWplace?.colorFilterManager;
-  const mode = colorFilterManager?.getEnhancedMode() ?? "dot";
+  const { getEnhancedMode } = await import("../states/colorFilterState");
+  const mode = getEnhancedMode();
 
   // 透明背景に複数オーバーレイが重なった合成画像を出力
   for (const { tileKey, instance } of matchingTiles) {
