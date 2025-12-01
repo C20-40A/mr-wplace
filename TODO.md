@@ -1,5 +1,7 @@
 # メイン
 
+- gallery の画像削除したあと、画像追加できないかも。firefox
+- アラーム任意の値にならない
 - fix type error
 - src/features/gallery/routes/list/index.ts で統計とっているのが謎
 - sendGalleryImagesToInject なんとかする

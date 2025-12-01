@@ -3,7 +3,7 @@
  * Handles storage diagnostic requests from content script
  */
 
-import { DB_NAME, DB_VERSION, STORES } from '../db/schema';
+import { DB_NAME, DB_VERSION, STORES } from "../db/schema";
 
 /**
  * Check if a gallery item exists in IndexedDB
@@ -52,7 +52,9 @@ const openDatabase = (): Promise<IDBDatabase> => {
 
       // Create object stores if they don't exist
       if (!db.objectStoreNames.contains(STORES.LAYERS)) {
-        const layersStore = db.createObjectStore(STORES.LAYERS, { keyPath: "id" });
+        const layersStore = db.createObjectStore(STORES.LAYERS, {
+          keyPath: "id",
+        });
         layersStore.createIndex("type", "type", { unique: false });
         layersStore.createIndex("visible", "visible", { unique: false });
       }
@@ -232,46 +234,29 @@ const handleThumbnailRequest = async (key: string): Promise<void> => {
 /**
  * Generate 128x128 thumbnail from blob
  */
-const generateThumbnail = async (blob: Blob): Promise<string> => {
-  const THUMBNAIL_SIZE = 128;
+export const generateThumbnail = async (blob: Blob): Promise<string> => {
+  const S = 128;
+  const bmp = await createImageBitmap(blob);
 
-  // Create ImageBitmap
-  const bitmap = await createImageBitmap(blob);
-
-  // Calculate scaled dimensions (maintain aspect ratio)
-  let width = bitmap.width;
-  let height = bitmap.height;
-
-  if (width > height) {
-    if (width > THUMBNAIL_SIZE) {
-      height = (height * THUMBNAIL_SIZE) / width;
-      width = THUMBNAIL_SIZE;
-    }
-  } else {
-    if (height > THUMBNAIL_SIZE) {
-      width = (width * THUMBNAIL_SIZE) / height;
-      height = THUMBNAIL_SIZE;
-    }
+  if (bmp.width <= S && bmp.height <= S) {
+    bmp.close();
+    return blobToDataUrl(blob);
   }
 
-  // Create canvas and draw scaled image
-  const canvas = new OffscreenCanvas(width, height);
+  const scale = Math.min(S / bmp.width, S / bmp.height);
+  const w = Math.round(bmp.width * scale);
+  const h = Math.round(bmp.height * scale);
+
+  const canvas = new OffscreenCanvas(w, h);
   const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    throw new Error("Failed to get canvas context");
-  }
+  if (!ctx) throw new Error("no ctx");
 
-  ctx.drawImage(bitmap, 0, 0, width, height);
-  bitmap.close();
+  ctx.clearRect(0, 0, w, h);
+  ctx.drawImage(bmp, 0, 0, w, h);
+  bmp.close();
 
-  // Convert to JPEG (smaller size)
-  const thumbnailBlob = await canvas.convertToBlob({
-    type: "image/jpeg",
-    quality: 0.7,
-  });
-
-  // Convert to dataUrl
-  return await blobToDataUrl(thumbnailBlob);
+  const out = await canvas.convertToBlob({ type: "image/webp", quality: 0.8 });
+  return blobToDataUrl(out);
 };
 
 /**
