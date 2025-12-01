@@ -7,7 +7,7 @@
  */
 
 // Database configuration
-export const DB_NAME = 'mr-wplace-v2';
+export const DB_NAME = 'mr-wplace-gallery';
 export const DB_VERSION = 1;
 
 // Object store names

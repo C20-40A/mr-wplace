@@ -8,6 +8,16 @@
  * - Processes tasks serially (one at a time) to avoid memory issues
  */
 
+// Database constants
+const DB_NAME = 'mr-wplace-gallery';
+const DB_VERSION = 1;
+const STORES = {
+  LAYERS: 'layers',
+  LEGACY_BLOBS: 'legacy_blobs',
+  OPTIMIZED_TILES: 'optimized_tiles',
+  STATISTICS: 'statistics'
+} as const;
+
 // Types for worker messages
 interface MigrateRequestData {
   layerId: string;
@@ -78,7 +88,7 @@ class MigrationWorker {
 
   private async openDatabase(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open('mr-wplace-v2', 1);
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve(request.result);
@@ -87,26 +97,26 @@ class MigrationWorker {
         const db = (event.target as IDBOpenDBRequest).result;
 
         // Create object stores if they don't exist
-        if (!db.objectStoreNames.contains('layers')) {
-          const layersStore = db.createObjectStore('layers', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains(STORES.LAYERS)) {
+          const layersStore = db.createObjectStore(STORES.LAYERS, { keyPath: 'id' });
           layersStore.createIndex('type', 'type', { unique: false });
           layersStore.createIndex('visible', 'visible', { unique: false });
         }
 
-        if (!db.objectStoreNames.contains('legacy_blobs')) {
-          db.createObjectStore('legacy_blobs', { keyPath: 'id' });
+        if (!db.objectStoreNames.contains(STORES.LEGACY_BLOBS)) {
+          db.createObjectStore(STORES.LEGACY_BLOBS, { keyPath: 'id' });
         }
 
-        if (!db.objectStoreNames.contains('optimized_tiles')) {
-          const tilesStore = db.createObjectStore('optimized_tiles', {
+        if (!db.objectStoreNames.contains(STORES.OPTIMIZED_TILES)) {
+          const tilesStore = db.createObjectStore(STORES.OPTIMIZED_TILES, {
             keyPath: ['layerId', 'tileKey']
           });
           tilesStore.createIndex('layerId', 'layerId', { unique: false });
           tilesStore.createIndex('tileKey', 'tileKey', { unique: false });
         }
 
-        if (!db.objectStoreNames.contains('statistics')) {
-          db.createObjectStore('statistics', { keyPath: 'layerId' });
+        if (!db.objectStoreNames.contains(STORES.STATISTICS)) {
+          db.createObjectStore(STORES.STATISTICS, { keyPath: 'layerId' });
         }
 
         console.log('🧑‍🎨 : [Worker] IndexedDB schema created');
@@ -247,8 +257,8 @@ class MigrationWorker {
     }
 
     return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(['legacy_blobs'], 'readonly');
-      const store = tx.objectStore('legacy_blobs');
+      const tx = this.db!.transaction([STORES.LEGACY_BLOBS], 'readonly');
+      const store = tx.objectStore(STORES.LEGACY_BLOBS);
       const request = store.get(layerId);
 
       request.onsuccess = () => resolve(request.result || null);
@@ -400,8 +410,8 @@ class MigrationWorker {
     }
 
     return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(['optimized_tiles'], 'readwrite');
-      const store = tx.objectStore('optimized_tiles');
+      const tx = this.db!.transaction([STORES.OPTIMIZED_TILES], 'readwrite');
+      const store = tx.objectStore(STORES.OPTIMIZED_TILES);
 
       const data = {
         layerId,
@@ -425,8 +435,8 @@ class MigrationWorker {
     }
 
     return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(['optimized_tiles'], 'readwrite');
-      const store = tx.objectStore('optimized_tiles');
+      const tx = this.db!.transaction([STORES.OPTIMIZED_TILES], 'readwrite');
+      const store = tx.objectStore(STORES.OPTIMIZED_TILES);
       const request = store.delete([layerId, tileKey]);
 
       request.onsuccess = () => resolve();
@@ -443,8 +453,8 @@ class MigrationWorker {
     }
 
     return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(['layers'], 'readwrite');
-      const store = tx.objectStore('layers');
+      const tx = this.db!.transaction([STORES.LAYERS], 'readwrite');
+      const store = tx.objectStore(STORES.LAYERS);
       const getRequest = store.get(layerId);
 
       getRequest.onsuccess = () => {

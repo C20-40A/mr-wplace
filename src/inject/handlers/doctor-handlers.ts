@@ -3,6 +3,8 @@
  * Handles storage diagnostic requests from content script
  */
 
+import { DB_NAME, DB_VERSION, STORES } from '../db/schema';
+
 /**
  * Check if a gallery item exists in IndexedDB
  */
@@ -40,7 +42,7 @@ const handleIndexedDBCheck = async (key: string): Promise<void> => {
  */
 const openDatabase = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open("mr-wplace-v2", 1);
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
@@ -49,26 +51,26 @@ const openDatabase = (): Promise<IDBDatabase> => {
       const db = (event.target as IDBOpenDBRequest).result;
 
       // Create object stores if they don't exist
-      if (!db.objectStoreNames.contains("layers")) {
-        const layersStore = db.createObjectStore("layers", { keyPath: "id" });
+      if (!db.objectStoreNames.contains(STORES.LAYERS)) {
+        const layersStore = db.createObjectStore(STORES.LAYERS, { keyPath: "id" });
         layersStore.createIndex("type", "type", { unique: false });
         layersStore.createIndex("visible", "visible", { unique: false });
       }
 
-      if (!db.objectStoreNames.contains("legacy_blobs")) {
-        db.createObjectStore("legacy_blobs", { keyPath: "id" });
+      if (!db.objectStoreNames.contains(STORES.LEGACY_BLOBS)) {
+        db.createObjectStore(STORES.LEGACY_BLOBS, { keyPath: "id" });
       }
 
-      if (!db.objectStoreNames.contains("optimized_tiles")) {
-        const tilesStore = db.createObjectStore("optimized_tiles", {
+      if (!db.objectStoreNames.contains(STORES.OPTIMIZED_TILES)) {
+        const tilesStore = db.createObjectStore(STORES.OPTIMIZED_TILES, {
           keyPath: ["layerId", "tileKey"],
         });
         tilesStore.createIndex("layerId", "layerId", { unique: false });
         tilesStore.createIndex("tileKey", "tileKey", { unique: false });
       }
 
-      if (!db.objectStoreNames.contains("statistics")) {
-        db.createObjectStore("statistics", { keyPath: "layerId" });
+      if (!db.objectStoreNames.contains(STORES.STATISTICS)) {
+        db.createObjectStore(STORES.STATISTICS, { keyPath: "layerId" });
       }
     };
   });
@@ -77,10 +79,13 @@ const openDatabase = (): Promise<IDBDatabase> => {
 /**
  * Check if layer exists in IndexedDB
  */
-const checkLayerExists = (db: IDBDatabase, layerId: string): Promise<boolean> => {
+const checkLayerExists = (
+  db: IDBDatabase,
+  layerId: string
+): Promise<boolean> => {
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(["layers"], "readonly");
-    const store = tx.objectStore("layers");
+    const tx = db.transaction([STORES.LAYERS], "readonly");
+    const store = tx.objectStore(STORES.LAYERS);
     const request = store.get(layerId);
 
     request.onsuccess = () => {
@@ -145,10 +150,13 @@ const handleGalleryDataUrlRequest = async (key: string): Promise<void> => {
 /**
  * Get legacy blob from IndexedDB
  */
-const getLegacyBlob = (db: IDBDatabase, layerId: string): Promise<Blob | null> => {
+const getLegacyBlob = (
+  db: IDBDatabase,
+  layerId: string
+): Promise<Blob | null> => {
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(["legacy_blobs"], "readonly");
-    const store = tx.objectStore("legacy_blobs");
+    const tx = db.transaction([STORES.LEGACY_BLOBS], "readonly");
+    const store = tx.objectStore(STORES.LEGACY_BLOBS);
     const request = store.get(layerId);
 
     request.onsuccess = () => {
