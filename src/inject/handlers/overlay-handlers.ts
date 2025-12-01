@@ -200,71 +200,118 @@ export const handleGalleryImages = async (data: {
 
   for (const img of sortedImages) {
     try {
-      // Priority: 1. IndexedDB (full image), 2. dataUrl (if not thumbnail), 3. Skip
-      let dataUrl: string | null = null;
+      // Check if layer exists in IndexedDB (lazy loading strategy)
+      const { getLayerRepository } = await import("../states/migrationState");
+      const repository = getLayerRepository();
 
-      // Try IndexedDB first (always)
-      const fullDataUrl = await fetchFullImageFromIndexedDB(img.key);
-      if (fullDataUrl) {
-        dataUrl = fullDataUrl;
-        console.log(`🧑‍🎨 : Using IndexedDB full image for ${img.key}`);
-      } else if (img.dataUrl) {
-        // Fallback: use dataUrl only if it's NOT a thumbnail
-        // This supports old data (before Doctor cleanup) and small images
-        dataUrl = img.dataUrl;
-        console.log(
-          `🧑‍🎨 : Using dataUrl (${(img.dataUrl.length / 1024).toFixed(
-            1
-          )}KB) for ${img.key}`
-        );
-      } else {
-        console.warn(
-          `🧑‍🎨 : No full image available for ${img.key} (no dataUrl), skipping`
-        );
-        continue; // Skip this image - cannot draw with thumbnail
+      let layerMetadata: Awaited<ReturnType<typeof repository.getLayerMetadata>> = null;
+      if (repository) {
+        try {
+          layerMetadata = await repository.getLayerMetadata(img.key);
+        } catch (error) {
+          console.warn(`🧑‍🎨 : Failed to check IndexedDB for ${img.key}:`, error);
+        }
       }
 
-      const bitmap = await loadImageBitmap(dataUrl, img.key);
+      // Strategy:
+      // 1. If layer is optimized in IndexedDB -> use lazy loading (no image load needed)
+      // 2. If layer exists but not optimized -> load full image from IndexedDB and split on-the-fly
+      // 3. If no layer in IndexedDB -> load from dataUrl and save to IndexedDB
 
-      // Only add to overlay layers if drawEnabled is true
-      if (img.drawEnabled !== false) {
-        if (!img.drawPosition) {
-          console.warn(`🧑‍🎨 : No drawPosition for ${img.key}, skipping overlay`);
+      if (layerMetadata && layerMetadata.isOptimized) {
+        // Layer is optimized - tiles will be loaded on-demand from IndexedDB during rendering
+        console.log(`🧑‍🎨 : Layer ${img.key} is optimized, will use lazy loading from IndexedDB`);
+
+        // Only add to overlay layers if drawEnabled is true
+        if (img.drawEnabled !== false) {
+          if (!img.drawPosition) {
+            console.warn(`🧑‍🎨 : No drawPosition for ${img.key}, skipping overlay`);
+            continue;
+          }
+
+          // Create a dummy 1x1 bitmap as placeholder (won't be used for rendering)
+          const dummyBitmap = await createImageBitmap(new ImageData(1, 1));
+          await addImageToOverlayLayers(
+            dummyBitmap,
+            [
+              img.drawPosition.TLX,
+              img.drawPosition.TLY,
+              img.drawPosition.PxX,
+              img.drawPosition.PxY,
+            ],
+            img.key,
+            { force: false } // Don't force split - layer is optimized
+          );
+        }
+
+        // No need to save to IndexedDB - already exists and optimized
+      } else {
+        // Layer needs to be loaded (either from IndexedDB or dataUrl)
+        let bitmap: ImageBitmap | null = null;
+
+        if (layerMetadata && !layerMetadata.isOptimized) {
+          // Layer exists but not optimized - load full image from IndexedDB
+          console.log(`🧑‍🎨 : Loading full image from IndexedDB for ${img.key}`);
+          const fullDataUrl = await fetchFullImageFromIndexedDB(img.key);
+          if (fullDataUrl) {
+            bitmap = await loadImageBitmap(fullDataUrl, img.key);
+          }
+        } else if (img.dataUrl) {
+          // No layer in IndexedDB - use dataUrl (supports old data and small images)
+          console.log(
+            `🧑‍🎨 : Using dataUrl (${(img.dataUrl.length / 1024).toFixed(1)}KB) for ${img.key}`
+          );
+          bitmap = await loadImageBitmap(img.dataUrl, img.key);
+        }
+
+        if (!bitmap) {
+          console.warn(
+            `🧑‍🎨 : No image source available for ${img.key}, skipping`
+          );
           continue;
         }
 
-        await addImageToOverlayLayers(
-          bitmap,
-          [
-            img.drawPosition.TLX,
-            img.drawPosition.TLY,
-            img.drawPosition.PxX,
-            img.drawPosition.PxY,
-          ],
-          img.key
-        );
+        // Only add to overlay layers if drawEnabled is true
+        if (img.drawEnabled !== false) {
+          if (!img.drawPosition) {
+            console.warn(`🧑‍🎨 : No drawPosition for ${img.key}, skipping overlay`);
+            continue;
+          }
 
-        // Count tiles for this image
-        const { overlayLayers } = await import("../tile-draw");
-        const thisImageLayer = overlayLayers.find(
-          (layer) => layer.imageKey === img.key
-        );
-        if (thisImageLayer && thisImageLayer.tiles) {
-          const tileCount = Object.keys(thisImageLayer.tiles).length;
-          totalTileCount += tileCount;
+          await addImageToOverlayLayers(
+            bitmap,
+            [
+              img.drawPosition.TLX,
+              img.drawPosition.TLY,
+              img.drawPosition.PxX,
+              img.drawPosition.PxY,
+            ],
+            img.key,
+            { force: true } // Force split since not optimized
+          );
+
+          // Count tiles for this image
+          const { overlayLayers } = await import("../tile-draw");
+          const thisImageLayer = overlayLayers.find(
+            (layer) => layer.imageKey === img.key
+          );
+          if (thisImageLayer && thisImageLayer.tiles) {
+            const tileCount = Object.keys(thisImageLayer.tiles).length;
+            totalTileCount += tileCount;
+            console.log(
+              `🧑‍🎨 : Image ${img.key} split into ${tileCount} tiles (${bitmap.width}x${bitmap.height}px)`
+            );
+          }
+        } else {
           console.log(
-            `🧑‍🎨 : Image ${img.key} split into ${tileCount} tiles (${bitmap.width}x${bitmap.height}px)`
+            `🧑‍🎨 : Image ${img.key} is disabled, skipping overlay layers (but saving to IndexedDB)`
           );
         }
-      } else {
-        console.log(
-          `🧑‍🎨 : Image ${img.key} is disabled, skipping overlay layers (but saving to IndexedDB)`
-        );
-      }
 
-      // Save to IndexedDB for ALL items (both enabled and disabled)
-      // This ensures complete backup of gallery data
-      await saveGalleryToIndexedDB(img, bitmap);
+        // Save to IndexedDB (or request migration if already exists but not optimized)
+        // This ensures complete backup of gallery data
+        await saveGalleryToIndexedDB(img, bitmap);
+      }
 
       // Restore stored statistics if available
       if (img.perTileColorStats) {
