@@ -5,8 +5,15 @@
 - fix type error
 - src/features/gallery/routes/list/index.ts で統計とっているのが謎
 - sendGalleryImagesToInject なんとかする
-- 透明ピクセルが取り込まれてしまう
+- 画像編集で 0 の値の時はなにもしない
+- 画像編集で透明ピクセルが取り込まれてしまう
+- 画像編集で「境界を強調」の機能追加
+- migration がされるか、以前のデータでちゃんとテストする
+- gallery のまとめて取り込みをするときは、indexed db に取り込みする
+- archive/統計の indexed db migration の検討
 - merge タイル画面の dark theme
+- 全 color もってたら、所持色のぼたんなくす
+- 描画関連の処理を web worker にすべきだろうか
 - 直接取り込みしたときの色問題
 - Paint pixel は非表示
 - friends 取り込みが、「件のお気に入りを...」になっている。また、上書き取り込みのリロード不要だ。
@@ -111,6 +118,10 @@
 - exclude_globs にメインのもの以外含める？
   - all_frames false (デフォルト)系は false．まあデフォルトが false だから不要か
 - dark/light テーマの i18n 不要になった
+
+# DONE v2.0.0
+
+-
 
 # DONE v1.11.3
 

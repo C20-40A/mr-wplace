@@ -44,6 +44,8 @@ export class EditorController {
   private isEditMode = false;
   private editingItemKey: string | null = null;
   private isDesktopMode = true;
+  private cachedResizedBitmap: ImageBitmap | null = null;
+  private cachedScale = 1.0;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -168,6 +170,11 @@ export class EditorController {
 
   onScaleChange(scale: number): void {
     this.imageScale = scale;
+    // スケール変更時はキャッシュをクリア
+    if (this.cachedResizedBitmap) {
+      this.cachedResizedBitmap.close();
+      this.cachedResizedBitmap = null;
+    }
     this.updateScaledImage();
   }
 
@@ -266,9 +273,15 @@ export class EditorController {
       this.imageInspector = null;
     }
 
+    if (this.cachedResizedBitmap) {
+      this.cachedResizedBitmap.close();
+      this.cachedResizedBitmap = null;
+    }
+
     this.originalImage = null;
     this.scaledCanvas = null;
     this.imageScale = 1.0;
+    this.cachedScale = 1.0;
     this.brightness = 0;
     this.contrast = 0;
     this.saturation = 0;
@@ -602,6 +615,12 @@ export class EditorController {
       "#wps-original-image"
     ) as HTMLImageElement;
 
+    // 新しい画像を表示する際はキャッシュをクリア
+    if (this.cachedResizedBitmap) {
+      this.cachedResizedBitmap.close();
+      this.cachedResizedBitmap = null;
+    }
+
     if (originalImage) {
       originalImage.src = imageSrc;
       this.originalImage = originalImage;
@@ -676,6 +695,12 @@ export class EditorController {
 
   private replaceImageDisplay(imageSrc: string): void {
     console.log("🧑‍🎨 : Replacing image, keeping current adjustments");
+
+    // 画像を置き換える際はキャッシュをクリア
+    if (this.cachedResizedBitmap) {
+      this.cachedResizedBitmap.close();
+      this.cachedResizedBitmap = null;
+    }
 
     const originalImage = this.container.querySelector(
       "#wps-original-image"
@@ -824,25 +849,57 @@ export class EditorController {
       sharpness: this.sharpnessEnabled ? this.sharpness : 0,
     };
 
-    // 統合処理: リサイズ→調整→パレット（GPU優先）
-    console.log(
-      "🧑‍🎨 : Processing with dithering:",
-      this.ditheringEnabled,
-      "quantization:",
-      this.quantizationMethod,
-      "useGpu:",
-      this.useGpu
-    );
-    const processedCanvas = await createProcessedCanvas(
-      this.originalImage,
-      this.imageScale,
-      adjustments,
-      this.selectedColorIds,
-      this.ditheringEnabled,
-      this.ditheringThreshold,
-      this.useGpu,
-      this.quantizationMethod
-    );
+    let processedCanvas: HTMLCanvasElement;
+
+    // スケール変更時のみリサイズを実行、それ以外はキャッシュを利用
+    if (!this.cachedResizedBitmap || this.cachedScale !== this.imageScale) {
+      console.log("🧑‍🎨 : Scale changed, creating new resized bitmap");
+
+      // リサイズ実行
+      const { createResizedImageBitmap } = await import("@/utils/image-bitmap-compat");
+      const originalWidth = this.originalImage.naturalWidth;
+      const originalHeight = this.originalImage.naturalHeight;
+      const newWidth = Math.floor(originalWidth * this.imageScale);
+      const newHeight = Math.floor(originalHeight * this.imageScale);
+
+      // 古いキャッシュをクリア
+      if (this.cachedResizedBitmap) {
+        this.cachedResizedBitmap.close();
+      }
+
+      this.cachedResizedBitmap = await createResizedImageBitmap(this.originalImage, {
+        width: newWidth,
+        height: newHeight,
+        quality: "pixelated"
+      });
+      this.cachedScale = this.imageScale;
+
+      // リサイズ後の処理
+      const { createProcessedCanvasFromBitmap } = await import("./canvas-processor");
+      processedCanvas = await createProcessedCanvasFromBitmap(
+        this.cachedResizedBitmap,
+        adjustments,
+        this.selectedColorIds,
+        this.ditheringEnabled,
+        this.ditheringThreshold,
+        this.useGpu,
+        this.quantizationMethod
+      );
+    } else {
+      console.log("🧑‍🎨 : Using cached bitmap for processing");
+
+      // キャッシュされたリサイズ済みBitmapを使用
+      const { createProcessedCanvasFromBitmap } = await import("./canvas-processor");
+      processedCanvas = await createProcessedCanvasFromBitmap(
+        this.cachedResizedBitmap,
+        adjustments,
+        this.selectedColorIds,
+        this.ditheringEnabled,
+        this.ditheringThreshold,
+        this.useGpu,
+        this.quantizationMethod
+      );
+    }
 
     // デスクトップモード: canvas更新
     if (canvas && this.isDesktopMode) {

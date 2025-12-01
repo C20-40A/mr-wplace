@@ -124,10 +124,19 @@ export const gpuProcessImage = async (
 
   void main(){
     vec4 color = texture(uSource, vTexCoord);
+
+    // 調整なしの場合は早期リターン（パフォーマンス最適化）
+    if (uBrightness == 0.0 && uContrastFactor == 1.0 && uSatFactor == 1.0) {
+      outColor = color;
+      return;
+    }
+
     vec3 rgb = color.rgb * 255.0;
 
     // brightness + contrast
-    rgb = uContrastFactor * (rgb + uBrightness - 128.0) + 128.0;
+    if (uBrightness != 0.0 || uContrastFactor != 1.0) {
+      rgb = uContrastFactor * (rgb + uBrightness - 128.0) + 128.0;
+    }
 
     // saturation
     if (uSatFactor != 1.0) {

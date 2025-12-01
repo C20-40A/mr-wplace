@@ -141,6 +141,18 @@ export function applyImageAdjustments(
   const data = imageData.data;
   const { brightness, contrast, saturation, sharpness } = adjustments;
 
+  // 調整なしの場合は処理をスキップ（パフォーマンス最適化）
+  const hasBrightnessContrast = brightness !== 0 || contrast !== 0;
+  const hasSaturation = saturation !== 0;
+
+  if (!hasBrightnessContrast && !hasSaturation) {
+    // シャープネスのみ処理
+    if (sharpness > 0) {
+      applySharpness(imageData, sharpness);
+    }
+    return;
+  }
+
   const brightnessValue = brightness * 2.55;
   const contrastFactor = (259 * (contrast + 255)) / (255 * (259 - contrast));
   const satFactor = 1 + saturation / 100;
@@ -151,12 +163,14 @@ export function applyImageAdjustments(
     let b = data[i + 2];
 
     // 明るさ＋コントラスト
-    r = contrastFactor * (r + brightnessValue - 128) + 128;
-    g = contrastFactor * (g + brightnessValue - 128) + 128;
-    b = contrastFactor * (b + brightnessValue - 128) + 128;
+    if (hasBrightnessContrast) {
+      r = contrastFactor * (r + brightnessValue - 128) + 128;
+      g = contrastFactor * (g + brightnessValue - 128) + 128;
+      b = contrastFactor * (b + brightnessValue - 128) + 128;
+    }
 
     // 彩度
-    if (saturation !== 0) {
+    if (hasSaturation) {
       const gray = 0.299 * r + 0.587 * g + 0.114 * b;
       r = gray + (r - gray) * satFactor;
       g = gray + (g - gray) * satFactor;
@@ -378,6 +392,98 @@ export function quantizeWithDithering(
       data[i + 2] = nearest[2];
     }
   }
+}
+
+/**
+ * リサイズ済みImageBitmapから画像処理：調整→パレット量子化
+ * 完成したcanvasを返却
+ * GPU処理優先・失敗時CPUフォールバック
+ */
+export async function createProcessedCanvasFromBitmap(
+  resizedBitmap: ImageBitmap,
+  adjustments: ImageAdjustments,
+  selectedColorIds: number[],
+  ditheringEnabled = false,
+  ditheringThreshold = 500,
+  useGpu = true,
+  quantizationMethod: QuantizationMethod = "rgb-euclidean"
+): Promise<HTMLCanvasElement> {
+  const newWidth = resizedBitmap.width;
+  const newHeight = resizedBitmap.height;
+
+  // GPU処理試行（useGpu=trueの場合のみ）
+  if (useGpu) {
+    try {
+      console.log("🧑‍🎨 : Attempting GPU processing (cached bitmap), dithering:", ditheringEnabled, "quantization:", quantizationMethod);
+      const paletteRGB = colorpalette
+        .filter((c) => selectedColorIds.includes(c.id))
+        .map((c) => c.rgb);
+
+      // ImageBitmapはクローンして渡す（gpuProcessImageで閉じられるため）
+      const bitmapClone = await createImageBitmap(resizedBitmap);
+      const processedData = await gpuProcessImage(
+        bitmapClone,
+        adjustments,
+        paletteRGB,
+        ditheringEnabled,
+        ditheringThreshold,
+        quantizationMethod
+      );
+
+      // 結果をcanvasに描画
+      const canvas = document.createElement("canvas");
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Failed to get canvas context");
+
+      const imageData = new ImageData(
+        new Uint8ClampedArray(processedData),
+        newWidth,
+        newHeight
+      );
+      ctx.putImageData(imageData, 0, 0);
+
+      console.log("🧑‍🎨 : GPU processing succeeded");
+      return canvas;
+    } catch (error) {
+      console.log("🧑‍🎨 : GPU processing failed, fallback to CPU:", error);
+    }
+  } else {
+    console.log("🧑‍🎨 : CPU processing selected");
+  }
+
+  // CPU処理
+  console.log("🧑‍🎨 : Starting CPU processing via cached ImageBitmap");
+
+  // ImageBitmap → ImageData
+  const tempCanvas = new OffscreenCanvas(newWidth, newHeight);
+  const tempCtx = tempCanvas.getContext("2d");
+  if (!tempCtx) throw new Error("Failed to get temp context");
+
+  tempCtx.drawImage(resizedBitmap, 0, 0);
+  const imageData = tempCtx.getImageData(0, 0, newWidth, newHeight);
+
+  // CPU処理適用
+  applyImageAdjustments(imageData, adjustments);
+
+  // ディザ処理切り替え
+  if (ditheringEnabled) {
+    quantizeWithDithering(imageData, selectedColorIds, ditheringThreshold, quantizationMethod);
+  } else {
+    quantizeToColorPalette(imageData, selectedColorIds, quantizationMethod);
+  }
+
+  // 新しいclean canvasに描画
+  const canvas = document.createElement("canvas");
+  canvas.width = newWidth;
+  canvas.height = newHeight;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Failed to get canvas context");
+
+  ctx.putImageData(imageData, 0, 0);
+  return canvas;
 }
 
 /**
