@@ -104,7 +104,7 @@ const saveGalleryToIndexedDB = async (
       id: img.key,
       type: "gallery" as const,
       visible: true,
-      zIndex: img.layerOrder,
+      zIndex: img.layerOrder ?? 0,
       opacity: 1,
       coords: { TLX, TLY, PxX, PxY },
       bounds,

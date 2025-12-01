@@ -182,7 +182,7 @@ export const createMigrationWorker = (): Worker => {
 // Migration Worker - Inline version
 // This is the same code as migration.worker.ts but bundled inline
 
-const DB_NAME = 'mr-wplace-v2';
+const DB_NAME = 'mr-wplace-gallery';
 const DB_VERSION = 1;
 const STORES = {
   LAYERS: 'layers',

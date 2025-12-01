@@ -520,6 +520,31 @@ export const drawOverlayLayersOnTile = async (
   for (const { tileKey, instance } of matchingTiles) {
     const coords = tileKey.split(",");
     let paintedTilebitmap = instance.tiles?.[tileKey];
+
+    // If tile not in memory, try loading from IndexedDB
+    if (!paintedTilebitmap) {
+      const { getLayerRepository } = await import("../states/migrationState");
+      const repository = getLayerRepository();
+
+      if (repository) {
+        try {
+          const loadedBitmap = await repository.getTile(instance.imageKey, tileKey);
+
+          if (loadedBitmap) {
+            paintedTilebitmap = loadedBitmap;
+            // Cache in memory for faster subsequent access
+            if (!instance.tiles) {
+              instance.tiles = {};
+            }
+            instance.tiles[tileKey] = loadedBitmap;
+            console.log(`🧑‍🎨 : Loaded tile ${tileKey} from IndexedDB for ${instance.imageKey}`);
+          }
+        } catch (error) {
+          console.warn(`🧑‍🎨 : Failed to load tile ${tileKey} from IndexedDB: ${error}`);
+        }
+      }
+    }
+
     if (!paintedTilebitmap) continue;
 
     paintedTilebitmap = await applyOverlayProcessing(
