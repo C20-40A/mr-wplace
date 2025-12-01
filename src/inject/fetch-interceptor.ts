@@ -1,6 +1,7 @@
 import { drawOverlayLayersOnTile } from "./tile-draw";
 import { invalidateTileCache } from "./cache-storage";
 import { handleUserStatusUpdate } from "./handlers/user-status-handler";
+import { WplaceUserData } from "./types";
 
 /**
  * Setup fetch interceptor to handle tile requests and user data
@@ -40,7 +41,7 @@ export const setupFetchInterceptor = (): void => {
       const clonedResponse = response.clone();
 
       try {
-        const jsonData = await clonedResponse.json();
+        const jsonData: WplaceUserData = await clonedResponse.json();
         console.log("🧑‍🎨: Parsed json:", jsonData);
 
         // Handle user status directly in inject context

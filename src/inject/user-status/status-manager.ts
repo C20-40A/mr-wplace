@@ -8,19 +8,10 @@ import { StatusUIComponents } from "./ui-components";
 import { StatusCalculator } from "../../features/user-status/services/calculator";
 import { TimerService } from "../../features/user-status/services/timer-service";
 import { setExtraColorsBitmap } from "../states/colorFilterState";
+import type { WplaceUserData } from "../types";
+import { WPlaceUserData } from "@/types/user-data";
 
-interface WPlaceUserData {
-  level?: number;
-  pixelsPainted?: number;
-  charges?: {
-    count: number;
-    max: number;
-    cooldownMs: number;
-  };
-  extraColorsBitmap?: number;
-}
-
-export class StatusManager {
+class StatusManager {
   private uiComponents = new StatusUIComponents();
   private calculator = new StatusCalculator();
   private timerService = new TimerService();
@@ -28,7 +19,7 @@ export class StatusManager {
   private container: HTMLElement;
   private nextLevelBadge: HTMLElement;
   private chargeCountdown: HTMLElement;
-  private currentUserData?: WPlaceUserData;
+  private currentUserData?: WplaceUserData;
 
   constructor() {
     this.container = this.uiComponents.createContainer();
@@ -72,7 +63,7 @@ export class StatusManager {
     this.chargeCountdown.style.display = "block";
   }
 
-  updateFromUserData(userData: WPlaceUserData): void {
+  updateFromUserData(userData: WplaceUserData): void {
     console.log("🧑‍🎨: StatusManager updating from userData (inject context)");
     this.currentUserData = userData;
 
@@ -118,12 +109,10 @@ export class StatusManager {
     return this.container;
   }
 
-  destroy(): void {
-    this.timerService.destroy();
-    this.container.remove();
-  }
-
-  private getChargeData(charges: any): { current: number; max: number } {
+  private getChargeData(charges: WPlaceUserData["charges"]): {
+    current: number;
+    max: number;
+  } {
     const globalChargeData = window.mrWplace?.wplaceChargeData;
 
     if (globalChargeData) {
@@ -142,3 +131,5 @@ export class StatusManager {
     };
   }
 }
+
+export const statusManagerSingleton = new StatusManager();

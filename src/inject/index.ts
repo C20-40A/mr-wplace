@@ -20,6 +20,9 @@ import { createMigrationWorker, WorkerMessenger } from "./workers/messaging";
     tileCacheDB, // IndexedDB will be initialized asynchronously later
   };
 
+  // Global instance初期化
+  window.mrWplace = {} as any;
+
   // Initialize compute device (default: gpu)
   window.mrWplaceComputeDevice = "gpu";
 
