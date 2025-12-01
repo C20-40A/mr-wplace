@@ -21,6 +21,13 @@ export interface TileDrawInstance {
   tiles: Record<string, ImageBitmap> | null;
   imageKey: string;
   drawEnabled: boolean;
+  isOptimized?: boolean; // true if layer is optimized in IndexedDB
+  bounds?: {
+    top: number;
+    left: number;
+    right: number;
+    bottom: number;
+  };
 }
 
 /** タイル処理結果 */

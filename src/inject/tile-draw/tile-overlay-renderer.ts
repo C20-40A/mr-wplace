@@ -444,13 +444,78 @@ export const drawOverlayLayersOnTile = async (
     tileKey: string;
     instance: TileDrawInstance;
   }> = [];
+
   for (const instance of overlayLayers) {
-    if (!instance.drawEnabled || !instance.tiles) continue;
-    const tiles = Object.keys(instance.tiles).filter((tile) =>
-      tile.startsWith(coordStr)
-    );
-    for (const tileKey of tiles) matchingTiles.push({ tileKey, instance });
+    if (!instance.drawEnabled) continue;
+
+    // Check if this layer is optimized and uses bounds checking
+    if (instance.isOptimized && instance.bounds) {
+      // Calculate tile pixel bounds
+      const tilePixelLeft = tileCoords[0] * 1000;
+      const tilePixelTop = tileCoords[1] * 1000;
+      const tilePixelRight = tilePixelLeft + 1000;
+      const tilePixelBottom = tilePixelTop + 1000;
+
+      // Check if tile intersects with layer bounds
+      if (
+        tilePixelRight > instance.bounds.left &&
+        tilePixelLeft < instance.bounds.right &&
+        tilePixelBottom > instance.bounds.top &&
+        tilePixelTop < instance.bounds.bottom
+      ) {
+        // Calculate which sub-tiles within this tile are covered by the layer
+        // Layer coords are in WPlace coordinates (TLX, TLY, PxX, PxY)
+        const layerStartPixelX = instance.coords[0] * 1000 + instance.coords[2];
+        const layerStartPixelY = instance.coords[1] * 1000 + instance.coords[3];
+
+        // Calculate the intersection of the current tile with the layer
+        const intersectLeft = Math.max(tilePixelLeft, instance.bounds.left);
+        const intersectTop = Math.max(tilePixelTop, instance.bounds.top);
+        const intersectRight = Math.min(tilePixelRight, instance.bounds.right);
+        const intersectBottom = Math.min(tilePixelBottom, instance.bounds.bottom);
+
+        // Convert intersection to tile-relative coordinates
+        const relativeStartX = intersectLeft - layerStartPixelX;
+        const relativeStartY = intersectTop - layerStartPixelY;
+        const relativeEndX = intersectRight - layerStartPixelX;
+        const relativeEndY = intersectBottom - layerStartPixelY;
+
+        // Calculate which sub-tiles are needed (in 1000x1000 chunks)
+        const startSubTileX = Math.floor(relativeStartX / 1000);
+        const startSubTileY = Math.floor(relativeStartY / 1000);
+        const endSubTileX = Math.floor((relativeEndX - 1) / 1000);
+        const endSubTileY = Math.floor((relativeEndY - 1) / 1000);
+
+        // Generate tile keys for all sub-tiles that intersect
+        for (let subTileY = startSubTileY; subTileY <= endSubTileY; subTileY++) {
+          for (let subTileX = startSubTileX; subTileX <= endSubTileX; subTileX++) {
+            const subTilePixelX = subTileX * 1000;
+            const subTilePixelY = subTileY * 1000;
+            const globalTileX = instance.coords[0] + Math.floor((instance.coords[2] + subTilePixelX) / 1000);
+            const globalTileY = instance.coords[1] + Math.floor((instance.coords[3] + subTilePixelY) / 1000);
+            const pixelOffsetX = (instance.coords[2] + subTilePixelX) % 1000;
+            const pixelOffsetY = (instance.coords[3] + subTilePixelY) % 1000;
+
+            const tileKey = `${globalTileX.toString().padStart(4, "0")},${globalTileY.toString().padStart(4, "0")},${pixelOffsetX.toString().padStart(3, "0")},${pixelOffsetY.toString().padStart(3, "0")}`;
+
+            // Only add if this tile key starts with coordStr (matches current tile)
+            if (tileKey.startsWith(coordStr)) {
+              matchingTiles.push({ tileKey, instance });
+            }
+          }
+        }
+      }
+    } else if (instance.tiles) {
+      // Non-optimized layer - use existing tile keys
+      const tiles = Object.keys(instance.tiles).filter((tile) =>
+        tile.startsWith(coordStr)
+      );
+      for (const tileKey of tiles) {
+        matchingTiles.push({ tileKey, instance });
+      }
+    }
   }
+
   if (matchingTiles.length === 0) return tileBlob;
 
   // ポーリング累積防止: 同タイルのみ統計delete

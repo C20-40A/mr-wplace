@@ -82,11 +82,23 @@ export const addImageToOverlayLayers = async (
     preparedOverlayImage = preparedOverlayImages;
   }
 
+  // Get layer metadata if available (for optimized layers)
+  let layerMetadata: Awaited<ReturnType<typeof repository.getLayerMetadata>> = null;
+  if (repository && isOptimized) {
+    try {
+      layerMetadata = await repository.getLayerMetadata(imageKey);
+    } catch (error) {
+      console.warn(`🧑‍🎨 : Failed to get LayerMetadata for ${imageKey}: ${error}`);
+    }
+  }
+
   overlayLayers.push({
     coords,
     tiles: preparedOverlayImage,
     imageKey,
     drawEnabled: true,
+    isOptimized,
+    bounds: layerMetadata?.bounds,
   });
 
   // 統計はタイルレンダリング時に必要に応じて計算される
