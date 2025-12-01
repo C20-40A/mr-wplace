@@ -117,7 +117,8 @@ export const handleImageStatsRequest = async (data: { imageKeys: string[]; reque
 const fetchStatsFromIndexedDB = async (
   imageKeys: string[]
 ): Promise<Record<string, { matched: Record<string, number>; total: Record<string, number> }>> => {
-  const repository = window.mrWplace?.layerRepository;
+  const { getLayerRepository } = await import("../states/migrationState");
+  const repository = getLayerRepository();
   if (!repository) {
     console.warn("🧑‍🎨 : LayerRepository not available for stats fetch");
     return {};

@@ -7,6 +7,7 @@
 import { StatusUIComponents } from "./ui-components";
 import { StatusCalculator } from "../../features/user-status/services/calculator";
 import { TimerService } from "../../features/user-status/services/timer-service";
+import { setExtraColorsBitmap } from "../states/colorFilterState";
 
 interface WPlaceUserData {
   level?: number;
@@ -71,12 +72,11 @@ export class StatusManager {
     this.chargeCountdown.style.display = "block";
   }
 
-  async updateFromUserData(userData: WPlaceUserData): Promise<void> {
+  updateFromUserData(userData: WPlaceUserData): void {
     console.log("🧑‍🎨: StatusManager updating from userData (inject context)");
     this.currentUserData = userData;
 
     // Update ColorFilterState with extraColorsBitmap
-    const { setExtraColorsBitmap } = await import("../states/colorFilterState");
     setExtraColorsBitmap(userData.extraColorsBitmap);
 
     if (userData.level !== undefined && userData.pixelsPainted !== undefined) {

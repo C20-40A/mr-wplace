@@ -34,7 +34,7 @@ fetch-interceptor intercepts tiles/{x}/{y}.png
 **Global State:**
 - `window.mrWplace`: shared between content & inject contexts
 - content fields: `tileOverlay`, `tileSnapshot`
-- inject fields: `layerRepository`, `workerMessenger` (optional)
+- inject state modules (in `inject/states/`): `colorFilterState`, `migrationState`
 
 ## Migration Architecture
 

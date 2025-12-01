@@ -26,13 +26,6 @@ import { createMigrationWorker, WorkerMessenger } from "./workers/messaging";
   // Initialize show unplaced only (default: false)
   window.mrWplaceShowUnplacedOnly = false;
 
-  // Initialize mrWplace global object
-  window.mrWplace = {
-    colorFilterManager: undefined,
-    layerRepository: undefined,
-    workerMessenger: undefined,
-  };
-
   // Setup fetch interceptor synchronously (no await)
   try {
     setupFetchInterceptor();
@@ -85,9 +78,11 @@ import { createMigrationWorker, WorkerMessenger } from "./workers/messaging";
           // Link Worker to Repository
           repository.setWorker(worker);
 
-          // Store in global object
-          window.mrWplace!.layerRepository = repository;
-          window.mrWplace!.workerMessenger = messenger;
+          // Store in state
+          const { setMigrationArchitecture } = await import(
+            "./states/migrationState"
+          );
+          setMigrationArchitecture(repository, messenger);
 
           console.log("🧑‍🎨: Migration architecture initialized successfully");
           console.log(

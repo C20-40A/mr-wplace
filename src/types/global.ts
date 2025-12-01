@@ -13,14 +13,12 @@ export interface RuntimeChargeData extends ChargeData {
 }
 
 interface mrWplace {
-  colorFilterManager?: ColorFilterManager;
   tileOverlay: TileOverlay;
   wplaceChargeData?: RuntimeChargeData;
   tileSnapshot: TileSnapshot;
   autoSpoit?: AutoSpoit;
-  // Inject context fields (optional - only available in inject context)
-  layerRepository?: any; // import("../inject/db/layer-repository").LayerRepository
-  workerMessenger?: any; // import("../inject/workers/messaging").WorkerMessenger
+  // Content context only (not available in inject context)
+  colorFilterManager?: ColorFilterManager;
 }
 
 declare global {

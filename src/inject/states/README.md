@@ -35,3 +35,4 @@ export const updateSomeState = (newState: Partial<SomeState>): void => {
 ## Current States
 
 - `colorFilterState.ts`: Color filter settings from content script (isFilterActive, selectedRGBs, enhancedMode, extraColorsBitmap)
+- `migrationState.ts`: Migration architecture instances (layerRepository, workerMessenger)

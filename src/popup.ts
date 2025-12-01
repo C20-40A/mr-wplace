@@ -293,7 +293,6 @@ const handleImport = async (file: File): Promise<void> => {
   try {
     // Disable button
     importBtn.disabled = true;
-    const originalLabel = importBtn.innerHTML;
     importBtn.innerHTML = `⏳ ${t`${"importing"}`}`;
 
     // Parse ZIP

@@ -56,8 +56,11 @@ const saveGalleryToIndexedDB = async (
   img: GalleryItem,
   bitmap: ImageBitmap
 ): Promise<void> => {
-  const repository = window.mrWplace?.layerRepository;
-  const workerMessenger = window.mrWplace?.workerMessenger;
+  const { getLayerRepository, getWorkerMessenger } = await import(
+    "../states/migrationState"
+  );
+  const repository = getLayerRepository();
+  const workerMessenger = getWorkerMessenger();
 
   if (!repository) {
     console.warn("🧑‍🎨 : LayerRepository not available, skipping IndexedDB save");
@@ -69,9 +72,9 @@ const saveGalleryToIndexedDB = async (
     const existingLayer = await repository.getLayerMetadata(img.key);
     if (existingLayer) {
       // Layer exists, but might not be optimized yet
-      if (!existingLayer.isOptimized && worker) {
+      if (!existingLayer.isOptimized && workerMessenger) {
         // Request migration in background (low priority)
-        requestWorkerMigration(worker, img.key, existingLayer);
+        requestWorkerMigration(workerMessenger, img.key, existingLayer);
       }
       return;
     }
@@ -470,7 +473,8 @@ export const handleLayerSave = async (data: {
   };
   dataUrl: string;
 }): Promise<void> => {
-  const repository = window.mrWplace?.layerRepository;
+  const { getLayerRepository } = await import("../states/migrationState");
+  const repository = getLayerRepository();
 
   if (!repository) {
     console.warn("🧑‍🎨 : LayerRepository not initialized, skipping layer save");
