@@ -125,9 +125,15 @@ export const gpuProcessImage = async (
   void main(){
     vec4 color = texture(uSource, vTexCoord);
 
+    // アルファ二値化：128未満は完全透明として処理スキップ（パフォーマンス最適化）
+    if (color.a < 0.5) {
+      outColor = vec4(0.0, 0.0, 0.0, 0.0);
+      return;
+    }
+
     // 調整なしの場合は早期リターン（パフォーマンス最適化）
     if (uBrightness == 0.0 && uContrastFactor == 1.0 && uSatFactor == 1.0) {
-      outColor = color;
+      outColor = vec4(color.rgb, 1.0);
       return;
     }
 
@@ -144,7 +150,7 @@ export const gpuProcessImage = async (
       rgb = gray + (rgb - gray) * uSatFactor;
     }
 
-    outColor = vec4(rgb / 255.0, color.a);
+    outColor = vec4(rgb / 255.0, 1.0);
   }`;
 
   // Phase1.5: シャープネス適用（アンチエイリアス除去）
@@ -157,9 +163,17 @@ export const gpuProcessImage = async (
   out vec4 outColor;
 
   void main(){
+    vec4 center = texture(uAdjusted, vTexCoord);
+
+    // アルファ二値化：透明ピクセルはそのまま出力
+    if (center.a < 0.5) {
+      outColor = vec4(0.0, 0.0, 0.0, 0.0);
+      return;
+    }
+
     if (uSharpness == 0.0) {
-      // シャープネス無効時はそのまま出力
-      outColor = texture(uAdjusted, vTexCoord);
+      // シャープネス無効時はそのまま出力（alpha=1.0に固定）
+      outColor = vec4(center.rgb, 1.0);
       return;
     }
 
@@ -167,7 +181,6 @@ export const gpuProcessImage = async (
     float centerWeight = 1.0 + 8.0 * uSharpness;
     float edgeWeight = -uSharpness;
 
-    vec4 center = texture(uAdjusted, vTexCoord);
     vec3 rgb = center.rgb * 255.0;
 
     // 3x3畳み込み（8方向）
@@ -184,7 +197,7 @@ export const gpuProcessImage = async (
     // クランプ
     sum = clamp(sum, 0.0, 255.0);
 
-    outColor = vec4(sum / 255.0, center.a);
+    outColor = vec4(sum / 255.0, 1.0);
   }`;
 
   // Phase2: パレット量子化 + ディザリング
@@ -267,6 +280,13 @@ export const gpuProcessImage = async (
 
   void main(){
     vec4 color = texture(uAdjusted, vTexCoord);
+
+    // アルファ二値化：透明ピクセルはそのまま出力
+    if (color.a < 0.5) {
+      outColor = vec4(0.0, 0.0, 0.0, 0.0);
+      return;
+    }
+
     vec3 rgb = color.rgb * 255.0;
 
     // ===== パレット近傍判定 =====
@@ -308,7 +328,7 @@ export const gpuProcessImage = async (
       nearest = nearest2;
     }
 
-    outColor = vec4(nearest / 255.0, color.a);
+    outColor = vec4(nearest / 255.0, 1.0);
   }`;
 
   const programAdjust = linkProgram(vsSource, fsAdjustSource);

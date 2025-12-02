@@ -146,6 +146,15 @@ export function applyImageAdjustments(
   const hasSaturation = saturation !== 0;
 
   if (!hasBrightnessContrast && !hasSaturation) {
+    // アルファ二値化のみ実行
+    for (let i = 0; i < data.length; i += 4) {
+      const alpha = data[i + 3];
+      if (alpha < 128) {
+        data[i + 3] = 0;
+      } else {
+        data[i + 3] = 255;
+      }
+    }
     // シャープネスのみ処理
     if (sharpness > 0) {
       applySharpness(imageData, sharpness);
@@ -158,6 +167,14 @@ export function applyImageAdjustments(
   const satFactor = 1 + saturation / 100;
 
   for (let i = 0; i < data.length; i += 4) {
+    const alpha = data[i + 3];
+
+    // アルファ二値化：128未満は完全透明として処理スキップ（パフォーマンス最適化）
+    if (alpha < 128) {
+      data[i + 3] = 0;
+      continue;
+    }
+
     let r = data[i];
     let g = data[i + 1];
     let b = data[i + 2];
@@ -180,6 +197,7 @@ export function applyImageAdjustments(
     data[i] = r;
     data[i + 1] = g;
     data[i + 2] = b;
+    data[i + 3] = 255; // 強制不透明化
   }
 
   // シャープネス処理（3x3畳み込みフィルター）
@@ -213,8 +231,15 @@ function applySharpness(imageData: ImageData, amount: number): void {
   // 画像の各ピクセルに畳み込みフィルターを適用
   for (let y = 1; y < height - 1; y++) {
     for (let x = 1; x < width - 1; x++) {
+      const idx = (y * width + x) * 4;
+
+      // 透明ピクセルはスキップ
+      if (original[idx + 3] < 128) {
+        continue;
+      }
+
       for (let c = 0; c < 3; c++) { // RGB（アルファは除く）
-        const idx = (y * width + x) * 4 + c;
+        const channelIdx = idx + c;
 
         // 8方向の畳み込み
         const sum =
@@ -222,14 +247,14 @@ function applySharpness(imageData: ImageData, amount: number): void {
           original[((y - 1) * width + x) * 4 + c] * edgeWeight +       // 上
           original[((y - 1) * width + (x + 1)) * 4 + c] * edgeWeight + // 右上
           original[(y * width + (x - 1)) * 4 + c] * edgeWeight +       // 左
-          original[idx] * centerWeight +                                // 中心
+          original[channelIdx] * centerWeight +                         // 中心
           original[(y * width + (x + 1)) * 4 + c] * edgeWeight +       // 右
           original[((y + 1) * width + (x - 1)) * 4 + c] * edgeWeight + // 左下
           original[((y + 1) * width + x) * 4 + c] * edgeWeight +       // 下
           original[((y + 1) * width + (x + 1)) * 4 + c] * edgeWeight;  // 右下
 
         // クランプして代入
-        data[idx] = Math.max(0, Math.min(255, sum));
+        data[channelIdx] = Math.max(0, Math.min(255, sum));
       }
     }
   }
@@ -263,6 +288,14 @@ export function quantizeToColorPalette(
       : colorDistRgbEuclidean2;
 
   for (let i = 0; i < data.length; i += 4) {
+    const alpha = data[i + 3];
+
+    // アルファ二値化：128未満は完全透明として処理スキップ（パフォーマンス最適化）
+    if (alpha < 128) {
+      data[i + 3] = 0;
+      continue;
+    }
+
     const r = data[i];
     const g = data[i + 1];
     const b = data[i + 2];
@@ -300,6 +333,7 @@ export function quantizeToColorPalette(
     data[i] = nearest[0];
     data[i + 1] = nearest[1];
     data[i + 2] = nearest[2];
+    data[i + 3] = 255; // 強制不透明化
   }
 }
 
@@ -347,6 +381,13 @@ export function quantizeWithDithering(
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const i = (y * width + x) * 4;
+      const alpha = data[i + 3];
+
+      // アルファ二値化：128未満は完全透明として処理スキップ（パフォーマンス最適化）
+      if (alpha < 128) {
+        data[i + 3] = 0;
+        continue;
+      }
 
       // ベイヤー行列から誤差取得
       const bayerValue = BAYER_MATRIX_4x4[y % 4][x % 4];
@@ -390,6 +431,7 @@ export function quantizeWithDithering(
       data[i] = nearest[0];
       data[i + 1] = nearest[1];
       data[i + 2] = nearest[2];
+      data[i + 3] = 255; // 強制不透明化
     }
   }
 }
