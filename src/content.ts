@@ -3,7 +3,7 @@ import { TileSnapshot } from "@/features/time-travel/utils/tile-snapshot";
 import { ThemeToggleStorage } from "@/features/theme-toggle/storage";
 import { NotificationModal } from "@/features/user-status/ui/notification-modal";
 import { runtime } from "@/utils/browser-api";
-import { doctorAPI } from "@/features/doctor";
+// Doctor feature removed in Phase 3 - functionality integrated into SAVER/MIGRATOR
 import { I18nManager } from "@/i18n/manager";
 import { detectBrowserLanguage } from "@/i18n/index";
 import { initializeFeatures } from "@/core/initializer";
@@ -40,13 +40,8 @@ export {
 
     console.log("🧑‍🎨: Starting initialization...");
 
-    // Run storage cleanup in background (5 seconds after initialization)
-    // SAFETY: Only deletes gallery_* keys, one at a time, 500ms delay
-    setTimeout(() => {
-      doctorAPI.checkAndCleanup().catch((error) => {
-        console.error("🧑‍🎨 [Doctor] Cleanup failed (non-critical):", error);
-      });
-    }, 5000);
+    // Phase 3: Doctor cleanup removed - SAVER now generates thumbnails immediately on save
+    // No need for delayed cleanup or dataUrl deletion
 
     // Fetchインターセプターの注入
     {

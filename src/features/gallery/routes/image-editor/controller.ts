@@ -442,23 +442,26 @@ export class EditorController {
   }
 
   private async saveCanvasToGallery(blob: Blob): Promise<void> {
-    const base64 = await blobToDataUrl(blob);
     const { GalleryStorage } = await import(
       "../../../../states/galleryStorage"
     );
     const galleryStorage = new GalleryStorage();
+
+    // Generate thumbnail immediately (128x128)
+    const { generateThumbnail } = await import("@/utils/thumbnail");
+    const thumbnail = await generateThumbnail(blob, 128);
 
     const galleryItem: GalleryItem =
       this.isEditMode && this.editingItemKey
         ? {
             key: this.editingItemKey,
             timestamp: Date.now(),
-            dataUrl: base64,
+            thumbnail,
           }
         : {
             key: `gallery_${Date.now()}`,
             timestamp: Date.now(),
-            dataUrl: base64,
+            thumbnail,
           };
 
     // 座標情報があれば追加（デフォルト表示ON）
@@ -468,7 +471,7 @@ export class EditorController {
       console.log("🧑‍🎨 : Saving with position:", this.drawPosition);
     }
 
-    // Save to Chrome Storage
+    // Save to Chrome Storage (metadata + thumbnail)
     await galleryStorage.save(galleryItem);
     console.log(
       "🧑‍🎨 : ",
@@ -478,51 +481,25 @@ export class EditorController {
     // Save to IndexedDB (only if it has drawPosition)
     if (this.drawPosition) {
       try {
-        const { saveLayerToIndexedDB } = await import("@/content");
-        const canvas = this.scaledCanvas;
-        if (!canvas) {
-          console.warn("🧑‍🎨 : No canvas to get image dimensions");
-        }
-
-        await saveLayerToIndexedDB(
-          {
-            id: galleryItem.key,
-            type: "gallery",
-            visible: true,
-            zIndex: galleryItem.layerOrder ?? 0,
-            opacity: 1,
-            coords: {
-              TLX: this.drawPosition.TLX,
-              TLY: this.drawPosition.TLY,
-              PxX: this.drawPosition.PxX,
-              PxY: this.drawPosition.PxY,
-            },
-            bounds: {
-              top: this.drawPosition.TLY,
-              left: this.drawPosition.TLX,
-              right:
-                this.drawPosition.TLX + Math.floor((canvas?.width || 0) / 1000),
-              bottom:
-                this.drawPosition.TLY +
-                Math.floor((canvas?.height || 0) / 1000),
-            },
-            isOptimized: false,
-            title: galleryItem.title,
-            timestamp: galleryItem.timestamp,
-            layerOrder: galleryItem.layerOrder,
-          },
-          base64
+        const { saveImageToIndexedDB } = await import(
+          "@/utils/indexed-db-bridge"
         );
-        console.log("🧑‍🎨 : Saved to IndexedDB:", galleryItem.key);
+        const success = await saveImageToIndexedDB(
+          galleryItem.key,
+          blob,
+          this.drawPosition
+        );
+
+        if (success) {
+          console.log("🧑‍🎨 : Saved to IndexedDB:", galleryItem.key);
+        } else {
+          console.warn("🧑‍🎨 : IndexedDB save failed:", galleryItem.key);
+        }
       } catch (error) {
         console.error("🧑‍🎨 : Failed to save to IndexedDB:", error);
         // Continue even if IndexedDB save fails
       }
     }
-
-    // Request total stats computation for the image
-    const { requestTotalStatsComputation } = await import("@/content");
-    requestTotalStatsComputation(galleryItem.key, galleryItem.dataUrl);
 
     this.onSaveSuccess?.();
   }
@@ -535,10 +512,18 @@ export class EditorController {
     );
     const galleryStorage = new GalleryStorage();
 
+    // Convert dataUrl to blob for thumbnail generation
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+
+    // Generate thumbnail immediately (128x128)
+    const { generateThumbnail } = await import("@/utils/thumbnail");
+    const thumbnail = await generateThumbnail(blob, 128);
+
     const galleryItem: GalleryItem = {
       key: key,
       timestamp: Date.now(),
-      dataUrl: dataUrl,
+      thumbnail,
     };
 
     // 座標情報があれば追加（デフォルト表示ON）
@@ -548,58 +533,32 @@ export class EditorController {
       console.log("🧑‍🎨 : Saving directly with position:", this.drawPosition);
     }
 
-    // Save to Chrome Storage
+    // Save to Chrome Storage (metadata + thumbnail)
     await galleryStorage.save(galleryItem);
     console.log("🧑‍🎨 : ", t`${"saved_to_gallery"}`);
 
     // Save to IndexedDB (only if it has drawPosition)
     if (this.drawPosition) {
       try {
-        const { saveLayerToIndexedDB } = await import("@/content");
-
-        // Get image dimensions from dataUrl
-        const img = new Image();
-        img.src = dataUrl;
-        await new Promise((resolve) => {
-          img.onload = resolve;
-        });
-
-        await saveLayerToIndexedDB(
-          {
-            id: galleryItem.key,
-            type: "gallery",
-            visible: true,
-            zIndex: galleryItem.layerOrder ?? 0,
-            opacity: 1,
-            coords: {
-              TLX: this.drawPosition.TLX,
-              TLY: this.drawPosition.TLY,
-              PxX: this.drawPosition.PxX,
-              PxY: this.drawPosition.PxY,
-            },
-            bounds: {
-              top: this.drawPosition.TLY,
-              left: this.drawPosition.TLX,
-              right: this.drawPosition.TLX + Math.floor(img.width / 1000),
-              bottom: this.drawPosition.TLY + Math.floor(img.height / 1000),
-            },
-            isOptimized: false,
-            title: galleryItem.title,
-            timestamp: galleryItem.timestamp,
-            layerOrder: galleryItem.layerOrder,
-          },
-          dataUrl
+        const { saveImageToIndexedDB } = await import(
+          "@/utils/indexed-db-bridge"
         );
-        console.log("🧑‍🎨 : Saved to IndexedDB:", galleryItem.key);
+        const success = await saveImageToIndexedDB(
+          galleryItem.key,
+          blob,
+          this.drawPosition
+        );
+
+        if (success) {
+          console.log("🧑‍🎨 : Saved to IndexedDB:", galleryItem.key);
+        } else {
+          console.warn("🧑‍🎨 : IndexedDB save failed:", galleryItem.key);
+        }
       } catch (error) {
         console.error("🧑‍🎨 : Failed to save to IndexedDB:", error);
         // Continue even if IndexedDB save fails
       }
     }
-
-    // Request total stats computation for the image
-    const { requestTotalStatsComputation } = await import("@/content");
-    requestTotalStatsComputation(galleryItem.key, galleryItem.dataUrl);
 
     this.onSaveSuccess?.();
   }

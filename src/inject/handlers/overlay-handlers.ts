@@ -246,71 +246,96 @@ export const handleGalleryImages = async (data: {
 
         // No need to save to IndexedDB - already exists and optimized
       } else {
-        // Layer needs to be loaded (either from IndexedDB or dataUrl)
-        let bitmap: ImageBitmap | null = null;
-
+        // Layer not optimized yet - check if in IndexedDB
         if (layerMetadata && !layerMetadata.isOptimized) {
-          // Layer exists but not optimized - load full image from IndexedDB
-          console.log(`🧑‍🎨 : Loading full image from IndexedDB for ${img.key}`);
-          const fullDataUrl = await fetchFullImageFromIndexedDB(img.key);
-          if (fullDataUrl) {
-            bitmap = await loadImageBitmap(fullDataUrl, img.key);
-          }
-        } else if (img.dataUrl) {
-          // No layer in IndexedDB - use dataUrl (supports old data and small images)
-          console.log(
-            `🧑‍🎨 : Using dataUrl (${(img.dataUrl.length / 1024).toFixed(1)}KB) for ${img.key}`
-          );
-          bitmap = await loadImageBitmap(img.dataUrl, img.key);
-        }
+          // Already in IndexedDB but not optimized - register metadata only, load tiles on-demand
+          console.log(`🧑‍🎨 : Layer ${img.key} in IndexedDB but not optimized, will use lazy loading`);
 
-        if (!bitmap) {
-          console.warn(
-            `🧑‍🎨 : No image source available for ${img.key}, skipping`
-          );
-          continue;
-        }
-
-        // Only add to overlay layers if drawEnabled is true
-        if (img.drawEnabled !== false) {
-          if (!img.drawPosition) {
-            console.warn(`🧑‍🎨 : No drawPosition for ${img.key}, skipping overlay`);
-            continue;
-          }
-
-          await addImageToOverlayLayers(
-            bitmap,
-            [
-              img.drawPosition.TLX,
-              img.drawPosition.TLY,
-              img.drawPosition.PxX,
-              img.drawPosition.PxY,
-            ],
-            img.key,
-            { force: true } // Force split since not optimized
-          );
-
-          // Count tiles for this image
-          const { overlayLayers } = await import("../tile-draw");
-          const thisImageLayer = overlayLayers.find(
-            (layer) => layer.imageKey === img.key
-          );
-          if (thisImageLayer && thisImageLayer.tiles) {
-            const tileCount = Object.keys(thisImageLayer.tiles).length;
-            totalTileCount += tileCount;
-            console.log(
-              `🧑‍🎨 : Image ${img.key} split into ${tileCount} tiles (${bitmap.width}x${bitmap.height}px)`
+          if (img.drawEnabled !== false && img.drawPosition) {
+            // Create a dummy 1x1 bitmap as placeholder
+            const dummyBitmap = await createImageBitmap(new ImageData(1, 1));
+            await addImageToOverlayLayers(
+              dummyBitmap,
+              [
+                img.drawPosition.TLX,
+                img.drawPosition.TLY,
+                img.drawPosition.PxX,
+                img.drawPosition.PxY,
+              ],
+              img.key,
+              { force: false } // Don't force split - will load tiles on-demand via getTile()
             );
           }
         } else {
-          console.log(
-            `🧑‍🎨 : Image ${img.key} is disabled, skipping overlay layers (but saving to IndexedDB)`
-          );
-        }
+          // Not in IndexedDB yet - need to load and save first
+          let bitmap: ImageBitmap | null = null;
 
-        // Save to IndexedDB (or request migration if already exists but not optimized)
-        // This ensures complete backup of gallery data
-        await saveGalleryToIndexedDB(img, bitmap);
+          if (img.dataUrl && img.dataUrl !== "") {
+            // dataUrl available in Chrome storage - use it directly
+            console.log(
+              `🧑‍🎨 : Loading from dataUrl (${(img.dataUrl.length / 1024).toFixed(1)}KB) for ${img.key}`
+            );
+            bitmap = await loadImageBitmap(img.dataUrl, img.key);
+          } else {
+            // dataUrl is empty (Doctor cleanup) - try fetching from IndexedDB
+            console.log(
+              `🧑‍🎨 : dataUrl empty for ${img.key}, attempting IndexedDB fetch...`
+            );
+            const fullDataUrl = await fetchFullImageFromIndexedDB(img.key);
+            if (fullDataUrl) {
+              bitmap = await loadImageBitmap(fullDataUrl, img.key);
+              console.log(
+                `🧑‍🎨 : Successfully loaded from IndexedDB for ${img.key}`
+              );
+            } else {
+              console.warn(
+                `🧑‍🎨 : Failed to fetch from IndexedDB for ${img.key}`
+              );
+            }
+          }
+
+          if (!bitmap) {
+            console.warn(
+              `🧑‍🎨 : No image source available for ${img.key}, skipping`
+            );
+            continue;
+          }
+
+          // Save to IndexedDB first (so we can use lazy loading next time)
+          await saveGalleryToIndexedDB(img, bitmap);
+
+          // Only add to overlay layers if drawEnabled is true
+          if (img.drawEnabled !== false && img.drawPosition) {
+            await addImageToOverlayLayers(
+              bitmap,
+              [
+                img.drawPosition.TLX,
+                img.drawPosition.TLY,
+                img.drawPosition.PxX,
+                img.drawPosition.PxY,
+              ],
+              img.key,
+              { force: true } // Force split since not optimized yet
+            );
+
+            // Count tiles for this image
+            const { overlayLayers } = await import("../tile-draw");
+            const thisImageLayer = overlayLayers.find(
+              (layer) => layer.imageKey === img.key
+            );
+            if (thisImageLayer && thisImageLayer.tiles) {
+              const tileCount = Object.keys(thisImageLayer.tiles).length;
+              totalTileCount += tileCount;
+              console.log(
+                `🧑‍🎨 : Image ${img.key} split into ${tileCount} tiles (${bitmap.width}x${bitmap.height}px)`
+              );
+            }
+          } else {
+            console.log(
+              `🧑‍🎨 : Image ${img.key} is disabled, skipping overlay layers (but saved to IndexedDB)`
+            );
+          }
+        }
       }
 
       // Restore stored statistics if available
@@ -555,6 +580,91 @@ export const handleLayerSave = async (data: {
       {
         source: "mr-wplace-layer-save-response",
         layerId: data.layer.id,
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "*"
+    );
+  }
+};
+
+/**
+ * Handle save image request from content context
+ *
+ * This handler saves an image blob to IndexedDB and triggers migration
+ */
+export const handleSaveImageRequest = async (data: {
+  key: string;
+  dataUrl: string;
+  coords: { TLX: number; TLY: number; PxX: number; PxY: number };
+}): Promise<void> => {
+  try {
+    const { getLayerRepository, requestWorkerMigration } = await import(
+      "../states/migrationState"
+    );
+    const repository = getLayerRepository();
+
+    if (!repository) {
+      throw new Error("LayerRepository not initialized");
+    }
+
+    // Convert dataUrl to blob
+    const response = await fetch(data.dataUrl);
+    const blob = await response.blob();
+
+    // Get image dimensions
+    const bitmap = await createImageBitmap(blob);
+    const width = bitmap.width;
+    const height = bitmap.height;
+    bitmap.close();
+
+    // Create layer metadata
+    const layer = {
+      id: data.key,
+      type: "gallery" as const,
+      visible: true,
+      zIndex: 0,
+      opacity: 1,
+      coords: data.coords,
+      bounds: {
+        top: data.coords.TLY,
+        left: data.coords.TLX,
+        right: data.coords.TLX + Math.floor(width / 1000),
+        bottom: data.coords.TLY + Math.floor(height / 1000),
+      },
+      isOptimized: false,
+      timestamp: Date.now(),
+    };
+
+    // Save to IndexedDB
+    await repository.saveLayer(layer, blob);
+
+    console.log(`🧑‍🎨 : Saved image ${data.key} to IndexedDB (${width}x${height})`);
+
+    // Request migration
+    requestWorkerMigration(data.key, {
+      priority: 1,
+      coords: data.coords,
+      bounds: layer.bounds,
+    });
+
+    // Send success response
+    window.postMessage(
+      {
+        source: "mr-wplace-save-image-response",
+        key: data.key,
+        success: true,
+      },
+      "*"
+    );
+  } catch (error) {
+    console.error(`🧑‍🎨 : Failed to save image ${data.key}:`, error);
+
+    // Send error response
+    window.postMessage(
+      {
+        source: "mr-wplace-save-image-response",
+        key: data.key,
         success: false,
         error: error instanceof Error ? error.message : String(error),
       },

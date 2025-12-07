@@ -37,3 +37,25 @@ export const setMigrationArchitecture = (
   migrationState.workerMessenger = messenger;
   console.log("🧑‍🎨 : Migration architecture set in state");
 };
+
+/**
+ * Request Worker migration for a layer
+ */
+export const requestWorkerMigration = (
+  layerId: string,
+  options: {
+    priority: number;
+    coords: { TLX: number; TLY: number; PxX: number; PxY: number };
+    bounds: { top: number; left: number; right: number; bottom: number };
+  }
+): void => {
+  const messenger = migrationState.workerMessenger;
+
+  if (!messenger) {
+    console.warn("🧑‍🎨 : WorkerMessenger not initialized, skipping migration");
+    return;
+  }
+
+  messenger.requestMigration(layerId, options.priority, options.coords, options.bounds);
+  console.log(`🧑‍🎨 : Requested migration for ${layerId} (priority: ${options.priority})`);
+};

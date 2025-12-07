@@ -3,6 +3,7 @@ import {
   handleSnapshotsUpdate,
   handleTextLayersUpdate,
   handleLayerSave,
+  handleSaveImageRequest,
 } from "./handlers/overlay-handlers";
 import {
   handleThemeUpdate,
@@ -22,8 +23,8 @@ import {
   handleComputeTotalStats,
 } from "./handlers/request-handlers";
 import {
-  setupDoctorHandlers,
-} from "./handlers/doctor-handlers";
+  setupIndexedDBBridgeHandlers,
+} from "./handlers/indexeddb-bridge-handlers";
 import {
   startAutoCanvasClick,
   stopAutoCanvasClick,
@@ -33,8 +34,8 @@ import {
  * Setup message event listener for handling various events
  */
 export const setupMessageHandler = (): void => {
-  // Setup doctor handlers (IndexedDB request/response)
-  setupDoctorHandlers();
+  // Setup IndexedDB bridge handlers (dataUrl fetch, thumbnail generation)
+  setupIndexedDBBridgeHandlers();
 
   window.addEventListener("message", async (event: MessageEvent) => {
     const { source } = event.data;
@@ -111,6 +112,11 @@ export const setupMessageHandler = (): void => {
     // Migration architecture handlers
     if (source === "mr-wplace-layer-save") {
       await handleLayerSave(event.data);
+      return;
+    }
+
+    if (source === "mr-wplace-save-image-request") {
+      await handleSaveImageRequest(event.data);
       return;
     }
 

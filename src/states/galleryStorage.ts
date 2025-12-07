@@ -12,7 +12,10 @@ export interface DrawPosition {
 export interface GalleryItem {
   key: string;
   timestamp: number;
+  // Legacy: dataUrl is deprecated, will be removed in future versions
+  // New images should only use thumbnail + IndexedDB blob storage
   dataUrl?: string;
+  // Thumbnail (128x128) for UI display, generated on save
   thumbnail?: string;
   title?: string;
   drawPosition?: { TLX: number; TLY: number; PxX: number; PxY: number };
@@ -32,7 +35,8 @@ interface GalleryIndex {
   items: Array<{
     key: string;
     timestamp: number;
-    cleaned?: boolean; // Doctor cleanup済みフラグ
+    // Phase 4: cleaned flag removed - Doctor feature eliminated
+    // State is now managed purely by isOptimized flag in IndexedDB LayerMetadata
   }>;
   lastUpdated: number;
 }

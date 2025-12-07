@@ -1,7 +1,7 @@
 import { setupFetchInterceptor } from "./fetch-interceptor";
 import { setupMapObserver } from "./map-instance";
 import { setupMessageHandler } from "./message-handler";
-import { setupDoctorHandlers } from "./handlers/doctor-handlers";
+import { setupIndexedDBBridgeHandlers } from "./handlers/indexeddb-bridge-handlers";
 import { tileCacheDB } from "./cache-storage";
 import { openDatabase } from "./db/schema";
 import { LayerRepository } from "./db/layer-repository";
@@ -97,14 +97,9 @@ import { setupPerformanceMonitor } from "./utils/performance-monitor";
         }
       })(),
 
-      // Setup message handler
+      // Setup message handler (includes IndexedDB bridge handlers)
       Promise.resolve(setupMessageHandler()).catch((error) => {
         console.error("🧑‍🎨: Failed to setup message handler:", error);
-      }),
-
-      // Setup doctor handlers (for storage health checks)
-      Promise.resolve(setupDoctorHandlers()).catch((error) => {
-        console.error("🧑‍🎨: Failed to setup doctor handlers:", error);
       }),
 
       // Setup map observer

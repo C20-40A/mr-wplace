@@ -1,41 +1,13 @@
 /**
- * Doctor Handlers - IndexedDB Health Check
- * Handles storage diagnostic requests from content script
+ * IndexedDB Bridge Handlers
+ * Handles IndexedDB access requests from content script context
+ *
+ * Phase 3: Renamed from doctor-handlers.ts
+ * - Removed Doctor diagnostic functions (handleIndexedDBCheck)
+ * - Kept essential bridge functions (dataUrl fetch, thumbnail generation)
  */
 
 import { DB_NAME, DB_VERSION, STORES } from "../db/schema";
-
-/**
- * Check if a gallery item exists in IndexedDB
- */
-const handleIndexedDBCheck = async (key: string): Promise<void> => {
-  try {
-    const db = await openDatabase();
-    const exists = await checkLayerExists(db, key);
-
-    // Send response back to content script
-    window.postMessage(
-      {
-        source: "mr-wplace-doctor-check-idb-response",
-        key,
-        exists,
-      },
-      "*"
-    );
-  } catch (error) {
-    console.error(`🧑‍🎨 : Failed to check IndexedDB for ${key}:`, error);
-
-    // Send failure response
-    window.postMessage(
-      {
-        source: "mr-wplace-doctor-check-idb-response",
-        key,
-        exists: false,
-      },
-      "*"
-    );
-  }
-};
 
 /**
  * Open IndexedDB database
@@ -74,28 +46,6 @@ const openDatabase = (): Promise<IDBDatabase> => {
       if (!db.objectStoreNames.contains(STORES.STATISTICS)) {
         db.createObjectStore(STORES.STATISTICS, { keyPath: "layerId" });
       }
-    };
-  });
-};
-
-/**
- * Check if layer exists in IndexedDB
- */
-const checkLayerExists = (
-  db: IDBDatabase,
-  layerId: string
-): Promise<boolean> => {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction([STORES.LAYERS], "readonly");
-    const store = tx.objectStore(STORES.LAYERS);
-    const request = store.get(layerId);
-
-    request.onsuccess = () => {
-      resolve(!!request.result);
-    };
-
-    request.onerror = () => {
-      reject(request.error);
     };
   });
 };
@@ -260,15 +210,10 @@ export const generateThumbnail = async (blob: Blob): Promise<string> => {
 };
 
 /**
- * Setup doctor message handlers
+ * Setup IndexedDB bridge message handlers
  */
-export const setupDoctorHandlers = (): void => {
+export const setupIndexedDBBridgeHandlers = (): void => {
   window.addEventListener("message", (event) => {
-    if (event.data.source === "mr-wplace-doctor-check-idb") {
-      const { key } = event.data;
-      handleIndexedDBCheck(key);
-    }
-
     // Handle gallery dataUrl request
     if (event.data.source === "mr-wplace-gallery-dataurl-request") {
       const { key } = event.data;
@@ -282,5 +227,5 @@ export const setupDoctorHandlers = (): void => {
     }
   });
 
-  console.log("🧑‍🎨 : Doctor handlers initialized");
+  console.log("🧑‍🎨 : IndexedDB bridge handlers initialized");
 };

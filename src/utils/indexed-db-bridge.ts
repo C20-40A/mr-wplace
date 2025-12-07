@@ -48,7 +48,7 @@ export const fetchFullImageFromIndexedDB = async (
 
 /**
  * Generate thumbnail from IndexedDB blob via inject context
- * 
+ *
  * @param key - Gallery item key
  * @param timeout - Timeout in milliseconds (default: 5000)
  * @returns Promise<string | null> - Thumbnail dataUrl or null if failed
@@ -83,6 +83,67 @@ export const generateThumbnailFromIndexedDB = async (
       window.removeEventListener("message", handler);
       console.warn(`🧑‍🎨 : Thumbnail generation timeout for ${key}`);
       resolve(null);
+    }, timeout);
+  });
+};
+
+/**
+ * Save image blob to IndexedDB via inject context
+ *
+ * @param key - Gallery item key (e.g., "gallery_1234567890")
+ * @param blob - Image blob to save
+ * @param coords - Draw position coordinates
+ * @param timeout - Timeout in milliseconds (default: 10000)
+ * @returns Promise<boolean> - true if saved successfully, false otherwise
+ */
+export const saveImageToIndexedDB = async (
+  key: string,
+  blob: Blob,
+  coords: { TLX: number; TLY: number; PxX: number; PxY: number },
+  timeout = 10000
+): Promise<boolean> => {
+  return new Promise((resolve) => {
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-save-image-response" &&
+        event.data.key === key
+      ) {
+        window.removeEventListener("message", handler);
+        resolve(event.data.success);
+      }
+    };
+
+    window.addEventListener("message", handler);
+
+    // Convert blob to dataUrl for postMessage
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const dataUrl = reader.result as string;
+
+      window.postMessage(
+        {
+          source: "mr-wplace-save-image-request",
+          key,
+          dataUrl,
+          coords,
+        },
+        "*"
+      );
+    };
+
+    reader.onerror = () => {
+      window.removeEventListener("message", handler);
+      console.error(`🧑‍🎨 : Failed to convert blob to dataUrl for ${key}`);
+      resolve(false);
+    };
+
+    reader.readAsDataURL(blob);
+
+    // Timeout
+    setTimeout(() => {
+      window.removeEventListener("message", handler);
+      console.warn(`🧑‍🎨 : IndexedDB save timeout for ${key}`);
+      resolve(false);
     }, timeout);
   });
 };

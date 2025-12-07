@@ -48,8 +48,11 @@ export interface LayerMetadata {
     bottom: number; // Max tile Y
   };
 
-  // State management
-  isOptimized: boolean; // true = tiled (State B), false = raw data only (State A)
+  // State management (Phase 4: unified to single flag)
+  // Phase 4: Simplified from 4 states (A/B/C/D) to 2 states (raw/final)
+  // - false (raw): IndexedDB legacy_blob available, not optimized
+  // - true (final): IndexedDB optimized_tiles available, optimized
+  isOptimized: boolean;
 
   // Metadata
   title?: string; // User-set title
