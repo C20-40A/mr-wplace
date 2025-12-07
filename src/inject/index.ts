@@ -6,6 +6,7 @@ import { tileCacheDB } from "./cache-storage";
 import { openDatabase } from "./db/schema";
 import { LayerRepository } from "./db/layer-repository";
 import { createMigrationWorker, WorkerMessenger } from "./workers/messaging";
+import { setupPerformanceMonitor } from "./utils/performance-monitor";
 
 // CRITICAL: Setup fetch interceptor IMMEDIATELY and SYNCHRONOUSLY
 // to catch /me requests before WPlace app code runs
@@ -129,6 +130,9 @@ import { createMigrationWorker, WorkerMessenger } from "./workers/messaging";
         )}MB`
       );
     }
+
+    // Setup performance monitor (Chrome only)
+    // setupPerformanceMonitor();
   } catch (error) {
     console.error("🧑‍🎨: Critical initialization error:", error);
   }
