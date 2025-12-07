@@ -73,17 +73,26 @@ All feature APIs are typed in `src/core/di.ts` under `FeatureRegistry`.
 ```
 src/
 ├── content.ts              # Main entry, DI registration
+├── popup.ts                # Extension popup UI
+├── inject.ts               # Inject entry point (bundles inject/index.ts)
 ├── inject/                 # Page-context scripts (see inject/CLAUDE.md)
-│   ├── db/                # IndexedDB schema & Repository Pattern
-│   ├── workers/           # Web Worker (migration, optimization)
+│   ├── index.ts           # Initialization flow
+│   ├── types.ts           # Type definitions, window extensions
+│   ├── fetch-interceptor.ts   # Tile & /me API interception
+│   ├── map-instance.ts    # Map instance capture, event handling
+│   ├── message-handler.ts # postMessage dispatcher
+│   ├── db/                # IndexedDB (Repository Pattern, LRU cache)
+│   ├── workers/           # Web Worker (tile splitting)
 │   ├── handlers/          # Message handlers (overlay, state, request)
-│   ├── tile-draw/         # Tile overlay rendering
-│   ├── fetch-interceptor.ts   # Intercepts tile & user API
-│   └── map-instance.ts    # Captures WPlace map instance
+│   ├── states/            # State management (colorFilter, migration)
+│   └── tile-draw/         # Tile rendering (stats, filters, processing)
 ├── core/di.ts             # DI container & API types
 ├── features/              # Feature modules (gallery, drawing, etc.)
+├── states/                # Content script state (GalleryStorage, etc.)
 ├── utils/
-│   └── inject-bridge.ts   # Content ↔ Inject communication
+│   ├── inject-bridge.ts   # Content ↔ Inject communication
+│   ├── browser-api.ts     # Chrome API wrapper
+│   └── ...                # Router, modal, coordinate, position, etc.
 └── i18n/                  # Internationalization
 ```
 
@@ -228,7 +237,7 @@ const stats = await getAggregatedColorStats(imageKeys);
 - ✅ **Use Canvas API for image processing in inject**
 - ✅ **Content manages storage, inject handles rendering**
 
-See `src/inject/CLAUDE.md` for detailed architecture and migration history.
+See [src/inject/CLAUDE.md](src/inject/CLAUDE.md) for detailed inject architecture.
 
 ### Statistics Persistence
 
@@ -238,7 +247,7 @@ See `src/inject/CLAUDE.md` for detailed architecture and migration history.
 2. **On tile visit**: Statistics are computed and saved to storage
 3. **On reload**: Statistics persist across browser restarts
 
-No manual intervention needed. See `src/inject/CLAUDE.md` for implementation details.
+No manual intervention needed. Statistics persist across browser restarts.
 
 ### Common Issues
 
