@@ -472,7 +472,10 @@ export const drawOverlayLayersOnTile = async (
         const intersectLeft = Math.max(tilePixelLeft, instance.bounds.left);
         const intersectTop = Math.max(tilePixelTop, instance.bounds.top);
         const intersectRight = Math.min(tilePixelRight, instance.bounds.right);
-        const intersectBottom = Math.min(tilePixelBottom, instance.bounds.bottom);
+        const intersectBottom = Math.min(
+          tilePixelBottom,
+          instance.bounds.bottom
+        );
 
         // Convert intersection to tile-relative coordinates
         const relativeStartX = intersectLeft - layerStartPixelX;
@@ -487,16 +490,34 @@ export const drawOverlayLayersOnTile = async (
         const endSubTileY = Math.floor((relativeEndY - 1) / 1000);
 
         // Generate tile keys for all sub-tiles that intersect
-        for (let subTileY = startSubTileY; subTileY <= endSubTileY; subTileY++) {
-          for (let subTileX = startSubTileX; subTileX <= endSubTileX; subTileX++) {
+        for (
+          let subTileY = startSubTileY;
+          subTileY <= endSubTileY;
+          subTileY++
+        ) {
+          for (
+            let subTileX = startSubTileX;
+            subTileX <= endSubTileX;
+            subTileX++
+          ) {
             const subTilePixelX = subTileX * 1000;
             const subTilePixelY = subTileY * 1000;
-            const globalTileX = instance.coords[0] + Math.floor((instance.coords[2] + subTilePixelX) / 1000);
-            const globalTileY = instance.coords[1] + Math.floor((instance.coords[3] + subTilePixelY) / 1000);
+            const globalTileX =
+              instance.coords[0] +
+              Math.floor((instance.coords[2] + subTilePixelX) / 1000);
+            const globalTileY =
+              instance.coords[1] +
+              Math.floor((instance.coords[3] + subTilePixelY) / 1000);
             const pixelOffsetX = (instance.coords[2] + subTilePixelX) % 1000;
             const pixelOffsetY = (instance.coords[3] + subTilePixelY) % 1000;
 
-            const tileKey = `${globalTileX.toString().padStart(4, "0")},${globalTileY.toString().padStart(4, "0")},${pixelOffsetX.toString().padStart(3, "0")},${pixelOffsetY.toString().padStart(3, "0")}`;
+            const tileKey = `${globalTileX
+              .toString()
+              .padStart(4, "0")},${globalTileY
+              .toString()
+              .padStart(4, "0")},${pixelOffsetX
+              .toString()
+              .padStart(3, "0")},${pixelOffsetY.toString().padStart(3, "0")}`;
 
             // Only add if this tile key starts with coordStr (matches current tile)
             if (tileKey.startsWith(coordStr)) {
@@ -522,9 +543,9 @@ export const drawOverlayLayersOnTile = async (
   for (const { instance } of matchingTiles) {
     const imageStatsMap = perTileColorStats.get(instance.imageKey);
     if (imageStatsMap?.has(coordStr)) {
-      console.log(
-        `🧑‍🎨 : Deleting existing stats for tile ${coordStr}, image ${instance.imageKey}`
-      );
+      // console.log(
+      //   `🧑‍🎨 : Deleting existing stats for tile ${coordStr}, image ${instance.imageKey}`
+      // );
       imageStatsMap.delete(coordStr);
     }
   }
@@ -593,7 +614,10 @@ export const drawOverlayLayersOnTile = async (
 
       if (repository) {
         try {
-          const loadedBitmap = await repository.getTile(instance.imageKey, tileKey);
+          const loadedBitmap = await repository.getTile(
+            instance.imageKey,
+            tileKey
+          );
 
           if (loadedBitmap) {
             paintedTilebitmap = loadedBitmap;
@@ -602,10 +626,14 @@ export const drawOverlayLayersOnTile = async (
               instance.tiles = {};
             }
             instance.tiles[tileKey] = loadedBitmap;
-            console.log(`🧑‍🎨 : Loaded tile ${tileKey} from IndexedDB for ${instance.imageKey}`);
+            console.log(
+              `🧑‍🎨 : Loaded tile ${tileKey} from IndexedDB for ${instance.imageKey}`
+            );
           }
         } catch (error) {
-          console.warn(`🧑‍🎨 : Failed to load tile ${tileKey} from IndexedDB: ${error}`);
+          console.warn(
+            `🧑‍🎨 : Failed to load tile ${tileKey} from IndexedDB: ${error}`
+          );
         }
       }
     }

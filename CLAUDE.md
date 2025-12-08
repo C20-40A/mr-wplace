@@ -281,7 +281,10 @@ import { GalleryStorage, GalleryItem } from "@/states/galleryStorage";
 export interface GalleryItem {
   key: string;
   timestamp: number;
+  // Legacy: dataUrl is deprecated, will be removed in future versions
+  // New images use thumbnail + IndexedDB blob storage instead
   dataUrl?: string;
+  // Thumbnail (128x128) for UI display, generated on save
   thumbnail?: string;
   title?: string;
   drawPosition?: { TLX: number; TLY: number; PxX: number; PxY: number };

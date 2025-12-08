@@ -21,9 +21,11 @@ src/inject/
 │   ├── colorFilterState.ts    # Color filter state
 │   └── migrationState.ts      # Migration state
 ├── handlers/                   # Message handlers
-│   ├── overlay-handlers.ts    # Gallery, snapshots, text
+│   ├── overlay-handlers.ts    # Gallery, snapshots, text, layer save
 │   ├── state-handlers.ts      # Theme, data saver, filter
-│   └── request-handlers.ts    # Stats, pixel color
+│   ├── request-handlers.ts    # Stats, pixel color
+│   ├── indexeddb-bridge-handlers.ts  # IndexedDB bridge (Phase 3: renamed from doctor-handlers)
+│   └── user-status-handler.ts # User status
 └── tile-draw/                  # Tile rendering
     ├── stats/                 # Statistics computation
     ├── filters/               # GPU/CPU filters
@@ -48,9 +50,11 @@ src/inject/
 
 **content → inject:**
 - `mr-wplace-gallery-images`, `mr-wplace-snapshots`, `mr-wplace-text-layers`, `mr-wplace-theme-update`, `mr-wplace-color-filter`, `wplace-studio-flyto`
+- **IndexedDB bridge:** `mr-wplace-gallery-dataurl-request`, `mr-wplace-thumbnail-request`, `mr-wplace-save-image-request`
 
 **inject → content:**
 - `mr-wplace-me`, `mr-wplace-response-stats`, `mr-wplace-stats-updated`
+- **IndexedDB bridge:** `mr-wplace-gallery-dataurl-response`, `mr-wplace-thumbnail-response`, `mr-wplace-save-image-response`
 
 ## Technical Constraints
 

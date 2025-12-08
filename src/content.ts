@@ -40,8 +40,35 @@ export {
 
     console.log("🧑‍🎨: Starting initialization...");
 
-    // Phase 3: Doctor cleanup removed - SAVER now generates thumbnails immediately on save
-    // No need for delayed cleanup or dataUrl deletion
+    // Phase 5: Data migration - convert legacy dataUrl to new format
+    // Run in background to avoid blocking initialization
+    (async () => {
+      try {
+        const { needsMigration, runDataMigration } = await import(
+          "@/features/migration/data-migrator"
+        );
+
+        if (await needsMigration()) {
+          console.log("🧑‍🎨 [Migration] Starting background migration...");
+          const result = await runDataMigration();
+
+          if (result.failed.length > 0) {
+            console.warn(
+              `🧑‍🎨 [Migration] Some items failed to migrate:`,
+              result.failed
+            );
+          }
+
+          // Refresh gallery images in inject context after migration
+          if (result.migrated > 0) {
+            await sendGalleryImagesToInject();
+            console.log(`🧑‍🎨 [Migration] Gallery images refreshed`);
+          }
+        }
+      } catch (error) {
+        console.error("🧑‍🎨 [Migration] Migration failed (non-critical):", error);
+      }
+    })();
 
     // Fetchインターセプターの注入
     {
