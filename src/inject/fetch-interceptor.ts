@@ -42,7 +42,7 @@ export const setupFetchInterceptor = (): void => {
 
       try {
         const jsonData: WplaceUserData = await clonedResponse.json();
-        console.log("🧑‍🎨: Parsed json:", jsonData);
+        // console.log("🧑‍🎨: Parsed json:", jsonData);
 
         // Handle user status directly in inject context
         handleUserStatusUpdate(jsonData);

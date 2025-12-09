@@ -1,0 +1,4 @@
+- "document_start"に content が動く。これがエントリーポイント
+- content.ts で src/inject の script を挿入
+  - content だと、window などが使えないため
+  - inject で描画や fetch のインターセプトなど諸々を担当する
