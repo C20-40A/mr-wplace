@@ -17,7 +17,8 @@ class DarkTheme {
 
   private createButton() {
     this.button = document.createElement("button");
-    this.button.textContent = this.currentTheme === "custom-winter" ? "☀️" : "🌙";
+    this.button.textContent =
+      this.currentTheme === "custom-winter" ? "☀️" : "🌙";
     this.button.className = `
       btn btn-sm btn-circle
       top-2
@@ -39,7 +40,8 @@ class DarkTheme {
   }
 
   private async toggleTheme() {
-    const newTheme = this.currentTheme === "custom-winter" ? "dark" : "custom-winter";
+    const newTheme =
+      this.currentTheme === "custom-winter" ? "dark" : "custom-winter";
     this.currentTheme = newTheme;
 
     // Storage保存
@@ -59,7 +61,6 @@ class DarkTheme {
   private applyTheme(theme: "custom-winter" | "dark") {
     // UIテーマの適用
     localStorage.setItem("theme", theme);
-    document.documentElement.setAttribute("data-theme", theme);
 
     // inject.jsに通知
     window.postMessage(

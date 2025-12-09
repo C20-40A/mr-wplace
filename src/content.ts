@@ -1,5 +1,4 @@
 import { TileSnapshot } from "@/features/time-travel/utils/tile-snapshot";
-import { ThemeToggleStorage } from "@/features/theme-toggle/storage";
 import { NotificationModal } from "@/features/user-status/ui/notification-modal";
 import { runtime } from "@/utils/browser-api";
 // Doctor feature removed in Phase 3 - functionality integrated into SAVER/MIGRATOR
@@ -31,23 +30,21 @@ const runMigrationInBackground = async () => {
     const { needsMigration, runDataMigration } = await import(
       "@/features/migration/data-migrator"
     );
+    if (!(await needsMigration())) return;
 
-    if (await needsMigration()) {
-      console.log("🧑‍🎨 [Migration] Starting background migration...");
-      const result = await runDataMigration();
+    console.log("🧑‍🎨 [Migration] Starting background migration...");
+    const result = await runDataMigration();
 
-      if (result.failed.length > 0) {
-        console.warn(
-          `🧑‍🎨 [Migration] Some items failed to migrate:`,
-          result.failed
-        );
-      }
+    if (result.failed.length > 0) {
+      console.warn(
+        `🧑‍🎨 [Migration] Some items failed to migrate:${result.failed}`
+      );
+    }
 
-      // Refresh gallery images in inject context after migration
-      if (result.migrated > 0) {
-        await sendGalleryImagesToInject();
-        console.log(`🧑‍🎨 [Migration] Gallery images refreshed`);
-      }
+    // Refresh gallery images in inject context after migration
+    if (result.migrated > 0) {
+      await sendGalleryImagesToInject();
+      console.log(`🧑‍🎨 [Migration] Gallery images refreshed`);
     }
   } catch (error) {
     console.error("🧑‍🎨 [Migration] Migration failed (non-critical):", error);
@@ -75,24 +72,6 @@ const loadInjectScript = async () => {
   });
 
   console.log("🧑‍🎨: inject.js script injected");
-};
-
-// データをDOM属性で渡す（CSP safe）
-const injectDomBridgeData = async () => {
-  console.log("🧑‍🎨: Injecting data element...");
-  const themeStart = performance.now();
-  const currentTheme = await ThemeToggleStorage.get();
-  const themeEnd = performance.now();
-  console.log(
-    `🧑‍🎨: ThemeToggleStorage.get() took ${(themeEnd - themeStart).toFixed(2)}ms`
-  );
-
-  const dataElement = document.createElement("div");
-  dataElement.id = "__mr_wplace_data__";
-  dataElement.setAttribute("data-theme", currentTheme);
-  dataElement.style.display = "none";
-  (document.head || document.documentElement).prepend(dataElement);
-  console.log("🧑‍🎨: Injected data element");
 };
 
 const initializeMainFeatures = async () => {
@@ -161,8 +140,6 @@ registerMessageListeners();
   runMigrationInBackground();
 
   await loadInjectScript();
-
-  await injectDomBridgeData();
 
   await initializeMainFeatures();
 })();
