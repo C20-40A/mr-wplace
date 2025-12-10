@@ -6,7 +6,7 @@ const DEFAULT_LIGHTNESS = 45;
 
 const MAGIC_NUMBER = 5;
 
-function simpleHash(str: string): number {
+const simpleHash = (str: string): number => {
   return (
     str
       .split("")
@@ -15,14 +15,14 @@ function simpleHash(str: string): number {
         MAGIC_NUMBER
       ) >>> 2
   ); // 32 bit unsigned integer conversion disregarding last 2 bits for better randomness
-}
+};
 
-export function minidenticon(
+export const minidenticon = (
   seed = "",
   saturation = DEFAULT_SATURATION,
   lightness = DEFAULT_LIGHTNESS,
   hashFn = simpleHash
-) {
+) => {
   const hash = hashFn(seed);
   const hue = (hash % COLORS_NB) * (360 / COLORS_NB);
   return (

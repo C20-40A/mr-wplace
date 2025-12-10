@@ -205,13 +205,8 @@ export class SnapshotDetailRoute {
     const returnBtn = document.querySelector("#wps-return-current-btn");
     if (!drawBtn || !returnBtn) throw new Error("Button not found");
 
-    if (isDrawing) {
-      drawBtn.classList.add("hidden");
-      returnBtn.classList.remove("hidden");
-    } else {
-      drawBtn.classList.remove("hidden");
-      returnBtn.classList.add("hidden");
-    }
+    drawBtn.classList.toggle("hidden", isDrawing);
+    returnBtn.classList.toggle("hidden", !isDrawing);
   }
 
   private async returnToCurrent(fullKey: string): Promise<void> {

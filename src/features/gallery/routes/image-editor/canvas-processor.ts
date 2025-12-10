@@ -21,7 +21,7 @@ export type QuantizationMethod = "rgb-euclidean" | "weighted-rgb" | "lab";
  * RGB (0-255) → Lab 色空間変換
  * Lab色空間は人間の視覚に基づいた知覚均等な色空間
  */
-function rgbToLab(r: number, g: number, b: number): [number, number, number] {
+const rgbToLab = (r: number, g: number, b: number): [number, number, number] => {
   // 1. RGB → sRGB (0-1 正規化)
   let rNorm = r / 255;
   let gNorm = g / 255;
@@ -68,14 +68,14 @@ function rgbToLab(r: number, g: number, b: number): [number, number, number] {
  * RGB Euclidean 距離の2乗（デフォルト、高速）
  * 平方根の計算を省略し、最も単純な色の物理的距離を計算
  */
-function colorDistRgbEuclidean2(
+const colorDistRgbEuclidean2 = (
   r1: number,
   g1: number,
   b1: number,
   r2: number,
   g2: number,
   b2: number
-): number {
+): number => {
   const dr = r1 - r2;
   const dg = g1 - g2;
   const db = b1 - b2;
@@ -87,14 +87,14 @@ function colorDistRgbEuclidean2(
  * 人間の目の感度（緑 > 赤 > 青）を考慮した重み付け
  * 視覚的品質が向上し、より自然な色合いになる
  */
-function colorDistWeightedRgb2(
+const colorDistWeightedRgb2 = (
   r1: number,
   g1: number,
   b1: number,
   r2: number,
   g2: number,
   b2: number
-): number {
+): number => {
   const dr = r1 - r2;
   const dg = g1 - g2;
   const db = b1 - b2;
@@ -112,14 +112,14 @@ function colorDistWeightedRgb2(
  * 最も正確に人間が感じる色差を表現
  * 最高品質の量子化結果が得られ、色の段差（バンディング）が目立ちにくい
  */
-function colorDistLab(
+const colorDistLab = (
   r1: number,
   g1: number,
   b1: number,
   r2: number,
   g2: number,
   b2: number
-): number {
+): number => {
   const [L1, a1, b1Lab] = rgbToLab(r1, g1, b1);
   const [L2, a2, b2Lab] = rgbToLab(r2, g2, b2);
 
@@ -134,10 +134,10 @@ function colorDistLab(
  * 明るさ・コントラスト・彩度・シャープネス調整を適用
  * ImageDataを直接変更（破壊的）
  */
-export function applyImageAdjustments(
+export const applyImageAdjustments = (
   imageData: ImageData,
   adjustments: ImageAdjustments
-): void {
+): void => {
   const data = imageData.data;
   const { brightness, contrast, saturation, sharpness } = adjustments;
 
@@ -210,7 +210,7 @@ export function applyImageAdjustments(
  * シャープネスフィルター適用（アンチエイリアス除去）
  * 8方向3x3畳み込みカーネルでエッジを強調し、中間色を除去
  */
-function applySharpness(imageData: ImageData, amount: number): void {
+const applySharpness = (imageData: ImageData, amount: number): void => {
   const width = imageData.width;
   const height = imageData.height;
   const data = imageData.data;
@@ -264,11 +264,11 @@ function applySharpness(imageData: ImageData, amount: number): void {
  * カラーパレット量子化
  * ImageDataを直接変更（破壊的）
  */
-export function quantizeToColorPalette(
+export const quantizeToColorPalette = (
   imageData: ImageData,
   selectedColorIds: number[],
   method: QuantizationMethod = "rgb-euclidean"
-): void {
+): void => {
   const data = imageData.data;
 
   // パレットキャッシュ
@@ -352,12 +352,12 @@ const BAYER_MATRIX_4x4 = [
  * ベイヤーディザリング + カラーパレット量子化
  * ImageDataを直接変更（破壊的）
  */
-export function quantizeWithDithering(
+export const quantizeWithDithering = (
   imageData: ImageData,
   selectedColorIds: number[],
   ditheringThreshold: number,
   method: QuantizationMethod = "rgb-euclidean"
-): void {
+): void => {
   const data = imageData.data;
   const width = imageData.width;
   const height = imageData.height;

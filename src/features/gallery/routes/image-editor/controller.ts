@@ -402,35 +402,29 @@ export class EditorController {
   }
 
   private getCoordinatesFromUI(): DrawPosition | null {
-    const tlxInput = this.container.querySelector(
-      "#wps-coord-tlx"
-    ) as HTMLInputElement;
-    const tlyInput = this.container.querySelector(
-      "#wps-coord-tly"
-    ) as HTMLInputElement;
-    const pxxInput = this.container.querySelector(
-      "#wps-coord-pxx"
-    ) as HTMLInputElement;
-    const pxyInput = this.container.querySelector(
-      "#wps-coord-pxy"
-    ) as HTMLInputElement;
+    const inputs = {
+      tlx: this.container.querySelector("#wps-coord-tlx") as HTMLInputElement,
+      tly: this.container.querySelector("#wps-coord-tly") as HTMLInputElement,
+      pxx: this.container.querySelector("#wps-coord-pxx") as HTMLInputElement,
+      pxy: this.container.querySelector("#wps-coord-pxy") as HTMLInputElement,
+    };
 
-    if (!tlxInput || !tlyInput || !pxxInput || !pxyInput) return null;
+    if (!Object.values(inputs).every((input) => input)) return null;
 
-    const tlx = tlxInput.value.trim();
-    const tly = tlyInput.value.trim();
-    const pxx = pxxInput.value.trim();
-    const pxy = pxyInput.value.trim();
+    const values = {
+      tlx: inputs.tlx.value.trim(),
+      tly: inputs.tly.value.trim(),
+      pxx: inputs.pxx.value.trim(),
+      pxy: inputs.pxy.value.trim(),
+    };
 
-    // 全て空欄の場合はnull
-    if (!tlx && !tly && !pxx && !pxy) return null;
+    if (Object.values(values).every((v) => !v)) return null;
 
-    // 一部のみ入力されている場合、空欄を0として扱う
     return {
-      TLX: parseInt(tlx || "0"),
-      TLY: parseInt(tly || "0"),
-      PxX: parseInt(pxx || "0"),
-      PxY: parseInt(pxy || "0"),
+      TLX: parseInt(values.tlx || "0"),
+      TLY: parseInt(values.tly || "0"),
+      PxX: parseInt(values.pxx || "0"),
+      PxY: parseInt(values.pxy || "0"),
     };
   }
 
@@ -441,126 +435,80 @@ export class EditorController {
     downloadBlob(blob, `wplace-image-${Date.now()}.png`);
   }
 
-  private async saveCanvasToGallery(blob: Blob): Promise<void> {
+  private async saveToStorage(
+    blob: Blob,
+    key?: string,
+    isEditMode = false
+  ): Promise<void> {
     const { GalleryStorage } = await import(
       "../../../../states/galleryStorage"
     );
     const galleryStorage = new GalleryStorage();
 
-    // Generate thumbnail immediately (128x128)
     const { generateThumbnail } = await import("@/utils/thumbnail");
     const thumbnail = await generateThumbnail(blob, 128);
 
-    const galleryItem: GalleryItem =
-      this.isEditMode && this.editingItemKey
-        ? {
-            key: this.editingItemKey,
-            timestamp: Date.now(),
-            thumbnail,
-          }
-        : {
-            key: `gallery_${Date.now()}`,
-            timestamp: Date.now(),
-            thumbnail,
-          };
+    const galleryItem: GalleryItem = {
+      key: key || `gallery_${Date.now()}`,
+      timestamp: Date.now(),
+      thumbnail,
+    };
 
-    // 座標情報があれば追加（デフォルト表示ON）
     if (this.drawPosition) {
       galleryItem.drawPosition = this.drawPosition;
       galleryItem.drawEnabled = true;
       console.log("🧑‍🎨 : Saving with position:", this.drawPosition);
     }
 
-    // Save to Chrome Storage (metadata + thumbnail)
     await galleryStorage.save(galleryItem);
     console.log(
       "🧑‍🎨 : ",
-      this.isEditMode ? t`${"updated"}` : t`${"saved_to_gallery"}`
+      isEditMode ? t`${"updated"}` : t`${"saved_to_gallery"}`
     );
 
-    // Save to IndexedDB (only if it has drawPosition)
     if (this.drawPosition) {
-      try {
-        const { saveImageToIndexedDB } = await import(
-          "@/utils/indexed-db-bridge"
-        );
-        const success = await saveImageToIndexedDB(
-          galleryItem.key,
-          blob,
-          this.drawPosition
-        );
-
-        if (success) {
-          console.log("🧑‍🎨 : Saved to IndexedDB:", galleryItem.key);
-        } else {
-          console.warn("🧑‍🎨 : IndexedDB save failed:", galleryItem.key);
-        }
-      } catch (error) {
-        console.error("🧑‍🎨 : Failed to save to IndexedDB:", error);
-        // Continue even if IndexedDB save fails
-      }
+      await this.saveToIndexedDB(galleryItem.key, blob);
     }
 
     this.onSaveSuccess?.();
   }
 
+  private async saveToIndexedDB(key: string, blob: Blob): Promise<void> {
+    if (!this.drawPosition) return;
+
+    try {
+      const { saveImageToIndexedDB } = await import(
+        "@/utils/indexed-db-bridge"
+      );
+      const success = await saveImageToIndexedDB(
+        key,
+        blob,
+        this.drawPosition
+      );
+
+      if (success) {
+        console.log("🧑‍🎨 : Saved to IndexedDB:", key);
+      } else {
+        console.warn("🧑‍🎨 : IndexedDB save failed:", key);
+      }
+    } catch (error) {
+      console.error("🧑‍🎨 : Failed to save to IndexedDB:", error);
+    }
+  }
+
+  private async saveCanvasToGallery(blob: Blob): Promise<void> {
+    const coordPosition = this.getCoordinatesFromUI();
+    if (coordPosition) this.drawPosition = coordPosition;
+
+    const key =
+      this.isEditMode && this.editingItemKey ? this.editingItemKey : undefined;
+    await this.saveToStorage(blob, key, this.isEditMode);
+  }
+
   private async saveDirectlyToGallery(dataUrl: string): Promise<void> {
-    const key = `gallery_${Date.now()}`;
-
-    const { GalleryStorage } = await import(
-      "../../../../states/galleryStorage"
-    );
-    const galleryStorage = new GalleryStorage();
-
-    // Convert dataUrl to blob for thumbnail generation
     const response = await fetch(dataUrl);
     const blob = await response.blob();
-
-    // Generate thumbnail immediately (128x128)
-    const { generateThumbnail } = await import("@/utils/thumbnail");
-    const thumbnail = await generateThumbnail(blob, 128);
-
-    const galleryItem: GalleryItem = {
-      key: key,
-      timestamp: Date.now(),
-      thumbnail,
-    };
-
-    // 座標情報があれば追加（デフォルト表示ON）
-    if (this.drawPosition) {
-      galleryItem.drawPosition = this.drawPosition;
-      galleryItem.drawEnabled = true;
-      console.log("🧑‍🎨 : Saving directly with position:", this.drawPosition);
-    }
-
-    // Save to Chrome Storage (metadata + thumbnail)
-    await galleryStorage.save(galleryItem);
-    console.log("🧑‍🎨 : ", t`${"saved_to_gallery"}`);
-
-    // Save to IndexedDB (only if it has drawPosition)
-    if (this.drawPosition) {
-      try {
-        const { saveImageToIndexedDB } = await import(
-          "@/utils/indexed-db-bridge"
-        );
-        const success = await saveImageToIndexedDB(
-          galleryItem.key,
-          blob,
-          this.drawPosition
-        );
-
-        if (success) {
-          console.log("🧑‍🎨 : Saved to IndexedDB:", galleryItem.key);
-        } else {
-          console.warn("🧑‍🎨 : IndexedDB save failed:", galleryItem.key);
-        }
-      } catch (error) {
-        console.error("🧑‍🎨 : Failed to save to IndexedDB:", error);
-        // Continue even if IndexedDB save fails
-      }
-    }
-
-    this.onSaveSuccess?.();
+    await this.saveToStorage(blob);
   }
 
   private displayImage(imageSrc: string): void {

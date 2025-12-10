@@ -7,10 +7,7 @@ import {
   findPositionModal,
   findMapPin,
 } from "../../constants/selectors";
-import {
-  getOrCreateMapPinButtonGroup,
-  createMapPinGroupButton,
-} from "@/components/map-pin-button";
+import { addMapPinButton } from "@/utils/map-pin-helper";
 import { TimeTravelRouter, TimeTravelRoute } from "./router";
 import {
   TimeTravelUI,
@@ -63,28 +60,13 @@ export const initTimeTravel = (): void => {
     renderCurrentRoute(route);
   });
 
-  /**
-   * マップピン周辺にボタンを作成
-   */
   const createMapPinButtons = (container: Element): void => {
-    const group = getOrCreateMapPinButtonGroup(container);
-
-    // 既存ボタンチェック
-    if (group.querySelector("#timetravel-btn")) {
-      // console.log("🧑‍🎨 : TimeTravel button already exists");
-      return;
-    }
-
-    const button = createMapPinGroupButton({
-      // icon: "⏰",
+    addMapPinButton(container, {
+      id: "timetravel-btn",
       iconSrc: IMG_ICON_TIME_TRAVEL,
       text: t`${"timetravel"}`,
       onClick: () => showCurrentPosition(),
     });
-    button.id = "timetravel-btn";
-
-    group.appendChild(button);
-    console.log("🧑‍🎨 : TimeTravel button added to group");
   };
 
   const buttonConfigs: ElementConfig[] = [

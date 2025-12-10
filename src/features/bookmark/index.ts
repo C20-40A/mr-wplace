@@ -9,10 +9,7 @@ import {
   findPositionModal,
   findMapPin,
 } from "@/constants/selectors";
-import {
-  getOrCreateMapPinButtonGroup,
-  createMapPinGroupButton,
-} from "@/components/map-pin-button";
+import { addMapPinButton } from "@/utils/map-pin-helper";
 import { BookmarkStorage } from "./storage";
 import { ImportExportService } from "./import-export";
 import { getCurrentPosition, gotoPosition } from "@/utils/position";
@@ -117,43 +114,32 @@ const editBookmark = async (id: number): Promise<void> => {
 };
 
 const renderCurrentRoute = async (route: string): Promise<void> => {
-  const listScreen = document.getElementById("wps-bookmark-list-screen");
-  const coordinateJumperScreen = document.getElementById(
-    "wps-coordinate-jumper-screen"
-  );
-  const locationSearchScreen = document.getElementById(
-    "wps-location-search-screen"
-  );
-  const editScreen = document.getElementById("wps-bookmark-edit-screen");
+  const screens = {
+    list: document.getElementById("wps-bookmark-list-screen"),
+    coordinateJumper: document.getElementById("wps-coordinate-jumper-screen"),
+    locationSearch: document.getElementById("wps-location-search-screen"),
+    edit: document.getElementById("wps-bookmark-edit-screen"),
+  };
 
-  if (
-    !listScreen ||
-    !coordinateJumperScreen ||
-    !locationSearchScreen ||
-    !editScreen
-  )
-    return;
+  if (!Object.values(screens).every((s) => s)) return;
 
   // Hide all screens
-  listScreen.style.display = "none";
-  coordinateJumperScreen.style.display = "none";
-  locationSearchScreen.style.display = "none";
-  editScreen.style.display = "none";
+  Object.values(screens).forEach((s) => (s!.style.display = "none"));
 
   // Show current route
   switch (route) {
     case "list":
-      listScreen.style.display = "flex";
+      screens.list!.style.display = "flex";
       render();
       break;
     case "coordinate-jumper":
-      coordinateJumperScreen.style.display = "block";
-      renderCoordinateJumper(coordinateJumperScreen);
+      screens.coordinateJumper!.style.display = "block";
+      renderCoordinateJumper(screens.coordinateJumper!);
       break;
     case "location-search":
-      locationSearchScreen.style.display = "block";
+      screens.locationSearch!.style.display = "block";
       const { renderLocationSearch } = await import("./routes/location-search");
-      renderLocationSearch(locationSearchScreen);
+      renderLocationSearch(screens.locationSearch!);
       break;
   }
 };
@@ -488,28 +474,13 @@ const setupModal = (): void => {
   });
 };
 
-/**
- * マップピン周辺にボタンを作成
- */
 const createMapPinButtons = (container: Element): void => {
-  const group = getOrCreateMapPinButtonGroup(container);
-
-  // 既存ボタンチェック
-  if (group.querySelector("#bookmark-btn")) {
-    // console.log("🧑‍🎨 : Bookmark button already exists");
-    return;
-  }
-
-  const button = createMapPinGroupButton({
-    // iconSrc: IMG_ICON_BOOKMARK,
+  addMapPinButton(container, {
+    id: "bookmark-btn",
     icon: "⭐",
     text: t`${"save_location"}`,
     onClick: () => addBookmark(),
   });
-  button.id = "bookmark-btn";
-
-  group.appendChild(button);
-  console.log("🧑‍🎨 : Bookmark button added to group");
 };
 
 const init = (): void => {

@@ -33,22 +33,22 @@ export const SORT_ORDER_OPTIONS: SortOrderOption[] = [
 /**
  * RGBから読みやすいテキスト色を計算
  */
-export function getContrastTextColor(r: number, g: number, b: number): string {
+export const getContrastTextColor = (r: number, g: number, b: number): string => {
   const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
   return luminance > 0.5 ? "#000000" : "#ffffff";
-}
+};
 
 /**
  * RGB値から統計キーを生成
  */
-export function getColorKey(r: number, g: number, b: number): string {
+export const getColorKey = (r: number, g: number, b: number): string => {
   return `${r},${g},${b}`;
-}
+};
 
 /**
  * 統計データからHTML生成（残り0pxなら空文字）
  */
-export function createStatsHtml(stats: ColorStats): string {
+export const createStatsHtml = (stats: ColorStats): string => {
   const remaining = stats.total - stats.matched;
   if (remaining === 0) return "";
 
@@ -64,22 +64,22 @@ export function createStatsHtml(stats: ColorStats): string {
       <div style="font-size: 0.625rem; margin-left: 0.125rem; white-space: nowrap;">${remaining}px</div>
     </div>
   `;
-}
+};
 
 /**
  * Enhanced Modeからラベルキーを取得
  */
-export function getEnhancedModeLabelKey(mode: EnhancedMode): string {
+export const getEnhancedModeLabelKey = (mode: EnhancedMode): string => {
   return (
     ENHANCED_MODE_OPTIONS.find((m) => m.value === mode)?.labelKey ??
     "enhanced_mode_dot"
   );
-}
+};
 
 /**
  * localStorageから現在選択中の色IDを取得
  */
-export function getCurrentlySelectedColorId(): number | null {
+export const getCurrentlySelectedColorId = (): number | null => {
   const selectedColorStr = window.localStorage.getItem("selected-color");
   return selectedColorStr ? parseInt(selectedColorStr) : null;
-}
+};

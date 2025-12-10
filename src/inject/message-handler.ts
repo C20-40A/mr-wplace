@@ -30,131 +30,42 @@ import {
   stopAutoCanvasClick,
 } from "./auto-canvas-click";
 
-/**
- * Setup message event listener for handling various events
- */
+type MessageHandler = (data: any) => void | Promise<void>;
+
+const messageHandlers: Record<string, MessageHandler> = {
+  "mr-wplace-processed": handleProcessedBlob,
+  "wplace-studio-flyto": handleFlyTo,
+  "mr-wplace-theme-update": handleThemeUpdate,
+  "mr-wplace-data-saver-update": handleDataSaverUpdate,
+  "mr-wplace-cache-size-update": handleCacheSizeUpdate,
+  "mr-wplace-compute-device": handleComputeDeviceUpdate,
+  "mr-wplace-show-unplaced-only": handleShowUnplacedOnlyUpdate,
+  "mr-wplace-color-filter": handleColorFilterUpdate,
+  "mr-wplace-tile-boundaries-update": handleTileBoundariesUpdate,
+  "mr-wplace-cache-clear": handleCacheClear,
+  "mr-wplace-gallery-images": handleGalleryImages,
+  "mr-wplace-snapshots": handleSnapshotsUpdate,
+  "mr-wplace-text-layers": handleTextLayersUpdate,
+  "mr-wplace-layer-save": handleLayerSave,
+  "mr-wplace-save-image-request": handleSaveImageRequest,
+  "mr-wplace-request-stats": handleStatsRequest,
+  "mr-wplace-request-pixel-color": handlePixelColorRequest,
+  "mr-wplace-request-tile-stats": handleTileStatsRequest,
+  "mr-wplace-request-image-stats": handleImageStatsRequest,
+  "mr-wplace-compute-total-stats": handleComputeTotalStats,
+  "mr-wplace-auto-canvas-click-start": startAutoCanvasClick,
+  "mr-wplace-auto-canvas-click-stop": stopAutoCanvasClick,
+};
+
 export const setupMessageHandler = (): void => {
-  // Setup IndexedDB bridge handlers (dataUrl fetch, thumbnail generation)
   setupIndexedDBBridgeHandlers();
 
   window.addEventListener("message", async (event: MessageEvent) => {
     const { source } = event.data;
+    const handler = messageHandlers[source];
 
-    // Legacy processed blob handler
-    if (source === "mr-wplace-processed") {
-      handleProcessedBlob(event.data);
-      return;
-    }
-
-    // Navigation handler
-    if (source === "wplace-studio-flyto") {
-      handleFlyTo(event.data);
-      return;
-    }
-
-    // State update handlers
-    if (source === "mr-wplace-theme-update") {
-      handleThemeUpdate(event.data);
-      return;
-    }
-
-    if (source === "mr-wplace-data-saver-update") {
-      handleDataSaverUpdate(event.data);
-      return;
-    }
-
-    if (source === "mr-wplace-cache-size-update") {
-      handleCacheSizeUpdate(event.data);
-      return;
-    }
-
-    if (source === "mr-wplace-compute-device") {
-      handleComputeDeviceUpdate(event.data);
-      return;
-    }
-
-    if (source === "mr-wplace-show-unplaced-only") {
-      handleShowUnplacedOnlyUpdate(event.data);
-      return;
-    }
-
-    if (source === "mr-wplace-color-filter") {
-      handleColorFilterUpdate(event.data);
-      return;
-    }
-
-    if (source === "mr-wplace-tile-boundaries-update") {
-      handleTileBoundariesUpdate(event.data);
-      return;
-    }
-
-    if (source === "mr-wplace-cache-clear") {
-      handleCacheClear();
-      return;
-    }
-
-    // Overlay update handlers
-    if (source === "mr-wplace-gallery-images") {
-      await handleGalleryImages(event.data);
-      return;
-    }
-
-    if (source === "mr-wplace-snapshots") {
-      await handleSnapshotsUpdate(event.data);
-      return;
-    }
-
-    if (source === "mr-wplace-text-layers") {
-      await handleTextLayersUpdate(event.data);
-      return;
-    }
-
-    // Migration architecture handlers
-    if (source === "mr-wplace-layer-save") {
-      await handleLayerSave(event.data);
-      return;
-    }
-
-    if (source === "mr-wplace-save-image-request") {
-      await handleSaveImageRequest(event.data);
-      return;
-    }
-
-    // Request handlers
-    if (source === "mr-wplace-request-stats") {
-      handleStatsRequest(event.data);
-      return;
-    }
-
-    if (source === "mr-wplace-request-pixel-color") {
-      await handlePixelColorRequest(event.data);
-      return;
-    }
-
-    if (source === "mr-wplace-request-tile-stats") {
-      handleTileStatsRequest(event.data);
-      return;
-    }
-
-    if (source === "mr-wplace-request-image-stats") {
-      await handleImageStatsRequest(event.data);
-      return;
-    }
-
-    if (source === "mr-wplace-compute-total-stats") {
-      await handleComputeTotalStats(event.data);
-      return;
-    }
-
-    // Auto canvas click handlers
-    if (source === "mr-wplace-auto-canvas-click-start") {
-      startAutoCanvasClick();
-      return;
-    }
-
-    if (source === "mr-wplace-auto-canvas-click-stop") {
-      stopAutoCanvasClick();
-      return;
+    if (handler) {
+      await handler(event.data);
     }
   });
 };

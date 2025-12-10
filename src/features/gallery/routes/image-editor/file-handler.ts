@@ -80,12 +80,12 @@ export async function showImageSizeDialog(
 /**
  * 3択ダイアログ表示（オーバーレイとして追加）
  */
-function showThreeChoiceDialog(
+const showThreeChoiceDialog = (
   width: number,
   height: number,
   maxSize: number,
   container: HTMLElement
-): Promise<"resize" | "edit" | "addToGallery"> {
+): Promise<"resize" | "edit" | "addToGallery"> => {
   return new Promise((resolve) => {
     // ダイアログHTML生成（オーバーレイ）
     const dialogOverlay = document.createElement("div");
@@ -198,7 +198,7 @@ export async function blobToDataUrl(blob: Blob): Promise<string> {
 /**
  * Blobダウンロード
  */
-export function downloadBlob(blob: Blob, filename: string): void {
+export const downloadBlob = (blob: Blob, filename: string): void => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -213,9 +213,9 @@ export function downloadBlob(blob: Blob, filename: string): void {
  * ファイル名から座標情報抽出
  * 形式: ${TLX}-${TLY}-${PxX}-${PxY}.png
  */
-export function parseDrawPositionFromFileName(
+export const parseDrawPositionFromFileName = (
   fileName: string
-): DrawPosition | null {
+): DrawPosition | null => {
   const match = fileName.match(/^(\d+)-(\d+)-(\d+)-(\d+)\.png$/);
   if (!match) return null;
 

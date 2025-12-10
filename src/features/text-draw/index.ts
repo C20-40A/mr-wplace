@@ -4,10 +4,7 @@ import {
 } from "@/components/element-observer";
 import { findPositionModal, findMapPin } from "@/constants/selectors";
 import { createTextInputButton, TextDrawUI, TextInstance } from "./ui";
-import {
-  getOrCreateMapPinButtonGroup,
-  createMapPinGroupButton,
-} from "@/components/map-pin-button";
+import { addMapPinButton } from "@/utils/map-pin-helper";
 import type { TextDrawAPI } from "@/core/di";
 import { drawText, moveText, deleteText } from "./text-manipulator";
 import { t } from "@/i18n/manager";
@@ -59,27 +56,13 @@ const handleDeleteText = async (key: string): Promise<void> => {
   textDrawUI.updateList(textInstances);
 };
 
-/**
- * マップピン周辺にボタンを作成
- */
 const createMapPinButtons = (container: Element): void => {
-  const group = getOrCreateMapPinButtonGroup(container);
-
-  // 既存ボタンチェック
-  if (group.querySelector("#text-draw-btn")) {
-    // console.log("🧑‍🎨 : Text draw button already exists");
-    return;
-  }
-
-  const button = createMapPinGroupButton({
+  addMapPinButton(container, {
+    id: "text-draw-btn",
     icon: "✏️",
     text: t`${"text_draw"}`,
     onClick: () => showModal(),
   });
-  button.id = "text-draw-btn";
-
-  group.appendChild(button);
-  console.log("🧑‍🎨 : Text draw button added to group");
 };
 
 // ========================================

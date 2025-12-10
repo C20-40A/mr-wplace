@@ -21,7 +21,7 @@ interface ImportData {
   source: string;
 }
 
-function validateImportData(data: unknown): data is ImportData {
+const validateImportData = (data: unknown): data is ImportData => {
   if (!data || typeof data !== "object") return false;
 
   const obj = data as Record<string, unknown>;
@@ -33,9 +33,9 @@ function validateImportData(data: unknown): data is ImportData {
   if (typeof obj.source !== "string") return false;
 
   return true;
-}
+};
 
-function validateBookmark(item: unknown): item is Bookmark {
+const validateBookmark = (item: unknown): item is Bookmark => {
   if (!item || typeof item !== "object") return false;
 
   const obj = item as Record<string, unknown>;

@@ -5,39 +5,21 @@ import {
 import { getCurrentPosition } from "../../utils/position";
 import { findPositionModal, findMapPin } from "../../constants/selectors";
 import { createDrawButton } from "./ui";
-import {
-  getOrCreateMapPinButtonGroup,
-  createMapPinGroupButton,
-} from "@/components/map-pin-button";
+import { addMapPinButton } from "@/utils/map-pin-helper";
 import { di } from "../../core/di";
 import { t } from "@/i18n/manager";
 import type { GalleryItem } from "@/states/galleryStorage";
 
-/**
- * マップピン周辺にボタンを作成
- */
 const createMapPinButtons = (
   container: Element,
   drawInstance: Drawing
 ): void => {
-  const group = getOrCreateMapPinButtonGroup(container);
-
-  // 既存ボタンチェック
-  if (group.querySelector("#drawing-btn")) {
-    // console.log("🧑‍🎨 : Drawing button already exists");
-    return;
-  }
-
-  const button = createMapPinGroupButton({
-    // iconSrc: IMG_ICON_GALLERY,
+  addMapPinButton(container, {
+    id: "drawing-btn",
     icon: "🖼️",
     text: t`${"draw_image"}`,
     onClick: () => drawInstance.openDrawMode(),
   });
-  button.id = "drawing-btn";
-
-  group.appendChild(button);
-  console.log("🧑‍🎨 : Drawing button added to group");
 };
 
 /**
