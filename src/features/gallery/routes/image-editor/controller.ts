@@ -447,60 +447,31 @@ export class EditorController {
     key?: string,
     isEditMode = false
   ): Promise<void> {
-    const { GalleryStorage } = await import(
-      "../../../../states/galleryStorage"
+    const itemKey = key || `gallery_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+
+    // Convert blob to dataUrl for v2 API
+    const dataUrl = await blobToDataUrl(blob);
+
+    // Use v2 API directly - saves image + thumbnail + metadata + tiles in one call
+    const { saveGalleryItem } = await import(
+      "@/core/bridge/gallery-storage-bridge"
     );
-    const galleryStorage = new GalleryStorage();
 
-    const { generateThumbnail } = await import("@/utils/thumbnail");
-    const thumbnail = await generateThumbnail(blob, 128);
-
-    const galleryItem: GalleryItem = {
-      key: key || `gallery_${Date.now()}`,
+    await saveGalleryItem(itemKey, dataUrl, {
+      title: undefined,
+      coords: this.drawPosition || undefined,
+      visible: this.drawPosition ? true : false,
+      zIndex: 0,
       timestamp: Date.now(),
-      thumbnail,
-    };
+    });
 
-    if (this.drawPosition) {
-      galleryItem.drawPosition = this.drawPosition;
-      galleryItem.drawEnabled = true;
-      console.log("🧑‍🎨 : Saving with position:", this.drawPosition);
-    }
-
-    await galleryStorage.save(galleryItem);
     console.log(
       "🧑‍🎨 : ",
-      isEditMode ? t`${"updated"}` : t`${"saved_to_gallery"}`
+      isEditMode ? t`${"updated"}` : t`${"saved_to_gallery"}`,
+      itemKey
     );
 
-    if (this.drawPosition) {
-      await this.saveToIndexedDB(galleryItem.key, blob);
-    }
-
     this.onSaveSuccess?.();
-  }
-
-  private async saveToIndexedDB(key: string, blob: Blob): Promise<void> {
-    if (!this.drawPosition) return;
-
-    try {
-      const { saveImageToIndexedDB } = await import(
-        "@/utils/indexed-db-bridge"
-      );
-      const success = await saveImageToIndexedDB(
-        key,
-        blob,
-        this.drawPosition
-      );
-
-      if (success) {
-        console.log("🧑‍🎨 : Saved to IndexedDB:", key);
-      } else {
-        console.warn("🧑‍🎨 : IndexedDB save failed:", key);
-      }
-    } catch (error) {
-      console.error("🧑‍🎨 : Failed to save to IndexedDB:", error);
-    }
   }
 
   private async saveCanvasToGallery(blob: Blob): Promise<void> {

@@ -31,6 +31,7 @@ export interface TileDrawInstance {
     right: number;
     bottom: number;
   };
+  affectedTiles?: string[]; // v2: pre-calculated affected tile keys
 }
 
 /** タイル処理結果 */

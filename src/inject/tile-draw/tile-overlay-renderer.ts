@@ -436,10 +436,14 @@ export const drawOverlayLayersOnTile = async (
 ): Promise<Blob> => {
   if (overlayLayers.length === 0) return tileBlob;
 
-  const coordStr =
+  // padded format for legacy compatibility: "0005,0003"
+  const coordStrPadded =
     tileCoords[0].toString().padStart(4, "0") +
     "," +
     tileCoords[1].toString().padStart(4, "0");
+
+  // v2 format: "5,3" prefix (no padding)
+  const coordStrV2Prefix = `${tileCoords[0]},${tileCoords[1]},`;
 
   // 現在タイルに重なる全オーバーレイ画像のリストを取得
   const matchingTiles: Array<{
@@ -450,7 +454,20 @@ export const drawOverlayLayersOnTile = async (
   for (const instance of overlayLayers) {
     if (!instance.drawEnabled) continue;
 
-    // Check if this layer is optimized and uses bounds checking
+    // v2: Use pre-calculated affectedTiles for efficient lookup
+    // affectedTiles format: "tx,ty,pxX,pxY" (no padding, e.g., "5,3,0,0")
+    if (instance.affectedTiles && instance.affectedTiles.length > 0) {
+      // Filter affectedTiles that match current tile coordinates
+      const matchingAffected = instance.affectedTiles.filter((tileKey) =>
+        tileKey.startsWith(coordStrV2Prefix)
+      );
+      for (const tileKey of matchingAffected) {
+        matchingTiles.push({ tileKey, instance });
+      }
+      continue;
+    }
+
+    // Legacy: Check if this layer is optimized and uses bounds checking
     if (instance.isOptimized && instance.bounds) {
       // Calculate tile pixel bounds
       const tilePixelLeft = tileCoords[0] * 1000;
@@ -521,8 +538,8 @@ export const drawOverlayLayersOnTile = async (
               .toString()
               .padStart(3, "0")},${pixelOffsetY.toString().padStart(3, "0")}`;
 
-            // Only add if this tile key starts with coordStr (matches current tile)
-            if (tileKey.startsWith(coordStr)) {
+            // Only add if this tile key starts with coordStrPadded (matches current tile)
+            if (tileKey.startsWith(coordStrPadded)) {
               matchingTiles.push({ tileKey, instance });
             }
           }
@@ -531,7 +548,7 @@ export const drawOverlayLayersOnTile = async (
     } else if (instance.tiles) {
       // Non-optimized layer - use existing tile keys
       const tiles = Object.keys(instance.tiles).filter((tile) =>
-        tile.startsWith(coordStr)
+        tile.startsWith(coordStrPadded)
       );
       for (const tileKey of tiles) {
         matchingTiles.push({ tileKey, instance });
@@ -544,11 +561,11 @@ export const drawOverlayLayersOnTile = async (
   // ポーリング累積防止: 同タイルのみ統計delete
   for (const { instance } of matchingTiles) {
     const imageStatsMap = perTileColorStats.get(instance.imageKey);
-    if (imageStatsMap?.has(coordStr)) {
+    if (imageStatsMap?.has(coordStrPadded)) {
       // console.log(
-      //   `🧑‍🎨 : Deleting existing stats for tile ${coordStr}, image ${instance.imageKey}`
+      //   `🧑‍🎨 : Deleting existing stats for tile ${coordStrPadded}, image ${instance.imageKey}`
       // );
-      imageStatsMap.delete(coordStr);
+      imageStatsMap.delete(coordStrPadded);
     }
   }
 
@@ -609,33 +626,58 @@ export const drawOverlayLayersOnTile = async (
     const coords = tileKey.split(",");
     let paintedTilebitmap = instance.tiles?.[tileKey];
 
-    // If tile not in memory, try loading from IndexedDB
+    // If tile not in memory, try loading from IndexedDB v2 first, then legacy
     if (!paintedTilebitmap) {
-      const { getLayerRepository } = await import("../states/migrationState");
-      const repository = getLayerRepository();
-
-      if (repository) {
-        try {
-          const loadedBitmap = await repository.getTile(
-            instance.imageKey,
-            tileKey
-          );
-
-          if (loadedBitmap) {
-            paintedTilebitmap = loadedBitmap;
+      // Try new GalleryRepository v2 first
+      try {
+        const { getGalleryRepository } = await import("../db/gallery-repository");
+        const repoV2 = getGalleryRepository();
+        if (repoV2) {
+          const tileBlob = await repoV2.getTile(instance.imageKey, tileKey);
+          if (tileBlob) {
+            paintedTilebitmap = await createImageBitmap(tileBlob);
             // Cache in memory for faster subsequent access
             if (!instance.tiles) {
               instance.tiles = {};
             }
-            instance.tiles[tileKey] = loadedBitmap;
+            instance.tiles[tileKey] = paintedTilebitmap;
             console.log(
-              `🧑‍🎨 : Loaded tile ${tileKey} from IndexedDB for ${instance.imageKey}`
+              `🧑‍🎨 : Loaded tile ${tileKey} from IndexedDB v2 for ${instance.imageKey}`
             );
           }
-        } catch (error) {
-          console.warn(
-            `🧑‍🎨 : Failed to load tile ${tileKey} from IndexedDB: ${error}`
-          );
+        }
+      } catch (error) {
+        // v2 not available, try legacy
+      }
+
+      // Fallback to legacy repository
+      if (!paintedTilebitmap) {
+        const { getLayerRepository } = await import("../states/migrationState");
+        const repository = getLayerRepository();
+
+        if (repository) {
+          try {
+            const loadedBitmap = await repository.getTile(
+              instance.imageKey,
+              tileKey
+            );
+
+            if (loadedBitmap) {
+              paintedTilebitmap = loadedBitmap;
+              // Cache in memory for faster subsequent access
+              if (!instance.tiles) {
+                instance.tiles = {};
+              }
+              instance.tiles[tileKey] = loadedBitmap;
+              console.log(
+                `🧑‍🎨 : Loaded tile ${tileKey} from legacy IndexedDB for ${instance.imageKey}`
+              );
+            }
+          } catch (error) {
+            console.warn(
+              `🧑‍🎨 : Failed to load tile ${tileKey} from IndexedDB: ${error}`
+            );
+          }
         }
       }
     }
@@ -666,13 +708,13 @@ export const drawOverlayLayersOnTile = async (
     if (!perTileColorStats.has(imageKey)) {
       perTileColorStats.set(imageKey, new Map());
     }
-    perTileColorStats.get(imageKey)!.set(coordStr, stats);
+    perTileColorStats.get(imageKey)!.set(coordStrPadded, stats);
   }
 
   // Notify content script to save statistics to storage
   // Do this asynchronously to avoid blocking tile rendering
   if (tempStatsMap.size > 0) {
-    notifyStatsUpdate(tempStatsMap, coordStr);
+    notifyStatsUpdate(tempStatsMap, coordStrPadded);
   }
 
   const result = await canvas.convertToBlob({ type: "image/png" });

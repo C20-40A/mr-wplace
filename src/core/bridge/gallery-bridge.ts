@@ -1,49 +1,60 @@
 /**
  * Gallery Bridge - Content ↔ Inject communication for gallery images
+ *
+ * NOTE: Migration後は新しいIndexedDB v2を使用
  */
+
+import {
+  getAllGalleryMetadata,
+  getGalleryImageDataUrl,
+} from "./gallery-storage-bridge";
 
 /**
  * Send gallery images to inject side for tile processing
+ *
  * IMPORTANT: Call this after any gallery image changes (add, move, toggle, delete)
- * Also sends stored statistics for restoration after reload
+ *
+ * New flow (v2):
+ * 1. Get all metadata from IndexedDB v2
+ * 2. Send metadata to inject side
+ * 3. Inject side uses metadata.affectedTiles for efficient tile lookup
  */
 export const sendGalleryImagesToInject = async () => {
-  const { GalleryStorage } = await import("@/states/galleryStorage");
-  const galleryStorage = new GalleryStorage();
-  const images = await galleryStorage.getAll(); // Send thumbnails only (lightweight)
+  try {
+    const metadata = await getAllGalleryMetadata();
 
-  // Send ALL images with drawPosition (including disabled ones)
-  // Inject side will handle IndexedDB storage for all items
-  // But only add enabled items to overlay layers
-  const allImages = images
-    .filter((img) => img.drawPosition)
-    .sort((a, b) => (a.layerOrder ?? 0) - (b.layerOrder ?? 0));
+    // Filter to items with coords (drawable items)
+    const drawableItems = metadata
+      .filter((m) => m.coords)
+      .sort((a, b) => a.zIndex - b.zIndex);
 
-  const messageData = {
-    source: "mr-wplace-gallery-images",
-    images: allImages,
-  };
+    const messageData = {
+      source: "mr-wplace-gallery-images-v2",
+      items: drawableItems,
+    };
 
-  // Log data size for performance monitoring
-  const dataSize = JSON.stringify(messageData).length;
-  const dataSizeMB = (dataSize / 1024 / 1024).toFixed(2);
-  console.log(
-    `🧑‍🎨 : Sending ${allImages.length} gallery images to inject side (${dataSizeMB}MB)`
-  );
+    console.log(
+      `🧑‍🎨 : Sending ${drawableItems.length} gallery items to inject side (v2)`
+    );
 
-  window.postMessage(messageData, "*");
-
-  console.log(`🧑‍🎨 : Sent ${allImages.length} gallery images to inject side`);
+    window.postMessage(messageData, "*");
+  } catch (error) {
+    console.error("🧑‍🎨 : Failed to send gallery images:", error);
+  }
 };
 
 /**
  * Request total stats computation for a newly saved image
  * Called after image is saved to storage
  */
-export const requestTotalStatsComputation = (
-  imageKey: string,
-  dataUrl: string
-) => {
+export const requestTotalStatsComputation = async (imageKey: string) => {
+  // Get full image from IndexedDB v2
+  const dataUrl = await getGalleryImageDataUrl(imageKey);
+  if (!dataUrl) {
+    console.warn(`🧑‍🎨 : Cannot compute stats - image not found: ${imageKey}`);
+    return;
+  }
+
   window.postMessage(
     {
       source: "mr-wplace-compute-total-stats",

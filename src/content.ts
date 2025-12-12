@@ -1,14 +1,10 @@
 import { TileSnapshot } from "@/features/time-travel/utils/tile-snapshot";
 import { NotificationModal } from "@/features/user-status/ui/notification-modal";
 import { runtime } from "@/utils/browser-api";
-// Doctor feature removed in Phase 3 - functionality integrated into SAVER/MIGRATOR
 import { I18nManager } from "@/i18n/manager";
 import { initializeFeatures } from "@/core/initializer";
 import { setupMessageHandlers } from "@/core/message-handlers";
-import {
-  sendGalleryImagesToInject,
-  sendTileBoundariesToInject,
-} from "@/core/bridge";
+import { sendTileBoundariesToInject } from "@/core/bridge";
 
 // Re-export bridge functions for backward compatibility
 export {
@@ -23,31 +19,48 @@ export {
   sendTileBoundariesToInject,
 } from "@/core/bridge";
 
-//  Data migration - convert legacy dataUrl to new format
-// Run in background to avoid blocking initialization
-const runMigrationInBackground = async () => {
-  try {
-    const { needsMigration, runDataMigration } = await import(
-      "@/features/migration/data-migrator"
-    );
-    if (!(await needsMigration())) return;
+/**
+ * Run migration with modal UI
+ */
+const runMigrationWithModal = async (): Promise<void> => {
+  const { needsMigration, runDataMigration } = await import(
+    "@/features/migration/data-migrator"
+  );
 
-    console.log("🧑‍🎨 [Migration] Starting background migration...");
-    const result = await runDataMigration();
+  if (!(await needsMigration())) {
+    console.log("🧑‍🎨 [Migration] No migration needed");
+    return;
+  }
+
+  console.log("🧑‍🎨 [Migration] Migration needed, showing modal...");
+
+  const { MigrationModal } = await import(
+    "@/features/migration/migration-modal"
+  );
+  const modal = new MigrationModal();
+  modal.show();
+
+  try {
+    const result = await runDataMigration((progress) => {
+      modal.updateProgress(progress);
+    });
 
     if (result.failed.length > 0) {
       console.warn(
-        `🧑‍🎨 [Migration] Some items failed to migrate:${result.failed}`
+        `🧑‍🎨 [Migration] Some items failed to migrate: ${result.failed.join(", ")}`
       );
     }
 
-    // Refresh gallery images in inject context after migration
-    if (result.migrated > 0) {
-      await sendGalleryImagesToInject();
-      console.log(`🧑‍🎨 [Migration] Gallery images refreshed`);
-    }
+    await modal.complete();
+    console.log(
+      `🧑‍🎨 [Migration] Complete: ${result.migrated} migrated, ${result.skipped} skipped`
+    );
   } catch (error) {
-    console.error("🧑‍🎨 [Migration] Migration failed (non-critical):", error);
+    console.error("🧑‍🎨 [Migration] Migration failed:", error);
+    modal.showError(error instanceof Error ? error.message : "Unknown error");
+    // Keep modal open for 2s to show error
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    modal.close();
   }
 };
 
@@ -118,12 +131,6 @@ const registerMessageListeners = () => {
       return;
     }
 
-    if (message.type === "GALLERY_UPDATED") {
-      // ギャラリーデータが更新されたらinject側に同期
-      await sendGalleryImagesToInject();
-      return;
-    }
-
     if (message.type === "TILE_BOUNDARIES_CHANGED") {
       // タイル境界表示設定が変更されたらinject側に通知
       await sendTileBoundariesToInject();
@@ -137,9 +144,10 @@ registerMessageListeners();
 (async () => {
   console.log("🧑‍🎨: Starting initialization...");
 
-  runMigrationInBackground();
-
   await loadInjectScript();
+
+  // Run migration before initializing features (blocking)
+  await runMigrationWithModal();
 
   await initializeMainFeatures();
 })();

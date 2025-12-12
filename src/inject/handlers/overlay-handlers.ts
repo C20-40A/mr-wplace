@@ -347,6 +347,71 @@ export const handleGalleryImages = async (data: {
 };
 
 /**
+ * Handle gallery images v2 (IndexedDB v2 based)
+ * Uses metadata with affectedTiles for efficient tile lookup
+ */
+export const handleGalleryImagesV2 = async (data: {
+  items: Array<{
+    id: string;
+    title?: string;
+    coords?: { TLX: number; TLY: number; PxX: number; PxY: number };
+    width: number;
+    height: number;
+    affectedTiles: string[];
+    visible: boolean;
+    zIndex: number;
+    timestamp: number;
+  }>;
+}): Promise<void> => {
+  const { overlayLayers } = await import("../tile-draw");
+
+  // Remove previously tracked gallery images from overlay layers
+  if (window.mrWplaceGalleryImageKeys) {
+    for (const key of window.mrWplaceGalleryImageKeys) {
+      removePreparedOverlayImageByKey(key);
+    }
+  }
+
+  const imageKeys: string[] = [];
+
+  // Process each visible item with coords
+  for (const item of data.items) {
+    if (!item.visible || !item.coords) continue;
+
+    // Calculate bounds from coords and dimensions
+    const bounds = {
+      top: item.coords.TLY * 1000 + item.coords.PxY,
+      left: item.coords.TLX * 1000 + item.coords.PxX,
+      right: item.coords.TLX * 1000 + item.coords.PxX + item.width,
+      bottom: item.coords.TLY * 1000 + item.coords.PxY + item.height,
+    };
+
+    // Add directly to overlay layers with affectedTiles for efficient lookup
+    overlayLayers.push({
+      coords: [item.coords.TLX, item.coords.TLY, item.coords.PxX, item.coords.PxY],
+      tiles: null, // Tiles loaded on-demand from IndexedDB v2
+      imageKey: item.id,
+      drawEnabled: true,
+      isOptimized: true, // v2 items are always optimized
+      bounds,
+      affectedTiles: item.affectedTiles,
+    });
+
+    imageKeys.push(item.id);
+    console.log(
+      `🧑‍🎨 : Registered v2 layer ${item.id} (${item.affectedTiles.length} affected tiles)`
+    );
+  }
+
+  // Save current image keys for next update
+  window.mrWplaceGalleryImageKeys = new Set(imageKeys);
+
+  console.log(
+    `🧑‍🎨 : Gallery images v2 sync complete - ${imageKeys.length} layers registered`
+  );
+};
+
+/**
  * Handle snapshots update from content script
  * Snapshots are tile-specific overlays for time-travel feature
  */

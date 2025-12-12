@@ -1,12 +1,8 @@
 import { setupFetchInterceptor } from "./fetch-interceptor";
 import { setupMapObserver } from "./map-instance";
 import { setupMessageHandler } from "./message-handler";
-import { setupIndexedDBBridgeHandlers } from "./handlers/indexeddb-bridge-handlers";
 import { tileCacheDB } from "./cache-storage";
-import { openDatabase } from "./db/schema";
-import { LayerRepository } from "./db/layer-repository";
-import { createMigrationWorker, WorkerMessenger } from "./workers/messaging";
-import { setupPerformanceMonitor } from "./utils/performance-monitor";
+import { initGalleryRepository } from "./db/gallery-repository";
 
 // CRITICAL: Setup fetch interceptor IMMEDIATELY and SYNCHRONOUSLY
 // to catch /me requests before WPlace app code runs
@@ -58,46 +54,19 @@ import { setupPerformanceMonitor } from "./utils/performance-monitor";
 
     // Run initialization tasks in parallel
     await Promise.all([
-      // Initialize IndexedDB (legacy tile cache)
+      // Initialize IndexedDB (legacy tile cache for data-saver)
       tileCacheDB.init().catch((error) => {
-        console.error("🧑‍🎨: Failed to init IndexedDB:", error);
+        console.error("🧑‍🎨: Failed to init tile cache DB:", error);
       }),
 
-      // Initialize migration architecture (Worker + Repository)
-      (async () => {
-        try {
-          console.log("🧑‍🎨: Initializing migration architecture...");
+      // Initialize Gallery Repository (v2 IndexedDB)
+      initGalleryRepository()
+        .then(() => console.log("🧑‍🎨: Gallery repository v2 initialized"))
+        .catch((error) => {
+          console.error("🧑‍🎨: Failed to init gallery repository:", error);
+        }),
 
-          // Open IndexedDB for migration
-          const db = await openDatabase();
-          console.log("🧑‍🎨: Migration database opened");
-
-          // Create LayerRepository
-          const repository = new LayerRepository(db);
-
-          // Create Worker and Messenger (using Blob URL - works in inject context)
-          const worker = createMigrationWorker();
-          const messenger = new WorkerMessenger(worker);
-
-          // Link Worker to Repository
-          repository.setWorker(worker);
-
-          // Store in state
-          const { setMigrationArchitecture } = await import(
-            "./states/migrationState"
-          );
-          setMigrationArchitecture(repository, messenger);
-
-          console.log("🧑‍🎨: Migration architecture initialized successfully");
-          console.log(
-            "🧑‍🎨: Worker running in separate thread for optimal performance"
-          );
-        } catch (error) {
-          console.error("🧑‍🎨: Failed to init migration architecture:", error);
-        }
-      })(),
-
-      // Setup message handler (includes IndexedDB bridge handlers)
+      // Setup message handler (includes Gallery V2 bridge handlers)
       Promise.resolve(setupMessageHandler()).catch((error) => {
         console.error("🧑‍🎨: Failed to setup message handler:", error);
       }),
@@ -125,9 +94,6 @@ import { setupPerformanceMonitor } from "./utils/performance-monitor";
         )}MB`
       );
     }
-
-    // Setup performance monitor (Chrome only)
-    // setupPerformanceMonitor();
   } catch (error) {
     console.error("🧑‍🎨: Critical initialization error:", error);
   }

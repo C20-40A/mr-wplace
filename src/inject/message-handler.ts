@@ -1,9 +1,7 @@
 import {
-  handleGalleryImages,
+  handleGalleryImagesV2,
   handleSnapshotsUpdate,
   handleTextLayersUpdate,
-  handleLayerSave,
-  handleSaveImageRequest,
 } from "./handlers/overlay-handlers";
 import {
   handleThemeUpdate,
@@ -22,9 +20,7 @@ import {
   handleImageStatsRequest,
   handleComputeTotalStats,
 } from "./handlers/request-handlers";
-import {
-  setupIndexedDBBridgeHandlers,
-} from "./handlers/indexeddb-bridge-handlers";
+import { setupGalleryV2Handlers } from "./handlers/gallery-v2-handlers";
 import {
   startAutoCanvasClick,
   stopAutoCanvasClick,
@@ -90,11 +86,9 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-color-filter": handleColorFilterUpdate,
   "mr-wplace-tile-boundaries-update": handleTileBoundariesUpdate,
   "mr-wplace-cache-clear": handleCacheClear,
-  "mr-wplace-gallery-images": handleGalleryImages,
+  "mr-wplace-gallery-images-v2": handleGalleryImagesV2,
   "mr-wplace-snapshots": handleSnapshotsUpdate,
   "mr-wplace-text-layers": handleTextLayersUpdate,
-  "mr-wplace-layer-save": handleLayerSave,
-  "mr-wplace-save-image-request": handleSaveImageRequest,
   "mr-wplace-request-stats": handleStatsRequest,
   "mr-wplace-request-pixel-color": handlePixelColorRequest,
   "mr-wplace-request-tile-stats": handleTileStatsRequest,
@@ -105,7 +99,7 @@ const messageHandlers: Record<string, MessageHandler> = {
 };
 
 export const setupMessageHandler = (): void => {
-  setupIndexedDBBridgeHandlers();
+  setupGalleryV2Handlers();
 
   window.addEventListener("message", async (event: MessageEvent) => {
     const { source } = event.data;
