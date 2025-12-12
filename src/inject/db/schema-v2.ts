@@ -30,7 +30,7 @@ export interface GalleryMetadata {
   coords?: { TLX: number; TLY: number; PxX: number; PxY: number };
   width: number;
   height: number;
-  affectedTiles: string[]; // ["5,3,0,0", "5,3,0,1", ...]
+  affectedTiles: string[]; // ["5,3", "5,4", ...] - tile coordinates only
   visible: boolean;
   zIndex: number;
   timestamp: number;
@@ -53,7 +53,7 @@ export interface ImageRecord {
  */
 export interface TileRecord {
   layerId: string;
-  tileKey: string; // "TLX,TLY,PxX,PxY"
+  tileKey: string; // "tx,ty" - tile coordinates only
   blob: Blob;
 }
 
@@ -127,6 +127,7 @@ export const openDatabaseV2 = (): Promise<IDBDatabase> => {
 
 /**
  * Calculate affected tiles from coords and image dimensions
+ * Returns array of tile keys in format "tx,ty"
  */
 export const calculateAffectedTiles = (
   coords: { TLX: number; TLY: number; PxX: number; PxY: number },
@@ -152,10 +153,8 @@ export const calculateAffectedTiles = (
 
   for (let ty = startTileY; ty <= endTileY; ty++) {
     for (let tx = startTileX; tx <= endTileX; tx++) {
-      // Calculate pixel offset within this tile
-      const pxX = tx === startTileX ? coords.PxX : 0;
-      const pxY = ty === startTileY ? coords.PxY : 0;
-      tiles.push(`${tx},${ty},${pxX},${pxY}`);
+      // Simple tile key format: "tx,ty"
+      tiles.push(`${tx},${ty}`);
     }
   }
 

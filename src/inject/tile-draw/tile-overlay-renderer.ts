@@ -442,8 +442,8 @@ export const drawOverlayLayersOnTile = async (
     "," +
     tileCoords[1].toString().padStart(4, "0");
 
-  // v2 format: "5,3" prefix (no padding)
-  const coordStrV2Prefix = `${tileCoords[0]},${tileCoords[1]},`;
+  // v2 format: "5,3" (no padding, exact match)
+  const coordStrV2 = `${tileCoords[0]},${tileCoords[1]}`;
 
   // 現在タイルに重なる全オーバーレイ画像のリストを取得
   const matchingTiles: Array<{
@@ -455,14 +455,11 @@ export const drawOverlayLayersOnTile = async (
     if (!instance.drawEnabled) continue;
 
     // v2: Use pre-calculated affectedTiles for efficient lookup
-    // affectedTiles format: "tx,ty,pxX,pxY" (no padding, e.g., "5,3,0,0")
+    // affectedTiles format: "tx,ty" (no padding, e.g., "5,3")
     if (instance.affectedTiles && instance.affectedTiles.length > 0) {
-      // Filter affectedTiles that match current tile coordinates
-      const matchingAffected = instance.affectedTiles.filter((tileKey) =>
-        tileKey.startsWith(coordStrV2Prefix)
-      );
-      for (const tileKey of matchingAffected) {
-        matchingTiles.push({ tileKey, instance });
+      // Check if current tile is in affectedTiles
+      if (instance.affectedTiles.includes(coordStrV2)) {
+        matchingTiles.push({ tileKey: coordStrV2, instance });
       }
       continue;
     }
@@ -626,6 +623,10 @@ export const drawOverlayLayersOnTile = async (
     const coords = tileKey.split(",");
     let paintedTilebitmap = instance.tiles?.[tileKey];
 
+    // Determine if this is a v2 tile (format: "tx,ty" - 2 parts)
+    // or legacy tile (format: "tx,ty,pxX,pxY" - 4 parts)
+    const isV2Tile = coords.length === 2;
+
     // If tile not in memory, try loading from IndexedDB v2 first, then legacy
     if (!paintedTilebitmap) {
       // Try new GalleryRepository v2 first
@@ -684,12 +685,17 @@ export const drawOverlayLayersOnTile = async (
 
     if (!paintedTilebitmap) continue;
 
+    // v2 tiles: already positioned within 1000x1000 tile, draw at (0,0)
+    // legacy tiles: have pixel offset in tileKey, draw at that offset
+    const offsetX = isV2Tile ? 0 : Number(coords[2]);
+    const offsetY = isV2Tile ? 0 : Number(coords[3]);
+
     paintedTilebitmap = await applyOverlayProcessing(
       paintedTilebitmap,
       finalBgPixels,
       finalBgWidth,
-      Number(coords[2]),
-      Number(coords[3]),
+      offsetX,
+      offsetY,
       mode,
       instance.imageKey,
       tempStatsMap,
@@ -698,8 +704,8 @@ export const drawOverlayLayersOnTile = async (
 
     context.drawImage(
       paintedTilebitmap,
-      Number(coords[2]) * TILE_DRAW_CONSTANTS.RENDER_SCALE,
-      Number(coords[3]) * TILE_DRAW_CONSTANTS.RENDER_SCALE
+      offsetX * TILE_DRAW_CONSTANTS.RENDER_SCALE,
+      offsetY * TILE_DRAW_CONSTANTS.RENDER_SCALE
     );
   }
 
