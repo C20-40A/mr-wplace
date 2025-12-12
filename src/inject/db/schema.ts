@@ -7,15 +7,15 @@
  */
 
 // Database configuration
-export const DB_NAME = 'mr-wplace-gallery';
+export const DB_NAME = "mr-wplace-gallery";
 export const DB_VERSION = 1;
 
 // Object store names
 export const STORES = {
-  LAYERS: 'layers',
-  LEGACY_BLOBS: 'legacy_blobs',
-  OPTIMIZED_TILES: 'optimized_tiles',
-  STATISTICS: 'statistics'
+  LAYERS: "layers",
+  LEGACY_BLOBS: "legacy_blobs",
+  OPTIMIZED_TILES: "optimized_tiles",
+  STATISTICS: "statistics",
 } as const;
 
 /**
@@ -27,7 +27,7 @@ export const STORES = {
 export interface LayerMetadata {
   // Identifier
   id: string; // "gallery_<timestamp>" | "text_<timestamp>" | "snapshot_<timestamp>_<x>_<y>"
-  type: 'gallery' | 'text' | 'snapshot';
+  type: "gallery" | "text" | "snapshot";
 
   // Display settings
   visible: boolean; // On/Off
@@ -35,13 +35,13 @@ export interface LayerMetadata {
   opacity: number; // 0-1
 
   // Coordinates and bounds
-  coords: {
+  coords?: {
     TLX: number; // Tile X coordinate
     TLY: number; // Tile Y coordinate
     PxX: number; // Pixel X offset
     PxY: number; // Pixel Y offset
   };
-  bounds: {
+  bounds?: {
     top: number; // Min tile Y
     left: number; // Min tile X
     right: number; // Max tile X
@@ -127,46 +127,48 @@ export const openDatabase = async (): Promise<IDBDatabase> => {
 
     request.onerror = () => reject(request.error);
     request.onsuccess = () => {
-      console.log('🧑‍🎨 : IndexedDB opened successfully');
+      console.log("🧑‍🎨 : IndexedDB opened successfully");
       resolve(request.result);
     };
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
 
-      console.log('🧑‍🎨 : IndexedDB upgrade needed, creating schema');
+      console.log("🧑‍🎨 : IndexedDB upgrade needed, creating schema");
 
       // Create "layers" store
       if (!db.objectStoreNames.contains(STORES.LAYERS)) {
-        const layersStore = db.createObjectStore(STORES.LAYERS, { keyPath: 'id' });
-        layersStore.createIndex('type', 'type', { unique: false });
-        layersStore.createIndex('visible', 'visible', { unique: false });
+        const layersStore = db.createObjectStore(STORES.LAYERS, {
+          keyPath: "id",
+        });
+        layersStore.createIndex("type", "type", { unique: false });
+        layersStore.createIndex("visible", "visible", { unique: false });
         console.log('🧑‍🎨 : Created "layers" store');
       }
 
       // Create "legacy_blobs" store
       if (!db.objectStoreNames.contains(STORES.LEGACY_BLOBS)) {
-        db.createObjectStore(STORES.LEGACY_BLOBS, { keyPath: 'id' });
+        db.createObjectStore(STORES.LEGACY_BLOBS, { keyPath: "id" });
         console.log('🧑‍🎨 : Created "legacy_blobs" store');
       }
 
       // Create "optimized_tiles" store
       if (!db.objectStoreNames.contains(STORES.OPTIMIZED_TILES)) {
         const tilesStore = db.createObjectStore(STORES.OPTIMIZED_TILES, {
-          keyPath: ['layerId', 'tileKey']
+          keyPath: ["layerId", "tileKey"],
         });
-        tilesStore.createIndex('layerId', 'layerId', { unique: false });
-        tilesStore.createIndex('tileKey', 'tileKey', { unique: false });
+        tilesStore.createIndex("layerId", "layerId", { unique: false });
+        tilesStore.createIndex("tileKey", "tileKey", { unique: false });
         console.log('🧑‍🎨 : Created "optimized_tiles" store');
       }
 
       // Create "statistics" store
       if (!db.objectStoreNames.contains(STORES.STATISTICS)) {
-        db.createObjectStore(STORES.STATISTICS, { keyPath: 'layerId' });
+        db.createObjectStore(STORES.STATISTICS, { keyPath: "layerId" });
         console.log('🧑‍🎨 : Created "statistics" store');
       }
 
-      console.log('🧑‍🎨 : IndexedDB schema created successfully');
+      console.log("🧑‍🎨 : IndexedDB schema created successfully");
     };
   });
 };
@@ -179,13 +181,13 @@ export const deleteDatabase = async (): Promise<void> => {
     const request = indexedDB.deleteDatabase(DB_NAME);
 
     request.onsuccess = () => {
-      console.log('🧑‍🎨 : IndexedDB deleted successfully');
+      console.log("🧑‍🎨 : IndexedDB deleted successfully");
       resolve();
     };
 
     request.onerror = () => reject(request.error);
     request.onblocked = () => {
-      console.warn('🧑‍🎨 : IndexedDB deletion blocked, please close all tabs');
+      console.warn("🧑‍🎨 : IndexedDB deletion blocked, please close all tabs");
     };
   });
 };
@@ -195,7 +197,7 @@ export const deleteDatabase = async (): Promise<void> => {
  */
 export const isIndexedDBAvailable = (): boolean => {
   try {
-    return typeof indexedDB !== 'undefined';
+    return typeof indexedDB !== "undefined";
   } catch (error) {
     return false;
   }
@@ -210,7 +212,7 @@ export const checkStorageQuota = async (): Promise<{
   quota: number;
   percentage: number;
 }> => {
-  if ('storage' in navigator && 'estimate' in navigator.storage) {
+  if ("storage" in navigator && "estimate" in navigator.storage) {
     const estimate = await navigator.storage.estimate();
     const usage = estimate.usage || 0;
     const quota = estimate.quota || 0;
@@ -219,7 +221,7 @@ export const checkStorageQuota = async (): Promise<{
       available: quota - usage,
       used: usage,
       quota,
-      percentage: quota > 0 ? (usage / quota) * 100 : 0
+      percentage: quota > 0 ? (usage / quota) * 100 : 0,
     };
   }
 
@@ -228,7 +230,7 @@ export const checkStorageQuota = async (): Promise<{
     available: 100 * 1024 * 1024,
     used: 0,
     quota: 100 * 1024 * 1024,
-    percentage: 0
+    percentage: 0,
   };
 };
 

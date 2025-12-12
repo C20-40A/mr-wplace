@@ -5,7 +5,7 @@ import { t } from "../../../../i18n/manager";
 import { Toast } from "../../../../components/toast";
 
 export class GalleryImageShare {
-  render(container: HTMLElement, item: GalleryItem): void {
+  async render(container: HTMLElement, item: GalleryItem): Promise<void> {
     if (!item.drawPosition) {
       container.innerHTML = `<div>${t`${"no_position_data"}`}</div>`;
       return;
@@ -60,7 +60,7 @@ export class GalleryImageShare {
     `;
 
     // canvasに画像描画
-    this.loadImageToCanvas(item.dataUrl);
+    await this.loadImageToCanvas(item);
 
     // タイル座標/ピクセル座標コピーボタン
     const copyTilePixelBtn = document.getElementById("copy-tile-pixel-btn");
@@ -95,7 +95,15 @@ export class GalleryImageShare {
     });
   }
 
-  private loadImageToCanvas(dataUrl: string): void {
+  private async loadImageToCanvas(item: GalleryItem): Promise<void> {
+    const { getFullImageDataUrl } = await import("@/utils/indexed-db-bridge");
+    const dataUrl = await getFullImageDataUrl(item, {
+      showToastOnError: true,
+      logContext: "image share",
+    });
+
+    if (!dataUrl) return;
+
     const canvas = document.getElementById(
       "image-share-canvas"
     ) as HTMLCanvasElement;

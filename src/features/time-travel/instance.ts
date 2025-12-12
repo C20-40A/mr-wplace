@@ -1,10 +1,12 @@
-let instance: TimeTravel | null = null;
+import type { TimeTravelAPI } from "@/core/di";
 
-export const setTimeTravelInstance = (tt: TimeTravel): void => {
+let instance: TimeTravelAPI | null = null;
+
+export const setTimeTravelInstance = (tt: TimeTravelAPI): void => {
   instance = tt;
 };
 
-export const getTimeTravelInstance = (): TimeTravel => {
+export const getTimeTravelInstance = (): TimeTravelAPI => {
   if (!instance) throw new Error("TimeTravel not initialized");
   return instance;
 };

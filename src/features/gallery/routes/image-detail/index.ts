@@ -92,13 +92,25 @@ export class GalleryImageDetail {
     `;
 
     // 画像をcanvasに描画してImageInspectorを初期化
-    this.loadImageToCanvas(item.dataUrl);
+    this.loadImageToCanvas(item);
 
     // ボタンイベント設定
     this.setupButtonEvents(router, onDelete, onEdit);
   }
 
-  private loadImageToCanvas(dataUrl: string): void {
+  private async loadImageToCanvas(item: GalleryItem): Promise<void> {
+    const { getFullImageDataUrl } = await import("@/utils/indexed-db-bridge");
+    const dataUrl = await getFullImageDataUrl(item, {
+      showToastOnError: true,
+      logContext: "image detail",
+    });
+
+    if (!dataUrl) return;
+
+    this.loadImageToCanvasInternal(dataUrl);
+  }
+
+  private loadImageToCanvasInternal(dataUrl: string): void {
     const canvas = document.getElementById(
       "image-detail-canvas"
     ) as HTMLCanvasElement;

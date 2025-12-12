@@ -56,6 +56,16 @@ export const requestWorkerMigration = (
     return;
   }
 
-  messenger.requestMigration(layerId, options.priority, options.coords, options.bounds);
-  console.log(`🧑‍🎨 : Requested migration for ${layerId} (priority: ${options.priority})`);
+  messenger.send({
+    type: 'MIGRATE_REQUEST',
+    data: {
+      layerId,
+      priority: options.priority as 0 | 1,
+      coords: options.coords,
+      bounds: options.bounds,
+    },
+  });
+  console.log(
+    `🧑‍🎨 : Requested migration for ${layerId} (priority: ${options.priority})`
+  );
 };

@@ -63,7 +63,14 @@ export class EditorController {
 
     console.log("🧑‍🎨 : Loading existing image for edit:", item.key);
 
-    this.displayImage(item.dataUrl);
+    const { getFullImageDataUrl } = await import("@/utils/indexed-db-bridge");
+    const dataUrl = await getFullImageDataUrl(item, {
+      logContext: "image editor",
+    });
+
+    if (!dataUrl) return;
+
+    this.displayImage(dataUrl);
     this.updateSaveButtonLabel();
   }
 

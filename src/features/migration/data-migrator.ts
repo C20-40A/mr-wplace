@@ -76,23 +76,17 @@ export const runDataMigration = async (): Promise<{
       }
 
       // 3. Save blob to IndexedDB (only if it has drawPosition)
-      if (item.drawPosition) {
-        const success = await saveImageToIndexedDB(
-          item.key,
-          blob,
-          item.drawPosition
-        );
-
-        if (!success) {
-          console.warn(
-            `🧑‍🎨 [Migration] Failed to save to IndexedDB: ${item.key}`
-          );
-          failed.push(item.key);
-          continue;
-        }
-
-        console.log(`🧑‍🎨 [Migration] Saved to IndexedDB: ${item.key}`);
+      const success = await saveImageToIndexedDB(
+        item.key,
+        blob,
+        item.drawPosition
+      );
+      if (!success) {
+        console.warn(`🧑‍🎨 [Migration] Failed to save to IndexedDB: ${item.key}`);
+        failed.push(item.key);
+        continue;
       }
+      console.log(`🧑‍🎨 [Migration] Saved to IndexedDB: ${item.key}`);
 
       // 4. Remove dataUrl from Chrome Storage
       const { dataUrl, ...metadata } = item;

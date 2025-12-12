@@ -130,10 +130,20 @@ const fetchStatsFromIndexedDB = async (
     try {
       const stats = await repository.getStatistics(key);
       if (stats) {
-        result[key] = {
-          matched: stats.matchedColorStats || {},
-          total: stats.totalColorStats || {},
-        };
+        // Aggregate perTileStats to get total matched and total stats
+        const matched: Record<string, number> = {};
+        const total: Record<string, number> = {};
+
+        for (const tileStats of Object.values(stats.perTileStats)) {
+          for (const [color, count] of Object.entries(tileStats.matched)) {
+            matched[color] = (matched[color] || 0) + count;
+          }
+          for (const [color, count] of Object.entries(tileStats.total)) {
+            total[color] = (total[color] || 0) + count;
+          }
+        }
+
+        result[key] = { matched, total };
       }
     } catch (error) {
       console.error(`🧑‍🎨 : Failed to fetch stats for ${key} from IndexedDB:`, error);

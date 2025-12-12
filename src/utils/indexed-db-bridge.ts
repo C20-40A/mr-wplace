@@ -1,13 +1,15 @@
 /**
  * IndexedDB Bridge Utility
- * 
+ *
  * Content context から inject context の IndexedDB にアクセスするための
  * postMessage 経由のブリッジユーティリティ
  */
 
+import type { GalleryItem } from "@/states/galleryStorage";
+
 /**
  * Fetch full image dataUrl from IndexedDB via inject context
- * 
+ *
  * @param key - Gallery item key (e.g., "gallery_1234567890")
  * @param timeout - Timeout in milliseconds (default: 10000)
  * @returns Promise<string | null> - Full image dataUrl or null if failed
@@ -99,7 +101,7 @@ export const generateThumbnailFromIndexedDB = async (
 export const saveImageToIndexedDB = async (
   key: string,
   blob: Blob,
-  coords: { TLX: number; TLY: number; PxX: number; PxY: number },
+  coords?: { TLX: number; TLY: number; PxX: number; PxY: number },
   timeout = 10000
 ): Promise<boolean> => {
   return new Promise((resolve) => {
@@ -146,4 +148,60 @@ export const saveImageToIndexedDB = async (
       resolve(false);
     }, timeout);
   });
+};
+
+/**
+ * Get full image dataUrl from GalleryItem, with fallback to IndexedDB
+ *
+ * This is a convenience function that:
+ * 1. Returns item.dataUrl if it exists
+ * 2. Falls back to fetching from IndexedDB
+ * 3. Handles error logging and optional Toast notifications
+ *
+ * @param item - Gallery item to get dataUrl from
+ * @param options - Options for error handling
+ * @param options.showToastOnError - Show error Toast when fetch fails (default: false)
+ * @param options.logContext - Context string for log messages (default: "image")
+ * @returns dataUrl string or null if not found
+ *
+ * @example
+ * ```typescript
+ * const dataUrl = await getFullImageDataUrl(item, {
+ *   showToastOnError: true,
+ *   logContext: "image detail"
+ * });
+ * if (!dataUrl) return;
+ * ```
+ */
+export const getFullImageDataUrl = async (
+  item: GalleryItem,
+  options?: {
+    showToastOnError?: boolean;
+    logContext?: string;
+  }
+): Promise<string | null> => {
+  // If dataUrl already exists, return it
+  if (item.dataUrl && item.dataUrl !== "") {
+    return item.dataUrl;
+  }
+
+  // Try fetching from IndexedDB
+  const dataUrl = await fetchFullImageFromIndexedDB(item.key);
+
+  if (!dataUrl) {
+    const context = options?.logContext || "image";
+    console.warn(
+      `🧑‍🎨 : Failed to load ${context} from IndexedDB for ${item.key}`
+    );
+
+    if (options?.showToastOnError) {
+      const { Toast } = await import("@/components/toast");
+      const { t } = await import("@/i18n/manager");
+      Toast.error(t`${"failed_to_load_image"}`);
+    }
+
+    return null;
+  }
+
+  return dataUrl;
 };

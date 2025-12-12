@@ -83,7 +83,7 @@ export const addImageToOverlayLayers = async (
   }
 
   // Get layer metadata if available (for optimized layers)
-  let layerMetadata: Awaited<ReturnType<typeof repository.getLayerMetadata>> = null;
+  let layerMetadata: Awaited<ReturnType<NonNullable<typeof repository>['getLayerMetadata']>> = null;
   if (repository && isOptimized) {
     try {
       layerMetadata = await repository.getLayerMetadata(imageKey);

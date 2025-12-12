@@ -1,52 +1,11 @@
-import type { GalleryItem } from "../../states/galleryStorage";
+import type { GalleryItem } from "@/states/galleryStorage";
 import {
   addImageToOverlayLayers,
   removePreparedOverlayImageByKey,
   setPerTileColorStats,
 } from "../tile-draw";
 import { loadImageBitmap } from "../utils/image-loader";
-
-/**
- * Fetch full image from IndexedDB via postMessage
- *
- * NOTE: This implementation is needed in inject context (page context)
- * Cannot import from content context utilities (@/utils/indexed-db-bridge.ts)
- * Content and inject contexts are isolated - no direct module imports allowed
- *
- * For content context code, use: import { fetchFullImageFromIndexedDB } from "@/utils/indexed-db-bridge"
- */
-const fetchFullImageFromIndexedDB = async (
-  key: string
-): Promise<string | null> => {
-  return new Promise((resolve) => {
-    const handler = (event: MessageEvent) => {
-      if (
-        event.data.source === "mr-wplace-gallery-dataurl-response" &&
-        event.data.key === key
-      ) {
-        window.removeEventListener("message", handler);
-        resolve(event.data.dataUrl);
-      }
-    };
-
-    window.addEventListener("message", handler);
-
-    window.postMessage(
-      {
-        source: "mr-wplace-gallery-dataurl-request",
-        key,
-      },
-      "*"
-    );
-
-    // Timeout after 10s
-    setTimeout(() => {
-      window.removeEventListener("message", handler);
-      console.warn(`🧑‍🎨 : IndexedDB full image fetch timeout for ${key}`);
-      resolve(null);
-    }, 10000);
-  });
-};
+import { getFullImageDataUrl } from "@/utils/indexed-db-bridge";
 
 /**
  * Save gallery item to IndexedDB and request Worker migration
@@ -72,9 +31,12 @@ const saveGalleryToIndexedDB = async (
     const existingLayer = await repository.getLayerMetadata(img.key);
     if (existingLayer) {
       // Layer exists, but might not be optimized yet
-      if (!existingLayer.isOptimized && workerMessenger) {
-        // Request migration in background (low priority)
-        requestWorkerMigration(workerMessenger, img.key, existingLayer);
+      if (!existingLayer.isOptimized && workerMessenger && existingLayer.coords && existingLayer.bounds) {
+        // Request migration in background (low priority, only if coords/bounds exist)
+        requestWorkerMigration(workerMessenger, img.key, {
+          coords: existingLayer.coords,
+          bounds: existingLayer.bounds,
+        });
       }
       return;
     }
@@ -118,9 +80,12 @@ const saveGalleryToIndexedDB = async (
 
     console.log(`🧑‍🎨 : Saved ${img.key} to IndexedDB`);
 
-    // Request Worker migration in background (low priority)
-    if (workerMessenger) {
-      requestWorkerMigration(workerMessenger, img.key, layerMetadata);
+    // Request Worker migration in background (low priority, only if coords/bounds exist)
+    if (workerMessenger && layerMetadata.coords && layerMetadata.bounds) {
+      requestWorkerMigration(workerMessenger, img.key, {
+        coords: layerMetadata.coords,
+        bounds: layerMetadata.bounds,
+      });
     }
   } catch (error) {
     console.error(`🧑‍🎨 : Failed to save ${img.key} to IndexedDB:`, error);
@@ -191,7 +156,9 @@ export const handleGalleryImages = async (data: {
 
   // Sync to overlay layers for tile-draw system
   // Sort by layerOrder to maintain proper z-index
-  const sortedImages = data.images.sort((a, b) => (a.layerOrder ?? 0) - (b.layerOrder ?? 0));
+  const sortedImages = data.images.sort(
+    (a, b) => (a.layerOrder ?? 0) - (b.layerOrder ?? 0)
+  );
 
   let successCount = 0;
   let failCount = 0;
@@ -204,8 +171,12 @@ export const handleGalleryImages = async (data: {
       const { getLayerRepository } = await import("../states/migrationState");
       const repository = getLayerRepository();
 
-      let layerMetadata: Awaited<ReturnType<typeof repository.getLayerMetadata>> = null;
-      if (repository) {
+      let layerMetadata: Awaited<
+        ReturnType<NonNullable<typeof repository>['getLayerMetadata']>
+      > = null;
+      if (!repository) {
+        console.warn(`🧑‍🎨 : LayerRepository not initialized, skipping IndexedDB check`);
+      } else {
         try {
           layerMetadata = await repository.getLayerMetadata(img.key);
         } catch (error) {
@@ -220,12 +191,16 @@ export const handleGalleryImages = async (data: {
 
       if (layerMetadata && layerMetadata.isOptimized) {
         // Layer is optimized - tiles will be loaded on-demand from IndexedDB during rendering
-        console.log(`🧑‍🎨 : Layer ${img.key} is optimized, will use lazy loading from IndexedDB`);
+        console.log(
+          `🧑‍🎨 : Layer ${img.key} is optimized, will use lazy loading from IndexedDB`
+        );
 
         // Only add to overlay layers if drawEnabled is true
         if (img.drawEnabled !== false) {
           if (!img.drawPosition) {
-            console.warn(`🧑‍🎨 : No drawPosition for ${img.key}, skipping overlay`);
+            console.warn(
+              `🧑‍🎨 : No drawPosition for ${img.key}, skipping overlay`
+            );
             continue;
           }
 
@@ -249,7 +224,9 @@ export const handleGalleryImages = async (data: {
         // Layer not optimized yet - check if in IndexedDB
         if (layerMetadata && !layerMetadata.isOptimized) {
           // Already in IndexedDB but not optimized - register metadata only, load tiles on-demand
-          console.log(`🧑‍🎨 : Layer ${img.key} in IndexedDB but not optimized, will use lazy loading`);
+          console.log(
+            `🧑‍🎨 : Layer ${img.key} in IndexedDB but not optimized, will use lazy loading`
+          );
 
           if (img.drawEnabled !== false && img.drawPosition) {
             // Create a dummy 1x1 bitmap as placeholder
@@ -268,38 +245,14 @@ export const handleGalleryImages = async (data: {
           }
         } else {
           // Not in IndexedDB yet - need to load and save first
-          let bitmap: ImageBitmap | null = null;
-
-          if (img.dataUrl && img.dataUrl !== "") {
-            // dataUrl available in Chrome storage - use it directly
-            console.log(
-              `🧑‍🎨 : Loading from dataUrl (${(img.dataUrl.length / 1024).toFixed(1)}KB) for ${img.key}`
-            );
-            bitmap = await loadImageBitmap(img.dataUrl, img.key);
-          } else {
-            // dataUrl is empty (Doctor cleanup) - try fetching from IndexedDB
-            console.log(
-              `🧑‍🎨 : dataUrl empty for ${img.key}, attempting IndexedDB fetch...`
-            );
-            const fullDataUrl = await fetchFullImageFromIndexedDB(img.key);
-            if (fullDataUrl) {
-              bitmap = await loadImageBitmap(fullDataUrl, img.key);
-              console.log(
-                `🧑‍🎨 : Successfully loaded from IndexedDB for ${img.key}`
-              );
-            } else {
-              console.warn(
-                `🧑‍🎨 : Failed to fetch from IndexedDB for ${img.key}`
-              );
-            }
-          }
-
-          if (!bitmap) {
-            console.warn(
-              `🧑‍🎨 : No image source available for ${img.key}, skipping`
-            );
+          const dataUrl = await getFullImageDataUrl(img);
+          if (!dataUrl) {
+            console.warn(`🧑‍🎨 : No image source available for ${img.key}, skipping`);
+            failCount++;
             continue;
           }
+
+          const bitmap = await loadImageBitmap(dataUrl, img.key);
 
           // Save to IndexedDB first (so we can use lazy loading next time)
           await saveGalleryToIndexedDB(img, bitmap);
@@ -596,7 +549,7 @@ export const handleLayerSave = async (data: {
 export const handleSaveImageRequest = async (data: {
   key: string;
   dataUrl: string;
-  coords: { TLX: number; TLY: number; PxX: number; PxY: number };
+  coords?: { TLX: number; TLY: number; PxX: number; PxY: number };
 }): Promise<void> => {
   try {
     const { getLayerRepository, requestWorkerMigration } = await import(
@@ -604,9 +557,7 @@ export const handleSaveImageRequest = async (data: {
     );
     const repository = getLayerRepository();
 
-    if (!repository) {
-      throw new Error("LayerRepository not initialized");
-    }
+    if (!repository) throw new Error("LayerRepository not initialized");
 
     // Convert dataUrl to blob
     const response = await fetch(data.dataUrl);
@@ -625,13 +576,17 @@ export const handleSaveImageRequest = async (data: {
       visible: true,
       zIndex: 0,
       opacity: 1,
-      coords: data.coords,
-      bounds: {
-        top: data.coords.TLY,
-        left: data.coords.TLX,
-        right: data.coords.TLX + Math.floor(width / 1000),
-        bottom: data.coords.TLY + Math.floor(height / 1000),
-      },
+      ...(data.coords
+        ? {
+            coords: data.coords,
+            bounds: {
+              top: data.coords.TLY,
+              left: data.coords.TLX,
+              right: data.coords.TLX + Math.floor(width / 1000),
+              bottom: data.coords.TLY + Math.floor(height / 1000),
+            },
+          }
+        : {}),
       isOptimized: false,
       timestamp: Date.now(),
     };
@@ -639,14 +594,18 @@ export const handleSaveImageRequest = async (data: {
     // Save to IndexedDB
     await repository.saveLayer(layer, blob);
 
-    console.log(`🧑‍🎨 : Saved image ${data.key} to IndexedDB (${width}x${height})`);
+    console.log(
+      `🧑‍🎨 : Saved image ${data.key} to IndexedDB (${width}x${height})`
+    );
 
-    // Request migration
-    requestWorkerMigration(data.key, {
-      priority: 1,
-      coords: data.coords,
-      bounds: layer.bounds,
-    });
+    // Request migration (tile splitting) only if coords/bounds exist
+    if (data.coords && layer.bounds) {
+      requestWorkerMigration(data.key, {
+        priority: 1,
+        coords: data.coords,
+        bounds: layer.bounds,
+      });
+    }
 
     // Send success response
     window.postMessage(

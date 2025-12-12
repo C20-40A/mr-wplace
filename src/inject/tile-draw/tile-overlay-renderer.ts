@@ -333,7 +333,9 @@ const convertToImageBitmap = async (
   width: number,
   height: number
 ): Promise<ImageBitmap> => {
-  const imageData = new ImageData(data, width, height);
+  // Ensure data is a standard Uint8ClampedArray (not generic ArrayBufferLike)
+  const standardData = new Uint8ClampedArray(data);
+  const imageData = new ImageData(standardData, width, height);
   return await createImageBitmap(imageData);
 };
 

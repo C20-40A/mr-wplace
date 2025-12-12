@@ -56,15 +56,26 @@ export const exportGalleryToZip = async (
     const { TLX, TLY, PxX, PxY } = item.drawPosition!;
     const layerOrder = item.layerOrder ?? 0;
 
+    // Get dataUrl (from storage or IndexedDB)
+    const { getFullImageDataUrl } = await import("./indexed-db-bridge");
+    const dataUrl = await getFullImageDataUrl(item, {
+      logContext: "gallery export",
+    });
+
+    if (!dataUrl) {
+      console.warn(`🧑‍🎨 : Skipping ${item.key} - no dataUrl available`);
+      continue;
+    }
+
     // Generate filename
     const titlePart = item.title ? sanitizeTitle(item.title) : "";
-    const ext = getExtensionFromDataUrl(item.dataUrl);
+    const ext = getExtensionFromDataUrl(dataUrl);
     const filename = titlePart
       ? `${layerOrder}_${titlePart}_${TLX}_${TLY}_${PxX}_${PxY}.${ext}`
       : `${layerOrder}__${TLX}_${TLY}_${PxX}_${PxY}.${ext}`;
 
     // Convert dataUrl to blob
-    const blob = await dataUrlToBlob(item.dataUrl);
+    const blob = await dataUrlToBlob(dataUrl);
 
     // Add to ZIP
     zip.file(filename, blob);

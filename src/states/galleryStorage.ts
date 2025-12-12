@@ -1,5 +1,4 @@
 import { storage } from "@/utils/browser-api";
-import { fetchFullImageFromIndexedDB } from "@/utils/indexed-db-bridge";
 import type { ColorStats } from "@/types/image";
 
 export interface DrawPosition {
@@ -135,17 +134,13 @@ export class GalleryStorage {
       } as GalleryItem;
     }
 
-    // Always fetch full image from IndexedDB
+    // Always fetch full image from IndexedDB if needed
     if (!item.dataUrl || item.dataUrl === "") {
-      const dataUrl = await fetchFullImageFromIndexedDB(key);
-      if (dataUrl) {
-        item.dataUrl = dataUrl;
-      } else {
-        console.warn(
-          `🧑‍🎨 : Failed to fetch full image for ${key} from IndexedDB`
-        );
-        item.dataUrl = item.dataUrl || "";
-      }
+      const { getFullImageDataUrl } = await import("@/utils/indexed-db-bridge");
+      const dataUrl = await getFullImageDataUrl(item, {
+        logContext: "gallery storage",
+      });
+      item.dataUrl = dataUrl || "";
     }
 
     return item;

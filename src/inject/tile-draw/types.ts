@@ -1,5 +1,8 @@
-import type { EnhancedMode } from "@/types/image";
+import type { EnhancedMode as EnhancedModeImport } from "@/types/image";
 import type { WplaceCoords } from "./constants";
+
+// Re-export EnhancedMode for external use
+export type EnhancedMode = EnhancedModeImport;
 
 /** Enhanced設定 */
 export interface EnhancedConfig {

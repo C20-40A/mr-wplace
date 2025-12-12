@@ -119,7 +119,7 @@ export class LayerRepository {
       const tx = this.db.transaction([STORES.LAYERS], 'readonly');
       const store = tx.objectStore(STORES.LAYERS);
       const index = store.index('visible');
-      const request = index.getAll(true); // Only visible layers
+      const request = index.getAll(IDBKeyRange.only(true)); // Only visible layers
 
       request.onsuccess = () => resolve(request.result || []);
       request.onerror = () => reject(request.error);
@@ -334,6 +334,10 @@ export class LayerRepository {
       const [tlx, tly, pxx, pxy] = tileKey.split(',').map(Number);
 
       // Calculate offset in source image
+      if (!layer.coords) {
+        bitmap.close();
+        return null;
+      }
       const offsetX = (tlx - layer.coords.TLX) * 1000 + (pxx - layer.coords.PxX);
       const offsetY = (tly - layer.coords.TLY) * 1000 + (pxy - layer.coords.PxY);
 
@@ -423,10 +427,14 @@ export class LayerRepository {
   private addToCache(key: string, bitmap: ImageBitmap): void {
     // If cache is full, remove oldest entry
     if (this.tileCache.size >= this.maxCacheSize) {
-      const oldestKey = this.tileCache.keys().next().value;
-      const oldBitmap = this.tileCache.get(oldestKey)!;
-      oldBitmap.close();
-      this.tileCache.delete(oldestKey);
+      const oldestKey = this.tileCache.keys().next().value as string | undefined;
+      if (oldestKey) {
+        const oldBitmap = this.tileCache.get(oldestKey);
+        if (oldBitmap) {
+          oldBitmap.close();
+          this.tileCache.delete(oldestKey);
+        }
+      }
     }
 
     this.tileCache.set(key, bitmap);
