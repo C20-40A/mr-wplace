@@ -185,15 +185,18 @@ const handleThumbnailRequest = async (key: string): Promise<void> => {
  * Generate 128x128 thumbnail from blob
  */
 export const generateThumbnail = async (blob: Blob): Promise<string> => {
-  const S = 128;
+  const THUMBNAIL_SIZE = 128;
   const bmp = await createImageBitmap(blob);
 
-  if (bmp.width <= S && bmp.height <= S) {
+  if (bmp.width <= THUMBNAIL_SIZE && bmp.height <= THUMBNAIL_SIZE) {
     bmp.close();
     return blobToDataUrl(blob);
   }
 
-  const scale = Math.min(S / bmp.width, S / bmp.height);
+  const scale = Math.min(
+    THUMBNAIL_SIZE / bmp.width,
+    THUMBNAIL_SIZE / bmp.height
+  );
   const w = Math.round(bmp.width * scale);
   const h = Math.round(bmp.height * scale);
 
