@@ -94,6 +94,11 @@
         color: #000;
       }
 
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
       .btn-danger {
         border-style: dashed;
       }
@@ -104,9 +109,29 @@
         padding-top: 8px;
       }
 
-      /* Bug Report をボタン化 */
-      .bug-button {
+      /* Bug Report をボタン風のリンクに */
+      .bug-report-link {
+        display: block;
+        width: 100%;
+        background: #000;
+        color: #fff;
+        border: 1px solid #fff;
+        padding: 4px;
+        font-family: inherit;
+        font-size: 12px;
+        text-align: center;
+        text-decoration: none;
         margin-bottom: 8px;
+        cursor: pointer;
+      }
+
+      .bug-report-link:hover {
+        background: #333;
+      }
+
+      .bug-report-link:active {
+        background: #fff;
+        color: #000;
       }
 
       /* coffee img サイズ制限 */
@@ -142,29 +167,43 @@
         </select>
       </div>
 
-      <div class="setting-group">
+      <!-- <div class="setting-group">
         <label class="setting-label">
           <svg class="icon" viewBox="0 0 12 12">
             <rect x="1" y="1" width="10" height="10" />
           </svg>
           Navigation
         </label>
-        <select id="navigation-select">
+        <select id="navigation-select" disabled>
           <option value="true">Map Jump</option>
           <option value="false">URL Jump</option>
         </select>
-      </div>
+      </div> -->
 
-      <div class="setting-group">
+      <!-- <div class="setting-group">
         <label class="setting-label">
           <svg class="icon" viewBox="0 0 12 12">
             <path d="M1 1h10v10H1z M6 1v10 M1 6h10" />
           </svg>
           Tile Boundaries
         </label>
-        <select id="tile-boundaries-select">
+        <select id="tile-boundaries-select" disabled>
           <option value="false">Hidden</option>
           <option value="true">Visible</option>
+        </select>
+      </div> -->
+
+      <div class="setting-group">
+        <label class="setting-label">
+          <svg class="icon" viewBox="0 0 12 12">
+            <rect x="3" y="5" width="6" height="5" />
+            <path d="M5 5V3a1 1 0 0 1 2 0v2" />
+          </svg>
+          Large Lock Button (for Mobile)
+        </label>
+        <select id="lock-button-enhancer-select">
+          <option value="true">Enabled</option>
+          <option value="false">Disabled</option>
         </select>
       </div>
 
@@ -189,13 +228,14 @@
       </div>
 
       <div class="coffee-support">
-        <button
+        <a
           id="feedback-link"
-          class="bug-button"
-          onclick="window.open('#','_blank')"
+          class="bug-report-link"
+          target="_blank"
+          href="https://docs.google.com/forms/d/e/1FAIpQLSdjPLjn76n3H2g_9kYqasCkr_qqa-gLfOuhoT_8ukIvpYE8bQ/viewform?usp=publish-editor"
         >
           Bug Report
-        </button>
+        </a>
 
         <a
           href="https://buymeacoffee.com/c20_40a"

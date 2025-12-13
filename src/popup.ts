@@ -14,6 +14,11 @@ import {
   getTileBoundaries,
   setTileBoundaries,
 } from "./states/tile-boundaries";
+import {
+  loadLockButtonEnhancerFromStorage,
+  getLockButtonEnhancer,
+  setLockButtonEnhancer,
+} from "./states/lock-button-enhancer";
 import { tabs } from "@/utils/browser-api";
 import { FEEDBACK_FORM_URL } from "@/constants/url";
 import { BUY_ME_COFFEE_IMAGE } from "./assets/buyMeACoffee";
@@ -25,7 +30,6 @@ const updateUI = (): void => {
   ) as HTMLAnchorElement;
   if (feedbackLink) {
     const currentLocale = I18nManager.getCurrentLocale();
-    // Narrow the locale to the known keys of FEEDBACK_FORM_URL before indexing
     const localeKey = currentLocale as keyof typeof FEEDBACK_FORM_URL;
     feedbackLink.href = FEEDBACK_FORM_URL[localeKey] || FEEDBACK_FORM_URL.en;
   }
@@ -42,66 +46,6 @@ const updateUI = (): void => {
   if (resetBtnLabel) resetBtnLabel.textContent = t`${"reset_gallery"}`;
 };
 
-// Check if mapInstance exists and hide features that require it
-const checkMapInstanceAndUpdateUI = async (): Promise<void> => {
-  try {
-    const [activeTab] = await tabs.query({
-      active: true,
-      currentWindow: true,
-    });
-
-    if (!activeTab.id) {
-      console.log("🧑‍🎨 : No active tab found");
-      return;
-    }
-
-    // Execute script to check if window.wplaceMap exists
-    const results = await chrome.scripting.executeScript({
-      target: { tabId: activeTab.id },
-      func: () => {
-        return typeof (window as any).wplaceMap !== "undefined";
-      },
-    });
-
-    const hasMapInstance = results?.[0]?.result ?? false;
-
-    console.log("🧑‍🎨 : Map instance exists:", hasMapInstance);
-
-    // Hide navigation and tile boundaries settings if no map instance
-    const navigationGroup = document
-      .getElementById("navigation-select")
-      ?.closest(".setting-group") as HTMLElement;
-    const tileBoundariesGroup = document
-      .getElementById("tile-boundaries-select")
-      ?.closest(".setting-group") as HTMLElement;
-
-    if (navigationGroup) {
-      navigationGroup.style.display = hasMapInstance ? "block" : "none";
-    }
-
-    if (tileBoundariesGroup) {
-      tileBoundariesGroup.style.display = hasMapInstance ? "block" : "none";
-    }
-  } catch (error) {
-    console.error("🧑‍🎨 : Failed to check map instance:", error);
-    // On error, hide the features to be safe
-    const navigationGroup = document
-      .getElementById("navigation-select")
-      ?.closest(".setting-group") as HTMLElement;
-    const tileBoundariesGroup = document
-      .getElementById("tile-boundaries-select")
-      ?.closest(".setting-group") as HTMLElement;
-
-    if (navigationGroup) {
-      navigationGroup.style.display = "none";
-    }
-
-    if (tileBoundariesGroup) {
-      tileBoundariesGroup.style.display = "none";
-    }
-  }
-};
-
 document.addEventListener("DOMContentLoaded", async () => {
   const languageSelect = document.getElementById(
     "language-select"
@@ -111,6 +55,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   ) as HTMLSelectElement;
   const tileBoundariesSelect = document.getElementById(
     "tile-boundaries-select"
+  ) as HTMLSelectElement;
+  const lockButtonEnhancerSelect = document.getElementById(
+    "lock-button-enhancer-select"
   ) as HTMLSelectElement;
 
   // Set Buy Me a Coffee image
@@ -129,13 +76,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadTileBoundariesFromStorage();
   const currentTileBoundaries = getTileBoundaries();
 
+  // lock button enhancer初期化
+  await loadLockButtonEnhancerFromStorage();
+  const currentLockButtonEnhancer = getLockButtonEnhancer();
+
   languageSelect.value = currentLocale;
   navigationSelect.value = currentMode.toString();
   tileBoundariesSelect.value = currentTileBoundaries.toString();
+  lockButtonEnhancerSelect.value = currentLockButtonEnhancer.toString();
   updateUI();
-
-  // Check if mapInstance exists and hide features that require it
-  await checkMapInstanceAndUpdateUI();
 
   // 言語変更イベント
   languageSelect.addEventListener("change", async (event) => {
@@ -161,28 +110,46 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // ナビゲーション変更イベント
-  navigationSelect.addEventListener("change", async (event) => {
+  // ナビゲーション変更イベント (currently disabled)
+  // navigationSelect.addEventListener("change", async (event) => {
+  //   const target = event.target as HTMLSelectElement;
+  //   const newMode = target.value === "true";
+  //
+  //   // 設定を保存
+  //   await setNavigationMode(newMode);
+  // });
+
+  // タイル境界変更イベント (currently disabled)
+  // tileBoundariesSelect.addEventListener("change", async (event) => {
+  //   const target = event.target as HTMLSelectElement;
+  //   const newVisible = target.value === "true";
+  //
+  //   // 設定を保存
+  //   await setTileBoundaries(newVisible);
+  //
+  //   // content.tsに通知
+  //   await notifyContentScript({
+  //     type: "TILE_BOUNDARIES_CHANGED",
+  //     visible: newVisible,
+  //   });
+  // });
+
+  // Lockボタン強化変更イベント
+  lockButtonEnhancerSelect.addEventListener("change", async (event) => {
     const target = event.target as HTMLSelectElement;
-    const newMode = target.value === "true";
+    const newEnabled = target.value === "true";
 
     // 設定を保存
-    await setNavigationMode(newMode);
-  });
+    await setLockButtonEnhancer(newEnabled);
 
-  // タイル境界変更イベント
-  tileBoundariesSelect.addEventListener("change", async (event) => {
-    const target = event.target as HTMLSelectElement;
-    const newVisible = target.value === "true";
-
-    // 設定を保存
-    await setTileBoundaries(newVisible);
-
-    // content.tsに通知
-    await notifyContentScript({
-      type: "TILE_BOUNDARIES_CHANGED",
-      visible: newVisible,
+    // ページをリロードして設定を反映
+    const [activeTab] = await tabs.query({
+      active: true,
+      currentWindow: true,
     });
+    if (activeTab.id) {
+      await tabs.reload(activeTab.id);
+    }
   });
 
   // Gallery export/import/reset

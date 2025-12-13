@@ -1,7 +1,6 @@
 # メイン
 
-- カラーフィルターの順番を wplace のカラーパレットと一致させてほしい
-- paint 中のバツ印の誤タップ防止策の検討
+- paint 中のバツ印の誤タップ防止
 - 開発者モードのアルゴリズム変更
 - document.querySelector('[title="Lock"]').style.borderRadius=0,document.querySelector('[title="Lock"]').parentNode.parentNode.parentNode.style.cssText="top:0;right:0;",document.querySelector('[title="Lock"]').style.transform='scale(1.2)'
 - 「？」アイコンからのドキュメント表示
@@ -123,7 +122,7 @@
 
 # DONE v2.0.0
 
--
+- カラーフィルターの順番を wplace のカラーパレットと一致させる
 - popup の UI 変更
 - 画像編集で透明ピクセルが取り込まれてしまう問題の修正
 - 画像編集で 0 の値の時はなにもしない
