@@ -192,21 +192,6 @@ const registerMessageListeners = () => {
       return true;
     }
 
-    if (message.type === "GALLERY_IMPORT_ZIP") {
-      const { importGalleryFromZip } = await import("@/utils/gallery-export");
-      try {
-        const file = new File([message.data], message.filename);
-        const result = await importGalleryFromZip(file);
-        sendResponse({ success: true, result });
-      } catch (error) {
-        sendResponse({
-          success: false,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-      return true;
-    }
-
     if (message.type === "GALLERY_GET_ALL_WITH_IMAGES") {
       const {
         getAllGalleryMetadata,

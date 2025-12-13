@@ -167,6 +167,12 @@ export const importGalleryFromZip = async (
   }
 
   console.log(`🧑‍🎨 : Import complete: ${success} success, ${failed} failed`);
+
+  if (success > 0 || failed > 0) {
+    const msg = failed > 0 ? `Imported ${success} images (${failed} failed)` : `Imported ${success} images`;
+    alert(msg);
+  }
+
   return { success, failed };
 };
 

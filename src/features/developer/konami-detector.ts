@@ -6,7 +6,7 @@ type KonamiCallback = () => void;
  * * @param callback コマンド成功時に実行する関数
  * @returns document.addEventListener('keydown', ...) に渡すためのイベントリスナー関数
  */
-const createKonamiCodeDetector = (callback: KonamiCallback) => {
+export const createKonamiCodeDetector = (callback: KonamiCallback) => {
   // コナミコマンドのキーコード配列を型注釈付きで定義
   const KONAMI_CODE: ReadonlyArray<string> = [
     "ArrowUp",
@@ -59,5 +59,3 @@ const createKonamiCodeDetector = (callback: KonamiCallback) => {
   // 生成したリスナー関数を返す
   return konamiCodeListener;
 };
-
-export { createKonamiCodeDetector };

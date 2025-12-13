@@ -13,6 +13,7 @@ import {
 } from "@/content";
 import type { ColorIsolate } from "@/features/color-isolate";
 import { setShowUnplacedOnly } from "@/states/showUnplacedOnly";
+import { setupDeveloperMenu } from "./developer-menu";
 
 export class AutoSpoit {
   private enabled: boolean = true;
@@ -52,6 +53,10 @@ export class AutoSpoit {
     // Start auto canvas click if enabled
     if (this.autoCanvasClickEnabled) {
       this.sendAutoCanvasClickStart();
+    }
+
+    if (this.devMode) {
+      setupDeveloperMenu();
     }
   }
 
