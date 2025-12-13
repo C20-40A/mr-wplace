@@ -364,6 +364,39 @@ export const handleGalleryImagesV2 = async (data: {
   }>;
 }): Promise<void> => {
   const { overlayLayers } = await import("../tile-draw");
+  const { invalidateTileCache } = await import("../cache-storage");
+
+  // Collect all affected tiles (old and new) for cache invalidation
+  const tilesToInvalidate = new Set<string>();
+
+  // Collect old affected tiles from existing layers
+  for (const layer of overlayLayers) {
+    if (layer.affectedTiles) {
+      for (const tileKey of layer.affectedTiles) {
+        tilesToInvalidate.add(tileKey);
+      }
+    }
+  }
+
+  // Collect new affected tiles from incoming items
+  for (const item of data.items) {
+    if (item.affectedTiles) {
+      for (const tileKey of item.affectedTiles) {
+        tilesToInvalidate.add(tileKey);
+      }
+    }
+  }
+
+  // Invalidate cache for all affected tiles
+  for (const tileKey of tilesToInvalidate) {
+    invalidateTileCache(tileKey).catch((err) => {
+      console.warn(`🧑‍🎨 : Failed to invalidate tile cache ${tileKey}:`, err);
+    });
+  }
+
+  if (tilesToInvalidate.size > 0) {
+    console.log(`🧑‍🎨 : Invalidated ${tilesToInvalidate.size} tile caches`);
+  }
 
   // Remove previously tracked gallery images from overlay layers
   if (window.mrWplaceGalleryImageKeys) {
@@ -371,6 +404,9 @@ export const handleGalleryImagesV2 = async (data: {
       removePreparedOverlayImageByKey(key);
     }
   }
+
+  // Re-import overlayLayers after removal (removePreparedOverlayImageByKey replaces the array)
+  const { overlayLayers: currentOverlayLayers } = await import("../tile-draw");
 
   const imageKeys: string[] = [];
 
@@ -387,7 +423,7 @@ export const handleGalleryImagesV2 = async (data: {
     };
 
     // Add directly to overlay layers with affectedTiles for efficient lookup
-    overlayLayers.push({
+    currentOverlayLayers.push({
       coords: [item.coords.TLX, item.coords.TLY, item.coords.PxX, item.coords.PxY],
       tiles: null, // Tiles loaded on-demand from IndexedDB v2
       imageKey: item.id,

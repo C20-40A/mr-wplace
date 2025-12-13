@@ -633,8 +633,10 @@ export const drawOverlayLayersOnTile = async (
       try {
         const { getGalleryRepository } = await import("../db/gallery-repository");
         const repoV2 = getGalleryRepository();
+        console.log(`🧑‍🎨 : Trying to load tile [${instance.imageKey}, ${tileKey}], repoV2 initialized=${!!repoV2}`);
         if (repoV2) {
           const tileBlob = await repoV2.getTile(instance.imageKey, tileKey);
+          console.log(`🧑‍🎨 : getTile result for [${instance.imageKey}, ${tileKey}]: ${tileBlob ? `Blob(${tileBlob.size})` : 'null'}`);
           if (tileBlob) {
             paintedTilebitmap = await createImageBitmap(tileBlob);
             // Cache in memory for faster subsequent access
@@ -648,6 +650,7 @@ export const drawOverlayLayersOnTile = async (
           }
         }
       } catch (error) {
+        console.error(`🧑‍🎨 : Error loading tile from v2:`, error);
         // v2 not available, try legacy
       }
 

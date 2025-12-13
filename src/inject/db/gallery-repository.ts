@@ -195,6 +195,11 @@ export class GalleryRepository {
   // ============================================
 
   async getTile(layerId: string, tileKey: string): Promise<Blob | null> {
+    // Ensure DB is initialized
+    if (!this.db) {
+      console.log(`🧑‍🎨 [getTile] DB not initialized, initializing...`);
+      await this.init();
+    }
     const db = this.getDb();
     return new Promise((resolve, reject) => {
       const tx = db.transaction([STORES_V2.SPLIT_TILES], "readonly");
@@ -203,9 +208,13 @@ export class GalleryRepository {
 
       request.onsuccess = () => {
         const record = request.result as TileRecord | undefined;
+        console.log(`🧑‍🎨 [getTile] Query [${layerId}, ${tileKey}] result: ${record ? `found (blob size: ${record.blob?.size})` : 'not found'}`);
         resolve(record?.blob || null);
       };
-      request.onerror = () => reject(request.error);
+      request.onerror = () => {
+        console.error(`🧑‍🎨 [getTile] Query error:`, request.error);
+        reject(request.error);
+      };
     });
   }
 
