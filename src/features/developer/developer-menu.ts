@@ -1,14 +1,34 @@
 // ==========================================
 // 1. 設定: ここにボタンを追加してください
 
-import { debugLegacyImport } from "./debugLegacyGalleryImport";
+import {
+  debugLegacyImport,
+  debugAutoGenerateLegacy,
+} from "./debugLegacyGalleryImport";
 
 // ==========================================
 const ACTIONS = [
   {
     label: "Legacy Gallery Import",
+    action: debugLegacyImport,
+  },
+  {
+    label: "Auto-generate Legacy Data",
+    action: debugAutoGenerateLegacy,
+  },
+  {
+    label: "Show LocalStorage",
     action: () => {
-      debugLegacyImport();
+      const entries = Object.entries(localStorage);
+      if (entries.length === 0) {
+        alert("localStorage is empty.");
+        return;
+      }
+      let output = "localStorage contents:\n\n";
+      entries.forEach(([key, value]) => {
+        output += `${key}: ${value}\n`;
+      });
+      alert(output);
     },
   },
   {
@@ -20,8 +40,6 @@ const ACTIONS = [
       alert("Cleared!");
     },
   },
-  { label: "Log Title", action: () => console.log(document.title) },
-  { label: "Bg Red", action: () => (document.body.style.background = "red") },
 ];
 
 // ==========================================
