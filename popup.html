@@ -1,182 +1,119 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mr. WPlace Settings</title>
+
     <style>
+      @font-face {
+        font-family: "MisakiGothic";
+        src: url("assets/fonts/misaki/misaki_gothic.ttf") format("truetype");
+      }
+
       * {
         box-sizing: border-box;
       }
 
       body {
         width: 320px;
-        min-height: 200px;
         margin: 0;
-        padding: 20px;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
-          sans-serif;
-        background: radial-gradient(circle at top left, #2b2b2b 0%, #000 70%);
-        color: #f5f5f5;
+        padding: 12px;
+        background: #000;
+        color: #fff;
+        font-family: "MisakiGothic", monospace;
+        font-size: 12px;
+        line-height: 1.6;
       }
 
-      /* ★ ガラス + 黒金フレーム */
       .container {
-        background: rgba(18, 18, 18, 0.6);
-        backdrop-filter: blur(18px) saturate(160%);
-        border-radius: 18px;
-        padding: 20px;
-        border: 1px solid rgba(212, 175, 55, 0.25);
-        box-shadow: 0 0 20px rgba(212, 175, 55, 0.25),
-          inset 0 0 25px rgba(0, 0, 0, 0.5);
-      }
-
-      .header {
-        text-align: center;
-        margin-bottom: 24px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+        border: 2px solid #fff;
+        padding: 12px;
       }
 
       .header h2 {
-        margin: 0;
-        font-size: 22px;
-        font-weight: 700;
-        background: linear-gradient(135deg, #f6e27f 0%, #d4af37 80%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        letter-spacing: 0.5px;
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        font-weight: normal;
       }
 
-      /* ★ 設定ブロック */
       .setting-group {
-        background: rgba(255, 255, 255, 0.07);
-        border: 1px solid rgba(212, 175, 55, 0.15);
-        border-radius: 14px;
-        padding: 14px;
-        margin-bottom: 14px;
-        transition: all 0.25s ease;
-      }
-      .setting-group:hover {
-        background: rgba(255, 215, 0, 0.05);
-        transform: translateY(-1px);
-        box-shadow: 0 3px 15px rgba(212, 175, 55, 0.2);
+        border: 1px solid #fff;
+        padding: 8px;
+        margin-bottom: 8px;
       }
 
       .setting-label {
         display: flex;
         align-items: center;
-        font-size: 13px;
-        font-weight: 600;
-        margin-bottom: 8px;
-        color: #f0e6d2;
+        gap: 6px;
+        margin-bottom: 4px;
       }
 
+      /* SVG アイコン */
       .icon {
-        font-size: 16px;
-        margin-right: 8px;
-        filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.5));
+        width: 12px;
+        height: 12px;
+        fill: #fff;
+        flex-shrink: 0;
       }
 
-      /* ★ Select（金枠） */
       select {
         width: 100%;
-        padding: 8px 12px;
-        border: 1px solid rgba(212, 175, 55, 0.4);
-        border-radius: 8px;
-        background: rgba(0, 0, 0, 0.6);
-        color: #f8f3d9;
-        font-size: 13px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-      select:hover {
-        border-color: #d4af37;
-      }
-      select:focus {
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.3);
+        background: #000;
+        color: #fff;
+        border: 1px solid #fff;
+        padding: 4px;
+        font-family: inherit;
+        font-size: 12px;
       }
 
-      /* ★ ボタン（黒金メタル） */
+      select:focus {
+        outline: none;
+        background: #fff;
+        color: #000;
+      }
+
       button {
         width: 100%;
-        padding: 10px 14px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 600;
+        background: #000;
+        color: #fff;
+        border: 1px solid #fff;
+        padding: 4px;
+        font-family: inherit;
+        font-size: 12px;
         cursor: pointer;
-        transition: all 0.2s ease;
+      }
+
+      button + button {
+        margin-top: 4px;
       }
 
       button:active {
-        transform: scale(0.96);
-      }
-
-      .btn-primary {
-        background: linear-gradient(135deg, #d4af37 0%, #b38600 100%);
+        background: #fff;
         color: #000;
-        box-shadow: 0 4px 14px rgba(212, 175, 55, 0.45);
-      }
-      .btn-primary:hover {
-        filter: brightness(1.05);
-        box-shadow: 0 6px 18px rgba(212, 175, 55, 0.6);
-      }
-
-      .btn-secondary {
-        background: rgba(255, 255, 255, 0.05);
-        color: #d4af37;
-        border: 1px solid #d4af37;
-      }
-      .btn-secondary:hover {
-        background: rgba(212, 175, 55, 0.15);
       }
 
       .btn-danger {
-        background: rgba(255, 255, 255, 0.05);
-        color: #ff6b6b;
-        border: 1px solid #ff6b6b;
-      }
-      .btn-danger:hover {
-        background: rgba(255, 107, 107, 0.15);
+        border-style: dashed;
       }
 
-      .btn-group {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      /* ★ サポート欄 */
       .coffee-support {
-        text-align: center;
-        margin-top: 24px;
-        padding-top: 16px;
-        border-top: 1px solid rgba(212, 175, 55, 0.25);
+        border-top: 1px solid #fff;
+        margin-top: 8px;
+        padding-top: 8px;
       }
 
-      .support-link {
-        display: inline-block;
-        color: #d4af37;
-        text-decoration: none;
-        font-size: 12px;
-        font-weight: 600;
-        padding: 8px 16px;
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.06);
-        margin-bottom: 12px;
-        border: 1px solid rgba(212, 175, 55, 0.25);
-        transition: 0.25s;
-      }
-      .support-link:hover {
-        background: rgba(212, 175, 55, 0.15);
-        transform: translateY(-1px);
+      /* Bug Report をボタン化 */
+      .bug-button {
+        margin-bottom: 8px;
       }
 
+      /* coffee img サイズ制限 */
       .coffee-btn img {
+        max-width: 100%;
+        max-height: 32px;
         display: block;
-        height: 36px;
       }
     </style>
   </head>
@@ -184,12 +121,14 @@
   <body>
     <div class="container">
       <div class="header">
-        <h2>✨ Mr.WPlace</h2>
+        <h2>Mr. WPlace</h2>
       </div>
 
       <div class="setting-group">
-        <label class="setting-label" for="language-select">
-          <span class="icon">🌐</span>
+        <label class="setting-label">
+          <svg class="icon" viewBox="0 0 12 12">
+            <circle cx="6" cy="6" r="5" />
+          </svg>
           Language
         </label>
         <select id="language-select">
@@ -204,19 +143,23 @@
       </div>
 
       <div class="setting-group">
-        <label class="setting-label" for="navigation-select">
-          <span class="icon">📍</span>
+        <label class="setting-label">
+          <svg class="icon" viewBox="0 0 12 12">
+            <rect x="1" y="1" width="10" height="10" />
+          </svg>
           Navigation
         </label>
         <select id="navigation-select">
-          <option value="true">Map Jump 🚁</option>
-          <option value="false">URL Jump 🔗</option>
+          <option value="true">Map Jump</option>
+          <option value="false">URL Jump</option>
         </select>
       </div>
 
       <div class="setting-group">
-        <label class="setting-label" for="tile-boundaries-select">
-          <span class="icon">🗺️</span>
+        <label class="setting-label">
+          <svg class="icon" viewBox="0 0 12 12">
+            <path d="M1 1h10v10H1z M6 1v10 M1 6h10" />
+          </svg>
           Tile Boundaries
         </label>
         <select id="tile-boundaries-select">
@@ -227,30 +170,33 @@
 
       <div class="setting-group">
         <label class="setting-label">
-          <span class="icon">🖼️</span>
-          <span id="gallery-data-label">Gallery Data</span>
+          <svg class="icon" viewBox="0 0 12 12">
+            <path d="M2 2h8v8H2z" />
+          </svg>
+          Gallery Data
         </label>
-        <div class="btn-group">
-          <button id="export-gallery-btn" class="btn-primary">📤 Export</button>
-          <button id="import-gallery-btn" class="btn-secondary">
-            📥 Import
-          </button>
-          <button id="reset-gallery-btn" class="btn-danger">
-            🗑️ Reset Gallery
-          </button>
-          <input
-            type="file"
-            id="import-gallery-file"
-            accept=".zip"
-            style="display: none"
-          />
-        </div>
+
+        <button id="export-gallery-btn">Export</button>
+        <button id="import-gallery-btn">Import</button>
+        <button id="reset-gallery-btn" class="btn-danger">Reset Gallery</button>
+
+        <input
+          type="file"
+          id="import-gallery-file"
+          accept=".zip"
+          style="display: none"
+        />
       </div>
 
       <div class="coffee-support">
-        <a id="feedback-link" href="#" target="_blank" class="support-link">
-          📝 Bug Report
-        </a>
+        <button
+          id="feedback-link"
+          class="bug-button"
+          onclick="window.open('#','_blank')"
+        >
+          Bug Report
+        </button>
+
         <a
           href="https://buymeacoffee.com/c20_40a"
           target="_blank"
