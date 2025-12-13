@@ -9,7 +9,6 @@ import { sendTileBoundariesToInject } from "@/core/bridge";
 // Re-export bridge functions for backward compatibility
 export {
   sendGalleryImagesToInject,
-  saveLayerToIndexedDB,
   sendComputeDeviceToInject,
   sendShowUnplacedOnlyToInject,
   sendColorFilterToInject,
@@ -124,7 +123,7 @@ const initializeMainFeatures = async () => {
 
 // メッセージリスナー（言語切替、ギャラリー更新）
 const registerMessageListeners = () => {
-  runtime.onMessage.addListener(async (message) => {
+  runtime.onMessage.addListener(async (message, _sender, sendResponse) => {
     if (message.type === "LOCALE_CHANGED") {
       // i18nマネージャーの状態を更新
       await I18nManager.init(message.locale);
@@ -134,6 +133,100 @@ const registerMessageListeners = () => {
     if (message.type === "TILE_BOUNDARIES_CHANGED") {
       // タイル境界表示設定が変更されたらinject側に通知
       await sendTileBoundariesToInject();
+      return;
+    }
+
+    // Popup -> Content -> Inject bridge for gallery operations
+    if (message.type === "GALLERY_SAVE_ITEM") {
+      const { saveGalleryItem } = await import(
+        "@/core/bridge/gallery-storage-bridge"
+      );
+      try {
+        const result = await saveGalleryItem(
+          message.id,
+          message.imageDataUrl,
+          message.metadata
+        );
+        sendResponse({ success: true, result });
+      } catch (error) {
+        sendResponse({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+      return true; // Keep channel open for async response
+    }
+
+    if (message.type === "GALLERY_DELETE_ITEM") {
+      const { deleteGalleryItem } = await import(
+        "@/core/bridge/gallery-storage-bridge"
+      );
+      try {
+        await deleteGalleryItem(message.id);
+        sendResponse({ success: true });
+      } catch (error) {
+        sendResponse({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+      return true;
+    }
+
+    if (message.type === "GALLERY_GET_ALL") {
+      const { getAllGalleryMetadata } = await import(
+        "@/core/bridge/gallery-storage-bridge"
+      );
+      try {
+        const result = await getAllGalleryMetadata();
+        sendResponse({ success: true, result });
+      } catch (error) {
+        sendResponse({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+      return true;
+    }
+
+    if (message.type === "GALLERY_GET_ALL_WITH_IMAGES") {
+      const {
+        getAllGalleryMetadata,
+        getGalleryImageDataUrl,
+        getGalleryThumbnailDataUrl,
+      } = await import("@/core/bridge/gallery-storage-bridge");
+      try {
+        const metadataList = await getAllGalleryMetadata();
+        const items = [];
+        for (const meta of metadataList) {
+          const dataUrl = await getGalleryImageDataUrl(meta.id);
+          const thumbnail = await getGalleryThumbnailDataUrl(meta.id);
+          items.push({
+            key: meta.id,
+            timestamp: meta.timestamp,
+            dataUrl: dataUrl || "",
+            thumbnail: thumbnail || undefined,
+            title: meta.title,
+            drawPosition: meta.coords,
+            drawEnabled: meta.visible,
+            layerOrder: meta.zIndex,
+            width: meta.width,
+            height: meta.height,
+          });
+        }
+        sendResponse({ success: true, result: items });
+      } catch (error) {
+        sendResponse({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+      return true;
+    }
+
+    if (message.type === "GALLERY_UPDATED") {
+      // Refresh overlay layers in inject
+      await sendGalleryImagesToInject();
       return;
     }
   });

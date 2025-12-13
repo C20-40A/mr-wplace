@@ -10,9 +10,6 @@ export {
   requestTotalStatsComputation,
 } from "./gallery-bridge";
 
-// Layer
-export { saveLayerToIndexedDB } from "./layer-bridge";
-
 // Settings
 export {
   sendComputeDeviceToInject,

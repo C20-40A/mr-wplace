@@ -15,7 +15,6 @@ import {
   setTileBoundaries,
 } from "./states/tile-boundaries";
 import { tabs } from "@/utils/browser-api";
-import { GalleryStorage } from "@/states/galleryStorage";
 import {
   exportGalleryToZip,
   importGalleryFromZip,
@@ -237,12 +236,23 @@ const handleExport = async (): Promise<void> => {
   try {
     // Disable button
     exportBtn.disabled = true;
-    // const originalLabel = exportBtn.innerHTML;
     exportBtn.innerHTML = `⏳ ${t`${"exporting"}`}`;
 
-    // Get all gallery items (full images for export)
-    const storage = new GalleryStorage();
-    const items = await storage.getAll({ fullImage: true });
+    // Get all gallery items with full images via content script bridge
+    const items = await sendToContentScript<
+      Array<{
+        key: string;
+        timestamp: number;
+        dataUrl: string;
+        thumbnail?: string;
+        title?: string;
+        drawPosition?: { TLX: number; TLY: number; PxX: number; PxY: number };
+        drawEnabled?: boolean;
+        layerOrder?: number;
+        width?: number;
+        height?: number;
+      }>
+    >({ type: "GALLERY_GET_ALL_WITH_IMAGES" });
 
     // Filter items with drawPosition
     const itemsToExport = items.filter((item) => item.drawPosition);
@@ -279,6 +289,32 @@ const handleExport = async (): Promise<void> => {
   }
 };
 
+/**
+ * Send message to content script and wait for response
+ * Popup cannot use postMessage to inject, must go through content script
+ */
+const sendToContentScript = async <T>(message: unknown): Promise<T> => {
+  const [activeTab] = await tabs.query({
+    active: true,
+    currentWindow: true,
+  });
+  if (!activeTab.id) throw new Error("No active tab");
+
+  return new Promise((resolve, reject) => {
+    chrome.tabs.sendMessage(activeTab.id!, message, (response) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      if (!response?.success) {
+        reject(new Error(response?.error || "Unknown error"));
+        return;
+      }
+      resolve(response.result as T);
+    });
+  });
+};
+
 // Gallery import handler
 const handleImport = async (file: File): Promise<void> => {
   // Confirmation dialog
@@ -303,22 +339,24 @@ const handleImport = async (file: File): Promise<void> => {
       return;
     }
 
-    // Import items
-    const storage = new GalleryStorage();
+    // Import items via content script bridge
     for (const item of items) {
       const timestamp = Date.now();
       const key = `gallery_${timestamp}_${Math.random()
         .toString(36)
         .slice(2, 9)}`;
 
-      await storage.save({
-        key,
-        timestamp,
-        dataUrl: item.dataUrl,
-        title: item.title,
-        drawPosition: item.drawPosition,
-        drawEnabled: true,
-        layerOrder: item.layerOrder,
+      await sendToContentScript({
+        type: "GALLERY_SAVE_ITEM",
+        id: key,
+        imageDataUrl: item.dataUrl,
+        metadata: {
+          title: item.title,
+          coords: item.drawPosition,
+          visible: true,
+          zIndex: item.layerOrder ?? 0,
+          timestamp,
+        },
       });
 
       // Small delay to ensure unique timestamps
@@ -362,12 +400,17 @@ const handleReset = async (): Promise<void> => {
     resetBtn.disabled = true;
     resetBtn.innerHTML = `⏳ ${t`${"resetting"}`}`;
 
-    // Delete all gallery items
-    const storage = new GalleryStorage();
-    const items = await storage.getAll();
+    // Get all gallery items via content script bridge
+    const items = await sendToContentScript<
+      Array<{ id: string }>
+    >({ type: "GALLERY_GET_ALL" });
 
+    // Delete each item via content script bridge
     for (const item of items) {
-      await storage.delete(item.key);
+      await sendToContentScript({
+        type: "GALLERY_DELETE_ITEM",
+        id: item.id,
+      });
     }
 
     // Notify inject side to update overlay layers
