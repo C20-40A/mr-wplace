@@ -11,9 +11,9 @@ src/inject/
 ├── fetch-interceptor.ts        # Tile & /me API interception
 ├── map-instance.ts             # Map instance capture, event handling
 ├── message-handler.ts          # postMessage dispatcher
-├── db/                         # IndexedDB
-│   ├── schema.ts              # Database schema
-│   └── layer-repository.ts    # Repository Pattern, LRU cache
+├── db/                         # IndexedDB v2
+│   ├── schema-v2.ts           # Database schema (4 stores)
+│   └── gallery-repository.ts  # Repository Pattern, CRUD operations
 ├── workers/                    # Web Worker
 │   ├── migration.worker.ts    # Tile splitting (OffscreenCanvas)
 │   └── messaging.ts           # Worker communication
@@ -21,11 +21,10 @@ src/inject/
 │   ├── colorFilterState.ts    # Color filter state
 │   └── migrationState.ts      # Migration state
 ├── handlers/                   # Message handlers
-│   ├── overlay-handlers.ts    # Gallery, snapshots, text, layer save
+│   ├── overlay-handlers.ts    # Gallery v2, snapshots, text layers
 │   ├── state-handlers.ts      # Theme, data saver, filter
 │   ├── request-handlers.ts    # Stats, pixel color
-│   ├── indexeddb-bridge-handlers.ts  # IndexedDB bridge (Phase 3: renamed from doctor-handlers)
-│   └── user-status-handler.ts # User status
+│   └── gallery-v2-handlers.ts # IndexedDB v2 CRUD bridge
 └── tile-draw/                  # Tile rendering
     ├── stats/                 # Statistics computation
     ├── filters/               # GPU/CPU filters
@@ -34,27 +33,36 @@ src/inject/
 
 ## Data Flow
 
-**Gallery Save:** content (Chrome Storage + IndexedDB) → `sendGalleryImagesToInject()` → inject `handleGalleryImages()` → IndexedDB + Worker tile splitting
+**Gallery Save:** content → `gallery-storage-bridge.ts` → inject `gallery-v2-handlers.ts` → IndexedDB v2
 
-**Tile Draw:** `fetch-interceptor` → `handleTileRequest()` → `drawOverlayLayersOnTile()` → composite + stats + cache
+**Gallery Display:** `sendGalleryImagesToInject()` → inject `handleGalleryImagesV2()` → overlay layers
 
-## Storage Strategy
+**Tile Draw:** `fetch-interceptor` → `handleTileRequest()` → `drawOverlayLayersOnTile()` → composite + cache
 
-- **Chrome Storage**: metadata + thumbnail (KB)
-- **IndexedDB (mr-wplace-v2)**: full image + optimized tiles (MB+)
-  - `layers`: metadata (visible, zIndex, coords, isOptimized)
-  - `legacy_blobs`: original image Blob
-  - `optimized_tiles`: 1000x1000 split tiles
+## Storage Strategy (IndexedDB v2)
+
+**Database:** `mr-wplace-gallery-v2` (version 1)
+
+| Store | Key | Content |
+|-------|-----|---------|
+| `images` | layerId | Full image Blob |
+| `splitTiles` | [layerId, tileKey] | Split tile Blob (1000x1000) |
+| `metadata` | layerId | GalleryMetadata (coords, visible, zIndex, affectedTiles) |
+| `thumbnails` | layerId | Thumbnail Blob (128x128) |
+
+**tileKey format:** `"tx,ty"` (e.g., `"1866,1292"`)
 
 ## Key Messages
 
 **content → inject:**
-- `mr-wplace-gallery-images`, `mr-wplace-snapshots`, `mr-wplace-text-layers`, `mr-wplace-theme-update`, `mr-wplace-color-filter`, `wplace-studio-flyto`
-- **IndexedDB bridge:** `mr-wplace-gallery-dataurl-request`, `mr-wplace-thumbnail-request`, `mr-wplace-save-image-request`
+- `mr-wplace-gallery-images-v2`: Gallery metadata with affectedTiles
+- `mr-wplace-snapshots`, `mr-wplace-text-layers`
+- `mr-wplace-theme-update`, `mr-wplace-color-filter`, `wplace-studio-flyto`
+- **Gallery v2 bridge:** `mr-wplace-gallery-v2-save`, `mr-wplace-gallery-v2-delete`, etc.
 
 **inject → content:**
 - `mr-wplace-me`, `mr-wplace-response-stats`, `mr-wplace-stats-updated`
-- **IndexedDB bridge:** `mr-wplace-gallery-dataurl-response`, `mr-wplace-thumbnail-response`, `mr-wplace-save-image-response`
+- **Gallery v2 response:** `mr-wplace-gallery-v2-save-response`, etc.
 
 ## Technical Constraints
 
@@ -67,7 +75,7 @@ src/inject/
 
 1. Load theme from DOM
 2. `setupFetchInterceptor()`: override `window.fetch`
-3. `setupMessageHandler()`: register listeners
+3. `setupMessageHandler()`: register listeners + Gallery v2 handlers
 4. `setupMapObserver()`: capture map instance
 5. Initialize `window.mrWplace` inject fields
 
@@ -94,3 +102,4 @@ await sendGalleryImagesToInject(); // Required after content changes
 - **2025-11-01**: tile-draw → inject (Firefox security)
 - **2025-11-27**: IndexedDB + Repository + Worker
 - **2025-12-01**: Type unification, hybrid storage, state refactoring
+- **2025-12-14**: IndexedDB v2 migration, v1 legacy code removed

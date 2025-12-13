@@ -38,11 +38,22 @@ content.ts → inject script tag → inject/index.ts
 
 **Key messages (content → inject):**
 
-- `mr-wplace-gallery-images`: Gallery images with draw positions
+- `mr-wplace-gallery-images-v2`: Gallery images metadata with affectedTiles (IndexedDB v2)
 - `mr-wplace-snapshots`: Time-travel snapshot overlays
 - `mr-wplace-color-filter`: Color filter state
 - `mr-wplace-theme-update`: Theme changes
 - `wplace-studio-flyto`: Position navigation
+
+**Popup → Content → Inject:**
+
+Popup cannot directly postMessage to inject (different context). Use `tabs.sendMessage`:
+
+```typescript
+// popup.ts
+chrome.tabs.sendMessage(tabId, { type: "GALLERY_SAVE_ITEM", ... });
+
+// content.ts handles and forwards to inject via postMessage
+```
 
 **Key messages (inject → content):**
 
