@@ -15,11 +15,6 @@ import {
   setTileBoundaries,
 } from "./states/tile-boundaries";
 import { tabs } from "@/utils/browser-api";
-import {
-  exportGalleryToZip,
-  importGalleryFromZip,
-  downloadBlob,
-} from "@/utils/gallery-export";
 import { FEEDBACK_FORM_URL } from "@/constants/url";
 import { BUY_ME_COFFEE_IMAGE } from "./assets/buyMeACoffee";
 
@@ -194,9 +189,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const exportBtn = document.getElementById("export-gallery-btn");
   const importBtn = document.getElementById("import-gallery-btn");
   const resetBtn = document.getElementById("reset-gallery-btn");
-  const fileInput = document.getElementById(
-    "import-gallery-file"
-  ) as HTMLInputElement;
 
   if (exportBtn) {
     exportBtn.addEventListener("click", async () => {
@@ -204,18 +196,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  if (importBtn && fileInput) {
-    importBtn.addEventListener("click", () => {
-      fileInput.click();
-    });
-
-    fileInput.addEventListener("change", async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        await handleImport(file);
-        // Clear file input
-        fileInput.value = "";
-      }
+  if (importBtn) {
+    importBtn.addEventListener("click", async () => {
+      await handleImport();
     });
   }
 
@@ -226,7 +209,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
-// Gallery export handler
+// Gallery export handler - delegates to inject
 const handleExport = async (): Promise<void> => {
   const exportBtn = document.getElementById(
     "export-gallery-btn"
@@ -234,92 +217,22 @@ const handleExport = async (): Promise<void> => {
   if (!exportBtn) return;
 
   try {
-    // Disable button
     exportBtn.disabled = true;
     exportBtn.innerHTML = `⏳ ${t`${"exporting"}`}`;
 
-    // Get all gallery items with full images via content script bridge
-    const items = await sendToContentScript<
-      Array<{
-        key: string;
-        timestamp: number;
-        dataUrl: string;
-        thumbnail?: string;
-        title?: string;
-        drawPosition?: { TLX: number; TLY: number; PxX: number; PxY: number };
-        drawEnabled?: boolean;
-        layerOrder?: number;
-        width?: number;
-        height?: number;
-      }>
-    >({ type: "GALLERY_GET_ALL_WITH_IMAGES" });
-
-    // Filter items with drawPosition
-    const itemsToExport = items.filter((item) => item.drawPosition);
-
-    if (itemsToExport.length === 0) {
-      alert(t`${"no_images_to_export"}`);
-      return;
-    }
-
-    // Create ZIP
-    const zipBlob = await exportGalleryToZip(items);
-
-    // Download
-    const timestamp = new Date()
-      .toISOString()
-      .replace(/[:.]/g, "-")
-      .slice(0, 19);
-    const filename = `wplace_gallery_${timestamp}.zip`;
-    downloadBlob(zipBlob, filename);
-
-    console.log(`🧑‍🎨 : Exported ${itemsToExport.length} gallery images`);
+    await notifyContentScript({ type: "GALLERY_EXPORT" });
   } catch (error) {
     console.error("🧑‍🎨 : Export failed:", error);
     alert(t`${"export_failed"}`);
   } finally {
-    // Re-enable button
-    const exportBtn = document.getElementById(
-      "export-gallery-btn"
-    ) as HTMLButtonElement;
-    if (exportBtn) {
-      exportBtn.disabled = false;
-      exportBtn.innerHTML = `📤 <span id="export-btn-label">${t`${"export"}`}</span>`;
-    }
+    exportBtn.disabled = false;
+    exportBtn.innerHTML = `📤 <span id="export-btn-label">${t`${"export"}`}</span>`;
   }
 };
 
-/**
- * Send message to content script and wait for response
- * Popup cannot use postMessage to inject, must go through content script
- */
-const sendToContentScript = async <T>(message: unknown): Promise<T> => {
-  const [activeTab] = await tabs.query({
-    active: true,
-    currentWindow: true,
-  });
-  if (!activeTab.id) throw new Error("No active tab");
-
-  return new Promise((resolve, reject) => {
-    chrome.tabs.sendMessage(activeTab.id!, message, (response) => {
-      if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
-        return;
-      }
-      if (!response?.success) {
-        reject(new Error(response?.error || "Unknown error"));
-        return;
-      }
-      resolve(response.result as T);
-    });
-  });
-};
-
-// Gallery import handler
-const handleImport = async (file: File): Promise<void> => {
-  // Confirmation dialog
-  const confirmed = confirm(t`${"confirm_import"}`);
-  if (!confirmed) return;
+// Gallery import handler - delegates to inject
+const handleImport = async (): Promise<void> => {
+  if (!confirm(t`${"confirm_import"}`)) return;
 
   const importBtn = document.getElementById(
     "import-gallery-btn"
@@ -327,68 +240,22 @@ const handleImport = async (file: File): Promise<void> => {
   if (!importBtn) return;
 
   try {
-    // Disable button
     importBtn.disabled = true;
     importBtn.innerHTML = `⏳ ${t`${"importing"}`}`;
 
-    // Parse ZIP
-    const items = await importGalleryFromZip(file);
-
-    if (items.length === 0) {
-      alert(t`${"no_valid_images_in_zip"}`);
-      return;
-    }
-
-    // Import items via content script bridge
-    for (const item of items) {
-      const timestamp = Date.now();
-      const key = `gallery_${timestamp}_${Math.random()
-        .toString(36)
-        .slice(2, 9)}`;
-
-      await sendToContentScript({
-        type: "GALLERY_SAVE_ITEM",
-        id: key,
-        imageDataUrl: item.dataUrl,
-        metadata: {
-          title: item.title,
-          coords: item.drawPosition,
-          visible: true,
-          zIndex: item.layerOrder ?? 0,
-          timestamp,
-        },
-      });
-
-      // Small delay to ensure unique timestamps
-      await new Promise((resolve) => setTimeout(resolve, 10));
-    }
-
-    // Notify inject side to update overlay layers
-    await notifyContentScript({ type: "GALLERY_UPDATED" });
-
-    alert(t`${"import_success"}`.replace("{count}", items.length.toString()));
-
-    console.log(`🧑‍🎨 : Imported ${items.length} gallery images`);
+    await notifyContentScript({ type: "GALLERY_IMPORT" });
   } catch (error) {
     console.error("🧑‍🎨 : Import failed:", error);
     alert(t`${"import_failed"}`);
   } finally {
-    // Re-enable button
-    const importBtn = document.getElementById(
-      "import-gallery-btn"
-    ) as HTMLButtonElement;
-    if (importBtn) {
-      importBtn.disabled = false;
-      importBtn.innerHTML = `📥 <span id="import-btn-label">${t`${"import"}`}</span>`;
-    }
+    importBtn.disabled = false;
+    importBtn.innerHTML = `📥 <span id="import-btn-label">${t`${"import"}`}</span>`;
   }
 };
 
-// Gallery reset handler
+// Gallery reset handler - delegates to inject
 const handleReset = async (): Promise<void> => {
-  // Confirmation dialog
-  const confirmed = confirm(t`${"confirm_reset"}`);
-  if (!confirmed) return;
+  if (!confirm(t`${"confirm_reset"}`)) return;
 
   const resetBtn = document.getElementById(
     "reset-gallery-btn"
@@ -396,41 +263,17 @@ const handleReset = async (): Promise<void> => {
   if (!resetBtn) return;
 
   try {
-    // Disable button
     resetBtn.disabled = true;
     resetBtn.innerHTML = `⏳ ${t`${"resetting"}`}`;
 
-    // Get all gallery items via content script bridge
-    const items = await sendToContentScript<
-      Array<{ id: string }>
-    >({ type: "GALLERY_GET_ALL" });
-
-    // Delete each item via content script bridge
-    for (const item of items) {
-      await sendToContentScript({
-        type: "GALLERY_DELETE_ITEM",
-        id: item.id,
-      });
-    }
-
-    // Notify inject side to update overlay layers
-    await notifyContentScript({ type: "GALLERY_UPDATED" });
-
+    await notifyContentScript({ type: "GALLERY_RESET" });
     alert(t`${"gallery_reset_success"}`);
-
-    console.log(`🧑‍🎨 : Reset ${items.length} gallery images`);
   } catch (error) {
     console.error("🧑‍🎨 : Reset failed:", error);
     alert(t`${"reset_failed"}`);
   } finally {
-    // Re-enable button
-    const resetBtn = document.getElementById(
-      "reset-gallery-btn"
-    ) as HTMLButtonElement;
-    if (resetBtn) {
-      resetBtn.disabled = false;
-      resetBtn.innerHTML = `🗑️ <span id="reset-btn-label">${t`${"reset_gallery"}`}</span>`;
-    }
+    resetBtn.disabled = false;
+    resetBtn.innerHTML = `🗑️ <span id="reset-btn-label">${t`${"reset_gallery"}`}</span>`;
   }
 };
 

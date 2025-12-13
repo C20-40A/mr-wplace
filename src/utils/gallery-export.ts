@@ -1,5 +1,6 @@
 import JSZip from "jszip";
 import type { GalleryItem, DrawPosition } from "@/states/galleryStorage";
+import { initGalleryRepository } from "@/inject/db/gallery-repository";
 
 /**
  * Sanitize title for use in filename
@@ -175,98 +176,81 @@ const parseFilename = (
 };
 
 /**
- * Import gallery items from a ZIP file
- * Returns array of items ready to be saved to storage
+ * Import gallery items from ZIP and save to IndexedDB directly
+ * Simple, error-tolerant, memory-safe
  */
 export const importGalleryFromZip = async (
   zipFile: File
-): Promise<
-  Array<{
-    dataUrl: string;
-    title?: string;
-    drawPosition: DrawPosition;
-    layerOrder?: number;
-  }>
-> => {
+): Promise<{ success: number; failed: number }> => {
+  const repo = await initGalleryRepository();
   const zip = await JSZip.loadAsync(zipFile);
+  const entries = Object.entries(zip.files);
 
+  console.log(`🧑‍🎨 : Loading ZIP with ${entries.length} files`);
+
+  // Collect valid items with metadata (no dataUrl yet)
   const items: Array<{
-    dataUrl: string;
-    title?: string;
-    drawPosition: DrawPosition;
-    layerOrder?: number;
+    filename: string;
+    file: JSZip.JSZipObject;
+    parsed: ReturnType<typeof parseFilename>;
   }> = [];
 
-  console.log(`🧑‍🎨 : Loading ZIP with ${Object.keys(zip.files).length} files`);
-
-  // Process each file in ZIP
-  for (const [filename, file] of Object.entries(zip.files)) {
-    // Skip directories and hidden files
-    if (
-      file.dir ||
-      filename.startsWith(".") ||
-      filename.startsWith("__MACOSX")
-    ) {
+  for (const [filename, file] of entries) {
+    if (file.dir || filename.startsWith(".") || filename.startsWith("__MACOSX"))
       continue;
-    }
+    if (!/\.(png|jpg|jpeg|webp)$/i.test(filename)) continue;
 
-    // Check if it's an image file
-    if (!/\.(png|jpg|jpeg|webp)$/i.test(filename)) {
-      console.warn(`🧑‍🎨 : Skipping non-image file: ${filename}`);
-      continue;
-    }
-
-    // Parse filename to extract draw position
     const parsed = parseFilename(filename);
     if (!parsed) {
-      console.warn(`🧑‍🎨 : Skipping file with invalid format: ${filename}`);
+      console.warn(`🧑‍🎨 : Skipping invalid format: ${filename}`);
       continue;
     }
 
-    // Read image data
-    const blob = await file.async("blob");
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-
-    items.push({
-      dataUrl,
-      title: parsed.title || undefined,
-      drawPosition: parsed.drawPosition,
-      layerOrder: parsed.layerOrder,
-    });
-
-    console.log(
-      `🧑‍🎨 : Imported ${filename} → layerOrder: ${
-        parsed.layerOrder ?? "auto"
-      }, title: "${parsed.title}", pos: ${parsed.drawPosition.TLX},${
-        parsed.drawPosition.TLY
-      }`
-    );
+    items.push({ filename, file, parsed });
   }
 
-  if (items.length === 0) {
-    throw new Error("No valid images found in ZIP file");
-  }
+  if (items.length === 0) return { success: 0, failed: 0 };
 
-  // Sort by layerOrder if available
+  // Sort by layerOrder (best effort)
   items.sort((a, b) => {
-    if (a.layerOrder !== undefined && b.layerOrder !== undefined) {
-      return a.layerOrder - b.layerOrder;
-    }
-    // Items without layerOrder go to the end
-    if (a.layerOrder === undefined && b.layerOrder !== undefined) return 1;
-    if (a.layerOrder !== undefined && b.layerOrder === undefined) return -1;
-    return 0;
+    const aLayer = a.parsed?.layerOrder ?? Infinity;
+    const bLayer = b.parsed?.layerOrder ?? Infinity;
+    return aLayer - bLayer;
   });
 
-  console.log(`🧑‍🎨 : Successfully imported ${items.length} images`);
+  console.log(`🧑‍🎨 : Found ${items.length} valid images`);
 
-  return items;
-};
+  let success = 0;
+  let failed = 0;
+
+  // Process one by one, continue on error
+  for (let i = 0; i < items.length; i++) {
+    const { filename, file, parsed } = items[i];
+
+    try {
+      const blob = await file.async("blob");
+      const timestamp = Date.now();
+      const key = `gallery_${timestamp}_${Math.random().toString(36).slice(2, 9)}`;
+
+      await repo.saveGalleryItem(key, blob, {
+        title: parsed?.title,
+        coords: parsed?.drawPosition,
+        visible: true,
+        zIndex: i,
+        timestamp,
+      });
+
+      success++;
+      console.log(`🧑‍🎨 : Imported ${filename}`);
+    } catch (error) {
+      failed++;
+      console.error(`🧑‍🎨 : Failed to import ${filename}:`, error);
+    }
+  }
+
+  console.log(`🧑‍🎨 : Import complete: ${success} success, ${failed} failed`);
+  return { success, failed };
+}
 
 /**
  * Download a blob as a file

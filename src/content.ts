@@ -4,7 +4,10 @@ import { runtime } from "@/utils/browser-api";
 import { I18nManager } from "@/i18n/manager";
 import { initializeFeatures } from "@/core/initializer";
 import { setupMessageHandlers } from "@/core/message-handlers";
-import { sendTileBoundariesToInject } from "@/core/bridge";
+import {
+  sendTileBoundariesToInject,
+  sendGalleryImagesToInject,
+} from "@/core/bridge";
 
 // Re-export bridge functions for backward compatibility
 export {
@@ -189,6 +192,21 @@ const registerMessageListeners = () => {
       return true;
     }
 
+    if (message.type === "GALLERY_IMPORT_ZIP") {
+      const { importGalleryFromZip } = await import("@/utils/gallery-export");
+      try {
+        const file = new File([message.data], message.filename);
+        const result = await importGalleryFromZip(file);
+        sendResponse({ success: true, result });
+      } catch (error) {
+        sendResponse({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+      return true;
+    }
+
     if (message.type === "GALLERY_GET_ALL_WITH_IMAGES") {
       const {
         getAllGalleryMetadata,
@@ -225,8 +243,23 @@ const registerMessageListeners = () => {
     }
 
     if (message.type === "GALLERY_UPDATED") {
-      // Refresh overlay layers in inject
       await sendGalleryImagesToInject();
+      return;
+    }
+
+    // Delegate to inject via postMessage
+    if (message.type === "GALLERY_IMPORT") {
+      window.postMessage({ source: "mr-wplace-gallery-import", requestId: Date.now().toString() }, "*");
+      return;
+    }
+
+    if (message.type === "GALLERY_EXPORT") {
+      window.postMessage({ source: "mr-wplace-gallery-export", requestId: Date.now().toString() }, "*");
+      return;
+    }
+
+    if (message.type === "GALLERY_RESET") {
+      window.postMessage({ source: "mr-wplace-gallery-reset", requestId: Date.now().toString() }, "*");
       return;
     }
   });

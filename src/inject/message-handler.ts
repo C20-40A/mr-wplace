@@ -25,6 +25,11 @@ import {
   startAutoCanvasClick,
   stopAutoCanvasClick,
 } from "./auto-canvas-click";
+import {
+  openFilePickerAndImport,
+  exportAndDownload,
+  resetGallery,
+} from "./utils/gallery-io";
 
 type MessageHandler = (data: any) => void | Promise<void>;
 
@@ -75,6 +80,72 @@ const handleFlyTo = (data: {
   window.wplaceMap.flyTo({ center: [lng, lat], zoom });
 };
 
+/**
+ * Handle gallery import request
+ */
+const handleGalleryImport = async (data: { requestId: string }): Promise<void> => {
+  try {
+    const result = await openFilePickerAndImport();
+    window.postMessage(
+      { source: "mr-wplace-gallery-import-response", requestId: data.requestId, result },
+      "*"
+    );
+  } catch (error) {
+    window.postMessage(
+      {
+        source: "mr-wplace-gallery-import-response",
+        requestId: data.requestId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "*"
+    );
+  }
+};
+
+/**
+ * Handle gallery export request
+ */
+const handleGalleryExport = async (data: { requestId: string }): Promise<void> => {
+  try {
+    await exportAndDownload();
+    window.postMessage(
+      { source: "mr-wplace-gallery-export-response", requestId: data.requestId, success: true },
+      "*"
+    );
+  } catch (error) {
+    window.postMessage(
+      {
+        source: "mr-wplace-gallery-export-response",
+        requestId: data.requestId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "*"
+    );
+  }
+};
+
+/**
+ * Handle gallery reset request
+ */
+const handleGalleryReset = async (data: { requestId: string }): Promise<void> => {
+  try {
+    const count = await resetGallery();
+    window.postMessage(
+      { source: "mr-wplace-gallery-reset-response", requestId: data.requestId, count },
+      "*"
+    );
+  } catch (error) {
+    window.postMessage(
+      {
+        source: "mr-wplace-gallery-reset-response",
+        requestId: data.requestId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "*"
+    );
+  }
+};
+
 const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-processed": handleProcessedBlob,
   "wplace-studio-flyto": handleFlyTo,
@@ -96,6 +167,9 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-compute-total-stats": handleComputeTotalStats,
   "mr-wplace-auto-canvas-click-start": startAutoCanvasClick,
   "mr-wplace-auto-canvas-click-stop": stopAutoCanvasClick,
+  "mr-wplace-gallery-import": handleGalleryImport,
+  "mr-wplace-gallery-export": handleGalleryExport,
+  "mr-wplace-gallery-reset": handleGalleryReset,
 };
 
 export const setupMessageHandler = (): void => {
