@@ -1,8 +1,7 @@
 # メイン
 
-- paint 中のバツ印の誤タップ防止
 - 開発者モードのアルゴリズム変更
-- document.querySelector('[title="Lock"]').style.borderRadius=0,document.querySelector('[title="Lock"]').parentNode.parentNode.parentNode.style.cssText="top:0;right:0;",document.querySelector('[title="Lock"]').style.transform='scale(1.2)'
+- ja の feedback form にならない
 - 「？」アイコンからのドキュメント表示
 - 画像編集で大きい画像をいれたら、UI ばぐる
 - image-select で画像を非表示 → 追加できなくなる

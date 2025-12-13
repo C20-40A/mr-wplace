@@ -1,21 +1,21 @@
 /**
- * IndexedDB wrapper for persistent tile cache
+ * IndexedDB wrapper for persistent tile cache (content script context)
+ *
+ * NOTE: This is a separate instance from src/inject/cache-storage.ts
+ * Both access the same IndexedDB but run in different JS contexts.
+ * - inject側: 実際のタイルキャッシュ読み書き (ArrayBuffer形式で保存)
+ * - content側 (このファイル): 統計表示用 (getCacheSize, clearCacheのみ使用)
  *
  * Storage structure:
  * - DB: "mr-wplace-cache"
  * - Object Store: "tiles"
  * - Key: "tileX,tileY" (e.g., "0,0")
- * - Value: { blob: Blob, lastAccessed: number }
+ * - Value: { arrayBuffer: ArrayBuffer, lastAccessed: number } (inject側で書き込み)
  */
 
 const DB_NAME = "mr-wplace-cache";
 const STORE_NAME = "tiles";
 const DB_VERSION = 1;
-
-interface CachedTile {
-  blob: Blob;
-  lastAccessed: number;
-}
 
 class TileCacheDB {
   private db: IDBDatabase | null = null;
@@ -46,114 +46,6 @@ class TileCacheDB {
           db.createObjectStore(STORE_NAME);
           console.log("🧑‍🎨 : Created object store:", STORE_NAME);
         }
-      };
-    });
-  }
-
-  /**
-   * Get cached tile
-   */
-  async getCachedTile(key: string): Promise<Blob | null> {
-    await this.init();
-    if (!this.db) return null;
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(STORE_NAME, "readwrite");
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.get(key);
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        const cached = request.result as CachedTile | undefined;
-        if (cached) {
-          // Update last accessed time
-          store.put({ blob: cached.blob, lastAccessed: Date.now() }, key);
-          resolve(cached.blob);
-        } else {
-          resolve(null);
-        }
-      };
-    });
-  }
-
-  /**
-   * Set cached tile with LRU eviction
-   */
-  async setCachedTile(key: string, blob: Blob, maxSize: number): Promise<void> {
-    await this.init();
-    if (!this.db) return;
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(STORE_NAME, "readwrite");
-      const store = transaction.objectStore(STORE_NAME);
-
-      // Add new tile
-      const addRequest = store.put(
-        { blob, lastAccessed: Date.now() } as CachedTile,
-        key
-      );
-
-      addRequest.onerror = () => reject(addRequest.error);
-      addRequest.onsuccess = async () => {
-        // Check cache size and evict if necessary
-        await this.evictIfNeeded(maxSize);
-        resolve();
-      };
-    });
-  }
-
-  /**
-   * Evict old tiles if cache size exceeds limit
-   */
-  private async evictIfNeeded(maxSize: number): Promise<void> {
-    if (!this.db) return;
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(STORE_NAME, "readwrite");
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.getAllKeys();
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = async () => {
-        const keys = request.result as IDBValidKey[];
-        const currentSize = keys.length;
-
-        if (currentSize <= maxSize) {
-          resolve();
-          return;
-        }
-
-        // Get all entries with timestamps
-        const entries: Array<{ key: IDBValidKey; lastAccessed: number }> = [];
-        const getAllRequest = store.getAll();
-
-        getAllRequest.onsuccess = () => {
-          const values = getAllRequest.result as CachedTile[];
-          values.forEach((value, index) => {
-            entries.push({ key: keys[index], lastAccessed: value.lastAccessed });
-          });
-
-          // Sort by lastAccessed (oldest first)
-          entries.sort((a, b) => a.lastAccessed - b.lastAccessed);
-
-          // Delete oldest entries
-          const deleteCount = currentSize - maxSize;
-          const deleteTransaction = this.db!.transaction(STORE_NAME, "readwrite");
-          const deleteStore = deleteTransaction.objectStore(STORE_NAME);
-
-          for (let i = 0; i < deleteCount; i++) {
-            deleteStore.delete(entries[i].key);
-          }
-
-          deleteTransaction.oncomplete = () => {
-            console.log(`🧑‍🎨 : Evicted ${deleteCount} old tiles from cache`);
-            resolve();
-          };
-
-          deleteTransaction.onerror = () => reject(deleteTransaction.error);
-        };
-
-        getAllRequest.onerror = () => reject(getAllRequest.error);
       };
     });
   }
@@ -192,52 +84,6 @@ class TileCacheDB {
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve(request.result);
-    });
-  }
-
-  /**
-   * Delete specific tile
-   */
-  async deleteTile(key: string): Promise<void> {
-    await this.init();
-    if (!this.db) return;
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(STORE_NAME, "readwrite");
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.delete(key);
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve();
-    });
-  }
-
-  /**
-   * Load all tiles into memory Map (for inject context)
-   */
-  async loadAllTiles(): Promise<Map<string, Blob>> {
-    await this.init();
-    const tileMap = new Map<string, Blob>();
-    if (!this.db) return tileMap;
-
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(STORE_NAME, "readonly");
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.openCursor();
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = (event) => {
-        const cursor = (event.target as IDBRequest).result;
-        if (cursor) {
-          const key = cursor.key as string;
-          const value = cursor.value as CachedTile;
-          tileMap.set(key, value.blob);
-          cursor.continue();
-        } else {
-          console.log(`🧑‍🎨 : Loaded ${tileMap.size} tiles from IndexedDB`);
-          resolve(tileMap);
-        }
-      };
     });
   }
 }
