@@ -112,29 +112,28 @@ export const handleImageStatsRequest = async (data: { imageKeys: string[]; reque
 };
 
 /**
- * Fetch stats from IndexedDB statistics store
+ * Fetch stats from IndexedDB (GalleryRepository v2 + legacy LayerRepository)
  */
 const fetchStatsFromIndexedDB = async (
   imageKeys: string[]
 ): Promise<Record<string, { matched: Record<string, number>; total: Record<string, number> }>> => {
-  const { getLayerRepository } = await import("../states/migrationState");
-  const repository = getLayerRepository();
-  if (!repository) {
-    console.warn("🧑‍🎨 : LayerRepository not available for stats fetch");
-    return {};
-  }
-
   const result: Record<string, { matched: Record<string, number>; total: Record<string, number> }> = {};
 
-  for (const key of imageKeys) {
-    try {
-      const stats = await repository.getStatistics(key);
-      if (stats) {
+  // Try GalleryRepository v2 first (perTileStats in metadata)
+  try {
+    const { getGalleryRepository } = await import("../db/gallery-repository");
+    const repoV2 = getGalleryRepository();
+
+    for (const key of imageKeys) {
+      if (result[key]) continue;
+
+      const metadata = await repoV2.getMetadata(key);
+      if (metadata?.perTileStats) {
         // Aggregate perTileStats to get total matched and total stats
         const matched: Record<string, number> = {};
         const total: Record<string, number> = {};
 
-        for (const tileStats of Object.values(stats.perTileStats)) {
+        for (const tileStats of Object.values(metadata.perTileStats)) {
           for (const [color, count] of Object.entries(tileStats.matched)) {
             matched[color] = (matched[color] || 0) + count;
           }
@@ -145,8 +144,40 @@ const fetchStatsFromIndexedDB = async (
 
         result[key] = { matched, total };
       }
+    }
+  } catch (error) {
+    console.warn("🧑‍🎨 : GalleryRepository v2 not available for stats fetch:", error);
+  }
+
+  // Fallback to legacy LayerRepository for remaining keys
+  const remainingKeys = imageKeys.filter((key) => !result[key]);
+  if (remainingKeys.length > 0) {
+    try {
+      const { getLayerRepository } = await import("../states/migrationState");
+      const repository = getLayerRepository();
+      if (repository) {
+        for (const key of remainingKeys) {
+          const stats = await repository.getStatistics(key);
+          if (stats) {
+            // Aggregate perTileStats to get total matched and total stats
+            const matched: Record<string, number> = {};
+            const total: Record<string, number> = {};
+
+            for (const tileStats of Object.values(stats.perTileStats)) {
+              for (const [color, count] of Object.entries(tileStats.matched)) {
+                matched[color] = (matched[color] || 0) + count;
+              }
+              for (const [color, count] of Object.entries(tileStats.total)) {
+                total[color] = (total[color] || 0) + count;
+              }
+            }
+
+            result[key] = { matched, total };
+          }
+        }
+      }
     } catch (error) {
-      console.error(`🧑‍🎨 : Failed to fetch stats for ${key} from IndexedDB:`, error);
+      console.warn("🧑‍🎨 : LayerRepository not available for stats fetch:", error);
     }
   }
 
