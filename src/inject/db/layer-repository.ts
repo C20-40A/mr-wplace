@@ -12,8 +12,8 @@ import {
   type LegacyBlobData,
   type OptimizedTileData,
   type LayerStatistics,
-  STORES
-} from './schema';
+  STORES,
+} from "./schema";
 
 export class LayerRepository {
   private db: IDBDatabase;
@@ -88,7 +88,7 @@ export class LayerRepository {
    */
   async getLayerMetadata(layerId: string): Promise<LayerMetadata | null> {
     return new Promise((resolve, reject) => {
-      const tx = this.db.transaction([STORES.LAYERS], 'readonly');
+      const tx = this.db.transaction([STORES.LAYERS], "readonly");
       const store = tx.objectStore(STORES.LAYERS);
       const request = store.get(layerId);
 
@@ -102,7 +102,7 @@ export class LayerRepository {
    */
   async getAllLayers(): Promise<LayerMetadata[]> {
     return new Promise((resolve, reject) => {
-      const tx = this.db.transaction([STORES.LAYERS], 'readonly');
+      const tx = this.db.transaction([STORES.LAYERS], "readonly");
       const store = tx.objectStore(STORES.LAYERS);
       const request = store.getAll();
 
@@ -116,9 +116,9 @@ export class LayerRepository {
    */
   async getVisibleLayers(): Promise<LayerMetadata[]> {
     return new Promise((resolve, reject) => {
-      const tx = this.db.transaction([STORES.LAYERS], 'readonly');
+      const tx = this.db.transaction([STORES.LAYERS], "readonly");
       const store = tx.objectStore(STORES.LAYERS);
-      const index = store.index('visible');
+      const index = store.index("visible");
       const request = index.getAll(IDBKeyRange.only(true)); // Only visible layers
 
       request.onsuccess = () => resolve(request.result || []);
@@ -145,7 +145,7 @@ export class LayerRepository {
       blob,
       width,
       height,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     await this.saveLegacyBlob(legacyData);
@@ -161,7 +161,7 @@ export class LayerRepository {
     updates: Partial<LayerMetadata>
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-      const tx = this.db.transaction([STORES.LAYERS], 'readwrite');
+      const tx = this.db.transaction([STORES.LAYERS], "readwrite");
       const store = tx.objectStore(STORES.LAYERS);
       const getRequest = store.get(layerId);
 
@@ -234,7 +234,7 @@ export class LayerRepository {
    */
   async getStatistics(layerId: string): Promise<LayerStatistics | null> {
     return new Promise((resolve, reject) => {
-      const tx = this.db.transaction([STORES.STATISTICS], 'readonly');
+      const tx = this.db.transaction([STORES.STATISTICS], "readonly");
       const store = tx.objectStore(STORES.STATISTICS);
       const request = store.get(layerId);
 
@@ -246,9 +246,12 @@ export class LayerRepository {
   /**
    * Update statistics for a layer
    */
-  async updateStatistics(layerId: string, stats: LayerStatistics): Promise<void> {
+  async updateStatistics(
+    layerId: string,
+    stats: LayerStatistics
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
-      const tx = this.db.transaction([STORES.STATISTICS], 'readwrite');
+      const tx = this.db.transaction([STORES.STATISTICS], "readwrite");
       const store = tx.objectStore(STORES.STATISTICS);
       const request = store.put(stats);
 
@@ -266,7 +269,7 @@ export class LayerRepository {
     }
 
     this.tileCache.clear();
-    console.log('🧑‍🎨 : Cleared tile cache');
+    console.log("🧑‍🎨 : Cleared tile cache");
   }
 
   /**
@@ -286,7 +289,7 @@ export class LayerRepository {
     tileKey: string
   ): Promise<ImageBitmap | null> {
     return new Promise((resolve, reject) => {
-      const tx = this.db.transaction([STORES.OPTIMIZED_TILES], 'readonly');
+      const tx = this.db.transaction([STORES.OPTIMIZED_TILES], "readonly");
       const store = tx.objectStore(STORES.OPTIMIZED_TILES);
       const request = store.get([layerId, tileKey]);
 
@@ -302,7 +305,10 @@ export class LayerRepository {
           const bitmap = await createImageBitmap(data.blob);
           resolve(bitmap);
         } catch (error) {
-          console.error('Failed to create ImageBitmap from optimized tile:', error);
+          console.error(
+            "Failed to create ImageBitmap from optimized tile:",
+            error
+          );
           resolve(null);
         }
       };
@@ -331,15 +337,17 @@ export class LayerRepository {
 
     try {
       // Parse tile key: "TLX,TLY,PxX,PxY"
-      const [tlx, tly, pxx, pxy] = tileKey.split(',').map(Number);
+      const [tlx, tly, pxx, pxy] = tileKey.split(",").map(Number);
 
       // Calculate offset in source image
       if (!layer.coords) {
         bitmap.close();
         return null;
       }
-      const offsetX = (tlx - layer.coords.TLX) * 1000 + (pxx - layer.coords.PxX);
-      const offsetY = (tly - layer.coords.TLY) * 1000 + (pxy - layer.coords.PxY);
+      const offsetX =
+        (tlx - layer.coords.TLX) * 1000 + (pxx - layer.coords.PxX);
+      const offsetY =
+        (tly - layer.coords.TLY) * 1000 + (pxy - layer.coords.PxY);
 
       // Calculate tile size
       const width = Math.min(1000 - pxx, bitmap.width - offsetX);
@@ -352,14 +360,24 @@ export class LayerRepository {
 
       // Extract tile using OffscreenCanvas
       const canvas = new OffscreenCanvas(width, height);
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
 
       if (!ctx) {
         bitmap.close();
         return null;
       }
 
-      ctx.drawImage(bitmap, offsetX, offsetY, width, height, 0, 0, width, height);
+      ctx.drawImage(
+        bitmap,
+        offsetX,
+        offsetY,
+        width,
+        height,
+        0,
+        0,
+        width,
+        height
+      );
 
       const tileBitmap = await createImageBitmap(canvas);
 
@@ -374,7 +392,7 @@ export class LayerRepository {
    */
   private async getLegacyBlob(layerId: string): Promise<LegacyBlobData | null> {
     return new Promise((resolve, reject) => {
-      const tx = this.db.transaction([STORES.LEGACY_BLOBS], 'readonly');
+      const tx = this.db.transaction([STORES.LEGACY_BLOBS], "readonly");
       const store = tx.objectStore(STORES.LEGACY_BLOBS);
       const request = store.get(layerId);
 
@@ -388,7 +406,7 @@ export class LayerRepository {
    */
   private async saveLegacyBlob(data: LegacyBlobData): Promise<void> {
     return new Promise((resolve, reject) => {
-      const tx = this.db.transaction([STORES.LEGACY_BLOBS], 'readwrite');
+      const tx = this.db.transaction([STORES.LEGACY_BLOBS], "readwrite");
       const store = tx.objectStore(STORES.LEGACY_BLOBS);
       const request = store.put(data);
 
@@ -402,20 +420,20 @@ export class LayerRepository {
    */
   private requestMigration(layerId: string, layer: LayerMetadata): void {
     if (!this.worker) {
-      console.warn('🧑‍🎨 : Worker not set, skipping migration request');
+      console.warn("🧑‍🎨 : Worker not set, skipping migration request");
       return;
     }
 
     this.migrationQueue.add(layerId);
 
     this.worker.postMessage({
-      type: 'MIGRATE_REQUEST',
+      type: "MIGRATE_REQUEST",
       data: {
         layerId,
         priority: 1, // Default: low priority (background)
         coords: layer.coords,
-        bounds: layer.bounds
-      }
+        bounds: layer.bounds,
+      },
     });
 
     console.log(`🧑‍🎨 : Requested migration for ${layerId}`);
@@ -427,7 +445,9 @@ export class LayerRepository {
   private addToCache(key: string, bitmap: ImageBitmap): void {
     // If cache is full, remove oldest entry
     if (this.tileCache.size >= this.maxCacheSize) {
-      const oldestKey = this.tileCache.keys().next().value as string | undefined;
+      const oldestKey = this.tileCache.keys().next().value as
+        | string
+        | undefined;
       if (oldestKey) {
         const oldBitmap = this.tileCache.get(oldestKey);
         if (oldBitmap) {
@@ -457,7 +477,7 @@ export class LayerRepository {
    */
   private async deleteLayerMetadata(layerId: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      const tx = this.db.transaction([STORES.LAYERS], 'readwrite');
+      const tx = this.db.transaction([STORES.LAYERS], "readwrite");
       const store = tx.objectStore(STORES.LAYERS);
       const request = store.delete(layerId);
 
@@ -471,7 +491,7 @@ export class LayerRepository {
    */
   private async deleteLegacyBlob(layerId: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      const tx = this.db.transaction([STORES.LEGACY_BLOBS], 'readwrite');
+      const tx = this.db.transaction([STORES.LEGACY_BLOBS], "readwrite");
       const store = tx.objectStore(STORES.LEGACY_BLOBS);
       const request = store.delete(layerId);
 
@@ -485,9 +505,9 @@ export class LayerRepository {
    */
   private async deleteOptimizedTiles(layerId: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      const tx = this.db.transaction([STORES.OPTIMIZED_TILES], 'readwrite');
+      const tx = this.db.transaction([STORES.OPTIMIZED_TILES], "readwrite");
       const store = tx.objectStore(STORES.OPTIMIZED_TILES);
-      const index = store.index('layerId');
+      const index = store.index("layerId");
       const request = index.openCursor(IDBKeyRange.only(layerId));
 
       request.onsuccess = (event) => {
@@ -510,7 +530,7 @@ export class LayerRepository {
    */
   private async deleteStatistics(layerId: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      const tx = this.db.transaction([STORES.STATISTICS], 'readwrite');
+      const tx = this.db.transaction([STORES.STATISTICS], "readwrite");
       const store = tx.objectStore(STORES.STATISTICS);
       const request = store.delete(layerId);
 

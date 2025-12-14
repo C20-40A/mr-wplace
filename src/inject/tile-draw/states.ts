@@ -49,56 +49,22 @@ export const addImageToOverlayLayers = async (
 ): Promise<void> => {
   removePreparedOverlayImageByKey(imageKey);
 
-  // Check if layer is optimized in IndexedDB
-  const { getLayerRepository } = await import("../states/migrationState");
-  const repository = getLayerRepository();
-
   let preparedOverlayImage: Record<string, ImageBitmap> = {};
-  let isOptimized = false;
 
-  if (repository && !options.force) {
-    try {
-      const layerMetadata = await repository.getLayerMetadata(imageKey);
-
-      if (layerMetadata && layerMetadata.isOptimized) {
-        console.log(`🧑‍🎨 : Layer ${imageKey} is optimized, tiles will be loaded on-demand from IndexedDB`);
-        isOptimized = true;
-        // Don't load tiles here - they'll be loaded on-demand during rendering
-        // This saves memory and initialization time
-      }
-    } catch (error) {
-      console.warn(`🧑‍🎨 : Failed to check IndexedDB for ${imageKey}: ${error}`);
-    }
-  }
-
-  // If not optimized, split image on-the-fly
-  if (!isOptimized) {
-    console.log(`🧑‍🎨 : Splitting image on-the-fly for ${imageKey}`);
-    const { preparedOverlayImages } = await splitImageOnTiles({
-      source,
-      coords,
-      tileSize: TILE_DRAW_CONSTANTS.TILE_SIZE,
-    });
-    preparedOverlayImage = preparedOverlayImages;
-  }
-
-  // Get layer metadata if available (for optimized layers)
-  let layerMetadata: Awaited<ReturnType<NonNullable<typeof repository>['getLayerMetadata']>> = null;
-  if (repository && isOptimized) {
-    try {
-      layerMetadata = await repository.getLayerMetadata(imageKey);
-    } catch (error) {
-      console.warn(`🧑‍🎨 : Failed to get LayerMetadata for ${imageKey}: ${error}`);
-    }
-  }
+  // Split image on-the-fly (tiles will be loaded on-demand from IndexedDB v2)
+  console.log(`🧑‍🎨 : Splitting image on-the-fly for ${imageKey}`);
+  const { preparedOverlayImages } = await splitImageOnTiles({
+    source,
+    coords,
+    tileSize: TILE_DRAW_CONSTANTS.TILE_SIZE,
+  });
+  preparedOverlayImage = preparedOverlayImages;
 
   overlayLayers.push({
     coords,
     tiles: preparedOverlayImage,
     imageKey,
     drawEnabled: true,
-    isOptimized,
-    bounds: layerMetadata?.bounds,
   });
 
   // 統計はタイルレンダリング時に必要に応じて計算される

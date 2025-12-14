@@ -149,38 +149,6 @@ const fetchStatsFromIndexedDB = async (
     console.warn("🧑‍🎨 : GalleryRepository v2 not available for stats fetch:", error);
   }
 
-  // Fallback to legacy LayerRepository for remaining keys
-  const remainingKeys = imageKeys.filter((key) => !result[key]);
-  if (remainingKeys.length > 0) {
-    try {
-      const { getLayerRepository } = await import("../states/migrationState");
-      const repository = getLayerRepository();
-      if (repository) {
-        for (const key of remainingKeys) {
-          const stats = await repository.getStatistics(key);
-          if (stats) {
-            // Aggregate perTileStats to get total matched and total stats
-            const matched: Record<string, number> = {};
-            const total: Record<string, number> = {};
-
-            for (const tileStats of Object.values(stats.perTileStats)) {
-              for (const [color, count] of Object.entries(tileStats.matched)) {
-                matched[color] = (matched[color] || 0) + count;
-              }
-              for (const [color, count] of Object.entries(tileStats.total)) {
-                total[color] = (total[color] || 0) + count;
-              }
-            }
-
-            result[key] = { matched, total };
-          }
-        }
-      }
-    } catch (error) {
-      console.warn("🧑‍🎨 : LayerRepository not available for stats fetch:", error);
-    }
-  }
-
   console.log(`🧑‍🎨 : Fetched stats for ${Object.keys(result).length}/${imageKeys.length} images from IndexedDB`);
 
   return result;

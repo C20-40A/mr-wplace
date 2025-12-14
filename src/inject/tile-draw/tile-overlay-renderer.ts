@@ -651,38 +651,6 @@ export const drawOverlayLayersOnTile = async (
         }
       } catch (error) {
         console.error(`🧑‍🎨 : Error loading tile from v2:`, error);
-        // v2 not available, try legacy
-      }
-
-      // Fallback to legacy repository
-      if (!paintedTilebitmap) {
-        const { getLayerRepository } = await import("../states/migrationState");
-        const repository = getLayerRepository();
-
-        if (repository) {
-          try {
-            const loadedBitmap = await repository.getTile(
-              instance.imageKey,
-              tileKey
-            );
-
-            if (loadedBitmap) {
-              paintedTilebitmap = loadedBitmap;
-              // Cache in memory for faster subsequent access
-              if (!instance.tiles) {
-                instance.tiles = {};
-              }
-              instance.tiles[tileKey] = loadedBitmap;
-              console.log(
-                `🧑‍🎨 : Loaded tile ${tileKey} from legacy IndexedDB for ${instance.imageKey}`
-              );
-            }
-          } catch (error) {
-            console.warn(
-              `🧑‍🎨 : Failed to load tile ${tileKey} from IndexedDB: ${error}`
-            );
-          }
-        }
       }
     }
 
