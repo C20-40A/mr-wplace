@@ -14,6 +14,7 @@ export function sortColors(
   let sortedColors = [...colorpalette];
 
   if (!colorStats || sortOrder === "default") {
+    sortedColors.sort((a, b) => a.sort - b.sort);
     return sortedColors;
   }
 

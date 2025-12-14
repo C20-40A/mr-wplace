@@ -3,6 +3,8 @@
  * Automatically simulates Space keypress when cursor is over target colors on the canvas
  */
 
+import { colorpalette } from "@/constants/colors";
+
 let isEnabled = false;
 let rafId: number | null = null;
 let sourceCanvas: HTMLCanvasElement | null = null;
@@ -28,16 +30,15 @@ const CONTINUE_COLORS: [number, number, number, number][] = [
   [255, 0, 0, 255], // rgb(255, 0, 0) - 継続時のみ判定
 ];
 
-// 現在選択中の色を取得（hex -> RGBA）
+// 現在選択中の色を取得（localStorage selected-color -> RGBA）
 const getSelectedColor = (): [number, number, number, number] | null => {
-  const selectedColor = window.localStorage.selectedColor;
-  if (!selectedColor) return null;
-  const hex = selectedColor.slice(1);
-  if (hex.length !== 6) return null;
-  const r = parseInt(hex.slice(0, 2), 16);
-  const g = parseInt(hex.slice(2, 4), 16);
-  const b = parseInt(hex.slice(4, 6), 16);
-  return [r, g, b, 255];
+  const selectedColorId = localStorage.getItem("selected-color");
+  if (!selectedColorId) return null;
+  const id = parseInt(selectedColorId, 10);
+  if (isNaN(id)) return null;
+  const color = colorpalette.find((c) => c.id === id);
+  if (!color) return null;
+  return [color.rgb[0], color.rgb[1], color.rgb[2], 255];
 };
 
 const initCanvases = (): boolean => {
@@ -144,9 +145,6 @@ const handleMouseMove = (e: MouseEvent): void => {
       sourceCanvas.dispatchEvent(keyUpEvent);
       isSpacePressed = false;
       console.log("🧑‍🎨 : Non-continue color detected, Space key released");
-
-      console.log(d);
-      console.log(selected);
     }
     // 継続色なら何もしない（押したまま維持）
   }
