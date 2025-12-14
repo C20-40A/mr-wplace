@@ -555,7 +555,7 @@ export class NotificationModal {
       thresholdSlider.addEventListener("input", () =>
         updateThresholdDisplay("slider")
       );
-      thresholdInput.addEventListener("input", () =>
+      thresholdInput.addEventListener("change", () =>
         updateThresholdDisplay("input")
       );
     }
