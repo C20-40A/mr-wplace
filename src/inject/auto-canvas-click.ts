@@ -125,14 +125,16 @@ const handleMouseMove = (e: MouseEvent): void => {
         d[2] === target[2] &&
         d[3] === target[3]
     );
-    const selected = getSelectedColor();
-    const isSelectedColor =
-      selected &&
-      d[0] === selected[0] &&
-      d[1] === selected[1] &&
-      d[2] === selected[2];
+    // NOTE: selected colorのときにkey downしたままだと、色が変わったときに離せなくなる問題があるため無効化
+    // const selected = getSelectedColor();
+    // const isSelectedColor =
+    //   selected &&
+    //   d[0] === selected[0] &&
+    //   d[1] === selected[1] &&
+    //   d[2] === selected[2];
+    // if (!isContinueColor && !isSelectedColor) {
 
-    if (!isContinueColor && !isSelectedColor) {
+    if (!isContinueColor) {
       // 継続色でなくなったら → スペースを離す
       const keyUpEvent = new KeyboardEvent("keyup", {
         bubbles: true,
