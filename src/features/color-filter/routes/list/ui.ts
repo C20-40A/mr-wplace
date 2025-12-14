@@ -2,8 +2,10 @@ import { ColorPalette } from "@/components/color-palette";
 import type { SortOrder } from "@/components/color-palette/types";
 import { ColorPaletteStorage } from "@/components/color-palette/storage";
 import type { ComputeDevice } from "@/components/color-palette/storage";
-import { getCurrentTiles } from "@/states/currentTile";
 import { getAggregatedColorStats } from "@/utils/inject-bridge";
+import { getAllGalleryMetadata } from "@/core/bridge/gallery-storage-bridge";
+import { getCurrentPosition } from "@/utils/position";
+import { latLngToTilePixel } from "@/utils/coordinate";
 import {
   sendColorFilterToInject,
   sendComputeDeviceToInject,
@@ -34,38 +36,38 @@ export const renderColorFilters = async (
   const currentSelectedColors = colorFilterManager?.getSelectedColors() || [];
   const hasExtraColorsBitmap = colorFilterManager?.getOwnedColorIds() !== null;
 
-  // 表示中タイルの統計取得
-  // const tileOverlay = window.mrWplace?.tileOverlay;
-  const currentTiles = getCurrentTiles();
-
+  // 最寄りテンプレートの統計取得
   let colorStats:
     | Record<string, { matched: number; total: number }>
     | undefined;
 
-  if (currentTiles && currentTiles.size > 0) {
-    const { GalleryStorage } = await import(
-      "../../../../states/galleryStorage"
-    );
-    const galleryStorage = new GalleryStorage();
-    const allImages = await galleryStorage.getAll();
+  const allMetadata = await getAllGalleryMetadata();
+  const drawableItems = allMetadata.filter((m) => m.visible && m.coords);
 
-    // currentTiles に含まれる画像フィルタ
-    const targetImageKeys = allImages
-      .filter(
-        (img) =>
-          img.drawEnabled &&
-          img.drawPosition &&
-          currentTiles.has(`${img.drawPosition.TLX},${img.drawPosition.TLY}`)
-      )
-      .map((img) => img.key);
+  if (drawableItems.length > 0) {
+    const currentPos = getCurrentPosition();
 
-    console.log(
-      `🧑‍🎨 : Color stats - currentTiles: ${currentTiles.size}, targetImages: ${targetImageKeys.length}`
-    );
+    if (currentPos) {
+      const { TLX: cx, TLY: cy } = latLngToTilePixel(
+        currentPos.lat,
+        currentPos.lng
+      );
 
-    if (targetImageKeys.length > 0) {
-      colorStats = await getAggregatedColorStats(targetImageKeys);
-      console.log(`🧑‍🎨 : Aggregated color stats:`, colorStats);
+      // 距離計算 → 最寄り1件を選択
+      const nearest = drawableItems.reduce(
+        (closest, item) => {
+          const dist =
+            Math.pow(item.coords!.TLX - cx, 2) +
+            Math.pow(item.coords!.TLY - cy, 2);
+          return dist < closest.dist ? { item, dist } : closest;
+        },
+        { item: drawableItems[0], dist: Infinity }
+      );
+
+      colorStats = await getAggregatedColorStats([nearest.item.id]);
+      console.log(
+        `🧑‍🎨 : Nearest template: ${nearest.item.title || nearest.item.id}`
+      );
     }
   }
 
