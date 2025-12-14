@@ -1,11 +1,7 @@
 # メイン
 
-- auto canvas click は selected color も keydown 対象にする
-- 開発者モードのアルゴリズム変更
 - ja の feedback form にならない
 - 「？」アイコンからのドキュメント表示
-- image-select で画像を非表示 → 追加できなくなる
-- gallery の画像削除したあと、画像追加できないかも。firefox
 - bookmarks や tiles は mobile だとスクロールできない
 - fix type error
 - src/features/gallery/routes/list/index.ts で統計とっているのが謎
@@ -115,6 +111,9 @@
 
 # DONE v2.0.0
 
+- gallery の画像非表示したあと、画像追加できない
+- auto canvas click は selected color も keydown 対象にする -> disable
+- 開発者モードのアルゴリズム変更
 - paint modal 閉じるとき alert
 - color filter の count 更新
 - gallery のまとめて取り込みをするときは、indexed db に取り込みされている

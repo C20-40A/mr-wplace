@@ -1,4 +1,4 @@
-import { GalleryItem } from "@/states/galleryStorage";
+import { GalleryItem, GalleryStorage } from "@/states/galleryStorage";
 import { ImageGridComponent } from "./components/ImageGridComponent";
 import { gotoMapPosition, toggleDrawState } from "../../common-actions";
 import { t } from "@/i18n";
@@ -7,9 +7,16 @@ export type GallerySortType = "layer" | "distance" | "created";
 
 export class GalleryListUI {
   private container: HTMLElement | null = null;
-
   private imageGrid: ImageGridComponent | null = null;
-  private onCloseModalCallback?: () => void;
+  private storage = new GalleryStorage();
+
+  // コールバックを保存して再描画時に再利用
+  private onDelete?: (key: string) => void;
+  private onImageClick?: (item: GalleryItem) => void;
+  private onAddClick?: () => void;
+  private onCloseModal?: () => void;
+  private onSortChange?: (sortType: GallerySortType) => void;
+  private sortType: GallerySortType = "layer";
 
   constructor() {}
 
@@ -25,33 +32,24 @@ export class GalleryListUI {
   ): void {
     if (!container) return;
 
+    // 状態を保存
     this.container = container;
-    this.onCloseModalCallback = onCloseModal;
+    this.onDelete = onDelete;
+    this.onImageClick = onImageClick;
+    this.onAddClick = onAddClick;
+    this.onCloseModal = onCloseModal;
+    this.onSortChange = onSortChange;
+    if (sortType) this.sortType = sortType;
 
-    this.renderGalleryList(
-      container,
-      items,
-      onDelete,
-      onImageClick,
-      onAddClick,
-      sortType,
-      onSortChange
-    );
+    this.renderGalleryList(items);
   }
 
-  private renderGalleryList(
-    container: HTMLElement,
-    items: GalleryItem[],
-    onDelete: (key: string) => void,
-    onImageClick?: (item: GalleryItem) => void,
-    onAddClick?: () => void,
-    sortType?: GallerySortType,
-    onSortChange?: (sortType: GallerySortType) => void
-  ): void {
-    // Clear container
-    container.innerHTML = "";
+  private renderGalleryList(items: GalleryItem[]): void {
+    if (!this.container) return;
 
-    // Create sort dropdown
+    this.container.innerHTML = "";
+
+    // Sort dropdown
     const sortContainer = document.createElement("div");
     sortContainer.className = "flex items-center gap-2 mb-4";
     sortContainer.innerHTML = `
@@ -61,97 +59,50 @@ export class GalleryListUI {
         <option value="created">${t`${"sort_created"}`}</option>
       </select>
     `;
-    container.appendChild(sortContainer);
+    this.container.appendChild(sortContainer);
 
     const sortSelect = sortContainer.querySelector(
       "#wps-gallery-sort"
     ) as HTMLSelectElement;
-    if (sortType) sortSelect.value = sortType;
-    if (onSortChange) {
-      sortSelect.addEventListener("change", (e) => {
-        onSortChange((e.target as HTMLSelectElement).value as GallerySortType);
-      });
-    }
+    sortSelect.value = this.sortType;
+    sortSelect.addEventListener("change", (e) => {
+      this.sortType = (e.target as HTMLSelectElement).value as GallerySortType;
+      this.onSortChange?.(this.sortType);
+    });
 
-    // Create grid container
+    // Grid container
     const gridContainer = document.createElement("div");
-    container.appendChild(gridContainer);
+    this.container.appendChild(gridContainer);
 
-    // 既存のImageGridComponentがあれば破棄
     if (this.imageGrid) this.imageGrid.destroy();
 
-    // 新しいImageGridComponentを作成
     this.imageGrid = new ImageGridComponent(gridContainer, {
       items,
-      isSelectionMode: false, // list routeは選択モードなし
-      onImageClick: (item) => {
-        const galleryItem = items.find((gItem) => gItem.key === item.key);
-        if (galleryItem && onImageClick) {
-          onImageClick(galleryItem);
-        }
-      },
-      onDrawToggle: (key) => {
-        this.handleDrawToggle(
-          key,
-          onDelete,
-          onImageClick,
-          sortType,
-          onSortChange
-        );
-      },
-      onImageDelete: (key) => {
-        onDelete(key);
-      },
-      onGotoPosition: (item) => {
-        const galleryItem = items.find((gItem) => gItem.key === item.key);
-        if (galleryItem) this.handleGotoPosition(galleryItem);
-      },
-      onAddClick: onAddClick || (() => {}),
-      showDeleteButton: true, // list routeは削除ボタン表示
+      isSelectionMode: false,
+      onImageClick: (item) => this.onImageClick?.(item),
+      onDrawToggle: (key) => this.handleDrawToggle(key),
+      onImageDelete: (key) => this.onDelete?.(key),
+      onGotoPosition: (item) => this.handleGotoPosition(item),
+      onAddClick: () => this.onAddClick?.(),
+      showDeleteButton: true,
       showAddButton: true,
     });
 
-    // レンダリング
     this.imageGrid.render();
   }
 
-  private async handleDrawToggle(
-    key: string,
-    onDelete: (key: string) => void,
-    onImageClick?: (item: GalleryItem) => void,
-    sortType?: GallerySortType,
-    onSortChange?: (sortType: GallerySortType) => void
-  ): Promise<void> {
+  private async handleDrawToggle(key: string): Promise<void> {
     const newDrawEnabled = await toggleDrawState(key);
+    console.log(`🧑‍🎨 : Draw toggle: ${key} -> ${newDrawEnabled}`);
 
-    // 画面を再描画
-    const galleryStorage = new (
-      await import("../../../../states/galleryStorage")
-    ).GalleryStorage();
-    const updatedItems = await galleryStorage.getAll();
-
-    if (this.container) {
-      this.renderGalleryList(
-        this.container,
-        updatedItems,
-        onDelete,
-        onImageClick,
-        undefined,
-        sortType,
-        onSortChange
-      );
-    }
-
-    console.log(`🎯 Draw toggle: ${key} -> ${newDrawEnabled}`);
+    // 再描画
+    const updatedItems = await this.storage.getAll();
+    this.renderGalleryList(updatedItems);
   }
 
   private async handleGotoPosition(item: GalleryItem): Promise<void> {
     await gotoMapPosition(item);
-
-    // 親のモーダルを閉じる（コールバック経由）
-    if (this.onCloseModalCallback) {
-      this.onCloseModalCallback();
-    }
+    this.onCloseModal?.();
   }
 
   destroy(): void {
