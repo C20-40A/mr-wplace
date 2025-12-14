@@ -123,7 +123,7 @@ export class ImageGridComponent {
     return `
       <div class="border rounded-lg overflow-hidden shadow relative gallery-item" data-item-key="${
         item.key
-      }">
+      }" style="touch-action: manipulation; -webkit-tap-highlight-color: transparent;">
         ${showDeleteBtn ? this.createDeleteButtonHtml(item.key) : ""}
         ${
           showDrawToggleBtn && item.drawPosition

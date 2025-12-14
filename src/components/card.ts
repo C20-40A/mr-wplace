@@ -40,7 +40,7 @@ export const createCard = (config: CardConfig): string => {
         transition: all 0.25s ease;
         transform: translateY(0);
         overflow: hidden;
-        touch-action: auto;
+        -webkit-tap-highlight-color: transparent;
       "
       ${
         config.onClick
@@ -49,8 +49,6 @@ export const createCard = (config: CardConfig): string => {
         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.08)';"
         onmousedown="this.style.transform='translateY(1px) scale(0.98)';"
         onmouseup="this.style.transform='translateY(-3px) scale(1)';"
-        onTouchStart="this.style.transform='translateY(1px) scale(0.98)';"
-        onTouchEnd="this.style.transform='translateY(0) scale(1)';"
       `
           : ""
       }
