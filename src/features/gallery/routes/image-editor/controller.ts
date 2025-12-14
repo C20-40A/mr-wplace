@@ -161,18 +161,9 @@ export class EditorController {
     this.currentFileName = file.name;
     this.drawPosition = parseDrawPositionFromFileName(file.name);
 
+    // 画像差し替え時は警告ダイアログをスキップして直接編集を続行
     const dataUrl = await readFileAsDataUrl(file);
-    const { action, dataUrl: processedDataUrl } = await showImageSizeDialog(
-      dataUrl,
-      this.container
-    );
-
-    if (action === "addToGallery") {
-      await this.saveDirectlyToGallery(processedDataUrl);
-      return;
-    }
-
-    this.replaceImageDisplay(processedDataUrl);
+    this.replaceImageDisplay(dataUrl);
   }
 
   onScaleChange(scale: number): void {
