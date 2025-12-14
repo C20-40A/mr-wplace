@@ -1,12 +1,14 @@
 # メイン
 
+- ギャラリーの count リセットされるようになっている
+- color filter の count 更新
 - 開発者モードのアルゴリズム変更
 - ja の feedback form にならない
 - 「？」アイコンからのドキュメント表示
 - image-select で画像を非表示 → 追加できなくなる
 - タイトル変更関連の処理の後、またモーダルがひらく
 - gallery の画像削除したあと、画像追加できないかも。firefox
-- アラーム任意の値にならない
+- bookmarks や tiles は mobile だとスクロールできない
 - fix type error
 - src/features/gallery/routes/list/index.ts で統計とっているのが謎
 - sendGalleryImagesToInject なんとかする
@@ -25,7 +27,6 @@
 - 紹介文更新 - 友人帳やら未描画のみのひょうじやら
 - paint modal に filter や描画モードの switch あってもいい
 - bookmarks も ONLINE 同期
-- bookmarks や tiles は mobile だとスクロールできない
 - ギャラリーからも、画像描画できると初心者に親切
 - 画像編集画面/タイル詳細画面で見切れる
 - 統計計算の処理のチェック。不要な処理がないか。
@@ -120,6 +121,7 @@
 
 # DONE v2.0.0
 
+- fix: アラーム任意の値にならない
 - 画像編集で大きい画像をいれたら、UI ばぐる
 - カラーフィルターの順番を wplace のカラーパレットと一致させる
 - popup の UI 変更

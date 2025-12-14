@@ -6,30 +6,19 @@ export interface ElementConfig {
 
 /**
  * Elementを監視して、存在しない場合に生成する
+ * 要素が削除された場合も再生成する
  */
 export const setupElementObserver = (configs: ElementConfig[]): void => {
-  const existingIds = new Set<string>();
-
   const renderMissingItems = () => {
     configs.forEach((config) => {
-      if (existingIds.has(config.id)) return;
+      // IDを使って要素を検索し、既に存在する場合はスキップ
+      if (document.querySelector(`#${config.id}`)) return;
 
       const target = config.getTargetElement();
       if (!target) return;
 
-      // IDを使って要素を検索し、既に存在する場合はスキップ
-      if (target.querySelector(`#${config.id}`)) {
-        existingIds.add(config.id);
-        return;
-      }
-
       config.createElement(target);
-      existingIds.add(config.id);
     });
-
-    if (existingIds.size === configs.length) {
-      observer.disconnect();
-    }
   };
 
   let scheduled = false;
