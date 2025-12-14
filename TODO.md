@@ -5,7 +5,6 @@
 - ja の feedback form にならない
 - 「？」アイコンからのドキュメント表示
 - image-select で画像を非表示 → 追加できなくなる
-- タイトル変更関連の処理の後、またモーダルがひらく
 - gallery の画像削除したあと、画像追加できないかも。firefox
 - bookmarks や tiles は mobile だとスクロールできない
 - fix type error

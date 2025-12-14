@@ -28,6 +28,18 @@ const CONTINUE_COLORS: [number, number, number, number][] = [
   [255, 0, 0, 255], // rgb(255, 0, 0) - 継続時のみ判定
 ];
 
+// 現在選択中の色を取得（hex -> RGBA）
+const getSelectedColor = (): [number, number, number, number] | null => {
+  const selectedColor = window.localStorage.selectedColor;
+  if (!selectedColor) return null;
+  const hex = selectedColor.slice(1);
+  if (hex.length !== 6) return null;
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  return [r, g, b, 255];
+};
+
 const initCanvases = (): boolean => {
   sourceCanvas = document.querySelector("canvas.maplibregl-canvas");
   if (!sourceCanvas) {
@@ -84,7 +96,10 @@ const handleMouseMove = (e: MouseEvent): void => {
   if (!isSpacePressed) {
     const isTriggerColor = TRIGGER_COLORS.some(
       (target) =>
-        d[0] === target[0] && d[1] === target[1] && d[2] === target[2] && d[3] === target[3]
+        d[0] === target[0] &&
+        d[1] === target[1] &&
+        d[2] === target[2] &&
+        d[3] === target[3]
     );
 
     if (isTriggerColor) {
@@ -101,13 +116,22 @@ const handleMouseMove = (e: MouseEvent): void => {
       console.log("🧑‍🎨 : Trigger color detected, Space key pressed");
     }
   } else {
-    // スペースが押されている状態 → 継続色（255,0,0,255を含む）でチェック
+    // スペースが押されている状態 → 継続色（255,0,0,255を含む）またはselected colorでチェック
     const isContinueColor = CONTINUE_COLORS.some(
       (target) =>
-        d[0] === target[0] && d[1] === target[1] && d[2] === target[2] && d[3] === target[3]
+        d[0] === target[0] &&
+        d[1] === target[1] &&
+        d[2] === target[2] &&
+        d[3] === target[3]
     );
+    const selected = getSelectedColor();
+    const isSelectedColor =
+      selected &&
+      d[0] === selected[0] &&
+      d[1] === selected[1] &&
+      d[2] === selected[2];
 
-    if (!isContinueColor) {
+    if (!isContinueColor && !isSelectedColor) {
       // 継続色でなくなったら → スペースを離す
       const keyUpEvent = new KeyboardEvent("keyup", {
         bubbles: true,
@@ -120,8 +144,22 @@ const handleMouseMove = (e: MouseEvent): void => {
       sourceCanvas.dispatchEvent(keyUpEvent);
       isSpacePressed = false;
       console.log("🧑‍🎨 : Non-continue color detected, Space key released");
+
+      console.log(d);
+      console.log(selected);
     }
     // 継続色なら何もしない（押したまま維持）
+  }
+};
+
+const clickFullscreenButton = (): void => {
+  const fullscreenPath =
+    "M5 21C4.45 21 3.97917 20.8042 3.5875 20.4125C3.19583 20.0208 3 19.55 3 19V15H5V19H9V21H5ZM15 21V19H19V15H21V19C21 19.55 20.8042 20.0208 20.4125 20.4125C20.0208 20.8042 19.55 21 19 21H15ZM3 9V5C3 4.45 3.19583 3.97917 3.5875 3.5875C3.97917 3.19583 4.45 3 5 3H9V5H5V9H3ZM19 9V5H15V3H19C19.55 3 20.0208 3.19583 20.4125 3.5875C20.8042 3.97917 21 4.45 21 5V9H19Z";
+  const pathEl = document.querySelector(`path[d="${fullscreenPath}"]`);
+  const btn = pathEl?.closest("button");
+  if (btn) {
+    btn.click();
+    console.log("🧑‍🎨 : Fullscreen button clicked");
   }
 };
 
@@ -134,6 +172,7 @@ export const startAutoCanvasClick = (): void => {
   }
 
   isEnabled = true;
+  clickFullscreenButton();
   console.log("🧑‍🎨 : Auto canvas click started");
 
   // Start refresh loop
