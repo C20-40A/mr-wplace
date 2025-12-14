@@ -1,5 +1,7 @@
 # メイン
 
+- gallery のまとめて取り込みをするときは、indexed db に取り込みされている？
+- import export reset できてないかも
 - 開発者モードのアルゴリズム変更
 - ja の feedback form にならない
 - 「？」アイコンからのドキュメント表示
@@ -12,10 +14,7 @@
 - sendGalleryImagesToInject なんとかする
 - 画像編集で「境界を強調」つまり「輪郭線を描画」できるようにする
 - migration がされるか、以前のデータでちゃんとテストする
-- gallery のまとめて取り込みをするときは、indexed db に取り込みする
 - archive/統計の indexed db migration の検討
-- merge タイル画面の dark theme
-- 全 color もってたら、所持色のぼたんなくす
 - 描画関連の処理を web worker にすべきだろうか
 - 直接取り込みしたときの色問題
 - Paint pixel は非表示

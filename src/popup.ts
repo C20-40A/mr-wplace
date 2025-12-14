@@ -52,10 +52,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   ) as HTMLSelectElement;
   const navigationSelect = document.getElementById(
     "navigation-select"
-  ) as HTMLSelectElement;
+  ) as HTMLSelectElement | null;
   const tileBoundariesSelect = document.getElementById(
     "tile-boundaries-select"
-  ) as HTMLSelectElement;
+  ) as HTMLSelectElement | null;
   const lockButtonEnhancerSelect = document.getElementById(
     "lock-button-enhancer-select"
   ) as HTMLSelectElement;
@@ -81,8 +81,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const currentLockButtonEnhancer = getLockButtonEnhancer();
 
   languageSelect.value = currentLocale;
-  navigationSelect.value = currentMode.toString();
-  tileBoundariesSelect.value = currentTileBoundaries.toString();
+  if (navigationSelect) navigationSelect.value = currentMode.toString();
+  if (tileBoundariesSelect) tileBoundariesSelect.value = currentTileBoundaries.toString();
   lockButtonEnhancerSelect.value = currentLockButtonEnhancer.toString();
   updateUI();
 
