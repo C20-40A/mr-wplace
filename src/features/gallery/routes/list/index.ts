@@ -122,6 +122,9 @@ export class GalleryList {
       }
     }
 
+    const refresh = () =>
+      this.render(container, router, onImageClick, onDrawToggle, onCloseModal);
+
     this.ui.render(
       sortedItems,
       async (key: string) => {
@@ -131,14 +134,7 @@ export class GalleryList {
         const { sendGalleryImagesToInject } = await import("@/content");
         await sendGalleryImagesToInject();
 
-        // 再描画
-        this.render(
-          container,
-          router,
-          onImageClick,
-          onDrawToggle,
-          onCloseModal
-        );
+        refresh();
       },
       container,
       () => router.navigate("image-editor"),
@@ -146,17 +142,10 @@ export class GalleryList {
       onCloseModal,
       sortType,
       async (newSortType: GallerySortType) => {
-        // ソート設定を保存
         await browserStorage.set({ [SORT_KEY]: newSortType });
-        // 再描画
-        this.render(
-          container,
-          router,
-          onImageClick,
-          onDrawToggle,
-          onCloseModal
-        );
-      }
+        refresh();
+      },
+      refresh
     );
   }
 

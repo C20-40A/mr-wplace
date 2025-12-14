@@ -1,4 +1,4 @@
-import { GalleryItem, GalleryStorage } from "@/states/galleryStorage";
+import { GalleryItem } from "@/states/galleryStorage";
 import { ImageGridComponent } from "./components/ImageGridComponent";
 import { gotoMapPosition, toggleDrawState } from "../../common-actions";
 import { t } from "@/i18n";
@@ -8,7 +8,6 @@ export type GallerySortType = "layer" | "distance" | "created";
 export class GalleryListUI {
   private container: HTMLElement | null = null;
   private imageGrid: ImageGridComponent | null = null;
-  private storage = new GalleryStorage();
 
   // コールバックを保存して再描画時に再利用
   private onDelete?: (key: string) => void;
@@ -16,6 +15,7 @@ export class GalleryListUI {
   private onAddClick?: () => void;
   private onCloseModal?: () => void;
   private onSortChange?: (sortType: GallerySortType) => void;
+  private onRefresh?: () => void; // 統計データ込みで再描画
   private sortType: GallerySortType = "layer";
 
   constructor() {}
@@ -28,7 +28,8 @@ export class GalleryListUI {
     onImageClick?: (item: GalleryItem) => void,
     onCloseModal?: () => void,
     sortType?: GallerySortType,
-    onSortChange?: (sortType: GallerySortType) => void
+    onSortChange?: (sortType: GallerySortType) => void,
+    onRefresh?: () => void
   ): void {
     if (!container) return;
 
@@ -39,6 +40,7 @@ export class GalleryListUI {
     this.onAddClick = onAddClick;
     this.onCloseModal = onCloseModal;
     this.onSortChange = onSortChange;
+    this.onRefresh = onRefresh;
     if (sortType) this.sortType = sortType;
 
     this.renderGalleryList(items);
@@ -95,9 +97,8 @@ export class GalleryListUI {
     const newDrawEnabled = await toggleDrawState(key);
     console.log(`🧑‍🎨 : Draw toggle: ${key} -> ${newDrawEnabled}`);
 
-    // 再描画
-    const updatedItems = await this.storage.getAll();
-    this.renderGalleryList(updatedItems);
+    // 統計データ込みで再描画 (onRefreshがあればそれを使用)
+    this.onRefresh?.();
   }
 
   private async handleGotoPosition(item: GalleryItem): Promise<void> {

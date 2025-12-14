@@ -111,6 +111,7 @@
 
 # DONE v2.0.0
 
+- gallery item を非表示にする-> 統計が消える
 - gallery の画像非表示したあと、画像追加できない
 - auto canvas click は selected color も keydown 対象にする -> disable
 - 開発者モードのアルゴリズム変更
