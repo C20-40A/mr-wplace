@@ -26,6 +26,7 @@ import { initPaintStats } from "@/features/paint-stats";
 import { PaletteToggle } from "@/features/palette-toggle";
 import { ShowUnplacedOnly } from "@/features/show-unplaced-only";
 import { LockButtonEnhancer } from "@/features/lock-button-enhancer";
+import { CloseConfirm } from "@/features/close-confirm";
 import { di } from "@/core/di";
 import {
   sendGalleryImagesToInject,
@@ -69,6 +70,7 @@ export const initializeFeatures = async () => {
   new PaletteToggle();
   new ShowUnplacedOnly();
   new LockButtonEnhancer();
+  new CloseConfirm();
   initPaintStats();
 
   // Initialize async features in parallel

@@ -343,6 +343,10 @@ export const jaTranslations = {
   cache_cleared: "キャッシュをクリアしました!",
   tiles: "タイル",
 
+  // Close Confirm
+  confirm_close_paint_modal:
+    "作業中の内容が失われる可能性があります。本当に閉じますか？",
+
   // Friends Book
   friends_book: "友人帳",
   add_to_friends: "友人帳に追加",

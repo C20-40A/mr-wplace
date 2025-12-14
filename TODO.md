@@ -1,7 +1,6 @@
 # メイン
 
-- gallery のまとめて取り込みをするときは、indexed db に取り込みされている？
-- import export reset できてないかも
+- auto canvas click は selected color も keydown 対象にする
 - 開発者モードのアルゴリズム変更
 - ja の feedback form にならない
 - 「？」アイコンからのドキュメント表示
@@ -20,7 +19,6 @@
 - Paint pixel は非表示
 - friends 取り込みが、「件のお気に入りを...」になっている。また、上書き取り込みのリロード不要だ。
 - equippedFlag がないと取り込めない？　 allianceId とか allianceName は不要なようだが
-- auto canvas click は selected color も keydown 対象にする
 - 紹介文更新 - 友人帳やら未描画のみのひょうじやら
 - paint modal に filter や描画モードの switch あってもいい
 - bookmarks も ONLINE 同期
@@ -118,7 +116,10 @@
 
 # DONE v2.0.0
 
+- paint modal 閉じるとき alert
 - color filter の count 更新
+- gallery のまとめて取り込みをするときは、indexed db に取り込みされている
+- import export reset できてない
 - fix: アラーム任意の値にならない
 - 画像編集で大きい画像をいれたら、UI ばぐる
 - カラーフィルターの順番を wplace のカラーパレットと一致させる

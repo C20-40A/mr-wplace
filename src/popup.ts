@@ -19,6 +19,11 @@ import {
   getLockButtonEnhancer,
   setLockButtonEnhancer,
 } from "./states/lock-button-enhancer";
+import {
+  loadCloseConfirmFromStorage,
+  getCloseConfirm,
+  setCloseConfirm,
+} from "./states/close-confirm";
 import { tabs } from "@/utils/browser-api";
 import { FEEDBACK_FORM_URL } from "@/constants/url";
 import { BUY_ME_COFFEE_IMAGE } from "./assets/buyMeACoffee";
@@ -59,6 +64,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const lockButtonEnhancerSelect = document.getElementById(
     "lock-button-enhancer-select"
   ) as HTMLSelectElement;
+  const closeConfirmSelect = document.getElementById(
+    "close-confirm-select"
+  ) as HTMLSelectElement;
 
   // Set Buy Me a Coffee image
   const coffeeImg = document.getElementById("coffee-img") as HTMLImageElement;
@@ -80,10 +88,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadLockButtonEnhancerFromStorage();
   const currentLockButtonEnhancer = getLockButtonEnhancer();
 
+  // close confirm初期化
+  await loadCloseConfirmFromStorage();
+  const currentCloseConfirm = getCloseConfirm();
+
   languageSelect.value = currentLocale;
   if (navigationSelect) navigationSelect.value = currentMode.toString();
   if (tileBoundariesSelect) tileBoundariesSelect.value = currentTileBoundaries.toString();
   lockButtonEnhancerSelect.value = currentLockButtonEnhancer.toString();
+  closeConfirmSelect.value = currentCloseConfirm.toString();
   updateUI();
 
   // 言語変更イベント
@@ -141,6 +154,24 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // 設定を保存
     await setLockButtonEnhancer(newEnabled);
+
+    // ページをリロードして設定を反映
+    const [activeTab] = await tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (activeTab.id) {
+      await tabs.reload(activeTab.id);
+    }
+  });
+
+  // Close confirm変更イベント
+  closeConfirmSelect.addEventListener("change", async (event) => {
+    const target = event.target as HTMLSelectElement;
+    const newEnabled = target.value === "true";
+
+    // 設定を保存
+    await setCloseConfirm(newEnabled);
 
     // ページをリロードして設定を反映
     const [activeTab] = await tabs.query({

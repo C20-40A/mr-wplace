@@ -342,6 +342,10 @@ export const enTranslations = {
   cache_cleared: "Cache Cleared!",
   tiles: "tiles",
 
+  // Close Confirm
+  confirm_close_paint_modal:
+    "You may lose your work in progress. Are you sure you want to close?",
+
   // Friends Book
   friends_book: "Friends",
   add_to_friends: "Add to Friends",
