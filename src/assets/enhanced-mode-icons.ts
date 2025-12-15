@@ -26,12 +26,19 @@ const COLORS = {
 } as const;
 
 /**
- * 3x3グリッドパターンからSVG文字列を生成
- * @param pattern 3x3の色配列 ('transparent'は描画スキップ)
+ * 3x3または5x5などのグリッドパターンからSVG文字列を生成
+ * @param pattern NxMの色配列 ('transparent'は描画スキップ)
  */
 const createGridSVG = (pattern: string[][]): string => {
   const cellSize = 3;
-  const totalSize = 9;
+
+  // 行の数（高さ）と列の数（幅）を取得
+  const numRows = pattern.length;
+  const numCols = pattern.length > 0 ? pattern[0].length : 0;
+
+  // SVG全体のサイズを動的に計算 (セルの数 * セルサイズ)
+  const totalWidth = numCols * cellSize;
+  const totalHeight = numRows * cellSize;
 
   const rects = pattern
     .flatMap((row, y) =>
@@ -46,7 +53,8 @@ const createGridSVG = (pattern: string[][]): string => {
     .filter((r) => r)
     .join("");
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${totalSize}" height="${totalSize}" viewBox="0 0 ${totalSize} ${totalSize}">${rects}</svg>`;
+  // width, height, viewBox を動的に計算したサイズに設定
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="${totalHeight}" viewBox="0 0 ${totalWidth} ${totalHeight}">${rects}</svg>`;
 };
 
 /**
@@ -55,6 +63,8 @@ const createGridSVG = (pattern: string[][]): string => {
 const toDataURI = (svg: string): string => {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 };
+
+// ... (以下、パターン定義は変更なし) ...
 
 // dot: 中央1ドットのみ
 // □□□
@@ -136,45 +146,128 @@ const RED_BORDER_PATTERN = [
   [COLORS.RED, COLORS.RED, COLORS.RED],
 ];
 
-// huge-red-cross: 中央黒+はみ出す赤十字
-// 赤□赤
-// □■□
-// 赤□赤
+// huge-red-cross: 巨大赤十字（細い線）
+// 描画: 水平垂直の1px線
+// アイコン: 十字形状（上下左右が赤、四隅は透明）
+// □□赤□□
+// □□赤□□
+// 赤赤■赤赤
+// □□赤□□
+// □□赤□□
 const HUGE_RED_CROSS_PATTERN = [
-  [COLORS.RED, "transparent", COLORS.RED],
-  ["transparent", COLORS.BLACK, "transparent"],
-  [COLORS.RED, "transparent", COLORS.RED],
+  ["transparent", "transparent", COLORS.RED, "transparent", "transparent"],
+  ["transparent", "transparent", COLORS.RED, "transparent", "transparent"],
+  [COLORS.RED, COLORS.RED, COLORS.BLACK, COLORS.RED, COLORS.RED],
+  ["transparent", "transparent", COLORS.RED, "transparent", "transparent"],
+  ["transparent", "transparent", COLORS.RED, "transparent", "transparent"],
 ];
 
-// huge-red-diamond: 中央黒+周囲赤グラデーション風ダイヤ
-// □赤□
-// 赤■赤
-// □赤□
-const HUGE_RED_DIAMOND_PATTERN = [
-  ["transparent", COLORS.RED, "transparent"],
-  [COLORS.RED, COLORS.BLACK, COLORS.RED],
-  ["transparent", COLORS.RED, "transparent"],
-];
-
-// huge-red-cross-bold: 極太赤十字（全体赤で中央黒）
-// 赤赤赤
-// 赤■赤
-// 赤赤赤
+// huge-red-cross-bold: 巨大赤十字（極太3px幅）
+// 描画: 3px幅の太い十字
+// アイコン: 5x5で太い十字を表現
+// □□赤赤赤□□
+// □□赤赤赤□□
+// 赤赤赤赤赤赤赤
+// 赤赤赤■赤赤赤
+// 赤赤赤赤赤赤赤
+// □□赤赤赤□□
+// □□赤赤赤□□
 const HUGE_RED_CROSS_BOLD_PATTERN = [
-  [COLORS.RED, COLORS.RED, COLORS.RED],
-  [COLORS.RED, COLORS.BLACK, COLORS.RED],
-  [COLORS.RED, COLORS.RED, COLORS.RED],
+  [
+    "transparent",
+    "transparent",
+    COLORS.RED,
+    COLORS.RED,
+    COLORS.RED,
+    "transparent",
+    "transparent",
+  ],
+  [
+    "transparent",
+    "transparent",
+    COLORS.RED,
+    COLORS.RED,
+    COLORS.RED,
+    "transparent",
+    "transparent",
+  ],
+  [
+    COLORS.RED,
+    COLORS.RED,
+    COLORS.RED,
+    COLORS.RED,
+    COLORS.RED,
+    COLORS.RED,
+    COLORS.RED,
+  ],
+  [
+    COLORS.RED,
+    COLORS.RED,
+    COLORS.RED,
+    COLORS.BLACK,
+    COLORS.RED,
+    COLORS.RED,
+    COLORS.RED,
+  ],
+  [
+    COLORS.RED,
+    COLORS.RED,
+    COLORS.RED,
+    COLORS.RED,
+    COLORS.RED,
+    COLORS.RED,
+    COLORS.RED,
+  ],
+  [
+    "transparent",
+    "transparent",
+    COLORS.RED,
+    COLORS.RED,
+    COLORS.RED,
+    "transparent",
+    "transparent",
+  ],
+  [
+    "transparent",
+    "transparent",
+    COLORS.RED,
+    COLORS.RED,
+    COLORS.RED,
+    "transparent",
+    "transparent",
+  ],
 ];
 
-// huge-red-ring: リング形状（中央黒、周囲8ドットが薄い赤）
-// 薄薄薄
-// 薄■薄
-// 薄薄薄
-const LIGHT_RED = "#f87171"; // より薄い赤
+// huge-red-diamond:  巨大赤ダイヤ（マンハッタン距離）
+// 描画: ダイヤ形状のグラデーション
+// アイコン: ダイヤ形状（四隅が赤、上下左右は透明）
+// □□赤□□
+// □赤赤赤□
+// 赤赤■赤赤
+// □赤赤赤□
+// □□赤□□
+const HUGE_RED_DIAMOND_PATTERN = [
+  ["transparent", "transparent", COLORS.RED, "transparent", "transparent"],
+  ["transparent", COLORS.RED, COLORS.RED, COLORS.RED, "transparent"],
+  [COLORS.RED, COLORS.RED, COLORS.BLACK, COLORS.RED, COLORS.RED],
+  ["transparent", COLORS.RED, COLORS.RED, COLORS.RED, "transparent"],
+  ["transparent", "transparent", COLORS.RED, "transparent", "transparent"],
+];
+
+// huge-red-ring: 巨大赤リング（円形）
+// 描画: 円形リング（内側空洞）
+// アイコン: 5x5でリング形状を表現
+// □赤赤赤□
+// 赤□□□赤
+// 赤□■□赤
+// 赤□□□赤
+// □赤赤赤□
 const HUGE_RED_RING_PATTERN = [
-  [LIGHT_RED, LIGHT_RED, LIGHT_RED],
-  [LIGHT_RED, COLORS.BLACK, LIGHT_RED],
-  [LIGHT_RED, LIGHT_RED, LIGHT_RED],
+  ["transparent", COLORS.RED, COLORS.RED, COLORS.RED, "transparent"],
+  [COLORS.RED, "transparent", "transparent", "transparent", COLORS.RED],
+  [COLORS.RED, "transparent", COLORS.BLACK, "transparent", COLORS.RED],
+  [COLORS.RED, "transparent", "transparent", "transparent", COLORS.RED],
+  ["transparent", COLORS.RED, COLORS.RED, COLORS.RED, "transparent"],
 ];
 
 // データURI形式でエクスポート
