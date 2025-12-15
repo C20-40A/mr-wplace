@@ -2,13 +2,13 @@
 
 - ja の feedback form にならない
 - 「？」アイコンからのドキュメント表示
+- シンプルモードの検討
 - bookmarks や tiles は mobile だとスクロールできない
 - fix type error
 - src/features/gallery/routes/list/index.ts で統計とっているのが謎
 - sendGalleryImagesToInject なんとかする
 - 画像編集で「境界を強調」つまり「輪郭線を描画」できるようにする
 - migration がされるか、以前のデータでちゃんとテストする
-- archive/統計の indexed db migration の検討
 - 描画関連の処理を web worker にすべきだろうか
 - 直接取り込みしたときの色問題
 - Paint pixel は非表示
@@ -111,6 +111,7 @@
 
 # DONE v2.0.0
 
+- archive/統計の indexed db migration
 - gallery item を非表示にする-> 統計が消える
 - gallery の画像非表示したあと、画像追加できない
 - auto canvas click は selected color も keydown 対象にする -> disable
