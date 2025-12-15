@@ -156,6 +156,27 @@ const HUGE_RED_DIAMOND_PATTERN = [
   ["transparent", COLORS.RED, "transparent"],
 ];
 
+// huge-red-cross-bold: 極太赤十字（全体赤で中央黒）
+// 赤赤赤
+// 赤■赤
+// 赤赤赤
+const HUGE_RED_CROSS_BOLD_PATTERN = [
+  [COLORS.RED, COLORS.RED, COLORS.RED],
+  [COLORS.RED, COLORS.BLACK, COLORS.RED],
+  [COLORS.RED, COLORS.RED, COLORS.RED],
+];
+
+// huge-red-ring: リング形状（中央黒、周囲8ドットが薄い赤）
+// 薄薄薄
+// 薄■薄
+// 薄薄薄
+const LIGHT_RED = "#f87171"; // より薄い赤
+const HUGE_RED_RING_PATTERN = [
+  [LIGHT_RED, LIGHT_RED, LIGHT_RED],
+  [LIGHT_RED, COLORS.BLACK, LIGHT_RED],
+  [LIGHT_RED, LIGHT_RED, LIGHT_RED],
+];
+
 // データURI形式でエクスポート
 export const ENHANCED_MODE_ICONS = {
   dot: toDataURI(createGridSVG(DOT_PATTERN)),
@@ -167,7 +188,9 @@ export const ENHANCED_MODE_ICONS = {
   "complement-cross": toDataURI(createGridSVG(COMPLEMENT_CROSS_PATTERN)),
   "red-border": toDataURI(createGridSVG(RED_BORDER_PATTERN)),
   "huge-red-cross": toDataURI(createGridSVG(HUGE_RED_CROSS_PATTERN)),
+  "huge-red-cross-bold": toDataURI(createGridSVG(HUGE_RED_CROSS_BOLD_PATTERN)),
   "huge-red-diamond": toDataURI(createGridSVG(HUGE_RED_DIAMOND_PATTERN)),
+  "huge-red-ring": toDataURI(createGridSVG(HUGE_RED_RING_PATTERN)),
 } as const;
 
 export type EnhancedModeType = keyof typeof ENHANCED_MODE_ICONS;

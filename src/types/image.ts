@@ -9,7 +9,9 @@ export type EnhancedMode =
   | "fill"
   | "red-border"
   | "huge-red-cross"
-  | "huge-red-diamond";
+  | "huge-red-cross-bold"
+  | "huge-red-diamond"
+  | "huge-red-ring";
 
 /** 色統計のデータ */
 export interface ColorStats {

@@ -240,7 +240,9 @@ export const jaTranslations = {
   enhanced_mode_complement_cross: "補色十字",
   enhanced_mode_red_border: "赤枠",
   enhanced_mode_huge_red_cross: "巨大赤十字",
+  enhanced_mode_huge_red_cross_bold: "巨大赤十字（極太）",
   enhanced_mode_huge_red_diamond: "巨大赤ダイヤ",
+  enhanced_mode_huge_red_ring: "巨大赤リング",
 
   // Auto Spoit
   auto_spoit: "オートスポイト",

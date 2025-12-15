@@ -22,7 +22,9 @@ export const ENHANCED_MODE_OPTIONS: EnhancedModeOption[] = [
   { value: "complement-cross", labelKey: "enhanced_mode_complement_cross" },
   { value: "red-border", labelKey: "enhanced_mode_red_border" },
   { value: "huge-red-cross", labelKey: "enhanced_mode_huge_red_cross" },
+  { value: "huge-red-cross-bold", labelKey: "enhanced_mode_huge_red_cross_bold" },
   { value: "huge-red-diamond", labelKey: "enhanced_mode_huge_red_diamond" },
+  { value: "huge-red-ring", labelKey: "enhanced_mode_huge_red_ring" },
 ];
 
 // Sort Order Options

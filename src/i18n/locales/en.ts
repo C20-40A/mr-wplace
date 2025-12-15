@@ -241,7 +241,9 @@ export const enTranslations = {
   enhanced_mode_complement_cross: "Complement Cross",
   enhanced_mode_red_border: "Red Border",
   enhanced_mode_huge_red_cross: "Huge Red Cross",
+  enhanced_mode_huge_red_cross_bold: "Huge Red Cross (Bold)",
   enhanced_mode_huge_red_diamond: "Huge Red Diamond",
+  enhanced_mode_huge_red_ring: "Huge Red Ring",
 
   // Auto Spoit
   auto_spoit: "Auto Color Picker",

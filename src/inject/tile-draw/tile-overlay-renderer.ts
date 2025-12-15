@@ -206,8 +206,11 @@ const scaleAndRenderWithMode = (
     b: number;
   }> = [];
   const isHugeRedCross = mode === "huge-red-cross";
+  const isHugeRedCrossBold = mode === "huge-red-cross-bold";
   const isHugeRedDiamond = mode === "huge-red-diamond";
-  const needsHugeMarker = isHugeRedCross || isHugeRedDiamond;
+  const isHugeRedRing = mode === "huge-red-ring";
+  const needsHugeMarker =
+    isHugeRedCross || isHugeRedCrossBold || isHugeRedDiamond || isHugeRedRing;
 
   for (let y = 0; y < scaledHeight; y++) {
     for (let x = 0; x < scaledWidth; x++) {
@@ -350,12 +353,20 @@ const scaleAndRenderWithMode = (
   // 2nd pass: huge marker 描画
   if (needsHugeMarker && unplacedCenters.length > 0) {
     const armLength = 30;
+    const centerSize = 1; // 中央3x3の半径（±1 = 3px）
 
-    for (const { x: cx, y: cy, r: origR, g: origG, b: origB } of unplacedCenters) {
+    for (const {
+      x: cx,
+      y: cy,
+      r: origR,
+      g: origG,
+      b: origB,
+    } of unplacedCenters) {
       if (isHugeRedCross) {
-        // 巨大赤十字: 水平腕
+        // 巨大赤十字: 細い線（1px幅）
+        // 水平腕
         for (let dx = -armLength; dx <= armLength; dx++) {
-          if (dx === 0) continue; // 中心はスキップ
+          if (Math.abs(dx) <= centerSize) continue; // 中心3x3はスキップ
           const px = cx + dx;
           if (px < 0 || px >= scaledWidth) continue;
           const i = (cy * scaledWidth + px) * 4;
@@ -364,10 +375,9 @@ const scaleAndRenderWithMode = (
           scaledData[i + 2] = 0;
           scaledData[i + 3] = 255;
         }
-
-        // 巨大赤十字: 垂直腕
+        // 垂直腕
         for (let dy = -armLength; dy <= armLength; dy++) {
-          if (dy === 0) continue; // 中心はスキップ
+          if (Math.abs(dy) <= centerSize) continue; // 中心3x3はスキップ
           const py = cy + dy;
           if (py < 0 || py >= scaledHeight) continue;
           const i = (py * scaledWidth + cx) * 4;
@@ -375,6 +385,32 @@ const scaleAndRenderWithMode = (
           scaledData[i + 1] = 0;
           scaledData[i + 2] = 0;
           scaledData[i + 3] = 255;
+        }
+      } else if (isHugeRedCrossBold) {
+        // 巨大赤十字（極太）: 3x3幅のクロス
+        const thickness = 1; // ±1 = 3px幅
+        for (let dy = -armLength; dy <= armLength; dy++) {
+          for (let dx = -armLength; dx <= armLength; dx++) {
+            // クロス形状: 水平または垂直の腕
+            const isHorizontalArm = Math.abs(dy) <= thickness;
+            const isVerticalArm = Math.abs(dx) <= thickness;
+            if (!isHorizontalArm && !isVerticalArm) continue;
+
+            // 中心3x3は元の色
+            if (Math.abs(dx) <= centerSize && Math.abs(dy) <= centerSize)
+              continue;
+
+            const px = cx + dx;
+            const py = cy + dy;
+            if (px < 0 || px >= scaledWidth || py < 0 || py >= scaledHeight)
+              continue;
+
+            const i = (py * scaledWidth + px) * 4;
+            scaledData[i] = 255;
+            scaledData[i + 1] = 0;
+            scaledData[i + 2] = 0;
+            scaledData[i + 3] = 255;
+          }
         }
       } else if (isHugeRedDiamond) {
         // 巨大赤ダイヤ: マンハッタン距離でダイヤ形状、グラデーション
@@ -390,8 +426,8 @@ const scaleAndRenderWithMode = (
 
             const i = (py * scaledWidth + px) * 4;
 
-            if (dx === 0 && dy === 0) {
-              // 中心は元の色
+            // 中心3x3は元の色
+            if (Math.abs(dx) <= centerSize && Math.abs(dy) <= centerSize) {
               scaledData[i] = origR;
               scaledData[i + 1] = origG;
               scaledData[i + 2] = origB;
@@ -405,6 +441,46 @@ const scaleAndRenderWithMode = (
               scaledData[i + 2] = 0;
               scaledData[i + 3] = alpha;
             }
+          }
+        }
+      } else if (isHugeRedRing) {
+        // 巨大赤リング: ユークリッド距離で円形リング
+        const innerRadius = 10; // 内径
+        const outerRadius = armLength; // 外径
+        for (let dy = -outerRadius; dy <= outerRadius; dy++) {
+          for (let dx = -outerRadius; dx <= outerRadius; dx++) {
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            // 中心3x3は元の色
+            if (Math.abs(dx) <= centerSize && Math.abs(dy) <= centerSize) {
+              const px = cx + dx;
+              const py = cy + dy;
+              if (px < 0 || px >= scaledWidth || py < 0 || py >= scaledHeight)
+                continue;
+              const i = (py * scaledWidth + px) * 4;
+              scaledData[i] = origR;
+              scaledData[i + 1] = origG;
+              scaledData[i + 2] = origB;
+              scaledData[i + 3] = 255;
+              continue;
+            }
+
+            // リング範囲内のみ描画
+            if (dist < innerRadius || dist > outerRadius) continue;
+
+            const px = cx + dx;
+            const py = cy + dy;
+            if (px < 0 || px >= scaledWidth || py < 0 || py >= scaledHeight)
+              continue;
+
+            const i = (py * scaledWidth + px) * 4;
+            // グラデーション: 内側が濃い、外側が薄い
+            const ratio = (dist - innerRadius) / (outerRadius - innerRadius);
+            const alpha = Math.round(255 - ratio * 191); // 255 → 64
+            scaledData[i] = 255;
+            scaledData[i + 1] = 0;
+            scaledData[i + 2] = 0;
+            scaledData[i + 3] = alpha;
           }
         }
       }
