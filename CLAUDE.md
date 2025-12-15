@@ -319,3 +319,26 @@ export interface GalleryItem {
 - if の内容が 1 行ならかっこでくくらないこともある
 - トーストは基本的に利用しない
 - 抽象化を意識した設計
+- パフォーマンスを意識
+- 実装のためにコードが複雑になりそうなら、別方法の検討もする
+- ボイラープレートや繰り返しを避ける
+- できるだけ短く最小限の変更が好ましい
+
+## wplace 仕様
+
+- 世界地図の上に、pixel art を描くサービス
+- pixel art は共有キャンバス
+- 1tile = web メルカトル zoomlevel 11 の単位 = 1000x1000px の png = 1fetch 単位
+- wplace はタイルを polling して更新している
+- polling に fetch intercept をして、画像サイズを大きくして、新しい pixel を描くことで、疑似的に overlay を実現
+
+# 注意点
+
+- inject,content のそれぞれの機能は限定的
+- inject: window の context が直で使える
+- inject: chrome.storage が使えないので、多くの storage 設定は content で管理
+- inject: indexedDb をメインで利用。特に重い画像データは chrome.storage では避ける
+- content: window の context が使えないので、messaging で inject に委任
+- content: indexedDb も使えるが、面倒なので、inject に委任することが多い
+- content: メイン機能はすべてここに入れているが、描画などの処理は inject で担当させている
+- content: browserAPI が使えるが、crossplatform のために、src/utils/browser-api.ts を利用する必要がある
