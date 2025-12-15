@@ -32,18 +32,9 @@ export class MigrationModal {
         <div id="migration-status" class="text-sm mb-2">Preparing migration...</div>
         <div id="migration-progress" class="text-xs text-base-content/60"></div>
         <progress class="progress progress-primary w-full mt-4" id="migration-progress-bar" value="0" max="100"></progress>
-        <button id="migration-force-close" class="btn btn-ghost btn-xs mt-4 opacity-0" style="transition: opacity 0.3s;">Force Close</button>
+        <button id="migration-force-close" class="btn btn-ghost btn-xs mt-4" style="display: none; transition: opacity 0.3s;">Force Close</button>
       </div>
     `;
-
-    // Show force close button after 10 seconds (safety mechanism)
-    setTimeout(() => {
-      const forceCloseBtn = this.modal?.querySelector("#migration-force-close") as HTMLButtonElement;
-      if (forceCloseBtn) {
-        forceCloseBtn.style.opacity = "1";
-        forceCloseBtn.onclick = () => this.close();
-      }
-    }, 10000);
 
     document.body.appendChild(this.modal);
     this.statusElement = this.modal.querySelector("#migration-status");
@@ -115,6 +106,13 @@ export class MigrationModal {
     if (progressBar) {
       progressBar.classList.remove("progress-primary");
       progressBar.classList.add("progress-error");
+    }
+
+    // Show force close button immediately on error
+    const forceCloseBtn = this.modal?.querySelector("#migration-force-close") as HTMLButtonElement;
+    if (forceCloseBtn) {
+      forceCloseBtn.style.display = "inline-block";
+      forceCloseBtn.onclick = () => this.close();
     }
   }
 

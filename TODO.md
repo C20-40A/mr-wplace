@@ -111,6 +111,7 @@
 # DONE v2.0.0
 
 - Paint pixel は非表示
+- force close はエラーのときのみ
 - 新規追加画像が謎のレイヤーに set される
 - archive/統計の indexed db migration
 - 描画関連の処理を web worker にすべきだろうか->重いからなしで
