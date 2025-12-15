@@ -171,6 +171,10 @@ const computeStatsWithBackground = (
 /**
  * Phase 3: x3拡大 + モード別処理
  * フィルター済みデータをx3にスケールし、描画モード（dot/cross/fill/補助色）を適用
+ *
+ * huge-red-cross モード:
+ * - 1st pass: 中心ピクセルのみ描画 + 未配置中心座標を収集
+ * - 2nd pass: 収集した座標に10x10の赤十字を上書き
  */
 const scaleAndRenderWithMode = (
   data: Uint8ClampedArray,
@@ -192,6 +196,18 @@ const scaleAndRenderWithMode = (
   if (shouldSkipRendering) {
     return scaledData; // 透明データを返す
   }
+
+  // huge-red-cross/diamond用: 未配置ピクセルの中心座標と元の色を収集
+  const unplacedCenters: Array<{
+    x: number;
+    y: number;
+    r: number;
+    g: number;
+    b: number;
+  }> = [];
+  const isHugeRedCross = mode === "huge-red-cross";
+  const isHugeRedDiamond = mode === "huge-red-diamond";
+  const needsHugeMarker = isHugeRedCross || isHugeRedDiamond;
 
   for (let y = 0; y < scaledHeight; y++) {
     for (let x = 0; x < scaledWidth; x++) {
@@ -240,8 +256,13 @@ const scaleAndRenderWithMode = (
           scaledData[i + 1] = g;
           scaledData[i + 2] = b;
           scaledData[i + 3] = a;
+          // huge marker: 中心座標と元の色を収集
+          if (needsHugeMarker) unplacedCenters.push({ x, y, r, g, b });
           continue;
         }
+
+        // huge marker は 2nd pass で処理するので、1st pass では中心のみ
+        if (needsHugeMarker) continue;
 
         // モード別処理（通常と同じ）
         if (mode === "dot") {
@@ -283,8 +304,13 @@ const scaleAndRenderWithMode = (
           scaledData[i + 1] = g;
           scaledData[i + 2] = b;
           scaledData[i + 3] = a;
+          // huge marker: 中心座標と元の色を収集
+          if (needsHugeMarker) unplacedCenters.push({ x, y, r, g, b });
           continue;
         }
+
+        // huge marker は 2nd pass で処理するので、1st pass では中心のみ
+        if (needsHugeMarker) continue;
 
         // モード別処理
         if (mode === "dot") {
@@ -315,6 +341,70 @@ const scaleAndRenderWithMode = (
             scaledData[i + 1] = 0;
             scaledData[i + 2] = 0;
             scaledData[i + 3] = 255;
+          }
+        }
+      }
+    }
+  }
+
+  // 2nd pass: huge marker 描画
+  if (needsHugeMarker && unplacedCenters.length > 0) {
+    const armLength = 30;
+
+    for (const { x: cx, y: cy, r: origR, g: origG, b: origB } of unplacedCenters) {
+      if (isHugeRedCross) {
+        // 巨大赤十字: 水平腕
+        for (let dx = -armLength; dx <= armLength; dx++) {
+          if (dx === 0) continue; // 中心はスキップ
+          const px = cx + dx;
+          if (px < 0 || px >= scaledWidth) continue;
+          const i = (cy * scaledWidth + px) * 4;
+          scaledData[i] = 255;
+          scaledData[i + 1] = 0;
+          scaledData[i + 2] = 0;
+          scaledData[i + 3] = 255;
+        }
+
+        // 巨大赤十字: 垂直腕
+        for (let dy = -armLength; dy <= armLength; dy++) {
+          if (dy === 0) continue; // 中心はスキップ
+          const py = cy + dy;
+          if (py < 0 || py >= scaledHeight) continue;
+          const i = (py * scaledWidth + cx) * 4;
+          scaledData[i] = 255;
+          scaledData[i + 1] = 0;
+          scaledData[i + 2] = 0;
+          scaledData[i + 3] = 255;
+        }
+      } else if (isHugeRedDiamond) {
+        // 巨大赤ダイヤ: マンハッタン距離でダイヤ形状、グラデーション
+        for (let dy = -armLength; dy <= armLength; dy++) {
+          for (let dx = -armLength; dx <= armLength; dx++) {
+            const dist = Math.abs(dx) + Math.abs(dy);
+            if (dist > armLength) continue; // ダイヤ形状の外側
+
+            const px = cx + dx;
+            const py = cy + dy;
+            if (px < 0 || px >= scaledWidth || py < 0 || py >= scaledHeight)
+              continue;
+
+            const i = (py * scaledWidth + px) * 4;
+
+            if (dx === 0 && dy === 0) {
+              // 中心は元の色
+              scaledData[i] = origR;
+              scaledData[i + 1] = origG;
+              scaledData[i + 2] = origB;
+              scaledData[i + 3] = 255;
+            } else {
+              // グラデーション: 中心が濃い(255)、外が薄い(64)
+              const ratio = dist / armLength;
+              const alpha = Math.round(255 - ratio * 191); // 255 → 64
+              scaledData[i] = 255;
+              scaledData[i + 1] = 0;
+              scaledData[i + 2] = 0;
+              scaledData[i + 3] = alpha;
+            }
           }
         }
       }

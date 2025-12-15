@@ -21,6 +21,8 @@ export const ENHANCED_MODE_OPTIONS: EnhancedModeOption[] = [
   { value: "dark-cross", labelKey: "enhanced_mode_dark_cross" },
   { value: "complement-cross", labelKey: "enhanced_mode_complement_cross" },
   { value: "red-border", labelKey: "enhanced_mode_red_border" },
+  { value: "huge-red-cross", labelKey: "enhanced_mode_huge_red_cross" },
+  { value: "huge-red-diamond", labelKey: "enhanced_mode_huge_red_diamond" },
 ];
 
 // Sort Order Options

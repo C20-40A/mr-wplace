@@ -7,7 +7,9 @@ export type EnhancedMode =
   | "dark-cross"
   | "complement-cross"
   | "fill"
-  | "red-border";
+  | "red-border"
+  | "huge-red-cross"
+  | "huge-red-diamond";
 
 /** 色統計のデータ */
 export interface ColorStats {
