@@ -1,6 +1,7 @@
 # メイン
 
-- ヌリ直後描画消える
+- 新規追加画像が謎のレイヤーに set される
+- window.localStorage.PARAGLIDE_LOCALE = 'jp'
 - ja の feedback form にならない
 - 「？」アイコンからのドキュメント表示
 - シンプルモードの検討

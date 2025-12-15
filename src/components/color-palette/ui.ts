@@ -1,7 +1,10 @@
 import { colorpalette } from "../../constants/colors";
 import { t } from "../../i18n/manager";
 import type { EnhancedMode } from "@/types/image";
-import { ENHANCED_MODE_ICONS, SHOW_UNPLACED_ONLY_ICON_SVG } from "../../assets/enhanced-mode-icons";
+import {
+  ENHANCED_MODE_ICONS,
+  SHOW_UNPLACED_ONLY_ICON_SVG,
+} from "../../assets/enhanced-mode-icons";
 import type { SortOrder, ColorPaletteOptions } from "./types";
 import type { ComputeDevice } from "./storage";
 import {
@@ -256,12 +259,20 @@ export function buildEnhancedSelectHtml(enhancedMode: EnhancedMode): string {
             const textColor = isSelected
               ? "var(--color-primary-content, #22c55e)"
               : "var(--color-base-content, #6b7280)";
+            // Speed badge: fast=⚡, slow=⌛, normal=none
+            const speedBadge =
+              mode.speed === "fast"
+                ? '<span style="position: absolute; top: -2px; right: -2px; font-size: 0.8rem;">⚡</span>'
+                : mode.speed === "slow"
+                ? '<span style="position: absolute; top: -2px; right: -2px; font-size: 0.8rem;">⌛</span>'
+                : "";
             return `
               <button class="enhanced-mode-item"
                       data-mode="${mode.value}"
                       type="button"
                       title="${t`${mode.labelKey}`}"
-                      style="padding: 0.5rem;
+                      style="position: relative;
+                             padding: 0.5rem;
                              background-color: ${bgColor};
                              border: ${borderWidth} solid ${borderColor};
                              border-radius: 0.5rem;
@@ -279,6 +290,7 @@ export function buildEnhancedSelectHtml(enhancedMode: EnhancedMode): string {
                       onmouseup="this.style.transform='scale(1.05) translateY(-2px)';"
                       ontouchstart="this.style.transform='scale(0.95)';"
                       ontouchend="this.style.transform='scale(1)';">
+                ${speedBadge}
                 <img src="${ENHANCED_MODE_ICONS[mode.value]}"
                      alt="${mode.value}"
                      style="width: 28px;
@@ -420,8 +432,12 @@ export function buildComputeDeviceSelectHtml(
  * Show Unplaced Only トグルHTML生成
  */
 export function buildShowUnplacedOnlyToggleHtml(enabled: boolean): string {
-  const bgColor = enabled ? "var(--color-success, #22c55e)" : "var(--color-base-300, #e5e7eb)";
-  const textColor = enabled ? "var(--color-primary-content, #fff)" : "var(--color-base-content, #6b7280)";
+  const bgColor = enabled
+    ? "var(--color-success, #22c55e)"
+    : "var(--color-base-300, #e5e7eb)";
+  const textColor = enabled
+    ? "var(--color-primary-content, #fff)"
+    : "var(--color-base-content, #6b7280)";
   const borderColor = enabled ? "#22c55e" : "#d1d5db";
 
   return `

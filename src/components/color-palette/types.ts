@@ -28,9 +28,12 @@ export interface ColorStats {
   total: number;
 }
 
+export type SpeedTier = "fast" | "normal" | "slow";
+
 export interface EnhancedModeOption {
   value: EnhancedMode;
   labelKey: string;
+  speed?: SpeedTier;
 }
 
 export interface SortOrderOption {

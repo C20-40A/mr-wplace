@@ -11,20 +11,23 @@ export const DISABLED_BADGE_HTML =
 export const CURRENTLY_SELECTED_ICON_HTML =
   '<span class="currently-selected-icon" style="position: absolute; top: -0.4rem; right: -0.4rem; font-size: 0.65rem; background: white; border-radius: 50%; border: 1px solid black;">⭐</span>';
 
-// Enhanced Mode Options
+// Enhanced Mode Options with speed tiers
+// fast: simple rendering (dot, cross, fill)
+// normal: auxiliary color calculation (red-cross, cyan-cross, etc.)
+// slow: 2-pass rendering with huge markers (huge-red-*)
 export const ENHANCED_MODE_OPTIONS: EnhancedModeOption[] = [
-  { value: "dot", labelKey: "enhanced_mode_dot" },
-  { value: "cross", labelKey: "enhanced_mode_cross" },
-  { value: "fill", labelKey: "enhanced_mode_fill" },
+  { value: "dot", labelKey: "enhanced_mode_dot", speed: "fast" },
+  { value: "cross", labelKey: "enhanced_mode_cross", speed: "fast" },
+  { value: "fill", labelKey: "enhanced_mode_fill", speed: "fast" },
   { value: "red-cross", labelKey: "enhanced_mode_red_cross" },
   { value: "cyan-cross", labelKey: "enhanced_mode_cyan_cross" },
   { value: "dark-cross", labelKey: "enhanced_mode_dark_cross" },
   { value: "complement-cross", labelKey: "enhanced_mode_complement_cross" },
   { value: "red-border", labelKey: "enhanced_mode_red_border" },
-  { value: "huge-red-cross", labelKey: "enhanced_mode_huge_red_cross" },
-  { value: "huge-red-cross-bold", labelKey: "enhanced_mode_huge_red_cross_bold" },
-  { value: "huge-red-diamond", labelKey: "enhanced_mode_huge_red_diamond" },
-  { value: "huge-red-ring", labelKey: "enhanced_mode_huge_red_ring" },
+  { value: "huge-red-cross", labelKey: "enhanced_mode_huge_red_cross", speed: "slow" },
+  { value: "huge-red-cross-bold", labelKey: "enhanced_mode_huge_red_cross_bold", speed: "slow" },
+  { value: "huge-red-diamond", labelKey: "enhanced_mode_huge_red_diamond", speed: "slow" },
+  { value: "huge-red-ring", labelKey: "enhanced_mode_huge_red_ring", speed: "slow" },
 ];
 
 // Sort Order Options
