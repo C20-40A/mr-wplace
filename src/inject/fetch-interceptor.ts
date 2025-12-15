@@ -2,6 +2,11 @@ import { drawOverlayLayersOnTile } from "./tile-draw";
 import { invalidateTileCache } from "./cache-storage";
 import { handleUserStatusUpdate } from "./handlers/user-status-handler";
 import { WplaceUserData } from "./types";
+import {
+  checkStateChanged,
+  getCachedBlob,
+  setCachedBlob,
+} from "./tile-draw/etag-cache";
 
 /**
  * Setup fetch interceptor to handle tile requests and user data
@@ -142,15 +147,9 @@ export const setupFetchInterceptor = (): void => {
  * Process tiles directly in inject (page context) using Canvas API
  * This avoids Firefox extension context ImageBitmap security issues
  *
- * Caching Strategy with IndexedDB:
- * 1. data saver OFF / cache key NOT exists -> No caching. Process tile.
- * 2. data saver OFF / cache key exists -> Process tile and cache the processed result.
- * 3. data saver ON / cache key NOT exists -> Fetch, process, and cache the processed result.
- * 4. data saver ON / cache key exists -> Return cached processed tile directly (no fetch/process).
- *
- * Cache storage:
- * - Memory Map: for fast access during session
- * - IndexedDB: for persistent cache across reloads
+ * Caching Strategy:
+ * 1. ETag cache (memory): Skip processing if ETag and state unchanged
+ * 2. data saver cache (IndexedDB): Persistent cache for processed tiles
  */
 const handleTileRequest = async (
   originalFetch: typeof fetch,
@@ -168,7 +167,7 @@ const handleTileRequest = async (
   const cacheKey = `${tileX},${tileY}`;
   const dataSaver = window.mrWplaceDataSaver;
 
-  // Check memory cache first
+  // Check memory cache first (data saver)
   let cacheExists = dataSaver?.tileCache.has(cacheKey) ?? false;
   let cachedBlob: Blob | null = null;
 
@@ -188,9 +187,8 @@ const handleTileRequest = async (
     cachedBlob = dataSaver!.tileCache.get(cacheKey)!;
   }
 
-  // Case 4: data saver ON + cache exists -> Return cached processed tile
+  // data saver ON + cache exists -> Return cached processed tile
   if (dataSaver?.enabled && cacheExists && cachedBlob) {
-    // console.log("🧑‍🎨 : Returning cached processed tile:", cacheKey);
     return new Response(cachedBlob, {
       status: 200,
       statusText: "OK (Cached Processed)",
@@ -200,6 +198,24 @@ const handleTileRequest = async (
 
   // Fetch original tile from network
   const response = await originalFetch.apply(window, args);
+
+  // Check state change (clears ETag cache if changed)
+  checkStateChanged();
+
+  // ETag cache check
+  const etag = response.headers.get("etag");
+  if (etag) {
+    const etagCachedBlob = getCachedBlob(cacheKey, etag);
+    if (etagCachedBlob) {
+      // console.log("🧑‍🎨 : ETag cache hit:", cacheKey);
+      return new Response(etagCachedBlob, {
+        headers: response.headers,
+        status: response.status,
+        statusText: response.statusText,
+      });
+    }
+  }
+
   const clonedResponse = response.clone();
   const originalTileBlob = await clonedResponse.blob();
 
@@ -268,6 +284,11 @@ const handleTileRequest = async (
     },
     "*"
   );
+
+  // Save to ETag cache
+  if (etag) {
+    setCachedBlob(cacheKey, etag, processedBlob);
+  }
 
   return new Response(processedBlob, {
     headers: response.headers,
