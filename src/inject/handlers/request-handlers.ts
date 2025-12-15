@@ -9,7 +9,10 @@ import { computeTotalStatsFromImage } from "../tile-draw/stats/compute-total";
 /**
  * Handle aggregated color stats request
  */
-export const handleStatsRequest = (data: { imageKeys: string[]; requestId: string }): void => {
+export const handleStatsRequest = (data: {
+  imageKeys: string[];
+  requestId: string;
+}): void => {
   const stats = getAggregatedColorStats(data.imageKeys);
 
   window.postMessage(
@@ -21,7 +24,9 @@ export const handleStatsRequest = (data: { imageKeys: string[]; requestId: strin
     "*"
   );
 
-  console.log(`🧑‍🎨 : Sent stats for ${data.imageKeys.length} images (request: ${data.requestId})`);
+  console.log(
+    `🧑‍🎨 : Sent stats for ${data.imageKeys.length} images (request: ${data.requestId})`
+  );
 };
 
 /**
@@ -43,7 +48,9 @@ export const handlePixelColorRequest = async (data: {
     "*"
   );
 
-  console.log(`🧑‍🎨 : Sent pixel color for (${data.lat}, ${data.lng}) (request: ${data.requestId})`);
+  console.log(
+    `🧑‍🎨 : Sent pixel color for (${data.lat}, ${data.lng}) (request: ${data.requestId})`
+  );
 };
 
 /**
@@ -82,7 +89,10 @@ export const handleTileStatsRequest = (data: { requestId: string }): void => {
  * Handle image stats request (per-image aggregated stats)
  * Hybrid: Get from memory (overlayLayers) + IndexedDB (statistics store)
  */
-export const handleImageStatsRequest = async (data: { imageKeys: string[]; requestId: string }): Promise<void> => {
+export const handleImageStatsRequest = async (data: {
+  imageKeys: string[];
+  requestId: string;
+}): Promise<void> => {
   // Get stats from memory (overlay layers)
   const memoryStats = getStatsPerImage(data.imageKeys);
 
@@ -90,7 +100,9 @@ export const handleImageStatsRequest = async (data: { imageKeys: string[]; reque
   const missingKeys = data.imageKeys.filter((key) => !memoryStats[key]);
 
   if (missingKeys.length > 0) {
-    console.log(`🧑‍🎨 : Fetching stats for ${missingKeys.length} images from IndexedDB...`);
+    console.log(
+      `🧑‍🎨 : Fetching stats for ${missingKeys.length} images from IndexedDB...`
+    );
     const indexedDBStats = await fetchStatsFromIndexedDB(missingKeys);
 
     // Merge with memory stats
@@ -108,16 +120,26 @@ export const handleImageStatsRequest = async (data: { imageKeys: string[]; reque
     "*"
   );
 
-  console.log(`🧑‍🎨 : Sent image stats for ${data.imageKeys.length} images (request: ${data.requestId})`);
+  console.log(
+    `🧑‍🎨 : Sent image stats for ${data.imageKeys.length} images (request: ${data.requestId})`
+  );
 };
 
 /**
- * Fetch stats from IndexedDB (GalleryRepository v2 + legacy LayerRepository)
+ * Fetch stats from IndexedDB (GalleryRepository v2)
  */
 const fetchStatsFromIndexedDB = async (
   imageKeys: string[]
-): Promise<Record<string, { matched: Record<string, number>; total: Record<string, number> }>> => {
-  const result: Record<string, { matched: Record<string, number>; total: Record<string, number> }> = {};
+): Promise<
+  Record<
+    string,
+    { matched: Record<string, number>; total: Record<string, number> }
+  >
+> => {
+  const result: Record<
+    string,
+    { matched: Record<string, number>; total: Record<string, number> }
+  > = {};
 
   // Try GalleryRepository v2 first (perTileStats in metadata)
   try {
@@ -146,10 +168,17 @@ const fetchStatsFromIndexedDB = async (
       }
     }
   } catch (error) {
-    console.warn("🧑‍🎨 : GalleryRepository v2 not available for stats fetch:", error);
+    console.warn(
+      "🧑‍🎨 : GalleryRepository v2 not available for stats fetch:",
+      error
+    );
   }
 
-  console.log(`🧑‍🎨 : Fetched stats for ${Object.keys(result).length}/${imageKeys.length} images from IndexedDB`);
+  console.log(
+    `🧑‍🎨 : Fetched stats for ${Object.keys(result).length}/${
+      imageKeys.length
+    } images from IndexedDB`
+  );
 
   return result;
 };
@@ -177,8 +206,13 @@ export const handleComputeTotalStats = async (data: {
       "*"
     );
 
-    console.log(`🧑‍🎨 : Total stats computed for ${data.imageKey}: ${result.totalPixels} pixels`);
+    console.log(
+      `🧑‍🎨 : Total stats computed for ${data.imageKey}: ${result.totalPixels} pixels`
+    );
   } catch (error) {
-    console.error(`🧑‍🎨 : Failed to compute total stats for ${data.imageKey}:`, error);
+    console.error(
+      `🧑‍🎨 : Failed to compute total stats for ${data.imageKey}:`,
+      error
+    );
   }
 };

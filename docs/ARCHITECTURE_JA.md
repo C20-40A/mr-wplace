@@ -31,21 +31,24 @@ IndexedDB layers: isOptimized=true
 
 ### データ保存先の詳細
 
-**Chrome Storage（5MB制限）:**
+**Chrome Storage（5MB 制限）:**
+
 - metadata: key, timestamp, drawPosition, layerOrder, drawEnabled
-- thumbnail: 128x128サムネイル（Doctor生成）
+- thumbnail: 128x128 サムネイル（Doctor 生成）
 - stats: タイルごとの色統計（matched/total）
-- ~~dataUrl~~: Doctor cleanupで削除（状態C以降）
+- ~~dataUrl~~: Doctor cleanup で削除（状態 C 以降）
 
 **IndexedDB mr-wplace-gallery（無制限）:**
+
 - `layers`: メタデータ（isOptimized, bounds, coords）
-- `legacy_blobs`: 元画像Blob（フォールバック用）
-- `optimized_tiles`: 1000x1000タイル（複合キー: [layerId, tileKey]）
+- `legacy_blobs`: 元画像 Blob（フォールバック用）
+- `optimized_tiles`: 1000x1000 タイル（複合キー: [layerId, tileKey]）
 - `statistics`: タイルごとの色統計（永続化）
 
 **IndexedDB mr-wplace-cache（処理済みタイルキャッシュ）:**
+
 - `tiles`: 描画済みタイル（キー: "tileX,tileY"）
-- LRU削除: 100タイル超過時
+- LRU 削除: 100 タイル超過時
 
 ---
 
@@ -56,33 +59,37 @@ IndexedDB layers: isOptimized=true
 **場所:** `src/states/galleryStorage.ts`, `src/features/gallery/`
 
 **役割:**
-- Chrome Storageへの画像保存・取得
-- `getAll({ fullImage: true })`: IndexedDBから完全な画像取得
+
+- Chrome Storage への画像保存・取得
+- `getAll({ fullImage: true })`: IndexedDB から完全な画像取得
 - `getAll()`: サムネイルのみ取得（軽量）
 
 **送信:** `src/core/bridge/gallery-bridge.ts`
-- `sendGalleryImagesToInject()`: サムネイルのみ送信（dataUrlは空の可能性）
+
+- `sendGalleryImagesToInject()`: サムネイルのみ送信（dataUrl は空の可能性）
 
 ### Doctor（ストレージ最適化）
 
 **場所:** `src/features/doctor/`
 
-**実行タイミング:** 拡張初期化から5秒後（自動）
+**実行タイミング:** 拡張初期化から 5 秒後（自動）
 
 **処理:**
-1. `gallery_index`の`cleaned !== true`なアイテムを検出
-2. サムネイル生成（なければIndexedDBから生成）
-3. **dataUrlフィールドのみ削除**（metadata/stats/thumbnailは保持）
-4. `cleaned: true`マーク
-5. 500ms間隔で1件ずつ処理（Chrome凍結防止）
 
-**重要:** IndexedDBへの保存確認は**しない**（inject側が自動保存する前提）
+1. `gallery_index`の`cleaned !== true`なアイテムを検出
+2. サムネイル生成（なければ IndexedDB から生成）
+3. **dataUrl フィールドのみ削除**（metadata/stats/thumbnail は保持）
+4. `cleaned: true`マーク
+5. 500ms 間隔で 1 件ずつ処理（Chrome 凍結防止）
+
+**重要:** IndexedDB への保存確認は**しない**（inject 側が自動保存する前提）
 
 ### Migration（タイル最適化）
 
 **場所:** `src/inject/workers/migration.worker.ts`
 
 **処理フロー:**
+
 ```
 1. legacy_blobsから元画像取得
 2. ImageBitmap化
@@ -93,11 +100,13 @@ IndexedDB layers: isOptimized=true
 ```
 
 **実行:**
+
 - バックグラウンド（優先度: LOW）
 - 新規画像保存時に自動キュー
 - 非最適化レイヤー描画時に再キュー
 
 **最適化効果:**
+
 - ストレージ削減: 透明タイルスキップ
 - 読み込み高速化: 必要なタイルのみロード
 - メモリ削減: 全体をロードせずタイル単位
@@ -106,25 +115,29 @@ IndexedDB layers: isOptimized=true
 
 **場所:** `src/inject/tile-draw/tile-overlay-renderer.ts`
 
-**3つのロード戦略:**
+**3 つのロード戦略:**
 
-**戦略A: dataUrlから直接（状態A〜B）**
+**戦略 A: dataUrl から直接（状態 A〜B）**
+
 - 条件: `img.dataUrl && img.dataUrl !== ""`
 - ソース: Chrome Storage
-- 処理: メモリ上で1000x1000分割 → 即座にレンダリング
+- 処理: メモリ上で 1000x1000 分割 → 即座にレンダリング
 
-**戦略B: 最適化IndexedDB（状態D）**
+**戦略 B: 最適化 IndexedDB（状態 D）**
+
 - 条件: `isOptimized === true`
 - ソース: `optimized_tiles`ストア
-- 処理: タイル単位で遅延ロード（bounds判定で必要分のみ）
+- 処理: タイル単位で遅延ロード（bounds 判定で必要分のみ）
 
-**戦略C: 非最適化IndexedDB（状態C）**
+**戦略 C: 非最適化 IndexedDB（状態 C）**
+
 - 条件: `isOptimized === false`、`dataUrl`空
 - ソース: `legacy_blobs`ストア
-- 処理: OffscreenCanvasで元画像から該当タイル抽出
-- 副作用: Worker migrationを自動キュー
+- 処理: OffscreenCanvas で元画像から該当タイル抽出
+- 副作用: Worker migration を自動キュー
 
 **フォールバックチェーン（修正後）:**
+
 ```typescript
 if (layerMetadata && !layerMetadata.isOptimized) {
   // IndexedDBから完全画像取得
@@ -143,6 +156,7 @@ if (layerMetadata && !layerMetadata.isOptimized) {
 **場所:** `src/inject/fetch-interceptor.ts`
 
 **処理:**
+
 ```
 1. タイル要求検知: GET /tiles/{tileX}/{tileY}.png
 2. キャッシュ確認: Memory → IndexedDB
@@ -159,17 +173,18 @@ if (layerMetadata && !layerMetadata.isOptimized) {
 7. ブラウザに返却
 ```
 
-**キャッシュ戦略（4ケース）:**
-- ケース1: Data Saver無効 + キャッシュなし → 処理のみ
-- ケース2: Data Saver無効 + キャッシュあり → 取得 → 処理 → 保存
-- ケース3: Data Saver有効 + キャッシュなし → 取得 → 処理 → 保存
-- ケース4: Data Saver有効 + キャッシュあり → キャッシュ返却（最速）
+**キャッシュ戦略（4 ケース）:**
+
+- ケース 1: Data Saver 無効 + キャッシュなし → 処理のみ
+- ケース 2: Data Saver 無効 + キャッシュあり → 取得 → 処理 → 保存
+- ケース 3: Data Saver 有効 + キャッシュなし → 取得 → 処理 → 保存
+- ケース 4: Data Saver 有効 + キャッシュあり → キャッシュ返却（最速）
 
 ---
 
 ## 既存ユーザーの画像データ処理
 
-### シナリオ1: 初回起動（状態A）
+### シナリオ 1: 初回起動（状態 A）
 
 ```
 1. ページロード
@@ -188,7 +203,7 @@ if (layerMetadata && !layerMetadata.isOptimized) {
    └─ 戦略C（legacy_blobs抽出）で描画
 ```
 
-### シナリオ2: Doctor cleanup後の起動（状態C）
+### シナリオ 2: Doctor cleanup 後の起動（状態 C）
 
 ```
 1. ページロード
@@ -205,7 +220,7 @@ if (layerMetadata && !layerMetadata.isOptimized) {
    └─ Worker migrationキュー（再実行）
 ```
 
-### シナリオ3: 最適化完了後（状態D）
+### シナリオ 3: 最適化完了後（状態 D）
 
 ```
 1. ページロード
@@ -277,34 +292,33 @@ if (layerMetadata && !layerMetadata.isOptimized) {
 
 ## 重要ファイル一覧
 
-### Content Script（Chrome拡張コンテキスト）
+### Content Script（Chrome 拡張コンテキスト）
 
-| ファイル | 役割 |
-|---------|------|
-| `src/content.ts` | 初期化、Doctor起動 |
+| ファイル                            | 役割                        |
+| ----------------------------------- | --------------------------- |
+| `src/content.ts`                    | 初期化、Doctor 起動         |
 | `src/core/bridge/gallery-bridge.ts` | sendGalleryImagesToInject() |
-| `src/states/galleryStorage.ts` | Chrome Storage管理 |
-| `src/features/doctor/` | ストレージ最適化 |
+| `src/states/galleryStorage.ts`      | Chrome Storage 管理         |
+| `src/features/doctor/`              | ストレージ最適化            |
 
 ### Inject Script（ページコンテキスト）
 
-| ファイル | 役割 |
-|---------|------|
-| `src/inject/index.ts` | 初期化（fetch override、IndexedDB）|
-| `src/inject/fetch-interceptor.ts` | タイル取得・キャッシュ |
-| `src/inject/handlers/overlay-handlers.ts` | Gallery処理、3戦略 |
-| `src/inject/tile-draw/tile-overlay-renderer.ts` | 描画パイプライン |
-| `src/inject/db/layer-repository.ts` | getTile()（fast/fallback） |
-| `src/inject/db/schema.ts` | データ型定義 |
-| `src/inject/workers/migration.worker.ts` | バックグラウンド最適化 |
+| ファイル                                        | 役割                                |
+| ----------------------------------------------- | ----------------------------------- |
+| `src/inject/index.ts`                           | 初期化（fetch override、IndexedDB） |
+| `src/inject/fetch-interceptor.ts`               | タイル取得・キャッシュ              |
+| `src/inject/handlers/overlay-handlers.ts`       | Gallery 処理、3 戦略                |
+| `src/inject/tile-draw/tile-overlay-renderer.ts` | 描画パイプライン                    |
+| `src/inject/db/schema.ts`                       | データ型定義                        |
+| `src/inject/workers/migration.worker.ts`        | バックグラウンド最適化              |
 
 ### 状態管理
 
-| ファイル | 役割 |
-|---------|------|
-| `src/inject/tile-draw/states.ts` | overlayLayers[], perTileColorStats |
-| `src/inject/states/migrationState.ts` | LayerRepository, WorkerMessenger |
-| `src/inject/states/colorFilterState.ts` | カラーフィルタ設定 |
+| ファイル                                | 役割                               |
+| --------------------------------------- | ---------------------------------- |
+| `src/inject/tile-draw/states.ts`        | overlayLayers[], perTileColorStats |
+| `src/inject/states/migrationState.ts`   | , WorkerMessenger                  |
+| `src/inject/states/colorFilterState.ts` | カラーフィルタ設定                 |
 
 ---
 
@@ -312,33 +326,34 @@ if (layerMetadata && !layerMetadata.isOptimized) {
 
 ### メモリ管理
 
-- LRUキャッシュ: LayerRepository（100 ImageBitmaps）
-- タイルキャッシュ: TileCacheDB（100タイル）
-- 明示的解放: `bitmap.close()`（GC促進）
-- Worker遅延: 100-500ms（タスク間GC）
+- LRU キャッシュ: （100 ImageBitmaps）
+- タイルキャッシュ: TileCacheDB（100 タイル）
+- 明示的解放: `bitmap.close()`（GC 促進）
+- Worker 遅延: 100-500ms（タスク間 GC）
 
 ### 描画最適化
 
-- bounds判定: 最適化レイヤーで不要タイルスキップ
-- 遅延ロード: 必要なタイルのみIndexedDBから取得
-- GPU処理: WebGL2カラーフィルタ（最大64色）
-- スパースタイル: 透明10px未満スキップ
+- bounds 判定: 最適化レイヤーで不要タイルスキップ
+- 遅延ロード: 必要なタイルのみ IndexedDB から取得
+- GPU 処理: WebGL2 カラーフィルタ（最大 64 色）
+- スパースタイル: 透明 10px 未満スキップ
 
 ### ネットワーク最適化
 
-- 4段階キャッシュ: Memory → IndexedDB → 処理 → Network
-- Data Saverモード: 処理済みタイル永続化
-- キャッシュ無効化: ピクセル描画POST時のみ
+- 4 段階キャッシュ: Memory → IndexedDB → 処理 → Network
+- Data Saver モード: 処理済みタイル永続化
+- キャッシュ無効化: ピクセル描画 POST 時のみ
 
 ---
 
 ## トラブルシューティング
 
-### 問題: 描画されない（dataUrl空）
+### 問題: 描画されない（dataUrl 空）
 
-**原因:** Doctor cleanup後、IndexedDBフォールバックなし
+**原因:** Doctor cleanup 後、IndexedDB フォールバックなし
 
 **解決:**
+
 ```typescript
 // overlay-handlers.ts:259-281
 } else if (img.dataUrl && img.dataUrl !== "") {
@@ -352,45 +367,50 @@ if (layerMetadata && !layerMetadata.isOptimized) {
 
 ### 問題: 最適化されない
 
-**原因:** Worker migrationが実行されていない
+**原因:** Worker migration が実行されていない
 
 **確認:**
+
 1. `migration.worker.ts`ロード確認
 2. `handleGalleryImages()`で`requestWorkerMigration()`呼び出し確認
 3. IndexedDB `layers`ストアの`isOptimized`フラグ確認
 
 ### 問題: 統計が消える
 
-**原因:** Chrome Storageへの保存失敗
+**原因:** Chrome Storage への保存失敗
 
 **確認:**
+
 1. `mr-wplace-stats-updated`メッセージ送信確認
 2. `content.ts`のメッセージリスナー確認
-3. Chrome Storage容量（5MB制限）
+3. Chrome Storage 容量（5MB 制限）
 
 ---
 
 ## データ移行パス
 
-### v1.x → v2.x（Doctor導入前 → 後）
+### v1.x → v2.x（Doctor 導入前 → 後）
 
 **自動移行:**
-1. Doctor初回実行でサムネイル生成
-2. dataUrl削除（5秒後）
-3. IndexedDB保存（inject側自動）
+
+1. Doctor 初回実行でサムネイル生成
+2. dataUrl 削除（5 秒後）
+3. IndexedDB 保存（inject 側自動）
 4. Worker migration（バックグラウンド）
 
 **ユーザー影響:** なし（透過的）
 
 ### 緊急復旧
 
-**dataUrl完全削除後の復旧:**
+**dataUrl 完全削除後の復旧:**
+
 ```javascript
 // IndexedDBから全画像復元
 const images = await galleryStorage.getAll({ fullImage: true });
 ```
 
-**IndexedDB破損時:**
+**IndexedDB 破損時:**
+
 ```javascript
 // Chrome Storageから再保存
 await sendGalleryImagesToInject();
@@ -404,10 +424,10 @@ await sendGalleryImagesToInject();
 1. **段階的最適化:** 即座に描画可能 → バックグラウンド最適化
 2. **多重フォールバック:** dataUrl → optimized → legacy → 失敗
 3. **透過的移行:** ユーザー操作不要、自動データ変換
-4. **永続性:** IndexedDB + Chrome Storage二重保存
+4. **永続性:** IndexedDB + Chrome Storage 二重保存
 5. **パフォーマンス優先:** メモリキャッシュ → IndexedDB → Network
 
 ---
 
 **更新日:** 2025-12-07
-**対象バージョン:** v2.x（Doctor/Migration導入後）
+**対象バージョン:** v2.x（Doctor/Migration 導入後）

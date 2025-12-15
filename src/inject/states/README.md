@@ -5,6 +5,7 @@ This folder contains state management for the inject context (page context).
 ## Purpose
 
 Store and manage states that are:
+
 - Received from content script via `postMessage`
 - Used across multiple files within inject context
 - Independent of `window` object exposure
@@ -12,11 +13,13 @@ Store and manage states that are:
 ## Pattern
 
 Each state module should export:
+
 - Type definition (interface/type)
 - Getter function(s)
 - Setter/updater function(s)
 
 Example:
+
 ```typescript
 export interface SomeState {
   enabled: boolean;
@@ -35,4 +38,4 @@ export const updateSomeState = (newState: Partial<SomeState>): void => {
 ## Current States
 
 - `colorFilterState.ts`: Color filter settings from content script (isFilterActive, selectedRGBs, enhancedMode, extraColorsBitmap)
-- `migrationState.ts`: Migration architecture instances (layerRepository, workerMessenger)
+- `migrationState.ts`: Migration architecture instances ( workerMessenger)
