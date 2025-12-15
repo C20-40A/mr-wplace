@@ -9,13 +9,19 @@ import { renderColorFilters } from "./routes/list";
  * - 色パレット表示・選択
  */
 export class ColorFilter {
+  private static instance: ColorFilter | null = null;
   private colorFilterModal: ColorFilterModal;
   private router: ColorFilterRouter;
 
   constructor() {
     this.router = new ColorFilterRouter();
     this.colorFilterModal = new ColorFilterModal(this.router);
+    ColorFilter.instance = this;
     this.init();
+  }
+
+  public static getInstance(): ColorFilter | null {
+    return ColorFilter.instance;
   }
 
   private init(): void {
@@ -49,7 +55,7 @@ export class ColorFilter {
     }
   }
 
-  private showModal(): void {
+  public showModal(): void {
     this.colorFilterModal.showModal(); // モーダルを先に作成
     this.router.initialize("color-filter");
   }

@@ -1,6 +1,5 @@
 # メイン
 
-- 新規追加画像が謎のレイヤーに set される
 - window.localStorage.PARAGLIDE_LOCALE = 'jp'
 - ja の feedback form にならない
 - 「？」アイコンからのドキュメント表示
@@ -11,9 +10,7 @@
 - sendGalleryImagesToInject なんとかする
 - 画像編集で「境界を強調」つまり「輪郭線を描画」できるようにする
 - migration がされるか、以前のデータでちゃんとテストする
-- 描画関連の処理を web worker にすべきだろうか
 - 直接取り込みしたときの色問題
-- Paint pixel は非表示
 - friends 取り込みが、「件のお気に入りを...」になっている。また、上書き取り込みのリロード不要だ。
 - equippedFlag がないと取り込めない？　 allianceId とか allianceName は不要なようだが
 - 紹介文更新 - 友人帳やら未描画のみのひょうじやら
@@ -113,7 +110,10 @@
 
 # DONE v2.0.0
 
+- Paint pixel は非表示
+- 新規追加画像が謎のレイヤーに set される
 - archive/統計の indexed db migration
+- 描画関連の処理を web worker にすべきだろうか->重いからなしで
 - gallery item を非表示にする-> 統計が消える
 - gallery の画像非表示したあと、画像追加できない
 - auto canvas click は selected color も keydown 対象にする -> disable
