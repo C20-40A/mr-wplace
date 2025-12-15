@@ -16,8 +16,9 @@ export const handleStatsComputed = async (
   >
 ) => {
   try {
-    // Skip text layers
-    if (imageKey.startsWith("text_")) return;
+    // Skip temporary layers (text, snapshot)
+    if (imageKey.startsWith("text_") || imageKey.startsWith("snapshot_"))
+      return;
 
     const { GalleryStorage } = await import("@/states/galleryStorage");
     const galleryStorage = new GalleryStorage();
@@ -50,6 +51,10 @@ export const handleTotalStatsComputed = async (
   totalColorStats: Record<string, number>
 ) => {
   try {
+    // Skip temporary layers (text, snapshot)
+    if (imageKey.startsWith("text_") || imageKey.startsWith("snapshot_"))
+      return;
+
     const { GalleryStorage } = await import("@/states/galleryStorage");
     const galleryStorage = new GalleryStorage();
 
