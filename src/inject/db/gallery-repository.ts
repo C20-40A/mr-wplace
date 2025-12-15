@@ -292,6 +292,20 @@ export class GalleryRepository {
     const height = bitmap.height;
     console.log(`🧑‍🎨 [GalleryRepository] dimensions: ${width}x${height}`);
 
+    // Calculate zIndex: new items go to top (max zIndex + 1)
+    const existingMetadata = await this.getMetadata(id);
+    let zIndex = metadata.zIndex;
+    if (!existingMetadata) {
+      const allMetadata = await this.getAllMetadata();
+      const maxZIndex = allMetadata.length > 0
+        ? Math.max(...allMetadata.map(m => m.zIndex))
+        : -1;
+      zIndex = maxZIndex + 1;
+      console.log(`🧑‍🎨 [GalleryRepository] new item, zIndex: ${zIndex}`);
+    } else {
+      zIndex = existingMetadata.zIndex;
+    }
+
     // Calculate affected tiles if coords exist
     const affectedTiles = metadata.coords
       ? calculateAffectedTiles(metadata.coords, width, height)
@@ -304,6 +318,7 @@ export class GalleryRepository {
       width,
       height,
       affectedTiles,
+      zIndex,
     };
 
     // Save image blob

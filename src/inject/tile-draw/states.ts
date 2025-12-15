@@ -44,8 +44,7 @@ export const clearAllOverlayLayers = (): void => {
 export const addImageToOverlayLayers = async (
   source: ImageBitmap | HTMLImageElement,
   coords: WplaceCoords,
-  imageKey: string,
-  options: { force?: boolean; skip?: boolean } = {}
+  imageKey: string
 ): Promise<void> => {
   removePreparedOverlayImageByKey(imageKey);
 

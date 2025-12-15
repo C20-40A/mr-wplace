@@ -68,8 +68,11 @@ export const handleGalleryImagesV2 = async (data: {
 
   const imageKeys: string[] = [];
 
+  // Sort by zIndex (ascending: lower zIndex = bottom layer = first in array)
+  const sortedItems = [...data.items].sort((a, b) => a.zIndex - b.zIndex);
+
   // Process each visible item with coords
-  for (const item of data.items) {
+  for (const item of sortedItems) {
     if (!item.visible || !item.coords) continue;
 
     // Calculate bounds from coords and dimensions
@@ -140,12 +143,10 @@ export const handleSnapshotsUpdate = async (data: {
     try {
       const bitmap = await loadImageBitmap(snapshot.dataUrl, snapshot.key);
 
-      // Snapshots don't need stats computation (no progress tracking)
       await addImageToOverlayLayers(
         bitmap,
         [snapshot.tileX, snapshot.tileY, 0, 0],
-        snapshot.key,
-        { skip: true } // Don't compute stats for snapshots
+        snapshot.key
       );
 
       snapshotKeys.push(snapshot.key);
@@ -203,7 +204,6 @@ export const handleTextLayersUpdate = async (data: {
     try {
       const bitmap = await loadImageBitmap(textLayer.dataUrl, textLayer.key);
 
-      // Text layers don't need stats computation (no progress tracking)
       await addImageToOverlayLayers(
         bitmap,
         [
@@ -212,8 +212,7 @@ export const handleTextLayersUpdate = async (data: {
           textLayer.coords.PxX,
           textLayer.coords.PxY,
         ],
-        textLayer.key,
-        { skip: true } // Don't compute stats for text layers
+        textLayer.key
       );
 
       textLayerKeys.push(textLayer.key);
