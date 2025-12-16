@@ -84,7 +84,11 @@ export abstract class BaseSnapshotRoute {
   ): Promise<void> {
     if (!confirm(t`${"delete_confirm"}`)) return;
 
-    await TimeTravelStorage.removeSnapshotFromIndex(fullKey);
+    const snapshotId = fullKey.replace("tile_snapshot_", "");
+    const { getSnapshotRepository } = await import(
+      "@/inject/db/snapshot-repository"
+    );
+    await getSnapshotRepository().deleteSnapshotWithMetadata(snapshotId);
 
     // Update inject side to remove snapshot overlay
     await sendSnapshotsToInject();

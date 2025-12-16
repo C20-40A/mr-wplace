@@ -111,15 +111,19 @@ export const handleGalleryImagesV2 = async (data: {
 /**
  * Handle snapshots update from content script
  * Snapshots are tile-specific overlays for time-travel feature
+ *
+ * Note: Receives only draw state info, loads actual data from IndexedDB
  */
 export const handleSnapshotsUpdate = async (data: {
-  snapshots: Array<{
+  snapshotDrawStates: Array<{
+    snapshotId: string;
     key: string;
-    dataUrl: string;
     tileX: number;
     tileY: number;
   }>;
 }): Promise<void> => {
+  const { getSnapshotRepository } = await import("../db/snapshot-repository");
+
   if (!window.mrWplaceSnapshots) {
     window.mrWplaceSnapshots = new Map();
   }
@@ -131,31 +135,51 @@ export const handleSnapshotsUpdate = async (data: {
     }
   }
 
-  // Clear and update snapshots
+  // Clear snapshots
   window.mrWplaceSnapshots.clear();
-  for (const snapshot of data.snapshots) {
-    window.mrWplaceSnapshots.set(snapshot.key, snapshot);
-  }
 
-  // Add each snapshot to overlay layers
+  // Add each snapshot to overlay layers (load from IndexedDB)
   const snapshotKeys: string[] = [];
-  for (const snapshot of data.snapshots) {
+  const repository = getSnapshotRepository();
+
+  for (const drawState of data.snapshotDrawStates) {
     try {
-      const bitmap = await loadImageBitmap(snapshot.dataUrl, snapshot.key);
+      // Load snapshot blob from IndexedDB
+      const blob = await repository.getSnapshot(drawState.snapshotId);
+      if (!blob) {
+        console.warn(`🧑‍🎨 : Snapshot ${drawState.snapshotId} not found in IndexedDB`);
+        continue;
+      }
+
+      // Convert blob to dataUrl for bitmap loading
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+
+      const bitmap = await loadImageBitmap(dataUrl, drawState.key);
 
       await addImageToOverlayLayers(
         bitmap,
-        [snapshot.tileX, snapshot.tileY, 0, 0],
-        snapshot.key
+        [drawState.tileX, drawState.tileY, 0, 0],
+        drawState.key
       );
 
-      snapshotKeys.push(snapshot.key);
+      // Store snapshot info for reference
+      window.mrWplaceSnapshots.set(drawState.key, {
+        key: drawState.key,
+        tileX: drawState.tileX,
+        tileY: drawState.tileY,
+      });
+
+      snapshotKeys.push(drawState.key);
       console.log(
-        `🧑‍🎨 : Added snapshot ${snapshot.key} to overlay at (${snapshot.tileX}, ${snapshot.tileY})`
+        `🧑‍🎨 : Added snapshot ${drawState.key} to overlay at (${drawState.tileX}, ${drawState.tileY})`
       );
     } catch (error) {
       console.error(
-        `🧑‍🎨 : Failed to add snapshot ${snapshot.key} to overlay layers:`,
+        `🧑‍🎨 : Failed to add snapshot ${drawState.key} to overlay layers:`,
         error
       );
     }
@@ -164,7 +188,7 @@ export const handleSnapshotsUpdate = async (data: {
   // Save current snapshot keys for next update
   window.mrWplaceSnapshotKeys = new Set(snapshotKeys);
 
-  console.log(`🧑‍🎨 : Snapshots updated: ${data.snapshots.length} active`);
+  console.log(`🧑‍🎨 : Snapshots updated: ${snapshotKeys.length} active`);
 };
 
 /**

@@ -20,7 +20,6 @@ export interface DataSaverState {
 
 export interface SnapshotImage {
   key: string;
-  dataUrl: string;
   tileX: number;
   tileY: number;
 }

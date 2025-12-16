@@ -186,56 +186,35 @@ export const getStatsPerImage = async (
 };
 
 /**
- * Send active snapshots to inject side for overlay rendering
+ * Send active snapshot draw states to inject side for overlay rendering
  * Used by: time-travel feature
+ *
+ * Note: Only sends draw state info (snapshotId, tileX, tileY).
+ * Inject side loads actual snapshot data from IndexedDB.
  */
 export const sendSnapshotsToInject = async () => {
   const { TimeTravelStorage } = await import("@/features/time-travel/storage");
-  const { storage } = await import("@/utils/browser-api");
 
   const drawStates = await TimeTravelStorage.getDrawStates();
   const enabledStates = drawStates.filter((s) => s.drawEnabled);
 
-  // Convert snapshots in parallel
-  const snapshots = await Promise.all(
-    enabledStates.map(async (state) => {
-      const snapshotData = await storage.get([state.fullKey]);
-      const rawData = snapshotData[state.fullKey];
+  // Send only draw state info - inject will load from IndexedDB
+  const snapshotDrawStates = enabledStates.map((state) => ({
+    snapshotId: state.fullKey.replace("tile_snapshot_", ""),
+    key: `snapshot_${state.fullKey}`,
+    tileX: state.tileX,
+    tileY: state.tileY,
+  }));
 
-      if (!rawData) return null;
-
-      // Convert Uint8Array to blob to dataUrl
-      const uint8Array = new Uint8Array(rawData);
-      const blob = new Blob([uint8Array], { type: "image/png" });
-
-      const dataUrl = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(blob);
-      });
-
-      return {
-        key: `snapshot_${state.fullKey}`,
-        dataUrl,
-        tileX: state.tileX,
-        tileY: state.tileY,
-      };
-    })
-  ).then((results) => results.filter((s): s is NonNullable<typeof s> => s !== null));
-
-  const messageData = {
-    source: "mr-wplace-snapshots",
-    snapshots,
-  };
-
-  // Log data size for performance monitoring
-  const dataSize = JSON.stringify(messageData).length;
-  const dataSizeMB = (dataSize / 1024 / 1024).toFixed(2);
   console.log(
-    `🧑‍🎨 : Sending ${snapshots.length} snapshots to inject side (${dataSizeMB}MB)`
+    `🧑‍🎨 : Sending ${snapshotDrawStates.length} snapshot draw states to inject side`
   );
 
-  window.postMessage(messageData, "*");
-
-  console.log(`🧑‍🎨 : Sent ${snapshots.length} snapshots to inject side`);
+  window.postMessage(
+    {
+      source: "mr-wplace-snapshots",
+      snapshotDrawStates,
+    },
+    "*"
+  );
 };

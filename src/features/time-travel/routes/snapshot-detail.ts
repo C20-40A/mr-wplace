@@ -6,7 +6,6 @@ import { Toast } from "../../../components/toast";
 import { di } from "../../../core/di";
 import { gotoPosition } from "../../../utils/position";
 import { tilePixelToLatLng } from "../../../utils/coordinate";
-import { storage } from "@/utils/browser-api";
 import { sendSnapshotsToInject } from "@/utils/inject-bridge";
 
 export class SnapshotDetailRoute {
@@ -120,11 +119,12 @@ export class SnapshotDetailRoute {
   }
 
   private async loadSnapshot(fullKey: string): Promise<void> {
-    const result = await storage.get(fullKey);
-    if (!result[fullKey]) throw new Error("Snapshot not found");
-
-    const uint8Array = new Uint8Array(result[fullKey]);
-    const blob = new Blob([uint8Array], { type: "image/png" });
+    const snapshotId = fullKey.replace("tile_snapshot_", "");
+    const { getSnapshotRepository } = await import(
+      "@/inject/db/snapshot-repository"
+    );
+    const blob = await getSnapshotRepository().getSnapshot(snapshotId);
+    if (!blob) throw new Error("Snapshot not found");
 
     const dataUrl = await new Promise<string>((resolve) => {
       const reader = new FileReader();
@@ -159,8 +159,12 @@ export class SnapshotDetailRoute {
   }
 
   private async drawSnapshot(fullKey: string): Promise<void> {
-    const result = await storage.get(fullKey);
-    if (!result[fullKey]) throw new Error("Snapshot not found");
+    const snapshotId = fullKey.replace("tile_snapshot_", "");
+    const { getSnapshotRepository } = await import(
+      "@/inject/db/snapshot-repository"
+    );
+    const blob = await getSnapshotRepository().getSnapshot(snapshotId);
+    if (!blob) throw new Error("Snapshot not found");
 
     const tileX = parseInt(fullKey.split("_")[3]);
     const tileY = parseInt(fullKey.split("_")[4]);
@@ -177,8 +181,6 @@ export class SnapshotDetailRoute {
       window.postMessage({ source: "wplace-studio-drawing-start" }, "*");
     }
 
-    const uint8Array = new Uint8Array(result[fullKey]);
-    const blob = new Blob([uint8Array], { type: "image/png" });
     const file = new File([blob], "snapshot.png", { type: "image/png" });
 
     // TimeTravelStorage.drawSnapshotOnTile使用
@@ -232,7 +234,11 @@ export class SnapshotDetailRoute {
   private async deleteSnapshot(fullKey: string): Promise<void> {
     if (!confirm(t`${"delete_confirm"}`)) return;
 
-    await TimeTravelStorage.removeSnapshotFromIndex(fullKey);
+    const snapshotId = fullKey.replace("tile_snapshot_", "");
+    const { getSnapshotRepository } = await import(
+      "@/inject/db/snapshot-repository"
+    );
+    await getSnapshotRepository().deleteSnapshotWithMetadata(snapshotId);
 
     // Update inject side to remove snapshot overlay
     await sendSnapshotsToInject();

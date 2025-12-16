@@ -1,23 +1,15 @@
-import { storage } from "@/utils/browser-api";
+import { getSnapshotRepository } from "@/inject/db/snapshot-repository";
 
 export class TileSnapshot {
-  private static readonly SNAPSHOT_PREFIX = "tile_snapshot_";
-
   // インメモリキャッシュ（永続化しない）
   private tmpTileCache = new Map<string, Blob>();
 
-  // スナップショット削除（インデックス対応）
+  // スナップショット削除
   async deleteSnapshot(snapshotId: string): Promise<void> {
-    const snapshotKey = `${TileSnapshot.SNAPSHOT_PREFIX}${snapshotId}`;
+    const repository = getSnapshotRepository();
+    await repository.deleteSnapshotWithMetadata(snapshotId);
 
-    // 実画像データ削除
-    await storage.remove(snapshotKey);
-
-    // インデックス更新
-    const { TimeTravelStorage } = await import("../storage");
-    await TimeTravelStorage.removeSnapshotFromIndex(snapshotKey);
-
-    console.log(`Deleted snapshot: ${snapshotId}`);
+    console.log(`🧑‍🎨 : Deleted snapshot: ${snapshotId}`);
   }
 
   async saveTmpTile(tileX: number, tileY: number, blob: Blob): Promise<void> {
@@ -80,37 +72,29 @@ export class TileSnapshot {
 
     const timestamp = Date.now();
     const snapshotId = `${timestamp}_${tileX}_${tileY}`;
-    const snapshotKey = `${TileSnapshot.SNAPSHOT_PREFIX}${snapshotId}`;
 
-    // Blobを配列に変換して保存
-    const arrayBuffer = await tmpBlob.arrayBuffer();
-    const data = Array.from(new Uint8Array(arrayBuffer));
-    await storage.set({ [snapshotKey]: data });
-
-    // インデックス更新
-    const { TimeTravelStorage } = await import("../storage");
-    await TimeTravelStorage.addSnapshotToIndex({
+    // IndexedDBに保存
+    const repository = getSnapshotRepository();
+    await repository.saveSnapshotWithMetadata(snapshotId, tmpBlob, {
       id: snapshotId,
-      fullKey: snapshotKey,
       timestamp,
       tileX,
       tileY,
       name,
     });
 
-    console.log(`Saved snapshot: ${snapshotId}`);
+    console.log(`🧑‍🎨 : Saved snapshot: ${snapshotId}`);
 
     return snapshotId;
   }
 
   async loadSnapshot(snapshotId: string): Promise<Blob> {
-    const key = `${TileSnapshot.SNAPSHOT_PREFIX}${snapshotId}`;
-    const result = await storage.get(key);
+    const repository = getSnapshotRepository();
+    const blob = await repository.getSnapshot(snapshotId);
 
-    if (!result[key]) throw new Error(`Snapshot not found: ${snapshotId}`);
+    if (!blob) throw new Error(`Snapshot not found: ${snapshotId}`);
 
-    const uint8Array = new Uint8Array(result[key]);
-    return new Blob([uint8Array], { type: "image/png" });
+    return blob;
   }
 
   async importSnapshot(
@@ -122,30 +106,21 @@ export class TileSnapshot {
   ): Promise<string> {
     // Scale down if needed
     const processedBlob = await this.scaleDownIfNeeded(file);
-    
-    // Convert to Uint8Array
-    const arrayBuffer = await processedBlob.arrayBuffer();
-    const data = Array.from(new Uint8Array(arrayBuffer));
-    
-    // Create snapshot ID and key
+
+    // Create snapshot ID
     const snapshotId = `${timestamp}_${tileX}_${tileY}`;
-    const snapshotKey = `${TileSnapshot.SNAPSHOT_PREFIX}${snapshotId}`;
-    
-    // Save to storage
-    await storage.set({ [snapshotKey]: data });
-    
-    // Update index
-    const { TimeTravelStorage } = await import("../storage");
-    await TimeTravelStorage.addSnapshotToIndex({
+
+    // Save to IndexedDB
+    const repository = getSnapshotRepository();
+    await repository.saveSnapshotWithMetadata(snapshotId, processedBlob, {
       id: snapshotId,
-      fullKey: snapshotKey,
       timestamp,
       tileX,
       tileY,
       name,
     });
-    
-    console.log(`Imported snapshot: ${snapshotId}`);
+
+    console.log(`🧑‍🎨 : Imported snapshot: ${snapshotId}`);
     return snapshotId;
   }
 }

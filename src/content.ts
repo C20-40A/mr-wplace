@@ -93,6 +93,12 @@ const initializeMainFeatures = async () => {
   // Global instance初期化（inject.js message listener前）
   window.mrWplace = window.mrWplace || ({} as any);
 
+  // Initialize SnapshotRepository (required before TileSnapshot operations)
+  const { initSnapshotRepository } = await import(
+    "@/inject/db/snapshot-repository"
+  );
+  await initSnapshotRepository();
+
   // TileSnapshot initialization (needed for message listener)
   const tileSnapshot = new TileSnapshot();
 

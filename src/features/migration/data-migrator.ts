@@ -6,11 +6,12 @@
  * - tiles: タイル分割画像
  * - metadata: メタデータ
  * - thumbnails: サムネイル
+ * - snapshots: タイルスナップショット (v3.1.0+)
  */
 
 import type { MigrationProgress } from "./migration-modal";
 
-const MIGRATION_VERSION = "3.0.0";
+const MIGRATION_VERSION = "3.1.0";
 const MIGRATION_VERSION_KEY = "mr-wplace-migration-version";
 
 /**
@@ -118,6 +119,42 @@ const getLegacyIndexedDBBlob = async (key: string): Promise<Blob | null> => {
 };
 
 /**
+ * Legacy snapshot key info (without data to save memory)
+ */
+interface LegacySnapshotKey {
+  id: string;
+  fullKey: string;
+  timestamp: number;
+  tileX: number;
+  tileY: number;
+}
+
+/**
+ * Get legacy snapshot keys from Chrome Storage (without data)
+ */
+const getLegacySnapshotKeys = async (): Promise<LegacySnapshotKey[]> => {
+  const { storage } = await import("@/utils/browser-api");
+  const result = await storage.get(null);
+  const keys: LegacySnapshotKey[] = [];
+
+  for (const key of Object.keys(result)) {
+    if (key.startsWith("tile_snapshot_")) {
+      const parts = key.split("_");
+      if (parts.length >= 5) {
+        const timestamp = parseInt(parts[2]);
+        const tileX = parseInt(parts[3]);
+        const tileY = parseInt(parts[4]);
+        const id = key.replace("tile_snapshot_", "");
+
+        keys.push({ id, fullKey: key, timestamp, tileX, tileY });
+      }
+    }
+  }
+
+  return keys;
+};
+
+/**
  * Check if migration to v3 is needed
  */
 export const needsMigration = async (): Promise<boolean> => {
@@ -129,7 +166,8 @@ export const needsMigration = async (): Promise<boolean> => {
 
   // Check if there are any legacy items to migrate
   const items = await getLegacyItems();
-  return items.length > 0;
+  const snapshotKeys = await getLegacySnapshotKeys();
+  return items.length > 0 || snapshotKeys.length > 0;
 };
 
 /**
@@ -137,7 +175,8 @@ export const needsMigration = async (): Promise<boolean> => {
  */
 export const getMigrationCount = async (): Promise<number> => {
   const items = await getLegacyItems();
-  return items.length;
+  const snapshotKeys = await getLegacySnapshotKeys();
+  return items.length + snapshotKeys.length;
 };
 
 /**
@@ -150,27 +189,33 @@ export const runDataMigration = async (
   skipped: number;
   failed: string[];
 }> => {
-  console.log("🧑‍🎨 [Migration] Starting migration to v3.0.0 (IndexedDB v2)...");
+  console.log("🧑‍🎨 [Migration] Starting migration to v3.1.0 (IndexedDB v2 + Snapshots)...");
 
   const { initGalleryRepository } = await import(
     "@/inject/db/gallery-repository"
   );
-  const repository = await initGalleryRepository();
+  const { initSnapshotRepository } = await import(
+    "@/inject/db/snapshot-repository"
+  );
+  const galleryRepository = await initGalleryRepository();
+  const snapshotRepository = await initSnapshotRepository();
 
   const items = await getLegacyItems();
-  const total = items.length;
+  const snapshotKeys = await getLegacySnapshotKeys();
+  const total = items.length + snapshotKeys.length;
 
   let migrated = 0;
   let skipped = 0;
   const failed: string[] = [];
 
+  // Migrate gallery items
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
 
     onProgress?.({
       current: i + 1,
       total,
-      currentItem: item.title || item.key,
+      currentItem: `Gallery: ${item.title || item.key}`,
     });
 
     try {
@@ -183,7 +228,7 @@ export const runDataMigration = async (
       }
 
       // Save to new IndexedDB v2
-      await repository.saveGalleryItem(item.key, blob, {
+      await galleryRepository.saveGalleryItem(item.key, blob, {
         title: item.title,
         coords: item.drawPosition,
         visible: item.drawEnabled !== false,
@@ -192,7 +237,7 @@ export const runDataMigration = async (
         perTileStats: item.perTileColorStats,
       });
 
-      console.log(`🧑‍🎨 [Migration] Migrated ${item.key}`);
+      console.log(`🧑‍🎨 [Migration] Migrated gallery ${item.key}`);
       migrated++;
     } catch (error) {
       console.error(`🧑‍🎨 [Migration] Failed to migrate ${item.key}:`, error);
@@ -203,14 +248,65 @@ export const runDataMigration = async (
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
 
+  // Migrate snapshots (one at a time to avoid memory issues)
+  const { storage } = await import("@/utils/browser-api");
+  for (let i = 0; i < snapshotKeys.length; i++) {
+    const snapshotKey = snapshotKeys[i];
+
+    onProgress?.({
+      current: items.length + i + 1,
+      total,
+      currentItem: `Snapshot: ${snapshotKey.id}`,
+    });
+
+    try {
+      // Load data for this snapshot only
+      const result = await storage.get(snapshotKey.fullKey);
+      const data = result[snapshotKey.fullKey];
+      if (!Array.isArray(data)) {
+        console.warn(`🧑‍🎨 [Migration] Invalid snapshot data for ${snapshotKey.id}, skipping`);
+        skipped++;
+        continue;
+      }
+
+      // Convert number array to Blob
+      const uint8Array = new Uint8Array(data);
+      const blob = new Blob([uint8Array], { type: "image/png" });
+
+      // Save to IndexedDB
+      await snapshotRepository.saveSnapshotWithMetadata(snapshotKey.id, blob, {
+        id: snapshotKey.id,
+        timestamp: snapshotKey.timestamp,
+        tileX: snapshotKey.tileX,
+        tileY: snapshotKey.tileY,
+      });
+
+      // Delete from Chrome Storage immediately to free memory
+      await storage.remove(snapshotKey.fullKey);
+
+      console.log(`🧑‍🎨 [Migration] Migrated snapshot ${snapshotKey.id}`);
+      migrated++;
+    } catch (error) {
+      console.error(
+        `🧑‍🎨 [Migration] Failed to migrate snapshot ${snapshotKey.id}:`,
+        error
+      );
+      failed.push(snapshotKey.fullKey);
+    }
+
+    // Small delay to avoid UI freeze
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+
   // Clean up Chrome Storage after successful migration
   if (failed.length === 0) {
     await cleanupLegacyStorage(items);
+    await cleanupLegacySnapshotIndex();
   }
 
   // Mark migration as complete
-  const { storage } = await import("@/utils/browser-api");
-  await storage.set({ [MIGRATION_VERSION_KEY]: MIGRATION_VERSION });
+  const { storage: storageApi } = await import("@/utils/browser-api");
+  await storageApi.set({ [MIGRATION_VERSION_KEY]: MIGRATION_VERSION });
 
   console.log(
     `🧑‍🎨 [Migration] Complete: ${migrated} migrated, ${skipped} skipped, ${failed.length} failed`
@@ -271,6 +367,17 @@ const deleteLegacyIndexedDB = async (): Promise<void> => {
       resolve();
     };
   });
+};
+
+/**
+ * Clean up legacy snapshot index from Chrome Storage
+ * Note: Snapshot data is already deleted during migration
+ * Note: timetravel_draw_states is NOT deleted (still used for UI state)
+ */
+const cleanupLegacySnapshotIndex = async (): Promise<void> => {
+  const { storage } = await import("@/utils/browser-api");
+  await storage.remove("tile_snapshots_index");
+  console.log("🧑‍🎨 [Migration] Cleaned up snapshot index from Chrome Storage");
 };
 
 /**

@@ -3,6 +3,7 @@ import { setupMapObserver } from "./map-instance";
 import { setupMessageHandler } from "./message-handler";
 import { tileCacheDB } from "./cache-storage";
 import { initGalleryRepository } from "./db/gallery-repository";
+import { initSnapshotRepository } from "./db/snapshot-repository";
 
 // CRITICAL: Setup fetch interceptor IMMEDIATELY and SYNCHRONOUSLY
 // to catch /me requests before WPlace app code runs
@@ -64,6 +65,13 @@ import { initGalleryRepository } from "./db/gallery-repository";
         .then(() => console.log("🧑‍🎨: Gallery repository v2 initialized"))
         .catch((error) => {
           console.error("🧑‍🎨: Failed to init gallery repository:", error);
+        }),
+
+      // Initialize Snapshot Repository (IndexedDB)
+      initSnapshotRepository()
+        .then(() => console.log("🧑‍🎨: Snapshot repository initialized"))
+        .catch((error) => {
+          console.error("🧑‍🎨: Failed to init snapshot repository:", error);
         }),
 
       // Setup message handler (includes Gallery V2 bridge handlers)
