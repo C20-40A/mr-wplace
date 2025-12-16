@@ -88,7 +88,7 @@ const SNAPSHOT_SCENARIOS = [
   { tileX: 1798, tileY: 905, label: "Snapshot B", color: "#3498DB" }, // Blue
   { tileX: 862, tileY: 1202, label: "Snapshot C", color: "#2ECC71" }, // Green
   { tileX: 694, tileY: 1417, label: "Snapshot D", color: "#9B59B6" }, // Purple
-  { tileX: 1800, tileY: 903, label: "Snapshot E", color: "#F39C12" }, // Orange
+  { tileX: 602, tileY: 769, label: "Snapshot E", color: "#F39C12" }, // Orange
 ];
 
 /**
