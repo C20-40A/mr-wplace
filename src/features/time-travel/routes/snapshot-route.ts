@@ -1,15 +1,12 @@
 import { BaseSnapshotRoute } from "./base-snapshot-route";
-import { Toast } from "../../../components/toast";
+import { Toast } from "@/components/toast";
 import { TimeTravelRouter } from "../router";
-import { getCurrentPosition, gotoPosition } from "../../../utils/position";
+import { getCurrentPosition, gotoPosition } from "@/utils/position";
 import { TimeTravelStorage } from "../storage";
 import { TileNameStorage } from "../tile-name-storage";
-import { t } from "../../../i18n/manager";
-import { showNameInputModal } from "../../../components/modal";
-import {
-  latLngToTilePixel,
-  tilePixelToLatLng,
-} from "../../../utils/coordinate";
+import { t } from "@/i18n/manager";
+import { showNameInputModal } from "@/components/modal";
+import { latLngToTilePixel, tilePixelToLatLng } from "@/utils/coordinate";
 
 interface SnapshotRouteOptions {
   showSaveButton: boolean;

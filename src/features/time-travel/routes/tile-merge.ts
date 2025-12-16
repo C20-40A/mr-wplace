@@ -1,7 +1,7 @@
 import { TimeTravelRouter } from "../router";
 import { TimeTravelStorage, TileSnapshotInfo } from "../storage";
 import { TileNameStorage } from "../tile-name-storage";
-import { t } from "../../../i18n/manager";
+import { t } from "@/i18n/manager";
 import { storage } from "@/utils/browser-api";
 import { createCleanImageBitmap } from "@/utils/image-bitmap-compat";
 
@@ -34,7 +34,7 @@ export class TileMergeRoute {
 
   private async loadAndAnalyzeTiles(container: HTMLElement): Promise<void> {
     this.allTiles = await TimeTravelStorage.getAllTilesWithSnapshots();
-    
+
     if (this.allTiles.length === 0) {
       container.querySelector("#wps-merge-content")!.innerHTML = `
         <div class="text-sm text-gray-500 text-center p-4">${t`${"no_items"}`}</div>
@@ -44,11 +44,13 @@ export class TileMergeRoute {
 
     this.groups = await this.findAdjacentGroups(this.allTiles);
     console.log("🧑‍🎨 : Found groups:", this.groups.length);
-    
+
     this.renderGroupList(container);
   }
 
-  private async findAdjacentGroups(tiles: TileSnapshotInfo[]): Promise<TileGroup[]> {
+  private async findAdjacentGroups(
+    tiles: TileSnapshotInfo[]
+  ): Promise<TileGroup[]> {
     const tileMap = new Map<string, TileSnapshotInfo>();
     for (const tile of tiles) {
       tileMap.set(`${tile.tileX}_${tile.tileY}`, tile);
@@ -64,8 +66,8 @@ export class TileMergeRoute {
 
       const group = this.bfsGroup(tile, tileMap, visited);
       if (group.length > 1) {
-        const xs = group.map(t => t.tileX);
-        const ys = group.map(t => t.tileY);
+        const xs = group.map((t) => t.tileX);
+        const ys = group.map((t) => t.tileY);
         groups.push({
           id: groupId++,
           tiles: group,
@@ -79,7 +81,7 @@ export class TileMergeRoute {
     }
 
     // タイル名称一括取得
-    const allCoords = tiles.map(t => ({ tileX: t.tileX, tileY: t.tileY }));
+    const allCoords = tiles.map((t) => ({ tileX: t.tileX, tileY: t.tileY }));
     const tileNames = await TileNameStorage.getTileNames(allCoords);
 
     // 各グループにタイル名称を設定
@@ -131,19 +133,21 @@ export class TileMergeRoute {
 
   private renderGroupList(container: HTMLElement): void {
     const content = container.querySelector("#wps-merge-content")!;
-    
+
     content.innerHTML = `
       <div style="display: flex; gap: 0.5rem; align-items: center;">
-        <span class="text-sm font-bold">${t`${"merge_tiles"}`}: ${this.groups.length} groups</span>
+        <span class="text-sm font-bold">${t`${"merge_tiles"}`}: ${
+      this.groups.length
+    } groups</span>
       </div>
       <div style="overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.5rem; min-height: 400px;">
         <div id="wps-group-list" class="grid grid-cols-1 gap-2">
-          ${this.groups.map(g => this.renderGroupCard(g)).join("")}
+          ${this.groups.map((g) => this.renderGroupCard(g)).join("")}
         </div>
       </div>
     `;
 
-    content.querySelectorAll(".wps-group-card").forEach(card => {
+    content.querySelectorAll(".wps-group-card").forEach((card) => {
       card.addEventListener("click", () => {
         const groupId = parseInt((card as HTMLElement).dataset.groupId || "0");
         this.selectGroup(groupId, container);
@@ -154,8 +158,11 @@ export class TileMergeRoute {
   private renderGroupCard(group: TileGroup): string {
     const width = group.maxX - group.minX + 1;
     const height = group.maxY - group.minY + 1;
-    const nameDisplay = group.tileNames.length > 0 ? group.tileNames.join(", ") : `(${group.minX}, ${group.minY}) - (${group.maxX}, ${group.maxY})`;
-    
+    const nameDisplay =
+      group.tileNames.length > 0
+        ? group.tileNames.join(", ")
+        : `(${group.minX}, ${group.minY}) - (${group.maxX}, ${group.maxY})`;
+
     return `
       <div 
         class="wps-group-card" 
@@ -188,7 +195,7 @@ export class TileMergeRoute {
   }
 
   private selectGroup(groupId: number, container: HTMLElement): void {
-    this.selectedGroup = this.groups.find(g => g.id === groupId) || null;
+    this.selectedGroup = this.groups.find((g) => g.id === groupId) || null;
     if (!this.selectedGroup) return;
 
     this.selectedTiles.clear();
@@ -203,7 +210,7 @@ export class TileMergeRoute {
     const height = group.maxY - group.minY + 1;
 
     const content = container.querySelector("#wps-merge-content")!;
-    
+
     content.innerHTML = `
       <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
         <button id="wps-back-to-groups" class="btn btn-sm btn-neutral">${t`${"back"}`}</button>
@@ -242,20 +249,32 @@ export class TileMergeRoute {
     this.setupTileGridEvents(container);
   }
 
-  private renderTileCell(x: number, y: number, tile?: TileSnapshotInfo): string {
+  private renderTileCell(
+    x: number,
+    y: number,
+    tile?: TileSnapshotInfo
+  ): string {
     const key = `${x}_${y}`;
     const hasSnapshot = !!tile;
     const isSelected = this.selectedTiles.has(key);
 
-    const bgColor = isSelected ? "#10b981" : hasSnapshot ? "#6b7280" : "#e5e7eb";
+    const bgColor = isSelected
+      ? "#10b981"
+      : hasSnapshot
+      ? "#6b7280"
+      : "#e5e7eb";
     const cursor = hasSnapshot ? "pointer" : "default";
     const opacity = hasSnapshot ? "1" : "0.2";
 
     let dateTimeStr = "";
     if (tile && tile.snapshots.length > 0) {
       const date = new Date(tile.snapshots[0].timestamp);
-      const datePart = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-      const timePart = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+      const datePart = `${date.getFullYear()}-${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      const timePart = `${String(date.getHours()).padStart(2, "0")}:${String(
+        date.getMinutes()
+      ).padStart(2, "0")}`;
       dateTimeStr = `${datePart} ${timePart}`;
     }
 
@@ -283,39 +302,51 @@ export class TileMergeRoute {
         "
       >
         <div style="font-weight: bold;">${x},${y}</div>
-        ${dateTimeStr ? `<div style="font-size: 0.5rem; margin-top: 0.125rem;">${dateTimeStr}</div>` : ""}
+        ${
+          dateTimeStr
+            ? `<div style="font-size: 0.5rem; margin-top: 0.125rem;">${dateTimeStr}</div>`
+            : ""
+        }
       </div>
     `;
   }
 
   private setupTileGridEvents(container: HTMLElement): void {
-    container.querySelector("#wps-back-to-groups")?.addEventListener("click", () => {
-      this.selectedGroup = null;
-      this.selectedTiles.clear();
-      this.renderGroupList(container);
-    });
+    container
+      .querySelector("#wps-back-to-groups")
+      ?.addEventListener("click", () => {
+        this.selectedGroup = null;
+        this.selectedTiles.clear();
+        this.renderGroupList(container);
+      });
 
-    container.querySelector("#wps-merge-export-btn")?.addEventListener("click", () => {
-      this.exportMergedImage();
-    });
+    container
+      .querySelector("#wps-merge-export-btn")
+      ?.addEventListener("click", () => {
+        this.exportMergedImage();
+      });
 
-    container.querySelector("#wps-merge-clear-btn")?.addEventListener("click", () => {
-      this.selectedTiles.clear();
-      this.updateSelectedCount(container);
-      this.renderTileGrid(container);
-    });
+    container
+      .querySelector("#wps-merge-clear-btn")
+      ?.addEventListener("click", () => {
+        this.selectedTiles.clear();
+        this.updateSelectedCount(container);
+        this.renderTileGrid(container);
+      });
 
-    container.querySelector("#wps-select-all-btn")?.addEventListener("click", () => {
-      if (!this.selectedGroup) return;
-      this.selectedTiles.clear();
-      for (const tile of this.selectedGroup.tiles) {
-        this.selectedTiles.add(`${tile.tileX}_${tile.tileY}`);
-      }
-      this.updateSelectedCount(container);
-      this.renderTileGrid(container);
-    });
+    container
+      .querySelector("#wps-select-all-btn")
+      ?.addEventListener("click", () => {
+        if (!this.selectedGroup) return;
+        this.selectedTiles.clear();
+        for (const tile of this.selectedGroup.tiles) {
+          this.selectedTiles.add(`${tile.tileX}_${tile.tileY}`);
+        }
+        this.updateSelectedCount(container);
+        this.renderTileGrid(container);
+      });
 
-    container.querySelectorAll(".wps-tile-cell").forEach(cell => {
+    container.querySelectorAll(".wps-tile-cell").forEach((cell) => {
       cell.addEventListener("click", () => {
         const target = cell as HTMLElement;
         const tileX = parseInt(target.dataset.tileX || "0");
@@ -327,11 +358,17 @@ export class TileMergeRoute {
     this.updateSelectedCount(container);
   }
 
-  private toggleTileSelection(tileX: number, tileY: number, container: HTMLElement): void {
+  private toggleTileSelection(
+    tileX: number,
+    tileY: number,
+    container: HTMLElement
+  ): void {
     if (!this.selectedGroup) return;
 
     const key = `${tileX}_${tileY}`;
-    const tile = this.selectedGroup.tiles.find(t => t.tileX === tileX && t.tileY === tileY);
+    const tile = this.selectedGroup.tiles.find(
+      (t) => t.tileX === tileX && t.tileY === tileY
+    );
 
     if (!tile) return;
 
@@ -359,9 +396,12 @@ export class TileMergeRoute {
     }
   }
 
-  private showSnapshotSelector(tile: TileSnapshotInfo, container: HTMLElement): void {
+  private showSnapshotSelector(
+    tile: TileSnapshotInfo,
+    container: HTMLElement
+  ): void {
     const key = `${tile.tileX}_${tile.tileY}`;
-    
+
     const overlay = document.createElement("div");
     overlay.id = "wps-snapshot-selector-overlay";
     overlay.style.cssText = `
@@ -388,8 +428,9 @@ export class TileMergeRoute {
     `;
 
     const title = document.createElement("div");
-    title.style.cssText = "font-weight: bold; font-size: 1rem; margin-bottom: 1rem;";
-    title.textContent = `${t`${'select'}`} (${tile.tileX}, ${tile.tileY})`;
+    title.style.cssText =
+      "font-weight: bold; font-size: 1rem; margin-bottom: 1rem;";
+    title.textContent = `${t`${"select"}`} (${tile.tileX}, ${tile.tileY})`;
 
     const list = document.createElement("div");
     list.style.cssText = "display: flex; flex-direction: column; gap: 0.5rem;";
@@ -403,14 +444,22 @@ export class TileMergeRoute {
         cursor: pointer;
         transition: all 0.2s;
       `;
-      
+
       const date = new Date(snapshot.timestamp);
-      const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-      const timeStr = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-      
+      const dateStr = `${date.getFullYear()}-${String(
+        date.getMonth() + 1
+      ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      const timeStr = `${String(date.getHours()).padStart(2, "0")}:${String(
+        date.getMinutes()
+      ).padStart(2, "0")}`;
+
       item.innerHTML = `
         <div style="font-weight: bold;">${dateStr} ${timeStr}</div>
-        ${snapshot.name ? `<div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">${snapshot.name}</div>` : ""}
+        ${
+          snapshot.name
+            ? `<div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">${snapshot.name}</div>`
+            : ""
+        }
       `;
 
       item.addEventListener("mouseover", () => {
@@ -434,7 +483,7 @@ export class TileMergeRoute {
 
     const cancelBtn = document.createElement("button");
     cancelBtn.className = "btn btn-sm btn-neutral";
-    cancelBtn.textContent = t`${'cancel'}`;
+    cancelBtn.textContent = t`${"cancel"}`;
     cancelBtn.style.cssText = "margin-top: 1rem; width: 100%;";
     cancelBtn.addEventListener("click", () => {
       container.removeChild(overlay);
@@ -462,15 +511,22 @@ export class TileMergeRoute {
       coordinates.push({ tileX, tileY });
     }
 
-    const minX = Math.min(...coordinates.map(c => c.tileX));
-    const maxX = Math.max(...coordinates.map(c => c.tileX));
-    const minY = Math.min(...coordinates.map(c => c.tileY));
-    const maxY = Math.max(...coordinates.map(c => c.tileY));
+    const minX = Math.min(...coordinates.map((c) => c.tileX));
+    const maxX = Math.max(...coordinates.map((c) => c.tileX));
+    const minY = Math.min(...coordinates.map((c) => c.tileY));
+    const maxY = Math.max(...coordinates.map((c) => c.tileY));
 
     const width = (maxX - minX + 1) * 1000;
     const height = (maxY - minY + 1) * 1000;
 
-    console.log("🧑‍🎨 : Exporting", this.selectedTiles.size, "tiles, canvas size:", width, "x", height);
+    console.log(
+      "🧑‍🎨 : Exporting",
+      this.selectedTiles.size,
+      "tiles, canvas size:",
+      width,
+      "x",
+      height
+    );
 
     const canvas = new OffscreenCanvas(width, height);
     const ctx = canvas.getContext("2d");
@@ -480,13 +536,16 @@ export class TileMergeRoute {
     }
 
     for (const coord of coordinates) {
-      const tile = this.selectedGroup.tiles.find(t => t.tileX === coord.tileX && t.tileY === coord.tileY);
+      const tile = this.selectedGroup.tiles.find(
+        (t) => t.tileX === coord.tileX && t.tileY === coord.tileY
+      );
       if (!tile || tile.snapshots.length === 0) continue;
 
       const key = `${coord.tileX}_${coord.tileY}`;
       const selectedSnapshotKey = this.selectedSnapshots.get(key);
-      const snapshot = selectedSnapshotKey 
-        ? tile.snapshots.find(s => s.fullKey === selectedSnapshotKey) || tile.snapshots[0]
+      const snapshot = selectedSnapshotKey
+        ? tile.snapshots.find((s) => s.fullKey === selectedSnapshotKey) ||
+          tile.snapshots[0]
         : tile.snapshots[0];
 
       const snapshotData = await storage.get([snapshot.fullKey]);

@@ -1,9 +1,9 @@
 # メイン
 
-- タイル統計の取得ができない
 - unplaced only の背景色変更&i18n
 - popup の i18n
 - theme = Halloween
+- タイルが何もない場合の説明ほしい
 - tile の名称を変更した直後、なぜかすぐ編集画面がでてくる
 - image-selector に進捗表示したい
 - window.localStorage.PARAGLIDE_LOCALE = 'jp'
@@ -115,6 +115,7 @@
 
 # DONE v2.0.2
 
+- タイル統計の取得ができない
 - スナップショット シェア画面の UI が dark theme で見づらい
 
 # DONE v2.0.1

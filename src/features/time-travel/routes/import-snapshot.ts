@@ -1,8 +1,8 @@
 import { TimeTravelRouter } from "../router";
-import { t } from "../../../i18n/manager";
-import { ImageDropzone } from "../../../components/image-dropzone";
+import { t } from "@/i18n/manager";
+import { ImageDropzone } from "@/components/image-dropzone";
 import { TileSnapshot } from "../utils/tile-snapshot";
-import { Toast } from "../../../components/toast";
+import { Toast } from "@/components/toast";
 
 export class ImportSnapshotRoute {
   private imageDropzone?: ImageDropzone;

@@ -34,12 +34,15 @@ export const sendGalleryImagesToInject = async () => {
     };
 
     console.log(
-      `🧑‍🎨 : Sending ${drawableItems.length} gallery items to inject side (v2)`
+      `🧑‍🎨 : [sendGalleryImagesToInject] Sending ${drawableItems.length} gallery Metadata to inject side (v2)`
     );
 
     window.postMessage(messageData, "*");
   } catch (error) {
-    console.error("🧑‍🎨 : Failed to send gallery images:", error);
+    console.error(
+      "🧑‍🎨 : [sendGalleryImagesToInject] Failed to send gallery images:",
+      error
+    );
   }
 };
 

@@ -1,11 +1,11 @@
 import { TimeTravelRouter } from "../router";
 import { TimeTravelStorage } from "../storage";
-import { t } from "../../../i18n/manager";
-import { ImageInspector } from "../../../components/image-inspector";
-import { Toast } from "../../../components/toast";
-import { di } from "../../../core/di";
-import { gotoPosition } from "../../../utils/position";
-import { tilePixelToLatLng } from "../../../utils/coordinate";
+import { t } from "@/i18n/manager";
+import { ImageInspector } from "@/components/image-inspector";
+import { Toast } from "@/components/toast";
+import { di } from "@/core/di";
+import { gotoPosition } from "@/utils/position";
+import { tilePixelToLatLng } from "@/utils/coordinate";
 import { sendSnapshotsToInject } from "@/utils/inject-bridge";
 
 export class SnapshotDetailRoute {
