@@ -1,5 +1,8 @@
 # メイン
 
+- unplaced only の背景色変更&i18n
+- popup の i18n
+- theme = Halloween
 - tile の名称を変更した直後、なぜかすぐ編集画面がでてくる
 - window.localStorage.PARAGLIDE_LOCALE = 'jp'
 - ja の feedback form にならない
