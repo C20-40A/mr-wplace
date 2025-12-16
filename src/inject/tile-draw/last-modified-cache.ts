@@ -1,5 +1,5 @@
 /**
- * ETag-based tile cache for polling optimization
+ * last-modified-based tile cache for polling optimization
  * Skips heavy drawing/stats processing when tile and state haven't changed
  */
 
@@ -11,8 +11,8 @@ import { overlayLayers } from "./states";
 
 const MAX_CACHE_SIZE = 24;
 
-// ETag mapping: "tileX,tileY" → etag
-const etagMap = new Map<string, string>();
+// LastModified mapping: "tileX,tileY" → lastModified
+const lastModifiedMap = new Map<string, string>();
 
 // Processed Blob cache: "tileX,tileY" → Blob
 const processedBlobCache = new Map<string, Blob>();
@@ -43,7 +43,7 @@ export const checkStateChanged = (): boolean => {
   const current = getStateVersion();
   if (current !== lastStateVersion) {
     lastStateVersion = current;
-    etagMap.clear();
+    lastModifiedMap.clear();
     processedBlobCache.clear();
     return true;
   }
@@ -51,12 +51,15 @@ export const checkStateChanged = (): boolean => {
 };
 
 /**
- * Get cached blob if ETag matches
+ * Get cached blob if LastModified matches
  * @returns Blob if cache hit, null otherwise
  */
-export const getCachedBlob = (cacheKey: string, etag: string): Blob | null => {
-  const cached = etagMap.get(cacheKey);
-  if (cached === etag) {
+export const getCachedBlob = (
+  cacheKey: string,
+  lastModified: string
+): Blob | null => {
+  const cached = lastModifiedMap.get(cacheKey);
+  if (cached === lastModified) {
     return processedBlobCache.get(cacheKey) ?? null;
   }
   return null;
@@ -67,17 +70,20 @@ export const getCachedBlob = (cacheKey: string, etag: string): Blob | null => {
  */
 export const setCachedBlob = (
   cacheKey: string,
-  etag: string,
+  lastModified: string,
   blob: Blob
 ): void => {
   // LRU: evict oldest if at capacity
-  if (etagMap.size >= MAX_CACHE_SIZE && !etagMap.has(cacheKey)) {
-    const oldest = etagMap.keys().next().value;
+  if (
+    lastModifiedMap.size >= MAX_CACHE_SIZE &&
+    !lastModifiedMap.has(cacheKey)
+  ) {
+    const oldest = lastModifiedMap.keys().next().value;
     if (oldest) {
-      etagMap.delete(oldest);
+      lastModifiedMap.delete(oldest);
       processedBlobCache.delete(oldest);
     }
   }
-  etagMap.set(cacheKey, etag);
+  lastModifiedMap.set(cacheKey, lastModified);
   processedBlobCache.set(cacheKey, blob);
 };

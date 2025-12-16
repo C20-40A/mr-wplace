@@ -6,7 +6,7 @@ import {
   checkStateChanged,
   getCachedBlob,
   setCachedBlob,
-} from "./tile-draw/etag-cache";
+} from "./tile-draw/last-modified-cache";
 
 /**
  * Setup fetch interceptor to handle tile requests and user data
@@ -148,7 +148,7 @@ export const setupFetchInterceptor = (): void => {
  * This avoids Firefox extension context ImageBitmap security issues
  *
  * Caching Strategy:
- * 1. ETag cache (memory): Skip processing if ETag and state unchanged
+ * 1. LastModified cache (memory): Skip processing if LastModified and state unchanged
  * 2. data saver cache (IndexedDB): Persistent cache for processed tiles
  */
 const handleTileRequest = async (
@@ -199,16 +199,18 @@ const handleTileRequest = async (
   // Fetch original tile from network
   const response = await originalFetch.apply(window, args);
 
-  // Check state change (clears ETag cache if changed)
+  // Check state change (clears LastModified cache if changed)
   checkStateChanged();
 
-  // ETag cache check
-  const etag = response.headers.get("etag");
-  if (etag) {
-    const etagCachedBlob = getCachedBlob(cacheKey, etag);
-    if (etagCachedBlob) {
-      // console.log("🧑‍🎨 : ETag cache hit:", cacheKey);
-      return new Response(etagCachedBlob, {
+  // LastModified cache check
+  const lastModified = response.headers.get("last-modified");
+  if (lastModified) {
+    const lastModifiedCachedBlob = getCachedBlob(cacheKey, lastModified);
+    if (lastModifiedCachedBlob) {
+      console.log(
+        `🧑‍🎨 : LastModified cache hit for tile (${tileX},${tileY}), skipping processing`
+      );
+      return new Response(lastModifiedCachedBlob, {
         headers: response.headers,
         status: response.status,
         statusText: response.statusText,
@@ -285,9 +287,9 @@ const handleTileRequest = async (
     "*"
   );
 
-  // Save to ETag cache
-  if (etag) {
-    setCachedBlob(cacheKey, etag, processedBlob);
+  // Save to LastModified cache
+  if (lastModified) {
+    setCachedBlob(cacheKey, lastModified, processedBlob);
   }
 
   return new Response(processedBlob, {

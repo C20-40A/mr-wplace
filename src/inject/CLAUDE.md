@@ -108,19 +108,19 @@ await sendGalleryImagesToInject(); // Required after content changes
 - **2025-12-01**: Type unification, hybrid storage, state refactoring
 - **2025-12-14**: IndexedDB v2 migration, v1 legacy code removed
 
-# ETag ベースタイルキャッシュ最適化
+# Last Modified ベースタイルキャッシュ最適化
 
 同じタイル画像が polling で来た場合に、重い描画・統計処理をスキップする
 処理フロー
 
 ```
-fetch tile → ETag 取得
+fetch tile → LastModified 取得
   ↓
 状態変化チェック (colorFilter, enhancedMode, showUnplacedOnly, overlayLayers)
   ↓ 変化あり → キャッシュ全破棄 → 処理実行 → キャッシュ保存
   ↓ 変化なし
     ↓
-ETag チェック (tileX,tileY → etag の対応表)
-  ↓ 対応表にない or ETag が違う → 対応表更新 → 処理実行 → Blob 保存
-  ↓ ETag が同じ → メモリから Blob 取得 → そのまま返す (処理スキップ)
+LastModified  チェック (tileX,tileY → etag の対応表)
+  ↓ 対応表にない or LastModified  が違う → 対応表更新 → 処理実行 → Blob 保存
+  ↓ LastModified  が同じ → メモリから Blob 取得 → そのまま返す (処理スキップ)
 ```
