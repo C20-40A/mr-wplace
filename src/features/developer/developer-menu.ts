@@ -6,6 +6,12 @@ import {
   debugAutoGenerateLegacy,
 } from "./debugLegacyGalleryImport";
 
+import {
+  debugGenerateLegacySnapshots,
+  debugShowSnapshotStorage,
+  debugClearLegacySnapshots,
+} from "./debugLegacySnapshotImport";
+
 // ==========================================
 const ACTIONS = [
   {
@@ -13,8 +19,20 @@ const ACTIONS = [
     action: debugLegacyImport,
   },
   {
-    label: "Auto-generate Legacy Data",
+    label: "Auto-generate Legacy Gallery",
     action: debugAutoGenerateLegacy,
+  },
+  {
+    label: "Generate Legacy Snapshots",
+    action: debugGenerateLegacySnapshots,
+  },
+  {
+    label: "Show Snapshot Storage",
+    action: debugShowSnapshotStorage,
+  },
+  {
+    label: "Clear Legacy Snapshots",
+    action: debugClearLegacySnapshots,
   },
   {
     label: "Show LocalStorage",
