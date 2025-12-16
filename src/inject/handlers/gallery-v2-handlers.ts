@@ -5,7 +5,10 @@
  * content script からの postMessage リクエストに応答
  */
 
-import { getGalleryRepository, initGalleryRepository } from "../db/gallery-repository";
+import {
+  getGalleryRepository,
+  initGalleryRepository,
+} from "../db/gallery-repository";
 import type { GalleryMetadata } from "../db/schema-v2";
 
 /**
@@ -106,7 +109,11 @@ const handleSave = async (
     const repo = await initGalleryRepository();
     const blob = dataUrlToBlob(imageDataUrl);
     const savedMetadata = await repo.saveGalleryItem(id, blob, metadata);
-    sendResponse("mr-wplace-gallery-v2-save-response", requestId, savedMetadata);
+    sendResponse(
+      "mr-wplace-gallery-v2-save-response",
+      requestId,
+      savedMetadata
+    );
     console.log(`🧑‍🎨 [Gallery V2] Saved ${id}`);
   } catch (error) {
     console.error("🧑‍🎨 [Gallery V2] Save failed:", error);
@@ -171,11 +178,19 @@ const handleGetThumbnail = async (requestId: string, id: string) => {
     const repo = await initGalleryRepository();
     const blob = await repo.getThumbnail(id);
     if (!blob) {
-      sendResponse("mr-wplace-gallery-v2-get-thumbnail-response", requestId, null);
+      sendResponse(
+        "mr-wplace-gallery-v2-get-thumbnail-response",
+        requestId,
+        null
+      );
       return;
     }
     const dataUrl = await blobToDataUrl(blob);
-    sendResponse("mr-wplace-gallery-v2-get-thumbnail-response", requestId, dataUrl);
+    sendResponse(
+      "mr-wplace-gallery-v2-get-thumbnail-response",
+      requestId,
+      dataUrl
+    );
   } catch (error) {
     console.error("🧑‍🎨 [Gallery V2] Get thumbnail failed:", error);
     sendResponse(
@@ -217,8 +232,14 @@ const handleUpdateMetadata = async (
         affectedTiles,
       };
       await repo.saveMetadata(updated);
-      sendResponse("mr-wplace-gallery-v2-update-metadata-response", requestId, updated);
-      console.log(`🧑‍🎨 [Gallery V2] Updated metadata + tiles for ${id} (${affectedTiles.length} tiles)`);
+      sendResponse(
+        "mr-wplace-gallery-v2-update-metadata-response",
+        requestId,
+        updated
+      );
+      console.log(
+        `🧑‍🎨 [Gallery V2] Updated metadata + tiles for ${id} (${affectedTiles.length} tiles)`
+      );
       return;
     }
 
@@ -227,7 +248,11 @@ const handleUpdateMetadata = async (
       ...updates,
     };
     await repo.saveMetadata(updated);
-    sendResponse("mr-wplace-gallery-v2-update-metadata-response", requestId, updated);
+    sendResponse(
+      "mr-wplace-gallery-v2-update-metadata-response",
+      requestId,
+      updated
+    );
     console.log(`🧑‍🎨 [Gallery V2] Updated metadata for ${id}`);
   } catch (error) {
     console.error("🧑‍🎨 [Gallery V2] Update metadata failed:", error);
@@ -242,27 +267,28 @@ const handleUpdateMetadata = async (
 
 /**
  * Handle update tiles request
+ * @deprecated
  */
-const handleUpdateTiles = async (
-  requestId: string,
-  id: string,
-  coords: { TLX: number; TLY: number; PxX: number; PxY: number }
-) => {
-  try {
-    const repo = await initGalleryRepository();
-    const affectedTiles = await repo.updateTiles(id, coords);
-    sendResponse("mr-wplace-gallery-v2-update-tiles-response", requestId, affectedTiles);
-    console.log(`🧑‍🎨 [Gallery V2] Updated tiles for ${id}: ${affectedTiles.length} tiles`);
-  } catch (error) {
-    console.error("🧑‍🎨 [Gallery V2] Update tiles failed:", error);
-    sendResponse(
-      "mr-wplace-gallery-v2-update-tiles-response",
-      requestId,
-      null,
-      error instanceof Error ? error.message : "Unknown error"
-    );
-  }
-};
+// const handleUpdateTiles = async (
+//   requestId: string,
+//   id: string,
+//   coords: { TLX: number; TLY: number; PxX: number; PxY: number }
+// ) => {
+//   try {
+//     const repo = await initGalleryRepository();
+//     const affectedTiles = await repo.updateTiles(id, coords);
+//     sendResponse("mr-wplace-gallery-v2-update-tiles-response", requestId, affectedTiles);
+//     console.log(`🧑‍🎨 [Gallery V2] Updated tiles for ${id}: ${affectedTiles.length} tiles`);
+//   } catch (error) {
+//     console.error("🧑‍🎨 [Gallery V2] Update tiles failed:", error);
+//     sendResponse(
+//       "mr-wplace-gallery-v2-update-tiles-response",
+//       requestId,
+//       null,
+//       error instanceof Error ? error.message : "Unknown error"
+//     );
+//   }
+// };
 
 /**
  * Setup gallery v2 bridge handlers
@@ -302,12 +328,17 @@ export const setupGalleryV2Handlers = () => {
         break;
 
       case "mr-wplace-gallery-v2-update-metadata":
-        await handleUpdateMetadata(requestId, event.data.id, event.data.updates);
+        await handleUpdateMetadata(
+          requestId,
+          event.data.id,
+          event.data.updates
+        );
         break;
 
-      case "mr-wplace-gallery-v2-update-tiles":
-        await handleUpdateTiles(requestId, event.data.id, event.data.coords);
-        break;
+      // @deprecated
+      // case "mr-wplace-gallery-v2-update-tiles":
+      //   await handleUpdateTiles(requestId, event.data.id, event.data.coords);
+      //   break;
     }
   });
 

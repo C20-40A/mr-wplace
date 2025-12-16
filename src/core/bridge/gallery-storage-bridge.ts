@@ -46,9 +46,9 @@ type MessageSource =
   | "mr-wplace-gallery-v2-get-thumbnail"
   | "mr-wplace-gallery-v2-get-thumbnail-response"
   | "mr-wplace-gallery-v2-update-metadata"
-  | "mr-wplace-gallery-v2-update-metadata-response"
-  | "mr-wplace-gallery-v2-update-tiles"
-  | "mr-wplace-gallery-v2-update-tiles-response";
+  | "mr-wplace-gallery-v2-update-metadata-response";
+// | "mr-wplace-gallery-v2-update-tiles"
+// | "mr-wplace-gallery-v2-update-tiles-response";
 
 let requestId = 0;
 const generateRequestId = () => `gallery-v2-${++requestId}-${Date.now()}`;
@@ -194,18 +194,19 @@ export const updateGalleryMetadata = async (
 
 /**
  * Update tiles (when coords change)
+ * @deprecated
  */
-export const updateGalleryTiles = async (
-  id: string,
-  coords: { TLX: number; TLY: number; PxX: number; PxY: number }
-): Promise<string[]> => {
-  return sendRequest<string[]>(
-    "mr-wplace-gallery-v2-update-tiles",
-    "mr-wplace-gallery-v2-update-tiles-response",
-    { id, coords },
-    30000 // Longer timeout for tile regeneration
-  );
-};
+// export const updateGalleryTiles = async (
+//   id: string,
+//   coords: { TLX: number; TLY: number; PxX: number; PxY: number }
+// ): Promise<string[]> => {
+//   return sendRequest<string[]>(
+//     "mr-wplace-gallery-v2-update-tiles",
+//     "mr-wplace-gallery-v2-update-tiles-response",
+//     { id, coords },
+//     30000 // Longer timeout for tile regeneration
+//   );
+// };
 
 // ============================================
 // Convenience Functions
