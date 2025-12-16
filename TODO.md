@@ -1,9 +1,12 @@
 # メイン
 
+- 🧑‍🎨 [Gallery V2] Updated metadata for gallery_1765825622378_xw6d1ss content.js:2912 🧑‍🎨 : Saved stats for gallery_1765825622378_xw6d1ss to storage app.BZjMtE-K.js:17 🧑‍🎨 : Cached processed tile to IndexedDB: 1793,899
+  - これがちょい重い
 - unplaced only の背景色変更&i18n
 - popup の i18n
 - theme = Halloween
 - tile の名称を変更した直後、なぜかすぐ編集画面がでてくる
+- image-selector に進捗表示したい
 - window.localStorage.PARAGLIDE_LOCALE = 'jp'
 - ja の feedback form にならない
 - 「？」アイコンからのドキュメント表示
@@ -110,6 +113,10 @@
 - exclude_globs にメインのもの以外含める？
   - all_frames false (デフォルト)系は false．まあデフォルトが false だから不要か
 - dark/light テーマの i18n 不要になった
+
+# DONE v2.1.0
+
+- 巨大リングやダイヤなどの中央 3x3 ピクセルは＋にする
 
 # DONE v2.0.0
 

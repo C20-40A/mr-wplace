@@ -197,14 +197,8 @@ const scaleAndRenderWithMode = (
     return scaledData; // 透明データを返す
   }
 
-  // huge-red-cross/diamond用: 未配置ピクセルの中心座標と元の色を収集
-  const unplacedCenters: Array<{
-    x: number;
-    y: number;
-    r: number;
-    g: number;
-    b: number;
-  }> = [];
+  // huge-red-cross/diamond用: 未配置ピクセルの中心座標を収集
+  const unplacedCenters: Array<{ x: number; y: number }> = [];
   const isHugeRedCross = mode === "huge-red-cross";
   const isHugeRedCrossBold = mode === "huge-red-cross-bold";
   const isHugeRedDiamond = mode === "huge-red-diamond";
@@ -259,13 +253,21 @@ const scaleAndRenderWithMode = (
           scaledData[i + 1] = g;
           scaledData[i + 2] = b;
           scaledData[i + 3] = a;
-          // huge marker: 中心座標と元の色を収集
-          if (needsHugeMarker) unplacedCenters.push({ x, y, r, g, b });
+          // huge marker: 中心座標を収集
+          if (needsHugeMarker) unplacedCenters.push({ x, y });
           continue;
         }
 
-        // huge marker は 2nd pass で処理するので、1st pass では中心のみ
-        if (needsHugeMarker) continue;
+        // huge marker は 2nd pass で処理するので、1st pass では中心+crossのみ
+        if (needsHugeMarker) {
+          if (isCrossArm) {
+            scaledData[i] = r;
+            scaledData[i + 1] = g;
+            scaledData[i + 2] = b;
+            scaledData[i + 3] = a;
+          }
+          continue;
+        }
 
         // モード別処理（通常と同じ）
         if (mode === "dot") {
@@ -307,13 +309,21 @@ const scaleAndRenderWithMode = (
           scaledData[i + 1] = g;
           scaledData[i + 2] = b;
           scaledData[i + 3] = a;
-          // huge marker: 中心座標と元の色を収集
-          if (needsHugeMarker) unplacedCenters.push({ x, y, r, g, b });
+          // huge marker: 中心座標を収集
+          if (needsHugeMarker) unplacedCenters.push({ x, y });
           continue;
         }
 
-        // huge marker は 2nd pass で処理するので、1st pass では中心のみ
-        if (needsHugeMarker) continue;
+        // huge marker は 2nd pass で処理するので、1st pass では中心+crossのみ
+        if (needsHugeMarker) {
+          if (isCrossArm) {
+            scaledData[i] = r;
+            scaledData[i + 1] = g;
+            scaledData[i + 2] = b;
+            scaledData[i + 3] = a;
+          }
+          continue;
+        }
 
         // モード別処理
         if (mode === "dot") {
@@ -355,13 +365,7 @@ const scaleAndRenderWithMode = (
     const armLength = 30;
     const centerSize = 1; // 中央3x3の半径（±1 = 3px）
 
-    for (const {
-      x: cx,
-      y: cy,
-      r: origR,
-      g: origG,
-      b: origB,
-    } of unplacedCenters) {
+    for (const { x: cx, y: cy } of unplacedCenters) {
       if (isHugeRedCross) {
         // 巨大赤十字: 細い線（1px幅）
         // 水平腕
@@ -391,14 +395,14 @@ const scaleAndRenderWithMode = (
         const thickness = 1; // ±1 = 3px幅
         for (let dy = -armLength; dy <= armLength; dy++) {
           for (let dx = -armLength; dx <= armLength; dx++) {
+            // 中心3x3はスキップ
+            if (Math.abs(dx) <= centerSize && Math.abs(dy) <= centerSize)
+              continue;
+
             // クロス形状: 水平または垂直の腕
             const isHorizontalArm = Math.abs(dy) <= thickness;
             const isVerticalArm = Math.abs(dx) <= thickness;
             if (!isHorizontalArm && !isVerticalArm) continue;
-
-            // 中心3x3は元の色
-            if (Math.abs(dx) <= centerSize && Math.abs(dy) <= centerSize)
-              continue;
 
             const px = cx + dx;
             const py = cy + dy;
@@ -416,6 +420,10 @@ const scaleAndRenderWithMode = (
         // 巨大赤ダイヤ: マンハッタン距離でダイヤ形状、グラデーション
         for (let dy = -armLength; dy <= armLength; dy++) {
           for (let dx = -armLength; dx <= armLength; dx++) {
+            // 中心3x3はスキップ
+            if (Math.abs(dx) <= centerSize && Math.abs(dy) <= centerSize)
+              continue;
+
             const dist = Math.abs(dx) + Math.abs(dy);
             if (dist > armLength) continue; // ダイヤ形状の外側
 
@@ -426,21 +434,13 @@ const scaleAndRenderWithMode = (
 
             const i = (py * scaledWidth + px) * 4;
 
-            // 中心3x3は元の色
-            if (Math.abs(dx) <= centerSize && Math.abs(dy) <= centerSize) {
-              scaledData[i] = origR;
-              scaledData[i + 1] = origG;
-              scaledData[i + 2] = origB;
-              scaledData[i + 3] = 255;
-            } else {
-              // グラデーション: 中心が濃い(255)、外が薄い(64)
-              const ratio = dist / armLength;
-              const alpha = Math.round(255 - ratio * 191); // 255 → 64
-              scaledData[i] = 255;
-              scaledData[i + 1] = 0;
-              scaledData[i + 2] = 0;
-              scaledData[i + 3] = alpha;
-            }
+            // グラデーション: 中心が濃い(255)、外が薄い(64)
+            const ratio = dist / armLength;
+            const alpha = Math.round(255 - ratio * 191); // 255 → 64
+            scaledData[i] = 255;
+            scaledData[i + 1] = 0;
+            scaledData[i + 2] = 0;
+            scaledData[i + 3] = alpha;
           }
         }
       } else if (isHugeRedRing) {
@@ -449,21 +449,11 @@ const scaleAndRenderWithMode = (
         const outerRadius = armLength; // 外径
         for (let dy = -outerRadius; dy <= outerRadius; dy++) {
           for (let dx = -outerRadius; dx <= outerRadius; dx++) {
-            const dist = Math.sqrt(dx * dx + dy * dy);
-
-            // 中心3x3は元の色
-            if (Math.abs(dx) <= centerSize && Math.abs(dy) <= centerSize) {
-              const px = cx + dx;
-              const py = cy + dy;
-              if (px < 0 || px >= scaledWidth || py < 0 || py >= scaledHeight)
-                continue;
-              const i = (py * scaledWidth + px) * 4;
-              scaledData[i] = origR;
-              scaledData[i + 1] = origG;
-              scaledData[i + 2] = origB;
-              scaledData[i + 3] = 255;
+            // 中心3x3はスキップ
+            if (Math.abs(dx) <= centerSize && Math.abs(dy) <= centerSize)
               continue;
-            }
+
+            const dist = Math.sqrt(dx * dx + dy * dy);
 
             // リング範囲内のみ描画
             if (dist < innerRadius || dist > outerRadius) continue;
