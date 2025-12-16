@@ -1,6 +1,11 @@
 import { storage } from "@/utils/browser-api";
 
 export class TileSnapshot {
+  private static readonly SNAPSHOT_PREFIX = "tile_snapshot_";
+
+  // インメモリキャッシュ（永続化しない）
+  private tmpTileCache = new Map<string, Blob>();
+
   // スナップショット削除（インデックス対応）
   async deleteSnapshot(snapshotId: string): Promise<void> {
     const snapshotKey = `${TileSnapshot.SNAPSHOT_PREFIX}${snapshotId}`;
@@ -14,29 +19,20 @@ export class TileSnapshot {
 
     console.log(`Deleted snapshot: ${snapshotId}`);
   }
-  private static readonly TMP_PREFIX = "tile_tmp_";
-  private static readonly SNAPSHOT_PREFIX = "tile_snapshot_";
 
   async saveTmpTile(tileX: number, tileY: number, blob: Blob): Promise<void> {
-    const key = `${TileSnapshot.TMP_PREFIX}${tileX}_${tileY}`;
+    const key = `${tileX}_${tileY}`;
 
     // Check image size and scale down if 3000x3000
     const processedBlob = await this.scaleDownIfNeeded(blob);
 
-    const arrayBuffer = await processedBlob.arrayBuffer();
-    const data = Array.from(new Uint8Array(arrayBuffer));
-
-    await storage.set({ [key]: data });
+    // インメモリに保存（永続化しない）
+    this.tmpTileCache.set(key, processedBlob);
   }
 
   async getTmpTile(tileX: number, tileY: number): Promise<Blob | null> {
-    const key = `${TileSnapshot.TMP_PREFIX}${tileX}_${tileY}`;
-    const result = await storage.get(key);
-
-    if (!result[key]) return null;
-
-    const uint8Array = new Uint8Array(result[key]);
-    return new Blob([uint8Array], { type: "image/png" });
+    const key = `${tileX}_${tileY}`;
+    return this.tmpTileCache.get(key) || null;
   }
 
   /**
@@ -76,18 +72,20 @@ export class TileSnapshot {
     tileY: number,
     name?: string
   ): Promise<string> {
-    const tmpKey = `${TileSnapshot.TMP_PREFIX}${tileX}_${tileY}`;
-    const result = await storage.get(tmpKey);
+    const tmpKey = `${tileX}_${tileY}`;
+    const tmpBlob = this.tmpTileCache.get(tmpKey);
 
-    if (!result[tmpKey])
+    if (!tmpBlob)
       throw new Error(`No tmp data found for tile ${tileX},${tileY}`);
 
     const timestamp = Date.now();
     const snapshotId = `${timestamp}_${tileX}_${tileY}`;
     const snapshotKey = `${TileSnapshot.SNAPSHOT_PREFIX}${snapshotId}`;
 
-    // 実画像データ保存
-    await storage.set({ [snapshotKey]: result[tmpKey] });
+    // Blobを配列に変換して保存
+    const arrayBuffer = await tmpBlob.arrayBuffer();
+    const data = Array.from(new Uint8Array(arrayBuffer));
+    await storage.set({ [snapshotKey]: data });
 
     // インデックス更新
     const { TimeTravelStorage } = await import("../storage");

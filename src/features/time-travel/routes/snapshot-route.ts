@@ -10,7 +10,6 @@ import {
   latLngToTilePixel,
   tilePixelToLatLng,
 } from "../../../utils/coordinate";
-import { storage } from "@/utils/browser-api";
 
 interface SnapshotRouteOptions {
   showSaveButton: boolean;
@@ -345,24 +344,32 @@ export class SnapshotRoute extends BaseSnapshotRoute {
       return;
     }
 
-    // tmpタイルを取得
-    const tmpKey = `tile_tmp_${this.currentTileX}_${this.currentTileY}`;
-    const result = await storage.get(tmpKey);
+    // tmpタイルをインメモリキャッシュから取得
+    const tileSnapshot = window.mrWplace?.tileSnapshot;
+    if (!tileSnapshot) {
+      canvas.style.display = "none";
+      noImageMessage.textContent = "Tile snapshot not available";
+      noImageMessage.style.display = "block";
+      return;
+    }
 
-    if (!result[tmpKey]) {
+    const tmpBlob = await tileSnapshot.getTmpTile(
+      this.currentTileX,
+      this.currentTileY
+    );
+
+    if (!tmpBlob) {
       canvas.style.display = "none";
       noImageMessage.textContent = "Tile image not loaded";
       noImageMessage.style.display = "block";
       return;
     }
 
-    // Blobに変換して画像表示
-    const uint8Array = new Uint8Array(result[tmpKey]);
-    const blob = new Blob([uint8Array], { type: "image/png" });
+    // Blob から画像表示
     const dataUrl = await new Promise<string>((resolve) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as string);
-      reader.readAsDataURL(blob);
+      reader.readAsDataURL(tmpBlob);
     });
 
     const img = new Image();

@@ -24,6 +24,7 @@ import { TileStatisticsRoute } from "./routes/tile-statistics";
 import { di, type TimeTravelAPI } from "../../core/di";
 import { t } from "@/i18n/manager";
 import { IMG_ICON_TIME_TRAVEL } from "@/assets/iconImages";
+import { storage } from "@/utils/browser-api";
 
 /**
  * タイムマシン機能
@@ -43,7 +44,31 @@ let importSnapshotRoute: ImportSnapshotRoute;
 let tileMergeRoute: TileMergeRoute;
 let tileStatisticsRoute: TileStatisticsRoute;
 
+// 既存の tile_tmp_* キーをクリーンアップ（一度だけ実行）
+const cleanupLegacyTmpTiles = async (): Promise<void> => {
+  const migrationKey = "migration_tile_tmp_cleanup_v1";
+  const result = await storage.get(migrationKey);
+
+  if (result[migrationKey]) return; // 既にクリーンアップ済み
+
+  const allKeys = await storage.get(null);
+  const tmpKeys = Object.keys(allKeys).filter((key) =>
+    key.startsWith("tile_tmp_")
+  );
+
+  if (tmpKeys.length > 0) {
+    await storage.remove(tmpKeys);
+    console.log(`🧑‍🎨 : Cleaned up ${tmpKeys.length} legacy tile_tmp_* keys`);
+  }
+
+  await storage.set({ [migrationKey]: true });
+};
+
 export const initTimeTravel = (): void => {
+  // レガシーキーのクリーンアップ（非同期、エラーは無視）
+  cleanupLegacyTmpTiles().catch((err) => {
+    console.warn("🧑‍🎨 : Failed to cleanup legacy tmp tiles:", err);
+  });
   router = new TimeTravelRouter();
   ui = new TimeTravelUI(router);
   currentPositionRoute = new SnapshotRoute({ showSaveButton: true });

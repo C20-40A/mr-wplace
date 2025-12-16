@@ -1,5 +1,6 @@
 # メイン
 
+- tile_tmp_1815_905...みたいのがまだ local storage にある。
 - 🧑‍🎨 [Gallery V2] Updated metadata for gallery_1765825622378_xw6d1ss content.js:2912 🧑‍🎨 : Saved stats for gallery_1765825622378_xw6d1ss to storage app.BZjMtE-K.js:17 🧑‍🎨 : Cached processed tile to IndexedDB: 1793,899
   - これがちょい重い
 - unplaced only の背景色変更&i18n
