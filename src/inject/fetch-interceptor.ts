@@ -6,6 +6,7 @@ import {
   checkStateChanged,
   getCachedBlob,
   setCachedBlob,
+  invalidateTile,
 } from "./tile-draw/last-modified-cache";
 
 /**
@@ -121,7 +122,8 @@ export const setupFetchInterceptor = (): void => {
           // Execute the original fetch first
           const response = await originalFetch.apply(this, args);
 
-          // Invalidate cache for the painted tile (fire and forget)
+          // Invalidate both LastModified cache and IndexedDB cache
+          invalidateTile(cacheKey);
           invalidateTileCache(cacheKey).catch((error) => {
             console.warn("🧑‍🎨: Failed to invalidate tile cache:", error);
           });

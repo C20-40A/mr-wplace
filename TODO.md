@@ -15,7 +15,6 @@
 - src/features/gallery/routes/list/index.ts で統計とっているのが謎
 - sendGalleryImagesToInject なんとかする
 - 画像編集で「境界を強調」つまり「輪郭線を描画」できるようにする
-- migration がされるか、以前のデータでちゃんとテストする
 - 直接取り込みしたときの色問題
 - friends 取り込みが、「件のお気に入りを...」になっている。また、上書き取り込みのリロード不要だ。
 - equippedFlag がないと取り込めない？　 allianceId とか allianceName は不要なようだが
@@ -43,10 +42,8 @@
 - タイル一覧もタグほしい
 - 画像編集で色カウントあると便利
 - 現在位置のアーカイブで import
-- ThemeToggleStorage.get()が 8.8 秒かかっている
 
 - snaphsot の storage 使用量カウント
-- 描画位置など、計算が正しいか検証
 
 # バグ
 
@@ -115,6 +112,7 @@
 
 # DONE v2.0.2
 
+- 🧑‍🎨 : LastModified cache hit for tile ... skipping processing 　これが描画直後にも発生する
 - タイル統計の取得ができない
 - スナップショット シェア画面の UI が dark theme で見づらい
 

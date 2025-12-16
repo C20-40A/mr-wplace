@@ -87,3 +87,13 @@ export const setCachedBlob = (
   lastModifiedMap.set(cacheKey, lastModified);
   processedBlobCache.set(cacheKey, blob);
 };
+
+/**
+ * Invalidate cache for a specific tile
+ * Used when pixel is painted to force re-processing
+ */
+export const invalidateTile = (cacheKey: string): void => {
+  lastModifiedMap.delete(cacheKey);
+  processedBlobCache.delete(cacheKey);
+  console.log(`🧑‍🎨 : Invalidated LastModified cache for tile: ${cacheKey}`);
+};
