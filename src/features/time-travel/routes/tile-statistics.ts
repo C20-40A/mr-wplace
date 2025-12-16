@@ -1,6 +1,5 @@
 import { TimeTravelRouter } from "../router";
 import { t } from "@/i18n/manager";
-import { storage } from "@/utils/browser-api";
 import { colorpalette } from "@/constants/colors";
 
 interface ColorStatItem {
@@ -89,12 +88,14 @@ export class TileStatisticsRoute {
   }
 
   private async calculateStatistics(fullKey: string): Promise<ColorStatItem[]> {
-    // スナップショット画像取得
-    const result = await storage.get(fullKey);
-    if (!result[fullKey]) throw new Error("Snapshot not found");
+    // スナップショット画像取得（IndexedDBから）
+    const snapshotId = fullKey.replace("tile_snapshot_", "");
+    const { getSnapshotRepository } = await import(
+      "@/inject/db/snapshot-repository"
+    );
+    const blob = await getSnapshotRepository().getSnapshot(snapshotId);
+    if (!blob) throw new Error("Snapshot not found");
 
-    const uint8Array = new Uint8Array(result[fullKey]);
-    const blob = new Blob([uint8Array], { type: "image/png" });
     const imageBitmap = await createImageBitmap(blob);
 
     // ImageData取得
