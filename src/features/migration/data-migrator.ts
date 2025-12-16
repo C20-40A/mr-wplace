@@ -43,30 +43,43 @@ interface LegacyGalleryItem {
 }
 
 /**
- * Get all legacy items from Chrome Storage
+ * Get legacy gallery item keys from Chrome Storage (without data to save memory)
  */
-const getLegacyItems = async (): Promise<LegacyGalleryItem[]> => {
+const getLegacyItemKeys = async (): Promise<string[]> => {
   const { storage } = await import("@/utils/browser-api");
   const result = await storage.get(null);
-  const items: LegacyGalleryItem[] = [];
+  const keys: string[] = [];
 
-  for (const [key, value] of Object.entries(result)) {
+  for (const key of Object.keys(result)) {
     if (key.startsWith("gallery_") && !key.endsWith("_index")) {
-      if (typeof value === "object" && (value as any).key) {
-        items.push(value as LegacyGalleryItem);
-      } else if (typeof value === "string") {
-        // Old format: dataUrl only
-        const timestamp = parseInt(key.replace("gallery_", ""));
-        items.push({
-          key,
-          timestamp,
-          dataUrl: value,
-        });
-      }
+      keys.push(key);
     }
   }
 
-  return items;
+  return keys;
+};
+
+/**
+ * Load a single legacy gallery item from Chrome Storage
+ */
+const loadLegacyItem = async (
+  key: string
+): Promise<LegacyGalleryItem | null> => {
+  const { storage } = await import("@/utils/browser-api");
+  const result = await storage.get(key);
+  const value = result[key];
+
+  if (!value) return null;
+
+  if (typeof value === "object" && (value as any).key) {
+    return value as LegacyGalleryItem;
+  } else if (typeof value === "string") {
+    // Old format: dataUrl only
+    const timestamp = parseInt(key.replace("gallery_", ""));
+    return { key, timestamp, dataUrl: value };
+  }
+
+  return null;
 };
 
 /**
@@ -165,18 +178,18 @@ export const needsMigration = async (): Promise<boolean> => {
   if (currentVersion === MIGRATION_VERSION) return false;
 
   // Check if there are any legacy items to migrate
-  const items = await getLegacyItems();
+  const itemKeys = await getLegacyItemKeys();
   const snapshotKeys = await getLegacySnapshotKeys();
-  return items.length > 0 || snapshotKeys.length > 0;
+  return itemKeys.length > 0 || snapshotKeys.length > 0;
 };
 
 /**
  * Get count of items to migrate (for progress display)
  */
 export const getMigrationCount = async (): Promise<number> => {
-  const items = await getLegacyItems();
+  const itemKeys = await getLegacyItemKeys();
   const snapshotKeys = await getLegacySnapshotKeys();
-  return items.length + snapshotKeys.length;
+  return itemKeys.length + snapshotKeys.length;
 };
 
 /**
@@ -200,25 +213,33 @@ export const runDataMigration = async (
   const galleryRepository = await initGalleryRepository();
   const snapshotRepository = await initSnapshotRepository();
 
-  const items = await getLegacyItems();
+  const itemKeys = await getLegacyItemKeys();
   const snapshotKeys = await getLegacySnapshotKeys();
-  const total = items.length + snapshotKeys.length;
+  const total = itemKeys.length + snapshotKeys.length;
 
   let migrated = 0;
   let skipped = 0;
   const failed: string[] = [];
 
-  // Migrate gallery items
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
+  // Migrate gallery items (one at a time to avoid memory issues)
+  for (let i = 0; i < itemKeys.length; i++) {
+    const itemKey = itemKeys[i];
 
     onProgress?.({
       current: i + 1,
       total,
-      currentItem: `Gallery: ${item.title || item.key}`,
+      currentItem: `Gallery: ${itemKey}`,
     });
 
     try {
+      // Load item data for this key only
+      const item = await loadLegacyItem(itemKey);
+      if (!item) {
+        console.warn(`🧑‍🎨 [Migration] Invalid gallery item ${itemKey}, skipping`);
+        skipped++;
+        continue;
+      }
+
       // Get image blob
       const blob = await getImageBlob(item);
       if (!blob) {
@@ -240,8 +261,8 @@ export const runDataMigration = async (
       console.log(`🧑‍🎨 [Migration] Migrated gallery ${item.key}`);
       migrated++;
     } catch (error) {
-      console.error(`🧑‍🎨 [Migration] Failed to migrate ${item.key}:`, error);
-      failed.push(item.key);
+      console.error(`🧑‍🎨 [Migration] Failed to migrate ${itemKey}:`, error);
+      failed.push(itemKey);
     }
 
     // Small delay to avoid UI freeze
@@ -254,7 +275,7 @@ export const runDataMigration = async (
     const snapshotKey = snapshotKeys[i];
 
     onProgress?.({
-      current: items.length + i + 1,
+      current: itemKeys.length + i + 1,
       total,
       currentItem: `Snapshot: ${snapshotKey.id}`,
     });
@@ -300,7 +321,7 @@ export const runDataMigration = async (
 
   // Clean up Chrome Storage after successful migration
   if (failed.length === 0) {
-    await cleanupLegacyStorage(items);
+    await cleanupLegacyStorage(itemKeys);
     await cleanupLegacySnapshotIndex();
   }
 
@@ -318,14 +339,11 @@ export const runDataMigration = async (
 /**
  * Clean up legacy Chrome Storage data
  */
-const cleanupLegacyStorage = async (
-  items: LegacyGalleryItem[]
-): Promise<void> => {
+const cleanupLegacyStorage = async (itemKeys: string[]): Promise<void> => {
   const { storage } = await import("@/utils/browser-api");
 
   // Remove all gallery items and index
-  const keysToRemove = items.map((item) => item.key);
-  keysToRemove.push("gallery_index");
+  const keysToRemove = [...itemKeys, "gallery_index"];
 
   for (const key of keysToRemove) {
     await storage.remove(key);

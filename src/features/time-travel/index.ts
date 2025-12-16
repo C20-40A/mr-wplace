@@ -45,14 +45,18 @@ let tileMergeRoute: TileMergeRoute;
 let tileStatisticsRoute: TileStatisticsRoute;
 
 // 既存の tile_tmp_* キーをクリーンアップ（一度だけ実行）
+// Note: This uses storage.get(null) but only collects keys, not data.
+// tile_tmp_* values are small, so this is acceptable for a one-time migration.
 const cleanupLegacyTmpTiles = async (): Promise<void> => {
   const migrationKey = "migration_tile_tmp_cleanup_v1";
   const result = await storage.get(migrationKey);
 
   if (result[migrationKey]) return; // 既にクリーンアップ済み
 
-  const allKeys = await storage.get(null);
-  const tmpKeys = Object.keys(allKeys).filter((key) =>
+  // Get all keys (data is loaded but we only use keys)
+  // tile_tmp_* are small blobs, so this is acceptable
+  const allData = await storage.get(null);
+  const tmpKeys = Object.keys(allData).filter((key) =>
     key.startsWith("tile_tmp_")
   );
 
