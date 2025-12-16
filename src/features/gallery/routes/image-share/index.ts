@@ -1,8 +1,8 @@
-import { GalleryItem } from "../../../../states/galleryStorage";
-import { tilePixelToLatLng } from "../../../../utils/coordinate";
+import { GalleryItem } from "@/states/galleryStorage";
+import { tilePixelToLatLng } from "@/utils/coordinate";
 import { downloadImage } from "../../common-actions";
-import { t } from "../../../../i18n/manager";
-import { Toast } from "../../../../components/toast";
+import { t } from "@/i18n/manager";
+import { Toast } from "@/components/toast";
 
 export class GalleryImageShare {
   async render(container: HTMLElement, item: GalleryItem): Promise<void> {

@@ -1,5 +1,6 @@
 # メイン
 
+- タイル統計の取得ができない
 - unplaced only の背景色変更&i18n
 - popup の i18n
 - theme = Halloween
@@ -111,6 +112,10 @@
 - exclude_globs にメインのもの以外含める？
   - all_frames false (デフォルト)系は false．まあデフォルトが false だから不要か
 - dark/light テーマの i18n 不要になった
+
+# DONE v2.0.2
+
+- スナップショット シェア画面の UI が dark theme で見づらい
 
 # DONE v2.0.1
 

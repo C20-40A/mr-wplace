@@ -1,7 +1,8 @@
 import { TimeTravelRouter } from "../router";
-import { t } from "../../../i18n/manager";
-import { Toast } from "../../../components/toast";
+import { t } from "@/i18n/manager";
+import { Toast } from "@/components/toast";
 import { storage } from "@/utils/browser-api";
+import { tilePixelToLatLng } from "@/utils/coordinate";
 
 export class SnapshotShareRoute {
   render(container: HTMLElement, router: TimeTravelRouter): void {
@@ -24,26 +25,60 @@ export class SnapshotShareRoute {
     const date = new Date(timestamp);
     const dateStr = date.toLocaleString();
 
+    // タイル座標の中心点（500, 500）を経度緯度に変換
+    const { lat, lng } = tilePixelToLatLng(tileX, tileY, 500, 500);
+
     container.innerHTML = `
       <div style="padding: 20px; display: flex; flex-direction: column; gap: 16px;">
         <div>
           <div style="font-weight: 600; margin-bottom: 8px;">${t`${"tile_coordinate"}`}</div>
-          <div style="background: #f0f0f0; padding: 8px; border-radius: 4px; font-family: monospace; user-select: all;">
-            TileX: ${tileX}, TileY: ${tileY}
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div id="tile-coord-text" style="flex: 1; border: 1px solid #ccc; padding: 8px; border-radius: 4px; font-family: monospace; user-select: all;">
+              TileX: ${tileX}, TileY: ${tileY}
+            </div>
+            <button id="copy-tile-coord-btn" class="btn btn-sm btn-ghost" style="height: 32px; min-height: 32px; padding: 0 8px;" title="Copy">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-weight: 600; margin-bottom: 8px;">${t`${"lat_lng"}`}</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div id="lat-lng-text" style="flex: 1; border: 1px solid #ccc; padding: 8px; border-radius: 4px; font-family: monospace; user-select: all;">
+              ${lat.toFixed(6)}, ${lng.toFixed(6)}
+            </div>
+            <button id="copy-lat-lng-btn" class="btn btn-sm btn-ghost" style="height: 32px; min-height: 32px; padding: 0 8px;" title="Copy">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+            </button>
           </div>
         </div>
 
         <div>
           <div style="font-weight: 600; margin-bottom: 8px;">${t`${"snapshot_timestamp"}`}</div>
-          <div style="background: #f0f0f0; padding: 8px; border-radius: 4px; font-family: monospace; user-select: all;">
-            ${timestamp}
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div id="timestamp-text" style="flex: 1; border: 1px solid #ccc; padding: 8px; border-radius: 4px; font-family: monospace; user-select: all;">
+              ${timestamp}
+            </div>
+            <button id="copy-timestamp-btn" class="btn btn-sm btn-ghost" style="height: 32px; min-height: 32px; padding: 0 8px;" title="Copy">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+            </button>
           </div>
-          <div style="margin-top: 4px; color: #666; font-size: 14px;">
+          <div style="margin-top: 4px; opacity: 0.6; font-size: 14px;">
             ${dateStr}
           </div>
         </div>
 
-        <div style="background: #e8f4f8; padding: 12px; border-radius: 4px; border-left: 4px solid #0ea5e9;">
+        <div style="padding: 12px; border-radius: 4px; border-left: 4px solid #0ea5e9;">
           ${t`${"snapshot_share_description"}`}
         </div>
 
@@ -58,6 +93,44 @@ export class SnapshotShareRoute {
 
     // canvasに画像読み込み
     this.loadSnapshotToCanvas(fullKey);
+
+    // タイル座標コピーボタン
+    const copyTileCoordBtn = document.getElementById("copy-tile-coord-btn");
+    copyTileCoordBtn?.addEventListener("click", async () => {
+      const coordText = `${tileX}-${tileY}`;
+      try {
+        await navigator.clipboard.writeText(coordText);
+        Toast.success(t`${"copied"}`);
+      } catch (err) {
+        console.error("🧑‍🎨 : Failed to copy tile coordinates", err);
+        Toast.error("Failed to copy");
+      }
+    });
+
+    // 経度緯度コピーボタン
+    const copyLatLngBtn = document.getElementById("copy-lat-lng-btn");
+    copyLatLngBtn?.addEventListener("click", async () => {
+      const coordText = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      try {
+        await navigator.clipboard.writeText(coordText);
+        Toast.success(t`${"copied"}`);
+      } catch (err) {
+        console.error("🧑‍🎨 : Failed to copy lat/lng", err);
+        Toast.error("Failed to copy");
+      }
+    });
+
+    // タイムスタンプコピーボタン
+    const copyTimestampBtn = document.getElementById("copy-timestamp-btn");
+    copyTimestampBtn?.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(timestamp.toString());
+        Toast.success(t`${"copied"}`);
+      } catch (err) {
+        console.error("🧑‍🎨 : Failed to copy timestamp", err);
+        Toast.error("Failed to copy");
+      }
+    });
 
     const downloadBtn = document.getElementById("download-snapshot-share-btn");
     downloadBtn?.addEventListener("click", () => {
