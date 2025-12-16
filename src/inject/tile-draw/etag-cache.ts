@@ -3,10 +3,13 @@
  * Skips heavy drawing/stats processing when tile and state haven't changed
  */
 
-import { getColorFilterState, getEnhancedMode } from "../states/colorFilterState";
+import {
+  getColorFilterState,
+  getEnhancedMode,
+} from "../states/colorFilterState";
 import { overlayLayers } from "./states";
 
-const MAX_CACHE_SIZE = 12;
+const MAX_CACHE_SIZE = 24;
 
 // ETag mapping: "tileX,tileY" → etag
 const etagMap = new Map<string, string>();
@@ -27,7 +30,9 @@ const getStateVersion = (): string => {
   const overlayKeys = overlayLayers
     .map((l) => `${l.imageKey}:${l.drawEnabled}`)
     .join(",");
-  return `${filter.isFilterActive}-${JSON.stringify(filter.selectedRGBs)}-${mode}-${unplaced}-${overlayKeys}`;
+  return `${filter.isFilterActive}-${JSON.stringify(
+    filter.selectedRGBs
+  )}-${mode}-${unplaced}-${overlayKeys}`;
 };
 
 /**
