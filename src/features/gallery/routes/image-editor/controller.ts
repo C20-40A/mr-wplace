@@ -76,7 +76,7 @@ export class EditorController {
 
   private updateSaveButtonLabel(): void {
     const saveBtn = this.container.querySelector(
-      "#wps-save-btn"
+      "#wps-add-to-gallery"
     ) as HTMLButtonElement;
     if (!saveBtn) return;
 

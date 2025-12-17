@@ -157,7 +157,18 @@ export class ImportExportService {
           return;
         }
 
-        const text = await file.text();
+        let text: string;
+        try {
+          text = await file.text();
+        } catch {
+          // Fallback for older Safari/Orion browsers that don't support File.text()
+          text = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsText(file);
+          });
+        }
         let importData: ImportData;
 
         try {
