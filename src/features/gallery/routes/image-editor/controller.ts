@@ -80,9 +80,7 @@ export class EditorController {
     ) as HTMLButtonElement;
     if (!saveBtn) return;
 
-    saveBtn.textContent = this.isEditMode
-      ? `💾 ${t`${"update"}`}`
-      : `💾 ${t`${"save_to_gallery"}"`}`;
+    saveBtn.textContent = this.isEditMode ? t`💾 ${"update"}` : t`💾 ${"save"}`;
 
     // タイトルも更新
     this.updateTitle();
@@ -438,7 +436,8 @@ export class EditorController {
     key?: string,
     isEditMode = false
   ): Promise<void> {
-    const itemKey = key || `gallery_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    const itemKey =
+      key || `gallery_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
     // Convert blob to dataUrl for v2 API
     const dataUrl = await blobToDataUrl(blob);
@@ -732,7 +731,9 @@ export class EditorController {
       console.log("🧑‍🎨 : Scale changed, creating new resized bitmap");
 
       // リサイズ実行
-      const { createResizedImageBitmap } = await import("@/utils/image-bitmap-compat");
+      const { createResizedImageBitmap } = await import(
+        "@/utils/image-bitmap-compat"
+      );
       const originalWidth = this.originalImage.naturalWidth;
       const originalHeight = this.originalImage.naturalHeight;
       const newWidth = Math.floor(originalWidth * this.imageScale);
@@ -743,15 +744,20 @@ export class EditorController {
         this.cachedResizedBitmap.close();
       }
 
-      this.cachedResizedBitmap = await createResizedImageBitmap(this.originalImage, {
-        width: newWidth,
-        height: newHeight,
-        quality: "pixelated"
-      });
+      this.cachedResizedBitmap = await createResizedImageBitmap(
+        this.originalImage,
+        {
+          width: newWidth,
+          height: newHeight,
+          quality: "pixelated",
+        }
+      );
       this.cachedScale = this.imageScale;
 
       // リサイズ後の処理
-      const { createProcessedCanvasFromBitmap } = await import("./canvas-processor");
+      const { createProcessedCanvasFromBitmap } = await import(
+        "./canvas-processor"
+      );
       processedCanvas = await createProcessedCanvasFromBitmap(
         this.cachedResizedBitmap,
         adjustments,
@@ -765,7 +771,9 @@ export class EditorController {
       console.log("🧑‍🎨 : Using cached bitmap for processing");
 
       // キャッシュされたリサイズ済みBitmapを使用
-      const { createProcessedCanvasFromBitmap } = await import("./canvas-processor");
+      const { createProcessedCanvasFromBitmap } = await import(
+        "./canvas-processor"
+      );
       processedCanvas = await createProcessedCanvasFromBitmap(
         this.cachedResizedBitmap,
         adjustments,
