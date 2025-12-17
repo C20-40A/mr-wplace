@@ -8,6 +8,7 @@ import {
   sendTileBoundariesToInject,
   sendGalleryImagesToInject,
 } from "@/core/bridge";
+import { cleanupLegacyTmpTiles } from "@/features/time-travel";
 
 // Re-export bridge functions for backward compatibility
 export {
@@ -257,6 +258,11 @@ const registerMessageListeners = () => {
 };
 
 registerMessageListeners();
+
+// レガシーキーのクリーンアップを最初に開始（非同期、エラーは無視）
+cleanupLegacyTmpTiles().catch((err) => {
+  console.warn("🧑‍🎨 : Failed to cleanup legacy tmp tiles:", err);
+});
 
 (async () => {
   console.log("🧑‍🎨: Starting initialization...");

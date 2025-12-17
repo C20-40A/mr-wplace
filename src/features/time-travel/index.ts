@@ -1,12 +1,12 @@
 import {
   setupElementObserver,
   ElementConfig,
-} from "../../components/element-observer";
+} from "@/components/element-observer";
 import {
   findOpacityContainer,
   findPositionModal,
   findMapPin,
-} from "../../constants/selectors";
+} from "@/constants/selectors";
 import { addMapPinButton } from "@/utils/map-pin-helper";
 import { TimeTravelRouter, TimeTravelRoute } from "./router";
 import {
@@ -21,7 +21,7 @@ import { SnapshotShareRoute } from "./routes/snapshot-share";
 import { ImportSnapshotRoute } from "./routes/import-snapshot";
 import { TileMergeRoute } from "./routes/tile-merge";
 import { TileStatisticsRoute } from "./routes/tile-statistics";
-import { di, type TimeTravelAPI } from "../../core/di";
+import { type TimeTravelAPI } from "../../core/di";
 import { t } from "@/i18n/manager";
 import { IMG_ICON_TIME_TRAVEL } from "@/assets/iconImages";
 import { storage } from "@/utils/browser-api";
@@ -45,20 +45,22 @@ let tileMergeRoute: TileMergeRoute;
 let tileStatisticsRoute: TileStatisticsRoute;
 
 // 既存の tile_tmp_* キーをクリーンアップ（一度だけ実行）
-// Note: This uses storage.get(null) but only collects keys, not data.
-// tile_tmp_* values are small, so this is acceptable for a one-time migration.
-const cleanupLegacyTmpTiles = async (): Promise<void> => {
+// IMPORTANT: tile_tmp_* は完全に不要なレガシーデータで削除するだけ
+// storage.get(null)を避け、chrome.storage.local APIを直接使用してキーのみ取得
+export const cleanupLegacyTmpTiles = async (): Promise<void> => {
   const migrationKey = "migration_tile_tmp_cleanup_v1";
   const result = await storage.get(migrationKey);
 
   if (result[migrationKey]) return; // 既にクリーンアップ済み
 
-  // Get all keys (data is loaded but we only use keys)
-  // tile_tmp_* are small blobs, so this is acceptable
-  const allData = await storage.get(null);
-  const tmpKeys = Object.keys(allData).filter((key) =>
-    key.startsWith("tile_tmp_")
-  );
+  // Use chrome.storage.local directly to avoid loading large data
+  const allKeys = await new Promise<string[]>((resolve) => {
+    chrome.storage.local.get(null, (items) => {
+      resolve(Object.keys(items));
+    });
+  });
+
+  const tmpKeys = allKeys.filter((key) => key.startsWith("tile_tmp_"));
 
   if (tmpKeys.length > 0) {
     await storage.remove(tmpKeys);
@@ -69,10 +71,6 @@ const cleanupLegacyTmpTiles = async (): Promise<void> => {
 };
 
 export const initTimeTravel = (): void => {
-  // レガシーキーのクリーンアップ（非同期、エラーは無視）
-  cleanupLegacyTmpTiles().catch((err) => {
-    console.warn("🧑‍🎨 : Failed to cleanup legacy tmp tiles:", err);
-  });
   router = new TimeTravelRouter();
   ui = new TimeTravelUI(router);
   currentPositionRoute = new SnapshotRoute({ showSaveButton: true });

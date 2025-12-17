@@ -12,6 +12,12 @@ import {
   debugClearLegacySnapshots,
 } from "./debugLegacySnapshotImport";
 
+import {
+  debugGenerateLegacyTmpTiles,
+  debugShowTmpTilesStorage,
+  debugClearLegacyTmpTiles,
+} from "./debugLegacyTmpTiles";
+
 // ==========================================
 const ACTIONS = [
   {
@@ -33,6 +39,18 @@ const ACTIONS = [
   {
     label: "Clear Legacy Snapshots",
     action: debugClearLegacySnapshots,
+  },
+  {
+    label: "Generate Legacy tile_tmp_*",
+    action: () => debugGenerateLegacyTmpTiles(50), // 50個生成
+  },
+  {
+    label: "Show tile_tmp_* Storage",
+    action: debugShowTmpTilesStorage,
+  },
+  {
+    label: "Clear tile_tmp_* Data",
+    action: debugClearLegacyTmpTiles,
   },
   {
     label: "Show LocalStorage",
