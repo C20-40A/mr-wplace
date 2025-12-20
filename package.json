@@ -1,6 +1,6 @@
 {
   "name": "mr-wplace",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "license": "MPL-2.0",
   "scripts": {
     "build": "esbuild src/content.ts src/popup.ts src/inject.ts src/inject/workers/migration.worker.ts --bundle --outdir=dist --minify --target=chrome88 --alias:@=./src",
