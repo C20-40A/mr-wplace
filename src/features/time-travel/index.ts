@@ -53,12 +53,13 @@ export const cleanupLegacyTmpTiles = async (): Promise<void> => {
 
   if (result[migrationKey]) return; // 既にクリーンアップ済み
 
-  // Use chrome.storage.local directly to avoid loading large data
-  const allKeys = await new Promise<string[]>((resolve) => {
-    chrome.storage.local.get(null, (items) => {
-      resolve(Object.keys(items));
-    });
-  });
+  // これやっちゃだめ。local.get(null) は大量データでタイムアウトする可能性がある
+  // const allKeys = await new Promise<string[]>((resolve) => {
+  //   chrome.storage.local.get(null, (items) => {
+  //     resolve(Object.keys(items));
+  //   });
+  // });
+  const allKeys = await chrome.storage.local.getKeys();
 
   const tmpKeys = allKeys.filter((key) => key.startsWith("tile_tmp_"));
 
