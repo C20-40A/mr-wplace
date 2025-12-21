@@ -67,7 +67,12 @@ import { getMapInstance } from "./features/map-instance";
         console.error("🧑‍🎨: Failed to setup message handler:", error);
       }),
 
-      getMapInstance(),
+      // Capture WPlace map instance
+      getMapInstance().then((mapInstance) => {
+        if (mapInstance && window.mrWplace) {
+          window.mrWplace.wplaceMap = mapInstance;
+        }
+      }),
 
       // Setup map observer
       // Promise.resolve(setupMapObserver()).catch((error) => {

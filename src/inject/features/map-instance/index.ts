@@ -1,8 +1,22 @@
+import { findPositionModal } from "@/constants/selectors";
 import { WplaceMap } from "@/inject/types";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const getMapInstance = async () => {
+/**
+ * Close position modal if opened by pixel click
+ */
+const clickPositionModalCloseButton = () => {
+  const positionModalElement = findPositionModal();
+  if (!positionModalElement) return;
+
+  const closeButton = positionModalElement.querySelector<HTMLButtonElement>(
+    'button:has(path[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"])'
+  );
+  closeButton?.click();
+};
+
+export const getMapInstance = async (): Promise<WplaceMap | undefined> => {
   let mapInstance: WplaceMap | null = null;
 
   const originalValues = Map.prototype.values;
@@ -49,8 +63,10 @@ export const getMapInstance = async () => {
     await delay(300);
     if (mapInstance) {
       console.log("🧑‍🎨 Map instance found:", mapInstance);
-      break;
+      clickPositionModalCloseButton();
+      return mapInstance;
     }
     forceTrigger();
   }
+  return undefined;
 };

@@ -62,22 +62,6 @@ export const findPositionModal = (): Element | null => {
   if (modalContent?.parentElement) return modalContent.parentElement;
 
   return null;
-
-  // 見つからない場合は作る
-  // Modalはdynamicに出たり消えたりするので、ここでは作らない
-  // {
-  //   const modalId = "mr-wplace-position-modal";
-  //   // もし既に同じIDの要素があれば追加しない
-  //   const existingModal = document.querySelector(`#${modalId}`);
-  //   if (existingModal) return existingModal;
-  //   // absoluteで上部中央に配置
-  //   const newModal = document.createElement("div");
-  //   newModal.className =
-  //     "absolute top-0 left-1/2 z-50 w-full max-w-md -translate-x-1/2 rounded-lg";
-  //   newModal.id = modalId;
-  //   document.body.appendChild(newModal);
-  //   return newModal;
-  // }
 };
 
 export const findPaintPixelControls = (): Element | null => {
