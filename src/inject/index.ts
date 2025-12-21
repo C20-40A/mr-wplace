@@ -1,9 +1,9 @@
 import { setupFetchInterceptor } from "./fetch-interceptor";
-import { setupMapObserver } from "./map-instance";
 import { setupMessageHandler } from "./message-handler";
 import { tileCacheDB } from "./cache-storage";
 import { initGalleryRepository } from "./db/gallery-repository";
 import { initSnapshotRepository } from "./db/snapshot-repository";
+import { getMapInstance } from "./features/map-instance";
 
 // CRITICAL: Setup fetch interceptor IMMEDIATELY and SYNCHRONOUSLY
 // to catch /me requests before WPlace app code runs
@@ -66,6 +66,8 @@ import { initSnapshotRepository } from "./db/snapshot-repository";
       Promise.resolve(setupMessageHandler()).catch((error) => {
         console.error("🧑‍🎨: Failed to setup message handler:", error);
       }),
+
+      getMapInstance(),
 
       // Setup map observer
       // Promise.resolve(setupMapObserver()).catch((error) => {

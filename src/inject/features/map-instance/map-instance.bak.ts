@@ -1,4 +1,4 @@
-import type { WplaceMap } from "./types";
+import type { WplaceMap } from "../../types";
 
 /**
  * Helper function to check if auto spoit dev mode is enabled
@@ -43,6 +43,7 @@ const getMapInstance = (): WplaceMap | null => {
 };
 
 /**
+ * @deprecated
  * Setup map instance observer and capture it
  */
 export const setupMapObserver = (): void => {
