@@ -39,18 +39,6 @@ import { initSnapshotRepository } from "./db/snapshot-repository";
 // Initialize other features asynchronously in parallel
 (async () => {
   try {
-    // Log initial memory usage (Chrome only)
-    const initialMemory = (performance as any).memory?.usedJSHeapSize;
-    if (initialMemory) {
-      console.log(
-        `🧑‍🎨 (inject): Initial memory usage: ${(
-          initialMemory /
-          1024 /
-          1024
-        ).toFixed(2)}MB`
-      );
-    }
-
     console.log("🧑‍🎨: Starting async initialization...");
 
     // Run initialization tasks in parallel
@@ -86,22 +74,6 @@ import { initSnapshotRepository } from "./db/snapshot-repository";
     ]);
 
     console.log("🧑‍🎨: Async initialization complete");
-
-    // Log final memory usage (Chrome only)
-    const finalMemory = (performance as any).memory?.usedJSHeapSize;
-    if (finalMemory && initialMemory) {
-      const memoryIncrease = finalMemory - initialMemory;
-      console.log(
-        `🧑‍🎨 (inject): Final memory usage: ${(finalMemory / 1024 / 1024).toFixed(
-          2
-        )}MB`
-      );
-      console.log(
-        `🧑‍🎨 (inject): Memory increase: ${(memoryIncrease / 1024 / 1024).toFixed(
-          2
-        )}MB`
-      );
-    }
   } catch (error) {
     console.error("🧑‍🎨: Critical initialization error:", error);
   }
