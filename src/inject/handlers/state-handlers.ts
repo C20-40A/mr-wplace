@@ -80,10 +80,9 @@ export const handleColorFilterUpdate = (data: {
 export const handleTileBoundariesUpdate = (data: {
   visible: boolean;
 }): void => {
-  if (window.wplaceMap) {
-    (window.wplaceMap as any).showTileBoundaries = data.visible;
-    console.log("🧑‍🎨 : Tile boundaries updated:", data.visible);
-  }
+  if (!window.mrWplace?.wplaceMap) return;
+  window.mrWplace.wplaceMap.showTileBoundaries = data.visible;
+  console.log("🧑‍🎨 : Tile boundaries updated:", data.visible);
 };
 
 /**

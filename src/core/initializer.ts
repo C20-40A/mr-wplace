@@ -33,7 +33,6 @@ import {
   sendGalleryImagesToInject,
   sendColorFilterToInject,
   sendComputeDeviceToInject,
-  sendTileBoundariesToInject,
   sendCacheSizeToInject,
 } from "@/core/bridge";
 import { sendSnapshotsToInject } from "@/utils/inject-bridge";
@@ -99,7 +98,6 @@ export const initializeFeatures = async () => {
     sendGalleryImagesToInject(),
     sendSnapshotsToInject(),
     sendComputeDeviceToInject(),
-    sendTileBoundariesToInject(),
     sendCacheSizeToInject(),
   ]);
   sendColorFilterToInject(colorFilterManager);

@@ -180,18 +180,22 @@
         </select>
       </div> -->
 
-      <!-- <div class="setting-group">
+      <div
+        id="tile-boundaries-setting"
+        class="setting-group"
+        style="display: none"
+      >
         <label class="setting-label">
           <svg class="icon" viewBox="0 0 12 12">
             <path d="M1 1h10v10H1z M6 1v10 M1 6h10" />
           </svg>
           Tile Boundaries
         </label>
-        <select id="tile-boundaries-select" disabled>
+        <select id="tile-boundaries-select">
           <option value="false">Hidden</option>
           <option value="true">Visible</option>
         </select>
-      </div> -->
+      </div>
 
       <div class="setting-group">
         <label class="setting-label">
@@ -229,9 +233,15 @@
           <span id="gallery-data-label">Gallery Data</span>
         </label>
 
-        <button id="export-gallery-btn">📤 <span id="export-btn-label">Export</span></button>
-        <button id="import-gallery-btn">📥 <span id="import-btn-label">Import</span></button>
-        <button id="reset-gallery-btn" class="btn-danger">🗑️ <span id="reset-btn-label">Reset Gallery</span></button>
+        <button id="export-gallery-btn">
+          📤 <span id="export-btn-label">Export</span>
+        </button>
+        <button id="import-gallery-btn">
+          📥 <span id="import-btn-label">Import</span>
+        </button>
+        <button id="reset-gallery-btn" class="btn-danger">
+          🗑️ <span id="reset-btn-label">Reset Gallery</span>
+        </button>
 
         <input
           type="file"

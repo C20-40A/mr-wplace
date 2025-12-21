@@ -94,10 +94,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   languageSelect.value = currentLocale;
   if (navigationSelect) navigationSelect.value = currentMode.toString();
-  if (tileBoundariesSelect) tileBoundariesSelect.value = currentTileBoundaries.toString();
+  if (tileBoundariesSelect)
+    tileBoundariesSelect.value = currentTileBoundaries.toString();
   lockButtonEnhancerSelect.value = currentLockButtonEnhancer.toString();
   closeConfirmSelect.value = currentCloseConfirm.toString();
   updateUI();
+
+  // Show tile boundaries setting only if supported
+  if (window.mrWplace?.wplaceMap) {
+    document
+      .getElementById("tile-boundaries-setting")
+      ?.removeAttribute("style"); // remove display: none
+  }
 
   // 言語変更イベント
   languageSelect.addEventListener("change", async (event) => {
@@ -133,19 +141,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   // });
 
   // タイル境界変更イベント (currently disabled)
-  // tileBoundariesSelect.addEventListener("change", async (event) => {
-  //   const target = event.target as HTMLSelectElement;
-  //   const newVisible = target.value === "true";
-  //
-  //   // 設定を保存
-  //   await setTileBoundaries(newVisible);
-  //
-  //   // content.tsに通知
-  //   await notifyContentScript({
-  //     type: "TILE_BOUNDARIES_CHANGED",
-  //     visible: newVisible,
-  //   });
-  // });
+  tileBoundariesSelect?.addEventListener("change", async (event) => {
+    const target = event.target as HTMLSelectElement;
+    const newVisible = target.value === "true";
+
+    // 設定を保存
+    await setTileBoundaries(newVisible);
+
+    // content.tsに通知
+    await notifyContentScript({
+      type: "TILE_BOUNDARIES_CHANGED",
+      visible: newVisible,
+    });
+  });
 
   // Lockボタン強化変更イベント
   lockButtonEnhancerSelect.addEventListener("change", async (event) => {
