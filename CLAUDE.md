@@ -207,7 +207,7 @@ const text = t`feature.gallery.title`; // Template literal syntax
    - Manages storage (gallery, snapshots, settings)
    - Sends data to inject via `postMessage`
 
-2. **Inject script** (`src/inject/tile-draw/`):
+2. **Inject script** (`src/inject`):
    - Receives data via message listeners
    - Performs image processing (split, filter, render)
    - Intercepts tile fetch and applies overlays

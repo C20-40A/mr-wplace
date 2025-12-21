@@ -4,7 +4,7 @@
  */
 
 import { WplaceUserData } from "../types";
-import { statusManagerSingleton } from "../user-status/status-manager";
+import { statusManagerSingleton } from "../features/user-status/status-manager";
 
 export const handleUserStatusUpdate = (userData: WplaceUserData): void => {
   // Initialize status manager if not exists

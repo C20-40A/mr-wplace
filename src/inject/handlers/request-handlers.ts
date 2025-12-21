@@ -3,8 +3,8 @@ import {
   getStatsPerImage,
   getOverlayPixelColor,
   perTileColorStats,
-} from "../tile-draw";
-import { computeTotalStatsFromImage } from "../tile-draw/stats/compute-total";
+} from "../features/tile-draw";
+import { computeTotalStatsFromImage } from "../features/tile-draw";
 
 /**
  * Handle aggregated color stats request

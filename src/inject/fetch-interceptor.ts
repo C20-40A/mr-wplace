@@ -1,13 +1,13 @@
-import { drawOverlayLayersOnTile } from "./tile-draw";
-import { invalidateTileCache } from "./cache-storage";
-import { handleUserStatusUpdate } from "./handlers/user-status-handler";
-import { WplaceUserData } from "./types";
 import {
+  drawOverlayLayersOnTile,
   checkStateChanged,
   getCachedBlob,
   setCachedBlob,
   invalidateTile,
-} from "./tile-draw/last-modified-cache";
+} from "./features/tile-draw";
+import { invalidateTileCache } from "./cache-storage";
+import { handleUserStatusUpdate } from "./handlers/user-status-handler";
+import { WplaceUserData } from "./types";
 
 /**
  * Setup fetch interceptor to handle tile requests and user data

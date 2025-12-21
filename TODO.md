@@ -1,5 +1,6 @@
 # メイン
 
+- setupGalleryV2Handlers remove
 - unplaced only の背景色変更&i18n
 - popup の i18n
 - theme = Halloween

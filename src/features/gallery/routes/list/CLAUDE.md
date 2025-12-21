@@ -61,7 +61,7 @@ Progress bars were not displaying in the gallery list, despite color filter and 
 
 **Statistics data existed only in inject context but was not being fetched when rendering the gallery list.**
 
-- `perTileColorStats` Map exists in `inject/tile-draw/states-inject.ts`
+- `perTileColorStats` Map exists in `inject/features/tile-draw/states-inject.ts`
 - Statistics are computed in background when images are added (`computeStatsInBackground`)
 - GalleryList was rendering items directly from storage without fetching inject-side stats
 - `ImageGridComponent` expected `currentColorStats` and `totalColorStats` but received undefined
@@ -74,7 +74,7 @@ Implemented a request-response pattern to fetch per-image statistics from inject
 
 ### 1. Inject-Side Stats Aggregation
 
-**File**: `src/inject/tile-draw/utils/getStatsPerImage.ts` (NEW)
+**File**: `src/inject/features/tile-draw/utils/getStatsPerImage.ts` (NEW)
 
 ```typescript
 export const getStatsPerImage = (
@@ -329,7 +329,7 @@ Statistics are calculated at multiple points:
 ### 1. Background Calculation (Primary)
 
 **Trigger**: When image is added to overlay layers
-**File**: `src/inject/tile-draw/states-inject.ts:66-96`
+**File**: `src/inject/features/tile-draw/states-inject.ts:66-96`
 
 ```typescript
 const computeStatsInBackground = (
@@ -418,7 +418,7 @@ const recomputeAllStats = (colorFilter?: number[][]): void => {
 ### 3. Tile Rendering (Fallback)
 
 **Trigger**: When tiles are rendered with overlay
-**File**: `src/inject/tile-draw/tile-overlay-renderer.ts`
+**File**: `src/inject/features/tile-draw/tile-overlay-renderer.ts`
 
 Statistics are also calculated during actual tile rendering as a fallback mechanism.
 
@@ -699,13 +699,13 @@ When modifying gallery list or statistics:
 - `src/features/gallery/routes/list/ui.ts` - UI rendering
 - `src/features/gallery/routes/list/components/ImageGridComponent.ts` - Grid component
 - `src/utils/inject-bridge.ts` - Content ↔ Inject communication bridge
-- `src/inject/tile-draw/utils/getStatsPerImage.ts` - Inject-side aggregation
+- `src/inject/features/tile-draw/utils/getStatsPerImage.ts` - Inject-side aggregation
 - `src/inject/message-handler.ts` - Request/response handling
 
 ### Supporting Files
 
-- `src/inject/tile-draw/states-inject.ts` - Overlay layers management
-- `src/inject/tile-draw/utils/computeStatsForImage.ts` - Background calculation
+- `src/inject/features/tile-draw/states-inject.ts` - Overlay layers management
+- `src/inject/features/tile-draw/utils/computeStatsForImage.ts` - Background calculation
 - `src/features/gallery/storage.ts` - Gallery storage interface
 - `src/features/gallery/common-actions.ts` - Shared actions (toggle, goto)
 

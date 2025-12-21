@@ -1,7 +1,7 @@
 import {
   addImageToOverlayLayers,
   removePreparedOverlayImageByKey,
-} from "../tile-draw";
+} from "../features/tile-draw";
 import { loadImageBitmap } from "../utils/image-loader";
 
 /**
@@ -21,7 +21,7 @@ export const handleGalleryImagesV2 = async (data: {
     timestamp: number;
   }>;
 }): Promise<void> => {
-  const { overlayLayers } = await import("../tile-draw");
+  const { overlayLayers } = await import("../features/tile-draw");
   const { invalidateTileCache } = await import("../cache-storage");
 
   // Collect all affected tiles (old and new) for cache invalidation
@@ -64,7 +64,9 @@ export const handleGalleryImagesV2 = async (data: {
   }
 
   // Re-import overlayLayers after removal (removePreparedOverlayImageByKey replaces the array)
-  const { overlayLayers: currentOverlayLayers } = await import("../tile-draw");
+  const { overlayLayers: currentOverlayLayers } = await import(
+    "../features/tile-draw"
+  );
 
   const imageKeys: string[] = [];
 
@@ -85,7 +87,12 @@ export const handleGalleryImagesV2 = async (data: {
 
     // Add directly to overlay layers with affectedTiles for efficient lookup
     currentOverlayLayers.push({
-      coords: [item.coords.TLX, item.coords.TLY, item.coords.PxX, item.coords.PxY],
+      coords: [
+        item.coords.TLX,
+        item.coords.TLY,
+        item.coords.PxX,
+        item.coords.PxY,
+      ],
       tiles: null, // Tiles loaded on-demand from IndexedDB v2
       imageKey: item.id,
       drawEnabled: true,
@@ -147,7 +154,9 @@ export const handleSnapshotsUpdate = async (data: {
       // Load snapshot blob from IndexedDB
       const blob = await repository.getSnapshot(drawState.snapshotId);
       if (!blob) {
-        console.warn(`🧑‍🎨 : Snapshot ${drawState.snapshotId} not found in IndexedDB`);
+        console.warn(
+          `🧑‍🎨 : Snapshot ${drawState.snapshotId} not found in IndexedDB`
+        );
         continue;
       }
 

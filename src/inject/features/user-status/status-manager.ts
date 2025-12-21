@@ -5,10 +5,10 @@
  */
 
 import { StatusUIComponents } from "./ui-components";
-import { StatusCalculator } from "../../features/user-status/services/calculator";
-import { TimerService } from "../../features/user-status/services/timer-service";
-import { setExtraColorsBitmap } from "../states/colorFilterState";
-import type { WplaceUserData } from "../types";
+import { StatusCalculator } from "../../../features/user-status/services/calculator";
+import { TimerService } from "../../../features/user-status/services/timer-service";
+import { setExtraColorsBitmap } from "../../states/colorFilterState";
+import type { WplaceUserData } from "../../types";
 import { WPlaceUserData } from "@/types/user-data";
 
 class StatusManager {

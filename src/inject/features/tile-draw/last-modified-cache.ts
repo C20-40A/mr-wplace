@@ -6,7 +6,7 @@
 import {
   getColorFilterState,
   getEnhancedMode,
-} from "../states/colorFilterState";
+} from "../../states/colorFilterState";
 import { overlayLayers } from "./states";
 
 const MAX_CACHE_SIZE = 24;

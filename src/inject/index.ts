@@ -68,9 +68,9 @@ import { initSnapshotRepository } from "./db/snapshot-repository";
       }),
 
       // Setup map observer
-      Promise.resolve(setupMapObserver()).catch((error) => {
-        console.error("🧑‍🎨: Failed to setup map observer:", error);
-      }),
+      // Promise.resolve(setupMapObserver()).catch((error) => {
+      //   console.error("🧑‍🎨: Failed to setup map observer:", error);
+      // }),
     ]);
 
     console.log("🧑‍🎨: Async initialization complete");

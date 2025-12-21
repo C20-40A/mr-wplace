@@ -45,11 +45,13 @@ The Data Saver feature provides **offline tile caching** with persistent storage
 ### Context Separation
 
 **Content Script Context** (`src/features/data-saver/`):
+
 - UI management (FAB button, settings modal)
 - Storage operations (Chrome storage API)
 - IndexedDB access for content script side
 
 **Inject Context** (`src/inject/`):
+
 - Tile interception and processing
 - IndexedDB access for inject side (separate instance)
 - Cache management with LRU eviction
@@ -73,25 +75,28 @@ src/inject/
 
 The caching behavior depends on **data saver state** and **cache existence**:
 
-| Data Saver | Cache Exists | Behavior |
-|-----------|--------------|----------|
-| OFF       | NO           | ❌ No caching. Fetch & process only. |
-| OFF       | YES          | ✅ Process tile and update cache. |
-| ON        | NO           | ✅ Fetch, process, and cache. |
-| ON        | YES          | ⚡ Return cached tile (fastest). |
+| Data Saver | Cache Exists | Behavior                             |
+| ---------- | ------------ | ------------------------------------ |
+| OFF        | NO           | ❌ No caching. Fetch & process only. |
+| OFF        | YES          | ✅ Process tile and update cache.    |
+| ON         | NO           | ✅ Fetch, process, and cache.        |
+| ON         | YES          | ⚡ Return cached tile (fastest).     |
 
 ### Case Breakdown
 
 1. **Case 1: Data Saver OFF, No Cache**
+
    - Normal operation, no caching
    - Tiles are processed but not stored
 
 2. **Case 2: Data Saver OFF, Cache Exists**
+
    - User previously had data saver ON
    - Update existing cache entries
    - Keeps cache warm for when data saver is re-enabled
 
 3. **Case 3: Data Saver ON, No Cache**
+
    - First visit to this tile with data saver ON
    - Fetch, process, and store for future use
 
@@ -109,6 +114,7 @@ When cache size exceeds `maxCacheSize`, the **Least Recently Used (LRU)** evicti
 3. Eviction continues until cache size is within limit
 
 **Example:**
+
 ```
 maxCacheSize = 100
 currentSize = 105
@@ -136,6 +142,7 @@ currentSize = 105
 **Key:** `"${tileX},${tileY}"` (e.g., `"0,0"`)
 
 **Value:**
+
 ```typescript
 {
   blob: Blob,           // Processed tile as PNG blob
@@ -150,11 +157,13 @@ currentSize = 105
 Located in bottom-right corner alongside other map controls.
 
 **States:**
+
 - 🟢 Green glow: Data saver ON
 - ⚪ Default: Data saver OFF
 - 🔧 Cog icon: Opens settings modal (top-right overlay)
 
 **Features:**
+
 - Toggle data saver on/off
 - Settings modal access
 - Hover scale animation
@@ -164,27 +173,33 @@ Located in bottom-right corner alongside other map controls.
 Comprehensive cache management interface with:
 
 #### 1. Header
+
 - Title: "Offline Cache Settings"
 - Subtitle: "Manage persistent tile cache"
 - Icon: Document/storage icon
 
 #### 2. Info Alert
+
 - Explains what the feature does
 - Mentions IndexedDB storage
 - Highlights offline capability
 
 #### 3. Statistics Grid
+
 **Left Card - Cached Tiles:**
+
 - Current cache count
 - Percentage of limit
 - Primary color theme
 
 **Right Card - Max Capacity:**
+
 - Maximum cache size setting
 - Current limit display
 - Secondary color theme
 
 #### 4. Cache Size Slider
+
 - Range: 10 to 1000 tiles
 - Step: 10 tiles
 - Real-time updates:
@@ -193,6 +208,7 @@ Comprehensive cache management interface with:
 - Calculation: ~50KB per tile average
 
 #### 5. Progress Bar
+
 - Visual representation of cache usage
 - Color coding:
   - 🟦 Blue (primary): 0-69% usage
@@ -200,7 +216,9 @@ Comprehensive cache management interface with:
   - 🔴 Red (error): 90-100% usage
 
 #### 6. Action Buttons
+
 **Clear All Cache:**
+
 - Deletes all cached tiles from IndexedDB
 - Clears memory cache in inject context
 - Confirmation dialog before execution
@@ -208,12 +226,14 @@ Comprehensive cache management interface with:
 - Success feedback (green checkmark)
 
 **Refresh Stats:**
+
 - Re-queries IndexedDB for current cache size
 - Updates all statistics displays
 - Loading state with spinner
 - Useful after browser operations or debugging
 
 #### 7. Footer Buttons
+
 - **Cancel:** Close without saving
 - **Save Settings:** Apply new cache size and close
 
@@ -272,15 +292,21 @@ They access the **same IndexedDB database** but in different contexts.
 
 ```typescript
 // Cache size update
-window.postMessage({
-  source: "mr-wplace-cache-size-update",
-  maxCacheSize: number
-}, "*");
+window.postMessage(
+  {
+    source: "mr-wplace-cache-size-update",
+    maxCacheSize: number,
+  },
+  "*"
+);
 
 // Cache clear request
-window.postMessage({
-  source: "mr-wplace-cache-clear"
-}, "*");
+window.postMessage(
+  {
+    source: "mr-wplace-cache-clear",
+  },
+  "*"
+);
 ```
 
 ### Handlers (inject/message-handler.ts)
@@ -331,14 +357,15 @@ await window.mrWplaceDataSaver.tileCacheDB.setCachedTile(
 
 ### Storage Size Estimates
 
-| Cache Size | Estimated Storage | Use Case |
-|-----------|------------------|----------|
-| 10 tiles  | ~0.5 MB         | Minimal cache, testing |
-| 100 tiles | ~5 MB           | Default, good for casual use |
-| 500 tiles | ~25 MB          | Heavy users, large maps |
-| 1000 tiles | ~50 MB         | Maximum, for offline archives |
+| Cache Size | Estimated Storage | Use Case                      |
+| ---------- | ----------------- | ----------------------------- |
+| 10 tiles   | ~0.5 MB           | Minimal cache, testing        |
+| 100 tiles  | ~5 MB             | Default, good for casual use  |
+| 500 tiles  | ~25 MB            | Heavy users, large maps       |
+| 1000 tiles | ~50 MB            | Maximum, for offline archives |
 
 **Note:** Actual size varies based on:
+
 - Tile content (more detail = larger size)
 - Number of overlays applied
 - PNG compression efficiency
@@ -352,6 +379,7 @@ await window.mrWplaceDataSaver.tileCacheDB.setCachedTile(
 ### Network Impact
 
 When data saver is ON:
+
 - ✅ Cached tiles: 0 network requests
 - ⚠️ Cache miss: 1 network request (same as OFF)
 - 💾 After initial load, most tiles are cached
@@ -389,16 +417,19 @@ for (const [key, blob] of window.mrWplaceDataSaver.tileCache) {
 ### Common Issues
 
 **Issue:** Cache not persisting across reloads
+
 - ✅ Check IndexedDB is initialized: `await tileCacheDB.init()`
 - ✅ Verify data saver is ON
 - ✅ Check browser storage quota not exceeded
 
 **Issue:** Tiles not being cached
+
 - ✅ Ensure `window.mrWplaceDataSaver.enabled === true`
 - ✅ Check fetch-interceptor is running
 - ✅ Verify tiles match pattern `/tiles/\d+/\d+\.png/`
 
 **Issue:** Cache size not updating in UI
+
 - ✅ Click "Refresh Stats" button
 - ✅ Check console for errors
 - ✅ Verify IndexedDB is accessible (not private browsing)
@@ -440,7 +471,7 @@ When modifying data-saver code:
 For understanding the full tile processing pipeline:
 
 - `src/inject/fetch-interceptor.ts` - Tile request interception
-- `src/inject/tile-draw/tile-overlay-renderer.ts` - Tile processing with overlays
+- `src/inject/features/tile-draw/tile-overlay-renderer.ts` - Tile processing with overlays
 - `src/inject/handlers/state-handlers.ts` - Message handlers for cache operations
 - `src/content.ts` - Initial cache size sync on extension load
 - `CLAUDE.md` (root) - Overall architecture and inject context details

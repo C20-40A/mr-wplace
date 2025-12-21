@@ -1,5 +1,5 @@
 import { TILE_DRAW_CONSTANTS, TileCoords } from "./constants";
-import { latLngToTilePixel } from "../../utils/coordinate";
+import { latLngToTilePixel } from "../../../utils/coordinate";
 import type { TileDrawInstance, ColorStats, EnhancedMode } from "./types";
 import {
   getAuxiliaryColor,
@@ -12,7 +12,7 @@ import {
 } from "./image-processing/pixel-processing";
 import { processGpuColorFilter } from "./filters/gpu-filter";
 import { processCpuColorFilter } from "./filters/cpu-filter";
-import { blobToPixels } from "../../utils/pixel-converters";
+import { blobToPixels } from "../../../utils/pixel-converters";
 import { overlayLayers, perTileColorStats } from "./states";
 
 /**
@@ -519,7 +519,7 @@ const applyOverlayProcessing = async (
 
   // カラーフィルター取得
   const { isColorFilterActive, getSelectedRGBs } = await import(
-    "../states/colorFilterState"
+    "../../states/colorFilterState"
   );
   const colorFilter = isColorFilterActive() ? getSelectedRGBs() : undefined;
 
@@ -771,7 +771,7 @@ export const drawOverlayLayersOnTile = async (
   }
 
   // 描画モードを取得
-  const { getEnhancedMode } = await import("../states/colorFilterState");
+  const { getEnhancedMode } = await import("../../states/colorFilterState");
   const mode = getEnhancedMode();
 
   // 透明背景に複数オーバーレイが重なった合成画像を出力
@@ -787,12 +787,22 @@ export const drawOverlayLayersOnTile = async (
     if (!paintedTilebitmap) {
       // Try new GalleryRepository v2 first
       try {
-        const { getGalleryRepository } = await import("../db/gallery-repository");
+        const { getGalleryRepository } = await import(
+          "../../db/gallery-repository"
+        );
         const repoV2 = getGalleryRepository();
-        console.log(`🧑‍🎨 : Trying to load tile [${instance.imageKey}, ${tileKey}], repoV2 initialized=${!!repoV2}`);
+        console.log(
+          `🧑‍🎨 : Trying to load tile [${
+            instance.imageKey
+          }, ${tileKey}], repoV2 initialized=${!!repoV2}`
+        );
         if (repoV2) {
           const tileBlob = await repoV2.getTile(instance.imageKey, tileKey);
-          console.log(`🧑‍🎨 : getTile result for [${instance.imageKey}, ${tileKey}]: ${tileBlob ? `Blob(${tileBlob.size})` : 'null'}`);
+          console.log(
+            `🧑‍🎨 : getTile result for [${instance.imageKey}, ${tileKey}]: ${
+              tileBlob ? `Blob(${tileBlob.size})` : "null"
+            }`
+          );
           if (tileBlob) {
             paintedTilebitmap = await createImageBitmap(tileBlob);
             // Cache in memory for faster subsequent access

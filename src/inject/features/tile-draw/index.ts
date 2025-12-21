@@ -15,3 +15,11 @@ export {
 
 export { getAggregatedColorStats } from "./stats/get-aggregated";
 export { getStatsPerImage } from "./stats/get-per-image";
+export {
+  checkStateChanged,
+  getCachedBlob,
+  setCachedBlob,
+  invalidateTile,
+} from "./last-modified-cache";
+
+export { computeTotalStatsFromImage } from "./stats/compute-total";

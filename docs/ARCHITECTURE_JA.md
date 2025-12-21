@@ -113,7 +113,7 @@ IndexedDB layers: isOptimized=true
 
 ### Tile Draw（描画処理）
 
-**場所:** `src/inject/tile-draw/tile-overlay-renderer.ts`
+**場所:** `src/inject/features/tile-draw/tile-overlay-renderer.ts`
 
 **3 つのロード戦略:**
 
@@ -303,22 +303,22 @@ if (layerMetadata && !layerMetadata.isOptimized) {
 
 ### Inject Script（ページコンテキスト）
 
-| ファイル                                        | 役割                                |
-| ----------------------------------------------- | ----------------------------------- |
-| `src/inject/index.ts`                           | 初期化（fetch override、IndexedDB） |
-| `src/inject/fetch-interceptor.ts`               | タイル取得・キャッシュ              |
-| `src/inject/handlers/overlay-handlers.ts`       | Gallery 処理、3 戦略                |
-| `src/inject/tile-draw/tile-overlay-renderer.ts` | 描画パイプライン                    |
-| `src/inject/db/schema.ts`                       | データ型定義                        |
-| `src/inject/workers/migration.worker.ts`        | バックグラウンド最適化              |
+| ファイル                                                 | 役割                                |
+| -------------------------------------------------------- | ----------------------------------- |
+| `src/inject/index.ts`                                    | 初期化（fetch override、IndexedDB） |
+| `src/inject/fetch-interceptor.ts`                        | タイル取得・キャッシュ              |
+| `src/inject/handlers/overlay-handlers.ts`                | Gallery 処理、3 戦略                |
+| `src/inject/features/tile-draw/tile-overlay-renderer.ts` | 描画パイプライン                    |
+| `src/inject/db/schema.ts`                                | データ型定義                        |
+| `src/inject/workers/migration.worker.ts`                 | バックグラウンド最適化              |
 
 ### 状態管理
 
-| ファイル                                | 役割                               |
-| --------------------------------------- | ---------------------------------- |
-| `src/inject/tile-draw/states.ts`        | overlayLayers[], perTileColorStats |
-| `src/inject/states/migrationState.ts`   | , WorkerMessenger                  |
-| `src/inject/states/colorFilterState.ts` | カラーフィルタ設定                 |
+| ファイル                                  | 役割                               |
+| ----------------------------------------- | ---------------------------------- |
+| `src/inject/features/tile-draw/states.ts` | overlayLayers[], perTileColorStats |
+| `src/inject/states/migrationState.ts`     | , WorkerMessenger                  |
+| `src/inject/states/colorFilterState.ts`   | カラーフィルタ設定                 |
 
 ---
 

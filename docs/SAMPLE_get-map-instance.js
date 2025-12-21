@@ -25,7 +25,7 @@
           for (const m of v.maps) {
             if (typeof m?.flyTo !== "function") continue;
 
-            document.head.__bmmap = m;
+            document.head.__wplaceMap = m;
             restore();
             break;
           }
@@ -40,8 +40,8 @@
 
 const forceTrigger = () => {
   console.log("clickするで");
-  if (document.head.__bmmap) {
-    console.log(document.head.__bmmap);
+  if (document.head.__wplaceMap) {
+    console.log(document.head.__wplaceMap);
     console.log("あるやん。もうええやろ");
     return;
   }
