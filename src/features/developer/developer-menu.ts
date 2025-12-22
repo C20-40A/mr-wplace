@@ -24,8 +24,18 @@ import {
   cleanStorageSync,
 } from "./debugGallerySync";
 
+import { storage } from "@/utils/browser-api";
+
 // ==========================================
 const ACTIONS = [
+  {
+    label: "🔴 Turn OFF Dev Mode",
+    action: async () => {
+      if (!confirm("Turn off developer mode? Page will reload.")) return;
+      await storage.set({ "mr-wplace-auto-spoit-dev-mode": false });
+      location.reload();
+    },
+  },
   {
     label: "Legacy Gallery Import",
     action: debugLegacyImport,
@@ -150,8 +160,8 @@ export const setupDeveloperMenu = (): void => {
     );
     btn.onmouseover = () => (btn.style.background = "#666");
     btn.onmouseout = () => (btn.style.background = "#444");
-    btn.onclick = () => {
-      action();
+    btn.onclick = async () => {
+      await Promise.resolve(action());
       menu.style.display = "none";
     }; // 実行後閉じる
     menu.appendChild(btn);

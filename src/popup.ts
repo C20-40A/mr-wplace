@@ -47,6 +47,67 @@ const updateUI = (): void => {
   if (resetBtnLabel) resetBtnLabel.textContent = t`${"reset_gallery"}`;
 };
 
+// Dev mode easter egg
+let titleClickCount = 0;
+const setupDevModeEasterEgg = (): void => {
+  const title = document.querySelector(".header h2") as HTMLHeadingElement;
+  if (!title) return;
+
+  title.style.cursor = "pointer";
+  title.style.userSelect = "none";
+
+  title.addEventListener("click", async () => {
+    titleClickCount++;
+
+    // Visual effect based on click count
+    const effects = [
+      () => title.style.transform = "scale(1.1)",
+      () => title.style.color = "#ff0",
+      () => title.style.transform = "rotate(5deg)",
+      () => title.style.color = "#0ff",
+      () => title.style.transform = "rotate(-5deg) scale(1.1)",
+      () => title.style.color = "#f0f",
+      () => title.style.transform = "rotate(10deg)",
+      () => title.style.textShadow = "0 0 10px #fff",
+      () => title.style.transform = "rotate(-10deg) scale(1.2)",
+      () => {
+        title.style.animation = "rainbow 0.5s infinite";
+        const style = document.createElement("style");
+        style.textContent = `
+          @keyframes rainbow {
+            0% { color: #f00; transform: scale(1.2) rotate(0deg); }
+            33% { color: #0f0; transform: scale(1.3) rotate(10deg); }
+            66% { color: #00f; transform: scale(1.2) rotate(-10deg); }
+            100% { color: #f00; transform: scale(1.2) rotate(0deg); }
+          }
+        `;
+        document.head.appendChild(style);
+      },
+    ];
+
+    if (titleClickCount <= effects.length) {
+      effects[titleClickCount - 1]?.();
+    }
+
+    if (titleClickCount === 10) {
+      // Enable dev mode
+      const { storage } = await import("@/utils/browser-api");
+      await storage.set({ "mr-wplace-auto-spoit-dev-mode": true });
+
+      // Notify content script to reload
+      const [activeTab] = await tabs.query({ active: true, currentWindow: true });
+      if (activeTab.id) {
+        await tabs.reload(activeTab.id);
+      }
+
+      setTimeout(() => {
+        alert("🛠️ Developer Mode Activated!");
+        window.close();
+      }, 300);
+    }
+  });
+};
+
 document.addEventListener("DOMContentLoaded", async () => {
   const languageSelect = document.getElementById(
     "language-select"
@@ -103,6 +164,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (mapInstanceReady) {
     document.getElementById("navigation-setting")?.removeAttribute("style"); // remove display: none
   }
+
+  // Setup dev mode easter egg
+  setupDevModeEasterEgg();
 
   // 言語変更イベント
   languageSelect.addEventListener("change", async (event) => {
