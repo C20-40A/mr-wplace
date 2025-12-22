@@ -11,6 +11,7 @@ import {
   handleShowUnplacedOnlyUpdate,
   handleColorFilterUpdate,
   handleCacheClear,
+  handleLayerSortUpdate,
 } from "./handlers/state-handlers";
 import {
   handleStatsRequest,
@@ -145,6 +146,7 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-tile-boundaries-update": (data) =>
     changeTileBoundaryVisibility(data.visible),
   "mr-wplace-cache-clear": handleCacheClear,
+  "mr-wplace-layer-sort-update": handleLayerSortUpdate,
   "mr-wplace-gallery-images-v2": handleGalleryImagesV2,
   "mr-wplace-snapshots": handleSnapshotsUpdate,
   "mr-wplace-text-layers": handleTextLayersUpdate,

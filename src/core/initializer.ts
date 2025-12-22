@@ -20,6 +20,7 @@ import {
   tileBoundariesAPI,
   dataSaverAPI,
 } from "@/features/map-filter";
+import { layerSortAPI } from "@/features/layer-sort";
 import { AutoSpoit } from "@/features/developer";
 import { ColorIsolate } from "@/features/color-isolate";
 import { PositionInfo } from "@/features/position-info";
@@ -82,6 +83,7 @@ export const initializeFeatures = async () => {
     highContrastAPI.initHighContrast(), // 6. HighContrast
     tileBoundariesAPI.initTileBoundaries(), // 7. TileBoundaries
     dataSaverAPI.initDataSaver(), // 8. DataSaver
+    layerSortAPI.initLayerSort(), // 9. LayerSort
   ]);
 
   // 初期化完了を待つ

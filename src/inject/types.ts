@@ -80,6 +80,7 @@ declare global {
     mrWplaceTextLayerKeys?: Set<string>;
     mrWplaceComputeDevice?: "gpu" | "cpu";
     mrWplaceShowUnplacedOnly?: boolean;
+    mrWplaceLayerSortEnabled?: boolean;
     mrWplaceTempPaintedByUser?: PaintedByUser;
     selectedColor?: string; // WPlace's selected color (e.g., "#FF0000")
   }

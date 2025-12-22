@@ -1,6 +1,7 @@
 import { EnhancedMode } from "@/types/image";
 import { applyTheme } from "../theme-manager";
 import { updateColorFilterState } from "../states/colorFilterState";
+import { sortMapLayers } from "../features/map-instance";
 
 /**
  * Handle theme update
@@ -81,5 +82,17 @@ export const handleCacheClear = (): void => {
   if (window.mrWplaceDataSaver?.tileCache) {
     window.mrWplaceDataSaver.tileCache.clear();
     console.log("🧑‍🎨 : Memory cache cleared");
+  }
+};
+
+/**
+ * Handle layer sort update
+ */
+export const handleLayerSortUpdate = (data: { enabled: boolean }): void => {
+  window.mrWplaceLayerSortEnabled = data.enabled;
+  console.log("🧑‍🎨 : Layer sort updated:", data.enabled);
+
+  if (data.enabled) {
+    sortMapLayers();
   }
 };

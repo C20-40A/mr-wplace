@@ -27,6 +27,9 @@ import { resolveMapInstanceAsync } from "./features/map-instance";
   // Initialize show unplaced only (default: false)
   window.mrWplaceShowUnplacedOnly = false;
 
+  // Initialize layer sort enabled (default: true)
+  window.mrWplaceLayerSortEnabled = true;
+
   // Setup fetch interceptor synchronously (no await)
   try {
     setupFetchInterceptor();
@@ -68,7 +71,7 @@ import { resolveMapInstanceAsync } from "./features/map-instance";
       }),
 
       // Capture WPlace map instance
-      resolveMapInstanceAsync().then((mapInstance) => {
+      resolveMapInstanceAsync().then(async (mapInstance) => {
         if (mapInstance && window.mrWplace) {
           window.mrWplace.wplaceMap = mapInstance;
           // Notify content script that map instance is ready
@@ -79,6 +82,21 @@ import { resolveMapInstanceAsync } from "./features/map-instance";
             },
             "*"
           );
+
+          // Apply layer sort if enabled
+          if (window.mrWplaceLayerSortEnabled) {
+            const { sortMapLayers } = await import("./features/map-instance");
+            // Wait for style to load, then sort layers
+            const waitForStyleAndSort = () => {
+              const map = mapInstance as any;
+              if (map.isStyleLoaded && map.isStyleLoaded()) {
+                sortMapLayers();
+              } else {
+                setTimeout(waitForStyleAndSort, 100);
+              }
+            };
+            waitForStyleAndSort();
+          }
         }
       }),
 

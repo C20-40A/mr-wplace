@@ -19,6 +19,11 @@ import {
   getCloseConfirm,
   setCloseConfirm,
 } from "./states/close-confirm";
+import {
+  loadLayerSortFromStorage,
+  getLayerSort,
+  setLayerSort,
+} from "./states/layer-sort";
 
 import { tabs } from "@/utils/browser-api";
 import { FEEDBACK_FORM_URL } from "@/constants/url";
@@ -121,6 +126,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const closeConfirmSelect = document.getElementById(
     "close-confirm-select"
   ) as HTMLSelectElement;
+  const layerSortSelect = document.getElementById(
+    "layer-sort-select"
+  ) as HTMLSelectElement;
 
   // Set Buy Me a Coffee image
   const coffeeImg = document.getElementById("coffee-img") as HTMLImageElement;
@@ -142,6 +150,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadCloseConfirmFromStorage();
   const currentCloseConfirm = getCloseConfirm();
 
+  // layer sort初期化
+  await loadLayerSortFromStorage();
+  const currentLayerSort = getLayerSort();
+
   // Get map instance ready state from content script
   const currentTab = (await tabs.query({ active: true, currentWindow: true }))[0];
   let mapInstanceReady = false;
@@ -158,6 +170,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (navigationSelect) navigationSelect.value = currentMode.toString();
   lockButtonEnhancerSelect.value = currentLockButtonEnhancer.toString();
   closeConfirmSelect.value = currentCloseConfirm.toString();
+  layerSortSelect.value = currentLayerSort.toString();
   updateUI();
 
   // Show navigation setting only if map instance is ready
@@ -234,6 +247,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     if (activeTab.id) {
       await tabs.reload(activeTab.id);
+    }
+  });
+
+  // Layer sort変更イベント
+  layerSortSelect.addEventListener("change", async (event) => {
+    const target = event.target as HTMLSelectElement;
+    const newEnabled = target.value === "true";
+
+    // 設定を保存
+    await setLayerSort(newEnabled);
+
+    // content.tsに設定変更を通知
+    const [activeTab] = await tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (activeTab.id) {
+      await tabs.sendMessage(activeTab.id, {
+        type: "LAYER_SORT_CHANGED",
+        enabled: newEnabled,
+      });
     }
   });
 

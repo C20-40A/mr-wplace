@@ -155,6 +155,13 @@ const registerMessageListeners = () => {
       return;
     }
 
+    if (message.type === "LAYER_SORT_CHANGED") {
+      // Layer sort設定を更新してinjectに通知
+      const { sendLayerSortToInject } = await import("@/features/layer-sort");
+      sendLayerSortToInject(message.enabled);
+      return;
+    }
+
     // Popup -> Content -> Inject bridge for gallery operations
     if (message.type === "GALLERY_SAVE_ITEM") {
       const { saveGalleryItem } = await import(
