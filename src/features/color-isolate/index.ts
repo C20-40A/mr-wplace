@@ -10,7 +10,6 @@ export class ColorIsolate {
   private originalSelectedColors: number[] = [];
   private lastSelectedColorId: number | null = null;
   private storageCheckInterval: number | null = null;
-  private modalObserver: MutationObserver | null = null;
 
   constructor() {
     this.init();
@@ -18,57 +17,6 @@ export class ColorIsolate {
 
   private async init(): Promise<void> {
     this.setupUI();
-    this.setupModalObserver();
-  }
-
-  private setupModalObserver(): void {
-    // paintモーダル（Paint pixel）の表示/非表示を監視
-    this.modalObserver = new MutationObserver(() => {
-      const paintModal = this.findPaintModal();
-
-      if (!paintModal && this.enabled) {
-        // モーダルが閉じた場合、監視を一時停止
-        this.pauseMonitoring();
-      } else if (
-        paintModal &&
-        this.enabled &&
-        this.storageCheckInterval === null
-      ) {
-        // モーダルが開いた場合、監視を再開
-        this.resumeMonitoring();
-      }
-    });
-
-    this.modalObserver.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-  }
-
-  private findPaintModal(): Element | null {
-    // Paint pixelヘッダーを探す
-    const headers = Array.from(document.querySelectorAll("h2"));
-    const paintHeader = headers.find((h2) =>
-      h2.textContent?.includes("Paint pixel")
-    );
-    return paintHeader
-      ? paintHeader.closest('.rounded-t-box, .modal-box, [role="dialog"]')
-      : null;
-  }
-
-  private pauseMonitoring(): void {
-    if (this.storageCheckInterval !== null) {
-      window.clearInterval(this.storageCheckInterval);
-      this.storageCheckInterval = null;
-      console.log("🧑‍🎨 : Color isolate monitoring paused (modal closed)");
-    }
-  }
-
-  private resumeMonitoring(): void {
-    if (this.enabled && this.storageCheckInterval === null) {
-      this.startMonitoring();
-      console.log("🧑‍🎨 : Color isolate monitoring resumed (modal opened)");
-    }
   }
 
   private setupUI(): void {
@@ -137,10 +85,24 @@ export class ColorIsolate {
 
   private async updateIsolatedColor(colorId: number): Promise<void> {
     const colorFilterManager = window.mrWplace?.colorFilterManager;
-    if (!colorFilterManager) return;
+    if (!colorFilterManager) {
+      console.warn("🧑‍🎨 : [DEBUG] colorFilterManager not found in updateIsolatedColor");
+      return;
+    }
+
+    console.log(
+      `🧑‍🎨 : [DEBUG] Before update - selected colors:`,
+      colorFilterManager.getSelectedColors()
+    );
 
     // 指定した色のみをenableにする
     await colorFilterManager.setSelectedColors([colorId]);
+
+    console.log(
+      `🧑‍🎨 : [DEBUG] After update - selected colors:`,
+      colorFilterManager.getSelectedColors()
+    );
+
     sendColorFilterToInject(colorFilterManager);
     console.log("🧑‍🎨 : Color isolate updated to color ID:", colorId);
   }

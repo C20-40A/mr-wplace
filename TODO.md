@@ -1,5 +1,6 @@
 # メイン
 
+- show selected color only が切り替わらない
 - setupGalleryV2Handlers remove
 - unplaced only の背景色変更&i18n
 - popup の i18n
