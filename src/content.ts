@@ -9,6 +9,10 @@ import {
   sendGalleryImagesToInject,
 } from "@/core/bridge";
 import { cleanupLegacyTmpTiles } from "@/features/time-travel";
+import {
+  setMapInstanceReady,
+  getMapInstanceReady,
+} from "@/states/map-instance-ready";
 
 // Re-export bridge functions for backward compatibility
 export {
@@ -50,7 +54,9 @@ const runMigrationWithModal = async (): Promise<void> => {
 
     if (result.failed.length > 0) {
       console.warn(
-        `🧑‍🎨 [Migration] Some items failed to migrate: ${result.failed.join(", ")}`
+        `🧑‍🎨 [Migration] Some items failed to migrate: ${result.failed.join(
+          ", "
+        )}`
       );
     }
 
@@ -131,9 +137,22 @@ const initializeMainFeatures = async () => {
   });
 };
 
-// メッセージリスナー（言語切替、ギャラリー更新）
+// メッセージリスナー
 const registerMessageListeners = () => {
+  // Listen for map instance captured message from inject
+  window.addEventListener("message", async (event: MessageEvent) => {
+    if (event.data.source === "mr-wplace-map-instance-captured") {
+      setMapInstanceReady(event.data.ready);
+      console.log("🧑‍🎨 : Map instance ready state updated:", event.data.ready);
+    }
+  });
+
   runtime.onMessage.addListener(async (message, _sender, sendResponse) => {
+    if (message.type === "GET_MAP_INSTANCE_READY") {
+      sendResponse({ ready: getMapInstanceReady() });
+      return true;
+    }
+
     if (message.type === "LOCALE_CHANGED") {
       // i18nマネージャーの状態を更新
       await I18nManager.init(message.locale);
@@ -241,17 +260,32 @@ const registerMessageListeners = () => {
 
     // Delegate to inject via postMessage
     if (message.type === "GALLERY_IMPORT") {
-      window.postMessage({ source: "mr-wplace-gallery-import", requestId: Date.now().toString() }, "*");
+      window.postMessage(
+        {
+          source: "mr-wplace-gallery-import",
+          requestId: Date.now().toString(),
+        },
+        "*"
+      );
       return;
     }
 
     if (message.type === "GALLERY_EXPORT") {
-      window.postMessage({ source: "mr-wplace-gallery-export", requestId: Date.now().toString() }, "*");
+      window.postMessage(
+        {
+          source: "mr-wplace-gallery-export",
+          requestId: Date.now().toString(),
+        },
+        "*"
+      );
       return;
     }
 
     if (message.type === "GALLERY_RESET") {
-      window.postMessage({ source: "mr-wplace-gallery-reset", requestId: Date.now().toString() }, "*");
+      window.postMessage(
+        { source: "mr-wplace-gallery-reset", requestId: Date.now().toString() },
+        "*"
+      );
       return;
     }
   });

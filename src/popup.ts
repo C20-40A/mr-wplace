@@ -24,6 +24,7 @@ import {
   getCloseConfirm,
   setCloseConfirm,
 } from "./states/close-confirm";
+
 import { tabs } from "@/utils/browser-api";
 import { FEEDBACK_FORM_URL } from "@/constants/url";
 import { BUY_ME_COFFEE_IMAGE } from "./assets/buyMeACoffee";
@@ -92,6 +93,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadCloseConfirmFromStorage();
   const currentCloseConfirm = getCloseConfirm();
 
+  // Get map instance ready state from content script
+  const currentTab = (await tabs.query({ active: true, currentWindow: true }))[0];
+  let mapInstanceReady = false;
+  if (currentTab?.id) {
+    try {
+      const response = await tabs.sendMessage(currentTab.id, { type: "GET_MAP_INSTANCE_READY" });
+      mapInstanceReady = response?.ready || false;
+    } catch (error) {
+      console.warn("🧑‍🎨 : Failed to get map instance ready state:", error);
+    }
+  }
+
   languageSelect.value = currentLocale;
   if (navigationSelect) navigationSelect.value = currentMode.toString();
   if (tileBoundariesSelect)
@@ -100,11 +113,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   closeConfirmSelect.value = currentCloseConfirm.toString();
   updateUI();
 
-  // Show tile boundaries setting only if supported
-  if (window.mrWplace?.wplaceMap) {
+  // Show tile boundaries setting only if map instance is ready
+  if (mapInstanceReady) {
     document
       .getElementById("tile-boundaries-setting")
       ?.removeAttribute("style"); // remove display: none
+    document.getElementById("navigation-setting")?.removeAttribute("style"); // remove display: none
   }
 
   // 言語変更イベント
@@ -131,14 +145,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // ナビゲーション変更イベント (currently disabled)
-  // navigationSelect.addEventListener("change", async (event) => {
-  //   const target = event.target as HTMLSelectElement;
-  //   const newMode = target.value === "true";
-  //
-  //   // 設定を保存
-  //   await setNavigationMode(newMode);
-  // });
+  // ナビゲーション変更イベント
+  navigationSelect?.addEventListener("change", async (event) => {
+    const target = event.target as HTMLSelectElement;
+    const newMode = target.value === "true";
+
+    // 設定を保存
+    await setNavigationMode(newMode);
+  });
 
   // タイル境界変更イベント (currently disabled)
   tileBoundariesSelect?.addEventListener("change", async (event) => {

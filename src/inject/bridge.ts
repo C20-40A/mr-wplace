@@ -10,7 +10,6 @@ import {
   handleComputeDeviceUpdate,
   handleShowUnplacedOnlyUpdate,
   handleColorFilterUpdate,
-  handleTileBoundariesUpdate,
   handleCacheClear,
 } from "./handlers/state-handlers";
 import {
@@ -21,15 +20,17 @@ import {
   handleComputeTotalStats,
 } from "./handlers/request-handlers";
 import { setupGalleryV2Handlers } from "./handlers/gallery-v2-handlers";
-import {
-  startAutoCanvasClick,
-  stopAutoCanvasClick,
-} from "./auto-canvas-click";
+import { startAutoCanvasClick, stopAutoCanvasClick } from "./auto-canvas-click";
 import {
   openFilePickerAndImport,
   exportAndDownload,
   resetGallery,
 } from "./utils/gallery-io";
+import {
+  changeTileBoundaryVisibility,
+  getMapInstanceFromWplace,
+  resolveMapInstanceAsync,
+} from "./features/map-instance";
 
 type MessageHandler = (data: any) => void | Promise<void>;
 
@@ -72,9 +73,11 @@ const handleFlyTo = (data: {
   const currentZoom = window.wplaceMap.getZoom();
 
   console.log(
-    `🧑‍🎨 : flyTo from (${currentCenter.lat.toFixed(2)}, ${currentCenter.lng.toFixed(
+    `🧑‍🎨 : flyTo from (${currentCenter.lat.toFixed(
       2
-    )}, z${currentZoom}) to (${lat.toFixed(2)}, ${lng.toFixed(2)}, z${zoom})`
+    )}, ${currentCenter.lng.toFixed(2)}, z${currentZoom}) to (${lat.toFixed(
+      2
+    )}, ${lng.toFixed(2)}, z${zoom})`
   );
 
   window.wplaceMap.flyTo({ center: [lng, lat], zoom });
@@ -83,11 +86,17 @@ const handleFlyTo = (data: {
 /**
  * Handle gallery import request
  */
-const handleGalleryImport = async (data: { requestId: string }): Promise<void> => {
+const handleGalleryImport = async (data: {
+  requestId: string;
+}): Promise<void> => {
   try {
     const result = await openFilePickerAndImport();
     window.postMessage(
-      { source: "mr-wplace-gallery-import-response", requestId: data.requestId, result },
+      {
+        source: "mr-wplace-gallery-import-response",
+        requestId: data.requestId,
+        result,
+      },
       "*"
     );
   } catch (error) {
@@ -105,11 +114,17 @@ const handleGalleryImport = async (data: { requestId: string }): Promise<void> =
 /**
  * Handle gallery export request
  */
-const handleGalleryExport = async (data: { requestId: string }): Promise<void> => {
+const handleGalleryExport = async (data: {
+  requestId: string;
+}): Promise<void> => {
   try {
     await exportAndDownload();
     window.postMessage(
-      { source: "mr-wplace-gallery-export-response", requestId: data.requestId, success: true },
+      {
+        source: "mr-wplace-gallery-export-response",
+        requestId: data.requestId,
+        success: true,
+      },
       "*"
     );
   } catch (error) {
@@ -127,11 +142,17 @@ const handleGalleryExport = async (data: { requestId: string }): Promise<void> =
 /**
  * Handle gallery reset request
  */
-const handleGalleryReset = async (data: { requestId: string }): Promise<void> => {
+const handleGalleryReset = async (data: {
+  requestId: string;
+}): Promise<void> => {
   try {
     const count = await resetGallery();
     window.postMessage(
-      { source: "mr-wplace-gallery-reset-response", requestId: data.requestId, count },
+      {
+        source: "mr-wplace-gallery-reset-response",
+        requestId: data.requestId,
+        count,
+      },
       "*"
     );
   } catch (error) {
@@ -155,7 +176,8 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-compute-device": handleComputeDeviceUpdate,
   "mr-wplace-show-unplaced-only": handleShowUnplacedOnlyUpdate,
   "mr-wplace-color-filter": handleColorFilterUpdate,
-  "mr-wplace-tile-boundaries-update": handleTileBoundariesUpdate,
+  "mr-wplace-tile-boundaries-update": (data) =>
+    changeTileBoundaryVisibility(data.visible),
   "mr-wplace-cache-clear": handleCacheClear,
   "mr-wplace-gallery-images-v2": handleGalleryImagesV2,
   "mr-wplace-snapshots": handleSnapshotsUpdate,
@@ -179,8 +201,6 @@ export const setupMessageHandler = (): void => {
     const { source } = event.data;
     const handler = messageHandlers[source];
 
-    if (handler) {
-      await handler(event.data);
-    }
+    if (handler) await handler(event.data);
   });
 };

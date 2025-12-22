@@ -1,9 +1,9 @@
 import { setupFetchInterceptor } from "./fetch-interceptor";
-import { setupMessageHandler } from "./message-handler";
+import { setupMessageHandler } from "./bridge";
 import { tileCacheDB } from "./cache-storage";
 import { initGalleryRepository } from "./db/gallery-repository";
 import { initSnapshotRepository } from "./db/snapshot-repository";
-import { getMapInstance } from "./features/map-instance";
+import { resolveMapInstanceAsync } from "./features/map-instance";
 
 // CRITICAL: Setup fetch interceptor IMMEDIATELY and SYNCHRONOUSLY
 // to catch /me requests before WPlace app code runs
@@ -68,9 +68,17 @@ import { getMapInstance } from "./features/map-instance";
       }),
 
       // Capture WPlace map instance
-      getMapInstance().then((mapInstance) => {
+      resolveMapInstanceAsync().then((mapInstance) => {
         if (mapInstance && window.mrWplace) {
           window.mrWplace.wplaceMap = mapInstance;
+          // Notify content script that map instance is ready
+          window.postMessage(
+            {
+              source: "mr-wplace-map-instance-captured",
+              ready: true,
+            },
+            "*"
+          );
         }
       }),
 

@@ -75,17 +75,6 @@ export const handleColorFilterUpdate = (data: {
 };
 
 /**
- * Handle tile boundaries visibility update
- */
-export const handleTileBoundariesUpdate = (data: {
-  visible: boolean;
-}): void => {
-  if (!window.mrWplace?.wplaceMap) return;
-  window.mrWplace.wplaceMap.showTileBoundaries = data.visible;
-  console.log("🧑‍🎨 : Tile boundaries updated:", data.visible);
-};
-
-/**
  * Handle cache clear request
  */
 export const handleCacheClear = (): void => {
