@@ -23,10 +23,7 @@ export {
 } from "./overlay-bridge";
 
 // Text
-export {
-  sendTextLayersToInject,
-  sendTileBoundariesToInject,
-} from "./text-bridge";
+export { sendTextLayersToInject } from "./text-bridge";
 
 // Stats
 export {
