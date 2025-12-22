@@ -2,4 +2,7 @@ export {
   resolveMapInstanceAsync,
   getMapInstanceFromWplace,
 } from "./get-map-instance";
-export { changeTileBoundaryVisibility } from "./map-control";
+export {
+  changeTileBoundaryVisibility,
+  handleMapInstanceFlyTo,
+} from "./map-control";

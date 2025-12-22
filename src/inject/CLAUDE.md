@@ -58,7 +58,7 @@ src/inject/
 
 - `mr-wplace-gallery-images-v2`: Gallery metadata with affectedTiles
 - `mr-wplace-snapshots`, `mr-wplace-text-layers`
-- `mr-wplace-theme-update`, `mr-wplace-color-filter`, `wplace-studio-flyto`
+- `mr-wplace-theme-update`, `mr-wplace-color-filter`, `mr-wplace-map-flyto`
 - **Gallery v2 bridge:** `mr-wplace-gallery-v2-save`, `mr-wplace-gallery-v2-delete`, etc.
 
 **inject → content:**

@@ -42,7 +42,7 @@ content.ts → inject script tag → inject/index.ts
 - `mr-wplace-snapshots`: Time-travel snapshot overlays
 - `mr-wplace-color-filter`: Color filter state
 - `mr-wplace-theme-update`: Theme changes
-- `wplace-studio-flyto`: Position navigation
+- `mr-wplace-map-flyto`: Position navigation
 
 **Popup → Content → Inject:**
 

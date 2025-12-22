@@ -21,7 +21,7 @@ export const gotoPosition = async ({ lat, lng, zoom }: Position) => {
 
   if (useFlyTo) {
     // Use smart navigation (flyTo for close distance, jumpTo for far distance)
-    window.postMessage({ source: "wplace-studio-flyto", lat, lng, zoom }, "*");
+    window.postMessage({ source: "mr-wplace-map-flyto", lat, lng, zoom }, "*");
   } else {
     // Use URL navigation (with reload)
     const url = new URL(window.location.href);

@@ -29,6 +29,7 @@ import {
 import {
   changeTileBoundaryVisibility,
   getMapInstanceFromWplace,
+  handleMapInstanceFlyTo,
   resolveMapInstanceAsync,
 } from "./features/map-instance";
 
@@ -45,42 +46,6 @@ const handleProcessedBlob = (data: any): void => {
     callback(processedBlob);
     window.tileProcessingQueue?.delete(blobID);
   }
-};
-
-/**
- * Handle flyTo/jumpTo requests
- */
-const handleFlyTo = (data: {
-  lat: number;
-  lng: number;
-  zoom: number;
-}): void => {
-  const { lat, lng, zoom } = data;
-
-  // If map instance not available, fallback to URL navigation
-  if (!window.wplaceMap) {
-    console.log("🧑‍🎨 : Map instance not available, using URL navigation");
-    const url = new URL(window.location.href);
-    url.searchParams.set("lat", lat.toString());
-    url.searchParams.set("lng", lng.toString());
-    url.searchParams.set("zoom", zoom.toString());
-    window.location.href = url.toString();
-    return;
-  }
-
-  // Get current position
-  const currentCenter = window.wplaceMap.getCenter();
-  const currentZoom = window.wplaceMap.getZoom();
-
-  console.log(
-    `🧑‍🎨 : flyTo from (${currentCenter.lat.toFixed(
-      2
-    )}, ${currentCenter.lng.toFixed(2)}, z${currentZoom}) to (${lat.toFixed(
-      2
-    )}, ${lng.toFixed(2)}, z${zoom})`
-  );
-
-  window.wplaceMap.flyTo({ center: [lng, lat], zoom });
 };
 
 /**
@@ -169,7 +134,8 @@ const handleGalleryReset = async (data: {
 
 const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-processed": handleProcessedBlob,
-  "wplace-studio-flyto": handleFlyTo,
+  "mr-wplace-map-flyto": (data: { lat: number; lng: number; zoom: number }) =>
+    handleMapInstanceFlyTo({ lat: data.lat, lng: data.lng, zoom: data.zoom }),
   "mr-wplace-theme-update": handleThemeUpdate,
   "mr-wplace-data-saver-update": handleDataSaverUpdate,
   "mr-wplace-cache-size-update": handleCacheSizeUpdate,
