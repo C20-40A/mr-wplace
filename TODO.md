@@ -1,6 +1,5 @@
 # メイン
 
-- show selected color only が切り替わらない
 - setupGalleryV2Handlers remove
 - unplaced only の背景色変更&i18n
 - popup の i18n
@@ -109,6 +108,14 @@
 - exclude_globs にメインのもの以外含める？
   - all_frames false (デフォルト)系は false．まあデフォルトが false だから不要か
 - dark/light テーマの i18n 不要になった
+
+# DONE v2.0.5
+
+- ステータスが表示されない問題の修正
+- show selected color only が切り替わらない問題の修正
+- マップインスタンス取得の復活
+- タイル境界の表示機能復活
+- スムーズなマップ移動方法の復活
 
 # DONE v2.0.2
 

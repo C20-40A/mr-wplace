@@ -18,6 +18,12 @@ import {
   debugClearLegacyTmpTiles,
 } from "./debugLegacyTmpTiles";
 
+import {
+  syncIndexedDBToStorage,
+  syncStorageToIndexedDB,
+  cleanStorageSync,
+} from "./debugGallerySync";
+
 // ==========================================
 const ACTIONS = [
   {
@@ -51,6 +57,18 @@ const ACTIONS = [
   {
     label: "Clear tile_tmp_* Data",
     action: debugClearLegacyTmpTiles,
+  },
+  {
+    label: "⚠️ DANGER: Sync IndexedDB → Storage",
+    action: syncIndexedDBToStorage,
+  },
+  {
+    label: "⚠️ DANGER: Sync Storage → IndexedDB",
+    action: syncStorageToIndexedDB,
+  },
+  {
+    label: "⚠️ DANGER: Clean Storage Sync",
+    action: cleanStorageSync,
   },
   {
     label: "Show LocalStorage",
