@@ -1,4 +1,3 @@
-import { RuntimeChargeData } from "../../../types/global";
 import { StatusCalculator } from "./calculator";
 
 export interface ChargeData {

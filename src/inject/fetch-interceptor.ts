@@ -41,7 +41,8 @@ export const setupFetchInterceptor = (): void => {
     }
 
     // Intercept /me endpoint for user data
-    if (url.includes("/me")) {
+    // IMPORTANT: Match only "/me" or "/me?" to avoid catching "/me/frames" etc.
+    if (url.match(/\/me(\?|$)/)) {
       console.log("🧑‍🎨: Intercepting /me endpoint:", url);
       const response = await originalFetch.apply(this, args);
       const clonedResponse = response.clone();

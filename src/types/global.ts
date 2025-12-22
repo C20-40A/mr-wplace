@@ -8,7 +8,7 @@ import type { AutoSpoit } from "../features/developer";
 import { WplaceMap } from "@/inject/types";
 
 // Runtime拡張ChargeData型（startTime, timeToFull追加）
-export interface RuntimeChargeData extends ChargeData {
+interface RuntimeChargeData extends ChargeData {
   startTime: number;
   timeToFull: number;
 }
