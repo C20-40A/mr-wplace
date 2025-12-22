@@ -1,6 +1,40 @@
 import { getMapInstanceFromWplace } from "./get-map-instance";
 
-let isLayerSortListenerSetup = false;
+const LAYER_PREFIX_TO_MOVE = "paint-preview-";
+const BEFORE_LAYER_ID = "pixel-art-layer";
+
+/**
+ * Check and move layer if needed
+ */
+const checkAndMoveLayer = (map: any): void => {
+  const layers = map.getStyle()?.layers;
+  if (!layers) return;
+
+  const paintPreviewLayer = layers.find((layer: any) =>
+    layer.id.startsWith(LAYER_PREFIX_TO_MOVE)
+  );
+
+  if (!paintPreviewLayer) return;
+
+  const currentIndex = layers.findIndex(
+    (layer: any) => layer.id === paintPreviewLayer.id
+  );
+  const beforeIndex = layers.findIndex(
+    (layer: any) => layer.id === BEFORE_LAYER_ID
+  );
+
+  // Only move if paint-preview is not already before pixel-art-layer
+  if (currentIndex > beforeIndex) {
+    try {
+      map.moveLayer(paintPreviewLayer.id, BEFORE_LAYER_ID);
+      console.log(
+        `🧑‍🎨 : Layer "${paintPreviewLayer.id}" moved before "${BEFORE_LAYER_ID}"`
+      );
+    } catch (error) {
+      console.warn("🧑‍🎨 : Failed to move layer:", error);
+    }
+  }
+};
 
 /**
  * Sort map layers by moving paint-preview layer before pixel-art-layer
@@ -13,66 +47,28 @@ export const sortMapLayers = (): void => {
     return;
   }
 
-  const layerPrefixToMove = "paint-preview-";
-  const beforeLayerId = "pixel-art-layer";
+  checkAndMoveLayer(map);
+};
 
-  const allLayerIds = map.getStyle().layers.map((layer: any) => layer.id);
-  const layerToMoveId = allLayerIds.find((id: string) =>
-    id.startsWith(layerPrefixToMove)
-  );
+/**
+ * Setup layer sort on map ready with styledata event listener
+ */
+export const setupLayerSortOnMapReady = (mapInstance: any): void => {
+  if (!window.mrWplaceLayerSortEnabled) return;
 
-  if (layerToMoveId) {
-    try {
-      map.moveLayer(layerToMoveId, beforeLayerId);
-      console.log(
-        `🧑‍🎨 : Layer "${layerToMoveId}" moved before "${beforeLayerId}"`
-      );
-    } catch (error) {
-      console.warn("🧑‍🎨 : Failed to move layer:", error);
-    }
-  } else {
-    console.log(
-      `🧑‍🎨 : No layer starting with "${layerPrefixToMove}" found yet`
-    );
-  }
+  const map = mapInstance as any;
 
-  // Setup listener for layer additions if not already setup
-  if (!isLayerSortListenerSetup && window.mrWplaceLayerSortEnabled) {
-    isLayerSortListenerSetup = true;
+  // Monitor for style changes (when layers are added/modified)
+  const onStyleData = () => {
+    if (!window.mrWplaceLayerSortEnabled) return;
+    checkAndMoveLayer(map);
+  };
 
-    // Monitor for layer additions via sourcedata event
-    map.on("sourcedata", () => {
-      if (!window.mrWplaceLayerSortEnabled) return;
+  map.on("styledata", onStyleData);
+  console.log("🧑‍🎨 : Layer sort listener setup complete");
 
-      const layers = map.getStyle()?.layers;
-      if (!layers) return;
-
-      const paintPreviewLayer = layers.find((layer: any) =>
-        layer.id.startsWith(layerPrefixToMove)
-      );
-
-      if (paintPreviewLayer) {
-        const currentIndex = layers.findIndex(
-          (layer: any) => layer.id === paintPreviewLayer.id
-        );
-        const beforeIndex = layers.findIndex(
-          (layer: any) => layer.id === beforeLayerId
-        );
-
-        // Only move if paint-preview is not already before pixel-art-layer
-        if (currentIndex > beforeIndex) {
-          try {
-            map.moveLayer(paintPreviewLayer.id, beforeLayerId);
-            console.log(
-              `🧑‍🎨 : Layer "${paintPreviewLayer.id}" auto-moved before "${beforeLayerId}"`
-            );
-          } catch (error) {
-            // Ignore errors during auto-sort
-          }
-        }
-      }
-    });
-
-    console.log("🧑‍🎨 : Layer sort listener setup complete");
+  // Initial sort if style is already loaded
+  if (map.isStyleLoaded && map.isStyleLoaded()) {
+    checkAndMoveLayer(map);
   }
 };

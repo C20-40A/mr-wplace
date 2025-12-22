@@ -6,4 +6,4 @@ export {
   changeTileBoundaryVisibility,
   handleMapInstanceFlyTo,
 } from "./map-control";
-export { sortMapLayers } from "./layer-sort";
+export { sortMapLayers, setupLayerSortOnMapReady } from "./layer-sort";

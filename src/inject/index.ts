@@ -83,20 +83,11 @@ import { resolveMapInstanceAsync } from "./features/map-instance";
             "*"
           );
 
-          // Apply layer sort if enabled
-          if (window.mrWplaceLayerSortEnabled) {
-            const { sortMapLayers } = await import("./features/map-instance");
-            // Wait for style to load, then sort layers
-            const waitForStyleAndSort = () => {
-              const map = mapInstance as any;
-              if (map.isStyleLoaded && map.isStyleLoaded()) {
-                sortMapLayers();
-              } else {
-                setTimeout(waitForStyleAndSort, 100);
-              }
-            };
-            waitForStyleAndSort();
-          }
+          // Setup layer sort with styledata event listener
+          const { setupLayerSortOnMapReady } = await import(
+            "./features/map-instance"
+          );
+          setupLayerSortOnMapReady(mapInstance);
         }
       }),
 
