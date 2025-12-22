@@ -17,6 +17,7 @@ import { textDrawAPI } from "@/features/text-draw";
 import {
   darkThemeAPI,
   highContrastAPI,
+  tileBoundariesAPI,
   dataSaverAPI,
 } from "@/features/map-filter";
 import { AutoSpoit } from "@/features/developer";
@@ -79,7 +80,8 @@ export const initializeFeatures = async () => {
     textDrawAPI.initTextDraw(), // 3. TextDraw
     darkThemeAPI.initDarkTheme(), // 5. DarkTheme
     highContrastAPI.initHighContrast(), // 6. HighContrast
-    dataSaverAPI.initDataSaver(), // 7. DataSaver
+    tileBoundariesAPI.initTileBoundaries(), // 7. TileBoundaries
+    dataSaverAPI.initDataSaver(), // 8. DataSaver
   ]);
 
   // 初期化完了を待つ

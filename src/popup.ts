@@ -10,11 +10,6 @@ import {
   setNavigationMode,
 } from "./states/navigation-mode";
 import {
-  loadTileBoundariesFromStorage,
-  getTileBoundaries,
-  setTileBoundaries,
-} from "./states/tile-boundaries";
-import {
   loadLockButtonEnhancerFromStorage,
   getLockButtonEnhancer,
   setLockButtonEnhancer,
@@ -59,9 +54,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const navigationSelect = document.getElementById(
     "navigation-select"
   ) as HTMLSelectElement | null;
-  const tileBoundariesSelect = document.getElementById(
-    "tile-boundaries-select"
-  ) as HTMLSelectElement | null;
   const lockButtonEnhancerSelect = document.getElementById(
     "lock-button-enhancer-select"
   ) as HTMLSelectElement;
@@ -80,10 +72,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   // navigation mode初期化
   await loadNavigationModeFromStorage();
   const currentMode = getNavigationMode();
-
-  // tile boundaries初期化
-  await loadTileBoundariesFromStorage();
-  const currentTileBoundaries = getTileBoundaries();
 
   // lock button enhancer初期化
   await loadLockButtonEnhancerFromStorage();
@@ -107,17 +95,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   languageSelect.value = currentLocale;
   if (navigationSelect) navigationSelect.value = currentMode.toString();
-  if (tileBoundariesSelect)
-    tileBoundariesSelect.value = currentTileBoundaries.toString();
   lockButtonEnhancerSelect.value = currentLockButtonEnhancer.toString();
   closeConfirmSelect.value = currentCloseConfirm.toString();
   updateUI();
 
-  // Show tile boundaries setting only if map instance is ready
+  // Show navigation setting only if map instance is ready
   if (mapInstanceReady) {
-    document
-      .getElementById("tile-boundaries-setting")
-      ?.removeAttribute("style"); // remove display: none
     document.getElementById("navigation-setting")?.removeAttribute("style"); // remove display: none
   }
 
@@ -152,21 +135,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // 設定を保存
     await setNavigationMode(newMode);
-  });
-
-  // タイル境界変更イベント (currently disabled)
-  tileBoundariesSelect?.addEventListener("change", async (event) => {
-    const target = event.target as HTMLSelectElement;
-    const newVisible = target.value === "true";
-
-    // 設定を保存
-    await setTileBoundaries(newVisible);
-
-    // content.tsに通知
-    await notifyContentScript({
-      type: "TILE_BOUNDARIES_CHANGED",
-      visible: newVisible,
-    });
   });
 
   // Lockボタン強化変更イベント

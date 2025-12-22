@@ -4,10 +4,7 @@ import { runtime } from "@/utils/browser-api";
 import { I18nManager } from "@/i18n/manager";
 import { initializeFeatures } from "@/core/initializer";
 import { setupMessageHandlers } from "@/core/message-handlers";
-import {
-  sendTileBoundariesToInject,
-  sendGalleryImagesToInject,
-} from "@/core/bridge";
+import { sendGalleryImagesToInject } from "@/core/bridge";
 import { cleanupLegacyTmpTiles } from "@/features/time-travel";
 import {
   setMapInstanceReady,
@@ -23,7 +20,6 @@ export {
   sendCacheSizeToInject,
   requestTotalStatsComputation,
   sendTextLayersToInject,
-  sendTileBoundariesToInject,
 } from "@/core/bridge";
 
 /**
@@ -156,12 +152,6 @@ const registerMessageListeners = () => {
     if (message.type === "LOCALE_CHANGED") {
       // i18nマネージャーの状態を更新
       await I18nManager.init(message.locale);
-      return;
-    }
-
-    if (message.type === "TILE_BOUNDARIES_CHANGED") {
-      // タイル境界表示設定が変更されたらinject側に通知
-      await sendTileBoundariesToInject();
       return;
     }
 
