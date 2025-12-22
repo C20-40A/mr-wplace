@@ -21,13 +21,10 @@ Get Mr. Wplace from the official stores:
 
 #### Mobile
 
-**Android (Microsoft Edge Canary)**
+**Android**
 
-1. Open Microsoft Edge Canary
-2. Go to Settings → About Microsoft Edge
-3. Tap the Edge build number (e.g., Edge Canary 125.0.2487.0) 5 times at the bottom to enable developer options
-4. In developer options, tap "Extension install by id"
-5. Enter extension ID: `acdodonamhbokadiikkfnnliplijigip`
+- **Edge Canary**: Install Edge Canary app and visit [Edge Add-ons](https://microsoftedge.microsoft.com/addons/detail/mr-wplace/acdodonamhbokadiikkfnnliplijigip) to auto-install
+- **Firefox Nightly**: Install Firefox Nightly for Developers app and visit [Firefox Add-ons](https://addons.mozilla.org/ja/firefox/addon/mr-wplace) to install with one click
 
 **iOS (Orion Browser)**
 
@@ -120,14 +117,75 @@ This generates a `.zip` file (e.g., `mr-wplace-v1.6.5.zip`) ready for:
 | `bun run bump:minor`    | Bump minor version (x.X.0)                   |
 | `bun run bump:major`    | Bump major version (X.0.0)                   |
 
-## 🌟 Features
+## ✨ Features
 
-- **Gallery**: Upload, edit, and manage images
-- **Drawing**: Draw images/texts on map tiles
-- **Time Travel**: Save and restore tile snapshots
-- **Color Filter**: Apply various color filters and drawing modes
-- **Bookmarks**: Save favorite locations
-- **Dark Theme**: Change map theme
+### 🖼️ Gallery & Image Management
+- Upload, edit, and manage template images with thumbnails
+- Layer-based image management with drag-and-drop reordering
+- Image editing: brightness, contrast, saturation, sharpness, dithering
+- Color conversion with multiple dithering algorithms (Bayer matrix)
+- Import/export gallery as zip for backup and device migration
+- Skirk Marble template JSON import support
+- Progress tracking with remaining pixels and estimated completion time
+
+### 🎨 Advanced Drawing Tools
+- Draw images and texts on map tiles with overlay rendering
+- 5 pixel fonts support (including custom Japanese fonts)
+- Color palette with pixel count display
+- Show/hide palette toggle for mobile-friendly painting
+- 4 enhanced drawing modes: Giant Red Cross, Giant Red Cross (Bold), Giant Red Diamond, Giant Red Ring
+- "Show Unplaced Only" mode: highlight unpainted pixels in gray
+- "Color Isolate" mode: display only selected color automatically
+
+### ⏱️ Time Travel
+- Save and restore tile snapshots for rollback protection
+- Share tiles with coordinates and timestamps
+- Merge adjacent archived tiles into single image
+
+### 🎨 Color Filter & Visual Aids
+- Apply color filters aligned with WPlace's color palette
+- Multiple drawing mode visualizations
+- High contrast mode for better visibility
+- Tile boundary display
+
+### 📍 Bookmarks & Navigation
+- Save favorite locations with tags (create, edit, filter by tags)
+- Export/import bookmarks by tag
+- Search locations by place name and jump to coordinates
+- Convert between lat/lng and WPlace coordinates
+
+### 🌓 Theme & Display
+- Dark theme for map and UI
+- High contrast mode
+- GPU/CPU rendering mode switch for compatibility
+
+### 💾 Data Saver Mode
+- Offline tile cache with LRU (Least Recently Used) eviction
+- Configurable cache size limit
+- Storage usage monitoring
+- Reduce bandwidth and improve performance
+
+### 📊 Statistics & Analytics
+- Paint statistics per user
+- Color statistics per tile with breakdown by color
+- Per-tile color statistics (matched/total)
+- Aggregated statistics across multiple images
+
+### 🔔 Notifications
+- Get notified when paint accumulates (customizable threshold from 10% to 100%)
+- Optional Google Calendar link integration
+- Toggle notifications ON/OFF from popup
+
+### 👥 Friends Book
+- Save other players' information with tags
+- Add notes for each player
+- Import/export player list as CSV
+- Hover to display player notes
+
+### 🛠️ Developer Mode
+- 10-click easter egg to enable dev mode (or Konami code)
+- IndexedDB ↔ chrome.storage full sync feature
+- Advanced tools for debugging and testing
 
 ## 📄 License
 
