@@ -60,7 +60,18 @@ export interface WplaceMap {
   version: string;
   getCenter: () => { lat: number; lng: number };
   getZoom: () => number;
-  flyTo: (options: { center: [number, number]; zoom: number }) => void;
+  flyTo: (options: {
+    center: [number, number];
+    zoom: number;
+    maxDuration?: number;
+    curve?: number;
+    minZoom?: number;
+    padding?:
+      | number
+      | { top: number; bottom: number; left: number; right: number };
+    speed?: number;
+    screenSpeed?: number;
+  }) => void;
   jumpTo: (options: { center: [number, number]; zoom: number }) => void;
   setPaintProperty: (layer: string, property: string, value: any) => void;
   on: (event: string, handler: (e: any) => void) => void;
