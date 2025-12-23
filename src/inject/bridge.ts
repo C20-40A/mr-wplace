@@ -29,9 +29,7 @@ import {
 } from "./utils/gallery-io";
 import {
   changeTileBoundaryVisibility,
-  getMapInstanceFromWplace,
   handleMapInstanceFlyTo,
-  resolveMapInstanceAsync,
 } from "./features/map-instance";
 
 type MessageHandler = (data: any) => void | Promise<void>;

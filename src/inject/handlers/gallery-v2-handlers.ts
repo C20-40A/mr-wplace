@@ -266,31 +266,6 @@ const handleUpdateMetadata = async (
 };
 
 /**
- * Handle update tiles request
- * @deprecated
- */
-// const handleUpdateTiles = async (
-//   requestId: string,
-//   id: string,
-//   coords: { TLX: number; TLY: number; PxX: number; PxY: number }
-// ) => {
-//   try {
-//     const repo = await initGalleryRepository();
-//     const affectedTiles = await repo.updateTiles(id, coords);
-//     sendResponse("mr-wplace-gallery-v2-update-tiles-response", requestId, affectedTiles);
-//     console.log(`🧑‍🎨 [Gallery V2] Updated tiles for ${id}: ${affectedTiles.length} tiles`);
-//   } catch (error) {
-//     console.error("🧑‍🎨 [Gallery V2] Update tiles failed:", error);
-//     sendResponse(
-//       "mr-wplace-gallery-v2-update-tiles-response",
-//       requestId,
-//       null,
-//       error instanceof Error ? error.message : "Unknown error"
-//     );
-//   }
-// };
-
-/**
  * Setup gallery v2 bridge handlers
  */
 export const setupGalleryV2Handlers = () => {

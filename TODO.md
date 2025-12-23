@@ -1,6 +1,6 @@
 # メイン
 
-- setupGalleryV2Handlers remove
+- orion で db の移動(というか画像の変換？)ができない
 - unplaced only の背景色変更&i18n
 - popup の i18n
 - theme = Halloween

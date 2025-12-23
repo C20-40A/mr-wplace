@@ -22,6 +22,8 @@ export const gotoPosition = async ({ lat, lng, zoom }: Position) => {
   if (useFlyTo) {
     // Use smart navigation (flyTo for close distance, jumpTo for far distance)
     window.postMessage({ source: "mr-wplace-map-flyto", lat, lng, zoom }, "*");
+    // wplaceのために位置情報を保存
+    window.localStorage.setItem("location", JSON.stringify({ lat, lng, zoom }));
   } else {
     // Use URL navigation (with reload)
     const url = new URL(window.location.href);
@@ -30,7 +32,4 @@ export const gotoPosition = async ({ lat, lng, zoom }: Position) => {
     url.searchParams.set("zoom", zoom.toString());
     window.location.href = url.toString();
   }
-
-  // wplaceのために位置情報を保存
-  window.localStorage.setItem("location", JSON.stringify({ lat, lng, zoom }));
 };
