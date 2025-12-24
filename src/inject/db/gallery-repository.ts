@@ -16,6 +16,23 @@ import {
 
 const TILE_SIZE = 1000;
 
+// ============================================
+// Blob <-> DataUrl conversion helpers
+// ============================================
+
+const blobToDataUrl = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+
+const dataUrlToBlob = async (dataUrl: string): Promise<Blob> => {
+  const res = await fetch(dataUrl);
+  return res.blob();
+};
+
 export class GalleryRepository {
   private db: IDBDatabase | null = null;
   private initPromise: Promise<void> | null = null;
@@ -115,9 +132,15 @@ export class GalleryRepository {
       const store = tx.objectStore(STORES_V2.IMAGES);
       const request = store.get(id);
 
-      request.onsuccess = () => {
+      request.onsuccess = async () => {
         const record = request.result as ImageRecord | undefined;
-        resolve(record?.blob || null);
+        if (!record) return resolve(null);
+        if (record.blob) return resolve(record.blob);
+        if (record.dataUrl) {
+          const blob = await dataUrlToBlob(record.dataUrl);
+          return resolve(blob);
+        }
+        resolve(null);
       };
       request.onerror = () => reject(request.error);
     });
@@ -131,7 +154,16 @@ export class GalleryRepository {
       const request = store.put({ id, blob } as ImageRecord);
 
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
+      request.onerror = async () => {
+        // Blob save failed (Safari/Private mode) → fallback to dataUrl
+        console.log("🧑‍🎨 : Blob save failed for image, falling back to dataUrl");
+        const dataUrl = await blobToDataUrl(blob);
+        const tx2 = db.transaction([STORES_V2.IMAGES], "readwrite");
+        const store2 = tx2.objectStore(STORES_V2.IMAGES);
+        const request2 = store2.put({ id, dataUrl } as ImageRecord);
+        request2.onsuccess = () => resolve();
+        request2.onerror = () => reject(request2.error);
+      };
     });
   }
 
@@ -158,9 +190,15 @@ export class GalleryRepository {
       const store = tx.objectStore(STORES_V2.THUMBNAILS);
       const request = store.get(id);
 
-      request.onsuccess = () => {
+      request.onsuccess = async () => {
         const record = request.result as ThumbnailRecord | undefined;
-        resolve(record?.blob || null);
+        if (!record) return resolve(null);
+        if (record.blob) return resolve(record.blob);
+        if (record.dataUrl) {
+          const blob = await dataUrlToBlob(record.dataUrl);
+          return resolve(blob);
+        }
+        resolve(null);
       };
       request.onerror = () => reject(request.error);
     });
@@ -174,7 +212,16 @@ export class GalleryRepository {
       const request = store.put({ id, blob } as ThumbnailRecord);
 
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
+      request.onerror = async () => {
+        // Blob save failed (Safari/Private mode) → fallback to dataUrl
+        console.log("🧑‍🎨 : Blob save failed for thumbnail, falling back to dataUrl");
+        const dataUrl = await blobToDataUrl(blob);
+        const tx2 = db.transaction([STORES_V2.THUMBNAILS], "readwrite");
+        const store2 = tx2.objectStore(STORES_V2.THUMBNAILS);
+        const request2 = store2.put({ id, dataUrl } as ThumbnailRecord);
+        request2.onsuccess = () => resolve();
+        request2.onerror = () => reject(request2.error);
+      };
     });
   }
 
@@ -206,10 +253,22 @@ export class GalleryRepository {
       const store = tx.objectStore(STORES_V2.SPLIT_TILES);
       const request = store.get([layerId, tileKey]);
 
-      request.onsuccess = () => {
+      request.onsuccess = async () => {
         const record = request.result as TileRecord | undefined;
-        console.log(`🧑‍🎨 [getTile] Query [${layerId}, ${tileKey}] result: ${record ? `found (blob size: ${record.blob?.size})` : 'not found'}`);
-        resolve(record?.blob || null);
+        if (!record) {
+          console.log(`🧑‍🎨 [getTile] Query [${layerId}, ${tileKey}] result: not found`);
+          return resolve(null);
+        }
+        if (record.blob) {
+          console.log(`🧑‍🎨 [getTile] Query [${layerId}, ${tileKey}] result: found (blob size: ${record.blob.size})`);
+          return resolve(record.blob);
+        }
+        if (record.dataUrl) {
+          console.log(`🧑‍🎨 [getTile] Query [${layerId}, ${tileKey}] result: found (dataUrl)`);
+          const blob = await dataUrlToBlob(record.dataUrl);
+          return resolve(blob);
+        }
+        resolve(null);
       };
       request.onerror = () => {
         console.error(`🧑‍🎨 [getTile] Query error:`, request.error);
@@ -226,11 +285,16 @@ export class GalleryRepository {
       const index = store.index("layerId");
       const request = index.getAll(IDBKeyRange.only(layerId));
 
-      request.onsuccess = () => {
+      request.onsuccess = async () => {
         const records = request.result as TileRecord[];
         const map = new Map<string, Blob>();
         for (const record of records) {
-          map.set(record.tileKey, record.blob);
+          if (record.blob) {
+            map.set(record.tileKey, record.blob);
+          } else if (record.dataUrl) {
+            const blob = await dataUrlToBlob(record.dataUrl);
+            map.set(record.tileKey, blob);
+          }
         }
         resolve(map);
       };
@@ -246,7 +310,16 @@ export class GalleryRepository {
       const request = store.put({ layerId, tileKey, blob } as TileRecord);
 
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
+      request.onerror = async () => {
+        // Blob save failed (Safari/Private mode) → fallback to dataUrl
+        console.log(`🧑‍🎨 : Blob save failed for tile [${layerId}, ${tileKey}], falling back to dataUrl`);
+        const dataUrl = await blobToDataUrl(blob);
+        const tx2 = db.transaction([STORES_V2.SPLIT_TILES], "readwrite");
+        const store2 = tx2.objectStore(STORES_V2.SPLIT_TILES);
+        const request2 = store2.put({ layerId, tileKey, dataUrl } as TileRecord);
+        request2.onsuccess = () => resolve();
+        request2.onerror = () => reject(request2.error);
+      };
     });
   }
 

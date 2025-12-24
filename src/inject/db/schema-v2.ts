@@ -42,27 +42,33 @@ export interface GalleryMetadata {
 
 /**
  * フルサイズ画像データ
+ * NOTE: Safari/Private modeではBlobが保存できないため、dataUrl fallbackを持つ
  */
 export interface ImageRecord {
   id: string;
-  blob: Blob;
+  blob?: Blob;
+  dataUrl?: string;
 }
 
 /**
  * タイル分割画像データ
+ * NOTE: Safari/Private modeではBlobが保存できないため、dataUrl fallbackを持つ
  */
 export interface TileRecord {
   layerId: string;
   tileKey: string; // "tx,ty" - tile coordinates only
-  blob: Blob;
+  blob?: Blob;
+  dataUrl?: string;
 }
 
 /**
  * サムネイルデータ
+ * NOTE: Safari/Private modeではBlobが保存できないため、dataUrl fallbackを持つ
  */
 export interface ThumbnailRecord {
   id: string;
-  blob: Blob;
+  blob?: Blob;
+  dataUrl?: string;
 }
 
 /**
@@ -81,7 +87,9 @@ export const openDatabaseV2 = (): Promise<IDBDatabase> => {
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
 
-      console.log(`🧑‍🎨 : IndexedDB v2 upgrade needed (v${event.oldVersion} -> v${DB_VERSION_V2})`);
+      console.log(
+        `🧑‍🎨 : IndexedDB v2 upgrade needed (v${event.oldVersion} -> v${DB_VERSION_V2})`
+      );
 
       // Remove old "tiles" store if exists (renamed to splitTiles in v2)
       if (db.objectStoreNames.contains("tiles")) {
