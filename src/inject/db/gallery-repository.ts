@@ -247,7 +247,6 @@ export class GalleryRepository {
   async getTile(layerId: string, tileKey: string): Promise<Blob | null> {
     // Ensure DB is initialized
     if (!this.db) {
-      console.log(`🧑‍🎨 [getTile] DB not initialized, initializing...`);
       await this.init();
     }
     const db = this.getDb();
@@ -259,15 +258,12 @@ export class GalleryRepository {
       request.onsuccess = async () => {
         const record = request.result as TileRecord | undefined;
         if (!record) {
-          console.log(`🧑‍🎨 [getTile] Query [${layerId}, ${tileKey}] result: not found`);
           return resolve(null);
         }
         if (record.blob) {
-          console.log(`🧑‍🎨 [getTile] Query [${layerId}, ${tileKey}] result: found (blob size: ${record.blob.size})`);
           return resolve(record.blob);
         }
         if (record.dataUrl) {
-          console.log(`🧑‍🎨 [getTile] Query [${layerId}, ${tileKey}] result: found (dataUrl)`);
           const blob = await dataUrlToBlob(record.dataUrl);
           return resolve(blob);
         }

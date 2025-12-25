@@ -16,6 +16,10 @@ let mouseMoveHandler: ((e: any) => void) | null = null;
 let lastSpoitTime = 0;
 const SPOIT_THROTTLE_MS = 100;
 
+// Tile cache: tileKey -> composited ImageData
+const tileCache = new Map<string, ImageData>();
+const MAX_CACHE_SIZE = 3; // Keep max 3 tiles in cache
+
 /**
  * Check if developer mode is enabled
  */
@@ -61,6 +65,7 @@ const selectColor = (id: number): boolean => {
 
 /**
  * Get pixel color from gallery splitTile at given tile pixel position
+ * Uses LRU cache for composited ImageData
  */
 const getPixelColorFromGallery = async (
   TLX: number,
@@ -68,45 +73,57 @@ const getPixelColorFromGallery = async (
   PxX: number,
   PxY: number
 ): Promise<[number, number, number] | null> => {
-  const repo = getGalleryRepository();
   const tileKey = `${TLX},${TLY}`;
 
-  // Get layers that affect this tile, sorted by zIndex
-  const layers = await repo.getLayersForTile(tileKey);
-  if (layers.length === 0) return null;
+  // Check cache first
+  let imageData = tileCache.get(tileKey);
 
-  // Iterate from highest zIndex (last) to lowest (first)
-  for (let i = layers.length - 1; i >= 0; i--) {
-    const layer = layers[i];
-    if (!layer.visible) continue;
+  if (!imageData) {
+    // Cache miss - load and composite layers
+    const repo = getGalleryRepository();
+    const layers = await repo.getLayersForTile(tileKey);
+    if (layers.length === 0) return null;
 
-    // Get split tile for this layer
-    const tileBlob = await repo.getTile(layer.id, tileKey);
-    if (!tileBlob) continue;
-
-    // Load tile and get pixel color at (PxX, PxY)
-    const bitmap = await createImageBitmap(tileBlob);
-    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+    // Create composite canvas
+    const canvas = new OffscreenCanvas(1000, 1000);
     const ctx = canvas.getContext("2d");
-    if (!ctx) {
+    if (!ctx) return null;
+
+    // Composite all visible layers (bottom to top)
+    for (let i = 0; i < layers.length; i++) {
+      const layer = layers[i];
+      if (!layer.visible) continue;
+
+      const tileBlob = await repo.getTile(layer.id, tileKey);
+      if (!tileBlob) continue;
+
+      const bitmap = await createImageBitmap(tileBlob);
+      ctx.drawImage(bitmap, 0, 0);
       bitmap.close();
-      continue;
     }
 
-    ctx.drawImage(bitmap, 0, 0);
-    bitmap.close();
+    // Extract full ImageData for caching
+    imageData = ctx.getImageData(0, 0, 1000, 1000);
 
-    // Get pixel color at (PxX, PxY)
-    const imageData = ctx.getImageData(PxX, PxY, 1, 1);
-    const [r, g, b, a] = imageData.data;
-
-    // Skip transparent pixels, continue to next layer
-    if (a < 128) continue;
-
-    return [r, g, b];
+    // Add to cache (LRU eviction)
+    tileCache.set(tileKey, imageData);
+    if (tileCache.size > MAX_CACHE_SIZE) {
+      const firstKey = tileCache.keys().next().value;
+      if (firstKey !== undefined) {
+        tileCache.delete(firstKey);
+      }
+    }
   }
 
-  return null;
+  // Get pixel color from cached ImageData
+  const offset = (PxY * 1000 + PxX) * 4;
+  const r = imageData.data[offset];
+  const g = imageData.data[offset + 1];
+  const b = imageData.data[offset + 2];
+  const a = imageData.data[offset + 3];
+
+  if (a < 128) return null;
+  return [r, g, b];
 };
 
 /**
@@ -185,6 +202,9 @@ export const stopAutoColorSpoit = (): void => {
   if (!isEnabled) return;
 
   isEnabled = false;
+
+  // Clear cache
+  tileCache.clear();
 
   // Remove mouse move listener
   if (mapInstance && mouseMoveHandler) {
