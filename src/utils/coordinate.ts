@@ -1,5 +1,6 @@
 import {
   latLonToTileAndPixel,
+  latLonToPixels,
   pixelsToMeters,
   metersToLatLon,
   TILE_SIZE,
@@ -11,6 +12,28 @@ import {
 export const latLngToTilePixel = (lat: number, lng: number) => {
   const { tile, pixel } = latLonToTileAndPixel(lat, lng);
   return { TLX: tile[0], TLY: tile[1], PxX: pixel[0], PxY: pixel[1] };
+};
+
+/**
+ * 緯度・経度からタイルインデックスとタイル内ピクセル座標へ変換（浮動小数点版）
+ * ピクセル境界判定に使用
+ */
+export const latLngToTilePixelFloat = (lat: number, lng: number) => {
+  const [pixelX, pixelY] = latLonToPixels(lat, lng);
+  const tileX = Math.floor(pixelX / TILE_SIZE);
+  const tileY = Math.floor(pixelY / TILE_SIZE);
+  const localPixelX = pixelX - tileX * TILE_SIZE;
+  const localPixelY = pixelY - tileY * TILE_SIZE;
+
+  return {
+    TLX: tileX,
+    TLY: tileY,
+    PxX: Math.floor(localPixelX),
+    PxY: Math.floor(localPixelY),
+    // 元の浮動小数点座標を保持
+    pixelXFrac: localPixelX,
+    pixelYFrac: localPixelY,
+  };
 };
 
 /**

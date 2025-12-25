@@ -5,7 +5,7 @@
  */
 
 import { colorpalette } from "@/constants/colors";
-import { latLngToTilePixel } from "@/utils/coordinate";
+import { latLngToTilePixelFloat } from "@/utils/coordinate";
 import { getGalleryRepository } from "../../db/gallery-repository";
 
 let isEnabled = false;
@@ -127,6 +127,24 @@ const getPixelColorFromGallery = async (
 };
 
 /**
+ * Check if position is near pixel boundary
+ * Returns true if fractional part is close to 0.0 or 1.0
+ */
+const isNearPixelBoundary = (
+  pixelXFrac: number,
+  pixelYFrac: number,
+  threshold: number = 0.005
+): boolean => {
+  const fracX = pixelXFrac - Math.floor(pixelXFrac);
+  const fracY = pixelYFrac - Math.floor(pixelYFrac);
+
+  const nearBoundaryX = fracX < threshold || fracX > 1 - threshold;
+  const nearBoundaryY = fracY < threshold || fracY > 1 - threshold;
+
+  return nearBoundaryX || nearBoundaryY;
+};
+
+/**
  * Handle mouse move event
  */
 const handleMouseMove = async (e: any): Promise<void> => {
@@ -143,8 +161,14 @@ const handleMouseMove = async (e: any): Promise<void> => {
 
   const { lat, lng } = lngLat;
 
-  // Convert to tile pixel coordinates
-  const { TLX, TLY, PxX, PxY } = latLngToTilePixel(lat, lng);
+  // Convert to tile pixel coordinates (with fractional part)
+  const { TLX, TLY, PxX, PxY, pixelXFrac, pixelYFrac } = latLngToTilePixelFloat(
+    lat,
+    lng
+  );
+
+  // Skip if near pixel boundary
+  if (isNearPixelBoundary(pixelXFrac, pixelYFrac)) return;
 
   // Get pixel color from gallery
   const color = await getPixelColorFromGallery(TLX, TLY, PxX, PxY);

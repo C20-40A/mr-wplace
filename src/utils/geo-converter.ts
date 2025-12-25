@@ -93,7 +93,7 @@ const metersToPixels = (
 // lat/lon -> pixels
 // 緯度・経度からピクセル座標へ変換
 // -----------------------------------------------
-const latLonToPixels = (
+export const latLonToPixels = (
   lat: number,
   lon: number,
   zoom: number = ZOOM_LEVEL
