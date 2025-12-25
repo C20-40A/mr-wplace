@@ -89,10 +89,13 @@ export class GalleryRepository {
     return new Promise((resolve, reject) => {
       const tx = db.transaction([STORES_V2.METADATA], "readonly");
       const store = tx.objectStore(STORES_V2.METADATA);
-      const index = store.index("visible");
-      const request = index.getAll(IDBKeyRange.only(true));
+      const request = store.getAll();
 
-      request.onsuccess = () => resolve(request.result || []);
+      request.onsuccess = () => {
+        const all = request.result || [];
+        const visible = all.filter((item) => item.visible === true);
+        resolve(visible);
+      };
       request.onerror = () => reject(request.error);
     });
   }

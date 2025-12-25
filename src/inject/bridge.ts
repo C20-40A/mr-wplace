@@ -23,6 +23,10 @@ import {
 import { setupGalleryV2Handlers } from "./handlers/gallery-v2-handlers";
 import { startAutoCanvasClick, stopAutoCanvasClick } from "./auto-canvas-click";
 import {
+  startAutoColorSpoit,
+  stopAutoColorSpoit,
+} from "./features/tile-draw/auto-color-spoit";
+import {
   openFilePickerAndImport,
   exportAndDownload,
   resetGallery,
@@ -155,6 +159,8 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-compute-total-stats": handleComputeTotalStats,
   "mr-wplace-auto-canvas-click-start": startAutoCanvasClick,
   "mr-wplace-auto-canvas-click-stop": stopAutoCanvasClick,
+  "mr-wplace-auto-color-spoit-start": startAutoColorSpoit,
+  "mr-wplace-auto-color-spoit-stop": stopAutoColorSpoit,
   "mr-wplace-gallery-import": handleGalleryImport,
   "mr-wplace-gallery-export": handleGalleryExport,
   "mr-wplace-gallery-reset": handleGalleryReset,

@@ -1,9 +1,10 @@
 import { setupElementObserver } from "@/components/element-observer";
 import { findPaintPixelControls } from "@/constants/selectors";
-// import { createAutoSpoitButton } from "./ui";
 import { AutoSpoitStorage } from "./storage";
 import { AutoCanvasClickStorage } from "./auto-canvas-click-storage";
+import { AutoColorSpoitStorage } from "./auto-color-spoit-storage";
 import { createAutoCanvasClickButton } from "./auto-canvas-click-ui";
+import { createAutoColorSpoitButton } from "./auto-color-spoit-ui";
 import { createKonamiCodeDetector } from "./konami-detector";
 import { t } from "@/i18n/manager";
 import { ColorFilterManager } from "@/utils/color-filter-manager";
@@ -16,11 +17,11 @@ import { setShowUnplacedOnly } from "@/states/showUnplacedOnly";
 import { setupDeveloperMenu } from "./developer-menu";
 
 export class AutoSpoit {
-  private enabled: boolean = true;
   private devMode: boolean = false;
-  private button: HTMLButtonElement | null = null;
   private autoCanvasClickEnabled: boolean = false;
   private autoCanvasClickButton: HTMLButtonElement | null = null;
+  private autoColorSpoitEnabled: boolean = false;
+  private autoColorSpoitButton: HTMLButtonElement | null = null;
   private colorFilterManager: ColorFilterManager;
   private colorIsolate: ColorIsolate;
 
@@ -34,9 +35,9 @@ export class AutoSpoit {
   }
 
   private async init(): Promise<void> {
-    this.enabled = await AutoSpoitStorage.get();
     this.devMode = await AutoSpoitStorage.getDevMode();
     this.autoCanvasClickEnabled = await AutoCanvasClickStorage.get();
+    this.autoColorSpoitEnabled = await AutoColorSpoitStorage.get();
 
     // Update DOM attribute for inject.js
     this.updateDevModeAttribute();
@@ -53,6 +54,11 @@ export class AutoSpoit {
     // Start auto canvas click if enabled
     if (this.autoCanvasClickEnabled) {
       this.sendAutoCanvasClickStart();
+    }
+
+    // Start auto color spoit if enabled
+    if (this.autoColorSpoitEnabled) {
+      this.sendAutoColorSpoitStart();
     }
 
     if (this.devMode) {
@@ -96,36 +102,22 @@ export class AutoSpoit {
     if (!this.devMode) {
       console.log("🧑‍🎨 : Auto spoit UI hidden (dev mode disabled)");
       // 既存のボタンを削除
-      const existingButton = document.getElementById("auto-spoit-btn");
-      if (existingButton) {
-        existingButton.parentElement?.remove();
-      }
       const existingAutoCanvasClickButton = document.getElementById(
         "auto-canvas-click-btn"
       );
       if (existingAutoCanvasClickButton) {
         existingAutoCanvasClickButton.parentElement?.remove();
       }
+      const existingAutoColorSpoitButton = document.getElementById(
+        "auto-color-spoit-btn"
+      );
+      if (existingAutoColorSpoitButton) {
+        existingAutoColorSpoitButton.parentElement?.remove();
+      }
       return;
     }
 
     setupElementObserver([
-      // NOTE: auto-spoitは現在利用不可のためコメントアウト
-      // {
-      //   id: "auto-spoit-btn",
-      //   getTargetElement: findPaintPixelControls,
-      //   createElement: (container) => {
-      //     const tooltip = document.createElement("div");
-      //     tooltip.className = "tooltip";
-      //     tooltip.setAttribute("data-tip", "Toggle auto color picker");
-      //     this.button = createAutoSpoitButton(this.enabled);
-      //     this.button.id = "auto-spoit-btn";
-      //     this.button.addEventListener("click", () => this.toggle());
-      //     tooltip.appendChild(this.button);
-      //     container.appendChild(tooltip);
-      //     console.log("🧑‍🎨 : Auto spoit button added");
-      //   },
-      // },
       {
         id: "auto-canvas-click-btn",
         getTargetElement: findPaintPixelControls,
@@ -145,47 +137,30 @@ export class AutoSpoit {
           console.log("🧑‍🎨 : Auto canvas click button added");
         },
       },
+      {
+        id: "auto-color-spoit-btn",
+        getTargetElement: findPaintPixelControls,
+        createElement: (container) => {
+          const tooltip = document.createElement("div");
+          tooltip.className = "tooltip";
+          tooltip.setAttribute("data-tip", "Toggle auto color spoit");
+          this.autoColorSpoitButton = createAutoColorSpoitButton(
+            this.autoColorSpoitEnabled
+          );
+          this.autoColorSpoitButton.id = "auto-color-spoit-btn";
+          this.autoColorSpoitButton.addEventListener("click", () =>
+            this.toggleAutoColorSpoit()
+          );
+          tooltip.appendChild(this.autoColorSpoitButton);
+          container.appendChild(tooltip);
+          console.log("🧑‍🎨 : Auto color spoit button added");
+        },
+      },
     ]);
-  }
-
-  isEnabled(): boolean {
-    return this.enabled;
   }
 
   isDevModeEnabled(): boolean {
     return this.devMode;
-  }
-
-  async toggle(): Promise<void> {
-    // 有効化しようとしている場合、初回警告チェック
-    if (!this.enabled) {
-      // 使えないから不要
-      // const hasShownWarning = await AutoSpoitStorage.hasShownWarning();
-      // if (!hasShownWarning) {
-      //   const warningMessage = t`${"auto_spoit_warning"}`;
-
-      //   const agreed = confirm(warningMessage);
-      //   if (!agreed) {
-      //     console.log("🧑‍🎨 : Auto spoit activation cancelled by user");
-      //     return;
-      //   }
-      //   await AutoSpoitStorage.setWarningShown();
-      //   console.log("🧑‍🎨 : Auto spoit warning shown and agreed");
-      // }
-      alert(
-        "Sorry! This feature is currently unavailable due to changes in the wplace codebase😇"
-      );
-    }
-
-    this.enabled = await AutoSpoitStorage.toggle();
-    console.log("🧑‍🎨 : Auto spoit toggled:", this.enabled);
-
-    if (this.button) {
-      // ボタンの見た目を更新
-      this.button.classList.toggle("text-primary", this.enabled);
-      this.button.classList.toggle("text-base-content", !this.enabled);
-      this.button.style.opacity = this.enabled ? "1" : "0.5";
-    }
   }
 
   async toggleAutoCanvasClick(): Promise<void> {
@@ -260,5 +235,55 @@ export class AutoSpoit {
   private sendAutoCanvasClickStop(): void {
     window.postMessage({ source: "mr-wplace-auto-canvas-click-stop" }, "*");
     console.log("🧑‍🎨 : Sent auto canvas click stop message");
+  }
+
+  async toggleAutoColorSpoit(): Promise<void> {
+    if (!this.autoColorSpoitEnabled) {
+      const hasShownWarning = await AutoColorSpoitStorage.hasShownWarning();
+      if (!hasShownWarning) {
+        const warningMessage =
+          "Auto Color Spoit will automatically pick colors from your template images as you move your cursor.\n\nThis feature is experimental and requires developer mode.";
+        const agreed = confirm(warningMessage);
+        if (!agreed) {
+          console.log("🧑‍🎨 : Auto color spoit activation cancelled by user");
+          return;
+        }
+        await AutoColorSpoitStorage.setWarningShown();
+        console.log("🧑‍🎨 : Auto color spoit warning shown and agreed");
+      }
+    }
+
+    this.autoColorSpoitEnabled = await AutoColorSpoitStorage.toggle();
+    console.log("🧑‍🎨 : Auto color spoit toggled:", this.autoColorSpoitEnabled);
+
+    if (this.autoColorSpoitEnabled) {
+      this.sendAutoColorSpoitStart();
+    } else {
+      this.sendAutoColorSpoitStop();
+    }
+
+    if (this.autoColorSpoitButton) {
+      this.autoColorSpoitButton.classList.toggle(
+        "text-primary",
+        this.autoColorSpoitEnabled
+      );
+      this.autoColorSpoitButton.classList.toggle(
+        "text-base-content",
+        !this.autoColorSpoitEnabled
+      );
+      this.autoColorSpoitButton.style.opacity = this.autoColorSpoitEnabled
+        ? "1"
+        : "0.5";
+    }
+  }
+
+  private sendAutoColorSpoitStart(): void {
+    window.postMessage({ source: "mr-wplace-auto-color-spoit-start" }, "*");
+    console.log("🧑‍🎨 : Sent auto color spoit start message");
+  }
+
+  private sendAutoColorSpoitStop(): void {
+    window.postMessage({ source: "mr-wplace-auto-color-spoit-stop" }, "*");
+    console.log("🧑‍🎨 : Sent auto color spoit stop message");
   }
 }
