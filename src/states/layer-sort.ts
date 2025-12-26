@@ -6,8 +6,8 @@ export type LayerSortEnabled = boolean;
 // Storage key
 const STORAGE_KEY = "mr_wplace_layer_sort";
 
-// Default: enabled (true)
-let currentEnabled: LayerSortEnabled = true;
+// Default: false
+let currentEnabled: LayerSortEnabled = false;
 
 // Load from storage
 export const loadLayerSortFromStorage = async (): Promise<void> => {
@@ -26,7 +26,9 @@ const saveLayerSortToStorage = async (
 };
 
 // Set layer sort enabled (with storage sync)
-export const setLayerSort = async (enabled: LayerSortEnabled): Promise<void> => {
+export const setLayerSort = async (
+  enabled: LayerSortEnabled
+): Promise<void> => {
   currentEnabled = enabled;
   await saveLayerSortToStorage(enabled);
 };
