@@ -24,10 +24,26 @@ export const ENHANCED_MODE_OPTIONS: EnhancedModeOption[] = [
   { value: "dark-cross", labelKey: "enhanced_mode_dark_cross" },
   { value: "complement-cross", labelKey: "enhanced_mode_complement_cross" },
   { value: "red-border", labelKey: "enhanced_mode_red_border" },
-  { value: "huge-red-cross", labelKey: "enhanced_mode_huge_red_cross", speed: "slow" },
-  { value: "huge-red-cross-bold", labelKey: "enhanced_mode_huge_red_cross_bold", speed: "slow" },
-  { value: "huge-red-diamond", labelKey: "enhanced_mode_huge_red_diamond", speed: "slow" },
-  { value: "huge-red-ring", labelKey: "enhanced_mode_huge_red_ring", speed: "slow" },
+  {
+    value: "huge-red-cross",
+    labelKey: "enhanced_mode_huge_red_cross",
+    speed: "slow",
+  },
+  {
+    value: "huge-red-cross-bold",
+    labelKey: "enhanced_mode_huge_red_cross_bold",
+    speed: "slow",
+  },
+  {
+    value: "huge-red-diamond",
+    labelKey: "enhanced_mode_huge_red_diamond",
+    speed: "slow",
+  },
+  {
+    value: "huge-red-ring",
+    labelKey: "enhanced_mode_huge_red_ring",
+    speed: "slow",
+  },
 ];
 
 // Sort Order Options
@@ -40,7 +56,11 @@ export const SORT_ORDER_OPTIONS: SortOrderOption[] = [
 /**
  * RGBから読みやすいテキスト色を計算
  */
-export const getContrastTextColor = (r: number, g: number, b: number): string => {
+export const getContrastTextColor = (
+  r: number,
+  g: number,
+  b: number
+): string => {
   const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
   return luminance > 0.5 ? "#000000" : "#ffffff";
 };
@@ -53,13 +73,28 @@ export const getColorKey = (r: number, g: number, b: number): string => {
 };
 
 /**
- * 統計データからHTML生成（残り0pxなら空文字）
+ * 数値をカンマ区切りでフォーマット
+ */
+const formatNumber = (n: number): string => n.toLocaleString();
+
+/**
+ * 統計データからHTML生成
  */
 export const createStatsHtml = (stats: ColorStats): string => {
   const remaining = stats.total - stats.matched;
-  if (remaining === 0) return "";
-
   const percentage = stats.total > 0 ? (stats.matched / stats.total) * 100 : 0;
+
+  // 100%完了時: COMPLETE! (gold border text) + total pixels
+  if (remaining === 0) {
+    return `
+      <div style="width: 100%; margin-top: 0.25rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem;">
+        <span style="font-size: 0.6rem; font-weight: bold; color: #facc15; text-shadow: -1px -1px 0 #b45309, 1px -1px 0 #b45309, -1px 1px 0 #b45309, 1px 1px 0 #b45309;">COMPLETE!</span>
+        <span style="font-size: 0.625rem; opacity: 0.8;">${formatNumber(
+          stats.total
+        )}px</span>
+      </div>
+    `;
+  }
 
   return `
     <div style="width: 100%; margin-top: 0.25rem; display: flex; align-items: center;">
@@ -68,7 +103,9 @@ export const createStatsHtml = (stats: ColorStats): string => {
           1
         )}%; transition: width 0.3s ease;"></div>
       </div>
-      <div style="font-size: 0.625rem; margin-left: 0.125rem; white-space: nowrap;">${remaining}px</div>
+      <div style="font-size: 0.625rem; margin-left: 0.125rem; white-space: nowrap;">${formatNumber(
+        remaining
+      )}px</div>
     </div>
   `;
 };
