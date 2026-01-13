@@ -1,5 +1,6 @@
 # メイン
 
+- text 位置移動が多分更新されてない
 - orion で db の移動(というか画像の変換？)ができない
 - unplaced only の背景色変更&i18n
 - popup の i18n
@@ -108,6 +109,10 @@
 - exclude_globs にメインのもの以外含める？
   - all_frames false (デフォルト)系は false．まあデフォルトが false だから不要か
 - dark/light テーマの i18n 不要になった
+
+# DONE v2.0.8
+
+- tile merge が死んでる
 
 # DONE v2.0.5
 

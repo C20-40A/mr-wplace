@@ -2,8 +2,8 @@ import { TimeTravelRouter } from "../router";
 import { TimeTravelStorage, TileSnapshotInfo } from "../storage";
 import { TileNameStorage } from "../tile-name-storage";
 import { t } from "@/i18n/manager";
-import { storage } from "@/utils/browser-api";
 import { createCleanImageBitmap } from "@/utils/image-bitmap-compat";
+import { getSnapshotRepository } from "@/inject/db/snapshot-repository";
 
 interface TileGroup {
   id: number;
@@ -548,12 +548,10 @@ export class TileMergeRoute {
           tile.snapshots[0]
         : tile.snapshots[0];
 
-      const snapshotData = await storage.get([snapshot.fullKey]);
-      const rawData = snapshotData[snapshot.fullKey];
+      const snapshotId = snapshot.fullKey.replace("tile_snapshot_", "");
+      const blob = await getSnapshotRepository().getSnapshot(snapshotId);
 
-      if (rawData) {
-        const uint8Array = new Uint8Array(rawData);
-        const blob = new Blob([uint8Array], { type: "image/png" });
+      if (blob) {
         const imageBitmap = await createCleanImageBitmap(blob);
 
         const x = (coord.tileX - minX) * 1000;
