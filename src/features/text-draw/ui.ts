@@ -61,30 +61,33 @@ export class TextDrawUI {
 
     this.fontSelect = document.createElement("select");
     this.fontSelect.className = "select select-bordered w-full";
-    this.fontSelect.style.cssText = "width: 100%;";
+    this.fontSelect.style.cssText = "width: 100%; font-family: inherit;";
     this.fontSelect.innerHTML = `
       <option value="c20_pixel">C20 Pixel (3x3～)(A,a,ひ,カ,記)</option>
-      <option value="Bytesized">Bytesized (3x4)(A,a)</option>
-      <option value="comic_sans_ms_pixel">Comic Sans MS Pixel (6x10)(MultiLang)</option>
-      <option value="Misaki">🇯🇵 Misaki (8x8)(A,ひ,カ,漢)</option>
-      <option value="k8x12">🇯🇵 k8x12 (8x12)(A,ひ,カ,漢)</option>
-      <option value="KH_Dot_Dougenzaka_12">🇯🇵 KH Dot 道玄坂 (12px)(A,ひ,カ,漢)</option>
-      <option value="KH_Dot_Kagurazaka_12">🇯🇵 KH Dot 神楽坂 (12px)(A,ひ,カ,漢)</option>
-      <option value="KH_Dot_Kodenmachou_12">🇯🇵 KH Dot 小伝馬町 (12px)(A,ひ,カ,漢)</option>
-      <option value="KH_Dot_Akihabara_16">🇯🇵 KH Dot 秋葉原 (16px)(A,ひ,カ,漢)</option>
-      <option value="KH_Dot_Hatchoubori_16">🇯🇵 KH Dot 八丁堀 (16px)(A,ひ,カ,漢)</option>
-      <option value="KH_Dot_Kabutochou_16">🇯🇵 KH Dot 兜町 (16px)(A,ひ,カ,漢)</option>
-      <option value="KH_Dot_Ningyouchou_16">🇯🇵 KH Dot 人形町 (16px)(A,ひ,カ,漢)</option>
+      <option value="Bytesized" style="font-family: Bytesized;">Bytesized (3x4)(A,a)</option>
+      <option value="comic_sans_ms_pixel" style="font-family: comic_sans_ms_pixel;">Comic Sans MS Pixel (6x10)(MultiLang)</option>
+      <option value="Misaki" style="font-family: Misaki;">🇯🇵 Misaki (8x8)(A,ひ,カ,漢)</option>
+      <option value="k8x12" style="font-family: k8x12;">🇯🇵 k8x12 (8x12)(A,ひ,カ,漢)</option>
+      <option value="KH_Dot_Dougenzaka_12" style="font-family: KH_Dot_Dougenzaka_12;">🇯🇵 KH Dot Dougenzaka (12px)(A,ひ,カ,漢)</option>
+      <option value="KH_Dot_Kagurazaka_12" style="font-family: KH_Dot_Kagurazaka_12;">🇯🇵 KH Dot Kagurazaka (12px)(A,ひ,カ,漢)</option>
+      <option value="KH_Dot_Kodenmachou_12" style="font-family: KH_Dot_Kodenmachou_12;">🇯🇵 KH Dot Kodenmachou (12px)(A,ひ,カ,漢)</option>
+      <option value="KH_Dot_Akihabara_16" style="font-family: KH_Dot_Akihabara_16;">🇯🇵 KH Dot Akihabara (16px)(A,ひ,カ,漢)</option>
+      <option value="KH_Dot_Hatchoubori_16" style="font-family: KH_Dot_Hatchoubori_16;">🇯🇵 KH Dot Hatchoubori (16px)(A,ひ,カ,漢)</option>
+      <option value="KH_Dot_Kabutochou_16" style="font-family: KH_Dot_Kabutochou_16;">🇯🇵 KH Dot Kabutochou (16px)(A,ひ,カ,漢)</option>
+      <option value="KH_Dot_Ningyouchou_16" style="font-family: KH_Dot_Ningyouchou_16;">🇯🇵 KH Dot Ningyouchou (16px)(A,ひ,カ,漢)</option>
     `;
 
     // Restore saved font selection
     const savedFont = localStorage.getItem(FONT_STORAGE_KEY);
     if (savedFont) this.fontSelect.value = savedFont;
 
-    // Save font selection on change
-    this.fontSelect.addEventListener("change", () => {
+    // Update select font-family on change
+    const updateSelectFont = () => {
+      this.fontSelect.style.fontFamily = this.fontSelect.value;
       localStorage.setItem(FONT_STORAGE_KEY, this.fontSelect.value);
-    });
+    };
+    this.fontSelect.addEventListener("change", updateSelectFont);
+    updateSelectFont();
 
     const buttonContainer = document.createElement("div");
     buttonContainer.style.cssText =
