@@ -68,6 +68,13 @@ export class TextDrawUI {
       <option value="comic_sans_ms_pixel">Comic Sans MS Pixel (6x10)(MultiLang)</option>
       <option value="Misaki">🇯🇵 Misaki (8x8)(A,ひ,カ,漢)</option>
       <option value="k8x12">🇯🇵 k8x12 (8x12)(A,ひ,カ,漢)</option>
+      <option value="KH_Dot_Dougenzaka_12">🇯🇵 KH Dot 道玄坂 (12px)(A,ひ,カ,漢)</option>
+      <option value="KH_Dot_Kagurazaka_12">🇯🇵 KH Dot 神楽坂 (12px)(A,ひ,カ,漢)</option>
+      <option value="KH_Dot_Kodenmachou_12">🇯🇵 KH Dot 小伝馬町 (12px)(A,ひ,カ,漢)</option>
+      <option value="KH_Dot_Akihabara_16">🇯🇵 KH Dot 秋葉原 (16px)(A,ひ,カ,漢)</option>
+      <option value="KH_Dot_Hatchoubori_16">🇯🇵 KH Dot 八丁堀 (16px)(A,ひ,カ,漢)</option>
+      <option value="KH_Dot_Kabutochou_16">🇯🇵 KH Dot 兜町 (16px)(A,ひ,カ,漢)</option>
+      <option value="KH_Dot_Ningyouchou_16">🇯🇵 KH Dot 人形町 (16px)(A,ひ,カ,漢)</option>
     `;
 
     // Restore saved font selection

@@ -48,6 +48,41 @@ export const fonts: Record<string, FontConfig> = {
     path: "assets/fonts/k8x12/k8x12S.ttf",
     size: 12,
   },
+  KH_Dot_Akihabara_16: {
+    type: "ttf",
+    path: "assets/fonts/khdotfont-20150527/KH-Dot-Akihabara-16.ttf",
+    size: 16,
+  },
+  KH_Dot_Dougenzaka_12: {
+    type: "ttf",
+    path: "assets/fonts/khdotfont-20150527/KH-Dot-Dougenzaka-12.ttf",
+    size: 12,
+  },
+  KH_Dot_Hatchoubori_16: {
+    type: "ttf",
+    path: "assets/fonts/khdotfont-20150527/KH-Dot-Hatchoubori-16.ttf",
+    size: 16,
+  },
+  KH_Dot_Kabutochou_16: {
+    type: "ttf",
+    path: "assets/fonts/khdotfont-20150527/KH-Dot-Kabutochou-16.ttf",
+    size: 16,
+  },
+  KH_Dot_Kagurazaka_12: {
+    type: "ttf",
+    path: "assets/fonts/khdotfont-20150527/KH-Dot-Kagurazaka-12.ttf",
+    size: 12,
+  },
+  KH_Dot_Kodenmachou_12: {
+    type: "ttf",
+    path: "assets/fonts/khdotfont-20150527/KH-Dot-Kodenmachou-12.ttf",
+    size: 12,
+  },
+  KH_Dot_Ningyouchou_16: {
+    type: "ttf",
+    path: "assets/fonts/khdotfont-20150527/KH-Dot-Ningyouchou-16.ttf",
+    size: 16,
+  },
 };
 
 // ========================================
