@@ -28,8 +28,8 @@ const getStateVersion = (): string => {
   const mode = getEnhancedMode();
   const unplaced = window.mrWplaceShowUnplacedOnly ?? false;
   const overlayKeys = overlayLayers
-    .map((l) => `${l.imageKey}:${l.drawEnabled}`)
-    .join(",");
+    .map((l) => `${l.imageKey}:${l.drawEnabled}:${l.coords.join(",")}`)
+    .join("|");
   return `${filter.isFilterActive}-${JSON.stringify(
     filter.selectedRGBs
   )}-${mode}-${unplaced}-${overlayKeys}`;

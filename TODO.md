@@ -1,6 +1,5 @@
 # メイン
 
-- text 位置移動が多分更新されてない
 - orion で db の移動(というか画像の変換？)ができない
 - unplaced only の背景色変更&i18n
 - popup の i18n
@@ -10,7 +9,6 @@
 - image-selector に進捗表示したい
 - window.localStorage.PARAGLIDE_LOCALE = 'jp'
 - ja の feedback form にならない
-- 「？」アイコンからのドキュメント表示
 - シンプルモードの検討
 - bookmarks や tiles は mobile だとスクロールできない
 - fix type error
@@ -112,7 +110,9 @@
 
 # DONE v2.0.9
 
+- text 位置移動が更新されない問題の fix
 - ギャラリーで、完全に 100%でなくても、100%表示になる問題の修正
+- 「？」アイコンからのドキュメント表示
 - チュートリアル画面を追加
 - complete の UI を update
 - paint 画面の色の計算方法を、最寄りのテンプレートを参照するように変更
