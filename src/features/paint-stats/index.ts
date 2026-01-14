@@ -1,6 +1,7 @@
 import { getAggregatedColorStats } from "@/utils/inject-bridge";
-import { getCurrentTiles } from "@/states/currentTile";
 import { colorpalette } from "@/constants/colors";
+import { getAllGalleryMetadata } from "@/core/bridge/gallery-storage-bridge";
+import { findNearestGalleryItem } from "@/utils/gallery-helpers";
 
 // selector統一
 const findColorButtons = (): NodeListOf<Element> => {
@@ -89,25 +90,24 @@ const getColorStats = async (): Promise<Record<
   string,
   { matched: number; total: number }
 > | null> => {
-  const currentTiles = getCurrentTiles();
-  if (!currentTiles || currentTiles.size === 0) return null;
+  const allMetadata = await getAllGalleryMetadata();
+  // coords が存在するアイテムのみを型安全に抽出
+  const drawableItems = allMetadata.filter(
+    (m): m is typeof m & { coords: NonNullable<typeof m.coords> } =>
+      m.visible && !!m.coords
+  );
 
-  const { GalleryStorage } = await import("@/states/galleryStorage");
-  const galleryStorage = new GalleryStorage();
-  const allImages = await galleryStorage.getAll();
+  if (drawableItems.length === 0) return null;
 
-  const targetImageKeys = allImages
-    .filter(
-      (img) =>
-        img.drawEnabled &&
-        img.drawPosition &&
-        currentTiles.has(`${img.drawPosition.TLX},${img.drawPosition.TLY}`)
-    )
-    .map((img) => img.key);
+  // 最寄り1件を選択
+  const nearest = findNearestGalleryItem(drawableItems);
+  if (!nearest) return null;
 
-  if (targetImageKeys.length === 0) return null;
+  const stats = await getAggregatedColorStats([nearest.id]);
+  console.log(
+    `🧑‍🎨 : Paint stats: nearest template: ${nearest.title || nearest.id}`
+  );
 
-  const stats = await getAggregatedColorStats(targetImageKeys);
   return Object.keys(stats).length > 0 ? stats : null;
 };
 

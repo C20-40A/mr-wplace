@@ -4,8 +4,7 @@ import { ColorPaletteStorage } from "@/components/color-palette/storage";
 import type { ComputeDevice } from "@/components/color-palette/storage";
 import { getAggregatedColorStats } from "@/utils/inject-bridge";
 import { getAllGalleryMetadata } from "@/core/bridge/gallery-storage-bridge";
-import { getCurrentPosition } from "@/utils/position";
-import { latLngToTilePixel } from "@/utils/coordinate";
+import { findNearestGalleryItem } from "@/utils/gallery-helpers";
 import {
   sendColorFilterToInject,
   sendComputeDeviceToInject,
@@ -42,31 +41,20 @@ export const renderColorFilters = async (
     | undefined;
 
   const allMetadata = await getAllGalleryMetadata();
-  const drawableItems = allMetadata.filter((m) => m.visible && m.coords);
+  // coords が存在するアイテムのみを型安全に抽出
+  const drawableItems = allMetadata.filter(
+    (m): m is typeof m & { coords: NonNullable<typeof m.coords> } =>
+      m.visible && !!m.coords
+  );
 
   if (drawableItems.length > 0) {
-    const currentPos = getCurrentPosition();
+    // 最寄り1件を選択
+    const nearest = findNearestGalleryItem(drawableItems);
 
-    if (currentPos) {
-      const { TLX: cx, TLY: cy } = latLngToTilePixel(
-        currentPos.lat,
-        currentPos.lng
-      );
-
-      // 距離計算 → 最寄り1件を選択
-      const nearest = drawableItems.reduce(
-        (closest, item) => {
-          const dist =
-            Math.pow(item.coords!.TLX - cx, 2) +
-            Math.pow(item.coords!.TLY - cy, 2);
-          return dist < closest.dist ? { item, dist } : closest;
-        },
-        { item: drawableItems[0], dist: Infinity }
-      );
-
-      colorStats = await getAggregatedColorStats([nearest.item.id]);
+    if (nearest) {
+      colorStats = await getAggregatedColorStats([nearest.id]);
       console.log(
-        `🧑‍🎨 : Nearest template: ${nearest.item.title || nearest.item.id}`
+        `🧑‍🎨 : Nearest template: ${nearest.title || nearest.id}`
       );
     }
   }
