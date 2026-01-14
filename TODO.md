@@ -110,6 +110,13 @@
   - all_frames false (デフォルト)系は false．まあデフォルトが false だから不要か
 - dark/light テーマの i18n 不要になった
 
+# DONE v2.0.9
+
+- チュートリアル画面を追加
+- complete の UI を update
+- paint 画面の色の計算方法を、最寄りのテンプレートを参照するように変更
+- テキストを複数追加
+
 # DONE v2.0.8
 
 - tile merge が死んでる
