@@ -376,8 +376,10 @@ export class ImageGridComponent {
 
     if (total === 0) return "";
 
-    const percentage = (matched / total) * 100;
     const remaining = total - matched;
+    // 100%未満なのに100.0%と表示されるのを防ぐ（99.95%以上で丸められる）
+    const rawPercentage = (matched / total) * 100;
+    const percentage = remaining > 0 ? Math.min(rawPercentage, 99.9) : 100;
 
     // 100% Complete: リッチな達成表示
     if (remaining === 0) {
