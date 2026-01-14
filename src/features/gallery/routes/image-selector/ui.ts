@@ -2,6 +2,7 @@ import { ImageSelector } from "../../components/ImageSelector";
 import { GalleryStorage, GalleryItem } from "@/states/galleryStorage";
 import { t } from "@/i18n";
 import { runtime } from "@/utils/browser-api";
+import { Tutorial } from "@/features/tutorial";
 import {
   createAddImageButton,
   createUnplacedItem,
@@ -15,9 +16,12 @@ export class GalleryImageSelectorUI {
   private currentOnSelect: ((item: GalleryItem) => void) | null = null;
   private currentOnShowDetail: ((item: GalleryItem) => void) | null = null;
   private currentOnAddClick: (() => void) | null = null;
+  private tutorial: Tutorial;
+  private containerElement: HTMLElement | null = null;
 
   constructor() {
     this.galleryStorage = new GalleryStorage();
+    this.tutorial = new Tutorial();
   }
 
   /**
@@ -32,6 +36,7 @@ export class GalleryImageSelectorUI {
     this.currentOnSelect = onSelect;
     this.currentOnShowDetail = onShowDetail ?? null;
     this.currentOnAddClick = onAddClick ?? null;
+    this.containerElement = container;
     container.innerHTML = "";
 
     // レイヤーパネル（単一カラム）
@@ -50,6 +55,9 @@ export class GalleryImageSelectorUI {
       hint.textContent = t`${"click_image_to_draw"}`;
       container.appendChild(hint);
     }
+
+    // チュートリアルボタンを追加
+    this.tutorial.createButton(container);
   }
 
   /**
@@ -340,10 +348,14 @@ export class GalleryImageSelectorUI {
     this.imageSelector?.destroy();
     this.imageSelector = null;
 
+    // チュートリアルをクリーンアップ
+    this.tutorial.destroy();
+
     // コールバック参照をクリア
     this.currentOnSelect = null;
     this.currentOnShowDetail = null;
     this.currentOnAddClick = null;
+    this.containerElement = null;
 
     console.log("🧑‍🎨 : GalleryImageSelectorUI destroyed");
   }

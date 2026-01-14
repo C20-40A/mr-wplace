@@ -390,4 +390,11 @@ export const jaTranslations = {
   sync_replace_confirm:
     "本当に上書き取り込みしますか？\n既存の友人リストは全て削除され、URLのデータで置き換えられます。",
   open_url: "URLを開く",
+
+  // チュートリアル
+  tutorial_title: "チュートリアル",
+  tutorial_how_to_draw_title: "画像をマップ上に描画する方法",
+  tutorial_how_to_draw_step1: "ギャラリーに画像をアップロードする",
+  tutorial_how_to_draw_step2: "画像をクリックしてマップ上に配置する",
+  tutorial_how_to_draw_step3: "画像がマップタイルにオーバーレイとして表示される",
 };

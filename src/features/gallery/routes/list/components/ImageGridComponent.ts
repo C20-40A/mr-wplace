@@ -1,6 +1,7 @@
 import { t } from "@/i18n/manager";
 import type { GalleryItem } from "@/states/galleryStorage";
 import { runtime } from "@/utils/browser-api";
+import { Tutorial } from "@/features/tutorial";
 
 export interface ImageGridOptions {
   items: GalleryItem[];
@@ -24,6 +25,7 @@ export interface ImageGridOptions {
 export class ImageGridComponent {
   private container: HTMLElement;
   private options: ImageGridOptions;
+  private tutorial: Tutorial;
 
   constructor(container: HTMLElement, options: ImageGridOptions) {
     this.container = container;
@@ -38,6 +40,7 @@ export class ImageGridComponent {
       gridCols: "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
       ...options,
     };
+    this.tutorial = new Tutorial();
   }
 
   /**
@@ -54,10 +57,12 @@ export class ImageGridComponent {
   render(): void {
     if (this.options.items.length === 0) {
       this.renderEmptyState();
+      this.tutorial.createButton(this.container);
       return;
     }
 
     this.renderImageGrid();
+    this.tutorial.createButton(this.container);
   }
 
   /**
@@ -471,5 +476,6 @@ export class ImageGridComponent {
    */
   destroy(): void {
     this.container.innerHTML = "";
+    this.tutorial.destroy();
   }
 }

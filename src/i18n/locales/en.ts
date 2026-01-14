@@ -390,4 +390,11 @@ export const enTranslations = {
   sync_replace_confirm:
     "Are you sure you want to replace all friends?\nAll existing friends will be deleted and replaced with data from the URL.",
   open_url: "Open URL",
+
+  // Tutorial
+  tutorial_title: "Tutorial",
+  tutorial_how_to_draw_title: "How to Draw Images on Map",
+  tutorial_how_to_draw_step1: "Upload an image to the gallery",
+  tutorial_how_to_draw_step2: "Click on the image to place it on the map",
+  tutorial_how_to_draw_step3: "The image will be displayed as an overlay on the map tiles",
 };
