@@ -1,6 +1,7 @@
 import { ImageSelector } from "../../components/ImageSelector";
 import { GalleryStorage, GalleryItem } from "@/states/galleryStorage";
 import { t } from "@/i18n";
+import { runtime } from "@/utils/browser-api";
 import {
   createAddImageButton,
   createUnplacedItem,
@@ -182,30 +183,12 @@ export class GalleryImageSelectorUI {
       emptyContainer.style.cssText =
         "display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 2rem; gap: 2rem; min-height: 300px;";
 
-      // SVGアイコン
-      const iconSvg = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "svg"
-      );
-      iconSvg.setAttribute("fill", "none");
-      iconSvg.setAttribute("viewBox", "0 0 24 24");
-      iconSvg.setAttribute("stroke-width", "1");
-      iconSvg.setAttribute("stroke", "currentColor");
-      iconSvg.style.cssText = "width: 6rem; height: 6rem; opacity: 0.3;";
-
-      const iconPath = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "path"
-      );
-      iconPath.setAttribute("stroke-linecap", "round");
-      iconPath.setAttribute("stroke-linejoin", "round");
-      iconPath.setAttribute(
-        "d",
-        "M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-      );
-
-      iconSvg.appendChild(iconPath);
-      emptyContainer.appendChild(iconSvg);
+      // Tutorial GIF
+      const tutorialGif = document.createElement("img");
+      tutorialGif.src = runtime.getURL("assets/images/tutorial/how_to_draw.gif");
+      tutorialGif.alt = "How to draw";
+      tutorialGif.style.cssText = "width: 18rem; height: auto; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);";
+      emptyContainer.appendChild(tutorialGif);
 
       // メッセージ
       const messageContainer = document.createElement("div");
