@@ -394,7 +394,8 @@ export const enTranslations = {
   // Tutorial
   tutorial_title: "Tutorial",
   tutorial_how_to_draw_title: "How to Draw Images on Map",
-  tutorial_how_to_draw_step1: "Upload an image to the gallery",
-  tutorial_how_to_draw_step2: "Click on the image to place it on the map",
-  tutorial_how_to_draw_step3: "The image will be displayed as an overlay on the map tiles",
+  tutorial_how_to_draw_step1: "Save an image to the gallery",
+  tutorial_how_to_draw_step2: "Click on the map and select the 'Image' button",
+  tutorial_how_to_draw_step3:
+    "Click the image you want to place, and it will appear as an overlay on the map tile",
 };

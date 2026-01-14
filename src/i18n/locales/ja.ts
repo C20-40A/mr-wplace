@@ -394,7 +394,8 @@ export const jaTranslations = {
   // チュートリアル
   tutorial_title: "チュートリアル",
   tutorial_how_to_draw_title: "画像をマップ上に描画する方法",
-  tutorial_how_to_draw_step1: "ギャラリーに画像をアップロードする",
-  tutorial_how_to_draw_step2: "画像をクリックしてマップ上に配置する",
-  tutorial_how_to_draw_step3: "画像がマップタイルにオーバーレイとして表示される",
+  tutorial_how_to_draw_step1: "ギャラリーに画像を保存する",
+  tutorial_how_to_draw_step2: "マップをクリックして、「画像」ボタンを選択",
+  tutorial_how_to_draw_step3:
+    "配置したい画像をクリックすると、画像がマップタイルにオーバーレイとして表示される",
 };
