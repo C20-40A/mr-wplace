@@ -84,10 +84,12 @@ import { resolveMapInstanceAsync } from "./features/map-instance";
           );
 
           // Setup layer sort with styledata event listener
+          // const { setupLayerSortOnMapReady, setupFrontTileLayerOnMapReady } =
           const { setupLayerSortOnMapReady } = await import(
             "./features/map-instance"
           );
           setupLayerSortOnMapReady(mapInstance);
+          // setupFrontTileLayerOnMapReady(mapInstance);
         }
       }),
 
