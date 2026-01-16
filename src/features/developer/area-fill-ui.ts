@@ -1,0 +1,195 @@
+import { getCurrentPosition } from "@/utils/position";
+import { AreaFillStorage, AreaFillCorners } from "./area-fill-storage";
+
+interface AreaFillUIElements {
+  container: HTMLDivElement;
+  topLeftValue: HTMLSpanElement;
+  bottomRightValue: HTMLSpanElement;
+  update: (corners: AreaFillCorners) => void;
+}
+
+const formatCoord = (coord: { lat: number; lng: number } | null): string => {
+  if (!coord) return "Not set";
+  return `${coord.lat.toFixed(5)}, ${coord.lng.toFixed(5)}`;
+};
+
+export const createAreaFillDialogItem = (
+  initialCorners: AreaFillCorners,
+  onCornersChange?: (corners: AreaFillCorners) => void
+): AreaFillUIElements => {
+  const container = document.createElement("div");
+  container.style.cssText = `
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  `;
+
+  // Header
+  const header = document.createElement("div");
+  header.style.cssText = `
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  `;
+
+  const icon = document.createElement("span");
+  icon.style.cssText = `font-size: 14px;`;
+  icon.textContent = "🪣";
+
+  const title = document.createElement("span");
+  title.style.cssText = `
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 12px;
+    font-weight: 500;
+  `;
+  title.textContent = "Area Fill";
+
+  header.appendChild(icon);
+  header.appendChild(title);
+
+  // Top Left row
+  const topLeftRow = createCoordRow("Top-Left", initialCorners.topLeft, async () => {
+    const pos = getCurrentPosition();
+    if (!pos) {
+      console.log("🧑‍🎨 : No current position available");
+      return;
+    }
+    await AreaFillStorage.setTopLeft(pos.lat, pos.lng);
+    const corners = await AreaFillStorage.getCorners();
+    update(corners);
+    onCornersChange?.(corners);
+    console.log("🧑‍🎨 : Area fill top-left set:", pos.lat, pos.lng);
+  });
+
+  // Bottom Right row
+  const bottomRightRow = createCoordRow("Bottom-Right", initialCorners.bottomRight, async () => {
+    const pos = getCurrentPosition();
+    if (!pos) {
+      console.log("🧑‍🎨 : No current position available");
+      return;
+    }
+    await AreaFillStorage.setBottomRight(pos.lat, pos.lng);
+    const corners = await AreaFillStorage.getCorners();
+    update(corners);
+    onCornersChange?.(corners);
+    console.log("🧑‍🎨 : Area fill bottom-right set:", pos.lat, pos.lng);
+  });
+
+  // Clear button
+  const clearBtn = document.createElement("button");
+  clearBtn.style.cssText = `
+    margin-top: 4px;
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    background: rgba(239, 68, 68, 0.2);
+    color: rgba(239, 68, 68, 0.9);
+    font-size: 10px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    align-self: flex-end;
+  `;
+  clearBtn.textContent = "Clear";
+  clearBtn.addEventListener("mouseenter", () => {
+    clearBtn.style.background = "rgba(239, 68, 68, 0.3)";
+  });
+  clearBtn.addEventListener("mouseleave", () => {
+    clearBtn.style.background = "rgba(239, 68, 68, 0.2)";
+  });
+  clearBtn.addEventListener("click", async () => {
+    await AreaFillStorage.clear();
+    const corners = await AreaFillStorage.getCorners();
+    update(corners);
+    onCornersChange?.(corners);
+    console.log("🧑‍🎨 : Area fill corners cleared");
+  });
+
+  container.appendChild(header);
+  container.appendChild(topLeftRow.row);
+  container.appendChild(bottomRightRow.row);
+  container.appendChild(clearBtn);
+
+  const update = (corners: AreaFillCorners) => {
+    topLeftRow.valueSpan.textContent = formatCoord(corners.topLeft);
+    topLeftRow.valueSpan.style.color = corners.topLeft
+      ? "rgba(34, 197, 94, 0.9)"
+      : "rgba(255, 255, 255, 0.4)";
+    bottomRightRow.valueSpan.textContent = formatCoord(corners.bottomRight);
+    bottomRightRow.valueSpan.style.color = corners.bottomRight
+      ? "rgba(34, 197, 94, 0.9)"
+      : "rgba(255, 255, 255, 0.4)";
+  };
+
+  return {
+    container,
+    topLeftValue: topLeftRow.valueSpan,
+    bottomRightValue: bottomRightRow.valueSpan,
+    update,
+  };
+};
+
+const createCoordRow = (
+  label: string,
+  initialValue: { lat: number; lng: number } | null,
+  onSet: () => void
+): { row: HTMLDivElement; valueSpan: HTMLSpanElement } => {
+  const row = document.createElement("div");
+  row.style.cssText = `
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  `;
+
+  const labelSpan = document.createElement("span");
+  labelSpan.style.cssText = `
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
+    width: 70px;
+    flex-shrink: 0;
+  `;
+  labelSpan.textContent = label;
+
+  const valueSpan = document.createElement("span");
+  valueSpan.style.cssText = `
+    color: ${initialValue ? "rgba(34, 197, 94, 0.9)" : "rgba(255, 255, 255, 0.4)"};
+    font-size: 10px;
+    font-family: monospace;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  `;
+  valueSpan.textContent = formatCoord(initialValue);
+
+  const setBtn = document.createElement("button");
+  setBtn.style.cssText = `
+    padding: 3px 8px;
+    border: none;
+    border-radius: 4px;
+    background: rgba(59, 130, 246, 0.2);
+    color: rgba(59, 130, 246, 0.9);
+    font-size: 10px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    flex-shrink: 0;
+  `;
+  setBtn.textContent = "Set";
+  setBtn.addEventListener("mouseenter", () => {
+    setBtn.style.background = "rgba(59, 130, 246, 0.3)";
+  });
+  setBtn.addEventListener("mouseleave", () => {
+    setBtn.style.background = "rgba(59, 130, 246, 0.2)";
+  });
+  setBtn.addEventListener("click", onSet);
+
+  row.appendChild(labelSpan);
+  row.appendChild(valueSpan);
+  row.appendChild(setBtn);
+
+  return { row, valueSpan };
+};

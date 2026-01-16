@@ -26,6 +26,8 @@ import {
 import type { ColorIsolate } from "@/features/color-isolate";
 import { setShowUnplacedOnly } from "@/states/showUnplacedOnly";
 import { setupDeveloperMenu } from "./developer-menu";
+import { createAreaFillDialogItem } from "./area-fill-ui";
+import { AreaFillStorage } from "./area-fill-storage";
 
 export class DevInject {
   private devMode: boolean = false;
@@ -151,7 +153,7 @@ export class DevInject {
   }
 
   /** ダイアログの中身を構築 */
-  private ensureDialogContent(): void {
+  private async ensureDialogContent(): Promise<void> {
     const { content } = createDeveloperDialog();
 
     // 既にアイテムがあればスキップ
@@ -170,6 +172,11 @@ export class DevInject {
       () => this.toggleAutoColorSpoit()
     );
     content.appendChild(this.autoColorSpoitDialogItem);
+
+    // Area Fill item
+    const areaFillCorners = await AreaFillStorage.getCorners();
+    const areaFillUI = createAreaFillDialogItem(areaFillCorners);
+    content.appendChild(areaFillUI.container);
 
     console.log("🧑‍🎨 : Developer dialog content initialized");
   }
