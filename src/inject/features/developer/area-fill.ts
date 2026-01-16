@@ -7,11 +7,20 @@
 import { getMapInstanceFromWplace } from "../map-instance/get-map-instance";
 import { latLngToTilePixelFloat, tilePixelToLatLng } from "@/utils/coordinate";
 import { TILE_SIZE } from "@/utils/geo-converter";
+import { getOriginalBlob } from "../tile-draw";
 
 interface AreaFillCorners {
   topLeft: { lat: number; lng: number } | null;
   bottomRight: { lat: number; lng: number } | null;
 }
+
+interface AreaFillOptions {
+  skipExistingPixels: boolean;
+}
+
+const DEFAULT_OPTIONS: AreaFillOptions = {
+  skipExistingPixels: true,
+};
 
 let isRunning = false;
 let stopRequested = false;
@@ -70,15 +79,22 @@ const fireMapClick = (lat: number, lng: number): boolean => {
   return true;
 };
 
+interface PixelPosition {
+  lat: number;
+  lng: number;
+  tileKey: string;
+  pxX: number;
+  pxY: number;
+}
+
 /**
  * Generate pixel grid positions within the area
- * Returns array of {lat, lng} for each pixel center
+ * Returns array of positions with tile info for filtering
  */
 const generatePixelPositions = (
   topLeft: { lat: number; lng: number },
   bottomRight: { lat: number; lng: number }
-): { lat: number; lng: number }[] => {
-  // Convert lat/lng to world pixel coordinates
+): PixelPosition[] => {
   const tl = latLngToTilePixelFloat(topLeft.lat, topLeft.lng);
   const br = latLngToTilePixelFloat(bottomRight.lat, bottomRight.lng);
 
@@ -92,20 +108,18 @@ const generatePixelPositions = (
   const minY = Math.min(tlWorldY, brWorldY);
   const maxY = Math.max(tlWorldY, brWorldY);
 
-  const positions: { lat: number; lng: number }[] = [];
+  const positions: PixelPosition[] = [];
 
-  // Iterate by pixel (accurate regardless of latitude)
-  // Use pixel center (+0.5) for accurate click positioning
   for (let y = minY; y <= maxY; y++) {
     for (let x = minX; x <= maxX; x++) {
       const centerX = x + 0.5;
       const centerY = y + 0.5;
       const tileX = Math.floor(centerX / TILE_SIZE);
       const tileY = Math.floor(centerY / TILE_SIZE);
-      const pxX = centerX - tileX * TILE_SIZE;
-      const pxY = centerY - tileY * TILE_SIZE;
-      const { lat, lng } = tilePixelToLatLng(tileX, tileY, pxX, pxY);
-      positions.push({ lat, lng });
+      const pxX = Math.floor(centerX - tileX * TILE_SIZE);
+      const pxY = Math.floor(centerY - tileY * TILE_SIZE);
+      const { lat, lng } = tilePixelToLatLng(tileX, tileY, pxX + 0.5, pxY + 0.5);
+      positions.push({ lat, lng, tileKey: `${tileX},${tileY}`, pxX, pxY });
     }
   }
 
@@ -113,10 +127,67 @@ const generatePixelPositions = (
 };
 
 /**
+ * Load tile ImageData from cached blob
+ */
+const loadTileImageData = async (blob: Blob): Promise<ImageData> => {
+  const bitmap = await createImageBitmap(blob);
+  const canvas = new OffscreenCanvas(TILE_SIZE, TILE_SIZE);
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(bitmap, 0, 0);
+  bitmap.close();
+  return ctx.getImageData(0, 0, TILE_SIZE, TILE_SIZE);
+};
+
+/**
+ * Filter positions to exclude pixels that already exist in background
+ */
+const filterExistingPixels = async (
+  positions: PixelPosition[]
+): Promise<PixelPosition[]> => {
+  // Group by tile
+  const byTile = new Map<string, PixelPosition[]>();
+  for (const pos of positions) {
+    const arr = byTile.get(pos.tileKey) ?? [];
+    arr.push(pos);
+    byTile.set(pos.tileKey, arr);
+  }
+
+  const result: PixelPosition[] = [];
+  const tileImageDataCache = new Map<string, ImageData | null>();
+
+  for (const [tileKey, tilePositions] of byTile) {
+    // Get cached original tile
+    let imageData = tileImageDataCache.get(tileKey);
+    if (imageData === undefined) {
+      const blob = getOriginalBlob(tileKey);
+      imageData = blob ? await loadTileImageData(blob) : null;
+      tileImageDataCache.set(tileKey, imageData);
+    }
+
+    // If no cache, include all positions (can't check)
+    if (!imageData) {
+      result.push(...tilePositions);
+      continue;
+    }
+
+    // Check each pixel
+    for (const pos of tilePositions) {
+      const idx = (pos.pxY * TILE_SIZE + pos.pxX) * 4;
+      const alpha = imageData.data[idx + 3];
+      // Empty pixel = transparent (alpha === 0)
+      if (alpha === 0) result.push(pos);
+    }
+  }
+
+  return result;
+};
+
+/**
  * Start area fill process
  */
 export const startAreaFill = async (
-  corners: AreaFillCorners
+  corners: AreaFillCorners,
+  options: AreaFillOptions = DEFAULT_OPTIONS
 ): Promise<void> => {
   if (!isDevModeEnabled()) {
     console.warn("🧑‍🎨 : Area fill requires developer mode");
@@ -139,11 +210,16 @@ export const startAreaFill = async (
 
   console.log("🧑‍🎨 : Area fill started", corners);
 
-  const positions = generatePixelPositions(
-    corners.topLeft,
-    corners.bottomRight
-  );
-  console.log(`🧑‍🎨 : Area fill - ${positions.length} pixels to fill`);
+  let positions = generatePixelPositions(corners.topLeft, corners.bottomRight);
+  console.log(`🧑‍🎨 : Area fill - ${positions.length} pixels in area`);
+
+  if (options.skipExistingPixels) {
+    const before = positions.length;
+    positions = await filterExistingPixels(positions);
+    console.log(
+      `🧑‍🎨 : Area fill - Filtered to ${positions.length} empty pixels (skipped ${before - positions.length} existing)`
+    );
+  }
 
   let clickCount = 0;
   for (const pos of positions) {

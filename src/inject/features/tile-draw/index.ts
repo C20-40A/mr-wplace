@@ -20,6 +20,8 @@ export {
   getCachedBlob,
   setCachedBlob,
   invalidateTile,
+  getOriginalBlob,
+  setOriginalBlob,
 } from "./last-modified-cache";
 
 export { computeTotalStatsFromImage } from "./stats/compute-total";
