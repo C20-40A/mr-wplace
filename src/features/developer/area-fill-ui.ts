@@ -5,7 +5,9 @@ interface AreaFillUIElements {
   container: HTMLDivElement;
   topLeftValue: HTMLSpanElement;
   bottomRightValue: HTMLSpanElement;
+  fillButton: HTMLButtonElement;
   update: (corners: AreaFillCorners) => void;
+  setRunning: (running: boolean) => void;
 }
 
 const formatCoord = (coord: { lat: number; lng: number } | null): string => {
@@ -80,26 +82,59 @@ export const createAreaFillDialogItem = (
     console.log("🧑‍🎨 : Area fill bottom-right set:", pos.lat, pos.lng);
   });
 
+  // Button row
+  const buttonRow = document.createElement("div");
+  buttonRow.style.cssText = `
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+  `;
+
+  // Fill button
+  let isRunning = false;
+  const fillBtn = document.createElement("button");
+  fillBtn.style.cssText = `
+    flex: 1;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    background: rgba(34, 197, 94, 0.2);
+    color: rgba(34, 197, 94, 0.9);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  `;
+  fillBtn.textContent = "Fill";
+  fillBtn.addEventListener("mouseenter", () => {
+    fillBtn.style.background = isRunning
+      ? "rgba(239, 68, 68, 0.3)"
+      : "rgba(34, 197, 94, 0.3)";
+  });
+  fillBtn.addEventListener("mouseleave", () => {
+    fillBtn.style.background = isRunning
+      ? "rgba(239, 68, 68, 0.2)"
+      : "rgba(34, 197, 94, 0.2)";
+  });
+
   // Clear button
   const clearBtn = document.createElement("button");
   clearBtn.style.cssText = `
-    margin-top: 4px;
-    padding: 4px 8px;
+    padding: 6px 12px;
     border: none;
     border-radius: 4px;
-    background: rgba(239, 68, 68, 0.2);
-    color: rgba(239, 68, 68, 0.9);
-    font-size: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
     cursor: pointer;
     transition: background 0.15s ease;
-    align-self: flex-end;
   `;
   clearBtn.textContent = "Clear";
   clearBtn.addEventListener("mouseenter", () => {
-    clearBtn.style.background = "rgba(239, 68, 68, 0.3)";
+    clearBtn.style.background = "rgba(255, 255, 255, 0.15)";
   });
   clearBtn.addEventListener("mouseleave", () => {
-    clearBtn.style.background = "rgba(239, 68, 68, 0.2)";
+    clearBtn.style.background = "rgba(255, 255, 255, 0.1)";
   });
   clearBtn.addEventListener("click", async () => {
     await AreaFillStorage.clear();
@@ -109,10 +144,24 @@ export const createAreaFillDialogItem = (
     console.log("🧑‍🎨 : Area fill corners cleared");
   });
 
+  buttonRow.appendChild(fillBtn);
+  buttonRow.appendChild(clearBtn);
+
   container.appendChild(header);
   container.appendChild(topLeftRow.row);
   container.appendChild(bottomRightRow.row);
-  container.appendChild(clearBtn);
+  container.appendChild(buttonRow);
+
+  const setRunning = (running: boolean) => {
+    isRunning = running;
+    fillBtn.textContent = running ? "Stop" : "Fill";
+    fillBtn.style.background = running
+      ? "rgba(239, 68, 68, 0.2)"
+      : "rgba(34, 197, 94, 0.2)";
+    fillBtn.style.color = running
+      ? "rgba(239, 68, 68, 0.9)"
+      : "rgba(34, 197, 94, 0.9)";
+  };
 
   const update = (corners: AreaFillCorners) => {
     topLeftRow.valueSpan.textContent = formatCoord(corners.topLeft);
@@ -129,7 +178,9 @@ export const createAreaFillDialogItem = (
     container,
     topLeftValue: topLeftRow.valueSpan,
     bottomRightValue: bottomRightRow.valueSpan,
+    fillButton: fillBtn,
     update,
+    setRunning,
   };
 };
 

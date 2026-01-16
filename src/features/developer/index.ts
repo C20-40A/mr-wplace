@@ -175,7 +175,33 @@ export class DevInject {
 
     // Area Fill item
     const areaFillCorners = await AreaFillStorage.getCorners();
+    let areaFillRunning = false;
     const areaFillUI = createAreaFillDialogItem(areaFillCorners);
+
+    areaFillUI.fillButton.addEventListener("click", async () => {
+      if (areaFillRunning) {
+        // Stop
+        window.postMessage({ source: "mr-wplace-area-fill-stop" }, "*");
+        areaFillRunning = false;
+        areaFillUI.setRunning(false);
+        console.log("🧑‍🎨 : Area fill stop requested");
+      } else {
+        // Start
+        const corners = await AreaFillStorage.getCorners();
+        if (!corners.topLeft || !corners.bottomRight) {
+          alert("Please set both corners before filling");
+          return;
+        }
+        window.postMessage(
+          { source: "mr-wplace-area-fill-start", corners },
+          "*"
+        );
+        areaFillRunning = true;
+        areaFillUI.setRunning(true);
+        console.log("🧑‍🎨 : Area fill start requested", corners);
+      }
+    });
+
     content.appendChild(areaFillUI.container);
 
     console.log("🧑‍🎨 : Developer dialog content initialized");

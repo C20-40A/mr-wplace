@@ -25,7 +25,8 @@ import { startAutoCanvasClick, stopAutoCanvasClick } from "./auto-canvas-click";
 import {
   startAutoColorSpoit,
   stopAutoColorSpoit,
-} from "./features/tile-draw/auto-color-spoit";
+} from "./features/developer/auto-color-spoit";
+import { startAreaFill, stopAreaFill } from "./features/developer/area-fill";
 import {
   openFilePickerAndImport,
   exportAndDownload,
@@ -161,6 +162,8 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-auto-canvas-click-stop": stopAutoCanvasClick,
   "mr-wplace-auto-color-spoit-start": startAutoColorSpoit,
   "mr-wplace-auto-color-spoit-stop": stopAutoColorSpoit,
+  "mr-wplace-area-fill-start": (data: any) => startAreaFill(data.corners),
+  "mr-wplace-area-fill-stop": stopAreaFill,
   "mr-wplace-gallery-import": handleGalleryImport,
   "mr-wplace-gallery-export": handleGalleryExport,
   "mr-wplace-gallery-reset": handleGalleryReset,
