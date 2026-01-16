@@ -21,7 +21,10 @@ import {
   handleComputeTotalStats,
 } from "./handlers/request-handlers";
 import { setupGalleryV2Handlers } from "./handlers/gallery-v2-handlers";
-import { startAutoCanvasClick, stopAutoCanvasClick } from "./auto-canvas-click";
+import {
+  startAutoCanvasClick,
+  stopAutoCanvasClick,
+} from "./features/developer/auto-canvas-click";
 import {
   startAutoColorSpoit,
   stopAutoColorSpoit,

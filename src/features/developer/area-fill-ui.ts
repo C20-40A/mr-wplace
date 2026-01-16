@@ -1,4 +1,5 @@
 import { getCurrentPosition } from "@/utils/position";
+import { latLngToTilePixel } from "@/utils/coordinate";
 import { AreaFillStorage, AreaFillCorners } from "./area-fill-storage";
 
 interface AreaFillUIElements {
@@ -12,7 +13,8 @@ interface AreaFillUIElements {
 
 const formatCoord = (coord: { lat: number; lng: number } | null): string => {
   if (!coord) return "Not set";
-  return `${coord.lat.toFixed(5)}, ${coord.lng.toFixed(5)}`;
+  const { TLX, TLY, PxX, PxY } = latLngToTilePixel(coord.lat, coord.lng);
+  return `${TLX}-${TLY}-${PxX}-${PxY}`;
 };
 
 export const createAreaFillDialogItem = (
@@ -55,28 +57,28 @@ export const createAreaFillDialogItem = (
   header.appendChild(title);
 
   // Top Left row
-  const topLeftRow = createCoordRow("Top-Left", initialCorners.topLeft, async () => {
+  const topLeftRow = createCoordRow("Top-Left", initialCorners.topLeft, () => {
     const pos = getCurrentPosition();
     if (!pos) {
       console.log("🧑‍🎨 : No current position available");
       return;
     }
-    await AreaFillStorage.setTopLeft(pos.lat, pos.lng);
-    const corners = await AreaFillStorage.getCorners();
+    AreaFillStorage.setTopLeft(pos.lat, pos.lng);
+    const corners = AreaFillStorage.getCorners();
     update(corners);
     onCornersChange?.(corners);
     console.log("🧑‍🎨 : Area fill top-left set:", pos.lat, pos.lng);
   });
 
   // Bottom Right row
-  const bottomRightRow = createCoordRow("Bottom-Right", initialCorners.bottomRight, async () => {
+  const bottomRightRow = createCoordRow("Bottom-Right", initialCorners.bottomRight, () => {
     const pos = getCurrentPosition();
     if (!pos) {
       console.log("🧑‍🎨 : No current position available");
       return;
     }
-    await AreaFillStorage.setBottomRight(pos.lat, pos.lng);
-    const corners = await AreaFillStorage.getCorners();
+    AreaFillStorage.setBottomRight(pos.lat, pos.lng);
+    const corners = AreaFillStorage.getCorners();
     update(corners);
     onCornersChange?.(corners);
     console.log("🧑‍🎨 : Area fill bottom-right set:", pos.lat, pos.lng);
@@ -93,6 +95,12 @@ export const createAreaFillDialogItem = (
   // Fill button
   let isRunning = false;
   const fillBtn = document.createElement("button");
+  const updateFillBtnStyle = (corners: AreaFillCorners) => {
+    const canFill = corners.topLeft && corners.bottomRight;
+    fillBtn.disabled = !canFill && !isRunning;
+    fillBtn.style.opacity = canFill || isRunning ? "1" : "0.4";
+    fillBtn.style.cursor = canFill || isRunning ? "pointer" : "not-allowed";
+  };
   fillBtn.style.cssText = `
     flex: 1;
     padding: 6px 12px;
@@ -103,15 +111,18 @@ export const createAreaFillDialogItem = (
     font-size: 11px;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.15s ease;
+    transition: background 0.15s ease, opacity 0.15s ease;
   `;
   fillBtn.textContent = "Fill";
+  updateFillBtnStyle(initialCorners);
   fillBtn.addEventListener("mouseenter", () => {
+    if (fillBtn.disabled) return;
     fillBtn.style.background = isRunning
       ? "rgba(239, 68, 68, 0.3)"
       : "rgba(34, 197, 94, 0.3)";
   });
   fillBtn.addEventListener("mouseleave", () => {
+    if (fillBtn.disabled) return;
     fillBtn.style.background = isRunning
       ? "rgba(239, 68, 68, 0.2)"
       : "rgba(34, 197, 94, 0.2)";
@@ -136,9 +147,9 @@ export const createAreaFillDialogItem = (
   clearBtn.addEventListener("mouseleave", () => {
     clearBtn.style.background = "rgba(255, 255, 255, 0.1)";
   });
-  clearBtn.addEventListener("click", async () => {
-    await AreaFillStorage.clear();
-    const corners = await AreaFillStorage.getCorners();
+  clearBtn.addEventListener("click", () => {
+    AreaFillStorage.clear();
+    const corners = AreaFillStorage.getCorners();
     update(corners);
     onCornersChange?.(corners);
     console.log("🧑‍🎨 : Area fill corners cleared");
@@ -172,6 +183,7 @@ export const createAreaFillDialogItem = (
     bottomRightRow.valueSpan.style.color = corners.bottomRight
       ? "rgba(34, 197, 94, 0.9)"
       : "rgba(255, 255, 255, 0.4)";
+    updateFillBtnStyle(corners);
   };
 
   return {

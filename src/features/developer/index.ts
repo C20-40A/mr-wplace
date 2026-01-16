@@ -153,7 +153,7 @@ export class DevInject {
   }
 
   /** ダイアログの中身を構築 */
-  private async ensureDialogContent(): Promise<void> {
+  private ensureDialogContent(): void {
     const { content } = createDeveloperDialog();
 
     // 既にアイテムがあればスキップ
@@ -174,11 +174,11 @@ export class DevInject {
     content.appendChild(this.autoColorSpoitDialogItem);
 
     // Area Fill item
-    const areaFillCorners = await AreaFillStorage.getCorners();
+    const areaFillCorners = AreaFillStorage.getCorners();
     let areaFillRunning = false;
     const areaFillUI = createAreaFillDialogItem(areaFillCorners);
 
-    areaFillUI.fillButton.addEventListener("click", async () => {
+    areaFillUI.fillButton.addEventListener("click", () => {
       if (areaFillRunning) {
         // Stop
         window.postMessage({ source: "mr-wplace-area-fill-stop" }, "*");
@@ -187,11 +187,8 @@ export class DevInject {
         console.log("🧑‍🎨 : Area fill stop requested");
       } else {
         // Start
-        const corners = await AreaFillStorage.getCorners();
-        if (!corners.topLeft || !corners.bottomRight) {
-          alert("Please set both corners before filling");
-          return;
-        }
+        const corners = AreaFillStorage.getCorners();
+        if (!corners.topLeft || !corners.bottomRight) return;
         window.postMessage(
           { source: "mr-wplace-area-fill-start", corners },
           "*"
