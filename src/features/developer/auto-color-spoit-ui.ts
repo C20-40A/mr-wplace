@@ -29,40 +29,50 @@ export const createAutoColorSpoitDialogItem = (
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 10px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 8px;
+    border-radius: 1px;
+    background: ${enabled ? "rgba(0, 255, 136, 0.1)" : "rgba(255, 255, 255, 0.04)"};
+    border: 1px solid ${enabled ? "rgba(0, 255, 136, 0.3)" : "rgba(255, 255, 255, 0.08)"};
     cursor: pointer;
-    transition: background 0.15s ease;
+    transition: all 0.1s ease;
   `;
   item.addEventListener("mouseenter", () => {
-    item.style.background = "rgba(255, 255, 255, 0.1)";
+    item.style.background = enabled ? "rgba(0, 255, 136, 0.15)" : "rgba(255, 255, 255, 0.08)";
   });
   item.addEventListener("mouseleave", () => {
-    item.style.background = "rgba(255, 255, 255, 0.05)";
+    item.style.background = enabled ? "rgba(0, 255, 136, 0.1)" : "rgba(255, 255, 255, 0.04)";
   });
 
   const icon = document.createElement("span");
-  icon.style.cssText = `font-size: 16px;`;
+  icon.style.cssText = `font-size: 14px; filter: ${enabled ? "none" : "grayscale(1) opacity(0.6)"};`;
   icon.textContent = "🪄";
 
   const label = document.createElement("span");
   label.style.cssText = `
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 12px;
+    color: ${enabled ? "rgba(0, 255, 136, 1)" : "rgba(255, 255, 255, 0.7)"};
+    font-size: 11px;
     flex: 1;
+    font-family: 'Consolas', 'Monaco', monospace;
+    letter-spacing: 0.5px;
   `;
-  label.textContent = "Auto Spoit";
+  label.textContent = "AUTO_SPOIT";
 
   const toggle = document.createElement("div");
   toggle.className = "auto-color-spoit-toggle";
   toggle.style.cssText = `
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: ${enabled ? "#22c55e" : "rgba(255, 255, 255, 0.3)"};
-    transition: background 0.15s ease;
+    width: 28px;
+    height: 10px;
+    border-radius: 1px;
+    background: ${enabled ? "rgba(0, 255, 136, 0.9)" : "rgba(255, 255, 255, 0.15)"};
+    box-shadow: ${enabled ? "0 0 8px rgba(0, 255, 136, 0.6)" : "none"};
+    transition: all 0.15s ease;
+    position: relative;
   `;
+  if (enabled) {
+    toggle.innerHTML = `<span style="position:absolute;left:3px;top:1px;font-size:7px;color:#000;font-weight:bold;font-family:monospace;">ON</span>`;
+  } else {
+    toggle.innerHTML = `<span style="position:absolute;right:2px;top:1px;font-size:7px;color:rgba(255,255,255,0.4);font-family:monospace;">OFF</span>`;
+  }
 
   item.appendChild(icon);
   item.appendChild(label);
@@ -77,12 +87,25 @@ export const updateAutoColorSpoitDialogItem = (
   item: HTMLDivElement,
   enabled: boolean
 ): void => {
-  const toggle = item.querySelector(
-    ".auto-color-spoit-toggle"
-  ) as HTMLDivElement;
+  // Update item style
+  item.style.background = enabled ? "rgba(0, 255, 136, 0.1)" : "rgba(255, 255, 255, 0.04)";
+  item.style.borderColor = enabled ? "rgba(0, 255, 136, 0.3)" : "rgba(255, 255, 255, 0.08)";
+
+  // Update icon
+  const icon = item.querySelector("span:first-child") as HTMLSpanElement;
+  if (icon) icon.style.filter = enabled ? "none" : "grayscale(1) opacity(0.6)";
+
+  // Update label
+  const label = item.querySelector("span:nth-child(2)") as HTMLSpanElement;
+  if (label) label.style.color = enabled ? "rgba(0, 255, 136, 1)" : "rgba(255, 255, 255, 0.7)";
+
+  // Update toggle
+  const toggle = item.querySelector(".auto-color-spoit-toggle") as HTMLDivElement;
   if (toggle) {
-    toggle.style.background = enabled
-      ? "#22c55e"
-      : "rgba(255, 255, 255, 0.3)";
+    toggle.style.background = enabled ? "rgba(0, 255, 136, 0.9)" : "rgba(255, 255, 255, 0.15)";
+    toggle.style.boxShadow = enabled ? "0 0 8px rgba(0, 255, 136, 0.6)" : "none";
+    toggle.innerHTML = enabled
+      ? `<span style="position:absolute;left:3px;top:1px;font-size:7px;color:#000;font-weight:bold;font-family:monospace;">ON</span>`
+      : `<span style="position:absolute;right:2px;top:1px;font-size:7px;color:rgba(255,255,255,0.4);font-family:monospace;">OFF</span>`;
   }
 };

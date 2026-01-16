@@ -17,19 +17,24 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
   dialog.style.cssText = `
     position: fixed;
     top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    left: 16px;
+    transform: translateY(-50%);
     z-index: 9999;
-    background: rgba(20, 20, 25, 0.92);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 12px;
-    min-width: 180px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 255, 136, 0.2);
+    border-left: 2px solid rgba(0, 255, 136, 0.7);
+    border-radius: 2px;
+    padding: 10px 12px;
+    min-width: 170px;
+    box-shadow:
+      0 0 20px rgba(0, 0, 0, 0.8),
+      0 0 40px rgba(0, 255, 136, 0.05),
+      inset 0 0 30px rgba(0, 0, 0, 0.4);
     display: none;
     cursor: default;
     user-select: none;
+    font-family: 'Consolas', 'Monaco', monospace;
   `;
 
   // Header (drag handle + close button)
@@ -40,44 +45,49 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     align-items: center;
     margin-bottom: 8px;
     cursor: move;
-    padding: 4px 0;
+    padding: 2px 0;
+    border-bottom: 1px solid rgba(0, 255, 136, 0.1);
+    padding-bottom: 6px;
   `;
 
   const title = document.createElement("span");
   title.style.cssText = `
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.5px;
+    color: rgba(0, 255, 136, 1);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
     text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
   `;
-  title.textContent = "DEV";
+  title.textContent = "//DEV";
 
   const closeBtn = document.createElement("button");
   closeBtn.style.cssText = `
     background: transparent;
-    border: none;
-    color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.4);
     cursor: pointer;
     padding: 2px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
-    transition: all 0.15s ease;
+    border-radius: 1px;
+    transition: all 0.1s ease;
+    width: 18px;
+    height: 18px;
   `;
   closeBtn.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width: 14px; height: 14px;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width: 10px; height: 10px;">
       <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
     </svg>
   `;
   closeBtn.addEventListener("mouseenter", () => {
-    closeBtn.style.color = "rgba(255, 255, 255, 0.9)";
-    closeBtn.style.background = "rgba(255, 255, 255, 0.1)";
+    closeBtn.style.color = "rgba(255, 100, 100, 0.9)";
+    closeBtn.style.borderColor = "rgba(255, 100, 100, 0.4)";
   });
   closeBtn.addEventListener("mouseleave", () => {
-    closeBtn.style.color = "rgba(255, 255, 255, 0.5)";
-    closeBtn.style.background = "transparent";
+    closeBtn.style.color = "rgba(255, 255, 255, 0.4)";
+    closeBtn.style.borderColor = "rgba(255, 255, 255, 0.15)";
   });
   closeBtn.addEventListener("click", () => hideDeveloperDialog());
 

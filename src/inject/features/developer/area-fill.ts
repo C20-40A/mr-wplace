@@ -17,8 +17,8 @@ let isRunning = false;
 let stopRequested = false;
 let currentCorners: AreaFillCorners = { topLeft: null, bottomRight: null };
 
-const BASE_INTERVAL_MS = 300;
-const JITTER_MS = 50;
+const BASE_INTERVAL_MS = 50;
+const JITTER_MS = 10;
 
 /**
  * Check if developer mode is enabled
