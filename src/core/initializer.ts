@@ -21,7 +21,7 @@ import {
   dataSaverAPI,
 } from "@/features/map-filter";
 import { layerSortAPI } from "@/features/layer-sort";
-import { AutoSpoit } from "@/features/developer";
+import { DevInject } from "@/features/developer";
 import { ColorIsolate } from "@/features/color-isolate";
 import { PositionInfo } from "@/features/position-info";
 import { initPaintStats } from "@/features/paint-stats";
@@ -67,7 +67,7 @@ export const initializeFeatures = async () => {
   new ColorFilter();
   const colorFilterManager = new ColorFilterManager();
   const colorIsolate = new ColorIsolate();
-  const autoSpoit = new AutoSpoit(colorFilterManager, colorIsolate);
+  const autoSpoit = new DevInject(colorFilterManager, colorIsolate);
   new PositionInfo();
   new PaletteToggle();
   new ShowUnplacedOnly();

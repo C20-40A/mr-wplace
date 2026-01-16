@@ -3,8 +3,19 @@ import { findPaintPixelControls } from "@/constants/selectors";
 import { AutoSpoitStorage } from "./storage";
 import { AutoCanvasClickStorage } from "./auto-canvas-click-storage";
 import { AutoColorSpoitStorage } from "./auto-color-spoit-storage";
-import { createAutoCanvasClickButton } from "./auto-canvas-click-ui";
-import { createAutoColorSpoitButton } from "./auto-color-spoit-ui";
+import {
+  createAutoCanvasClickDialogItem,
+  updateAutoCanvasClickDialogItem,
+} from "./auto-canvas-click-ui";
+import {
+  createAutoColorSpoitDialogItem,
+  updateAutoColorSpoitDialogItem,
+} from "./auto-color-spoit-ui";
+import { createDeveloperTriggerButton } from "./developer-trigger-button";
+import {
+  createDeveloperDialog,
+  toggleDeveloperDialog,
+} from "./developer-dialog";
 import { createKonamiCodeDetector } from "./konami-detector";
 import { t } from "@/i18n/manager";
 import { ColorFilterManager } from "@/utils/color-filter-manager";
@@ -16,12 +27,12 @@ import type { ColorIsolate } from "@/features/color-isolate";
 import { setShowUnplacedOnly } from "@/states/showUnplacedOnly";
 import { setupDeveloperMenu } from "./developer-menu";
 
-export class AutoSpoit {
+export class DevInject {
   private devMode: boolean = false;
   private autoCanvasClickEnabled: boolean = false;
-  private autoCanvasClickButton: HTMLButtonElement | null = null;
+  private autoCanvasClickDialogItem: HTMLDivElement | null = null;
   private autoColorSpoitEnabled: boolean = false;
-  private autoColorSpoitButton: HTMLButtonElement | null = null;
+  private autoColorSpoitDialogItem: HTMLDivElement | null = null;
   private colorFilterManager: ColorFilterManager;
   private colorIsolate: ColorIsolate;
 
@@ -100,63 +111,67 @@ export class AutoSpoit {
   private setupUI(): void {
     // dev modeがoffの場合はUIを表示しない
     if (!this.devMode) {
-      console.log("🧑‍🎨 : Auto spoit UI hidden (dev mode disabled)");
-      // 既存のボタンを削除
-      const existingAutoCanvasClickButton = document.getElementById(
-        "auto-canvas-click-btn"
-      );
-      if (existingAutoCanvasClickButton) {
-        existingAutoCanvasClickButton.parentElement?.remove();
+      console.log("🧑‍🎨 : Developer UI hidden (dev mode disabled)");
+      // 既存のトリガーボタンを削除
+      const existingTrigger = document.getElementById("dev-trigger-btn");
+      if (existingTrigger) {
+        existingTrigger.parentElement?.remove();
       }
-      const existingAutoColorSpoitButton = document.getElementById(
-        "auto-color-spoit-btn"
-      );
-      if (existingAutoColorSpoitButton) {
-        existingAutoColorSpoitButton.parentElement?.remove();
+      // ダイアログも削除
+      const existingDialog = document.getElementById("mr-wplace-dev-dialog");
+      if (existingDialog) {
+        existingDialog.remove();
       }
       return;
     }
 
+    // トリガーボタンをPaintPixelControlsに追加
     setupElementObserver([
       {
-        id: "auto-canvas-click-btn",
+        id: "dev-trigger-btn",
         getTargetElement: findPaintPixelControls,
         createElement: (container) => {
           const tooltip = document.createElement("div");
           tooltip.className = "tooltip";
-          tooltip.setAttribute("data-tip", "Toggle auto canvas click");
-          this.autoCanvasClickButton = createAutoCanvasClickButton(
-            this.autoCanvasClickEnabled
-          );
-          this.autoCanvasClickButton.id = "auto-canvas-click-btn";
-          this.autoCanvasClickButton.addEventListener("click", () =>
-            this.toggleAutoCanvasClick()
-          );
-          tooltip.appendChild(this.autoCanvasClickButton);
+          tooltip.setAttribute("data-tip", "Developer Tools");
+
+          const triggerButton = createDeveloperTriggerButton();
+          triggerButton.id = "dev-trigger-btn";
+          triggerButton.addEventListener("click", () => {
+            this.ensureDialogContent();
+            toggleDeveloperDialog();
+          });
+
+          tooltip.appendChild(triggerButton);
           container.appendChild(tooltip);
-          console.log("🧑‍🎨 : Auto canvas click button added");
-        },
-      },
-      {
-        id: "auto-color-spoit-btn",
-        getTargetElement: findPaintPixelControls,
-        createElement: (container) => {
-          const tooltip = document.createElement("div");
-          tooltip.className = "tooltip";
-          tooltip.setAttribute("data-tip", "Toggle auto color spoit");
-          this.autoColorSpoitButton = createAutoColorSpoitButton(
-            this.autoColorSpoitEnabled
-          );
-          this.autoColorSpoitButton.id = "auto-color-spoit-btn";
-          this.autoColorSpoitButton.addEventListener("click", () =>
-            this.toggleAutoColorSpoit()
-          );
-          tooltip.appendChild(this.autoColorSpoitButton);
-          container.appendChild(tooltip);
-          console.log("🧑‍🎨 : Auto color spoit button added");
+          console.log("🧑‍🎨 : Developer trigger button added");
         },
       },
     ]);
+  }
+
+  /** ダイアログの中身を構築 */
+  private ensureDialogContent(): void {
+    const { content } = createDeveloperDialog();
+
+    // 既にアイテムがあればスキップ
+    if (content.children.length > 0) return;
+
+    // Auto Canvas Click item
+    this.autoCanvasClickDialogItem = createAutoCanvasClickDialogItem(
+      this.autoCanvasClickEnabled,
+      () => this.toggleAutoCanvasClick()
+    );
+    content.appendChild(this.autoCanvasClickDialogItem);
+
+    // Auto Color Spoit item
+    this.autoColorSpoitDialogItem = createAutoColorSpoitDialogItem(
+      this.autoColorSpoitEnabled,
+      () => this.toggleAutoColorSpoit()
+    );
+    content.appendChild(this.autoColorSpoitDialogItem);
+
+    console.log("🧑‍🎨 : Developer dialog content initialized");
   }
 
   isDevModeEnabled(): boolean {
@@ -211,19 +226,11 @@ export class AutoSpoit {
       this.sendAutoCanvasClickStop();
     }
 
-    if (this.autoCanvasClickButton) {
-      // ボタンの見た目を更新
-      this.autoCanvasClickButton.classList.toggle(
-        "text-primary",
+    if (this.autoCanvasClickDialogItem) {
+      updateAutoCanvasClickDialogItem(
+        this.autoCanvasClickDialogItem,
         this.autoCanvasClickEnabled
       );
-      this.autoCanvasClickButton.classList.toggle(
-        "text-base-content",
-        !this.autoCanvasClickEnabled
-      );
-      this.autoCanvasClickButton.style.opacity = this.autoCanvasClickEnabled
-        ? "1"
-        : "0.5";
     }
   }
 
@@ -262,18 +269,11 @@ export class AutoSpoit {
       this.sendAutoColorSpoitStop();
     }
 
-    if (this.autoColorSpoitButton) {
-      this.autoColorSpoitButton.classList.toggle(
-        "text-primary",
+    if (this.autoColorSpoitDialogItem) {
+      updateAutoColorSpoitDialogItem(
+        this.autoColorSpoitDialogItem,
         this.autoColorSpoitEnabled
       );
-      this.autoColorSpoitButton.classList.toggle(
-        "text-base-content",
-        !this.autoColorSpoitEnabled
-      );
-      this.autoColorSpoitButton.style.opacity = this.autoColorSpoitEnabled
-        ? "1"
-        : "0.5";
     }
   }
 

@@ -4,7 +4,7 @@ import { TileOverlay } from "../features/tile-overlay";
 import { TileSnapshot } from "../features/time-travel/utils/tile-snapshot";
 import { ChargeData } from "../features/user-status/services/timer-service";
 import type { ColorFilterManager } from "../utils/color-filter-manager";
-import type { AutoSpoit } from "../features/developer";
+import type { DevInject } from "../features/developer";
 import { WplaceMap } from "@/inject/types";
 
 // Runtime拡張ChargeData型（startTime, timeToFull追加）
@@ -17,7 +17,7 @@ interface mrWplace {
   tileOverlay: TileOverlay;
   wplaceChargeData?: RuntimeChargeData;
   tileSnapshot: TileSnapshot;
-  autoSpoit?: AutoSpoit;
+  autoSpoit?: DevInject;
   // Content context only (not available in inject context)
   colorFilterManager?: ColorFilterManager;
   wplaceMap?: WplaceMap;
