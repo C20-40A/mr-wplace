@@ -26,8 +26,8 @@ let isRunning = false;
 let stopRequested = false;
 let currentCorners: AreaFillCorners = { topLeft: null, bottomRight: null };
 
-const BASE_INTERVAL_MS = 50;
-const JITTER_MS = 10;
+const BASE_INTERVAL_MS = 10;
+const JITTER_MS = 5;
 
 /**
  * Check if developer mode is enabled
@@ -118,7 +118,12 @@ const generatePixelPositions = (
       const tileY = Math.floor(centerY / TILE_SIZE);
       const pxX = Math.floor(centerX - tileX * TILE_SIZE);
       const pxY = Math.floor(centerY - tileY * TILE_SIZE);
-      const { lat, lng } = tilePixelToLatLng(tileX, tileY, pxX + 0.5, pxY + 0.5);
+      const { lat, lng } = tilePixelToLatLng(
+        tileX,
+        tileY,
+        pxX + 0.5,
+        pxY + 0.5
+      );
       positions.push({ lat, lng, tileKey: `${tileX},${tileY}`, pxX, pxY });
     }
   }
@@ -217,7 +222,9 @@ export const startAreaFill = async (
     const before = positions.length;
     positions = await filterExistingPixels(positions);
     console.log(
-      `🧑‍🎨 : Area fill - Filtered to ${positions.length} empty pixels (skipped ${before - positions.length} existing)`
+      `🧑‍🎨 : Area fill - Filtered to ${positions.length} empty pixels (skipped ${
+        before - positions.length
+      } existing)`
     );
   }
 
