@@ -5,6 +5,7 @@ interface DeveloperDialogElements {
 }
 
 let dialogInstance: DeveloperDialogElements | null = null;
+let onHideCallback: (() => void) | null = null;
 let isDragging = false;
 let dragOffset = { x: 0, y: 0 };
 
@@ -163,7 +164,12 @@ export const showDeveloperDialog = (): void => {
 export const hideDeveloperDialog = (): void => {
   if (dialogInstance) {
     dialogInstance.dialog.style.display = "none";
+    onHideCallback?.();
   }
+};
+
+export const setOnHideCallback = (callback: (() => void) | null): void => {
+  onHideCallback = callback;
 };
 
 export const toggleDeveloperDialog = (): void => {

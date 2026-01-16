@@ -1,14 +1,17 @@
 import { getCurrentPosition } from "@/utils/position";
 import { latLngToTilePixel } from "@/utils/coordinate";
 import { AreaFillStorage, AreaFillCorners } from "./area-fill-storage";
+import { findPaintPixelControls } from "@/constants/selectors";
 
-interface AreaFillUIElements {
+export interface AreaFillUIElements {
   container: HTMLDivElement;
   topLeftValue: HTMLSpanElement;
   bottomRightValue: HTMLSpanElement;
   fillButton: HTMLButtonElement;
   update: (corners: AreaFillCorners) => void;
   setRunning: (running: boolean) => void;
+  mount: () => void;
+  unmount: () => void;
 }
 
 const formatCoord = (coord: { lat: number; lng: number } | null): string => {
@@ -100,12 +103,27 @@ export const createAreaFillDialogItem = (
 
   // Fill button
   let isRunning = false;
+  let isPaintControlsVisible = !!findPaintPixelControls();
+  let currentCornersState = initialCorners;
   const fillBtn = document.createElement("button");
-  const updateFillBtnStyle = (corners: AreaFillCorners) => {
-    const canFill = corners.topLeft && corners.bottomRight;
-    fillBtn.disabled = !canFill && !isRunning;
-    fillBtn.style.opacity = canFill || isRunning ? "1" : "0.4";
-    fillBtn.style.cursor = canFill || isRunning ? "pointer" : "not-allowed";
+
+  const updateFillBtnStyle = () => {
+    const hasCorners = currentCornersState.topLeft && currentCornersState.bottomRight;
+    // Running中は常にクリック可能（STOPのため）、それ以外はcorners + PaintPixelControls両方必要
+    const canFill = isRunning || (hasCorners && isPaintControlsVisible);
+    fillBtn.disabled = !canFill;
+    fillBtn.style.opacity = canFill ? "1" : "0.4";
+    fillBtn.style.cursor = canFill ? "pointer" : "not-allowed";
+  };
+
+  const updateSetBtnsStyle = () => {
+    // SETボタンはPaintPixelControlsが非表示の時のみクリック可能
+    const canSet = !isPaintControlsVisible;
+    [topLeftRow.setBtn, bottomRightRow.setBtn].forEach((btn) => {
+      btn.disabled = !canSet;
+      btn.style.opacity = canSet ? "1" : "0.4";
+      btn.style.cursor = canSet ? "pointer" : "not-allowed";
+    });
   };
   fillBtn.style.cssText = `
     flex: 1;
@@ -123,7 +141,8 @@ export const createAreaFillDialogItem = (
     text-transform: uppercase;
   `;
   fillBtn.textContent = "EXEC";
-  updateFillBtnStyle(initialCorners);
+  updateFillBtnStyle();
+  updateSetBtnsStyle();
   fillBtn.addEventListener("mouseenter", () => {
     if (fillBtn.disabled) return;
     fillBtn.style.background = isRunning
@@ -196,6 +215,7 @@ export const createAreaFillDialogItem = (
   };
 
   const update = (corners: AreaFillCorners) => {
+    currentCornersState = corners;
     topLeftRow.valueSpan.textContent = formatCoord(corners.topLeft);
     topLeftRow.valueSpan.style.color = corners.topLeft
       ? "rgba(0, 255, 136, 1)"
@@ -204,7 +224,32 @@ export const createAreaFillDialogItem = (
     bottomRightRow.valueSpan.style.color = corners.bottomRight
       ? "rgba(0, 255, 136, 1)"
       : "rgba(255, 255, 255, 0.4)";
-    updateFillBtnStyle(corners);
+    updateFillBtnStyle();
+  };
+
+  // MutationObserver for PaintPixelControls visibility
+  let observer: MutationObserver | null = null;
+
+  const mount = () => {
+    if (observer) return;
+    observer = new MutationObserver(() => {
+      const newVisible = !!findPaintPixelControls();
+      if (newVisible !== isPaintControlsVisible) {
+        isPaintControlsVisible = newVisible;
+        updateFillBtnStyle();
+        updateSetBtnsStyle();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    // Initial check
+    isPaintControlsVisible = !!findPaintPixelControls();
+    updateFillBtnStyle();
+    updateSetBtnsStyle();
+  };
+
+  const unmount = () => {
+    observer?.disconnect();
+    observer = null;
   };
 
   return {
@@ -214,6 +259,8 @@ export const createAreaFillDialogItem = (
     fillButton: fillBtn,
     update,
     setRunning,
+    mount,
+    unmount,
   };
 };
 
@@ -221,7 +268,7 @@ const createCoordRow = (
   label: string,
   initialValue: { lat: number; lng: number } | null,
   onSet: () => void
-): { row: HTMLDivElement; valueSpan: HTMLSpanElement } => {
+): { row: HTMLDivElement; valueSpan: HTMLSpanElement; setBtn: HTMLButtonElement } => {
   const row = document.createElement("div");
   row.style.cssText = `
     display: flex;
@@ -269,10 +316,12 @@ const createCoordRow = (
   `;
   setBtn.textContent = "SET";
   setBtn.addEventListener("mouseenter", () => {
+    if (setBtn.disabled) return;
     setBtn.style.background = "rgba(100, 180, 255, 0.2)";
     setBtn.style.boxShadow = "0 0 6px rgba(100, 180, 255, 0.3)";
   });
   setBtn.addEventListener("mouseleave", () => {
+    if (setBtn.disabled) return;
     setBtn.style.background = "rgba(100, 180, 255, 0.1)";
     setBtn.style.boxShadow = "none";
   });
@@ -282,5 +331,5 @@ const createCoordRow = (
   row.appendChild(valueSpan);
   row.appendChild(setBtn);
 
-  return { row, valueSpan };
+  return { row, valueSpan, setBtn };
 };

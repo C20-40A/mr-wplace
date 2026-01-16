@@ -15,6 +15,7 @@ import { createDeveloperTriggerButton } from "./developer-trigger-button";
 import {
   createDeveloperDialog,
   toggleDeveloperDialog,
+  setOnHideCallback,
 } from "./developer-dialog";
 import { createKonamiCodeDetector } from "./konami-detector";
 import { t } from "@/i18n/manager";
@@ -26,7 +27,7 @@ import {
 import type { ColorIsolate } from "@/features/color-isolate";
 import { setShowUnplacedOnly } from "@/states/showUnplacedOnly";
 import { setupDeveloperMenu } from "./developer-menu";
-import { createAreaFillDialogItem } from "./area-fill-ui";
+import { createAreaFillDialogItem, type AreaFillUIElements } from "./area-fill-ui";
 import { AreaFillStorage } from "./area-fill-storage";
 
 export class DevInject {
@@ -35,6 +36,7 @@ export class DevInject {
   private autoCanvasClickDialogItem: HTMLDivElement | null = null;
   private autoColorSpoitEnabled: boolean = false;
   private autoColorSpoitDialogItem: HTMLDivElement | null = null;
+  private areaFillUI: AreaFillUIElements | null = null;
   private colorFilterManager: ColorFilterManager;
   private colorIsolate: ColorIsolate;
 
@@ -141,7 +143,7 @@ export class DevInject {
           triggerButton.id = "dev-trigger-btn";
           triggerButton.addEventListener("click", () => {
             this.ensureDialogContent();
-            toggleDeveloperDialog();
+            this.toggleDialogWithLifecycle();
           });
 
           tooltip.appendChild(triggerButton);
@@ -176,14 +178,14 @@ export class DevInject {
     // Area Fill item
     const areaFillCorners = AreaFillStorage.getCorners();
     let areaFillRunning = false;
-    const areaFillUI = createAreaFillDialogItem(areaFillCorners);
+    this.areaFillUI = createAreaFillDialogItem(areaFillCorners);
 
-    areaFillUI.fillButton.addEventListener("click", () => {
+    this.areaFillUI.fillButton.addEventListener("click", () => {
       if (areaFillRunning) {
         // Stop
         window.postMessage({ source: "mr-wplace-area-fill-stop" }, "*");
         areaFillRunning = false;
-        areaFillUI.setRunning(false);
+        this.areaFillUI?.setRunning(false);
         console.log("🧑‍🎨 : Area fill stop requested");
       } else {
         // Start
@@ -194,14 +196,29 @@ export class DevInject {
           "*"
         );
         areaFillRunning = true;
-        areaFillUI.setRunning(true);
+        this.areaFillUI?.setRunning(true);
         console.log("🧑‍🎨 : Area fill start requested", corners);
       }
     });
 
-    content.appendChild(areaFillUI.container);
+    content.appendChild(this.areaFillUI.container);
+
+    // Register callback for ESC/close button
+    setOnHideCallback(() => this.areaFillUI?.unmount());
 
     console.log("🧑‍🎨 : Developer dialog content initialized");
+  }
+
+  private toggleDialogWithLifecycle(): void {
+    const { dialog } = createDeveloperDialog();
+    const isOpening = dialog.style.display === "none";
+    toggleDeveloperDialog();
+
+    if (isOpening) {
+      this.areaFillUI?.mount();
+    } else {
+      this.areaFillUI?.unmount();
+    }
   }
 
   isDevModeEnabled(): boolean {
