@@ -18,6 +18,7 @@ import {
   darkThemeAPI,
   highContrastAPI,
   tileBoundariesAPI,
+  gridDisplayAPI,
   dataSaverAPI,
 } from "@/features/map-filter";
 import { layerSortAPI } from "@/features/layer-sort";
@@ -82,8 +83,9 @@ export const initializeFeatures = async () => {
     darkThemeAPI.initDarkTheme(), // 5. DarkTheme
     highContrastAPI.initHighContrast(), // 6. HighContrast
     tileBoundariesAPI.initTileBoundaries(), // 7. TileBoundaries
-    dataSaverAPI.initDataSaver(), // 8. DataSaver
-    layerSortAPI.initLayerSort(), // 9. LayerSort
+    gridDisplayAPI.initGridDisplay(), // 8. GridDisplay
+    dataSaverAPI.initDataSaver(), // 9. DataSaver
+    layerSortAPI.initLayerSort(), // 10. LayerSort
   ]);
 
   // 初期化完了を待つ

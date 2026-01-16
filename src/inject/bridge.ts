@@ -39,6 +39,7 @@ import {
   changeTileBoundaryVisibility,
   handleMapInstanceFlyTo,
 } from "./features/map-instance";
+import { setGridDisplayEnabled } from "./features/grid-display";
 
 type MessageHandler = (data: any) => void | Promise<void>;
 
@@ -151,6 +152,8 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-color-filter": handleColorFilterUpdate,
   "mr-wplace-tile-boundaries-update": (data) =>
     changeTileBoundaryVisibility(data.visible),
+  "mr-wplace-grid-display-update": (data) =>
+    setGridDisplayEnabled(data.visible),
   "mr-wplace-cache-clear": handleCacheClear,
   "mr-wplace-layer-sort-update": handleLayerSortUpdate,
   "mr-wplace-gallery-images-v2": handleGalleryImagesV2,
