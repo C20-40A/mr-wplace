@@ -5,7 +5,8 @@
  */
 
 import { getMapInstanceFromWplace } from "../map-instance/get-map-instance";
-import { latLngToTilePixelFloat } from "@/utils/coordinate";
+import { latLngToTilePixelFloat, tilePixelToLatLng } from "@/utils/coordinate";
+import { TILE_SIZE } from "@/utils/geo-converter";
 
 interface AreaFillCorners {
   topLeft: { lat: number; lng: number } | null;
@@ -16,9 +17,8 @@ let isRunning = false;
 let stopRequested = false;
 let currentCorners: AreaFillCorners = { topLeft: null, bottomRight: null };
 
-// Base interval ~500ms with ±100ms jitter
-const BASE_INTERVAL_MS = 500;
-const JITTER_MS = 100;
+const BASE_INTERVAL_MS = 300;
+const JITTER_MS = 50;
 
 /**
  * Check if developer mode is enabled
@@ -78,28 +78,33 @@ const generatePixelPositions = (
   topLeft: { lat: number; lng: number },
   bottomRight: { lat: number; lng: number }
 ): { lat: number; lng: number }[] => {
+  // Convert lat/lng to world pixel coordinates
+  const tl = latLngToTilePixelFloat(topLeft.lat, topLeft.lng);
+  const br = latLngToTilePixelFloat(bottomRight.lat, bottomRight.lng);
+
+  const tlWorldX = tl.TLX * TILE_SIZE + tl.PxX;
+  const tlWorldY = tl.TLY * TILE_SIZE + tl.PxY;
+  const brWorldX = br.TLX * TILE_SIZE + br.PxX;
+  const brWorldY = br.TLY * TILE_SIZE + br.PxY;
+
+  const minX = Math.min(tlWorldX, brWorldX);
+  const maxX = Math.max(tlWorldX, brWorldX);
+  const minY = Math.min(tlWorldY, brWorldY);
+  const maxY = Math.max(tlWorldY, brWorldY);
+
   const positions: { lat: number; lng: number }[] = [];
 
-  // At zoom level 11 (wplace default), 1 tile = 1000x1000 pixels
-  // Each tile spans a certain lat/lng range depending on location
-  // For simplicity, we'll use a small step that approximates 1 pixel
-
-  // Approximate pixel size at equator for zoom 11
-  // 360 degrees / (2^11 * 1000 pixels) ≈ 0.000176 degrees per pixel
-  const PIXEL_SIZE_LNG = 0.000176;
-  // Latitude needs to be adjusted for mercator projection
-  // For simplicity, use similar value (works well near equator)
-  const PIXEL_SIZE_LAT = 0.000176;
-
-  // Ensure correct ordering (topLeft should have higher lat, lower lng)
-  const minLat = Math.min(topLeft.lat, bottomRight.lat);
-  const maxLat = Math.max(topLeft.lat, bottomRight.lat);
-  const minLng = Math.min(topLeft.lng, bottomRight.lng);
-  const maxLng = Math.max(topLeft.lng, bottomRight.lng);
-
-  // Generate grid (row by row, left to right)
-  for (let lat = maxLat; lat >= minLat; lat -= PIXEL_SIZE_LAT) {
-    for (let lng = minLng; lng <= maxLng; lng += PIXEL_SIZE_LNG) {
+  // Iterate by pixel (accurate regardless of latitude)
+  // Use pixel center (+0.5) for accurate click positioning
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      const centerX = x + 0.5;
+      const centerY = y + 0.5;
+      const tileX = Math.floor(centerX / TILE_SIZE);
+      const tileY = Math.floor(centerY / TILE_SIZE);
+      const pxX = centerX - tileX * TILE_SIZE;
+      const pxY = centerY - tileY * TILE_SIZE;
+      const { lat, lng } = tilePixelToLatLng(tileX, tileY, pxX, pxY);
       positions.push({ lat, lng });
     }
   }
@@ -110,7 +115,9 @@ const generatePixelPositions = (
 /**
  * Start area fill process
  */
-export const startAreaFill = async (corners: AreaFillCorners): Promise<void> => {
+export const startAreaFill = async (
+  corners: AreaFillCorners
+): Promise<void> => {
   if (!isDevModeEnabled()) {
     console.warn("🧑‍🎨 : Area fill requires developer mode");
     return;
@@ -132,7 +139,10 @@ export const startAreaFill = async (corners: AreaFillCorners): Promise<void> => 
 
   console.log("🧑‍🎨 : Area fill started", corners);
 
-  const positions = generatePixelPositions(corners.topLeft, corners.bottomRight);
+  const positions = generatePixelPositions(
+    corners.topLeft,
+    corners.bottomRight
+  );
   console.log(`🧑‍🎨 : Area fill - ${positions.length} pixels to fill`);
 
   let clickCount = 0;
@@ -146,7 +156,9 @@ export const startAreaFill = async (corners: AreaFillCorners): Promise<void> => 
     if (success) {
       clickCount++;
       if (clickCount % 100 === 0) {
-        console.log(`🧑‍🎨 : Area fill progress: ${clickCount}/${positions.length}`);
+        console.log(
+          `🧑‍🎨 : Area fill progress: ${clickCount}/${positions.length}`
+        );
       }
     }
 
