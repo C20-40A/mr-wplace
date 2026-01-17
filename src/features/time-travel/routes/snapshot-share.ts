@@ -1,8 +1,8 @@
 import { TimeTravelRouter } from "../router";
 import { t } from "@/i18n/manager";
 import { Toast } from "@/components/toast";
-import { storage } from "@/utils/browser-api";
 import { tilePixelToLatLng } from "@/utils/coordinate";
+import { getSnapshotRepository } from "@/inject/db/snapshot-repository";
 
 export class SnapshotShareRoute {
   render(container: HTMLElement, router: TimeTravelRouter): void {
@@ -140,11 +140,11 @@ export class SnapshotShareRoute {
   }
 
   private async loadSnapshotToCanvas(fullKey: string): Promise<void> {
-    const result = await storage.get(fullKey);
-    if (!result[fullKey]) return;
+    // fullKey: tile_snapshot_${timestamp}_${tileX}_${tileY}
+    const snapshotId = fullKey.replace("tile_snapshot_", "");
+    const blob = await getSnapshotRepository().getSnapshot(snapshotId);
 
-    const uint8Array = new Uint8Array(result[fullKey]);
-    const blob = new Blob([uint8Array], { type: "image/png" });
+    if (!blob) return;
 
     const dataUrl = await new Promise<string>((resolve) => {
       const reader = new FileReader();
