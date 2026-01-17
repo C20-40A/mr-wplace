@@ -19,12 +19,9 @@ import { overlayLayers, perTileColorStats } from "./states";
  * Notify content script to save statistics to storage
  * This is called after tile rendering completes and statistics are updated
  */
-const notifyStatsUpdate = (
-  tempStatsMap: Map<string, ColorStats>,
-  tileKey: string
-): void => {
+const notifyStatsUpdate = (tempStatsMap: Map<string, ColorStats>): void => {
   // Convert each image's stats to a serializable format
-  for (const [imageKey, stats] of tempStatsMap.entries()) {
+  for (const [imageKey] of tempStatsMap.entries()) {
     // Get all stats for this image
     const imageStatsMap = perTileColorStats.get(imageKey);
     if (!imageStatsMap) continue;
@@ -35,8 +32,8 @@ const notifyStatsUpdate = (
       { matched: Record<string, number>; total: Record<string, number> }
     > = {};
 
-    for (const [tileKey, tileStats] of imageStatsMap.entries()) {
-      tileStatsObject[tileKey] = {
+    for (const [key, tileStats] of imageStatsMap.entries()) {
+      tileStatsObject[key] = {
         matched: Object.fromEntries(tileStats.matched),
         total: Object.fromEntries(tileStats.total),
       };
@@ -95,13 +92,13 @@ const applyColorFilterToOverlay = async (
  * Phase 2: 背景比較 + 統計計算（x1サイズ）
  * オーバーレイと背景を比較し、色ごとの統計を計算
  * total: 元画像の色でカウント（カラーフィルター無関係）
- * matched: フィルター適用後の色でカウント
+ * matched: 元画像の色でカウント（カラーフィルター無関係）
  *
  * NOTE: totalは全ピクセルをカウント、matchedは背景範囲内のみ
+ * NOTE: 統計はカラーフィルターの状態に依存せず、元画像の色で計算される
  */
 const computeStatsWithBackground = (
   originalData: Uint8ClampedArray,
-  filteredData: Uint8ClampedArray,
   width: number,
   height: number,
   bgData: Uint8ClampedArray,
@@ -126,16 +123,7 @@ const computeStatsWithBackground = (
       const totalColorKey = colorToKey([origR, origG, origB]);
       stats.total.set(totalColorKey, (stats.total.get(totalColorKey) || 0) + 1);
 
-      // matched: フィルター適用後の色でカウント
-      // フィルター適用後に透明になったピクセルはスキップ
-      if (filteredData[i + 3] === 0) continue;
-
-      const [filteredR, filteredG, filteredB] = [
-        filteredData[i],
-        filteredData[i + 1],
-        filteredData[i + 2],
-      ];
-
+      // matched: 元画像の色でカウント（カラーフィルター無関係）
       // 背景位置を計算
       const bgX = offsetX + x;
       const bgY = offsetY + y;
@@ -144,7 +132,7 @@ const computeStatsWithBackground = (
       // 背景の範囲外のピクセルはスキップ（matchedのみ）
       if (bgI + 3 >= bgData.length) continue;
 
-      // 背景比較（フィルター適用後の色で）
+      // 背景比較（元画像の色で）
       const [bgR, bgG, bgB, bgA] = [
         bgData[bgI],
         bgData[bgI + 1],
@@ -153,12 +141,12 @@ const computeStatsWithBackground = (
       ];
 
       const colorMatches = isSameColor(
-        [filteredR, filteredG, filteredB, 255],
+        [origR, origG, origB, 255],
         [bgR, bgG, bgB, bgA]
       );
 
       if (colorMatches) {
-        const matchedColorKey = colorToKey([filteredR, filteredG, filteredB]);
+        const matchedColorKey = colorToKey([origR, origG, origB]);
         stats.matched.set(
           matchedColorKey,
           (stats.matched.get(matchedColorKey) || 0) + 1
@@ -503,8 +491,8 @@ const convertToImageBitmap = async (
 
 /**
  * オーバーレイ最終処理（メイン関数）
- * 1. カラーフィルター適用（x1サイズ）
- * 2. 背景比較+統計計算（x1サイズ）
+ * 1. 背景比較+統計計算（x1サイズ）- カラーフィルター無関係
+ * 2. カラーフィルター適用（x1サイズ）- 描画用
  * 3. x3拡大 + モード別処理
  * 4. ImageBitmap変換
  */
@@ -517,7 +505,8 @@ const applyOverlayProcessing = async (
   mode: EnhancedMode,
   imageKey: string,
   tempStatsMap: Map<string, ColorStats>,
-  compute_device: "gpu" | "cpu" = "gpu"
+  compute_device: "gpu" | "cpu" = "gpu",
+  skipStatsComputation: boolean = false
 ): Promise<ImageBitmap> => {
   const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
   const width = overlayBitmap.width;
@@ -529,39 +518,41 @@ const applyOverlayProcessing = async (
   );
   const colorFilter = isColorFilterActive() ? getSelectedRGBs() : undefined;
 
-  // 元のオーバーレイデータを取得（total統計用）
+  // 元のオーバーレイデータを取得（統計計算用）
   const originalData = convertImageBitmapToUint8ClampedArray(overlayBitmap);
-
-  // Phase 1: カラーフィルター適用
-  const filteredData = await applyColorFilterToOverlay(
-    overlayBitmap,
-    colorFilter,
-    compute_device
-  );
 
   // 背景データ準備
   const bgData = new Uint8ClampedArray(bgPixels.buffer);
 
-  // 統計初期化
-  if (!tempStatsMap.has(imageKey)) {
-    tempStatsMap.set(imageKey, {
-      matched: new Map(),
-      total: new Map(),
-    });
-  }
-  const stats = tempStatsMap.get(imageKey)!;
+  // Phase 1: 背景比較 + 統計計算（カラーフィルター無関係）
+  // Skip if we already have stats for this tile
+  if (!skipStatsComputation) {
+    // 統計初期化
+    if (!tempStatsMap.has(imageKey)) {
+      tempStatsMap.set(imageKey, {
+        matched: new Map(),
+        total: new Map(),
+      });
+    }
+    const stats = tempStatsMap.get(imageKey)!;
 
-  // Phase 2: 背景比較 + 統計計算
-  computeStatsWithBackground(
-    originalData,
-    filteredData,
-    width,
-    height,
-    bgData,
-    bgWidth,
-    offsetX,
-    offsetY,
-    stats
+    computeStatsWithBackground(
+      originalData,
+      width,
+      height,
+      bgData,
+      bgWidth,
+      offsetX,
+      offsetY,
+      stats
+    );
+  }
+
+  // Phase 2: カラーフィルター適用（描画用のみ）
+  const filteredData = await applyColorFilterToOverlay(
+    overlayBitmap,
+    colorFilter,
+    compute_device
   );
 
   // Phase 3: x3拡大 + モード別処理
@@ -717,17 +708,6 @@ export const drawOverlayLayersOnTile = async (
 
   if (matchingTiles.length === 0) return tileBlob;
 
-  // ポーリング累積防止: 同タイルのみ統計delete
-  for (const { instance } of matchingTiles) {
-    const imageStatsMap = perTileColorStats.get(instance.imageKey);
-    if (imageStatsMap?.has(coordStrPadded)) {
-      // console.log(
-      //   `🧑‍🎨 : Deleting existing stats for tile ${coordStrPadded}, image ${instance.imageKey}`
-      // );
-      imageStatsMap.delete(coordStrPadded);
-    }
-  }
-
   // 一時統計マップ: 複数タイルまたがり対応
   const tempStatsMap = new Map<string, ColorStats>();
 
@@ -833,6 +813,10 @@ export const drawOverlayLayersOnTile = async (
     const offsetX = isV2Tile ? 0 : Number(coords[2]);
     const offsetY = isV2Tile ? 0 : Number(coords[3]);
 
+    // Check if we already have stats for this tile+image (caching)
+    const imageStatsMap = perTileColorStats.get(instance.imageKey);
+    const alreadyHasStats = imageStatsMap?.has(coordStrPadded) ?? false;
+
     paintedTilebitmap = await applyOverlayProcessing(
       paintedTilebitmap,
       finalBgPixels,
@@ -842,7 +826,8 @@ export const drawOverlayLayersOnTile = async (
       mode,
       instance.imageKey,
       tempStatsMap,
-      computeDevice
+      computeDevice,
+      alreadyHasStats
     );
 
     context.drawImage(
@@ -863,7 +848,7 @@ export const drawOverlayLayersOnTile = async (
   // Notify content script to save statistics to storage
   // Do this asynchronously to avoid blocking tile rendering
   if (tempStatsMap.size > 0) {
-    notifyStatsUpdate(tempStatsMap, coordStrPadded);
+    notifyStatsUpdate(tempStatsMap);
   }
 
   const result = await canvas.convertToBlob({ type: "image/png" });
