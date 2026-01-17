@@ -3,15 +3,21 @@ import { TimeTravelStorage, TileSnapshotInfo } from "../storage";
 import { TileNameStorage } from "../tile-name-storage";
 import { t } from "@/i18n/manager";
 import { createCard, CardConfig } from "@/components/card";
-import { storage } from "@/utils/browser-api";
+import { storage, runtime } from "@/utils/browser-api";
 import { getCurrentPosition } from "@/utils/position";
 import { latLngToTilePixel } from "@/utils/coordinate";
+import { Tutorial } from "@/features/tutorial";
 
 type TileSortType = "distance" | "last_updated" | "tile_count" | "name";
 const TILE_SORT_KEY = "wplace-studio-tile-sort";
 
 export class TileListRoute {
   private currentSortType: TileSortType = "distance";
+  private tutorial: Tutorial;
+
+  constructor() {
+    this.tutorial = new Tutorial();
+  }
 
   async render(
     container: HTMLElement,
@@ -161,6 +167,22 @@ export class TileListRoute {
     }
   }
 
+  private renderEmptyState(listContainer: HTMLElement, container: HTMLElement): void {
+    const tutorialGifUrl = runtime.getURL("assets/images/tutorial/how_to_archive.gif");
+
+    listContainer.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 2rem; gap: 2rem; min-height: 300px; grid-column: 1 / -1;">
+        <img src="${tutorialGifUrl}" alt="How to archive" style="width: 18rem; height: auto; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+
+        <div style="text-align: center; max-width: 400px;">
+          <p style="font-size: 1rem; margin-bottom: 0.5rem;">${t`${"empty_archive_message"}`}</p>
+        </div>
+      </div>
+    `;
+
+    this.tutorial.createButton(container);
+  }
+
   private async loadTileList(container: HTMLElement): Promise<void> {
     try {
       const tiles = await TimeTravelStorage.getAllTilesWithSnapshots();
@@ -176,7 +198,7 @@ export class TileListRoute {
       const listContainer = container.querySelector("#wps-tile-list");
       if (listContainer) {
         if (sortedTiles.length === 0) {
-          listContainer.innerHTML = `<div class="text-sm text-base-content/60 text-center p-4" style="grid-column: 1 / -1;">${t`${"no_items"}`}</div>`;
+          this.renderEmptyState(listContainer as HTMLElement, container);
         } else {
           const renderedTiles = await Promise.all(
             sortedTiles.map((tile) => this.renderTileCard(tile, tileNames))

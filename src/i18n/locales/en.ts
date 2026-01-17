@@ -93,13 +93,13 @@ export const enTranslations = {
 
   // Snapshots
   timetravel_modal_title: "Time Machine",
-  timetravel_current_position: "Current Position Snapshots",
+  timetravel_current_position: "Current Position Archive",
   timetravel_tile_list: "Tile List",
-  timetravel_tile_snapshots: "Tile Snapshots",
-  save_current_snapshot: "Save Current Snapshot",
-  snapshot_detail: "Snapshot Detail",
-  snapshot_share: "Snapshot Share",
-  snapshot_timestamp: "Snapshot Timestamp",
+  timetravel_tile_snapshots: "Tile Archives",
+  save_current_snapshot: "Save Current Tile",
+  snapshot_detail: "Tile Detail",
+  snapshot_share: "Tile Share",
+  snapshot_timestamp: "Timestamp",
   snapshot_share_description:
     "This filename contains coordinate and timestamp information. When you re-import it from the tile list, it will be registered as a snapshot at the same position and time.",
   return_to_current: "Return to Current",
@@ -398,4 +398,10 @@ export const enTranslations = {
   tutorial_how_to_draw_step2: "Click on the map and select the 'Image' button",
   tutorial_how_to_draw_step3:
     "Click the image you want to place, and it will appear as an overlay on the map tile",
+  tutorial_how_to_archive_title: "How to Archive Pixel Art on Map",
+  tutorial_how_to_archive_step1: "Click on the map and select 'Archive'",
+  tutorial_how_to_archive_step2: "Click the 'Save Current Tile' button",
+
+  // Empty states
+  empty_archive_message: "No archived tiles yet. Click on the map to start archiving!",
 };

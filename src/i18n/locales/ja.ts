@@ -404,4 +404,10 @@ export const jaTranslations = {
   tutorial_how_to_draw_step2: "マップをクリックして、「画像」ボタンを選択",
   tutorial_how_to_draw_step3:
     "配置したい画像をクリックすると、画像がマップタイルにオーバーレイとして表示される",
+  tutorial_how_to_archive_title: "マップ上のピクセルアートをアーカイブする方法",
+  tutorial_how_to_archive_step1: "マップをクリックして「アーカイブ」を選択",
+  tutorial_how_to_archive_step2: "「Save Current Tile」ボタンをクリックする",
+
+  // 空の状態
+  empty_archive_message: "まだアーカイブされたタイルがありません。マップをクリックしてアーカイブを開始しましょう！",
 };

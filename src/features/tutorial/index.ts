@@ -34,6 +34,15 @@ export class Tutorial {
         "tutorial_how_to_draw_step3",
       ],
     },
+    {
+      id: "how_to_archive",
+      titleKey: "tutorial_how_to_archive_title",
+      gifUrl: runtime.getURL("assets/images/tutorial/how_to_archive.gif"),
+      steps: [
+        "tutorial_how_to_archive_step1",
+        "tutorial_how_to_archive_step2",
+      ],
+    },
   ];
 
   /**
