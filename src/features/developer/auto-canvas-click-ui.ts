@@ -1,3 +1,5 @@
+import { getColor } from "./ui-colors";
+
 const AUTO_CANVAS_CLICK_ICON = `
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4.5">
     <!-- 3x3グリッド -->
@@ -48,16 +50,16 @@ export const createAutoCanvasClickDialogItem = (
     gap: 10px;
     padding: 6px 8px;
     border-radius: 1px;
-    background: ${enabled ? "rgba(0, 255, 136, 0.1)" : "rgba(255, 255, 255, 0.04)"};
-    border: 1px solid ${enabled ? "rgba(0, 255, 136, 0.3)" : "rgba(255, 255, 255, 0.08)"};
+    background: ${enabled ? getColor("primary", 0.1) : "rgba(255, 255, 255, 0.04)"};
+    border: 1px solid ${enabled ? getColor("primary", 0.3) : "rgba(255, 255, 255, 0.08)"};
     cursor: pointer;
     transition: all 0.1s ease;
   `;
   item.addEventListener("mouseenter", () => {
-    item.style.background = enabled ? "rgba(0, 255, 136, 0.15)" : "rgba(255, 255, 255, 0.08)";
+    item.style.background = enabled ? getColor("primary", 0.15) : "rgba(255, 255, 255, 0.08)";
   });
   item.addEventListener("mouseleave", () => {
-    item.style.background = enabled ? "rgba(0, 255, 136, 0.1)" : "rgba(255, 255, 255, 0.04)";
+    item.style.background = enabled ? getColor("primary", 0.1) : "rgba(255, 255, 255, 0.04)";
   });
 
   const icon = document.createElement("span");
@@ -67,13 +69,13 @@ export const createAutoCanvasClickDialogItem = (
     display: flex;
     align-items: center;
     justify-content: center;
-    color: ${enabled ? "rgba(0, 255, 136, 1)" : "rgba(255, 255, 255, 0.5)"};
+    color: ${enabled ? getColor("primary", 1) : "rgba(255, 255, 255, 0.5)"};
   `;
   icon.innerHTML = AUTO_CANVAS_CLICK_ICON.replace('class="size-4.5"', 'style="width: 16px; height: 16px;"');
 
   const label = document.createElement("span");
   label.style.cssText = `
-    color: ${enabled ? "rgba(0, 255, 136, 1)" : "rgba(255, 255, 255, 0.7)"};
+    color: ${enabled ? getColor("primary", 1) : "rgba(255, 255, 255, 0.7)"};
     font-size: 11px;
     flex: 1;
     font-family: 'Consolas', 'Monaco', monospace;
@@ -87,8 +89,8 @@ export const createAutoCanvasClickDialogItem = (
     width: 28px;
     height: 10px;
     border-radius: 1px;
-    background: ${enabled ? "rgba(0, 255, 136, 0.9)" : "rgba(255, 255, 255, 0.15)"};
-    box-shadow: ${enabled ? "0 0 8px rgba(0, 255, 136, 0.6)" : "none"};
+    background: ${enabled ? getColor("primary", 0.9) : "rgba(255, 255, 255, 0.15)"};
+    box-shadow: ${enabled ? `0 0 8px ${getColor("primary", 0.6)}` : "none"};
     transition: all 0.15s ease;
     position: relative;
   `;
@@ -112,22 +114,22 @@ export const updateAutoCanvasClickDialogItem = (
   enabled: boolean
 ): void => {
   // Update item style
-  item.style.background = enabled ? "rgba(0, 255, 136, 0.1)" : "rgba(255, 255, 255, 0.04)";
-  item.style.borderColor = enabled ? "rgba(0, 255, 136, 0.3)" : "rgba(255, 255, 255, 0.08)";
+  item.style.background = enabled ? getColor("primary", 0.1) : "rgba(255, 255, 255, 0.04)";
+  item.style.borderColor = enabled ? getColor("primary", 0.3) : "rgba(255, 255, 255, 0.08)";
 
   // Update icon
   const icon = item.querySelector("span:first-child") as HTMLSpanElement;
-  if (icon) icon.style.color = enabled ? "rgba(0, 255, 136, 1)" : "rgba(255, 255, 255, 0.5)";
+  if (icon) icon.style.color = enabled ? getColor("primary", 1) : "rgba(255, 255, 255, 0.5)";
 
   // Update label
   const label = item.querySelector("span:nth-child(2)") as HTMLSpanElement;
-  if (label) label.style.color = enabled ? "rgba(0, 255, 136, 1)" : "rgba(255, 255, 255, 0.7)";
+  if (label) label.style.color = enabled ? getColor("primary", 1) : "rgba(255, 255, 255, 0.7)";
 
   // Update toggle
   const toggle = item.querySelector(".auto-canvas-click-toggle") as HTMLDivElement;
   if (toggle) {
-    toggle.style.background = enabled ? "rgba(0, 255, 136, 0.9)" : "rgba(255, 255, 255, 0.15)";
-    toggle.style.boxShadow = enabled ? "0 0 8px rgba(0, 255, 136, 0.6)" : "none";
+    toggle.style.background = enabled ? getColor("primary", 0.9) : "rgba(255, 255, 255, 0.15)";
+    toggle.style.boxShadow = enabled ? `0 0 8px ${getColor("primary", 0.6)}` : "none";
     toggle.innerHTML = enabled
       ? `<span style="position:absolute;left:3px;top:1px;font-size:7px;color:#000;font-weight:bold;font-family:monospace;">ON</span>`
       : `<span style="position:absolute;right:2px;top:1px;font-size:7px;color:rgba(255,255,255,0.4);font-family:monospace;">OFF</span>`;

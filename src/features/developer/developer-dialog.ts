@@ -1,3 +1,5 @@
+import { getColor } from "./ui-colors";
+
 interface DeveloperDialogElements {
   dialog: HTMLDivElement;
   content: HTMLDivElement;
@@ -23,14 +25,14 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     z-index: 9999;
     background: rgba(0, 0, 0, 0.85);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(0, 255, 136, 0.2);
-    border-left: 2px solid rgba(0, 255, 136, 0.7);
+    border: 1px solid ${getColor("primary", 0.2)};
+    border-left: 2px solid ${getColor("primary", 0.7)};
     border-radius: 2px;
     padding: 10px 12px;
     min-width: 170px;
     box-shadow:
       0 0 20px rgba(0, 0, 0, 0.8),
-      0 0 40px rgba(0, 255, 136, 0.05),
+      0 0 40px ${getColor("primary", 0.05)},
       inset 0 0 30px rgba(0, 0, 0, 0.4);
     display: none;
     cursor: default;
@@ -47,20 +49,37 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     margin-bottom: 8px;
     cursor: move;
     padding: 2px 0;
-    border-bottom: 1px solid rgba(0, 255, 136, 0.1);
+    border-bottom: 1px solid ${getColor("primary", 0.1)};
     padding-bottom: 6px;
   `;
 
+  const titleWrapper = document.createElement("div");
+  titleWrapper.style.cssText = `display: flex; flex-direction: column; gap: 4px;`;
+
   const title = document.createElement("span");
   title.style.cssText = `
-    color: rgba(0, 255, 136, 1);
+    color: ${getColor("primary", 1)};
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 2px;
     text-transform: uppercase;
-    text-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
+    text-shadow: 0 0 10px ${getColor("primary", 0.6)};
   `;
   title.textContent = "//DEV";
+
+  const warning = document.createElement("span");
+  warning.style.cssText = `
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 8px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    line-height: 1.2;
+    max-width: 150px;
+  `;
+  warning.textContent =
+    "This is a private feature for development testing only. Not intended for actual use.";
+
+  titleWrapper.appendChild(title);
+  titleWrapper.appendChild(warning);
 
   const closeBtn = document.createElement("button");
   closeBtn.style.cssText = `
@@ -92,7 +111,7 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
   });
   closeBtn.addEventListener("click", () => hideDeveloperDialog());
 
-  header.appendChild(title);
+  header.appendChild(titleWrapper);
   header.appendChild(closeBtn);
 
   // Content area

@@ -161,21 +161,7 @@ export class DevInject {
     // 既にアイテムがあればスキップ
     if (content.children.length > 0) return;
 
-    // Auto Canvas Click item
-    this.autoCanvasClickDialogItem = createAutoCanvasClickDialogItem(
-      this.autoCanvasClickEnabled,
-      () => this.toggleAutoCanvasClick()
-    );
-    content.appendChild(this.autoCanvasClickDialogItem);
-
-    // Auto Color Spoit item
-    this.autoColorSpoitDialogItem = createAutoColorSpoitDialogItem(
-      this.autoColorSpoitEnabled,
-      () => this.toggleAutoColorSpoit()
-    );
-    content.appendChild(this.autoColorSpoitDialogItem);
-
-    // Area Fill item
+    // Area Fill item (displayed first)
     const areaFillCorners = AreaFillStorage.getCorners();
     let areaFillRunning = false;
     this.areaFillUI = createAreaFillDialogItem(areaFillCorners);
@@ -202,6 +188,20 @@ export class DevInject {
     });
 
     content.appendChild(this.areaFillUI.container);
+
+    // Auto Canvas Click item
+    this.autoCanvasClickDialogItem = createAutoCanvasClickDialogItem(
+      this.autoCanvasClickEnabled,
+      () => this.toggleAutoCanvasClick()
+    );
+    content.appendChild(this.autoCanvasClickDialogItem);
+
+    // Auto Color Spoit item
+    this.autoColorSpoitDialogItem = createAutoColorSpoitDialogItem(
+      this.autoColorSpoitEnabled,
+      () => this.toggleAutoColorSpoit()
+    );
+    content.appendChild(this.autoColorSpoitDialogItem);
 
     // Register callback for ESC/close button
     setOnHideCallback(() => this.areaFillUI?.unmount());

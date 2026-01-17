@@ -2,6 +2,7 @@ import { getCurrentPosition } from "@/utils/position";
 import { latLngToTilePixel } from "@/utils/coordinate";
 import { AreaFillStorage, AreaFillCorners } from "./area-fill-storage";
 import { findPaintPixelControls } from "@/constants/selectors";
+import { getColor } from "./ui-colors";
 
 export interface AreaFillUIElements {
   container: HTMLDivElement;
@@ -33,7 +34,7 @@ export const createAreaFillDialogItem = (
     border-radius: 1px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-left: 2px solid rgba(0, 255, 136, 0.4);
+    border-left: 2px solid ${getColor("primary", 0.4)};
   `;
 
   // Header
@@ -53,7 +54,7 @@ export const createAreaFillDialogItem = (
 
   const title = document.createElement("span");
   title.style.cssText = `
-    color: rgba(0, 255, 136, 0.9);
+    color: ${getColor("primary", 0.9)};
     font-size: 10px;
     font-weight: 600;
     font-family: 'Consolas', 'Monaco', monospace;
@@ -80,18 +81,22 @@ export const createAreaFillDialogItem = (
   });
 
   // Bottom Right row
-  const bottomRightRow = createCoordRow("Bottom-Right", initialCorners.bottomRight, () => {
-    const pos = getCurrentPosition();
-    if (!pos) {
-      console.log("🧑‍🎨 : No current position available");
-      return;
+  const bottomRightRow = createCoordRow(
+    "Bottom-Right",
+    initialCorners.bottomRight,
+    () => {
+      const pos = getCurrentPosition();
+      if (!pos) {
+        console.log("🧑‍🎨 : No current position available");
+        return;
+      }
+      AreaFillStorage.setBottomRight(pos.lat, pos.lng);
+      const corners = AreaFillStorage.getCorners();
+      update(corners);
+      onCornersChange?.(corners);
+      console.log("🧑‍🎨 : Area fill bottom-right set:", pos.lat, pos.lng);
     }
-    AreaFillStorage.setBottomRight(pos.lat, pos.lng);
-    const corners = AreaFillStorage.getCorners();
-    update(corners);
-    onCornersChange?.(corners);
-    console.log("🧑‍🎨 : Area fill bottom-right set:", pos.lat, pos.lng);
-  });
+  );
 
   // Button row
   const buttonRow = document.createElement("div");
@@ -108,7 +113,8 @@ export const createAreaFillDialogItem = (
   const fillBtn = document.createElement("button");
 
   const updateFillBtnStyle = () => {
-    const hasCorners = currentCornersState.topLeft && currentCornersState.bottomRight;
+    const hasCorners =
+      currentCornersState.topLeft && currentCornersState.bottomRight;
     // Running中は常にクリック可能（STOPのため）、それ以外はcorners + PaintPixelControls両方必要
     const canFill = isRunning || (hasCorners && isPaintControlsVisible);
     fillBtn.disabled = !canFill;
@@ -128,10 +134,10 @@ export const createAreaFillDialogItem = (
   fillBtn.style.cssText = `
     flex: 1;
     padding: 5px 10px;
-    border: 1px solid rgba(0, 255, 136, 0.3);
+    border: 1px solid ${getColor("primary", 0.3)};
     border-radius: 1px;
-    background: rgba(0, 255, 136, 0.1);
-    color: rgba(0, 255, 136, 0.9);
+    background: ${getColor("primary", 0.1)};
+    color: ${getColor("primary", 0.9)};
     font-size: 10px;
     font-weight: 600;
     font-family: 'Consolas', 'Monaco', monospace;
@@ -147,16 +153,16 @@ export const createAreaFillDialogItem = (
     if (fillBtn.disabled) return;
     fillBtn.style.background = isRunning
       ? "rgba(255, 80, 80, 0.2)"
-      : "rgba(0, 255, 136, 0.2)";
+      : getColor("primary", 0.2);
     fillBtn.style.boxShadow = isRunning
       ? "0 0 8px rgba(255, 80, 80, 0.3)"
-      : "0 0 8px rgba(0, 255, 136, 0.3)";
+      : `0 0 8px ${getColor("primary", 0.3)}`;
   });
   fillBtn.addEventListener("mouseleave", () => {
     if (fillBtn.disabled) return;
     fillBtn.style.background = isRunning
       ? "rgba(255, 80, 80, 0.1)"
-      : "rgba(0, 255, 136, 0.1)";
+      : getColor("primary", 0.1);
     fillBtn.style.boxShadow = "none";
   });
 
@@ -204,25 +210,27 @@ export const createAreaFillDialogItem = (
     fillBtn.textContent = running ? "STOP" : "EXEC";
     fillBtn.style.background = running
       ? "rgba(255, 80, 80, 0.1)"
-      : "rgba(0, 255, 136, 0.1)";
+      : getColor("primary", 0.1);
     fillBtn.style.borderColor = running
       ? "rgba(255, 80, 80, 0.4)"
-      : "rgba(0, 255, 136, 0.3)";
+      : getColor("primary", 0.3);
     fillBtn.style.color = running
       ? "rgba(255, 80, 80, 0.9)"
-      : "rgba(0, 255, 136, 0.9)";
-    fillBtn.style.boxShadow = running ? "0 0 8px rgba(255, 80, 80, 0.2)" : "none";
+      : getColor("primary", 0.9);
+    fillBtn.style.boxShadow = running
+      ? "0 0 8px rgba(255, 80, 80, 0.2)"
+      : "none";
   };
 
   const update = (corners: AreaFillCorners) => {
     currentCornersState = corners;
     topLeftRow.valueSpan.textContent = formatCoord(corners.topLeft);
     topLeftRow.valueSpan.style.color = corners.topLeft
-      ? "rgba(0, 255, 136, 1)"
+      ? getColor("primary", 1)
       : "rgba(255, 255, 255, 0.4)";
     bottomRightRow.valueSpan.textContent = formatCoord(corners.bottomRight);
     bottomRightRow.valueSpan.style.color = corners.bottomRight
-      ? "rgba(0, 255, 136, 1)"
+      ? getColor("primary", 1)
       : "rgba(255, 255, 255, 0.4)";
     updateFillBtnStyle();
   };
@@ -268,7 +276,11 @@ const createCoordRow = (
   label: string,
   initialValue: { lat: number; lng: number } | null,
   onSet: () => void
-): { row: HTMLDivElement; valueSpan: HTMLSpanElement; setBtn: HTMLButtonElement } => {
+): {
+  row: HTMLDivElement;
+  valueSpan: HTMLSpanElement;
+  setBtn: HTMLButtonElement;
+} => {
   const row = document.createElement("div");
   row.style.cssText = `
     display: flex;
@@ -284,32 +296,32 @@ const createCoordRow = (
     width: 55px;
     flex-shrink: 0;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
   `;
   labelSpan.textContent = label.replace("-", "_");
 
   const valueSpan = document.createElement("span");
   valueSpan.style.cssText = `
-    color: ${initialValue ? "rgba(0, 255, 136, 1)" : "rgba(255, 255, 255, 0.4)"};
+    color: ${initialValue ? getColor("primary", 1) : "rgba(255, 255, 255, 0.4)"};
     font-size: 9px;
     font-family: 'Consolas', 'Monaco', monospace;
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    text-align: right;
+    margin-right: 4px;
   `;
   valueSpan.textContent = formatCoord(initialValue);
 
   const setBtn = document.createElement("button");
   setBtn.style.cssText = `
     padding: 2px 6px;
-    border: 1px solid rgba(100, 180, 255, 0.3);
+    border: 1px solid ${getColor("secondary", 0.3)};
     border-radius: 1px;
-    background: rgba(100, 180, 255, 0.1);
-    color: rgba(100, 180, 255, 0.9);
+    background: ${getColor("secondary", 0.1)};
+    color: ${getColor("secondary", 0.9)};
     font-size: 8px;
     font-family: 'Consolas', 'Monaco', monospace;
-    letter-spacing: 0.5px;
     cursor: pointer;
     transition: all 0.1s ease;
     flex-shrink: 0;
@@ -317,12 +329,12 @@ const createCoordRow = (
   setBtn.textContent = "SET";
   setBtn.addEventListener("mouseenter", () => {
     if (setBtn.disabled) return;
-    setBtn.style.background = "rgba(100, 180, 255, 0.2)";
-    setBtn.style.boxShadow = "0 0 6px rgba(100, 180, 255, 0.3)";
+    setBtn.style.background = getColor("secondary", 0.2);
+    setBtn.style.boxShadow = `0 0 6px ${getColor("secondary", 0.3)}`;
   });
   setBtn.addEventListener("mouseleave", () => {
     if (setBtn.disabled) return;
-    setBtn.style.background = "rgba(100, 180, 255, 0.1)";
+    setBtn.style.background = getColor("secondary", 0.1);
     setBtn.style.boxShadow = "none";
   });
   setBtn.addEventListener("click", onSet);
