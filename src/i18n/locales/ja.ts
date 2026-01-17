@@ -105,6 +105,12 @@ export const jaTranslations = {
   return_to_current: "描画を元に戻す",
   enter_snapshot_name: "スナップショット名を入力（空の場合は日時表示）:",
   enter_tile_name: "タイル名を入力（空の場合は座標表示）:",
+  import_snapshot_tile_x_label: "タイル座標 X",
+  import_snapshot_tile_y_label: "タイル座標 Y",
+  import_snapshot_tile_x_placeholder: "例: 520",
+  import_snapshot_tile_y_placeholder: "例: 218",
+  import_snapshot_datetime_label: "時刻",
+  import_snapshot_success: "インポートが完了しました",
 
   // Image Editor関連
   drag_drop_or_click: "画像をドラッグ&ドロップまたはクリックして選択",

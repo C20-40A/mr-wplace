@@ -22,23 +22,23 @@ export class ImportSnapshotRoute {
         <div class="border-2 border-dashed border-gray-300 rounded">
           <div id="import-dropzone" style="max-height: 30vh; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 1.5rem"></div>
         </div>
-        
+
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium mb-1">タイル座標 X</label>
-            <input type="number" id="tile-x-input" class="input input-bordered w-full" placeholder="例: 520">
+            <label class="block text-sm font-medium mb-1">${"import_snapshot_tile_x_label"}</label>
+            <input type="number" id="tile-x-input" class="input input-bordered w-full" placeholder="${"import_snapshot_tile_x_placeholder"}">
           </div>
           <div>
-            <label class="block text-sm font-medium mb-1">タイル座標 Y</label>
-            <input type="number" id="tile-y-input" class="input input-bordered w-full" placeholder="例: 218">
+            <label class="block text-sm font-medium mb-1">${"import_snapshot_tile_y_label"}</label>
+            <input type="number" id="tile-y-input" class="input input-bordered w-full" placeholder="${"import_snapshot_tile_y_placeholder"}">
           </div>
         </div>
-        
+
         <div>
-          <label class="block text-sm font-medium mb-1">時刻</label>
+          <label class="block text-sm font-medium mb-1">${"import_snapshot_datetime_label"}</label>
           <input type="datetime-local" id="datetime-input" class="input input-bordered w-full" value="${defaultDatetime}">
         </div>
-        
+
         <div class="flex justify-end gap-2">
           <button id="import-execute-btn" class="btn btn-primary" disabled>
             ${"import"}
@@ -147,7 +147,7 @@ export class ImportSnapshotRoute {
       timestamp
     );
 
-    Toast.success("インポートが完了しました");
+    Toast.success(t`import_snapshot_success`);
     router.navigate("tile-list");
   }
 }
