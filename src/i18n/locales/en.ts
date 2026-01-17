@@ -401,6 +401,10 @@ export const enTranslations = {
   tutorial_how_to_archive_title: "How to Archive Pixel Art on Map",
   tutorial_how_to_archive_step1: "Click on the map and select 'Archive'",
   tutorial_how_to_archive_step2: "Click the 'Save Current Tile' button",
+  tutorial_how_to_draw_archive_title: "How to Draw Archived Pixel Art",
+  tutorial_how_to_draw_archive_step1: "Click on the map and select 'Archive'",
+  tutorial_how_to_draw_archive_step2: "Click the archive you want to display",
+  tutorial_how_to_draw_archive_step3: "Click the draw button",
 
   // Empty states
   empty_archive_message: "No archived tiles yet. Click on the map to start archiving!",

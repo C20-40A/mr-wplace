@@ -407,6 +407,10 @@ export const jaTranslations = {
   tutorial_how_to_archive_title: "マップ上のピクセルアートをアーカイブする方法",
   tutorial_how_to_archive_step1: "マップをクリックして「アーカイブ」を選択",
   tutorial_how_to_archive_step2: "「Save Current Tile」ボタンをクリックする",
+  tutorial_how_to_draw_archive_title: "アーカイブしたピクセルアートを描画する方法",
+  tutorial_how_to_draw_archive_step1: "マップをクリックして「アーカイブ」を選択",
+  tutorial_how_to_draw_archive_step2: "表示したい時点のアーカイブをクリック",
+  tutorial_how_to_draw_archive_step3: "描画ボタンをクリック",
 
   // 空の状態
   empty_archive_message: "まだアーカイブされたタイルがありません。マップをクリックしてアーカイブを開始しましょう！",

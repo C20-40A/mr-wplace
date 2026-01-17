@@ -7,6 +7,7 @@ import { TileNameStorage } from "../tile-name-storage";
 import { t } from "@/i18n/manager";
 import { showNameInputModal } from "@/components/modal";
 import { latLngToTilePixel, tilePixelToLatLng } from "@/utils/coordinate";
+import { Tutorial } from "@/features/tutorial";
 
 interface SnapshotRouteOptions {
   showSaveButton: boolean;
@@ -16,10 +17,12 @@ export class SnapshotRoute extends BaseSnapshotRoute {
   private options: SnapshotRouteOptions;
   private currentTileX?: number;
   private currentTileY?: number;
+  private tutorial: Tutorial;
 
   constructor(options: SnapshotRouteOptions) {
     super();
     this.options = options;
+    this.tutorial = new Tutorial();
   }
 
   private async editTileName(): Promise<void> {
@@ -188,6 +191,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     this.updateTileInfo(); // タイル情報更新
     this.reloadSnapshots(container);
     this.loadCurrentTileImage(); // 現在タイル画像読み込み
+    this.tutorial.createButton(container);
   }
 
   private setupEvents(container: HTMLElement): void {

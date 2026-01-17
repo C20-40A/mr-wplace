@@ -57,6 +57,7 @@ export class TileListRoute {
 
     this.setupEvents(container, router);
     this.loadTileList(container);
+    this.tutorial.createButton(container);
   }
 
   private setupEvents(container: HTMLElement, router: TimeTravelRouter): void {
