@@ -361,7 +361,13 @@ const scaleAndRenderWithMode = (
   }
 
   // 2nd pass: huge marker 描画
-  if (needsHugeMarker && unplacedCenters.length > 0) {
+  // Skip if too many unplaced pixels (>100) for performance
+  const HUGE_MARKER_MAX_PIXELS = 100;
+  if (
+    needsHugeMarker &&
+    unplacedCenters.length > 0 &&
+    unplacedCenters.length <= HUGE_MARKER_MAX_PIXELS
+  ) {
     const armLength = 30;
     const centerSize = 1; // 中央3x3の半径（±1 = 3px）
 
