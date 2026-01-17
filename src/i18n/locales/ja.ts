@@ -411,6 +411,10 @@ export const jaTranslations = {
   tutorial_how_to_draw_archive_step1: "マップをクリックして「アーカイブ」を選択",
   tutorial_how_to_draw_archive_step2: "表示したい時点のアーカイブをクリック",
   tutorial_how_to_draw_archive_step3: "描画ボタンをクリック",
+  tutorial_how_to_draw_text_title: "テキストをマップ上に表示する方法",
+  tutorial_how_to_draw_text_step1: "マップをクリックして「テキスト」を選択",
+  tutorial_how_to_draw_text_step2: "テキストを入力し、フォントを選んで「Draw」ボタンをクリック",
+  tutorial_how_to_draw_text_step3: "オプション：矢印ボタンで位置を調節",
 
   // 空の状態
   empty_archive_message: "まだアーカイブされたタイルがありません。マップをクリックしてアーカイブを開始しましょう！",

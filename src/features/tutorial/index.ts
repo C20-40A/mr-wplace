@@ -53,6 +53,16 @@ export class Tutorial {
         "tutorial_how_to_draw_archive_step3",
       ],
     },
+    {
+      id: "how_to_draw_text",
+      titleKey: "tutorial_how_to_draw_text_title",
+      gifUrl: runtime.getURL("assets/images/tutorial/how_to_draw_text.gif"),
+      steps: [
+        "tutorial_how_to_draw_text_step1",
+        "tutorial_how_to_draw_text_step2",
+        "tutorial_how_to_draw_text_step3",
+      ],
+    },
   ];
 
   /**
