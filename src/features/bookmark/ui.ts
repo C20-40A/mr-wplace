@@ -3,7 +3,7 @@ import { t } from "../../i18n/manager";
 import { createModal, ModalElements } from "../../components/modal";
 import { IMG_ICON_BOOKMARK } from "../../assets/iconImages";
 import { createResponsiveButton } from "../../components/responsive-button";
-import { createCard, CardConfig } from "../../components/card";
+import { createCard, CardConfig, attachCardScrollPassthrough } from "../../components/card";
 import { BookmarkStorage } from "./storage";
 
 export const createSaveBookmarkButton = (): HTMLButtonElement => {
@@ -670,6 +670,8 @@ export const renderBookmarks = (
       return createCard(cardConfig);
     })
     .join("");
+
+  attachCardScrollPassthrough(grid);
 };
 
 // Legacy accessor for modal element

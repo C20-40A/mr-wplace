@@ -2,7 +2,7 @@ import { TimeTravelRouter } from "../router";
 import { TimeTravelStorage, TileSnapshotInfo } from "../storage";
 import { TileNameStorage } from "../tile-name-storage";
 import { t } from "@/i18n/manager";
-import { createCard, CardConfig } from "@/components/card";
+import { createCard, CardConfig, attachCardScrollPassthrough } from "@/components/card";
 import { storage, runtime } from "@/utils/browser-api";
 import { getCurrentPosition } from "@/utils/position";
 import { latLngToTilePixel } from "@/utils/coordinate";
@@ -196,15 +196,16 @@ export class TileListRoute {
       // ソート処理
       const sortedTiles = this.sortTiles(tiles, tileNames);
 
-      const listContainer = container.querySelector("#wps-tile-list");
+      const listContainer = container.querySelector("#wps-tile-list") as HTMLElement;
       if (listContainer) {
         if (sortedTiles.length === 0) {
-          this.renderEmptyState(listContainer as HTMLElement, container);
+          this.renderEmptyState(listContainer, container);
         } else {
           const renderedTiles = await Promise.all(
             sortedTiles.map((tile) => this.renderTileCard(tile, tileNames))
           );
           listContainer.innerHTML = renderedTiles.join("");
+          attachCardScrollPassthrough(listContainer);
         }
       }
     } catch (error) {

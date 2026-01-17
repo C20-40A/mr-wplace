@@ -272,6 +272,13 @@ No manual intervention needed. Statistics persist across browser restarts.
 - Visit tiles first to compute statistics
 - Statistics are computed incrementally as you navigate
 
+**Scroll not working on card/item elements:**
+
+- Card/item elements can block wheel events from reaching parent scroll containers
+- Use `attachCardScrollPassthrough()` helper (cards) or `attachWheelPassthrough()` (gallery items)
+- These helpers manually propagate wheel/touch events to the nearest scrollable ancestor
+- Example: `attachCardScrollPassthrough(gridContainer)` after rendering cards
+
 **Debugging:**
 
 ```typescript

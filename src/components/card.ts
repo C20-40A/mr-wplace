@@ -72,7 +72,7 @@ export const createCard = (config: CardConfig): string => {
             transform: scale(1);
             z-index: 10;
           "
-          onmouseover="event.stopPropagation(); this.style.opacity='1'; this.style.transform='scale(1.1)';"
+          onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)';"
           onmouseout="this.style.opacity='0.6'; this.style.transform='scale(1)';"
         >
           <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 -960 960 960' fill='currentColor' style='width:12px; height:12px;'>
@@ -102,7 +102,7 @@ export const createCard = (config: CardConfig): string => {
             transform: scale(1);
             z-index: 10;
           "
-          onmouseover="event.stopPropagation(); this.style.opacity='1'; this.style.transform='scale(1.1)';"
+          onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)';"
           onmouseout="this.style.opacity='0.6'; this.style.transform='scale(1)';"
         >
           <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 -960 960 960' fill='currentColor' style='width:12px; height:12px;'>
@@ -200,4 +200,43 @@ export const createCard = (config: CardConfig): string => {
       }
     </div>
   `;
+};
+
+/**
+ * カード要素にスクロールパススルーを設定
+ * グリッドコンテナ内のカード上でホイール/タッチスクロールを親に伝播させる
+ */
+export const attachCardScrollPassthrough = (gridContainer: HTMLElement): void => {
+  // グリッドの親要素を取得
+  let scrollContainer = gridContainer.parentElement;
+
+  // スクロール可能な親要素を探す（scrollHeight > clientHeight）
+  while (scrollContainer) {
+    if (scrollContainer.scrollHeight > scrollContainer.clientHeight) {
+      break;
+    }
+    scrollContainer = scrollContainer.parentElement;
+  }
+
+  if (!scrollContainer) return;
+
+  gridContainer.querySelectorAll(".wps-card").forEach((card) => {
+    // デスクトップ: wheelイベント
+    card.addEventListener("wheel", (e) => {
+      scrollContainer.scrollTop += (e as WheelEvent).deltaY;
+    }, { passive: true });
+
+    // モバイル: touchイベント
+    let touchStartY = 0;
+    card.addEventListener("touchstart", (e) => {
+      touchStartY = (e as TouchEvent).touches[0].clientY;
+    }, { passive: true });
+
+    card.addEventListener("touchmove", (e) => {
+      const touchY = (e as TouchEvent).touches[0].clientY;
+      const deltaY = touchStartY - touchY;
+      scrollContainer.scrollTop += deltaY;
+      touchStartY = touchY;
+    }, { passive: true });
+  });
 };

@@ -154,10 +154,10 @@ export class ImageGridComponent {
    */
   private createDeleteButtonHtml(itemKey: string): string {
     return `
-      <button 
-        class="btn btn-xs btn-circle btn-ghost absolute -top-1 -right-1 z-10 opacity-50 hover:opacity-80 bg-white border border-gray-200 shadow-sm" 
+      <button
+        class="btn btn-xs btn-circle btn-ghost absolute -top-1 -right-1 z-10 opacity-50 hover:opacity-80 bg-white border border-gray-200 shadow-sm"
         data-delete="${itemKey}"
-      >
+        >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3">
           <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd"/>
         </svg>
@@ -170,8 +170,8 @@ export class ImageGridComponent {
    */
   private createGotoPositionButtonHtml(item: GalleryItem): string {
     return `
-      <button 
-        class="btn btn-xs btn-circle btn-ghost opacity-70 hover:opacity-100 border border-gray-200 shadow-sm" 
+      <button
+        class="btn btn-xs btn-circle btn-ghost opacity-70 hover:opacity-100 border border-gray-200 shadow-sm"
         data-goto-position="${item.key}"
         title="Go to map position"
         style="position: absolute; top: 0.25rem; left: 2rem; z-index: 10; background-color: #f3f4f6;"
@@ -195,8 +195,8 @@ export class ImageGridComponent {
       : `<path fill-rule="evenodd" d="M3.53 2.47a.75.75 0 00-1.06 1.06l18 18a.75.75 0 101.06-1.06l-18-18zM7.823 9.177A4.31 4.31 0 006.586 12 4.31 4.31 0 0012 17.411c1.02 0 1.958-.351 2.696-.937L13.177 15c-.465.465-1.102.75-1.177.75a3 3 0 01-3-3c0-.075.285-.712.75-1.177L7.823 9.177zM7.29 6.696l8.014 8.014a4.31 4.31 0 001.282-3.123A4.31 4.31 0 0012 6.075a4.31 4.31 0 00-4.71.621z" clip-rule="evenodd"/>`;
 
     return `
-      <button 
-        class="btn btn-xs btn-circle btn-ghost opacity-70 hover:opacity-100 border border-gray-200 shadow-sm" 
+      <button
+        class="btn btn-xs btn-circle btn-ghost opacity-70 hover:opacity-100 border border-gray-200 shadow-sm"
         data-draw-toggle="${item.key}"
         title="${isEnabled ? "Hide drawing" : "Show drawing"}"
         style="position: absolute; top: 0.25rem; left: 0.25rem; z-index: 10; ${bgStyle}"
@@ -251,6 +251,35 @@ export class ImageGridComponent {
     this.attachDrawToggleButtonListeners();
     this.attachGotoPositionButtonListeners();
     this.attachImageClickListeners();
+    this.attachWheelPassthrough();
+  }
+
+  /**
+   * スクロールイベントを親コンテナにパススルー
+   */
+  private attachWheelPassthrough(): void {
+    const scrollContainer = this.container.closest('[style*="overflow"]') as HTMLElement;
+    if (!scrollContainer) return;
+
+    this.container.querySelectorAll(".gallery-item").forEach((item) => {
+      // デスクトップ: wheelイベント
+      item.addEventListener("wheel", (e) => {
+        scrollContainer.scrollTop += (e as WheelEvent).deltaY;
+      }, { passive: true });
+
+      // モバイル: touchイベント
+      let touchStartY = 0;
+      item.addEventListener("touchstart", (e) => {
+        touchStartY = (e as TouchEvent).touches[0].clientY;
+      }, { passive: true });
+
+      item.addEventListener("touchmove", (e) => {
+        const touchY = (e as TouchEvent).touches[0].clientY;
+        const deltaY = touchStartY - touchY;
+        scrollContainer.scrollTop += deltaY;
+        touchStartY = touchY;
+      }, { passive: true });
+    });
   }
 
   /**
