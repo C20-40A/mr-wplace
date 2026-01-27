@@ -105,26 +105,14 @@ class MapFilterMenu {
 
   private createTriggerButton() {
     this.triggerButton = document.createElement("button");
-    this.triggerButton.className = "btn btn-sm btn-circle";
+    this.triggerButton.className = "btn btn-sm btn-circle top-2";
     this.triggerButton.style.cssText = `
       position: fixed;
-      left: 50px;
-      top: 10px;
+      left: 47px;
       font-size: 16px;
       z-index: 800;
-      width: 32px;
-      height: 32px;
     `;
-    this.triggerButton.innerHTML = `
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="4" y1="6" x2="20" y2="6"/>
-        <circle cx="8" cy="6" r="2" fill="currentColor"/>
-        <line x1="4" y1="12" x2="20" y2="12"/>
-        <circle cx="16" cy="12" r="2" fill="currentColor"/>
-        <line x1="4" y1="18" x2="20" y2="18"/>
-        <circle cx="10" cy="18" r="2" fill="currentColor"/>
-      </svg>
-    `;
+    this.triggerButton.innerHTML = `🗺️`;
     this.triggerButton.addEventListener("click", (e) => {
       e.stopPropagation();
       this.togglePopover();
@@ -143,7 +131,7 @@ class MapFilterMenu {
       display: none;
       min-width: 200px;
     `;
-    this.popover.innerHTML = `<div class="card-body p-2"></div>`;
+    this.popover.innerHTML = `<div class="card-body p-4"></div>`;
     this.updatePopoverItems();
     document.body.appendChild(this.popover);
   }
@@ -154,39 +142,43 @@ class MapFilterMenu {
     if (!container) return;
     container.innerHTML = "";
 
+    const itemsWrapper = document.createElement("div");
+    itemsWrapper.className = "flex flex-col gap-2";
+
     for (const config of filterConfig) {
       const isEnabled = this.getFilterEnabled(config.id);
       const disabled = config.requiresMap && !this.mapReady;
 
-      const item = document.createElement("button");
-      item.className = `btn btn-sm justify-start gap-2 ${
-        disabled ? "btn-disabled" : ""
-      }`;
-      item.style.cssText = "width: 100%;";
+      const item = document.createElement("div");
+      item.className = "flex items-center justify-between";
+
+      const textContainer = document.createElement("span");
+      textContainer.className = "flex items-center gap-2";
+      if (disabled) {
+        textContainer.classList.add("opacity-50");
+      }
 
       const icon = document.createElement("span");
       icon.textContent = isEnabled ? config.iconOn : config.iconOff;
 
-      const label = document.createElement("span");
-      label.style.cssText = "flex: 1; text-align: left;";
-      label.textContent = config.label();
+      const labelText = document.createElement("span");
+      labelText.textContent = config.label();
 
-      const indicator = document.createElement("span");
-      indicator.className = "badge badge-sm";
-      indicator.style.cssText = `background: ${
-        isEnabled ? "#4ade80" : "#666"
-      }; width: 8px; height: 8px; padding: 0;`;
+      textContainer.appendChild(icon);
+      textContainer.appendChild(labelText);
 
-      item.appendChild(icon);
-      item.appendChild(label);
-      item.appendChild(indicator);
+      const toggle = document.createElement("input");
+      toggle.type = "checkbox";
+      toggle.className = "toggle toggle-sm";
+      toggle.checked = isEnabled;
+      toggle.disabled = disabled;
+      toggle.addEventListener("change", () => this.toggleFilter(config.id));
 
-      if (!disabled) {
-        item.addEventListener("click", () => this.toggleFilter(config.id));
-      }
-
-      container.appendChild(item);
+      item.appendChild(textContainer);
+      item.appendChild(toggle);
+      itemsWrapper.appendChild(item);
     }
+    container.appendChild(itemsWrapper);
   }
 
   private getFilterEnabled(id: FilterId): boolean {
@@ -239,6 +231,10 @@ class MapFilterMenu {
 
   private openPopover() {
     if (this.popover && this.triggerButton) {
+      // Re-check map ready state every time popover opens
+      this.mapReady = getMapInstanceReady();
+      this.updatePopoverItems();
+
       this.popover.style.display = "block";
       this.triggerButton.classList.add("btn-active");
       this.isOpen = true;

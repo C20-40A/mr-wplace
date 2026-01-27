@@ -134,21 +134,21 @@ export const setupDeveloperMenu = (): void => {
     ${S.dark} position:fixed; top:50px; left:10px; z-index:${S.z};
     padding:10px; border-radius:6px; display:none; min-width:200px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.5); font:${S.font};
-  `
+  `,
   );
 
   // Close Button (Right Top)
   const closeBtn = el(
     "button",
     "position:absolute; top:5px; right:5px; background:none; border:none; color:#aaa; cursor:pointer; font-size:16px;",
-    "×"
+    "×",
   );
   closeBtn.onclick = () => (menu.style.display = "none");
   menu.appendChild(closeBtn);
 
   // Title
   menu.appendChild(
-    el("div", "margin-bottom:8px; font-weight:bold; color:#ccc;", "Dev Menu")
+    el("div", "margin-bottom:8px; font-weight:bold; color:#ccc;", "Dev Menu"),
   );
 
   // Action Buttons生成
@@ -156,7 +156,7 @@ export const setupDeveloperMenu = (): void => {
     const btn = el(
       "button",
       `${S.btn} background:#444; transition:0.2s;`,
-      label
+      label,
     );
     btn.onmouseover = () => (btn.style.background = "#666");
     btn.onmouseout = () => (btn.style.background = "#444");
@@ -171,11 +171,11 @@ export const setupDeveloperMenu = (): void => {
   const icon = el(
     "button",
     `
-    ${S.dark} position:fixed; top:10px; left:90px; z-index:${S.z};
+    ${S.dark} position:fixed; top:8px; left:86px; z-index:${S.z};
     width:32px; height:32px; border-radius:50%; border:none; cursor:pointer;
     display:flex; align-items:center; justify-content:center; font-size:16px;
   `,
-    "🛠️"
+    "🛠️",
   );
 
   icon.onclick = () => {
