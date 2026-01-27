@@ -8,6 +8,7 @@ import { getMapInstanceFromWplace } from "../map-instance/get-map-instance";
 import { latLngToTilePixelFloat, tilePixelToLatLng } from "@/utils/coordinate";
 import { TILE_SIZE } from "@/utils/geo-converter";
 import { getOriginalBlob } from "../tile-draw";
+import { statusManagerSingleton } from "../user-status/status-manager";
 
 interface AreaFillCorners {
   topLeft: { lat: number; lng: number } | null;
@@ -228,8 +229,32 @@ export const startAreaFill = async (
     );
   }
 
+  // Get available charge count
+  const availableCharges = statusManagerSingleton.getCurrentChargeCount();
+  console.log(`🧑‍🎨 : Area fill - Available charges: ${availableCharges}`);
+
+  // Limit positions by available charges
+  const maxClicks = Math.min(positions.length, availableCharges);
+  const limitedPositions = positions.slice(0, maxClicks);
+
+  if (limitedPositions.length < positions.length) {
+    console.log(
+      `🧑‍🎨 : Area fill - Limited to ${limitedPositions.length} clicks (charge limit)`
+    );
+  }
+
+  // Send initial progress
+  window.postMessage(
+    {
+      source: "mr-wplace-area-fill-progress",
+      current: 0,
+      total: limitedPositions.length,
+    },
+    "*"
+  );
+
   let clickCount = 0;
-  for (const pos of positions) {
+  for (const pos of limitedPositions) {
     if (stopRequested) {
       console.log("🧑‍🎨 : Area fill stopped by user");
       break;
@@ -238,9 +263,22 @@ export const startAreaFill = async (
     const success = fireMapClick(pos.lat, pos.lng);
     if (success) {
       clickCount++;
+
+      // Send progress update every 10 clicks or on milestones
+      if (clickCount % 10 === 0 || clickCount === limitedPositions.length) {
+        window.postMessage(
+          {
+            source: "mr-wplace-area-fill-progress",
+            current: clickCount,
+            total: limitedPositions.length,
+          },
+          "*"
+        );
+      }
+
       if (clickCount % 100 === 0) {
         console.log(
-          `🧑‍🎨 : Area fill progress: ${clickCount}/${positions.length}`
+          `🧑‍🎨 : Area fill progress: ${clickCount}/${limitedPositions.length}`
         );
       }
     }

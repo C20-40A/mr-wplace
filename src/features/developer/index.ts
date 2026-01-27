@@ -65,10 +65,12 @@ export class DevInject {
     document.addEventListener("keydown", konamiListener);
     console.log("🧑‍🎨 : Konami code detector initialized");
 
-    // Listen for area fill finished message from inject
+    // Listen for area fill messages from inject
     window.addEventListener("message", (event: MessageEvent) => {
       if (event.data.source === "mr-wplace-area-fill-finished") {
         this.handleAreaFillFinished();
+      } else if (event.data.source === "mr-wplace-area-fill-progress") {
+        this.handleAreaFillProgress(event.data.current, event.data.total);
       }
     });
 
@@ -346,6 +348,12 @@ export class DevInject {
     if (this.areaFillUI) {
       this.areaFillUI.setRunning(false);
       console.log("🧑‍🎨 : Area fill finished, UI updated");
+    }
+  }
+
+  private handleAreaFillProgress(current: number, total: number): void {
+    if (this.areaFillUI) {
+      this.areaFillUI.updateProgress(current, total);
     }
   }
 }

@@ -9,8 +9,10 @@ export interface AreaFillUIElements {
   topLeftValue: HTMLSpanElement;
   bottomRightValue: HTMLSpanElement;
   fillButton: HTMLButtonElement;
+  progressGauge: HTMLDivElement;
   update: (corners: AreaFillCorners) => void;
   setRunning: (running: boolean) => void;
+  updateProgress: (current: number, total: number) => void;
   mount: () => void;
   unmount: () => void;
 }
@@ -97,6 +99,50 @@ export const createAreaFillDialogItem = (
       console.log("🧑‍🎨 : Area fill bottom-right set:", pos.lat, pos.lng);
     }
   );
+
+  // Progress gauge
+  const progressGauge = document.createElement("div");
+  progressGauge.style.cssText = `
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 6px;
+    padding: 6px;
+    border-radius: 1px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  `;
+
+  const progressText = document.createElement("div");
+  progressText.style.cssText = `
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 9px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    text-align: center;
+  `;
+
+  const progressBarContainer = document.createElement("div");
+  progressBarContainer.style.cssText = `
+    width: 100%;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  `;
+
+  const progressBarFill = document.createElement("div");
+  progressBarFill.style.cssText = `
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, ${getColor("primary", 0.6)}, ${getColor("primary", 0.9)});
+    transition: width 0.3s ease;
+    box-shadow: 0 0 8px ${getColor("primary", 0.4)};
+  `;
+
+  progressBarContainer.appendChild(progressBarFill);
+  progressGauge.appendChild(progressText);
+  progressGauge.appendChild(progressBarContainer);
 
   // Button row
   const buttonRow = document.createElement("div");
@@ -203,6 +249,7 @@ export const createAreaFillDialogItem = (
   container.appendChild(header);
   container.appendChild(topLeftRow.row);
   container.appendChild(bottomRightRow.row);
+  container.appendChild(progressGauge);
   container.appendChild(buttonRow);
 
   const setRunning = (running: boolean) => {
@@ -220,6 +267,21 @@ export const createAreaFillDialogItem = (
     fillBtn.style.boxShadow = running
       ? "0 0 8px rgba(255, 80, 80, 0.2)"
       : "none";
+
+    // Show/hide progress gauge
+    progressGauge.style.display = running ? "flex" : "none";
+    if (!running) {
+      // Reset gauge on stop
+      progressBarFill.style.width = "0%";
+      progressText.textContent = "";
+    }
+  };
+
+  const updateProgress = (current: number, total: number) => {
+    if (total === 0) return;
+    const percentage = Math.round((current / total) * 100);
+    progressBarFill.style.width = `${percentage}%`;
+    progressText.textContent = `${current} / ${total} (${percentage}%)`;
   };
 
   const update = (corners: AreaFillCorners) => {
@@ -265,8 +327,10 @@ export const createAreaFillDialogItem = (
     topLeftValue: topLeftRow.valueSpan,
     bottomRightValue: bottomRightRow.valueSpan,
     fillButton: fillBtn,
+    progressGauge,
     update,
     setRunning,
+    updateProgress,
     mount,
     unmount,
   };

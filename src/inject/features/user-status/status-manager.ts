@@ -109,6 +109,16 @@ class StatusManager {
     return this.container;
   }
 
+  getCurrentChargeCount(): number {
+    if (!this.currentUserData?.charges) return 0;
+    const chargeData = this.getChargeData(this.currentUserData.charges);
+    return chargeData.current;
+  }
+
+  getCurrentUserData(): WplaceUserData | undefined {
+    return this.currentUserData;
+  }
+
   private getChargeData(charges: WPlaceUserData["charges"]): {
     current: number;
     max: number;
