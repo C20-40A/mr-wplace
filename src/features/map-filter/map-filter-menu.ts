@@ -7,6 +7,7 @@ const HIGH_CONTRAST_KEY = "mapFilter_highContrast";
 const HIGH_CONTRAST_STYLE_ID = "mr-wplace-high-contrast-style";
 const BACKGROUND_COLOR_ENABLED_KEY = "mapFilter_backgroundColorEnabled";
 const BACKGROUND_COLOR_VALUE_KEY = "mapFilter_backgroundColorValue";
+const GRID_DISPLAY_KEY = "mapFilter_gridDisplay";
 
 type FilterState = {
   darkTheme: "custom-winter" | "dark";
@@ -90,8 +91,10 @@ class MapFilterMenu {
       HIGH_CONTRAST_KEY,
       BACKGROUND_COLOR_ENABLED_KEY,
       BACKGROUND_COLOR_VALUE_KEY,
+      GRID_DISPLAY_KEY,
     ]);
     this.state.highContrast = stored[HIGH_CONTRAST_KEY] ?? false;
+    this.state.gridDisplay = stored[GRID_DISPLAY_KEY] ?? false;
     this.state.backgroundColorEnabled =
       stored[BACKGROUND_COLOR_ENABLED_KEY] ?? false;
     this.state.backgroundColorValue =
@@ -276,6 +279,7 @@ class MapFilterMenu {
       }
       case "gridDisplay": {
         this.state.gridDisplay = !this.state.gridDisplay;
+        await storage.set({ [GRID_DISPLAY_KEY]: this.state.gridDisplay });
         this.notifyGridDisplay();
         break;
       }
