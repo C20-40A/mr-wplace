@@ -65,6 +65,13 @@ export class DevInject {
     document.addEventListener("keydown", konamiListener);
     console.log("🧑‍🎨 : Konami code detector initialized");
 
+    // Listen for area fill finished message from inject
+    window.addEventListener("message", (event: MessageEvent) => {
+      if (event.data.source === "mr-wplace-area-fill-finished") {
+        this.handleAreaFillFinished();
+      }
+    });
+
     this.setupUI();
 
     // Start auto canvas click if enabled
@@ -166,14 +173,13 @@ export class DevInject {
 
     // Area Fill item (displayed first)
     const areaFillCorners = AreaFillStorage.getCorners();
-    let areaFillRunning = false;
     this.areaFillUI = createAreaFillDialogItem(areaFillCorners);
 
     this.areaFillUI.fillButton.addEventListener("click", () => {
-      if (areaFillRunning) {
+      const isCurrentlyRunning = this.areaFillUI?.fillButton.textContent === "STOP";
+      if (isCurrentlyRunning) {
         // Stop
         window.postMessage({ source: "mr-wplace-area-fill-stop" }, "*");
-        areaFillRunning = false;
         this.areaFillUI?.setRunning(false);
         console.log("🧑‍🎨 : Area fill stop requested");
       } else {
@@ -184,7 +190,6 @@ export class DevInject {
           { source: "mr-wplace-area-fill-start", corners },
           "*"
         );
-        areaFillRunning = true;
         this.areaFillUI?.setRunning(true);
         console.log("🧑‍🎨 : Area fill start requested", corners);
       }
@@ -335,5 +340,12 @@ export class DevInject {
   private sendAutoColorSpoitStop(): void {
     window.postMessage({ source: "mr-wplace-auto-color-spoit-stop" }, "*");
     console.log("🧑‍🎨 : Sent auto color spoit stop message");
+  }
+
+  private handleAreaFillFinished(): void {
+    if (this.areaFillUI) {
+      this.areaFillUI.setRunning(false);
+      console.log("🧑‍🎨 : Area fill finished, UI updated");
+    }
   }
 }

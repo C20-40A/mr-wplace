@@ -1,8 +1,5 @@
 # メイン
 
-- devdialogをmobileでも移動可能にする
-- dev dialogを最小化できるようにする
-- dev dialogの閉じるボタンなどを見やすくする
 - mobileでpaint modalのボタン間距離を小さくする
 - area fillで、executeが停止するようにする
 - area fillで、0になったら必ず止まるようにする
@@ -111,6 +108,12 @@
 - PC のブックマーク一覧を 4 行ぐらいにしたい。が、その tailwind のメディアクエリがないから、設定が面倒
 - exclude_globs にメインのもの以外含める？
   - all_frames false (デフォルト)系は false．まあデフォルトが false だから不要か
+
+# DONE v2.1.1
+
+- devdialogをmobileでも移動可能にする
+- dev dialogを最小化できるようにする
+- dev dialogの閉じるボタンなどを見やすくする
 
 # DONE v2.1.0
 

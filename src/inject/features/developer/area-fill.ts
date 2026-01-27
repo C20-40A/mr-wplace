@@ -250,6 +250,9 @@ export const startAreaFill = async (
 
   isRunning = false;
   console.log(`🧑‍🎨 : Area fill completed. Clicked ${clickCount} pixels`);
+
+  // Notify content script that area fill has finished
+  window.postMessage({ source: "mr-wplace-area-fill-finished" }, "*");
 };
 
 /**
