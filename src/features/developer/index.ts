@@ -89,7 +89,12 @@ export class DevInject {
     if (this.devMode) {
       setupDeveloperMenu();
       // Restore dialog visibility from localStorage
-      restoreDeveloperDialogVisibility();
+      const savedVisible = localStorage.getItem("mr-wplace-dev-visible");
+      if (savedVisible === "true") {
+        this.ensureDialogContent();
+        restoreDeveloperDialogVisibility();
+        this.areaFillUI?.mount();
+      }
     }
   }
 
