@@ -70,7 +70,7 @@ export class PaletteToggle {
           // Toggle button
           this.button = document.createElement("button");
           this.button.id = "palette-toggle-btn";
-          this.button.className = "btn btn-sm btn-ghost";
+          this.button.className = "btn btn-sm btn-ghost p-0";
           this.button.title = "Toggle color palette visibility";
           this.button.onclick = () => void this.toggle();
 
@@ -80,7 +80,8 @@ export class PaletteToggle {
 
           // Current color display (badge on top-right)
           this.colorDisplay = document.createElement("div");
-          this.colorDisplay.className = "w-3 h-3 rounded-full border border-base-300";
+          this.colorDisplay.className =
+            "w-3 h-3 rounded-full border border-base-300";
           this.colorDisplay.style.cssText = `
             position: absolute;
             top: -4px;
@@ -168,19 +169,21 @@ export class PaletteToggle {
 
     // Find selected color button (with ring-2 or similar selected state)
     const selectedColorButton = document.querySelector(
-      'button[id^="color-"].ring-2, button[id^="color-"].ring-4'
+      'button[id^="color-"].ring-2, button[id^="color-"].ring-4',
     ) as HTMLButtonElement | null;
 
     if (selectedColorButton) {
-      const bgColor = window.getComputedStyle(selectedColorButton).backgroundColor;
+      const bgColor =
+        window.getComputedStyle(selectedColorButton).backgroundColor;
       this.colorDisplay.style.backgroundColor = bgColor;
     } else {
       // Fallback: use first color button
       const firstColorButton = document.querySelector(
-        'button[id^="color-"]'
+        'button[id^="color-"]',
       ) as HTMLButtonElement | null;
       if (firstColorButton) {
-        const bgColor = window.getComputedStyle(firstColorButton).backgroundColor;
+        const bgColor =
+          window.getComputedStyle(firstColorButton).backgroundColor;
         this.colorDisplay.style.backgroundColor = bgColor;
       }
     }
