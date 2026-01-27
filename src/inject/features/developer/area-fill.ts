@@ -23,12 +23,142 @@ const DEFAULT_OPTIONS: AreaFillOptions = {
   skipExistingPixels: true,
 };
 
+// ============================================
+// Human-like behavior settings
+// ============================================
+
+type FillPattern = "linear" | "spiralPingPong";
+
+interface HumanLikeBehaviorSettings {
+  enabled: boolean;
+  fillPattern: FillPattern;
+}
+
+const humanLikeBehaviorSettings: HumanLikeBehaviorSettings = {
+  enabled: true,
+  fillPattern: "spiralPingPong",
+};
+
+/**
+ * Apply spiral ping-pong pattern (outside → inside, alternating directions per layer)
+ * Each spiral layer alternates: clockwise → counter-clockwise → clockwise...
+ */
+const applySpiralPingPongPattern = (
+  positions: PixelPosition[],
+  width: number,
+  height: number,
+): PixelPosition[] => {
+  if (width <= 0 || height <= 0) return positions;
+
+  // Build 2D grid
+  const grid: (PixelPosition | null)[][] = [];
+  for (let y = 0; y < height; y++) {
+    grid[y] = [];
+    for (let x = 0; x < width; x++) {
+      const idx = y * width + x;
+      grid[y][x] = idx < positions.length ? positions[idx] : null;
+    }
+  }
+
+  const result: PixelPosition[] = [];
+  let top = 0,
+    bottom = height - 1,
+    left = 0,
+    right = width - 1;
+  let layerIndex = 0;
+
+  while (top <= bottom && left <= right) {
+    const clockwise = layerIndex % 2 === 0;
+
+    if (clockwise) {
+      // Clockwise: → ↓ ← ↑
+      for (let x = left; x <= right; x++) {
+        if (grid[top][x]) result.push(grid[top][x]!);
+      }
+      top++;
+
+      for (let y = top; y <= bottom; y++) {
+        if (grid[y][right]) result.push(grid[y][right]!);
+      }
+      right--;
+
+      if (top <= bottom) {
+        for (let x = right; x >= left; x--) {
+          if (grid[bottom][x]) result.push(grid[bottom][x]!);
+        }
+        bottom--;
+      }
+
+      if (left <= right) {
+        for (let y = bottom; y >= top; y--) {
+          if (grid[y][left]) result.push(grid[y][left]!);
+        }
+        left++;
+      }
+    } else {
+      // Counter-clockwise: ↓ → ↑ ←
+      for (let y = top; y <= bottom; y++) {
+        if (grid[y][left]) result.push(grid[y][left]!);
+      }
+      left++;
+
+      if (left <= right) {
+        for (let x = left; x <= right; x++) {
+          if (grid[bottom][x]) result.push(grid[bottom][x]!);
+        }
+        bottom--;
+      }
+
+      if (top <= bottom) {
+        for (let y = bottom; y >= top; y--) {
+          if (grid[y][right]) result.push(grid[y][right]!);
+        }
+        right--;
+      }
+
+      if (left <= right) {
+        for (let x = right; x >= left; x--) {
+          if (grid[top][x]) result.push(grid[top][x]!);
+        }
+        top++;
+      }
+    }
+
+    layerIndex++;
+  }
+
+  return result;
+};
+
+/**
+ * Apply fill pattern based on settings
+ */
+const applyFillPattern = (
+  positions: PixelPosition[],
+  width: number,
+  height: number,
+): PixelPosition[] => {
+  if (
+    !humanLikeBehaviorSettings.enabled ||
+    humanLikeBehaviorSettings.fillPattern === "linear"
+  ) {
+    return positions;
+  }
+  return applySpiralPingPongPattern(positions, width, height);
+};
+
+// ============================================
+// Core state
+// ============================================
+
 let isRunning = false;
 let stopRequested = false;
 let currentCorners: AreaFillCorners = { topLeft: null, bottomRight: null };
 
 const BASE_INTERVAL_MS = 10;
-const JITTER_MS = 5;
+const MIN_JITTER_MS = 2;
+const MAX_JITTER_MS = 15;
+const JITTER_CYCLE_CLICKS = 100; // jitter が一周するクリック数
 
 /**
  * Check if developer mode is enabled
@@ -41,11 +171,16 @@ const isDevModeEnabled = (): boolean => {
 };
 
 /**
- * Get random interval with jitter
+ * Get interval with gradual jitter (spring-like acceleration/deceleration)
+ * jitter が sin 波で変化し、クリック速度が徐々に上下する
  */
-const getRandomInterval = (): number => {
-  const jitter = Math.random() * JITTER_MS * 2 - JITTER_MS;
-  return BASE_INTERVAL_MS + jitter;
+const getGradualInterval = (clickIndex: number): number => {
+  const phase = (clickIndex % JITTER_CYCLE_CLICKS) / JITTER_CYCLE_CLICKS;
+  const sinValue = Math.sin(phase * Math.PI * 2);
+  const jitterRange = MAX_JITTER_MS - MIN_JITTER_MS;
+  const jitter = MIN_JITTER_MS + (jitterRange * (sinValue + 1)) / 2;
+  const randomOffset = (Math.random() - 0.5) * 2;
+  return BASE_INTERVAL_MS + jitter + randomOffset;
 };
 
 /**
@@ -88,14 +223,20 @@ interface PixelPosition {
   pxY: number;
 }
 
+interface GenerateResult {
+  positions: PixelPosition[];
+  width: number;
+  height: number;
+}
+
 /**
  * Generate pixel grid positions within the area
- * Returns array of positions with tile info for filtering
+ * Returns array of positions with tile info for filtering, and row width
  */
 const generatePixelPositions = (
   topLeft: { lat: number; lng: number },
-  bottomRight: { lat: number; lng: number }
-): PixelPosition[] => {
+  bottomRight: { lat: number; lng: number },
+): GenerateResult => {
   const tl = latLngToTilePixelFloat(topLeft.lat, topLeft.lng);
   const br = latLngToTilePixelFloat(bottomRight.lat, bottomRight.lng);
 
@@ -109,6 +250,8 @@ const generatePixelPositions = (
   const minY = Math.min(tlWorldY, brWorldY);
   const maxY = Math.max(tlWorldY, brWorldY);
 
+  const width = maxX - minX + 1;
+  const height = maxY - minY + 1;
   const positions: PixelPosition[] = [];
 
   for (let y = minY; y <= maxY; y++) {
@@ -123,13 +266,13 @@ const generatePixelPositions = (
         tileX,
         tileY,
         pxX + 0.5,
-        pxY + 0.5
+        pxY + 0.5,
       );
       positions.push({ lat, lng, tileKey: `${tileX},${tileY}`, pxX, pxY });
     }
   }
 
-  return positions;
+  return { positions, width, height };
 };
 
 /**
@@ -148,7 +291,7 @@ const loadTileImageData = async (blob: Blob): Promise<ImageData> => {
  * Filter positions to exclude pixels that already exist in background
  */
 const filterExistingPixels = async (
-  positions: PixelPosition[]
+  positions: PixelPosition[],
 ): Promise<PixelPosition[]> => {
   // Group by tile
   const byTile = new Map<string, PixelPosition[]>();
@@ -193,7 +336,7 @@ const filterExistingPixels = async (
  */
 export const startAreaFill = async (
   corners: AreaFillCorners,
-  options: AreaFillOptions = DEFAULT_OPTIONS
+  options: AreaFillOptions = DEFAULT_OPTIONS,
 ): Promise<void> => {
   if (!isDevModeEnabled()) {
     console.warn("🧑‍🎨 : Area fill requires developer mode");
@@ -216,8 +359,15 @@ export const startAreaFill = async (
 
   console.log("🧑‍🎨 : Area fill started", corners);
 
-  let positions = generatePixelPositions(corners.topLeft, corners.bottomRight);
-  console.log(`🧑‍🎨 : Area fill - ${positions.length} pixels in area`);
+  const generated = generatePixelPositions(
+    corners.topLeft,
+    corners.bottomRight,
+  );
+  let positions = generated.positions;
+  const { width, height } = generated;
+  console.log(
+    `🧑‍🎨 : Area fill - ${positions.length} pixels in area (${width}x${height})`,
+  );
 
   if (options.skipExistingPixels) {
     const before = positions.length;
@@ -225,7 +375,18 @@ export const startAreaFill = async (
     console.log(
       `🧑‍🎨 : Area fill - Filtered to ${positions.length} empty pixels (skipped ${
         before - positions.length
-      } existing)`
+      } existing)`,
+    );
+  }
+
+  // Apply fill pattern (human-like behavior)
+  positions = applyFillPattern(positions, width, height);
+  if (
+    humanLikeBehaviorSettings.enabled &&
+    humanLikeBehaviorSettings.fillPattern !== "linear"
+  ) {
+    console.log(
+      `🧑‍🎨 : Area fill - Pattern applied: ${humanLikeBehaviorSettings.fillPattern}`,
     );
   }
 
@@ -239,7 +400,7 @@ export const startAreaFill = async (
 
   if (limitedPositions.length < positions.length) {
     console.log(
-      `🧑‍🎨 : Area fill - Limited to ${limitedPositions.length} clicks (charge limit)`
+      `🧑‍🎨 : Area fill - Limited to ${limitedPositions.length} clicks (charge limit)`,
     );
   }
 
@@ -250,7 +411,7 @@ export const startAreaFill = async (
       current: 0,
       total: limitedPositions.length,
     },
-    "*"
+    "*",
   );
 
   let clickCount = 0;
@@ -272,18 +433,18 @@ export const startAreaFill = async (
             current: clickCount,
             total: limitedPositions.length,
           },
-          "*"
+          "*",
         );
       }
 
       if (clickCount % 100 === 0) {
         console.log(
-          `🧑‍🎨 : Area fill progress: ${clickCount}/${limitedPositions.length}`
+          `🧑‍🎨 : Area fill progress: ${clickCount}/${limitedPositions.length}`,
         );
       }
     }
 
-    await sleep(getRandomInterval());
+    await sleep(getGradualInterval(clickCount));
   }
 
   isRunning = false;
