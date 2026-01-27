@@ -1,5 +1,2 @@
-export { darkThemeAPI } from "./dark-theme";
-export { highContrastAPI } from "./high-contrast";
-export { tileBoundariesAPI } from "./tile-boundaries";
-export { gridDisplayAPI } from "./grid-display";
+export { mapFilterMenuAPI } from "./map-filter-menu";
 export { dataSaverAPI } from "../data-saver";

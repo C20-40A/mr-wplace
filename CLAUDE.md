@@ -179,7 +179,8 @@ tabs.reload(tabId);
 ```typescript
 import { t } from "@/i18n/manager";
 
-const text = t`feature.gallery.title`; // Template literal syntax
+const text = t`${"feature_gallery_title"}`; // Template literal syntax
+// don't use like this: t`feature.gallery.title`
 ```
 
 ## Important Utilities

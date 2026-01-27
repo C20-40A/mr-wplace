@@ -14,13 +14,7 @@ import { friendsBookAPI } from "@/features/friends-book";
 import { ColorFilter } from "@/features/color-filter";
 import { ColorFilterManager } from "@/utils/color-filter-manager";
 import { textDrawAPI } from "@/features/text-draw";
-import {
-  darkThemeAPI,
-  highContrastAPI,
-  tileBoundariesAPI,
-  gridDisplayAPI,
-  dataSaverAPI,
-} from "@/features/map-filter";
+import { mapFilterMenuAPI, dataSaverAPI } from "@/features/map-filter";
 import { layerSortAPI } from "@/features/layer-sort";
 import { DevInject } from "@/features/developer";
 import { ColorIsolate } from "@/features/color-isolate";
@@ -80,12 +74,9 @@ export const initializeFeatures = async () => {
   // Initialize async features in parallel
   await Promise.all([
     textDrawAPI.initTextDraw(), // 3. TextDraw
-    darkThemeAPI.initDarkTheme(), // 5. DarkTheme
-    highContrastAPI.initHighContrast(), // 6. HighContrast
-    tileBoundariesAPI.initTileBoundaries(), // 7. TileBoundaries
-    gridDisplayAPI.initGridDisplay(), // 8. GridDisplay
-    dataSaverAPI.initDataSaver(), // 9. DataSaver
-    layerSortAPI.initLayerSort(), // 10. LayerSort
+    mapFilterMenuAPI.initMapFilterMenu(), // 5. MapFilterMenu (unified)
+    dataSaverAPI.initDataSaver(), // 6. DataSaver
+    layerSortAPI.initLayerSort(), // 7. LayerSort
   ]);
 
   // 初期化完了を待つ

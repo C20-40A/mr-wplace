@@ -407,9 +407,18 @@ export const enTranslations = {
   tutorial_how_to_draw_archive_step3: "Click the draw button",
   tutorial_how_to_draw_text_title: "How to Display Text on Map",
   tutorial_how_to_draw_text_step1: "Click on the map and select 'Text'",
-  tutorial_how_to_draw_text_step2: "Enter text, choose a font, and click 'Draw' button",
-  tutorial_how_to_draw_text_step3: "Optional: Use arrow buttons to adjust position",
+  tutorial_how_to_draw_text_step2:
+    "Enter text, choose a font, and click 'Draw' button",
+  tutorial_how_to_draw_text_step3:
+    "Optional: Use arrow buttons to adjust position",
 
   // Empty states
-  empty_archive_message: "No archived tiles yet. Click on the map to start archiving!",
+  empty_archive_message:
+    "No archived tiles yet. Click on the map to start archiving!",
+
+  // Map Filter Menu
+  map_filter_darkTheme: "Dark Theme",
+  map_filter_highContrast: "High Contrast",
+  map_filter_tileBoundaries: "Tile Boundaries",
+  map_filter_gridDisplay: "Pixel Grid",
 };
