@@ -1,6 +1,5 @@
 # メイン
 
-- mobileでpaint modalのボタン間距離を小さくする
 - orionでpopupが開けない
 - corsのerrorがログ報告ツールで表示されて、エラーで停止する？
 

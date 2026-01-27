@@ -8,6 +8,7 @@ import {
 
 const GRID_LAYER_ID = "mr-wplace-grid-layer";
 const GRID_SOURCE_ID = "mr-wplace-grid-source";
+const GRID_MIN_ZOOM = 14; // Zoom level to show grid
 
 let gridEnabled = false;
 let layerAdded = false;
@@ -50,41 +51,46 @@ const generateGridForBounds = (map: any) => {
   const startPxY = Math.floor(topLeft.pixelY);
   const endPxY = Math.ceil(bottomRight.pixelY);
 
-  const features: any[] = [];
-
+  const verticalLines: any[] = [];
   // 縦線（X方向のピクセル境界）
   for (let pxX = startPxX; pxX <= endPxX; pxX++) {
     const top = pixelToLatLng(pxX, startPxY);
     const bottom = pixelToLatLng(pxX, endPxY);
-    features.push({
-      type: "Feature",
-      properties: {},
-      geometry: {
-        type: "LineString",
-        coordinates: [
-          [top.lng, top.lat],
-          [bottom.lng, bottom.lat],
-        ],
-      },
-    });
+    verticalLines.push([
+      [top.lng, top.lat],
+      [bottom.lng, bottom.lat],
+    ]);
   }
 
+  const horizontalLines: any[] = [];
   // 横線（Y方向のピクセル境界）
   for (let pxY = startPxY; pxY <= endPxY; pxY++) {
     const left = pixelToLatLng(startPxX, pxY);
     const right = pixelToLatLng(endPxX, pxY);
-    features.push({
+    horizontalLines.push([
+      [left.lng, left.lat],
+      [right.lng, right.lat],
+    ]);
+  }
+
+  const features = [
+    {
       type: "Feature",
       properties: {},
       geometry: {
-        type: "LineString",
-        coordinates: [
-          [left.lng, left.lat],
-          [right.lng, right.lat],
-        ],
+        type: "MultiLineString",
+        coordinates: verticalLines,
       },
-    });
-  }
+    },
+    {
+      type: "Feature",
+      properties: {},
+      geometry: {
+        type: "MultiLineString",
+        coordinates: horizontalLines,
+      },
+    },
+  ];
 
   return {
     type: "FeatureCollection",
@@ -92,12 +98,21 @@ const generateGridForBounds = (map: any) => {
   };
 };
 
+const EMPTY_GRID = {
+  type: "FeatureCollection",
+  features: [],
+};
+
 /**
  * グリッドソースを更新
  */
 const updateGridSource = (map: any): void => {
-  const source = map.getSource(GRID_SOURCE_ID);
-  if (source) {
+  const source = map.getSource(GRID_SOURCE_ID) as any;
+  if (!source) return;
+
+  if (map.getZoom() < GRID_MIN_ZOOM) {
+    source.setData(EMPTY_GRID);
+  } else {
     source.setData(generateGridForBounds(map));
   }
 };
@@ -114,9 +129,11 @@ const addGridLayer = (map: any): void => {
 
   // ソースを追加
   if (!map.getSource(GRID_SOURCE_ID)) {
+    const initialData =
+      map.getZoom() < GRID_MIN_ZOOM ? EMPTY_GRID : generateGridForBounds(map);
     map.addSource(GRID_SOURCE_ID, {
       type: "geojson",
-      data: generateGridForBounds(map),
+      data: initialData,
     });
   }
 
@@ -125,7 +142,7 @@ const addGridLayer = (map: any): void => {
     id: GRID_LAYER_ID,
     type: "line",
     source: GRID_SOURCE_ID,
-    minzoom: 15,
+    minzoom: GRID_MIN_ZOOM,
     paint: {
       "line-color": "rgba(100, 100, 100, 0.5)",
       "line-width": 1,
