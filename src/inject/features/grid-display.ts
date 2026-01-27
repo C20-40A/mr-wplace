@@ -14,6 +14,14 @@ let gridEnabled = false;
 let layerAdded = false;
 let moveEndHandler: (() => void) | null = null;
 
+// Pixel range cache for differential updates
+let prevPixelRange: {
+  sx: number;
+  ex: number;
+  sy: number;
+  ey: number;
+} | null = null;
+
 /**
  * ワールドピクセル座標から緯度経度へ変換
  */
@@ -24,77 +32,48 @@ const pixelToLatLng = (pixelX: number, pixelY: number) => {
 };
 
 /**
- * 緯度経度からワールドピクセル座標へ変換
+ * 現在のビューポートに基づいてグリッド線を生成（最適化版：Feature 1個に統合）
  */
-const latLngToPixel = (lat: number, lng: number) => {
-  const [pixelX, pixelY] = latLonToPixels(lat, lng, ZOOM_LEVEL);
-  return { pixelX, pixelY };
-};
+const generateGridGeoJSON = (
+  startPxX: number,
+  endPxX: number,
+  startPxY: number,
+  endPxY: number
+) => {
+  const allLines: number[][][] = [];
 
-/**
- * 現在のビューポートに基づいてグリッド線を生成
- */
-const generateGridForBounds = (map: any) => {
-  const bounds = map.getBounds();
-  const minLng = bounds.getWest();
-  const maxLng = bounds.getEast();
-  const minLat = bounds.getSouth();
-  const maxLat = bounds.getNorth();
-
-  // ビューポートの四隅をピクセル座標に変換
-  const topLeft = latLngToPixel(maxLat, minLng);
-  const bottomRight = latLngToPixel(minLat, maxLng);
-
-  // ピクセル座標の範囲（整数に丸める）
-  const startPxX = Math.floor(topLeft.pixelX);
-  const endPxX = Math.ceil(bottomRight.pixelX);
-  const startPxY = Math.floor(topLeft.pixelY);
-  const endPxY = Math.ceil(bottomRight.pixelY);
-
-  const verticalLines: any[] = [];
   // 縦線（X方向のピクセル境界）
   for (let pxX = startPxX; pxX <= endPxX; pxX++) {
     const top = pixelToLatLng(pxX, startPxY);
     const bottom = pixelToLatLng(pxX, endPxY);
-    verticalLines.push([
+    allLines.push([
       [top.lng, top.lat],
       [bottom.lng, bottom.lat],
     ]);
   }
 
-  const horizontalLines: any[] = [];
   // 横線（Y方向のピクセル境界）
   for (let pxY = startPxY; pxY <= endPxY; pxY++) {
     const left = pixelToLatLng(startPxX, pxY);
     const right = pixelToLatLng(endPxX, pxY);
-    horizontalLines.push([
+    allLines.push([
       [left.lng, left.lat],
       [right.lng, right.lat],
     ]);
   }
 
-  const features = [
-    {
-      type: "Feature",
-      properties: {},
-      geometry: {
-        type: "MultiLineString",
-        coordinates: verticalLines,
-      },
-    },
-    {
-      type: "Feature",
-      properties: {},
-      geometry: {
-        type: "MultiLineString",
-        coordinates: horizontalLines,
-      },
-    },
-  ];
-
   return {
     type: "FeatureCollection",
-    features,
+    features: [
+      {
+        type: "Feature",
+        properties: {},
+        geometry: {
+          type: "MultiLineString",
+          coordinates: allLines,
+        },
+      },
+    ],
   };
 };
 
@@ -104,17 +83,53 @@ const EMPTY_GRID = {
 };
 
 /**
- * グリッドソースを更新
+ * グリッドソースを更新（差分チェック最適化版）
  */
 const updateGridSource = (map: any): void => {
+  // zoom < 14 は完全スキップ（最重要最適化）
+  if (map.getZoom() < GRID_MIN_ZOOM) return;
+
   const source = map.getSource(GRID_SOURCE_ID) as any;
   if (!source) return;
 
-  if (map.getZoom() < GRID_MIN_ZOOM) {
-    source.setData(EMPTY_GRID);
-  } else {
-    source.setData(generateGridForBounds(map));
+  // Pixel range 計算
+  const bounds = map.getBounds();
+  // latLonToPixels returns [pixelX, pixelY]
+  // North = 高緯度 = 小さい pixelY, South = 低緯度 = 大きい pixelY
+  // West = 小さい pixelX, East = 大きい pixelX
+  const [westPx, northPy] = latLonToPixels(
+    bounds.getNorth(),
+    bounds.getWest(),
+    ZOOM_LEVEL
+  );
+  const [eastPx, southPy] = latLonToPixels(
+    bounds.getSouth(),
+    bounds.getEast(),
+    ZOOM_LEVEL
+  );
+
+  const sx = Math.floor(westPx);
+  const ex = Math.ceil(eastPx);
+  const sy = Math.floor(northPy);
+  const ey = Math.ceil(southPy);
+
+  // 差分チェック - 前回と同じ範囲なら何もしない（最大の最適化）
+  if (
+    prevPixelRange &&
+    prevPixelRange.sx === sx &&
+    prevPixelRange.ex === ex &&
+    prevPixelRange.sy === sy &&
+    prevPixelRange.ey === ey
+  ) {
+    return;
   }
+
+  // 範囲を保存
+  prevPixelRange = { sx, ex, sy, ey };
+
+  // GeoJSON 生成 & 更新
+  const data = generateGridGeoJSON(sx, ex, sy, ey);
+  source.setData(data);
 };
 
 /**
@@ -129,11 +144,9 @@ const addGridLayer = (map: any): void => {
 
   // ソースを追加
   if (!map.getSource(GRID_SOURCE_ID)) {
-    const initialData =
-      map.getZoom() < GRID_MIN_ZOOM ? EMPTY_GRID : generateGridForBounds(map);
     map.addSource(GRID_SOURCE_ID, {
       type: "geojson",
-      data: initialData,
+      data: EMPTY_GRID,
     });
   }
 
@@ -154,6 +167,10 @@ const addGridLayer = (map: any): void => {
   map.on("moveend", moveEndHandler);
 
   layerAdded = true;
+
+  // 初回更新（zoom >= 14 なら即座に表示）
+  updateGridSource(map);
+
   console.log("🧑‍🎨 : Grid layer added");
 };
 
@@ -175,6 +192,8 @@ const removeGridLayer = (map: any): void => {
     map.removeSource(GRID_SOURCE_ID);
   }
 
+  // キャッシュクリア
+  prevPixelRange = null;
   layerAdded = false;
   console.log("🧑‍🎨 : Grid layer removed");
 };
@@ -208,6 +227,8 @@ export const setupGridDisplayOnMapReady = (mapInstance: any): void => {
 
   const onStyleData = () => {
     if (!gridEnabled) return;
+    // キャッシュクリアして再描画
+    prevPixelRange = null;
     layerAdded = false;
     addGridLayer(map);
   };
