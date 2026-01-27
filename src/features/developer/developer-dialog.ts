@@ -10,10 +10,15 @@ let dialogInstance: DeveloperDialogElements | null = null;
 let onHideCallback: (() => void) | null = null;
 let isDragging = false;
 let dragOffset = { x: 0, y: 0 };
+let isMinimized = false;
 
 export const createDeveloperDialog = (): DeveloperDialogElements => {
   // 既存のダイアログがあれば再利用
   if (dialogInstance) return dialogInstance;
+
+  // 最小化状態を復元
+  const savedMinimized = localStorage.getItem("mr-wplace-dev-minimized");
+  isMinimized = savedMinimized === "true";
 
   const dialog = document.createElement("div");
   dialog.id = "mr-wplace-dev-dialog";
@@ -40,7 +45,7 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     font-family: 'Consolas', 'Monaco', monospace;
   `;
 
-  // Header (drag handle + close button)
+  // Header (drag handle + buttons)
   const header = document.createElement("div");
   header.style.cssText = `
     display: flex;
@@ -51,6 +56,7 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     padding: 2px 0;
     border-bottom: 1px solid ${getColor("primary", 0.1)};
     padding-bottom: 6px;
+    touch-action: none;
   `;
 
   const titleWrapper = document.createElement("div");
@@ -74,6 +80,7 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     font-family: 'Consolas', 'Monaco', monospace;
     line-height: 1.2;
     max-width: 150px;
+    display: ${isMinimized ? "none" : "block"};
   `;
   warning.textContent =
     "This is a private feature for development testing only. Not intended for actual use.";
@@ -81,78 +88,201 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
   titleWrapper.appendChild(title);
   titleWrapper.appendChild(warning);
 
-  const closeBtn = document.createElement("button");
-  closeBtn.style.cssText = `
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: rgba(255, 255, 255, 0.4);
+  // Button container
+  const buttonContainer = document.createElement("div");
+  buttonContainer.style.cssText = `display: flex; gap: 4px; align-items: center;`;
+
+  // Minimize button
+  const minimizeBtn = document.createElement("button");
+  minimizeBtn.style.cssText = `
+    background: rgba(255, 255, 255, 0.05);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.5);
     cursor: pointer;
     padding: 2px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 1px;
-    transition: all 0.1s ease;
-    width: 18px;
-    height: 18px;
+    border-radius: 2px;
+    transition: all 0.15s ease;
+    width: 22px;
+    height: 22px;
+  `;
+  const updateMinimizeIcon = () => {
+    minimizeBtn.innerHTML = isMinimized
+      ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width: 12px; height: 12px;">
+          <path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.96-4.158a.75.75 0 111.08 1.04l-5.25 5.5a.75.75 0 01-1.08 0l-5.25-5.5a.75.75 0 111.08-1.04l3.96 4.158V3.75A.75.75 0 0110 3z" clip-rule="evenodd" />
+        </svg>`
+      : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width: 12px; height: 12px;">
+          <path d="M6.75 9.25a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" />
+        </svg>`;
+  };
+  updateMinimizeIcon();
+  minimizeBtn.addEventListener("mouseenter", () => {
+    minimizeBtn.style.color = "rgba(100, 200, 255, 0.9)";
+    minimizeBtn.style.borderColor = "rgba(100, 200, 255, 0.5)";
+    minimizeBtn.style.background = "rgba(100, 200, 255, 0.1)";
+  });
+  minimizeBtn.addEventListener("mouseleave", () => {
+    minimizeBtn.style.color = "rgba(255, 255, 255, 0.5)";
+    minimizeBtn.style.borderColor = "rgba(255, 255, 255, 0.2)";
+    minimizeBtn.style.background = "rgba(255, 255, 255, 0.05)";
+  });
+  minimizeBtn.addEventListener("mousedown", () => {
+    minimizeBtn.style.transform = "scale(0.95)";
+  });
+  minimizeBtn.addEventListener("mouseup", () => {
+    minimizeBtn.style.transform = "scale(1)";
+  });
+  minimizeBtn.addEventListener("click", () => {
+    isMinimized = !isMinimized;
+    localStorage.setItem("mr-wplace-dev-minimized", String(isMinimized));
+    const currentContent = document.getElementById("mr-wplace-dev-dialog-content") as HTMLDivElement;
+    if (currentContent) {
+      currentContent.style.display = isMinimized ? "none" : "flex";
+    }
+    warning.style.display = isMinimized ? "none" : "block";
+    header.style.marginBottom = isMinimized ? "0" : "8px";
+    header.style.borderBottom = isMinimized ? "none" : `1px solid ${getColor("primary", 0.1)}`;
+    updateMinimizeIcon();
+  });
+
+  // Close button
+  const closeBtn = document.createElement("button");
+  closeBtn.style.cssText = `
+    background: rgba(255, 255, 255, 0.05);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+    transition: all 0.15s ease;
+    width: 22px;
+    height: 22px;
   `;
   closeBtn.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width: 10px; height: 10px;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" style="width: 12px; height: 12px;">
       <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
     </svg>
   `;
   closeBtn.addEventListener("mouseenter", () => {
     closeBtn.style.color = "rgba(255, 100, 100, 0.9)";
-    closeBtn.style.borderColor = "rgba(255, 100, 100, 0.4)";
+    closeBtn.style.borderColor = "rgba(255, 100, 100, 0.5)";
+    closeBtn.style.background = "rgba(255, 100, 100, 0.1)";
   });
   closeBtn.addEventListener("mouseleave", () => {
-    closeBtn.style.color = "rgba(255, 255, 255, 0.4)";
-    closeBtn.style.borderColor = "rgba(255, 255, 255, 0.15)";
+    closeBtn.style.color = "rgba(255, 255, 255, 0.5)";
+    closeBtn.style.borderColor = "rgba(255, 255, 255, 0.2)";
+    closeBtn.style.background = "rgba(255, 255, 255, 0.05)";
+  });
+  closeBtn.addEventListener("mousedown", () => {
+    closeBtn.style.transform = "scale(0.95)";
+  });
+  closeBtn.addEventListener("mouseup", () => {
+    closeBtn.style.transform = "scale(1)";
   });
   closeBtn.addEventListener("click", () => hideDeveloperDialog());
 
+  buttonContainer.appendChild(minimizeBtn);
+  buttonContainer.appendChild(closeBtn);
+
   header.appendChild(titleWrapper);
-  header.appendChild(closeBtn);
+  header.appendChild(buttonContainer);
 
   // Content area
   const content = document.createElement("div");
   content.id = "mr-wplace-dev-dialog-content";
   content.style.cssText = `
-    display: flex;
+    display: ${isMinimized ? "none" : "flex"};
     flex-direction: column;
     gap: 8px;
   `;
+
+  // 最小化状態をヘッダーに反映
+  if (isMinimized) {
+    header.style.marginBottom = "0";
+    header.style.borderBottom = "none";
+  }
 
   dialog.appendChild(header);
   dialog.appendChild(content);
   document.body.appendChild(dialog);
 
-  // Drag handling
-  const handleMouseDown = (e: MouseEvent) => {
-    if (e.target === closeBtn || closeBtn.contains(e.target as Node)) return;
+  // Drag handling (mouse & touch)
+  const startDrag = (clientX: number, clientY: number) => {
     isDragging = true;
     const rect = dialog.getBoundingClientRect();
-    dragOffset = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    dragOffset = { x: clientX - rect.left, y: clientY - rect.top };
     dialog.style.cursor = "grabbing";
+    header.style.cursor = "grabbing";
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const moveDrag = (clientX: number, clientY: number) => {
     if (!isDragging) return;
-    const x = e.clientX - dragOffset.x;
-    const y = e.clientY - dragOffset.y;
+    const x = clientX - dragOffset.x;
+    const y = clientY - dragOffset.y;
     dialog.style.left = `${x}px`;
     dialog.style.top = `${y}px`;
     dialog.style.transform = "none";
   };
 
-  const handleMouseUp = () => {
+  const endDrag = () => {
     isDragging = false;
     dialog.style.cursor = "default";
+    header.style.cursor = "move";
+  };
+
+  const handleMouseDown = (e: MouseEvent) => {
+    if (
+      e.target === closeBtn ||
+      closeBtn.contains(e.target as Node) ||
+      e.target === minimizeBtn ||
+      minimizeBtn.contains(e.target as Node)
+    )
+      return;
+    startDrag(e.clientX, e.clientY);
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    moveDrag(e.clientX, e.clientY);
+  };
+
+  const handleMouseUp = () => {
+    endDrag();
+  };
+
+  const handleTouchStart = (e: TouchEvent) => {
+    if (
+      e.target === closeBtn ||
+      closeBtn.contains(e.target as Node) ||
+      e.target === minimizeBtn ||
+      minimizeBtn.contains(e.target as Node)
+    )
+      return;
+    const touch = e.touches[0];
+    startDrag(touch.clientX, touch.clientY);
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    moveDrag(touch.clientX, touch.clientY);
+  };
+
+  const handleTouchEnd = () => {
+    endDrag();
   };
 
   header.addEventListener("mousedown", handleMouseDown);
   document.addEventListener("mousemove", handleMouseMove);
   document.addEventListener("mouseup", handleMouseUp);
+  header.addEventListener("touchstart", handleTouchStart, { passive: false });
+  document.addEventListener("touchmove", handleTouchMove, { passive: false });
+  document.addEventListener("touchend", handleTouchEnd);
 
   // ESC to close
   const handleKeydown = (e: KeyboardEvent) => {
@@ -166,6 +296,9 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     header.removeEventListener("mousedown", handleMouseDown);
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
+    header.removeEventListener("touchstart", handleTouchStart);
+    document.removeEventListener("touchmove", handleTouchMove);
+    document.removeEventListener("touchend", handleTouchEnd);
     document.removeEventListener("keydown", handleKeydown);
     dialog.remove();
     dialogInstance = null;
@@ -178,11 +311,13 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
 export const showDeveloperDialog = (): void => {
   const { dialog } = createDeveloperDialog();
   dialog.style.display = "block";
+  localStorage.setItem("mr-wplace-dev-visible", "true");
 };
 
 export const hideDeveloperDialog = (): void => {
   if (dialogInstance) {
     dialogInstance.dialog.style.display = "none";
+    localStorage.setItem("mr-wplace-dev-visible", "false");
     onHideCallback?.();
   }
 };
@@ -194,10 +329,15 @@ export const setOnHideCallback = (callback: (() => void) | null): void => {
 export const toggleDeveloperDialog = (): void => {
   const { dialog } = createDeveloperDialog();
   if (dialog.style.display === "none") {
-    dialog.style.display = "block";
+    showDeveloperDialog();
   } else {
-    dialog.style.display = "none";
+    hideDeveloperDialog();
   }
+};
+
+export const restoreDeveloperDialogVisibility = (): void => {
+  const savedVisible = localStorage.getItem("mr-wplace-dev-visible");
+  if (savedVisible === "true") showDeveloperDialog();
 };
 
 export const getDeveloperDialogContent = (): HTMLDivElement | null => {

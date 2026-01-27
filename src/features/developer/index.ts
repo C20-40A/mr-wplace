@@ -16,6 +16,7 @@ import {
   createDeveloperDialog,
   toggleDeveloperDialog,
   setOnHideCallback,
+  restoreDeveloperDialogVisibility,
 } from "./developer-dialog";
 import { createKonamiCodeDetector } from "./konami-detector";
 import { t } from "@/i18n/manager";
@@ -78,6 +79,8 @@ export class DevInject {
 
     if (this.devMode) {
       setupDeveloperMenu();
+      // Restore dialog visibility from localStorage
+      restoreDeveloperDialogVisibility();
     }
   }
 

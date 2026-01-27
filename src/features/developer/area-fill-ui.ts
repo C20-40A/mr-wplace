@@ -173,7 +173,7 @@ export const createAreaFillDialogItem = (
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 1px;
     background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.7);
     font-size: 10px;
     font-family: 'Consolas', 'Monaco', monospace;
     letter-spacing: 0.5px;
@@ -183,11 +183,11 @@ export const createAreaFillDialogItem = (
   clearBtn.textContent = "CLR";
   clearBtn.addEventListener("mouseenter", () => {
     clearBtn.style.background = "rgba(255, 255, 255, 0.1)";
-    clearBtn.style.color = "rgba(255, 255, 255, 0.7)";
+    clearBtn.style.color = "rgba(255, 255, 255, 0.9)";
   });
   clearBtn.addEventListener("mouseleave", () => {
     clearBtn.style.background = "rgba(255, 255, 255, 0.05)";
-    clearBtn.style.color = "rgba(255, 255, 255, 0.5)";
+    clearBtn.style.color = "rgba(255, 255, 255, 0.7)";
   });
   clearBtn.addEventListener("click", () => {
     AreaFillStorage.clear();
@@ -290,7 +290,7 @@ const createCoordRow = (
 
   const labelSpan = document.createElement("span");
   labelSpan.style.cssText = `
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.75);
     font-size: 9px;
     font-family: 'Consolas', 'Monaco', monospace;
     width: 55px;

@@ -203,7 +203,6 @@ const text = t`feature.gallery.title`; // Template literal syntax
 #### Content vs Inject Roles
 
 1. **Content script** (`src/content.ts`):
-
    - Manages storage (gallery, snapshots, settings)
    - Sends data to inject via `postMessage`
 
@@ -335,6 +334,7 @@ export interface GalleryItem {
 - 不明点、実装上の問題点があれば、報告すること
 - 実装後、コードをチェックし、パフォーマンスやバグになりそうな注意点を確認・報告する
 - 実装後、候補になる commit message を表示する
+- コーディング前の方針を決める際は、自然言語で抽象的に設計する
 
 ## wplace 仕様
 

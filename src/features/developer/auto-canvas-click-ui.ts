@@ -75,7 +75,7 @@ export const createAutoCanvasClickDialogItem = (
 
   const label = document.createElement("span");
   label.style.cssText = `
-    color: ${enabled ? getColor("primary", 1) : "rgba(255, 255, 255, 0.7)"};
+    color: ${enabled ? getColor("primary", 1) : "rgba(255, 255, 255, 0.8)"};
     font-size: 11px;
     flex: 1;
     font-family: 'Consolas', 'Monaco', monospace;
@@ -123,7 +123,7 @@ export const updateAutoCanvasClickDialogItem = (
 
   // Update label
   const label = item.querySelector("span:nth-child(2)") as HTMLSpanElement;
-  if (label) label.style.color = enabled ? getColor("primary", 1) : "rgba(255, 255, 255, 0.7)";
+  if (label) label.style.color = enabled ? getColor("primary", 1) : "rgba(255, 255, 255, 0.8)";
 
   // Update toggle
   const toggle = item.querySelector(".auto-canvas-click-toggle") as HTMLDivElement;

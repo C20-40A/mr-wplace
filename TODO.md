@@ -1,5 +1,14 @@
 # メイン
 
+- devdialogをmobileでも移動可能にする
+- dev dialogを最小化できるようにする
+- dev dialogの閉じるボタンなどを見やすくする
+- mobileでpaint modalのボタン間距離を小さくする
+- area fillで、executeが停止するようにする
+- area fillで、0になったら必ず止まるようにする
+- orionでpopupが開けない
+- corsのerrorがログ報告ツールで表示されて、エラーで停止する？
+
 - orion で db の移動(というか画像の変換？)ができない
 - unplaced only の背景色変更&i18n
 - popup の i18n
