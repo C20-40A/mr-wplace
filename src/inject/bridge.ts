@@ -37,6 +37,7 @@ import {
 } from "./utils/gallery-io";
 import {
   changeTileBoundaryVisibility,
+  changeBackgroundColor,
   handleMapInstanceFlyTo,
 } from "./features/map-instance";
 import { setGridDisplayEnabled } from "./features/grid-display";
@@ -154,6 +155,8 @@ const messageHandlers: Record<string, MessageHandler> = {
     changeTileBoundaryVisibility(data.visible),
   "mr-wplace-grid-display-update": (data) =>
     setGridDisplayEnabled(data.visible),
+  "mr-wplace-background-color-update": (data) =>
+    changeBackgroundColor(data.color),
   "mr-wplace-cache-clear": handleCacheClear,
   "mr-wplace-layer-sort-update": handleLayerSortUpdate,
   "mr-wplace-gallery-images-v2": handleGalleryImagesV2,

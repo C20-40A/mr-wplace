@@ -428,4 +428,5 @@ export const jaTranslations = {
   map_filter_highContrast: "ハイコントラスト",
   map_filter_tileBoundaries: "タイル境界",
   map_filter_gridDisplay: "ピクセルグリッド",
+  map_filter_backgroundColor: "背景色",
 };

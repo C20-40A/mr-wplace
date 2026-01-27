@@ -74,6 +74,8 @@ export interface WplaceMap {
   }) => void;
   jumpTo: (options: { center: [number, number]; zoom: number }) => void;
   setPaintProperty: (layer: string, property: string, value: any) => void;
+  getLayer: (layerId: string) => any;
+  getStyle: () => any;
   on: (event: string, handler: (e: any) => void) => void;
   showTileBoundaries: boolean;
 }

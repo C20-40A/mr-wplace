@@ -6,10 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Mr. Wplace** is a Chrome extension for WPlace, an online collaborative pixel placement map. The extension provides advanced drawing, gallery management, and map customization features.
 
-- **Project Name**: mr-wplace
-- **Extension Name**: Mr. Wplace
-- **Target**: Chrome/Edge Manifest V3 extension
-- **Build Tool**: esbuild with Bun runtime
+- Project Name: mr-wplace
+- Target: Chrome/Edge Manifest V3 extension
+- Build Tool: esbuild + Bun
 
 ## Architecture
 
@@ -344,6 +343,8 @@ export interface GalleryItem {
 - 1tile = web メルカトル zoomlevel 11 の単位 = 1000x1000px の png = 1fetch 単位
 - wplace はタイルを polling して更新している
 - polling に fetch intercept をして、画像サイズを大きくして、新しい pixel を描くことで、疑似的に overlay を実現
+- maplibreglを利用
+- themeはdocs/theme.mdを参照
 
 # 注意点
 
