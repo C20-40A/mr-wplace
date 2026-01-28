@@ -102,8 +102,6 @@ class MapFilterMenu {
 
     this.applyDarkTheme(this.state.darkTheme);
     if (this.state.highContrast) this.applyHighContrastStyle();
-    if (this.state.backgroundColorEnabled)
-      this.applyBackgroundColor(this.state.backgroundColorValue);
 
     this.createTriggerButton();
     this.createPopover();
@@ -118,6 +116,8 @@ class MapFilterMenu {
         this.updatePopoverItems();
         this.notifyTileBoundaries();
         this.notifyGridDisplay();
+        if (this.state.backgroundColorEnabled)
+          this.applyBackgroundColor(this.state.backgroundColorValue);
       }
     });
 
