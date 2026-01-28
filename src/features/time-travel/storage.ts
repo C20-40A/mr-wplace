@@ -36,9 +36,11 @@ export interface SnapshotDrawState {
 export class TimeTravelStorage {
   private static readonly DRAW_STATES_KEY = "timetravel_draw_states";
 
-  // 全スナップショット保有タイル一覧取得（IndexedDBから via bridge）
-  static async getAllTilesWithSnapshots(): Promise<TileSnapshotInfo[]> {
-    console.time("getAllTilesWithSnapshots");
+  /**
+   * 全スナップショット保有タイル一覧取得（IndexedDBから via bridge）
+   */
+  static async getAllTilesWithSnapshotMetadata(): Promise<TileSnapshotInfo[]> {
+    console.time("getAllTilesWithSnapshotMetadata");
 
     const allMetadata = await getAllSnapshotMetadata();
 
@@ -77,14 +79,14 @@ export class TimeTravelStorage {
       return a.tileY - b.tileY;
     });
 
-    console.timeEnd("getAllTilesWithSnapshots");
+    console.timeEnd("getAllTilesWithSnapshotMetadata");
     return tiles;
   }
 
   // 特定タイルのスナップショット一覧取得（IndexedDBから via bridge）
   static async getSnapshotsForTile(
     tileX: number,
-    tileY: number
+    tileY: number,
   ): Promise<SnapshotInfo[]> {
     const metadata = await getSnapshotMetadataByTile(tileX, tileY);
 
@@ -119,12 +121,12 @@ export class TimeTravelStorage {
 
   static async getActiveSnapshotForTile(
     tileX: number,
-    tileY: number
+    tileY: number,
   ): Promise<SnapshotDrawState | null> {
     const states = await this.getDrawStates();
     return (
       states.find(
-        (s) => s.tileX === tileX && s.tileY === tileY && s.drawEnabled
+        (s) => s.tileX === tileX && s.tileY === tileY && s.drawEnabled,
       ) || null
     );
   }
@@ -140,7 +142,6 @@ export class TimeTravelStorage {
     return state.drawEnabled;
   }
 
-
   static async isSnapshotDrawing(fullKey: string): Promise<boolean> {
     const states = await this.getDrawStates();
     const state = states.find((s) => s.fullKey === fullKey);
@@ -151,7 +152,7 @@ export class TimeTravelStorage {
     tileX: number,
     tileY: number,
     file: File,
-    fullKey: string
+    fullKey: string,
   ): Promise<boolean> {
     // 1. 既存の描画状態をチェックしてトグル
     const currentState = await this.getActiveSnapshotForTile(tileX, tileY);

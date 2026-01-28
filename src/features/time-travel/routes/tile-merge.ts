@@ -33,7 +33,7 @@ export class TileMergeRoute {
   }
 
   private async loadAndAnalyzeTiles(container: HTMLElement): Promise<void> {
-    this.allTiles = await TimeTravelStorage.getAllTilesWithSnapshots();
+    this.allTiles = await TimeTravelStorage.getAllTilesWithSnapshotMetadata();
 
     if (this.allTiles.length === 0) {
       container.querySelector("#wps-merge-content")!.innerHTML = `
@@ -49,7 +49,7 @@ export class TileMergeRoute {
   }
 
   private async findAdjacentGroups(
-    tiles: TileSnapshotInfo[]
+    tiles: TileSnapshotInfo[],
   ): Promise<TileGroup[]> {
     const tileMap = new Map<string, TileSnapshotInfo>();
     for (const tile of tiles) {
@@ -101,7 +101,7 @@ export class TileMergeRoute {
   private bfsGroup(
     start: TileSnapshotInfo,
     tileMap: Map<string, TileSnapshotInfo>,
-    visited: Set<string>
+    visited: Set<string>,
   ): TileSnapshotInfo[] {
     const group: TileSnapshotInfo[] = [];
     const queue: TileSnapshotInfo[] = [start];
@@ -137,8 +137,8 @@ export class TileMergeRoute {
     content.innerHTML = `
       <div style="display: flex; gap: 0.5rem; align-items: center;">
         <span class="text-sm font-bold">${t`${"merge_tiles"}`}: ${
-      this.groups.length
-    } groups</span>
+          this.groups.length
+        } groups</span>
       </div>
       <div style="overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.5rem; min-height: 400px;">
         <div id="wps-group-list" class="grid grid-cols-1 gap-2">
@@ -252,7 +252,7 @@ export class TileMergeRoute {
   private renderTileCell(
     x: number,
     y: number,
-    tile?: TileSnapshotInfo
+    tile?: TileSnapshotInfo,
   ): string {
     const key = `${x}_${y}`;
     const hasSnapshot = !!tile;
@@ -261,8 +261,8 @@ export class TileMergeRoute {
     const bgColor = isSelected
       ? "#10b981"
       : hasSnapshot
-      ? "#6b7280"
-      : "#e5e7eb";
+        ? "#6b7280"
+        : "#e5e7eb";
     const cursor = hasSnapshot ? "pointer" : "default";
     const opacity = hasSnapshot ? "1" : "0.2";
 
@@ -270,10 +270,10 @@ export class TileMergeRoute {
     if (tile && tile.snapshots.length > 0) {
       const date = new Date(tile.snapshots[0].timestamp);
       const datePart = `${date.getFullYear()}-${String(
-        date.getMonth() + 1
+        date.getMonth() + 1,
       ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
       const timePart = `${String(date.getHours()).padStart(2, "0")}:${String(
-        date.getMinutes()
+        date.getMinutes(),
       ).padStart(2, "0")}`;
       dateTimeStr = `${datePart} ${timePart}`;
     }
@@ -361,13 +361,13 @@ export class TileMergeRoute {
   private toggleTileSelection(
     tileX: number,
     tileY: number,
-    container: HTMLElement
+    container: HTMLElement,
   ): void {
     if (!this.selectedGroup) return;
 
     const key = `${tileX}_${tileY}`;
     const tile = this.selectedGroup.tiles.find(
-      (t) => t.tileX === tileX && t.tileY === tileY
+      (t) => t.tileX === tileX && t.tileY === tileY,
     );
 
     if (!tile) return;
@@ -398,7 +398,7 @@ export class TileMergeRoute {
 
   private showSnapshotSelector(
     tile: TileSnapshotInfo,
-    container: HTMLElement
+    container: HTMLElement,
   ): void {
     const key = `${tile.tileX}_${tile.tileY}`;
 
@@ -447,10 +447,10 @@ export class TileMergeRoute {
 
       const date = new Date(snapshot.timestamp);
       const dateStr = `${date.getFullYear()}-${String(
-        date.getMonth() + 1
+        date.getMonth() + 1,
       ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
       const timeStr = `${String(date.getHours()).padStart(2, "0")}:${String(
-        date.getMinutes()
+        date.getMinutes(),
       ).padStart(2, "0")}`;
 
       item.innerHTML = `
@@ -525,7 +525,7 @@ export class TileMergeRoute {
       "tiles, canvas size:",
       width,
       "x",
-      height
+      height,
     );
 
     const canvas = new OffscreenCanvas(width, height);
@@ -537,7 +537,7 @@ export class TileMergeRoute {
 
     for (const coord of coordinates) {
       const tile = this.selectedGroup.tiles.find(
-        (t) => t.tileX === coord.tileX && t.tileY === coord.tileY
+        (t) => t.tileX === coord.tileX && t.tileY === coord.tileY,
       );
       if (!tile || tile.snapshots.length === 0) continue;
 

@@ -1,8 +1,16 @@
 import { TimeTravelRouter } from "../router";
-import { TimeTravelStorage, TileSnapshotInfo } from "../storage";
+import {
+  TimeTravelStorage,
+  TileSnapshotInfo,
+  SnapshotDrawState,
+} from "../storage";
 import { TileNameStorage } from "../tile-name-storage";
 import { t } from "@/i18n/manager";
-import { createCard, CardConfig, attachCardScrollPassthrough } from "@/components/card";
+import {
+  createCard,
+  CardConfig,
+  attachCardScrollPassthrough,
+} from "@/components/card";
 import { storage, runtime } from "@/utils/browser-api";
 import { getCurrentPosition } from "@/utils/position";
 import { latLngToTilePixel } from "@/utils/coordinate";
@@ -21,7 +29,7 @@ export class TileListRoute {
 
   async render(
     container: HTMLElement,
-    router: TimeTravelRouter
+    router: TimeTravelRouter,
   ): Promise<void> {
     // Load saved sort type
     const result = await storage.get([TILE_SORT_KEY]);
@@ -51,7 +59,7 @@ export class TileListRoute {
 
     // Set sort dropdown value
     const sortSelect = container.querySelector(
-      "#wps-tile-sort"
+      "#wps-tile-sort",
     ) as HTMLSelectElement;
     if (sortSelect) sortSelect.value = this.currentSortType;
 
@@ -103,7 +111,7 @@ export class TileListRoute {
 
   private sortTiles(
     tiles: TileSnapshotInfo[],
-    tileNames: Map<string, string>
+    tileNames: Map<string, string>,
   ): TileSnapshotInfo[] {
     const sorted = [...tiles];
 
@@ -116,17 +124,17 @@ export class TileListRoute {
         // 現在位置をタイル座標に変換
         const { TLX: currentTileX, TLY: currentTileY } = latLngToTilePixel(
           currentPos.lat,
-          currentPos.lng
+          currentPos.lng,
         );
 
         return sorted.sort((a, b) => {
           const aDistance = Math.sqrt(
             Math.pow(a.tileX - currentTileX, 2) +
-              Math.pow(a.tileY - currentTileY, 2)
+              Math.pow(a.tileY - currentTileY, 2),
           );
           const bDistance = Math.sqrt(
             Math.pow(b.tileX - currentTileX, 2) +
-              Math.pow(b.tileY - currentTileY, 2)
+              Math.pow(b.tileY - currentTileY, 2),
           );
 
           return aDistance - bDistance;
@@ -168,8 +176,13 @@ export class TileListRoute {
     }
   }
 
-  private renderEmptyState(listContainer: HTMLElement, container: HTMLElement): void {
-    const tutorialGifUrl = runtime.getURL("assets/images/tutorial/how_to_archive.gif");
+  private renderEmptyState(
+    listContainer: HTMLElement,
+    container: HTMLElement,
+  ): void {
+    const tutorialGifUrl = runtime.getURL(
+      "assets/images/tutorial/how_to_archive.gif",
+    );
 
     listContainer.innerHTML = `
       <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 2rem; gap: 2rem; min-height: 300px; grid-column: 1 / -1;">
@@ -186,23 +199,28 @@ export class TileListRoute {
 
   private async loadTileList(container: HTMLElement): Promise<void> {
     try {
-      const tiles = await TimeTravelStorage.getAllTilesWithSnapshots();
+      const tiles = await TimeTravelStorage.getAllTilesWithSnapshotMetadata();
 
       // 名称一括取得（効率化）
       const tileNames = await TileNameStorage.getTileNames(
-        tiles.map((t) => ({ tileX: t.tileX, tileY: t.tileY }))
+        tiles.map((t) => ({ tileX: t.tileX, tileY: t.tileY })),
       );
+
+      // 描画状態一括取得（効率化：タイルごとにstorage.get()を呼ばない）
+      const drawStates = await TimeTravelStorage.getDrawStates();
 
       // ソート処理
       const sortedTiles = this.sortTiles(tiles, tileNames);
 
-      const listContainer = container.querySelector("#wps-tile-list") as HTMLElement;
+      const listContainer = container.querySelector(
+        "#wps-tile-list",
+      ) as HTMLElement;
       if (listContainer) {
         if (sortedTiles.length === 0) {
           this.renderEmptyState(listContainer, container);
         } else {
-          const renderedTiles = await Promise.all(
-            sortedTiles.map((tile) => this.renderTileCard(tile, tileNames))
+          const renderedTiles = sortedTiles.map((tile) =>
+            this.renderTileCard(tile, tileNames, drawStates),
           );
           listContainer.innerHTML = renderedTiles.join("");
           attachCardScrollPassthrough(listContainer);
@@ -217,13 +235,13 @@ export class TileListRoute {
     }
   }
 
-  private async renderTileCard(
+  private renderTileCard(
     tile: TileSnapshotInfo,
-    tileNames: Map<string, string>
-  ): Promise<string> {
-    const activeSnapshot = await TimeTravelStorage.getActiveSnapshotForTile(
-      tile.tileX,
-      tile.tileY
+    tileNames: Map<string, string>,
+    drawStates: SnapshotDrawState[],
+  ): string {
+    const hasActiveSnapshot = drawStates.some(
+      (s) => s.tileX === tile.tileX && s.tileY === tile.tileY && s.drawEnabled,
     );
 
     const nameKey = `${tile.tileX}_${tile.tileY}`;
@@ -235,7 +253,7 @@ export class TileListRoute {
       title: displayName,
       subtitle: `📍${tile.tileX}, ${tile.tileY}`,
       badge: `${tile.count}`,
-      hasActiveIcon: !!activeSnapshot,
+      hasActiveIcon: hasActiveSnapshot,
       onClick: true,
       data: {
         "tile-x": tile.tileX.toString(),

@@ -21,11 +21,14 @@ export const getAggregatedColorStats = async (
   const requestId = generateRequestId();
 
   return new Promise((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
     const handler = (event: MessageEvent) => {
       if (
         event.data.source === "mr-wplace-response-stats" &&
         event.data.requestId === requestId
       ) {
+        clearTimeout(timeoutId);
         window.removeEventListener("message", handler);
         resolve(event.data.stats);
       }
@@ -33,7 +36,6 @@ export const getAggregatedColorStats = async (
 
     window.addEventListener("message", handler);
 
-    // Send request to inject
     window.postMessage(
       {
         source: "mr-wplace-request-stats",
@@ -43,8 +45,7 @@ export const getAggregatedColorStats = async (
       "*"
     );
 
-    // Timeout after 5 seconds
-    setTimeout(() => {
+    timeoutId = setTimeout(() => {
       window.removeEventListener("message", handler);
       console.warn("🧑‍🎨 : Stats request timed out");
       resolve({});
@@ -67,11 +68,14 @@ export const getOverlayPixelColor = async (
   const requestId = generateRequestId();
 
   return new Promise((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
     const handler = (event: MessageEvent) => {
       if (
         event.data.source === "mr-wplace-response-pixel-color" &&
         event.data.requestId === requestId
       ) {
+        clearTimeout(timeoutId);
         window.removeEventListener("message", handler);
         resolve(event.data.color);
       }
@@ -79,7 +83,6 @@ export const getOverlayPixelColor = async (
 
     window.addEventListener("message", handler);
 
-    // Send request to inject
     window.postMessage(
       {
         source: "mr-wplace-request-pixel-color",
@@ -90,8 +93,7 @@ export const getOverlayPixelColor = async (
       "*"
     );
 
-    // Timeout after 5 seconds
-    setTimeout(() => {
+    timeoutId = setTimeout(() => {
       window.removeEventListener("message", handler);
       console.warn("🧑‍🎨 : Pixel color request timed out");
       resolve(null);
@@ -111,11 +113,14 @@ export const getPerTileColorStatsAll = async (): Promise<
   const requestId = generateRequestId();
 
   return new Promise((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
     const handler = (event: MessageEvent) => {
       if (
         event.data.source === "mr-wplace-response-tile-stats" &&
         event.data.requestId === requestId
       ) {
+        clearTimeout(timeoutId);
         window.removeEventListener("message", handler);
         resolve(event.data.stats);
       }
@@ -123,7 +128,6 @@ export const getPerTileColorStatsAll = async (): Promise<
 
     window.addEventListener("message", handler);
 
-    // Send request to inject
     window.postMessage(
       {
         source: "mr-wplace-request-tile-stats",
@@ -132,8 +136,7 @@ export const getPerTileColorStatsAll = async (): Promise<
       "*"
     );
 
-    // Timeout after 5 seconds
-    setTimeout(() => {
+    timeoutId = setTimeout(() => {
       window.removeEventListener("message", handler);
       console.warn("🧑‍🎨 : Tile stats request timed out");
       resolve({});
@@ -154,11 +157,14 @@ export const getStatsPerImage = async (
   const requestId = generateRequestId();
 
   return new Promise((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
     const handler = (event: MessageEvent) => {
       if (
         event.data.source === "mr-wplace-response-image-stats" &&
         event.data.requestId === requestId
       ) {
+        clearTimeout(timeoutId);
         window.removeEventListener("message", handler);
         resolve(event.data.stats);
       }
@@ -166,7 +172,6 @@ export const getStatsPerImage = async (
 
     window.addEventListener("message", handler);
 
-    // Send request to inject
     window.postMessage(
       {
         source: "mr-wplace-request-image-stats",
@@ -176,8 +181,7 @@ export const getStatsPerImage = async (
       "*"
     );
 
-    // Timeout after 5 seconds
-    setTimeout(() => {
+    timeoutId = setTimeout(() => {
       window.removeEventListener("message", handler);
       console.warn("🧑‍🎨 : Image stats request timed out");
       resolve({});
@@ -238,11 +242,14 @@ export const getAllSnapshotMetadata = async (): Promise<SnapshotMetadata[]> => {
   const requestId = generateRequestId();
 
   return new Promise((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
     const handler = (event: MessageEvent) => {
       if (
         event.data.source === "mr-wplace-snapshot-get-all-metadata-response" &&
         event.data.requestId === requestId
       ) {
+        clearTimeout(timeoutId);
         window.removeEventListener("message", handler);
         resolve(event.data.result || []);
       }
@@ -251,7 +258,7 @@ export const getAllSnapshotMetadata = async (): Promise<SnapshotMetadata[]> => {
     window.addEventListener("message", handler);
     window.postMessage({ source: "mr-wplace-snapshot-get-all-metadata", requestId }, "*");
 
-    setTimeout(() => {
+    timeoutId = setTimeout(() => {
       window.removeEventListener("message", handler);
       console.warn("🧑‍🎨 : Get all snapshot metadata timed out");
       resolve([]);
@@ -269,11 +276,14 @@ export const getSnapshotMetadataByTile = async (
   const requestId = generateRequestId();
 
   return new Promise((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
     const handler = (event: MessageEvent) => {
       if (
         event.data.source === "mr-wplace-snapshot-get-metadata-by-tile-response" &&
         event.data.requestId === requestId
       ) {
+        clearTimeout(timeoutId);
         window.removeEventListener("message", handler);
         resolve(event.data.result || []);
       }
@@ -285,7 +295,7 @@ export const getSnapshotMetadataByTile = async (
       "*"
     );
 
-    setTimeout(() => {
+    timeoutId = setTimeout(() => {
       window.removeEventListener("message", handler);
       console.warn("🧑‍🎨 : Get snapshot metadata by tile timed out");
       resolve([]);
@@ -300,11 +310,14 @@ export const getSnapshotDataUrl = async (id: string): Promise<string | null> => 
   const requestId = generateRequestId();
 
   return new Promise((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
     const handler = (event: MessageEvent) => {
       if (
         event.data.source === "mr-wplace-snapshot-get-response" &&
         event.data.requestId === requestId
       ) {
+        clearTimeout(timeoutId);
         window.removeEventListener("message", handler);
         resolve(event.data.result || null);
       }
@@ -313,7 +326,7 @@ export const getSnapshotDataUrl = async (id: string): Promise<string | null> => 
     window.addEventListener("message", handler);
     window.postMessage({ source: "mr-wplace-snapshot-get", requestId, id }, "*");
 
-    setTimeout(() => {
+    timeoutId = setTimeout(() => {
       window.removeEventListener("message", handler);
       console.warn("🧑‍🎨 : Get snapshot timed out");
       resolve(null);
@@ -332,11 +345,14 @@ export const saveSnapshotToInject = async (
   const requestId = generateRequestId();
 
   return new Promise((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
     const handler = (event: MessageEvent) => {
       if (
         event.data.source === "mr-wplace-snapshot-save-response" &&
         event.data.requestId === requestId
       ) {
+        clearTimeout(timeoutId);
         window.removeEventListener("message", handler);
         resolve(event.data.result === true);
       }
@@ -348,7 +364,7 @@ export const saveSnapshotToInject = async (
       "*"
     );
 
-    setTimeout(() => {
+    timeoutId = setTimeout(() => {
       window.removeEventListener("message", handler);
       console.warn("🧑‍🎨 : Save snapshot timed out");
       resolve(false);
@@ -363,11 +379,14 @@ export const deleteSnapshotFromInject = async (id: string): Promise<boolean> => 
   const requestId = generateRequestId();
 
   return new Promise((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
     const handler = (event: MessageEvent) => {
       if (
         event.data.source === "mr-wplace-snapshot-delete-response" &&
         event.data.requestId === requestId
       ) {
+        clearTimeout(timeoutId);
         window.removeEventListener("message", handler);
         resolve(event.data.result === true);
       }
@@ -376,7 +395,7 @@ export const deleteSnapshotFromInject = async (id: string): Promise<boolean> => 
     window.addEventListener("message", handler);
     window.postMessage({ source: "mr-wplace-snapshot-delete", requestId, id }, "*");
 
-    setTimeout(() => {
+    timeoutId = setTimeout(() => {
       window.removeEventListener("message", handler);
       console.warn("🧑‍🎨 : Delete snapshot timed out");
       resolve(false);
