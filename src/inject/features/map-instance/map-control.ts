@@ -41,47 +41,43 @@ export const changeBackgroundColor = (color: string | null): void => {
   try {
     const existingLayer = mapInstance.getLayer(SOLID_BG_LAYER_ID);
 
-    if (color) {
-      if (!existingLayer) {
-        // Add source if not exists
-        if (!mapInstance.getSource(SOLID_BG_SOURCE_ID)) {
-          mapInstance.addSource(SOLID_BG_SOURCE_ID, {
-            type: "geojson",
-            data: worldPolygon,
-          });
-        }
-
-        // Add layer before pixel-art-layer
-        mapInstance.addLayer(
-          {
-            id: SOLID_BG_LAYER_ID,
-            type: "fill",
-            source: SOLID_BG_SOURCE_ID,
-            paint: {
-              "fill-color": color,
-              "fill-opacity": 1,
-            },
-          },
-          "pixel-art-layer"
-        );
-        console.log("🧑‍🎨 : Background layer created with color:", color);
-      } else {
-        // Update existing layer color
-        mapInstance.setPaintProperty(
-          SOLID_BG_LAYER_ID,
-          "fill-color",
-          color
-        );
-        console.log("🧑‍🎨 : Background color updated to:", color);
-      }
-    } else {
-      // Remove layer if exists
+    // Remove layer when color is null
+    if (!color) {
       if (existingLayer) {
         mapInstance.removeLayer(SOLID_BG_LAYER_ID);
         console.log("🧑‍🎨 : Background layer removed");
       }
-      // Keep source for potential reuse
+      return;
     }
+
+    // Update existing layer
+    if (existingLayer) {
+      mapInstance.setPaintProperty(SOLID_BG_LAYER_ID, "fill-color", color);
+      console.log("🧑‍🎨 : Background color updated to:", color);
+      return;
+    }
+
+    // Create new layer
+    if (!mapInstance.getSource(SOLID_BG_SOURCE_ID)) {
+      mapInstance.addSource(SOLID_BG_SOURCE_ID, {
+        type: "geojson",
+        data: worldPolygon,
+      });
+    }
+
+    mapInstance.addLayer(
+      {
+        id: SOLID_BG_LAYER_ID,
+        type: "fill",
+        source: SOLID_BG_SOURCE_ID,
+        paint: {
+          "fill-color": color,
+          "fill-opacity": 1,
+        },
+      },
+      "pixel-art-layer"
+    );
+    console.log("🧑‍🎨 : Background layer created with color:", color);
   } catch (error) {
     console.error("🧑‍🎨 : Error changing background color:", error);
   }
