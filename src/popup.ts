@@ -134,36 +134,47 @@ document.addEventListener("DOMContentLoaded", async () => {
   const coffeeImg = document.getElementById("coffee-img") as HTMLImageElement;
   if (coffeeImg && BUY_ME_COFFEE_IMAGE) coffeeImg.src = BUY_ME_COFFEE_IMAGE;
 
-  // i18n初期化（ブラウザ言語検出）
-  await I18nManager.init(detectBrowserLanguage());
-  const currentLocale = I18nManager.getCurrentLocale();
-
-  // navigation mode初期化
-  await loadNavigationModeFromStorage();
-  const currentMode = getNavigationMode();
-
-  // lock button enhancer初期化
-  await loadLockButtonEnhancerFromStorage();
-  const currentLockButtonEnhancer = getLockButtonEnhancer();
-
-  // close confirm初期化
-  await loadCloseConfirmFromStorage();
-  const currentCloseConfirm = getCloseConfirm();
-
-  // layer sort初期化
-  await loadLayerSortFromStorage();
-  const currentLayerSort = getLayerSort();
-
-  // Get map instance ready state from content script
-  const currentTab = (await tabs.query({ active: true, currentWindow: true }))[0];
+  // Initialize with defaults, then try to load from storage
+  let currentLocale = detectBrowserLanguage();
+  let currentMode = false;
+  let currentLockButtonEnhancer = false;
+  let currentCloseConfirm = false;
+  let currentLayerSort = true;
   let mapInstanceReady = false;
-  if (currentTab?.id) {
-    try {
-      const response = await tabs.sendMessage(currentTab.id, { type: "GET_MAP_INSTANCE_READY" });
-      mapInstanceReady = response?.ready || false;
-    } catch (error) {
-      console.warn("🧑‍🎨 : Failed to get map instance ready state:", error);
+
+  try {
+    // i18n初期化（ブラウザ言語検出）
+    await I18nManager.init(currentLocale);
+    currentLocale = I18nManager.getCurrentLocale();
+
+    // navigation mode初期化
+    await loadNavigationModeFromStorage();
+    currentMode = getNavigationMode();
+
+    // lock button enhancer初期化
+    await loadLockButtonEnhancerFromStorage();
+    currentLockButtonEnhancer = getLockButtonEnhancer();
+
+    // close confirm初期化
+    await loadCloseConfirmFromStorage();
+    currentCloseConfirm = getCloseConfirm();
+
+    // layer sort初期化
+    await loadLayerSortFromStorage();
+    currentLayerSort = getLayerSort();
+
+    // Get map instance ready state from content script
+    const currentTab = (await tabs.query({ active: true, currentWindow: true }))[0];
+    if (currentTab?.id) {
+      try {
+        const response = await tabs.sendMessage(currentTab.id, { type: "GET_MAP_INSTANCE_READY" });
+        mapInstanceReady = response?.ready || false;
+      } catch (error) {
+        console.warn("🧑‍🎨 : Failed to get map instance ready state:", error);
+      }
     }
+  } catch (error) {
+    console.warn("🧑‍🎨 : Failed to initialize popup (limited browser API support):", error);
   }
 
   languageSelect.value = currentLocale;
