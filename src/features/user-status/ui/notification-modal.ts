@@ -108,25 +108,12 @@ export class NotificationModal {
     const alarmTime = this.calculateAlarmTime(threshold);
     if (!alarmTime) return t`${"already_reached"}`;
 
-    const now = new Date();
-    const isToday =
-      alarmTime.getFullYear() === now.getFullYear() &&
-      alarmTime.getMonth() === now.getMonth() &&
-      alarmTime.getDate() === now.getDate();
+    const month = alarmTime.getMonth() + 1;
+    const day = alarmTime.getDate();
+    const hours = alarmTime.getHours();
+    const minutes = alarmTime.getMinutes();
 
-    if (isToday) {
-      return alarmTime.toLocaleTimeString("ja-JP", {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    }
-
-    return alarmTime.toLocaleString("ja-JP", {
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return `${month}/${day} ${hours}:${minutes.toString().padStart(2, "0")}`;
   }
 
   private calculateAlarmTime(threshold: number): Date | null {
@@ -221,7 +208,7 @@ export class NotificationModal {
 
     // Charge Status更新
     const chargeStatusElement = document.getElementById(
-      "charge-status-content"
+      "charge-status-content",
     );
     if (chargeStatusElement) {
       chargeStatusElement.innerHTML = this.createChargeStatusContent();
@@ -252,15 +239,14 @@ export class NotificationModal {
     if (!this.userData) return "";
 
     const currentLevel = Math.floor(this.userData.level);
-    const nextLevel = currentLevel + 1;
     const remainingPixels = this.calculator.calculateNextLevelPixels(
       this.userData.level,
-      this.userData.pixelsPainted!
+      this.userData.pixelsPainted!,
     );
 
     const levelGaugeHtml = this.calculator.generateLevelGaugeOnly(
       remainingPixels,
-      this.userData.level
+      this.userData.level,
     );
 
     return `
@@ -269,19 +255,13 @@ export class NotificationModal {
         <div class="space-y-2">
           <div class="flex justify-between">
             <span>${t`${"current_level"}`}:</span>
-            <span class="font-mono">${currentLevel}</span>
+            <span class="font-mono">${currentLevel}Lv</span>
           </div>
           <div class="flex justify-between">
             <span>${t`${"pixels_painted"}`}:</span>
             <span class="font-mono">${new Intl.NumberFormat().format(
-              this.userData.pixelsPainted!
-            )}</span>
-          </div>
-          <div class="flex justify-between">
-            <span>${t`${"next_level"}`} (${nextLevel}):</span>
-            <span class="font-mono>${new Intl.NumberFormat().format(
-              remainingPixels
-            )} px</span>
+              this.userData.pixelsPainted!,
+            )}px</span>
           </div>
           <div class="mt-3">
             ${levelGaugeHtml}
@@ -308,7 +288,7 @@ export class NotificationModal {
 
     const chargeGaugeHtml = this.calculator.generateChargeGaugeHtml(
       current,
-      max
+      max,
     );
 
     const fullChargeTime = new Date(Date.now() + timeToFullMs);
@@ -343,13 +323,12 @@ export class NotificationModal {
 
   private createAlarmStatusHTML(): string {
     if (this.currentAlarmInfo) {
-      const alarmTime = new Date(
-        this.currentAlarmInfo.scheduledTime
-      ).toLocaleTimeString("ja-JP", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
+      const alarmDate = new Date(this.currentAlarmInfo.scheduledTime);
+      const month = alarmDate.getMonth() + 1;
+      const day = alarmDate.getDate();
+      const hours = alarmDate.getHours();
+      const minutes = alarmDate.getMinutes();
+      const alarmTime = `${month}/${day} ${hours}:${minutes.toString().padStart(2, "0")}`;
       return `
         <div style="background-color: #dcfce7; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #bbf7d0;">
           <div style="font-size: 13px; color: #15803d; font-weight: 500;">${t`${"alarm_active"}`}</div>
@@ -399,8 +378,8 @@ export class NotificationModal {
         <div style="margin-bottom: 16px;">
           <label style="font-size: 14px; font-weight: 500; display: block; margin-bottom: 8px;">
             ${t`${"notification_threshold"}`}: <span id="thresholdValue">${
-      this.currentThreshold
-    }</span>%
+              this.currentThreshold
+            }</span>%
           </label>
           <input type="range" id="chargeThreshold" min="10" max="100" value="${
             this.currentThreshold
@@ -408,7 +387,7 @@ export class NotificationModal {
                  style="width: 100%; margin-bottom: 8px;">
           <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
             <input type="number" id="thresholdInput" min="${Math.ceil(
-              current
+              current,
             )}" max="${max}" value="${thresholdPixels}"
                    style="width: 80px; padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-family: monospace; font-size: 13px;">
             <span style="font-size: 13px;">/ ${max}</span>
@@ -445,11 +424,11 @@ export class NotificationModal {
     const enableButton = document.getElementById("enableAlarm");
     const disableButton = document.getElementById("disableAlarm");
     const thresholdSlider = document.getElementById(
-      "chargeThreshold"
+      "chargeThreshold",
     ) as HTMLInputElement;
     const thresholdValue = document.getElementById("thresholdValue");
     const thresholdInput = document.getElementById(
-      "thresholdInput"
+      "thresholdInput",
     ) as HTMLInputElement;
     const estimatedTime = document.getElementById("estimatedTime");
     const addToCalendarButton = document.getElementById("addToCalendar");
@@ -482,7 +461,7 @@ export class NotificationModal {
         "🧑‍🎨: Alarm enabled for threshold:",
         threshold,
         "at",
-        alarmTime.toLocaleTimeString()
+        alarmTime.toLocaleTimeString(),
       );
     });
 
@@ -521,7 +500,7 @@ export class NotificationModal {
         this.currentThreshold = threshold;
         thresholdValue.textContent = threshold.toString();
         estimatedTime.textContent = `${t`${"estimated_time"}`}: ${this.calculateThresholdTime(
-          threshold
+          threshold,
         )}`;
 
         // storageに保存
@@ -547,16 +526,16 @@ export class NotificationModal {
             "🧑‍🎨: Alarm updated for threshold:",
             threshold,
             "at",
-            alarmTime.toLocaleTimeString()
+            alarmTime.toLocaleTimeString(),
           );
         }
       };
 
       thresholdSlider.addEventListener("input", () =>
-        updateThresholdDisplay("slider")
+        updateThresholdDisplay("slider"),
       );
       thresholdInput.addEventListener("change", () =>
-        updateThresholdDisplay("input")
+        updateThresholdDisplay("input"),
       );
     }
 
