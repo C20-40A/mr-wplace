@@ -4,6 +4,7 @@ export interface AreaFillCorners {
 }
 
 let corners: AreaFillCorners = { topLeft: null, bottomRight: null };
+let templateOnlyMode = false;
 
 export const AreaFillStorage = {
   getCorners: () => corners,
@@ -18,5 +19,11 @@ export const AreaFillStorage = {
 
   clear: () => {
     corners = { topLeft: null, bottomRight: null };
+  },
+
+  getTemplateOnlyMode: () => templateOnlyMode,
+
+  setTemplateOnlyMode: (enabled: boolean) => {
+    templateOnlyMode = enabled;
   },
 };

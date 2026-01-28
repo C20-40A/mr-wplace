@@ -7,8 +7,9 @@
 import { getMapInstanceFromWplace } from "../map-instance/get-map-instance";
 import { latLngToTilePixelFloat, tilePixelToLatLng } from "@/utils/coordinate";
 import { TILE_SIZE } from "@/utils/geo-converter";
-import { getOriginalBlob } from "../tile-draw";
+import { getOriginalBlob, overlayLayers } from "../tile-draw";
 import { statusManagerSingleton } from "../user-status/status-manager";
+import { colorpalette } from "@/constants/colors";
 
 interface AreaFillCorners {
   topLeft: { lat: number; lng: number } | null;
@@ -17,10 +18,12 @@ interface AreaFillCorners {
 
 interface AreaFillOptions {
   skipExistingPixels: boolean;
+  templateOnlyMode: boolean;
 }
 
 const DEFAULT_OPTIONS: AreaFillOptions = {
   skipExistingPixels: true,
+  templateOnlyMode: false,
 };
 
 // ============================================
@@ -288,6 +291,28 @@ const loadTileImageData = async (blob: Blob): Promise<ImageData> => {
 };
 
 /**
+ * Get currently selected color RGB from localStorage
+ */
+const getSelectedColorRGB = (): [number, number, number] | null => {
+  const selectedColorId = localStorage.getItem("selected-color");
+  if (!selectedColorId) return null;
+  const id = parseInt(selectedColorId, 10);
+  if (isNaN(id)) return null;
+  const color = colorpalette.find((c) => c.id === id);
+  return color ? color.rgb : null;
+};
+
+/**
+ * Load ImageData from ImageBitmap
+ */
+const loadImageDataFromBitmap = (bitmap: ImageBitmap): ImageData => {
+  const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(bitmap, 0, 0);
+  return ctx.getImageData(0, 0, bitmap.width, bitmap.height);
+};
+
+/**
  * Filter positions to exclude pixels that already exist in background
  */
 const filterExistingPixels = async (
@@ -325,6 +350,75 @@ const filterExistingPixels = async (
       const alpha = imageData.data[idx + 3];
       // Empty pixel = transparent (alpha === 0)
       if (alpha === 0) result.push(pos);
+    }
+  }
+
+  return result;
+};
+
+/**
+ * Filter positions to only include pixels that match the selected color in overlay layers
+ * Used when templateOnlyMode is enabled
+ */
+const filterByTemplateColor = async (
+  positions: PixelPosition[],
+  targetRGB: [number, number, number],
+): Promise<PixelPosition[]> => {
+  if (overlayLayers.length === 0) {
+    console.warn("🧑‍🎨 : No overlay layers found for template filter");
+    return [];
+  }
+
+  // Group by tile
+  const byTile = new Map<string, PixelPosition[]>();
+  for (const pos of positions) {
+    const arr = byTile.get(pos.tileKey) ?? [];
+    arr.push(pos);
+    byTile.set(pos.tileKey, arr);
+  }
+
+  const result: PixelPosition[] = [];
+
+  // Build overlay tile cache (merged from all enabled layers)
+  const overlayTileCache = new Map<string, ImageData>();
+
+  for (const [tileKey, tilePositions] of byTile) {
+    // Get or create merged overlay ImageData for this tile
+    let overlayData = overlayTileCache.get(tileKey);
+    if (!overlayData) {
+      const tempCanvas = new OffscreenCanvas(TILE_SIZE, TILE_SIZE);
+      const tempCtx = tempCanvas.getContext("2d")!;
+
+      // Draw all enabled overlay layers for this tile
+      for (const layer of overlayLayers) {
+        if (!layer.drawEnabled || !layer.tiles) continue;
+        const tileBitmap = layer.tiles[tileKey];
+        if (tileBitmap) {
+          tempCtx.drawImage(tileBitmap, 0, 0);
+        }
+      }
+
+      overlayData = tempCtx.getImageData(0, 0, TILE_SIZE, TILE_SIZE);
+      overlayTileCache.set(tileKey, overlayData);
+    }
+
+    // Check each pixel
+    for (const pos of tilePositions) {
+      const idx = (pos.pxY * TILE_SIZE + pos.pxX) * 4;
+      const r = overlayData.data[idx];
+      const g = overlayData.data[idx + 1];
+      const b = overlayData.data[idx + 2];
+      const alpha = overlayData.data[idx + 3];
+
+      // Match if pixel is opaque and RGB matches target
+      if (
+        alpha > 0 &&
+        r === targetRGB[0] &&
+        g === targetRGB[1] &&
+        b === targetRGB[2]
+      ) {
+        result.push(pos);
+      }
     }
   }
 
@@ -377,6 +471,32 @@ export const startAreaFill = async (
         before - positions.length
       } existing)`,
     );
+  }
+
+  // Template only mode: filter by overlay color
+  if (options.templateOnlyMode) {
+    const selectedRGB = getSelectedColorRGB();
+    if (!selectedRGB) {
+      console.error("🧑‍🎨 : Template only mode requires a selected color");
+      isRunning = false;
+      window.postMessage({ source: "mr-wplace-area-fill-finished" }, "*");
+      return;
+    }
+
+    const before = positions.length;
+    positions = await filterByTemplateColor(positions, selectedRGB);
+    console.log(
+      `🧑‍🎨 : Area fill - Template filter: ${positions.length} pixels match color RGB(${selectedRGB.join(",")}) (filtered ${before - positions.length})`,
+    );
+
+    if (positions.length === 0) {
+      console.warn(
+        "🧑‍🎨 : No pixels match the selected color in overlay templates",
+      );
+      isRunning = false;
+      window.postMessage({ source: "mr-wplace-area-fill-finished" }, "*");
+      return;
+    }
   }
 
   // Apply fill pattern (human-like behavior)

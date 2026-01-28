@@ -193,12 +193,22 @@ export class DevInject {
         // Start
         const corners = AreaFillStorage.getCorners();
         if (!corners.topLeft || !corners.bottomRight) return;
+        const templateOnlyMode = this.areaFillUI?.getTemplateOnlyMode() ?? false;
         window.postMessage(
-          { source: "mr-wplace-area-fill-start", corners },
+          {
+            source: "mr-wplace-area-fill-start",
+            corners,
+            options: {
+              skipExistingPixels: true,
+              templateOnlyMode,
+            },
+          },
           "*"
         );
         this.areaFillUI?.setRunning(true);
-        console.log("🧑‍🎨 : Area fill start requested", corners);
+        console.log("🧑‍🎨 : Area fill start requested", corners, {
+          templateOnlyMode,
+        });
       }
     });
 

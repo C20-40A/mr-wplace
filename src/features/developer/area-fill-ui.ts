@@ -13,6 +13,7 @@ export interface AreaFillUIElements {
   update: (corners: AreaFillCorners) => void;
   setRunning: (running: boolean) => void;
   updateProgress: (current: number, total: number) => void;
+  getTemplateOnlyMode: () => boolean;
   mount: () => void;
   unmount: () => void;
 }
@@ -246,9 +247,22 @@ export const createAreaFillDialogItem = (
   buttonRow.appendChild(fillBtn);
   buttonRow.appendChild(clearBtn);
 
+  // Template Only Mode toggle
+  let templateOnlyModeEnabled = AreaFillStorage.getTemplateOnlyMode();
+  const templateToggleRow = createToggleRow(
+    "TMPL_ONLY",
+    templateOnlyModeEnabled,
+    (enabled) => {
+      templateOnlyModeEnabled = enabled;
+      AreaFillStorage.setTemplateOnlyMode(enabled);
+      console.log("🧑‍🎨 : Area fill template only mode:", enabled);
+    }
+  );
+
   container.appendChild(header);
   container.appendChild(topLeftRow.row);
   container.appendChild(bottomRightRow.row);
+  container.appendChild(templateToggleRow.row);
   container.appendChild(progressGauge);
   container.appendChild(buttonRow);
 
@@ -331,6 +345,7 @@ export const createAreaFillDialogItem = (
     update,
     setRunning,
     updateProgress,
+    getTemplateOnlyMode: () => templateOnlyModeEnabled,
     mount,
     unmount,
   };
@@ -408,4 +423,44 @@ const createCoordRow = (
   row.appendChild(setBtn);
 
   return { row, valueSpan, setBtn };
+};
+
+const createToggleRow = (
+  label: string,
+  initialValue: boolean,
+  onChange: (enabled: boolean) => void
+): { row: HTMLDivElement; toggle: HTMLInputElement } => {
+  const row = document.createElement("div");
+  row.style.cssText = `
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+  `;
+
+  const labelSpan = document.createElement("span");
+  labelSpan.style.cssText = `
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 9px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    flex: 1;
+    text-transform: uppercase;
+  `;
+  labelSpan.textContent = label;
+
+  const toggle = document.createElement("input");
+  toggle.type = "checkbox";
+  toggle.checked = initialValue;
+  toggle.style.cssText = `
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    accent-color: ${getColor("primary", 1)};
+  `;
+  toggle.addEventListener("change", () => onChange(toggle.checked));
+
+  row.appendChild(labelSpan);
+  row.appendChild(toggle);
+
+  return { row, toggle };
 };

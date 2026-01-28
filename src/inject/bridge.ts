@@ -172,7 +172,8 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-auto-canvas-click-stop": stopAutoCanvasClick,
   "mr-wplace-auto-color-spoit-start": startAutoColorSpoit,
   "mr-wplace-auto-color-spoit-stop": stopAutoColorSpoit,
-  "mr-wplace-area-fill-start": (data: any) => startAreaFill(data.corners),
+  "mr-wplace-area-fill-start": (data: any) =>
+    startAreaFill(data.corners, data.options),
   "mr-wplace-area-fill-stop": stopAreaFill,
   "mr-wplace-gallery-import": handleGalleryImport,
   "mr-wplace-gallery-export": handleGalleryExport,
