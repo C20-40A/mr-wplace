@@ -1,5 +1,7 @@
 # メイン
 
+- 背景色
+- fill target
 - orionでpopupが開けない
 - corsのerrorがログ報告ツールで表示されて、エラーで停止する？
 
