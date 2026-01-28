@@ -82,25 +82,30 @@ All feature APIs are typed in `src/core/di.ts` under `FeatureRegistry`.
 
 ```
 src/
-├── content.ts              # Main entry, DI registration
+├── content.ts              # Main entry, message listeners, initialization orchestration
 ├── popup.ts                # Extension popup UI
 ├── inject.ts               # Inject entry point (bundles inject/index.ts)
 ├── inject/                 # Page-context scripts (see inject/CLAUDE.md)
-│   ├── index.ts           # Initialization flow
+│   ├── index.ts           # Initialization flow (sync fetch interceptor + async parallel init)
 │   ├── types.ts           # Type definitions, window extensions
 │   ├── fetch-interceptor.ts   # Tile & /me API interception
-│   ├── message-handler.ts # postMessage dispatcher
+│   ├── bridge.ts          # postMessage dispatcher (setupMessageHandler)
 │   ├── db/                # IndexedDB (Repository Pattern, LRU cache)
 │   ├── workers/           # Web Worker (tile splitting)
 │   ├── handlers/          # Message handlers (overlay, state, request)
 │   ├── states/            # State management (colorFilter, migration)
+│   ├── features/          # Inject-side features (map-instance, grid-display)
 │   └── tile-draw/         # Tile rendering (stats, filters, processing)
-├── core/di.ts             # DI container & API types
+├── core/
+│   ├── di.ts              # DI container & API types
+│   ├── initializer.ts     # Feature initialization orchestration (with error isolation)
+│   ├── message-handlers.ts # Content-side message handlers
+│   └── bridge/            # Content ↔ Inject communication (gallery, settings, overlay, etc.)
 ├── features/              # Feature modules (gallery, drawing, etc.)
 ├── states/                # Content script state (GalleryStorage, etc.)
 ├── utils/
-│   ├── inject-bridge.ts   # Content ↔ Inject communication
-│   ├── browser-api.ts     # Chrome API wrapper
+│   ├── inject-bridge.ts   # Content ↔ Inject communication helpers
+│   ├── browser-api.ts     # Chrome/Firefox API wrapper (storage, runtime, tabs)
 │   └── ...                # Router, modal, coordinate, position, etc.
 └── i18n/                  # Internationalization
 ```
@@ -129,7 +134,7 @@ Each feature is self-contained in `src/features/`:
 ### Core Rules
 
 1. **Minimal implementation principle** - Solve one problem at a time
-2. **No try-catch** - Throw errors, let upper layers catch
+2. **Error handling at boundaries** - Individual features are wrapped with try-catch in `core/initializer.ts` so one failure doesn't break others. Feature code itself should throw errors.
 3. **Arrow functions** - Prefer `const fn = () => {}` over `function fn() {}`
 4. **Path alias** - Use `@/` instead of relative paths: `import { di } from "@/core/di"`
 
@@ -159,7 +164,10 @@ button.style.cssText = `position: fixed; z-index: 800;`; // Custom styles
 ```typescript
 import { storage, runtime, tabs } from "@/utils/browser-api";
 
-await storage.get("key");
+// Storage - NEVER use storage.get(null), use getKeys() instead
+await storage.get("key");           // Get single key
+await storage.get(["key1", "key2"]); // Get multiple keys
+await storage.getKeys();            // Get all keys (memory efficient)
 await storage.set({ key: "value" });
 await storage.remove("key");
 
@@ -171,6 +179,8 @@ const currentTab = await tabs.query({ active: true });
 tabs.sendMessage(tabId, message);
 tabs.reload(tabId);
 ```
+
+**Important:** `storage.get(null)` is intentionally not supported. Use `storage.getKeys()` to get all keys without loading values into memory, then fetch only the keys you need.
 
 ### Internationalization
 

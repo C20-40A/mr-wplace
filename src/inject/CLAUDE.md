@@ -5,11 +5,14 @@
 
 ## 構造概要
 
+- `index.ts` - 初期化（同期: fetch interceptor、非同期: 並列でDB/message handler/map instance）
 - `fetch-interceptor.ts` - タイルと/me API の傍受
+- `bridge.ts` - postMessage dispatcher (setupMessageHandler)
 - `tile-draw/` - タイル描画・統計・フィルタ処理
 - `handlers/` - postMessage のディスパッチ先
 - `db/` - IndexedDB v2 (gallery 画像の永続化)
 - `states/` - inject 内の状態管理
+- `features/` - inject側機能 (map-instance, grid-display, layer-sort)
 
 ## タイルキャッシュ
 
