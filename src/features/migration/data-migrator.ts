@@ -44,19 +44,14 @@ interface LegacyGalleryItem {
 
 /**
  * Get legacy gallery item keys from Chrome Storage (without data to save memory)
+ * Uses getKeys() to avoid loading all storage values into memory
  */
 const getLegacyItemKeys = async (): Promise<string[]> => {
   const { storage } = await import("@/utils/browser-api");
-  const result = await storage.get(null);
-  const keys: string[] = [];
-
-  for (const key of Object.keys(result)) {
-    if (key.startsWith("gallery_") && !key.endsWith("_index")) {
-      keys.push(key);
-    }
-  }
-
-  return keys;
+  const allKeys = await storage.getKeys();
+  return allKeys.filter(
+    (key) => key.startsWith("gallery_") && !key.endsWith("_index")
+  );
 };
 
 /**
@@ -144,13 +139,14 @@ interface LegacySnapshotKey {
 
 /**
  * Get legacy snapshot keys from Chrome Storage (without data)
+ * Uses getKeys() to avoid loading all storage values into memory
  */
 const getLegacySnapshotKeys = async (): Promise<LegacySnapshotKey[]> => {
   const { storage } = await import("@/utils/browser-api");
-  const result = await storage.get(null);
+  const allKeys = await storage.getKeys();
   const keys: LegacySnapshotKey[] = [];
 
-  for (const key of Object.keys(result)) {
+  for (const key of allKeys) {
     if (key.startsWith("tile_snapshot_")) {
       const parts = key.split("_");
       if (parts.length >= 5) {
@@ -169,18 +165,27 @@ const getLegacySnapshotKeys = async (): Promise<LegacySnapshotKey[]> => {
 
 /**
  * Check if migration to v3 is needed
+ * Optimized: version check first, then key scan only if needed
  */
 export const needsMigration = async (): Promise<boolean> => {
   const { storage } = await import("@/utils/browser-api");
+
+  // Fast path: check version first (single key lookup)
   const result = await storage.get(MIGRATION_VERSION_KEY);
-  const currentVersion = result[MIGRATION_VERSION_KEY];
+  if (result[MIGRATION_VERSION_KEY] === MIGRATION_VERSION) return false;
 
-  if (currentVersion === MIGRATION_VERSION) return false;
+  // Slow path: scan keys only if version mismatch
+  // Uses getKeys() to avoid loading all values into memory
+  const allKeys = await storage.getKeys();
+  const hasLegacyGallery = allKeys.some(
+    (key) => key.startsWith("gallery_") && !key.endsWith("_index")
+  );
+  if (hasLegacyGallery) return true;
 
-  // Check if there are any legacy items to migrate
-  const itemKeys = await getLegacyItemKeys();
-  const snapshotKeys = await getLegacySnapshotKeys();
-  return itemKeys.length > 0 || snapshotKeys.length > 0;
+  const hasLegacySnapshot = allKeys.some((key) =>
+    key.startsWith("tile_snapshot_")
+  );
+  return hasLegacySnapshot;
 };
 
 /**

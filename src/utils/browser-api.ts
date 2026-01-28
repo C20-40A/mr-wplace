@@ -11,8 +11,26 @@ const browserAPI = isFirefox ? browser : chrome;
 
 // Storage API - 完全互換
 export const storage = {
-  get: async (keys: string | string[] | null): Promise<Record<string, any>> => {
+  /**
+   * Get values for specified keys
+   * @param keys - Key(s) to retrieve. Do NOT pass null (use getKeys() + get() instead)
+   */
+  get: async (keys: string | string[]): Promise<Record<string, any>> => {
     return await browserAPI.storage.local.get(keys);
+  },
+
+  /**
+   * Get all keys in storage (without loading values)
+   * Use this instead of get(null) for memory efficiency
+   */
+  getKeys: async (): Promise<string[]> => {
+    // Chrome 130+ and Firefox 130+ support getKeys()
+    if (typeof browserAPI.storage.local.getKeys === "function") {
+      return await browserAPI.storage.local.getKeys();
+    }
+    // Fallback for older browsers: get(null) then extract keys
+    const all = await browserAPI.storage.local.get(null);
+    return Object.keys(all);
   },
 
   set: async (items: Record<string, any>): Promise<void> => {

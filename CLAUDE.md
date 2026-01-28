@@ -89,7 +89,6 @@ src/
 │   ├── index.ts           # Initialization flow
 │   ├── types.ts           # Type definitions, window extensions
 │   ├── fetch-interceptor.ts   # Tile & /me API interception
-│   ├── map-instance.ts    # Map instance capture, event handling
 │   ├── message-handler.ts # postMessage dispatcher
 │   ├── db/                # IndexedDB (Repository Pattern, LRU cache)
 │   ├── workers/           # Web Worker (tile splitting)

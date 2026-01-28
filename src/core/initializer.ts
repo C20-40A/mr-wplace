@@ -35,6 +35,31 @@ import {
 import { sendSnapshotsToInject } from "@/utils/inject-bridge";
 
 /**
+ * Safe wrapper for feature initialization
+ */
+const safeInit = (name: string, fn: () => void): void => {
+  try {
+    fn();
+  } catch (e) {
+    console.error(`🧑‍🎨: ${name} init failed:`, e);
+  }
+};
+
+/**
+ * Safe wrapper for async feature initialization
+ */
+const safeInitAsync = async (
+  name: string,
+  fn: () => Promise<void>
+): Promise<void> => {
+  try {
+    await fn();
+  } catch (e) {
+    console.error(`🧑‍🎨: ${name} init failed:`, e);
+  }
+};
+
+/**
  * Initialize all features and return global instances
  */
 export const initializeFeatures = async () => {
@@ -51,36 +76,38 @@ export const initializeFeatures = async () => {
   di.register("timeTravel", timeTravelAPI);
   di.register("friendsBook", friendsBookAPI);
 
-  // Feature初期化
-  bookmarkAPI.initBookmark(); // 1. Bookmark (最後に表示)
-  friendsBookAPI.initFriendsBook(); // Friends book
+  // Feature初期化 - 各featureは独立して初期化（1つ失敗しても他は継続）
+  safeInit("bookmark", () => bookmarkAPI.initBookmark());
+  safeInit("friendsBook", () => friendsBookAPI.initFriendsBook());
   const tileOverlay = new TileOverlay();
-  timeTravelAPI.initTimeTravel(); // 2. TimeTravel
-  galleryAPI.initGallery();
-  new Drawing(); // 4. Drawing (最初に表示)
-  drawingLoaderAPI.initDrawingLoader();
-  new ColorFilter();
+  safeInit("timeTravel", () => timeTravelAPI.initTimeTravel());
+  safeInit("gallery", () => galleryAPI.initGallery());
+  safeInit("drawing", () => new Drawing());
+  safeInit("drawingLoader", () => drawingLoaderAPI.initDrawingLoader());
+  safeInit("colorFilter", () => new ColorFilter());
   const colorFilterManager = new ColorFilterManager();
   const colorIsolate = new ColorIsolate();
   const autoSpoit = new DevInject(colorFilterManager, colorIsolate);
-  new PositionInfo();
-  new PaletteToggle();
-  new ShowUnplacedOnly();
-  new LockButtonEnhancer();
-  new PaintPixelIcon();
-  new CloseConfirm();
-  initPaintStats();
+  safeInit("positionInfo", () => new PositionInfo());
+  safeInit("paletteToggle", () => new PaletteToggle());
+  safeInit("showUnplacedOnly", () => new ShowUnplacedOnly());
+  safeInit("lockButtonEnhancer", () => new LockButtonEnhancer());
+  safeInit("paintPixelIcon", () => new PaintPixelIcon());
+  safeInit("closeConfirm", () => new CloseConfirm());
+  safeInit("paintStats", () => initPaintStats());
 
-  // Initialize async features in parallel
+  // Initialize async features in parallel (each wrapped for error isolation)
   await Promise.all([
-    textDrawAPI.initTextDraw(), // 3. TextDraw
-    mapFilterMenuAPI.initMapFilterMenu(), // 5. MapFilterMenu (unified)
-    dataSaverAPI.initDataSaver(), // 6. DataSaver
-    layerSortAPI.initLayerSort(), // 7. LayerSort
+    safeInitAsync("textDraw", () => textDrawAPI.initTextDraw()),
+    safeInitAsync("mapFilterMenu", () => mapFilterMenuAPI.initMapFilterMenu()),
+    safeInitAsync("dataSaver", () => dataSaverAPI.initDataSaver()),
+    safeInitAsync("layerSort", () => layerSortAPI.initLayerSort()),
   ]);
 
-  // 初期化完了を待つ
-  await colorFilterManager.init();
+  // colorFilterManager.init() - 遅延実行（UI表示をブロックしない）
+  colorFilterManager.init().catch((e) => {
+    console.error("🧑‍🎨: colorFilterManager init failed:", e);
+  });
 
   // GalleryとTileOverlayの連携設定（DI経由）
   galleryAPI.setDrawToggleCallback(async (imageKey: string) => {

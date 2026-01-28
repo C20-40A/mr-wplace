@@ -293,10 +293,14 @@ cleanupLegacyTmpTiles().catch((err) => {
 (async () => {
   console.log("🧑‍🎨: Starting initialization...");
 
-  await loadInjectScript();
+  try {
+    await loadInjectScript();
 
-  // Run migration before initializing features (blocking)
-  await runMigrationWithModal();
+    // Run migration before initializing features (blocking)
+    await runMigrationWithModal();
 
-  await initializeMainFeatures();
+    await initializeMainFeatures();
+  } catch (error) {
+    console.error("🧑‍🎨: Critical initialization error:", error);
+  }
 })();
