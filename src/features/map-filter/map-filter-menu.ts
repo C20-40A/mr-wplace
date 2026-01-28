@@ -314,6 +314,12 @@ class MapFilterMenu {
     if (this.popover && this.triggerButton) {
       // Re-check map ready state every time popover opens
       this.mapReady = getMapInstanceReady();
+      // Re-check theme from localStorage (may have changed externally)
+      const storedTheme = localStorage.getItem("theme");
+      this.state.darkTheme =
+        storedTheme === "dark" || storedTheme === "custom-winter"
+          ? storedTheme
+          : "custom-winter";
       this.updatePopoverItems();
 
       this.popover.style.display = "block";
