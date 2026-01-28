@@ -1,5 +1,4 @@
 import { storage } from "@/utils/browser-api";
-import { ThemeToggleStorage } from "@/features/theme-toggle/storage";
 import { getMapInstanceReady } from "@/states/map-instance-ready";
 import { t } from "@/i18n/manager";
 
@@ -86,7 +85,11 @@ class MapFilterMenu {
   };
 
   async init() {
-    this.state.darkTheme = await ThemeToggleStorage.get();
+    const storedTheme = localStorage.getItem("theme");
+    this.state.darkTheme =
+      storedTheme === "dark" || storedTheme === "custom-winter"
+        ? storedTheme
+        : "custom-winter";
     const stored = await storage.get([
       HIGH_CONTRAST_KEY,
       BACKGROUND_COLOR_ENABLED_KEY,
@@ -258,7 +261,6 @@ class MapFilterMenu {
         const newTheme =
           this.state.darkTheme === "custom-winter" ? "dark" : "custom-winter";
         this.state.darkTheme = newTheme;
-        await ThemeToggleStorage.set(newTheme);
         this.applyDarkTheme(newTheme);
         break;
       }
