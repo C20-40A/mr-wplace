@@ -21,6 +21,7 @@ import {
   handleComputeTotalStats,
 } from "./handlers/request-handlers";
 import { setupGalleryV2Handlers } from "./handlers/gallery-v2-handlers";
+import { setupSnapshotHandlers } from "./handlers/snapshot-handlers";
 import {
   startAutoCanvasClick,
   stopAutoCanvasClick,
@@ -180,6 +181,7 @@ const messageHandlers: Record<string, MessageHandler> = {
 
 export const setupMessageHandler = (): void => {
   setupGalleryV2Handlers();
+  setupSnapshotHandlers();
 
   window.addEventListener("message", async (event: MessageEvent) => {
     const { source } = event.data;

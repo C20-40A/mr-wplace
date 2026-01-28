@@ -1,6 +1,9 @@
 import { storage } from "@/utils/browser-api";
-import { sendSnapshotsToInject } from "@/utils/inject-bridge";
-import { getSnapshotRepository } from "@/inject/db/snapshot-repository";
+import {
+  sendSnapshotsToInject,
+  getAllSnapshotMetadata,
+  getSnapshotMetadataByTile,
+} from "@/utils/inject-bridge";
 
 // タイルスナップショットの visible 状態を localStorage に保存するかどうか
 // true: 保存する（リロード後も描画状態を維持）
@@ -33,12 +36,11 @@ export interface SnapshotDrawState {
 export class TimeTravelStorage {
   private static readonly DRAW_STATES_KEY = "timetravel_draw_states";
 
-  // 全スナップショット保有タイル一覧取得（IndexedDBから）
+  // 全スナップショット保有タイル一覧取得（IndexedDBから via bridge）
   static async getAllTilesWithSnapshots(): Promise<TileSnapshotInfo[]> {
     console.time("getAllTilesWithSnapshots");
 
-    const repository = getSnapshotRepository();
-    const allMetadata = await repository.getAllMetadata();
+    const allMetadata = await getAllSnapshotMetadata();
 
     const tileMap = new Map<string, SnapshotInfo[]>();
 
@@ -79,13 +81,12 @@ export class TimeTravelStorage {
     return tiles;
   }
 
-  // 特定タイルのスナップショット一覧取得（IndexedDBから）
+  // 特定タイルのスナップショット一覧取得（IndexedDBから via bridge）
   static async getSnapshotsForTile(
     tileX: number,
     tileY: number
   ): Promise<SnapshotInfo[]> {
-    const repository = getSnapshotRepository();
-    const metadata = await repository.getMetadataByTile(tileX, tileY);
+    const metadata = await getSnapshotMetadataByTile(tileX, tileY);
 
     return metadata.map((m) => ({
       id: m.id,

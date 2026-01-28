@@ -1,6 +1,7 @@
 import { TimeTravelRouter } from "../router";
 import { t } from "@/i18n/manager";
 import { colorpalette } from "@/constants/colors";
+import { getSnapshotDataUrl } from "@/utils/inject-bridge";
 
 interface ColorStatItem {
   name: string;
@@ -88,14 +89,14 @@ export class TileStatisticsRoute {
   }
 
   private async calculateStatistics(fullKey: string): Promise<ColorStatItem[]> {
-    // スナップショット画像取得（IndexedDBから）
+    // スナップショット画像取得（bridge経由でIndexedDBから）
     const snapshotId = fullKey.replace("tile_snapshot_", "");
-    const { getSnapshotRepository } = await import(
-      "@/inject/db/snapshot-repository"
-    );
-    const blob = await getSnapshotRepository().getSnapshot(snapshotId);
-    if (!blob) throw new Error("Snapshot not found");
+    const dataUrl = await getSnapshotDataUrl(snapshotId);
+    if (!dataUrl) throw new Error("Snapshot not found");
 
+    // Convert dataUrl to Blob for createImageBitmap
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
     const imageBitmap = await createImageBitmap(blob);
 
     // ImageData取得

@@ -108,6 +108,9 @@
 
 # DONE v2.1.1
 
+- マップ置き換えUIをまとめる
+- グリッド表示高速化
+- 背景表示追加
 - area fillで、executeが停止するようにする
 - area fillで、0になったら必ず止まるようにする
 - devdialogをmobileでも移動可能にする

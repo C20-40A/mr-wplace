@@ -6,7 +6,11 @@ import { Toast } from "@/components/toast";
 import { di } from "@/core/di";
 import { gotoPosition } from "@/utils/position";
 import { tilePixelToLatLng } from "@/utils/coordinate";
-import { sendSnapshotsToInject } from "@/utils/inject-bridge";
+import {
+  sendSnapshotsToInject,
+  getSnapshotDataUrl,
+  deleteSnapshotFromInject,
+} from "@/utils/inject-bridge";
 
 export class SnapshotDetailRoute {
   private imageInspector?: ImageInspector;
@@ -120,17 +124,8 @@ export class SnapshotDetailRoute {
 
   private async loadSnapshot(fullKey: string): Promise<void> {
     const snapshotId = fullKey.replace("tile_snapshot_", "");
-    const { getSnapshotRepository } = await import(
-      "@/inject/db/snapshot-repository"
-    );
-    const blob = await getSnapshotRepository().getSnapshot(snapshotId);
-    if (!blob) throw new Error("Snapshot not found");
-
-    const dataUrl = await new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.readAsDataURL(blob);
-    });
+    const dataUrl = await getSnapshotDataUrl(snapshotId);
+    if (!dataUrl) throw new Error("Snapshot not found");
 
     const canvas = document.getElementById(
       "wps-snapshot-canvas"
@@ -160,11 +155,12 @@ export class SnapshotDetailRoute {
 
   private async drawSnapshot(fullKey: string): Promise<void> {
     const snapshotId = fullKey.replace("tile_snapshot_", "");
-    const { getSnapshotRepository } = await import(
-      "@/inject/db/snapshot-repository"
-    );
-    const blob = await getSnapshotRepository().getSnapshot(snapshotId);
-    if (!blob) throw new Error("Snapshot not found");
+    const dataUrl = await getSnapshotDataUrl(snapshotId);
+    if (!dataUrl) throw new Error("Snapshot not found");
+
+    // Convert dataUrl to Blob
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
 
     const tileX = parseInt(fullKey.split("_")[3]);
     const tileY = parseInt(fullKey.split("_")[4]);
@@ -235,10 +231,7 @@ export class SnapshotDetailRoute {
     if (!confirm(t`${"delete_confirm"}`)) return;
 
     const snapshotId = fullKey.replace("tile_snapshot_", "");
-    const { getSnapshotRepository } = await import(
-      "@/inject/db/snapshot-repository"
-    );
-    await getSnapshotRepository().deleteSnapshotWithMetadata(snapshotId);
+    await deleteSnapshotFromInject(snapshotId);
 
     // Update inject side to remove snapshot overlay
     await sendSnapshotsToInject();

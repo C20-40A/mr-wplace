@@ -218,3 +218,168 @@ export const sendSnapshotsToInject = async () => {
     "*"
   );
 };
+
+// ============================================
+// Snapshot Repository Bridge Functions
+// ============================================
+
+export interface SnapshotMetadata {
+  id: string;
+  timestamp: number;
+  tileX: number;
+  tileY: number;
+  name?: string;
+}
+
+/**
+ * Get all snapshot metadata from inject side IndexedDB
+ */
+export const getAllSnapshotMetadata = async (): Promise<SnapshotMetadata[]> => {
+  const requestId = generateRequestId();
+
+  return new Promise((resolve) => {
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-snapshot-get-all-metadata-response" &&
+        event.data.requestId === requestId
+      ) {
+        window.removeEventListener("message", handler);
+        resolve(event.data.result || []);
+      }
+    };
+
+    window.addEventListener("message", handler);
+    window.postMessage({ source: "mr-wplace-snapshot-get-all-metadata", requestId }, "*");
+
+    setTimeout(() => {
+      window.removeEventListener("message", handler);
+      console.warn("🧑‍🎨 : Get all snapshot metadata timed out");
+      resolve([]);
+    }, 5000);
+  });
+};
+
+/**
+ * Get snapshot metadata by tile coordinates
+ */
+export const getSnapshotMetadataByTile = async (
+  tileX: number,
+  tileY: number
+): Promise<SnapshotMetadata[]> => {
+  const requestId = generateRequestId();
+
+  return new Promise((resolve) => {
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-snapshot-get-metadata-by-tile-response" &&
+        event.data.requestId === requestId
+      ) {
+        window.removeEventListener("message", handler);
+        resolve(event.data.result || []);
+      }
+    };
+
+    window.addEventListener("message", handler);
+    window.postMessage(
+      { source: "mr-wplace-snapshot-get-metadata-by-tile", requestId, tileX, tileY },
+      "*"
+    );
+
+    setTimeout(() => {
+      window.removeEventListener("message", handler);
+      console.warn("🧑‍🎨 : Get snapshot metadata by tile timed out");
+      resolve([]);
+    }, 5000);
+  });
+};
+
+/**
+ * Get snapshot blob as dataUrl
+ */
+export const getSnapshotDataUrl = async (id: string): Promise<string | null> => {
+  const requestId = generateRequestId();
+
+  return new Promise((resolve) => {
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-snapshot-get-response" &&
+        event.data.requestId === requestId
+      ) {
+        window.removeEventListener("message", handler);
+        resolve(event.data.result || null);
+      }
+    };
+
+    window.addEventListener("message", handler);
+    window.postMessage({ source: "mr-wplace-snapshot-get", requestId, id }, "*");
+
+    setTimeout(() => {
+      window.removeEventListener("message", handler);
+      console.warn("🧑‍🎨 : Get snapshot timed out");
+      resolve(null);
+    }, 5000);
+  });
+};
+
+/**
+ * Save snapshot with metadata to inject side IndexedDB
+ */
+export const saveSnapshotToInject = async (
+  id: string,
+  dataUrl: string,
+  metadata: SnapshotMetadata
+): Promise<boolean> => {
+  const requestId = generateRequestId();
+
+  return new Promise((resolve) => {
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-snapshot-save-response" &&
+        event.data.requestId === requestId
+      ) {
+        window.removeEventListener("message", handler);
+        resolve(event.data.result === true);
+      }
+    };
+
+    window.addEventListener("message", handler);
+    window.postMessage(
+      { source: "mr-wplace-snapshot-save", requestId, id, dataUrl, metadata },
+      "*"
+    );
+
+    setTimeout(() => {
+      window.removeEventListener("message", handler);
+      console.warn("🧑‍🎨 : Save snapshot timed out");
+      resolve(false);
+    }, 10000);
+  });
+};
+
+/**
+ * Delete snapshot with metadata from inject side IndexedDB
+ */
+export const deleteSnapshotFromInject = async (id: string): Promise<boolean> => {
+  const requestId = generateRequestId();
+
+  return new Promise((resolve) => {
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-snapshot-delete-response" &&
+        event.data.requestId === requestId
+      ) {
+        window.removeEventListener("message", handler);
+        resolve(event.data.result === true);
+      }
+    };
+
+    window.addEventListener("message", handler);
+    window.postMessage({ source: "mr-wplace-snapshot-delete", requestId, id }, "*");
+
+    setTimeout(() => {
+      window.removeEventListener("message", handler);
+      console.warn("🧑‍🎨 : Delete snapshot timed out");
+      resolve(false);
+    }, 5000);
+  });
+};

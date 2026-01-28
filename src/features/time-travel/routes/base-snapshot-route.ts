@@ -2,7 +2,10 @@ import { SnapshotInfo } from "../storage";
 import { Toast } from "@/components/toast";
 import { t, formatDate } from "@/i18n/manager";
 import { di } from "@/core/di";
-import { sendSnapshotsToInject } from "@/utils/inject-bridge";
+import {
+  sendSnapshotsToInject,
+  deleteSnapshotFromInject,
+} from "@/utils/inject-bridge";
 
 export abstract class BaseSnapshotRoute {
   protected setupSnapshotEvents(
@@ -85,10 +88,7 @@ export abstract class BaseSnapshotRoute {
     if (!confirm(t`${"delete_confirm"}`)) return;
 
     const snapshotId = fullKey.replace("tile_snapshot_", "");
-    const { getSnapshotRepository } = await import(
-      "@/inject/db/snapshot-repository"
-    );
-    await getSnapshotRepository().deleteSnapshotWithMetadata(snapshotId);
+    await deleteSnapshotFromInject(snapshotId);
 
     // Update inject side to remove snapshot overlay
     await sendSnapshotsToInject();

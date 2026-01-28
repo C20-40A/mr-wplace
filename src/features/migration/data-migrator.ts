@@ -195,6 +195,18 @@ export const getMigrationCount = async (): Promise<number> => {
 /**
  * Run data migration
  */
+/**
+ * Convert Blob to dataUrl for bridge communication
+ */
+const blobToDataUrl = (blob: Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
+
 export const runDataMigration = async (
   onProgress?: (progress: MigrationProgress) => void
 ): Promise<{
@@ -204,14 +216,11 @@ export const runDataMigration = async (
 }> => {
   console.log("🧑‍🎨 [Migration] Starting migration to v3.1.0 (IndexedDB v2 + Snapshots)...");
 
-  const { initGalleryRepository } = await import(
-    "@/inject/db/gallery-repository"
+  // Import bridge functions for cross-context IndexedDB access
+  const { saveGalleryItem } = await import(
+    "@/core/bridge/gallery-storage-bridge"
   );
-  const { initSnapshotRepository } = await import(
-    "@/inject/db/snapshot-repository"
-  );
-  const galleryRepository = await initGalleryRepository();
-  const snapshotRepository = await initSnapshotRepository();
+  const { saveSnapshotToInject } = await import("@/utils/inject-bridge");
 
   const itemKeys = await getLegacyItemKeys();
   const snapshotKeys = await getLegacySnapshotKeys();
@@ -248,8 +257,11 @@ export const runDataMigration = async (
         continue;
       }
 
-      // Save to new IndexedDB v2
-      await galleryRepository.saveGalleryItem(item.key, blob, {
+      // Convert blob to dataUrl for bridge
+      const imageDataUrl = await blobToDataUrl(blob);
+
+      // Save via inject bridge (to page context IndexedDB)
+      await saveGalleryItem(item.key, imageDataUrl, {
         title: item.title,
         coords: item.drawPosition,
         visible: item.drawEnabled !== false,
@@ -290,17 +302,24 @@ export const runDataMigration = async (
         continue;
       }
 
-      // Convert number array to Blob
+      // Convert number array to Blob, then to dataUrl for bridge
       const uint8Array = new Uint8Array(data);
       const blob = new Blob([uint8Array], { type: "image/png" });
+      const dataUrl = await blobToDataUrl(blob);
 
-      // Save to IndexedDB
-      await snapshotRepository.saveSnapshotWithMetadata(snapshotKey.id, blob, {
+      // Save via inject bridge (to page context IndexedDB)
+      const success = await saveSnapshotToInject(snapshotKey.id, dataUrl, {
         id: snapshotKey.id,
         timestamp: snapshotKey.timestamp,
         tileX: snapshotKey.tileX,
         tileY: snapshotKey.tileY,
       });
+
+      if (!success) {
+        console.warn(`🧑‍🎨 [Migration] Failed to save snapshot ${snapshotKey.id} via bridge`);
+        failed.push(snapshotKey.fullKey);
+        continue;
+      }
 
       // Delete from Chrome Storage immediately to free memory
       await storage.remove(snapshotKey.fullKey);
