@@ -303,16 +303,6 @@ const getSelectedColorRGB = (): [number, number, number] | null => {
 };
 
 /**
- * Load ImageData from ImageBitmap
- */
-const loadImageDataFromBitmap = (bitmap: ImageBitmap): ImageData => {
-  const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-  const ctx = canvas.getContext("2d")!;
-  ctx.drawImage(bitmap, 0, 0);
-  return ctx.getImageData(0, 0, bitmap.width, bitmap.height);
-};
-
-/**
  * Filter positions to exclude pixels that already exist in background
  */
 const filterExistingPixels = async (

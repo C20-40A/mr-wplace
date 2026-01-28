@@ -1,7 +1,5 @@
 # メイン
 
-- 背景色
-- fill target
 - orionでpopupが開けない
 - corsのerrorがログ報告ツールで表示されて、エラーで停止する？
 
@@ -110,6 +108,8 @@
 
 # DONE v2.1.1
 
+- 背景色
+- fill target->template only
 - マップ置き換えUIをまとめる
 - グリッド表示高速化
 - 背景表示追加
