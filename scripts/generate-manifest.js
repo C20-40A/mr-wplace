@@ -37,7 +37,10 @@ if (browser === "chrome") {
     }
   };
 
-  console.log("🧑‍🎨 : Generated Firefox manifest.json with gecko id");
+  // Firefox needs host_permissions for content_scripts to work without optional permission grant
+  template.host_permissions = ["https://wplace.live/*"];
+
+  console.log("🧑‍🎨 : Generated Firefox manifest.json with gecko id and host_permissions");
 }
 
 // Write output
