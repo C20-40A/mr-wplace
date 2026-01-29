@@ -5,6 +5,7 @@ import { IMG_ICON_BOOKMARK } from "../../assets/iconImages";
 import { createResponsiveButton } from "../../components/responsive-button";
 import { createCard, CardConfig, attachCardScrollPassthrough } from "../../components/card";
 import { BookmarkStorage } from "./storage";
+import { runtime } from "../../utils/browser-api";
 
 export const createSaveBookmarkButton = (): HTMLButtonElement => {
   return createResponsiveButton({
@@ -573,13 +574,14 @@ export const renderBookmarks = (
   }
 
   if (filteredFavorites.length === 0) {
-    grid.innerHTML = t`
-        <div class="text-center" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-12 mx-auto mb-4 text-base-content/50">
-            <path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/>
-          </svg>
-          <p class="text-base-content/80">${"no_bookmarks"}</p>
-          <p class="text-sm text-base-content/60">${"add_bookmark_instruction"}</p>
+    const tutorialGifUrl = runtime.getURL("assets/images/tutorial/how_to_bookmark.gif");
+    grid.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; gap: 1.5rem; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 400px;">
+          <img src="${tutorialGifUrl}" alt="How to bookmark" style="width: 18rem; height: auto; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+
+          <div style="text-align: center;">
+            <p style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--bc); opacity: 0.8;">${t`${"empty_bookmark_message"}`}</p>
+          </div>
         </div>
       `;
     return;

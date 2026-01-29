@@ -25,12 +25,14 @@ import {
 import { BookmarkRouter } from "./router";
 import { renderCoordinateJumper } from "./routes/coordinate-jumper";
 import type { BookmarkAPI } from "@/core/di";
+import { Tutorial } from "@/features/tutorial";
 // import { IMG_ICON_BOOKMARK } from "@/assets/iconImages";
 
 const SORT_KEY = "wplace-studio-bookmark-sort";
 
 let router: BookmarkRouter;
 let selectedTagFilters: Set<string> = new Set();
+let tutorial: Tutorial;
 
 class TagSelectionState {
   private color: string = "";
@@ -427,9 +429,10 @@ const setupColorPickerHandlers = (modal: HTMLDialogElement): void => {
 
 const setupModal = (): void => {
   const modalElements = createBookmarkModal();
-  const { modal } = modalElements;
+  const { modal, container } = modalElements;
 
   tagState = new TagSelectionState();
+  tutorial = new Tutorial();
 
   router = new BookmarkRouter();
   router.setHeaderElements(
@@ -443,6 +446,9 @@ const setupModal = (): void => {
   setupEditScreenHandlers(modal);
   setupTagSelectionHandlers(modal);
   setupColorPickerHandlers(modal);
+
+  // Add tutorial button to modal
+  tutorial.createButton(container);
 };
 
 const createMapPinButtons = (container: Element): void => {

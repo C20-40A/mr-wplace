@@ -427,6 +427,8 @@ export const jaTranslations = {
   // 空の状態
   empty_archive_message:
     "まだアーカイブされたタイルがありません。マップをクリックしてアーカイブを開始しましょう！",
+  empty_bookmark_message:
+    "まだブックマークがありません。マップをクリックして⭐のアイコンを選択し、お気に入りの場所を保存しましょう！",
 
   // Map Filter Menu
   map_filter_darkTheme: "ダークテーマ",

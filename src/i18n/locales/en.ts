@@ -420,6 +420,8 @@ export const enTranslations = {
   // Empty states
   empty_archive_message:
     "No archived tiles yet. Click on the map to start archiving!",
+  empty_bookmark_message:
+    "No bookmarks yet. Click on the map and select the ⭐ icon to save your favorite locations!",
 
   // Map Filter Menu
   map_filter_darkTheme: "Dark Theme",
