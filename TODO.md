@@ -106,18 +106,17 @@
 - exclude_globs にメインのもの以外含める？
   - all_frames false (デフォルト)系は false．まあデフォルトが false だから不要か
 
-# DONE v2.1.1
+# DONE v2.2.0
 
-- 背景色
-- fill target->template only
-- マップ置き換えUIをまとめる
-- グリッド表示高速化
-- 背景表示追加
-- area fillで、executeが停止するようにする
-- area fillで、0になったら必ず止まるようにする
-- devdialogをmobileでも移動可能にする
-- dev dialogを最小化できるようにする
-- dev dialogの閉じるボタンなどを見やすくする
+- 背景色を変更する機能を追加
+- マップ表示補助のUIを統合する
+- ピクセルグリッド表示を高速化
+- area fill: templateだけを塗れるようにする
+- area fill; executeが停止するようにする
+- area fill: 0になったら必ず止まるようにする
+- devdialog: mobileでも移動可能にする
+- dev dialog: 最小化できるようにする
+- dev dialog: 閉じるボタンなどを見やすくする
 
 # DONE v2.1.0
 
