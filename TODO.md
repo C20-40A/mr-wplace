@@ -117,6 +117,7 @@
 - devdialog: mobileでも移動可能にする
 - dev dialog: 最小化できるようにする
 - dev dialog: 閉じるボタンなどを見やすくする
+- bookmarkのtutorial追加
 
 # DONE v2.1.0
 
