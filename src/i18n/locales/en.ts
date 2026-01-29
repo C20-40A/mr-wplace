@@ -411,6 +411,11 @@ export const enTranslations = {
     "Enter text, choose a font, and click 'Draw' button",
   tutorial_how_to_draw_text_step3:
     "Optional: Use arrow buttons to adjust position",
+  tutorial_how_to_bookmark_title: "How to Add and Navigate Bookmarks",
+  tutorial_how_to_bookmark_step1: "Click on the map and select the ⭐ icon",
+  tutorial_how_to_bookmark_step2: "Enter a bookmark name and save",
+  tutorial_how_to_bookmark_step3:
+    "Click the ⭐ button in the bottom left corner and select a bookmark to navigate",
 
   // Empty states
   empty_archive_message:

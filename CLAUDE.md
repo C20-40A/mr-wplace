@@ -165,9 +165,9 @@ button.style.cssText = `position: fixed; z-index: 800;`; // Custom styles
 import { storage, runtime, tabs } from "@/utils/browser-api";
 
 // Storage - NEVER use storage.get(null), use getKeys() instead
-await storage.get("key");           // Get single key
+await storage.get("key"); // Get single key
 await storage.get(["key1", "key2"]); // Get multiple keys
-await storage.getKeys();            // Get all keys (memory efficient)
+await storage.getKeys(); // Get all keys (memory efficient)
 await storage.set({ key: "value" });
 await storage.remove("key");
 
@@ -190,6 +190,19 @@ import { t } from "@/i18n/manager";
 const text = t`${"feature_gallery_title"}`; // Template literal syntax
 // don't use like this: t`feature.gallery.title`
 ```
+
+### Adding Tutorial
+
+Tutorial機能に新しいチュートリアル項目を追加する場合は、`.claude/skills/add-tutorial.md` を参照してください。
+
+**必要な作業:**
+
+1. GIF ファイルを `public/assets/images/tutorial/` に配置
+2. `manifest.json` と `manifest.template.json` の `web_accessible_resources` に GIF を追加
+3. `src/features/tutorial/index.ts` の `tutorials` 配列に項目を追加
+4. `src/i18n/locales/en.ts` と `src/i18n/locales/ja.ts` に翻訳キーを追加
+
+詳細な手順、命名規則、チェックリストは `.claude/skills/add-tutorial.md` を参照。
 
 ## Important Utilities
 

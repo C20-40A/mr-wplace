@@ -63,6 +63,16 @@ export class Tutorial {
         "tutorial_how_to_draw_text_step3",
       ],
     },
+    {
+      id: "how_to_bookmark",
+      titleKey: "tutorial_how_to_bookmark_title",
+      gifUrl: runtime.getURL("assets/images/tutorial/how_to_bookmark.gif"),
+      steps: [
+        "tutorial_how_to_bookmark_step1",
+        "tutorial_how_to_bookmark_step2",
+        "tutorial_how_to_bookmark_step3",
+      ],
+    },
   ];
 
   /**

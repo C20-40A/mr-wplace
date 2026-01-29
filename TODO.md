@@ -106,7 +106,7 @@
 - exclude_globs にメインのもの以外含める？
   - all_frames false (デフォルト)系は false．まあデフォルトが false だから不要か
 
-# DONE v2.2.0
+# DONE v2.2.1
 
 - 背景色を変更する機能を追加
 - マップ表示補助のUIを統合する

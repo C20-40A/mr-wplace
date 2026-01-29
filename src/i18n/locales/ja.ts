@@ -418,6 +418,11 @@ export const jaTranslations = {
   tutorial_how_to_draw_text_step2:
     "テキストを入力し、フォントを選んで「Draw」ボタンをクリック",
   tutorial_how_to_draw_text_step3: "オプション：矢印ボタンで位置を調節",
+  tutorial_how_to_bookmark_title: "ブックマークを追加・移動する方法",
+  tutorial_how_to_bookmark_step1: "マップをクリックして、⭐のアイコンを選択",
+  tutorial_how_to_bookmark_step2: "bookmark nameを入力して保存",
+  tutorial_how_to_bookmark_step3:
+    "左下の⭐のあるボタンをクリックして、ブックマークリストから移動したい場所を選択",
 
   // 空の状態
   empty_archive_message:
