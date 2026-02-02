@@ -1,8 +1,8 @@
-import { t } from "../../../../i18n/manager";
-import { colorpalette } from "../../../../constants/colors";
-import { ImageInspector } from "../../../../components/image-inspector";
-import { ColorPalette } from "../../../../components/color-palette";
-import { DrawPosition, GalleryItem } from "../../../../states/galleryStorage";
+import { t } from "@/i18n/manager";
+import { colorpalette } from "@/constants/colors";
+import { ImageInspector } from "@/components/image-inspector";
+import { ColorPalette } from "@/components/color-palette";
+import { DrawPosition, GalleryItem } from "@/states/galleryStorage";
 import {
   readFileAsDataUrl,
   showImageSizeDialog,
@@ -11,11 +11,7 @@ import {
   downloadBlob,
   parseDrawPositionFromFileName,
 } from "./file-handler";
-import {
-  createProcessedCanvas,
-  ImageAdjustments,
-  QuantizationMethod,
-} from "./canvas-processor";
+import { ImageAdjustments, QuantizationMethod } from "./canvas-processor";
 
 /**
  * 画像エディタController
@@ -76,7 +72,7 @@ export class EditorController {
 
   private updateSaveButtonLabel(): void {
     const saveBtn = this.container.querySelector(
-      "#wps-add-to-gallery"
+      "#wps-add-to-gallery",
     ) as HTMLButtonElement;
     if (!saveBtn) return;
 
@@ -88,7 +84,7 @@ export class EditorController {
 
   updateTitle(): void {
     const titleElement = document.querySelector(
-      "#wplace-studio-gallery-modal-title"
+      "#wplace-studio-gallery-modal-title",
     ) as HTMLElement;
     if (!titleElement) return;
 
@@ -101,9 +97,8 @@ export class EditorController {
     // JSON形式チェック
     if (file.type === "application/json" || file.name.endsWith(".json")) {
       console.log("🧑‍🎨 : Detected Bluemarble JSON file");
-      const { readFileAsText, parseBluemarbleJson } = await import(
-        "./file-handler"
-      );
+      const { readFileAsText, parseBluemarbleJson } =
+        await import("./file-handler");
 
       const jsonText = await readFileAsText(file);
       const { dataUrl, drawPosition } = await parseBluemarbleJson(jsonText);
@@ -123,7 +118,7 @@ export class EditorController {
     const dataUrl = await readFileAsDataUrl(file);
     const { action, dataUrl: processedDataUrl } = await showImageSizeDialog(
       dataUrl,
-      this.container
+      this.container,
     );
 
     if (action === "addToGallery") {
@@ -140,9 +135,8 @@ export class EditorController {
     // JSON形式チェック
     if (file.type === "application/json" || file.name.endsWith(".json")) {
       console.log("🧑‍🎨 : Detected Bluemarble JSON file");
-      const { readFileAsText, parseBluemarbleJson } = await import(
-        "./file-handler"
-      );
+      const { readFileAsText, parseBluemarbleJson } =
+        await import("./file-handler");
 
       const jsonText = await readFileAsText(file);
       const { dataUrl, drawPosition } = await parseBluemarbleJson(jsonText);
@@ -247,7 +241,7 @@ export class EditorController {
       ? "#wps-color-palette-container-mobile"
       : "#wps-color-palette-container";
     const newContainer = this.container.querySelector(
-      containerSelector
+      containerSelector,
     ) as HTMLElement;
 
     if (!newContainer) return;
@@ -293,60 +287,60 @@ export class EditorController {
     this.editingItemKey = null;
 
     const dropzone = this.container.querySelector(
-      "#wps-dropzone-container"
+      "#wps-dropzone-container",
     ) as HTMLElement;
     const imageDisplay = this.container.querySelector(
-      "#wps-image-display"
+      "#wps-image-display",
     ) as HTMLElement;
     const slider = this.container.querySelector(
-      "#wps-scale-slider"
+      "#wps-scale-slider",
     ) as HTMLInputElement;
     const widthInput = this.container.querySelector(
-      "#wps-width-input"
+      "#wps-width-input",
     ) as HTMLInputElement;
     const heightInput = this.container.querySelector(
-      "#wps-height-input"
+      "#wps-height-input",
     ) as HTMLInputElement;
     const brightnessSlider = this.container.querySelector(
-      "#wps-brightness-slider"
+      "#wps-brightness-slider",
     ) as HTMLInputElement;
     const brightnessValue = this.container.querySelector(
-      "#wps-brightness-value"
+      "#wps-brightness-value",
     );
     const contrastSlider = this.container.querySelector(
-      "#wps-contrast-slider"
+      "#wps-contrast-slider",
     ) as HTMLInputElement;
     const contrastValue = this.container.querySelector("#wps-contrast-value");
     const saturationSlider = this.container.querySelector(
-      "#wps-saturation-slider"
+      "#wps-saturation-slider",
     ) as HTMLInputElement;
     const saturationValue = this.container.querySelector(
-      "#wps-saturation-value"
+      "#wps-saturation-value",
     );
     const sharpnessCheckbox = this.container.querySelector(
-      "#wps-sharpness-checkbox"
+      "#wps-sharpness-checkbox",
     ) as HTMLInputElement;
     const sharpnessSlider = this.container.querySelector(
-      "#wps-sharpness-slider"
+      "#wps-sharpness-slider",
     ) as HTMLInputElement;
     const sharpnessValue = this.container.querySelector("#wps-sharpness-value");
     const ditheringCheckbox = this.container.querySelector(
-      "#wps-dithering-checkbox"
+      "#wps-dithering-checkbox",
     ) as HTMLInputElement;
     const gpuToggle = this.container.querySelector(
-      "#wps-gpu-toggle"
+      "#wps-gpu-toggle",
     ) as HTMLInputElement;
     const tlxInput = this.container.querySelector(
-      "#wps-coord-tlx"
+      "#wps-coord-tlx",
     ) as HTMLInputElement;
     const tlyInput = this.container.querySelector(
-      "#wps-coord-tly"
+      "#wps-coord-tly",
     ) as HTMLInputElement;
     const pxxInput = this.container.querySelector(
-      "#wps-coord-pxx"
+      "#wps-coord-pxx",
     ) as HTMLInputElement;
     const pxyInput = this.container.querySelector(
-      "#wps-coord-pxy"
+      "#wps-coord-pxy",
     ) as HTMLInputElement;
 
     if (slider) slider.value = "1";
@@ -434,7 +428,7 @@ export class EditorController {
   private async saveToStorage(
     blob: Blob,
     key?: string,
-    isEditMode = false
+    isEditMode = false,
   ): Promise<void> {
     const itemKey =
       key || `gallery_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
@@ -443,9 +437,8 @@ export class EditorController {
     const dataUrl = await blobToDataUrl(blob);
 
     // Use v2 API directly - saves image + thumbnail + metadata + tiles in one call
-    const { saveGalleryItem } = await import(
-      "@/core/bridge/gallery-storage-bridge"
-    );
+    const { saveGalleryItem } =
+      await import("@/core/bridge/gallery-storage-bridge");
 
     await saveGalleryItem(itemKey, dataUrl, {
       title: undefined,
@@ -458,7 +451,7 @@ export class EditorController {
     console.log(
       "🧑‍🎨 : ",
       isEditMode ? t`${"updated"}` : t`${"saved_to_gallery"}`,
-      itemKey
+      itemKey,
     );
 
     this.onSaveSuccess?.();
@@ -481,13 +474,13 @@ export class EditorController {
 
   private displayImage(imageSrc: string): void {
     const dropzone = this.container.querySelector(
-      "#wps-dropzone-container"
+      "#wps-dropzone-container",
     ) as HTMLElement;
     const imageDisplay = this.container.querySelector(
-      "#wps-image-display"
+      "#wps-image-display",
     ) as HTMLElement;
     const originalImage = this.container.querySelector(
-      "#wps-original-image"
+      "#wps-original-image",
     ) as HTMLImageElement;
 
     // 新しい画像を表示する際はキャッシュをクリア
@@ -505,10 +498,10 @@ export class EditorController {
 
         // 画像サイズ入力の初期化
         const widthInput = this.container.querySelector(
-          "#wps-width-input"
+          "#wps-width-input",
         ) as HTMLInputElement;
         const heightInput = this.container.querySelector(
-          "#wps-height-input"
+          "#wps-height-input",
         ) as HTMLInputElement;
 
         if (widthInput && heightInput && this.originalImage) {
@@ -526,12 +519,12 @@ export class EditorController {
             "🧑‍🎨 : Initialized size inputs:",
             originalWidth,
             "x",
-            originalHeight
+            originalHeight,
           );
         }
 
         const canvas = this.container.querySelector(
-          "#wps-scaled-canvas"
+          "#wps-scaled-canvas",
         ) as HTMLCanvasElement;
         // デスクトップ環境のみImageInspector初期化
         if (canvas && this.isDesktopMode) {
@@ -541,10 +534,10 @@ export class EditorController {
         const isMobile = window.innerWidth < 1024;
         const colorPaletteContainer = isMobile
           ? (this.container.querySelector(
-              "#wps-color-palette-container-mobile"
+              "#wps-color-palette-container-mobile",
             ) as HTMLElement)
           : (this.container.querySelector(
-              "#wps-color-palette-container"
+              "#wps-color-palette-container",
             ) as HTMLElement);
 
         if (colorPaletteContainer) {
@@ -578,7 +571,7 @@ export class EditorController {
     }
 
     const originalImage = this.container.querySelector(
-      "#wps-original-image"
+      "#wps-original-image",
     ) as HTMLImageElement;
 
     if (originalImage) {
@@ -590,13 +583,13 @@ export class EditorController {
 
         // 画像サイズ入力の更新（元画像サイズ基準）
         const widthInput = this.container.querySelector(
-          "#wps-width-input"
+          "#wps-width-input",
         ) as HTMLInputElement;
         const heightInput = this.container.querySelector(
-          "#wps-height-input"
+          "#wps-height-input",
         ) as HTMLInputElement;
         const slider = this.container.querySelector(
-          "#wps-scale-slider"
+          "#wps-scale-slider",
         ) as HTMLInputElement;
 
         if (widthInput && heightInput && this.originalImage) {
@@ -605,10 +598,10 @@ export class EditorController {
 
           // 現在のscaleを維持してサイズを更新
           widthInput.value = Math.round(
-            originalWidth * this.imageScale
+            originalWidth * this.imageScale,
           ).toString();
           heightInput.value = Math.round(
-            originalHeight * this.imageScale
+            originalHeight * this.imageScale,
           ).toString();
           widthInput.dataset.originalWidth = originalWidth.toString();
           widthInput.dataset.originalHeight = originalHeight.toString();
@@ -625,7 +618,7 @@ export class EditorController {
             ":",
             originalWidth,
             "x",
-            originalHeight
+            originalHeight,
           );
         }
 
@@ -644,16 +637,16 @@ export class EditorController {
     if (!this.drawPosition) return;
 
     const tlxInput = this.container.querySelector(
-      "#wps-coord-tlx"
+      "#wps-coord-tlx",
     ) as HTMLInputElement;
     const tlyInput = this.container.querySelector(
-      "#wps-coord-tly"
+      "#wps-coord-tly",
     ) as HTMLInputElement;
     const pxxInput = this.container.querySelector(
-      "#wps-coord-pxx"
+      "#wps-coord-pxx",
     ) as HTMLInputElement;
     const pxyInput = this.container.querySelector(
-      "#wps-coord-pxy"
+      "#wps-coord-pxy",
     ) as HTMLInputElement;
 
     if (tlxInput) tlxInput.value = this.drawPosition.TLX.toString();
@@ -666,7 +659,7 @@ export class EditorController {
 
   private updateOriginalImageDisplay(): void {
     const originalImage = this.container.querySelector(
-      "#wps-original-image"
+      "#wps-original-image",
     ) as HTMLImageElement;
     if (!originalImage || !this.originalImage) return;
 
@@ -689,7 +682,7 @@ export class EditorController {
 
     // モード切り替え時にImageInspectorの初期化/破棄
     const canvas = this.container.querySelector(
-      "#wps-scaled-canvas"
+      "#wps-scaled-canvas",
     ) as HTMLCanvasElement;
 
     if (isDesktop && canvas && !this.imageInspector) {
@@ -707,10 +700,10 @@ export class EditorController {
     if (!this.originalImage) return;
 
     const canvas = this.container.querySelector(
-      "#wps-scaled-canvas"
+      "#wps-scaled-canvas",
     ) as HTMLCanvasElement;
     const image = this.container.querySelector(
-      "#wps-scaled-image"
+      "#wps-scaled-image",
     ) as HTMLImageElement;
     const originalSizeDisplay =
       this.container.querySelector("#wps-original-size");
@@ -731,9 +724,8 @@ export class EditorController {
       console.log("🧑‍🎨 : Scale changed, creating new resized bitmap");
 
       // リサイズ実行
-      const { createResizedImageBitmap } = await import(
-        "@/utils/image-bitmap-compat"
-      );
+      const { createResizedImageBitmap } =
+        await import("@/utils/image-bitmap-compat");
       const originalWidth = this.originalImage.naturalWidth;
       const originalHeight = this.originalImage.naturalHeight;
       const newWidth = Math.floor(originalWidth * this.imageScale);
@@ -750,14 +742,13 @@ export class EditorController {
           width: newWidth,
           height: newHeight,
           quality: "pixelated",
-        }
+        },
       );
       this.cachedScale = this.imageScale;
 
       // リサイズ後の処理
-      const { createProcessedCanvasFromBitmap } = await import(
-        "./canvas-processor"
-      );
+      const { createProcessedCanvasFromBitmap } =
+        await import("./canvas-processor");
       processedCanvas = await createProcessedCanvasFromBitmap(
         this.cachedResizedBitmap,
         adjustments,
@@ -765,15 +756,14 @@ export class EditorController {
         this.ditheringEnabled,
         this.ditheringThreshold,
         this.useGpu,
-        this.quantizationMethod
+        this.quantizationMethod,
       );
     } else {
       console.log("🧑‍🎨 : Using cached bitmap for processing");
 
       // キャッシュされたリサイズ済みBitmapを使用
-      const { createProcessedCanvasFromBitmap } = await import(
-        "./canvas-processor"
-      );
+      const { createProcessedCanvasFromBitmap } =
+        await import("./canvas-processor");
       processedCanvas = await createProcessedCanvasFromBitmap(
         this.cachedResizedBitmap,
         adjustments,
@@ -781,7 +771,7 @@ export class EditorController {
         this.ditheringEnabled,
         this.ditheringThreshold,
         this.useGpu,
-        this.quantizationMethod
+        this.quantizationMethod,
       );
     }
 
