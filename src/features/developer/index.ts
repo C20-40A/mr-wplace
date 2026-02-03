@@ -194,6 +194,7 @@ export class DevInject {
         const corners = AreaFillStorage.getCorners();
         if (!corners.topLeft || !corners.bottomRight) return;
         const templateOnlyMode = this.areaFillUI?.getTemplateOnlyMode() ?? false;
+        const fillPattern = this.areaFillUI?.getFillPattern() ?? "spiralPingPong";
         window.postMessage(
           {
             source: "mr-wplace-area-fill-start",
@@ -201,6 +202,7 @@ export class DevInject {
             options: {
               skipExistingPixels: true,
               templateOnlyMode,
+              fillPattern,
             },
           },
           "*"
@@ -208,6 +210,7 @@ export class DevInject {
         this.areaFillUI?.setRunning(true);
         console.log("🧑‍🎨 : Area fill start requested", corners, {
           templateOnlyMode,
+          fillPattern,
         });
       }
     });

@@ -3,8 +3,11 @@ export interface AreaFillCorners {
   bottomRight: { lat: number; lng: number } | null;
 }
 
+export type FillPattern = "linear" | "spiralPingPong";
+
 let corners: AreaFillCorners = { topLeft: null, bottomRight: null };
 let templateOnlyMode = false;
+let fillPattern: FillPattern = "spiralPingPong";
 
 export const AreaFillStorage = {
   getCorners: () => corners,
@@ -25,5 +28,11 @@ export const AreaFillStorage = {
 
   setTemplateOnlyMode: (enabled: boolean) => {
     templateOnlyMode = enabled;
+  },
+
+  getFillPattern: (): FillPattern => fillPattern,
+
+  setFillPattern: (pattern: FillPattern) => {
+    fillPattern = pattern;
   },
 };

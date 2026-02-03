@@ -16,9 +16,12 @@ interface AreaFillCorners {
   bottomRight: { lat: number; lng: number } | null;
 }
 
+type FillPattern = "linear" | "spiralPingPong";
+
 interface AreaFillOptions {
   skipExistingPixels: boolean;
   templateOnlyMode: boolean;
+  fillPattern?: FillPattern;
 }
 
 const DEFAULT_OPTIONS: AreaFillOptions = {
@@ -27,24 +30,13 @@ const DEFAULT_OPTIONS: AreaFillOptions = {
 };
 
 // ============================================
-// Human-like behavior settings
+// Fill patterns
 // ============================================
-
-type FillPattern = "linear" | "spiralPingPong";
-
-interface HumanLikeBehaviorSettings {
-  enabled: boolean;
-  fillPattern: FillPattern;
-}
-
-const humanLikeBehaviorSettings: HumanLikeBehaviorSettings = {
-  enabled: true,
-  fillPattern: "spiralPingPong",
-};
 
 /**
  * Apply spiral ping-pong pattern (outside → inside, alternating directions per layer)
  * Each spiral layer alternates: clockwise → counter-clockwise → clockwise...
+ * Uses gridX/gridY coordinates for correct lookup even after filtering.
  */
 const applySpiralPingPongPattern = (
   positions: PixelPosition[],
@@ -53,14 +45,10 @@ const applySpiralPingPongPattern = (
 ): PixelPosition[] => {
   if (width <= 0 || height <= 0) return positions;
 
-  // Build 2D grid
-  const grid: (PixelPosition | null)[][] = [];
-  for (let y = 0; y < height; y++) {
-    grid[y] = [];
-    for (let x = 0; x < width; x++) {
-      const idx = y * width + x;
-      grid[y][x] = idx < positions.length ? positions[idx] : null;
-    }
+  // Build coordinate-keyed lookup from filtered positions
+  const coordMap = new Map<string, PixelPosition>();
+  for (const pos of positions) {
+    coordMap.set(`${pos.gridX},${pos.gridY}`, pos);
   }
 
   const result: PixelPosition[] = [];
@@ -70,59 +58,48 @@ const applySpiralPingPongPattern = (
     right = width - 1;
   let layerIndex = 0;
 
+  const push = (x: number, y: number) => {
+    const pos = coordMap.get(`${x},${y}`);
+    if (pos) result.push(pos);
+  };
+
   while (top <= bottom && left <= right) {
     const clockwise = layerIndex % 2 === 0;
 
     if (clockwise) {
       // Clockwise: → ↓ ← ↑
-      for (let x = left; x <= right; x++) {
-        if (grid[top][x]) result.push(grid[top][x]!);
-      }
+      for (let x = left; x <= right; x++) push(x, top);
       top++;
 
-      for (let y = top; y <= bottom; y++) {
-        if (grid[y][right]) result.push(grid[y][right]!);
-      }
+      for (let y = top; y <= bottom; y++) push(right, y);
       right--;
 
       if (top <= bottom) {
-        for (let x = right; x >= left; x--) {
-          if (grid[bottom][x]) result.push(grid[bottom][x]!);
-        }
+        for (let x = right; x >= left; x--) push(x, bottom);
         bottom--;
       }
 
       if (left <= right) {
-        for (let y = bottom; y >= top; y--) {
-          if (grid[y][left]) result.push(grid[y][left]!);
-        }
+        for (let y = bottom; y >= top; y--) push(left, y);
         left++;
       }
     } else {
       // Counter-clockwise: ↓ → ↑ ←
-      for (let y = top; y <= bottom; y++) {
-        if (grid[y][left]) result.push(grid[y][left]!);
-      }
+      for (let y = top; y <= bottom; y++) push(left, y);
       left++;
 
       if (left <= right) {
-        for (let x = left; x <= right; x++) {
-          if (grid[bottom][x]) result.push(grid[bottom][x]!);
-        }
+        for (let x = left; x <= right; x++) push(x, bottom);
         bottom--;
       }
 
       if (top <= bottom) {
-        for (let y = bottom; y >= top; y--) {
-          if (grid[y][right]) result.push(grid[y][right]!);
-        }
+        for (let y = bottom; y >= top; y--) push(right, y);
         right--;
       }
 
       if (left <= right) {
-        for (let x = right; x >= left; x--) {
-          if (grid[top][x]) result.push(grid[top][x]!);
-        }
+        for (let x = right; x >= left; x--) push(x, top);
         top++;
       }
     }
@@ -134,19 +111,15 @@ const applySpiralPingPongPattern = (
 };
 
 /**
- * Apply fill pattern based on settings
+ * Apply fill pattern based on selected pattern
  */
 const applyFillPattern = (
   positions: PixelPosition[],
   width: number,
   height: number,
+  pattern: FillPattern,
 ): PixelPosition[] => {
-  if (
-    !humanLikeBehaviorSettings.enabled ||
-    humanLikeBehaviorSettings.fillPattern === "linear"
-  ) {
-    return positions;
-  }
+  if (pattern === "linear") return positions;
   return applySpiralPingPongPattern(positions, width, height);
 };
 
@@ -224,6 +197,8 @@ interface PixelPosition {
   tileKey: string;
   pxX: number;
   pxY: number;
+  gridX: number;
+  gridY: number;
 }
 
 interface GenerateResult {
@@ -271,7 +246,10 @@ const generatePixelPositions = (
         pxX + 0.5,
         pxY + 0.5,
       );
-      positions.push({ lat, lng, tileKey: `${tileX},${tileY}`, pxX, pxY });
+      positions.push({
+        lat, lng, tileKey: `${tileX},${tileY}`, pxX, pxY,
+        gridX: x - minX, gridY: y - minY,
+      });
     }
   }
 
@@ -489,15 +467,11 @@ export const startAreaFill = async (
     }
   }
 
-  // Apply fill pattern (human-like behavior)
-  positions = applyFillPattern(positions, width, height);
-  if (
-    humanLikeBehaviorSettings.enabled &&
-    humanLikeBehaviorSettings.fillPattern !== "linear"
-  ) {
-    console.log(
-      `🧑‍🎨 : Area fill - Pattern applied: ${humanLikeBehaviorSettings.fillPattern}`,
-    );
+  // Apply fill pattern
+  const fillPattern = options.fillPattern ?? "spiralPingPong";
+  positions = applyFillPattern(positions, width, height, fillPattern);
+  if (fillPattern !== "linear") {
+    console.log(`🧑‍🎨 : Area fill - Pattern applied: ${fillPattern}`);
   }
 
   // Get available charge count

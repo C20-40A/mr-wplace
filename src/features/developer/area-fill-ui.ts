@@ -1,6 +1,6 @@
 import { getCurrentPosition } from "@/utils/position";
 import { latLngToTilePixel } from "@/utils/coordinate";
-import { AreaFillStorage, AreaFillCorners } from "./area-fill-storage";
+import { AreaFillStorage, AreaFillCorners, type FillPattern } from "./area-fill-storage";
 import { findPaintPixelControls } from "@/constants/selectors";
 import { getColor } from "./ui-colors";
 
@@ -14,6 +14,7 @@ export interface AreaFillUIElements {
   setRunning: (running: boolean) => void;
   updateProgress: (current: number, total: number) => void;
   getTemplateOnlyMode: () => boolean;
+  getFillPattern: () => FillPattern;
   mount: () => void;
   unmount: () => void;
 }
@@ -247,22 +248,85 @@ export const createAreaFillDialogItem = (
   buttonRow.appendChild(fillBtn);
   buttonRow.appendChild(clearBtn);
 
-  // Template Only Mode toggle
+  // Fill pattern + Template Only Mode row
+  let currentFillPattern = AreaFillStorage.getFillPattern();
   let templateOnlyModeEnabled = AreaFillStorage.getTemplateOnlyMode();
-  const templateToggleRow = createToggleRow(
-    "TMPL_ONLY",
-    templateOnlyModeEnabled,
-    (enabled) => {
-      templateOnlyModeEnabled = enabled;
-      AreaFillStorage.setTemplateOnlyMode(enabled);
-      console.log("🧑‍🎨 : Area fill template only mode:", enabled);
-    }
-  );
+
+  const optionsRow = document.createElement("div");
+  optionsRow.style.cssText = `
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+  `;
+
+  // Fill pattern dropdown
+  const patternSelect = document.createElement("select");
+  patternSelect.style.cssText = `
+    flex: 1;
+    padding: 2px 4px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 1px;
+    background: rgba(0, 0, 0, 0.4);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 9px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    cursor: pointer;
+    outline: none;
+  `;
+  const patterns: { value: FillPattern; label: string }[] = [
+    { value: "linear", label: "LINEAR" },
+    { value: "spiralPingPong", label: "SPIRAL" },
+  ];
+  for (const p of patterns) {
+    const opt = document.createElement("option");
+    opt.value = p.value;
+    opt.textContent = p.label;
+    opt.style.cssText = `background: #1a1a2e; color: rgba(255, 255, 255, 0.8);`;
+    patternSelect.appendChild(opt);
+  }
+  patternSelect.value = currentFillPattern;
+  patternSelect.addEventListener("change", () => {
+    currentFillPattern = patternSelect.value as FillPattern;
+    AreaFillStorage.setFillPattern(currentFillPattern);
+    console.log("🧑‍🎨 : Area fill pattern:", currentFillPattern);
+  });
+
+  // Template Only Mode toggle label + checkbox
+  const tmplLabel = document.createElement("span");
+  tmplLabel.style.cssText = `
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 9px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  `;
+  tmplLabel.textContent = "TMPL_ONLY";
+
+  const tmplToggle = document.createElement("input");
+  tmplToggle.type = "checkbox";
+  tmplToggle.checked = templateOnlyModeEnabled;
+  tmplToggle.style.cssText = `
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    accent-color: ${getColor("primary", 1)};
+    flex-shrink: 0;
+  `;
+  tmplToggle.addEventListener("change", () => {
+    templateOnlyModeEnabled = tmplToggle.checked;
+    AreaFillStorage.setTemplateOnlyMode(templateOnlyModeEnabled);
+    console.log("🧑‍🎨 : Area fill template only mode:", templateOnlyModeEnabled);
+  });
+
+  optionsRow.appendChild(patternSelect);
+  optionsRow.appendChild(tmplLabel);
+  optionsRow.appendChild(tmplToggle);
 
   container.appendChild(header);
   container.appendChild(topLeftRow.row);
   container.appendChild(bottomRightRow.row);
-  container.appendChild(templateToggleRow.row);
+  container.appendChild(optionsRow);
   container.appendChild(progressGauge);
   container.appendChild(buttonRow);
 
@@ -346,6 +410,7 @@ export const createAreaFillDialogItem = (
     setRunning,
     updateProgress,
     getTemplateOnlyMode: () => templateOnlyModeEnabled,
+    getFillPattern: () => currentFillPattern,
     mount,
     unmount,
   };
@@ -425,42 +490,3 @@ const createCoordRow = (
   return { row, valueSpan, setBtn };
 };
 
-const createToggleRow = (
-  label: string,
-  initialValue: boolean,
-  onChange: (enabled: boolean) => void
-): { row: HTMLDivElement; toggle: HTMLInputElement } => {
-  const row = document.createElement("div");
-  row.style.cssText = `
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 4px;
-  `;
-
-  const labelSpan = document.createElement("span");
-  labelSpan.style.cssText = `
-    color: rgba(255, 255, 255, 0.75);
-    font-size: 9px;
-    font-family: 'Consolas', 'Monaco', monospace;
-    flex: 1;
-    text-transform: uppercase;
-  `;
-  labelSpan.textContent = label;
-
-  const toggle = document.createElement("input");
-  toggle.type = "checkbox";
-  toggle.checked = initialValue;
-  toggle.style.cssText = `
-    width: 14px;
-    height: 14px;
-    cursor: pointer;
-    accent-color: ${getColor("primary", 1)};
-  `;
-  toggle.addEventListener("change", () => onChange(toggle.checked));
-
-  row.appendChild(labelSpan);
-  row.appendChild(toggle);
-
-  return { row, toggle };
-};
