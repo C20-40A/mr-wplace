@@ -551,7 +551,8 @@ export class ImageEditorUI {
     const style = this._createElement("style", { id: styleId }, [`
       #wps-image-editor-container.desktop #wps-main-grid {
         display: grid;
-        grid-template-columns: 3fr 4fr;
+        grid-template-columns: 2fr 3fr;
+        grid-template-rows: 2fr 3fr;
         height: 80vh;
         overflow: hidden;
         gap: 0.1rem;
@@ -590,10 +591,10 @@ export class ImageEditorUI {
         position: absolute; top:0; left:0; font-size: 0.875rem; font-weight: 500;
       }
       #wps-current-area .flex {
-        justify-content: center; position: relative; width: 100%; height: calc(100% - 2.5rem);
+        justify-content: center; position: relative; width: 100%; height: 100%; padding-top: 1.5rem; box-sizing: border-box;
       }
       #wps-canvas-container {
-        min-width: 100%; min-height: 300px; max-width: 100%; max-height: 100%; overflow: hidden; position: relative;
+        min-width: 100%; min-height: 0; height: 100%; max-width: 100%; max-height: 100%; overflow: hidden; position: relative;
       }
       #wps-image-editor-container.mobile #wps-canvas-container { display: none; }
       #wps-image-editor-container.desktop #wps-canvas-container { display: block; }
@@ -626,10 +627,11 @@ export class ImageEditorUI {
       .label-hint { font-size: 0.75rem; color: #9ca3af; }
       .label-hint-sm { font-size: 0.65rem; color: #9ca3af; }
       .flex-group { display: flex; gap: 0.5rem; align-items: center; }
-      .flex-group .range { flex: 1; }
+      .flex-group .range { flex: 1; min-width: 0; }
       #wps-width-input, #wps-height-input { width: 60px; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; text-align: center; }
       .control-group { display: flex; gap: 0.75rem; }
-      .control-item { flex: 1; }
+      .control-item { flex: 1; min-width: 0; }
+      .control-item .range { width: 100%; display: block; }
       .cursor-pointer { cursor: pointer; }
 
       #wps-image-editor-container.mobile .control-group { flex-direction: column; }
