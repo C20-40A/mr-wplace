@@ -143,7 +143,15 @@ export class ImageEditorUI {
       this.elements.originalImage,
       this.elements.replaceOverlay,
       this.elements.replaceFileInput,
-      this._createElement("h4", {}, [t("original_image")])
+      this._createElement("div", {
+        style: {
+          position: "absolute",
+          top: "0.25rem",
+          left: "0.25rem",
+          fontSize: "0.75rem",
+          fontWeight: "500"
+        }
+      }, [t("original_image")])
     ]);
 
     return this._createElement("div", { id: "wps-original-area" }, [this.elements.replaceZone]);
@@ -166,7 +174,15 @@ export class ImageEditorUI {
       canvasContainer,
       imageContainer,
       gpuLabel,
-      this._createElement("h4", {}, [t("current_image")])
+      this._createElement("div", {
+        style: {
+          position: "absolute",
+          top: "0.25rem",
+          left: "0.25rem",
+          fontSize: "0.75rem",
+          fontWeight: "500"
+        }
+      }, [t("current_image")])
     ]);
 
     return this._createElement("div", { id: "wps-current-area" }, [flexContainer]);
@@ -579,19 +595,16 @@ export class ImageEditorUI {
         overscroll-behavior: contain;
       }
       #wps-image-replace-zone {
-        position: relative; cursor: pointer; display: flex; justify-content: center;
+        position: relative; cursor: pointer; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; overflow: hidden;
       }
       #wps-original-image {
-        border: 1px solid #e5e7eb; border-radius: 0.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 100%; height: auto; object-fit: contain; image-rendering: pixelated; image-rendering: -webkit-optimize-contrast;
+        border: 1px solid #e5e7eb; border-radius: 0.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: pixelated; image-rendering: -webkit-optimize-contrast;
       }
       #wps-replace-overlay {
         position: absolute; inset: 0; background: rgba(0,0,0,0.7); border-radius: 0.25rem; display: none; align-items: center; justify-content: center; color: white; font-size: 0.875rem; text-align: center; padding: 1rem;
       }
-      #wps-original-area h4, #wps-current-area h4 {
-        position: absolute; top:0; left:0; font-size: 0.875rem; font-weight: 500;
-      }
       #wps-current-area .flex {
-        justify-content: center; position: relative; width: 100%; height: 100%; padding-top: 1.5rem; box-sizing: border-box;
+        justify-content: center; position: relative; width: 100%; height: 100%; box-sizing: border-box;
       }
       #wps-canvas-container {
         min-width: 100%; min-height: 0; height: 100%; max-width: 100%; max-height: 100%; overflow: hidden; position: relative;
