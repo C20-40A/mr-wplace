@@ -84,6 +84,15 @@ export const createStatsHtml = (stats: ColorStats): string => {
   const remaining = stats.total - stats.matched;
   const percentage = stats.total > 0 ? (stats.matched / stats.total) * 100 : 0;
 
+  // matched === 0 の場合: total のみ表示（image-editor用）
+  if (stats.matched === 0 && stats.total > 0) {
+    return `
+      <div style="position: absolute; top: -0.35rem; right: -0.35rem; font-size: 0.625rem; font-weight: bold; background: rgba(0, 0, 0, 0.7); color: white; padding: 0.125rem 0.3rem; border-radius: 0.3rem; line-height: 1; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);">
+        ${formatNumber(stats.total)}
+      </div>
+    `;
+  }
+
   // 100%完了時: COMPLETE (gold border text) + total pixels (subscript style)
   if (remaining === 0) {
     return `

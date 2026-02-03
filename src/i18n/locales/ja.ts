@@ -203,6 +203,7 @@ export const jaTranslations = {
   disable_all: "すべて無効",
   free_colors_only: "無料色",
   owned_colors_only: "所持色",
+  disable_unused_colors: "未使用色を無効化",
   enhanced: "強化",
 
   // User Status (Notification Modal)

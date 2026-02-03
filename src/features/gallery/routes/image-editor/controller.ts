@@ -231,6 +231,8 @@ export class EditorController {
       selectedColorIds: this.selectedColorIds,
       onChange: (colorIds) => this.onColorSelectionChange(colorIds),
       hasExtraColorsBitmap: true,
+      showColorStats: true,
+      showDisableUnusedButton: true,
     });
   }
 
@@ -254,6 +256,8 @@ export class EditorController {
       selectedColorIds: this.selectedColorIds,
       onChange: (colorIds) => this.onColorSelectionChange(colorIds),
       hasExtraColorsBitmap: true,
+      showColorStats: true,
+      showDisableUnusedButton: true,
     });
   }
 
@@ -802,5 +806,63 @@ export class EditorController {
     if (currentSizeDisplay) {
       currentSizeDisplay.textContent = `${processedCanvas.width} x ${processedCanvas.height}`;
     }
+
+    // ピクセル数を集計してColorPaletteを更新
+    this.updateColorPaletteWithPixelCounts(processedCanvas);
+  }
+
+  private updateColorPaletteWithPixelCounts(canvas: HTMLCanvasElement): void {
+    if (!this.colorPalette) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    const pixelCounts = new Map<string, number>();
+
+    // ピクセル数を集計
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const a = data[i + 3];
+
+      // 透明ピクセルはスキップ
+      if (a === 0) continue;
+
+      const key = `${r},${g},${b}`;
+      pixelCounts.set(key, (pixelCounts.get(key) || 0) + 1);
+    }
+
+    // colorStats形式に変換 (matched: 0, total: ピクセル数)
+    const colorStats: Record<string, { matched: number; total: number }> = {};
+    for (const [key, count] of pixelCounts.entries()) {
+      colorStats[key] = { matched: 0, total: count };
+    }
+
+    // ColorPaletteを再生成
+    const isMobile = !this.isDesktopMode;
+    const containerSelector = isMobile
+      ? "#wps-color-palette-container-mobile"
+      : "#wps-color-palette-container";
+    const container = this.container.querySelector(
+      containerSelector,
+    ) as HTMLElement;
+
+    if (!container) return;
+
+    if (this.colorPalette) {
+      this.colorPalette.destroy();
+    }
+
+    this.colorPalette = new ColorPalette(container, {
+      selectedColorIds: this.selectedColorIds,
+      onChange: (colorIds) => this.onColorSelectionChange(colorIds),
+      hasExtraColorsBitmap: true,
+      showColorStats: true,
+      colorStats,
+      showDisableUnusedButton: true,
+    });
   }
 }

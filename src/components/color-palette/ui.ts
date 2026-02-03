@@ -480,7 +480,8 @@ export function buildControlsHtml(
   enhancedMode: EnhancedMode,
   computeDevice: ComputeDevice,
   showUnplacedOnlyToggle: boolean = false,
-  showUnplacedOnly: boolean = false
+  showUnplacedOnly: boolean = false,
+  showDisableUnusedButton: boolean = false
 ): string {
   const buttonBaseStyle = `
     padding: 0.625rem 1.25rem;
@@ -523,6 +524,19 @@ export function buildControlsHtml(
     ? buildShowUnplacedOnlyToggleHtml(showUnplacedOnly)
     : "";
 
+  const disableUnusedButtonHTML = showDisableUnusedButton
+    ? `<button class="disable-unused-btn btn btn-outline btn-sm rounded"
+               style="${buttonBaseStyle}
+                      border: 2px solid var(--color-warning, #f59e0b);
+                      color: var(--color-warning, #f59e0b);
+               onmouseenter="this.style.backgroundColor='var(--color-base-300, #f0f0f0)'; this.style.borderColor='var(--color-warning, #f59e0b)'; this.style.color='var(--color-warning, #f59e0b)';"
+               onmouseleave="this.style.backgroundColor='transparent'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'; this.style.color='var(--color-warning, #f59e0b)';"
+               onmousedown="this.style.transform='scale(0.95)';"
+               onmouseup="this.style.transform='scale(1)';"
+               ontouchstart="this.style.transform='scale(0.95)';"
+               ontouchend="this.style.transform='scale(1)';">${t`${"disable_unused_colors"}`}</button>`
+    : "";
+
   return `
     <div class="color-palette-controls flex flex-wrap gap-2 px-4 pb-2">
       <button class="enable-all-btn btn btn-outline btn-sm rounded"
@@ -558,6 +572,7 @@ export function buildControlsHtml(
               ontouchstart="this.style.transform='scale(0.95)';"
               ontouchend="this.style.transform='scale(1)';">${t`${"free_colors_only"}`}</button>
       ${ownedColorsButtonHTML}
+      ${disableUnusedButtonHTML}
       ${sortOrderSelectHTML}
       ${enhancedSelectHTML}
       ${computeDeviceSelectHTML}

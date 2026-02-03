@@ -21,6 +21,7 @@ export interface ColorPaletteOptions {
   showUnplacedOnlyToggle?: boolean;
   onShowUnplacedOnlyChange?: (enabled: boolean) => void;
   showUnplacedOnly?: boolean;
+  showDisableUnusedButton?: boolean;
 }
 
 export interface ColorStats {

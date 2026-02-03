@@ -197,6 +197,7 @@ export const enTranslations = {
   disable_all: "Disable All",
   free_colors_only: "Free Colors",
   owned_colors_only: "Owned Colors",
+  disable_unused_colors: "Disable Unused",
   enhanced: "Enhanced",
   show_selected_color_only: "Show Selected Color Only",
 

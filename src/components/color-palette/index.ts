@@ -74,7 +74,8 @@ export class ColorPalette {
       this.enhancedMode,
       this.computeDevice,
       this.options.showUnplacedOnlyToggle ?? false,
-      this.showUnplacedOnly
+      this.showUnplacedOnly,
+      this.options.showDisableUnusedButton ?? false
     );
 
     this.container.innerHTML = `
@@ -132,6 +133,10 @@ export class ColorPalette {
     }
     if (target.classList.contains("owned-colors-btn")) {
       this.enableOwnedColors();
+      return;
+    }
+    if (target.classList.contains("disable-unused-btn")) {
+      this.disableUnusedColors();
       return;
     }
 
@@ -293,6 +298,26 @@ export class ColorPalette {
     if (!ownedIds) return;
 
     this.selectedColorIds = new Set(ownedIds);
+    this.updateAllColorSelections();
+    this.notifyChange();
+  }
+
+  private disableUnusedColors(): void {
+    if (!this.options.colorStats) return;
+
+    // colorStatsに存在する色（total > 0）のみを有効化
+    const usedColorIds = new Set<number>();
+    for (const [colorKey, stats] of Object.entries(this.options.colorStats)) {
+      if (stats.total > 0) {
+        const [r, g, b] = colorKey.split(",").map(Number);
+        const color = colorpalette.find(
+          (c) => c.rgb[0] === r && c.rgb[1] === g && c.rgb[2] === b
+        );
+        if (color) usedColorIds.add(color.id);
+      }
+    }
+
+    this.selectedColorIds = usedColorIds;
     this.updateAllColorSelections();
     this.notifyChange();
   }
