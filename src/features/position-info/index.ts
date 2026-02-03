@@ -139,6 +139,12 @@ export class PositionInfo {
       headerRow.querySelector<HTMLElement>(
         ".dropdown.dropdown-top.dropdown-left.shrink-0",
       );
+    const shouldRightAlignProxy = !headerDropdown;
+    if (shouldRightAlignProxy) {
+      proxyButton.classList.add("ml-auto");
+    } else {
+      proxyButton.classList.remove("ml-auto");
+    }
     const needsMove =
       proxyButton.parentElement !== headerRow ||
       (headerDropdown && proxyButton.nextElementSibling !== headerDropdown);
