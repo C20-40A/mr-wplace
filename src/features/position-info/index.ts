@@ -4,23 +4,184 @@ import { getCurrentPosition } from "@/utils/position";
 import { latLngToTilePixel } from "@/utils/coordinate";
 import { t } from "@/i18n/manager";
 import { Toast } from "@/components/toast";
+import {
+  loadCloseButtonSwapFromStorage,
+  getCloseButtonSwap,
+} from "@/states/close-button-swap";
+
+const CLOSE_SVG_PATH =
+  "m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z";
+const CLOSE_PROXY_ID = "position-close-proxy";
+const DROPDOWN_SWAP_ID = "position-swap-dropdown";
 
 /**
  * 位置情報モーダルにタイル座標を表示
  */
 export class PositionInfo {
   private observer: MutationObserver | null = null;
+  private swapObserver: MutationObserver | null = null;
+  private swapEnabled = false;
+  private swapScheduled = false;
+  private static readonly SWAP_MARKER_ID = "position-close-swap-marker";
 
   constructor() {
+    this.init();
+  }
+
+  private init = async () => {
+    await loadCloseButtonSwapFromStorage();
+    this.swapEnabled = getCloseButtonSwap();
+
     setupElementObserver([
       {
         id: "position-tile-info",
         getTargetElement: findPositionModal,
-        createElement: (container) => {
+        createElement: (container: Element) => {
           this.addTileInfo(container);
         },
       },
+      {
+        id: PositionInfo.SWAP_MARKER_ID,
+        getTargetElement: findPositionModal,
+        createElement: (container: Element) => {
+          this.ensureSwapMarker(container);
+          if (this.swapEnabled) {
+            this.scheduleCloseButtonSwap(container);
+            this.startSwapObserver(container);
+          }
+        },
+      },
     ]);
+  };
+
+  /**
+   * 閉じるボタンと三点メニューの位置を入れ替え
+   */
+  private applyCloseButtonSwap(container: Element): boolean {
+    const headerRow = container.querySelector<HTMLElement>(
+      ".flex.items-center.gap-2",
+    );
+    const footerRow = container.querySelector<HTMLElement>(
+      ".border-base-300.flex.items-center.justify-between",
+    );
+    if (!headerRow || !footerRow) return false;
+
+    const closeButton = footerRow.querySelector<HTMLButtonElement>(
+      `button:has(path[d="${CLOSE_SVG_PATH}"])`,
+    );
+    if (!closeButton) return false;
+
+    const dropdowns = Array.from(
+      container.querySelectorAll<HTMLElement>(
+        ".dropdown.dropdown-top.dropdown-left.shrink-0",
+      ),
+    );
+    if (dropdowns.length === 0) return false;
+
+    const dropdownInHeader = dropdowns.find((el) => headerRow.contains(el));
+    const dropdownInFooter = dropdowns.find((el) => footerRow.contains(el));
+    const dropdown = dropdownInHeader || dropdownInFooter || dropdowns[0];
+    if (!dropdown) return false;
+
+    const dropdownInFooterNow = footerRow.contains(dropdown);
+
+    if (!dropdownInFooterNow) {
+      footerRow.appendChild(dropdown);
+    }
+
+    dropdown.id = DROPDOWN_SWAP_ID;
+    for (const extra of dropdowns) {
+      if (extra === dropdown) continue;
+      if (extra.id === DROPDOWN_SWAP_ID) {
+        extra.remove();
+      }
+    }
+
+    // もとの閉じるボタンはフッターに残し、ヘッダーにプロキシを置く
+    closeButton.classList.add("hidden");
+
+    let proxyButton = headerRow.querySelector<HTMLButtonElement>(
+      `#${CLOSE_PROXY_ID}`,
+    );
+    if (!proxyButton) {
+      proxyButton = document.createElement("button");
+      proxyButton.id = CLOSE_PROXY_ID;
+      proxyButton.type = "button";
+      proxyButton.className = closeButton.className;
+      proxyButton.classList.remove("btn-xs");
+      proxyButton.classList.remove("hidden");
+      proxyButton.innerHTML = closeButton.innerHTML;
+      proxyButton.addEventListener("click", () => {
+        const latestCloseButton = footerRow.querySelector<HTMLButtonElement>(
+          `button:has(path[d="${CLOSE_SVG_PATH}"])`,
+        );
+        latestCloseButton?.click();
+      });
+    } else {
+      proxyButton.className = closeButton.className;
+      proxyButton.classList.remove("btn-xs");
+      proxyButton.classList.remove("hidden");
+      proxyButton.innerHTML = closeButton.innerHTML;
+    }
+
+    const headerDropdown =
+      headerRow.querySelector<HTMLElement>(`#${DROPDOWN_SWAP_ID}`) ??
+      headerRow.querySelector<HTMLElement>(
+        ".dropdown.dropdown-top.dropdown-left.shrink-0",
+      );
+    if (headerDropdown) {
+      headerRow.insertBefore(proxyButton, headerDropdown);
+    } else {
+      headerRow.appendChild(proxyButton);
+    }
+
+    return true;
+  }
+
+  private scheduleCloseButtonSwap(
+    container: Element,
+    attempts = 6,
+  ): void {
+    if (!this.swapEnabled) return;
+    if (this.swapScheduled) return;
+
+    this.swapScheduled = true;
+    requestAnimationFrame(() => {
+      this.swapScheduled = false;
+      const swapped = this.applyCloseButtonSwap(container);
+      if (!swapped && attempts > 0) {
+        setTimeout(
+          () => this.scheduleCloseButtonSwap(container, attempts - 1),
+          50,
+        );
+      }
+    });
+  }
+
+  private startSwapObserver(container: Element): void {
+    if (!this.swapEnabled) return;
+
+    this.swapObserver?.disconnect();
+
+    let scheduled = false;
+    this.swapObserver = new MutationObserver(() => {
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(() => {
+        scheduled = false;
+        this.scheduleCloseButtonSwap(container);
+      });
+    });
+    this.swapObserver.observe(container, { childList: true, subtree: true });
+  }
+
+  private ensureSwapMarker(container: Element): void {
+    if (container.querySelector(`#${PositionInfo.SWAP_MARKER_ID}`)) return;
+
+    const marker = document.createElement("span");
+    marker.id = PositionInfo.SWAP_MARKER_ID;
+    marker.style.display = "none";
+    container.appendChild(marker);
   }
 
   private addTileInfo(container: Element): void {
@@ -32,6 +193,10 @@ export class PositionInfo {
 
     // 既に追加済みかチェック
     if (coordSpan.previousElementSibling?.id === "position-tile-info") {
+      if (this.swapEnabled) {
+        this.scheduleCloseButtonSwap(container);
+        this.startSwapObserver(container);
+      }
       return;
     }
 
@@ -104,6 +269,12 @@ export class PositionInfo {
     coordSpan.insertAdjacentElement("beforebegin", tileCoordSpan);
     tileCoordSpan.insertAdjacentElement("afterend", copyButton);
     copyButton.insertAdjacentElement("afterend", clockButton);
+
+    // 閉じるボタンのスワップを適用
+    if (this.swapEnabled) {
+      this.scheduleCloseButtonSwap(container);
+      this.startSwapObserver(container);
+    }
 
     // MutationObserver: 座標変更監視
     this.observer = new MutationObserver(() => {

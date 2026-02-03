@@ -29,6 +29,11 @@ import {
   getPaintModeStyle,
   setPaintModeStyle,
 } from "./states/paint-mode-style";
+import {
+  loadCloseButtonSwapFromStorage,
+  getCloseButtonSwap,
+  setCloseButtonSwap,
+} from "./states/close-button-swap";
 
 import { tabs } from "@/utils/browser-api";
 import { FEEDBACK_FORM_URL } from "@/constants/url";
@@ -137,6 +142,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const paintModeStyleSelect = document.getElementById(
     "paint-mode-style-select"
   ) as HTMLSelectElement;
+  const closeButtonSwapSelect = document.getElementById(
+    "close-button-swap-select"
+  ) as HTMLSelectElement;
 
   // Set Buy Me a Coffee image
   const coffeeImg = document.getElementById("coffee-img") as HTMLImageElement;
@@ -149,6 +157,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentCloseConfirm = false;
   let currentLayerSort = true;
   let currentPaintModeStyle = true;
+  let currentCloseButtonSwap = false;
   let mapInstanceReady = false;
 
   try {
@@ -176,6 +185,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadPaintModeStyleFromStorage();
     currentPaintModeStyle = getPaintModeStyle();
 
+    // close button swap初期化
+    await loadCloseButtonSwapFromStorage();
+    currentCloseButtonSwap = getCloseButtonSwap();
+
     // Get map instance ready state from content script
     const currentTab = (await tabs.query({ active: true, currentWindow: true }))[0];
     if (currentTab?.id) {
@@ -196,6 +209,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   closeConfirmSelect.value = currentCloseConfirm.toString();
   layerSortSelect.value = currentLayerSort.toString();
   paintModeStyleSelect.value = currentPaintModeStyle.toString();
+  closeButtonSwapSelect.value = currentCloseButtonSwap.toString();
   updateUI();
 
   // Show navigation setting only if map instance is ready
@@ -302,6 +316,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     const newEnabled = target.value === "true";
 
     await setPaintModeStyle(newEnabled);
+
+    // ページをリロードして設定を反映
+    const [activeTab] = await tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (activeTab.id) {
+      await tabs.reload(activeTab.id);
+    }
+  });
+
+  // Close button swap変更イベント
+  closeButtonSwapSelect.addEventListener("change", async (event) => {
+    const target = event.target as HTMLSelectElement;
+    const newEnabled = target.value === "true";
+
+    await setCloseButtonSwap(newEnabled);
 
     // ページをリロードして設定を反映
     const [activeTab] = await tabs.query({
