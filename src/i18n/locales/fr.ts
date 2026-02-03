@@ -144,6 +144,7 @@ export const frTranslations = {
   select_image: "Sélectionner une image",
   click_image_to_draw:
     "Cliquez sur l'image que vous souhaitez dessiner sur la carte",
+  click_to_draw: "Cliquer pour dessiner",
   no_draw_images: "Aucune image pour le dessin.",
   no_saved_images: "Aucune image enregistrée",
   empty_gallery_message:

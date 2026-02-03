@@ -123,7 +123,8 @@ export class GalleryImageSelectorUI {
     ) as HTMLElement;
     if (!unplacedGrid || !this.currentOnSelect) return;
 
-    const itemEl = createUnplacedItem(item, this.currentOnSelect);
+    const clickHint = t("click_to_draw");
+    const itemEl = createUnplacedItem(item, this.currentOnSelect, clickHint);
     // 「＋」ボタンの前に挿入
     const addButton = unplacedGrid.querySelector(".add-button");
     if (addButton) {
@@ -146,6 +147,7 @@ export class GalleryImageSelectorUI {
     const layerImages = galleryItems
       .filter((i) => i.drawPosition)
       .sort((a, b) => (b.layerOrder ?? 0) - (a.layerOrder ?? 0));
+    const clickHint = t("click_to_draw");
 
     // レイヤーアイテムだけをクリア（タイトルは残す）
     const existingItems = layerSection.querySelectorAll("[data-key]");
@@ -169,6 +171,7 @@ export class GalleryImageSelectorUI {
           onMoveToUnplaced: (key) => this.moveItemToUnplaced(key),
           onRefreshOrder: () => this.refreshLayerOrder(),
           galleryStorage: this.galleryStorage,
+          clickHint,
         });
         layerSection.appendChild(itemEl);
       });
@@ -256,6 +259,7 @@ export class GalleryImageSelectorUI {
     const layerImages = galleryItems
       .filter((i) => i.drawPosition)
       .sort((a, b) => (b.layerOrder ?? 0) - (a.layerOrder ?? 0)); // 降順：大→小
+    const clickHint = t("click_to_draw");
 
     // 未配置画像セクション（常に表示）
     const unplacedSection = document.createElement("div");
@@ -272,7 +276,7 @@ export class GalleryImageSelectorUI {
     unplacedGrid.style.cssText = "display: flex; flex-wrap: wrap; gap: 0.5rem;";
 
     unplacedImages.forEach((item) => {
-      const itemEl = createUnplacedItem(item, this.currentOnSelect!);
+      const itemEl = createUnplacedItem(item, this.currentOnSelect!, clickHint);
       unplacedGrid.appendChild(itemEl);
     });
 
@@ -314,6 +318,7 @@ export class GalleryImageSelectorUI {
           onMoveToUnplaced: (key) => this.moveItemToUnplaced(key),
           onRefreshOrder: () => this.refreshLayerOrder(),
           galleryStorage: this.galleryStorage,
+          clickHint,
         });
         layerSection.appendChild(itemEl);
       });

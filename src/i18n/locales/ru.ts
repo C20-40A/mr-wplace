@@ -142,6 +142,7 @@ export const ruTranslations = {
   select_image: "Выбрать изображение",
   click_image_to_draw:
     "Нажмите на изображение, которое хотите нарисовать на карте",
+  click_to_draw: "Кликните, чтобы рисовать",
   no_draw_images: "Нет изображений для рисования.",
   no_saved_images: "Нет сохраненных изображений",
   empty_gallery_message:

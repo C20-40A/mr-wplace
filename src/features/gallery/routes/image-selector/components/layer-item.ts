@@ -16,6 +16,7 @@ interface LayerItemParams {
   onMoveToUnplaced: (key: string) => Promise<void>;
   onRefreshOrder: () => Promise<void>;
   galleryStorage: GalleryStorage;
+  clickHint?: string;
 }
 
 /**
@@ -32,6 +33,7 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
     onMoveToUnplaced,
     onRefreshOrder,
     galleryStorage,
+    clickHint,
   } = params;
 
   const container = document.createElement("div");
@@ -47,7 +49,7 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
   `;
 
   // コンテンツエリア
-  const contentArea = createContentArea(item, index, onSelect);
+  const contentArea = createContentArea(item, index, onSelect, clickHint);
 
   // Divider
   const divider = document.createElement("div");
@@ -88,7 +90,8 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
 const createContentArea = (
   item: GalleryItem,
   index: number,
-  onSelect: (item: GalleryItem) => void
+  onSelect: (item: GalleryItem) => void,
+  clickHint?: string
 ): HTMLElement => {
   const contentArea = document.createElement("div");
   contentArea.style.cssText =
@@ -107,10 +110,17 @@ const createContentArea = (
 		transition: background 0.15s, transform 0.15s;
 		min-width: 0;
 	`;
+  if (clickHint) mainArea.title = clickHint;
 
   mainArea.onclick = () => {
     onSelect(item);
   };
+  const setHoverState = (isHover: boolean) => {
+    mainArea.style.background = isHover ? "rgba(0, 0, 0, 0.04)" : "transparent";
+    mainArea.style.transform = isHover ? "translateY(-1px)" : "translateY(0)";
+  };
+  mainArea.onmouseenter = () => setHoverState(true);
+  mainArea.onmouseleave = () => setHoverState(false);
 
   // サムネイル
   const thumbnail = document.createElement("img");
@@ -120,7 +130,7 @@ const createContentArea = (
     "width: 48px; height: 48px; object-fit: cover; flex-shrink: 0; image-rendering: pixelated;";
 
   // 情報
-  const infoContainer = createInfoContainer(item, index);
+  const infoContainer = createInfoContainer(item, index, clickHint);
 
   mainArea.appendChild(thumbnail);
   mainArea.appendChild(infoContainer);
@@ -130,7 +140,11 @@ const createContentArea = (
 };
 
 // 情報コンテナ作成
-const createInfoContainer = (item: any, index: number): HTMLElement => {
+const createInfoContainer = (
+  item: any,
+  index: number,
+  clickHint?: string
+): HTMLElement => {
   const infoContainer = document.createElement("div");
   infoContainer.style.cssText = "flex: 1; min-width: 0;";
 
@@ -160,6 +174,14 @@ const createInfoContainer = (item: any, index: number): HTMLElement => {
     titleText.dataset.role = "title";
     titleText.textContent = item.title;
     infoContainer.appendChild(titleText);
+  }
+
+  if (clickHint) {
+    const hintText = document.createElement("div");
+    hintText.style.cssText =
+      "font-size: 0.6rem; color: inherit; opacity: 0.6; margin-top: 0.15rem;";
+    hintText.textContent = clickHint;
+    infoContainer.appendChild(hintText);
   }
 
   return infoContainer;

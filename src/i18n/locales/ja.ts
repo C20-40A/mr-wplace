@@ -146,6 +146,7 @@ export const jaTranslations = {
   add_to_gallery_directly: "直接ギャラリーに追加",
   select_image: "画像を選択",
   click_image_to_draw: "地図に描画したい画像をクリックしてください",
+  click_to_draw: "クリックで描画",
   no_draw_images: "描画用の画像がありません。",
   no_saved_images: "保存された画像がありません",
   empty_gallery_message:

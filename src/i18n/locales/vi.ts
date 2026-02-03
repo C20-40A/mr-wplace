@@ -139,6 +139,7 @@ export const viTranslations = {
   add_to_gallery_directly: "Thêm trực tiếp vào thư viện",
   select_image: "Chọn hình ảnh",
   click_image_to_draw: "Nhấp vào hình ảnh bạn muốn vẽ trên bản đồ",
+  click_to_draw: "Nhấp để vẽ",
   no_draw_images: "Không có hình ảnh để vẽ.",
   no_saved_images: "Không có hình ảnh đã lưu",
   empty_gallery_message:

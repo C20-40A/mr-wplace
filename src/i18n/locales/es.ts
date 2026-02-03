@@ -144,6 +144,7 @@ export const esTranslations = {
   add_to_gallery_directly: "Añadir directamente a galería",
   select_image: "Seleccionar imagen",
   click_image_to_draw: "Haz clic en la imagen que quieres dibujar en el mapa",
+  click_to_draw: "Clic para dibujar",
   no_draw_images: "Sin imágenes para dibujar.",
   no_saved_images: "Sin imágenes guardadas",
   empty_gallery_message:

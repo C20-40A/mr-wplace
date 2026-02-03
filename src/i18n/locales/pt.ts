@@ -141,6 +141,7 @@ export const ptTranslations = {
   add_to_gallery_directly: "Adicionar diretamente à galeria",
   select_image: "Selecionar imagem",
   click_image_to_draw: "Clique na imagem que deseja desenhar no mapa",
+  click_to_draw: "Clique para desenhar",
   no_draw_images: "Sem imagens para desenhar.",
   no_saved_images: "Sem imagens salvas",
   empty_gallery_message:

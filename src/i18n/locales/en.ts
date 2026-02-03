@@ -140,6 +140,7 @@ export const enTranslations = {
   add_to_gallery_directly: "Add directly to gallery",
   select_image: "Select image",
   click_image_to_draw: "Click on the image you want to draw on the map",
+  click_to_draw: "Click to draw",
   no_draw_images: "No images for drawing.",
   no_saved_images: "No saved images",
   empty_gallery_message:
