@@ -74,7 +74,9 @@ export class ImageGridComponent {
       ? this.createPrimaryAddButtonHtml()
       : "";
 
-    const tutorialGifUrl = runtime.getURL("assets/images/tutorial/how_to_draw.gif");
+    const tutorialGifUrl = runtime.getURL(
+      "assets/images/tutorial/how_to_draw.gif",
+    );
 
     this.container.innerHTML = `
       <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 2rem; gap: 2rem; min-height: 300px;">
@@ -258,27 +260,41 @@ export class ImageGridComponent {
    * スクロールイベントを親コンテナにパススルー
    */
   private attachWheelPassthrough(): void {
-    const scrollContainer = this.container.closest('[style*="overflow"]') as HTMLElement;
+    const scrollContainer = this.container.closest(
+      '[style*="overflow"]',
+    ) as HTMLElement;
     if (!scrollContainer) return;
 
     this.container.querySelectorAll(".gallery-item").forEach((item) => {
       // デスクトップ: wheelイベント
-      item.addEventListener("wheel", (e) => {
-        scrollContainer.scrollTop += (e as WheelEvent).deltaY;
-      }, { passive: true });
+      item.addEventListener(
+        "wheel",
+        (e) => {
+          scrollContainer.scrollTop += (e as WheelEvent).deltaY;
+        },
+        { passive: true },
+      );
 
       // モバイル: touchイベント
       let touchStartY = 0;
-      item.addEventListener("touchstart", (e) => {
-        touchStartY = (e as TouchEvent).touches[0].clientY;
-      }, { passive: true });
+      item.addEventListener(
+        "touchstart",
+        (e) => {
+          touchStartY = (e as TouchEvent).touches[0].clientY;
+        },
+        { passive: true },
+      );
 
-      item.addEventListener("touchmove", (e) => {
-        const touchY = (e as TouchEvent).touches[0].clientY;
-        const deltaY = touchStartY - touchY;
-        scrollContainer.scrollTop += deltaY;
-        touchStartY = touchY;
-      }, { passive: true });
+      item.addEventListener(
+        "touchmove",
+        (e) => {
+          const touchY = (e as TouchEvent).touches[0].clientY;
+          const deltaY = touchStartY - touchY;
+          scrollContainer.scrollTop += deltaY;
+          touchStartY = touchY;
+        },
+        { passive: true },
+      );
     });
   }
 
@@ -289,7 +305,7 @@ export class ImageGridComponent {
     if (!this.options.showAddButton) return;
 
     const addBtn = this.container.querySelector(
-      "#wps-gallery-add-btn"
+      "#wps-gallery-add-btn",
     ) as HTMLButtonElement;
     addBtn?.addEventListener("click", () => {
       this.options.onAddClick?.();
@@ -306,7 +322,7 @@ export class ImageGridComponent {
       button.addEventListener("click", async (e) => {
         e.stopPropagation();
         const key = (e.currentTarget as HTMLElement).getAttribute(
-          "data-delete"
+          "data-delete",
         );
         if (key && confirm(t`${"delete_image_confirm"}`)) {
           this.options.onImageDelete?.(key);
@@ -331,11 +347,11 @@ export class ImageGridComponent {
       button.addEventListener("click", async (e) => {
         e.stopPropagation();
         const key = (e.currentTarget as HTMLElement).getAttribute(
-          "data-goto-position"
+          "data-goto-position",
         );
         if (!key) throw new Error("No key found on button");
         const selectedItem = this.options.items.find(
-          (item) => item.key === key
+          (item) => item.key === key,
         );
         console.log("🔍 Selected item:", selectedItem);
         if (!selectedItem) throw new Error("Selected item not found");
@@ -351,7 +367,7 @@ export class ImageGridComponent {
       button.addEventListener("click", async (e) => {
         e.stopPropagation();
         const key = (e.currentTarget as HTMLElement).getAttribute(
-          "data-draw-toggle"
+          "data-draw-toggle",
         );
         if (key) {
           this.options.onDrawToggle?.(key);
@@ -396,11 +412,11 @@ export class ImageGridComponent {
 
     const matched = Object.values(item.matchedColorStats).reduce(
       (sum, count) => sum + count,
-      0
+      0,
     );
     const total = Object.values(item.totalColorStats).reduce(
       (sum, count) => sum + count,
-      0
+      0,
     );
 
     if (total === 0) return "";
@@ -429,16 +445,17 @@ export class ImageGridComponent {
       <div style="padding: 0.375rem 0.625rem; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
         <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
           <span style="font-size: 0.75rem; font-weight: 600; color: #3b82f6; font-family: ui-monospace, monospace; min-width: 3rem;">${percentage.toFixed(
-            1
+            1,
           )}%</span>
           <div style="flex: 1; position: relative; height: 0.375rem; background-color: #e5e7eb; border-radius: 0.25rem; overflow: hidden;">
             <div style="height: 100%; background: linear-gradient(to right, #3b82f6, #60a5fa); width: ${percentage.toFixed(
-              1
+              1,
             )}%; transition: width 0.3s ease;"></div>
           </div>
         </div>
         <div style="display: flex; justify-content: space-between; font-size: 0.6875rem; color: #6b7280; font-family: ui-monospace, monospace; letter-spacing: 0.025em; flex-wrap: wrap;">
           <span>${matched.toLocaleString()}/${total.toLocaleString()}</span>
+          <span style="min-width: 9px;" />
           ${
             remaining > 0
               ? `<span style="color: #9ca3af;">${remaining}px(${timeStr})</span>`
@@ -482,11 +499,11 @@ export class ImageGridComponent {
         }
 
         const key = (e.currentTarget as HTMLElement).getAttribute(
-          "data-item-key"
+          "data-item-key",
         );
         if (key) {
           const selectedItem = this.options.items.find(
-            (item) => item.key === key
+            (item) => item.key === key,
           );
           if (selectedItem) {
             if (this.options.isSelectionMode) {
