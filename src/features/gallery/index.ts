@@ -183,6 +183,13 @@ const createGallery = () => {
 
     const container = ui.getContainer();
     if (!container) return;
+
+    // image-editor ルートではモーダルを広げる
+    const modalBox = container.closest(".modal-box") as HTMLElement | null;
+    if (modalBox) {
+      modalBox.style.maxWidth = route === "image-editor" ? "90vw" : "64rem";
+    }
+
     await routeMap[route]?.(container);
   };
 
