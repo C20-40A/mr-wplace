@@ -206,6 +206,7 @@ export const jaTranslations = {
   owned_colors_only: "所持色",
   disable_unused_colors: "未使用色を無効化",
   enhanced: "強化",
+  show_selected_color_only: "選択中の色のみ表示",
 
   // User Status (Notification Modal)
   user_status_details: "ステータス",

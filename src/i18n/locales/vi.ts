@@ -124,6 +124,7 @@ export const viTranslations = {
   quantization_weighted_rgb: "RGB Có Trọng Số (Trung Bình, Tự Nhiên)",
   quantization_lab: "Không Gian Màu Lab (Chậm, Chất Lượng Cao)",
   include_paid_colors: "Bao gồm màu trả phí",
+  transparent_color: "Màu trong suốt",
   add_to_gallery: "Thêm vào thư viện",
   download: "Tải xuống",
   clear_image_confirm: "Xóa hình ảnh và quay về trạng thái ban đầu?",
@@ -196,6 +197,7 @@ export const viTranslations = {
   disable_all: "Tắt tất cả",
   free_colors_only: "Chỉ màu miễn phí",
   owned_colors_only: "Chỉ màu sở hữu",
+  disable_unused_colors: "Tắt màu không dùng",
   enhanced: "Nâng cao",
   show_selected_color_only: "Chỉ hiển thị màu đã chọn",
 
@@ -239,10 +241,21 @@ export const viTranslations = {
   enhanced_mode_dark_cross: "Chữ thập tối",
   enhanced_mode_complement_cross: "Chữ thập bổ sung",
   enhanced_mode_red_border: "Viền đỏ",
+  enhanced_mode_huge_red_cross: "Chữ thập đỏ khổng lồ",
+  enhanced_mode_huge_red_cross_bold: "Chữ thập đỏ khổng lồ (Đậm)",
+  enhanced_mode_huge_red_diamond: "Hình thoi đỏ khổng lồ",
+  enhanced_mode_huge_red_ring: "Vòng đỏ khổng lồ",
 
   // Auto Spoit
   auto_spoit: "Chọn màu tự động",
   auto_spoit_tooltip: "Chọn màu tự động",
+  auto_dotter_warning: `
+• Đây là tính năng thử nghiệm "tự động nhấn Space khi rê qua vùng đỏ"
+• Đây là tính năng kiểm thử cho nhà phát triển
+• Chỉ dùng cho mục đích kiểm thử
+• Tô quá nhanh hoặc không tự nhiên có thể bị hiểu nhầm là BOT
+• Tự chịu rủi ro khi sử dụng
+`,
 
   // Sort Order
   sort_order_default: "Mặc định",
@@ -321,6 +334,10 @@ export const viTranslations = {
   cache_cleared: "Đã xóa bộ nhớ cache!",
   tiles: "ô",
 
+  // Close Confirm
+  confirm_close_paint_modal:
+    "Bạn có thể mất phần việc đang làm. Bạn có chắc muốn đóng không?",
+
   // Friends Book
   friends_book: "Danh sách bạn bè",
   add_to_friends: "Thêm vào bạn bè",
@@ -346,4 +363,59 @@ export const viTranslations = {
   import_merge_confirm:
     "bạn bè để nhập?\nSẽ hợp nhất với dữ liệu hiện có (ID giống nhau sẽ bị ghi đè).",
   import_merge_description: "Dữ liệu hiện có sẽ được giữ lại.",
+  import_friends_description: "Nhập danh sách người chơi từ tệp CSV",
+  export_all_friends_description: "Xuất tất cả bạn bè dưới dạng tệp CSV",
+  export_friends_by_tag_description:
+    "Chỉ xuất bạn bè có thẻ đã chọn dưới dạng CSV",
+  online_sync: "Nhập trực tuyến",
+  online_sync_description:
+    "Nhập danh sách bạn bè từ URL CSV (vd. URL công bố của Google Sheets)",
+  sync_merge: "Nhập gộp",
+  sync_replace: "Nhập thay thế",
+  please_enter_sync_url: "Vui lòng nhập URL nhập",
+  sync_failed: "Nhập thất bại",
+  sync_replace_confirm:
+    "Bạn có chắc muốn thay thế tất cả bạn bè?\nTất cả danh sách hiện có sẽ bị xóa và thay bằng dữ liệu từ URL.",
+  open_url: "Mở URL",
+
+  // Tutorial
+  tutorial_title: "Hướng dẫn",
+  tutorial_how_to_draw_title: "Cách Vẽ Hình Ảnh Trên Bản Đồ",
+  tutorial_how_to_draw_step1: "Lưu một hình ảnh vào thư viện",
+  tutorial_how_to_draw_step2: "Nhấp vào bản đồ và chọn nút 'Hình ảnh'",
+  tutorial_how_to_draw_step3:
+    "Nhấp vào hình ảnh bạn muốn đặt, hình ảnh sẽ hiển thị chồng lên ô bản đồ",
+  tutorial_how_to_archive_title: "Cách Lưu Trữ Pixel Art Trên Bản Đồ",
+  tutorial_how_to_archive_step1: "Nhấp vào bản đồ và chọn 'Lưu trữ'",
+  tutorial_how_to_archive_step2: "Nhấp nút 'Lưu ô hiện tại'",
+  tutorial_how_to_draw_archive_title: "Cách Vẽ Pixel Art Đã Lưu Trữ",
+  tutorial_how_to_draw_archive_step1: "Nhấp vào bản đồ và chọn 'Lưu trữ'",
+  tutorial_how_to_draw_archive_step2:
+    "Nhấp vào bản lưu trữ bạn muốn hiển thị",
+  tutorial_how_to_draw_archive_step3: "Nhấp nút vẽ",
+  tutorial_how_to_draw_text_title: "Cách Hiển Thị Văn Bản Trên Bản Đồ",
+  tutorial_how_to_draw_text_step1: "Nhấp vào bản đồ và chọn 'Văn bản'",
+  tutorial_how_to_draw_text_step2:
+    "Nhập văn bản, chọn phông chữ và nhấp nút 'Vẽ'",
+  tutorial_how_to_draw_text_step3:
+    "Tùy chọn: dùng các nút mũi tên để chỉnh vị trí",
+  tutorial_how_to_bookmark_title: "Cách Thêm Và Đi Đến Đánh Dấu",
+  tutorial_how_to_bookmark_step1:
+    "Nhấp vào bản đồ và chọn biểu tượng ⭐",
+  tutorial_how_to_bookmark_step2: "Nhập tên đánh dấu và lưu",
+  tutorial_how_to_bookmark_step3:
+    "Nhấp nút ⭐ ở góc dưới bên trái và chọn một đánh dấu để đi đến",
+
+  // Empty states
+  empty_archive_message:
+    "Chưa có ô lưu trữ nào. Nhấp vào bản đồ để bắt đầu lưu trữ!",
+  empty_bookmark_message:
+    "Chưa có đánh dấu nào. Nhấp vào bản đồ và chọn biểu tượng ⭐ để lưu vị trí yêu thích!",
+
+  // Map Filter Menu
+  map_filter_darkTheme: "Giao diện tối",
+  map_filter_highContrast: "Tương phản cao",
+  map_filter_tileBoundaries: "Ranh giới ô",
+  map_filter_gridDisplay: "Lưới pixel",
+  map_filter_backgroundColor: "Màu nền",
 };

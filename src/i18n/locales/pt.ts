@@ -126,6 +126,7 @@ export const ptTranslations = {
   quantization_weighted_rgb: "RGB Ponderado (Médio, Natural)",
   quantization_lab: "Espaço de Cor Lab (Lento, Alta Qualidade)",
   include_paid_colors: "Incluir cores pagas",
+  transparent_color: "Cor Transparente",
   add_to_gallery: "Adicionar à galeria",
   download: "Download",
   clear_image_confirm: "Limpar imagem e retornar ao estado inicial?",
@@ -198,6 +199,7 @@ export const ptTranslations = {
   disable_all: "Desativar Todos",
   free_colors_only: "Apenas Cores Grátis",
   owned_colors_only: "Apenas Cores Possuídas",
+  disable_unused_colors: "Desativar Cores Não Usadas",
   enhanced: "Aprimorado",
   show_selected_color_only: "Mostrar Apenas Cor Selecionada",
 
@@ -241,10 +243,21 @@ export const ptTranslations = {
   enhanced_mode_dark_cross: "Cruz Escura",
   enhanced_mode_complement_cross: "Cruz Complementar",
   enhanced_mode_red_border: "Borda Vermelha",
+  enhanced_mode_huge_red_cross: "Cruz Vermelha Enorme",
+  enhanced_mode_huge_red_cross_bold: "Cruz Vermelha Enorme (Negrito)",
+  enhanced_mode_huge_red_diamond: "Diamante Vermelho Enorme",
+  enhanced_mode_huge_red_ring: "Anel Vermelho Enorme",
 
   // Auto Spoit
   auto_spoit: "Seletor de Cor Automático",
   auto_spoit_tooltip: "Seletor de cor automático",
+  auto_dotter_warning: `
+• Este é um recurso experimental que "pressiona automaticamente Espaço ao passar sobre áreas vermelhas"
+• Este é um recurso de verificação para desenvolvedores
+• Use apenas para fins de teste
+• Pintar rápido demais ou de forma não natural pode ser interpretado como BOT
+• Use por sua conta e risco
+`,
 
   // Sort Order
   sort_order_default: "Padrão",
@@ -323,6 +336,10 @@ export const ptTranslations = {
   cache_cleared: "Cache Limpo!",
   tiles: "blocos",
 
+  // Close Confirm
+  confirm_close_paint_modal:
+    "Você pode perder o trabalho em andamento. Tem certeza de que deseja fechar?",
+
   // Friends Book
   friends_book: "Amigos",
   add_to_friends: "Adicionar aos Amigos",
@@ -348,4 +365,58 @@ export const ptTranslations = {
   import_merge_confirm:
     "amigos para importar?\nSerá mesclado com dados existentes (mesmo ID será sobrescrito).",
   import_merge_description: "Os dados existentes serão mantidos.",
+  import_friends_description: "Importar lista de jogadores de um arquivo CSV",
+  export_all_friends_description: "Exportar todos os amigos como arquivo CSV",
+  export_friends_by_tag_description:
+    "Exportar apenas amigos com tags selecionadas como CSV",
+  online_sync: "Importação Online",
+  online_sync_description:
+    "Importar lista de amigos de URL CSV (ex. URL publicada do Google Sheets)",
+  sync_merge: "Mesclar Importação",
+  sync_replace: "Substituir Importação",
+  please_enter_sync_url: "Por favor insira a URL de importação",
+  sync_failed: "Falha na importação",
+  sync_replace_confirm:
+    "Tem certeza de que deseja substituir todos os amigos?\nTodos os amigos existentes serão excluídos e substituídos pelos dados da URL.",
+  open_url: "Abrir URL",
+
+  // Tutorial
+  tutorial_title: "Tutorial",
+  tutorial_how_to_draw_title: "Como Desenhar Imagens no Mapa",
+  tutorial_how_to_draw_step1: "Salve uma imagem na galeria",
+  tutorial_how_to_draw_step2: "Clique no mapa e selecione o botão 'Imagem'",
+  tutorial_how_to_draw_step3:
+    "Clique na imagem que deseja colocar, e ela aparecerá como sobreposição no tile do mapa",
+  tutorial_how_to_archive_title: "Como Arquivar Pixel Art no Mapa",
+  tutorial_how_to_archive_step1: "Clique no mapa e selecione 'Arquivo'",
+  tutorial_how_to_archive_step2: "Clique no botão 'Salvar Tile Atual'",
+  tutorial_how_to_draw_archive_title: "Como Desenhar Pixel Art Arquivada",
+  tutorial_how_to_draw_archive_step1: "Clique no mapa e selecione 'Arquivo'",
+  tutorial_how_to_draw_archive_step2: "Clique no arquivo que deseja exibir",
+  tutorial_how_to_draw_archive_step3: "Clique no botão desenhar",
+  tutorial_how_to_draw_text_title: "Como Exibir Texto no Mapa",
+  tutorial_how_to_draw_text_step1: "Clique no mapa e selecione 'Texto'",
+  tutorial_how_to_draw_text_step2:
+    "Digite o texto, escolha uma fonte e clique no botão 'Desenhar'",
+  tutorial_how_to_draw_text_step3:
+    "Opcional: use os botões de seta para ajustar a posição",
+  tutorial_how_to_bookmark_title: "Como Adicionar e Navegar Favoritos",
+  tutorial_how_to_bookmark_step1:
+    "Clique no mapa e selecione o ícone ⭐",
+  tutorial_how_to_bookmark_step2: "Digite um nome de favorito e salve",
+  tutorial_how_to_bookmark_step3:
+    "Clique no botão ⭐ no canto inferior esquerdo e selecione um favorito para navegar",
+
+  // Empty states
+  empty_archive_message:
+    "Nenhum tile arquivado ainda. Clique no mapa para começar a arquivar!",
+  empty_bookmark_message:
+    "Nenhum favorito ainda. Clique no mapa e selecione o ícone ⭐ para salvar seus locais favoritos!",
+
+  // Map Filter Menu
+  map_filter_darkTheme: "Tema Escuro",
+  map_filter_highContrast: "Alto Contraste",
+  map_filter_tileBoundaries: "Limites dos Tiles",
+  map_filter_gridDisplay: "Grade de Pixel",
+  map_filter_backgroundColor: "Cor de Fundo",
 };
