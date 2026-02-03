@@ -76,9 +76,34 @@ export class PositionInfo {
       }
     });
 
-    // タイル座標とコピーボタンを既存座標の前に挿入
+    // 時計アイコンボタンを作成
+    const clockButton = document.createElement("button");
+    clockButton.className = "btn btn-xs btn-ghost shrink-0";
+    clockButton.style.cssText = `
+      color: rgb(156 163 175 / 0.7);
+      height: 1.25rem;
+      min-height: 1.25rem;
+      padding: 0;
+      margin-left: 2px;
+    `;
+    clockButton.title = "Open in Eralyon";
+    clockButton.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+    `;
+
+    clockButton.addEventListener("click", () => {
+      const zoom = position.zoom ?? 11;
+      const url = `https://wplace.eralyon.net/?lat=${lat.toFixed(6)}&lng=${lng.toFixed(6)}&zoom=${zoom}`;
+      window.open(url, "_blank");
+    });
+
+    // タイル座標とボタンを既存座標の前に挿入
     coordSpan.insertAdjacentElement("beforebegin", tileCoordSpan);
     tileCoordSpan.insertAdjacentElement("afterend", copyButton);
+    copyButton.insertAdjacentElement("afterend", clockButton);
 
     // MutationObserver: 座標変更監視
     this.observer = new MutationObserver(() => {
