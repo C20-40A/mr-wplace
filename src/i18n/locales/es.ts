@@ -129,6 +129,7 @@ export const esTranslations = {
   quantization_weighted_rgb: "RGB Ponderado (Medio, Natural)",
   quantization_lab: "Espacio de Color Lab (Lento, Alta Calidad)",
   include_paid_colors: "Incluir colores de pago",
+  transparent_color: "Color transparente",
   add_to_gallery: "Añadir a galería",
   download: "Descargar",
   clear_image_confirm: "¿Limpiar imagen y volver al estado inicial?",
@@ -201,6 +202,7 @@ export const esTranslations = {
   disable_all: "Desactivar Todos",
   free_colors_only: "Solo Colores Gratis",
   owned_colors_only: "Solo Colores Poseídos",
+  disable_unused_colors: "Desactivar no usados",
   enhanced: "Mejorado",
   show_selected_color_only: "Mostrar Solo Color Seleccionado",
 
@@ -244,10 +246,22 @@ export const esTranslations = {
   enhanced_mode_dark_cross: "Cruz Oscura",
   enhanced_mode_complement_cross: "Cruz Complementaria",
   enhanced_mode_red_border: "Borde Rojo",
+  enhanced_mode_huge_red_cross: "Gran Cruz Roja",
+  enhanced_mode_huge_red_cross_bold: "Gran Cruz Roja (Negrita)",
+  enhanced_mode_huge_red_diamond: "Gran Diamante Rojo",
+  enhanced_mode_huge_red_ring: "Gran Anillo Rojo",
 
   // Auto Spoit
   auto_spoit: "Selector de Color Automático",
   auto_spoit_tooltip: "Selector de color automático",
+
+  auto_dotter_warning: `
+• Esta es una función experimental que "presiona automáticamente Espacio al pasar sobre áreas rojas"
+• Esta es una función de verificación para desarrolladores
+• Úsela solo con fines de prueba
+• Una pintura demasiado rápida o poco natural puede ser malinterpretada como comportamiento de BOT
+• Úsela bajo su propio riesgo
+`,
 
   // Sort Order
   sort_order_default: "Predeterminado",
@@ -276,7 +290,6 @@ export const esTranslations = {
 
   // Bookmark Tags
   existing_tags: "Etiquetas Existentes",
-  new_tag: "Crear Nueva Etiqueta",
   remove_tag: "Quitar Etiqueta",
   bookmark_name: "Nombre del Favorito",
   tag_name: "Nombre de Etiqueta",
@@ -327,6 +340,10 @@ export const esTranslations = {
   cache_cleared: "¡Caché Limpiada!",
   tiles: "bloques",
 
+  // Close Confirm
+  confirm_close_paint_modal:
+    "Puede perder el trabajo en progreso. ¿Estás seguro de que quieres cerrar?",
+
   // Friends Book
   friends_book: "Amigos",
   add_to_friends: "Añadir a Amigos",
@@ -341,6 +358,7 @@ export const esTranslations = {
   description_placeholder: "Ingrese descripción...",
   tag: "Etiqueta",
   tags: "Etiquetas",
+  new_tag: "Nueva Etiqueta",
   create_new_tag: "Crear Nueva Etiqueta",
   clear_tag: "Borrar Etiqueta",
   tag_name_placeholder: "ej: Amigo, Rival...",
@@ -352,4 +370,70 @@ export const esTranslations = {
   import_merge_confirm:
     "amigos para importar?\nSe fusionará con datos existentes (mismo ID será sobrescrito).",
   import_merge_description: "Los datos existentes se mantendrán.",
+  import_friends_description:
+    "Importar lista de jugadores desde archivo CSV",
+  export_all_friends_description:
+    "Exportar todos los amigos como archivo CSV",
+  export_friends_by_tag_description:
+    "Exportar solo amigos con etiquetas seleccionadas como CSV",
+  online_sync: "Importación en línea",
+  online_sync_description:
+    "Importar lista de amigos desde URL CSV (ej. URL publicada de Google Sheets)",
+  sync_merge: "Importación por fusión",
+  sync_replace: "Importación por reemplazo",
+  please_enter_sync_url: "Por favor ingrese la URL de importación",
+  sync_failed: "Error en la importación",
+  sync_replace_confirm:
+    "¿Estás seguro de que quieres reemplazar todos los amigos?\nTodos los amigos existentes serán eliminados y reemplazados con los datos de la URL.",
+  open_url: "Abrir URL",
+
+  // Tutorial
+  tutorial_title: "Tutorial",
+  tutorial_how_to_draw_title: "Cómo dibujar imágenes en el mapa",
+  tutorial_how_to_draw_step1: "Guarda una imagen en la galería",
+  tutorial_how_to_draw_step2:
+    "Haz clic en el mapa y selecciona el botón «Imagen»",
+  tutorial_how_to_draw_step3:
+    "Haz clic en la imagen que quieres colocar y aparecerá como superposición en el bloque del mapa",
+  tutorial_how_to_archive_title:
+    "Cómo archivar pixel art en el mapa",
+  tutorial_how_to_archive_step1:
+    "Haz clic en el mapa y selecciona «Archivo»",
+  tutorial_how_to_archive_step2:
+    "Haz clic en el botón «Guardar Instantánea Actual»",
+  tutorial_how_to_draw_archive_title:
+    "Cómo dibujar pixel art archivado",
+  tutorial_how_to_draw_archive_step1:
+    "Haz clic en el mapa y selecciona «Archivo»",
+  tutorial_how_to_draw_archive_step2:
+    "Haz clic en el archivo que quieres mostrar",
+  tutorial_how_to_draw_archive_step3: "Haz clic en el botón de dibujar",
+  tutorial_how_to_draw_text_title: "Cómo mostrar texto en el mapa",
+  tutorial_how_to_draw_text_step1:
+    "Haz clic en el mapa y selecciona «Texto»",
+  tutorial_how_to_draw_text_step2:
+    "Escribe el texto, elige una fuente y haz clic en «Dibujar»",
+  tutorial_how_to_draw_text_step3:
+    "Opcional: usa los botones de flecha para ajustar la posición",
+  tutorial_how_to_bookmark_title:
+    "Cómo añadir y navegar entre favoritos",
+  tutorial_how_to_bookmark_step1:
+    "Haz clic en el mapa y selecciona el icono ⭐",
+  tutorial_how_to_bookmark_step2:
+    "Introduce un nombre de favorito y guárdalo",
+  tutorial_how_to_bookmark_step3:
+    "Haz clic en el botón ⭐ en la esquina inferior izquierda y selecciona un favorito para navegar",
+
+  // Empty states
+  empty_archive_message:
+    "Aún no hay bloques archivados. ¡Haz clic en el mapa para comenzar a archivar!",
+  empty_bookmark_message:
+    "Aún no hay favoritos. ¡Haz clic en el mapa y selecciona el icono ⭐ para guardar tus lugares favoritos!",
+
+  // Map Filter Menu
+  map_filter_darkTheme: "Tema Oscuro",
+  map_filter_highContrast: "Alto Contraste",
+  map_filter_tileBoundaries: "Límites de Bloques",
+  map_filter_gridDisplay: "Cuadrícula de Píxeles",
+  map_filter_backgroundColor: "Color de Fondo",
 };

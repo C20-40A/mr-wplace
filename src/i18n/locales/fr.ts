@@ -128,6 +128,7 @@ export const frTranslations = {
   quantization_weighted_rgb: "RVB pondéré (Moyen, naturel)",
   quantization_lab: "Espace colorimétrique Lab (Lent, haute qualité)",
   include_paid_colors: "Inclure les couleurs payantes",
+  transparent_color: "Couleur transparente",
   add_to_gallery: "Ajouter à la galerie",
   download: "Télécharger",
   clear_image_confirm: "Effacer l'image et revenir à l'état initial ?",
@@ -201,6 +202,7 @@ export const frTranslations = {
   disable_all: "Tout désactiver",
   free_colors_only: "Couleurs gratuites",
   owned_colors_only: "Couleurs possédées",
+  disable_unused_colors: "Désactiver inutilisés",
   enhanced: "Amélioré",
   show_selected_color_only: "Afficher uniquement la couleur sélectionnée",
 
@@ -244,6 +246,10 @@ export const frTranslations = {
   enhanced_mode_dark_cross: "Croix sombre",
   enhanced_mode_complement_cross: "Croix complémentaire",
   enhanced_mode_red_border: "Bordure rouge",
+  enhanced_mode_huge_red_cross: "Grande croix rouge",
+  enhanced_mode_huge_red_cross_bold: "Grande croix rouge (gras)",
+  enhanced_mode_huge_red_diamond: "Grand losange rouge",
+  enhanced_mode_huge_red_ring: "Grand anneau rouge",
 
   // Auto Spoit
   auto_spoit: "Pipette automatique",
@@ -334,6 +340,10 @@ export const frTranslations = {
   cache_cleared: "Cache effacé !",
   tiles: "tuiles",
 
+  // Close Confirm
+  confirm_close_paint_modal:
+    "Vous risquez de perdre votre travail en cours. Voulez-vous vraiment fermer ?",
+
   // Friends Book
   friends_book: "Amis",
   add_to_friends: "Ajouter aux amis",
@@ -360,4 +370,69 @@ export const frTranslations = {
   import_merge_confirm:
     "amis à importer ?\nSera fusionné avec les données existantes (le même ID sera écrasé).",
   import_merge_description: "Les données existantes seront conservées.",
+  import_friends_description:
+    "Importer la liste de joueurs depuis un fichier CSV",
+  export_all_friends_description: "Exporter tous les amis en fichier CSV",
+  export_friends_by_tag_description:
+    "Exporter uniquement les amis avec les étiquettes sélectionnées en CSV",
+  online_sync: "Importation en ligne",
+  online_sync_description:
+    "Importer la liste d'amis depuis une URL CSV (ex. URL publiée Google Sheets)",
+  sync_merge: "Importation par fusion",
+  sync_replace: "Importation par remplacement",
+  please_enter_sync_url: "Veuillez entrer l'URL d'importation",
+  sync_failed: "Échec de l'importation",
+  sync_replace_confirm:
+    "Voulez-vous vraiment remplacer tous les amis ?\nTous les amis existants seront supprimés et remplacés par les données de l'URL.",
+  open_url: "Ouvrir l'URL",
+
+  // Tutorial
+  tutorial_title: "Tutoriel",
+  tutorial_how_to_draw_title: "Comment dessiner des images sur la carte",
+  tutorial_how_to_draw_step1: "Enregistrez une image dans la galerie",
+  tutorial_how_to_draw_step2:
+    "Cliquez sur la carte et sélectionnez le bouton « Image »",
+  tutorial_how_to_draw_step3:
+    "Cliquez sur l'image que vous souhaitez placer, et elle apparaîtra en superposition sur la tuile de la carte",
+  tutorial_how_to_archive_title:
+    "Comment archiver le pixel art sur la carte",
+  tutorial_how_to_archive_step1:
+    "Cliquez sur la carte et sélectionnez « Archive »",
+  tutorial_how_to_archive_step2:
+    "Cliquez sur le bouton « Enregistrer l'instantané actuel »",
+  tutorial_how_to_draw_archive_title:
+    "Comment dessiner le pixel art archivé",
+  tutorial_how_to_draw_archive_step1:
+    "Cliquez sur la carte et sélectionnez « Archive »",
+  tutorial_how_to_draw_archive_step2:
+    "Cliquez sur l'archive que vous souhaitez afficher",
+  tutorial_how_to_draw_archive_step3: "Cliquez sur le bouton dessiner",
+  tutorial_how_to_draw_text_title:
+    "Comment afficher du texte sur la carte",
+  tutorial_how_to_draw_text_step1:
+    "Cliquez sur la carte et sélectionnez « Texte »",
+  tutorial_how_to_draw_text_step2:
+    "Saisissez le texte, choisissez une police et cliquez sur « Dessiner »",
+  tutorial_how_to_draw_text_step3:
+    "Optionnel : utilisez les boutons fléchés pour ajuster la position",
+  tutorial_how_to_bookmark_title:
+    "Comment ajouter et naviguer entre les favoris",
+  tutorial_how_to_bookmark_step1:
+    "Cliquez sur la carte et sélectionnez l'icône ⭐",
+  tutorial_how_to_bookmark_step2: "Entrez un nom de favori et enregistrez",
+  tutorial_how_to_bookmark_step3:
+    "Cliquez sur le bouton ⭐ en bas à gauche et sélectionnez un favori pour y naviguer",
+
+  // Empty states
+  empty_archive_message:
+    "Aucune tuile archivée pour le moment. Cliquez sur la carte pour commencer l'archivage !",
+  empty_bookmark_message:
+    "Aucun favori pour le moment. Cliquez sur la carte et sélectionnez l'icône ⭐ pour enregistrer vos lieux préférés !",
+
+  // Map Filter Menu
+  map_filter_darkTheme: "Thème sombre",
+  map_filter_highContrast: "Contraste élevé",
+  map_filter_tileBoundaries: "Limites de tuiles",
+  map_filter_gridDisplay: "Grille de pixels",
+  map_filter_backgroundColor: "Couleur de fond",
 };
