@@ -32,6 +32,7 @@ export class EditorController {
   private ditheringThreshold = 500;
   private quantizationMethod: QuantizationMethod = "rgb-euclidean";
   private useGpu = true;
+  private transparentColors = new Set<string>();
   private imageInspector: ImageInspector | null = null;
   private colorPalette: ColorPalette | null = null;
   private onSaveSuccess?: () => void;
@@ -218,6 +219,11 @@ export class EditorController {
     this.updateScaledImage();
   }
 
+  onTransparentColorsChange(colors: Set<string>): void {
+    this.transparentColors = colors;
+    this.updateScaledImage();
+  }
+
   onColorSelectionChange(colorIds: number[]): void {
     this.selectedColorIds = colorIds;
     // パレット変更時は再描画
@@ -286,6 +292,7 @@ export class EditorController {
     this.ditheringThreshold = 500;
     this.quantizationMethod = "rgb-euclidean";
     this.useGpu = true;
+    this.transparentColors.clear();
     this.currentFileName = null;
     this.drawPosition = null;
     this.isEditMode = false;
@@ -766,6 +773,7 @@ export class EditorController {
         this.ditheringThreshold,
         this.useGpu,
         this.quantizationMethod,
+        this.transparentColors,
       );
     } else {
       console.log("🧑‍🎨 : Using cached bitmap for processing");
@@ -781,6 +789,7 @@ export class EditorController {
         this.ditheringThreshold,
         this.useGpu,
         this.quantizationMethod,
+        this.transparentColors,
       );
     }
 

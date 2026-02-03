@@ -42,6 +42,7 @@ export class GalleryImageEditor {
       onDitheringThresholdChange: (threshold) => this.controller?.onDitheringThresholdChange(threshold),
       onQuantizationMethodChange: (method) => this.controller?.onQuantizationMethodChange(method),
       onGpuToggle: (enabled) => this.controller?.onGpuToggle(enabled),
+      onTransparentColorsChange: (colors) => this.controller?.onTransparentColorsChange(colors),
       onClear: () => this.controller?.clearImage(),
       onSaveToGallery: () => this.controller?.saveToGallery(),
       onDownload: () => this.controller?.downloadImage()

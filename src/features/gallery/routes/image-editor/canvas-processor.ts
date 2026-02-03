@@ -437,6 +437,24 @@ export const quantizeWithDithering = (
 }
 
 /**
+ * 透過色適用
+ * 指定されたRGB色のピクセルを完全透明(alpha=0)に変更
+ * ImageDataを直接変更（破壊的）
+ */
+export const applyTransparentColors = (
+  imageData: ImageData,
+  transparentColors: Set<string>
+): void => {
+  if (transparentColors.size === 0) return;
+  const data = imageData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] === 0) continue;
+    const key = `${data[i]},${data[i + 1]},${data[i + 2]}`;
+    if (transparentColors.has(key)) data[i + 3] = 0;
+  }
+};
+
+/**
  * リサイズ済みImageBitmapから画像処理：調整→パレット量子化
  * 完成したcanvasを返却
  * GPU処理優先・失敗時CPUフォールバック
@@ -448,7 +466,8 @@ export async function createProcessedCanvasFromBitmap(
   ditheringEnabled = false,
   ditheringThreshold = 500,
   useGpu = true,
-  quantizationMethod: QuantizationMethod = "rgb-euclidean"
+  quantizationMethod: QuantizationMethod = "rgb-euclidean",
+  transparentColors?: Set<string>
 ): Promise<HTMLCanvasElement> {
   const newWidth = resizedBitmap.width;
   const newHeight = resizedBitmap.height;
@@ -484,6 +503,7 @@ export async function createProcessedCanvasFromBitmap(
         newWidth,
         newHeight
       );
+      if (transparentColors?.size) applyTransparentColors(imageData, transparentColors);
       ctx.putImageData(imageData, 0, 0);
 
       console.log("🧑‍🎨 : GPU processing succeeded");
@@ -515,6 +535,9 @@ export async function createProcessedCanvasFromBitmap(
   } else {
     quantizeToColorPalette(imageData, selectedColorIds, quantizationMethod);
   }
+
+  // 透過色適用
+  if (transparentColors?.size) applyTransparentColors(imageData, transparentColors);
 
   // 新しいclean canvasに描画
   const canvas = document.createElement("canvas");

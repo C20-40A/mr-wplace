@@ -1,4 +1,5 @@
 import { t } from "@/i18n/manager";
+import { colorpalette } from "@/constants/colors";
 import { ImageDropzone } from "../../../../components/image-dropzone";
 import { QuantizationMethod } from "./canvas-processor";
 
@@ -15,6 +16,7 @@ export interface ImageEditorCallbacks {
   onDitheringThresholdChange: (threshold: number) => void;
   onQuantizationMethodChange: (method: QuantizationMethod) => void;
   onGpuToggle: (enabled: boolean) => void;
+  onTransparentColorsChange: (colors: Set<string>) => void;
   onClear: () => void;
   onSaveToGallery: () => void;
   onDownload: () => void;
@@ -35,6 +37,7 @@ export class ImageEditorUI {
   private imageDropzone: ImageDropzone | null = null;
   private controller: any = null;
   private elements: UIElements = {};
+  private transparentColors = new Set<string>();
 
   constructor() {
     this.container = this._createElement("div", {
@@ -261,10 +264,53 @@ export class ImageEditorUI {
       [this.elements.colorPaletteContainer],
     );
 
+    const paletteScrollArea = this._createElement(
+      "div",
+      { id: "wps-palette-scroll-area" },
+      [accordion, desktopPalette],
+    );
+
+    const transparentSection = this._createTransparentColorSection();
+
     return this._createElement("div", { id: "wps-palette-area" }, [
-      accordion,
-      desktopPalette,
+      paletteScrollArea,
+      transparentSection,
     ]);
+  }
+
+  private _createTransparentColorSection(): HTMLElement {
+    const divider = this._createElement("div", {
+      className: "wps-transparent-divider",
+    });
+
+    const label = this._createElement(
+      "div",
+      { className: "wps-transparent-label" },
+      ["Transparent"],
+    );
+
+    const chips: HTMLElement[] = colorpalette.map((c) => {
+      const chip = this._createElement("div", {
+        className: "wps-transparent-chip",
+        dataset: { rgb: c.rgb.join(",") },
+        style: {
+          backgroundColor: `rgb(${c.rgb[0]},${c.rgb[1]},${c.rgb[2]})`,
+        },
+      });
+      return chip;
+    });
+
+    const grid = this._createElement(
+      "div",
+      { id: "wps-transparent-grid" },
+      chips,
+    );
+
+    return this._createElement(
+      "div",
+      { id: "wps-transparent-section" },
+      [divider, label, grid],
+    );
   }
 
   private _createControlsArea(): HTMLElement {
@@ -795,7 +841,25 @@ export class ImageEditorUI {
 
   private _handleClick(e: Event): void {
     const target = e.target as HTMLElement;
-    if (!target.id || !this.callbacks) return;
+    if (!this.callbacks) return;
+
+    // 透過色チップのクリック
+    const chip = target.closest(".wps-transparent-chip") as HTMLElement;
+    if (chip) {
+      const rgb = chip.dataset.rgb;
+      if (!rgb) return;
+      if (this.transparentColors.has(rgb)) {
+        this.transparentColors.delete(rgb);
+        chip.classList.remove("active");
+      } else {
+        this.transparentColors.add(rgb);
+        chip.classList.add("active");
+      }
+      this.callbacks.onTransparentColorsChange(new Set(this.transparentColors));
+      return;
+    }
+
+    if (!target.id) return;
 
     switch (target.id) {
       case "wps-add-to-gallery":
@@ -974,6 +1038,23 @@ export class ImageEditorUI {
       .grid-4-col input { width: 100%; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; text-align: center; }
       .flex { display: flex; gap: 0.5rem; }
       .flex-1 { flex: 1; }
+
+      #wps-palette-area { display: flex; flex-direction: column; }
+      #wps-palette-scroll-area { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+      #wps-transparent-section { flex-shrink: 0; padding: 0 0.5rem 0.25rem; }
+      .wps-transparent-divider { height: 1px; background: #e5e7eb; margin: 0.25rem 0; }
+      .wps-transparent-label { font-size: 0.65rem; font-weight: 500; color: #9ca3af; margin-bottom: 0.2rem; }
+      #wps-transparent-grid { display: flex; flex-wrap: wrap; gap: 2px; }
+      .wps-transparent-chip {
+        width: 14px; height: 14px; border-radius: 2px; cursor: pointer;
+        border: 1px solid rgba(0,0,0,0.15); position: relative; transition: transform 0.1s;
+      }
+      .wps-transparent-chip:hover { transform: scale(1.3); z-index: 1; }
+      .wps-transparent-chip.active::after {
+        content: ""; position: absolute; inset: 0; border-radius: 1px;
+        background: linear-gradient(135deg, transparent 40%, rgba(255,0,0,0.8) 40%, rgba(255,0,0,0.8) 60%, transparent 60%);
+      }
+      .wps-transparent-chip.active { border-color: #ef4444; }
     `,
     ]);
     document.head.appendChild(style);
