@@ -130,23 +130,23 @@ export const showAddFriendDialog = async (userData?: {
       document.body.appendChild(modal);
 
       const idInput = modal.querySelector(
-        "#friend-id-input"
+        "#friend-id-input",
       ) as HTMLInputElement | null;
       const nameInput = modal.querySelector(
-        "#friend-name-input"
+        "#friend-name-input",
       ) as HTMLInputElement | null;
       const memoInput = modal.querySelector(
-        "#friend-memo-input"
+        "#friend-memo-input",
       ) as HTMLInputElement;
       const saveBtn = modal.querySelector(
-        "#save-friend-btn"
+        "#save-friend-btn",
       ) as HTMLButtonElement;
       const cancelBtn = modal.querySelector("#cancel-btn") as HTMLButtonElement;
       const backdropBtn = modal.querySelector(
-        "#backdrop-btn"
+        "#backdrop-btn",
       ) as HTMLButtonElement;
       const tagSelectionArea = modal.querySelector(
-        "#tag-selection-area"
+        "#tag-selection-area",
       ) as HTMLElement;
 
       let selectedTag: Tag | undefined = existingFriend?.tag;
@@ -160,7 +160,7 @@ export const showAddFriendDialog = async (userData?: {
           selectedTag &&
           !existingTags.some(
             (tag) =>
-              tag.color === selectedTag?.color && tag.name === selectedTag.name
+              tag.color === selectedTag?.color && tag.name === selectedTag.name,
           );
         const displayTags =
           isNewTag && selectedTag
@@ -188,7 +188,7 @@ export const showAddFriendDialog = async (userData?: {
                 }; border-radius: 50%; display: inline-block;"></span>
                 <span class="text-xs">${tag.name || `tag`}</span>
               </button>
-            `
+            `,
               )
               .join("")}
           </div>
@@ -244,8 +244,8 @@ export const showAddFriendDialog = async (userData?: {
           ? nameInput.value.trim()
           : userData?.name || "";
 
-        if (!friendId || !friendName) {
-          alert(t`please_enter_id_and_name`);
+        if (isNaN(friendId) || !friendName) {
+          alert(t`${"please_enter_id_and_name"}`);
           resolved = false;
           return;
         }
@@ -345,13 +345,13 @@ const showNewTagDialog = (): Promise<Tag | null> => {
     document.body.appendChild(modal);
 
     const tagNameInput = modal.querySelector(
-      "#tag-name-input"
+      "#tag-name-input",
     ) as HTMLInputElement;
     const colorPicker = modal.querySelector("#color-picker") as HTMLElement;
     const saveBtn = modal.querySelector("#save-tag-btn") as HTMLButtonElement;
     const cancelBtn = modal.querySelector("#cancel-btn") as HTMLButtonElement;
     const backdropBtn = modal.querySelector(
-      "#backdrop-btn"
+      "#backdrop-btn",
     ) as HTMLButtonElement;
 
     let selectedColor = TAG_COLORS[0];
@@ -366,7 +366,7 @@ const showNewTagDialog = (): Promise<Tag | null> => {
           data-color="${color}"
           style="background: ${color}; width: 1.5rem; height: 1.5rem; flex-shrink: 0;"
         ></button>
-      `
+      `,
     ).join("");
 
     // カラーボタンのイベント
@@ -488,7 +488,7 @@ export type FriendsSortType = "added" | "name" | "tag" | "id";
 export const renderFriends = (
   friends: Friend[],
   sortType: FriendsSortType,
-  selectedTagFilters: Set<string>
+  selectedTagFilters: Set<string>,
 ): void => {
   const grid = document.getElementById("friends-grid");
   if (!grid) return;
@@ -557,8 +557,8 @@ export const renderFriends = (
               <div class="flex-1 min-w-0">
                 <h3 class="font-bold text-sm truncate">${friend.name}</h3>
                 <p class="text-xs opacity-70">#${friend.id}${
-        friend.allianceName ? ` · ${friend.allianceName}` : ""
-      }</p>
+                  friend.allianceName ? ` · ${friend.allianceName}` : ""
+                }</p>
               </div>
             </div>
 
@@ -623,11 +623,11 @@ export const renderFriendsTagFilters = (
   existingTags: Tag[],
   friends: Friend[],
   selectedTagFilters: Set<string>,
-  onTagClick: (tagKey: string) => void
+  onTagClick: (tagKey: string) => void,
 ): void => {
   const container = document.getElementById("friends-tag-filter-container");
   const buttonsContainer = document.getElementById(
-    "friends-tag-filter-buttons"
+    "friends-tag-filter-buttons",
   );
 
   if (!container || !buttonsContainer) return;
@@ -661,10 +661,10 @@ export const renderFriendsTagFilters = (
           }"
           data-tag-key="${tagKey}"
           style="border-color: ${tag.color}; ${
-        isSelected
-          ? `background: ${tag.color}; border-color: ${tag.color};`
-          : ""
-      }"
+            isSelected
+              ? `background: ${tag.color}; border-color: ${tag.color};`
+              : ""
+          }"
         >
           <span style="width: 12px; height: 12px; background: ${
             tag.color
@@ -692,7 +692,7 @@ export const renderFriendsTagFilters = (
 export const showImportExportDialog = async (
   onImport: (csv: string) => Promise<void>,
   onExport: () => void,
-  onExportByTag: (tags: Tag[]) => void
+  onExportByTag: (tags: Tag[]) => void,
 ): Promise<void> => {
   const allFriends = await FriendsBookStorage.getFriends();
   const existingTags = await FriendsBookStorage.getExistingTags();
@@ -772,7 +772,7 @@ export const showImportExportDialog = async (
                       (f) =>
                         f.tag &&
                         f.tag.color === tag.color &&
-                        (f.tag.name || "") === (tag.name || "")
+                        (f.tag.name || "") === (tag.name || ""),
                     ).length;
                     return t`
                       <label class="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-base-200" style="margin-bottom: 0.25rem;">
@@ -841,7 +841,7 @@ export const showImportExportDialog = async (
   const updateExportTagButton = () => {
     const checkboxes = modal.querySelectorAll(".friends-tag-checkbox:checked");
     const exportTagBtn = modal.querySelector(
-      "#friends-dialog-export-tag-btn"
+      "#friends-dialog-export-tag-btn",
     ) as HTMLButtonElement;
     if (exportTagBtn) {
       exportTagBtn.disabled = checkboxes.length === 0;
@@ -873,7 +873,7 @@ export const showImportExportDialog = async (
 
   // Sync URL input - save on change
   const syncUrlInput = modal.querySelector(
-    "#friends-sync-url-input"
+    "#friends-sync-url-input",
   ) as HTMLInputElement;
   syncUrlInput?.addEventListener("blur", async () => {
     const url = syncUrlInput.value.trim();
