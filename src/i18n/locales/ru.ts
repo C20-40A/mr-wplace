@@ -125,6 +125,7 @@ export const ruTranslations = {
   quantization_weighted_rgb: "Взвешенный RGB (Средне, естественно)",
   quantization_lab: "Цветовое пространство Lab (Медленно, высокое качество)",
   include_paid_colors: "Включить платные цвета",
+  transparent_color: "Прозрачный цвет",
   add_to_gallery: "Добавить в галерею",
   download: "Скачать",
   clear_image_confirm:
@@ -199,6 +200,7 @@ export const ruTranslations = {
   disable_all: "Отключить все",
   free_colors_only: "Только бесплатные цвета",
   owned_colors_only: "Только принадлежащие цвета",
+  disable_unused_colors: "Отключить неиспользуемые",
   enhanced: "Улучшенный",
   show_selected_color_only: "Показать только выбранный цвет",
 
@@ -243,6 +245,10 @@ export const ruTranslations = {
   enhanced_mode_dark_cross: "Темный крест",
   enhanced_mode_complement_cross: "Дополнительный крест",
   enhanced_mode_red_border: "Красная граница",
+  enhanced_mode_huge_red_cross: "Огромный красный крест",
+  enhanced_mode_huge_red_cross_bold: "Огромный красный крест (Жирный)",
+  enhanced_mode_huge_red_diamond: "Огромный красный ромб",
+  enhanced_mode_huge_red_ring: "Огромное красное кольцо",
 
   // Auto Spoit
   auto_spoit: "Автопипетка",
@@ -332,6 +338,10 @@ export const ruTranslations = {
   cache_cleared: "Кэш очищен!",
   tiles: "тайлов",
 
+  // Close Confirm
+  confirm_close_paint_modal:
+    "Вы можете потерять свою работу. Вы уверены, что хотите закрыть?",
+
   // Friends Book
   friends_book: "Друзья",
   add_to_friends: "Добавить в друзья",
@@ -358,4 +368,66 @@ export const ruTranslations = {
   import_merge_confirm:
     "друзей для импорта?\nБудет объединено с существующими данными (тот же ID будет перезаписан).",
   import_merge_description: "Существующие данные будут сохранены.",
+  import_friends_description: "Импорт списка игроков из CSV-файла",
+  export_all_friends_description: "Экспорт всех друзей в CSV-файл",
+  export_friends_by_tag_description:
+    "Экспорт только друзей с выбранными тегами в CSV",
+  online_sync: "Онлайн импорт",
+  online_sync_description:
+    "Импорт списка друзей из CSV URL (например, опубликованный URL Google Sheets)",
+  sync_merge: "Объединить импорт",
+  sync_replace: "Заменить импорт",
+  please_enter_sync_url: "Пожалуйста, введите URL для импорта",
+  sync_failed: "Ошибка импорта",
+  sync_replace_confirm:
+    "Вы уверены, что хотите заменить всех друзей?\nВсе существующие друзья будут удалены и заменены данными из URL.",
+  open_url: "Открыть URL",
+
+  // Import/Export Snapshots
+  import_snapshot_tile_x_label: "Координата тайла X",
+  import_snapshot_tile_y_label: "Координата тайла Y",
+  import_snapshot_tile_x_placeholder: "напр.: 520",
+  import_snapshot_tile_y_placeholder: "напр.: 218",
+  import_snapshot_datetime_label: "Время",
+  import_snapshot_success: "Импорт завершен",
+
+  // Tutorial
+  tutorial_title: "Руководство",
+  tutorial_how_to_draw_title: "Как рисовать изображения на карте",
+  tutorial_how_to_draw_step1: "Сохраните изображение в галерею",
+  tutorial_how_to_draw_step2: "Нажмите на карту и выберите кнопку 'Изображение'",
+  tutorial_how_to_draw_step3:
+    "Нажмите на изображение, которое хотите разместить, и оно появится как наложение на тайле карты",
+  tutorial_how_to_archive_title: "Как архивировать пиксель-арт на карте",
+  tutorial_how_to_archive_step1: "Нажмите на карту и выберите 'Архив'",
+  tutorial_how_to_archive_step2: "Нажмите кнопку 'Сохранить текущий снимок'",
+  tutorial_how_to_draw_archive_title: "Как рисовать архивированный пиксель-арт",
+  tutorial_how_to_draw_archive_step1: "Нажмите на карту и выберите 'Архив'",
+  tutorial_how_to_draw_archive_step2:
+    "Нажмите на архив, который хотите отобразить",
+  tutorial_how_to_draw_archive_step3: "Нажмите кнопку рисования",
+  tutorial_how_to_draw_text_title: "Как отобразить текст на карте",
+  tutorial_how_to_draw_text_step1: "Нажмите на карту и выберите 'Текст'",
+  tutorial_how_to_draw_text_step2:
+    "Введите текст, выберите шрифт и нажмите кнопку 'Рисовать'",
+  tutorial_how_to_draw_text_step3:
+    "Необязательно: используйте кнопки со стрелками для настройки позиции",
+  tutorial_how_to_bookmark_title: "Как добавлять закладки и перемещаться по ним",
+  tutorial_how_to_bookmark_step1: "Нажмите на карту и выберите иконку ⭐",
+  tutorial_how_to_bookmark_step2: "Введите название закладки и сохраните",
+  tutorial_how_to_bookmark_step3:
+    "Нажмите кнопку ⭐ в левом нижнем углу и выберите закладку для перехода",
+
+  // Empty states
+  empty_archive_message:
+    "Еще нет архивированных тайлов. Нажмите на карту, чтобы начать архивирование!",
+  empty_bookmark_message:
+    "Еще нет закладок. Нажмите на карту и выберите иконку ⭐, чтобы сохранить любимые места!",
+
+  // Map Filter Menu
+  map_filter_darkTheme: "Темная тема",
+  map_filter_highContrast: "Высокий контраст",
+  map_filter_tileBoundaries: "Границы тайлов",
+  map_filter_gridDisplay: "Сетка пикселей",
+  map_filter_backgroundColor: "Цвет фона",
 };
