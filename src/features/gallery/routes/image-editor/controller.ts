@@ -709,10 +709,6 @@ export class EditorController {
     const image = this.container.querySelector(
       "#wps-scaled-image",
     ) as HTMLImageElement;
-    const originalSizeDisplay =
-      this.container.querySelector("#wps-original-size");
-    const currentSizeDisplay =
-      this.container.querySelector("#wps-current-size");
 
     const adjustments: ImageAdjustments = {
       brightness: this.brightness,
@@ -798,13 +794,6 @@ export class EditorController {
     if (image && !this.isDesktopMode) {
       image.src = processedCanvas.toDataURL();
       this.scaledCanvas = processedCanvas;
-    }
-
-    if (originalSizeDisplay) {
-      originalSizeDisplay.textContent = `${this.originalImage.naturalWidth} x ${this.originalImage.naturalHeight}`;
-    }
-    if (currentSizeDisplay) {
-      currentSizeDisplay.textContent = `${processedCanvas.width} x ${processedCanvas.height}`;
     }
 
     // ピクセル数を集計してColorPaletteを更新

@@ -63,28 +63,23 @@ export class ImageEditorUI {
         <div id="wps-main-grid" style="display: grid; grid-template-columns: 1fr; grid-template-rows: 3fr 4fr; gap: 0.1rem; height: calc(100vh - 8rem);">
           <!-- Original Image Area -->
           <div id="wps-original-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0;">
-            <h4 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
-              ${"original_image"}
-              <span id="wps-original-size" style="font-size: 0.75rem;"></span>
-            </h4>
             <div id="wps-image-replace-zone" style="position: relative; cursor: pointer; display: flex; justify-content: center;">
               <img id="wps-original-image" style="border: 1px solid #e5e7eb; border-radius: 0.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 100%; height: auto; object-fit: contain; image-rendering: pixelated; image-rendering: crisp-edges;" alt="Original">
               <div id="wps-replace-overlay" style="position: absolute; inset: 0; background: rgba(0,0,0,0.7); border-radius: 0.25rem; display: none; align-items: center; justify-content: center; color: white; font-size: 0.875rem; text-align: center; padding: 1rem;">
                 📁 ${"click_or_drop_to_change"}
               </div>
               <input type="file" id="wps-replace-file-input" accept="image/*,.json" style="display: none;">
+              <h4 style="position: absolute; top:0; left:0; font-size: 0.875rem; font-weight: 500; display: flex; justify-content: space-between; align-items: center;">
+                ${"original_image"}
+              </h4>
             </div>
           </div>
           
           <!-- Current Image Area -->
           <div id="wps-current-area" style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 0.5rem; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0;">
-            <h4 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
-              ${"current_image"}
-              <span id="wps-current-size" style="font-size: 0.75rem;"></span>
-            </h4>
             <div class="flex" style="justify-content: center; position: relative; width: 100%; height: calc(100% - 2.5rem);">
               <!-- Desktop: Canvas with ImageInspector -->
-              <div id="wps-canvas-container" style="min-width: 300px; min-height: 300px; max-width: 100%; max-height: 100%; overflow: hidden; position: relative; display: block;">
+              <div id="wps-canvas-container" style="min-width: 100%; min-height: 300px; max-width: 100%; max-height: 100%; overflow: hidden; position: relative; display: block;">
                 <canvas id="wps-scaled-canvas" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></canvas>
               </div>
               <!-- Mobile: Simple image -->
@@ -95,6 +90,9 @@ export class ImageEditorUI {
                 <input type="checkbox" id="wps-gpu-toggle" class="checkbox checkbox-xs" checked>
                 <span>⚡GPU</span>
               </label>
+              <h4 style="position: absolute; top:0; left:0; font-size: 0.875rem; font-weight: 500; display: flex; justify-content: space-between; align-items: center;">
+                ${"current_image"}
+              </h4>
             </div>
           </div>
           
@@ -226,7 +224,7 @@ export class ImageEditorUI {
     if (!this.container || !this.callbacks) return;
 
     const dropzoneContainer = this.container.querySelector(
-      "#wps-dropzone-container"
+      "#wps-dropzone-container",
     ) as HTMLElement;
     if (!dropzoneContainer) return;
 
@@ -241,51 +239,51 @@ export class ImageEditorUI {
     if (!this.container || !this.callbacks) return;
 
     const slider = this.container.querySelector(
-      "#wps-scale-slider"
+      "#wps-scale-slider",
     ) as HTMLInputElement;
     const widthInput = this.container.querySelector(
-      "#wps-width-input"
+      "#wps-width-input",
     ) as HTMLInputElement;
     const heightInput = this.container.querySelector(
-      "#wps-height-input"
+      "#wps-height-input",
     ) as HTMLInputElement;
     const brightnessSlider = this.container.querySelector(
-      "#wps-brightness-slider"
+      "#wps-brightness-slider",
     ) as HTMLInputElement;
     const brightnessValue = this.container.querySelector(
-      "#wps-brightness-value"
+      "#wps-brightness-value",
     );
     const contrastSlider = this.container.querySelector(
-      "#wps-contrast-slider"
+      "#wps-contrast-slider",
     ) as HTMLInputElement;
     const contrastValue = this.container.querySelector("#wps-contrast-value");
     const saturationSlider = this.container.querySelector(
-      "#wps-saturation-slider"
+      "#wps-saturation-slider",
     ) as HTMLInputElement;
     const saturationValue = this.container.querySelector(
-      "#wps-saturation-value"
+      "#wps-saturation-value",
     );
     const sharpnessCheckbox = this.container.querySelector(
-      "#wps-sharpness-checkbox"
+      "#wps-sharpness-checkbox",
     ) as HTMLInputElement;
     const sharpnessSlider = this.container.querySelector(
-      "#wps-sharpness-slider"
+      "#wps-sharpness-slider",
     ) as HTMLInputElement;
     const sharpnessValue = this.container.querySelector("#wps-sharpness-value");
     const ditheringCheckbox = this.container.querySelector(
-      "#wps-dithering-checkbox"
+      "#wps-dithering-checkbox",
     ) as HTMLInputElement;
     const ditheringThresholdSlider = this.container.querySelector(
-      "#wps-dithering-threshold-slider"
+      "#wps-dithering-threshold-slider",
     ) as HTMLInputElement;
     const ditheringThresholdValue = this.container.querySelector(
-      "#wps-dithering-threshold-value"
+      "#wps-dithering-threshold-value",
     );
     const quantizationMethodSelect = this.container.querySelector(
-      "#wps-quantization-method"
+      "#wps-quantization-method",
     ) as HTMLSelectElement;
     const gpuToggle = this.container.querySelector(
-      "#wps-gpu-toggle"
+      "#wps-gpu-toggle",
     ) as HTMLInputElement;
     const addToGalleryBtn = this.container.querySelector("#wps-add-to-gallery");
     const downloadBtn = this.container.querySelector("#wps-download");
@@ -295,7 +293,7 @@ export class ImageEditorUI {
       const scale = parseFloat((e.target as HTMLInputElement).value);
       const originalWidth = parseInt(widthInput?.dataset.originalWidth || "1");
       const originalHeight = parseInt(
-        heightInput?.dataset.originalHeight || "1"
+        heightInput?.dataset.originalHeight || "1",
       );
 
       if (widthInput && heightInput) {
@@ -314,7 +312,7 @@ export class ImageEditorUI {
       const width = parseInt((e.target as HTMLInputElement).value) || 1;
       const originalWidth = parseInt(widthInput.dataset.originalWidth || "1");
       const originalHeight = parseInt(
-        heightInput?.dataset.originalHeight || "1"
+        heightInput?.dataset.originalHeight || "1",
       );
 
       // アスペクト比維持（常に固定）
@@ -343,7 +341,7 @@ export class ImageEditorUI {
       const height = parseInt((e.target as HTMLInputElement).value) || 1;
       const originalWidth = parseInt(widthInput?.dataset.originalWidth || "1");
       const originalHeight = parseInt(
-        heightInput.dataset.originalHeight || "1"
+        heightInput.dataset.originalHeight || "1",
       );
 
       // アスペクト比維持（常に固定）
@@ -363,7 +361,7 @@ export class ImageEditorUI {
     heightInput?.addEventListener("change", (e) => {
       const height = parseInt((e.target as HTMLInputElement).value) || 1;
       const originalHeight = parseInt(
-        heightInput.dataset.originalHeight || "1"
+        heightInput.dataset.originalHeight || "1",
       );
       const scale = height / originalHeight;
       this.callbacks?.onScaleChange(Math.max(0.01, Math.min(1, scale)));
@@ -484,13 +482,13 @@ export class ImageEditorUI {
     if (!this.container || !this.callbacks) return;
 
     const replaceZone = this.container.querySelector(
-      "#wps-image-replace-zone"
+      "#wps-image-replace-zone",
     ) as HTMLElement;
     const overlay = this.container.querySelector(
-      "#wps-replace-overlay"
+      "#wps-replace-overlay",
     ) as HTMLElement;
     const fileInput = this.container.querySelector(
-      "#wps-replace-file-input"
+      "#wps-replace-file-input",
     ) as HTMLInputElement;
 
     if (!replaceZone || !overlay || !fileInput) return;
@@ -554,37 +552,37 @@ export class ImageEditorUI {
       const isDesktop = window.innerWidth >= 1024;
 
       const mainGrid = this.container?.querySelector(
-        "#wps-main-grid"
+        "#wps-main-grid",
       ) as HTMLElement;
       const accordion = this.container?.querySelector(
-        "#wps-palette-accordion"
+        "#wps-palette-accordion",
       ) as HTMLElement;
       const desktopPalette = this.container?.querySelector(
-        "#wps-palette-desktop"
+        "#wps-palette-desktop",
       ) as HTMLElement;
       const originalArea = this.container?.querySelector(
-        "#wps-original-area"
+        "#wps-original-area",
       ) as HTMLElement;
       const currentArea = this.container?.querySelector(
-        "#wps-current-area"
+        "#wps-current-area",
       ) as HTMLElement;
       const controlsArea = this.container?.querySelector(
-        "#wps-controls-area"
+        "#wps-controls-area",
       ) as HTMLElement;
       const canvasContainer = this.container?.querySelector(
-        "#wps-canvas-container"
+        "#wps-canvas-container",
       ) as HTMLElement;
       const imageContainer = this.container?.querySelector(
-        "#wps-image-container"
+        "#wps-image-container",
       ) as HTMLElement;
       const contrastQuantizationContainer = this.container?.querySelector(
-        "#wps-contrast-quantization-container"
+        "#wps-contrast-quantization-container",
       ) as HTMLElement;
       const brightnessSaturationContainer = this.container?.querySelector(
-        "#wps-brightness-saturation-container"
+        "#wps-brightness-saturation-container",
       ) as HTMLElement;
       const ditheringSharpnessContainer = this.container?.querySelector(
-        "#wps-dithering-sharpness-container"
+        "#wps-dithering-sharpness-container",
       ) as HTMLElement;
 
       if (mainGrid) {
