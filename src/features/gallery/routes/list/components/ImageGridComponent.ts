@@ -129,7 +129,7 @@ export class ImageGridComponent {
     const titleHtml = this.createTitleHtml(item, !!progressHtml);
 
     return `
-      <div class="border rounded-lg overflow-hidden shadow relative gallery-item" data-item-key="${
+      <div class="border rounded-lg overflow-hidden shadow relative gallery-item" style="display: flex; flex-direction: column;" data-item-key="${
         item.key
       }">
         ${showDeleteBtn ? this.createDeleteButtonHtml(item.key) : ""}
@@ -429,7 +429,7 @@ export class ImageGridComponent {
     // 100% Complete: リッチな達成表示
     if (remaining === 0) {
       return `
-        <div style="padding: 0.375rem 0.625rem; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-top: 1px solid #fbbf24;">
+        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0.375rem 0.625rem; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-top: 1px solid #fbbf24;">
           <div style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
             <span style="font-size: 0.875rem; font-weight: bold; color: #facc15; text-shadow: -1px -1px 0 #b45309, 1px -1px 0 #b45309, -1px 1px 0 #b45309, 1px 1px 0 #b45309; letter-spacing: 0.05em;">COMPLETE</span>
             <span style="font-size: 0.625rem; color: #92400e; font-family: ui-monospace, monospace; opacity: 0.8;">${total.toLocaleString()} pixels</span>
@@ -442,7 +442,7 @@ export class ImageGridComponent {
     const timeStr = this.formatEstimatedTime(remaining);
 
     return `
-      <div style="padding: 0.375rem 0.625rem; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
+      <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0.375rem 0.625rem; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
         <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
           <span style="font-size: 0.75rem; font-weight: 600; color: #3b82f6; font-family: ui-monospace, monospace; min-width: 3rem;">${percentage.toFixed(
             1,
