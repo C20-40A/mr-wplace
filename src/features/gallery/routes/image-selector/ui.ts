@@ -132,6 +132,7 @@ export class GalleryImageSelectorUI {
     } else {
       unplacedGrid.appendChild(itemEl);
     }
+    this.attachScrollPassthrough();
   }
 
   /**
@@ -176,6 +177,7 @@ export class GalleryImageSelectorUI {
         layerSection.appendChild(itemEl);
       });
     }
+    this.attachScrollPassthrough();
   }
 
   /**
@@ -325,6 +327,61 @@ export class GalleryImageSelectorUI {
     }
 
     this.layerPanel.appendChild(layerSection);
+    this.attachScrollPassthrough();
+  }
+
+  /**
+   * レイヤーパネル内の要素でホイール/タッチスクロールを有効化
+   */
+  private attachScrollPassthrough(): void {
+    if (!this.layerPanel) return;
+
+    const scrollContainer = this.getScrollContainer();
+    if (!scrollContainer) return;
+
+    if (this.layerPanel.dataset.scrollPassthrough === "true") return;
+    this.layerPanel.dataset.scrollPassthrough = "true";
+
+    this.layerPanel.addEventListener(
+      "wheel",
+      (e) => {
+        scrollContainer.scrollTop += (e as WheelEvent).deltaY;
+      },
+      { passive: true },
+    );
+
+    let touchStartY = 0;
+    this.layerPanel.addEventListener(
+      "touchstart",
+      (e) => {
+        touchStartY = (e as TouchEvent).touches[0].clientY;
+      },
+      { passive: true },
+    );
+
+    this.layerPanel.addEventListener(
+      "touchmove",
+      (e) => {
+        const touchY = (e as TouchEvent).touches[0].clientY;
+        const deltaY = touchStartY - touchY;
+        scrollContainer.scrollTop += deltaY;
+        touchStartY = touchY;
+      },
+      { passive: true },
+    );
+  }
+
+  private getScrollContainer(): HTMLElement | null {
+    let scrollContainer = this.layerPanel ?? null;
+
+    while (scrollContainer) {
+      if (scrollContainer.scrollHeight > scrollContainer.clientHeight) {
+        return scrollContainer;
+      }
+      scrollContainer = scrollContainer.parentElement;
+    }
+
+    return null;
   }
 
   /**
