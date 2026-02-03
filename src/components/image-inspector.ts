@@ -24,6 +24,7 @@ export class ImageInspector {
   private resetButton?: HTMLElement;
   private containerElement?: HTMLElement;
   private controlsContainer?: HTMLElement;
+  private interactionElement?: HTMLElement;
 
   constructor(canvas: HTMLCanvasElement, options: ImageInspectorOptions = {}) {
     this.canvas = canvas;
@@ -49,6 +50,7 @@ export class ImageInspector {
     const parent = this.canvas.parentElement;
     if (!parent) return;
     this.containerElement = parent;
+    this.interactionElement = parent;
 
     // コントロールボタンをまとめるコンテナを作成し、flexboxで横並びに配置
     this.controlsContainer = document.createElement("div");
@@ -94,35 +96,56 @@ export class ImageInspector {
   }
 
   private setupWheelZoom(): void {
-    this.canvas.addEventListener("wheel", (e) => {
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? -0.2 : 0.2;
-      const newZoom = Math.max(
-        this.options.minZoom,
-        Math.min(this.options.maxZoom, this.zoom + delta)
-      );
-
-      if (newZoom !== this.zoom) {
-        // ズームが1.0に戻ったらパンもリセット
-        if (newZoom === 1.0) {
-          this.panX = 0;
-          this.panY = 0;
+    const target = this.interactionElement ?? this.canvas;
+    target.addEventListener(
+      "wheel",
+      (e) => {
+        if (
+          this.controlsContainer &&
+          e.target instanceof Node &&
+          this.controlsContainer.contains(e.target)
+        ) {
+          return;
         }
-        this.zoom = newZoom;
-        this.updateDisplay();
-        this.options.onViewportChange(this.zoom, this.panX, this.panY);
-      }
-    });
+
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.2 : 0.2;
+        const newZoom = Math.max(
+          this.options.minZoom,
+          Math.min(this.options.maxZoom, this.zoom + delta)
+        );
+
+        if (newZoom !== this.zoom) {
+          // ズームが1.0に戻ったらパンもリセット
+          if (newZoom === 1.0) {
+            this.panX = 0;
+            this.panY = 0;
+          }
+          this.zoom = newZoom;
+          this.updateDisplay();
+          this.options.onViewportChange(this.zoom, this.panX, this.panY);
+        }
+      },
+      { passive: false }
+    );
   }
 
   private setupDragPan(): void {
+    const target = this.interactionElement ?? this.canvas;
     const handleMouseDown = (e: MouseEvent) => {
       if (this.zoom <= 1.0) return; // ズーム時のみドラッグ可能
+      if (
+        this.controlsContainer &&
+        e.target instanceof Node &&
+        this.controlsContainer.contains(e.target)
+      ) {
+        return;
+      }
 
       this.isDragging = true;
       this.lastMouseX = e.clientX;
       this.lastMouseY = e.clientY;
-      this.canvas.style.cursor = "grabbing";
+      this.setCursor("grabbing");
       e.preventDefault();
     };
 
@@ -146,21 +169,28 @@ export class ImageInspector {
       if (!this.isDragging) return;
 
       this.isDragging = false;
-      this.canvas.style.cursor = this.zoom > 1.0 ? "move" : "grab";
+      this.setCursor(this.zoom > 1.0 ? "move" : "grab");
     };
 
     // イベントリスナー登録
-    this.canvas.addEventListener("mousedown", handleMouseDown);
+    target.addEventListener("mousedown", handleMouseDown);
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
 
     // マウスがcanvas外に出た時の処理
-    this.canvas.addEventListener("mouseleave", () => {
+    target.addEventListener("mouseleave", () => {
       if (this.isDragging) {
         this.isDragging = false;
-        this.canvas.style.cursor = this.zoom > 1.0 ? "move" : "grab";
+        this.setCursor(this.zoom > 1.0 ? "move" : "grab");
       }
     });
+  }
+
+  private setCursor(value: "grab" | "grabbing" | "move"): void {
+    this.canvas.style.cursor = value;
+    if (this.interactionElement) {
+      this.interactionElement.style.cursor = value;
+    }
   }
 
   private updateDisplay(): void {
@@ -194,7 +224,7 @@ export class ImageInspector {
     this.canvas.style.imageRendering = "pixelated";
     this.canvas.style.imageRendering = "crisp-edges";
     this.canvas.style.transform = `translate(calc(-50% + ${this.panX}px), calc(-50% + ${this.panY}px))`;
-    this.canvas.style.cursor = this.zoom > 1.0 ? "move" : "grab";
+    this.setCursor(this.zoom > 1.0 ? "move" : "grab");
 
     // ズームインジケーターとリセットボタンの表示制御（100%以外のときのみ）
     const shouldShow = this.zoom !== 1.0;
