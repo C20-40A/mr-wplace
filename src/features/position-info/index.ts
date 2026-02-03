@@ -84,7 +84,6 @@ export class PositionInfo {
     if (!dropdown) return false;
 
     const dropdownInFooterNow = footerRow.contains(dropdown);
-
     if (!dropdownInFooterNow) {
       footerRow.appendChild(dropdown);
     }
@@ -98,30 +97,41 @@ export class PositionInfo {
     }
 
     // もとの閉じるボタンはフッターに残し、ヘッダーにプロキシを置く
-    closeButton.classList.add("hidden");
+    if (!closeButton.classList.contains("hidden")) {
+      closeButton.classList.add("hidden");
+    }
 
     let proxyButton = headerRow.querySelector<HTMLButtonElement>(
       `#${CLOSE_PROXY_ID}`,
     );
+    const desiredClasses = new Set(closeButton.classList);
+    desiredClasses.delete("btn-xs");
+    desiredClasses.delete("hidden");
+    const desiredClassName = Array.from(desiredClasses).sort().join(" ");
+    const desiredHtml = closeButton.innerHTML;
+
+    const needsProxyInit = !proxyButton;
     if (!proxyButton) {
       proxyButton = document.createElement("button");
       proxyButton.id = CLOSE_PROXY_ID;
       proxyButton.type = "button";
-      proxyButton.className = closeButton.className;
-      proxyButton.classList.remove("btn-xs");
-      proxyButton.classList.remove("hidden");
-      proxyButton.innerHTML = closeButton.innerHTML;
       proxyButton.addEventListener("click", () => {
         const latestCloseButton = footerRow.querySelector<HTMLButtonElement>(
           `button:has(path[d="${CLOSE_SVG_PATH}"])`,
         );
         latestCloseButton?.click();
       });
-    } else {
-      proxyButton.className = closeButton.className;
-      proxyButton.classList.remove("btn-xs");
-      proxyButton.classList.remove("hidden");
-      proxyButton.innerHTML = closeButton.innerHTML;
+    }
+
+    if (
+      needsProxyInit ||
+      Array.from(proxyButton.classList).sort().join(" ") !== desiredClassName
+    ) {
+      proxyButton.className = desiredClassName;
+    }
+
+    if (needsProxyInit || proxyButton.innerHTML !== desiredHtml) {
+      proxyButton.innerHTML = desiredHtml;
     }
 
     const headerDropdown =
@@ -129,10 +139,15 @@ export class PositionInfo {
       headerRow.querySelector<HTMLElement>(
         ".dropdown.dropdown-top.dropdown-left.shrink-0",
       );
-    if (headerDropdown) {
-      headerRow.insertBefore(proxyButton, headerDropdown);
-    } else {
-      headerRow.appendChild(proxyButton);
+    const needsMove =
+      proxyButton.parentElement !== headerRow ||
+      (headerDropdown && proxyButton.nextElementSibling !== headerDropdown);
+    if (needsMove) {
+      if (headerDropdown) {
+        headerRow.insertBefore(proxyButton, headerDropdown);
+      } else {
+        headerRow.appendChild(proxyButton);
+      }
     }
 
     return true;
