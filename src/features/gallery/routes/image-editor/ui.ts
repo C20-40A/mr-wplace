@@ -916,6 +916,9 @@ export class ImageEditorUI {
       #wps-original-image {
         border: 1px solid #e5e7eb; border-radius: 0.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: auto; height: auto; max-width: none; max-height: none; object-fit: contain; image-rendering: pixelated; image-rendering: -webkit-optimize-contrast;
       }
+      #wps-image-editor-container.mobile #wps-original-image {
+        max-width: 100%; max-height: 40vh;
+      }
       #wps-replace-overlay {
         position: absolute; inset: 0; background: rgba(0,0,0,0.7); border-radius: 0.25rem; display: none; align-items: center; justify-content: center; color: white; font-size: 0.875rem; text-align: center; padding: 1rem;
       }
