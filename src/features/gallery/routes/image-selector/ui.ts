@@ -31,7 +31,7 @@ export class GalleryImageSelectorUI {
     container: HTMLElement,
     onSelect: (item: GalleryItem) => void,
     onAddClick?: () => void,
-    onShowDetail?: (item: GalleryItem) => void
+    onShowDetail?: (item: GalleryItem) => void,
   ): Promise<void> {
     this.currentOnSelect = onSelect;
     this.currentOnShowDetail = onShowDetail ?? null;
@@ -77,7 +77,7 @@ export class GalleryImageSelectorUI {
     }
 
     const statusBadge = itemEl.querySelector(
-      '[data-role="status"]'
+      '[data-role="status"]',
     ) as HTMLElement;
     if (statusBadge) {
       statusBadge.textContent = item.drawEnabled ? "✓ ON" : "✗ OFF";
@@ -87,7 +87,7 @@ export class GalleryImageSelectorUI {
     }
 
     const toggleBtn = itemEl.querySelector(
-      '[data-role="toggle"]'
+      '[data-role="toggle"]',
     ) as HTMLElement;
     if (toggleBtn) {
       toggleBtn.innerHTML = item.drawEnabled ? "👁" : "🚫";
@@ -100,7 +100,7 @@ export class GalleryImageSelectorUI {
       "🧑‍🎨 : Updated status for",
       key,
       "drawEnabled:",
-      item.drawEnabled
+      item.drawEnabled,
     );
   }
 
@@ -110,7 +110,7 @@ export class GalleryImageSelectorUI {
   async moveItemToUnplaced(key: string): Promise<void> {
     // レイヤーセクションから削除
     const layerItem = this.layerPanel?.querySelector(
-      `.layer-section [data-key="${key}"]`
+      `.layer-section [data-key="${key}"]`,
     );
     layerItem?.remove();
 
@@ -119,7 +119,7 @@ export class GalleryImageSelectorUI {
     if (!item) return;
 
     const unplacedGrid = this.layerPanel?.querySelector(
-      ".unplaced-grid"
+      ".unplaced-grid",
     ) as HTMLElement;
     if (!unplacedGrid || !this.currentOnSelect) return;
 
@@ -138,7 +138,7 @@ export class GalleryImageSelectorUI {
    */
   async refreshLayerOrder(): Promise<void> {
     const layerSection = this.layerPanel?.querySelector(
-      ".layer-section"
+      ".layer-section",
     ) as HTMLElement;
     if (!layerSection) return;
 
@@ -193,9 +193,12 @@ export class GalleryImageSelectorUI {
 
       // Tutorial GIF
       const tutorialGif = document.createElement("img");
-      tutorialGif.src = runtime.getURL("assets/images/tutorial/how_to_draw.gif");
+      tutorialGif.src = runtime.getURL(
+        "assets/images/tutorial/how_to_draw.gif",
+      );
       tutorialGif.alt = "How to draw";
-      tutorialGif.style.cssText = "width: 18rem; height: auto; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);";
+      tutorialGif.style.cssText =
+        "width: 18rem; height: auto; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);";
       emptyContainer.appendChild(tutorialGif);
 
       // メッセージ
@@ -219,7 +222,7 @@ export class GalleryImageSelectorUI {
         // ボタンのSVGアイコン
         const buttonSvg = document.createElementNS(
           "http://www.w3.org/2000/svg",
-          "svg"
+          "svg",
         );
         buttonSvg.setAttribute("viewBox", "0 0 24 24");
         buttonSvg.setAttribute("fill", "currentColor");
@@ -227,12 +230,12 @@ export class GalleryImageSelectorUI {
 
         const buttonPath = document.createElementNS(
           "http://www.w3.org/2000/svg",
-          "path"
+          "path",
         );
         buttonPath.setAttribute("fill-rule", "evenodd");
         buttonPath.setAttribute(
           "d",
-          "M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z"
+          "M12 3.75a.75.75 0 01.75.75v6.75h6.75a.75.75 0 010 1.5h-6.75v6.75a.75.75 0 01-1.5 0v-6.75H4.5a.75.75 0 010-1.5h6.75V4.5a.75.75 0 01.75-.75z",
         );
         buttonPath.setAttribute("clip-rule", "evenodd");
 
@@ -261,7 +264,7 @@ export class GalleryImageSelectorUI {
     const sectionTitle = document.createElement("div");
     sectionTitle.className =
       "text-sm font-semibold mb-3 pl-2 border-l-4 border-primary";
-    sectionTitle.textContent = t`${"unplaced_images"}`;
+    sectionTitle.textContent = t("unplaced_images");
     unplacedSection.appendChild(sectionTitle);
 
     const unplacedGrid = document.createElement("div");

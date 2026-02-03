@@ -117,25 +117,30 @@ const createAddToFriendsButton = async (container: Element): Promise<void> => {
     }
 
     // 説明があれば名前にtooltipを追加
-    if (friend?.memo) {
-      // ユーザー名要素を探す: .font-medium かつ flex かつ gap-1.5 を持つspan
-      const allSpans = Array.from(
-        container.querySelectorAll("span.font-medium.flex"),
+    if (friend?.memo || friend?.tag) {
+      // ユーザー名要素を探す: IDを含むspan
+      const userNameSpan = (
+        Array.from(container.querySelectorAll("span")) as HTMLElement[]
+      ).find(
+        (span) =>
+          span.textContent?.includes(`#${lastPaintedByUser?.id}`) &&
+          !span.querySelector("span"), // Get the innermost span
       );
-      const userNameSpan = allSpans.find((span) => {
-        // gap-1.5 クラスを持ち、内部に #付きIDを含むspanを探す
-        const hasGapClass = Array.from(span.classList).some((cls) =>
-          cls.includes("gap-"),
-        );
-        const hasUserId = span.textContent?.includes(
-          `#${lastPaintedByUser?.id}`,
-        );
-        return hasGapClass && hasUserId;
-      });
 
       if (userNameSpan) {
-        userNameSpan.classList.add("tooltip");
-        userNameSpan.setAttribute("data-tip", friend.memo);
+        // The tooltip should be on the parent element, which contains both name and ID
+        const targetElement = userNameSpan.parentElement;
+        if (!targetElement) return;
+
+        targetElement.classList.add("tooltip");
+
+        const tagText = friend.tag ? `[${friend.tag.name || t`tag`}]` : "";
+        const memoText = friend.memo || "";
+        const tooltipText = `${tagText} ${memoText}`.trim();
+
+        if (tooltipText) {
+          targetElement.setAttribute("data-tip", tooltipText);
+        }
       }
     }
   }
