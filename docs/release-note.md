@@ -12,6 +12,10 @@
 - 【Android】 EdgeCanary アプリをインストール → 開発者モードにする(設定>「MicrosoftEdge について」> 1 番下のバージョンの数字を５回ぐらいタップ) → 戻って「開発者向けオプション」→「Extension install by id」→`acdodonamhbokadiikkfnnliplijigip` を入力
 ```
 
+# 🧑‍🎨Mr. Wplace(v2.3.0)リリースノート
+
+-
+
 # 🧑‍🎨Mr. Wplace(v2.0.0)リリースノート
 
 ## より高速になりました
