@@ -145,15 +145,12 @@ export class PositionInfo {
     } else {
       proxyButton.classList.remove("ml-auto");
     }
-    const needsMove =
+    // close-proxy must always be the last child in headerRow
+    if (
       proxyButton.parentElement !== headerRow ||
-      (headerDropdown && proxyButton.nextElementSibling !== headerDropdown);
-    if (needsMove) {
-      if (headerDropdown) {
-        headerRow.insertBefore(proxyButton, headerDropdown);
-      } else {
-        headerRow.appendChild(proxyButton);
-      }
+      proxyButton !== headerRow.lastElementChild
+    ) {
+      headerRow.appendChild(proxyButton);
     }
 
     return true;
