@@ -8,7 +8,8 @@ export const createUnplacedItem = (
   onSelect: (item: GalleryItem) => void,
   clickHint?: string
 ): HTMLElement => {
-  const container = document.createElement("div");
+  const container = document.createElement("button");
+  container.type = "button";
   container.className = "unplaced-item";
   container.style.cssText = `
     cursor: pointer;
@@ -17,6 +18,11 @@ export const createUnplacedItem = (
     position: relative;
     transition: transform 0.15s, box-shadow 0.15s;
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
+    background: transparent;
+    border: 0;
+    padding: 0;
+    text-align: left;
+    touch-action: pan-y;
   `;
   if (clickHint) container.title = clickHint;
 

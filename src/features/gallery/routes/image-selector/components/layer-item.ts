@@ -46,6 +46,7 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
     transition: transform 0.2s, box-shadow 0.2s;
     overflow: hidden;
     will-change: transform;
+    touch-action: pan-y;
   `;
 
   // コンテンツエリア
@@ -62,7 +63,7 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
     onShowDetail,
     galleryStorage,
     onUpdateStatus,
-    onMoveToUnplaced
+    onMoveToUnplaced,
   );
 
   // レイヤー移動ボタン
@@ -71,7 +72,7 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
     index,
     totalCount,
     galleryStorage,
-    onRefreshOrder
+    onRefreshOrder,
   );
 
   container.appendChild(contentArea);
@@ -91,7 +92,7 @@ const createContentArea = (
   item: GalleryItem,
   index: number,
   onSelect: (item: GalleryItem) => void,
-  clickHint?: string
+  clickHint?: string,
 ): HTMLElement => {
   const contentArea = document.createElement("div");
   contentArea.style.cssText =
@@ -109,6 +110,7 @@ const createContentArea = (
 		padding: 0.4rem;
 		transition: background 0.15s, transform 0.15s;
 		min-width: 0;
+    touch-action: pan-y;
 	`;
   if (clickHint) mainArea.title = clickHint;
 
@@ -143,7 +145,7 @@ const createContentArea = (
 const createInfoContainer = (
   item: any,
   index: number,
-  clickHint?: string
+  clickHint?: string,
 ): HTMLElement => {
   const infoContainer = document.createElement("div");
   infoContainer.style.cssText = "flex: 1; min-width: 0;";
@@ -193,11 +195,11 @@ const createButtonArea = (
   onShowDetail: ((item: GalleryItem) => void) | null,
   galleryStorage: GalleryStorage,
   onUpdateStatus: (key: string) => Promise<void>,
-  onMoveToUnplaced: (key: string) => Promise<void>
+  onMoveToUnplaced: (key: string) => Promise<void>,
 ): HTMLElement => {
   const buttonArea = document.createElement("div");
   buttonArea.style.cssText =
-    "display: flex; flex-shrink: 0; align-items: center;";
+    "display: flex; flex-shrink: 0; align-items: center; touch-action: pan-y;";
   buttonArea.onclick = (e) => e.stopPropagation();
 
   // 2x2グリッド（goto/detail/toggle/delete）
@@ -206,7 +208,7 @@ const createButtonArea = (
     onShowDetail,
     galleryStorage,
     onUpdateStatus,
-    onMoveToUnplaced
+    onMoveToUnplaced,
   );
 
   buttonArea.appendChild(actionGrid);
@@ -217,20 +219,21 @@ const createButtonArea = (
 // D-pad作成
 const createDPad = (
   item: any,
-  onRefreshOrder: () => Promise<void>
+  onRefreshOrder: () => Promise<void>,
 ): HTMLElement => {
   const dPadContainer = document.createElement("div");
   dPadContainer.style.cssText = `
     display: grid;
     grid-template-columns: repeat(3, 20px);
     grid-template-rows: repeat(3, 20px);
+    touch-action: pan-y;
   `;
 
   const createMoveImageButton = (
     direction: "up" | "down" | "left" | "right",
     symbol: string,
     gridColumn: string,
-    gridRow: string
+    gridRow: string,
   ) => {
     const btn = document.createElement("button");
     btn.className = "btn btn-xs btn-info";
@@ -267,7 +270,7 @@ const createActionGrid = (
   onShowDetail: ((item: GalleryItem) => void) | null,
   galleryStorage: GalleryStorage,
   onUpdateStatus: (key: string) => Promise<void>,
-  onMoveToUnplaced: (key: string) => Promise<void>
+  onMoveToUnplaced: (key: string) => Promise<void>,
 ): HTMLElement => {
   const actionGrid = document.createElement("div");
   actionGrid.style.cssText = `
@@ -275,6 +278,7 @@ const createActionGrid = (
     grid-template-columns: repeat(2, 1.75rem);
     grid-template-rows: repeat(2, 1.75rem);
     margin: 0.25rem;
+    touch-action: pan-y;
   `;
 
   // Gotoボタン
@@ -294,7 +298,7 @@ const createActionGrid = (
     async () => {
       await toggleDrawState(item.key);
       await onUpdateStatus(item.key);
-    }
+    },
   );
   toggleBtn.dataset.role = "toggle";
 
@@ -325,7 +329,7 @@ const createActionGrid = (
 const createButton = (
   content: string,
   btnClass: string,
-  onClick: () => void | Promise<void>
+  onClick: () => void | Promise<void>,
 ): HTMLButtonElement => {
   const btn = document.createElement("button");
   btn.className = `btn btn-xs ${btnClass}`;
@@ -339,6 +343,7 @@ const createButton = (
     justify-content: center;
     font-size: 0.875rem;
     transition: all 0.15s;
+    touch-action: pan-y;
   `;
   btn.onclick = () => {
     const result = onClick();
@@ -355,18 +360,18 @@ const createMoveContainer = (
   index: number,
   totalCount: number,
   galleryStorage: GalleryStorage,
-  onRefreshOrder: () => Promise<void>
+  onRefreshOrder: () => Promise<void>,
 ): HTMLElement => {
   const moveContainer = document.createElement("div");
   moveContainer.className = "bg-base-200 border-l border-base-300";
   moveContainer.style.cssText =
-    "display: flex; flex-direction: column; flex-shrink: 0;";
+    "display: flex; flex-direction: column; flex-shrink: 0; touch-action: pan-y;";
   moveContainer.onclick = (e) => e.stopPropagation();
 
   const createLayerMoveButton = (
     direction: "up" | "down",
     symbol: string,
-    disabled: boolean
+    disabled: boolean,
   ) => {
     const btn = document.createElement("button");
     btn.className = disabled
@@ -385,6 +390,7 @@ const createMoveContainer = (
       font-weight: 600;
       transition: transform 0.15s;
       will-change: transform;
+      touch-action: pan-y;
     `;
     if (!disabled) {
       btn.onclick = async () => {
@@ -401,7 +407,7 @@ const createMoveContainer = (
 
   moveContainer.appendChild(createLayerMoveButton("up", "⌃", index === 0));
   moveContainer.appendChild(
-    createLayerMoveButton("down", "⌄", index === totalCount - 1)
+    createLayerMoveButton("down", "⌄", index === totalCount - 1),
   );
 
   return moveContainer;

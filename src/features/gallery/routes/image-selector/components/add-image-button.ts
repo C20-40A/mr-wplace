@@ -2,7 +2,8 @@
  * 画像追加ボタン作成
  */
 export const createAddImageButton = (onAddClick: () => void): HTMLElement => {
-  const container = document.createElement("div");
+  const container = document.createElement("button");
+  container.type = "button";
   container.className =
     "add-image-btn border-2 border-dashed border-base-300 rounded-lg";
   container.style.cssText = `
@@ -12,6 +13,9 @@ export const createAddImageButton = (onAddClick: () => void): HTMLElement => {
     display: flex;
     align-items: center;
     justify-content: center;
+    background: transparent;
+    padding: 0;
+    touch-action: pan-y;
   `;
 
   const content = document.createElement("div");
