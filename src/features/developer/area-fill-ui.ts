@@ -3,6 +3,7 @@ import { latLngToTilePixel } from "@/utils/coordinate";
 import { AreaFillStorage, AreaFillCorners, type FillPattern } from "./area-fill-storage";
 import { findPaintPixelControls } from "@/constants/selectors";
 import { getColor } from "./ui-colors";
+import { Toast } from "@/components/toast";
 
 export interface AreaFillUIElements {
   container: HTMLDivElement;
@@ -292,36 +293,95 @@ export const createAreaFillDialogItem = (
     console.log("🧑‍🎨 : Area fill pattern:", currentFillPattern);
   });
 
-  // Template Only Mode toggle label + checkbox
+  // Template Only Mode - unlock gate + toggle
+  const UNLOCK_CLICKS = 5;
+  let tmplUnlocked = AreaFillStorage.getTmplUnlocked();
+  let unlockClicks = 0;
+
+  const tmplArea = document.createElement("div");
+  tmplArea.style.cssText = `
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    padding: 1px 4px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+    user-select: none;
+  `;
+
   const tmplLabel = document.createElement("span");
   tmplLabel.style.cssText = `
-    color: rgba(255, 255, 255, 0.75);
     font-size: 9px;
     font-family: 'Consolas', 'Monaco', monospace;
     text-transform: uppercase;
     flex-shrink: 0;
+    transition: color 0.2s ease;
   `;
-  tmplLabel.textContent = "TMPL_ONLY";
 
   const tmplToggle = document.createElement("input");
   tmplToggle.type = "checkbox";
-  tmplToggle.checked = templateOnlyModeEnabled;
   tmplToggle.style.cssText = `
     width: 14px;
     height: 14px;
     cursor: pointer;
-    accent-color: ${getColor("primary", 1)};
+    accent-color: #8b0000;
     flex-shrink: 0;
   `;
+
+  const applyUnlockedStyle = () => {
+    tmplLabel.textContent = "TMPL_ONLY";
+    tmplLabel.style.color = "#cc3333";
+    tmplArea.style.background = "rgba(20, 0, 0, 0.5)";
+    tmplArea.style.boxShadow = "inset 0 0 8px rgba(139, 0, 0, 0.3)";
+    tmplToggle.style.display = "";
+    tmplToggle.checked = templateOnlyModeEnabled;
+  };
+
+  const applyLockedStyle = () => {
+    tmplLabel.textContent = "TMPL_ONLY";
+    const progress = unlockClicks / UNLOCK_CLICKS;
+    const r = Math.round(255 * progress);
+    tmplLabel.style.color = `rgba(${100 + r * 0.6}, ${255 - r * 0.7}, ${255 - r * 0.7}, ${0.4 + progress * 0.5})`;
+    tmplArea.style.background = `rgba(${r}, 0, 0, ${progress * 0.15})`;
+    tmplArea.style.boxShadow = progress > 0 ? `inset 0 0 ${4 + progress * 8}px rgba(255, 0, 0, ${progress * 0.2})` : "none";
+    tmplToggle.style.display = "none";
+  };
+
+  if (tmplUnlocked) applyUnlockedStyle();
+  else applyLockedStyle();
+
   tmplToggle.addEventListener("change", () => {
     templateOnlyModeEnabled = tmplToggle.checked;
     AreaFillStorage.setTemplateOnlyMode(templateOnlyModeEnabled);
     console.log("🧑‍🎨 : Area fill template only mode:", templateOnlyModeEnabled);
   });
 
+  tmplArea.addEventListener("click", (e) => {
+    if (tmplUnlocked) return;
+    if (e.target === tmplToggle) return;
+    e.preventDefault();
+    unlockClicks++;
+
+    if (unlockClicks < UNLOCK_CLICKS) {
+      const remaining = UNLOCK_CLICKS - unlockClicks;
+      Toast.error(`🔒 LOCKED — ${remaining} more`);
+      applyLockedStyle();
+    } else {
+      tmplUnlocked = true;
+      AreaFillStorage.setTmplUnlocked(true);
+      applyUnlockedStyle();
+      Toast.show("🔓 TMPL_ONLY unlocked", "success");
+      console.log("🧑‍🎨 : TMPL_ONLY unlocked");
+    }
+  });
+
+  tmplArea.appendChild(tmplLabel);
+  tmplArea.appendChild(tmplToggle);
+
   optionsRow.appendChild(patternSelect);
-  optionsRow.appendChild(tmplLabel);
-  optionsRow.appendChild(tmplToggle);
+  optionsRow.appendChild(tmplArea);
 
   container.appendChild(header);
   container.appendChild(topLeftRow.row);

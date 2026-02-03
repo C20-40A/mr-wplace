@@ -9,6 +9,8 @@ let corners: AreaFillCorners = { topLeft: null, bottomRight: null };
 let templateOnlyMode = false;
 let fillPattern: FillPattern = "spiralPingPong";
 
+const TMPL_UNLOCK_KEY = "mr-wplace-tmpl-unlocked";
+
 export const AreaFillStorage = {
   getCorners: () => corners,
 
@@ -34,5 +36,20 @@ export const AreaFillStorage = {
 
   setFillPattern: (pattern: FillPattern) => {
     fillPattern = pattern;
+  },
+
+  getTmplUnlocked: (): boolean => {
+    try {
+      return localStorage.getItem(TMPL_UNLOCK_KEY) === "1";
+    } catch {
+      return false;
+    }
+  },
+
+  setTmplUnlocked: (unlocked: boolean) => {
+    try {
+      if (unlocked) localStorage.setItem(TMPL_UNLOCK_KEY, "1");
+      else localStorage.removeItem(TMPL_UNLOCK_KEY);
+    } catch {}
   },
 };
