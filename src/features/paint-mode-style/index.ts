@@ -1,11 +1,15 @@
 import { findPaintPixelControls } from "@/constants/selectors";
+import {
+  loadPaintModeStyleFromStorage,
+  getPaintModeStyle,
+} from "@/states/paint-mode-style";
 
 /**
  * ペイントモーダル表示中のスタイル調整機能
  * - モバイル時: findPaintPixelControls()のgapを除去（省スペース化）
  * - ペイント中: マップ上のFABボタンを非表示（操作の邪魔を防止）
  *
- * 将来的にコンフィグで各ルールのON/OFFを制御可能にする想定
+ * popupからenable/disableを切り替え可能
  */
 
 /** モバイル判定の閾値（sm breakpoint） */
@@ -82,7 +86,10 @@ export class PaintModeStyle {
     this.init();
   }
 
-  private init(): void {
+  private async init(): Promise<void> {
+    await loadPaintModeStyleFromStorage();
+    if (!getPaintModeStyle()) return;
+
     this.observer = new MutationObserver(() => this.check());
     this.observer.observe(document.body, { childList: true, subtree: true });
     this.check();

@@ -24,6 +24,11 @@ import {
   getLayerSort,
   setLayerSort,
 } from "./states/layer-sort";
+import {
+  loadPaintModeStyleFromStorage,
+  getPaintModeStyle,
+  setPaintModeStyle,
+} from "./states/paint-mode-style";
 
 import { tabs } from "@/utils/browser-api";
 import { FEEDBACK_FORM_URL } from "@/constants/url";
@@ -129,6 +134,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const layerSortSelect = document.getElementById(
     "layer-sort-select"
   ) as HTMLSelectElement;
+  const paintModeStyleSelect = document.getElementById(
+    "paint-mode-style-select"
+  ) as HTMLSelectElement;
 
   // Set Buy Me a Coffee image
   const coffeeImg = document.getElementById("coffee-img") as HTMLImageElement;
@@ -140,6 +148,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentLockButtonEnhancer = false;
   let currentCloseConfirm = false;
   let currentLayerSort = true;
+  let currentPaintModeStyle = true;
   let mapInstanceReady = false;
 
   try {
@@ -163,6 +172,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadLayerSortFromStorage();
     currentLayerSort = getLayerSort();
 
+    // paint mode style初期化
+    await loadPaintModeStyleFromStorage();
+    currentPaintModeStyle = getPaintModeStyle();
+
     // Get map instance ready state from content script
     const currentTab = (await tabs.query({ active: true, currentWindow: true }))[0];
     if (currentTab?.id) {
@@ -182,6 +195,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   lockButtonEnhancerSelect.value = currentLockButtonEnhancer.toString();
   closeConfirmSelect.value = currentCloseConfirm.toString();
   layerSortSelect.value = currentLayerSort.toString();
+  paintModeStyleSelect.value = currentPaintModeStyle.toString();
   updateUI();
 
   // Show navigation setting only if map instance is ready
@@ -279,6 +293,23 @@ document.addEventListener("DOMContentLoaded", async () => {
         type: "LAYER_SORT_CHANGED",
         enabled: newEnabled,
       });
+    }
+  });
+
+  // Paint mode style変更イベント
+  paintModeStyleSelect.addEventListener("change", async (event) => {
+    const target = event.target as HTMLSelectElement;
+    const newEnabled = target.value === "true";
+
+    await setPaintModeStyle(newEnabled);
+
+    // ページをリロードして設定を反映
+    const [activeTab] = await tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (activeTab.id) {
+      await tabs.reload(activeTab.id);
     }
   });
 
