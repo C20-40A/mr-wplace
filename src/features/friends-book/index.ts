@@ -16,29 +16,25 @@ import { storage } from "@/utils/browser-api";
 import { t } from "@/i18n/manager";
 import { IMG_ICON_BOOK } from "@/assets/iconImages";
 import { friendsToCSV, csvToFriends, downloadCSV } from "./csv-utils";
-import { Friend, Tag } from "./types";
+import { Tag } from "./types";
+import { findPositionModal } from "@/constants/selectors";
 
 /**
  * "Painted by:" 要素を検索
  */
 const findPaintedByContainer = (): Element | null => {
-  // 1. "Painted by:" または "Pintado por:" のspan要素を検索
-  const spans = Array.from(document.querySelectorAll("span"));
-  const paintedBySpan = spans.find(
-    (span) =>
-      span.textContent === "Painted by:" || span.textContent === "Pintado por:"
-  );
+  const positionModal = findPositionModal();
+  if (!positionModal) return null;
 
-  if (paintedBySpan?.parentElement) {
-    return paintedBySpan.parentElement;
-  }
+  // モーダル内の .px-3.pb-1.5 要素を検索
+  const container = positionModal.querySelector(".px-3.pb-1\\.5");
+  if (container) return container;
 
-  // 2. Fallback: 固定セレクター
-  const fallbackContainer = document.querySelector(
-    "body > div:nth-child(1) > div.disable-pinch-zoom.relative.h-full.overflow-hidden.svelte-1uha8ag > div.absolute.bottom-0.left-0.z-50.w-full.sm\\:left-1\\/2.sm\\:max-w-md.sm\\:-translate-x-1\\/2.md\\:max-w-lg > div > div > div.text-base-content\\/80.mt-1.px-3.text-sm > div"
-  );
-
-  return fallbackContainer;
+  // Fallback: flex items-center gap-2 の親要素
+  const flexContainer = positionModal.querySelector(
+    ".flex.items-center.gap-2",
+  )?.parentElement;
+  return flexContainer || null;
 };
 
 // 最後に受信したユーザー情報を保存
@@ -79,13 +75,20 @@ const createAddToFriendsButton = async (container: Element): Promise<void> => {
     await showAddFriendDialog(lastPaintedByUser);
   });
 
-  // ボタンを "..." ボタンの前に挿入
-  const moreButton = container.querySelector(".dropdown.dropdown-top");
-  if (moreButton) {
-    moreButton.parentElement?.insertBefore(button, moreButton);
+  // ボタンを "..." ボタンの前に挿入（兄弟要素として）
+  // .flex.items-center.gap-2 の中の .dropdown の前に配置
+  const flexContainer = container.querySelector(".flex.items-center.gap-2");
+  const moreButton = flexContainer?.querySelector(".dropdown");
+
+  if (moreButton && flexContainer) {
+    flexContainer.insertBefore(button, moreButton);
   } else {
-    // fallback: 最後に追加
-    container.appendChild(button);
+    // fallback: flex container の最後に追加
+    if (flexContainer) {
+      flexContainer.appendChild(button);
+    } else {
+      container.appendChild(button);
+    }
   }
 
   // "Painted by:" をタグに置き換え、メモをtooltipで表示
@@ -117,15 +120,15 @@ const createAddToFriendsButton = async (container: Element): Promise<void> => {
     if (friend?.memo) {
       // ユーザー名要素を探す: .font-medium かつ flex かつ gap-1.5 を持つspan
       const allSpans = Array.from(
-        container.querySelectorAll("span.font-medium.flex")
+        container.querySelectorAll("span.font-medium.flex"),
       );
       const userNameSpan = allSpans.find((span) => {
         // gap-1.5 クラスを持ち、内部に #付きIDを含むspanを探す
         const hasGapClass = Array.from(span.classList).some((cls) =>
-          cls.includes("gap-")
+          cls.includes("gap-"),
         );
         const hasUserId = span.textContent?.includes(
-          `#${lastPaintedByUser?.id}`
+          `#${lastPaintedByUser?.id}`,
         );
         return hasGapClass && hasUserId;
       });
@@ -192,13 +195,13 @@ const render = async (): Promise<void> => {
         selectedTagFilters.add(tagKey);
       }
       render();
-    }
+    },
   );
 
   renderFriends(friends, sortType, selectedTagFilters);
 
   const sortSelect = document.getElementById(
-    "friends-sort"
+    "friends-sort",
   ) as HTMLSelectElement;
   if (sortSelect) sortSelect.value = sortType;
 };
@@ -240,7 +243,7 @@ const openModal = (): void => {
   setupModal();
   render();
   const modal = document.getElementById(
-    "friends-book-modal"
+    "friends-book-modal",
   ) as HTMLDialogElement;
   if (modal) modal.showModal();
 };
@@ -348,7 +351,7 @@ const setupModal = (): void => {
 
     const editBtn = target.closest(".friends-edit-btn") as HTMLElement | null;
     const deleteBtn = target.closest(
-      ".friends-delete-btn"
+      ".friends-delete-btn",
     ) as HTMLElement | null;
 
     if (editBtn?.dataset.id) {
