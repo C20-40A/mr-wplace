@@ -42,6 +42,7 @@ export class EditorController {
   private isDesktopMode = true;
   private cachedResizedBitmap: ImageBitmap | null = null;
   private cachedScale = 1.0;
+  private readonly inspectorContainerSize = 300;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -532,7 +533,10 @@ export class EditorController {
         ) as HTMLCanvasElement;
         // デスクトップ環境のみImageInspector初期化
         if (canvas && this.isDesktopMode) {
-          this.imageInspector = new ImageInspector(canvas);
+          this.imageInspector = new ImageInspector(canvas, {
+            onViewportChange: (zoom, panX, panY) =>
+              this.syncOriginalImageViewport(zoom, panX, panY),
+          });
         }
 
         const isMobile = window.innerWidth < 1024;
@@ -690,10 +694,15 @@ export class EditorController {
     ) as HTMLCanvasElement;
 
     if (isDesktop && canvas && !this.imageInspector) {
-      this.imageInspector = new ImageInspector(canvas);
+      this.imageInspector = new ImageInspector(canvas, {
+        onViewportChange: (zoom, panX, panY) =>
+          this.syncOriginalImageViewport(zoom, panX, panY),
+      });
     } else if (!isDesktop && this.imageInspector) {
       // モバイルモードではImageInspectorを破棄
       this.imageInspector = null;
+      this.resetOriginalImageViewport();
+      this.updateOriginalImageDisplay();
     }
 
     // 画像を再描画
@@ -853,5 +862,69 @@ export class EditorController {
       colorStats,
       showDisableUnusedButton: true,
     });
+  }
+
+  private resetOriginalImageViewport(): void {
+    const originalImage = this.container.querySelector(
+      "#wps-original-image",
+    ) as HTMLImageElement;
+    if (!originalImage) return;
+
+    originalImage.style.position = "";
+    originalImage.style.top = "";
+    originalImage.style.left = "";
+    originalImage.style.transform = "";
+    originalImage.style.width = "";
+    originalImage.style.height = "";
+  }
+
+  private syncOriginalImageViewport(
+    zoom: number,
+    panX: number,
+    panY: number,
+  ): void {
+    if (!this.isDesktopMode) return;
+    const originalImage = this.container.querySelector(
+      "#wps-original-image",
+    ) as HTMLImageElement;
+    const canvas = this.container.querySelector(
+      "#wps-scaled-canvas",
+    ) as HTMLCanvasElement;
+    if (!originalImage || !canvas) return;
+    if (!originalImage.naturalWidth || !originalImage.naturalHeight) return;
+    if (!canvas.width || !canvas.height) return;
+
+    const containerSize = this.inspectorContainerSize;
+    const baseScaleCurrent = Math.min(
+      containerSize / canvas.width,
+      containerSize / canvas.height,
+    );
+    const baseScaleOriginal = Math.min(
+      containerSize / originalImage.naturalWidth,
+      containerSize / originalImage.naturalHeight,
+    );
+
+    const currentDisplayWidth = canvas.width * baseScaleCurrent * zoom;
+    const currentDisplayHeight = canvas.height * baseScaleCurrent * zoom;
+    const originalDisplayWidth =
+      originalImage.naturalWidth * baseScaleOriginal * zoom;
+    const originalDisplayHeight =
+      originalImage.naturalHeight * baseScaleOriginal * zoom;
+
+    const panXScaled =
+      currentDisplayWidth > 0
+        ? (panX / currentDisplayWidth) * originalDisplayWidth
+        : panX;
+    const panYScaled =
+      currentDisplayHeight > 0
+        ? (panY / currentDisplayHeight) * originalDisplayHeight
+        : panY;
+
+    originalImage.style.position = "absolute";
+    originalImage.style.top = "50%";
+    originalImage.style.left = "50%";
+    originalImage.style.width = `${originalDisplayWidth}px`;
+    originalImage.style.height = `${originalDisplayHeight}px`;
+    originalImage.style.transform = `translate(calc(-50% + ${panXScaled}px), calc(-50% + ${panYScaled}px))`;
   }
 }

@@ -21,7 +21,12 @@ export interface ImageEditorCallbacks {
 }
 
 type UIElements = {
-  [key: string]: HTMLElement | HTMLInputElement | HTMLSelectElement | HTMLCanvasElement | HTMLImageElement;
+  [key: string]:
+    | HTMLElement
+    | HTMLInputElement
+    | HTMLSelectElement
+    | HTMLCanvasElement
+    | HTMLImageElement;
 };
 
 export class ImageEditorUI {
@@ -57,7 +62,7 @@ export class ImageEditorUI {
   private _createElement<K extends keyof HTMLElementTagNameMap>(
     tagName: K,
     options: { [key: string]: any } = {},
-    children: (Node | string)[] = []
+    children: (Node | string)[] = [],
   ): HTMLElementTagNameMap[K] {
     const element = document.createElement(tagName);
     Object.entries(options).forEach(([key, value]) => {
@@ -67,13 +72,12 @@ export class ImageEditorUI {
         Object.assign(element.dataset, value);
       } else if (key === "className") {
         element.className = value;
-      }
-      else {
+      } else {
         (element as any)[key] = value;
       }
     });
-    children.forEach(child => {
-      if (typeof child === 'string') {
+    children.forEach((child) => {
+      if (typeof child === "string") {
         element.appendChild(document.createTextNode(child));
       } else {
         element.appendChild(child);
@@ -89,9 +93,10 @@ export class ImageEditorUI {
     this.container.innerHTML = "";
     this.container.append(dropzone, imageDisplay);
 
-    Object.values(this.elements).forEach(element => {
+    Object.values(this.elements).forEach((element) => {
       if (!element.id) return;
-      this.elements[element.id.replace("wps-", "").replace(/-/g, "_")] = element;
+      this.elements[element.id.replace("wps-", "").replace(/-/g, "_")] =
+        element;
     });
   }
 
@@ -102,7 +107,7 @@ export class ImageEditorUI {
         border: "2px dashed #d1d5db",
         borderRadius: "0.5rem",
         height: "20rem",
-      }
+      },
     });
     return this.elements.dropzoneContainer;
   }
@@ -113,229 +118,479 @@ export class ImageEditorUI {
     const paletteArea = this._createPaletteArea();
     const controlsArea = this._createControlsArea();
 
-    this.elements.mainGrid = this._createElement("div", { id: "wps-main-grid" }, [
-      originalArea,
-      currentArea,
-      paletteArea,
-      controlsArea,
-    ]);
+    this.elements.mainGrid = this._createElement(
+      "div",
+      { id: "wps-main-grid" },
+      [originalArea, currentArea, paletteArea, controlsArea],
+    );
 
-    this.elements.imageDisplay = this._createElement("div", { id: "wps-image-display", style: { display: "none" } }, [
-      this.elements.mainGrid
-    ]);
+    this.elements.imageDisplay = this._createElement(
+      "div",
+      { id: "wps-image-display", style: { display: "none" } },
+      [this.elements.mainGrid],
+    );
     return this.elements.imageDisplay;
   }
 
   private _createOriginalArea(): HTMLElement {
     this.elements.originalImage = this._createElement("img", {
       id: "wps-original-image",
-      alt: "Original"
+      alt: "Original",
     }) as HTMLImageElement;
-    this.elements.replaceOverlay = this._createElement("div", { id: "wps-replace-overlay" }, [`📁 ${t("click_or_drop_to_change")}`]);
+    this.elements.replaceOverlay = this._createElement(
+      "div",
+      { id: "wps-replace-overlay" },
+      [`📁 ${t("click_or_drop_to_change")}`],
+    );
     this.elements.replaceFileInput = this._createElement("input", {
       id: "wps-replace-file-input",
       type: "file",
       accept: "image/*,.json",
-      style: { display: "none" }
+      style: { display: "none" },
     }) as HTMLInputElement;
 
-    this.elements.replaceZone = this._createElement("div", { id: "wps-image-replace-zone" }, [
-      this.elements.originalImage,
-      this.elements.replaceOverlay,
-      this.elements.replaceFileInput,
-      this._createElement("div", {
-        style: {
-          position: "absolute",
-          top: "0.25rem",
-          left: "0.25rem",
-          fontSize: "0.75rem",
-          fontWeight: "500"
-        }
-      }, [t("original_image")])
-    ]);
+    this.elements.replaceZone = this._createElement(
+      "div",
+      { id: "wps-image-replace-zone" },
+      [this.elements.replaceOverlay, this.elements.replaceFileInput],
+    );
 
-    return this._createElement("div", { id: "wps-original-area" }, [this.elements.replaceZone]);
+    const imageLayer = this._createElement(
+      "div",
+      { id: "wps-original-image-layer" },
+      [
+        this.elements.originalImage,
+        this._createElement(
+          "div",
+          {
+            style: {
+              position: "absolute",
+              top: "0.25rem",
+              left: "0.25rem",
+              fontSize: "0.75rem",
+              fontWeight: "500",
+            },
+          },
+          [t("original_image")],
+        ),
+      ],
+    );
+
+    return this._createElement("div", { id: "wps-original-area" }, [
+      imageLayer,
+      this.elements.replaceZone,
+    ]);
   }
 
   private _createCurrentArea(): HTMLElement {
-    this.elements.scaledCanvas = this._createElement("canvas", { id: "wps-scaled-canvas" }) as HTMLCanvasElement;
-    const canvasContainer = this._createElement("div", { id: "wps-canvas-container" }, [this.elements.scaledCanvas]);
+    this.elements.scaledCanvas = this._createElement("canvas", {
+      id: "wps-scaled-canvas",
+    }) as HTMLCanvasElement;
+    const canvasContainer = this._createElement(
+      "div",
+      { id: "wps-canvas-container" },
+      [this.elements.scaledCanvas],
+    );
 
-    this.elements.scaledImage = this._createElement("img", { id: "wps-scaled-image", alt: "Current" }) as HTMLImageElement;
-    const imageContainer = this._createElement("div", { id: "wps-image-container" }, [this.elements.scaledImage]);
+    this.elements.scaledImage = this._createElement("img", {
+      id: "wps-scaled-image",
+      alt: "Current",
+    }) as HTMLImageElement;
+    const imageContainer = this._createElement(
+      "div",
+      { id: "wps-image-container" },
+      [this.elements.scaledImage],
+    );
 
-    this.elements.gpuToggle = this._createElement("input", { type: "checkbox", id: "wps-gpu-toggle", className: "checkbox checkbox-xs", checked: true }) as HTMLInputElement;
-    const gpuLabel = this._createElement("label", { className: "gpu-toggle-label" }, [
-      this.elements.gpuToggle,
-      this._createElement("span", {}, ["⚡GPU"])
-    ]);
+    this.elements.gpuToggle = this._createElement("input", {
+      type: "checkbox",
+      id: "wps-gpu-toggle",
+      className: "checkbox checkbox-xs",
+      checked: true,
+    }) as HTMLInputElement;
+    const gpuLabel = this._createElement(
+      "label",
+      { className: "gpu-toggle-label" },
+      [this.elements.gpuToggle, this._createElement("span", {}, ["⚡GPU"])],
+    );
 
     const flexContainer = this._createElement("div", { className: "flex" }, [
       canvasContainer,
       imageContainer,
       gpuLabel,
-      this._createElement("div", {
-        style: {
-          position: "absolute",
-          top: "0.25rem",
-          left: "0.25rem",
-          fontSize: "0.75rem",
-          fontWeight: "500"
-        }
-      }, [t("current_image")])
+      this._createElement(
+        "div",
+        {
+          style: {
+            position: "absolute",
+            top: "0.25rem",
+            left: "0.25rem",
+            fontSize: "0.75rem",
+            fontWeight: "500",
+          },
+        },
+        [t("current_image")],
+      ),
     ]);
 
-    return this._createElement("div", { id: "wps-current-area" }, [flexContainer]);
+    return this._createElement("div", { id: "wps-current-area" }, [
+      flexContainer,
+    ]);
   }
 
-
   private _createPaletteArea(): HTMLElement {
-    this.elements.colorPaletteContainerMobile = this._createElement("div", { id: "wps-color-palette-container-mobile" });
+    this.elements.colorPaletteContainerMobile = this._createElement("div", {
+      id: "wps-color-palette-container-mobile",
+    });
     const summary = this._createElement("summary", {}, [
       "Color Palette",
       this._createElement("span", { style: { float: "right" } }, ["▼"]),
     ]);
-    const accordion = this._createElement("details", { id: "wps-palette-accordion" }, [
-      summary,
-      this.elements.colorPaletteContainerMobile,
-    ]);
+    const accordion = this._createElement(
+      "details",
+      { id: "wps-palette-accordion" },
+      [summary, this.elements.colorPaletteContainerMobile],
+    );
 
-    this.elements.colorPaletteContainer = this._createElement("div", { id: "wps-color-palette-container" });
-    const desktopPalette = this._createElement("div", { id: "wps-palette-desktop" }, [this.elements.colorPaletteContainer]);
+    this.elements.colorPaletteContainer = this._createElement("div", {
+      id: "wps-color-palette-container",
+    });
+    const desktopPalette = this._createElement(
+      "div",
+      { id: "wps-palette-desktop" },
+      [this.elements.colorPaletteContainer],
+    );
 
     return this._createElement("div", { id: "wps-palette-area" }, [
       accordion,
-      desktopPalette
+      desktopPalette,
     ]);
   }
 
   private _createControlsArea(): HTMLElement {
-    const controlsContainer = this._createElement("div", { id: "wps-controls-container" }, [
-      this._createSizeControl(),
-      this._createContrastQuantizationControl(),
-      this._createBrightnessSaturationControl(),
-      this._createDitheringSharpnessControl(),
-      this._createCoordinateInput(),
-      this._createActionButtons()
+    const controlsContainer = this._createElement(
+      "div",
+      { id: "wps-controls-container" },
+      [
+        this._createSizeControl(),
+        this._createContrastQuantizationControl(),
+        this._createBrightnessSaturationControl(),
+        this._createDitheringSharpnessControl(),
+        this._createCoordinateInput(),
+        this._createActionButtons(),
+      ],
+    );
+    return this._createElement("div", { id: "wps-controls-area" }, [
+      controlsContainer,
     ]);
-    return this._createElement("div", { id: "wps-controls-area" }, [controlsContainer]);
   }
 
   private _createSizeControl(): HTMLElement {
-    this.elements.scaleSlider = this._createElement("input", { id: "wps-scale-slider", type: "range", min: 0.1, max: 1, step: 0.01, value: 1, className: "range" }) as HTMLInputElement;
-    this.elements.widthInput = this._createElement("input", { id: "wps-width-input", type: "number", min: 1, step: 1 }) as HTMLInputElement;
-    this.elements.heightInput = this._createElement("input", { id: "wps-height-input", type: "number", min: 1, step: 1 }) as HTMLInputElement;
+    this.elements.scaleSlider = this._createElement("input", {
+      id: "wps-scale-slider",
+      type: "range",
+      min: 0.1,
+      max: 1,
+      step: 0.01,
+      value: 1,
+      className: "range",
+    }) as HTMLInputElement;
+    this.elements.widthInput = this._createElement("input", {
+      id: "wps-width-input",
+      type: "number",
+      min: 1,
+      step: 1,
+    }) as HTMLInputElement;
+    this.elements.heightInput = this._createElement("input", {
+      id: "wps-height-input",
+      type: "number",
+      min: 1,
+      step: 1,
+    }) as HTMLInputElement;
 
     return this._createElement("div", {}, [
-      this._createElement("label", { className: "control-label space-between" }, [
-        this._createElement("span", { className: "label-hint" }, ["0.1x"]),
-        this._createElement("span", {}, [t("size_reduction")]),
-        this._createElement("span", { className: "label-hint" }, ["1.0x"]),
-      ]),
+      this._createElement(
+        "label",
+        { className: "control-label space-between" },
+        [
+          this._createElement("span", { className: "label-hint" }, ["0.1x"]),
+          this._createElement("span", {}, [t("size_reduction")]),
+          this._createElement("span", { className: "label-hint" }, ["1.0x"]),
+        ],
+      ),
       this._createElement("div", { className: "flex-group" }, [
         this.elements.scaleSlider,
         this._createElement("div", { className: "flex-group" }, [
           this.elements.widthInput,
           this._createElement("span", { className: "label-hint" }, ["×"]),
           this.elements.heightInput,
-        ])
+        ]),
       ]),
     ]);
   }
   private _createContrastQuantizationControl(): HTMLElement {
-    this.elements.contrastValue = this._createElement("span", { id: "wps-contrast-value" }, ["0"]);
-    this.elements.contrastSlider = this._createElement("input", { id: "wps-contrast-slider", type: "range", min: -100, max: 100, step: 1, value: 0, className: "range" }) as HTMLInputElement;
-    this.elements.quantizationMethod = this._createElement("select", { id: "wps-quantization-method", className: "select select-sm w-full" }, [
-      this._createElement("option", { value: "rgb-euclidean" }, [t("quantization_rgb_euclidean")]),
-      this._createElement("option", { value: "weighted-rgb" }, [t("quantization_weighted_rgb")]),
-      this._createElement("option", { value: "lab" }, [t("quantization_lab")]),
-    ]) as HTMLSelectElement;
-
-    return this._createElement("div", { id: "wps-contrast-quantization-container", className: "control-group" }, [
-      this._createElement("div", { className: "control-item" }, [
-        this._createElement("label", { className: "control-label space-between" }, [
-          this._createElement("span", { className: "label-hint" }, ["-100"]),
-          this._createElement("span", {}, [`${t("contrast")}: `, this.elements.contrastValue]),
-          this._createElement("span", { className: "label-hint" }, ["100"]),
+    this.elements.contrastValue = this._createElement(
+      "span",
+      { id: "wps-contrast-value" },
+      ["0"],
+    );
+    this.elements.contrastSlider = this._createElement("input", {
+      id: "wps-contrast-slider",
+      type: "range",
+      min: -100,
+      max: 100,
+      step: 1,
+      value: 0,
+      className: "range",
+    }) as HTMLInputElement;
+    this.elements.quantizationMethod = this._createElement(
+      "select",
+      { id: "wps-quantization-method", className: "select select-sm w-full" },
+      [
+        this._createElement("option", { value: "rgb-euclidean" }, [
+          t("quantization_rgb_euclidean"),
         ]),
-        this.elements.contrastSlider,
-      ]),
-      this._createElement("div", { className: "control-item" }, [
-        this._createElement("label", { className: "control-label centered" }, [t("quantization_method")]),
-        this.elements.quantizationMethod,
-      ]),
-    ]);
+        this._createElement("option", { value: "weighted-rgb" }, [
+          t("quantization_weighted_rgb"),
+        ]),
+        this._createElement("option", { value: "lab" }, [
+          t("quantization_lab"),
+        ]),
+      ],
+    ) as HTMLSelectElement;
+
+    return this._createElement(
+      "div",
+      { id: "wps-contrast-quantization-container", className: "control-group" },
+      [
+        this._createElement("div", { className: "control-item" }, [
+          this._createElement(
+            "label",
+            { className: "control-label space-between" },
+            [
+              this._createElement("span", { className: "label-hint" }, [
+                "-100",
+              ]),
+              this._createElement("span", {}, [
+                `${t("contrast")}: `,
+                this.elements.contrastValue,
+              ]),
+              this._createElement("span", { className: "label-hint" }, ["100"]),
+            ],
+          ),
+          this.elements.contrastSlider,
+        ]),
+        this._createElement("div", { className: "control-item" }, [
+          this._createElement(
+            "label",
+            { className: "control-label centered" },
+            [t("quantization_method")],
+          ),
+          this.elements.quantizationMethod,
+        ]),
+      ],
+    );
   }
 
   private _createBrightnessSaturationControl(): HTMLElement {
-    this.elements.brightnessValue = this._createElement("span", { id: "wps-brightness-value" }, ["0"]);
-    this.elements.brightnessSlider = this._createElement("input", { id: "wps-brightness-slider", type: "range", min: -100, max: 100, step: 1, value: 0, className: "range" }) as HTMLInputElement;
-    this.elements.saturationValue = this._createElement("span", { id: "wps-saturation-value" }, ["0"]);
-    this.elements.saturationSlider = this._createElement("input", { id: "wps-saturation-slider", type: "range", min: -100, max: 100, step: 1, value: 0, className: "range" }) as HTMLInputElement;
+    this.elements.brightnessValue = this._createElement(
+      "span",
+      { id: "wps-brightness-value" },
+      ["0"],
+    );
+    this.elements.brightnessSlider = this._createElement("input", {
+      id: "wps-brightness-slider",
+      type: "range",
+      min: -100,
+      max: 100,
+      step: 1,
+      value: 0,
+      className: "range",
+    }) as HTMLInputElement;
+    this.elements.saturationValue = this._createElement(
+      "span",
+      { id: "wps-saturation-value" },
+      ["0"],
+    );
+    this.elements.saturationSlider = this._createElement("input", {
+      id: "wps-saturation-slider",
+      type: "range",
+      min: -100,
+      max: 100,
+      step: 1,
+      value: 0,
+      className: "range",
+    }) as HTMLInputElement;
 
-    return this._createElement("div", { id: "wps-brightness-saturation-container", className: "control-group" }, [
-      this._createElement("div", { className: "control-item" }, [
-        this._createElement("label", { className: "control-label space-between" }, [
-          this._createElement("span", { className: "label-hint" }, ["-100"]),
-          this._createElement("span", {}, [`${t("brightness")}: `, this.elements.brightnessValue]),
-          this._createElement("span", { className: "label-hint" }, ["100"]),
+    return this._createElement(
+      "div",
+      { id: "wps-brightness-saturation-container", className: "control-group" },
+      [
+        this._createElement("div", { className: "control-item" }, [
+          this._createElement(
+            "label",
+            { className: "control-label space-between" },
+            [
+              this._createElement("span", { className: "label-hint" }, [
+                "-100",
+              ]),
+              this._createElement("span", {}, [
+                `${t("brightness")}: `,
+                this.elements.brightnessValue,
+              ]),
+              this._createElement("span", { className: "label-hint" }, ["100"]),
+            ],
+          ),
+          this.elements.brightnessSlider,
         ]),
-        this.elements.brightnessSlider,
-      ]),
-      this._createElement("div", { className: "control-item" }, [
-        this._createElement("label", { className: "control-label space-between" }, [
-          this._createElement("span", { className: "label-hint" }, ["-100"]),
-          this._createElement("span", {}, [`${t("saturation")}: `, this.elements.saturationValue]),
-          this._createElement("span", { className: "label-hint" }, ["100"]),
+        this._createElement("div", { className: "control-item" }, [
+          this._createElement(
+            "label",
+            { className: "control-label space-between" },
+            [
+              this._createElement("span", { className: "label-hint" }, [
+                "-100",
+              ]),
+              this._createElement("span", {}, [
+                `${t("saturation")}: `,
+                this.elements.saturationValue,
+              ]),
+              this._createElement("span", { className: "label-hint" }, ["100"]),
+            ],
+          ),
+          this.elements.saturationSlider,
         ]),
-        this.elements.saturationSlider,
-      ]),
-    ]);
+      ],
+    );
   }
 
   private _createDitheringSharpnessControl(): HTMLElement {
-    this.elements.ditheringCheckbox = this._createElement("input", { id: "wps-dithering-checkbox", type: "checkbox", className: "checkbox checkbox-sm" }) as HTMLInputElement;
-    this.elements.ditheringThresholdValue = this._createElement("span", { id: "wps-dithering-threshold-value" }, ["500"]);
-    this.elements.ditheringThresholdSlider = this._createElement("input", { id: "wps-dithering-threshold-slider", type: "range", min: 0, max: 1500, step: 50, value: 500, className: "range", disabled: true }) as HTMLInputElement;
+    this.elements.ditheringCheckbox = this._createElement("input", {
+      id: "wps-dithering-checkbox",
+      type: "checkbox",
+      className: "checkbox checkbox-sm",
+    }) as HTMLInputElement;
+    this.elements.ditheringThresholdValue = this._createElement(
+      "span",
+      { id: "wps-dithering-threshold-value" },
+      ["500"],
+    );
+    this.elements.ditheringThresholdSlider = this._createElement("input", {
+      id: "wps-dithering-threshold-slider",
+      type: "range",
+      min: 0,
+      max: 1500,
+      step: 50,
+      value: 500,
+      className: "range",
+      disabled: true,
+    }) as HTMLInputElement;
 
-    this.elements.sharpnessCheckbox = this._createElement("input", { id: "wps-sharpness-checkbox", type: "checkbox", className: "checkbox checkbox-sm" }) as HTMLInputElement;
-    this.elements.sharpnessValue = this._createElement("span", { id: "wps-sharpness-value" }, ["0"]);
-    this.elements.sharpnessSlider = this._createElement("input", { id: "wps-sharpness-slider", type: "range", min: 0, max: 100, step: 1, value: 0, className: "range", disabled: true }) as HTMLInputElement;
+    this.elements.sharpnessCheckbox = this._createElement("input", {
+      id: "wps-sharpness-checkbox",
+      type: "checkbox",
+      className: "checkbox checkbox-sm",
+    }) as HTMLInputElement;
+    this.elements.sharpnessValue = this._createElement(
+      "span",
+      { id: "wps-sharpness-value" },
+      ["0"],
+    );
+    this.elements.sharpnessSlider = this._createElement("input", {
+      id: "wps-sharpness-slider",
+      type: "range",
+      min: 0,
+      max: 100,
+      step: 1,
+      value: 0,
+      className: "range",
+      disabled: true,
+    }) as HTMLInputElement;
 
-    return this._createElement("div", { id: "wps-dithering-sharpness-container", className: "control-group" }, [
-      this._createElement("div", { className: "control-item" }, [
-        this._createElement("label", { className: "control-label centered cursor-pointer" }, [
-          this.elements.ditheringCheckbox,
-          this._createElement("span", {}, [`${t("dithering")}: `, this.elements.ditheringThresholdValue]),
+    return this._createElement(
+      "div",
+      { id: "wps-dithering-sharpness-container", className: "control-group" },
+      [
+        this._createElement("div", { className: "control-item" }, [
+          this._createElement(
+            "label",
+            { className: "control-label centered cursor-pointer" },
+            [
+              this.elements.ditheringCheckbox,
+              this._createElement("span", {}, [
+                `${t("dithering")}: `,
+                this.elements.ditheringThresholdValue,
+              ]),
+            ],
+          ),
+          this._createElement("div", { className: "flex-group" }, [
+            this._createElement("span", { className: "label-hint-sm" }, ["0"]),
+            this.elements.ditheringThresholdSlider,
+            this._createElement("span", { className: "label-hint-sm" }, [
+              "1500",
+            ]),
+          ]),
         ]),
-        this._createElement("div", { className: "flex-group" }, [
-          this._createElement("span", { className: "label-hint-sm" }, ["0"]),
-          this.elements.ditheringThresholdSlider,
-          this._createElement("span", { className: "label-hint-sm" }, ["1500"]),
+        this._createElement("div", { className: "control-item" }, [
+          this._createElement(
+            "label",
+            { className: "control-label centered cursor-pointer" },
+            [
+              this.elements.sharpnessCheckbox,
+              this._createElement("span", {}, [
+                `${t("sharpness")}: `,
+                this.elements.sharpnessValue,
+              ]),
+            ],
+          ),
+          this._createElement("div", { className: "flex-group" }, [
+            this._createElement("span", { className: "label-hint-sm" }, ["0"]),
+            this.elements.sharpnessSlider,
+            this._createElement("span", { className: "label-hint-sm" }, [
+              "100",
+            ]),
+          ]),
         ]),
-      ]),
-      this._createElement("div", { className: "control-item" }, [
-        this._createElement("label", { className: "control-label centered cursor-pointer" }, [
-          this.elements.sharpnessCheckbox,
-          this._createElement("span", {}, [`${t("sharpness")}: `, this.elements.sharpnessValue]),
-        ]),
-        this._createElement("div", { className: "flex-group" }, [
-          this._createElement("span", { className: "label-hint-sm" }, ["0"]),
-          this.elements.sharpnessSlider,
-          this._createElement("span", { className: "label-hint-sm" }, ["100"]),
-        ]),
-      ]),
-    ]);
+      ],
+    );
   }
 
   private _createCoordinateInput(): HTMLElement {
-    this.elements.coordTlx = this._createElement("input", { id: "wps-coord-tlx", type: "number", placeholder: "TLX", min: 0, step: 1 }) as HTMLInputElement;
-    this.elements.coordTly = this._createElement("input", { id: "wps-coord-tly", type: "number", placeholder: "TLY", min: 0, step: 1 }) as HTMLInputElement;
-    this.elements.coordPxx = this._createElement("input", { id: "wps-coord-pxx", type: "number", placeholder: "PxX", min: 0, max: 999, step: 1 }) as HTMLInputElement;
-    this.elements.coordPxy = this._createElement("input", { id: "wps-coord-pxy", type: "number", placeholder: "PxY", min: 0, max: 999, step: 1 }) as HTMLInputElement;
+    this.elements.coordTlx = this._createElement("input", {
+      id: "wps-coord-tlx",
+      type: "number",
+      placeholder: "TLX",
+      min: 0,
+      step: 1,
+    }) as HTMLInputElement;
+    this.elements.coordTly = this._createElement("input", {
+      id: "wps-coord-tly",
+      type: "number",
+      placeholder: "TLY",
+      min: 0,
+      step: 1,
+    }) as HTMLInputElement;
+    this.elements.coordPxx = this._createElement("input", {
+      id: "wps-coord-pxx",
+      type: "number",
+      placeholder: "PxX",
+      min: 0,
+      max: 999,
+      step: 1,
+    }) as HTMLInputElement;
+    this.elements.coordPxy = this._createElement("input", {
+      id: "wps-coord-pxy",
+      type: "number",
+      placeholder: "PxY",
+      min: 0,
+      max: 999,
+      step: 1,
+    }) as HTMLInputElement;
 
     return this._createElement("div", {}, [
-      this._createElement("label", { className: "control-label-sm" }, [t("coordinate_input_optional")]),
+      this._createElement("label", { className: "control-label-sm" }, [
+        t("coordinate_input_optional"),
+      ]),
       this._createElement("div", { className: "grid-4-col" }, [
         this.elements.coordTlx,
         this.elements.coordTly,
@@ -346,15 +601,22 @@ export class ImageEditorUI {
   }
 
   private _createActionButtons(): HTMLElement {
-    this.elements.addToGallery = this._createElement("button", { id: "wps-add-to-gallery", className: "btn btn-primary flex-1" }, [t("add_to_gallery")]);
-    this.elements.download = this._createElement("button", { id: "wps-download", className: "btn btn-ghost" }, [t("download")]);
+    this.elements.addToGallery = this._createElement(
+      "button",
+      { id: "wps-add-to-gallery", className: "btn btn-primary flex-1" },
+      [t("add_to_gallery")],
+    );
+    this.elements.download = this._createElement(
+      "button",
+      { id: "wps-download", className: "btn btn-ghost" },
+      [t("download")],
+    );
 
     return this._createElement("div", { className: "flex" }, [
       this.elements.addToGallery,
       this.elements.download,
     ]);
   }
-
 
   private setupImageDropzone(): void {
     if (!this.callbacks) return;
@@ -376,11 +638,26 @@ export class ImageEditorUI {
 
     const replaceZone = this.elements.replaceZone as HTMLElement;
     if (replaceZone) {
-      replaceZone.addEventListener("mouseenter", () => (this.elements.replaceOverlay as HTMLElement).style.display = "flex");
-      replaceZone.addEventListener("mouseleave", () => (this.elements.replaceOverlay as HTMLElement).style.display = "none");
-      replaceZone.addEventListener("click", () => (this.elements.replaceFileInput as HTMLInputElement).click());
+      replaceZone.addEventListener(
+        "mouseenter",
+        () =>
+          ((this.elements.replaceOverlay as HTMLElement).style.display =
+            "flex"),
+      );
+      replaceZone.addEventListener(
+        "mouseleave",
+        () =>
+          ((this.elements.replaceOverlay as HTMLElement).style.display =
+            "none"),
+      );
+      replaceZone.addEventListener("click", () =>
+        (this.elements.replaceFileInput as HTMLInputElement).click(),
+      );
       replaceZone.addEventListener("dragover", this._handleDragOver.bind(this));
-      replaceZone.addEventListener("dragleave", this._handleDragLeave.bind(this));
+      replaceZone.addEventListener(
+        "dragleave",
+        this._handleDragLeave.bind(this),
+      );
       replaceZone.addEventListener("drop", this._handleDrop.bind(this));
     }
   }
@@ -393,18 +670,29 @@ export class ImageEditorUI {
     switch (target.id) {
       case "wps-scale-slider": {
         const scale = parseFloat(value);
-        const { widthInput, heightInput } = this.elements as { widthInput: HTMLInputElement, heightInput: HTMLInputElement };
+        const { widthInput, heightInput } = this.elements as {
+          widthInput: HTMLInputElement;
+          heightInput: HTMLInputElement;
+        };
         const originalWidth = parseInt(widthInput.dataset.originalWidth || "1");
-        const originalHeight = parseInt(heightInput.dataset.originalHeight || "1");
+        const originalHeight = parseInt(
+          heightInput.dataset.originalHeight || "1",
+        );
         widthInput.value = Math.round(originalWidth * scale).toString();
         heightInput.value = Math.round(originalHeight * scale).toString();
         break;
       }
       case "wps-width-input": {
         const width = parseInt(value) || 1;
-        const { widthInput, heightInput, scaleSlider } = this.elements as { widthInput: HTMLInputElement, heightInput: HTMLInputElement, scaleSlider: HTMLInputElement };
+        const { widthInput, heightInput, scaleSlider } = this.elements as {
+          widthInput: HTMLInputElement;
+          heightInput: HTMLInputElement;
+          scaleSlider: HTMLInputElement;
+        };
         const originalWidth = parseInt(widthInput.dataset.originalWidth || "1");
-        const originalHeight = parseInt(heightInput.dataset.originalHeight || "1");
+        const originalHeight = parseInt(
+          heightInput.dataset.originalHeight || "1",
+        );
         const aspectRatio = originalHeight / originalWidth;
         heightInput.value = Math.round(width * aspectRatio).toString();
         const scale = width / originalWidth;
@@ -413,9 +701,15 @@ export class ImageEditorUI {
       }
       case "wps-height-input": {
         const height = parseInt(value) || 1;
-        const { widthInput, heightInput, scaleSlider } = this.elements as { widthInput: HTMLInputElement, heightInput: HTMLInputElement, scaleSlider: HTMLInputElement };
+        const { widthInput, heightInput, scaleSlider } = this.elements as {
+          widthInput: HTMLInputElement;
+          heightInput: HTMLInputElement;
+          scaleSlider: HTMLInputElement;
+        };
         const originalWidth = parseInt(widthInput.dataset.originalWidth || "1");
-        const originalHeight = parseInt(heightInput.dataset.originalHeight || "1");
+        const originalHeight = parseInt(
+          heightInput.dataset.originalHeight || "1",
+        );
         const aspectRatio = originalWidth / originalHeight;
         widthInput.value = Math.round(height * aspectRatio).toString();
         const scale = height / originalHeight;
@@ -435,7 +729,8 @@ export class ImageEditorUI {
         (this.elements.sharpnessValue as HTMLElement).textContent = value;
         break;
       case "wps-dithering-threshold-slider":
-        (this.elements.ditheringThresholdValue as HTMLElement).textContent = value;
+        (this.elements.ditheringThresholdValue as HTMLElement).textContent =
+          value;
         break;
     }
   }
@@ -448,7 +743,9 @@ export class ImageEditorUI {
       case "wps-scale-slider":
       case "wps-width-input":
       case "wps-height-input": {
-        const scale = parseFloat((this.elements.scaleSlider as HTMLInputElement).value);
+        const scale = parseFloat(
+          (this.elements.scaleSlider as HTMLInputElement).value,
+        );
         this.callbacks.onScaleChange(Math.max(0.01, Math.min(1, scale)));
         break;
       }
@@ -462,21 +759,25 @@ export class ImageEditorUI {
         this.callbacks.onSaturationChange(parseInt(target.value));
         break;
       case "wps-sharpness-checkbox":
-        (this.elements.sharpnessSlider as HTMLInputElement).disabled = !target.checked;
+        (this.elements.sharpnessSlider as HTMLInputElement).disabled =
+          !target.checked;
         this.callbacks.onSharpnessToggle(target.checked);
         break;
       case "wps-sharpness-slider":
         this.callbacks.onSharpnessChange(parseInt(target.value));
         break;
       case "wps-dithering-checkbox":
-        (this.elements.ditheringThresholdSlider as HTMLInputElement).disabled = !target.checked;
+        (this.elements.ditheringThresholdSlider as HTMLInputElement).disabled =
+          !target.checked;
         this.callbacks.onDitheringChange(target.checked);
         break;
       case "wps-dithering-threshold-slider":
         this.callbacks.onDitheringThresholdChange(parseInt(target.value));
         break;
       case "wps-quantization-method":
-        this.callbacks.onQuantizationMethodChange((target as any).value as QuantizationMethod);
+        this.callbacks.onQuantizationMethodChange(
+          (target as any).value as QuantizationMethod,
+        );
         break;
       case "wps-gpu-toggle":
         this.callbacks.onGpuToggle(target.checked);
@@ -530,7 +831,10 @@ export class ImageEditorUI {
     overlay.style.background = "rgba(0,0,0,0.7)";
 
     const file = e.dataTransfer?.files?.[0];
-    if (file && (file.type.startsWith("image/") || file.name.endsWith(".json"))) {
+    if (
+      file &&
+      (file.type.startsWith("image/") || file.name.endsWith(".json"))
+    ) {
       this.callbacks?.onReplaceImage(file);
     }
   }
@@ -564,7 +868,8 @@ export class ImageEditorUI {
     const styleId = "wps-image-editor-styles";
     if (document.getElementById(styleId)) return;
 
-    const style = this._createElement("style", { id: styleId }, [`
+    const style = this._createElement("style", { id: styleId }, [
+      `
       #wps-image-editor-container.desktop #wps-main-grid {
         display: grid;
         grid-template-columns: 2fr 3fr;
@@ -586,6 +891,7 @@ export class ImageEditorUI {
         padding: 0.5rem;
         min-height: 0;
       }
+      #wps-original-area { position: relative; }
       #wps-image-editor-container.desktop #wps-original-area,
       #wps-image-editor-container.desktop #wps-current-area,
       #wps-image-editor-container.desktop #wps-palette-area,
@@ -594,11 +900,21 @@ export class ImageEditorUI {
         -webkit-overflow-scrolling: touch;
         overscroll-behavior: contain;
       }
+      #wps-image-editor-container.desktop #wps-original-area { overflow: hidden; }
+      #wps-original-image-layer {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: visible;
+      }
       #wps-image-replace-zone {
-        position: relative; cursor: pointer; display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; overflow: hidden;
+        position: absolute; inset: 0; cursor: pointer; display: flex; justify-content: center; align-items: center;
       }
       #wps-original-image {
-        border: 1px solid #e5e7eb; border-radius: 0.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: pixelated; image-rendering: -webkit-optimize-contrast;
+        border: 1px solid #e5e7eb; border-radius: 0.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: auto; height: auto; max-width: none; max-height: none; object-fit: contain; image-rendering: pixelated; image-rendering: -webkit-optimize-contrast;
       }
       #wps-replace-overlay {
         position: absolute; inset: 0; background: rgba(0,0,0,0.7); border-radius: 0.25rem; display: none; align-items: center; justify-content: center; color: white; font-size: 0.875rem; text-align: center; padding: 1rem;
@@ -655,7 +971,8 @@ export class ImageEditorUI {
       .grid-4-col input { width: 100%; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; text-align: center; }
       .flex { display: flex; gap: 0.5rem; }
       .flex-1 { flex: 1; }
-    `]);
+    `,
+    ]);
     document.head.appendChild(style);
   }
 }
