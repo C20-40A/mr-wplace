@@ -359,19 +359,37 @@ export class SnapshotRoute extends BaseSnapshotRoute {
       this.currentTileY
     );
 
-    if (!tmpBlob) {
+    let dataUrl: string | null = null;
+
+    if (tmpBlob) {
+      // Blob から画像表示
+      dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(tmpBlob);
+      });
+    } else {
+      // tmpタイルがない場合は、最新のスナップショットを取得
+      const snapshots = await TimeTravelStorage.getSnapshotsForTile(
+        this.currentTileX,
+        this.currentTileY
+      );
+
+      if (snapshots.length > 0) {
+        // 最新のスナップショット（先頭）を取得
+        const latestSnapshot = snapshots[0];
+        const { getSnapshotDataUrl } = await import("@/utils/inject-bridge");
+        const snapshotId = latestSnapshot.fullKey.replace("tile_snapshot_", "");
+        dataUrl = await getSnapshotDataUrl(snapshotId);
+      }
+    }
+
+    if (!dataUrl) {
       canvas.style.display = "none";
       noImageMessage.textContent = "Tile image not loaded";
       noImageMessage.style.display = "block";
       return;
     }
-
-    // Blob から画像表示
-    const dataUrl = await new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.readAsDataURL(tmpBlob);
-    });
 
     const img = new Image();
     img.onload = () => {
