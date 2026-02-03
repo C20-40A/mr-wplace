@@ -54,6 +54,6 @@ export class LockButtonEnhancer {
       container.style.cssText = "top:0;right:0;";
     }
 
-    console.log("🧑‍🎨 : Lock button enhanced");
+    // console.log("🧑‍🎨 : Lock button enhanced");
   }
 }
