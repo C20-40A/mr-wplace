@@ -3,7 +3,7 @@ import { storage } from "@/utils/browser-api";
 const STORAGE_KEY = "mr_wplace_close_button_swap";
 
 // Default: disabled (false)
-let currentEnabled = false;
+let currentEnabled = true;
 
 export const loadCloseButtonSwapFromStorage = async (): Promise<void> => {
   const result = await storage.get([STORAGE_KEY]);

@@ -1,6 +1,6 @@
 import { t } from "@/i18n/manager";
 import { colorpalette } from "@/constants/colors";
-import { ImageDropzone } from "../../../../components/image-dropzone";
+import { ImageDropzone } from "@/components/image-dropzone";
 import { QuantizationMethod } from "./canvas-processor";
 
 export interface ImageEditorCallbacks {
@@ -306,11 +306,11 @@ export class ImageEditorUI {
       chips,
     );
 
-    return this._createElement(
-      "div",
-      { id: "wps-transparent-section" },
-      [divider, label, grid],
-    );
+    return this._createElement("div", { id: "wps-transparent-section" }, [
+      divider,
+      label,
+      grid,
+    ]);
   }
 
   private _createControlsArea(): HTMLElement {
