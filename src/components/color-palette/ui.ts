@@ -90,7 +90,11 @@ export function buildColorGrid(
 /**
  * ソート順ドロップダウンHTML生成
  */
-export function buildSortOrderSelectHtml(sortOrder: SortOrder): string {
+export function buildSortOrderSelectHtml(
+  sortOrder: SortOrder,
+  controlSize: "default" | "xs" = "default"
+): string {
+  const isXs = controlSize === "xs";
   const currentOption = SORT_ORDER_OPTIONS.find((o) => o.value === sortOrder);
   const currentLabelKey = currentOption?.labelKey ?? "sort_order_default";
 
@@ -104,9 +108,9 @@ export function buildSortOrderSelectHtml(sortOrder: SortOrder): string {
   return `
     <div class="sort-order-container" style="position: relative;">
       <button class="sort-order-button" type="button"
-              style="padding: 0.2rem 0.4rem;
+              style="padding: ${isXs ? "0.15rem 0.3rem" : "0.2rem 0.4rem"};
                      border: 2px solid #d1d5db;
-                     border-radius: 0.5rem;
+                     border-radius: ${isXs ? "0.4rem" : "0.5rem"};
                      cursor: pointer;
                      display: flex;
                      align-items: center;
@@ -122,7 +126,7 @@ export function buildSortOrderSelectHtml(sortOrder: SortOrder): string {
               ontouchstart="this.style.transform='scale(0.98)'; this.style.boxShadow='0 1px 2px rgba(0, 0, 0, 0.1)';"
               ontouchend="this.style.transform='scale(1)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)';">
         <span style="display: flex; align-items: center; color: #22c55e;">${sortIconSvg}</span>
-        <span class="sort-order-current-name" style="font-size: 0.875rem; font-weight: 600; color: #22c55e; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">${t`${currentLabelKey}`}</span>
+        <span class="sort-order-current-name" style="font-size: ${isXs ? "0.75rem" : "0.875rem"}; font-weight: 600; color: #22c55e; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">${t`${currentLabelKey}`}</span>
       </button>
       <div class="sort-order-dropdown"
            style="display: none;
@@ -136,7 +140,7 @@ export function buildSortOrderSelectHtml(sortOrder: SortOrder): string {
                   padding: 0.375rem;
                   z-index: 1000;
                   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-                  min-width: 180px;
+                  min-width: ${isXs ? "150px" : "180px"};
                   animation: slideDown 0.2s ease-out;
                   transform-origin: top;
                   backdrop-filter: blur(10px);">
@@ -157,13 +161,13 @@ export function buildSortOrderSelectHtml(sortOrder: SortOrder): string {
               <button class="sort-order-item"
                       data-sort="${option.value}"
                       type="button"
-                      style="padding: 0.5rem 0.75rem;
+                      style="padding: ${isXs ? "0.35rem 0.5rem" : "0.5rem 0.75rem"};
                              background-color: ${bgColor};
                              border: ${borderWidth} solid ${borderColor};
                              border-radius: 0.375rem;
                              cursor: pointer;
                              text-align: left;
-                             font-size: 0.875rem;
+                             font-size: ${isXs ? "0.75rem" : "0.875rem"};
                              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                              font-weight: ${isSelected ? "600" : "400"};
                              color: ${textColor};
@@ -192,15 +196,19 @@ export function buildSortOrderSelectHtml(sortOrder: SortOrder): string {
 /**
  * EnhancedモードドロップダウンHTML生成
  */
-export function buildEnhancedSelectHtml(enhancedMode: EnhancedMode): string {
+export function buildEnhancedSelectHtml(
+  enhancedMode: EnhancedMode,
+  controlSize: "default" | "xs" = "default"
+): string {
+  const isXs = controlSize === "xs";
   const labelKey = getEnhancedModeLabelKey(enhancedMode);
 
   return `
     <div class="enhanced-mode-container" style="position: relative;">
       <button class="enhanced-mode-button" type="button"
-              style="padding: 0.2rem 0.4rem;
+              style="padding: ${isXs ? "0.15rem 0.3rem" : "0.2rem 0.4rem"};
                      border: 2px solid #d1d5db;
-                     border-radius: 0.5rem;
+                     border-radius: ${isXs ? "0.4rem" : "0.5rem"};
                      cursor: pointer;
                      display: flex;
                      align-items: center;
@@ -219,14 +227,14 @@ export function buildEnhancedSelectHtml(enhancedMode: EnhancedMode): string {
         <img class="enhanced-mode-current-icon" 
              src="${ENHANCED_MODE_ICONS[enhancedMode]}" 
              alt="${enhancedMode}" 
-             style="width: 20px; 
-                    height: 20px; 
+             style="width: ${isXs ? "16px" : "20px"}; 
+                    height: ${isXs ? "16px" : "20px"}; 
                     image-rendering: pixelated;
                     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
                     transition: transform 0.2s ease;" />
-        <span style="font-size: 0.875rem;">${t`${"enhanced_mode_label"}`}</span>
+        <span style="font-size: ${isXs ? "0.75rem" : "0.875rem"};">${t`${"enhanced_mode_label"}`}</span>
         <span class="enhanced-mode-current-name" 
-              style="font-size: 0.875rem; 
+              style="font-size: ${isXs ? "0.75rem" : "0.875rem"}; 
                      font-weight: 600; 
                      color: #22c55e;
                      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">${t`${labelKey}`}</span>
@@ -262,9 +270,13 @@ export function buildEnhancedSelectHtml(enhancedMode: EnhancedMode): string {
             // Speed badge: fast=⚡, slow=⌛, normal=none
             const speedBadge =
               mode.speed === "fast"
-                ? '<span style="position: absolute; top: -2px; right: -2px; font-size: 0.8rem;">⚡</span>'
+                ? `<span style="position: absolute; top: -2px; right: -2px; font-size: ${
+                    isXs ? "0.7rem" : "0.8rem"
+                  };">⚡</span>`
                 : mode.speed === "slow"
-                ? '<span style="position: absolute; top: -2px; right: -2px; font-size: 0.8rem;">⌛</span>'
+                ? `<span style="position: absolute; top: -2px; right: -2px; font-size: ${
+                    isXs ? "0.7rem" : "0.8rem"
+                  };">⌛</span>`
                 : "";
             return `
               <button class="enhanced-mode-item"
@@ -272,15 +284,15 @@ export function buildEnhancedSelectHtml(enhancedMode: EnhancedMode): string {
                       type="button"
                       title="${t`${mode.labelKey}`}"
                       style="position: relative;
-                             padding: 0.5rem;
+                             padding: ${isXs ? "0.35rem" : "0.5rem"};
                              background-color: ${bgColor};
                              border: ${borderWidth} solid ${borderColor};
-                             border-radius: 0.5rem;
+                             border-radius: ${isXs ? "0.4rem" : "0.5rem"};
                              cursor: pointer;
                              display: flex;
                              flex-direction: column;
                              align-items: center;
-                             gap: 0.5rem;
+                             gap: ${isXs ? "0.35rem" : "0.5rem"};
                              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                              user-select: none;
                              -webkit-tap-highlight-color: transparent;"
@@ -293,12 +305,12 @@ export function buildEnhancedSelectHtml(enhancedMode: EnhancedMode): string {
                 ${speedBadge}
                 <img src="${ENHANCED_MODE_ICONS[mode.value]}"
                      alt="${mode.value}"
-                     style="width: 28px;
-                            height: 28px;
+                     style="width: ${isXs ? "22px" : "28px"};
+                            height: ${isXs ? "22px" : "28px"};
                             image-rendering: pixelated;
                             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
                             transition: transform 0.2s ease;" />
-                <span style="font-size: 0.625rem;
+                <span style="font-size: ${isXs ? "0.55rem" : "0.625rem"};
                              color: ${textColor};
                              text-align: center;
                              font-weight: ${
@@ -317,8 +329,10 @@ export function buildEnhancedSelectHtml(enhancedMode: EnhancedMode): string {
  * ComputeDeviceドロップダウンHTML生成
  */
 export function buildComputeDeviceSelectHtml(
-  computeDevice: ComputeDevice
+  computeDevice: ComputeDevice,
+  controlSize: "default" | "xs" = "default"
 ): string {
+  const isXs = controlSize === "xs";
   const devices: Array<{ value: ComputeDevice; label: string; icon: string }> =
     [
       { value: "gpu", label: "GPU", icon: "🚀" },
@@ -331,9 +345,9 @@ export function buildComputeDeviceSelectHtml(
   return `
     <div class="compute-device-container" style="position: relative;">
       <button class="compute-device-button" type="button"
-              style="padding: 0.2rem 0.4rem;
+              style="padding: ${isXs ? "0.15rem 0.3rem" : "0.2rem 0.4rem"};
                      border: 2px solid #d1d5db;
-                     border-radius: 0.5rem;
+                     border-radius: ${isXs ? "0.4rem" : "0.5rem"};
                      cursor: pointer;
                      display: flex;
                      align-items: center;
@@ -348,9 +362,9 @@ export function buildComputeDeviceSelectHtml(
               onmouseup="this.style.transform='scale(1)';"
               ontouchstart="this.style.transform='scale(0.98)'; this.style.boxShadow='0 1px 2px rgba(0, 0, 0, 0.1)';"
               ontouchend="this.style.transform='scale(1)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)';">
-        <span style="font-size: 0.875rem;">${t`${"compute_device_label"}`}</span>
+        <span style="font-size: ${isXs ? "0.75rem" : "0.875rem"};">${t`${"compute_device_label"}`}</span>
         <span class="compute-device-current-name" 
-              style="font-size: 0.875rem; 
+              style="font-size: ${isXs ? "0.75rem" : "0.875rem"}; 
                      font-weight: 600; 
                      color: #22c55e;
                      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">${currentLabel}</span>
@@ -367,7 +381,7 @@ export function buildComputeDeviceSelectHtml(
                   padding: 0.375rem;
                   z-index: 1000;
                   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-                  min-width: 100px;
+                  min-width: ${isXs ? "90px" : "100px"};
                   animation: slideDown 0.2s ease-out;
                   transform-origin: top;
                   backdrop-filter: blur(10px);">
@@ -389,13 +403,13 @@ export function buildComputeDeviceSelectHtml(
               <button class="compute-device-item"
                       data-device="${device.value}"
                       type="button"
-                      style="padding: 0.2rem 0.4rem;
+                      style="padding: ${isXs ? "0.15rem 0.3rem" : "0.2rem 0.4rem"};
                              background-color: ${bgColor};
                              border: ${borderWidth} solid ${borderColor};
                              border-radius: 0.375rem;
                              cursor: pointer;
                              text-align: left;
-                             font-size: 0.875rem;
+                             font-size: ${isXs ? "0.75rem" : "0.875rem"};
                              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                              display: flex;
                              align-items: center;
@@ -414,7 +428,7 @@ export function buildComputeDeviceSelectHtml(
                       onmouseup="this.style.transform='translateX(4px)';"
                       ontouchstart="this.style.transform='scale(0.98)';"
                       ontouchend="this.style.transform='scale(1)';">
-                <span style="font-size: 1rem; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));">${
+                <span style="font-size: ${isXs ? "0.85rem" : "1rem"}; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));">${
                   device.icon
                 }</span>
                 <span>${device.label}</span>
@@ -431,7 +445,11 @@ export function buildComputeDeviceSelectHtml(
 /**
  * Show Unplaced Only トグルHTML生成
  */
-export function buildShowUnplacedOnlyToggleHtml(enabled: boolean): string {
+export function buildShowUnplacedOnlyToggleHtml(
+  enabled: boolean,
+  controlSize: "default" | "xs" = "default"
+): string {
+  const isXs = controlSize === "xs";
   const bgColor = enabled
     ? "var(--color-success, #22c55e)"
     : "var(--color-base-300, #e5e7eb)";
@@ -439,13 +457,14 @@ export function buildShowUnplacedOnlyToggleHtml(enabled: boolean): string {
     ? "var(--color-primary-content, #fff)"
     : "var(--color-base-content, #6b7280)";
   const borderColor = enabled ? "#22c55e" : "#d1d5db";
+  const sizeClass = isXs ? "btn-xs XS" : "btn-sm";
 
   return `
-    <button class="show-unplaced-only-toggle btn btn-sm rounded"
+    <button class="show-unplaced-only-toggle btn ${sizeClass} rounded"
             type="button"
-            style="padding: 0.4rem 0.6rem;
+            style="padding: ${isXs ? "0.3rem 0.45rem" : "0.4rem 0.6rem"};
                    border: 2px solid ${borderColor};
-                   border-radius: 0.5rem;
+                   border-radius: ${isXs ? "0.4rem" : "0.5rem"};
                    cursor: pointer;
                    display: flex;
                    align-items: center;
@@ -462,8 +481,8 @@ export function buildShowUnplacedOnlyToggleHtml(enabled: boolean): string {
             onmouseup="this.style.transform='scale(1)';"
             ontouchstart="this.style.transform='scale(0.95)';"
             ontouchend="this.style.transform='scale(1)';">
-      <span style="display: flex; align-items: center; width: 24px; height: 24px;">${SHOW_UNPLACED_ONLY_ICON_SVG}</span>
-      <span style="font-size: 0.875rem; font-weight: 600;">${t`${"show_unplaced_only"}`}</span>
+      <span style="display: flex; align-items: center; width: ${isXs ? "18px" : "24px"}; height: ${isXs ? "18px" : "24px"};">${SHOW_UNPLACED_ONLY_ICON_SVG}</span>
+      <span style="font-size: ${isXs ? "0.75rem" : "0.875rem"}; font-weight: 600;">${t`${"show_unplaced_only"}`}</span>
     </button>
   `;
 }
@@ -481,22 +500,25 @@ export function buildControlsHtml(
   computeDevice: ComputeDevice,
   showUnplacedOnlyToggle: boolean = false,
   showUnplacedOnly: boolean = false,
-  showDisableUnusedButton: boolean = false
+  showDisableUnusedButton: boolean = false,
+  controlSize: "default" | "xs" = "default"
 ): string {
+  const isXs = controlSize === "xs";
+  const sizeClass = isXs ? "btn-xs XS" : "btn-sm";
   const buttonBaseStyle = `
-    padding: 0.625rem 1.25rem;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
+    padding: ${isXs ? "0.3rem 0.6rem" : "0.625rem 1.25rem"};
+    border-radius: ${isXs ? "0.4rem" : "0.5rem"};
+    font-size: ${isXs ? "0.75rem" : "0.875rem"};
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: ${isXs ? "0 1px 2px rgba(0, 0, 0, 0.08)" : "0 1px 3px rgba(0, 0, 0, 0.1)"};
     user-select: none;
     -webkit-tap-highlight-color: transparent;
   `;
 
   const ownedColorsButtonHTML = hasExtraColorsBitmap
-    ? `<button class="owned-colors-btn btn btn-outline btn-sm rounded"
+    ? `<button class="owned-colors-btn btn btn-outline ${sizeClass} rounded"
                style="${buttonBaseStyle}
                       border: 2px solid var(--color-secondary, #9333ea);
                       color: var(--color-secondary, #9333ea);
@@ -509,23 +531,23 @@ export function buildControlsHtml(
     : "";
 
   const sortOrderSelectHTML = showColorStats
-    ? buildSortOrderSelectHtml(sortOrder)
+    ? buildSortOrderSelectHtml(sortOrder, controlSize)
     : "";
 
   const enhancedSelectHTML = showEnhancedSelect
-    ? buildEnhancedSelectHtml(enhancedMode)
+    ? buildEnhancedSelectHtml(enhancedMode, controlSize)
     : "";
 
   const computeDeviceSelectHTML = showComputeDeviceSelect
-    ? buildComputeDeviceSelectHtml(computeDevice)
+    ? buildComputeDeviceSelectHtml(computeDevice, controlSize)
     : "";
 
   const showUnplacedOnlyToggleHTML = showUnplacedOnlyToggle
-    ? buildShowUnplacedOnlyToggleHtml(showUnplacedOnly)
+    ? buildShowUnplacedOnlyToggleHtml(showUnplacedOnly, controlSize)
     : "";
 
   const disableUnusedButtonHTML = showDisableUnusedButton
-    ? `<button class="disable-unused-btn btn btn-outline btn-sm rounded"
+    ? `<button class="disable-unused-btn btn btn-outline ${sizeClass} rounded"
                style="${buttonBaseStyle}
                       border: 2px solid var(--color-warning, #f59e0b);
                       color: var(--color-warning, #f59e0b);
@@ -539,7 +561,7 @@ export function buildControlsHtml(
 
   return `
     <div class="color-palette-controls flex flex-wrap gap-2 px-4 pb-2">
-      <button class="enable-all-btn btn btn-outline btn-sm rounded"
+      <button class="enable-all-btn btn btn-outline ${sizeClass} rounded"
               style="${buttonBaseStyle}
                      background-color: transparent;
                      border: 2px solid var(--color-success, #22c55e);
@@ -550,7 +572,7 @@ export function buildControlsHtml(
               onmouseup="this.style.transform='scale(1)';"
               ontouchstart="this.style.transform='scale(0.95)';"
               ontouchend="this.style.transform='scale(1)';">${t`${"enable_all"}`}</button>
-      <button class="disable-all-btn btn btn-outline btn-sm rounded"
+      <button class="disable-all-btn btn btn-outline ${sizeClass} rounded"
               style="${buttonBaseStyle}
                      background-color: transparent;
                      border: 2px solid var(--color-error, #ef4444);
@@ -561,7 +583,7 @@ export function buildControlsHtml(
               onmouseup="this.style.transform='scale(1)';"
               ontouchstart="this.style.transform='scale(0.95)';"
               ontouchend="this.style.transform='scale(1)';">${t`${"disable_all"}`}</button>
-      <button class="free-colors-btn btn btn-outline btn-sm rounded"
+      <button class="free-colors-btn btn btn-outline ${sizeClass} rounded"
               style="${buttonBaseStyle}
                      border: 2px solid var(--color-info, #2563eb);
                      color: var(--color-info, #2563eb);

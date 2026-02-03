@@ -75,7 +75,8 @@ export class ColorPalette {
       this.computeDevice,
       this.options.showUnplacedOnlyToggle ?? false,
       this.showUnplacedOnly,
-      this.options.showDisableUnusedButton ?? false
+      this.options.showDisableUnusedButton ?? false,
+      this.options.controlSize ?? "default"
     );
 
     this.container.innerHTML = `
@@ -462,6 +463,15 @@ export class ColorPalette {
   // Public API
   getSelectedColors(): number[] {
     return Array.from(this.selectedColorIds);
+  }
+
+  updateColorStats(
+    colorStats?: Record<string, { matched: number; total: number }>
+  ): void {
+    this.options.colorStats = colorStats;
+    if (this.options.showColorStats) {
+      this.updateColorGrid();
+    }
   }
 
   setSelectedColors(colorIds: number[]): void {

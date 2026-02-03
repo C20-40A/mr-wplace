@@ -240,6 +240,7 @@ export class EditorController {
       hasExtraColorsBitmap: true,
       showColorStats: true,
       showDisableUnusedButton: true,
+      controlSize: "xs",
     });
   }
 
@@ -265,6 +266,7 @@ export class EditorController {
       hasExtraColorsBitmap: true,
       showColorStats: true,
       showDisableUnusedButton: true,
+      controlSize: "xs",
     });
   }
 
@@ -848,7 +850,11 @@ export class EditorController {
       colorStats[key] = { matched: 0, total: count };
     }
 
-    // ColorPaletteを再生成
+    if (this.colorPalette) {
+      this.colorPalette.updateColorStats(colorStats);
+      return;
+    }
+
     const isMobile = !this.isDesktopMode;
     const containerSelector = isMobile
       ? "#wps-color-palette-container-mobile"
@@ -859,10 +865,6 @@ export class EditorController {
 
     if (!container) return;
 
-    if (this.colorPalette) {
-      this.colorPalette.destroy();
-    }
-
     this.colorPalette = new ColorPalette(container, {
       selectedColorIds: this.selectedColorIds,
       onChange: (colorIds) => this.onColorSelectionChange(colorIds),
@@ -870,6 +872,7 @@ export class EditorController {
       showColorStats: true,
       colorStats,
       showDisableUnusedButton: true,
+      controlSize: "xs",
     });
   }
 

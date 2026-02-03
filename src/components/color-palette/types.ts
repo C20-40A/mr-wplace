@@ -22,6 +22,7 @@ export interface ColorPaletteOptions {
   onShowUnplacedOnlyChange?: (enabled: boolean) => void;
   showUnplacedOnly?: boolean;
   showDisableUnusedButton?: boolean;
+  controlSize?: "default" | "xs";
 }
 
 export interface ColorStats {
