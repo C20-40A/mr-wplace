@@ -41,6 +41,7 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
     "layer-item-container bg-base-100 border border-base-300 rounded-lg mb-2 shadow-sm";
   container.dataset.key = item.key;
   container.style.cssText = `
+    position: relative;
     display: flex;
     align-items: stretch;
     transition: transform 0.2s, box-shadow 0.2s;
@@ -101,6 +102,7 @@ const createContentArea = (
   const mainArea = document.createElement("div");
   mainArea.className = "layer-item-main";
   mainArea.style.cssText = `
+		position: relative;
 		flex: 1;
 		display: flex;
 		align-items: center;
@@ -134,11 +136,52 @@ const createContentArea = (
   // 情報
   const infoContainer = createInfoContainer(item, index, clickHint);
 
+  // プログレスバー
+  const progressBar = createProgressBar(item);
+
   mainArea.appendChild(thumbnail);
   mainArea.appendChild(infoContainer);
+  mainArea.appendChild(progressBar);
   contentArea.appendChild(mainArea);
 
   return contentArea;
+};
+
+// プログレスバー作成（mainArea内部の下部にアブソリュート配置）
+const createProgressBar = (item: GalleryItem): HTMLElement => {
+  const placedPixels = item.matchedColorStats
+    ? Object.values(item.matchedColorStats).reduce((a, b) => a + b, 0)
+    : 0;
+  const totalPixels = item.totalColorStats
+    ? Object.values(item.totalColorStats).reduce((a, b) => a + b, 0)
+    : 0;
+  const progress = totalPixels > 0 ? (placedPixels / totalPixels) * 100 : 0;
+
+  const progressContainer = document.createElement("div");
+  progressContainer.style.cssText = `
+    position: absolute;
+    bottom: 1px;
+    left: 5px;
+    right: 0px;
+    height: 3px;
+    background: rgba(0,0,0,0.1);
+    overflow: hidden;
+    pointer-events: none;
+  `;
+
+  const progressFill = document.createElement("div");
+  progressFill.style.cssText = `
+    width: ${progress}%;
+    height: 100%;
+    background: linear-gradient(to right, #3b82f6, #60a5fa);
+    transition: width 0.3s;
+  `;
+
+  progressContainer.appendChild(progressFill);
+
+  console.log(`🧑‍🎨 : Progress for ${item.key}: ${placedPixels}/${totalPixels} = ${progress.toFixed(1)}%`);
+
+  return progressContainer;
 };
 
 // 情報コンテナ作成

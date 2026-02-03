@@ -3,6 +3,7 @@ import { GalleryStorage, GalleryItem } from "@/states/galleryStorage";
 import { t } from "@/i18n";
 import { runtime } from "@/utils/browser-api";
 import { Tutorial } from "@/features/tutorial";
+import { getStatsPerImage } from "@/utils/inject-bridge";
 import {
   createAddImageButton,
   createUnplacedItem,
@@ -148,6 +149,21 @@ export class GalleryImageSelectorUI {
     const layerImages = galleryItems
       .filter((i) => i.drawPosition)
       .sort((a, b) => (b.layerOrder ?? 0) - (a.layerOrder ?? 0));
+
+    // 統計データを取得
+    if (layerImages.length > 0) {
+      const imageKeys = layerImages.map((item) => item.key);
+      const statsPerImage = await getStatsPerImage(imageKeys);
+
+      for (const item of layerImages) {
+        const stats = statsPerImage[item.key];
+        if (stats) {
+          item.matchedColorStats = stats.matched;
+          item.totalColorStats = stats.total;
+        }
+      }
+    }
+
     const clickHint = t("click_to_draw");
 
     // レイヤーアイテムだけをクリア（タイトルは残す）
@@ -261,6 +277,21 @@ export class GalleryImageSelectorUI {
     const layerImages = galleryItems
       .filter((i) => i.drawPosition)
       .sort((a, b) => (b.layerOrder ?? 0) - (a.layerOrder ?? 0)); // 降順：大→小
+
+    // 統計データを取得
+    if (layerImages.length > 0) {
+      const imageKeys = layerImages.map((item) => item.key);
+      const statsPerImage = await getStatsPerImage(imageKeys);
+
+      for (const item of layerImages) {
+        const stats = statsPerImage[item.key];
+        if (stats) {
+          item.matchedColorStats = stats.matched;
+          item.totalColorStats = stats.total;
+        }
+      }
+    }
+
     const clickHint = t("click_to_draw");
 
     // 未配置画像セクション（常に表示）
