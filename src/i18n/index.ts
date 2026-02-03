@@ -127,9 +127,25 @@ export const formatDateShort = (date: Date): string => {
   return date.toLocaleDateString(localeMap[currentLocale]);
 };
 
-// タグ付きテンプレートリテラル関数
-export const t = (strings: TemplateStringsArray, ...values: any[]): string => {
+// タグ付きテンプレートリテラル関数（通常の関数呼び出しも許可）
+export function t(strings: TemplateStringsArray, ...values: any[]): string;
+export function t(key: string): string;
+export function t(
+  stringsOrKey: TemplateStringsArray | string,
+  ...values: any[]
+): string {
+  // Function call syntax: t("key")
+  if (typeof stringsOrKey === "string") {
+    return (
+      translations[currentLocale][stringsOrKey] ||
+      translations["en"][stringsOrKey] ||
+      stringsOrKey
+    );
+  }
+
+  // Tagged template syntax: t`...`
   let result = "";
+  const strings = stringsOrKey;
 
   for (let i = 0; i < strings.length; i++) {
     result += strings[i];
@@ -149,4 +165,4 @@ export const t = (strings: TemplateStringsArray, ...values: any[]): string => {
   }
 
   return result;
-};
+}

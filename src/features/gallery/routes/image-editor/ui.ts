@@ -1,4 +1,4 @@
-import { t } from "../../../../i18n/manager";
+import { t } from "@/i18n/manager";
 import { ImageDropzone } from "../../../../components/image-dropzone";
 import { QuantizationMethod } from "./canvas-processor";
 
@@ -131,7 +131,7 @@ export class ImageEditorUI {
       id: "wps-original-image",
       alt: "Original"
     }) as HTMLImageElement;
-    this.elements.replaceOverlay = this._createElement("div", { id: "wps-replace-overlay" }, [`📁 ${t`click_or_drop_to_change`}`]);
+    this.elements.replaceOverlay = this._createElement("div", { id: "wps-replace-overlay" }, [`📁 ${t("click_or_drop_to_change")}`]);
     this.elements.replaceFileInput = this._createElement("input", {
       id: "wps-replace-file-input",
       type: "file",
@@ -143,7 +143,7 @@ export class ImageEditorUI {
       this.elements.originalImage,
       this.elements.replaceOverlay,
       this.elements.replaceFileInput,
-      this._createElement("h4", {}, [t`original_image`])
+      this._createElement("h4", {}, [t("original_image")])
     ]);
 
     return this._createElement("div", { id: "wps-original-area" }, [this.elements.replaceZone]);
@@ -166,7 +166,7 @@ export class ImageEditorUI {
       canvasContainer,
       imageContainer,
       gpuLabel,
-      this._createElement("h4", {}, [t`current_image`])
+      this._createElement("h4", {}, [t("current_image")])
     ]);
 
     return this._createElement("div", { id: "wps-current-area" }, [flexContainer]);
@@ -213,7 +213,7 @@ export class ImageEditorUI {
     return this._createElement("div", {}, [
       this._createElement("label", { className: "control-label space-between" }, [
         this._createElement("span", { className: "label-hint" }, ["0.1x"]),
-        this._createElement("span", {}, [t`size_reduction`]),
+        this._createElement("span", {}, [t("size_reduction")]),
         this._createElement("span", { className: "label-hint" }, ["1.0x"]),
       ]),
       this._createElement("div", { className: "flex-group" }, [
@@ -230,22 +230,22 @@ export class ImageEditorUI {
     this.elements.contrastValue = this._createElement("span", { id: "wps-contrast-value" }, ["0"]);
     this.elements.contrastSlider = this._createElement("input", { id: "wps-contrast-slider", type: "range", min: -100, max: 100, step: 1, value: 0, className: "range" }) as HTMLInputElement;
     this.elements.quantizationMethod = this._createElement("select", { id: "wps-quantization-method", className: "select select-sm w-full" }, [
-      this._createElement("option", { value: "rgb-euclidean" }, [t`quantization_rgb_euclidean`]),
-      this._createElement("option", { value: "weighted-rgb" }, [t`quantization_weighted_rgb`]),
-      this._createElement("option", { value: "lab" }, [t`quantization_lab`]),
+      this._createElement("option", { value: "rgb-euclidean" }, [t("quantization_rgb_euclidean")]),
+      this._createElement("option", { value: "weighted-rgb" }, [t("quantization_weighted_rgb")]),
+      this._createElement("option", { value: "lab" }, [t("quantization_lab")]),
     ]) as HTMLSelectElement;
 
     return this._createElement("div", { id: "wps-contrast-quantization-container", className: "control-group" }, [
       this._createElement("div", { className: "control-item" }, [
         this._createElement("label", { className: "control-label space-between" }, [
           this._createElement("span", { className: "label-hint" }, ["-100"]),
-          this._createElement("span", {}, [`${t`contrast`}: `, this.elements.contrastValue]),
+          this._createElement("span", {}, [`${t("contrast")}: `, this.elements.contrastValue]),
           this._createElement("span", { className: "label-hint" }, ["100"]),
         ]),
         this.elements.contrastSlider,
       ]),
       this._createElement("div", { className: "control-item" }, [
-        this._createElement("label", { className: "control-label centered" }, [t`quantization_method`]),
+        this._createElement("label", { className: "control-label centered" }, [t("quantization_method")]),
         this.elements.quantizationMethod,
       ]),
     ]);
@@ -261,7 +261,7 @@ export class ImageEditorUI {
       this._createElement("div", { className: "control-item" }, [
         this._createElement("label", { className: "control-label space-between" }, [
           this._createElement("span", { className: "label-hint" }, ["-100"]),
-          this._createElement("span", {}, [`${t`brightness`}: `, this.elements.brightnessValue]),
+          this._createElement("span", {}, [`${t("brightness")}: `, this.elements.brightnessValue]),
           this._createElement("span", { className: "label-hint" }, ["100"]),
         ]),
         this.elements.brightnessSlider,
@@ -269,7 +269,7 @@ export class ImageEditorUI {
       this._createElement("div", { className: "control-item" }, [
         this._createElement("label", { className: "control-label space-between" }, [
           this._createElement("span", { className: "label-hint" }, ["-100"]),
-          this._createElement("span", {}, [`${t`saturation`}: `, this.elements.saturationValue]),
+          this._createElement("span", {}, [`${t("saturation")}: `, this.elements.saturationValue]),
           this._createElement("span", { className: "label-hint" }, ["100"]),
         ]),
         this.elements.saturationSlider,
@@ -290,7 +290,7 @@ export class ImageEditorUI {
       this._createElement("div", { className: "control-item" }, [
         this._createElement("label", { className: "control-label centered cursor-pointer" }, [
           this.elements.ditheringCheckbox,
-          this._createElement("span", {}, [`${t`dithering`}: `, this.elements.ditheringThresholdValue]),
+          this._createElement("span", {}, [`${t("dithering")}: `, this.elements.ditheringThresholdValue]),
         ]),
         this._createElement("div", { className: "flex-group" }, [
           this._createElement("span", { className: "label-hint-sm" }, ["0"]),
@@ -301,7 +301,7 @@ export class ImageEditorUI {
       this._createElement("div", { className: "control-item" }, [
         this._createElement("label", { className: "control-label centered cursor-pointer" }, [
           this.elements.sharpnessCheckbox,
-          this._createElement("span", {}, [`${t`sharpness`}: `, this.elements.sharpnessValue]),
+          this._createElement("span", {}, [`${t("sharpness")}: `, this.elements.sharpnessValue]),
         ]),
         this._createElement("div", { className: "flex-group" }, [
           this._createElement("span", { className: "label-hint-sm" }, ["0"]),
@@ -319,7 +319,7 @@ export class ImageEditorUI {
     this.elements.coordPxy = this._createElement("input", { id: "wps-coord-pxy", type: "number", placeholder: "PxY", min: 0, max: 999, step: 1 }) as HTMLInputElement;
 
     return this._createElement("div", {}, [
-      this._createElement("label", { className: "control-label-sm" }, [t`coordinate_input_optional`]),
+      this._createElement("label", { className: "control-label-sm" }, [t("coordinate_input_optional")]),
       this._createElement("div", { className: "grid-4-col" }, [
         this.elements.coordTlx,
         this.elements.coordTly,
@@ -330,8 +330,8 @@ export class ImageEditorUI {
   }
 
   private _createActionButtons(): HTMLElement {
-    this.elements.addToGallery = this._createElement("button", { id: "wps-add-to-gallery", className: "btn btn-primary flex-1" }, [t`add_to_gallery`]);
-    this.elements.download = this._createElement("button", { id: "wps-download", className: "btn btn-ghost" }, [t`download`]);
+    this.elements.addToGallery = this._createElement("button", { id: "wps-add-to-gallery", className: "btn btn-primary flex-1" }, [t("add_to_gallery")]);
+    this.elements.download = this._createElement("button", { id: "wps-download", className: "btn btn-ghost" }, [t("download")]);
 
     return this._createElement("div", { className: "flex" }, [
       this.elements.addToGallery,
