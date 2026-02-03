@@ -286,7 +286,7 @@ export class ImageEditorUI {
     const label = this._createElement(
       "div",
       { className: "wps-transparent-label" },
-      ["Transparent"],
+      [t("transparent_color")],
     );
 
     const chips: HTMLElement[] = colorpalette.map((c) => {

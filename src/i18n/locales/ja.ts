@@ -131,6 +131,7 @@ export const jaTranslations = {
   quantization_weighted_rgb: "重み付きRGB（中速・自然）",
   quantization_lab: "Lab色空間（低速・高品質）",
   include_paid_colors: "Paid色を含む",
+  transparent_color: "透過する色",
   add_to_gallery: "ギャラリーに追加",
   download: "ダウンロード",
   clear_image_confirm: "画像をクリアして初期状態に戻しますか？",

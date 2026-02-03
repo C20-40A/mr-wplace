@@ -125,6 +125,7 @@ export const enTranslations = {
   quantization_weighted_rgb: "Weighted RGB (Medium, Natural)",
   quantization_lab: "Lab Color Space (Slow, High Quality)",
   include_paid_colors: "Include paid colors",
+  transparent_color: "Transparent Color",
   add_to_gallery: "Add to gallery",
   download: "Download",
   clear_image_confirm: "Clear image and return to initial state?",
