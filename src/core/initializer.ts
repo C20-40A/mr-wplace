@@ -25,6 +25,7 @@ import { ShowUnplacedOnly } from "@/features/show-unplaced-only";
 import { LockButtonEnhancer } from "@/features/lock-button-enhancer";
 import { PaintPixelIcon } from "@/features/paint-pixel-icon";
 import { CloseConfirm } from "@/features/close-confirm";
+import { PaintModeStyle } from "@/features/paint-mode-style";
 import { di } from "@/core/di";
 import {
   sendGalleryImagesToInject,
@@ -94,6 +95,7 @@ export const initializeFeatures = async () => {
   safeInit("lockButtonEnhancer", () => new LockButtonEnhancer());
   safeInit("paintPixelIcon", () => new PaintPixelIcon());
   safeInit("closeConfirm", () => new CloseConfirm());
+  safeInit("paintModeStyle", () => new PaintModeStyle());
   safeInit("paintStats", () => initPaintStats());
 
   // Initialize async features in parallel (each wrapped for error isolation)
