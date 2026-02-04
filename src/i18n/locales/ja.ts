@@ -134,8 +134,9 @@ export const jaTranslations = {
   transparent_color: "透過する色",
   transparency_tool: "透過ツール",
   transparency_flood_fill: "境界フラッドフィル",
-  transparency_flood_fill_desc: "画像上のポイントをクリックして、つながった同色領域を透過します",
-  transparency_threshold: "しきい値",
+  transparency_flood_fill_desc:
+    "画像上のポイントをクリックして、つながった同色領域を透過します。境界調整で拡張/縮小します",
+  transparency_threshold: "境界調整",
   transparency_apply: "適用",
   transparency_reset: "リセット",
   transparency_no_image: "透過ツールを使うには、先に画像を読み込んでください",

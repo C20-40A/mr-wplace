@@ -44,28 +44,20 @@ export class GalleryImageEditor {
       onGpuToggle: (enabled) => this.controller?.onGpuToggle(enabled),
       onTransparentColorsChange: (colors) => this.controller?.onTransparentColorsChange(colors),
       onOpenTransparencyTool: () => this.controller?.getProcessedImage() ?? null,
-      onTransparencyCanvasClick: (x, y) => {
-        console.log("🧑‍🎨 : Transparency flood fill click at", x, y);
-        // TODO: implement flood fill logic
-      },
-      onTransparencyThresholdChange: (value) => {
-        console.log("🧑‍🎨 : Transparency threshold changed to", value);
-        // TODO: implement threshold change
-      },
-      onTransparencyApply: () => {
-        console.log("🧑‍🎨 : Transparency apply");
-        // TODO: implement apply
-      },
-      onTransparencyReset: () => {
-        console.log("🧑‍🎨 : Transparency reset");
-        // TODO: implement reset
-      },
+      onTransparencyCanvasClick: (x, y) => this.controller?.onTransparencyClick(x, y),
+      onTransparencyThresholdChange: (value) =>
+        this.controller?.onTransparencyBoundaryAdjust(value),
+      onTransparencyApply: () => this.controller?.onTransparencyApply(),
+      onTransparencyReset: () => this.controller?.onTransparencyReset(),
       onClear: () => this.controller?.clearImage(),
       onSaveToGallery: () => this.controller?.saveToGallery(),
       onDownload: () => this.controller?.downloadImage()
     };
 
     this.ui.setupUI(callbacks);
+    this.controller.setTransparencyPreviewHandler((canvas) =>
+      this.ui.updateTransparencyPreview(canvas),
+    );
 
     // 初期タイトル設定（新規追加モード）
     this.controller.updateTitle();

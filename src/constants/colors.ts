@@ -11,6 +11,8 @@ interface ColorPaletteEntry {
  * id: WPlace API color ID (matches localStorage selected-color value)
  * sort: UI display order
  */
+export const TRANSPARENT_COLOR_ID = 64;
+
 export const colorpalette: ColorPaletteEntry[] = [
   { id: 1, sort: 1, premium: false, name: "Black", rgb: [0, 0, 0] },
   { id: 2, sort: 2, premium: false, name: "Dark Gray", rgb: [60, 60, 60] },
@@ -75,5 +77,5 @@ export const colorpalette: ColorPaletteEntry[] = [
   { id: 58, sort: 61, premium: true, name: "Dark Slate", rgb: [51, 57, 65] },
   { id: 59, sort: 62, premium: true, name: "Slate", rgb: [109, 117, 141] },
   { id: 60, sort: 63, premium: true, name: "Light Slate", rgb: [179, 185, 209] },
-  // { id: 0, sort: 64, premium: false, name: "Transparent", rgb: [0, 0, 0] },
+  // { id: 64, sort: 64, premium: false, name: "Transparent", rgb: [0, 0, 0] },
 ];

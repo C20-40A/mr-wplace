@@ -1,5 +1,5 @@
 import { t } from "@/i18n/manager";
-import { colorpalette } from "@/constants/colors";
+import { colorpalette, TRANSPARENT_COLOR_ID } from "@/constants/colors";
 import { ImageInspector } from "@/components/image-inspector";
 import { ColorPalette } from "@/components/color-palette";
 import { DrawPosition, GalleryItem } from "@/states/galleryStorage";
@@ -44,6 +44,13 @@ export class EditorController {
   private cachedResizedBitmap: ImageBitmap | null = null;
   private cachedScale = 1.0;
   private readonly inspectorContainerSize = 300;
+  private transparencyMask: Uint8Array | null = null;
+  private transparencyWorkingMask: Uint8Array | null = null;
+  private transparencyMaskWidth = 0;
+  private transparencyMaskHeight = 0;
+  private transparencyBoundaryAdjust = 0;
+  private transparencyWorkingCanvas: HTMLCanvasElement | null = null;
+  private transparencyPreviewHandler?: (canvas: HTMLCanvasElement) => void;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -51,6 +58,12 @@ export class EditorController {
 
   setOnSaveSuccess(callback?: () => void): void {
     this.onSaveSuccess = callback;
+  }
+
+  setTransparencyPreviewHandler(
+    handler: (canvas: HTMLCanvasElement) => void,
+  ): void {
+    this.transparencyPreviewHandler = handler;
   }
 
   async loadExistingImage(item: GalleryItem): Promise<void> {
@@ -237,7 +250,9 @@ export class EditorController {
   }
 
   initColorPalette(container: HTMLElement): void {
-    this.selectedColorIds = colorpalette.map((c) => c.id);
+    this.selectedColorIds = colorpalette
+      .filter((c) => c.id !== TRANSPARENT_COLOR_ID)
+      .map((c) => c.id);
     this.colorPalette = new ColorPalette(container, {
       selectedColorIds: this.selectedColorIds,
       onChange: (colorIds) => this.onColorSelectionChange(colorIds),
@@ -299,6 +314,7 @@ export class EditorController {
     this.quantizationMethod = "rgb-euclidean";
     this.useGpu = true;
     this.transparentColors.clear();
+    this.resetTransparencyState();
     this.currentFileName = null;
     this.drawPosition = null;
     this.isEditMode = false;
@@ -506,6 +522,7 @@ export class EditorController {
       this.cachedResizedBitmap.close();
       this.cachedResizedBitmap = null;
     }
+    this.resetTransparencyState();
 
     if (originalImage) {
       originalImage.src = imageSrc;
@@ -590,6 +607,7 @@ export class EditorController {
       this.cachedResizedBitmap.close();
       this.cachedResizedBitmap = null;
     }
+    this.resetTransparencyState();
 
     const originalImage = this.container.querySelector(
       "#wps-original-image",
@@ -799,6 +817,18 @@ export class EditorController {
       );
     }
 
+    // 透過マスク適用（編集後も維持）
+    if (this.transparencyMask) {
+      if (
+        processedCanvas.width !== this.transparencyMaskWidth ||
+        processedCanvas.height !== this.transparencyMaskHeight
+      ) {
+        this.resetTransparencyState();
+      } else {
+        this.applyTransparencyMaskToCanvas(processedCanvas, this.transparencyMask);
+      }
+    }
+
     // デスクトップモード: canvas更新
     if (canvas && this.isDesktopMode) {
       canvas.width = processedCanvas.width;
@@ -942,5 +972,262 @@ export class EditorController {
     originalImage.style.width = `${originalDisplayWidth}px`;
     originalImage.style.height = `${originalDisplayHeight}px`;
     originalImage.style.transform = `translate(calc(-50% + ${panXScaled}px), calc(-50% + ${panYScaled}px))`;
+  }
+
+  onTransparencyClick(x: number, y: number): void {
+    if (!this.scaledCanvas) return;
+    const ctx = this.scaledCanvas.getContext("2d");
+    if (!ctx) return;
+
+    const width = this.scaledCanvas.width;
+    const height = this.scaledCanvas.height;
+    if (!width || !height) return;
+    if (x < 0 || y < 0 || x >= width || y >= height) return;
+
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const seedIndex = (y * width + x) * 4;
+    if (imageData.data[seedIndex + 3] === 0) return;
+
+    this.ensureTransparencyWorkingMask(width, height);
+    if (!this.transparencyWorkingMask) return;
+
+    const region = this.computeFloodFillRegion(imageData, x, y);
+    const adjustedRegion = this.applyBoundaryAdjustToRegion(
+      region,
+      width,
+      height,
+      this.transparencyBoundaryAdjust,
+    );
+
+    for (let i = 0; i < adjustedRegion.length; i++) {
+      if (adjustedRegion[i]) this.transparencyWorkingMask[i] = 1;
+    }
+
+    this.updateTransparencyPreview(imageData, this.transparencyWorkingMask);
+  }
+
+  onTransparencyBoundaryAdjust(value: number): void {
+    this.transparencyBoundaryAdjust = value;
+  }
+
+  onTransparencyApply(): void {
+    if (this.transparencyWorkingMask) {
+      this.transparencyMask = new Uint8Array(this.transparencyWorkingMask);
+    } else {
+      this.transparencyMask = null;
+      this.transparencyMaskWidth = 0;
+      this.transparencyMaskHeight = 0;
+    }
+    this.transparencyWorkingMask = null;
+    this.transparencyWorkingCanvas = null;
+    this.updateScaledImage();
+  }
+
+  onTransparencyReset(): void {
+    this.transparencyWorkingMask = null;
+    this.transparencyWorkingCanvas = null;
+    if (this.scaledCanvas) {
+      this.transparencyPreviewHandler?.(this.scaledCanvas);
+    }
+  }
+
+  private resetTransparencyState(): void {
+    this.transparencyMask = null;
+    this.transparencyWorkingMask = null;
+    this.transparencyMaskWidth = 0;
+    this.transparencyMaskHeight = 0;
+    this.transparencyWorkingCanvas = null;
+    this.transparencyBoundaryAdjust = 0;
+  }
+
+  private ensureTransparencyWorkingMask(width: number, height: number): void {
+    if (
+      !this.transparencyWorkingMask ||
+      this.transparencyMaskWidth !== width ||
+      this.transparencyMaskHeight !== height
+    ) {
+      this.transparencyMaskWidth = width;
+      this.transparencyMaskHeight = height;
+      this.transparencyWorkingMask = new Uint8Array(width * height);
+      if (this.transparencyMask) {
+        this.transparencyWorkingMask.set(this.transparencyMask);
+      }
+    }
+  }
+
+  private computeFloodFillRegion(
+    imageData: ImageData,
+    startX: number,
+    startY: number,
+  ): Uint8Array {
+    const { width, height, data } = imageData;
+    const region = new Uint8Array(width * height);
+    const visited = new Uint8Array(width * height);
+
+    const startIndex = startY * width + startX;
+    const baseOffset = startIndex * 4;
+    const baseR = data[baseOffset];
+    const baseG = data[baseOffset + 1];
+    const baseB = data[baseOffset + 2];
+    const baseA = data[baseOffset + 3];
+
+    const queue = new Int32Array(width * height);
+    let head = 0;
+    let tail = 0;
+    queue[tail++] = startIndex;
+    visited[startIndex] = 1;
+
+    while (head < tail) {
+      const idx = queue[head++];
+      const offset = idx * 4;
+
+      if (
+        data[offset] !== baseR ||
+        data[offset + 1] !== baseG ||
+        data[offset + 2] !== baseB ||
+        data[offset + 3] !== baseA
+      ) {
+        continue;
+      }
+
+      region[idx] = 1;
+
+      const x = idx % width;
+      const y = Math.floor(idx / width);
+
+      if (x > 0) {
+        const left = idx - 1;
+        if (!visited[left]) {
+          visited[left] = 1;
+          queue[tail++] = left;
+        }
+      }
+      if (x + 1 < width) {
+        const right = idx + 1;
+        if (!visited[right]) {
+          visited[right] = 1;
+          queue[tail++] = right;
+        }
+      }
+      if (y > 0) {
+        const up = idx - width;
+        if (!visited[up]) {
+          visited[up] = 1;
+          queue[tail++] = up;
+        }
+      }
+      if (y + 1 < height) {
+        const down = idx + width;
+        if (!visited[down]) {
+          visited[down] = 1;
+          queue[tail++] = down;
+        }
+      }
+    }
+
+    return region;
+  }
+
+  private applyBoundaryAdjustToRegion(
+    region: Uint8Array,
+    width: number,
+    height: number,
+    adjust: number,
+  ): Uint8Array {
+    if (adjust === 0) return region;
+
+    const steps = Math.abs(adjust);
+    let current = region;
+    let temp = new Uint8Array(width * height);
+
+    for (let step = 0; step < steps; step++) {
+      temp.fill(0);
+      if (adjust > 0) {
+        for (let y = 0; y < height; y++) {
+          const rowOffset = y * width;
+          for (let x = 0; x < width; x++) {
+            const idx = rowOffset + x;
+            if (!current[idx]) continue;
+            temp[idx] = 1;
+            if (x > 0) temp[idx - 1] = 1;
+            if (x + 1 < width) temp[idx + 1] = 1;
+            if (y > 0) temp[idx - width] = 1;
+            if (y + 1 < height) temp[idx + width] = 1;
+          }
+        }
+      } else {
+        for (let y = 0; y < height; y++) {
+          const rowOffset = y * width;
+          for (let x = 0; x < width; x++) {
+            const idx = rowOffset + x;
+            if (!current[idx]) continue;
+            if (
+              x > 0 &&
+              x + 1 < width &&
+              y > 0 &&
+              y + 1 < height &&
+              current[idx - 1] &&
+              current[idx + 1] &&
+              current[idx - width] &&
+              current[idx + width]
+            ) {
+              temp[idx] = 1;
+            }
+          }
+        }
+      }
+      const swap = current;
+      current = temp;
+      temp = swap;
+    }
+
+    return current;
+  }
+
+  private updateTransparencyPreview(
+    baseImageData: ImageData,
+    mask: Uint8Array,
+  ): void {
+    if (!this.transparencyPreviewHandler) return;
+
+    const previewData = new ImageData(
+      new Uint8ClampedArray(baseImageData.data),
+      baseImageData.width,
+      baseImageData.height,
+    );
+    this.applyTransparencyMaskToImageData(previewData, mask);
+
+    if (!this.transparencyWorkingCanvas) {
+      this.transparencyWorkingCanvas = document.createElement("canvas");
+    }
+
+    this.transparencyWorkingCanvas.width = previewData.width;
+    this.transparencyWorkingCanvas.height = previewData.height;
+    const ctx = this.transparencyWorkingCanvas.getContext("2d");
+    if (!ctx) return;
+    ctx.putImageData(previewData, 0, 0);
+    this.transparencyPreviewHandler(this.transparencyWorkingCanvas);
+  }
+
+  private applyTransparencyMaskToCanvas(
+    canvas: HTMLCanvasElement,
+    mask: Uint8Array,
+  ): void {
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    this.applyTransparencyMaskToImageData(imageData, mask);
+    ctx.putImageData(imageData, 0, 0);
+  }
+
+  private applyTransparencyMaskToImageData(
+    imageData: ImageData,
+    mask: Uint8Array,
+  ): void {
+    const data = imageData.data;
+    const len = Math.min(mask.length, data.length / 4);
+    for (let i = 0; i < len; i++) {
+      if (mask[i]) data[i * 4 + 3] = 0;
+    }
   }
 }

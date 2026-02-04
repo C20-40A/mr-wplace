@@ -343,18 +343,28 @@ export class ImageEditorUI {
     if (this.transparencyDialog) {
       this.transparencyDialog.close();
     }
+    const mountRoot =
+      (this.container.closest("dialog") as HTMLElement | null) ?? document.body;
     this.transparencyDialog = new TransparencyDialog({
       onCanvasClick: (x, y) => this.callbacks?.onTransparencyCanvasClick(x, y),
       onThresholdChange: (v) => this.callbacks?.onTransparencyThresholdChange(v),
-      onApply: () => this.callbacks?.onTransparencyApply(),
+      onApply: () => {
+        this.callbacks?.onTransparencyApply();
+        this.transparencyDialog?.close();
+        this.transparencyDialog = null;
+      },
       onReset: () => this.callbacks?.onTransparencyReset(),
       onClose: () => { this.transparencyDialog = null; },
     });
-    this.transparencyDialog.open(image);
+    this.transparencyDialog.open(image, mountRoot);
   }
 
   setController(controller: any): void {
     this.controller = controller;
+  }
+
+  updateTransparencyPreview(canvas: HTMLCanvasElement): void {
+    this.transparencyDialog?.updatePreview(canvas);
   }
 
   private setupResponsive(): void {

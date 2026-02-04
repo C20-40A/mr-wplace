@@ -120,7 +120,7 @@ export const injectImageEditorStyles = (createElement: CreateElementFn): void =>
       }
 
       #wps-transparency-overlay {
-        position: fixed; inset: 0; z-index: 9999;
+        position: fixed; inset: 0; z-index: 2147483647;
         background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
       }
       #wps-transparency-dialog {

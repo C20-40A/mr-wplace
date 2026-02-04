@@ -128,8 +128,9 @@ export const enTranslations = {
   transparent_color: "Transparent Color",
   transparency_tool: "Transparency Tool",
   transparency_flood_fill: "Boundary Flood Fill",
-  transparency_flood_fill_desc: "Click a point on the image to make the connected same-color region transparent",
-  transparency_threshold: "Threshold",
+  transparency_flood_fill_desc:
+    "Click a point to make the connected same-color region transparent. Use boundary adjust to expand or shrink.",
+  transparency_threshold: "Boundary Adjust",
   transparency_apply: "Apply",
   transparency_reset: "Reset",
   transparency_no_image: "Load an image first to use the transparency tool",

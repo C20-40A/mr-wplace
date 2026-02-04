@@ -16,14 +16,19 @@ export class TransparencyDialog {
   private thresholdValue: HTMLElement | null = null;
   private callbacks: TransparencyDialogCallbacks;
   private sourceImage: HTMLImageElement | HTMLCanvasElement | null = null;
+  private mountRoot: HTMLElement = document.body;
 
   constructor(callbacks: TransparencyDialogCallbacks) {
     this.callbacks = callbacks;
   }
 
-  open(image: HTMLImageElement | HTMLCanvasElement | null): void {
+  open(
+    image: HTMLImageElement | HTMLCanvasElement | null,
+    mountRoot: HTMLElement = document.body,
+  ): void {
     if (this.overlay) return;
     this.sourceImage = image;
+    this.mountRoot = mountRoot;
     this.createDialog();
     if (image) this.drawPreview(image);
   }
@@ -117,13 +122,15 @@ export class TransparencyDialog {
     const slider = document.createElement("input");
     slider.type = "range";
     slider.id = "wps-td-threshold";
-    slider.min = "0";
-    slider.max = "100";
-    slider.value = "20";
+    slider.min = "-20";
+    slider.max = "20";
+    slider.value = "0";
     slider.className = "range range-xs";
     slider.addEventListener("input", () => {
-      if (this.thresholdValue)
-        this.thresholdValue.textContent = slider.value;
+      if (this.thresholdValue) {
+        const numeric = parseInt(slider.value);
+        this.thresholdValue.textContent = numeric > 0 ? `+${numeric}` : `${numeric}`;
+      }
     });
     slider.addEventListener("change", () => {
       this.callbacks.onThresholdChange(parseInt(slider.value));
@@ -132,7 +139,7 @@ export class TransparencyDialog {
 
     const valSpan = document.createElement("span");
     valSpan.className = "wps-td-value";
-    valSpan.textContent = "20";
+    valSpan.textContent = "0";
     this.thresholdValue = valSpan;
 
     thresholdRow.append(slider, valSpan);
@@ -156,7 +163,7 @@ export class TransparencyDialog {
 
     dialog.append(header, modeLabel, modeDesc, canvasWrap, thresholdGroup, actions);
     overlay.appendChild(dialog);
-    document.body.appendChild(overlay);
+    this.mountRoot.appendChild(overlay);
     this.overlay = overlay;
   }
 
