@@ -115,18 +115,66 @@ export const injectImageEditorStyles = (createElement: CreateElementFn): void =>
       #wps-palette-scroll-area { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
       #wps-transparent-section { flex-shrink: 0; padding: 0 0.5rem 0.25rem; }
       .wps-transparent-divider { height: 1px; background: #e5e7eb; margin: 0.25rem 0; }
-      .wps-transparent-label { font-size: 0.65rem; font-weight: 500; color: #9ca3af; margin-bottom: 0.2rem; }
-      #wps-transparent-grid { display: flex; flex-wrap: wrap; gap: 2px; }
-      .wps-transparent-chip {
-        width: 14px; height: 14px; border-radius: 2px; cursor: pointer;
-        border: 1px solid rgba(0,0,0,0.15); position: relative; transition: transform 0.1s;
+      .wps-transparency-tool-btn {
+        width: 100%; margin-top: 0.25rem; font-size: 0.75rem;
       }
-      .wps-transparent-chip:hover { transform: scale(1.3); z-index: 1; }
-      .wps-transparent-chip.active::after {
-        content: ""; position: absolute; inset: 0; border-radius: 1px;
-        background: linear-gradient(135deg, transparent 40%, rgba(255,0,0,0.8) 40%, rgba(255,0,0,0.8) 60%, transparent 60%);
+
+      #wps-transparency-overlay {
+        position: fixed; inset: 0; z-index: 9999;
+        background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
       }
-      .wps-transparent-chip.active { border-color: #ef4444; }
+      #wps-transparency-dialog {
+        background: var(--color-base-100, #fff); border-radius: 0.75rem;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3); padding: 1rem;
+        width: 90vw; max-width: 480px; max-height: 85vh;
+        display: flex; flex-direction: column; gap: 0.5rem;
+        overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+      }
+      .wps-td-header {
+        display: flex; justify-content: space-between; align-items: center;
+      }
+      .wps-td-title {
+        font-size: 0.95rem; font-weight: 600;
+      }
+      .wps-td-close {
+        background: none; border: none; font-size: 1rem; cursor: pointer;
+        color: #9ca3af; padding: 0.25rem; line-height: 1;
+      }
+      .wps-td-close:hover { color: #374151; }
+      .wps-td-mode-label {
+        font-size: 0.8rem; font-weight: 500;
+      }
+      .wps-td-mode-desc {
+        font-size: 0.7rem; color: #6b7280; line-height: 1.3;
+      }
+      #wps-td-canvas-wrap {
+        border: 1px solid #e5e7eb; border-radius: 0.5rem;
+        background: repeating-conic-gradient(#f3f4f6 0% 25%, #fff 0% 50%) 0 0 / 16px 16px;
+        display: flex; align-items: center; justify-content: center;
+        min-height: 200px; overflow: hidden;
+      }
+      #wps-td-canvas {
+        max-width: 100%; max-height: 50vh; object-fit: contain;
+      }
+      .wps-td-no-image {
+        font-size: 0.8rem; color: #9ca3af; padding: 2rem; text-align: center;
+      }
+      .wps-td-control-group {
+        display: flex; flex-direction: column; gap: 0.2rem;
+      }
+      .wps-td-label {
+        font-size: 0.75rem; font-weight: 500;
+      }
+      .wps-td-slider-row {
+        display: flex; align-items: center; gap: 0.5rem;
+      }
+      .wps-td-slider-row input[type="range"] { flex: 1; min-width: 0; }
+      .wps-td-value {
+        font-size: 0.7rem; color: #6b7280; min-width: 2rem; text-align: right;
+      }
+      .wps-td-actions {
+        display: flex; gap: 0.5rem; justify-content: flex-end;
+      }
     `,
   ]);
 

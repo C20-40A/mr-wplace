@@ -1,5 +1,4 @@
 import { t } from "@/i18n/manager";
-import { colorpalette } from "@/constants/colors";
 import type { CreateElementFn, UIElements } from "./types";
 
 export const createPaletteArea = (
@@ -34,7 +33,7 @@ export const createPaletteArea = (
     [accordion, desktopPalette],
   );
 
-  const transparentSection = createTransparentColorSection(createElement);
+  const transparentSection = createTransparentSection(createElement, elements);
 
   return createElement("div", { id: "wps-palette-area" }, [
     paletteScrollArea,
@@ -42,34 +41,26 @@ export const createPaletteArea = (
   ]);
 };
 
-const createTransparentColorSection = (
+const createTransparentSection = (
   createElement: CreateElementFn,
+  elements: UIElements,
 ): HTMLElement => {
   const divider = createElement("div", {
     className: "wps-transparent-divider",
   });
 
-  const label = createElement(
-    "div",
-    { className: "wps-transparent-label" },
-    [t("transparent_color")],
+  const btn = createElement(
+    "button",
+    {
+      id: "wps-transparency-tool-btn",
+      className: "btn btn-sm wps-transparency-tool-btn",
+    },
+    [t("transparency_tool")],
   );
-
-  const chips: HTMLElement[] = colorpalette.map((c) =>
-    createElement("div", {
-      className: "wps-transparent-chip",
-      dataset: { rgb: c.rgb.join(",") },
-      style: {
-        backgroundColor: `rgb(${c.rgb[0]},${c.rgb[1]},${c.rgb[2]})`,
-      },
-    }),
-  );
-
-  const grid = createElement("div", { id: "wps-transparent-grid" }, chips);
+  elements.transparencyToolBtn = btn;
 
   return createElement("div", { id: "wps-transparent-section" }, [
     divider,
-    label,
-    grid,
+    btn,
   ]);
 };

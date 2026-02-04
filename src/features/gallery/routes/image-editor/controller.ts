@@ -219,6 +219,10 @@ export class EditorController {
     this.updateScaledImage();
   }
 
+  getProcessedImage(): HTMLCanvasElement | null {
+    return this.scaledCanvas;
+  }
+
   onTransparentColorsChange(colors: Set<string>): void {
     this.transparentColors = colors;
     this.updateScaledImage();

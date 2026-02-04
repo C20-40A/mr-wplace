@@ -43,6 +43,23 @@ export class GalleryImageEditor {
       onQuantizationMethodChange: (method) => this.controller?.onQuantizationMethodChange(method),
       onGpuToggle: (enabled) => this.controller?.onGpuToggle(enabled),
       onTransparentColorsChange: (colors) => this.controller?.onTransparentColorsChange(colors),
+      onOpenTransparencyTool: () => this.controller?.getProcessedImage() ?? null,
+      onTransparencyCanvasClick: (x, y) => {
+        console.log("🧑‍🎨 : Transparency flood fill click at", x, y);
+        // TODO: implement flood fill logic
+      },
+      onTransparencyThresholdChange: (value) => {
+        console.log("🧑‍🎨 : Transparency threshold changed to", value);
+        // TODO: implement threshold change
+      },
+      onTransparencyApply: () => {
+        console.log("🧑‍🎨 : Transparency apply");
+        // TODO: implement apply
+      },
+      onTransparencyReset: () => {
+        console.log("🧑‍🎨 : Transparency reset");
+        // TODO: implement reset
+      },
       onClear: () => this.controller?.clearImage(),
       onSaveToGallery: () => this.controller?.saveToGallery(),
       onDownload: () => this.controller?.downloadImage()

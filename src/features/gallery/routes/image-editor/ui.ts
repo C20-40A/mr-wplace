@@ -4,6 +4,7 @@ import type { UIElements } from "./components/types";
 import { createDropzone } from "./components/create-dropzone";
 import { createImageDisplayArea } from "./components/create-image-display-area";
 import { injectImageEditorStyles } from "./components/inject-styles";
+import { TransparencyDialog } from "./components/transparency-dialog";
 
 export interface ImageEditorCallbacks {
   onFileHandle: (file: File) => void;
@@ -19,6 +20,11 @@ export interface ImageEditorCallbacks {
   onQuantizationMethodChange: (method: QuantizationMethod) => void;
   onGpuToggle: (enabled: boolean) => void;
   onTransparentColorsChange: (colors: Set<string>) => void;
+  onOpenTransparencyTool: () => HTMLImageElement | HTMLCanvasElement | null;
+  onTransparencyCanvasClick: (x: number, y: number) => void;
+  onTransparencyThresholdChange: (value: number) => void;
+  onTransparencyApply: () => void;
+  onTransparencyReset: () => void;
   onClear: () => void;
   onSaveToGallery: () => void;
   onDownload: () => void;
@@ -30,7 +36,7 @@ export class ImageEditorUI {
   private imageDropzone: ImageDropzone | null = null;
   private controller: any = null;
   private elements: UIElements = {};
-  private transparentColors = new Set<string>();
+  private transparencyDialog: TransparencyDialog | null = null;
 
   constructor() {
     this.container = this._createElement("div", {
@@ -281,19 +287,9 @@ export class ImageEditorUI {
     const target = e.target as HTMLElement;
     if (!this.callbacks) return;
 
-    // 透過色チップのクリック
-    const chip = target.closest(".wps-transparent-chip") as HTMLElement;
-    if (chip) {
-      const rgb = chip.dataset.rgb;
-      if (!rgb) return;
-      if (this.transparentColors.has(rgb)) {
-        this.transparentColors.delete(rgb);
-        chip.classList.remove("active");
-      } else {
-        this.transparentColors.add(rgb);
-        chip.classList.add("active");
-      }
-      this.callbacks.onTransparentColorsChange(new Set(this.transparentColors));
+    // 透過ツールボタン
+    if (target.id === "wps-transparency-tool-btn") {
+      this.openTransparencyDialog();
       return;
     }
 
@@ -339,6 +335,22 @@ export class ImageEditorUI {
     ) {
       this.callbacks?.onReplaceImage(file);
     }
+  }
+
+  private openTransparencyDialog(): void {
+    if (!this.callbacks) return;
+    const image = this.callbacks.onOpenTransparencyTool();
+    if (this.transparencyDialog) {
+      this.transparencyDialog.close();
+    }
+    this.transparencyDialog = new TransparencyDialog({
+      onCanvasClick: (x, y) => this.callbacks?.onTransparencyCanvasClick(x, y),
+      onThresholdChange: (v) => this.callbacks?.onTransparencyThresholdChange(v),
+      onApply: () => this.callbacks?.onTransparencyApply(),
+      onReset: () => this.callbacks?.onTransparencyReset(),
+      onClose: () => { this.transparencyDialog = null; },
+    });
+    this.transparencyDialog.open(image);
   }
 
   setController(controller: any): void {
