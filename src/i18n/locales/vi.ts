@@ -176,7 +176,7 @@ export const viTranslations = {
   invalid_coordinates: "Tọa độ không hợp lệ",
   coordinates_updated: "Đã cập nhật tọa độ",
   goto_map: "Đến bản đồ",
-  share: "Chia sẻ",
+  share: "Tải xuống",
   image_share: "Chia sẻ hình ảnh",
   tile_coordinate: "Tọa độ ô",
   pixel_coordinate: "Tọa độ pixel",

@@ -177,7 +177,7 @@ export const enTranslations = {
   invalid_coordinates: "Invalid coordinates",
   coordinates_updated: "Coordinates updated",
   goto_map: "Go to Map",
-  share: "Share",
+  share: "Download",
   image_share: "Image Share",
   tile_coordinate: "Tile Coordinate",
   pixel_coordinate: "Pixel Coordinate",

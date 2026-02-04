@@ -181,7 +181,7 @@ export const frTranslations = {
   invalid_coordinates: "Coordonnées invalides",
   coordinates_updated: "Coordonnées mises à jour",
   goto_map: "Aller à la carte",
-  share: "Partager",
+  share: "Télécharger",
   image_share: "Partager l'image",
   tile_coordinate: "Coordonnées de tuile",
   pixel_coordinate: "Coordonnées de pixel",

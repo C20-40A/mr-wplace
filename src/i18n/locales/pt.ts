@@ -178,7 +178,7 @@ export const ptTranslations = {
   invalid_coordinates: "Coordenadas inválidas",
   coordinates_updated: "Coordenadas atualizadas",
   goto_map: "Ir ao Mapa",
-  share: "Compartilhar",
+  share: "Baixar",
   image_share: "Compartilhar Imagem",
   tile_coordinate: "Coordenada do Tile",
   pixel_coordinate: "Coordenada do Pixel",

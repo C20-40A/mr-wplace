@@ -179,7 +179,7 @@ export const ruTranslations = {
   invalid_coordinates: "Неверные координаты",
   coordinates_updated: "Координаты обновлены",
   goto_map: "Перейти на карту",
-  share: "Поделиться",
+  share: "Скачать",
   image_share: "Поделиться изображением",
   tile_coordinate: "Координаты тайла",
   pixel_coordinate: "Координаты пикселя",

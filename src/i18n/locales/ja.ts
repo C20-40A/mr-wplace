@@ -183,7 +183,7 @@ export const jaTranslations = {
   invalid_coordinates: "無効な座標",
   coordinates_updated: "座標を更新しました",
   goto_map: "マップへ移動",
-  share: "シェア",
+  share: "ダウンロード",
   image_share: "画像シェア",
   tile_coordinate: "タイル座標",
   pixel_coordinate: "ピクセル座標",
