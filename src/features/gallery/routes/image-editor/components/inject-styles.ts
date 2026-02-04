@@ -126,7 +126,7 @@ export const injectImageEditorStyles = (createElement: CreateElementFn): void =>
       #wps-transparency-dialog {
         background: var(--color-base-100, #fff); border-radius: 0.75rem;
         box-shadow: 0 20px 60px rgba(0,0,0,0.3); padding: 1rem;
-        width: 90vw; max-width: 480px; max-height: 85vh;
+        width: 95vw; max-width: 720px; max-height: 90vh; min-height: 60vh;
         display: flex; flex-direction: column; gap: 0.5rem;
         overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
       }
@@ -151,11 +151,20 @@ export const injectImageEditorStyles = (createElement: CreateElementFn): void =>
         border: 1px solid #e5e7eb; border-radius: 0.5rem;
         background: repeating-conic-gradient(#f3f4f6 0% 25%, #fff 0% 50%) 0 0 / 16px 16px;
         display: flex; align-items: center; justify-content: center;
-        min-height: 200px; overflow: hidden;
+        position: relative;
+        min-height: 320px; overflow: hidden;
       }
       #wps-td-canvas {
-        max-width: 100%; max-height: 50vh; object-fit: contain;
+        max-width: 100%; max-height: 70vh; object-fit: contain;
       }
+      .wps-td-controls {
+        position: absolute; top: 8px; right: 8px; display: flex; gap: 6px; align-items: center; z-index: 1;
+      }
+      .wps-td-control-btn, .wps-td-zoom-indicator {
+        background: rgba(255, 255, 255, 0.85); border: none; border-radius: 4px;
+        padding: 4px 8px; font-size: 12px; color: #4b5563; line-height: 1;
+      }
+      .wps-td-control-btn { cursor: pointer; }
       .wps-td-no-image {
         font-size: 0.8rem; color: #9ca3af; padding: 2rem; text-align: center;
       }

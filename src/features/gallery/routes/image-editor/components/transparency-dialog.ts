@@ -17,6 +17,17 @@ export class TransparencyDialog {
   private callbacks: TransparencyDialogCallbacks;
   private sourceImage: HTMLImageElement | HTMLCanvasElement | null = null;
   private mountRoot: HTMLElement = document.body;
+  private zoom = 1;
+  private readonly minZoom = 1;
+  private readonly maxZoom = 8;
+  private panX = 0;
+  private panY = 0;
+  private isDragging = false;
+  private lastMouseX = 0;
+  private lastMouseY = 0;
+  private dragMoved = false;
+  private zoomIndicator: HTMLElement | null = null;
+  private resetButton: HTMLButtonElement | null = null;
 
   constructor(callbacks: TransparencyDialogCallbacks) {
     this.callbacks = callbacks;
@@ -28,6 +39,9 @@ export class TransparencyDialog {
   ): void {
     if (this.overlay) return;
     this.sourceImage = image;
+    this.zoom = 1;
+    this.panX = 0;
+    this.panY = 0;
     this.mountRoot = mountRoot;
     this.createDialog();
     if (image) this.drawPreview(image);
@@ -92,12 +106,18 @@ export class TransparencyDialog {
     // Canvas preview area
     const canvasWrap = document.createElement("div");
     canvasWrap.id = "wps-td-canvas-wrap";
+    this.createCanvasControls(canvasWrap);
 
     if (this.sourceImage) {
       const canvas = document.createElement("canvas");
       canvas.id = "wps-td-canvas";
       canvas.style.cssText = "image-rendering: pixelated; cursor: crosshair;";
       canvas.addEventListener("click", (e) => this.handleCanvasClick(e));
+      canvas.addEventListener("wheel", (e) => this.handleCanvasWheel(e), {
+        passive: false,
+      });
+      canvas.addEventListener("mousedown", (e) => this.handleCanvasMouseDown(e));
+      canvas.addEventListener("mouseleave", () => this.handleCanvasMouseLeave());
       this.canvas = canvas;
       this.ctx = canvas.getContext("2d", { willReadFrequently: true });
       canvasWrap.appendChild(canvas);
@@ -178,10 +198,15 @@ export class TransparencyDialog {
     this.canvas.height = h;
     this.ctx.imageSmoothingEnabled = false;
     this.ctx.drawImage(image, 0, 0);
+    this.applyCanvasZoom();
   }
 
   private handleCanvasClick(e: MouseEvent): void {
     if (!this.canvas) return;
+    if (this.dragMoved) {
+      this.dragMoved = false;
+      return;
+    }
     const rect = this.canvas.getBoundingClientRect();
     const scaleX = this.canvas.width / rect.width;
     const scaleY = this.canvas.height / rect.height;
@@ -190,5 +215,117 @@ export class TransparencyDialog {
     if (x >= 0 && y >= 0 && x < this.canvas.width && y < this.canvas.height) {
       this.callbacks.onCanvasClick(x, y);
     }
+  }
+
+  private handleCanvasWheel(e: WheelEvent): void {
+    if (!this.canvas) return;
+    e.preventDefault();
+
+    const delta = e.deltaY > 0 ? -0.2 : 0.2;
+    const next = Math.min(this.maxZoom, Math.max(this.minZoom, this.zoom + delta));
+    if (next === this.zoom) return;
+
+    this.zoom = next;
+    if (this.zoom === 1) {
+      this.panX = 0;
+      this.panY = 0;
+    }
+    this.applyCanvasZoom();
+  }
+
+  private applyCanvasZoom(): void {
+    if (!this.canvas) return;
+    this.canvas.style.transformOrigin = "center center";
+    this.canvas.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.zoom})`;
+    this.updateZoomIndicator();
+    this.updateCanvasCursor();
+  }
+
+  private createCanvasControls(container: HTMLElement): void {
+    const controls = document.createElement("div");
+    controls.className = "wps-td-controls";
+
+    const resetBtn = document.createElement("button");
+    resetBtn.className = "wps-td-control-btn";
+    resetBtn.textContent = t`${"reset_viewport"}`;
+    resetBtn.addEventListener("click", () => this.resetViewport());
+    this.resetButton = resetBtn;
+
+    const indicator = document.createElement("div");
+    indicator.className = "wps-td-zoom-indicator";
+    this.zoomIndicator = indicator;
+
+    controls.append(resetBtn, indicator);
+    container.appendChild(controls);
+    this.updateZoomIndicator();
+  }
+
+  private updateZoomIndicator(): void {
+    if (!this.zoomIndicator || !this.resetButton) return;
+    const isActive = this.zoom !== 1 || this.panX !== 0 || this.panY !== 0;
+    this.zoomIndicator.textContent = `${Math.round(this.zoom * 100)}%`;
+    this.zoomIndicator.style.display = isActive ? "block" : "none";
+    this.resetButton.style.display = isActive ? "block" : "none";
+  }
+
+  private resetViewport(): void {
+    this.zoom = 1;
+    this.panX = 0;
+    this.panY = 0;
+    this.applyCanvasZoom();
+  }
+
+  private handleCanvasMouseDown(e: MouseEvent): void {
+    if (!this.canvas) return;
+    if (this.zoom <= 1) return;
+    this.isDragging = true;
+    this.dragMoved = false;
+    this.lastMouseX = e.clientX;
+    this.lastMouseY = e.clientY;
+    this.updateCanvasCursor("grabbing");
+    document.addEventListener("mousemove", this.handleCanvasMouseMove);
+    document.addEventListener("mouseup", this.handleCanvasMouseUp);
+  }
+
+  private handleCanvasMouseMove = (e: MouseEvent): void => {
+    if (!this.isDragging) return;
+    const deltaX = e.clientX - this.lastMouseX;
+    const deltaY = e.clientY - this.lastMouseY;
+    if (Math.abs(deltaX) + Math.abs(deltaY) > 2) this.dragMoved = true;
+    this.panX += deltaX;
+    this.panY += deltaY;
+    this.lastMouseX = e.clientX;
+    this.lastMouseY = e.clientY;
+    this.applyCanvasZoom();
+  };
+
+  private handleCanvasMouseUp = (): void => {
+    if (!this.isDragging) return;
+    this.isDragging = false;
+    this.updateCanvasCursor();
+    document.removeEventListener("mousemove", this.handleCanvasMouseMove);
+    document.removeEventListener("mouseup", this.handleCanvasMouseUp);
+  };
+
+  private handleCanvasMouseLeave(): void {
+    if (this.isDragging) {
+      this.isDragging = false;
+      this.updateCanvasCursor();
+      document.removeEventListener("mousemove", this.handleCanvasMouseMove);
+      document.removeEventListener("mouseup", this.handleCanvasMouseUp);
+    }
+  }
+
+  private updateCanvasCursor(forced?: "grab" | "grabbing" | "crosshair"): void {
+    if (!this.canvas) return;
+    if (forced) {
+      this.canvas.style.cursor = forced;
+      return;
+    }
+    if (this.zoom > 1) {
+      this.canvas.style.cursor = this.isDragging ? "grabbing" : "grab";
+      return;
+    }
+    this.canvas.style.cursor = "crosshair";
   }
 }
