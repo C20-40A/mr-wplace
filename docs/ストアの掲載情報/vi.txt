@@ -1,27 +1,35 @@
-🚀 Bộ Công Cụ Đa Chức Năng Mr. Wplace
-
-🔔 Thông Báo Khi Sơn Tích Lũy
-• Nhận thông báo khi sơn tích lũy (có thể bật/tắt)
-• Đặt thông báo từ 10% đến 100% vào thời điểm bạn muốn
-• Cũng có thể sử dụng liên kết Google Calendar
-
-✏ Vẽ Văn Bản
-• Vẽ văn bản dưới dạng các chấm trên bản đồ
-• Hỗ trợ nhiều kiểu văn bản
+🚀 Mr. Wplace - Công Cụ Siêu Đa Năng
 
 🎨 Vẽ Hình Ảnh Trên Bản Đồ
-• Hiển thị các pixel cần thiết để vẽ hình ảnh đã tải lên trên bản đồ
-• Xem danh sách tác phẩm nghệ thuật trong thư viện
-• Dễ dàng chuyển đổi hiển thị tác phẩm và dịch chuyển đến vị trí tác phẩm
-• Hiển thị các pixel còn thiếu một cách dễ thấy
-• Áp dụng bộ lọc màu để hiển thị hình ảnh
-• Chia sẻ và tải hình ảnh đang làm dở với thông tin vị trí
+• Công cụ chỉnh sửa ảnh nâng cao
+• Công cụ trong suốt màu
+• Hiển thị tiến độ
+• Hiệu năng nhanh
+• Xem và chia sẻ danh sách tác phẩm (kèm thông tin vị trí ảnh)
+• Bộ lọc màu nâng cao
+• Hiển thị rõ các pixel chưa tô
+
+✏ Vẽ Văn Bản
+• Vẽ văn bản nhập trên màn hình
+• Hỗ trợ nhiều kiểu văn bản
 
 ⭐ Dấu Trang Không Giới Hạn
-• Lưu vị trí không giới hạn với tên tùy chỉnh
-• Nhập/xuất danh sách dấu trang
+• Lưu vị trí không giới hạn
+• Đặt thẻ và tên vị trí
+• Nhảy ngay đến bất kỳ tile nào
+• Có thể nhập/xuất
+
+🔔 Thông Báo Khi Sơn Tích Lũy
+• Đặt thời điểm mong muốn từ 10% đến 100%
+• Hỗ trợ Google Calendar
 
 ⏰ Khôi Phục Tác Phẩm Về Trạng Thái Trước
-• Lưu hình ảnh hiện đang vẽ trên các ô bản đồ
-• Hiển thị trạng thái trước đó trên bản đồ để nhanh chóng sửa tác phẩm bị phá hoại
-• Xem các ô đã lưu trong danh sách
+• Lưu hình ảnh hiện đang được vẽ trên các tile bản đồ
+• Hiển thị trạng thái trước trên bản đồ để nhanh chóng sửa tác phẩm bị phá hoại
+• Xem các tile đã lưu trong danh sách
+
+🗺 Làm Bản Đồ Dễ Nhìn Hơn
+• Hiển thị đường lưới
+• Hỗ trợ tương phản cao
+• Hiển thị ranh giới tile
+• Thay đổi màu nền

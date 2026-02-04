@@ -1,27 +1,35 @@
-🚀 Kit de Ferramentas Multifuncional Mr. Wplace
-
-🔔 Notificações quando a Tinta Acumula
-• Receba notificações quando a tinta acumular (pode ser ativado/desativado)
-• Configure notificações de 10% a 100% no momento que preferir
-• Também pode usar links do Google Calendar
-
-✏ Desenhar Texto
-• Desenhe texto como pontos no mapa
-• Suporta múltiplos estilos de texto
+🚀 Mr. Wplace - Ferramenta Super Multifuncional
 
 🎨 Desenhar Imagens no Mapa
-• Exiba os pixels necessários para desenhar imagens carregadas no mapa
-• Veja a lista de obras de arte na galeria
-• Alterne facilmente a exibição de obras e teleporte-se para as posições das obras
-• Exiba pixels faltantes de maneira fácil de ver
-• Aplique filtros de cor para exibir imagens
-• Compartilhe e carregue imagens em andamento com informações de localização
+• Ferramentas avançadas de edição de imagens
+• Ferramenta de transparência de cor
+• Exibição de progresso
+• Alto desempenho
+• Ver e compartilhar a lista de obras (com informações de localização da imagem)
+• Filtros de cor avançados
+• Exibir claramente pixels não pintados
+
+✏ Desenhar Texto
+• Desenhe o texto digitado na tela
+• Suporta múltiplos estilos de texto
 
 ⭐ Marcadores Ilimitados
-• Salve locais ilimitados com nomes personalizados
-• Importe/exporte listas de marcadores
+• Salve locais sem limites
+• Defina tags e nomes de locais
+• Salte instantaneamente para qualquer tile
+• Importação/exportação disponível
+
+🔔 Notificações quando a tinta acumula
+• Configure o momento desejado de 10% a 100%
+• Compatível com Google Calendar
 
 ⏰ Restaurar Obras para Estados Passados
 • Salve imagens atualmente desenhadas nos tiles do mapa
 • Exiba estados passados no mapa para corrigir rapidamente obras vandalizadas
 • Veja os tiles salvos em uma lista
+
+🗺 Deixar o Mapa mais Fácil de Ver
+• Mostrar linhas de grade
+• Suporte a alto contraste
+• Mostrar limites dos tiles
+• Alterar a cor de fundo

@@ -1,27 +1,35 @@
-🚀 Mr. Wplace Multifunctional Toolkit
-
-🔔 Notifications When Paint Accumulates
-• Get notified when paint accumulates (can be turned ON/OFF)
-• Set notifications at your preferred timing from 10% to 100%
-• Can also use Google Calendar links
-
-✏ Draw Text
-• Draw text as dots on the map
-• Supports multiple text styles
+🚀 Mr. Wplace - Super Multifunctional Tools
 
 🎨 Draw Images on the Map
-• Display the pixels needed to draw uploaded images on the map
-• View artwork list in the gallery
-• Easy toggling of artwork display and warping to artwork positions
-• Display missing pixels in an easy-to-see manner
-• Apply color filters to display images
-• Share and load work-in-progress images with location information
+• Advanced image editing tools
+• Color transparency tool
+• Progress display
+• Fast performance
+• View and share artwork list (with image location info)
+• Advanced color filters
+• Clearly display unpainted pixels
+
+✏ Draw Text
+• Draw text entered on the screen
+• Supports multiple text styles
 
 ⭐ Unlimited Bookmarks
-• Save unlimited locations with custom names
-• Import/export bookmark lists
+• Save locations without limits
+• Set tags and location names
+• Jump instantly to any tile
+• Import/export available
+
+🔔 Notifications When Paint Accumulates
+• Set your preferred timing from 10% to 100%
+• Google Calendar supported
 
 ⏰ Restore Artwork to Past States
 • Save images currently drawn on map tiles
-• Display past states on the map to quickly fix vandalized artwork
+• Show past states on the map to quickly fix vandalized artwork
 • View saved tiles in a list
+
+🗺 Make the Map Easier to See
+• Show grid lines
+• High-contrast support
+• Show tile boundaries
+• Change background color

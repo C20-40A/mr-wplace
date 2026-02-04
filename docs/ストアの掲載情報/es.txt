@@ -1,27 +1,35 @@
-🚀 Kit de Herramientas Multifuncional Mr. Wplace
-
-🔔 Notificaciones cuando se Acumula Pintura
-• Recibe notificaciones cuando se acumula pintura (se puede activar/desactivar)
-• Configura notificaciones desde 10% hasta 100% en el momento que prefieras
-• También puedes usar enlaces de Google Calendar
-
-✏ Dibujar Texto
-• Dibuja texto como puntos en el mapa
-• Admite múltiples estilos de texto
+🚀 Mr. Wplace - Herramienta Súper Multifuncional
 
 🎨 Dibujar Imágenes en el Mapa
-• Muestra los píxeles necesarios para dibujar imágenes cargadas en el mapa
-• Ve la lista de obras de arte en la galería
-• Alterna fácilmente la visualización de obras y teletranspórtate a las posiciones de las obras
-• Muestra píxeles faltantes de manera fácil de ver
-• Aplica filtros de color para mostrar imágenes
-• Comparte y carga imágenes en progreso con información de ubicación
+• Herramientas avanzadas de edición de imágenes
+• Herramienta de transparencia de color
+• Mostrar el progreso
+• Alto rendimiento
+• Ver y compartir la lista de obras (con información de ubicación de la imagen)
+• Filtros de color avanzados
+• Mostrar claramente los píxeles sin pintar
+
+✏ Dibujar Texto
+• Dibuja el texto ingresado en la pantalla
+• Compatible con múltiples estilos de texto
 
 ⭐ Marcadores Ilimitados
-• Guarda ubicaciones ilimitadas con nombres personalizados
-• Importa/exporta listas de marcadores
+• Guarda lugares sin límites
+• Configura etiquetas y nombres de lugares
+• Salta al instante a cualquier tesela
+• Importar/exportar disponible
+
+🔔 Notificaciones cuando se acumula la pintura
+• Configura el momento que prefieras entre 10% y 100%
+• Compatible con Google Calendar
 
 ⏰ Restaurar Obras a Estados Pasados
 • Guarda imágenes actualmente dibujadas en las teselas del mapa
 • Muestra estados pasados en el mapa para corregir rápidamente obras vandalizadas
-• Ve las teselas guardadas en una lista
+• Ver las teselas guardadas en una lista
+
+🗺 Hacer el Mapa más Fácil de Ver
+• Mostrar líneas de cuadrícula
+• Compatible con alto contraste
+• Mostrar límites de las teselas
+• Cambiar el color de fondo
