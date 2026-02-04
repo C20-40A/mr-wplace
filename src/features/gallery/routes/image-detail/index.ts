@@ -15,7 +15,7 @@ export class GalleryImageDetail {
     router: GalleryRouter,
     item: GalleryItem,
     onDelete: (key: string) => void,
-    onEdit?: () => void
+    onEdit?: () => void,
   ): void {
     this.currentItem = item;
 
@@ -41,12 +41,6 @@ export class GalleryImageDetail {
             }
           </button>
 
-          <button id="goto-map-btn" class="btn btn-sm btn-primary" ${
-            !item.drawPosition ? "disabled" : ""
-          }>
-            📍 ${t`${"goto_map"}`}
-          </button>
-
           <button id="title-edit-btn" class="btn btn-sm btn-primary">
             📝 ${t`${"title"}`}
           </button>
@@ -67,25 +61,29 @@ export class GalleryImageDetail {
         </div>
         
         <!-- 座標編集エリア -->
-        <div style="padding: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; flex-wrap: wrap;">
-          <label>TLX: <input id="coord-tlx" type="number" value="${
+        <div style="padding: 8px; display: flex; align-items: center; gap: 4px; justify-content: center;">
+          <button id="goto-map-btn" class="btn btn-sm btn-ghost" ${
+            !item.drawPosition ? "disabled" : ""
+          } style="height: 28px; min-height: 28px; padding: 0 8px;" title="${t`${"goto_map"}`}">
+            📍
+          </button>
+          <input id="coord-tlx" type="number" placeholder="TLX" value="${
             item.drawPosition?.TLX ?? 0
-          }" style="width: 60px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 4px;"></label>
-          <label>TLY: <input id="coord-tly" type="number" value="${
+          }" style="width: 60px; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: 12px;">
+          <input id="coord-tly" type="number" placeholder="TLY" value="${
             item.drawPosition?.TLY ?? 0
-          }" style="width: 60px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 4px;"></label>
-          <label>PxX: <input id="coord-pxx" type="number" value="${
+          }" style="width: 60px; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: 12px;">
+          <input id="coord-pxx" type="number" placeholder="PxX" value="${
             item.drawPosition?.PxX ?? 0
-          }" style="width: 60px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 4px;"></label>
-          <label>PxY: <input id="coord-pxy" type="number" value="${
+          }" min="0" max="999" style="width: 60px; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: 12px;">
+          <input id="coord-pxy" type="number" placeholder="PxY" value="${
             item.drawPosition?.PxY ?? 0
-          }" style="width: 60px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 4px;"></label>
-          <button id="update-coords-btn" class="btn btn-sm" style="height: 24px; min-height: 24px; padding: 0 12px;">🔄 ${t`${"update"}`}</button>
-          <button id="copy-coords-btn" class="btn btn-sm btn-ghost" style="height: 24px; min-height: 24px; padding: 0 8px;" title="Copy">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-            </svg>
+          }" min="0" max="999" style="width: 60px; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: 12px;">
+          <button id="update-coords-btn" class="btn btn-sm btn-ghost" style="height: 28px; min-height: 28px; padding: 0 8px;" title="${t`${"update"}`}">
+            🔄 ${t`${"update"}`}
+          </button>
+          <button id="copy-coords-btn" class="btn btn-sm btn-ghost" style="height: 28px; min-height: 28px; padding: 0 8px;" title="Copy">
+            📋
           </button>
         </div>
       </div>
@@ -112,7 +110,7 @@ export class GalleryImageDetail {
 
   private loadImageToCanvasInternal(dataUrl: string): void {
     const canvas = document.getElementById(
-      "image-detail-canvas"
+      "image-detail-canvas",
     ) as HTMLCanvasElement;
     if (!canvas) return;
 
@@ -143,7 +141,7 @@ export class GalleryImageDetail {
   private setupButtonEvents(
     router: GalleryRouter,
     onDelete: (key: string) => void,
-    onEdit?: () => void
+    onEdit?: () => void,
   ): void {
     if (!this.currentItem) return;
 
@@ -168,7 +166,7 @@ export class GalleryImageDetail {
       Toast.success(
         `${t`${"draw_state"}`}: ${
           newDrawEnabled ? t`${"enabled"}` : t`${"disabled"}`
-        }`
+        }`,
       );
     });
 
@@ -188,16 +186,15 @@ export class GalleryImageDetail {
       const currentTitle = this.currentItem.title || "";
       const newTitle = await showNameInputModal(
         t`${"edit_image_title"}`,
-        t`${"image_title_placeholder"}`
+        t`${"image_title_placeholder"}`,
       );
 
       // キャンセルされた場合はnullが返る
       if (newTitle === null) return;
 
       // 新しいタイトルを保存
-      const { GalleryStorage } = await import(
-        "../../../../states/galleryStorage"
-      );
+      const { GalleryStorage } =
+        await import("../../../../states/galleryStorage");
       const storage = new GalleryStorage();
       await storage.save({ ...this.currentItem, title: newTitle });
 
@@ -240,16 +237,16 @@ export class GalleryImageDetail {
       if (!this.currentItem) return;
 
       const tlx = parseInt(
-        (document.getElementById("coord-tlx") as HTMLInputElement).value
+        (document.getElementById("coord-tlx") as HTMLInputElement).value,
       );
       const tly = parseInt(
-        (document.getElementById("coord-tly") as HTMLInputElement).value
+        (document.getElementById("coord-tly") as HTMLInputElement).value,
       );
       const pxx = parseInt(
-        (document.getElementById("coord-pxx") as HTMLInputElement).value
+        (document.getElementById("coord-pxx") as HTMLInputElement).value,
       );
       const pxy = parseInt(
-        (document.getElementById("coord-pxy") as HTMLInputElement).value
+        (document.getElementById("coord-pxy") as HTMLInputElement).value,
       );
 
       if (isNaN(tlx) || isNaN(tly) || isNaN(pxx) || isNaN(pxy)) {
@@ -269,7 +266,7 @@ export class GalleryImageDetail {
 
       await tileOverlay.drawImageWithCoords(
         { TLX: tlx, TLY: tly, PxX: pxx, PxY: pxy },
-        this.currentItem
+        this.currentItem,
       );
 
       // currentItem更新
