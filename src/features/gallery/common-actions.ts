@@ -42,15 +42,20 @@ export const downloadImage = (item: GalleryItem, canvasId: string): void => {
   const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
   if (!canvas) throw new Error("Canvas not found");
 
+  const { TLX, TLY, PxX, PxY } = item.drawPosition;
+  const coords = `${TLX}-${TLY}-${PxX}-${PxY}`;
+  const filename = item.title ? `${item.title}_${coords}.png` : `${coords}.png`;
+  console.log("🧑‍🎨 : Downloading image with filename:", filename);
+
   canvas.toBlob((blob) => {
     if (!blob) throw new Error("Failed to create blob");
 
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
+    a.download = filename;
 
-    const { TLX, TLY, PxX, PxY } = item.drawPosition!;
-    a.download = `${TLX}-${TLY}-${PxX}-${PxY}.png`;
+    console.log("🧑‍🎨 : Download link created with filename:", a.download);
 
     document.body.appendChild(a);
     a.click();
