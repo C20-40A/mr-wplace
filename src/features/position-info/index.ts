@@ -55,60 +55,55 @@ export class PositionInfo {
   };
 
   /**
-   * 閉じるボタンと三点メニューの位置を入れ替え
+   * ヘッダーに閉じるボタンを追加（元の閉じるボタンがなくても動作）
    */
-  private applyCloseButtonSwap(container: Element): boolean {
+  private applyHeaderCloseButton(container: Element): boolean {
     const headerRow = container.querySelector<HTMLElement>(
       ".flex.items-center.gap-2",
     );
+    if (!headerRow) return false;
+
     const footerRow = container.querySelector<HTMLElement>(
       ".border-base-300.flex.items-center.justify-between",
     );
-    if (!headerRow || !footerRow) return false;
 
-    const closeButton = footerRow.querySelector<HTMLButtonElement>(
+    const closeButton = footerRow?.querySelector<HTMLButtonElement>(
       `button:has(path[d="${CLOSE_SVG_PATH}"])`,
     );
-    if (!closeButton) return false;
 
+    // dropdownがあれば移動（オプション）
     const dropdowns = Array.from(
       container.querySelectorAll<HTMLElement>(
         ".dropdown.dropdown-top.dropdown-left.shrink-0",
       ),
     );
-    if (dropdowns.length === 0) return false;
+    if (dropdowns.length > 0 && footerRow) {
+      const dropdownInHeader = dropdowns.find((el) => headerRow.contains(el));
+      const dropdownInFooter = dropdowns.find((el) => footerRow.contains(el));
+      const dropdown = dropdownInHeader || dropdownInFooter || dropdowns[0];
 
-    const dropdownInHeader = dropdowns.find((el) => headerRow.contains(el));
-    const dropdownInFooter = dropdowns.find((el) => footerRow.contains(el));
-    const dropdown = dropdownInHeader || dropdownInFooter || dropdowns[0];
-    if (!dropdown) return false;
+      if (dropdown && !footerRow.contains(dropdown)) {
+        footerRow.appendChild(dropdown);
+      }
 
-    const dropdownInFooterNow = footerRow.contains(dropdown);
-    if (!dropdownInFooterNow) {
-      footerRow.appendChild(dropdown);
-    }
-
-    dropdown.id = DROPDOWN_SWAP_ID;
-    for (const extra of dropdowns) {
-      if (extra === dropdown) continue;
-      if (extra.id === DROPDOWN_SWAP_ID) {
-        extra.remove();
+      if (dropdown) {
+        dropdown.id = DROPDOWN_SWAP_ID;
+        for (const extra of dropdowns) {
+          if (extra === dropdown) continue;
+          if (extra.id === DROPDOWN_SWAP_ID) extra.remove();
+        }
       }
     }
 
-    // もとの閉じるボタンはフッターに残し、ヘッダーにプロキシを置く
-    if (!closeButton.classList.contains("hidden")) {
+    // 元の閉じるボタンがあれば非表示に
+    if (closeButton && !closeButton.classList.contains("hidden")) {
       closeButton.classList.add("hidden");
     }
 
+    // プロキシボタンの作成/更新
     let proxyButton = headerRow.querySelector<HTMLButtonElement>(
       `#${CLOSE_PROXY_ID}`,
     );
-    const desiredClasses = new Set(closeButton.classList);
-    desiredClasses.delete("btn-xs");
-    desiredClasses.delete("hidden");
-    const desiredClassName = Array.from(desiredClasses).sort().join(" ");
-    const desiredHtml = closeButton.innerHTML;
 
     const needsProxyInit = !proxyButton;
     if (!proxyButton) {
@@ -116,36 +111,68 @@ export class PositionInfo {
       proxyButton.id = CLOSE_PROXY_ID;
       proxyButton.type = "button";
       proxyButton.addEventListener("click", () => {
-        const latestCloseButton = footerRow.querySelector<HTMLButtonElement>(
+        // 1. footerの閉じるボタンがあればclick
+        const latestCloseButton = footerRow?.querySelector<HTMLButtonElement>(
           `button:has(path[d="${CLOSE_SVG_PATH}"])`,
         );
-        latestCloseButton?.click();
+        if (latestCloseButton) {
+          latestCloseButton.click();
+          return;
+        }
+        // 2. なければESCキーを発火してモーダルを閉じる
+        document.dispatchEvent(
+          new KeyboardEvent("keydown", {
+            key: "Escape",
+            code: "Escape",
+            keyCode: 27,
+            bubbles: true,
+          }),
+        );
       });
     }
 
-    if (
-      needsProxyInit ||
-      Array.from(proxyButton.classList).sort().join(" ") !== desiredClassName
-    ) {
-      proxyButton.className = desiredClassName;
+    // スタイル設定（元の閉じるボタンがあればそれをベースに、なければデフォルト）
+    if (closeButton) {
+      const desiredClasses = new Set(closeButton.classList);
+      desiredClasses.delete("btn-xs");
+      desiredClasses.delete("hidden");
+      const desiredClassName = Array.from(desiredClasses).sort().join(" ");
+
+      if (
+        needsProxyInit ||
+        Array.from(proxyButton.classList).sort().join(" ") !== desiredClassName
+      ) {
+        proxyButton.className = desiredClassName;
+      }
+
+      if (needsProxyInit || proxyButton.innerHTML !== closeButton.innerHTML) {
+        proxyButton.innerHTML = closeButton.innerHTML;
+      }
+    } else {
+      // デフォルトスタイル（閉じるボタンがない場合）
+      if (needsProxyInit) {
+        proxyButton.className = "btn btn-circle btn-ghost btn-sm";
+        proxyButton.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor">
+            <path d="${CLOSE_SVG_PATH}"/>
+          </svg>
+        `;
+      }
     }
 
-    if (needsProxyInit || proxyButton.innerHTML !== desiredHtml) {
-      proxyButton.innerHTML = desiredHtml;
-    }
-
+    // 右寄せ
     const headerDropdown =
       headerRow.querySelector<HTMLElement>(`#${DROPDOWN_SWAP_ID}`) ??
       headerRow.querySelector<HTMLElement>(
         ".dropdown.dropdown-top.dropdown-left.shrink-0",
       );
-    const shouldRightAlignProxy = !headerDropdown;
-    if (shouldRightAlignProxy) {
+    if (!headerDropdown) {
       proxyButton.classList.add("ml-auto");
     } else {
       proxyButton.classList.remove("ml-auto");
     }
-    // close-proxy must always be the last child in headerRow
+
+    // headerRowの最後に配置
     if (
       proxyButton.parentElement !== headerRow ||
       proxyButton !== headerRow.lastElementChild
@@ -166,7 +193,7 @@ export class PositionInfo {
     this.swapScheduled = true;
     requestAnimationFrame(() => {
       this.swapScheduled = false;
-      const swapped = this.applyCloseButtonSwap(container);
+      const swapped = this.applyHeaderCloseButton(container);
       if (!swapped && attempts > 0) {
         setTimeout(
           () => this.scheduleCloseButtonSwap(container, attempts - 1),
