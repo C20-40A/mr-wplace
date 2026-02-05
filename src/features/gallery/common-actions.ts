@@ -6,6 +6,18 @@ import { GalleryItem, GalleryStorage } from "../../states/galleryStorage";
 import { gotoPosition } from "../../utils/position";
 import { tilePixelToLatLng } from "../../utils/coordinate";
 import { sendGalleryImagesToInject } from "@/content";
+import { downloadBlob } from "./routes/image-editor/file-handler";
+
+/**
+ * ファイル名のサニタイズ
+ * ファイルシステムで使えない文字を削除または置換
+ */
+const sanitizeFilename = (filename: string): string => {
+  return filename
+    .replace(/[/\\:*?"<>|]/g, "_")
+    .replace(/\s+/g, "_")
+    .trim();
+};
 
 /**
  * 描画ON/OFFトグル
@@ -44,23 +56,14 @@ export const downloadImage = (item: GalleryItem, canvasId: string): void => {
 
   const { TLX, TLY, PxX, PxY } = item.drawPosition;
   const coords = `${TLX}-${TLY}-${PxX}-${PxY}`;
-  const filename = item.title ? `${item.title}_${coords}.png` : `${coords}.png`;
+  const baseFilename = item.title ? `${item.title}_${coords}` : coords;
+  const filename = sanitizeFilename(baseFilename) + ".png";
+
   console.log("🧑‍🎨 : Downloading image with filename:", filename);
 
   canvas.toBlob((blob) => {
     if (!blob) throw new Error("Failed to create blob");
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-
-    console.log("🧑‍🎨 : Download link created with filename:", a.download);
-
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, filename);
   }, "image/png");
 };
 
