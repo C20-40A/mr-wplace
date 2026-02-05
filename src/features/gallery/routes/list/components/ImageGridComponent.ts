@@ -455,7 +455,7 @@ export class ImageGridComponent {
         </div>
         <div style="display: flex; justify-content: space-between; font-size: 0.6875rem; color: #6b7280; font-family: ui-monospace, monospace; letter-spacing: 0.025em; flex-wrap: wrap;">
           <span>${matched.toLocaleString()}/${total.toLocaleString()}</span>
-          <span style="min-width: 9px;" />
+          <span style="min-width: 9px;"></span>
           ${
             remaining > 0
               ? `<span style="color: #9ca3af;">${remaining}px(${timeStr})</span>`
