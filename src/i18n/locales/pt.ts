@@ -420,4 +420,5 @@ export const ptTranslations = {
   map_filter_tileBoundaries: "Limites dos Tiles",
   map_filter_gridDisplay: "Grade de Pixel",
   map_filter_backgroundColor: "Cor de Fundo",
+  map_filter_map3d: "Visão 3D",
 };

@@ -440,4 +440,5 @@ export const enTranslations = {
   map_filter_tileBoundaries: "Tile Boundaries",
   map_filter_gridDisplay: "Pixel Grid",
   map_filter_backgroundColor: "Background Color",
+  map_filter_map3d: "3D View",
 };

@@ -437,4 +437,5 @@ export const esTranslations = {
   map_filter_tileBoundaries: "Límites de Bloques",
   map_filter_gridDisplay: "Cuadrícula de Píxeles",
   map_filter_backgroundColor: "Color de Fondo",
+  map_filter_map3d: "Vista 3D",
 };

@@ -83,6 +83,24 @@ export const changeBackgroundColor = (color: string | null): void => {
   }
 };
 
+export const changeMap3dEnabled = (enabled: boolean): void => {
+  const mapInstance = getMapInstanceFromWplace();
+  if (!mapInstance) return;
+
+  if (enabled) {
+    mapInstance.touchZoomRotate.enableRotation();
+    mapInstance.dragRotate.enable();
+    mapInstance.setMaxPitch(85);
+  } else {
+    mapInstance.touchZoomRotate.disableRotation();
+    mapInstance.dragRotate.disable();
+    mapInstance.setMaxPitch(0);
+    mapInstance.setPitch(0);
+    mapInstance.setBearing(0);
+  }
+  console.log("🧑‍🎨 : Map 3D mode:", enabled);
+};
+
 // Distance threshold for smart navigation (adjustable)
 const SMART_NAV_THRESHOLD = 4;
 

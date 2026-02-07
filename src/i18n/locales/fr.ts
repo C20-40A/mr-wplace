@@ -436,4 +436,5 @@ export const frTranslations = {
   map_filter_tileBoundaries: "Limites de tuiles",
   map_filter_gridDisplay: "Grille de pixels",
   map_filter_backgroundColor: "Couleur de fond",
+  map_filter_map3d: "Vue 3D",
 };

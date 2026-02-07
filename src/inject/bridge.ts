@@ -39,6 +39,7 @@ import {
 import {
   changeTileBoundaryVisibility,
   changeBackgroundColor,
+  changeMap3dEnabled,
   handleMapInstanceFlyTo,
 } from "./features/map-instance";
 import { setGridDisplayEnabled } from "./features/grid-display";
@@ -158,6 +159,7 @@ const messageHandlers: Record<string, MessageHandler> = {
     setGridDisplayEnabled(data.visible),
   "mr-wplace-background-color-update": (data) =>
     changeBackgroundColor(data.color),
+  "mr-wplace-map-3d-update": (data) => changeMap3dEnabled(data.enabled),
   "mr-wplace-cache-clear": handleCacheClear,
   "mr-wplace-layer-sort-update": handleLayerSortUpdate,
   "mr-wplace-gallery-images-v2": handleGalleryImagesV2,

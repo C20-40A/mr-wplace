@@ -5,6 +5,7 @@ export {
 export {
   changeTileBoundaryVisibility,
   changeBackgroundColor,
+  changeMap3dEnabled,
   handleMapInstanceFlyTo,
 } from "./map-control";
 export { sortMapLayers, setupLayerSortOnMapReady } from "./layer-sort";
