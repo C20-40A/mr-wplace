@@ -3,7 +3,11 @@ import { t } from "../../i18n/manager";
 import { createModal, ModalElements } from "../../components/modal";
 import { IMG_ICON_BOOKMARK } from "../../assets/iconImages";
 import { createResponsiveButton } from "../../components/responsive-button";
-import { createCard, CardConfig, attachCardScrollPassthrough } from "../../components/card";
+import {
+  createCard,
+  CardConfig,
+  attachCardScrollPassthrough,
+} from "../../components/card";
 import { BookmarkStorage } from "./storage";
 import { runtime } from "../../utils/browser-api";
 
@@ -83,6 +87,8 @@ export const createBookmarkModal = (): ModalElements => {
       <!-- Scrollable Content: Bookmarks Grid -->
       <div style="flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0;">
         <div id="wps-favorites-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2">
+        </div>
+        <div id="wps-favorites-empty" style="display: none; min-height: 100%;">
         </div>
       </div>
     </div>
@@ -181,8 +187,8 @@ export const renderExistingTags = (tags: Tag[], currentTag?: Tag): void => {
            gap: 8px;
            padding: 8px;
            border: ${selected ? "3px" : "2px"} solid ${
-        selected ? "oklch(var(--p))" : "oklch(var(--bc) / 0.1)"
-      };
+             selected ? "oklch(var(--p))" : "oklch(var(--bc) / 0.1)"
+           };
            background: ${selected ? "oklch(var(--p) / 0.1)" : "transparent"};
            border-radius: 8px;
            margin-bottom: 6px;
@@ -219,8 +225,8 @@ export const renderExistingTags = (tags: Tag[], currentTag?: Tag): void => {
           }
         </div>
         <span style="flex: 1; font-weight: ${selected ? "600" : "400"};">${
-        tag.name || `(${t`${"tag_name"}`})`
-      }</span>
+          tag.name || `(${t`${"tag_name"}`})`
+        }</span>
       </div>
       <button
         class="wps-tag-edit-btn btn btn-ghost btn-xs"
@@ -272,7 +278,7 @@ export const showTagCreation = (): void => {
         onmouseover="this.style.transform='scale(1.1)';"
         onmouseout="this.style.transform='scale(1)';"
       ></button>
-    `
+    `,
   ).join("");
 };
 
@@ -280,7 +286,7 @@ export const showEditScreen = async (bookmark: Bookmark): Promise<void> => {
   const listScreen = document.getElementById("wps-bookmark-list-screen");
   const editScreen = document.getElementById("wps-bookmark-edit-screen");
   const nameInput = document.getElementById(
-    "wps-edit-name"
+    "wps-edit-name",
   ) as HTMLInputElement;
 
   if (!listScreen || !editScreen || !nameInput) return;
@@ -320,7 +326,7 @@ export const hideEditScreen = (): void => {
 export const showTagEditModal = (
   tag: Tag,
   onSave: (oldTag: Tag, newTag: Tag) => void,
-  onDelete: (tag: Tag) => void
+  onDelete: (tag: Tag) => void,
 ): void => {
   const modal = document.createElement("dialog");
   modal.className = "modal";
@@ -361,7 +367,7 @@ export const showTagEditModal = (
               onmouseover="this.style.transform='scale(1.1)';"
               onmouseout="this.style.transform='scale(1)';"
             ></button>
-          `
+          `,
           ).join("")}
         </div>
       </div>
@@ -392,7 +398,7 @@ export const showTagEditModal = (
     .addEventListener("click", (e) => {
       const target = e.target as HTMLElement;
       const colorBtn = target.closest(
-        ".wps-tag-edit-color-btn"
+        ".wps-tag-edit-color-btn",
       ) as HTMLElement | null;
 
       if (!colorBtn) return;
@@ -411,7 +417,7 @@ export const showTagEditModal = (
       console.log("🧑‍🎨 : Save button clicked in modal");
 
       const nameInput = modal.querySelector(
-        "#wps-tag-edit-name"
+        "#wps-tag-edit-name",
       ) as HTMLInputElement;
 
       // Find selected color button by checking all buttons
@@ -422,7 +428,7 @@ export const showTagEditModal = (
           "🧑‍🎨 : Button border style:",
           style,
           "data-color:",
-          (btn as HTMLElement).dataset.color
+          (btn as HTMLElement).dataset.color,
         );
         if (
           style.includes("rgb(0, 0, 0)") ||
@@ -479,7 +485,7 @@ export const renderTagFilters = (
   tags: Tag[],
   bookmarks: Bookmark[],
   selectedTagFilters: Set<string>,
-  onTagFilterChange: (tagKey: string) => void
+  onTagFilterChange: (tagKey: string) => void,
 ): void => {
   const container = document.getElementById("wps-tag-filter-container");
   const buttonsContainer = document.getElementById("wps-tag-filter-buttons");
@@ -557,11 +563,14 @@ export const renderTagFilters = (
 export const renderBookmarks = (
   favorites: Bookmark[],
   sortType: BookmarkSortType = "created",
-  selectedTagFilters: Set<string> = new Set()
+  selectedTagFilters: Set<string> = new Set(),
 ): void => {
   const grid = document.getElementById("wps-favorites-grid") as HTMLElement;
+  const emptyState = document.getElementById(
+    "wps-favorites-empty",
+  ) as HTMLElement;
 
-  if (!grid) return;
+  if (!grid || !emptyState) return;
 
   // Filter bookmarks by selected tags
   let filteredFavorites = favorites;
@@ -574,18 +583,26 @@ export const renderBookmarks = (
   }
 
   if (filteredFavorites.length === 0) {
-    const tutorialGifUrl = runtime.getURL("assets/images/tutorial/how_to_bookmark.gif");
-    grid.innerHTML = `
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; gap: 1.5rem; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 400px;">
-          <img src="${tutorialGifUrl}" alt="How to bookmark" style="width: 18rem; height: auto; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+    grid.style.display = "none";
+    emptyState.style.display = "block";
+    const tutorialGifUrl = runtime.getURL(
+      "assets/images/tutorial/how_to_bookmark.gif",
+    );
+    emptyState.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100%; padding: 1rem; gap: 1.5rem; max-width: 90%; width: 100%; margin: 0 auto; box-sizing: border-box;">
+          <img src="${tutorialGifUrl}" alt="How to bookmark" style="max-width: 18rem; width: 100%; height: auto; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
 
-          <div style="text-align: center;">
+          <div style="text-align: center; width: 100%;">
             <p style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--bc); opacity: 0.8;">${t`${"empty_bookmark_message"}`}</p>
           </div>
         </div>
       `;
     return;
   }
+
+  emptyState.style.display = "none";
+  emptyState.innerHTML = "";
+  grid.style.display = "grid";
 
   // Sort bookmarks
   if (sortType === "created") {
@@ -678,7 +695,7 @@ export const renderBookmarks = (
 
 // Legacy accessor for modal element
 export const getBookmarkModalElement = (
-  modalElements: ModalElements
+  modalElements: ModalElements,
 ): HTMLDialogElement => {
   return modalElements.modal;
 };
@@ -686,7 +703,7 @@ export const getBookmarkModalElement = (
 export const showImportExportDialog = async (
   onImport: () => void,
   onExport: () => void,
-  onExportByTag: (tags: Tag[]) => void
+  onExportByTag: (tags: Tag[]) => void,
 ): Promise<void> => {
   const allBookmarks = await BookmarkStorage.getBookmarks();
   const existingTags = await BookmarkStorage.getExistingTags();
@@ -736,7 +753,7 @@ export const showImportExportDialog = async (
                       (b) =>
                         b.tag &&
                         b.tag.color === tag.color &&
-                        (b.tag.name || "") === (tag.name || "")
+                        (b.tag.name || "") === (tag.name || ""),
                     ).length;
                     return t`
                       <label class="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-base-200" style="margin-bottom: 0.25rem;">
@@ -800,7 +817,7 @@ export const showImportExportDialog = async (
   const updateExportTagButton = () => {
     const checkboxes = modal.querySelectorAll(".wps-tag-checkbox:checked");
     const exportTagBtn = modal.querySelector(
-      "#wps-dialog-export-tag-btn"
+      "#wps-dialog-export-tag-btn",
     ) as HTMLButtonElement;
     if (exportTagBtn) {
       exportTagBtn.disabled = checkboxes.length === 0;

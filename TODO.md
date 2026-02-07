@@ -1,7 +1,5 @@
 # メイン
 
-- 斜め表示
-
 - orionでpopupが開けない
 - corsのerrorがログ報告ツールで表示されて、エラーで停止する？
 
@@ -10,7 +8,6 @@
 - popup の i18n
 - タイルが何もない場合の説明ほしい
 - tile の名称を変更した直後、なぜかすぐ編集画面がでてくる
-- image-selector に進捗表示したい
 - window.localStorage.PARAGLIDE_LOCALE = 'jp'
 - ja の feedback form にならない
 - シンプルモードの検討
@@ -100,6 +97,11 @@
 - exclude_globs にメインのもの以外含める？
   - all_frames false (デフォルト)系は false．まあデフォルトが false だから不要か
 
+# DONE v2.4.0
+
+- 斜め表示
+- position modal修正
+
 # DONE v2.3.1
 
 - 画像シェア→ダウンロード→画像のファイル名ない問題修正
@@ -114,6 +116,7 @@
 - 画像編集画面にピクセル数を表示
 - 未使用の色を無効化可能にする
 - i18n続き
+- image-selector に進捗表示
 
 # DONE v2.2.2
 
