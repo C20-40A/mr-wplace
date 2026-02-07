@@ -75,7 +75,7 @@ export const changeBackgroundColor = (color: string | null): void => {
           "fill-opacity": 1,
         },
       },
-      "pixel-art-layer"
+      "pixel-art-layer",
     );
     console.log("🧑‍🎨 : Background layer created with color:", color);
   } catch (error) {
@@ -90,13 +90,40 @@ export const changeMap3dEnabled = (enabled: boolean): void => {
   if (enabled) {
     mapInstance.touchZoomRotate.enableRotation();
     mapInstance.dragRotate.enable();
-    mapInstance.setMaxPitch(85);
+    mapInstance.setMaxPitch(75);
+
+    // Automatically enable sky and fog when 3D is enabled
+    if (typeof mapInstance.setSky === "function") {
+      try {
+        mapInstance.setSky({
+          "sky-color": "black",
+          "sky-horizon-blend": 0.8,
+          "horizon-color": "#444",
+          "horizon-fog-blend": 0.1,
+          "fog-color": "black",
+          "fog-ground-blend": 0.1,
+        });
+        console.log("🧑‍🎨 : Sky and fog enabled with 3D mode");
+      } catch (error) {
+        console.error("🧑‍🎨 : Sky not supported:", error);
+      }
+    }
   } else {
     mapInstance.touchZoomRotate.disableRotation();
     mapInstance.dragRotate.disable();
     mapInstance.setMaxPitch(0);
     mapInstance.setPitch(0);
     mapInstance.setBearing(0);
+
+    // Automatically disable sky and fog when 3D is disabled
+    if (typeof mapInstance.setSky === "function") {
+      try {
+        mapInstance.setSky({});
+        console.log("🧑‍🎨 : Sky and fog disabled with 3D mode");
+      } catch (error) {
+        console.error("🧑‍🎨 : Sky not supported:", error);
+      }
+    }
   }
   console.log("🧑‍🎨 : Map 3D mode:", enabled);
 };
@@ -143,10 +170,10 @@ export const handleMapInstanceFlyTo = (data: {
 
   console.log(
     `🧑‍🎨 : ${useJump ? "jumpTo" : "flyTo"} from (${currentCenter.lat.toFixed(
-      2
+      2,
     )}, ${currentCenter.lng.toFixed(2)}, z${currentZoom}) to (${lat.toFixed(
-      2
-    )}, ${lng.toFixed(2)}, z${zoom}) [distance: ${distance.toFixed(2)}]`
+      2,
+    )}, ${lng.toFixed(2)}, z${zoom}) [distance: ${distance.toFixed(2)}]`,
   );
 
   if (useJump) {

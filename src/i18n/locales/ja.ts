@@ -449,4 +449,5 @@ export const jaTranslations = {
   map_filter_gridDisplay: "ピクセルグリッド",
   map_filter_backgroundColor: "背景色",
   map_filter_map3d: "3D表示",
+  map_filter_mapSky: "空とフォグ",
 };

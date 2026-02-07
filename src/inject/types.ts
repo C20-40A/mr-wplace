@@ -56,6 +56,16 @@ export interface PaintedByUser {
   discordId?: string;
 }
 
+export interface SkySpecification {
+  "sky-color"?: string;
+  "sky-horizon-blend"?: number;
+  "horizon-color"?: string;
+  "horizon-fog-blend"?: number;
+  "fog-color"?: string;
+  "fog-ground-blend"?: number;
+  "atmosphere-blend"?: number | any[];
+}
+
 export interface WplaceMap {
   version: string;
   getCenter: () => { lat: number; lng: number };
@@ -82,6 +92,18 @@ export interface WplaceMap {
   getStyle: () => any;
   on: (event: string, handler: (e: any) => void) => void;
   showTileBoundaries: boolean;
+  setSky?: (sky: SkySpecification) => void;
+  setMaxPitch: (pitch: number) => void;
+  setPitch: (pitch: number) => void;
+  setBearing: (bearing: number) => void;
+  touchZoomRotate: {
+    enableRotation: () => void;
+    disableRotation: () => void;
+  };
+  dragRotate: {
+    enable: () => void;
+    disable: () => void;
+  };
 }
 
 declare global {

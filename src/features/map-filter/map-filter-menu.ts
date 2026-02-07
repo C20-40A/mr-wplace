@@ -7,7 +7,6 @@ const HIGH_CONTRAST_STYLE_ID = "mr-wplace-high-contrast-style";
 const BACKGROUND_COLOR_ENABLED_KEY = "mapFilter_backgroundColorEnabled";
 const BACKGROUND_COLOR_VALUE_KEY = "mapFilter_backgroundColorValue";
 const GRID_DISPLAY_KEY = "mapFilter_gridDisplay";
-const MAP_3D_KEY = "mapFilter_map3d";
 
 type FilterState = {
   darkTheme: "custom-winter" | "dark";
@@ -27,14 +26,16 @@ type FilterId =
   | "backgroundColor"
   | "map3d";
 
-const filterConfig: {
+type FilterConfig = {
   id: FilterId;
   label: () => string;
   iconOn: string;
   iconOff: string;
   requiresMap: boolean;
   hasColorPicker?: boolean;
-}[] = [
+};
+
+const filterConfig: FilterConfig[] = [
   {
     id: "darkTheme",
     label: () => t`${"map_filter_darkTheme"}`,
@@ -106,7 +107,6 @@ class MapFilterMenu {
       BACKGROUND_COLOR_ENABLED_KEY,
       BACKGROUND_COLOR_VALUE_KEY,
       GRID_DISPLAY_KEY,
-      MAP_3D_KEY,
     ]);
     this.state.highContrast = stored[HIGH_CONTRAST_KEY] ?? false;
     this.state.gridDisplay = stored[GRID_DISPLAY_KEY] ?? false;
@@ -114,7 +114,6 @@ class MapFilterMenu {
       stored[BACKGROUND_COLOR_ENABLED_KEY] ?? false;
     this.state.backgroundColorValue =
       stored[BACKGROUND_COLOR_VALUE_KEY] ?? "#000000";
-    this.state.map3d = stored[MAP_3D_KEY] ?? false;
 
     this.applyDarkTheme(this.state.darkTheme);
     if (this.state.highContrast) this.applyHighContrastStyle();
@@ -134,7 +133,6 @@ class MapFilterMenu {
         this.notifyGridDisplay();
         if (this.state.backgroundColorEnabled)
           this.applyBackgroundColor(this.state.backgroundColorValue);
-        if (this.state.map3d) this.notifyMap3d();
       }
     });
 
@@ -313,7 +311,6 @@ class MapFilterMenu {
       }
       case "map3d": {
         this.state.map3d = !this.state.map3d;
-        await storage.set({ [MAP_3D_KEY]: this.state.map3d });
         this.notifyMap3d();
         break;
       }
