@@ -88,9 +88,12 @@ export const changeMap3dEnabled = (enabled: boolean): void => {
   if (!mapInstance) return;
 
   if (enabled) {
-    mapInstance.touchZoomRotate.enableRotation();
-    mapInstance.dragRotate.enable();
-    mapInstance.setMaxPitch(75);
+    // mapInstance.touchZoomRotate.enableRotation();
+    // mapInstance.touchZoomRotate.disableRotation();
+    // mapInstance.dragRotate.enable();
+    mapInstance.setMaxPitch(20);
+    mapInstance.setPitch(20);
+    mapInstance.setVerticalFieldOfView(180);
 
     // Automatically enable sky and fog when 3D is enabled
     if (typeof mapInstance.setSky === "function") {

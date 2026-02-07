@@ -2,8 +2,10 @@ import type { GalleryItem } from "../states/galleryStorage";
 
 export type TileProcessingCallback = (processedBlob: Blob) => void;
 
-export interface TileProcessingQueue
-  extends Map<string, TileProcessingCallback> {}
+export interface TileProcessingQueue extends Map<
+  string,
+  TileProcessingCallback
+> {}
 
 export interface DataSaverState {
   enabled: boolean;
@@ -95,6 +97,7 @@ export interface WplaceMap {
   setSky?: (sky: SkySpecification) => void;
   setMaxPitch: (pitch: number) => void;
   setPitch: (pitch: number) => void;
+  setVerticalFieldOfView: (fov: number) => void;
   setBearing: (bearing: number) => void;
   touchZoomRotate: {
     enableRotation: () => void;
