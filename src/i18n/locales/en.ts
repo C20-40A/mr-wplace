@@ -441,5 +441,6 @@ export const enTranslations = {
   map_filter_gridDisplay: "Pixel Grid",
   map_filter_backgroundColor: "Background Color",
   map_filter_map3d: "3D View",
+  map_filter_map3d_drag_rotate: "Enable Rotation",
   map_filter_mapSky: "Sky & Fog",
 };

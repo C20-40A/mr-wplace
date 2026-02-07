@@ -131,6 +131,28 @@ export const changeMap3dEnabled = (enabled: boolean): void => {
   console.log("🧑‍🎨 : Map 3D mode:", enabled);
 };
 
+export const changeMap3dDragRotateEnabled = (enabled: boolean): void => {
+  const mapInstance = getMapInstanceFromWplace();
+  if (!mapInstance) return;
+
+  if (enabled) {
+    // Enable drag rotate mode: reset to default FOV, allow rotation
+    // MapLibre default FOV is approximately 36.87 degrees (0.6435 radians)
+    mapInstance.setVerticalFieldOfView(36.87);
+    mapInstance.dragRotate.enable();
+    mapInstance.setMaxPitch(75);
+    mapInstance.setPitch(60);
+    console.log("🧑‍🎨 : 3D drag rotate enabled");
+  } else {
+    // Return to fixed 3D view: wide FOV, disable rotation
+    mapInstance.dragRotate.disable();
+    mapInstance.setMaxPitch(20);
+    mapInstance.setPitch(20);
+    mapInstance.setVerticalFieldOfView(180);
+    console.log("🧑‍🎨 : 3D drag rotate disabled, returning to fixed view");
+  }
+};
+
 // Distance threshold for smart navigation (adjustable)
 const SMART_NAV_THRESHOLD = 4;
 

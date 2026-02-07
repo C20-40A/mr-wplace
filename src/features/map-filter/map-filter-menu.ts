@@ -16,6 +16,7 @@ type FilterState = {
   backgroundColorEnabled: boolean;
   backgroundColorValue: string;
   map3d: boolean;
+  map3dDragRotate: boolean;
 };
 
 type FilterId =
@@ -24,7 +25,8 @@ type FilterId =
   | "tileBoundaries"
   | "gridDisplay"
   | "backgroundColor"
-  | "map3d";
+  | "map3d"
+  | "map3dDragRotate";
 
 type FilterConfig = {
   id: FilterId;
@@ -79,6 +81,13 @@ const filterConfig: FilterConfig[] = [
     iconOff: "🧊",
     requiresMap: true,
   },
+  {
+    id: "map3dDragRotate",
+    label: () => t`${"map_filter_map3d_drag_rotate"}`,
+    iconOn: "🔄",
+    iconOff: "🔄",
+    requiresMap: true,
+  },
 ];
 
 class MapFilterMenu {
@@ -94,6 +103,7 @@ class MapFilterMenu {
     backgroundColorEnabled: false,
     backgroundColorValue: "#000000",
     map3d: false,
+    map3dDragRotate: false,
   };
 
   async init() {
@@ -194,6 +204,11 @@ class MapFilterMenu {
     itemsWrapper.className = "flex flex-col gap-2";
 
     for (const config of filterConfig) {
+      // Skip map3dDragRotate if map3d is not enabled
+      if (config.id === "map3dDragRotate" && !this.state.map3d) {
+        continue;
+      }
+
       const isEnabled = this.getFilterEnabled(config.id);
       const disabled = config.requiresMap && !this.mapReady;
 
@@ -311,7 +326,16 @@ class MapFilterMenu {
       }
       case "map3d": {
         this.state.map3d = !this.state.map3d;
+        // Reset drag rotate when 3D is disabled
+        if (!this.state.map3d && this.state.map3dDragRotate) {
+          this.state.map3dDragRotate = false;
+        }
         this.notifyMap3d();
+        break;
+      }
+      case "map3dDragRotate": {
+        this.state.map3dDragRotate = !this.state.map3dDragRotate;
+        this.notifyMap3dDragRotate();
         break;
       }
     }
@@ -401,6 +425,16 @@ class MapFilterMenu {
       {
         source: "mr-wplace-map-3d-update",
         enabled: this.state.map3d,
+      },
+      "*",
+    );
+  }
+
+  private notifyMap3dDragRotate() {
+    window.postMessage(
+      {
+        source: "mr-wplace-map-3d-drag-rotate-update",
+        enabled: this.state.map3dDragRotate,
       },
       "*",
     );
