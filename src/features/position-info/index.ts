@@ -230,14 +230,21 @@ export class PositionInfo {
   }
 
   private addTileInfo(container: Element): void {
-    // 座標表示スパンを探す（.text-base-content/70 .shrink-0 .text-xs）
+    // 座標表示スパンを探す（.text-base-content/70 .shrink-0 .text-xs、ただし自前の要素は除外）
     const coordSpan = container.querySelector(
-      "span.text-base-content\\/70.shrink-0.text-xs",
+      "span.text-base-content\\/70.shrink-0.text-xs:not(#position-tile-info)",
     );
     if (!coordSpan) return;
 
-    // 既に追加済みかチェック
-    if (coordSpan.previousElementSibling?.id === "position-tile-info") {
+    // 既に追加済みの場合は座標を更新して終了
+    const existingTileInfo =
+      container.querySelector<HTMLElement>("#position-tile-info");
+    if (existingTileInfo) {
+      const newPosition = getCurrentPosition();
+      if (newPosition) {
+        const newCoords = latLngToTilePixel(newPosition.lat, newPosition.lng);
+        existingTileInfo.textContent = `${newCoords.TLX}-${newCoords.TLY}-${newCoords.PxX}-${newCoords.PxY}`;
+      }
       if (this.swapEnabled) {
         this.scheduleCloseButtonSwap(container);
         this.startSwapObserver(container);
@@ -275,7 +282,10 @@ export class PositionInfo {
     `;
 
     copyButton.addEventListener("click", async () => {
-      const coordText = `${coords.TLX}-${coords.TLY}-${coords.PxX}-${coords.PxY}`;
+      const currentPos = getCurrentPosition();
+      if (!currentPos) return;
+      const currentCoords = latLngToTilePixel(currentPos.lat, currentPos.lng);
+      const coordText = `${currentCoords.TLX}-${currentCoords.TLY}-${currentCoords.PxX}-${currentCoords.PxY}`;
 
       try {
         await navigator.clipboard.writeText(coordText);
@@ -305,8 +315,10 @@ export class PositionInfo {
     `;
 
     clockButton.addEventListener("click", () => {
-      const zoom = position.zoom ?? 11;
-      const url = `https://wplace.eralyon.net/?lat=${lat.toFixed(6)}&lng=${lng.toFixed(6)}&zoom=${zoom}`;
+      const currentPos = getCurrentPosition();
+      if (!currentPos) return;
+      const zoom = currentPos.zoom ?? 11;
+      const url = `https://wplace.eralyon.net/?lat=${currentPos.lat.toFixed(6)}&lng=${currentPos.lng.toFixed(6)}&zoom=${zoom}`;
       window.open(url, "_blank");
     });
 
@@ -322,14 +334,20 @@ export class PositionInfo {
     }
 
     // MutationObserver: 座標変更監視
+    // characterDataで直接テキスト変更を検知、遅延でlocalStorage更新を待つ
     this.observer = new MutationObserver(() => {
-      const newPosition = getCurrentPosition();
-      if (!newPosition) return;
-
-      const { lat, lng } = newPosition;
-      const newCoords = latLngToTilePixel(lat, lng);
-      tileCoordSpan.textContent = `${newCoords.TLX}-${newCoords.TLY}-${newCoords.PxX}-${newCoords.PxY}`;
+      setTimeout(() => {
+        const newPosition = getCurrentPosition();
+        if (!newPosition) return;
+        const { lat, lng } = newPosition;
+        const newCoords = latLngToTilePixel(lat, lng);
+        tileCoordSpan.textContent = `${newCoords.TLX}-${newCoords.TLY}-${newCoords.PxX}-${newCoords.PxY}`;
+      }, 50);
     });
-    this.observer.observe(coordSpan, { childList: true, subtree: true });
+    this.observer.observe(coordSpan, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
   }
 }
