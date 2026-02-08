@@ -174,6 +174,15 @@ export const needsMigration = async (): Promise<boolean> => {
   const result = await storage.get(MIGRATION_VERSION_KEY);
   if (result[MIGRATION_VERSION_KEY] === MIGRATION_VERSION) return false;
 
+  // Fast probe: legacy index keys are strong indicators of pre-v3 data.
+  // If both are absent, skip expensive full key scan.
+  const probe = await storage.get(["gallery_index", "tile_snapshots_index"]);
+  const hasLegacyIndex = Boolean(probe.gallery_index || probe.tile_snapshots_index);
+  if (!hasLegacyIndex) {
+    await storage.set({ [MIGRATION_VERSION_KEY]: MIGRATION_VERSION });
+    return false;
+  }
+
   // Slow path: scan keys only if version mismatch
   // Uses getKeys() to avoid loading all values into memory
   const allKeys = await storage.getKeys();

@@ -25,11 +25,25 @@ export {
  * Run migration with modal UI
  */
 const runMigrationWithModal = async (): Promise<void> => {
+  const importStartedAt = performance.now();
   const { needsMigration, runDataMigration } = await import(
     "@/features/migration/data-migrator"
   );
+  console.log(
+    `🧑‍🎨 [Migration] data-migrator import completed in ${Math.round(
+      performance.now() - importStartedAt
+    )}ms`
+  );
 
-  if (!(await needsMigration())) {
+  const needsCheckStartedAt = performance.now();
+  const shouldMigrate = await needsMigration();
+  console.log(
+    `🧑‍🎨 [Migration] needsMigration resolved in ${Math.round(
+      performance.now() - needsCheckStartedAt
+    )}ms (result=${shouldMigrate})`
+  );
+
+  if (!shouldMigrate) {
     console.log("🧑‍🎨 [Migration] No migration needed");
     return;
   }
@@ -105,16 +119,24 @@ const initializeMainFeatures = async () => {
   // Setup message handlers from inject side
   setupMessageHandlers(tileSnapshot, notificationModal);
 
+  // initializerモジュール読込をDOM待機と並列化
+  const initializerPromise = import("@/core/initializer");
+
   // DOM準備待機
-  if (document.readyState === "loading") {
+  const domWaitStartedAt = performance.now();
+  if (document.readyState === "loading" && !document.body) {
     await new Promise((resolve) => {
       document.addEventListener("DOMContentLoaded", resolve, { once: true });
     });
   }
-  console.log("🧑‍🎨: DOM ready, proceeding with initialization");
+  console.log(
+    `🧑‍🎨: DOM gate passed in ${Math.round(
+      performance.now() - domWaitStartedAt
+    )}ms (readyState=${document.readyState}, hasBody=${Boolean(document.body)})`
+  );
 
   // Initialize all features
-  const { initializeFeatures } = await import("@/core/initializer");
+  const { initializeFeatures } = await initializerPromise;
   const { colorFilterManager, tileOverlay, autoSpoit } =
     await initializeFeatures();
 
@@ -126,6 +148,21 @@ const initializeMainFeatures = async () => {
     tileSnapshot,
     autoSpoit,
   });
+};
+
+const scheduleLegacyTmpTilesCleanup = () => {
+  const runCleanup = () => {
+    cleanupLegacyTmpTiles().catch((err) => {
+      console.warn("🧑‍🎨 : Failed to cleanup legacy tmp tiles:", err);
+    });
+  };
+
+  if (typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(runCleanup, { timeout: 5000 });
+    return;
+  }
+
+  setTimeout(runCleanup, 3000);
 };
 
 // メッセージリスナー
@@ -285,21 +322,42 @@ const registerMessageListeners = () => {
 
 registerMessageListeners();
 
-// レガシーキーのクリーンアップを最初に開始（非同期、エラーは無視）
-cleanupLegacyTmpTiles().catch((err) => {
-  console.warn("🧑‍🎨 : Failed to cleanup legacy tmp tiles:", err);
-});
-
 (async () => {
   console.log("🧑‍🎨: Starting initialization...");
+  const wakeupStartedAt = performance.now();
 
   try {
+    const injectStartedAt = performance.now();
     await loadInjectScript();
+    console.log(
+      `🧑‍🎨: loadInjectScript completed in ${Math.round(
+        performance.now() - injectStartedAt
+      )}ms`
+    );
 
     // Run migration before initializing features (blocking)
+    const migrationStartedAt = performance.now();
     await runMigrationWithModal();
+    console.log(
+      `🧑‍🎨: migration check completed in ${Math.round(
+        performance.now() - migrationStartedAt
+      )}ms`
+    );
 
+    const featureInitStartedAt = performance.now();
     await initializeMainFeatures();
+    console.log(
+      `🧑‍🎨: initializeMainFeatures completed in ${Math.round(
+        performance.now() - featureInitStartedAt
+      )}ms`
+    );
+    scheduleLegacyTmpTilesCleanup();
+    console.log("🧑‍🎨: scheduled legacy tmp cleanup on idle");
+    console.log(
+      `🧑‍🎨: wakeup sequence completed in ${Math.round(
+        performance.now() - wakeupStartedAt
+      )}ms`
+    );
   } catch (error) {
     console.error("🧑‍🎨: Critical initialization error:", error);
   }
