@@ -8,7 +8,6 @@ import {
 } from "./filters/color-processing";
 import {
   convertImageBitmapToUint8ClampedArray,
-  getGridPosition,
 } from "./image-processing/pixel-processing";
 import { processGpuColorFilter } from "./filters/gpu-filter";
 import { processCpuColorFilter } from "./filters/cpu-filter";
@@ -181,6 +180,7 @@ const scaleAndRenderWithMode = (
   const scaledWidth = width * pixelScale;
   const scaledHeight = height * pixelScale;
   const scaledData = new Uint8ClampedArray(scaledWidth * scaledHeight * 4);
+  const scaledStride = scaledWidth * 4;
   const [ecR, ecG, ecB] = enhancedColor;
 
   if (shouldSkipRendering) {
@@ -196,25 +196,16 @@ const scaleAndRenderWithMode = (
   const needsHugeMarker =
     isHugeRedCross || isHugeRedCrossBold || isHugeRedDiamond || isHugeRedRing;
 
-  for (let y = 0; y < scaledHeight; y++) {
-    for (let x = 0; x < scaledWidth; x++) {
-      // x1座標逆算
-      const x1 = Math.floor(x / pixelScale);
-      const y1 = Math.floor(y / pixelScale);
+  for (let y1 = 0; y1 < height; y1++) {
+    for (let x1 = 0; x1 < width; x1++) {
       const srcI = (y1 * width + x1) * 4;
 
       // x1データから取得
-      const [r, g, b, a] = [
-        data[srcI],
-        data[srcI + 1],
-        data[srcI + 2],
-        data[srcI + 3],
-      ];
+      const r = data[srcI];
+      const g = data[srcI + 1];
+      const b = data[srcI + 2];
+      const a = data[srcI + 3];
       if (a === 0) continue;
-
-      const i = (y * scaledWidth + x) * 4;
-
-      const { isCenterPixel, isCrossArm } = getGridPosition(x, y);
 
       // 背景色取得
       const bgX1 = offsetX + x1;
@@ -223,12 +214,10 @@ const scaleAndRenderWithMode = (
 
       if (bgI1 + 3 >= bgData.length) continue;
 
-      const [bgR, bgG, bgB, bgA] = [
-        bgData[bgI1],
-        bgData[bgI1 + 1],
-        bgData[bgI1 + 2],
-        bgData[bgI1 + 3],
-      ];
+      const bgR = bgData[bgI1];
+      const bgG = bgData[bgI1 + 1];
+      const bgB = bgData[bgI1 + 2];
+      const bgA = bgData[bgI1 + 3];
 
       const colorMatches = isSameColor([r, g, b, 255], [bgR, bgG, bgB, bgA]);
 
@@ -236,144 +225,212 @@ const scaleAndRenderWithMode = (
       if (showUnplacedOnly) {
         // 背景と一致するピクセル (配置済み) は透明化、不一致 (未配置) のみ描画
         if (colorMatches) continue;
-
-        // border-onlyは枠のみなので中心スキップ
-        if (isCenterPixel && mode === "border-only") continue;
-
-        // 中心ピクセルは常に書き込み
-        if (isCenterPixel && mode) {
-          scaledData[i] = r;
-          scaledData[i + 1] = g;
-          scaledData[i + 2] = b;
-          scaledData[i + 3] = a;
-          // huge marker: 中心座標を収集
-          if (needsHugeMarker) unplacedCenters.push({ x, y });
-          continue;
-        }
-
-        // huge marker は 2nd pass で処理するので、1st pass では中心+crossのみ
-        if (needsHugeMarker) {
-          if (isCrossArm) {
-            scaledData[i] = r;
-            scaledData[i + 1] = g;
-            scaledData[i + 2] = b;
-            scaledData[i + 3] = a;
-          }
-          continue;
-        }
-
-        // モード別処理（通常と同じ）
-        if (mode === "dot") {
-          // 書き込まない
-        } else if (mode === "cross") {
-          if (isCrossArm) {
-            scaledData[i] = r;
-            scaledData[i + 1] = g;
-            scaledData[i + 2] = b;
-            scaledData[i + 3] = a;
-          }
-        } else if (mode === "fill") {
-          scaledData[i] = r;
-          scaledData[i + 1] = g;
-          scaledData[i + 2] = b;
-          scaledData[i + 3] = a;
-        } else if (mode === "border-only") {
-          if (!isCenterPixel) {
-            scaledData[i] = r;
-            scaledData[i + 1] = g;
-            scaledData[i + 2] = b;
-            scaledData[i + 3] = a;
-          }
-        } else {
-          // 補助色を使うパターン
-          if (isCrossArm) {
-            const [ar, ag, ab] = getAuxiliaryColor(
-              mode,
-              [r, g, b],
-              enhancedColor,
-            );
-            scaledData[i] = ar;
-            scaledData[i + 1] = ag;
-            scaledData[i + 2] = ab;
-            scaledData[i + 3] = 255;
-          } else if (mode === "red-border") {
-            scaledData[i] = ecR;
-            scaledData[i + 1] = ecG;
-            scaledData[i + 2] = ecB;
-            scaledData[i + 3] = 255;
-          }
-        }
       } else {
         // 通常モード: 背景と一致したら透明化、不一致なら描画
         if (colorMatches) continue;
+      }
 
-        // border-onlyは枠のみなので中心スキップ
-        if (isCenterPixel && mode === "border-only") continue;
+      const baseX = x1 * pixelScale;
+      const baseY = y1 * pixelScale;
+      const row0 = (baseY * scaledWidth + baseX) * 4;
+      const row1 = row0 + scaledStride;
+      const row2 = row1 + scaledStride;
 
-        // 中心ピクセルは常に書き込み
-        if (isCenterPixel) {
-          scaledData[i] = r;
-          scaledData[i + 1] = g;
-          scaledData[i + 2] = b;
-          scaledData[i + 3] = a;
-          // huge marker: 中心座標を収集
-          if (needsHugeMarker) unplacedCenters.push({ x, y });
-          continue;
-        }
+      const topLeft = row0;
+      const topCenter = row0 + 4;
+      const topRight = row0 + 8;
+      const midLeft = row1;
+      const center = row1 + 4;
+      const midRight = row1 + 8;
+      const bottomLeft = row2;
+      const bottomCenter = row2 + 4;
+      const bottomRight = row2 + 8;
 
-        // huge marker は 2nd pass で処理するので、1st pass では中心+crossのみ
-        if (needsHugeMarker) {
-          if (isCrossArm) {
-            scaledData[i] = r;
-            scaledData[i + 1] = g;
-            scaledData[i + 2] = b;
-            scaledData[i + 3] = a;
-          }
-          continue;
-        }
+      // border-onlyは枠のみなので中心スキップ
+      if (mode !== "border-only") {
+        scaledData[center] = r;
+        scaledData[center + 1] = g;
+        scaledData[center + 2] = b;
+        scaledData[center + 3] = a;
+        // huge marker: 中心座標を収集
+        if (needsHugeMarker) unplacedCenters.push({ x: baseX + 1, y: baseY + 1 });
+      }
 
-        // モード別処理
-        if (mode === "dot") {
-          // 書き込まない（デフォルト透明のまま）
-        } else if (mode === "cross") {
-          if (isCrossArm) {
-            scaledData[i] = r;
-            scaledData[i + 1] = g;
-            scaledData[i + 2] = b;
-            scaledData[i + 3] = a;
-          }
-        } else if (mode === "fill") {
-          scaledData[i] = r;
-          scaledData[i + 1] = g;
-          scaledData[i + 2] = b;
-          scaledData[i + 3] = a;
-        } else if (mode === "border-only") {
-          if (!isCenterPixel) {
-            scaledData[i] = r;
-            scaledData[i + 1] = g;
-            scaledData[i + 2] = b;
-            scaledData[i + 3] = a;
-          }
-        } else {
-          // 補助色を使うパターン
-          if (isCrossArm) {
-            const [ar, ag, ab] = getAuxiliaryColor(
-              mode,
-              [r, g, b],
-              enhancedColor,
-            );
-            scaledData[i] = ar;
-            scaledData[i + 1] = ag;
-            scaledData[i + 2] = ab;
-            scaledData[i + 3] = 255;
-          } else if (mode === "red-border") {
-            // 赤枠モードは腕以外(4隅)も赤
-            scaledData[i] = ecR;
-            scaledData[i + 1] = ecG;
-            scaledData[i + 2] = ecB;
-            scaledData[i + 3] = 255;
-          }
-        }
+      // huge marker は 2nd pass で処理するので、1st pass では中心+crossのみ
+      if (needsHugeMarker) {
+        scaledData[topCenter] = r;
+        scaledData[topCenter + 1] = g;
+        scaledData[topCenter + 2] = b;
+        scaledData[topCenter + 3] = a;
+
+        scaledData[midLeft] = r;
+        scaledData[midLeft + 1] = g;
+        scaledData[midLeft + 2] = b;
+        scaledData[midLeft + 3] = a;
+
+        scaledData[midRight] = r;
+        scaledData[midRight + 1] = g;
+        scaledData[midRight + 2] = b;
+        scaledData[midRight + 3] = a;
+
+        scaledData[bottomCenter] = r;
+        scaledData[bottomCenter + 1] = g;
+        scaledData[bottomCenter + 2] = b;
+        scaledData[bottomCenter + 3] = a;
+        continue;
+      }
+
+      if (mode === "dot") {
+        // 書き込まない（中心のみ）
+        continue;
+      }
+
+      if (mode === "cross") {
+        scaledData[topCenter] = r;
+        scaledData[topCenter + 1] = g;
+        scaledData[topCenter + 2] = b;
+        scaledData[topCenter + 3] = a;
+
+        scaledData[midLeft] = r;
+        scaledData[midLeft + 1] = g;
+        scaledData[midLeft + 2] = b;
+        scaledData[midLeft + 3] = a;
+
+        scaledData[midRight] = r;
+        scaledData[midRight + 1] = g;
+        scaledData[midRight + 2] = b;
+        scaledData[midRight + 3] = a;
+
+        scaledData[bottomCenter] = r;
+        scaledData[bottomCenter + 1] = g;
+        scaledData[bottomCenter + 2] = b;
+        scaledData[bottomCenter + 3] = a;
+        continue;
+      }
+
+      if (mode === "fill") {
+        // 3x3全体を描画
+        scaledData[topLeft] = r;
+        scaledData[topLeft + 1] = g;
+        scaledData[topLeft + 2] = b;
+        scaledData[topLeft + 3] = a;
+        scaledData[topCenter] = r;
+        scaledData[topCenter + 1] = g;
+        scaledData[topCenter + 2] = b;
+        scaledData[topCenter + 3] = a;
+        scaledData[topRight] = r;
+        scaledData[topRight + 1] = g;
+        scaledData[topRight + 2] = b;
+        scaledData[topRight + 3] = a;
+
+        scaledData[midLeft] = r;
+        scaledData[midLeft + 1] = g;
+        scaledData[midLeft + 2] = b;
+        scaledData[midLeft + 3] = a;
+        scaledData[center] = r;
+        scaledData[center + 1] = g;
+        scaledData[center + 2] = b;
+        scaledData[center + 3] = a;
+        scaledData[midRight] = r;
+        scaledData[midRight + 1] = g;
+        scaledData[midRight + 2] = b;
+        scaledData[midRight + 3] = a;
+
+        scaledData[bottomLeft] = r;
+        scaledData[bottomLeft + 1] = g;
+        scaledData[bottomLeft + 2] = b;
+        scaledData[bottomLeft + 3] = a;
+        scaledData[bottomCenter] = r;
+        scaledData[bottomCenter + 1] = g;
+        scaledData[bottomCenter + 2] = b;
+        scaledData[bottomCenter + 3] = a;
+        scaledData[bottomRight] = r;
+        scaledData[bottomRight + 1] = g;
+        scaledData[bottomRight + 2] = b;
+        scaledData[bottomRight + 3] = a;
+        continue;
+      }
+
+      if (mode === "border-only") {
+        // 枠のみ描画（中心は透明）
+        scaledData[topLeft] = r;
+        scaledData[topLeft + 1] = g;
+        scaledData[topLeft + 2] = b;
+        scaledData[topLeft + 3] = a;
+        scaledData[topCenter] = r;
+        scaledData[topCenter + 1] = g;
+        scaledData[topCenter + 2] = b;
+        scaledData[topCenter + 3] = a;
+        scaledData[topRight] = r;
+        scaledData[topRight + 1] = g;
+        scaledData[topRight + 2] = b;
+        scaledData[topRight + 3] = a;
+
+        scaledData[midLeft] = r;
+        scaledData[midLeft + 1] = g;
+        scaledData[midLeft + 2] = b;
+        scaledData[midLeft + 3] = a;
+        scaledData[midRight] = r;
+        scaledData[midRight + 1] = g;
+        scaledData[midRight + 2] = b;
+        scaledData[midRight + 3] = a;
+
+        scaledData[bottomLeft] = r;
+        scaledData[bottomLeft + 1] = g;
+        scaledData[bottomLeft + 2] = b;
+        scaledData[bottomLeft + 3] = a;
+        scaledData[bottomCenter] = r;
+        scaledData[bottomCenter + 1] = g;
+        scaledData[bottomCenter + 2] = b;
+        scaledData[bottomCenter + 3] = a;
+        scaledData[bottomRight] = r;
+        scaledData[bottomRight + 1] = g;
+        scaledData[bottomRight + 2] = b;
+        scaledData[bottomRight + 3] = a;
+        continue;
+      }
+
+      // 補助色を使うパターン
+      const [ar, ag, ab] = getAuxiliaryColor(mode, [r, g, b], enhancedColor);
+      scaledData[topCenter] = ar;
+      scaledData[topCenter + 1] = ag;
+      scaledData[topCenter + 2] = ab;
+      scaledData[topCenter + 3] = 255;
+
+      scaledData[midLeft] = ar;
+      scaledData[midLeft + 1] = ag;
+      scaledData[midLeft + 2] = ab;
+      scaledData[midLeft + 3] = 255;
+
+      scaledData[midRight] = ar;
+      scaledData[midRight + 1] = ag;
+      scaledData[midRight + 2] = ab;
+      scaledData[midRight + 3] = 255;
+
+      scaledData[bottomCenter] = ar;
+      scaledData[bottomCenter + 1] = ag;
+      scaledData[bottomCenter + 2] = ab;
+      scaledData[bottomCenter + 3] = 255;
+
+      if (mode === "red-border") {
+        // 赤枠モードは腕以外(4隅)も赤
+        scaledData[topLeft] = ecR;
+        scaledData[topLeft + 1] = ecG;
+        scaledData[topLeft + 2] = ecB;
+        scaledData[topLeft + 3] = 255;
+        scaledData[topRight] = ecR;
+        scaledData[topRight + 1] = ecG;
+        scaledData[topRight + 2] = ecB;
+        scaledData[topRight + 3] = 255;
+
+        scaledData[bottomLeft] = ecR;
+        scaledData[bottomLeft + 1] = ecG;
+        scaledData[bottomLeft + 2] = ecB;
+        scaledData[bottomLeft + 3] = 255;
+        scaledData[bottomRight] = ecR;
+        scaledData[bottomRight + 1] = ecG;
+        scaledData[bottomRight + 2] = ecB;
+        scaledData[bottomRight + 3] = 255;
       }
     }
   }
@@ -503,7 +560,6 @@ const scaleAndRenderWithMode = (
 
   return scaledData;
 };
-
 /**
  * Phase 4: ImageBitmap変換
  * Uint8ClampedArrayをImageBitmapに変換
