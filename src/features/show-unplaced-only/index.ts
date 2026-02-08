@@ -7,6 +7,7 @@ import {
   setShowUnplacedOnly,
   subscribeShowUnplacedOnly,
 } from "@/states/showUnplacedOnly";
+import { t } from "@/i18n";
 
 export class ShowUnplacedOnly {
   private button: HTMLButtonElement | null = null;
@@ -33,7 +34,7 @@ export class ShowUnplacedOnly {
         createElement: (container) => {
           const tooltip = document.createElement("div");
           tooltip.className = "tooltip";
-          tooltip.setAttribute("data-tip", "Show unplaced pixels only");
+          tooltip.setAttribute("data-tip", t("Show unplaced pixels only"));
           this.button = createShowUnplacedOnlyButton(getShowUnplacedOnly());
           this.button.id = "show-unplaced-only-btn";
           this.button.addEventListener("click", () => this.toggle());

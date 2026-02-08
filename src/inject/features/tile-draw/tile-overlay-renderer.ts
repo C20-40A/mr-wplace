@@ -1,13 +1,9 @@
 import { TILE_DRAW_CONSTANTS, TileCoords } from "./constants";
-import { latLngToTilePixel } from "../../../utils/coordinate";
+import { latLngToTilePixel } from "@/utils/coordinate";
+import { blobToPixels } from "@/utils/pixel-converters";
 import type { TileDrawInstance, ColorStats, EnhancedMode } from "./types";
-import {
-  getAuxiliaryColor,
-  colorToKey,
-} from "./filters/color-processing";
-import {
-  convertImageBitmapToUint8ClampedArray,
-} from "./image-processing/pixel-processing";
+import { getAuxiliaryColor, colorToKey } from "./filters/color-processing";
+import { convertImageBitmapToUint8ClampedArray } from "./image-processing/pixel-processing";
 import { processGpuColorFilter } from "./filters/gpu-filter";
 import { processCpuColorFilter } from "./filters/cpu-filter";
 import {
@@ -16,7 +12,6 @@ import {
   getSelectedRGBs,
   isColorFilterActive,
 } from "../../states/colorFilterState";
-import { blobToPixels } from "../../../utils/pixel-converters";
 import { overlayLayers, perTileColorStats } from "./states";
 
 /**
@@ -283,7 +278,8 @@ const scaleAndRenderWithMode = (
         scaledData[center + 2] = b;
         scaledData[center + 3] = a;
         // huge marker: 中心座標を収集
-        if (needsHugeMarker) unplacedCenters.push({ x: baseX + 1, y: baseY + 1 });
+        if (needsHugeMarker)
+          unplacedCenters.push({ x: baseX + 1, y: baseY + 1 });
       }
 
       // huge marker は 2nd pass で処理するので、1st pass では中心+crossのみ
@@ -899,7 +895,8 @@ export const drawOverlayLayersOnTile = async (
     if (galleryRepoV2 !== undefined) return galleryRepoV2;
 
     try {
-      const { getGalleryRepository } = await import("../../db/gallery-repository");
+      const { getGalleryRepository } =
+        await import("../../db/gallery-repository");
       galleryRepoV2 = getGalleryRepository();
     } catch (error) {
       console.error(`🧑‍🎨 : Error loading gallery repository v2:`, error);
