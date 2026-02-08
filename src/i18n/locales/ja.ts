@@ -253,7 +253,7 @@ export const jaTranslations = {
   enhanced_mode_cross: "十字",
   enhanced_mode_fill: "塗りつぶし",
   enhanced_mode_red_cross: "色十字",
-  enhanced_mode_cyan_cross: "シアン十字",
+  enhanced_mode_border_only: "枠のみ",
   enhanced_mode_dark_cross: "暗色十字",
   enhanced_mode_complement_cross: "補色十字",
   enhanced_mode_red_border: "色枠",

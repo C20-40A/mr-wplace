@@ -247,7 +247,7 @@ export const enTranslations = {
   enhanced_mode_cross: "Cross",
   enhanced_mode_fill: "Fill",
   enhanced_mode_red_cross: "Colored Cross",
-  enhanced_mode_cyan_cross: "Cyan Cross",
+  enhanced_mode_border_only: "Border Only",
   enhanced_mode_dark_cross: "Dark Cross",
   enhanced_mode_complement_cross: "Complement Cross",
   enhanced_mode_red_border: "Colored Border",

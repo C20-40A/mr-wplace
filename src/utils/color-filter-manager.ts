@@ -181,7 +181,7 @@ export class ColorFilterManager {
         "dot",
         "cross",
         "red-cross",
-        "cyan-cross",
+        "border-only",
         "dark-cross",
         "complement-cross",
         "fill",

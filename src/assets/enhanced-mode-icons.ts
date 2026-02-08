@@ -47,8 +47,8 @@ const createGridSVG = (pattern: string[][]): string => {
           ? `<rect x="${x * cellSize}" y="${
               y * cellSize
             }" width="${cellSize}" height="${cellSize}" fill="${color}"/>`
-          : ""
-      )
+          : "",
+      ),
     )
     .filter((r) => r)
     .join("");
@@ -96,14 +96,14 @@ const FILL_PATTERN = [
   [COLORS.BLACK, COLORS.BLACK, COLORS.BLACK],
 ];
 
-// cyan-cross: 中央黒+上下左右シアン
-// □シ□
-// シ■シ
-// □シ□
-const CYAN_CROSS_PATTERN = [
-  ["transparent", COLORS.CYAN, "transparent"],
-  [COLORS.CYAN, COLORS.BLACK, COLORS.CYAN],
-  ["transparent", COLORS.CYAN, "transparent"],
+// border-only: 枠のみ（中央黒+周囲明るいグレー）
+// グググ
+// グ■グ
+// グググ
+const BORDER_ONLY_PATTERN = [
+  [COLORS.BLACK, COLORS.BLACK, COLORS.BLACK],
+  [COLORS.BLACK, "transparent", COLORS.BLACK],
+  [COLORS.BLACK, COLORS.BLACK, COLORS.BLACK],
 ];
 
 // dark-cross: 中央明るいグレー+上下左右暗いグレー
@@ -131,69 +131,85 @@ const STATIC_ICONS = {
   dot: toDataURI(createGridSVG(DOT_PATTERN)),
   cross: toDataURI(createGridSVG(CROSS_PATTERN)),
   fill: toDataURI(createGridSVG(FILL_PATTERN)),
-  "cyan-cross": toDataURI(createGridSVG(CYAN_CROSS_PATTERN)),
+  "border-only": toDataURI(createGridSVG(BORDER_ONLY_PATTERN)),
   "dark-cross": toDataURI(createGridSVG(DARK_CROSS_PATTERN)),
   "complement-cross": toDataURI(createGridSVG(COMPLEMENT_CROSS_PATTERN)),
 } as const;
 
 /**
- * カスタムカラーで赤系アイコンを生成
+ * カスタムカラーで色系アイコンを生成
  */
 const buildColoredIcons = (c: string) => ({
-  "red-cross": toDataURI(createGridSVG([
-    ["transparent", c, "transparent"],
-    [c, COLORS.BLACK, c],
-    ["transparent", c, "transparent"],
-  ])),
-  "red-border": toDataURI(createGridSVG([
-    [c, c, c],
-    [c, COLORS.BLACK, c],
-    [c, c, c],
-  ])),
-  "huge-red-cross": toDataURI(createGridSVG([
-    ["transparent", "transparent", c, "transparent", "transparent"],
-    ["transparent", "transparent", c, "transparent", "transparent"],
-    [c, c, COLORS.BLACK, c, c],
-    ["transparent", "transparent", c, "transparent", "transparent"],
-    ["transparent", "transparent", c, "transparent", "transparent"],
-  ])),
-  "huge-red-cross-bold": toDataURI(createGridSVG([
-    ["transparent", "transparent", c, c, c, "transparent", "transparent"],
-    ["transparent", "transparent", c, c, c, "transparent", "transparent"],
-    [c, c, c, c, c, c, c],
-    [c, c, c, COLORS.BLACK, c, c, c],
-    [c, c, c, c, c, c, c],
-    ["transparent", "transparent", c, c, c, "transparent", "transparent"],
-    ["transparent", "transparent", c, c, c, "transparent", "transparent"],
-  ])),
-  "huge-red-diamond": toDataURI(createGridSVG([
-    ["transparent", "transparent", c, "transparent", "transparent"],
-    ["transparent", c, c, c, "transparent"],
-    [c, c, COLORS.BLACK, c, c],
-    ["transparent", c, c, c, "transparent"],
-    ["transparent", "transparent", c, "transparent", "transparent"],
-  ])),
-  "huge-red-ring": toDataURI(createGridSVG([
-    ["transparent", c, c, c, "transparent"],
-    [c, "transparent", "transparent", "transparent", c],
-    [c, "transparent", COLORS.BLACK, "transparent", c],
-    [c, "transparent", "transparent", "transparent", c],
-    ["transparent", c, c, c, "transparent"],
-  ])),
+  "red-cross": toDataURI(
+    createGridSVG([
+      ["transparent", c, "transparent"],
+      [c, COLORS.BLACK, c],
+      ["transparent", c, "transparent"],
+    ]),
+  ),
+  "red-border": toDataURI(
+    createGridSVG([
+      [c, c, c],
+      [c, COLORS.BLACK, c],
+      [c, c, c],
+    ]),
+  ),
+  "huge-red-cross": toDataURI(
+    createGridSVG([
+      ["transparent", "transparent", c, "transparent", "transparent"],
+      ["transparent", "transparent", c, "transparent", "transparent"],
+      [c, c, COLORS.BLACK, c, c],
+      ["transparent", "transparent", c, "transparent", "transparent"],
+      ["transparent", "transparent", c, "transparent", "transparent"],
+    ]),
+  ),
+  "huge-red-cross-bold": toDataURI(
+    createGridSVG([
+      ["transparent", "transparent", c, c, c, "transparent", "transparent"],
+      ["transparent", "transparent", c, c, c, "transparent", "transparent"],
+      [c, c, c, c, c, c, c],
+      [c, c, c, COLORS.BLACK, c, c, c],
+      [c, c, c, c, c, c, c],
+      ["transparent", "transparent", c, c, c, "transparent", "transparent"],
+      ["transparent", "transparent", c, c, c, "transparent", "transparent"],
+    ]),
+  ),
+  "huge-red-diamond": toDataURI(
+    createGridSVG([
+      ["transparent", "transparent", c, "transparent", "transparent"],
+      ["transparent", c, c, c, "transparent"],
+      [c, c, COLORS.BLACK, c, c],
+      ["transparent", c, c, c, "transparent"],
+      ["transparent", "transparent", c, "transparent", "transparent"],
+    ]),
+  ),
+  "huge-red-ring": toDataURI(
+    createGridSVG([
+      ["transparent", c, c, c, "transparent"],
+      [c, "transparent", "transparent", "transparent", c],
+      [c, "transparent", COLORS.BLACK, "transparent", c],
+      [c, "transparent", "transparent", "transparent", c],
+      ["transparent", c, c, c, "transparent"],
+    ]),
+  ),
 });
 
-export type EnhancedModeIconMap = typeof STATIC_ICONS & ReturnType<typeof buildColoredIcons>;
+export type EnhancedModeIconMap = typeof STATIC_ICONS &
+  ReturnType<typeof buildColoredIcons>;
 
 /**
  * カスタムカラーでenhanced modeアイコンを生成
  */
-export const createEnhancedModeIcons = (colorHex: string = COLORS.RED): EnhancedModeIconMap => ({
+export const createEnhancedModeIcons = (
+  colorHex: string = COLORS.RED,
+): EnhancedModeIconMap => ({
   ...STATIC_ICONS,
   ...buildColoredIcons(colorHex),
 });
 
 // デフォルトアイコン（後方互換）
-export const ENHANCED_MODE_ICONS: EnhancedModeIconMap = createEnhancedModeIcons();
+export const ENHANCED_MODE_ICONS: EnhancedModeIconMap =
+  createEnhancedModeIcons();
 
 export type EnhancedModeType = keyof EnhancedModeIconMap;
 

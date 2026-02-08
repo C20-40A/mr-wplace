@@ -240,7 +240,7 @@ export const ptTranslations = {
   enhanced_mode_cross: "Cruz",
   enhanced_mode_fill: "Preencher",
   enhanced_mode_red_cross: "Cruz Colorida",
-  enhanced_mode_cyan_cross: "Cruz Ciano",
+  enhanced_mode_border_only: "Apenas Borda",
   enhanced_mode_dark_cross: "Cruz Escura",
   enhanced_mode_complement_cross: "Cruz Complementar",
   enhanced_mode_red_border: "Borda Colorida",

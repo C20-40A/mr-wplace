@@ -18,8 +18,6 @@ export const getAuxiliaryColor = (
     case "red-cross":
     case "red-border":
       return enhancedColor;
-    case "cyan-cross":
-      return [0, 255, 255];
     case "dark-cross":
       return [Math.max(0, r - 40), Math.max(0, g - 40), Math.max(0, b - 40)];
     case "complement-cross":
@@ -37,7 +35,7 @@ export const getAuxiliaryColor = (
  */
 export const isSameColor = (
   rgba1: readonly [number, number, number, number],
-  rgba2: readonly [number, number, number, number]
+  rgba2: readonly [number, number, number, number],
 ): boolean => {
   return (
     rgba2[3] > 0 &&

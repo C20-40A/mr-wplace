@@ -3,7 +3,7 @@ export type EnhancedMode =
   | "dot"
   | "cross"
   | "red-cross"
-  | "cyan-cross"
+  | "border-only"
   | "dark-cross"
   | "complement-cross"
   | "fill"

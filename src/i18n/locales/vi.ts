@@ -238,7 +238,7 @@ export const viTranslations = {
   enhanced_mode_cross: "Chữ thập",
   enhanced_mode_fill: "Tô đầy",
   enhanced_mode_red_cross: "Chữ thập màu",
-  enhanced_mode_cyan_cross: "Chữ thập lục lam",
+  enhanced_mode_border_only: "Chỉ viền",
   enhanced_mode_dark_cross: "Chữ thập tối",
   enhanced_mode_complement_cross: "Chữ thập bổ sung",
   enhanced_mode_red_border: "Viền màu",

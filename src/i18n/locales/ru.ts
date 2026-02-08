@@ -242,7 +242,7 @@ export const ruTranslations = {
   enhanced_mode_cross: "Крест",
   enhanced_mode_fill: "Заполнить",
   enhanced_mode_red_cross: "Цветной крест",
-  enhanced_mode_cyan_cross: "Голубой крест",
+  enhanced_mode_border_only: "Только граница",
   enhanced_mode_dark_cross: "Темный крест",
   enhanced_mode_complement_cross: "Дополнительный крест",
   enhanced_mode_red_border: "Цветная граница",

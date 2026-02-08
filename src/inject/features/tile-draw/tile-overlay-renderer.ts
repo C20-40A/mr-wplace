@@ -46,7 +46,7 @@ const notifyStatsUpdate = (tempStatsMap: Map<string, ColorStats>): void => {
         imageKey,
         tileStatsMap: tileStatsObject,
       },
-      "*"
+      "*",
     );
   }
 };
@@ -57,7 +57,7 @@ const notifyStatsUpdate = (tempStatsMap: Map<string, ColorStats>): void => {
 const drawSolidBackground = (
   ctx: OffscreenCanvasRenderingContext2D,
   width: number,
-  height: number
+  height: number,
 ): void => {
   ctx.fillStyle = "#e8e8e8"; // rgb(232, 232, 232)
   ctx.fillRect(0, 0, width, height);
@@ -70,7 +70,7 @@ const drawSolidBackground = (
 const applyColorFilterToOverlay = async (
   overlayBitmap: ImageBitmap,
   colorFilter: [number, number, number][] | undefined,
-  compute_device: "gpu" | "cpu"
+  compute_device: "gpu" | "cpu",
 ): Promise<Uint8ClampedArray> => {
   if (compute_device === "gpu" && colorFilter !== undefined) {
     try {
@@ -105,7 +105,7 @@ const computeStatsWithBackground = (
   bgWidth: number,
   offsetX: number,
   offsetY: number,
-  stats: ColorStats
+  stats: ColorStats,
 ): void => {
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -142,14 +142,14 @@ const computeStatsWithBackground = (
 
       const colorMatches = isSameColor(
         [origR, origG, origB, 255],
-        [bgR, bgG, bgB, bgA]
+        [bgR, bgG, bgB, bgA],
       );
 
       if (colorMatches) {
         const matchedColorKey = colorToKey([origR, origG, origB]);
         stats.matched.set(
           matchedColorKey,
-          (stats.matched.get(matchedColorKey) || 0) + 1
+          (stats.matched.get(matchedColorKey) || 0) + 1,
         );
       }
     }
@@ -237,8 +237,11 @@ const scaleAndRenderWithMode = (
         // 背景と一致するピクセル (配置済み) は透明化、不一致 (未配置) のみ描画
         if (colorMatches) continue;
 
+        // border-onlyは枠のみなので中心スキップ
+        if (isCenterPixel && mode === "border-only") continue;
+
         // 中心ピクセルは常に書き込み
-        if (isCenterPixel) {
+        if (isCenterPixel && mode) {
           scaledData[i] = r;
           scaledData[i + 1] = g;
           scaledData[i + 2] = b;
@@ -274,10 +277,21 @@ const scaleAndRenderWithMode = (
           scaledData[i + 1] = g;
           scaledData[i + 2] = b;
           scaledData[i + 3] = a;
+        } else if (mode === "border-only") {
+          if (!isCenterPixel) {
+            scaledData[i] = r;
+            scaledData[i + 1] = g;
+            scaledData[i + 2] = b;
+            scaledData[i + 3] = a;
+          }
         } else {
           // 補助色を使うパターン
           if (isCrossArm) {
-            const [ar, ag, ab] = getAuxiliaryColor(mode, [r, g, b], enhancedColor);
+            const [ar, ag, ab] = getAuxiliaryColor(
+              mode,
+              [r, g, b],
+              enhancedColor,
+            );
             scaledData[i] = ar;
             scaledData[i + 1] = ag;
             scaledData[i + 2] = ab;
@@ -292,6 +306,9 @@ const scaleAndRenderWithMode = (
       } else {
         // 通常モード: 背景と一致したら透明化、不一致なら描画
         if (colorMatches) continue;
+
+        // border-onlyは枠のみなので中心スキップ
+        if (isCenterPixel && mode === "border-only") continue;
 
         // 中心ピクセルは常に書き込み
         if (isCenterPixel) {
@@ -330,10 +347,21 @@ const scaleAndRenderWithMode = (
           scaledData[i + 1] = g;
           scaledData[i + 2] = b;
           scaledData[i + 3] = a;
+        } else if (mode === "border-only") {
+          if (!isCenterPixel) {
+            scaledData[i] = r;
+            scaledData[i + 1] = g;
+            scaledData[i + 2] = b;
+            scaledData[i + 3] = a;
+          }
         } else {
           // 補助色を使うパターン
           if (isCrossArm) {
-            const [ar, ag, ab] = getAuxiliaryColor(mode, [r, g, b], enhancedColor);
+            const [ar, ag, ab] = getAuxiliaryColor(
+              mode,
+              [r, g, b],
+              enhancedColor,
+            );
             scaledData[i] = ar;
             scaledData[i + 1] = ag;
             scaledData[i + 2] = ab;
@@ -483,7 +511,7 @@ const scaleAndRenderWithMode = (
 const convertToImageBitmap = async (
   data: Uint8ClampedArray,
   width: number,
-  height: number
+  height: number,
 ): Promise<ImageBitmap> => {
   // Ensure data is a standard Uint8ClampedArray (not generic ArrayBufferLike)
   const standardData = new Uint8ClampedArray(data);
@@ -516,9 +544,8 @@ const applyOverlayProcessing = async (
   const height = overlayBitmap.height;
 
   // カラーフィルター取得
-  const { isColorFilterActive, getSelectedRGBs } = await import(
-    "../../states/colorFilterState"
-  );
+  const { isColorFilterActive, getSelectedRGBs } =
+    await import("../../states/colorFilterState");
   const colorFilter = isColorFilterActive() ? getSelectedRGBs() : undefined;
 
   // 元のオーバーレイデータを取得（統計計算用）
@@ -547,7 +574,7 @@ const applyOverlayProcessing = async (
       bgWidth,
       offsetX,
       offsetY,
-      stats
+      stats,
     );
   }
 
@@ -555,7 +582,7 @@ const applyOverlayProcessing = async (
   const filteredData = await applyColorFilterToOverlay(
     overlayBitmap,
     colorFilter,
-    compute_device
+    compute_device,
   );
 
   // Phase 3: x3拡大 + モード別処理
@@ -582,14 +609,14 @@ const applyOverlayProcessing = async (
   return await convertToImageBitmap(
     scaledData,
     width * pixelScale,
-    height * pixelScale
+    height * pixelScale,
   );
 };
 
 export const drawOverlayLayersOnTile = async (
   tileBlob: Blob,
   tileCoords: TileCoords,
-  computeDevice: "gpu" | "cpu" = "gpu"
+  computeDevice: "gpu" | "cpu" = "gpu",
 ): Promise<Blob> => {
   if (overlayLayers.length === 0) return tileBlob;
 
@@ -647,7 +674,7 @@ export const drawOverlayLayersOnTile = async (
         const intersectRight = Math.min(tilePixelRight, instance.bounds.right);
         const intersectBottom = Math.min(
           tilePixelBottom,
-          instance.bounds.bottom
+          instance.bounds.bottom,
         );
 
         // Convert intersection to tile-relative coordinates
@@ -702,7 +729,7 @@ export const drawOverlayLayersOnTile = async (
     } else if (instance.tiles) {
       // Non-optimized layer - use existing tile keys
       const tiles = Object.keys(instance.tiles).filter((tile) =>
-        tile.startsWith(coordStrPadded)
+        tile.startsWith(coordStrPadded),
       );
       for (const tileKey of tiles) {
         matchingTiles.push({ tileKey, instance });
@@ -730,7 +757,7 @@ export const drawOverlayLayersOnTile = async (
   if (bgWidth === 1 && bgHeight === 1) {
     console.log("🧑‍🎨 : 1x1 tile detected, generating transparent 1000x1000");
     finalBgPixels = new Uint8Array(
-      TILE_DRAW_CONSTANTS.TILE_SIZE * TILE_DRAW_CONSTANTS.TILE_SIZE * 4
+      TILE_DRAW_CONSTANTS.TILE_SIZE * TILE_DRAW_CONSTANTS.TILE_SIZE * 4,
     );
     finalBgWidth = TILE_DRAW_CONSTANTS.TILE_SIZE;
     finalBgHeight = TILE_DRAW_CONSTANTS.TILE_SIZE;
@@ -739,7 +766,7 @@ export const drawOverlayLayersOnTile = async (
   const bgImageData = new ImageData(
     new Uint8ClampedArray(finalBgPixels),
     finalBgWidth,
-    finalBgHeight
+    finalBgHeight,
   );
   const tileBitmap = await createImageBitmap(bgImageData);
 
@@ -761,7 +788,8 @@ export const drawOverlayLayersOnTile = async (
   }
 
   // 描画モードと色を取得
-  const { getEnhancedMode, getEnhancedColor } = await import("../../states/colorFilterState");
+  const { getEnhancedMode, getEnhancedColor } =
+    await import("../../states/colorFilterState");
   const mode = getEnhancedMode();
   const enhancedColor = getEnhancedColor();
 
@@ -778,21 +806,20 @@ export const drawOverlayLayersOnTile = async (
     if (!paintedTilebitmap) {
       // Try new GalleryRepository v2 first
       try {
-        const { getGalleryRepository } = await import(
-          "../../db/gallery-repository"
-        );
+        const { getGalleryRepository } =
+          await import("../../db/gallery-repository");
         const repoV2 = getGalleryRepository();
         console.log(
           `🧑‍🎨 : Trying to load tile [${
             instance.imageKey
-          }, ${tileKey}], repoV2 initialized=${!!repoV2}`
+          }, ${tileKey}], repoV2 initialized=${!!repoV2}`,
         );
         if (repoV2) {
           const tileBlob = await repoV2.getTile(instance.imageKey, tileKey);
           console.log(
             `🧑‍🎨 : getTile result for [${instance.imageKey}, ${tileKey}]: ${
               tileBlob ? `Blob(${tileBlob.size})` : "null"
-            }`
+            }`,
           );
           if (tileBlob) {
             paintedTilebitmap = await createImageBitmap(tileBlob);
@@ -802,7 +829,7 @@ export const drawOverlayLayersOnTile = async (
             }
             instance.tiles[tileKey] = paintedTilebitmap;
             console.log(
-              `🧑‍🎨 : Loaded tile ${tileKey} from IndexedDB v2 for ${instance.imageKey}`
+              `🧑‍🎨 : Loaded tile ${tileKey} from IndexedDB v2 for ${instance.imageKey}`,
             );
           }
         }
@@ -839,7 +866,7 @@ export const drawOverlayLayersOnTile = async (
     context.drawImage(
       paintedTilebitmap,
       offsetX * TILE_DRAW_CONSTANTS.RENDER_SCALE,
-      offsetY * TILE_DRAW_CONSTANTS.RENDER_SCALE
+      offsetY * TILE_DRAW_CONSTANTS.RENDER_SCALE,
     );
   }
 
@@ -863,12 +890,12 @@ export const drawOverlayLayersOnTile = async (
 
 export const getOverlayPixelColor = async (
   lat: number,
-  lng: number
+  lng: number,
 ): Promise<{ r: number; g: number; b: number; a: number } | null> => {
   const coords = latLngToTilePixel(lat, lng);
   const coordPrefix = `${coords.TLX.toString().padStart(
     4,
-    "0"
+    "0",
   )},${coords.TLY.toString().padStart(4, "0")}`;
 
   // 後ろから検索（上位レイヤー優先）

@@ -243,7 +243,7 @@ export const esTranslations = {
   enhanced_mode_cross: "Cruz",
   enhanced_mode_fill: "Rellenar",
   enhanced_mode_red_cross: "Cruz de Color",
-  enhanced_mode_cyan_cross: "Cruz Cian",
+  enhanced_mode_border_only: "Solo Borde",
   enhanced_mode_dark_cross: "Cruz Oscura",
   enhanced_mode_complement_cross: "Cruz Complementaria",
   enhanced_mode_red_border: "Borde de Color",

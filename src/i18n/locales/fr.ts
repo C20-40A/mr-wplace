@@ -243,7 +243,7 @@ export const frTranslations = {
   enhanced_mode_cross: "Croix",
   enhanced_mode_fill: "Remplir",
   enhanced_mode_red_cross: "Croix colorée",
-  enhanced_mode_cyan_cross: "Croix cyan",
+  enhanced_mode_border_only: "Bordure seulement",
   enhanced_mode_dark_cross: "Croix sombre",
   enhanced_mode_complement_cross: "Croix complémentaire",
   enhanced_mode_red_border: "Bordure colorée",

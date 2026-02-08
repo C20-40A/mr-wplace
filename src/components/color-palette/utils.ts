@@ -19,11 +19,11 @@ export const ENHANCED_MODE_OPTIONS: EnhancedModeOption[] = [
   { value: "dot", labelKey: "enhanced_mode_dot", speed: "fast" },
   { value: "cross", labelKey: "enhanced_mode_cross", speed: "fast" },
   { value: "fill", labelKey: "enhanced_mode_fill", speed: "fast" },
+  { value: "red-border", labelKey: "enhanced_mode_red_border" },
   { value: "red-cross", labelKey: "enhanced_mode_red_cross" },
-  { value: "cyan-cross", labelKey: "enhanced_mode_cyan_cross" },
   { value: "dark-cross", labelKey: "enhanced_mode_dark_cross" },
   { value: "complement-cross", labelKey: "enhanced_mode_complement_cross" },
-  { value: "red-border", labelKey: "enhanced_mode_red_border" },
+  { value: "border-only", labelKey: "enhanced_mode_border_only" },
   {
     value: "huge-red-cross",
     labelKey: "enhanced_mode_huge_red_cross",
@@ -59,7 +59,7 @@ export const SORT_ORDER_OPTIONS: SortOrderOption[] = [
 export const getContrastTextColor = (
   r: number,
   g: number,
-  b: number
+  b: number,
 ): string => {
   const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
   return luminance > 0.5 ? "#000000" : "#ffffff";
@@ -99,7 +99,7 @@ export const createStatsHtml = (stats: ColorStats): string => {
       <div style="width: 100%; margin-top: 0.25rem; display: flex; align-items: center; justify-content: center; gap: 0.125rem;">
         <span style="font-size: 0.65rem; font-weight: bold; color: #facc15; text-shadow: -1px -1px 0 #b45309, 1px -1px 0 #b45309, -1px 1px 0 #b45309, 1px 1px 0 #b45309; line-height: 1;">COMPLETE</span>
         <span style="font-size: 0.5rem; opacity: 0.6; align-self: flex-end; line-height: 1; padding-bottom: 0.05rem;">(${formatNumber(
-          stats.total
+          stats.total,
         )})</span>
       </div>
     `;
@@ -109,11 +109,11 @@ export const createStatsHtml = (stats: ColorStats): string => {
     <div style="width: 100%; margin-top: 0.25rem; display: flex; align-items: center;">
       <div style="flex: 1; height: 0.5rem; background: #e5e7eb; border: 1px solid #d1d5db; border-radius: 0.125rem; overflow: hidden;">
         <div style="height: 100%; background: linear-gradient(to right, #3b82f6, #60a5fa); width: ${percentage.toFixed(
-          1
+          1,
         )}%; transition: width 0.3s ease;"></div>
       </div>
       <div style="font-size: 0.625rem; margin-left: 0.125rem; white-space: nowrap;">${formatNumber(
-        remaining
+        remaining,
       )}px</div>
     </div>
   `;
