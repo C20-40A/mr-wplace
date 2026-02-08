@@ -576,9 +576,12 @@ const convertToImageBitmap = async (
   width: number,
   height: number,
 ): Promise<ImageBitmap> => {
-  // Ensure data is a standard Uint8ClampedArray (not generic ArrayBufferLike)
-  const standardData = new Uint8ClampedArray(data);
-  const imageData = new ImageData(standardData, width, height);
+  // ArrayBuffer由来ならコピーせず使い、型要件を満たさない場合のみコピーする
+  const imageDataInput =
+    data.buffer instanceof ArrayBuffer
+      ? (data as Uint8ClampedArray<ArrayBuffer>)
+      : new Uint8ClampedArray(data);
+  const imageData = new ImageData(imageDataInput, width, height);
   return await createImageBitmap(imageData);
 };
 
