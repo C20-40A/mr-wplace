@@ -2,7 +2,6 @@ import { TileSnapshot } from "@/features/time-travel/utils/tile-snapshot";
 import { NotificationModal } from "@/features/user-status/ui/notification-modal";
 import { runtime } from "@/utils/browser-api";
 import { I18nManager } from "@/i18n/manager";
-import { initializeFeatures } from "@/core/initializer";
 import { setupMessageHandlers } from "@/core/message-handlers";
 import { sendGalleryImagesToInject } from "@/core/bridge";
 import { cleanupLegacyTmpTiles } from "@/features/time-travel";
@@ -115,6 +114,7 @@ const initializeMainFeatures = async () => {
   console.log("🧑‍🎨: DOM ready, proceeding with initialization");
 
   // Initialize all features
+  const { initializeFeatures } = await import("@/core/initializer");
   const { colorFilterManager, tileOverlay, autoSpoit } =
     await initializeFeatures();
 

@@ -185,7 +185,11 @@ export const needsMigration = async (): Promise<boolean> => {
   const hasLegacySnapshot = allKeys.some((key) =>
     key.startsWith("tile_snapshot_")
   );
-  return hasLegacySnapshot;
+  if (hasLegacySnapshot) return true;
+
+  // No legacy data exists: pin migration version to skip future key scans.
+  await storage.set({ [MIGRATION_VERSION_KEY]: MIGRATION_VERSION });
+  return false;
 };
 
 /**
