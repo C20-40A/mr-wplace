@@ -342,7 +342,7 @@ export function buildEnhancedSelectHtml(
                  style="width: ${isXs ? "24px" : "28px"}; height: ${isXs ? "24px" : "28px"};
                         border: 2px solid #d1d5db; cursor: pointer; padding: 0;
                         border-radius: 4px; background: none;" />
-          <span style="font-size: ${isXs ? "0.65rem" : "0.75rem"}; color: var(--color-base-content, #6b7280);">Marker Color</span>
+          <span style="font-size: ${isXs ? "0.65rem" : "0.75rem"}; color: var(--color-base-content, #6b7280);">${t("marker_color")}</span>
         </div>
       </div>
     </div>
