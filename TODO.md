@@ -1,5 +1,7 @@
 # メイン
 
+- custom color(赤だけではなく、ほかの色も)
+
 - orionでpopupが開けない
 - corsのerrorがログ報告ツールで表示されて、エラーで停止する？
 
@@ -96,6 +98,10 @@
 - PC のブックマーク一覧を 4 行ぐらいにしたい。が、その tailwind のメディアクエリがないから、設定が面倒
 - exclude_globs にメインのもの以外含める？
   - all_frames false (デフォルト)系は false．まあデフォルトが false だから不要か
+
+# DONE v2.4.1
+
+- show unplaced onlyをi18n
 
 # DONE v2.4.0
 

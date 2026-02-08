@@ -26,7 +26,7 @@ export function buildColorGrid(
   selectedColorIds: Set<number>,
   currentlySelectedColorId: number | null,
   sortedColors: typeof colorpalette,
-  options: ColorPaletteOptions
+  options: ColorPaletteOptions,
 ): string {
   return sortedColors
     .map((color) => {
@@ -92,7 +92,7 @@ export function buildColorGrid(
  */
 export function buildSortOrderSelectHtml(
   sortOrder: SortOrder,
-  controlSize: "default" | "xs" = "default"
+  controlSize: "default" | "xs" = "default",
 ): string {
   const isXs = controlSize === "xs";
   const currentOption = SORT_ORDER_OPTIONS.find((o) => o.value === sortOrder);
@@ -198,7 +198,7 @@ export function buildSortOrderSelectHtml(
  */
 export function buildEnhancedSelectHtml(
   enhancedMode: EnhancedMode,
-  controlSize: "default" | "xs" = "default"
+  controlSize: "default" | "xs" = "default",
 ): string {
   const isXs = controlSize === "xs";
   const labelKey = getEnhancedModeLabelKey(enhancedMode);
@@ -274,10 +274,10 @@ export function buildEnhancedSelectHtml(
                     isXs ? "0.7rem" : "0.8rem"
                   };">⚡</span>`
                 : mode.speed === "slow"
-                ? `<span style="position: absolute; top: -2px; right: -2px; font-size: ${
-                    isXs ? "0.7rem" : "0.8rem"
-                  };">⌛</span>`
-                : "";
+                  ? `<span style="position: absolute; top: -2px; right: -2px; font-size: ${
+                      isXs ? "0.7rem" : "0.8rem"
+                    };">⌛</span>`
+                  : "";
             return `
               <button class="enhanced-mode-item"
                       data-mode="${mode.value}"
@@ -330,7 +330,7 @@ export function buildEnhancedSelectHtml(
  */
 export function buildComputeDeviceSelectHtml(
   computeDevice: ComputeDevice,
-  controlSize: "default" | "xs" = "default"
+  controlSize: "default" | "xs" = "default",
 ): string {
   const isXs = controlSize === "xs";
   const devices: Array<{ value: ComputeDevice; label: string; icon: string }> =
@@ -447,7 +447,7 @@ export function buildComputeDeviceSelectHtml(
  */
 export function buildShowUnplacedOnlyToggleHtml(
   enabled: boolean,
-  controlSize: "default" | "xs" = "default"
+  controlSize: "default" | "xs" = "default",
 ): string {
   const isXs = controlSize === "xs";
   const bgColor = enabled
@@ -482,7 +482,7 @@ export function buildShowUnplacedOnlyToggleHtml(
             ontouchstart="this.style.transform='scale(0.95)';"
             ontouchend="this.style.transform='scale(1)';">
       <span style="display: flex; align-items: center; width: ${isXs ? "18px" : "24px"}; height: ${isXs ? "18px" : "24px"};">${SHOW_UNPLACED_ONLY_ICON_SVG}</span>
-      <span style="font-size: ${isXs ? "0.75rem" : "0.875rem"}; font-weight: 600;">${t`${"show_unplaced_only"}`}</span>
+      <span style="font-size: ${isXs ? "0.75rem" : "0.875rem"}; font-weight: 600;">${t("show_unplaced_only")}</span>
     </button>
   `;
 }
@@ -501,7 +501,7 @@ export function buildControlsHtml(
   showUnplacedOnlyToggle: boolean = false,
   showUnplacedOnly: boolean = false,
   showDisableUnusedButton: boolean = false,
-  controlSize: "default" | "xs" = "default"
+  controlSize: "default" | "xs" = "default",
 ): string {
   const isXs = controlSize === "xs";
   const sizeClass = isXs ? "btn-xs XS" : "btn-sm";
