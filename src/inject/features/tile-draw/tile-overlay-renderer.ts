@@ -3,7 +3,6 @@ import { latLngToTilePixel } from "../../../utils/coordinate";
 import type { TileDrawInstance, ColorStats, EnhancedMode } from "./types";
 import {
   getAuxiliaryColor,
-  isSameColor,
   colorToKey,
 } from "./filters/color-processing";
 import {
@@ -13,6 +12,21 @@ import { processGpuColorFilter } from "./filters/gpu-filter";
 import { processCpuColorFilter } from "./filters/cpu-filter";
 import { blobToPixels } from "../../../utils/pixel-converters";
 import { overlayLayers, perTileColorStats } from "./states";
+
+/**
+ * RGBA配列を毎回生成せずに色一致判定する
+ */
+const isSameColorComponents = (
+  r: number,
+  g: number,
+  b: number,
+  bgR: number,
+  bgG: number,
+  bgB: number,
+  bgA: number,
+): boolean => {
+  return bgA > 0 && r === bgR && g === bgG && b === bgB;
+};
 
 /**
  * Notify content script to save statistics to storage
@@ -113,6 +127,9 @@ const computeStatsWithBackground = (
   offsetY: number,
   stats: ColorStats,
 ): void => {
+  // "r,g,b" 文字列生成を色ごとに1回へ抑える
+  const colorKeyCache = new Map<number, string>();
+
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const i = (y * width + x) * 4;
@@ -121,12 +138,15 @@ const computeStatsWithBackground = (
       if (originalData[i + 3] === 0) continue;
 
       // total: 元画像の色でカウント（カラーフィルター無関係）
-      const [origR, origG, origB] = [
-        originalData[i],
-        originalData[i + 1],
-        originalData[i + 2],
-      ];
-      const totalColorKey = colorToKey([origR, origG, origB]);
+      const origR = originalData[i];
+      const origG = originalData[i + 1];
+      const origB = originalData[i + 2];
+      const colorInt = (origR << 16) | (origG << 8) | origB;
+      let totalColorKey = colorKeyCache.get(colorInt);
+      if (!totalColorKey) {
+        totalColorKey = colorToKey([origR, origG, origB]);
+        colorKeyCache.set(colorInt, totalColorKey);
+      }
       stats.total.set(totalColorKey, (stats.total.get(totalColorKey) || 0) + 1);
 
       // matched: 元画像の色でカウント（カラーフィルター無関係）
@@ -139,23 +159,25 @@ const computeStatsWithBackground = (
       if (bgI + 3 >= bgData.length) continue;
 
       // 背景比較（元画像の色で）
-      const [bgR, bgG, bgB, bgA] = [
-        bgData[bgI],
-        bgData[bgI + 1],
-        bgData[bgI + 2],
-        bgData[bgI + 3],
-      ];
+      const bgR = bgData[bgI];
+      const bgG = bgData[bgI + 1];
+      const bgB = bgData[bgI + 2];
+      const bgA = bgData[bgI + 3];
 
-      const colorMatches = isSameColor(
-        [origR, origG, origB, 255],
-        [bgR, bgG, bgB, bgA],
+      const colorMatches = isSameColorComponents(
+        origR,
+        origG,
+        origB,
+        bgR,
+        bgG,
+        bgB,
+        bgA,
       );
 
       if (colorMatches) {
-        const matchedColorKey = colorToKey([origR, origG, origB]);
         stats.matched.set(
-          matchedColorKey,
-          (stats.matched.get(matchedColorKey) || 0) + 1,
+          totalColorKey,
+          (stats.matched.get(totalColorKey) || 0) + 1,
         );
       }
     }
@@ -226,7 +248,7 @@ const scaleAndRenderWithMode = (
       const bgB = bgData[bgI1 + 2];
       const bgA = bgData[bgI1 + 3];
 
-      const colorMatches = isSameColor([r, g, b, 255], [bgR, bgG, bgB, bgA]);
+      const colorMatches = isSameColorComponents(r, g, b, bgR, bgG, bgB, bgA);
 
       // Show unplaced only モード: ロジック反転
       if (showUnplacedOnly) {
