@@ -10,6 +10,12 @@ import {
 } from "./image-processing/pixel-processing";
 import { processGpuColorFilter } from "./filters/gpu-filter";
 import { processCpuColorFilter } from "./filters/cpu-filter";
+import {
+  getEnhancedColor,
+  getEnhancedMode,
+  getSelectedRGBs,
+  isColorFilterActive,
+} from "../../states/colorFilterState";
 import { blobToPixels } from "../../../utils/pixel-converters";
 import { overlayLayers, perTileColorStats } from "./states";
 
@@ -632,8 +638,6 @@ const applyOverlayProcessing = async (
   const height = overlayBitmap.height;
 
   // カラーフィルター取得
-  const { isColorFilterActive, getSelectedRGBs } =
-    await import("../../states/colorFilterState");
   const colorFilter = isColorFilterActive() ? getSelectedRGBs() : undefined;
 
   // 元のオーバーレイデータ（必要時のみデコード）
@@ -883,10 +887,29 @@ export const drawOverlayLayersOnTile = async (
   }
 
   // 描画モードと色を取得
-  const { getEnhancedMode, getEnhancedColor } =
-    await import("../../states/colorFilterState");
   const mode = getEnhancedMode();
   const enhancedColor = getEnhancedColor();
+
+  // GalleryRepository v2 は必要時のみ初回1回だけ解決する
+  let galleryRepoV2:
+    | { getTile: (layerId: string, tileKey: string) => Promise<Blob | null> }
+    | null
+    | undefined;
+  const getGalleryRepoV2 = async (): Promise<{
+    getTile: (layerId: string, tileKey: string) => Promise<Blob | null>;
+  } | null> => {
+    if (galleryRepoV2 !== undefined) return galleryRepoV2;
+
+    try {
+      const { getGalleryRepository } = await import("../../db/gallery-repository");
+      galleryRepoV2 = getGalleryRepository();
+    } catch (error) {
+      console.error(`🧑‍🎨 : Error loading gallery repository v2:`, error);
+      galleryRepoV2 = null;
+    }
+
+    return galleryRepoV2;
+  };
 
   // 透明背景に複数オーバーレイが重なった合成画像を出力
   for (const { tileKey, instance } of matchingTiles) {
@@ -900,36 +923,30 @@ export const drawOverlayLayersOnTile = async (
     // If tile not in memory, try loading from IndexedDB v2 first, then legacy
     if (!paintedTilebitmap) {
       // Try new GalleryRepository v2 first
-      try {
-        const { getGalleryRepository } =
-          await import("../../db/gallery-repository");
-        const repoV2 = getGalleryRepository();
+      const repoV2 = await getGalleryRepoV2();
+      console.log(
+        `🧑‍🎨 : Trying to load tile [${
+          instance.imageKey
+        }, ${tileKey}], repoV2 initialized=${!!repoV2}`,
+      );
+      if (repoV2) {
+        const tileBlob = await repoV2.getTile(instance.imageKey, tileKey);
         console.log(
-          `🧑‍🎨 : Trying to load tile [${
-            instance.imageKey
-          }, ${tileKey}], repoV2 initialized=${!!repoV2}`,
+          `🧑‍🎨 : getTile result for [${instance.imageKey}, ${tileKey}]: ${
+            tileBlob ? `Blob(${tileBlob.size})` : "null"
+          }`,
         );
-        if (repoV2) {
-          const tileBlob = await repoV2.getTile(instance.imageKey, tileKey);
-          console.log(
-            `🧑‍🎨 : getTile result for [${instance.imageKey}, ${tileKey}]: ${
-              tileBlob ? `Blob(${tileBlob.size})` : "null"
-            }`,
-          );
-          if (tileBlob) {
-            paintedTilebitmap = await createImageBitmap(tileBlob);
-            // Cache in memory for faster subsequent access
-            if (!instance.tiles) {
-              instance.tiles = {};
-            }
-            instance.tiles[tileKey] = paintedTilebitmap;
-            console.log(
-              `🧑‍🎨 : Loaded tile ${tileKey} from IndexedDB v2 for ${instance.imageKey}`,
-            );
+        if (tileBlob) {
+          paintedTilebitmap = await createImageBitmap(tileBlob);
+          // Cache in memory for faster subsequent access
+          if (!instance.tiles) {
+            instance.tiles = {};
           }
+          instance.tiles[tileKey] = paintedTilebitmap;
+          console.log(
+            `🧑‍🎨 : Loaded tile ${tileKey} from IndexedDB v2 for ${instance.imageKey}`,
+          );
         }
-      } catch (error) {
-        console.error(`🧑‍🎨 : Error loading tile from v2:`, error);
       }
     }
 
