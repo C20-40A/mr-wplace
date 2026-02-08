@@ -96,16 +96,6 @@ const FILL_PATTERN = [
   [COLORS.BLACK, COLORS.BLACK, COLORS.BLACK],
 ];
 
-// red-cross: 中央黒+上下左右赤
-// □赤□
-// 赤■赤
-// □赤□
-const RED_CROSS_PATTERN = [
-  ["transparent", COLORS.RED, "transparent"],
-  [COLORS.RED, COLORS.BLACK, COLORS.RED],
-  ["transparent", COLORS.RED, "transparent"],
-];
-
 // cyan-cross: 中央黒+上下左右シアン
 // □シ□
 // シ■シ
@@ -136,157 +126,76 @@ const COMPLEMENT_CROSS_PATTERN = [
   ["transparent", COLORS.YELLOW, "transparent"],
 ];
 
-// red-border: 中央黒+周囲8ドット赤
-// 赤赤赤
-// 赤■赤
-// 赤赤赤
-const RED_BORDER_PATTERN = [
-  [COLORS.RED, COLORS.RED, COLORS.RED],
-  [COLORS.RED, COLORS.BLACK, COLORS.RED],
-  [COLORS.RED, COLORS.RED, COLORS.RED],
-];
-
-// huge-red-cross: 巨大赤十字（細い線）
-// 描画: 水平垂直の1px線
-// アイコン: 十字形状（上下左右が赤、四隅は透明）
-// □□赤□□
-// □□赤□□
-// 赤赤■赤赤
-// □□赤□□
-// □□赤□□
-const HUGE_RED_CROSS_PATTERN = [
-  ["transparent", "transparent", COLORS.RED, "transparent", "transparent"],
-  ["transparent", "transparent", COLORS.RED, "transparent", "transparent"],
-  [COLORS.RED, COLORS.RED, COLORS.BLACK, COLORS.RED, COLORS.RED],
-  ["transparent", "transparent", COLORS.RED, "transparent", "transparent"],
-  ["transparent", "transparent", COLORS.RED, "transparent", "transparent"],
-];
-
-// huge-red-cross-bold: 巨大赤十字（極太3px幅）
-// 描画: 3px幅の太い十字
-// アイコン: 5x5で太い十字を表現
-// □□赤赤赤□□
-// □□赤赤赤□□
-// 赤赤赤赤赤赤赤
-// 赤赤赤■赤赤赤
-// 赤赤赤赤赤赤赤
-// □□赤赤赤□□
-// □□赤赤赤□□
-const HUGE_RED_CROSS_BOLD_PATTERN = [
-  [
-    "transparent",
-    "transparent",
-    COLORS.RED,
-    COLORS.RED,
-    COLORS.RED,
-    "transparent",
-    "transparent",
-  ],
-  [
-    "transparent",
-    "transparent",
-    COLORS.RED,
-    COLORS.RED,
-    COLORS.RED,
-    "transparent",
-    "transparent",
-  ],
-  [
-    COLORS.RED,
-    COLORS.RED,
-    COLORS.RED,
-    COLORS.RED,
-    COLORS.RED,
-    COLORS.RED,
-    COLORS.RED,
-  ],
-  [
-    COLORS.RED,
-    COLORS.RED,
-    COLORS.RED,
-    COLORS.BLACK,
-    COLORS.RED,
-    COLORS.RED,
-    COLORS.RED,
-  ],
-  [
-    COLORS.RED,
-    COLORS.RED,
-    COLORS.RED,
-    COLORS.RED,
-    COLORS.RED,
-    COLORS.RED,
-    COLORS.RED,
-  ],
-  [
-    "transparent",
-    "transparent",
-    COLORS.RED,
-    COLORS.RED,
-    COLORS.RED,
-    "transparent",
-    "transparent",
-  ],
-  [
-    "transparent",
-    "transparent",
-    COLORS.RED,
-    COLORS.RED,
-    COLORS.RED,
-    "transparent",
-    "transparent",
-  ],
-];
-
-// huge-red-diamond:  巨大赤ダイヤ（マンハッタン距離）
-// 描画: ダイヤ形状のグラデーション
-// アイコン: ダイヤ形状（四隅が赤、上下左右は透明）
-// □□赤□□
-// □赤赤赤□
-// 赤赤■赤赤
-// □赤赤赤□
-// □□赤□□
-const HUGE_RED_DIAMOND_PATTERN = [
-  ["transparent", "transparent", COLORS.RED, "transparent", "transparent"],
-  ["transparent", COLORS.RED, COLORS.RED, COLORS.RED, "transparent"],
-  [COLORS.RED, COLORS.RED, COLORS.BLACK, COLORS.RED, COLORS.RED],
-  ["transparent", COLORS.RED, COLORS.RED, COLORS.RED, "transparent"],
-  ["transparent", "transparent", COLORS.RED, "transparent", "transparent"],
-];
-
-// huge-red-ring: 巨大赤リング（円形）
-// 描画: 円形リング（内側空洞）
-// アイコン: 5x5でリング形状を表現
-// □赤赤赤□
-// 赤□□□赤
-// 赤□■□赤
-// 赤□□□赤
-// □赤赤赤□
-const HUGE_RED_RING_PATTERN = [
-  ["transparent", COLORS.RED, COLORS.RED, COLORS.RED, "transparent"],
-  [COLORS.RED, "transparent", "transparent", "transparent", COLORS.RED],
-  [COLORS.RED, "transparent", COLORS.BLACK, "transparent", COLORS.RED],
-  [COLORS.RED, "transparent", "transparent", "transparent", COLORS.RED],
-  ["transparent", COLORS.RED, COLORS.RED, COLORS.RED, "transparent"],
-];
-
-// データURI形式でエクスポート
-export const ENHANCED_MODE_ICONS = {
+// 非赤系モードの静的アイコン
+const STATIC_ICONS = {
   dot: toDataURI(createGridSVG(DOT_PATTERN)),
   cross: toDataURI(createGridSVG(CROSS_PATTERN)),
   fill: toDataURI(createGridSVG(FILL_PATTERN)),
-  "red-cross": toDataURI(createGridSVG(RED_CROSS_PATTERN)),
   "cyan-cross": toDataURI(createGridSVG(CYAN_CROSS_PATTERN)),
   "dark-cross": toDataURI(createGridSVG(DARK_CROSS_PATTERN)),
   "complement-cross": toDataURI(createGridSVG(COMPLEMENT_CROSS_PATTERN)),
-  "red-border": toDataURI(createGridSVG(RED_BORDER_PATTERN)),
-  "huge-red-cross": toDataURI(createGridSVG(HUGE_RED_CROSS_PATTERN)),
-  "huge-red-cross-bold": toDataURI(createGridSVG(HUGE_RED_CROSS_BOLD_PATTERN)),
-  "huge-red-diamond": toDataURI(createGridSVG(HUGE_RED_DIAMOND_PATTERN)),
-  "huge-red-ring": toDataURI(createGridSVG(HUGE_RED_RING_PATTERN)),
 } as const;
 
-export type EnhancedModeType = keyof typeof ENHANCED_MODE_ICONS;
+/**
+ * カスタムカラーで赤系アイコンを生成
+ */
+const buildColoredIcons = (c: string) => ({
+  "red-cross": toDataURI(createGridSVG([
+    ["transparent", c, "transparent"],
+    [c, COLORS.BLACK, c],
+    ["transparent", c, "transparent"],
+  ])),
+  "red-border": toDataURI(createGridSVG([
+    [c, c, c],
+    [c, COLORS.BLACK, c],
+    [c, c, c],
+  ])),
+  "huge-red-cross": toDataURI(createGridSVG([
+    ["transparent", "transparent", c, "transparent", "transparent"],
+    ["transparent", "transparent", c, "transparent", "transparent"],
+    [c, c, COLORS.BLACK, c, c],
+    ["transparent", "transparent", c, "transparent", "transparent"],
+    ["transparent", "transparent", c, "transparent", "transparent"],
+  ])),
+  "huge-red-cross-bold": toDataURI(createGridSVG([
+    ["transparent", "transparent", c, c, c, "transparent", "transparent"],
+    ["transparent", "transparent", c, c, c, "transparent", "transparent"],
+    [c, c, c, c, c, c, c],
+    [c, c, c, COLORS.BLACK, c, c, c],
+    [c, c, c, c, c, c, c],
+    ["transparent", "transparent", c, c, c, "transparent", "transparent"],
+    ["transparent", "transparent", c, c, c, "transparent", "transparent"],
+  ])),
+  "huge-red-diamond": toDataURI(createGridSVG([
+    ["transparent", "transparent", c, "transparent", "transparent"],
+    ["transparent", c, c, c, "transparent"],
+    [c, c, COLORS.BLACK, c, c],
+    ["transparent", c, c, c, "transparent"],
+    ["transparent", "transparent", c, "transparent", "transparent"],
+  ])),
+  "huge-red-ring": toDataURI(createGridSVG([
+    ["transparent", c, c, c, "transparent"],
+    [c, "transparent", "transparent", "transparent", c],
+    [c, "transparent", COLORS.BLACK, "transparent", c],
+    [c, "transparent", "transparent", "transparent", c],
+    ["transparent", c, c, c, "transparent"],
+  ])),
+});
+
+export type EnhancedModeIconMap = typeof STATIC_ICONS & ReturnType<typeof buildColoredIcons>;
+
+/**
+ * カスタムカラーでenhanced modeアイコンを生成
+ */
+export const createEnhancedModeIcons = (colorHex: string = COLORS.RED): EnhancedModeIconMap => ({
+  ...STATIC_ICONS,
+  ...buildColoredIcons(colorHex),
+});
+
+// デフォルトアイコン（後方互換）
+export const ENHANCED_MODE_ICONS: EnhancedModeIconMap = createEnhancedModeIcons();
+
+export type EnhancedModeType = keyof EnhancedModeIconMap;
 
 export const SHOW_UNPLACED_ONLY_ICON_SVG = `
 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

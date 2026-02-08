@@ -6,6 +6,7 @@
 import {
   getColorFilterState,
   getEnhancedMode,
+  getEnhancedColor,
 } from "../../states/colorFilterState";
 import { overlayLayers } from "./states";
 
@@ -29,13 +30,14 @@ let lastStateVersion = "";
 const getStateVersion = (): string => {
   const filter = getColorFilterState();
   const mode = getEnhancedMode();
+  const eColor = getEnhancedColor();
   const unplaced = window.mrWplaceShowUnplacedOnly ?? false;
   const overlayKeys = overlayLayers
     .map((l) => `${l.imageKey}:${l.drawEnabled}:${l.coords.join(",")}`)
     .join("|");
   return `${filter.isFilterActive}-${JSON.stringify(
     filter.selectedRGBs
-  )}-${mode}-${unplaced}-${overlayKeys}`;
+  )}-${mode}-${eColor.join(",")}-${unplaced}-${overlayKeys}`;
 };
 
 /**

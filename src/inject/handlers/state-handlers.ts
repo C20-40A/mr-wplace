@@ -64,11 +64,13 @@ export const handleColorFilterUpdate = (data: {
   isFilterActive: boolean;
   selectedRGBs?: [number, number, number][];
   enhancedMode: EnhancedMode;
+  enhancedColor?: [number, number, number];
 }): void => {
   updateColorFilterState({
     isFilterActive: data.isFilterActive,
     selectedRGBs: data.selectedRGBs,
     enhancedMode: data.enhancedMode,
+    enhancedColor: data.enhancedColor ?? [255, 0, 0],
   });
 
   // 統計は必要に応じてタイルレンダリング時に計算されるため、

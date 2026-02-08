@@ -174,12 +174,14 @@ const scaleAndRenderWithMode = (
   offsetY: number,
   mode: EnhancedMode,
   shouldSkipRendering: boolean,
-  showUnplacedOnly: boolean = false
+  showUnplacedOnly: boolean = false,
+  enhancedColor: readonly [number, number, number] = [255, 0, 0],
 ): Uint8ClampedArray => {
   const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
   const scaledWidth = width * pixelScale;
   const scaledHeight = height * pixelScale;
   const scaledData = new Uint8ClampedArray(scaledWidth * scaledHeight * 4);
+  const [ecR, ecG, ecB] = enhancedColor;
 
   if (shouldSkipRendering) {
     return scaledData; // 透明データを返す
@@ -275,15 +277,15 @@ const scaleAndRenderWithMode = (
         } else {
           // 補助色を使うパターン
           if (isCrossArm) {
-            const [ar, ag, ab] = getAuxiliaryColor(mode, [r, g, b]);
+            const [ar, ag, ab] = getAuxiliaryColor(mode, [r, g, b], enhancedColor);
             scaledData[i] = ar;
             scaledData[i + 1] = ag;
             scaledData[i + 2] = ab;
             scaledData[i + 3] = 255;
           } else if (mode === "red-border") {
-            scaledData[i] = 255;
-            scaledData[i + 1] = 0;
-            scaledData[i + 2] = 0;
+            scaledData[i] = ecR;
+            scaledData[i + 1] = ecG;
+            scaledData[i + 2] = ecB;
             scaledData[i + 3] = 255;
           }
         }
@@ -331,16 +333,16 @@ const scaleAndRenderWithMode = (
         } else {
           // 補助色を使うパターン
           if (isCrossArm) {
-            const [ar, ag, ab] = getAuxiliaryColor(mode, [r, g, b]);
+            const [ar, ag, ab] = getAuxiliaryColor(mode, [r, g, b], enhancedColor);
             scaledData[i] = ar;
             scaledData[i + 1] = ag;
             scaledData[i + 2] = ab;
             scaledData[i + 3] = 255;
           } else if (mode === "red-border") {
             // 赤枠モードは腕以外(4隅)も赤
-            scaledData[i] = 255;
-            scaledData[i + 1] = 0;
-            scaledData[i + 2] = 0;
+            scaledData[i] = ecR;
+            scaledData[i + 1] = ecG;
+            scaledData[i + 2] = ecB;
             scaledData[i + 3] = 255;
           }
         }
@@ -368,9 +370,9 @@ const scaleAndRenderWithMode = (
           const px = cx + dx;
           if (px < 0 || px >= scaledWidth) continue;
           const i = (cy * scaledWidth + px) * 4;
-          scaledData[i] = 255;
-          scaledData[i + 1] = 0;
-          scaledData[i + 2] = 0;
+          scaledData[i] = ecR;
+          scaledData[i + 1] = ecG;
+          scaledData[i + 2] = ecB;
           scaledData[i + 3] = 255;
         }
         // 垂直腕
@@ -379,9 +381,9 @@ const scaleAndRenderWithMode = (
           const py = cy + dy;
           if (py < 0 || py >= scaledHeight) continue;
           const i = (py * scaledWidth + cx) * 4;
-          scaledData[i] = 255;
-          scaledData[i + 1] = 0;
-          scaledData[i + 2] = 0;
+          scaledData[i] = ecR;
+          scaledData[i + 1] = ecG;
+          scaledData[i + 2] = ecB;
           scaledData[i + 3] = 255;
         }
       } else if (isHugeRedCrossBold) {
@@ -404,9 +406,9 @@ const scaleAndRenderWithMode = (
               continue;
 
             const i = (py * scaledWidth + px) * 4;
-            scaledData[i] = 255;
-            scaledData[i + 1] = 0;
-            scaledData[i + 2] = 0;
+            scaledData[i] = ecR;
+            scaledData[i + 1] = ecG;
+            scaledData[i + 2] = ecB;
             scaledData[i + 3] = 255;
           }
         }
@@ -431,9 +433,9 @@ const scaleAndRenderWithMode = (
             // グラデーション: 中心が濃い(255)、外が薄い(64)
             const ratio = dist / armLength;
             const alpha = Math.round(255 - ratio * 191); // 255 → 64
-            scaledData[i] = 255;
-            scaledData[i + 1] = 0;
-            scaledData[i + 2] = 0;
+            scaledData[i] = ecR;
+            scaledData[i + 1] = ecG;
+            scaledData[i + 2] = ecB;
             scaledData[i + 3] = alpha;
           }
         }
@@ -461,9 +463,9 @@ const scaleAndRenderWithMode = (
             // グラデーション: 内側が濃い、外側が薄い
             const ratio = (dist - innerRadius) / (outerRadius - innerRadius);
             const alpha = Math.round(255 - ratio * 191); // 255 → 64
-            scaledData[i] = 255;
-            scaledData[i + 1] = 0;
-            scaledData[i + 2] = 0;
+            scaledData[i] = ecR;
+            scaledData[i + 1] = ecG;
+            scaledData[i + 2] = ecB;
             scaledData[i + 3] = alpha;
           }
         }
@@ -506,7 +508,8 @@ const applyOverlayProcessing = async (
   imageKey: string,
   tempStatsMap: Map<string, ColorStats>,
   compute_device: "gpu" | "cpu" = "gpu",
-  skipStatsComputation: boolean = false
+  skipStatsComputation: boolean = false,
+  enhancedColor: [number, number, number] = [255, 0, 0],
 ): Promise<ImageBitmap> => {
   const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
   const width = overlayBitmap.width;
@@ -571,7 +574,8 @@ const applyOverlayProcessing = async (
     offsetY,
     mode,
     shouldSkipRendering,
-    showUnplacedOnly
+    showUnplacedOnly,
+    enhancedColor,
   );
 
   // Phase 4: ImageBitmap変換
@@ -756,9 +760,10 @@ export const drawOverlayLayersOnTile = async (
     context.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
   }
 
-  // 描画モードを取得
-  const { getEnhancedMode } = await import("../../states/colorFilterState");
+  // 描画モードと色を取得
+  const { getEnhancedMode, getEnhancedColor } = await import("../../states/colorFilterState");
   const mode = getEnhancedMode();
+  const enhancedColor = getEnhancedColor();
 
   // 透明背景に複数オーバーレイが重なった合成画像を出力
   for (const { tileKey, instance } of matchingTiles) {
@@ -827,7 +832,8 @@ export const drawOverlayLayersOnTile = async (
       instance.imageKey,
       tempStatsMap,
       computeDevice,
-      alreadyHasStats
+      alreadyHasStats,
+      enhancedColor,
     );
 
     context.drawImage(

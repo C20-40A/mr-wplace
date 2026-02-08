@@ -7,13 +7,17 @@ import type { EnhancedMode } from "@/types/image";
  * @param rgb 元のRGB色
  * @returns 補助色RGB
  */
-export const getAuxiliaryColor = (mode: EnhancedMode, rgb: RGB): RGB => {
+export const getAuxiliaryColor = (
+  mode: EnhancedMode,
+  rgb: RGB,
+  enhancedColor: RGB = [255, 0, 0],
+): RGB => {
   const [r, g, b] = rgb;
 
   switch (mode) {
     case "red-cross":
     case "red-border":
-      return [255, 0, 0];
+      return enhancedColor;
     case "cyan-cross":
       return [0, 255, 255];
     case "dark-cross":

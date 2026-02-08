@@ -73,13 +73,16 @@ export const renderColorFilters = async (
     showCurrentlySelected: true,
     showEnhancedSelect: true,
     enhancedMode: colorFilterManager?.getEnhancedMode() ?? "dot",
+    enhancedColor: colorFilterManager?.getEnhancedColor() ?? [255, 0, 0],
     onEnhancedModeChange: (mode) => {
       colorFilterManager?.setEnhancedMode(mode);
       console.log(`🧑‍🎨 : Enhanced mode:`, mode);
-      // Send updated filter to inject side
-      if (colorFilterManager) {
-        sendColorFilterToInject(colorFilterManager);
-      }
+      if (colorFilterManager) sendColorFilterToInject(colorFilterManager);
+    },
+    onEnhancedColorChange: (color) => {
+      colorFilterManager?.setEnhancedColor(color);
+      console.log(`🧑‍🎨 : Enhanced color:`, color);
+      if (colorFilterManager) sendColorFilterToInject(colorFilterManager);
     },
     hasExtraColorsBitmap,
     showColorStats: !!colorStats,

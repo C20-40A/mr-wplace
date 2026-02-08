@@ -2,8 +2,8 @@ import { colorpalette } from "../../constants/colors";
 import { t } from "../../i18n/manager";
 import type { EnhancedMode } from "@/types/image";
 import {
-  ENHANCED_MODE_ICONS,
   SHOW_UNPLACED_ONLY_ICON_SVG,
+  createEnhancedModeIcons,
 } from "../../assets/enhanced-mode-icons";
 import type { SortOrder, ColorPaletteOptions } from "./types";
 import type { ComputeDevice } from "./storage";
@@ -193,15 +193,25 @@ export function buildSortOrderSelectHtml(
   `;
 }
 
+const rgbToHex = ([r, g, b]: [number, number, number]): string =>
+  `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+
+const RED_BASED_MODES: EnhancedMode[] = [
+  "red-cross", "red-border", "huge-red-cross", "huge-red-cross-bold", "huge-red-diamond", "huge-red-ring",
+];
+
 /**
  * EnhancedモードドロップダウンHTML生成
  */
 export function buildEnhancedSelectHtml(
   enhancedMode: EnhancedMode,
   controlSize: "default" | "xs" = "default",
+  enhancedColor: [number, number, number] = [255, 0, 0],
 ): string {
   const isXs = controlSize === "xs";
   const labelKey = getEnhancedModeLabelKey(enhancedMode);
+  const icons = createEnhancedModeIcons(rgbToHex(enhancedColor));
+  const colorHex = rgbToHex(enhancedColor);
 
   return `
     <div class="enhanced-mode-container" style="position: relative;">
@@ -224,8 +234,8 @@ export function buildEnhancedSelectHtml(
               onmouseup="this.style.transform='scale(1)';"
               ontouchstart="this.style.transform='scale(0.98)'; this.style.boxShadow='0 1px 2px rgba(0, 0, 0, 0.1)';"
               ontouchend="this.style.transform='scale(1)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)';">
-        <img class="enhanced-mode-current-icon" 
-             src="${ENHANCED_MODE_ICONS[enhancedMode]}" 
+        <img class="enhanced-mode-current-icon"
+             src="${icons[enhancedMode]}"
              alt="${enhancedMode}" 
              style="width: ${isXs ? "16px" : "20px"}; 
                     height: ${isXs ? "16px" : "20px"}; 
@@ -303,7 +313,7 @@ export function buildEnhancedSelectHtml(
                       ontouchstart="this.style.transform='scale(0.95)';"
                       ontouchend="this.style.transform='scale(1)';">
                 ${speedBadge}
-                <img src="${ENHANCED_MODE_ICONS[mode.value]}"
+                <img src="${icons[mode.value]}"
                      alt="${mode.value}"
                      style="width: ${isXs ? "22px" : "28px"};
                             height: ${isXs ? "22px" : "28px"};
@@ -319,6 +329,20 @@ export function buildEnhancedSelectHtml(
               </button>
             `;
           }).join("")}
+        </div>
+        <div class="enhanced-color-picker-container"
+             style="display: ${RED_BASED_MODES.includes(enhancedMode) ? "flex" : "none"};
+                    align-items: center;
+                    gap: 0.5rem;
+                    padding: 0.5rem 0.25rem 0;
+                    border-top: 1px solid var(--color-base-content, #e5e7eb);
+                    margin-top: 0.5rem;">
+          <input type="color" class="enhanced-color-picker"
+                 value="${colorHex}"
+                 style="width: ${isXs ? "24px" : "28px"}; height: ${isXs ? "24px" : "28px"};
+                        border: 2px solid #d1d5db; cursor: pointer; padding: 0;
+                        border-radius: 4px; background: none;" />
+          <span style="font-size: ${isXs ? "0.65rem" : "0.75rem"}; color: var(--color-base-content, #6b7280);">Marker Color</span>
         </div>
       </div>
     </div>
@@ -502,6 +526,7 @@ export function buildControlsHtml(
   showUnplacedOnly: boolean = false,
   showDisableUnusedButton: boolean = false,
   controlSize: "default" | "xs" = "default",
+  enhancedColor: [number, number, number] = [255, 0, 0],
 ): string {
   const isXs = controlSize === "xs";
   const sizeClass = isXs ? "btn-xs XS" : "btn-sm";
@@ -535,7 +560,7 @@ export function buildControlsHtml(
     : "";
 
   const enhancedSelectHTML = showEnhancedSelect
-    ? buildEnhancedSelectHtml(enhancedMode, controlSize)
+    ? buildEnhancedSelectHtml(enhancedMode, controlSize, enhancedColor)
     : "";
 
   const computeDeviceSelectHTML = showComputeDeviceSelect

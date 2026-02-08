@@ -32,6 +32,7 @@ export const sendColorFilterToInject = (
       isFilterActive: colorFilterManager.isFilterActive(),
       selectedRGBs: colorFilterManager.selectedRGBs,
       enhancedMode: colorFilterManager.getEnhancedMode(),
+      enhancedColor: colorFilterManager.getEnhancedColor(),
     },
     "*"
   );

@@ -10,6 +10,8 @@ export interface ColorPaletteOptions {
   showEnhancedSelect?: boolean;
   onEnhancedModeChange?: (mode: EnhancedMode) => void;
   enhancedMode?: EnhancedMode;
+  enhancedColor?: [number, number, number];
+  onEnhancedColorChange?: (color: [number, number, number]) => void;
   hasExtraColorsBitmap?: boolean;
   showColorStats?: boolean;
   colorStats?: Record<string, { matched: number; total: number }>;

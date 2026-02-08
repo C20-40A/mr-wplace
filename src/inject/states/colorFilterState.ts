@@ -7,6 +7,7 @@ export interface ColorFilterState {
   isFilterActive: boolean;
   selectedRGBs?: [number, number, number][];
   enhancedMode: EnhancedMode;
+  enhancedColor: [number, number, number];
   extraColorsBitmap?: number;
 }
 
@@ -14,6 +15,7 @@ let colorFilterState: ColorFilterState = {
   isFilterActive: false,
   selectedRGBs: undefined,
   enhancedMode: "dot",
+  enhancedColor: [255, 0, 0],
   extraColorsBitmap: undefined,
 };
 
@@ -39,6 +41,12 @@ export const getSelectedRGBs = (): [number, number, number][] | undefined =>
  */
 export const getEnhancedMode = (): EnhancedMode =>
   colorFilterState.enhancedMode;
+
+/**
+ * Get enhanced marker color
+ */
+export const getEnhancedColor = (): [number, number, number] =>
+  colorFilterState.enhancedColor;
 
 /**
  * Get extra colors bitmap

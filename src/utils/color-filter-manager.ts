@@ -4,11 +4,13 @@ import { storage } from "@/utils/browser-api";
 
 const STORAGE_KEY = "color-filter-selection";
 const ENHANCED_MODE_STORAGE_KEY = "enhanced-mode";
+const ENHANCED_COLOR_STORAGE_KEY = "enhanced-marker-color";
 
 export class ColorFilterManager {
   private selectedColorIds: Set<number>;
   public selectedRGBs: Array<[number, number, number]> = [];
   private enhancedMode: EnhancedMode = "dot";
+  private enhancedColor: [number, number, number] = [255, 0, 0];
   private extraColorsBitmap: number | undefined = undefined;
 
   constructor() {
@@ -19,6 +21,7 @@ export class ColorFilterManager {
   async init(): Promise<void> {
     await this.loadFromStorage();
     await this.loadEnhancedModeFromStorage();
+    await this.loadEnhancedColorFromStorage();
   }
 
   async setSelectedColors(colorIds: number[]): Promise<void> {
@@ -77,10 +80,11 @@ export class ColorFilterManager {
 
       const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
 
-      // Enhanced赤ドット[255,0,0]を保護
-      const isEnhancedRed = r === 255 && g === 0 && b === 0;
+      // Enhancedマーカー色を保護
+      const [er, eg, eb] = this.enhancedColor;
+      const isEnhancedMarker = r === er && g === eg && b === eb;
 
-      if (!isEnhancedRed && !this.isColorMatch(r, g, b)) {
+      if (!isEnhancedMarker && !this.isColorMatch(r, g, b)) {
         data[i + 3] = 0;
       }
     }
@@ -123,6 +127,15 @@ export class ColorFilterManager {
 
   getEnhancedMode(): EnhancedMode {
     return this.enhancedMode;
+  }
+
+  setEnhancedColor(color: [number, number, number]): void {
+    this.enhancedColor = color;
+    this.saveEnhancedColorToStorage();
+  }
+
+  getEnhancedColor(): [number, number, number] {
+    return this.enhancedColor;
   }
 
   setExtraColorsBitmap(bitmap: number | undefined): void {
@@ -183,6 +196,23 @@ export class ColorFilterManager {
   private async saveEnhancedModeToStorage(): Promise<void> {
     await storage.set({
       [ENHANCED_MODE_STORAGE_KEY]: this.enhancedMode,
+    });
+  }
+
+  private async loadEnhancedColorFromStorage(): Promise<void> {
+    try {
+      const result = await storage.get(ENHANCED_COLOR_STORAGE_KEY);
+      const saved = result[ENHANCED_COLOR_STORAGE_KEY];
+      if (Array.isArray(saved) && saved.length === 3)
+        this.enhancedColor = saved as [number, number, number];
+    } catch {
+      // keep default
+    }
+  }
+
+  private async saveEnhancedColorToStorage(): Promise<void> {
+    await storage.set({
+      [ENHANCED_COLOR_STORAGE_KEY]: this.enhancedColor,
     });
   }
 }

@@ -1,6 +1,6 @@
 import { colorpalette } from "../../constants/colors";
 import type { EnhancedMode } from "@/types/image";
-import { ENHANCED_MODE_ICONS } from "../../assets/enhanced-mode-icons";
+import { createEnhancedModeIcons } from "../../assets/enhanced-mode-icons";
 import { t } from "../../i18n/manager";
 import type { ColorPaletteOptions, SortOrder } from "./types";
 import type { ComputeDevice } from "./storage";
@@ -28,11 +28,13 @@ export class ColorPalette {
   private selectedColorIds: Set<number>;
   private currentlySelectedColorId: number | null = null;
   private enhancedMode: EnhancedMode;
+  private enhancedColor: [number, number, number];
   private sortOrder: SortOrder = "default";
   private computeDevice: ComputeDevice;
   private showUnplacedOnly: boolean;
   private boundClickHandler: (e: MouseEvent) => void;
   private boundDocumentClickHandler: (e: MouseEvent) => void;
+  private boundInputHandler: (e: Event) => void;
 
   constructor(container: HTMLElement, options: ColorPaletteOptions = {}) {
     this.container = container;
@@ -44,6 +46,7 @@ export class ColorPalette {
       ? getCurrentlySelectedColorId()
       : null;
     this.enhancedMode = options.enhancedMode ?? "dot";
+    this.enhancedColor = options.enhancedColor ?? [255, 0, 0];
     this.sortOrder = options.sortOrder ?? "default";
     this.computeDevice = options.computeDevice ?? "gpu";
     this.showUnplacedOnly = options.showUnplacedOnly ?? false;
@@ -52,6 +55,7 @@ export class ColorPalette {
     this.boundClickHandler = (e: MouseEvent) => this.handleClick(e);
     this.boundDocumentClickHandler = (e: MouseEvent) =>
       this.handleDocumentClick(e);
+    this.boundInputHandler = (e: Event) => this.handleInput(e);
 
     this.render();
     this.setupEventHandlers();
@@ -76,7 +80,8 @@ export class ColorPalette {
       this.options.showUnplacedOnlyToggle ?? false,
       this.showUnplacedOnly,
       this.options.showDisableUnusedButton ?? false,
-      this.options.controlSize ?? "default"
+      this.options.controlSize ?? "default",
+      this.enhancedColor,
     );
 
     this.container.innerHTML = `
@@ -90,9 +95,36 @@ export class ColorPalette {
   private setupEventHandlers(): void {
     // イベント委譲で全イベント処理
     this.container.addEventListener("click", this.boundClickHandler);
+    this.container.addEventListener("input", this.boundInputHandler);
 
     // ドロップダウンを外側クリックで閉じる
     document.addEventListener("click", this.boundDocumentClickHandler);
+  }
+
+  private handleInput(e: Event): void {
+    const target = e.target as HTMLElement;
+    if (target.classList.contains("enhanced-color-picker")) {
+      const hex = (target as HTMLInputElement).value;
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      this.enhancedColor = [r, g, b];
+
+      // アイコンを更新
+      const icons = createEnhancedModeIcons(hex);
+      this.container.querySelectorAll(".enhanced-mode-item").forEach((item) => {
+        const mode = (item as HTMLElement).dataset.mode as keyof typeof icons;
+        const img = item.querySelector("img") as HTMLImageElement;
+        if (img && icons[mode]) img.src = icons[mode];
+      });
+      const currentIcon = this.container.querySelector(
+        ".enhanced-mode-current-icon"
+      ) as HTMLImageElement;
+      if (currentIcon && icons[this.enhancedMode])
+        currentIcon.src = icons[this.enhancedMode];
+
+      this.options.onEnhancedColorChange?.(this.enhancedColor);
+    }
   }
 
   private handleDocumentClick(e: MouseEvent): void {
@@ -376,12 +408,16 @@ export class ColorPalette {
   private handleEnhancedModeChange(mode: EnhancedMode): void {
     this.enhancedMode = mode;
 
+    const icons = createEnhancedModeIcons(
+      `#${this.enhancedColor.map((c) => c.toString(16).padStart(2, "0")).join("")}`
+    );
+
     // 現在選択中のアイコンと名称を更新
     const currentIcon = this.container.querySelector(
       ".enhanced-mode-current-icon"
     ) as HTMLImageElement;
     if (currentIcon) {
-      currentIcon.src = ENHANCED_MODE_ICONS[mode];
+      currentIcon.src = icons[mode];
       currentIcon.alt = mode;
     }
 
@@ -403,6 +439,16 @@ export class ColorPalette {
         button as HTMLElement
       ).style.border = `${borderWidth} solid ${borderColor}`;
     });
+
+    // カラーピッカーの表示切替
+    const RED_BASED: EnhancedMode[] = [
+      "red-cross", "red-border", "huge-red-cross", "huge-red-cross-bold", "huge-red-diamond", "huge-red-ring",
+    ];
+    const pickerContainer = this.container.querySelector(
+      ".enhanced-color-picker-container"
+    ) as HTMLElement;
+    if (pickerContainer)
+      pickerContainer.style.display = RED_BASED.includes(mode) ? "flex" : "none";
 
     if (this.options.onEnhancedModeChange) {
       this.options.onEnhancedModeChange(mode);
@@ -482,6 +528,7 @@ export class ColorPalette {
   destroy(): void {
     // イベントリスナー削除
     this.container.removeEventListener("click", this.boundClickHandler);
+    this.container.removeEventListener("input", this.boundInputHandler);
     document.removeEventListener("click", this.boundDocumentClickHandler);
 
     // DOM削除

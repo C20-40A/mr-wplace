@@ -4,6 +4,7 @@
  */
 
 import { colorpalette } from "@/constants/colors";
+import { getEnhancedColor } from "../../states/colorFilterState";
 
 let isEnabled = false;
 let rafId: number | null = null;
@@ -22,13 +23,14 @@ const TRIGGER_COLORS: [number, number, number, number][] = [
   [153, 0, 0, 255], // rgb(153, 0, 0)
 ];
 
-// keydown継続用（255,0,0,255を含む）
-const CONTINUE_COLORS: [number, number, number, number][] = [
-  [235, 82, 82, 255], // rgb(235, 82, 82)
-  [254, 101, 101, 255], // rgb(254, 101, 101)
-  [153, 0, 0, 255], // rgb(153, 0, 0)
-  [255, 0, 0, 255], // rgb(255, 0, 0) - 継続時のみ判定
-];
+// keydown継続用（enhancedColor を含む）
+const getContinueColors = (): [number, number, number, number][] => {
+  const [r, g, b] = getEnhancedColor();
+  return [
+    ...TRIGGER_COLORS,
+    [r, g, b, 255], // enhanced marker color - 継続時のみ判定
+  ];
+};
 
 // 現在選択中の色を取得（localStorage selected-color -> RGBA）
 const getSelectedColor = (): [number, number, number, number] | null => {
@@ -117,8 +119,8 @@ const handleMouseMove = (e: MouseEvent): void => {
       console.log("🧑‍🎨 : Trigger color detected, Space key pressed");
     }
   } else {
-    // スペースが押されている状態 → 継続色（255,0,0,255を含む）またはselected colorでチェック
-    const isContinueColor = CONTINUE_COLORS.some(
+    // スペースが押されている状態 → 継続色（enhancedColorを含む）またはselected colorでチェック
+    const isContinueColor = getContinueColors().some(
       (target) =>
         d[0] === target[0] &&
         d[1] === target[1] &&
