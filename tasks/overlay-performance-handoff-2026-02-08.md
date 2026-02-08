@@ -8,22 +8,17 @@
 - CPU color filter を文字列キーから数値キー比較へ変更。
 - `colorFilterState` の `await import` を静的参照化。
 - GalleryRepository v2 の解決をタイルごとではなく1回キャッシュ化。
+- `notifyStatsUpdate` を全量送信から tile 単位 `delta` 送信へ変更（`tileStatsDelta`）。
+- content 側受信を `delta優先 + full fallback` 対応に変更（`tileStatsMap` 互換維持）。
+- `affectedTiles.includes(coordStr)` を `Set.has(coordStr)` 化（`affectedTileSet` キャッシュ追加）。
+- stats 永続化で同一 `imageKey` 更新を直列化し、delta 競合による取りこぼしを防止。
 
 ## 次にやると効果が大きい候補（優先順）
-1. `notifyStatsUpdate` の全量シリアライズを差分送信へ変更。
-- 現状は1タイル更新で画像全タイル分を `Object.fromEntries` して `postMessage` している。
-- image単位の巨大データでメインスレッド負荷が高い。
-- 互換性のため、最初は `delta + full fallback` 方式が安全。
-
-2. `affectedTiles.includes(coordStr)` の線形探索を `Set` 化。
-- `TileDrawInstance` に `affectedTileSet?: Set<string>` を持たせる。
-- レイヤー数/対象タイル数が増えるほど効く。
-
-3. `convertImageBitmapToUint8ClampedArray` の OffscreenCanvas 生成を再利用。
+1. `convertImageBitmapToUint8ClampedArray` の OffscreenCanvas 生成を再利用。
 - 毎回 `new OffscreenCanvas` を作っているため、小さいオーバーヘッドが蓄積。
 - サイズ別に 1〜2個キャッシュで十分。
 
-4. GPU path の同期点削減（`gl.finish()` 2回の見直し）。
+2. GPU path の同期点削減（`gl.finish()` 2回の見直し）。
 - 現状は CPU/GPU 同期が強く、GPU利点を潰しやすい。
 - まずは upload後の `gl.finish()` を外して計測。
 

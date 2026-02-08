@@ -32,6 +32,7 @@ export interface TileDrawInstance {
     bottom: number;
   };
   affectedTiles?: string[]; // v2: pre-calculated affected tile keys
+  affectedTileSet?: Set<string>; // v2: cached set for O(1) tile lookup
 }
 
 /** タイル処理結果 */

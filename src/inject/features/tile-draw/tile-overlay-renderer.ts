@@ -38,32 +38,27 @@ const isSameColorComponents = (
  * Notify content script to save statistics to storage
  * This is called after tile rendering completes and statistics are updated
  */
-const notifyStatsUpdate = (tempStatsMap: Map<string, ColorStats>): void => {
-  // Convert each image's stats to a serializable format
-  for (const [imageKey] of tempStatsMap.entries()) {
-    // Get all stats for this image
-    const imageStatsMap = perTileColorStats.get(imageKey);
-    if (!imageStatsMap) continue;
-
-    // Convert Map to plain object for postMessage
-    const tileStatsObject: Record<
+const notifyStatsUpdate = (
+  tempStatsMap: Map<string, ColorStats>,
+  tileKey: string,
+): void => {
+  // Send only current tile delta to avoid full-map serialization on every tile render
+  for (const [imageKey, stats] of tempStatsMap.entries()) {
+    const tileStatsDelta: Record<
       string,
       { matched: Record<string, number>; total: Record<string, number> }
-    > = {};
+    > = {
+      [tileKey]: {
+        matched: Object.fromEntries(stats.matched),
+        total: Object.fromEntries(stats.total),
+      },
+    };
 
-    for (const [key, tileStats] of imageStatsMap.entries()) {
-      tileStatsObject[key] = {
-        matched: Object.fromEntries(tileStats.matched),
-        total: Object.fromEntries(tileStats.total),
-      };
-    }
-
-    // Send to content script
     window.postMessage(
       {
         source: "mr-wplace-stats-updated",
         imageKey,
-        tileStatsMap: tileStatsObject,
+        tileStatsDelta,
       },
       "*",
     );
@@ -740,8 +735,11 @@ export const drawOverlayLayersOnTile = async (
     // v2: Use pre-calculated affectedTiles for efficient lookup
     // affectedTiles format: "tx,ty" (no padding, e.g., "5,3")
     if (instance.affectedTiles && instance.affectedTiles.length > 0) {
+      const affectedTileSet =
+        instance.affectedTileSet ??
+        (instance.affectedTileSet = new Set(instance.affectedTiles));
       // Check if current tile is in affectedTiles
-      if (instance.affectedTiles.includes(coordStrV2)) {
+      if (affectedTileSet.has(coordStrV2)) {
         matchingTiles.push({ tileKey: coordStrV2, instance });
       }
       continue;
@@ -993,7 +991,7 @@ export const drawOverlayLayersOnTile = async (
   // Notify content script to save statistics to storage
   // Do this asynchronously to avoid blocking tile rendering
   if (tempStatsMap.size > 0) {
-    notifyStatsUpdate(tempStatsMap);
+    notifyStatsUpdate(tempStatsMap, coordStrPadded);
   }
 
   const result = await canvas.convertToBlob({ type: "image/png" });

@@ -16,8 +16,8 @@ export const setupStatsHandlers = () => {
     // This is called when a tile is rendered and statistics are computed
     // Statistics are saved to storage for persistence across reloads
     if (event.data.source === "mr-wplace-stats-updated") {
-      const { imageKey, tileStatsMap } = event.data;
-      await handleStatsComputed(imageKey, tileStatsMap);
+      const { imageKey, tileStatsDelta, tileStatsMap } = event.data;
+      await handleStatsComputed(imageKey, tileStatsDelta || tileStatsMap);
       return;
     }
 

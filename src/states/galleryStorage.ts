@@ -155,20 +155,26 @@ export class GalleryStorage {
     imageKey: string,
     perTileStatsMap: Map<string, ColorStats>
   ): Promise<void> {
-    // Convert Map to Record
-    const perTileRecord: Record<
+    const metadata = await getGalleryMetadata(imageKey);
+    if (!metadata) return;
+
+    // Merge current stats with incoming delta/full payload
+    const mergedPerTileStats: Record<
       string,
       { matched: Record<string, number>; total: Record<string, number> }
-    > = {};
+    > = {
+      ...(metadata.perTileStats || {}),
+    };
+
     for (const [tileKey, stats] of perTileStatsMap.entries()) {
-      perTileRecord[tileKey] = {
+      mergedPerTileStats[tileKey] = {
         matched: Object.fromEntries(stats.matched),
         total: Object.fromEntries(stats.total),
       };
     }
 
     await updateGalleryMetadata(imageKey, {
-      perTileStats: perTileRecord,
+      perTileStats: mergedPerTileStats,
     });
   }
 

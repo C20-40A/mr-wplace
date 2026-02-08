@@ -68,6 +68,7 @@ export const handleGalleryImagesV2 = async (data: {
       isOptimized: true, // v2 items are always optimized
       bounds,
       affectedTiles: item.affectedTiles,
+      affectedTileSet: new Set(item.affectedTiles),
     });
 
     imageKeys.push(item.id);
