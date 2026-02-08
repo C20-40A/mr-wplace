@@ -70,20 +70,27 @@ const applyColorFilterToOverlay = async (
   overlayBitmap: ImageBitmap,
   colorFilter: [number, number, number][] | undefined,
   compute_device: "gpu" | "cpu",
+  originalData?: Uint8ClampedArray,
 ): Promise<Uint8ClampedArray> => {
+  let cachedOriginalData = originalData;
+  const getOriginalData = (): Uint8ClampedArray => {
+    if (!cachedOriginalData) {
+      cachedOriginalData = convertImageBitmapToUint8ClampedArray(overlayBitmap);
+    }
+    return cachedOriginalData;
+  };
+
   if (compute_device === "gpu" && colorFilter !== undefined) {
     try {
       return await processGpuColorFilter(overlayBitmap, colorFilter);
     } catch (error) {
       console.log("🧑‍🎨 : GPU processing failed, fallback to CPU", error);
-      const rawData = convertImageBitmapToUint8ClampedArray(overlayBitmap);
-      return processCpuColorFilter(rawData, { filters: colorFilter });
+      return processCpuColorFilter(getOriginalData(), { filters: colorFilter });
     }
   } else if (compute_device === "cpu" && colorFilter !== undefined) {
-    const rawData = convertImageBitmapToUint8ClampedArray(overlayBitmap);
-    return processCpuColorFilter(rawData, { filters: colorFilter });
+    return processCpuColorFilter(getOriginalData(), { filters: colorFilter });
   } else {
-    return convertImageBitmapToUint8ClampedArray(overlayBitmap);
+    return getOriginalData();
   }
 };
 
@@ -604,8 +611,14 @@ const applyOverlayProcessing = async (
     await import("../../states/colorFilterState");
   const colorFilter = isColorFilterActive() ? getSelectedRGBs() : undefined;
 
-  // 元のオーバーレイデータを取得（統計計算用）
-  const originalData = convertImageBitmapToUint8ClampedArray(overlayBitmap);
+  // 元のオーバーレイデータ（必要時のみデコード）
+  let originalData: Uint8ClampedArray | undefined;
+  const getOriginalData = (): Uint8ClampedArray => {
+    if (!originalData) {
+      originalData = convertImageBitmapToUint8ClampedArray(overlayBitmap);
+    }
+    return originalData;
+  };
 
   // 背景データ準備
   const bgData = new Uint8ClampedArray(bgPixels.buffer);
@@ -623,7 +636,7 @@ const applyOverlayProcessing = async (
     const stats = tempStatsMap.get(imageKey)!;
 
     computeStatsWithBackground(
-      originalData,
+      getOriginalData(),
       width,
       height,
       bgData,
@@ -639,6 +652,7 @@ const applyOverlayProcessing = async (
     overlayBitmap,
     colorFilter,
     compute_device,
+    originalData,
   );
 
   // Phase 3: x3拡大 + モード別処理
