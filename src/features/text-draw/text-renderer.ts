@@ -1,16 +1,26 @@
 import { fonts } from "./font-loader";
 import type { BitmapChar } from "../../assets/kyokugen-font";
+import { colorpalette } from "@/constants/colors";
 
 // ========================================
 // Text to Blob conversion
 // ========================================
 
-export const textToBlob = async (text: string, font: string): Promise<Blob> => {
+const getColorHex = (colorId: number): string => {
+  const color = colorpalette.find((c) => c.id === colorId);
+  if (!color) return "#000000";
+  const [r, g, b] = color.rgb;
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+};
+
+export const textToBlob = async (text: string, font: string, colorId: number): Promise<Blob> => {
   const fontConfig = fonts[font];
   if (!fontConfig) throw new Error(`Font not found: ${font}`);
 
+  const colorHex = getColorHex(colorId);
+
   if (fontConfig.type === "bitmap") {
-    return bitmapToBlob(text, fontConfig.data);
+    return bitmapToBlob(text, fontConfig.data, colorHex);
   }
 
   const canvas = document.createElement("canvas");
@@ -25,20 +35,22 @@ export const textToBlob = async (text: string, font: string): Promise<Blob> => {
   canvas.height = fontSize;
 
   ctx.font = `${fontSize}px ${font}`;
-  ctx.fillStyle = "#000000";
+  ctx.fillStyle = colorHex;
   ctx.textBaseline = "top";
   ctx.fillText(text, 0, 0);
 
   // Pre-render to bitmap: 閾値処理でアンチエイリアス排除
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imageData.data;
+  const color = colorpalette.find((c) => c.id === colorId);
+  const [targetR, targetG, targetB] = color?.rgb ?? [0, 0, 0];
 
   for (let i = 0; i < data.length; i += 4) {
     const alpha = data[i + 3];
     if (alpha >= 128) {
-      data[i] = 0;
-      data[i + 1] = 0;
-      data[i + 2] = 0;
+      data[i] = targetR;
+      data[i + 1] = targetG;
+      data[i + 2] = targetB;
       data[i + 3] = 255;
     } else {
       data[i + 3] = 0;
@@ -57,7 +69,8 @@ export const textToBlob = async (text: string, font: string): Promise<Blob> => {
 
 const bitmapToBlob = async (
   text: string,
-  bitmapData: BitmapChar[]
+  bitmapData: BitmapChar[],
+  colorHex: string
 ): Promise<Blob> => {
   const charSpacing = 1;
   const chars = text.split("");
@@ -98,7 +111,7 @@ const bitmapToBlob = async (
     for (let row = 0; row < charInfo.height; row++) {
       for (let col = 0; col < charInfo.width; col++) {
         if (charInfo.data[row][col] === 1) {
-          ctx.fillStyle = "#000000";
+          ctx.fillStyle = colorHex;
           ctx.fillRect(x + col, yOffset + row, 1, 1);
         }
       }

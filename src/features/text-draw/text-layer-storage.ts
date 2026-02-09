@@ -12,6 +12,7 @@ export interface TextLayerItem {
   };
   dataUrl: string;
   timestamp: number;
+  colorId?: number;
 }
 
 const STORAGE_KEY = "text_layers";

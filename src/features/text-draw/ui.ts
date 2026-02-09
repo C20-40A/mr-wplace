@@ -1,15 +1,18 @@
 import { createResponsiveButton } from "../../components/responsive-button";
 import { t } from "../../i18n/manager";
 import { createModal, ModalElements } from "@/components/modal";
+import { colorpalette } from "@/constants/colors";
 
 export interface TextInstance {
   key: string;
   text: string;
   font: string;
   coords: { TLX: number; TLY: number; PxX: number; PxY: number };
+  colorId?: number;
 }
 
 const FONT_STORAGE_KEY = "text_draw_selected_font";
+const COLOR_STORAGE_KEY = "text_draw_selected_color";
 
 export const createTextInputButton = (): HTMLButtonElement => {
   return createResponsiveButton({
@@ -23,16 +26,21 @@ export const createTextInputButton = (): HTMLButtonElement => {
 export class TextDrawUI {
   private modalElements: ModalElements | null = null;
   private textInstances: TextInstance[] = [];
-  private onDraw?: (text: string, font: string) => Promise<void>;
+  private onDraw?: (
+    text: string,
+    font: string,
+    colorId: number,
+  ) => Promise<void>;
   private onMove?: (
     key: string,
-    direction: "up" | "down" | "left" | "right"
+    direction: "up" | "down" | "left" | "right",
   ) => void;
   private onDelete?: (key: string) => void;
 
   private leftPanel!: HTMLElement;
   private input!: HTMLInputElement;
   private fontSelect!: HTMLSelectElement;
+  private colorSelect!: HTMLSelectElement;
 
   constructor() {}
 
@@ -89,6 +97,34 @@ export class TextDrawUI {
     this.fontSelect.addEventListener("change", updateSelectFont);
     updateSelectFont();
 
+    // Color selector
+    this.colorSelect = document.createElement("select");
+    this.colorSelect.className = "select select-bordered w-full";
+    this.colorSelect.style.cssText = "width: 100%;";
+
+    // Build color options from colorpalette
+    this.colorSelect.innerHTML = colorpalette
+      .map((color) => {
+        const [r, g, b] = color.rgb;
+        const colorStyle = `background: rgb(${r}, ${g}, ${b}); color: ${r + g + b > 384 ? "#000" : "#fff"};`;
+        const premiumBadge = color.premium ? " 💧" : "";
+        return `<option value="${color.id}" style="${colorStyle}">${color.name}${premiumBadge}</option>`;
+      })
+      .join("");
+
+    // Restore saved color selection (default to Black if not set)
+    const savedColor = localStorage.getItem(COLOR_STORAGE_KEY);
+    if (savedColor) {
+      this.colorSelect.value = savedColor;
+    } else {
+      this.colorSelect.value = "1"; // Black
+    }
+
+    // Save color selection on change
+    this.colorSelect.addEventListener("change", () => {
+      localStorage.setItem(COLOR_STORAGE_KEY, this.colorSelect.value);
+    });
+
     const buttonContainer = document.createElement("div");
     buttonContainer.style.cssText =
       "display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: auto;";
@@ -100,7 +136,8 @@ export class TextDrawUI {
     drawButton.onclick = async () => {
       const text = this.input.value.trim();
       if (!text || !this.onDraw) return;
-      await this.onDraw(text, this.fontSelect.value);
+      const colorId = parseInt(this.colorSelect.value, 10);
+      await this.onDraw(text, this.fontSelect.value, colorId);
       this.input.value = "";
     };
 
@@ -114,6 +151,7 @@ export class TextDrawUI {
 
     rightPanel.appendChild(this.input);
     rightPanel.appendChild(this.fontSelect);
+    rightPanel.appendChild(this.colorSelect);
     rightPanel.appendChild(buttonContainer);
 
     contentContainer.appendChild(this.leftPanel);
@@ -123,10 +161,10 @@ export class TextDrawUI {
   }
 
   show(
-    onDraw: (text: string, font: string) => Promise<void>,
+    onDraw: (text: string, font: string, colorId: number) => Promise<void>,
     textInstances: TextInstance[],
     onMove: (key: string, direction: "up" | "down" | "left" | "right") => void,
-    onDelete: (key: string) => void
+    onDelete: (key: string) => void,
   ): void {
     this.onDraw = onDraw;
     this.textInstances = textInstances;
@@ -200,8 +238,32 @@ export class TextDrawUI {
       fontLabel.style.cssText =
         "font-size: 0.625rem; margin-top: 0.125rem; opacity: 0.6;";
 
+      // Color indicator
+      const colorInfo = document.createElement("div");
+      colorInfo.style.cssText =
+        "display: flex; align-items: center; gap: 0.25rem; margin-top: 0.125rem;";
+
+      const colorDot = document.createElement("div");
+      colorDot.style.cssText =
+        "width: 0.75rem; height: 0.75rem; border-radius: 50%; border: 1px solid #e5e7eb;";
+
+      const colorId = instance.colorId ?? 1;
+      const color = colorpalette.find((c) => c.id === colorId);
+      if (color) {
+        const [r, g, b] = color.rgb;
+        colorDot.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+      }
+
+      const colorName = document.createElement("span");
+      colorName.textContent = color?.name ?? "Black";
+      colorName.style.cssText = "font-size: 0.625rem; opacity: 0.6;";
+
+      colorInfo.appendChild(colorDot);
+      colorInfo.appendChild(colorName);
+
       textContainer.appendChild(textLabel);
       textContainer.appendChild(fontLabel);
+      textContainer.appendChild(colorInfo);
 
       // D-pad controls - compact
       const dPadContainer = document.createElement("div");
@@ -212,7 +274,7 @@ export class TextDrawUI {
         direction: "up" | "down" | "left" | "right",
         symbol: string,
         gridColumn: string,
-        gridRow: string
+        gridRow: string,
       ) => {
         const btn = document.createElement("button");
         btn.textContent = symbol;
