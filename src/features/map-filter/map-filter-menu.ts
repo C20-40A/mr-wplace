@@ -26,7 +26,6 @@ type FilterId =
   | "highContrast"
   | "tileBoundaries"
   | "gridDisplay"
-  | "scaleDisplay"
   | "backgroundColor"
   | "map3d"
   | "map3dDragRotate";
@@ -70,13 +69,6 @@ const filterConfig: FilterConfig[] = [
     requiresMap: true,
   },
   {
-    id: "scaleDisplay",
-    label: () => t`${"map_filter_scaleDisplay"}`,
-    iconOn: "📏",
-    iconOff: "📏",
-    requiresMap: true,
-  },
-  {
     id: "backgroundColor",
     label: () => t`${"map_filter_backgroundColor"}`,
     iconOn: "🎨",
@@ -102,6 +94,7 @@ const filterConfig: FilterConfig[] = [
 
 class MapFilterMenu {
   private triggerButton: HTMLButtonElement | null = null;
+  private scaleButton: HTMLButtonElement | null = null;
   private popover: HTMLDivElement | null = null;
   private isOpen = false;
   private mapReady = false;
@@ -142,6 +135,7 @@ class MapFilterMenu {
     if (this.state.highContrast) this.applyHighContrastStyle();
 
     this.createTriggerButton();
+    this.createScaleButton();
     this.createPopover();
 
     this.mapReady = getMapInstanceReady();
@@ -152,6 +146,7 @@ class MapFilterMenu {
       ) {
         this.mapReady = true;
         this.updatePopoverItems();
+        this.updateScaleButton();
         this.notifyTileBoundaries();
         this.notifyGridDisplay();
         this.notifyScaleDisplay();
@@ -192,13 +187,42 @@ class MapFilterMenu {
     document.body.appendChild(this.triggerButton);
   }
 
+  private createScaleButton() {
+    this.scaleButton = document.createElement("button");
+    this.scaleButton.className = "btn btn-sm btn-circle";
+    this.scaleButton.style.cssText = `
+      position: fixed;
+      left: 47px;
+      top: 46px;
+      font-size: 14px;
+      z-index: 800;
+    `;
+    this.scaleButton.innerHTML = "📏";
+    this.scaleButton.title = t`${"map_filter_scaleDisplay"}`;
+    this.scaleButton.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.toggleScaleDisplay();
+    });
+    this.updateScaleButton();
+    document.body.appendChild(this.scaleButton);
+  }
+
+  private updateScaleButton() {
+    if (!this.scaleButton) return;
+
+    const disabled = !this.mapReady;
+    this.scaleButton.disabled = disabled;
+    this.scaleButton.classList.toggle("btn-active", this.state.scaleDisplay);
+    this.scaleButton.classList.toggle("opacity-50", disabled);
+  }
+
   private createPopover() {
     this.popover = document.createElement("div");
     this.popover.className = "card bg-base-100 shadow-xl";
     this.popover.style.cssText = `
       position: fixed;
       left: 50px;
-      top: 46px;
+      top: 84px;
       z-index: 801;
       display: none;
       min-width: 200px;
@@ -326,12 +350,6 @@ class MapFilterMenu {
         this.notifyGridDisplay();
         break;
       }
-      case "scaleDisplay": {
-        this.state.scaleDisplay = !this.state.scaleDisplay;
-        await storage.set({ [SCALE_DISPLAY_KEY]: this.state.scaleDisplay });
-        this.notifyScaleDisplay();
-        break;
-      }
       case "backgroundColor": {
         this.state.backgroundColorEnabled = !this.state.backgroundColorEnabled;
         await storage.set({
@@ -363,6 +381,15 @@ class MapFilterMenu {
     console.log("🧑‍🎨 : Filter toggled:", id);
   }
 
+  private async toggleScaleDisplay() {
+    if (!this.mapReady) return;
+    this.state.scaleDisplay = !this.state.scaleDisplay;
+    await storage.set({ [SCALE_DISPLAY_KEY]: this.state.scaleDisplay });
+    this.notifyScaleDisplay();
+    this.updateScaleButton();
+    console.log("🧑‍🎨 : Filter toggled:", "scaleDisplay");
+  }
+
   private togglePopover() {
     if (this.isOpen) {
       this.closePopover();
@@ -382,6 +409,7 @@ class MapFilterMenu {
           ? storedTheme
           : "custom-winter";
       this.updatePopoverItems();
+      this.updateScaleButton();
 
       this.popover.style.display = "block";
       this.triggerButton.classList.add("btn-active");

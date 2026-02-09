@@ -5,7 +5,6 @@ const SCALE_LINE_ID = "mr-wplace-scale-line";
 const SCALE_LABEL_ID = "mr-wplace-scale-label";
 const SCALE_PIN_A_ID = "mr-wplace-scale-pin-a";
 const SCALE_PIN_B_ID = "mr-wplace-scale-pin-b";
-const SCALE_PIN_STATE_KEY = "mr-wplace-scale-pins";
 const DEFAULT_PIN_OFFSET_PX = 140;
 const MAP_UPDATE_EVENTS = ["move", "zoom", "rotate", "pitch", "resize"];
 
@@ -30,11 +29,6 @@ interface ScaleMap {
     disable: () => void;
     enable: () => void;
   };
-}
-
-interface SavedPinState {
-  pinA: LngLat;
-  pinB: LngLat;
 }
 
 type DragTarget = "A" | "B" | null;
@@ -70,27 +64,6 @@ const isValidLngLat = (value: unknown): value is LngLat => {
   );
 };
 
-const getSavedPins = (): SavedPinState | null => {
-  const raw = localStorage.getItem(SCALE_PIN_STATE_KEY);
-  if (!raw) return null;
-
-  try {
-    const parsed = JSON.parse(raw) as SavedPinState;
-    if (!isValidLngLat(parsed.pinA) || !isValidLngLat(parsed.pinB)) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-};
-
-const savePins = (): void => {
-  if (!pinALngLat || !pinBLngLat) return;
-  localStorage.setItem(
-    SCALE_PIN_STATE_KEY,
-    JSON.stringify({ pinA: pinALngLat, pinB: pinBLngLat }),
-  );
-};
-
 const getMapContainer = (map: ScaleMap): HTMLElement | null => {
   const byApi = map.getContainer?.();
   if (byApi instanceof HTMLElement) return byApi;
@@ -107,7 +80,7 @@ const createPinElement = (id: string, label: string, color: string): HTMLDivElem
   pin.style.cssText = `
     position: absolute;
     width: 24px;
-    height: 36px;
+    height: 24px;
     transform: translate(-50%, -100%);
     display: flex;
     align-items: flex-start;
@@ -203,7 +176,7 @@ const createScaleContainer = (): HTMLDivElement => {
   return container;
 };
 
-const getDefaultPins = (map: ScaleMap): SavedPinState => {
+const getDefaultPins = (map: ScaleMap): { pinA: LngLat; pinB: LngLat } => {
   const center = map.getCenter();
   const centerPoint = map.project(center);
   const pinA = map.unproject({
@@ -321,7 +294,6 @@ const stopDragging = (): void => {
   }
 
   activeDragTarget = null;
-  savePins();
   updateScaleDisplay(activeMap);
 };
 
@@ -369,9 +341,9 @@ const addScaleDisplay = (map: ScaleMap): void => {
   scaleContainer = createScaleContainer();
   mapContainer.appendChild(scaleContainer);
 
-  const savedPins = getSavedPins() ?? getDefaultPins(map);
-  pinALngLat = savedPins.pinA;
-  pinBLngLat = savedPins.pinB;
+  const defaultPins = getDefaultPins(map);
+  if (!isValidLngLat(pinALngLat)) pinALngLat = defaultPins.pinA;
+  if (!isValidLngLat(pinBLngLat)) pinBLngLat = defaultPins.pinB;
 
   pinAPointerDownHandler = (event) => startDragging(map, "A", event);
   pinBPointerDownHandler = (event) => startDragging(map, "B", event);
@@ -382,7 +354,6 @@ const addScaleDisplay = (map: ScaleMap): void => {
   for (const eventName of MAP_UPDATE_EVENTS) map.on(eventName, mapUpdateHandler);
 
   updateScaleDisplay(map);
-  savePins();
   console.log("🧑‍🎨 : Scale display added (2 draggable pins)");
 };
 
@@ -402,8 +373,6 @@ const removeScaleDisplay = (map: ScaleMap): void => {
   }
   pinAPointerDownHandler = null;
   pinBPointerDownHandler = null;
-
-  savePins();
 
   scaleContainer?.remove();
   scaleContainer = null;
