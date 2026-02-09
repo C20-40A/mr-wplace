@@ -34,6 +34,7 @@ import {
   startAreaFill,
   stopAreaFill,
   calculateAreaFillEstimate,
+  resetAreaFillProgress,
 } from "./features/developer/area-fill";
 import {
   openFilePickerAndImport,
@@ -214,6 +215,7 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-area-fill-start": (data: any) =>
     startAreaFill(data.corners, data.options),
   "mr-wplace-area-fill-stop": stopAreaFill,
+  "mr-wplace-area-fill-reset": resetAreaFillProgress,
   "mr-wplace-area-fill-estimate": handleAreaFillEstimate,
   "mr-wplace-gallery-import": handleGalleryImport,
   "mr-wplace-gallery-export": handleGalleryExport,

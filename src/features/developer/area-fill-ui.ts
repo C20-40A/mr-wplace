@@ -551,10 +551,14 @@ export const createAreaFillDialogItem = (
         updateSetBtnsStyle();
 
         // Stop area fill if paint modal is closed while running
-        if (wasVisible && !newVisible && isRunning) {
-          window.postMessage({ source: "mr-wplace-area-fill-stop" }, "*");
-          setRunning(false);
-          console.log("🧑‍🎨 : Area fill stopped (paint modal closed)");
+        if (wasVisible && !newVisible) {
+          if (isRunning) {
+            window.postMessage({ source: "mr-wplace-area-fill-stop" }, "*");
+            setRunning(false);
+            console.log("🧑‍🎨 : Area fill stopped (paint modal closed)");
+          }
+          // Reset progress when paint modal is closed
+          window.postMessage({ source: "mr-wplace-area-fill-reset" }, "*");
         }
       }
     });

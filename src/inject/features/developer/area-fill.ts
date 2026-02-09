@@ -403,20 +403,35 @@ const needsRecalculation = (
   corners: AreaFillCorners,
   options: AreaFillOptions,
 ): boolean => {
-  if (!cachedPositions || !cachedOptions) return true;
-  if (
+  if (!cachedPositions || !cachedOptions) {
+    console.log("🧑‍🎨 : Recalculation needed - no cache");
+    return true;
+  }
+
+  // Check corners change
+  const cornersChanged =
     currentCorners.topLeft?.lat !== corners.topLeft?.lat ||
     currentCorners.topLeft?.lng !== corners.topLeft?.lng ||
     currentCorners.bottomRight?.lat !== corners.bottomRight?.lat ||
-    currentCorners.bottomRight?.lng !== corners.bottomRight?.lng
-  )
+    currentCorners.bottomRight?.lng !== corners.bottomRight?.lng;
+
+  if (cornersChanged) {
+    console.log("🧑‍🎨 : Recalculation needed - corners changed");
     return true;
-  if (
+  }
+
+  // Check options change
+  const optionsChanged =
     cachedOptions.skipExistingPixels !== options.skipExistingPixels ||
     cachedOptions.templateOnlyMode !== options.templateOnlyMode ||
-    cachedOptions.fillPattern !== options.fillPattern
-  )
+    cachedOptions.fillPattern !== options.fillPattern;
+
+  if (optionsChanged) {
+    console.log("🧑‍🎨 : Recalculation needed - options changed");
     return true;
+  }
+
+  console.log("🧑‍🎨 : Using cached positions (no recalculation)");
   return false;
 };
 
@@ -457,7 +472,7 @@ export const startAreaFill = async (
   let height: number;
 
   // Use cached positions if resuming, otherwise recalculate
-  if (isResume && cachedPositions) {
+  if (isResume && cachedPositions && lastProcessedIndex < cachedPositions.length) {
     positions = cachedPositions;
     console.log(
       `🧑‍🎨 : Area fill - Resuming from index ${lastProcessedIndex}/${positions.length}`,
@@ -609,6 +624,18 @@ export const stopAreaFill = (): void => {
   if (!isRunning) return;
   stopRequested = true;
   console.log("🧑‍🎨 : Area fill stop requested");
+};
+
+/**
+ * Reset area fill progress (called when paint modal is closed)
+ */
+export const resetAreaFillProgress = (): void => {
+  if (cachedPositions && lastProcessedIndex > 0) {
+    console.log(
+      `🧑‍🎨 : Area fill progress reset from ${lastProcessedIndex} to 0 (paint modal closed)`,
+    );
+    lastProcessedIndex = 0;
+  }
 };
 
 /**
