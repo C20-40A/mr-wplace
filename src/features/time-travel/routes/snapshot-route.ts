@@ -8,6 +8,7 @@ import { t } from "@/i18n/manager";
 import { showNameInputModal } from "@/components/modal";
 import { latLngToTilePixel, tilePixelToLatLng } from "@/utils/coordinate";
 import { Tutorial } from "@/features/tutorial";
+import { runtime } from "@/utils/browser-api";
 
 interface SnapshotRouteOptions {
   showSaveButton: boolean;
@@ -240,11 +241,11 @@ export class SnapshotRoute extends BaseSnapshotRoute {
       this.currentTileX,
       this.currentTileY
     );
-    const listContainer = container.querySelector("#wps-snapshots-list");
+    const listContainer = container.querySelector("#wps-snapshots-list") as HTMLElement;
 
     if (listContainer) {
       if (snapshots.length === 0) {
-        listContainer.innerHTML = `<div class="text-sm text-gray-500 text-center p-4">${t`${"no_items"}`}</div>`;
+        this.renderEmptySnapshotState(listContainer);
       } else {
         const renderedItems = await Promise.all(
           snapshots.map((snapshot) => this.renderSnapshotItem(snapshot))
@@ -252,6 +253,22 @@ export class SnapshotRoute extends BaseSnapshotRoute {
         listContainer.innerHTML = renderedItems.join("");
       }
     }
+  }
+
+  private renderEmptySnapshotState(listContainer: HTMLElement): void {
+    const tutorialGifUrl = runtime.getURL(
+      "assets/images/tutorial/how_to_archive.gif"
+    );
+
+    listContainer.innerHTML = `
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1rem; gap: 1.5rem;">
+        <img src="${tutorialGifUrl}" alt="How to archive" style="width: 16rem; height: auto; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+
+        <div style="text-align: center; max-width: 350px;">
+          <p style="font-size: 0.95rem; color: #6b7280;">${t`${"empty_archive_message"}`}</p>
+        </div>
+      </div>
+    `;
   }
 
   private async saveCurrentSnapshot(container: HTMLElement): Promise<void> {
