@@ -443,9 +443,17 @@ export const createAreaFillDialogItem = (
     observer = new MutationObserver(() => {
       const newVisible = !!findPaintPixelControls();
       if (newVisible !== isPaintControlsVisible) {
+        const wasVisible = isPaintControlsVisible;
         isPaintControlsVisible = newVisible;
         updateFillBtnStyle();
         updateSetBtnsStyle();
+
+        // Stop area fill if paint modal is closed while running
+        if (wasVisible && !newVisible && isRunning) {
+          window.postMessage({ source: "mr-wplace-area-fill-stop" }, "*");
+          setRunning(false);
+          console.log("🧑‍🎨 : Area fill stopped (paint modal closed)");
+        }
       }
     });
     observer.observe(document.body, { childList: true, subtree: true });
