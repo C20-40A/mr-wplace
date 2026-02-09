@@ -8,6 +8,7 @@ const BACKGROUND_COLOR_ENABLED_KEY = "mapFilter_backgroundColorEnabled";
 const BACKGROUND_COLOR_VALUE_KEY = "mapFilter_backgroundColorValue";
 const GRID_DISPLAY_KEY = "mapFilter_gridDisplay";
 const SCALE_DISPLAY_KEY = "mapFilter_scaleDisplay";
+const AREA_MEASURE_KEY = "mapFilter_areaMeasure";
 
 type FilterState = {
   darkTheme: "custom-winter" | "dark";
@@ -15,6 +16,7 @@ type FilterState = {
   tileBoundaries: boolean;
   gridDisplay: boolean;
   scaleDisplay: boolean;
+  areaMeasure: boolean;
   backgroundColorEnabled: boolean;
   backgroundColorValue: string;
   map3d: boolean;
@@ -95,6 +97,7 @@ const filterConfig: FilterConfig[] = [
 class MapFilterMenu {
   private triggerButton: HTMLButtonElement | null = null;
   private scaleButton: HTMLButtonElement | null = null;
+  private areaButton: HTMLButtonElement | null = null;
   private popover: HTMLDivElement | null = null;
   private isOpen = false;
   private mapReady = false;
@@ -104,6 +107,7 @@ class MapFilterMenu {
     tileBoundaries: false,
     gridDisplay: false,
     scaleDisplay: false,
+    areaMeasure: false,
     backgroundColorEnabled: false,
     backgroundColorValue: "#000000",
     map3d: false,
@@ -122,10 +126,12 @@ class MapFilterMenu {
       BACKGROUND_COLOR_VALUE_KEY,
       GRID_DISPLAY_KEY,
       SCALE_DISPLAY_KEY,
+      AREA_MEASURE_KEY,
     ]);
     this.state.highContrast = stored[HIGH_CONTRAST_KEY] ?? false;
     this.state.gridDisplay = stored[GRID_DISPLAY_KEY] ?? false;
     this.state.scaleDisplay = stored[SCALE_DISPLAY_KEY] ?? false;
+    this.state.areaMeasure = stored[AREA_MEASURE_KEY] ?? false;
     this.state.backgroundColorEnabled =
       stored[BACKGROUND_COLOR_ENABLED_KEY] ?? false;
     this.state.backgroundColorValue =
@@ -136,6 +142,7 @@ class MapFilterMenu {
 
     this.createTriggerButton();
     this.createScaleButton();
+    this.createAreaButton();
     this.createPopover();
 
     this.mapReady = getMapInstanceReady();
@@ -147,9 +154,11 @@ class MapFilterMenu {
         this.mapReady = true;
         this.updatePopoverItems();
         this.updateScaleButton();
+        this.updateAreaButton();
         this.notifyTileBoundaries();
         this.notifyGridDisplay();
         this.notifyScaleDisplay();
+        this.notifyAreaMeasure();
         if (this.state.backgroundColorEnabled)
           this.applyBackgroundColor(this.state.backgroundColorValue);
       }
@@ -207,6 +216,26 @@ class MapFilterMenu {
     document.body.appendChild(this.scaleButton);
   }
 
+  private createAreaButton() {
+    this.areaButton = document.createElement("button");
+    this.areaButton.className = "btn btn-sm btn-circle";
+    this.areaButton.style.cssText = `
+      position: fixed;
+      left: 47px;
+      top: 84px;
+      font-size: 14px;
+      z-index: 800;
+    `;
+    this.areaButton.innerHTML = "📐";
+    this.areaButton.title = t`${"map_filter_areaMeasure"}`;
+    this.areaButton.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.toggleAreaMeasure();
+    });
+    this.updateAreaButton();
+    document.body.appendChild(this.areaButton);
+  }
+
   private updateScaleButton() {
     if (!this.scaleButton) return;
 
@@ -216,13 +245,22 @@ class MapFilterMenu {
     this.scaleButton.classList.toggle("opacity-50", disabled);
   }
 
+  private updateAreaButton() {
+    if (!this.areaButton) return;
+
+    const disabled = !this.mapReady;
+    this.areaButton.disabled = disabled;
+    this.areaButton.classList.toggle("btn-active", this.state.areaMeasure);
+    this.areaButton.classList.toggle("opacity-50", disabled);
+  }
+
   private createPopover() {
     this.popover = document.createElement("div");
     this.popover.className = "card bg-base-100 shadow-xl";
     this.popover.style.cssText = `
       position: fixed;
       left: 50px;
-      top: 84px;
+      top: 122px;
       z-index: 801;
       display: none;
       min-width: 200px;
@@ -390,6 +428,15 @@ class MapFilterMenu {
     console.log("🧑‍🎨 : Filter toggled:", "scaleDisplay");
   }
 
+  private async toggleAreaMeasure() {
+    if (!this.mapReady) return;
+    this.state.areaMeasure = !this.state.areaMeasure;
+    await storage.set({ [AREA_MEASURE_KEY]: this.state.areaMeasure });
+    this.notifyAreaMeasure();
+    this.updateAreaButton();
+    console.log("🧑‍🎨 : Filter toggled:", "areaMeasure");
+  }
+
   private togglePopover() {
     if (this.isOpen) {
       this.closePopover();
@@ -410,6 +457,7 @@ class MapFilterMenu {
           : "custom-winter";
       this.updatePopoverItems();
       this.updateScaleButton();
+      this.updateAreaButton();
 
       this.popover.style.display = "block";
       this.triggerButton.classList.add("btn-active");
@@ -473,6 +521,16 @@ class MapFilterMenu {
       {
         source: "mr-wplace-scale-display-update",
         visible: this.state.scaleDisplay,
+      },
+      "*",
+    );
+  }
+
+  private notifyAreaMeasure() {
+    window.postMessage(
+      {
+        source: "mr-wplace-area-measure-update",
+        visible: this.state.areaMeasure,
       },
       "*",
     );

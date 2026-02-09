@@ -100,6 +100,12 @@ import { resolveMapInstanceAsync } from "./features/map-instance";
             "./features/scale-display"
           );
           setupScaleDisplayOnMapReady(mapInstance);
+
+          // Setup area measure with styledata event listener
+          const { setupAreaMeasureOnMapReady } = await import(
+            "./features/area-measure"
+          );
+          setupAreaMeasureOnMapReady(mapInstance);
         }
       }),
 

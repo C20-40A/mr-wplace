@@ -50,6 +50,7 @@ import {
 } from "./features/map-instance";
 import { setGridDisplayEnabled } from "./features/grid-display";
 import { setScaleDisplayEnabled } from "./features/scale-display";
+import { setAreaMeasureEnabled } from "./features/area-measure";
 
 type MessageHandler = (data: any) => void | Promise<void>;
 
@@ -196,6 +197,7 @@ const messageHandlers: Record<string, MessageHandler> = {
     setGridDisplayEnabled(data.visible),
   "mr-wplace-scale-display-update": (data) =>
     setScaleDisplayEnabled(data.visible),
+  "mr-wplace-area-measure-update": (data) => setAreaMeasureEnabled(data.visible),
   "mr-wplace-background-color-update": (data) =>
     changeBackgroundColor(data.color),
   "mr-wplace-map-3d-update": (data) => changeMap3dEnabled(data.enabled),

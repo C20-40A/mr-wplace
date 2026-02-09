@@ -450,6 +450,7 @@ export const jaTranslations = {
   map_filter_tileBoundaries: "タイル境界",
   map_filter_gridDisplay: "ピクセルグリッド",
   map_filter_scaleDisplay: "縮尺表示",
+  map_filter_areaMeasure: "面積計測",
   map_filter_backgroundColor: "背景色",
   map_filter_map3d: "3D表示",
   map_filter_map3d_drag_rotate: "回転を有効化",
