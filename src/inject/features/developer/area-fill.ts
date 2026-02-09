@@ -544,7 +544,10 @@ export const startAreaFill = async (
 export const stopAreaFill = (): void => {
   if (!isRunning) return;
   stopRequested = true;
+  isRunning = false;
   console.log("🧑‍🎨 : Area fill stop requested");
+  // Notify content script that area fill has stopped
+  window.postMessage({ source: "mr-wplace-area-fill-finished" }, "*");
 };
 
 /**

@@ -318,6 +318,10 @@ export const hideDeveloperDialog = (): void => {
   if (dialogInstance) {
     dialogInstance.dialog.style.display = "none";
     localStorage.setItem("mr-wplace-dev-visible", "false");
+
+    // Stop area fill if running
+    window.postMessage({ source: "mr-wplace-area-fill-stop" }, "*");
+
     onHideCallback?.();
   }
 };
