@@ -32,7 +32,7 @@ let areaEnabled = false;
 let container: HTMLDivElement | null = null;
 let svg: SVGSVGElement | null = null;
 let polygon: SVGPolygonElement | null = null;
-let edgeHitGroup: SVGGElement | null = null;
+let edgeHitLayer: HTMLDivElement | null = null;
 let areaLabel: HTMLDivElement | null = null;
 
 let vertices: LngLat[] = [];
@@ -62,7 +62,7 @@ const createVertexElement = (): HTMLDivElement => {
     transform: translate(-50%, -50%);
     border: 2px solid #fff;
     border-radius: 9999px;
-    background: #16a34a;
+    background: #a31616;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
     pointer-events: auto;
     cursor: grab;
@@ -87,19 +87,24 @@ const createOverlay = (): HTMLDivElement => {
   svgRoot.setAttribute("width", "100%");
   svgRoot.setAttribute("height", "100%");
   svgRoot.setAttribute("viewBox", "0 0 1 1");
-  svgRoot.style.pointerEvents = "auto";
+  svgRoot.style.pointerEvents = "none";
 
   const polygonShape = document.createElementNS(AREA_SVG_NS, "polygon");
   polygonShape.setAttribute("fill", "rgba(34, 197, 94, 0.18)");
-  polygonShape.setAttribute("stroke", "rgba(34, 197, 94, 0.95)");
-  polygonShape.setAttribute("stroke-width", "2");
+  polygonShape.setAttribute("stroke", "rgba(197, 34, 94, 0.95)");
+  polygonShape.setAttribute("stroke-width", "3");
   polygonShape.setAttribute("vector-effect", "non-scaling-stroke");
   polygonShape.style.pointerEvents = "none";
 
-  const hitGroup = document.createElementNS(AREA_SVG_NS, "g");
-
   svgRoot.appendChild(polygonShape);
-  svgRoot.appendChild(hitGroup);
+
+  const hitLayer = document.createElement("div");
+  hitLayer.style.cssText = `
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+  `;
 
   const label = document.createElement("div");
   label.style.cssText = `
@@ -120,11 +125,12 @@ const createOverlay = (): HTMLDivElement => {
   `;
 
   root.appendChild(svgRoot);
+  root.appendChild(hitLayer);
   root.appendChild(label);
 
   svg = svgRoot;
   polygon = polygonShape;
-  edgeHitGroup = hitGroup;
+  edgeHitLayer = hitLayer;
   areaLabel = label;
 
   return root;
@@ -185,8 +191,9 @@ const ensureDefaultVertices = (map: AreaMap): void => {
 };
 
 const clearEdgeHitLines = (): void => {
-  if (!edgeHitGroup) return;
-  while (edgeHitGroup.firstChild) edgeHitGroup.removeChild(edgeHitGroup.firstChild);
+  if (!edgeHitLayer) return;
+  while (edgeHitLayer.firstChild)
+    edgeHitLayer.removeChild(edgeHitLayer.firstChild);
 };
 
 const syncVertexElements = (): void => {
@@ -231,12 +238,15 @@ const stopVertexDrag = (): void => {
   }
 
   for (const vertex of vertexElements) vertex.style.cursor = "grab";
-  activeMap.dragPan?.enable();
   activeDragIndex = null;
   renderAreaOverlay(activeMap);
 };
 
-const startVertexDrag = (map: AreaMap, index: number, event: PointerEvent): void => {
+const startVertexDrag = (
+  map: AreaMap,
+  index: number,
+  event: PointerEvent,
+): void => {
   if (event.pointerType === "mouse" && event.button !== 0) return;
   if (activeDragIndex !== null) stopVertexDrag();
   event.preventDefault();
@@ -244,7 +254,6 @@ const startVertexDrag = (map: AreaMap, index: number, event: PointerEvent): void
 
   activeMap = map;
   activeDragIndex = index;
-  map.dragPan?.disable();
   if (vertexElements[index]) vertexElements[index].style.cursor = "grabbing";
 
   pointerMoveHandler = (moveEvent) => {
@@ -273,7 +282,7 @@ const insertVertexOnEdge = (map: AreaMap, edgeIndex: number): void => {
 };
 
 const renderAreaOverlay = (map: AreaMap): void => {
-  if (!svg || !polygon || !edgeHitGroup || !areaLabel || !container) return;
+  if (!svg || !polygon || !edgeHitLayer || !areaLabel || !container) return;
   if (vertices.length < 3) return;
 
   const mapContainer = getMapContainer(map);
@@ -281,7 +290,10 @@ const renderAreaOverlay = (map: AreaMap): void => {
 
   const width = mapContainer.clientWidth;
   const height = mapContainer.clientHeight;
-  svg.setAttribute("viewBox", `0 0 ${Math.max(width, 1)} ${Math.max(height, 1)}`);
+  svg.setAttribute(
+    "viewBox",
+    `0 0 ${Math.max(width, 1)} ${Math.max(height, 1)}`,
+  );
 
   const points = vertices.map((lngLat) => map.project(lngLat));
   polygon.setAttribute("points", points.map((p) => `${p.x},${p.y}`).join(" "));
@@ -318,29 +330,39 @@ const renderAreaOverlay = (map: AreaMap): void => {
   for (let i = 0; i < points.length; i++) {
     const current = points[i];
     const next = points[(i + 1) % points.length];
+    const dx = next.x - current.x;
+    const dy = next.y - current.y;
+    const length = Math.hypot(dx, dy);
+    if (length < 1) continue;
 
-    const hit = document.createElementNS(AREA_SVG_NS, "line");
-    hit.setAttribute("x1", String(current.x));
-    hit.setAttribute("y1", String(current.y));
-    hit.setAttribute("x2", String(next.x));
-    hit.setAttribute("y2", String(next.y));
-    hit.setAttribute("stroke", "rgba(0,0,0,0)");
-    hit.setAttribute("stroke-width", "18");
-    hit.style.pointerEvents = "stroke";
-    hit.style.cursor = "copy";
+    const hit = document.createElement("div");
+    hit.style.cssText = `
+      position: absolute;
+      left: ${current.x}px;
+      top: ${current.y}px;
+      width: ${length}px;
+      height: 14px;
+      transform-origin: 0 50%;
+      transform: translateY(-50%) rotate(${Math.atan2(dy, dx)}rad);
+      pointer-events: auto;
+      cursor: copy;
+      background: rgba(0, 0, 0, 0);
+    `;
     hit.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
       insertVertexOnEdge(map, i);
     });
-    edgeHitGroup.appendChild(hit);
+    edgeHitLayer.appendChild(hit);
   }
 
   const area = calculateAreaSquareMeters(vertices);
-  areaLabel.textContent = `${formatArea(area)} (${vertices.length} pts)`;
+  areaLabel.textContent = `${formatArea(area)} (${vertices.length} points)`;
 
-  const centerX = points.reduce((sum, point) => sum + point.x, 0) / points.length;
-  const centerY = points.reduce((sum, point) => sum + point.y, 0) / points.length;
+  const centerX =
+    points.reduce((sum, point) => sum + point.x, 0) / points.length;
+  const centerY =
+    points.reduce((sum, point) => sum + point.y, 0) / points.length;
   areaLabel.style.left = `${centerX}px`;
   areaLabel.style.top = `${centerY}px`;
 };
@@ -363,7 +385,8 @@ const addAreaOverlay = (map: AreaMap): void => {
   ensureDefaultVertices(map);
 
   mapUpdateHandler = () => renderAreaOverlay(map);
-  for (const eventName of MAP_UPDATE_EVENTS) map.on(eventName, mapUpdateHandler);
+  for (const eventName of MAP_UPDATE_EVENTS)
+    map.on(eventName, mapUpdateHandler);
 
   renderAreaOverlay(map);
   console.log("🧑‍🎨 : Area measure added");
@@ -371,7 +394,8 @@ const addAreaOverlay = (map: AreaMap): void => {
 
 const removeAreaOverlay = (map: AreaMap): void => {
   if (mapUpdateHandler) {
-    for (const eventName of MAP_UPDATE_EVENTS) map.off(eventName, mapUpdateHandler);
+    for (const eventName of MAP_UPDATE_EVENTS)
+      map.off(eventName, mapUpdateHandler);
     mapUpdateHandler = null;
   }
 
@@ -384,7 +408,7 @@ const removeAreaOverlay = (map: AreaMap): void => {
   container = null;
   svg = null;
   polygon = null;
-  edgeHitGroup = null;
+  edgeHitLayer = null;
   areaLabel = null;
   activeMap = null;
   activeDragIndex = null;
