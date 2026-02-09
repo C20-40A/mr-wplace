@@ -1,4 +1,4 @@
-import { getColor } from "./ui-colors";
+import { getColor, TEXT_COLORS, TEXT_OUTLINE } from "./ui-colors";
 
 interface DeveloperDialogElements {
   dialog: HTMLDivElement;
@@ -28,17 +28,18 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     left: 16px;
     transform: translateY(-50%);
     z-index: 9999;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(12px);
-    border: 1px solid ${getColor("primary", 0.2)};
-    border-left: 2px solid ${getColor("primary", 0.7)};
-    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-left: 2px solid ${getColor("primary", 0.5)};
+    border-radius: 8px;
     padding: 10px 12px;
     min-width: 170px;
     box-shadow:
-      0 0 20px rgba(0, 0, 0, 0.8),
-      0 0 40px ${getColor("primary", 0.05)},
-      inset 0 0 30px rgba(0, 0, 0, 0.4);
+      0 8px 32px rgba(0, 0, 0, 0.1),
+      0 2px 8px rgba(0, 0, 0, 0.05),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.2);
     display: none;
     cursor: default;
     user-select: none;
@@ -54,9 +55,10 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     margin-bottom: 8px;
     cursor: move;
     padding: 2px 0;
-    border-bottom: 1px solid ${getColor("primary", 0.1)};
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     padding-bottom: 6px;
     touch-action: none;
+    transition: all 0.2s ease;
   `;
 
   const titleWrapper = document.createElement("div");
@@ -69,18 +71,20 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     font-weight: 600;
     letter-spacing: 2px;
     text-transform: uppercase;
-    text-shadow: 0 0 10px ${getColor("primary", 0.6)};
+    transition: all 0.2s ease;
+    text-shadow: ${TEXT_OUTLINE};
   `;
   title.textContent = "//DEV";
 
   const warning = document.createElement("span");
   warning.style.cssText = `
-    color: rgba(255, 255, 255, 0.4);
+    color: ${TEXT_COLORS.tertiary};
     font-size: 8px;
     font-family: 'Consolas', 'Monaco', monospace;
     line-height: 1.2;
     max-width: 150px;
     display: ${isMinimized ? "none" : "block"};
+    text-shadow: ${TEXT_OUTLINE};
   `;
   warning.textContent =
     "This is a private feature for development testing only. Not intended for actual use.";
@@ -90,20 +94,25 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
 
   // Button container
   const buttonContainer = document.createElement("div");
-  buttonContainer.style.cssText = `display: flex; gap: 4px; align-items: center;`;
+  buttonContainer.style.cssText = `
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    transition: all 0.2s ease;
+  `;
 
   // Minimize button
   const minimizeBtn = document.createElement("button");
   minimizeBtn.style.cssText = `
-    background: rgba(255, 255, 255, 0.05);
-    border: 1.5px solid rgba(255, 255, 255, 0.2);
-    color: rgba(255, 255, 255, 0.5);
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    color: ${TEXT_COLORS.secondary};
     cursor: pointer;
     padding: 2px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 2px;
+    border-radius: 4px;
     transition: all 0.15s ease;
     width: 22px;
     height: 22px;
@@ -119,14 +128,14 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
   };
   updateMinimizeIcon();
   minimizeBtn.addEventListener("mouseenter", () => {
-    minimizeBtn.style.color = "rgba(100, 200, 255, 0.9)";
-    minimizeBtn.style.borderColor = "rgba(100, 200, 255, 0.5)";
-    minimizeBtn.style.background = "rgba(100, 200, 255, 0.1)";
+    minimizeBtn.style.color = getColor("secondary", 1);
+    minimizeBtn.style.borderColor = getColor("secondary", 0.4);
+    minimizeBtn.style.background = getColor("secondary", 0.1);
   });
   minimizeBtn.addEventListener("mouseleave", () => {
-    minimizeBtn.style.color = "rgba(255, 255, 255, 0.5)";
-    minimizeBtn.style.borderColor = "rgba(255, 255, 255, 0.2)";
-    minimizeBtn.style.background = "rgba(255, 255, 255, 0.05)";
+    minimizeBtn.style.color = TEXT_COLORS.secondary;
+    minimizeBtn.style.borderColor = "rgba(0, 0, 0, 0.15)";
+    minimizeBtn.style.background = "rgba(0, 0, 0, 0.05)";
   });
   minimizeBtn.addEventListener("mousedown", () => {
     minimizeBtn.style.transform = "scale(0.95)";
@@ -143,22 +152,57 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     }
     warning.style.display = isMinimized ? "none" : "block";
     header.style.marginBottom = isMinimized ? "0" : "8px";
-    header.style.borderBottom = isMinimized ? "none" : `1px solid ${getColor("primary", 0.1)}`;
+    header.style.paddingBottom = isMinimized ? "0" : "6px";
+    header.style.borderBottom = isMinimized ? "none" : "1px solid rgba(0, 0, 0, 0.1)";
+
+    // Compact mode styling
+    if (isMinimized) {
+      dialog.style.padding = "4px 6px";
+      dialog.style.minWidth = "auto";
+      titleWrapper.style.gap = "0";
+      title.style.fontSize = "8px";
+      title.style.letterSpacing = "1px";
+      buttonContainer.style.gap = "2px";
+      minimizeBtn.style.width = "16px";
+      minimizeBtn.style.height = "16px";
+      closeBtn.style.width = "16px";
+      closeBtn.style.height = "16px";
+      const minimizeSvg = minimizeBtn.querySelector("svg");
+      const closeSvg = closeBtn.querySelector("svg");
+      if (minimizeSvg) minimizeSvg.style.cssText = "width: 10px; height: 10px;";
+      if (closeSvg) closeSvg.style.cssText = "width: 10px; height: 10px;";
+    } else {
+      dialog.style.padding = "10px 12px";
+      dialog.style.minWidth = "170px";
+      titleWrapper.style.gap = "4px";
+      title.style.fontSize = "10px";
+      title.style.letterSpacing = "2px";
+      buttonContainer.style.gap = "4px";
+      minimizeBtn.style.width = "22px";
+      minimizeBtn.style.height = "22px";
+      closeBtn.style.width = "22px";
+      closeBtn.style.height = "22px";
+      const minimizeSvg = minimizeBtn.querySelector("svg");
+      const closeSvg = closeBtn.querySelector("svg");
+      if (minimizeSvg) minimizeSvg.style.cssText = "width: 12px; height: 12px;";
+      if (closeSvg) closeSvg.style.cssText = "width: 12px; height: 12px;";
+    }
+
     updateMinimizeIcon();
   });
 
   // Close button
   const closeBtn = document.createElement("button");
   closeBtn.style.cssText = `
-    background: rgba(255, 255, 255, 0.05);
-    border: 1.5px solid rgba(255, 255, 255, 0.2);
-    color: rgba(255, 255, 255, 0.5);
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    color: ${TEXT_COLORS.secondary};
     cursor: pointer;
     padding: 2px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 2px;
+    border-radius: 4px;
     transition: all 0.15s ease;
     width: 22px;
     height: 22px;
@@ -169,14 +213,14 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     </svg>
   `;
   closeBtn.addEventListener("mouseenter", () => {
-    closeBtn.style.color = "rgba(255, 100, 100, 0.9)";
-    closeBtn.style.borderColor = "rgba(255, 100, 100, 0.5)";
-    closeBtn.style.background = "rgba(255, 100, 100, 0.1)";
+    closeBtn.style.color = "rgba(220, 50, 50, 1)";
+    closeBtn.style.borderColor = "rgba(220, 50, 50, 0.4)";
+    closeBtn.style.background = "rgba(220, 50, 50, 0.1)";
   });
   closeBtn.addEventListener("mouseleave", () => {
-    closeBtn.style.color = "rgba(255, 255, 255, 0.5)";
-    closeBtn.style.borderColor = "rgba(255, 255, 255, 0.2)";
-    closeBtn.style.background = "rgba(255, 255, 255, 0.05)";
+    closeBtn.style.color = TEXT_COLORS.secondary;
+    closeBtn.style.borderColor = "rgba(0, 0, 0, 0.15)";
+    closeBtn.style.background = "rgba(0, 0, 0, 0.05)";
   });
   closeBtn.addEventListener("mousedown", () => {
     closeBtn.style.transform = "scale(0.95)";
@@ -204,7 +248,22 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
   // 最小化状態をヘッダーに反映
   if (isMinimized) {
     header.style.marginBottom = "0";
+    header.style.paddingBottom = "0";
     header.style.borderBottom = "none";
+    dialog.style.padding = "4px 6px";
+    dialog.style.minWidth = "auto";
+    titleWrapper.style.gap = "0";
+    title.style.fontSize = "8px";
+    title.style.letterSpacing = "1px";
+    buttonContainer.style.gap = "2px";
+    minimizeBtn.style.width = "16px";
+    minimizeBtn.style.height = "16px";
+    closeBtn.style.width = "16px";
+    closeBtn.style.height = "16px";
+    const minimizeSvg = minimizeBtn.querySelector("svg");
+    const closeSvg = closeBtn.querySelector("svg");
+    if (minimizeSvg) minimizeSvg.style.cssText = "width: 10px; height: 10px;";
+    if (closeSvg) closeSvg.style.cssText = "width: 10px; height: 10px;";
   }
 
   dialog.appendChild(header);

@@ -2,7 +2,7 @@ import { getCurrentPosition } from "@/utils/position";
 import { latLngToTilePixel } from "@/utils/coordinate";
 import { AreaFillStorage, AreaFillCorners, type FillPattern } from "./area-fill-storage";
 import { findPaintPixelControls } from "@/constants/selectors";
-import { getColor } from "./ui-colors";
+import { getColor, TEXT_COLORS, TEXT_OUTLINE } from "./ui-colors";
 import { Toast } from "@/components/toast";
 
 export interface AreaFillUIElements {
@@ -85,10 +85,10 @@ export const createAreaFillDialogItem = (
     flex-direction: column;
     gap: 6px;
     padding: 8px;
-    border-radius: 1px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-left: 2px solid ${getColor("primary", 0.4)};
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-left: 2px solid ${getColor("primary", 0.6)};
   `;
 
   // Header
@@ -99,7 +99,7 @@ export const createAreaFillDialogItem = (
     gap: 8px;
     margin-bottom: 4px;
     padding-bottom: 4px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   `;
 
   const icon = document.createElement("span");
@@ -108,12 +108,13 @@ export const createAreaFillDialogItem = (
 
   const title = document.createElement("span");
   title.style.cssText = `
-    color: ${getColor("primary", 0.9)};
+    color: ${getColor("primary", 1)};
     font-size: 10px;
     font-weight: 600;
     font-family: 'Consolas', 'Monaco', monospace;
     letter-spacing: 1px;
     text-transform: uppercase;
+    text-shadow: ${TEXT_OUTLINE};
   `;
   title.textContent = "AREA_FILL";
 
@@ -157,18 +158,19 @@ export const createAreaFillDialogItem = (
   estimateDisplay.style.cssText = `
     display: none;
     padding: 4px 6px;
-    border-radius: 1px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
     margin-top: 4px;
   `;
 
   const estimateText = document.createElement("div");
   estimateText.style.cssText = `
-    color: ${getColor("primary", 0.8)};
+    color: ${TEXT_COLORS.primary};
     font-size: 9px;
     font-family: 'Consolas', 'Monaco', monospace;
     text-align: center;
+    text-shadow: ${TEXT_OUTLINE};
   `;
   estimateText.textContent = "Calculating...";
 
@@ -182,36 +184,37 @@ export const createAreaFillDialogItem = (
     gap: 4px;
     margin-top: 6px;
     padding: 6px;
-    border-radius: 1px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
   `;
 
   const progressText = document.createElement("div");
   progressText.style.cssText = `
-    color: rgba(255, 255, 255, 0.8);
+    color: ${TEXT_COLORS.primary};
     font-size: 9px;
     font-family: 'Consolas', 'Monaco', monospace;
     text-align: center;
+    text-shadow: ${TEXT_OUTLINE};
   `;
 
   const progressBarContainer = document.createElement("div");
   progressBarContainer.style.cssText = `
     width: 100%;
     height: 6px;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.1);
     border-radius: 3px;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.15);
   `;
 
   const progressBarFill = document.createElement("div");
   progressBarFill.style.cssText = `
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, ${getColor("primary", 0.6)}, ${getColor("primary", 0.9)});
+    background: linear-gradient(90deg, ${getColor("primary", 0.8)}, ${getColor("primary", 1)});
     transition: width 0.3s ease;
-    box-shadow: 0 0 8px ${getColor("primary", 0.4)};
+    box-shadow: 0 0 4px ${getColor("primary", 0.3)};
   `;
 
   progressBarContainer.appendChild(progressBarFill);
@@ -254,10 +257,10 @@ export const createAreaFillDialogItem = (
   fillBtn.style.cssText = `
     flex: 1;
     padding: 5px 10px;
-    border: 1px solid ${getColor("primary", 0.3)};
-    border-radius: 1px;
-    background: ${getColor("primary", 0.1)};
-    color: ${getColor("primary", 0.9)};
+    border: 1px solid ${getColor("primary", 0.4)};
+    border-radius: 3px;
+    background: ${getColor("primary", 0.15)};
+    color: #fff;
     font-size: 10px;
     font-weight: 600;
     font-family: 'Consolas', 'Monaco', monospace;
@@ -265,6 +268,7 @@ export const createAreaFillDialogItem = (
     cursor: pointer;
     transition: all 0.1s ease;
     text-transform: uppercase;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   `;
   fillBtn.textContent = "EXEC";
   updateFillBtnStyle();
@@ -290,10 +294,10 @@ export const createAreaFillDialogItem = (
   const clearBtn = document.createElement("button");
   clearBtn.style.cssText = `
     padding: 5px 10px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 1px;
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.05);
+    color: ${TEXT_COLORS.secondary};
     font-size: 10px;
     font-family: 'Consolas', 'Monaco', monospace;
     letter-spacing: 0.5px;
@@ -302,12 +306,12 @@ export const createAreaFillDialogItem = (
   `;
   clearBtn.textContent = "CLR";
   clearBtn.addEventListener("mouseenter", () => {
-    clearBtn.style.background = "rgba(255, 255, 255, 0.1)";
-    clearBtn.style.color = "rgba(255, 255, 255, 0.9)";
+    clearBtn.style.background = "rgba(0, 0, 0, 0.1)";
+    clearBtn.style.color = TEXT_COLORS.primary;
   });
   clearBtn.addEventListener("mouseleave", () => {
-    clearBtn.style.background = "rgba(255, 255, 255, 0.05)";
-    clearBtn.style.color = "rgba(255, 255, 255, 0.7)";
+    clearBtn.style.background = "rgba(0, 0, 0, 0.05)";
+    clearBtn.style.color = TEXT_COLORS.secondary;
   });
   clearBtn.addEventListener("click", () => {
     AreaFillStorage.clear();
@@ -337,10 +341,10 @@ export const createAreaFillDialogItem = (
   patternSelect.style.cssText = `
     flex: 1;
     padding: 2px 4px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 1px;
-    background: rgba(0, 0, 0, 0.4);
-    color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.5);
+    color: ${TEXT_COLORS.primary};
     font-size: 9px;
     font-family: 'Consolas', 'Monaco', monospace;
     cursor: pointer;
@@ -405,8 +409,10 @@ export const createAreaFillDialogItem = (
 
   const applyUnlockedStyle = () => {
     tmplLabel.textContent = "TMPL_ONLY";
-    tmplLabel.style.color = "#cc3333";
-    tmplArea.style.background = "rgba(20, 0, 0, 0.5)";
+    tmplLabel.style.color = "#fff";
+    tmplLabel.style.textShadow = "0 1px 3px rgba(0, 0, 0, 0.5)";
+    tmplArea.style.background = "rgba(180, 30, 30, 0.6)";
+    tmplArea.style.border = "1px solid rgba(200, 50, 50, 0.5)";
     tmplArea.style.boxShadow = "inset 0 0 8px rgba(139, 0, 0, 0.3)";
     tmplToggle.style.display = "";
     tmplToggle.checked = templateOnlyModeEnabled;
@@ -503,11 +509,11 @@ export const createAreaFillDialogItem = (
     topLeftRow.valueSpan.textContent = formatCoord(corners.topLeft);
     topLeftRow.valueSpan.style.color = corners.topLeft
       ? getColor("primary", 1)
-      : "rgba(255, 255, 255, 0.4)";
+      : TEXT_COLORS.tertiary;
     bottomRightRow.valueSpan.textContent = formatCoord(corners.bottomRight);
     bottomRightRow.valueSpan.style.color = corners.bottomRight
       ? getColor("primary", 1)
-      : "rgba(255, 255, 255, 0.4)";
+      : TEXT_COLORS.tertiary;
     updateFillBtnStyle();
 
     // Calculate and display estimate if both corners are set
@@ -608,18 +614,19 @@ const createCoordRow = (
 
   const labelSpan = document.createElement("span");
   labelSpan.style.cssText = `
-    color: rgba(255, 255, 255, 0.75);
+    color: ${TEXT_COLORS.secondary};
     font-size: 9px;
     font-family: 'Consolas', 'Monaco', monospace;
     width: 55px;
     flex-shrink: 0;
     text-transform: uppercase;
+    text-shadow: ${TEXT_OUTLINE};
   `;
   labelSpan.textContent = label.replace("-", "_");
 
   const valueSpan = document.createElement("span");
   valueSpan.style.cssText = `
-    color: ${initialValue ? getColor("primary", 1) : "rgba(255, 255, 255, 0.4)"};
+    color: ${initialValue ? getColor("primary", 1) : TEXT_COLORS.tertiary};
     font-size: 9px;
     font-family: 'Consolas', 'Monaco', monospace;
     flex: 1;
@@ -628,21 +635,23 @@ const createCoordRow = (
     white-space: nowrap;
     text-align: right;
     margin-right: 4px;
+    text-shadow: ${TEXT_OUTLINE};
   `;
   valueSpan.textContent = formatCoord(initialValue);
 
   const setBtn = document.createElement("button");
   setBtn.style.cssText = `
     padding: 2px 6px;
-    border: 1px solid ${getColor("secondary", 0.3)};
-    border-radius: 1px;
-    background: ${getColor("secondary", 0.1)};
-    color: ${getColor("secondary", 0.9)};
+    border: 1px solid ${getColor("secondary", 0.4)};
+    border-radius: 3px;
+    background: ${getColor("secondary", 0.15)};
+    color: #fff;
     font-size: 8px;
     font-family: 'Consolas', 'Monaco', monospace;
     cursor: pointer;
     transition: all 0.1s ease;
     flex-shrink: 0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   `;
   setBtn.textContent = "SET";
   setBtn.addEventListener("mouseenter", () => {

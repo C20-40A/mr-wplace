@@ -1,4 +1,4 @@
-import { getColor } from "./ui-colors";
+import { getColor, TEXT_COLORS, TEXT_OUTLINE } from "./ui-colors";
 
 const AUTO_CANVAS_CLICK_ICON = `
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4.5">
@@ -49,17 +49,17 @@ export const createAutoCanvasClickDialogItem = (
     align-items: center;
     gap: 10px;
     padding: 6px 8px;
-    border-radius: 1px;
-    background: ${enabled ? getColor("primary", 0.1) : "rgba(255, 255, 255, 0.04)"};
-    border: 1px solid ${enabled ? getColor("primary", 0.3) : "rgba(255, 255, 255, 0.08)"};
+    border-radius: 4px;
+    background: ${enabled ? getColor("primary", 0.15) : "rgba(255, 255, 255, 0.08)"};
+    border: 1px solid ${enabled ? getColor("primary", 0.4) : "rgba(0, 0, 0, 0.1)"};
     cursor: pointer;
     transition: all 0.1s ease;
   `;
   item.addEventListener("mouseenter", () => {
-    item.style.background = enabled ? getColor("primary", 0.15) : "rgba(255, 255, 255, 0.08)";
+    item.style.background = enabled ? getColor("primary", 0.2) : "rgba(255, 255, 255, 0.12)";
   });
   item.addEventListener("mouseleave", () => {
-    item.style.background = enabled ? getColor("primary", 0.1) : "rgba(255, 255, 255, 0.04)";
+    item.style.background = enabled ? getColor("primary", 0.15) : "rgba(255, 255, 255, 0.08)";
   });
 
   const icon = document.createElement("span");
@@ -69,17 +69,18 @@ export const createAutoCanvasClickDialogItem = (
     display: flex;
     align-items: center;
     justify-content: center;
-    color: ${enabled ? getColor("primary", 1) : "rgba(255, 255, 255, 0.5)"};
+    color: ${enabled ? getColor("primary", 1) : TEXT_COLORS.secondary};
   `;
   icon.innerHTML = AUTO_CANVAS_CLICK_ICON.replace('class="size-4.5"', 'style="width: 16px; height: 16px;"');
 
   const label = document.createElement("span");
   label.style.cssText = `
-    color: ${enabled ? getColor("primary", 1) : "rgba(255, 255, 255, 0.8)"};
+    color: ${enabled ? getColor("primary", 1) : TEXT_COLORS.primary};
     font-size: 11px;
     flex: 1;
     font-family: 'Consolas', 'Monaco', monospace;
     letter-spacing: 0.5px;
+    text-shadow: ${TEXT_OUTLINE};
   `;
   label.textContent = "AUTO_CLICK";
 
@@ -88,16 +89,16 @@ export const createAutoCanvasClickDialogItem = (
   toggle.style.cssText = `
     width: 28px;
     height: 10px;
-    border-radius: 1px;
-    background: ${enabled ? getColor("primary", 0.9) : "rgba(255, 255, 255, 0.15)"};
-    box-shadow: ${enabled ? `0 0 8px ${getColor("primary", 0.6)}` : "none"};
+    border-radius: 5px;
+    background: ${enabled ? getColor("primary", 1) : "rgba(0, 0, 0, 0.15)"};
+    box-shadow: ${enabled ? `0 0 4px ${getColor("primary", 0.5)}` : "none"};
     transition: all 0.15s ease;
     position: relative;
   `;
   if (enabled) {
-    toggle.innerHTML = `<span style="position:absolute;left:3px;top:1px;font-size:7px;color:#000;font-weight:bold;font-family:monospace;">ON</span>`;
+    toggle.innerHTML = `<span style="position:absolute;left:3px;top:1px;font-size:7px;color:#fff;font-weight:bold;font-family:monospace;">ON</span>`;
   } else {
-    toggle.innerHTML = `<span style="position:absolute;right:2px;top:1px;font-size:7px;color:rgba(255,255,255,0.4);font-family:monospace;">OFF</span>`;
+    toggle.innerHTML = `<span style="position:absolute;right:2px;top:1px;font-size:7px;color:${TEXT_COLORS.tertiary};font-family:monospace;">OFF</span>`;
   }
 
   item.appendChild(icon);
@@ -114,24 +115,24 @@ export const updateAutoCanvasClickDialogItem = (
   enabled: boolean
 ): void => {
   // Update item style
-  item.style.background = enabled ? getColor("primary", 0.1) : "rgba(255, 255, 255, 0.04)";
-  item.style.borderColor = enabled ? getColor("primary", 0.3) : "rgba(255, 255, 255, 0.08)";
+  item.style.background = enabled ? getColor("primary", 0.15) : "rgba(255, 255, 255, 0.08)";
+  item.style.borderColor = enabled ? getColor("primary", 0.4) : "rgba(0, 0, 0, 0.1)";
 
   // Update icon
   const icon = item.querySelector("span:first-child") as HTMLSpanElement;
-  if (icon) icon.style.color = enabled ? getColor("primary", 1) : "rgba(255, 255, 255, 0.5)";
+  if (icon) icon.style.color = enabled ? getColor("primary", 1) : TEXT_COLORS.secondary;
 
   // Update label
   const label = item.querySelector("span:nth-child(2)") as HTMLSpanElement;
-  if (label) label.style.color = enabled ? getColor("primary", 1) : "rgba(255, 255, 255, 0.8)";
+  if (label) label.style.color = enabled ? getColor("primary", 1) : TEXT_COLORS.primary;
 
   // Update toggle
   const toggle = item.querySelector(".auto-canvas-click-toggle") as HTMLDivElement;
   if (toggle) {
-    toggle.style.background = enabled ? getColor("primary", 0.9) : "rgba(255, 255, 255, 0.15)";
-    toggle.style.boxShadow = enabled ? `0 0 8px ${getColor("primary", 0.6)}` : "none";
+    toggle.style.background = enabled ? getColor("primary", 1) : "rgba(0, 0, 0, 0.15)";
+    toggle.style.boxShadow = enabled ? `0 0 4px ${getColor("primary", 0.5)}` : "none";
     toggle.innerHTML = enabled
-      ? `<span style="position:absolute;left:3px;top:1px;font-size:7px;color:#000;font-weight:bold;font-family:monospace;">ON</span>`
-      : `<span style="position:absolute;right:2px;top:1px;font-size:7px;color:rgba(255,255,255,0.4);font-family:monospace;">OFF</span>`;
+      ? `<span style="position:absolute;left:3px;top:1px;font-size:7px;color:#fff;font-weight:bold;font-family:monospace;">ON</span>`
+      : `<span style="position:absolute;right:2px;top:1px;font-size:7px;color:${TEXT_COLORS.tertiary};font-family:monospace;">OFF</span>`;
   }
 };
