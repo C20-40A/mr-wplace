@@ -94,6 +94,12 @@ import { resolveMapInstanceAsync } from "./features/map-instance";
             "./features/grid-display"
           );
           setupGridDisplayOnMapReady(mapInstance);
+
+          // Setup scale display with styledata event listener
+          const { setupScaleDisplayOnMapReady } = await import(
+            "./features/scale-display"
+          );
+          setupScaleDisplayOnMapReady(mapInstance);
         }
       }),
 

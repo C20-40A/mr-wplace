@@ -7,12 +7,14 @@ const HIGH_CONTRAST_STYLE_ID = "mr-wplace-high-contrast-style";
 const BACKGROUND_COLOR_ENABLED_KEY = "mapFilter_backgroundColorEnabled";
 const BACKGROUND_COLOR_VALUE_KEY = "mapFilter_backgroundColorValue";
 const GRID_DISPLAY_KEY = "mapFilter_gridDisplay";
+const SCALE_DISPLAY_KEY = "mapFilter_scaleDisplay";
 
 type FilterState = {
   darkTheme: "custom-winter" | "dark";
   highContrast: boolean;
   tileBoundaries: boolean;
   gridDisplay: boolean;
+  scaleDisplay: boolean;
   backgroundColorEnabled: boolean;
   backgroundColorValue: string;
   map3d: boolean;
@@ -24,6 +26,7 @@ type FilterId =
   | "highContrast"
   | "tileBoundaries"
   | "gridDisplay"
+  | "scaleDisplay"
   | "backgroundColor"
   | "map3d"
   | "map3dDragRotate";
@@ -67,6 +70,13 @@ const filterConfig: FilterConfig[] = [
     requiresMap: true,
   },
   {
+    id: "scaleDisplay",
+    label: () => t`${"map_filter_scaleDisplay"}`,
+    iconOn: "📏",
+    iconOff: "📏",
+    requiresMap: true,
+  },
+  {
     id: "backgroundColor",
     label: () => t`${"map_filter_backgroundColor"}`,
     iconOn: "🎨",
@@ -100,6 +110,7 @@ class MapFilterMenu {
     highContrast: false,
     tileBoundaries: false,
     gridDisplay: false,
+    scaleDisplay: false,
     backgroundColorEnabled: false,
     backgroundColorValue: "#000000",
     map3d: false,
@@ -117,9 +128,11 @@ class MapFilterMenu {
       BACKGROUND_COLOR_ENABLED_KEY,
       BACKGROUND_COLOR_VALUE_KEY,
       GRID_DISPLAY_KEY,
+      SCALE_DISPLAY_KEY,
     ]);
     this.state.highContrast = stored[HIGH_CONTRAST_KEY] ?? false;
     this.state.gridDisplay = stored[GRID_DISPLAY_KEY] ?? false;
+    this.state.scaleDisplay = stored[SCALE_DISPLAY_KEY] ?? false;
     this.state.backgroundColorEnabled =
       stored[BACKGROUND_COLOR_ENABLED_KEY] ?? false;
     this.state.backgroundColorValue =
@@ -141,6 +154,7 @@ class MapFilterMenu {
         this.updatePopoverItems();
         this.notifyTileBoundaries();
         this.notifyGridDisplay();
+        this.notifyScaleDisplay();
         if (this.state.backgroundColorEnabled)
           this.applyBackgroundColor(this.state.backgroundColorValue);
       }
@@ -312,6 +326,12 @@ class MapFilterMenu {
         this.notifyGridDisplay();
         break;
       }
+      case "scaleDisplay": {
+        this.state.scaleDisplay = !this.state.scaleDisplay;
+        await storage.set({ [SCALE_DISPLAY_KEY]: this.state.scaleDisplay });
+        this.notifyScaleDisplay();
+        break;
+      }
       case "backgroundColor": {
         this.state.backgroundColorEnabled = !this.state.backgroundColorEnabled;
         await storage.set({
@@ -415,6 +435,16 @@ class MapFilterMenu {
       {
         source: "mr-wplace-grid-display-update",
         visible: this.state.gridDisplay,
+      },
+      "*",
+    );
+  }
+
+  private notifyScaleDisplay() {
+    window.postMessage(
+      {
+        source: "mr-wplace-scale-display-update",
+        visible: this.state.scaleDisplay,
       },
       "*",
     );
