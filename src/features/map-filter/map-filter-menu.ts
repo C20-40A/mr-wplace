@@ -1,6 +1,16 @@
+import {
+  createModal,
+  ModalElements,
+  showNameInputModal,
+} from "@/components/modal";
 import { storage } from "@/utils/browser-api";
 import { getMapInstanceReady } from "@/states/map-instance-ready";
 import { t } from "@/i18n/manager";
+import type {
+  AreaRegion,
+  AreaRegionEditSnapshot,
+  AreaRegionVertex,
+} from "@/types/area-region";
 
 const HIGH_CONTRAST_KEY = "mapFilter_highContrast";
 const HIGH_CONTRAST_STYLE_ID = "mr-wplace-high-contrast-style";
@@ -9,6 +19,8 @@ const BACKGROUND_COLOR_VALUE_KEY = "mapFilter_backgroundColorValue";
 const GRID_DISPLAY_KEY = "mapFilter_gridDisplay";
 const SCALE_DISPLAY_KEY = "mapFilter_scaleDisplay";
 const AREA_MEASURE_KEY = "mapFilter_areaMeasure";
+const AREA_REGIONS_KEY = "areaRegions_v1";
+const AREA_MANAGER_MODAL_ID = "wplace-studio-area-manager-modal";
 
 type FilterState = {
   darkTheme: "custom-winter" | "dark";
@@ -101,6 +113,12 @@ class MapFilterMenu {
   private popover: HTMLDivElement | null = null;
   private isOpen = false;
   private mapReady = false;
+  private areaManagerModal: ModalElements | null = null;
+  private areaRegions: AreaRegion[] = [];
+  private areaEditMode = false;
+  private editingRegionId: string | null = null;
+  private editingRegionName = "";
+  private areaRequestCounter = 0;
   private state: FilterState = {
     darkTheme: "custom-winter",
     highContrast: false,
@@ -120,6 +138,7 @@ class MapFilterMenu {
       storedTheme === "dark" || storedTheme === "custom-winter"
         ? storedTheme
         : "custom-winter";
+
     const stored = await storage.get([
       HIGH_CONTRAST_KEY,
       BACKGROUND_COLOR_ENABLED_KEY,
@@ -127,7 +146,9 @@ class MapFilterMenu {
       GRID_DISPLAY_KEY,
       SCALE_DISPLAY_KEY,
       AREA_MEASURE_KEY,
+      AREA_REGIONS_KEY,
     ]);
+
     this.state.highContrast = stored[HIGH_CONTRAST_KEY] ?? false;
     this.state.gridDisplay = stored[GRID_DISPLAY_KEY] ?? false;
     this.state.scaleDisplay = stored[SCALE_DISPLAY_KEY] ?? false;
@@ -136,6 +157,7 @@ class MapFilterMenu {
       stored[BACKGROUND_COLOR_ENABLED_KEY] ?? false;
     this.state.backgroundColorValue =
       stored[BACKGROUND_COLOR_VALUE_KEY] ?? "#000000";
+    this.areaRegions = this.normalizeAreaRegions(stored[AREA_REGIONS_KEY]);
 
     this.applyDarkTheme(this.state.darkTheme);
     if (this.state.highContrast) this.applyHighContrastStyle();
@@ -146,21 +168,18 @@ class MapFilterMenu {
     this.createPopover();
 
     this.mapReady = getMapInstanceReady();
+    if (this.mapReady) this.syncMapDependentState();
+
+    this.notifyAreaRegions();
+
     window.addEventListener("message", (event: MessageEvent) => {
       if (
         event.data.source === "mr-wplace-map-instance-captured" &&
         event.data.ready
       ) {
         this.mapReady = true;
-        this.updatePopoverItems();
-        this.updateScaleButton();
-        this.updateAreaButton();
-        this.notifyTileBoundaries();
-        this.notifyGridDisplay();
-        this.notifyScaleDisplay();
-        this.notifyAreaMeasure();
-        if (this.state.backgroundColorEnabled)
-          this.applyBackgroundColor(this.state.backgroundColorValue);
+        this.syncMapDependentState();
+        this.renderAreaManager();
       }
     });
 
@@ -179,6 +198,21 @@ class MapFilterMenu {
     console.log("🧑‍🎨 : Map filter menu initialized");
   }
 
+  private syncMapDependentState() {
+    this.updatePopoverItems();
+    this.updateScaleButton();
+    this.updateAreaButton();
+    this.notifyTileBoundaries();
+    this.notifyGridDisplay();
+    this.notifyScaleDisplay();
+    this.notifyAreaMeasure();
+    this.notifyAreaRegions();
+
+    if (this.state.backgroundColorEnabled) {
+      this.applyBackgroundColor(this.state.backgroundColorValue);
+    }
+  }
+
   private createTriggerButton() {
     this.triggerButton = document.createElement("button");
     this.triggerButton.className = "btn btn-sm btn-circle top-2";
@@ -188,7 +222,7 @@ class MapFilterMenu {
       font-size: 16px;
       z-index: 800;
     `;
-    this.triggerButton.innerHTML = `🗺️`;
+    this.triggerButton.innerHTML = "🗺️";
     this.triggerButton.addEventListener("click", (e) => {
       e.stopPropagation();
       this.togglePopover();
@@ -227,10 +261,10 @@ class MapFilterMenu {
       z-index: 800;
     `;
     this.areaButton.innerHTML = "📐";
-    this.areaButton.title = t`${"map_filter_areaMeasure"}`;
+    this.areaButton.title = t`${"map_filter_area_manager_title"}`;
     this.areaButton.addEventListener("click", (e) => {
       e.stopPropagation();
-      this.toggleAreaMeasure();
+      this.openAreaManager();
     });
     this.updateAreaButton();
     document.body.appendChild(this.areaButton);
@@ -250,7 +284,10 @@ class MapFilterMenu {
 
     const disabled = !this.mapReady;
     this.areaButton.disabled = disabled;
-    this.areaButton.classList.toggle("btn-active", this.state.areaMeasure);
+    this.areaButton.classList.toggle(
+      "btn-active",
+      this.state.areaMeasure || this.areaEditMode,
+    );
     this.areaButton.classList.toggle("opacity-50", disabled);
   }
 
@@ -280,7 +317,6 @@ class MapFilterMenu {
     itemsWrapper.className = "flex flex-col gap-2";
 
     for (const config of filterConfig) {
-      // Skip map3dDragRotate if map3d is not enabled
       if (config.id === "map3dDragRotate" && !this.state.map3d) {
         continue;
       }
@@ -296,9 +332,7 @@ class MapFilterMenu {
 
       const textContainer = document.createElement("span");
       textContainer.className = "flex items-center gap-2";
-      if (disabled) {
-        textContainer.classList.add("opacity-50");
-      }
+      if (disabled) textContainer.classList.add("opacity-50");
 
       const icon = document.createElement("span");
       icon.textContent = isEnabled ? config.iconOn : config.iconOff;
@@ -349,6 +383,7 @@ class MapFilterMenu {
 
       itemsWrapper.appendChild(itemWrapper);
     }
+
     container.appendChild(itemsWrapper);
   }
 
@@ -402,7 +437,6 @@ class MapFilterMenu {
       }
       case "map3d": {
         this.state.map3d = !this.state.map3d;
-        // Reset drag rotate when 3D is disabled
         if (!this.state.map3d && this.state.map3dDragRotate) {
           this.state.map3dDragRotate = false;
         }
@@ -415,6 +449,7 @@ class MapFilterMenu {
         break;
       }
     }
+
     this.updatePopoverItems();
     console.log("🧑‍🎨 : Filter toggled:", id);
   }
@@ -428,13 +463,23 @@ class MapFilterMenu {
     console.log("🧑‍🎨 : Filter toggled:", "scaleDisplay");
   }
 
-  private async toggleAreaMeasure() {
-    if (!this.mapReady) return;
-    this.state.areaMeasure = !this.state.areaMeasure;
-    await storage.set({ [AREA_MEASURE_KEY]: this.state.areaMeasure });
+  private async setAreaMeasureEnabled(enabled: boolean) {
+    this.state.areaMeasure = enabled;
+    await storage.set({ [AREA_MEASURE_KEY]: enabled });
+
+    if (!enabled && this.areaEditMode) {
+      await this.stopAreaEditing(true);
+    }
+
     this.notifyAreaMeasure();
     this.updateAreaButton();
-    console.log("🧑‍🎨 : Filter toggled:", "areaMeasure");
+    this.renderAreaManager();
+
+    console.log("🧑‍🎨 : Filter toggled:", "areaMeasure", enabled);
+  }
+
+  private async toggleAreaMeasure() {
+    await this.setAreaMeasureEnabled(!this.state.areaMeasure);
   }
 
   private togglePopover() {
@@ -447,9 +492,7 @@ class MapFilterMenu {
 
   private openPopover() {
     if (this.popover && this.triggerButton) {
-      // Re-check map ready state every time popover opens
       this.mapReady = getMapInstanceReady();
-      // Re-check theme from localStorage (may have changed externally)
       const storedTheme = localStorage.getItem("theme");
       this.state.darkTheme =
         storedTheme === "dark" || storedTheme === "custom-winter"
@@ -536,6 +579,16 @@ class MapFilterMenu {
     );
   }
 
+  private notifyAreaRegions() {
+    window.postMessage(
+      {
+        source: "mr-wplace-area-regions-sync",
+        regions: this.areaRegions,
+      },
+      "*",
+    );
+  }
+
   private notifyMap3d() {
     window.postMessage(
       {
@@ -573,6 +626,523 @@ class MapFilterMenu {
       this.applyBackgroundColor(color);
     }
     console.log("🧑‍🎨 : Background color value changed to:", color);
+  }
+
+  private normalizeAreaRegions(value: unknown): AreaRegion[] {
+    if (!Array.isArray(value)) return [];
+
+    const now = Date.now();
+    const normalized: AreaRegion[] = [];
+
+    for (const raw of value) {
+      if (!raw || typeof raw !== "object") continue;
+      const candidate = raw as Record<string, unknown>;
+      const vertices = this.normalizeAreaVertices(candidate.vertices);
+      if (vertices.length < 3) continue;
+
+      const id =
+        typeof candidate.id === "string" && candidate.id.trim()
+          ? candidate.id
+          : this.createAreaRegionId();
+      const name =
+        typeof candidate.name === "string" && candidate.name.trim()
+          ? candidate.name.trim()
+          : this.createDefaultAreaName(normalized.length + 1);
+      const visible =
+        typeof candidate.visible === "boolean" ? candidate.visible : true;
+      const createdAt = this.normalizeTimestamp(candidate.createdAt, now);
+      const updatedAt = this.normalizeTimestamp(candidate.updatedAt, createdAt);
+
+      normalized.push({ id, name, vertices, visible, createdAt, updatedAt });
+    }
+
+    return normalized.sort((a, b) => b.updatedAt - a.updatedAt);
+  }
+
+  private normalizeAreaVertices(value: unknown): AreaRegionVertex[] {
+    if (!Array.isArray(value)) return [];
+
+    const vertices: AreaRegionVertex[] = [];
+    for (const raw of value) {
+      if (!raw || typeof raw !== "object") continue;
+      const candidate = raw as Record<string, unknown>;
+      const lng = candidate.lng;
+      const lat = candidate.lat;
+      if (
+        typeof lng === "number" &&
+        Number.isFinite(lng) &&
+        typeof lat === "number" &&
+        Number.isFinite(lat)
+      ) {
+        vertices.push({ lng, lat });
+      }
+    }
+
+    return vertices;
+  }
+
+  private normalizeTimestamp(value: unknown, fallback: number): number {
+    return typeof value === "number" && Number.isFinite(value)
+      ? value
+      : fallback;
+  }
+
+  private createAreaRegionId(): string {
+    return `area_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  }
+
+  private createDefaultAreaName(index: number): string {
+    return `${t`${"map_filter_area_default_name"}`} ${index}`;
+  }
+
+  private async persistAreaRegions() {
+    await storage.set({ [AREA_REGIONS_KEY]: this.areaRegions });
+  }
+
+  private getEditingRegion(): AreaRegion | undefined {
+    if (!this.editingRegionId) return undefined;
+    return this.areaRegions.find((region) => region.id === this.editingRegionId);
+  }
+
+  private getEditingLabel(): string {
+    const editingRegion = this.getEditingRegion();
+    if (editingRegion) return editingRegion.name;
+    if (this.editingRegionName.trim()) return this.editingRegionName.trim();
+    return t`${"map_filter_area_new_region"}`;
+  }
+
+  private ensureAreaManagerModal() {
+    if (this.areaManagerModal) return;
+
+    this.areaManagerModal = createModal({
+      id: AREA_MANAGER_MODAL_ID,
+      title: t`${"map_filter_area_manager_title"}`,
+      maxWidth: "34rem",
+    });
+
+    this.areaManagerModal.modal.addEventListener(
+      "close",
+      () => {
+        this.areaManagerModal = null;
+      },
+      { once: true },
+    );
+  }
+
+  private openAreaManager() {
+    this.ensureAreaManagerModal();
+    this.renderAreaManager();
+
+    if (!this.areaManagerModal?.modal.open) {
+      this.areaManagerModal?.modal.showModal();
+    }
+  }
+
+  private renderAreaManager() {
+    const container = this.areaManagerModal?.container;
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    const root = document.createElement("div");
+    root.className = "flex flex-col gap-3";
+
+    const modeCard = document.createElement("div");
+    modeCard.className = "card bg-base-200";
+    modeCard.style.cssText = "padding: 0.75rem;";
+
+    const modeRow = document.createElement("div");
+    modeRow.className = "flex items-center justify-between gap-2";
+
+    const modeLabel = document.createElement("div");
+    modeLabel.className = "font-semibold text-sm";
+    modeLabel.textContent = t`${"map_filter_area_mode"}`;
+
+    const modeBadge = document.createElement("span");
+    modeBadge.className = `badge ${this.areaEditMode ? "badge-warning" : "badge-ghost"}`;
+    modeBadge.textContent = this.areaEditMode
+      ? t`${"map_filter_area_mode_editing"}`
+      : t`${"map_filter_area_mode_display"}`;
+
+    modeRow.appendChild(modeLabel);
+    modeRow.appendChild(modeBadge);
+    modeCard.appendChild(modeRow);
+
+    const displayRow = document.createElement("label");
+    displayRow.className = "label cursor-pointer justify-start gap-3 py-2";
+
+    const displayToggle = document.createElement("input");
+    displayToggle.type = "checkbox";
+    displayToggle.className = "toggle toggle-sm";
+    displayToggle.checked = this.state.areaMeasure;
+    displayToggle.disabled = !this.mapReady;
+    displayToggle.addEventListener("change", () => {
+      this.setAreaMeasureEnabled(displayToggle.checked);
+    });
+
+    const displayText = document.createElement("span");
+    displayText.className = "label-text";
+    displayText.textContent = t`${"map_filter_areaMeasure"}`;
+
+    displayRow.appendChild(displayToggle);
+    displayRow.appendChild(displayText);
+    modeCard.appendChild(displayRow);
+
+    if (this.areaEditMode) {
+      const editingText = document.createElement("div");
+      editingText.className = "text-xs opacity-80";
+      editingText.textContent = `${t`${"map_filter_area_editing"}`}: ${this.getEditingLabel()}`;
+      modeCard.appendChild(editingText);
+
+      const actionRow = document.createElement("div");
+      actionRow.className = "flex gap-2 pt-2";
+
+      const saveButton = document.createElement("button");
+      saveButton.className = "btn btn-primary btn-sm";
+      saveButton.textContent = this.getEditingRegion()
+        ? t`${"map_filter_area_save_update"}`
+        : t`${"map_filter_area_save_new"}`;
+      saveButton.disabled = !this.mapReady;
+      saveButton.addEventListener("click", () => {
+        this.saveAreaEditing();
+      });
+
+      const stopButton = document.createElement("button");
+      stopButton.className = "btn btn-outline btn-sm";
+      stopButton.textContent = t`${"map_filter_area_stop_editing"}`;
+      stopButton.addEventListener("click", () => {
+        this.stopAreaEditing();
+      });
+
+      actionRow.appendChild(saveButton);
+      actionRow.appendChild(stopButton);
+      modeCard.appendChild(actionRow);
+    } else {
+      const startButton = document.createElement("button");
+      startButton.className = "btn btn-primary btn-sm mt-2";
+      startButton.textContent = t`${"map_filter_area_start_new"}`;
+      startButton.disabled = !this.mapReady;
+      startButton.addEventListener("click", () => {
+        this.startAreaEditing(null);
+      });
+      modeCard.appendChild(startButton);
+    }
+
+    const listHeader = document.createElement("div");
+    listHeader.className = "flex items-center justify-between";
+
+    const listTitle = document.createElement("h4");
+    listTitle.className = "font-semibold text-sm";
+    listTitle.textContent = t`${"map_filter_area_saved_regions"}`;
+
+    const count = document.createElement("span");
+    count.className = "text-xs opacity-70";
+    count.textContent = String(this.areaRegions.length);
+
+    listHeader.appendChild(listTitle);
+    listHeader.appendChild(count);
+
+    const list = document.createElement("div");
+    list.className = "flex flex-col gap-2";
+
+    if (this.areaRegions.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "text-sm opacity-70";
+      empty.textContent = t`${"map_filter_area_empty"}`;
+      list.appendChild(empty);
+    } else {
+      for (const region of this.areaRegions) {
+        const card = document.createElement("div");
+        card.className = "card bg-base-200";
+        card.style.cssText = "padding: 0.6rem;";
+
+        const topRow = document.createElement("div");
+        topRow.className = "flex items-center justify-between gap-2";
+
+        const name = document.createElement("div");
+        name.className = "font-medium text-sm";
+        name.textContent = region.name;
+
+        const meta = document.createElement("span");
+        meta.className = "text-xs opacity-70";
+        meta.textContent = `${region.vertices.length} ${t`${"map_filter_area_points"}`}`;
+
+        topRow.appendChild(name);
+        topRow.appendChild(meta);
+        card.appendChild(topRow);
+
+        const actionRow = document.createElement("div");
+        actionRow.className = "flex items-center gap-1 pt-2 flex-wrap";
+
+        const visibilityButton = document.createElement("button");
+        visibilityButton.className = `btn btn-xs ${region.visible ? "btn-ghost" : "btn-outline"}`;
+        visibilityButton.textContent = region.visible
+          ? t`${"map_filter_area_hide"}`
+          : t`${"map_filter_area_show"}`;
+        visibilityButton.addEventListener("click", () => {
+          this.toggleAreaRegionVisibility(region.id);
+        });
+
+        const editButton = document.createElement("button");
+        editButton.className = "btn btn-xs btn-primary";
+        editButton.textContent = t`${"edit"}`;
+        editButton.disabled = !this.mapReady;
+        editButton.addEventListener("click", () => {
+          this.startAreaEditing(region.id);
+        });
+
+        const renameButton = document.createElement("button");
+        renameButton.className = "btn btn-xs";
+        renameButton.textContent = t`${"map_filter_area_rename"}`;
+        renameButton.addEventListener("click", () => {
+          this.renameAreaRegion(region.id);
+        });
+
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "btn btn-xs btn-error btn-outline";
+        deleteButton.textContent = t`${"delete"}`;
+        deleteButton.addEventListener("click", () => {
+          this.deleteAreaRegion(region.id);
+        });
+
+        actionRow.appendChild(visibilityButton);
+        actionRow.appendChild(editButton);
+        actionRow.appendChild(renameButton);
+        actionRow.appendChild(deleteButton);
+        card.appendChild(actionRow);
+
+        list.appendChild(card);
+      }
+    }
+
+    root.appendChild(modeCard);
+    root.appendChild(listHeader);
+    root.appendChild(list);
+
+    container.appendChild(root);
+  }
+
+  private async toggleAreaRegionVisibility(regionId: string) {
+    const target = this.areaRegions.find((region) => region.id === regionId);
+    if (!target) return;
+
+    target.visible = !target.visible;
+    target.updatedAt = Date.now();
+    this.areaRegions.sort((a, b) => b.updatedAt - a.updatedAt);
+
+    await this.persistAreaRegions();
+    this.notifyAreaRegions();
+    this.renderAreaManager();
+
+    console.log("🧑‍🎨 : Area region visibility toggled:", regionId, target.visible);
+  }
+
+  private async renameAreaRegion(regionId: string) {
+    const target = this.areaRegions.find((region) => region.id === regionId);
+    if (!target) return;
+
+    const value = await showNameInputModal(
+      t`${"map_filter_area_rename"}`,
+      t`${"map_filter_area_name_placeholder"}`,
+      target.name,
+    );
+
+    if (value == null) return;
+
+    const name = value.trim();
+    if (!name) return;
+
+    target.name = name;
+    target.updatedAt = Date.now();
+    this.areaRegions.sort((a, b) => b.updatedAt - a.updatedAt);
+
+    await this.persistAreaRegions();
+    this.notifyAreaRegions();
+    this.renderAreaManager();
+
+    console.log("🧑‍🎨 : Area region renamed:", regionId, name);
+  }
+
+  private async deleteAreaRegion(regionId: string) {
+    const target = this.areaRegions.find((region) => region.id === regionId);
+    if (!target) return;
+
+    const shouldDelete = confirm(t`${"map_filter_area_delete_confirm"}`);
+    if (!shouldDelete) return;
+
+    this.areaRegions = this.areaRegions.filter((region) => region.id !== regionId);
+
+    if (this.editingRegionId === regionId && this.areaEditMode) {
+      await this.stopAreaEditing(true);
+    }
+
+    await this.persistAreaRegions();
+    this.notifyAreaRegions();
+    this.renderAreaManager();
+    this.updateAreaButton();
+
+    console.log("🧑‍🎨 : Area region deleted:", regionId);
+  }
+
+  private async startAreaEditing(regionId: string | null) {
+    if (!this.mapReady) return;
+
+    const editingRegion = regionId
+      ? this.areaRegions.find((region) => region.id === regionId)
+      : undefined;
+
+    if (!this.state.areaMeasure) {
+      await this.setAreaMeasureEnabled(true);
+    }
+
+    this.areaEditMode = true;
+    this.editingRegionId = editingRegion?.id ?? null;
+    this.editingRegionName = editingRegion?.name ?? "";
+
+    window.postMessage(
+      {
+        source: "mr-wplace-area-region-edit-start",
+        regionId: this.editingRegionId,
+        name: this.editingRegionName,
+        vertices: editingRegion?.vertices ?? [],
+      },
+      "*",
+    );
+
+    this.updateAreaButton();
+    this.renderAreaManager();
+
+    console.log("🧑‍🎨 : Area edit requested:", this.editingRegionId ?? "new");
+  }
+
+  private async stopAreaEditing(skipRender = false) {
+    if (!this.areaEditMode) return;
+
+    this.areaEditMode = false;
+    this.editingRegionId = null;
+    this.editingRegionName = "";
+
+    window.postMessage({ source: "mr-wplace-area-region-edit-stop" }, "*");
+
+    this.updateAreaButton();
+    if (!skipRender) this.renderAreaManager();
+
+    console.log("🧑‍🎨 : Area edit stopped");
+  }
+
+  private generateAreaEditRequestId(): string {
+    return `area_edit_${Date.now()}_${++this.areaRequestCounter}`;
+  }
+
+  private async requestAreaEditSnapshot(): Promise<AreaRegionEditSnapshot | null> {
+    const requestId = this.generateAreaEditRequestId();
+
+    return new Promise((resolve) => {
+      let timeoutId: ReturnType<typeof setTimeout>;
+
+      const cleanup = () => {
+        window.removeEventListener("message", handler);
+        clearTimeout(timeoutId);
+      };
+
+      const handler = (event: MessageEvent) => {
+        if (
+          event.data.source !== "mr-wplace-area-region-edit-response" ||
+          event.data.requestId !== requestId
+        ) {
+          return;
+        }
+
+        cleanup();
+
+        const result = event.data.result as AreaRegionEditSnapshot | null;
+        if (!result || typeof result !== "object") {
+          resolve(null);
+          return;
+        }
+
+        const vertices = this.normalizeAreaVertices(result.vertices);
+        if (vertices.length < 3) {
+          resolve(null);
+          return;
+        }
+
+        resolve({
+          regionId: typeof result.regionId === "string" ? result.regionId : null,
+          name: typeof result.name === "string" ? result.name : "",
+          vertices,
+        });
+      };
+
+      window.addEventListener("message", handler);
+
+      window.postMessage(
+        {
+          source: "mr-wplace-area-region-edit-request",
+          requestId,
+        },
+        "*",
+      );
+
+      timeoutId = setTimeout(() => {
+        cleanup();
+        console.warn("🧑‍🎨 : Area edit request timed out");
+        resolve(null);
+      }, 5000);
+    });
+  }
+
+  private async saveAreaEditing() {
+    if (!this.areaEditMode) return;
+
+    const snapshot = await this.requestAreaEditSnapshot();
+    if (!snapshot || snapshot.vertices.length < 3) {
+      alert(t`${"map_filter_area_need_polygon"}`);
+      return;
+    }
+
+    const now = Date.now();
+    const existing = this.getEditingRegion();
+
+    if (existing) {
+      existing.vertices = snapshot.vertices;
+      existing.updatedAt = now;
+      this.areaRegions.sort((a, b) => b.updatedAt - a.updatedAt);
+      await this.persistAreaRegions();
+      this.notifyAreaRegions();
+      await this.stopAreaEditing(true);
+      this.renderAreaManager();
+
+      console.log("🧑‍🎨 : Area region updated:", existing.id);
+      return;
+    }
+
+    const suggestedName = this.getEditingLabel();
+    const nameInput = await showNameInputModal(
+      t`${"map_filter_area_save_new"}`,
+      t`${"map_filter_area_name_placeholder"}`,
+      suggestedName,
+    );
+
+    if (nameInput == null) return;
+
+    const name = nameInput.trim() || this.createDefaultAreaName(this.areaRegions.length + 1);
+    const newRegion: AreaRegion = {
+      id: this.createAreaRegionId(),
+      name,
+      vertices: snapshot.vertices,
+      visible: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    this.areaRegions.unshift(newRegion);
+    await this.persistAreaRegions();
+    this.notifyAreaRegions();
+    await this.stopAreaEditing(true);
+    this.renderAreaManager();
+
+    console.log("🧑‍🎨 : Area region created:", newRegion.id);
   }
 }
 

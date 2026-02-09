@@ -50,7 +50,13 @@ import {
 } from "./features/map-instance";
 import { setGridDisplayEnabled } from "./features/grid-display";
 import { setScaleDisplayEnabled } from "./features/scale-display";
-import { setAreaMeasureEnabled } from "./features/area-measure";
+import {
+  setAreaMeasureEnabled,
+  setAreaRegions,
+  startAreaRegionEdit,
+  stopAreaRegionEdit,
+  respondAreaRegionEditRequest,
+} from "./features/area-measure";
 
 type MessageHandler = (data: any) => void | Promise<void>;
 
@@ -198,6 +204,11 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-scale-display-update": (data) =>
     setScaleDisplayEnabled(data.visible),
   "mr-wplace-area-measure-update": (data) => setAreaMeasureEnabled(data.visible),
+  "mr-wplace-area-regions-sync": (data) => setAreaRegions(data.regions || []),
+  "mr-wplace-area-region-edit-start": (data) => startAreaRegionEdit(data),
+  "mr-wplace-area-region-edit-stop": () => stopAreaRegionEdit(),
+  "mr-wplace-area-region-edit-request": (data) =>
+    respondAreaRegionEditRequest(data),
   "mr-wplace-background-color-update": (data) =>
     changeBackgroundColor(data.color),
   "mr-wplace-map-3d-update": (data) => changeMap3dEnabled(data.enabled),

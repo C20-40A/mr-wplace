@@ -1,3 +1,8 @@
+import type {
+  AreaRegion,
+  AreaRegionEditSnapshot,
+  AreaRegionVertex,
+} from "@/types/area-region";
 import { getMapInstanceFromWplace } from "./map-instance";
 
 const AREA_CONTAINER_ID = "mr-wplace-area-measure";
@@ -27,15 +32,26 @@ interface AreaMap {
   };
 }
 
+interface AreaRegionEditStartPayload {
+  regionId?: string | null;
+  name?: string;
+  vertices?: AreaRegionVertex[];
+}
+
 let areaEnabled = false;
 
 let container: HTMLDivElement | null = null;
 let svg: SVGSVGElement | null = null;
-let polygon: SVGPolygonElement | null = null;
+let regionsLayer: SVGGElement | null = null;
+let editPolygon: SVGPolygonElement | null = null;
 let edgeHitLayer: HTMLDivElement | null = null;
 let areaLabel: HTMLDivElement | null = null;
 
-let vertices: LngLat[] = [];
+let areaRegions: AreaRegion[] = [];
+let editMode = false;
+let editingRegionId: string | null = null;
+let editingRegionName = "";
+let editVertices: LngLat[] = [];
 let vertexElements: HTMLDivElement[] = [];
 
 let activeMap: AreaMap | null = null;
@@ -43,6 +59,26 @@ let activeDragIndex: number | null = null;
 let mapUpdateHandler: (() => void) | null = null;
 let pointerMoveHandler: ((e: PointerEvent) => void) | null = null;
 let pointerUpHandler: (() => void) | null = null;
+
+const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === "number" && Number.isFinite(value);
+
+const isValidVertex = (vertex: unknown): vertex is AreaRegionVertex => {
+  if (!vertex || typeof vertex !== "object") return false;
+  const candidate = vertex as Record<string, unknown>;
+  return isFiniteNumber(candidate.lng) && isFiniteNumber(candidate.lat);
+};
+
+const sanitizeVertices = (vertices: unknown): LngLat[] => {
+  if (!Array.isArray(vertices)) return [];
+  return vertices.filter(isValidVertex).map((vertex) => ({
+    lng: vertex.lng,
+    lat: vertex.lat,
+  }));
+};
+
+const cloneVertices = (vertices: LngLat[]): AreaRegionVertex[] =>
+  vertices.map((vertex) => ({ lng: vertex.lng, lat: vertex.lat }));
 
 const getMapContainer = (map: AreaMap): HTMLElement | null => {
   const byApi = map.getContainer?.();
@@ -89,14 +125,18 @@ const createOverlay = (): HTMLDivElement => {
   svgRoot.setAttribute("viewBox", "0 0 1 1");
   svgRoot.style.pointerEvents = "none";
 
-  const polygonShape = document.createElementNS(AREA_SVG_NS, "polygon");
-  polygonShape.setAttribute("fill", "rgba(34, 197, 94, 0.18)");
-  polygonShape.setAttribute("stroke", "rgba(197, 34, 94, 0.95)");
-  polygonShape.setAttribute("stroke-width", "3");
-  polygonShape.setAttribute("vector-effect", "non-scaling-stroke");
-  polygonShape.style.pointerEvents = "none";
+  const regionsGroup = document.createElementNS(AREA_SVG_NS, "g");
 
-  svgRoot.appendChild(polygonShape);
+  const editingPolygon = document.createElementNS(AREA_SVG_NS, "polygon");
+  editingPolygon.setAttribute("fill", "rgba(34, 197, 94, 0.2)");
+  editingPolygon.setAttribute("stroke", "rgba(197, 34, 94, 0.95)");
+  editingPolygon.setAttribute("stroke-width", "3");
+  editingPolygon.setAttribute("vector-effect", "non-scaling-stroke");
+  editingPolygon.style.pointerEvents = "none";
+  editingPolygon.style.display = "none";
+
+  svgRoot.appendChild(regionsGroup);
+  svgRoot.appendChild(editingPolygon);
 
   const hitLayer = document.createElement("div");
   hitLayer.style.cssText = `
@@ -122,6 +162,7 @@ const createOverlay = (): HTMLDivElement => {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
     pointer-events: none;
     z-index: 2;
+    display: none;
   `;
 
   root.appendChild(svgRoot);
@@ -129,7 +170,8 @@ const createOverlay = (): HTMLDivElement => {
   root.appendChild(label);
 
   svg = svgRoot;
-  polygon = polygonShape;
+  regionsLayer = regionsGroup;
+  editPolygon = editingPolygon;
   edgeHitLayer = hitLayer;
   areaLabel = label;
 
@@ -173,7 +215,7 @@ const formatArea = (areaM2: number): string => {
 };
 
 const ensureDefaultVertices = (map: AreaMap): void => {
-  if (vertices.length >= 3) return;
+  if (editVertices.length >= 3) return;
 
   const center = map.getCenter();
   const centerPoint = map.project(center);
@@ -182,7 +224,7 @@ const ensureDefaultVertices = (map: AreaMap): void => {
     { x: 0, y: -110 },
     { x: 120, y: 40 },
   ];
-  vertices = offsets.map((offset) =>
+  editVertices = offsets.map((offset) =>
     map.unproject({
       x: centerPoint.x + offset.x,
       y: centerPoint.y + offset.y,
@@ -196,16 +238,21 @@ const clearEdgeHitLines = (): void => {
     edgeHitLayer.removeChild(edgeHitLayer.firstChild);
 };
 
+const clearVertexElements = (): void => {
+  for (const vertex of vertexElements) vertex.remove();
+  vertexElements = [];
+};
+
 const syncVertexElements = (): void => {
   if (!container) return;
 
-  while (vertexElements.length < vertices.length) {
+  while (vertexElements.length < editVertices.length) {
     const vertex = createVertexElement();
     vertexElements.push(vertex);
     container.appendChild(vertex);
   }
 
-  while (vertexElements.length > vertices.length) {
+  while (vertexElements.length > editVertices.length) {
     const vertex = vertexElements.pop();
     vertex?.remove();
   }
@@ -220,12 +267,14 @@ const setVertexFromPointer = (map: AreaMap, event: PointerEvent): void => {
   const rect = mapContainer.getBoundingClientRect();
   const x = Math.min(Math.max(event.clientX - rect.left, 0), rect.width);
   const y = Math.min(Math.max(event.clientY - rect.top, 0), rect.height);
-  vertices[activeDragIndex] = map.unproject({ x, y });
+  editVertices[activeDragIndex] = map.unproject({ x, y });
   renderAreaOverlay(map);
 };
 
 const stopVertexDrag = (): void => {
   if (!activeMap) return;
+
+  activeMap.dragPan?.enable();
 
   if (pointerMoveHandler) {
     window.removeEventListener("pointermove", pointerMoveHandler);
@@ -254,6 +303,7 @@ const startVertexDrag = (
 
   activeMap = map;
   activeDragIndex = index;
+  activeMap.dragPan?.disable();
   if (vertexElements[index]) vertexElements[index].style.cursor = "grabbing";
 
   pointerMoveHandler = (moveEvent) => {
@@ -270,20 +320,50 @@ const startVertexDrag = (
 };
 
 const insertVertexOnEdge = (map: AreaMap, edgeIndex: number): void => {
-  const current = map.project(vertices[edgeIndex]);
-  const next = map.project(vertices[(edgeIndex + 1) % vertices.length]);
+  const current = map.project(editVertices[edgeIndex]);
+  const next = map.project(editVertices[(edgeIndex + 1) % editVertices.length]);
   const midpoint = map.unproject({
     x: (current.x + next.x) / 2,
     y: (current.y + next.y) / 2,
   });
 
-  vertices.splice(edgeIndex + 1, 0, midpoint);
+  editVertices.splice(edgeIndex + 1, 0, midpoint);
   renderAreaOverlay(map);
 };
 
+const createRegionPolygon = (
+  map: AreaMap,
+  region: AreaRegion,
+): { polygon: SVGPolygonElement; center: ScreenPoint } | null => {
+  if (region.vertices.length < 3) return null;
+  const points = region.vertices.map((vertex) => map.project(vertex));
+  if (points.length < 3) return null;
+
+  const polygon = document.createElementNS(AREA_SVG_NS, "polygon");
+  polygon.setAttribute("points", points.map((point) => `${point.x},${point.y}`).join(" "));
+  polygon.setAttribute("fill", "rgba(20, 184, 166, 0.16)");
+  polygon.setAttribute("stroke", "rgba(15, 118, 110, 0.95)");
+  polygon.setAttribute("stroke-width", "2");
+  polygon.setAttribute("vector-effect", "non-scaling-stroke");
+  polygon.style.pointerEvents = "none";
+
+  const center = {
+    x: points.reduce((sum, point) => sum + point.x, 0) / points.length,
+    y: points.reduce((sum, point) => sum + point.y, 0) / points.length,
+  };
+
+  return { polygon, center };
+};
+
+const clearEditingUI = (): void => {
+  if (editPolygon) editPolygon.style.display = "none";
+  if (areaLabel) areaLabel.style.display = "none";
+  clearEdgeHitLines();
+  clearVertexElements();
+};
+
 const renderAreaOverlay = (map: AreaMap): void => {
-  if (!svg || !polygon || !edgeHitLayer || !areaLabel || !container) return;
-  if (vertices.length < 3) return;
+  if (!svg || !regionsLayer || !edgeHitLayer || !areaLabel || !container) return;
 
   const mapContainer = getMapContainer(map);
   if (!mapContainer) return;
@@ -295,8 +375,47 @@ const renderAreaOverlay = (map: AreaMap): void => {
     `0 0 ${Math.max(width, 1)} ${Math.max(height, 1)}`,
   );
 
-  const points = vertices.map((lngLat) => map.project(lngLat));
-  polygon.setAttribute("points", points.map((p) => `${p.x},${p.y}`).join(" "));
+  while (regionsLayer.firstChild) regionsLayer.removeChild(regionsLayer.firstChild);
+
+  for (const region of areaRegions) {
+    if (!region.visible) continue;
+    if (editMode && editingRegionId && region.id === editingRegionId) continue;
+
+    const rendered = createRegionPolygon(map, region);
+    if (!rendered) continue;
+
+    const text = document.createElementNS(AREA_SVG_NS, "text");
+    text.setAttribute("x", String(rendered.center.x));
+    text.setAttribute("y", String(rendered.center.y));
+    text.setAttribute("text-anchor", "middle");
+    text.setAttribute("dominant-baseline", "middle");
+    text.setAttribute("fill", "rgba(255, 255, 255, 0.95)");
+    text.setAttribute("stroke", "rgba(0, 0, 0, 0.65)");
+    text.setAttribute("stroke-width", "2");
+    text.setAttribute("paint-order", "stroke");
+    text.setAttribute("font-size", "12");
+    text.setAttribute("font-weight", "700");
+    text.style.pointerEvents = "none";
+    text.textContent = region.name;
+
+    regionsLayer.appendChild(rendered.polygon);
+    regionsLayer.appendChild(text);
+  }
+
+  if (!editMode || !editPolygon) {
+    clearEditingUI();
+    return;
+  }
+
+  ensureDefaultVertices(map);
+  if (editVertices.length < 3) {
+    clearEditingUI();
+    return;
+  }
+
+  const points = editVertices.map((lngLat) => map.project(lngLat));
+  editPolygon.style.display = "block";
+  editPolygon.setAttribute("points", points.map((point) => `${point.x},${point.y}`).join(" "));
 
   syncVertexElements();
   for (let i = 0; i < vertexElements.length; i++) {
@@ -305,24 +424,27 @@ const renderAreaOverlay = (map: AreaMap): void => {
     vertex.style.left = `${point.x}px`;
     vertex.style.top = `${point.y}px`;
     vertex.dataset.index = String(i);
-    if (!(vertex as any)._mrAreaEventsBound) {
+
+    if (!(vertex as { _mrAreaEventsBound?: boolean })._mrAreaEventsBound) {
       const onPointerDown = (event: PointerEvent) => {
         const index = Number(vertex.dataset.index);
         if (!Number.isFinite(index)) return;
         startVertexDrag(map, index, event);
       };
+
       const onDoubleClick = (event: MouseEvent) => {
         event.preventDefault();
         event.stopPropagation();
         const index = Number(vertex.dataset.index);
         if (!Number.isFinite(index)) return;
-        if (vertices.length <= 3) return;
-        vertices.splice(index, 1);
+        if (editVertices.length <= 3) return;
+        editVertices.splice(index, 1);
         renderAreaOverlay(map);
       };
+
       vertex.addEventListener("pointerdown", onPointerDown);
       vertex.addEventListener("dblclick", onDoubleClick);
-      (vertex as any)._mrAreaEventsBound = true;
+      (vertex as { _mrAreaEventsBound?: boolean })._mrAreaEventsBound = true;
     }
   }
 
@@ -356,13 +478,13 @@ const renderAreaOverlay = (map: AreaMap): void => {
     edgeHitLayer.appendChild(hit);
   }
 
-  const area = calculateAreaSquareMeters(vertices);
-  areaLabel.textContent = `${formatArea(area)} (${vertices.length} points)`;
+  const area = calculateAreaSquareMeters(editVertices);
+  const editName = editingRegionName.trim();
+  areaLabel.textContent = `${editName || "Editing"}: ${formatArea(area)} (${editVertices.length} points)`;
+  areaLabel.style.display = "block";
 
-  const centerX =
-    points.reduce((sum, point) => sum + point.x, 0) / points.length;
-  const centerY =
-    points.reduce((sum, point) => sum + point.y, 0) / points.length;
+  const centerX = points.reduce((sum, point) => sum + point.x, 0) / points.length;
+  const centerY = points.reduce((sum, point) => sum + point.y, 0) / points.length;
   areaLabel.style.left = `${centerX}px`;
   areaLabel.style.top = `${centerY}px`;
 };
@@ -382,8 +504,6 @@ const addAreaOverlay = (map: AreaMap): void => {
   container = createOverlay();
   mapContainer.appendChild(container);
 
-  ensureDefaultVertices(map);
-
   mapUpdateHandler = () => renderAreaOverlay(map);
   for (const eventName of MAP_UPDATE_EVENTS)
     map.on(eventName, mapUpdateHandler);
@@ -400,20 +520,111 @@ const removeAreaOverlay = (map: AreaMap): void => {
   }
 
   stopVertexDrag();
-
-  for (const vertex of vertexElements) vertex.remove();
-  vertexElements = [];
+  clearVertexElements();
 
   container?.remove();
   container = null;
   svg = null;
-  polygon = null;
+  regionsLayer = null;
+  editPolygon = null;
   edgeHitLayer = null;
   areaLabel = null;
   activeMap = null;
   activeDragIndex = null;
 
   console.log("🧑‍🎨 : Area measure removed");
+};
+
+const getCurrentEditSnapshot = (): AreaRegionEditSnapshot | null => {
+  if (!editMode || editVertices.length < 3) return null;
+  return {
+    regionId: editingRegionId,
+    name: editingRegionName,
+    vertices: cloneVertices(editVertices),
+  };
+};
+
+export const setAreaRegions = (regions: AreaRegion[]): void => {
+  areaRegions = Array.isArray(regions)
+    ? regions
+        .map((region) => {
+          if (!region || typeof region !== "object") return null;
+          const vertices = sanitizeVertices(
+            (region as { vertices?: unknown }).vertices,
+          );
+          if (vertices.length < 3) return null;
+
+          return {
+            id: String((region as { id?: unknown }).id ?? ""),
+            name: String((region as { name?: unknown }).name ?? ""),
+            visible:
+              typeof (region as { visible?: unknown }).visible === "boolean"
+                ? Boolean((region as { visible?: unknown }).visible)
+                : true,
+            createdAt: Number((region as { createdAt?: unknown }).createdAt ?? 0),
+            updatedAt: Number((region as { updatedAt?: unknown }).updatedAt ?? 0),
+            vertices,
+          } satisfies AreaRegion;
+        })
+        .filter((region): region is AreaRegion => Boolean(region))
+    : [];
+
+  const map = getMapInstanceFromWplace() as AreaMap | null;
+  if (map && areaEnabled) renderAreaOverlay(map);
+
+  console.log("🧑‍🎨 : Area regions synced:", areaRegions.length);
+};
+
+export const startAreaRegionEdit = (
+  payload: AreaRegionEditStartPayload = {},
+): void => {
+  const map = getMapInstanceFromWplace() as AreaMap | null;
+  if (!map) {
+    console.warn("🧑‍🎨 : Map instance not available for area edit");
+    return;
+  }
+
+  if (!areaEnabled) {
+    setAreaMeasureEnabled(true);
+  }
+
+  editMode = true;
+  editingRegionId = payload.regionId ?? null;
+  editingRegionName = payload.name?.trim() || "";
+  editVertices = sanitizeVertices(payload.vertices);
+  ensureDefaultVertices(map);
+  renderAreaOverlay(map);
+
+  console.log("🧑‍🎨 : Area edit started", {
+    regionId: editingRegionId,
+    points: editVertices.length,
+  });
+};
+
+export const stopAreaRegionEdit = (): void => {
+  stopVertexDrag();
+  editMode = false;
+  editingRegionId = null;
+  editingRegionName = "";
+  editVertices = [];
+
+  const map = getMapInstanceFromWplace() as AreaMap | null;
+  if (map && areaEnabled) renderAreaOverlay(map);
+
+  console.log("🧑‍🎨 : Area edit stopped");
+};
+
+export const respondAreaRegionEditRequest = (data: { requestId?: string }): void => {
+  if (!data.requestId) return;
+
+  window.postMessage(
+    {
+      source: "mr-wplace-area-region-edit-response",
+      requestId: data.requestId,
+      result: getCurrentEditSnapshot(),
+    },
+    "*",
+  );
 };
 
 export const setAreaMeasureEnabled = (enabled: boolean): void => {

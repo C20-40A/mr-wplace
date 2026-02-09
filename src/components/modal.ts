@@ -25,7 +25,8 @@ export interface ModalElements {
  */
 export const showNameInputModal = (
   title: string,
-  placeholder: string
+  placeholder: string,
+  defaultValue = ""
 ): Promise<string | null> => {
   return new Promise((resolve) => {
     const modal = document.createElement("dialog");
@@ -101,6 +102,7 @@ export const showNameInputModal = (
       }
     });
 
+    nameInput.value = defaultValue;
     modal.showModal();
     nameInput.focus();
   });
