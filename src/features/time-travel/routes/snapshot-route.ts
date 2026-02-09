@@ -19,6 +19,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
   private currentTileX?: number;
   private currentTileY?: number;
   private tutorial: Tutorial;
+  private router?: TimeTravelRouter;
 
   constructor(options: SnapshotRouteOptions) {
     super();
@@ -31,7 +32,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
 
     const newName = await showNameInputModal(
       t`${"edit"}`,
-      t`${"enter_tile_name"}`
+      t`${"enter_tile_name"}`,
     );
 
     if (newName === null) return;
@@ -39,7 +40,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     await TileNameStorage.setTileName(
       this.currentTileX,
       this.currentTileY,
-      newName
+      newName,
     );
     await this.updateTileInfo();
     Toast.success("Tile name updated");
@@ -61,7 +62,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
 
     const tileName = await TileNameStorage.getTileName(
       this.currentTileX,
-      this.currentTileY
+      this.currentTileY,
     );
     const displayName =
       tileName || `Tile(${this.currentTileX}, ${this.currentTileY})`;
@@ -89,6 +90,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
   }
 
   render(container: HTMLElement, router: TimeTravelRouter): void {
+    this.router = router;
     const currentRoute = router.getCurrentRoute();
     const selectedTile = (router as any).selectedTile;
 
@@ -109,10 +111,10 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     }
 
     container.innerHTML = `
-      <!-- タイル名称管理UI -->
-      <div class="mb-4 p-3 border rounded bg-gray-50">
-        <div id="tile-info-section" class="flex items-center gap-3">
-          <div class="flex-1">
+      <!-- タイル名称管理UI + Import Button -->
+      <div class="mb-4 p-3 border rounded bg-gray-50" style="display: flex; align-items: center; gap: 12px;">
+        <div id="tile-info-section" style="flex: 1; display: flex; align-items: center; gap: 12px;">
+          <div style="flex: 1;">
             <div id="tile-name-display" class="font-bold text-base">Loading...</div>
           </div>
           <button id="edit-tile-name-btn" class="btn btn-sm btn-outline" title="Edit tile name">
@@ -129,6 +131,14 @@ export class SnapshotRoute extends BaseSnapshotRoute {
             </svg>
           </button>
         </div>
+
+        <!-- Import Button -->
+        <button id="wps-import-snapshot-btn" class="btn btn-sm btn-neutral" style="flex-shrink: 0;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+            <path fill-rule="evenodd" d="M11.47 2.47a.75.75 0 011.06 0l4.5 4.5a.75.75 0 01-1.06 1.06l-3.22-3.22V16.5a.75.75 0 01-1.5 0V4.81L8.03 8.03a.75.75 0 01-1.06-1.06l4.5-4.5zM3 15.75a.75.75 0 01.75.75v2.25a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5V16.5a.75.75 0 011.5 0v2.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V16.5a.75.75 0 01.75-.75z" clip-rule="evenodd" />
+          </svg>
+          ${t`${"import"}`}
+        </button>
       </div>
 
       <!-- レスポンシブレイアウト -->
@@ -196,6 +206,13 @@ export class SnapshotRoute extends BaseSnapshotRoute {
   }
 
   private setupEvents(container: HTMLElement): void {
+    // インポートボタンのイベント
+    container
+      .querySelector("#wps-import-snapshot-btn")
+      ?.addEventListener("click", () => {
+        this.router?.navigate("import-snapshot");
+      });
+
     // 保存ボタンのイベント
     if (this.options.showSaveButton) {
       container
@@ -239,16 +256,18 @@ export class SnapshotRoute extends BaseSnapshotRoute {
 
     const snapshots = await TimeTravelStorage.getSnapshotsForTile(
       this.currentTileX,
-      this.currentTileY
+      this.currentTileY,
     );
-    const listContainer = container.querySelector("#wps-snapshots-list") as HTMLElement;
+    const listContainer = container.querySelector(
+      "#wps-snapshots-list",
+    ) as HTMLElement;
 
     if (listContainer) {
       if (snapshots.length === 0) {
         this.renderEmptySnapshotState(listContainer);
       } else {
         const renderedItems = await Promise.all(
-          snapshots.map((snapshot) => this.renderSnapshotItem(snapshot))
+          snapshots.map((snapshot) => this.renderSnapshotItem(snapshot)),
         );
         listContainer.innerHTML = renderedItems.join("");
       }
@@ -257,7 +276,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
 
   private renderEmptySnapshotState(listContainer: HTMLElement): void {
     const tutorialGifUrl = runtime.getURL(
-      "assets/images/tutorial/how_to_archive.gif"
+      "assets/images/tutorial/how_to_archive.gif",
     );
 
     listContainer.innerHTML = `
@@ -277,7 +296,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     // 名称入力Modal表示
     const name = await showNameInputModal(
       t`${"save_current_snapshot"}`,
-      t`${"enter_snapshot_name"}`
+      t`${"enter_snapshot_name"}`,
     );
 
     // キャンセルされた場合は処理中断
@@ -288,7 +307,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     const snapshotId = await tileSnapshot.saveSnapshot(
       this.currentTileX,
       this.currentTileY,
-      name === "" ? undefined : name
+      name === "" ? undefined : name,
     );
     Toast.success(`Snapshot saved: ${snapshotId}`);
     await this.reloadSnapshots(container);
@@ -300,7 +319,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
 
     const { lat, lng } = tilePixelToLatLng(
       this.currentTileX,
-      this.currentTileY
+      this.currentTileY,
     );
     await gotoPosition({ lat, lng, zoom: 11 });
   }
@@ -312,7 +331,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     }
 
     const canvas = document.getElementById(
-      "wps-current-tile-canvas"
+      "wps-current-tile-canvas",
     ) as HTMLCanvasElement;
 
     if (!canvas || canvas.style.display === "none") {
@@ -348,7 +367,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
 
   private async loadCurrentTileImage(): Promise<void> {
     const canvas = document.getElementById(
-      "wps-current-tile-canvas"
+      "wps-current-tile-canvas",
     ) as HTMLCanvasElement;
     const noImageMessage = document.getElementById("no-image-message");
 
@@ -373,7 +392,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
 
     const tmpBlob = await tileSnapshot.getTmpTile(
       this.currentTileX,
-      this.currentTileY
+      this.currentTileY,
     );
 
     let dataUrl: string | null = null;
@@ -389,7 +408,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
       // tmpタイルがない場合は、最新のスナップショットを取得
       const snapshots = await TimeTravelStorage.getSnapshotsForTile(
         this.currentTileX,
-        this.currentTileY
+        this.currentTileY,
       );
 
       if (snapshots.length > 0) {

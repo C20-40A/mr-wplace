@@ -10,15 +10,10 @@
 - corsのerrorがログ報告ツールで表示されて、エラーで停止する？
 
 - orion で db の移動(というか画像の変換？)ができない
-- unplaced only の背景色変更&i18n
 - popup の i18n
-- タイルが何もない場合の説明ほしい
 - tile の名称を変更した直後、なぜかすぐ編集画面がでてくる
 - window.localStorage.PARAGLIDE_LOCALE = 'jp'
-- ja の feedback form にならない
 - シンプルモードの検討
-- bookmarks や tiles は mobile だとスクロールできない
-- fix type error
 - src/features/gallery/routes/list/index.ts で統計とっているのが謎
 - sendGalleryImagesToInject なんとかする
 - 画像編集で「境界を強調」つまり「輪郭線を描画」できるようにする
@@ -39,12 +34,8 @@
 - 追加したばかりの画像、描画モードがドットスタートになっている。現在の描画モードにしたい
 - ブックマークの export とかに不要なのあるかも
 - タイル描画初回できない場合がある（データセーバーのとき）
-- 進捗を描画の UI に表示したい
 - 高速化のため、いくつかの map を record にする
-- i18n の不足部分
 - タイル一覧もタグほしい
-- 画像編集で色カウントあると便利
-- 現在位置のアーカイブで import
 
 - snaphsot の storage 使用量カウント
 
@@ -106,6 +97,8 @@
 
 # DONE v2.4.1
 
+- 現在位置のアーカイブで import
+- タイルが何もない場合の説明
 - EXEC -> STOP -> 再度EXEC -> クリックの基点がリセットされる。前回塗った場所に到達するまで待たないといけない
 - show unplaced onlyを別の機能にする
 - 「この範囲を塗るとすればどれくらいのPaintが必要か」を見積れる機能
@@ -117,6 +110,7 @@
 
 - 斜め表示
 - position modal修正
+- 画像編集で色カウントあると便利
 
 # DONE v2.3.1
 
