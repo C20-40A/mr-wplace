@@ -8,6 +8,7 @@ export interface ColorFilterState {
   selectedRGBs?: [number, number, number][];
   enhancedMode: EnhancedMode;
   enhancedColor: [number, number, number];
+  showUnplacedColor: [number, number, number];
   extraColorsBitmap?: number;
 }
 
@@ -16,6 +17,7 @@ let colorFilterState: ColorFilterState = {
   selectedRGBs: undefined,
   enhancedMode: "dot",
   enhancedColor: [255, 0, 0],
+  showUnplacedColor: [160, 160, 160],
   extraColorsBitmap: undefined,
 };
 
@@ -47,6 +49,12 @@ export const getEnhancedMode = (): EnhancedMode =>
  */
 export const getEnhancedColor = (): [number, number, number] =>
   colorFilterState.enhancedColor;
+
+/**
+ * Get show-unplaced-only match layer color
+ */
+export const getShowUnplacedColor = (): [number, number, number] =>
+  colorFilterState.showUnplacedColor;
 
 /**
  * Get extra colors bitmap

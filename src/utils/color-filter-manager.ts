@@ -5,12 +5,14 @@ import { storage } from "@/utils/browser-api";
 const STORAGE_KEY = "color-filter-selection";
 const ENHANCED_MODE_STORAGE_KEY = "enhanced-mode";
 const ENHANCED_COLOR_STORAGE_KEY = "enhanced-marker-color";
+const SHOW_UNPLACED_COLOR_STORAGE_KEY = "show-unplaced-color";
 
 export class ColorFilterManager {
   private selectedColorIds: Set<number>;
   public selectedRGBs: Array<[number, number, number]> = [];
   private enhancedMode: EnhancedMode = "dot";
   private enhancedColor: [number, number, number] = [255, 0, 0];
+  private showUnplacedColor: [number, number, number] = [160, 160, 160];
   private extraColorsBitmap: number | undefined = undefined;
 
   constructor() {
@@ -22,6 +24,7 @@ export class ColorFilterManager {
     await this.loadFromStorage();
     await this.loadEnhancedModeFromStorage();
     await this.loadEnhancedColorFromStorage();
+    await this.loadShowUnplacedColorFromStorage();
   }
 
   async setSelectedColors(colorIds: number[]): Promise<void> {
@@ -138,6 +141,15 @@ export class ColorFilterManager {
     return this.enhancedColor;
   }
 
+  setShowUnplacedColor(color: [number, number, number]): void {
+    this.showUnplacedColor = color;
+    this.saveShowUnplacedColorToStorage();
+  }
+
+  getShowUnplacedColor(): [number, number, number] {
+    return this.showUnplacedColor;
+  }
+
   setExtraColorsBitmap(bitmap: number | undefined): void {
     this.extraColorsBitmap = bitmap;
   }
@@ -213,6 +225,23 @@ export class ColorFilterManager {
   private async saveEnhancedColorToStorage(): Promise<void> {
     await storage.set({
       [ENHANCED_COLOR_STORAGE_KEY]: this.enhancedColor,
+    });
+  }
+
+  private async loadShowUnplacedColorFromStorage(): Promise<void> {
+    try {
+      const result = await storage.get(SHOW_UNPLACED_COLOR_STORAGE_KEY);
+      const saved = result[SHOW_UNPLACED_COLOR_STORAGE_KEY];
+      if (Array.isArray(saved) && saved.length === 3)
+        this.showUnplacedColor = saved as [number, number, number];
+    } catch {
+      // keep default
+    }
+  }
+
+  private async saveShowUnplacedColorToStorage(): Promise<void> {
+    await storage.set({
+      [SHOW_UNPLACED_COLOR_STORAGE_KEY]: this.showUnplacedColor,
     });
   }
 }

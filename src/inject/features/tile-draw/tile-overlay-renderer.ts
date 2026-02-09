@@ -10,6 +10,7 @@ import {
   getEnhancedColor,
   getEnhancedMode,
   getSelectedRGBs,
+  getShowUnplacedColor,
   isColorFilterActive,
 } from "../../states/colorFilterState";
 import { overlayLayers, perTileColorStats } from "./states";
@@ -58,18 +59,6 @@ const notifyStatsUpdate = (
       "*",
     );
   }
-};
-
-/**
- * Draw solid background for unplaced-only mode
- */
-const drawSolidBackground = (
-  ctx: OffscreenCanvasRenderingContext2D,
-  width: number,
-  height: number,
-): void => {
-  ctx.fillStyle = "#e8e8e8"; // rgb(232, 232, 232)
-  ctx.fillRect(0, 0, width, height);
 };
 
 /**
@@ -190,6 +179,7 @@ const computeStatsWithBackground = (
  */
 const scaleAndRenderWithMode = (
   data: Uint8ClampedArray,
+  comparisonData: Uint8ClampedArray | null,
   width: number,
   height: number,
   bgData: Uint8ClampedArray,
@@ -200,6 +190,7 @@ const scaleAndRenderWithMode = (
   shouldSkipRendering: boolean,
   showUnplacedOnly: boolean = false,
   enhancedColor: readonly [number, number, number] = [255, 0, 0],
+  showUnplacedColor: readonly [number, number, number] = [160, 160, 160],
 ): Uint8ClampedArray => {
   const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
   const scaledWidth = width * pixelScale;
@@ -232,6 +223,14 @@ const scaleAndRenderWithMode = (
       const a = data[srcI + 3];
       if (a === 0) continue;
 
+      // ON時のみ元画像基準で背景一致判定（OFF時は従来どおり描画データ基準）
+      const useOriginalComparison = showUnplacedOnly && comparisonData !== null;
+      const cmpR = useOriginalComparison ? comparisonData[srcI] : r;
+      const cmpG = useOriginalComparison ? comparisonData[srcI + 1] : g;
+      const cmpB = useOriginalComparison ? comparisonData[srcI + 2] : b;
+      const cmpA = useOriginalComparison ? comparisonData[srcI + 3] : a;
+      if (cmpA === 0) continue;
+
       // 背景色取得
       const bgX1 = offsetX + x1;
       const bgY1 = offsetY + y1;
@@ -244,16 +243,19 @@ const scaleAndRenderWithMode = (
       const bgB = bgData[bgI1 + 2];
       const bgA = bgData[bgI1 + 3];
 
-      const colorMatches = isSameColorComponents(r, g, b, bgR, bgG, bgB, bgA);
+      const colorMatches = isSameColorComponents(
+        cmpR,
+        cmpG,
+        cmpB,
+        bgR,
+        bgG,
+        bgB,
+        bgA,
+      );
 
-      // Show unplaced only モード: ロジック反転
-      if (showUnplacedOnly) {
-        // 背景と一致するピクセル (配置済み) は透明化、不一致 (未配置) のみ描画
-        if (colorMatches) continue;
-      } else {
-        // 通常モード: 背景と一致したら透明化、不一致なら描画
-        if (colorMatches) continue;
-      }
+      // 通常: 配置済みピクセルは非表示
+      // トグルON: 配置済みピクセルを専用色レイヤーで表示する
+      if (colorMatches && !showUnplacedOnly) continue;
 
       const baseX = x1 * pixelScale;
       const baseY = y1 * pixelScale;
@@ -270,6 +272,54 @@ const scaleAndRenderWithMode = (
       const bottomLeft = row2;
       const bottomCenter = row2 + 4;
       const bottomRight = row2 + 8;
+
+      if (showUnplacedOnly && colorMatches) {
+        // 配置済みを専用色で塗る。視認性のため元色を少しだけ残す
+        const matchedR = (showUnplacedColor[0] * 224 + cmpR * 32) >> 8;
+        const matchedG = (showUnplacedColor[1] * 224 + cmpG * 32) >> 8;
+        const matchedB = (showUnplacedColor[2] * 224 + cmpB * 32) >> 8;
+        const matchedA = 255;
+
+        scaledData[topLeft] = matchedR;
+        scaledData[topLeft + 1] = matchedG;
+        scaledData[topLeft + 2] = matchedB;
+        scaledData[topLeft + 3] = matchedA;
+        scaledData[topCenter] = matchedR;
+        scaledData[topCenter + 1] = matchedG;
+        scaledData[topCenter + 2] = matchedB;
+        scaledData[topCenter + 3] = matchedA;
+        scaledData[topRight] = matchedR;
+        scaledData[topRight + 1] = matchedG;
+        scaledData[topRight + 2] = matchedB;
+        scaledData[topRight + 3] = matchedA;
+
+        scaledData[midLeft] = matchedR;
+        scaledData[midLeft + 1] = matchedG;
+        scaledData[midLeft + 2] = matchedB;
+        scaledData[midLeft + 3] = matchedA;
+        scaledData[center] = matchedR;
+        scaledData[center + 1] = matchedG;
+        scaledData[center + 2] = matchedB;
+        scaledData[center + 3] = matchedA;
+        scaledData[midRight] = matchedR;
+        scaledData[midRight + 1] = matchedG;
+        scaledData[midRight + 2] = matchedB;
+        scaledData[midRight + 3] = matchedA;
+
+        scaledData[bottomLeft] = matchedR;
+        scaledData[bottomLeft + 1] = matchedG;
+        scaledData[bottomLeft + 2] = matchedB;
+        scaledData[bottomLeft + 3] = matchedA;
+        scaledData[bottomCenter] = matchedR;
+        scaledData[bottomCenter + 1] = matchedG;
+        scaledData[bottomCenter + 2] = matchedB;
+        scaledData[bottomCenter + 3] = matchedA;
+        scaledData[bottomRight] = matchedR;
+        scaledData[bottomRight + 1] = matchedG;
+        scaledData[bottomRight + 2] = matchedB;
+        scaledData[bottomRight + 3] = matchedA;
+        continue;
+      }
 
       // border-onlyは枠のみなので中心スキップ
       if (mode !== "border-only") {
@@ -680,9 +730,12 @@ const applyOverlayProcessing = async (
     colorFilter !== undefined && colorFilter.length === 0;
 
   const showUnplacedOnly = window.mrWplaceShowUnplacedOnly ?? false;
+  const comparisonData = showUnplacedOnly ? getOriginalData() : null;
+  const showUnplacedColor = getShowUnplacedColor();
 
   const scaledData = scaleAndRenderWithMode(
     filteredData,
+    comparisonData,
     width,
     height,
     bgData,
@@ -693,6 +746,7 @@ const applyOverlayProcessing = async (
     shouldSkipRendering,
     showUnplacedOnly,
     enhancedColor,
+    showUnplacedColor,
   );
 
   // Phase 4: ImageBitmap変換
@@ -871,14 +925,8 @@ export const drawOverlayLayersOnTile = async (
   if (!context) throw new Error("tile canvas context not found");
   context.imageSmoothingEnabled = false;
 
-  // Show unplaced only モード時は単色背景を描画
-  const showUnplacedOnly = window.mrWplaceShowUnplacedOnly ?? false;
-  if (showUnplacedOnly) {
-    drawSolidBackground(context, drawSize, drawSize);
-  } else {
-    // 元タイル画像を下地化（デコード済みImageBitmap）
-    context.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
-  }
+  // 元タイル画像を下地化（デコード済みImageBitmap）
+  context.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
 
   // 描画モードと色を取得
   const mode = getEnhancedMode();

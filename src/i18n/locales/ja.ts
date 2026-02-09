@@ -298,7 +298,8 @@ export const jaTranslations = {
   compute_device_label: "処理方式",
 
   // Show Unplaced Only
-  show_unplaced_only: "未配置のみ",
+  show_unplaced_only: "配置済み色",
+  show_unplaced_color: "色",
 
   // Tile Merge
   tile_merge: "タイルマージ",

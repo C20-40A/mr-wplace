@@ -1,8 +1,8 @@
 # メイン
 
+- tileもTMPL fill対象
 - show unplaced onlyを別の機能にする
 - EXEC -> STOP -> 再度EXEC -> クリックの基点がリセットされる。前回塗った場所に到達するまで待たないといけない
-- 「この範囲を塗るとすればどれくらいのPaintが必要か」を見積れる機能
 
 - 縮尺スケール
 
@@ -107,6 +107,7 @@
 
 # DONE v2.4.1
 
+- 「この範囲を塗るとすればどれくらいのPaintが必要か」を見積れる機能
 - EXEC->バツ印->止まらない
 - custom color(赤だけではなく、ほかの色も)
 - show unplaced onlyをi18n

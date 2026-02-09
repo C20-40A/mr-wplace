@@ -32,12 +32,13 @@ const getStateVersion = (): string => {
   const mode = getEnhancedMode();
   const eColor = getEnhancedColor();
   const unplaced = window.mrWplaceShowUnplacedOnly ?? false;
+  const unplacedColor = filter.showUnplacedColor;
   const overlayKeys = overlayLayers
     .map((l) => `${l.imageKey}:${l.drawEnabled}:${l.coords.join(",")}`)
     .join("|");
   return `${filter.isFilterActive}-${JSON.stringify(
     filter.selectedRGBs
-  )}-${mode}-${eColor.join(",")}-${unplaced}-${overlayKeys}`;
+  )}-${mode}-${eColor.join(",")}-${unplaced}-${unplacedColor.join(",")}-${overlayKeys}`;
 };
 
 /**

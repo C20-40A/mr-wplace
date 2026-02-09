@@ -29,6 +29,7 @@ export class ColorPalette {
   private currentlySelectedColorId: number | null = null;
   private enhancedMode: EnhancedMode;
   private enhancedColor: [number, number, number];
+  private showUnplacedColor: [number, number, number];
   private sortOrder: SortOrder = "default";
   private computeDevice: ComputeDevice;
   private showUnplacedOnly: boolean;
@@ -47,6 +48,7 @@ export class ColorPalette {
       : null;
     this.enhancedMode = options.enhancedMode ?? "dot";
     this.enhancedColor = options.enhancedColor ?? [255, 0, 0];
+    this.showUnplacedColor = options.showUnplacedColor ?? [160, 160, 160];
     this.sortOrder = options.sortOrder ?? "default";
     this.computeDevice = options.computeDevice ?? "gpu";
     this.showUnplacedOnly = options.showUnplacedOnly ?? false;
@@ -79,6 +81,7 @@ export class ColorPalette {
       this.computeDevice,
       this.options.showUnplacedOnlyToggle ?? false,
       this.showUnplacedOnly,
+      this.showUnplacedColor,
       this.options.showDisableUnusedButton ?? false,
       this.options.controlSize ?? "default",
       this.enhancedColor,
@@ -124,6 +127,16 @@ export class ColorPalette {
         currentIcon.src = icons[this.enhancedMode];
 
       this.options.onEnhancedColorChange?.(this.enhancedColor);
+      return;
+    }
+
+    if (target.classList.contains("show-unplaced-color-picker")) {
+      const hex = (target as HTMLInputElement).value;
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      this.showUnplacedColor = [r, g, b];
+      this.options.onShowUnplacedColorChange?.(this.showUnplacedColor);
     }
   }
 
@@ -150,6 +163,8 @@ export class ColorPalette {
 
   private handleClick(e: MouseEvent): void {
     const target = e.target as HTMLElement;
+
+    if (target.classList.contains("show-unplaced-color-picker")) return;
 
     // コントロールボタン
     if (target.classList.contains("enable-all-btn")) {

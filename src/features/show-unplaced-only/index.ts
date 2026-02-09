@@ -34,7 +34,7 @@ export class ShowUnplacedOnly {
         createElement: (container) => {
           const tooltip = document.createElement("div");
           tooltip.className = "tooltip";
-          tooltip.setAttribute("data-tip", t("Show unplaced pixels only"));
+          tooltip.setAttribute("data-tip", t("show_unplaced_only"));
           this.button = createShowUnplacedOnlyButton(getShowUnplacedOnly());
           this.button.id = "show-unplaced-only-btn";
           this.button.addEventListener("click", () => this.toggle());

@@ -23,6 +23,8 @@ export interface ColorPaletteOptions {
   showUnplacedOnlyToggle?: boolean;
   onShowUnplacedOnlyChange?: (enabled: boolean) => void;
   showUnplacedOnly?: boolean;
+  showUnplacedColor?: [number, number, number];
+  onShowUnplacedColorChange?: (color: [number, number, number]) => void;
   showDisableUnusedButton?: boolean;
   controlSize?: "default" | "xs";
 }

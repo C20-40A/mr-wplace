@@ -197,7 +197,12 @@ const rgbToHex = ([r, g, b]: [number, number, number]): string =>
   `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
 
 const RED_BASED_MODES: EnhancedMode[] = [
-  "red-cross", "red-border", "huge-red-cross", "huge-red-cross-bold", "huge-red-diamond", "huge-red-ring",
+  "red-cross",
+  "red-border",
+  "huge-red-cross",
+  "huge-red-cross-bold",
+  "huge-red-diamond",
+  "huge-red-ring",
 ];
 
 /**
@@ -471,9 +476,11 @@ export function buildComputeDeviceSelectHtml(
  */
 export function buildShowUnplacedOnlyToggleHtml(
   enabled: boolean,
+  showUnplacedColor: [number, number, number] = [160, 160, 160],
   controlSize: "default" | "xs" = "default",
 ): string {
   const isXs = controlSize === "xs";
+  const colorHex = rgbToHex(showUnplacedColor);
   const bgColor = enabled
     ? "var(--color-success, #22c55e)"
     : "var(--color-base-300, #e5e7eb)";
@@ -507,6 +514,18 @@ export function buildShowUnplacedOnlyToggleHtml(
             ontouchend="this.style.transform='scale(1)';">
       <span style="display: flex; align-items: center; width: ${isXs ? "18px" : "24px"}; height: ${isXs ? "18px" : "24px"};">${SHOW_UNPLACED_ONLY_ICON_SVG}</span>
       <span style="font-size: ${isXs ? "0.75rem" : "0.875rem"}; font-weight: 600;">${t("show_unplaced_only")}</span>
+      <input type="color"
+             class="show-unplaced-color-picker"
+             value="${colorHex}"
+             title="${t("show_unplaced_color")}"
+             style="width: ${isXs ? "16px" : "20px"};
+                    height: ${isXs ? "16px" : "20px"};
+                    border: 1px solid rgba(255,255,255,0.45);
+                    border-radius: 4px;
+                    background: none;
+                    cursor: pointer;
+                    padding: 0;
+                    flex-shrink: 0;" />
     </button>
   `;
 }
@@ -524,6 +543,7 @@ export function buildControlsHtml(
   computeDevice: ComputeDevice,
   showUnplacedOnlyToggle: boolean = false,
   showUnplacedOnly: boolean = false,
+  showUnplacedColor: [number, number, number] = [160, 160, 160],
   showDisableUnusedButton: boolean = false,
   controlSize: "default" | "xs" = "default",
   enhancedColor: [number, number, number] = [255, 0, 0],
@@ -568,7 +588,11 @@ export function buildControlsHtml(
     : "";
 
   const showUnplacedOnlyToggleHTML = showUnplacedOnlyToggle
-    ? buildShowUnplacedOnlyToggleHtml(showUnplacedOnly, controlSize)
+    ? buildShowUnplacedOnlyToggleHtml(
+        showUnplacedOnly,
+        showUnplacedColor,
+        controlSize,
+      )
     : "";
 
   const disableUnusedButtonHTML = showDisableUnusedButton

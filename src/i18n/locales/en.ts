@@ -291,7 +291,8 @@ export const enTranslations = {
   compute_device_label: "Processing",
 
   // Show Unplaced Only
-  show_unplaced_only: "Unplaced Only",
+  show_unplaced_only: "Placed",
+  show_unplaced_color: "Color",
 
   // Tile Merge
   tile_merge: "Tile Merge",

@@ -102,11 +102,17 @@ export const renderColorFilters = async (
     },
     showUnplacedOnlyToggle: true,
     showUnplacedOnly: getShowUnplacedOnly(),
+    showUnplacedColor: colorFilterManager?.getShowUnplacedColor() ?? [160, 160, 160],
     onShowUnplacedOnlyChange: (enabled) => {
       setShowUnplacedOnly(enabled);
       console.log(`🧑‍🎨 : Show unplaced only changed:`, enabled);
       // Send updated setting to inject side (transient state, not persisted)
       sendShowUnplacedOnlyToInject(enabled);
+    },
+    onShowUnplacedColorChange: (color) => {
+      colorFilterManager?.setShowUnplacedColor(color);
+      console.log(`🧑‍🎨 : Show unplaced color:`, color);
+      if (colorFilterManager) sendColorFilterToInject(colorFilterManager);
     },
   });
 };
