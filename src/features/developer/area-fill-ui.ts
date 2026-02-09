@@ -26,6 +26,55 @@ const formatCoord = (coord: { lat: number; lng: number } | null): string => {
   return `${TLX}-${TLY}-${PxX}-${PxY}`;
 };
 
+/**
+ * Request area fill estimate from inject context
+ */
+const requestAreaFillEstimate = (
+  corners: AreaFillCorners,
+  options: { skipExistingPixels: boolean; templateOnlyMode: boolean; fillPattern: FillPattern },
+): Promise<{ total: number; estimated: number } | null> => {
+  return new Promise((resolve) => {
+    const requestId = `estimate-${Date.now()}-${Math.random()}`;
+
+    const handleResponse = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-area-fill-estimate-response" &&
+        event.data.requestId === requestId
+      ) {
+        window.removeEventListener("message", handleResponse);
+        if (event.data.error) {
+          console.error("🧑‍🎨 : Area fill estimate error:", event.data.error);
+          resolve(null);
+        } else {
+          resolve(event.data.result);
+        }
+      }
+    };
+
+    window.addEventListener("message", handleResponse);
+
+    window.postMessage(
+      {
+        source: "mr-wplace-area-fill-estimate",
+        requestId,
+        corners,
+        options: {
+          skipExistingPixels: options.skipExistingPixels,
+          templateOnlyMode: options.templateOnlyMode,
+          fillPattern: options.fillPattern,
+        },
+      },
+      "*",
+    );
+
+    // Timeout after 10s
+    setTimeout(() => {
+      window.removeEventListener("message", handleResponse);
+      resolve(null);
+    }, 10000);
+  });
+};
+
 export const createAreaFillDialogItem = (
   initialCorners: AreaFillCorners,
   onCornersChange?: (corners: AreaFillCorners) => void
@@ -102,6 +151,28 @@ export const createAreaFillDialogItem = (
       console.log("🧑‍🎨 : Area fill bottom-right set:", pos.lat, pos.lng);
     }
   );
+
+  // Estimate display
+  const estimateDisplay = document.createElement("div");
+  estimateDisplay.style.cssText = `
+    display: none;
+    padding: 4px 6px;
+    border-radius: 1px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 4px;
+  `;
+
+  const estimateText = document.createElement("div");
+  estimateText.style.cssText = `
+    color: ${getColor("primary", 0.8)};
+    font-size: 9px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    text-align: center;
+  `;
+  estimateText.textContent = "Calculating...";
+
+  estimateDisplay.appendChild(estimateText);
 
   // Progress gauge
   const progressGauge = document.createElement("div");
@@ -291,6 +362,8 @@ export const createAreaFillDialogItem = (
     currentFillPattern = patternSelect.value as FillPattern;
     AreaFillStorage.setFillPattern(currentFillPattern);
     console.log("🧑‍🎨 : Area fill pattern:", currentFillPattern);
+    // Recalculate estimate
+    update(currentCornersState);
   });
 
   // Template Only Mode - unlock gate + toggle
@@ -356,6 +429,8 @@ export const createAreaFillDialogItem = (
     templateOnlyModeEnabled = tmplToggle.checked;
     AreaFillStorage.setTemplateOnlyMode(templateOnlyModeEnabled);
     console.log("🧑‍🎨 : Area fill template only mode:", templateOnlyModeEnabled);
+    // Recalculate estimate
+    update(currentCornersState);
   });
 
   tmplArea.addEventListener("click", (e) => {
@@ -386,6 +461,7 @@ export const createAreaFillDialogItem = (
   container.appendChild(header);
   container.appendChild(topLeftRow.row);
   container.appendChild(bottomRightRow.row);
+  container.appendChild(estimateDisplay);
   container.appendChild(optionsRow);
   container.appendChild(progressGauge);
   container.appendChild(buttonRow);
@@ -422,7 +498,7 @@ export const createAreaFillDialogItem = (
     progressText.textContent = `${current} / ${total} (${percentage}%)`;
   };
 
-  const update = (corners: AreaFillCorners) => {
+  const update = async (corners: AreaFillCorners) => {
     currentCornersState = corners;
     topLeftRow.valueSpan.textContent = formatCoord(corners.topLeft);
     topLeftRow.valueSpan.style.color = corners.topLeft
@@ -433,6 +509,32 @@ export const createAreaFillDialogItem = (
       ? getColor("primary", 1)
       : "rgba(255, 255, 255, 0.4)";
     updateFillBtnStyle();
+
+    // Calculate and display estimate if both corners are set
+    if (corners.topLeft && corners.bottomRight) {
+      estimateDisplay.style.display = "block";
+      estimateText.textContent = "Calculating...";
+
+      try {
+        const estimate = await requestAreaFillEstimate(corners, {
+          skipExistingPixels: true,
+          templateOnlyMode: templateOnlyModeEnabled,
+          fillPattern: currentFillPattern,
+        });
+
+        if (estimate) {
+          const { total, estimated } = estimate;
+          estimateText.textContent = `Area: ${total} px | Target: ${estimated} px`;
+        } else {
+          estimateText.textContent = "Calculation failed";
+        }
+      } catch (error) {
+        console.error("🧑‍🎨 : Estimate calculation error:", error);
+        estimateText.textContent = "Calculation error";
+      }
+    } else {
+      estimateDisplay.style.display = "none";
+    }
   };
 
   // MutationObserver for PaintPixelControls visibility

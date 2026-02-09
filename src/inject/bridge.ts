@@ -30,7 +30,11 @@ import {
   startAutoColorSpoit,
   stopAutoColorSpoit,
 } from "./features/developer/auto-color-spoit";
-import { startAreaFill, stopAreaFill } from "./features/developer/area-fill";
+import {
+  startAreaFill,
+  stopAreaFill,
+  calculateAreaFillEstimate,
+} from "./features/developer/area-fill";
 import {
   openFilePickerAndImport,
   exportAndDownload,
@@ -144,6 +148,36 @@ const handleGalleryReset = async (data: {
   }
 };
 
+/**
+ * Handle area fill estimate request
+ */
+const handleAreaFillEstimate = async (data: {
+  requestId: string;
+  corners: any;
+  options: any;
+}): Promise<void> => {
+  try {
+    const result = await calculateAreaFillEstimate(data.corners, data.options);
+    window.postMessage(
+      {
+        source: "mr-wplace-area-fill-estimate-response",
+        requestId: data.requestId,
+        result,
+      },
+      "*"
+    );
+  } catch (error) {
+    window.postMessage(
+      {
+        source: "mr-wplace-area-fill-estimate-response",
+        requestId: data.requestId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "*"
+    );
+  }
+};
+
 const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-processed": handleProcessedBlob,
   "mr-wplace-map-flyto": (data: { lat: number; lng: number; zoom: number }) =>
@@ -180,6 +214,7 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-area-fill-start": (data: any) =>
     startAreaFill(data.corners, data.options),
   "mr-wplace-area-fill-stop": stopAreaFill,
+  "mr-wplace-area-fill-estimate": handleAreaFillEstimate,
   "mr-wplace-gallery-import": handleGalleryImport,
   "mr-wplace-gallery-export": handleGalleryExport,
   "mr-wplace-gallery-reset": handleGalleryReset,

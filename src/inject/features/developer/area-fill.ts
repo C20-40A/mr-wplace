@@ -130,6 +130,9 @@ const applyFillPattern = (
 let isRunning = false;
 let stopRequested = false;
 let currentCorners: AreaFillCorners = { topLeft: null, bottomRight: null };
+let lastProcessedIndex = 0; // Track last processed index for resume
+let cachedPositions: PixelPosition[] | null = null; // Cache filtered positions
+let cachedOptions: AreaFillOptions | null = null; // Cache options for comparison
 
 const BASE_INTERVAL_MS = 10;
 const MIN_JITTER_MS = 2;
@@ -394,6 +397,30 @@ const filterByTemplateColor = async (
 };
 
 /**
+ * Check if corners or options have changed (requires recalculation)
+ */
+const needsRecalculation = (
+  corners: AreaFillCorners,
+  options: AreaFillOptions,
+): boolean => {
+  if (!cachedPositions || !cachedOptions) return true;
+  if (
+    currentCorners.topLeft?.lat !== corners.topLeft?.lat ||
+    currentCorners.topLeft?.lng !== corners.topLeft?.lng ||
+    currentCorners.bottomRight?.lat !== corners.bottomRight?.lat ||
+    currentCorners.bottomRight?.lng !== corners.bottomRight?.lng
+  )
+    return true;
+  if (
+    cachedOptions.skipExistingPixels !== options.skipExistingPixels ||
+    cachedOptions.templateOnlyMode !== options.templateOnlyMode ||
+    cachedOptions.fillPattern !== options.fillPattern
+  )
+    return true;
+  return false;
+};
+
+/**
  * Start area fill process
  */
 export const startAreaFill = async (
@@ -415,74 +442,96 @@ export const startAreaFill = async (
     return;
   }
 
+  const isResume = !needsRecalculation(corners, options);
   currentCorners = corners;
   isRunning = true;
   stopRequested = false;
 
-  console.log("🧑‍🎨 : Area fill started", corners);
-
-  const generated = generatePixelPositions(
-    corners.topLeft,
-    corners.bottomRight,
-  );
-  let positions = generated.positions;
-  const { width, height } = generated;
   console.log(
-    `🧑‍🎨 : Area fill - ${positions.length} pixels in area (${width}x${height})`,
+    `🧑‍🎨 : Area fill ${isResume ? "resumed" : "started"}`,
+    corners,
   );
 
-  if (options.skipExistingPixels) {
-    const before = positions.length;
-    positions = await filterExistingPixels(positions);
+  let positions: PixelPosition[];
+  let width: number;
+  let height: number;
+
+  // Use cached positions if resuming, otherwise recalculate
+  if (isResume && cachedPositions) {
+    positions = cachedPositions;
     console.log(
-      `🧑‍🎨 : Area fill - Filtered to ${positions.length} empty pixels (skipped ${
-        before - positions.length
-      } existing)`,
+      `🧑‍🎨 : Area fill - Resuming from index ${lastProcessedIndex}/${positions.length}`,
     );
-  }
+  } else {
+    // Reset cache and index
+    lastProcessedIndex = 0;
+    cachedOptions = { ...options };
 
-  // Template only mode: filter by overlay color
-  if (options.templateOnlyMode) {
-    const selectedRGB = getSelectedColorRGB();
-    if (!selectedRGB) {
-      console.error("🧑‍🎨 : Template only mode requires a selected color");
-      isRunning = false;
-      window.postMessage({ source: "mr-wplace-area-fill-finished" }, "*");
-      return;
-    }
-
-    const before = positions.length;
-    positions = await filterByTemplateColor(positions, selectedRGB);
+    const generated = generatePixelPositions(corners.topLeft, corners.bottomRight);
+    positions = generated.positions;
+    width = generated.width;
+    height = generated.height;
     console.log(
-      `🧑‍🎨 : Area fill - Template filter: ${positions.length} pixels match color RGB(${selectedRGB.join(",")}) (filtered ${before - positions.length})`,
+      `🧑‍🎨 : Area fill - ${positions.length} pixels in area (${width}x${height})`,
     );
 
-    if (positions.length === 0) {
-      console.warn(
-        "🧑‍🎨 : No pixels match the selected color in overlay templates",
+    if (options.skipExistingPixels) {
+      const before = positions.length;
+      positions = await filterExistingPixels(positions);
+      console.log(
+        `🧑‍🎨 : Area fill - Filtered to ${positions.length} empty pixels (skipped ${
+          before - positions.length
+        } existing)`,
       );
-      isRunning = false;
-      window.postMessage({ source: "mr-wplace-area-fill-finished" }, "*");
-      return;
     }
-  }
 
-  // Apply fill pattern
-  const fillPattern = options.fillPattern ?? "spiralPingPong";
-  positions = applyFillPattern(positions, width, height, fillPattern);
-  if (fillPattern !== "linear") {
-    console.log(`🧑‍🎨 : Area fill - Pattern applied: ${fillPattern}`);
+    // Template only mode: filter by overlay color
+    if (options.templateOnlyMode) {
+      const selectedRGB = getSelectedColorRGB();
+      if (!selectedRGB) {
+        console.error("🧑‍🎨 : Template only mode requires a selected color");
+        isRunning = false;
+        window.postMessage({ source: "mr-wplace-area-fill-finished" }, "*");
+        return;
+      }
+
+      const before = positions.length;
+      positions = await filterByTemplateColor(positions, selectedRGB);
+      console.log(
+        `🧑‍🎨 : Area fill - Template filter: ${positions.length} pixels match color RGB(${selectedRGB.join(",")}) (filtered ${before - positions.length})`,
+      );
+
+      if (positions.length === 0) {
+        console.warn(
+          "🧑‍🎨 : No pixels match the selected color in overlay templates",
+        );
+        isRunning = false;
+        window.postMessage({ source: "mr-wplace-area-fill-finished" }, "*");
+        return;
+      }
+    }
+
+    // Apply fill pattern
+    const fillPattern = options.fillPattern ?? "spiralPingPong";
+    positions = applyFillPattern(positions, width, height, fillPattern);
+    if (fillPattern !== "linear") {
+      console.log(`🧑‍🎨 : Area fill - Pattern applied: ${fillPattern}`);
+    }
+
+    // Cache positions for resume
+    cachedPositions = positions;
   }
 
   // Get available charge count
   const availableCharges = statusManagerSingleton.getCurrentChargeCount();
   console.log(`🧑‍🎨 : Area fill - Available charges: ${availableCharges}`);
 
-  // Limit positions by available charges
-  const maxClicks = Math.min(positions.length, availableCharges);
-  const limitedPositions = positions.slice(0, maxClicks);
+  // Calculate remaining positions from last index
+  const remainingPositions = positions.slice(lastProcessedIndex);
+  const maxClicks = Math.min(remainingPositions.length, availableCharges);
+  const limitedPositions = remainingPositions.slice(0, maxClicks);
 
-  if (limitedPositions.length < positions.length) {
+  if (limitedPositions.length < remainingPositions.length) {
     console.log(
       `🧑‍🎨 : Area fill - Limited to ${limitedPositions.length} clicks (charge limit)`,
     );
@@ -492,8 +541,8 @@ export const startAreaFill = async (
   window.postMessage(
     {
       source: "mr-wplace-area-fill-progress",
-      current: 0,
-      total: limitedPositions.length,
+      current: lastProcessedIndex,
+      total: positions.length,
     },
     "*",
   );
@@ -501,21 +550,24 @@ export const startAreaFill = async (
   let clickCount = 0;
   for (const pos of limitedPositions) {
     if (stopRequested) {
-      console.log("🧑‍🎨 : Area fill stopped by user");
+      console.log(
+        `🧑‍🎨 : Area fill stopped by user at ${lastProcessedIndex + clickCount}/${positions.length}`,
+      );
       break;
     }
 
     const success = fireMapClick(pos.lat, pos.lng);
     if (success) {
       clickCount++;
+      lastProcessedIndex++;
 
       // Send progress update every 10 clicks or on milestones
-      if (clickCount % 10 === 0 || clickCount === limitedPositions.length) {
+      if (clickCount % 10 === 0 || lastProcessedIndex === positions.length) {
         window.postMessage(
           {
             source: "mr-wplace-area-fill-progress",
-            current: clickCount,
-            total: limitedPositions.length,
+            current: lastProcessedIndex,
+            total: positions.length,
           },
           "*",
         );
@@ -523,18 +575,30 @@ export const startAreaFill = async (
 
       if (clickCount % 100 === 0) {
         console.log(
-          `🧑‍🎨 : Area fill progress: ${clickCount}/${limitedPositions.length}`,
+          `🧑‍🎨 : Area fill progress: ${lastProcessedIndex}/${positions.length}`,
         );
       }
     }
 
-    await sleep(getGradualInterval(clickCount));
+    await sleep(getGradualInterval(lastProcessedIndex));
   }
 
+  const isComplete = lastProcessedIndex >= positions.length;
   isRunning = false;
-  console.log(`🧑‍🎨 : Area fill completed. Clicked ${clickCount} pixels`);
 
-  // Notify content script that area fill has finished
+  if (isComplete) {
+    console.log(`🧑‍🎨 : Area fill completed. Total clicked ${lastProcessedIndex} pixels`);
+    // Reset cache on completion
+    cachedPositions = null;
+    cachedOptions = null;
+    lastProcessedIndex = 0;
+  } else {
+    console.log(
+      `🧑‍🎨 : Area fill paused at ${lastProcessedIndex}/${positions.length}`,
+    );
+  }
+
+  // Notify content script that area fill has finished/paused
   window.postMessage({ source: "mr-wplace-area-fill-finished" }, "*");
 };
 
@@ -544,10 +608,7 @@ export const startAreaFill = async (
 export const stopAreaFill = (): void => {
   if (!isRunning) return;
   stopRequested = true;
-  isRunning = false;
   console.log("🧑‍🎨 : Area fill stop requested");
-  // Notify content script that area fill has stopped
-  window.postMessage({ source: "mr-wplace-area-fill-finished" }, "*");
 };
 
 /**
@@ -566,3 +627,34 @@ export const setAreaFillCorners = (corners: AreaFillCorners): void => {
  * Get current corners
  */
 export const getAreaFillCorners = (): AreaFillCorners => currentCorners;
+
+/**
+ * Calculate estimated paint count for given corners and options
+ */
+export const calculateAreaFillEstimate = async (
+  corners: AreaFillCorners,
+  options: AreaFillOptions = DEFAULT_OPTIONS,
+): Promise<{ total: number; estimated: number } | null> => {
+  if (!corners.topLeft || !corners.bottomRight) return null;
+
+  const generated = generatePixelPositions(corners.topLeft, corners.bottomRight);
+  let positions = generated.positions;
+  const { width, height } = generated;
+
+  const totalPixels = positions.length;
+
+  if (options.skipExistingPixels) {
+    positions = await filterExistingPixels(positions);
+  }
+
+  if (options.templateOnlyMode) {
+    const selectedRGB = getSelectedColorRGB();
+    if (!selectedRGB) return { total: totalPixels, estimated: 0 };
+    positions = await filterByTemplateColor(positions, selectedRGB);
+  }
+
+  const fillPattern = options.fillPattern ?? "spiralPingPong";
+  positions = applyFillPattern(positions, width, height, fillPattern);
+
+  return { total: totalPixels, estimated: positions.length };
+};
