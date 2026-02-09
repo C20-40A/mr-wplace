@@ -330,17 +330,15 @@ const filterExistingPixels = async (
 /**
  * Filter positions to only include pixels that match the selected color in overlay layers
  * Used when templateOnlyMode is enabled
+ * Supports IndexedDB v2 for gallery images and snapshot layers
+ * Only includes pixels where background differs from template (skip already-placed pixels)
  */
 const filterByTemplateColor = async (
   positions: PixelPosition[],
   targetRGB: [number, number, number],
 ): Promise<PixelPosition[]> => {
-  if (overlayLayers.length === 0) {
-    console.warn("🧑‍🎨 : No overlay layers found for template filter");
-    return [];
-  }
+  if (overlayLayers.length === 0) return [];
 
-  // Group by tile
   const byTile = new Map<string, PixelPosition[]>();
   for (const pos of positions) {
     const arr = byTile.get(pos.tileKey) ?? [];
@@ -349,47 +347,89 @@ const filterByTemplateColor = async (
   }
 
   const result: PixelPosition[] = [];
-
-  // Build overlay tile cache (merged from all enabled layers)
-  const overlayTileCache = new Map<string, ImageData>();
+  const tileImageDataCache = new Map<string, ImageData | null>();
+  let galleryRepo: any;
+  let snapshotRepo: any;
 
   for (const [tileKey, tilePositions] of byTile) {
-    // Get or create merged overlay ImageData for this tile
-    let overlayData = overlayTileCache.get(tileKey);
-    if (!overlayData) {
-      const tempCanvas = new OffscreenCanvas(TILE_SIZE, TILE_SIZE);
-      const tempCtx = tempCanvas.getContext("2d")!;
+    const canvas = new OffscreenCanvas(TILE_SIZE, TILE_SIZE);
+    const ctx = canvas.getContext("2d")!;
 
-      // Draw all enabled overlay layers for this tile
-      for (const layer of overlayLayers) {
-        if (!layer.drawEnabled || !layer.tiles) continue;
-        const tileBitmap = layer.tiles[tileKey];
-        if (tileBitmap) {
-          tempCtx.drawImage(tileBitmap, 0, 0);
+    for (const layer of overlayLayers) {
+      if (!layer.drawEnabled) continue;
+
+      let tile = layer.tiles?.[tileKey];
+      if (!tile) {
+        const isSnapshot = layer.imageKey.startsWith("snapshot_");
+
+        if (isSnapshot) {
+          if (!snapshotRepo) {
+            try {
+              const { getSnapshotRepository } = await import("../../db/snapshot-repository");
+              snapshotRepo = getSnapshotRepository();
+            } catch {}
+          }
+          if (snapshotRepo) {
+            const snapshotId = layer.imageKey.replace("snapshot_tile_snapshot_", "");
+            const blob = await snapshotRepo.getSnapshot(snapshotId);
+            if (blob) tile = await createImageBitmap(blob);
+          }
+        } else {
+          if (!galleryRepo) {
+            try {
+              const { getGalleryRepository } = await import("../../db/gallery-repository");
+              galleryRepo = getGalleryRepository();
+            } catch {}
+          }
+          if (galleryRepo) {
+            const blob = await galleryRepo.getTile(layer.imageKey, tileKey);
+            if (blob) tile = await createImageBitmap(blob);
+          }
         }
       }
-
-      overlayData = tempCtx.getImageData(0, 0, TILE_SIZE, TILE_SIZE);
-      overlayTileCache.set(tileKey, overlayData);
+      if (tile) ctx.drawImage(tile, 0, 0);
     }
 
-    // Check each pixel
-    for (const pos of tilePositions) {
-      const idx = (pos.pxY * TILE_SIZE + pos.pxX) * 4;
-      const r = overlayData.data[idx];
-      const g = overlayData.data[idx + 1];
-      const b = overlayData.data[idx + 2];
-      const alpha = overlayData.data[idx + 3];
+    const templateData = ctx.getImageData(0, 0, TILE_SIZE, TILE_SIZE).data;
 
-      // Match if pixel is opaque and RGB matches target
-      if (
-        alpha > 0 &&
-        r === targetRGB[0] &&
-        g === targetRGB[1] &&
-        b === targetRGB[2]
-      ) {
+    // Load background tile for comparison
+    let bgImageData = tileImageDataCache.get(tileKey);
+    if (bgImageData === undefined) {
+      const blob = getOriginalBlob(tileKey);
+      bgImageData = blob ? await loadTileImageData(blob) : null;
+      tileImageDataCache.set(tileKey, bgImageData);
+    }
+
+    for (const pos of tilePositions) {
+      const i = (pos.pxY * TILE_SIZE + pos.pxX) * 4;
+      const tAlpha = templateData[i + 3];
+
+      // Skip if template pixel is transparent
+      if (tAlpha === 0) continue;
+
+      // Check if template color matches target
+      if (templateData[i] !== targetRGB[0] || templateData[i + 1] !== targetRGB[1] || templateData[i + 2] !== targetRGB[2]) continue;
+
+      // If no background data, include (empty tile)
+      if (!bgImageData) {
+        result.push(pos);
+        continue;
+      }
+
+      // Check background pixel
+      const bgAlpha = bgImageData.data[i + 3];
+
+      // Include if background is empty (alpha === 0)
+      if (bgAlpha === 0) {
+        result.push(pos);
+        continue;
+      }
+
+      // Include if background color differs from template color
+      if (bgImageData.data[i] !== targetRGB[0] || bgImageData.data[i + 1] !== targetRGB[1] || bgImageData.data[i + 2] !== targetRGB[2]) {
         result.push(pos);
       }
+      // Skip if background already matches template color (no need to paint)
     }
   }
 
@@ -490,17 +530,7 @@ export const startAreaFill = async (
       `🧑‍🎨 : Area fill - ${positions.length} pixels in area (${width}x${height})`,
     );
 
-    if (options.skipExistingPixels) {
-      const before = positions.length;
-      positions = await filterExistingPixels(positions);
-      console.log(
-        `🧑‍🎨 : Area fill - Filtered to ${positions.length} empty pixels (skipped ${
-          before - positions.length
-        } existing)`,
-      );
-    }
-
-    // Template only mode: filter by overlay color
+    // Template only mode: filter by overlay color (skip existing pixel check)
     if (options.templateOnlyMode) {
       const selectedRGB = getSelectedColorRGB();
       if (!selectedRGB) {
@@ -524,6 +554,15 @@ export const startAreaFill = async (
         window.postMessage({ source: "mr-wplace-area-fill-finished" }, "*");
         return;
       }
+    } else if (options.skipExistingPixels) {
+      // Normal mode: skip existing pixels
+      const before = positions.length;
+      positions = await filterExistingPixels(positions);
+      console.log(
+        `🧑‍🎨 : Area fill - Filtered to ${positions.length} empty pixels (skipped ${
+          before - positions.length
+        } existing)`,
+      );
     }
 
     // Apply fill pattern
@@ -670,14 +709,12 @@ export const calculateAreaFillEstimate = async (
 
   const totalPixels = positions.length;
 
-  if (options.skipExistingPixels) {
-    positions = await filterExistingPixels(positions);
-  }
-
   if (options.templateOnlyMode) {
     const selectedRGB = getSelectedColorRGB();
     if (!selectedRGB) return { total: totalPixels, estimated: 0 };
     positions = await filterByTemplateColor(positions, selectedRGB);
+  } else if (options.skipExistingPixels) {
+    positions = await filterExistingPixels(positions);
   }
 
   const fillPattern = options.fillPattern ?? "spiralPingPong";
