@@ -7,14 +7,12 @@ const HIGH_CONTRAST_STYLE_ID = "mr-wplace-high-contrast-style";
 const BACKGROUND_COLOR_ENABLED_KEY = "mapFilter_backgroundColorEnabled";
 const BACKGROUND_COLOR_VALUE_KEY = "mapFilter_backgroundColorValue";
 const GRID_DISPLAY_KEY = "mapFilter_gridDisplay";
-const SCALE_DISPLAY_KEY = "mapFilter_scaleDisplay";
 
 type FilterState = {
   darkTheme: "custom-winter" | "dark";
   highContrast: boolean;
   tileBoundaries: boolean;
   gridDisplay: boolean;
-  scaleDisplay: boolean;
   backgroundColorEnabled: boolean;
   backgroundColorValue: string;
   map3d: boolean;
@@ -94,7 +92,6 @@ const filterConfig: FilterConfig[] = [
 
 class MapFilterMenu {
   private triggerButton: HTMLButtonElement | null = null;
-  private scaleButton: HTMLButtonElement | null = null;
   private popover: HTMLDivElement | null = null;
   private isOpen = false;
   private mapReady = false;
@@ -103,7 +100,6 @@ class MapFilterMenu {
     highContrast: false,
     tileBoundaries: false,
     gridDisplay: false,
-    scaleDisplay: false,
     backgroundColorEnabled: false,
     backgroundColorValue: "#000000",
     map3d: false,
@@ -122,12 +118,10 @@ class MapFilterMenu {
       BACKGROUND_COLOR_ENABLED_KEY,
       BACKGROUND_COLOR_VALUE_KEY,
       GRID_DISPLAY_KEY,
-      SCALE_DISPLAY_KEY,
     ]);
 
     this.state.highContrast = stored[HIGH_CONTRAST_KEY] ?? false;
     this.state.gridDisplay = stored[GRID_DISPLAY_KEY] ?? false;
-    this.state.scaleDisplay = stored[SCALE_DISPLAY_KEY] ?? false;
     this.state.backgroundColorEnabled =
       stored[BACKGROUND_COLOR_ENABLED_KEY] ?? false;
     this.state.backgroundColorValue =
@@ -137,7 +131,6 @@ class MapFilterMenu {
     if (this.state.highContrast) this.applyHighContrastStyle();
 
     this.createTriggerButton();
-    this.createScaleButton();
     this.createPopover();
 
     this.mapReady = getMapInstanceReady();
@@ -170,10 +163,8 @@ class MapFilterMenu {
 
   private syncMapDependentState() {
     this.updatePopoverItems();
-    this.updateScaleButton();
     this.notifyTileBoundaries();
     this.notifyGridDisplay();
-    this.notifyScaleDisplay();
 
     if (this.state.backgroundColorEnabled) {
       this.applyBackgroundColor(this.state.backgroundColorValue);
@@ -195,35 +186,6 @@ class MapFilterMenu {
       this.togglePopover();
     });
     document.body.appendChild(this.triggerButton);
-  }
-
-  private createScaleButton() {
-    this.scaleButton = document.createElement("button");
-    this.scaleButton.className = "btn btn-sm btn-circle";
-    this.scaleButton.style.cssText = `
-      position: fixed;
-      left: 47px;
-      top: 46px;
-      font-size: 14px;
-      z-index: 800;
-    `;
-    this.scaleButton.innerHTML = "📏";
-    this.scaleButton.title = t`${"map_filter_scaleDisplay"}`;
-    this.scaleButton.addEventListener("click", (e) => {
-      e.stopPropagation();
-      this.toggleScaleDisplay();
-    });
-    this.updateScaleButton();
-    document.body.appendChild(this.scaleButton);
-  }
-
-  private updateScaleButton() {
-    if (!this.scaleButton) return;
-
-    const disabled = !this.mapReady;
-    this.scaleButton.disabled = disabled;
-    this.scaleButton.classList.toggle("btn-active", this.state.scaleDisplay);
-    this.scaleButton.classList.toggle("opacity-50", disabled);
   }
 
   private createPopover() {
@@ -389,15 +351,6 @@ class MapFilterMenu {
     console.log("🧑‍🎨 : Filter toggled:", id);
   }
 
-  private async toggleScaleDisplay() {
-    if (!this.mapReady) return;
-    this.state.scaleDisplay = !this.state.scaleDisplay;
-    await storage.set({ [SCALE_DISPLAY_KEY]: this.state.scaleDisplay });
-    this.notifyScaleDisplay();
-    this.updateScaleButton();
-    console.log("🧑‍🎨 : Filter toggled:", "scaleDisplay");
-  }
-
   private togglePopover() {
     if (this.isOpen) {
       this.closePopover();
@@ -415,7 +368,6 @@ class MapFilterMenu {
           ? storedTheme
           : "custom-winter";
       this.updatePopoverItems();
-      this.updateScaleButton();
 
       this.popover.style.display = "block";
       this.triggerButton.classList.add("btn-active");
@@ -469,16 +421,6 @@ class MapFilterMenu {
       {
         source: "mr-wplace-grid-display-update",
         visible: this.state.gridDisplay,
-      },
-      "*",
-    );
-  }
-
-  private notifyScaleDisplay() {
-    window.postMessage(
-      {
-        source: "mr-wplace-scale-display-update",
-        visible: this.state.scaleDisplay,
       },
       "*",
     );

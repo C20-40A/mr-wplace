@@ -15,6 +15,7 @@ import { ColorFilter } from "@/features/color-filter";
 import { ColorFilterManager } from "@/utils/color-filter-manager";
 import { textDrawAPI } from "@/features/text-draw";
 import { mapFilterMenuAPI, dataSaverAPI } from "@/features/map-filter";
+import { distanceMeasureAPI } from "@/features/distance-measure";
 import { areaManagerAPI } from "@/features/area-manager";
 import { layerSortAPI } from "@/features/layer-sort";
 import { DevInject } from "@/features/developer";
@@ -103,6 +104,7 @@ export const initializeFeatures = async () => {
   await Promise.all([
     safeInitAsync("textDraw", () => textDrawAPI.initTextDraw()),
     safeInitAsync("mapFilterMenu", () => mapFilterMenuAPI.initMapFilterMenu()),
+    safeInitAsync("distanceMeasure", () => distanceMeasureAPI.initDistanceMeasure()),
     safeInitAsync("areaManager", () => areaManagerAPI.initAreaManager()),
     safeInitAsync("dataSaver", () => dataSaverAPI.initDataSaver()),
     safeInitAsync("layerSort", () => layerSortAPI.initLayerSort()),
