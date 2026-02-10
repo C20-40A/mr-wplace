@@ -1,3 +1,49 @@
+const escapeAttrValue = (value: string): string =>
+  value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+
+const PAINT_OPACITY_TEXTS = [
+  "Toggle art opacity", // 英語 (ste)
+  "Alterar opacidade", // ポルトガル語 (lte) - 前回の "Alternar opacidade da arte" から変更
+  "切换作品不透明度", // 中国語 (cte)
+  "Art-Transparenz umschalten", // ドイツ語 (ute)
+  "Alternar opacidad del arte", // スペイン語 (hte)
+  "Basculer l’opacité de l’art", // フランス語 (dte)
+  "Modifica opacità", // イタリア語 (pte)
+  "アートの不透明度を切り替え", // 日本語 (fte)
+  "Przełącz przezroczystość grafik", // ポーランド語 (_te)
+  "Переключить непрозрачность арта", // ロシア語 (mte)
+  "Перемкнути прозорість арту", // ウクライナ語 (gte)
+  "Chuyển độ trong suốt của art", // ベトナム語 (vte)
+] as const;
+
+const PAINT_PIXEL_HEADER_TEXTS = [
+  "Paint pixel", // 英語 (WN)
+  "Pintar pixel", // ポルトガル語 ($N)
+  "绘制像素", // 中国語 (HN)
+  "Pixel malen", // ドイツ語 (XN)
+  "Pintar píxel", // スペイン語 (YN)
+  "Peindre un pixel", // フランス語 (KN)
+  "Dipingere pixel", // イタリア語 (JN)
+  "ピクセルを塗る", // 日本語 (QN)
+  "Pomaluj piksel", // ポーランド語 (eV)
+  "Нарисовать пиксель", // ロシア語 (tV)
+  "Намалювати піксель", // ウクライナ語 (rV)
+  "Tô pixel", // ベトナム語 (nV)
+] as const;
+
+const PAINT_OPACITY_TOOLTIP_SELECTOR = PAINT_OPACITY_TEXTS.map(
+  (text) => `[data-tip="${escapeAttrValue(text)}"]`,
+).join(", ");
+
+let cachedPaintPixelControls: Element | null = null;
+
+const isValidPaintControlsCache = (candidate: Element | null): boolean => {
+  if (!candidate?.isConnected) return false;
+
+  // Cached要素内にopacity tooltipが残っている場合のみキャッシュ有効とする
+  return !!candidate.querySelector(PAINT_OPACITY_TOOLTIP_SELECTOR);
+};
+
 export const findOpacityContainer = (): Element | null => {
   // 1. "Toggle art opacity" の多言語テキストリスト
   // ste, lte, cte, ute, hte, dte, pte, fte, _te, mte, gte, vte に対応
@@ -51,13 +97,13 @@ export const findOpacityContainer = (): Element | null => {
 export const findPositionModal = (): Element | null => {
   // 1. classのstyleで検索
   const positionModal = document.querySelector(
-    ".absolute.bottom-0.left-0.z-50.w-full.sm\\:left-1\\/2.sm\\:max-w-md.sm\\:-translate-x-1\\/2.md\\:max-w-lg"
+    ".absolute.bottom-0.left-0.z-50.w-full.sm\\:left-1\\/2.sm\\:max-w-md.sm\\:-translate-x-1\\/2.md\\:max-w-lg",
   );
   if (positionModal) return positionModal;
 
   // 2. modalの中身で検索
   const modalContent = document.querySelector(
-    ".rounded-t-box.bg-base-100.border-base-300.sm\\:rounded-b-box.w-full.border-t.pt-2.sm\\:mb-3.sm\\:shadow-xl"
+    ".rounded-t-box.bg-base-100.border-base-300.sm\\:rounded-b-box.w-full.border-t.pt-2.sm\\:mb-3.sm\\:shadow-xl",
   );
   if (modalContent?.parentElement) return modalContent.parentElement;
 
@@ -65,55 +111,29 @@ export const findPositionModal = (): Element | null => {
 };
 
 export const findPaintPixelControls = (): Element | null => {
-  // 1. "Toggle art opacity" の多言語テキストリスト
-  // ste, lte, cte, ute, hte, dte, pte, fte, _te, mte, gte, vte に対応
-  const opacityTexts = [
-    "Toggle art opacity", // 英語 (ste)
-    "Alterar opacidade", // ポルトガル語 (lte) - 前回の "Alternar opacidade da arte" から変更
-    "切换作品不透明度", // 中国語 (cte)
-    "Art-Transparenz umschalten", // ドイツ語 (ute)
-    "Alternar opacidad del arte", // スペイン語 (hte)
-    "Basculer l’opacité de l’art", // フランス語 (dte)
-    "Modifica opacità", // イタリア語 (pte)
-    "アートの不透明度を切り替え", // 日本語 (fte)
-    "Przełącz przezroczystość grafik", // ポーランド語 (_te)
-    "Переключить непрозрачность арта", // ロシア語 (mte)
-    "Перемкнути прозорість арту", // ウクライナ語 (gte)
-    "Chuyển độ trong suốt của art", // ベトナム語 (vte)
-  ];
-
-  // A. "Toggle art opacity" ボタンの親要素を取得
-  // data-tip属性の値が opacityTexts のいずれかに一致する要素を探す
-  for (const text of opacityTexts) {
-    const opacityTooltip = document.querySelector(`[data-tip="${text}"]`);
-    if (opacityTooltip?.parentElement) return opacityTooltip.parentElement;
+  if (isValidPaintControlsCache(cachedPaintPixelControls)) {
+    return cachedPaintPixelControls;
   }
 
-  // 2. "Paint pixel" の多言語テキストリスト
-  // WN, $N, HN, XN, YN, KN, JN, QN, eV, tV, rV, nV に対応
-  const paintPixelHeaderTexts = [
-    "Paint pixel", // 英語 (WN)
-    "Pintar pixel", // ポルトガル語 ($N)
-    "绘制像素", // 中国語 (HN)
-    "Pixel malen", // ドイツ語 (XN)
-    "Pintar píxel", // スペイン語 (YN)
-    "Peindre un pixel", // フランス語 (KN)
-    "Dipingere pixel", // イタリア語 (JN)
-    "ピクセルを塗る", // 日本語 (QN)
-    "Pomaluj piksel", // ポーランド語 (eV)
-    "Нарисовать пиксель", // ロシア語 (tV)
-    "Намалювати піксель", // ウクライナ語 (rV)
-    "Tô pixel", // ベトナム語 (nV)
-  ];
+  // A. "Toggle art opacity" ボタンの親要素を取得
+  const opacityTooltip = document.querySelector(PAINT_OPACITY_TOOLTIP_SELECTOR);
+  if (opacityTooltip?.parentElement) {
+    cachedPaintPixelControls = opacityTooltip.parentElement;
+    return cachedPaintPixelControls;
+  }
 
   // B. Paint pixel h2の親要素を取得
   const paintPixelHeaders = Array.from(document.querySelectorAll("h2"));
   const paintPixelHeader = paintPixelHeaders.find((h2) =>
-    paintPixelHeaderTexts.some((text) => h2.textContent?.includes(text))
+    PAINT_PIXEL_HEADER_TEXTS.some((text) => h2.textContent?.includes(text)),
   );
 
-  if (paintPixelHeader?.parentElement) return paintPixelHeader.parentElement;
+  if (paintPixelHeader?.parentElement) {
+    cachedPaintPixelControls = paintPixelHeader.parentElement;
+    return cachedPaintPixelControls;
+  }
 
+  cachedPaintPixelControls = null;
   return null;
 };
 
@@ -158,7 +178,7 @@ export const findTopLeftControls = (): Element | null => {
 
   // 2. classベース検索 (元のロジックを維持)
   const topLeftContainer = document.querySelector(
-    ".absolute.left-2.top-2.z-30.flex.flex-col.gap-3"
+    ".absolute.left-2.top-2.z-30.flex.flex-col.gap-3",
   );
   if (topLeftContainer) return topLeftContainer;
 
@@ -169,7 +189,7 @@ export const findTopLeftControls = (): Element | null => {
     .join(", ");
 
   const leftTopElements = document.querySelectorAll(
-    ".absolute.left-2.top-2.z-30"
+    ".absolute.left-2.top-2.z-30",
   );
   for (const element of leftTopElements) {
     if (element.querySelector(partialTitleSelectors)) {
@@ -197,7 +217,7 @@ export const findTopLeftControls = (): Element | null => {
 export const findMapPin = (): Element | null => {
   // すべてのmaplibregl-markerを取得
   const markers = document.querySelectorAll(
-    ".maplibregl-marker, .mapboxgl-marker"
+    ".maplibregl-marker, .mapboxgl-marker",
   );
 
   for (const marker of markers) {
@@ -217,7 +237,7 @@ export const findMapPin = (): Element | null => {
     // 4. 画面内の座標にあるか確認（translate値が妥当な範囲）
     const transform = style.transform || "";
     const translateMatch = transform.match(
-      /translate\((-?\d+)px,\s*(-?\d+)px\)/
+      /translate\((-?\d+)px,\s*(-?\d+)px\)/,
     );
     if (translateMatch) {
       const x = parseInt(translateMatch[1], 10);
