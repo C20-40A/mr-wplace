@@ -206,6 +206,16 @@ export const jaTranslations = {
 
   // popup専用
   buy_me_coffee: "作者にコーヒーをおごる",
+  popup_language: "言語",
+  popup_navigation: "ナビゲーション",
+  popup_navigation_map_jump: "マップジャンプ",
+  popup_navigation_url_jump: "URLジャンプ",
+  popup_lock_button: "ロックボタン拡大（モバイル向け）",
+  popup_close_confirm: "ペイント画面を閉じる時に確認",
+  popup_layer_sort: "ペイントアシストを最前面に",
+  popup_paint_mode_style: "ペイント時にFABを非表示",
+  popup_close_button_swap: "閉じるボタンの位置を入れ替え",
+  popup_bug_report: "バグ報告",
 
   // Color Filter
   color_filter: "カラーフィルター",

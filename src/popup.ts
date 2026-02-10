@@ -42,7 +42,7 @@ import { BUY_ME_COFFEE_IMAGE } from "./assets/buyMeACoffee";
 const updateUI = (): void => {
   // Update feedback form URL based on current locale
   const feedbackLink = document.getElementById(
-    "feedback-link"
+    "feedback-link",
   ) as HTMLAnchorElement;
   if (feedbackLink) {
     const currentLocale = I18nManager.getCurrentLocale();
@@ -50,16 +50,37 @@ const updateUI = (): void => {
     feedbackLink.href = FEEDBACK_FORM_URL[localeKey] || FEEDBACK_FORM_URL.en;
   }
 
-  // Update gallery data labels
-  const galleryDataLabel = document.getElementById("gallery-data-label");
-  const exportBtnLabel = document.getElementById("export-btn-label");
-  const importBtnLabel = document.getElementById("import-btn-label");
-  const resetBtnLabel = document.getElementById("reset-btn-label");
+  // Update all popup labels
+  const labelMap: Record<string, string> = {
+    "popup-language-label": "popup_language",
+    "popup-navigation-label": "popup_navigation",
+    "popup-nav-map-jump": "popup_navigation_map_jump",
+    "popup-nav-url-jump": "popup_navigation_url_jump",
+    "popup-lock-button-label": "popup_lock_button",
+    "popup-close-confirm-label": "popup_close_confirm",
+    "popup-layer-sort-label": "popup_layer_sort",
+    "popup-paint-mode-style-label": "popup_paint_mode_style",
+    "popup-close-button-swap-label": "popup_close_button_swap",
+    "popup-bug-report-label": "popup_bug_report",
+    "gallery-data-label": "gallery_data",
+    "export-btn-label": "export",
+    "import-btn-label": "import",
+    "reset-btn-label": "reset_gallery",
+  };
+  for (const [id, key] of Object.entries(labelMap)) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = t(key);
+  }
 
-  if (galleryDataLabel) galleryDataLabel.textContent = t`${"gallery_data"}`;
-  if (exportBtnLabel) exportBtnLabel.textContent = t`${"export"}`;
-  if (importBtnLabel) importBtnLabel.textContent = t`${"import"}`;
-  if (resetBtnLabel) resetBtnLabel.textContent = t`${"reset_gallery"}`;
+  // Update Enabled/Disabled options
+  const enabledText = t("enabled");
+  const disabledText = t("disabled");
+  document.querySelectorAll<HTMLOptionElement>(".popup-enabled-option").forEach(
+    (el) => (el.textContent = enabledText),
+  );
+  document
+    .querySelectorAll<HTMLOptionElement>(".popup-disabled-option")
+    .forEach((el) => (el.textContent = disabledText));
 };
 
 // Dev mode easter egg
@@ -76,15 +97,15 @@ const setupDevModeEasterEgg = (): void => {
 
     // Visual effect based on click count
     const effects = [
-      () => title.style.transform = "scale(1.1)",
-      () => title.style.color = "#ff0",
-      () => title.style.transform = "rotate(5deg)",
-      () => title.style.color = "#0ff",
-      () => title.style.transform = "rotate(-5deg) scale(1.1)",
-      () => title.style.color = "#f0f",
-      () => title.style.transform = "rotate(10deg)",
-      () => title.style.textShadow = "0 0 10px #fff",
-      () => title.style.transform = "rotate(-10deg) scale(1.2)",
+      () => (title.style.transform = "scale(1.1)"),
+      () => (title.style.color = "#ff0"),
+      () => (title.style.transform = "rotate(5deg)"),
+      () => (title.style.color = "#0ff"),
+      () => (title.style.transform = "rotate(-5deg) scale(1.1)"),
+      () => (title.style.color = "#f0f"),
+      () => (title.style.transform = "rotate(10deg)"),
+      () => (title.style.textShadow = "0 0 10px #fff"),
+      () => (title.style.transform = "rotate(-10deg) scale(1.2)"),
       () => {
         title.style.animation = "rainbow 0.5s infinite";
         const style = document.createElement("style");
@@ -110,7 +131,10 @@ const setupDevModeEasterEgg = (): void => {
       await storage.set({ "mr-wplace-auto-spoit-dev-mode": true });
 
       // Notify content script to reload
-      const [activeTab] = await tabs.query({ active: true, currentWindow: true });
+      const [activeTab] = await tabs.query({
+        active: true,
+        currentWindow: true,
+      });
       if (activeTab.id) {
         await tabs.reload(activeTab.id);
       }
@@ -125,25 +149,25 @@ const setupDevModeEasterEgg = (): void => {
 
 document.addEventListener("DOMContentLoaded", async () => {
   const languageSelect = document.getElementById(
-    "language-select"
+    "language-select",
   ) as HTMLSelectElement;
   const navigationSelect = document.getElementById(
-    "navigation-select"
+    "navigation-select",
   ) as HTMLSelectElement | null;
   const lockButtonEnhancerSelect = document.getElementById(
-    "lock-button-enhancer-select"
+    "lock-button-enhancer-select",
   ) as HTMLSelectElement;
   const closeConfirmSelect = document.getElementById(
-    "close-confirm-select"
+    "close-confirm-select",
   ) as HTMLSelectElement;
   const layerSortSelect = document.getElementById(
-    "layer-sort-select"
+    "layer-sort-select",
   ) as HTMLSelectElement;
   const paintModeStyleSelect = document.getElementById(
-    "paint-mode-style-select"
+    "paint-mode-style-select",
   ) as HTMLSelectElement;
   const closeButtonSwapSelect = document.getElementById(
-    "close-button-swap-select"
+    "close-button-swap-select",
   ) as HTMLSelectElement;
 
   // Set Buy Me a Coffee image
@@ -190,17 +214,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     currentCloseButtonSwap = getCloseButtonSwap();
 
     // Get map instance ready state from content script
-    const currentTab = (await tabs.query({ active: true, currentWindow: true }))[0];
+    const currentTab = (
+      await tabs.query({ active: true, currentWindow: true })
+    )[0];
     if (currentTab?.id) {
       try {
-        const response = await tabs.sendMessage(currentTab.id, { type: "GET_MAP_INSTANCE_READY" });
+        const response = await tabs.sendMessage(currentTab.id, {
+          type: "GET_MAP_INSTANCE_READY",
+        });
         mapInstanceReady = response?.ready || false;
       } catch (error) {
         console.warn("🧑‍🎨 : Failed to get map instance ready state:", error);
       }
     }
   } catch (error) {
-    console.warn("🧑‍🎨 : Failed to initialize popup (limited browser API support):", error);
+    console.warn(
+      "🧑‍🎨 : Failed to initialize popup (limited browser API support):",
+      error,
+    );
   }
 
   languageSelect.value = currentLocale;
@@ -371,7 +402,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 // Gallery export handler - delegates to inject
 const handleExport = async (): Promise<void> => {
   const exportBtn = document.getElementById(
-    "export-gallery-btn"
+    "export-gallery-btn",
   ) as HTMLButtonElement;
   if (!exportBtn) return;
 
@@ -394,7 +425,7 @@ const handleImport = async (): Promise<void> => {
   if (!confirm(t`${"confirm_import"}`)) return;
 
   const importBtn = document.getElementById(
-    "import-gallery-btn"
+    "import-gallery-btn",
   ) as HTMLButtonElement;
   if (!importBtn) return;
 
@@ -417,7 +448,7 @@ const handleReset = async (): Promise<void> => {
   if (!confirm(t`${"confirm_reset"}`)) return;
 
   const resetBtn = document.getElementById(
-    "reset-gallery-btn"
+    "reset-gallery-btn",
   ) as HTMLButtonElement;
   if (!resetBtn) return;
 
@@ -426,13 +457,13 @@ const handleReset = async (): Promise<void> => {
     resetBtn.innerHTML = `⏳ ${t`${"resetting"}`}`;
 
     await notifyContentScript({ type: "GALLERY_RESET" });
-    alert(t`${"gallery_reset_success"}`);
+    alert(t("gallery_reset_success"));
   } catch (error) {
     console.error("🧑‍🎨 : Reset failed:", error);
-    alert(t`${"reset_failed"}`);
+    alert(t("reset_failed"));
   } finally {
     resetBtn.disabled = false;
-    resetBtn.innerHTML = `🗑️ <span id="reset-btn-label">${t`${"reset_gallery"}`}</span>`;
+    resetBtn.innerHTML = `🗑️ <span id="reset-btn-label">${t("reset_gallery")}</span>`;
   }
 };
 

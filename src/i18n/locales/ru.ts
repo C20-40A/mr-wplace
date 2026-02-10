@@ -194,6 +194,16 @@ export const ruTranslations = {
 
   // popup専用
   buy_me_coffee: "Купите мне кофе",
+  popup_language: "Язык",
+  popup_navigation: "Навигация",
+  popup_navigation_map_jump: "Переход на Карте",
+  popup_navigation_url_jump: "Переход по URL",
+  popup_lock_button: "Большая Кнопка Блокировки (Мобильная)",
+  popup_close_confirm: "Подтверждение при Закрытии Панели Рисования",
+  popup_layer_sort: "Вывести Помощник Рисования на Передний План",
+  popup_paint_mode_style: "Скрыть FAB в Режиме Рисования",
+  popup_close_button_swap: "Поменять Позицию Кнопки Закрытия",
+  popup_bug_report: "Сообщить об Ошибке",
 
   // Color Filter
   color_filter: "Фильтр цвета",

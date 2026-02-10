@@ -200,6 +200,16 @@ export const enTranslations = {
 
   // popup専用
   buy_me_coffee: "Buy me a coffee",
+  popup_language: "Language",
+  popup_navigation: "Navigation",
+  popup_navigation_map_jump: "Map Jump",
+  popup_navigation_url_jump: "URL Jump",
+  popup_lock_button: "Large Lock Button (for Mobile)",
+  popup_close_confirm: "Confirm on Close Paint Modal",
+  popup_layer_sort: "Bring Paint Assist to Front",
+  popup_paint_mode_style: "Hide FABs on Paint Mode",
+  popup_close_button_swap: "Swap Close Button Position",
+  popup_bug_report: "Bug Report",
 
   // Color Filter
   color_filter: "Color Filter",

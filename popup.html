@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -154,7 +154,7 @@
           <svg class="icon" viewBox="0 0 12 12">
             <circle cx="6" cy="6" r="5" />
           </svg>
-          Language
+          <span id="popup-language-label">Language</span>
         </label>
         <select id="language-select">
           <option value="en">English</option>
@@ -167,30 +167,19 @@
         </select>
       </div>
 
-      <div class="setting-group" id="navigation-setting" style="display: none">
-        <label class="setting-label">
-          <svg class="icon" viewBox="0 0 12 12">
-            <rect x="1" y="1" width="10" height="10" />
-          </svg>
-          Navigation
-        </label>
-        <select id="navigation-select">
-          <option value="true">Map Jump</option>
-          <option value="false">URL Jump</option>
-        </select>
-      </div>
-
       <div class="setting-group">
         <label class="setting-label">
           <svg class="icon" viewBox="0 0 12 12">
             <rect x="3" y="5" width="6" height="5" />
             <path d="M5 5V3a1 1 0 0 1 2 0v2" />
           </svg>
-          Large Lock Button (for Mobile)
+          <span id="popup-lock-button-label"
+            >Large Lock Button (for Mobile)</span
+          >
         </label>
         <select id="lock-button-enhancer-select">
-          <option value="true">Enabled</option>
-          <option value="false">Disabled</option>
+          <option value="true" class="popup-enabled-option">Enabled</option>
+          <option value="false" class="popup-disabled-option">Disabled</option>
         </select>
       </div>
 
@@ -200,11 +189,13 @@
             <path d="M6 1L6 7M3 4L6 1L9 4" />
             <path d="M2 11h8" />
           </svg>
-          Confirm on Close Paint Modal
+          <span id="popup-close-confirm-label"
+            >Confirm on Close Paint Modal</span
+          >
         </label>
         <select id="close-confirm-select">
-          <option value="false">Disabled</option>
-          <option value="true">Enabled</option>
+          <option value="false" class="popup-disabled-option">Disabled</option>
+          <option value="true" class="popup-enabled-option">Enabled</option>
         </select>
       </div>
 
@@ -215,11 +206,11 @@
             <rect x="1" y="5" width="10" height="2" />
             <rect x="1" y="8" width="10" height="2" />
           </svg>
-          Bring Paint Assist to Front
+          <span id="popup-layer-sort-label">Bring Paint Assist to Front</span>
         </label>
         <select id="layer-sort-select">
-          <option value="true">Enabled</option>
-          <option value="false">Disabled</option>
+          <option value="true" class="popup-enabled-option">Enabled</option>
+          <option value="false" class="popup-disabled-option">Disabled</option>
         </select>
       </div>
 
@@ -228,24 +219,44 @@
           <svg class="icon" viewBox="0 0 12 12">
             <path d="M2 3h8v1H2zM4 6h4v1H4zM3 9h6v1H3z" />
           </svg>
-          Hide FABs on Paint Mode
+          <span id="popup-paint-mode-style-label">Hide FABs on Paint Mode</span>
         </label>
         <select id="paint-mode-style-select">
-          <option value="true">Enabled</option>
-          <option value="false">Disabled</option>
+          <option value="true" class="popup-enabled-option">Enabled</option>
+          <option value="false" class="popup-disabled-option">Disabled</option>
         </select>
       </div>
 
       <div class="setting-group">
         <label class="setting-label">
           <svg class="icon" viewBox="0 0 12 12">
-            <path d="M9 3L3 9M3 3l6 6" stroke="#fff" stroke-width="1.5" fill="none" />
+            <path
+              d="M9 3L3 9M3 3l6 6"
+              stroke="#fff"
+              stroke-width="1.5"
+              fill="none"
+            />
           </svg>
-          Swap Close Button Position
+          <span id="popup-close-button-swap-label"
+            >Swap Close Button Position</span
+          >
         </label>
         <select id="close-button-swap-select">
-          <option value="false">Disabled</option>
-          <option value="true">Enabled</option>
+          <option value="false" class="popup-disabled-option">Disabled</option>
+          <option value="true" class="popup-enabled-option">Enabled</option>
+        </select>
+      </div>
+
+      <div class="setting-group" id="navigation-setting" style="display: none">
+        <label class="setting-label">
+          <svg class="icon" viewBox="0 0 12 12">
+            <rect x="1" y="1" width="10" height="10" />
+          </svg>
+          <span id="popup-navigation-label">Navigation</span>
+        </label>
+        <select id="navigation-select">
+          <option value="true" id="popup-nav-map-jump">Map Jump</option>
+          <option value="false" id="popup-nav-url-jump">URL Jump</option>
         </select>
       </div>
 
@@ -282,7 +293,7 @@
           target="_blank"
           href="https://docs.google.com/forms/d/e/1FAIpQLSdjPLjn76n3H2g_9kYqasCkr_qqa-gLfOuhoT_8ukIvpYE8bQ/viewform?usp=publish-editor"
         >
-          Bug Report
+          <span id="popup-bug-report-label">Bug Report</span>
         </a>
 
         <a

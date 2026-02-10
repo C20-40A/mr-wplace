@@ -193,6 +193,16 @@ export const ptTranslations = {
 
   // popup専用
   buy_me_coffee: "Me pague um café",
+  popup_language: "Idioma",
+  popup_navigation: "Navegação",
+  popup_navigation_map_jump: "Saltar no Mapa",
+  popup_navigation_url_jump: "Saltar por URL",
+  popup_lock_button: "Botão de Bloqueio Grande (Mobile)",
+  popup_close_confirm: "Confirmar ao Fechar Painel de Pintura",
+  popup_layer_sort: "Trazer Assistente de Pintura para Frente",
+  popup_paint_mode_style: "Ocultar FABs no Modo Pintura",
+  popup_close_button_swap: "Trocar Posição do Botão Fechar",
+  popup_bug_report: "Reportar Bug",
 
   // Color Filter
   color_filter: "Filtro de Cor",

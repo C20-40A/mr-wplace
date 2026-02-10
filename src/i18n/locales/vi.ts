@@ -191,6 +191,16 @@ export const viTranslations = {
 
   // popup
   buy_me_coffee: "Mời tác giả cà phê",
+  popup_language: "Ngôn ngữ",
+  popup_navigation: "Điều hướng",
+  popup_navigation_map_jump: "Nhảy trên Bản đồ",
+  popup_navigation_url_jump: "Nhảy theo URL",
+  popup_lock_button: "Nút Khóa Lớn (Di động)",
+  popup_close_confirm: "Xác nhận khi Đóng Bảng Vẽ",
+  popup_layer_sort: "Đưa Hỗ trợ Vẽ lên Trước",
+  popup_paint_mode_style: "Ẩn FAB khi Chế độ Vẽ",
+  popup_close_button_swap: "Đổi Vị trí Nút Đóng",
+  popup_bug_report: "Báo Lỗi",
 
   // Color Filter
   color_filter: "Bộ lọc màu",
