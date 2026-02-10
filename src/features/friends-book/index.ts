@@ -156,11 +156,11 @@ const createFriendsBookFAB = (): void => {
 
   const button = document.createElement("button");
   button.id = "friends-book-fab";
-  button.className = "btn btn-square shadow-md top-2";
+  button.className = "btn btn-sm btn-circle shadow-md top-2";
   button.style.cssText =
     "position: absolute; right: 60px; z-index: 800; transition: transform 0.2s;";
   button.innerHTML = `
-    <img src="${IMG_ICON_BOOK}" style="width: calc(var(--spacing)*7); height: calc(var(--spacing)*7); image-rendering: pixelated;" />
+    <img src="${IMG_ICON_BOOK}" style="width: calc(var(--spacing)*6); height: calc(var(--spacing)*6); image-rendering: pixelated;" />
   `;
   button.title = t`friends_book`;
 

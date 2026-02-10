@@ -17,6 +17,7 @@ type FilterState = {
   backgroundColorValue: string;
   map3d: boolean;
   map3dDragRotate: boolean;
+  scaleDisplay: boolean;
 };
 
 type FilterId =
@@ -26,7 +27,8 @@ type FilterId =
   | "gridDisplay"
   | "backgroundColor"
   | "map3d"
-  | "map3dDragRotate";
+  | "map3dDragRotate"
+  | "scaleDisplay";
 
 type FilterConfig = {
   id: FilterId;
@@ -88,6 +90,13 @@ const filterConfig: FilterConfig[] = [
     iconOff: "🔄",
     requiresMap: true,
   },
+  {
+    id: "scaleDisplay",
+    label: () => t`${"map_filter_scaleDisplay"}`,
+    iconOn: "📏",
+    iconOff: "📏",
+    requiresMap: true,
+  },
 ];
 
 class MapFilterMenu {
@@ -104,6 +113,7 @@ class MapFilterMenu {
     backgroundColorValue: "#000000",
     map3d: false,
     map3dDragRotate: false,
+    scaleDisplay: false,
   };
 
   async init() {
@@ -165,6 +175,7 @@ class MapFilterMenu {
     this.updatePopoverItems();
     this.notifyTileBoundaries();
     this.notifyGridDisplay();
+    this.notifyScaleDisplay();
 
     if (this.state.backgroundColorEnabled) {
       this.applyBackgroundColor(this.state.backgroundColorValue);
@@ -193,8 +204,8 @@ class MapFilterMenu {
     this.popover.className = "card bg-base-100 shadow-xl";
     this.popover.style.cssText = `
       position: fixed;
-      left: 50px;
-      top: 122px;
+      left: 47px;
+      top: 46px;
       z-index: 801;
       display: none;
       min-width: 200px;
@@ -345,6 +356,11 @@ class MapFilterMenu {
         this.notifyMap3dDragRotate();
         break;
       }
+      case "scaleDisplay": {
+        this.state.scaleDisplay = !this.state.scaleDisplay;
+        this.notifyScaleDisplay();
+        break;
+      }
     }
 
     this.updatePopoverItems();
@@ -463,6 +479,16 @@ class MapFilterMenu {
       this.applyBackgroundColor(color);
     }
     console.log("🧑‍🎨 : Background color value changed to:", color);
+  }
+
+  private notifyScaleDisplay() {
+    window.postMessage(
+      {
+        source: "mr-wplace-scale-display-update",
+        visible: this.state.scaleDisplay,
+      },
+      "*",
+    );
   }
 }
 
