@@ -465,6 +465,7 @@ export const jaTranslations = {
   map_filter_area_points: "点",
   map_filter_area_show: "表示",
   map_filter_area_hide: "非表示",
+  map_filter_area_goto: "位置にジャンプ",
   map_filter_area_rename: "名前変更",
   map_filter_area_delete_confirm: "このエリアを削除しますか？",
   map_filter_area_name_placeholder: "エリア名",

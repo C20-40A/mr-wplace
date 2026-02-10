@@ -97,9 +97,7 @@ const normalizeHexColor = (value: unknown, fallback = "#0f766e"): string => {
   return normalized.toLowerCase();
 };
 
-const hexToRgb = (
-  hex: string,
-): { r: number; g: number; b: number } | null => {
+const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
   const matched = /^#([0-9a-fA-F]{6})$/.exec(hex);
   if (!matched) return null;
   const value = matched[1];
@@ -108,6 +106,13 @@ const hexToRgb = (
     g: Number.parseInt(value.slice(2, 4), 16),
     b: Number.parseInt(value.slice(4, 6), 16),
   };
+};
+
+const getContrastTextColor = (bgHex: string): string => {
+  const rgb = hexToRgb(bgHex);
+  if (!rgb) return "#000";
+  const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+  return luminance > 0.5 ? "#000" : "#fff";
 };
 
 const getMapContainer = (map: AreaMap): HTMLElement | null => {
@@ -146,7 +151,6 @@ const createOverlay = (): HTMLDivElement => {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    z-index: 520;
   `;
 
   const svgRoot = document.createElementNS(AREA_SVG_NS, "svg");
@@ -417,7 +421,10 @@ const createRegionPolygon = (
   const polygon = document.createElementNS(AREA_SVG_NS, "polygon");
   const color = normalizeHexColor(region.color);
   const rgb = hexToRgb(color) ?? { r: 15, g: 118, b: 110 };
-  polygon.setAttribute("points", points.map((point) => `${point.x},${point.y}`).join(" "));
+  polygon.setAttribute(
+    "points",
+    points.map((point) => `${point.x},${point.y}`).join(" "),
+  );
   polygon.setAttribute("fill", `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.14)`);
   polygon.setAttribute("stroke", color);
   polygon.setAttribute("stroke-width", "3");
@@ -462,25 +469,29 @@ const renderAreaOverlay = (map: AreaMap): void => {
     `0 0 ${Math.max(width, 1)} ${Math.max(height, 1)}`,
   );
 
-  while (regionsLayer.firstChild) regionsLayer.removeChild(regionsLayer.firstChild);
+  while (regionsLayer.firstChild)
+    regionsLayer.removeChild(regionsLayer.firstChild);
   while (regionLabelLayer.firstChild)
     regionLabelLayer.removeChild(regionLabelLayer.firstChild);
 
   for (const region of areaRegions) {
     if (!region.visible) continue;
-  if (editMode && editingRegionId && region.id === editingRegionId) continue;
+    if (editMode && editingRegionId && region.id === editingRegionId) continue;
 
     const rendered = createRegionPolygon(map, region);
     if (!rendered) continue;
 
     regionsLayer.appendChild(rendered.polygon);
+
+    const regionColor = normalizeHexColor(region.color);
+    const textColor = getContrastTextColor(regionColor);
+
     const label = document.createElement("div");
     label.style.cssText = `
       position: absolute;
       transform: translate(-50%, -50%);
       border-radius: 9999px;
       padding: 2px 8px;
-      color: #fff;
       font-size: 11px;
       font-weight: 700;
       line-height: 1.2;
@@ -488,7 +499,8 @@ const renderAreaOverlay = (map: AreaMap): void => {
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
       pointer-events: none;
     `;
-    label.style.background = normalizeHexColor(region.color);
+    label.style.background = regionColor;
+    label.style.color = textColor;
     label.style.left = `${rendered.center.x}px`;
     label.style.top = `${rendered.center.y}px`;
     label.textContent = region.name;
@@ -518,7 +530,10 @@ const renderAreaOverlay = (map: AreaMap): void => {
     "stroke",
     `rgba(${editingRgb.r}, ${editingRgb.g}, ${editingRgb.b}, 0.95)`,
   );
-  editPolygon.setAttribute("points", points.map((point) => `${point.x},${point.y}`).join(" "));
+  editPolygon.setAttribute(
+    "points",
+    points.map((point) => `${point.x},${point.y}`).join(" "),
+  );
 
   syncVertexElements();
   for (let i = 0; i < vertexElements.length; i++) {
@@ -586,8 +601,10 @@ const renderAreaOverlay = (map: AreaMap): void => {
   areaLabel.textContent = formatArea(area);
   areaLabel.style.display = "block";
 
-  const centerX = points.reduce((sum, point) => sum + point.x, 0) / points.length;
-  const centerY = points.reduce((sum, point) => sum + point.y, 0) / points.length;
+  const centerX =
+    points.reduce((sum, point) => sum + point.x, 0) / points.length;
+  const centerY =
+    points.reduce((sum, point) => sum + point.y, 0) / points.length;
   areaLabel.style.left = `${centerX}px`;
   areaLabel.style.top = `${centerY}px`;
 
@@ -675,8 +692,12 @@ export const setAreaRegions = (regions: AreaRegion[]): void => {
               typeof (region as { visible?: unknown }).visible === "boolean"
                 ? Boolean((region as { visible?: unknown }).visible)
                 : true,
-            createdAt: Number((region as { createdAt?: unknown }).createdAt ?? 0),
-            updatedAt: Number((region as { updatedAt?: unknown }).updatedAt ?? 0),
+            createdAt: Number(
+              (region as { createdAt?: unknown }).createdAt ?? 0,
+            ),
+            updatedAt: Number(
+              (region as { updatedAt?: unknown }).updatedAt ?? 0,
+            ),
             vertices,
           } satisfies AreaRegion;
         })
@@ -734,7 +755,9 @@ export const stopAreaRegionEdit = (): void => {
   console.log("🧑‍🎨 : Area edit stopped");
 };
 
-export const respondAreaRegionEditRequest = (data: { requestId?: string }): void => {
+export const respondAreaRegionEditRequest = (data: {
+  requestId?: string;
+}): void => {
   if (!data.requestId) return;
 
   window.postMessage(

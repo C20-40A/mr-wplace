@@ -457,6 +457,7 @@ export const enTranslations = {
   map_filter_area_points: "points",
   map_filter_area_show: "Show",
   map_filter_area_hide: "Hide",
+  map_filter_area_goto: "Go to location",
   map_filter_area_rename: "Rename",
   map_filter_area_delete_confirm: "Delete this saved area?",
   map_filter_area_name_placeholder: "Area name",

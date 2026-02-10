@@ -191,6 +191,15 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-processed": handleProcessedBlob,
   "mr-wplace-map-flyto": (data: { lat: number; lng: number; zoom: number }) =>
     handleMapInstanceFlyTo({ lat: data.lat, lng: data.lng, zoom: data.zoom }),
+  "mr-wplace-area-region-goto": (data: {
+    regionId: string;
+    lng: number;
+    lat: number;
+  }) => {
+    const map = (window as any).wplace?.map;
+    const currentZoom = map?.getZoom?.() ?? 11;
+    handleMapInstanceFlyTo({ lat: data.lat, lng: data.lng, zoom: currentZoom });
+  },
   "mr-wplace-theme-update": handleThemeUpdate,
   "mr-wplace-data-saver-update": handleDataSaverUpdate,
   "mr-wplace-cache-size-update": handleCacheSizeUpdate,
