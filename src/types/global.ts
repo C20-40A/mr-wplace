@@ -5,7 +5,11 @@ import { TileSnapshot } from "../features/time-travel/utils/tile-snapshot";
 import { ChargeData } from "../features/user-status/services/timer-service";
 import type { ColorFilterManager } from "../utils/color-filter-manager";
 import type { DevInject } from "../features/developer";
-import { WplaceMap } from "@/inject/types";
+import type {
+  CapturedPaintedCoordinate,
+  PaintedPixelMap,
+  WplaceMap,
+} from "@/inject/types";
 
 // Runtime拡張ChargeData型（startTime, timeToFull追加）
 interface RuntimeChargeData extends ChargeData {
@@ -21,6 +25,8 @@ interface mrWplace {
   // Content context only (not available in inject context)
   colorFilterManager?: ColorFilterManager;
   wplaceMap?: WplaceMap;
+  paintedPixelMap?: PaintedPixelMap;
+  paintedPixelEntries?: Map<string, CapturedPaintedCoordinate>;
 }
 
 declare global {

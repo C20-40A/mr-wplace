@@ -14,3 +14,8 @@ export {
   setFrontTileLayerEnabled,
   setupFrontTileLayerOnMapReady,
 } from "./front-tile-layer";
+export {
+  setupPaintedCoordinatesCapture,
+  stopPaintedCoordinatesCapture,
+  getCapturedPaintedCoordinates,
+} from "./painted-coordinates-capture";

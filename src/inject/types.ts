@@ -58,6 +58,36 @@ export interface PaintedByUser {
   discordId?: string;
 }
 
+export interface PaintedPixelColor {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
+}
+
+export interface PaintedPixelValue {
+  color?: PaintedPixelColor;
+  tile?: [number, number] | number[];
+  pixel?: [number, number] | number[];
+  season?: number;
+  colorIdx?: number;
+  [key: string]: unknown;
+}
+
+export type PaintedPixelMap = Map<string, PaintedPixelValue>;
+
+export interface CapturedPaintedCoordinate {
+  key: string;
+  tileX: number;
+  tileY: number;
+  pixelX: number;
+  pixelY: number;
+  season: number;
+  colorIdx?: number;
+  color?: PaintedPixelColor;
+  timestamp: number;
+}
+
 export interface SkySpecification {
   "sky-color"?: string;
   "sky-horizon-blend"?: number;

@@ -3,7 +3,10 @@ import { setupMessageHandler } from "./bridge";
 import { tileCacheDB } from "./cache-storage";
 import { initGalleryRepository } from "./db/gallery-repository";
 import { initSnapshotRepository } from "./db/snapshot-repository";
-import { resolveMapInstanceAsync } from "./features/map-instance";
+import {
+  resolveMapInstanceAsync,
+  setupPaintedCoordinatesCapture,
+} from "./features/map-instance";
 
 // CRITICAL: Setup fetch interceptor IMMEDIATELY and SYNCHRONOUSLY
 // to catch /me requests before WPlace app code runs
@@ -32,6 +35,7 @@ import { resolveMapInstanceAsync } from "./features/map-instance";
 
   // Setup fetch interceptor synchronously (no await)
   try {
+    setupPaintedCoordinatesCapture();
     setupFetchInterceptor();
     console.log("🧑‍🎨: Fetch interceptor ready");
   } catch (error) {
