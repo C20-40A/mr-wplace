@@ -64,10 +64,12 @@ export class ImportSnapshotRoute {
   }
 
   private parseFilenameCoordinates(filename: string): void {
-    // 対応形式: 1791-908.png, 1791-908-1758516204724.png, 1791-908-1758516204724.snapshot.png
-    const match = filename.match(
-      /^(\d+)-(\d+)(?:-(\d+))?(?:\.snapshot)?\.[^.]+$/
-    );
+    // 対応形式:
+    // 1791-908.png, 1791-908-1758516204724.png, 1791-908-1758516204724.snapshot.png
+    // v47.024-11-1797-905.png (末尾2つの数値がtile座標)
+    const match =
+      filename.match(/^(\d+)-(\d+)(?:-(\d+))?(?:\.snapshot)?\.[^.]+$/) ||
+      filename.match(/(?:^|-)(\d+)-(\d+)(?:\.snapshot)?\.[^.]+$/);
     if (match) {
       const tileX = match[1];
       const tileY = match[2];
