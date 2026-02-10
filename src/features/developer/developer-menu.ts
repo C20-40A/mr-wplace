@@ -171,9 +171,9 @@ export const setupDeveloperMenu = (): void => {
   const icon = el(
     "button",
     `
-    ${S.dark} position:fixed; top:8px; left:86px; z-index:${S.z};
-    width:32px; height:32px; border-radius:50%; border:none; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; font-size:16px;
+    position:fixed; top:10px; left:86px; z-index:${S.z};
+    width:20px; height:20px; border-radius:50%; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; font-size:12px;
   `,
     "🛠️",
   );
