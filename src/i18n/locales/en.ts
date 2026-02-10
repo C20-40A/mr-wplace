@@ -466,6 +466,20 @@ export const enTranslations = {
   map_filter_area_add: "Add Area",
   map_filter_area_save_map: "Save Area",
   map_filter_area_color: "Color",
+  map_filter_area_online_sync_description:
+    "Import area data from GeoJSON/JSON URL (e.g. public cloud storage URL)",
+  map_filter_area_import_description: "Import areas from a GeoJSON or JSON file",
+  map_filter_area_import_file: "Import from Area File",
+  map_filter_area_export_all_description: "Export all saved areas as GeoJSON",
+  map_filter_area_export_selected: "Export Selected Areas",
+  map_filter_area_export_selected_description:
+    "Export only the checked areas as GeoJSON",
+  map_filter_area_export_selected_button: "Export Selected Areas",
+  map_filter_area_no_regions_available: "No areas available",
+  map_filter_area_no_export_regions: "No areas to export",
+  map_filter_area_no_importable_regions: "No importable areas found",
+  map_filter_area_sync_replace_confirm:
+    "Replace all saved areas with URL data?\nCurrent areas will be overwritten.",
   map_filter_backgroundColor: "Background Color",
   map_filter_map3d: "3D View",
   map_filter_map3d_drag_rotate: "Enable Rotation",

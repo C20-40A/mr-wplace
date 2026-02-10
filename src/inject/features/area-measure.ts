@@ -35,6 +35,7 @@ interface AreaMap {
 interface AreaRegionEditStartPayload {
   regionId?: string | null;
   name?: string;
+  color?: string;
   vertices?: AreaRegionVertex[];
   saveLabel?: string;
   cancelLabel?: string;
@@ -57,6 +58,7 @@ let areaRegions: AreaRegion[] = [];
 let editMode = false;
 let editingRegionId: string | null = null;
 let editingRegionName = "";
+let editingColor = "#0f766e";
 let editingSaveLabel = "Save";
 let editingCancelLabel = "Cancel";
 let editVertices: LngLat[] = [];
@@ -144,7 +146,7 @@ const createOverlay = (): HTMLDivElement => {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    z-index: 649;
+    z-index: 520;
   `;
 
   const svgRoot = document.createElementNS(AREA_SVG_NS, "svg");
@@ -156,8 +158,8 @@ const createOverlay = (): HTMLDivElement => {
   const regionsGroup = document.createElementNS(AREA_SVG_NS, "g");
 
   const editingPolygon = document.createElementNS(AREA_SVG_NS, "polygon");
-  editingPolygon.setAttribute("fill", "rgba(34, 197, 94, 0.2)");
-  editingPolygon.setAttribute("stroke", "rgba(197, 34, 94, 0.95)");
+  editingPolygon.setAttribute("fill", "rgba(15, 118, 110, 0.2)");
+  editingPolygon.setAttribute("stroke", "rgba(15, 118, 110, 0.95)");
   editingPolygon.setAttribute("stroke-width", "3");
   editingPolygon.setAttribute("vector-effect", "non-scaling-stroke");
   editingPolygon.style.pointerEvents = "none";
@@ -466,7 +468,7 @@ const renderAreaOverlay = (map: AreaMap): void => {
 
   for (const region of areaRegions) {
     if (!region.visible) continue;
-    if (editMode && editingRegionId && region.id === editingRegionId) continue;
+  if (editMode && editingRegionId && region.id === editingRegionId) continue;
 
     const rendered = createRegionPolygon(map, region);
     if (!rendered) continue;
@@ -505,13 +507,24 @@ const renderAreaOverlay = (map: AreaMap): void => {
   }
 
   const points = editVertices.map((lngLat) => map.project(lngLat));
+  const editingHex = normalizeHexColor(editingColor);
+  const editingRgb = hexToRgb(editingHex) ?? { r: 15, g: 118, b: 110 };
   editPolygon.style.display = "block";
+  editPolygon.setAttribute(
+    "fill",
+    `rgba(${editingRgb.r}, ${editingRgb.g}, ${editingRgb.b}, 0.2)`,
+  );
+  editPolygon.setAttribute(
+    "stroke",
+    `rgba(${editingRgb.r}, ${editingRgb.g}, ${editingRgb.b}, 0.95)`,
+  );
   editPolygon.setAttribute("points", points.map((point) => `${point.x},${point.y}`).join(" "));
 
   syncVertexElements();
   for (let i = 0; i < vertexElements.length; i++) {
     const point = points[i];
     const vertex = vertexElements[i];
+    vertex.style.background = editingHex;
     vertex.style.left = `${point.x}px`;
     vertex.style.top = `${point.y}px`;
     vertex.dataset.index = String(i);
@@ -692,6 +705,7 @@ export const startAreaRegionEdit = (
   editMode = true;
   editingRegionId = payload.regionId ?? null;
   editingRegionName = payload.name?.trim() || "";
+  editingColor = normalizeHexColor(payload.color);
   editingSaveLabel = payload.saveLabel?.trim() || "Save";
   editingCancelLabel = payload.cancelLabel?.trim() || "Cancel";
   if (saveEditButton) saveEditButton.textContent = editingSaveLabel;
@@ -711,6 +725,7 @@ export const stopAreaRegionEdit = (): void => {
   editMode = false;
   editingRegionId = null;
   editingRegionName = "";
+  editingColor = "#0f766e";
   editVertices = [];
 
   const map = getMapInstanceFromWplace() as AreaMap | null;
