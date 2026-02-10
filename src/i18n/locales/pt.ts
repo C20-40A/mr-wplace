@@ -203,6 +203,13 @@ export const ptTranslations = {
   popup_paint_mode_style: "Ocultar FABs no Modo Pintura",
   popup_close_button_swap: "Trocar Posição do Botão Fechar",
   popup_bug_report: "Reportar Bug",
+  popup_fab_visibility: "Visibilidade dos FABs",
+  popup_fab_gallery: "Galeria",
+  popup_fab_bookmark: "Favoritos",
+  popup_fab_time_travel: "Viagem no Tempo",
+  popup_fab_color_filter: "Filtro de Cor",
+  popup_fab_data_saver: "Economia de Dados",
+  popup_fab_map_filter: "Filtro de Mapa",
 
   // Color Filter
   color_filter: "Filtro de Cor",

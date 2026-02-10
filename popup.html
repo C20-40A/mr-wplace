@@ -103,6 +103,24 @@
         border-style: dashed;
       }
 
+      .fab-visibility-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .fab-visibility-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .fab-visibility-item .setting-select {
+        width: 90px;
+        min-width: 90px;
+      }
+
       .coffee-support {
         border-top: 1px solid #fff;
         margin-top: 8px;
@@ -245,6 +263,53 @@
           <option value="false" class="popup-disabled-option">Disabled</option>
           <option value="true" class="popup-enabled-option">Enabled</option>
         </select>
+      </div>
+
+      <div class="setting-group">
+        <label class="setting-label">
+          <svg class="icon" viewBox="0 0 12 12">
+            <circle cx="4" cy="8" r="3" fill="none" stroke="#fff" stroke-width="1" />
+            <circle cx="8" cy="4" r="3" fill="none" stroke="#fff" stroke-width="1" />
+          </svg>
+          <span id="popup-fab-visibility-label">FAB Visibility</span>
+        </label>
+        <div class="fab-visibility-list" id="fab-visibility-selectors">
+          <div class="fab-visibility-item">
+            <span id="popup-fab-gallery-label">Gallery</span>
+            <select class="setting-select" data-fab="gallery">
+              <option value="true" class="popup-enabled-option">Enabled</option>
+              <option value="false" class="popup-disabled-option">Disabled</option>
+            </select>
+          </div>
+          <div class="fab-visibility-item">
+            <span id="popup-fab-bookmark-label">Bookmark</span>
+            <select class="setting-select" data-fab="bookmark">
+              <option value="true" class="popup-enabled-option">Enabled</option>
+              <option value="false" class="popup-disabled-option">Disabled</option>
+            </select>
+          </div>
+          <div class="fab-visibility-item">
+            <span id="popup-fab-time-travel-label">Time Travel</span>
+            <select class="setting-select" data-fab="time-travel">
+              <option value="true" class="popup-enabled-option">Enabled</option>
+              <option value="false" class="popup-disabled-option">Disabled</option>
+            </select>
+          </div>
+          <div class="fab-visibility-item">
+            <span id="popup-fab-data-saver-label">Data Saver</span>
+            <select class="setting-select" data-fab="data-saver">
+              <option value="true" class="popup-enabled-option">Enabled</option>
+              <option value="false" class="popup-disabled-option">Disabled</option>
+            </select>
+          </div>
+          <div class="fab-visibility-item">
+            <span id="popup-fab-filter-label">Filter</span>
+            <select class="setting-select" data-fab="filter">
+              <option value="true" class="popup-enabled-option">Enabled</option>
+              <option value="false" class="popup-disabled-option">Disabled</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       <div class="setting-group" id="navigation-setting" style="display: none">

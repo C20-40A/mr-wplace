@@ -201,6 +201,13 @@ export const viTranslations = {
   popup_paint_mode_style: "Ẩn FAB khi Chế độ Vẽ",
   popup_close_button_swap: "Đổi Vị trí Nút Đóng",
   popup_bug_report: "Báo Lỗi",
+  popup_fab_visibility: "Hiện/Ẩn FAB",
+  popup_fab_gallery: "Thư viện",
+  popup_fab_bookmark: "Dấu trang",
+  popup_fab_time_travel: "Du hành thời gian",
+  popup_fab_color_filter: "Bộ lọc màu",
+  popup_fab_data_saver: "Tiết kiệm dữ liệu",
+  popup_fab_map_filter: "Bộ lọc bản đồ",
 
   // Color Filter
   color_filter: "Bộ lọc màu",

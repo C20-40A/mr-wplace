@@ -34,6 +34,13 @@ import {
   getCloseButtonSwap,
   setCloseButtonSwap,
 } from "./states/close-button-swap";
+import {
+  loadFabVisibilityFromStorage,
+  getFabVisibility,
+  setFabVisibility,
+  FAB_FEATURES,
+  type FabFeature,
+} from "./states/fab-visibility";
 
 import { tabs } from "@/utils/browser-api";
 import { FEEDBACK_FORM_URL } from "@/constants/url";
@@ -62,6 +69,12 @@ const updateUI = (): void => {
     "popup-paint-mode-style-label": "popup_paint_mode_style",
     "popup-close-button-swap-label": "popup_close_button_swap",
     "popup-bug-report-label": "popup_bug_report",
+    "popup-fab-visibility-label": "popup_fab_visibility",
+    "popup-fab-gallery-label": "popup_fab_gallery",
+    "popup-fab-bookmark-label": "popup_fab_bookmark",
+    "popup-fab-time-travel-label": "popup_fab_time_travel",
+    "popup-fab-data-saver-label": "popup_fab_data_saver",
+    "popup-fab-filter-label": "popup_fab_color_filter",
     "gallery-data-label": "gallery_data",
     "export-btn-label": "export",
     "import-btn-label": "import",
@@ -213,6 +226,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadCloseButtonSwapFromStorage();
     currentCloseButtonSwap = getCloseButtonSwap();
 
+    // fab visibility初期化
+    await loadFabVisibilityFromStorage();
+
     // Get map instance ready state from content script
     const currentTab = (
       await tabs.query({ active: true, currentWindow: true })
@@ -241,6 +257,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   layerSortSelect.value = currentLayerSort.toString();
   paintModeStyleSelect.value = currentPaintModeStyle.toString();
   closeButtonSwapSelect.value = currentCloseButtonSwap.toString();
+
+  // FAB visibility selector初期化
+  const fabVisibility = getFabVisibility();
+  for (const feature of FAB_FEATURES) {
+    const selector = document.querySelector<HTMLSelectElement>(
+      `select[data-fab="${feature}"]`,
+    );
+    if (selector) selector.value = fabVisibility[feature].toString();
+  }
+
   updateUI();
 
   // Show navigation setting only if map instance is ready
@@ -372,6 +398,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     if (activeTab.id) {
       await tabs.reload(activeTab.id);
+    }
+  });
+
+  // FAB visibility変更イベント
+  const fabSelectorContainer = document.getElementById(
+    "fab-visibility-selectors",
+  );
+  fabSelectorContainer?.addEventListener("change", async (event) => {
+    const target = event.target as HTMLSelectElement;
+    const feature = target.dataset.fab as FabFeature | undefined;
+    if (!feature) return;
+
+    const current = getFabVisibility();
+    const next = { ...current, [feature]: target.value === "true" };
+    await setFabVisibility(next);
+    try {
+      await notifyContentScript({
+        type: "FAB_VISIBILITY_CHANGED",
+        visibility: next,
+      });
+    } catch (error) {
+      console.warn("🧑‍🎨 : Failed to notify FAB visibility change:", error);
     }
   });
 

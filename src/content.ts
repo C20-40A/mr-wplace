@@ -9,6 +9,11 @@ import {
   setMapInstanceReady,
   getMapInstanceReady,
 } from "@/states/map-instance-ready";
+import {
+  getFabVisibility,
+  loadFabVisibilityFromStorage,
+  type FabFeature,
+} from "@/states/fab-visibility";
 
 // Re-export bridge functions for backward compatibility
 export {
@@ -165,6 +170,46 @@ const scheduleLegacyTmpTilesCleanup = () => {
   setTimeout(runCleanup, 3000);
 };
 
+const FAB_VISIBILITY_STYLE_ID = "mr-wplace-fab-visibility-style";
+
+const FAB_SELECTOR_MAP: Record<FabFeature, string[]> = {
+  gallery: ["#gallery-btn"],
+  bookmark: ["#bookmarks-btn"],
+  "time-travel": ["#timetravel-fab-btn"],
+  "data-saver": ["#data-saver-btn"],
+  filter: ["#color-filter-fab-btn"],
+};
+
+const applyFabVisibilityStyles = (
+  visibility: Readonly<Record<FabFeature, boolean>>
+) => {
+  const hiddenSelectors: string[] = [];
+
+  for (const [feature, visible] of Object.entries(visibility) as [
+    FabFeature,
+    boolean,
+  ][]) {
+    if (visible) continue;
+    const selectors = FAB_SELECTOR_MAP[feature];
+    if (!selectors) continue;
+    hiddenSelectors.push(...selectors);
+  }
+
+  let styleTag = document.getElementById(
+    FAB_VISIBILITY_STYLE_ID,
+  ) as HTMLStyleElement | null;
+  if (!styleTag) {
+    styleTag = document.createElement("style");
+    styleTag.id = FAB_VISIBILITY_STYLE_ID;
+    (document.head || document.documentElement).appendChild(styleTag);
+  }
+
+  styleTag.textContent =
+    hiddenSelectors.length > 0
+      ? `${hiddenSelectors.join(", ")} { display: none !important; }`
+      : "";
+};
+
 // メッセージリスナー
 const registerMessageListeners = () => {
   // Listen for map instance captured message from inject
@@ -191,6 +236,11 @@ const registerMessageListeners = () => {
       // Layer sort設定を更新してinjectに通知
       const { sendLayerSortToInject } = await import("@/features/layer-sort");
       sendLayerSortToInject(message.enabled);
+      return;
+    }
+
+    if (message.type === "FAB_VISIBILITY_CHANGED") {
+      applyFabVisibilityStyles(message.visibility ?? getFabVisibility());
       return;
     }
 
@@ -327,6 +377,9 @@ registerMessageListeners();
   const wakeupStartedAt = performance.now();
 
   try {
+    await loadFabVisibilityFromStorage();
+    applyFabVisibilityStyles(getFabVisibility());
+
     const injectStartedAt = performance.now();
     await loadInjectScript();
     console.log(

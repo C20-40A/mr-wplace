@@ -216,6 +216,13 @@ export const jaTranslations = {
   popup_paint_mode_style: "ペイント時にFABを非表示",
   popup_close_button_swap: "閉じるボタンの位置を入れ替え",
   popup_bug_report: "バグ報告",
+  popup_fab_visibility: "FABボタン表示",
+  popup_fab_gallery: "ギャラリー",
+  popup_fab_bookmark: "ブックマーク",
+  popup_fab_time_travel: "タイムトラベル",
+  popup_fab_color_filter: "カラーフィルター",
+  popup_fab_data_saver: "データセーバー",
+  popup_fab_map_filter: "マップフィルター",
 
   // Color Filter
   color_filter: "カラーフィルター",

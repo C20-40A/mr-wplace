@@ -204,6 +204,13 @@ export const ruTranslations = {
   popup_paint_mode_style: "Скрыть FAB в Режиме Рисования",
   popup_close_button_swap: "Поменять Позицию Кнопки Закрытия",
   popup_bug_report: "Сообщить об Ошибке",
+  popup_fab_visibility: "Видимость FAB",
+  popup_fab_gallery: "Галерея",
+  popup_fab_bookmark: "Закладки",
+  popup_fab_time_travel: "Путешествие во Времени",
+  popup_fab_color_filter: "Фильтр Цвета",
+  popup_fab_data_saver: "Экономия Данных",
+  popup_fab_map_filter: "Фильтр Карты",
 
   // Color Filter
   color_filter: "Фильтр цвета",
