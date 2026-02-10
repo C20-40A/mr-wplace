@@ -6,6 +6,7 @@ export interface AreaRegionVertex {
 export interface AreaRegion {
   id: string;
   name: string;
+  color: string;
   vertices: AreaRegionVertex[];
   visible: boolean;
   createdAt: number;

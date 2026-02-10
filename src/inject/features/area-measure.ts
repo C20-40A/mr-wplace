@@ -36,6 +36,8 @@ interface AreaRegionEditStartPayload {
   regionId?: string | null;
   name?: string;
   vertices?: AreaRegionVertex[];
+  saveLabel?: string;
+  cancelLabel?: string;
 }
 
 let areaEnabled = false;
@@ -46,11 +48,17 @@ let regionsLayer: SVGGElement | null = null;
 let editPolygon: SVGPolygonElement | null = null;
 let edgeHitLayer: HTMLDivElement | null = null;
 let areaLabel: HTMLDivElement | null = null;
+let regionLabelLayer: HTMLDivElement | null = null;
+let editActionLayer: HTMLDivElement | null = null;
+let saveEditButton: HTMLButtonElement | null = null;
+let cancelEditButton: HTMLButtonElement | null = null;
 
 let areaRegions: AreaRegion[] = [];
 let editMode = false;
 let editingRegionId: string | null = null;
 let editingRegionName = "";
+let editingSaveLabel = "Save";
+let editingCancelLabel = "Cancel";
 let editVertices: LngLat[] = [];
 let vertexElements: HTMLDivElement[] = [];
 
@@ -79,6 +87,26 @@ const sanitizeVertices = (vertices: unknown): LngLat[] => {
 
 const cloneVertices = (vertices: LngLat[]): AreaRegionVertex[] =>
   vertices.map((vertex) => ({ lng: vertex.lng, lat: vertex.lat }));
+
+const normalizeHexColor = (value: unknown, fallback = "#0f766e"): string => {
+  if (typeof value !== "string") return fallback;
+  const normalized = value.trim();
+  if (!/^#([0-9a-fA-F]{6})$/.test(normalized)) return fallback;
+  return normalized.toLowerCase();
+};
+
+const hexToRgb = (
+  hex: string,
+): { r: number; g: number; b: number } | null => {
+  const matched = /^#([0-9a-fA-F]{6})$/.exec(hex);
+  if (!matched) return null;
+  const value = matched[1];
+  return {
+    r: Number.parseInt(value.slice(0, 2), 16),
+    g: Number.parseInt(value.slice(2, 4), 16),
+    b: Number.parseInt(value.slice(4, 6), 16),
+  };
+};
 
 const getMapContainer = (map: AreaMap): HTMLElement | null => {
   const byApi = map.getContainer?.();
@@ -165,15 +193,60 @@ const createOverlay = (): HTMLDivElement => {
     display: none;
   `;
 
+  const labelsLayer = document.createElement("div");
+  labelsLayer.style.cssText = `
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+  `;
+
+  const actionLayer = document.createElement("div");
+  actionLayer.style.cssText = `
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: none;
+    gap: 8px;
+    z-index: 4;
+    pointer-events: auto;
+  `;
+
+  const saveButton = document.createElement("button");
+  saveButton.className = "btn btn-primary btn-sm";
+  saveButton.textContent = editingSaveLabel;
+  saveButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    window.postMessage({ source: "mr-wplace-area-region-save-click" }, "*");
+  });
+
+  const cancelButton = document.createElement("button");
+  cancelButton.className = "btn btn-outline btn-sm";
+  cancelButton.textContent = editingCancelLabel;
+  cancelButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    window.postMessage({ source: "mr-wplace-area-region-cancel-click" }, "*");
+  });
+
+  actionLayer.appendChild(saveButton);
+  actionLayer.appendChild(cancelButton);
+
   root.appendChild(svgRoot);
   root.appendChild(hitLayer);
+  root.appendChild(labelsLayer);
   root.appendChild(label);
+  root.appendChild(actionLayer);
 
   svg = svgRoot;
   regionsLayer = regionsGroup;
   editPolygon = editingPolygon;
   edgeHitLayer = hitLayer;
+  regionLabelLayer = labelsLayer;
   areaLabel = label;
+  editActionLayer = actionLayer;
+  saveEditButton = saveButton;
+  cancelEditButton = cancelButton;
 
   return root;
 };
@@ -340,10 +413,12 @@ const createRegionPolygon = (
   if (points.length < 3) return null;
 
   const polygon = document.createElementNS(AREA_SVG_NS, "polygon");
+  const color = normalizeHexColor(region.color);
+  const rgb = hexToRgb(color) ?? { r: 15, g: 118, b: 110 };
   polygon.setAttribute("points", points.map((point) => `${point.x},${point.y}`).join(" "));
-  polygon.setAttribute("fill", "rgba(20, 184, 166, 0.16)");
-  polygon.setAttribute("stroke", "rgba(15, 118, 110, 0.95)");
-  polygon.setAttribute("stroke-width", "2");
+  polygon.setAttribute("fill", `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.14)`);
+  polygon.setAttribute("stroke", color);
+  polygon.setAttribute("stroke-width", "3");
   polygon.setAttribute("vector-effect", "non-scaling-stroke");
   polygon.style.pointerEvents = "none";
 
@@ -358,12 +433,22 @@ const createRegionPolygon = (
 const clearEditingUI = (): void => {
   if (editPolygon) editPolygon.style.display = "none";
   if (areaLabel) areaLabel.style.display = "none";
+  if (editActionLayer) editActionLayer.style.display = "none";
   clearEdgeHitLines();
   clearVertexElements();
 };
 
 const renderAreaOverlay = (map: AreaMap): void => {
-  if (!svg || !regionsLayer || !edgeHitLayer || !areaLabel || !container) return;
+  if (
+    !svg ||
+    !regionsLayer ||
+    !edgeHitLayer ||
+    !areaLabel ||
+    !regionLabelLayer ||
+    !container
+  ) {
+    return;
+  }
 
   const mapContainer = getMapContainer(map);
   if (!mapContainer) return;
@@ -376,6 +461,8 @@ const renderAreaOverlay = (map: AreaMap): void => {
   );
 
   while (regionsLayer.firstChild) regionsLayer.removeChild(regionsLayer.firstChild);
+  while (regionLabelLayer.firstChild)
+    regionLabelLayer.removeChild(regionLabelLayer.firstChild);
 
   for (const region of areaRegions) {
     if (!region.visible) continue;
@@ -384,22 +471,26 @@ const renderAreaOverlay = (map: AreaMap): void => {
     const rendered = createRegionPolygon(map, region);
     if (!rendered) continue;
 
-    const text = document.createElementNS(AREA_SVG_NS, "text");
-    text.setAttribute("x", String(rendered.center.x));
-    text.setAttribute("y", String(rendered.center.y));
-    text.setAttribute("text-anchor", "middle");
-    text.setAttribute("dominant-baseline", "middle");
-    text.setAttribute("fill", "rgba(255, 255, 255, 0.95)");
-    text.setAttribute("stroke", "rgba(0, 0, 0, 0.65)");
-    text.setAttribute("stroke-width", "2");
-    text.setAttribute("paint-order", "stroke");
-    text.setAttribute("font-size", "12");
-    text.setAttribute("font-weight", "700");
-    text.style.pointerEvents = "none";
-    text.textContent = region.name;
-
     regionsLayer.appendChild(rendered.polygon);
-    regionsLayer.appendChild(text);
+    const label = document.createElement("div");
+    label.style.cssText = `
+      position: absolute;
+      transform: translate(-50%, -50%);
+      border-radius: 9999px;
+      padding: 2px 8px;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+      pointer-events: none;
+    `;
+    label.style.background = normalizeHexColor(region.color);
+    label.style.left = `${rendered.center.x}px`;
+    label.style.top = `${rendered.center.y}px`;
+    label.textContent = region.name;
+    regionLabelLayer.appendChild(label);
   }
 
   if (!editMode || !editPolygon) {
@@ -479,14 +570,19 @@ const renderAreaOverlay = (map: AreaMap): void => {
   }
 
   const area = calculateAreaSquareMeters(editVertices);
-  const editName = editingRegionName.trim();
-  areaLabel.textContent = `${editName || "Editing"}: ${formatArea(area)} (${editVertices.length} points)`;
+  areaLabel.textContent = formatArea(area);
   areaLabel.style.display = "block";
 
   const centerX = points.reduce((sum, point) => sum + point.x, 0) / points.length;
   const centerY = points.reduce((sum, point) => sum + point.y, 0) / points.length;
   areaLabel.style.left = `${centerX}px`;
   areaLabel.style.top = `${centerY}px`;
+
+  if (editActionLayer) {
+    editActionLayer.style.display = "flex";
+    editActionLayer.style.left = `${centerX}px`;
+    editActionLayer.style.top = `${centerY + 28}px`;
+  }
 };
 
 const addAreaOverlay = (map: AreaMap): void => {
@@ -529,6 +625,10 @@ const removeAreaOverlay = (map: AreaMap): void => {
   editPolygon = null;
   edgeHitLayer = null;
   areaLabel = null;
+  regionLabelLayer = null;
+  editActionLayer = null;
+  saveEditButton = null;
+  cancelEditButton = null;
   activeMap = null;
   activeDragIndex = null;
 
@@ -557,6 +657,7 @@ export const setAreaRegions = (regions: AreaRegion[]): void => {
           return {
             id: String((region as { id?: unknown }).id ?? ""),
             name: String((region as { name?: unknown }).name ?? ""),
+            color: normalizeHexColor((region as { color?: unknown }).color),
             visible:
               typeof (region as { visible?: unknown }).visible === "boolean"
                 ? Boolean((region as { visible?: unknown }).visible)
@@ -591,6 +692,10 @@ export const startAreaRegionEdit = (
   editMode = true;
   editingRegionId = payload.regionId ?? null;
   editingRegionName = payload.name?.trim() || "";
+  editingSaveLabel = payload.saveLabel?.trim() || "Save";
+  editingCancelLabel = payload.cancelLabel?.trim() || "Cancel";
+  if (saveEditButton) saveEditButton.textContent = editingSaveLabel;
+  if (cancelEditButton) cancelEditButton.textContent = editingCancelLabel;
   editVertices = sanitizeVertices(payload.vertices);
   ensureDefaultVertices(map);
   renderAreaOverlay(map);

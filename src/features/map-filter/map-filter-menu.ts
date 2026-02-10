@@ -21,6 +21,7 @@ const SCALE_DISPLAY_KEY = "mapFilter_scaleDisplay";
 const AREA_MEASURE_KEY = "mapFilter_areaMeasure";
 const AREA_REGIONS_KEY = "areaRegions_v1";
 const AREA_MANAGER_MODAL_ID = "wplace-studio-area-manager-modal";
+const DEFAULT_AREA_COLOR = "#0f766e";
 
 type FilterState = {
   darkTheme: "custom-winter" | "dark";
@@ -180,6 +181,16 @@ class MapFilterMenu {
         this.mapReady = true;
         this.syncMapDependentState();
         this.renderAreaManager();
+        return;
+      }
+
+      if (event.data.source === "mr-wplace-area-region-save-click") {
+        this.saveAreaEditing();
+        return;
+      }
+
+      if (event.data.source === "mr-wplace-area-region-cancel-click") {
+        this.stopAreaEditing();
       }
     });
 
@@ -648,12 +659,21 @@ class MapFilterMenu {
         typeof candidate.name === "string" && candidate.name.trim()
           ? candidate.name.trim()
           : this.createDefaultAreaName(normalized.length + 1);
+      const color = this.normalizeAreaColor(candidate.color);
       const visible =
         typeof candidate.visible === "boolean" ? candidate.visible : true;
       const createdAt = this.normalizeTimestamp(candidate.createdAt, now);
       const updatedAt = this.normalizeTimestamp(candidate.updatedAt, createdAt);
 
-      normalized.push({ id, name, vertices, visible, createdAt, updatedAt });
+      normalized.push({
+        id,
+        name,
+        color,
+        vertices,
+        visible,
+        createdAt,
+        updatedAt,
+      });
     }
 
     return normalized.sort((a, b) => b.updatedAt - a.updatedAt);
@@ -685,6 +705,46 @@ class MapFilterMenu {
     return typeof value === "number" && Number.isFinite(value)
       ? value
       : fallback;
+  }
+
+  private normalizeAreaColor(value: unknown): string {
+    if (typeof value !== "string") return DEFAULT_AREA_COLOR;
+    const normalized = value.trim();
+    if (!/^#([0-9a-fA-F]{6})$/.test(normalized)) return DEFAULT_AREA_COLOR;
+    return normalized.toLowerCase();
+  }
+
+  private toRadians(value: number): number {
+    return (value * Math.PI) / 180;
+  }
+
+  private toMercatorMeters(vertex: AreaRegionVertex): { x: number; y: number } {
+    const earthRadius = 6378137;
+    const maxLat = 85.05112878;
+    const lat = Math.max(Math.min(vertex.lat, maxLat), -maxLat);
+    const x = earthRadius * this.toRadians(vertex.lng);
+    const y =
+      earthRadius * Math.log(Math.tan(Math.PI / 4 + this.toRadians(lat) / 2));
+    return { x, y };
+  }
+
+  private calculateAreaSquareMeters(vertices: AreaRegionVertex[]): number {
+    if (vertices.length < 3) return 0;
+
+    let sum = 0;
+    for (let i = 0; i < vertices.length; i++) {
+      const curr = this.toMercatorMeters(vertices[i]);
+      const next = this.toMercatorMeters(vertices[(i + 1) % vertices.length]);
+      sum += curr.x * next.y - next.x * curr.y;
+    }
+    return Math.abs(sum) / 2;
+  }
+
+  private formatAreaKm2(vertices: AreaRegionVertex[]): string {
+    const km2 = this.calculateAreaSquareMeters(vertices) / 1000000;
+    if (km2 >= 100) return `${km2.toFixed(1)} km²`;
+    if (km2 >= 10) return `${km2.toFixed(2)} km²`;
+    return `${km2.toFixed(3)} km²`;
   }
 
   private createAreaRegionId(): string {
@@ -738,6 +798,10 @@ class MapFilterMenu {
     }
   }
 
+  private closeAreaManager() {
+    this.areaManagerModal?.modal.close();
+  }
+
   private renderAreaManager() {
     const container = this.areaManagerModal?.container;
     if (!container) return;
@@ -745,31 +809,11 @@ class MapFilterMenu {
     container.innerHTML = "";
 
     const root = document.createElement("div");
-    root.className = "flex flex-col gap-3";
-
-    const modeCard = document.createElement("div");
-    modeCard.className = "card bg-base-200";
-    modeCard.style.cssText = "padding: 0.75rem;";
-
-    const modeRow = document.createElement("div");
-    modeRow.className = "flex items-center justify-between gap-2";
-
-    const modeLabel = document.createElement("div");
-    modeLabel.className = "font-semibold text-sm";
-    modeLabel.textContent = t`${"map_filter_area_mode"}`;
-
-    const modeBadge = document.createElement("span");
-    modeBadge.className = `badge ${this.areaEditMode ? "badge-warning" : "badge-ghost"}`;
-    modeBadge.textContent = this.areaEditMode
-      ? t`${"map_filter_area_mode_editing"}`
-      : t`${"map_filter_area_mode_display"}`;
-
-    modeRow.appendChild(modeLabel);
-    modeRow.appendChild(modeBadge);
-    modeCard.appendChild(modeRow);
+    root.className = "flex flex-col gap-2";
 
     const displayRow = document.createElement("label");
-    displayRow.className = "label cursor-pointer justify-start gap-3 py-2";
+    displayRow.className =
+      "label cursor-pointer justify-start gap-3 py-1 pl-1 w-fit";
 
     const displayToggle = document.createElement("input");
     displayToggle.type = "checkbox";
@@ -786,61 +830,6 @@ class MapFilterMenu {
 
     displayRow.appendChild(displayToggle);
     displayRow.appendChild(displayText);
-    modeCard.appendChild(displayRow);
-
-    if (this.areaEditMode) {
-      const editingText = document.createElement("div");
-      editingText.className = "text-xs opacity-80";
-      editingText.textContent = `${t`${"map_filter_area_editing"}`}: ${this.getEditingLabel()}`;
-      modeCard.appendChild(editingText);
-
-      const actionRow = document.createElement("div");
-      actionRow.className = "flex gap-2 pt-2";
-
-      const saveButton = document.createElement("button");
-      saveButton.className = "btn btn-primary btn-sm";
-      saveButton.textContent = this.getEditingRegion()
-        ? t`${"map_filter_area_save_update"}`
-        : t`${"map_filter_area_save_new"}`;
-      saveButton.disabled = !this.mapReady;
-      saveButton.addEventListener("click", () => {
-        this.saveAreaEditing();
-      });
-
-      const stopButton = document.createElement("button");
-      stopButton.className = "btn btn-outline btn-sm";
-      stopButton.textContent = t`${"map_filter_area_stop_editing"}`;
-      stopButton.addEventListener("click", () => {
-        this.stopAreaEditing();
-      });
-
-      actionRow.appendChild(saveButton);
-      actionRow.appendChild(stopButton);
-      modeCard.appendChild(actionRow);
-    } else {
-      const startButton = document.createElement("button");
-      startButton.className = "btn btn-primary btn-sm mt-2";
-      startButton.textContent = t`${"map_filter_area_start_new"}`;
-      startButton.disabled = !this.mapReady;
-      startButton.addEventListener("click", () => {
-        this.startAreaEditing(null);
-      });
-      modeCard.appendChild(startButton);
-    }
-
-    const listHeader = document.createElement("div");
-    listHeader.className = "flex items-center justify-between";
-
-    const listTitle = document.createElement("h4");
-    listTitle.className = "font-semibold text-sm";
-    listTitle.textContent = t`${"map_filter_area_saved_regions"}`;
-
-    const count = document.createElement("span");
-    count.className = "text-xs opacity-70";
-    count.textContent = String(this.areaRegions.length);
-
-    listHeader.appendChild(listTitle);
-    listHeader.appendChild(count);
 
     const list = document.createElement("div");
     list.className = "flex flex-col gap-2";
@@ -854,31 +843,88 @@ class MapFilterMenu {
       for (const region of this.areaRegions) {
         const card = document.createElement("div");
         card.className = "card bg-base-200";
-        card.style.cssText = "padding: 0.6rem;";
+        card.style.cssText = `
+          padding: 0.7rem 0.75rem;
+          border: 2px solid ${region.color};
+          border-radius: 0.8rem;
+          ${region.visible ? "" : "opacity: 0.58;"}
+        `;
 
         const topRow = document.createElement("div");
-        topRow.className = "flex items-center justify-between gap-2";
+        topRow.className = "flex items-start justify-between gap-2";
+
+        const titleRow = document.createElement("div");
+        titleRow.className = "flex items-center gap-2 min-w-0";
 
         const name = document.createElement("div");
-        name.className = "font-medium text-sm";
+        name.className = "font-semibold text-base leading-tight truncate";
+        name.style.maxWidth = "14rem";
         name.textContent = region.name;
 
-        const meta = document.createElement("span");
-        meta.className = "text-xs opacity-70";
-        meta.textContent = `${region.vertices.length} ${t`${"map_filter_area_points"}`}`;
+        const renameButton = document.createElement("button");
+        renameButton.className = "btn btn-ghost btn-xs";
+        renameButton.title = t`${"map_filter_area_rename"}`;
+        renameButton.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px; opacity: 0.7;">
+            <path d="M16.862 3.487a2.1 2.1 0 0 1 2.97 2.97l-10.5 10.5a2.25 2.25 0 0 1-1.01.57l-3.14.79a.75.75 0 0 1-.91-.91l.79-3.14a2.25 2.25 0 0 1 .57-1.01l10.5-10.5ZM15.8 5.61 7.29 14.12a.75.75 0 0 0-.19.34l-.46 1.83 1.83-.46a.75.75 0 0 0 .34-.19l8.51-8.51L15.8 5.61Z" />
+          </svg>
+        `;
+        renameButton.addEventListener("click", () => {
+          this.renameAreaRegion(region.id);
+        });
 
-        topRow.appendChild(name);
-        topRow.appendChild(meta);
+        titleRow.appendChild(name);
+        titleRow.appendChild(renameButton);
+
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "btn btn-ghost btn-xs";
+        deleteButton.title = t`${"delete"}`;
+        deleteButton.style.color = "#dc2626";
+        deleteButton.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px;">
+            <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 0 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+          </svg>
+        `;
+        deleteButton.addEventListener("click", () => {
+          this.deleteAreaRegion(region.id);
+        });
+
+        topRow.appendChild(titleRow);
+        topRow.appendChild(deleteButton);
         card.appendChild(topRow);
 
+        const metaRow = document.createElement("div");
+        metaRow.className = "flex items-center justify-between gap-2 pt-1";
+
+        const area = document.createElement("span");
+        area.className = "text-sm opacity-80";
+        area.textContent = this.formatAreaKm2(region.vertices);
+
+        const colorInput = document.createElement("input");
+        colorInput.type = "color";
+        colorInput.className = "w-7 h-7 cursor-pointer";
+        colorInput.value = region.color;
+        colorInput.title = t`${"map_filter_area_color"}`;
+        colorInput.addEventListener("input", (event) => {
+          const target = event.target as HTMLInputElement;
+          this.changeAreaRegionColor(region.id, target.value);
+        });
+
+        metaRow.appendChild(area);
+        metaRow.appendChild(colorInput);
+        card.appendChild(metaRow);
+
         const actionRow = document.createElement("div");
-        actionRow.className = "flex items-center gap-1 pt-2 flex-wrap";
+        actionRow.className = "flex items-center gap-2 pt-2";
 
         const visibilityButton = document.createElement("button");
-        visibilityButton.className = `btn btn-xs ${region.visible ? "btn-ghost" : "btn-outline"}`;
-        visibilityButton.textContent = region.visible
+        visibilityButton.className = "btn btn-xs btn-ghost";
+        visibilityButton.title = region.visible
           ? t`${"map_filter_area_hide"}`
           : t`${"map_filter_area_show"}`;
+        visibilityButton.innerHTML = region.visible
+          ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px;"><path d="M3.53 2.47a.75.75 0 1 0-1.06 1.06l18 18a.75.75 0 1 0 1.06-1.06l-2.134-2.134A10.73 10.73 0 0 0 22.5 12s-3.75-7.5-10.5-7.5a10.8 10.8 0 0 0-4.286.897L3.53 2.47ZM12 7.5c2.485 0 4.5 2.015 4.5 4.5 0 .69-.156 1.343-.435 1.926l-5.99-5.99A4.473 4.473 0 0 1 12 7.5Z"/><path d="M5.315 8.375A13.72 13.72 0 0 0 1.5 12s3.75 7.5 10.5 7.5a10.74 10.74 0 0 0 5.394-1.456l-2.145-2.145A4.48 4.48 0 0 1 12 16.5c-2.485 0-4.5-2.015-4.5-4.5 0-.512.086-1.003.244-1.46L5.315 8.375Z"/></svg>`
+          : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px;"><path d="M12 4.5c6.75 0 10.5 7.5 10.5 7.5s-3.75 7.5-10.5 7.5S1.5 12 1.5 12 5.25 4.5 12 4.5Zm0 3a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z"/></svg>`;
         visibilityButton.addEventListener("click", () => {
           this.toggleAreaRegionVisibility(region.id);
         });
@@ -888,36 +934,28 @@ class MapFilterMenu {
         editButton.textContent = t`${"edit"}`;
         editButton.disabled = !this.mapReady;
         editButton.addEventListener("click", () => {
-          this.startAreaEditing(region.id);
-        });
-
-        const renameButton = document.createElement("button");
-        renameButton.className = "btn btn-xs";
-        renameButton.textContent = t`${"map_filter_area_rename"}`;
-        renameButton.addEventListener("click", () => {
-          this.renameAreaRegion(region.id);
-        });
-
-        const deleteButton = document.createElement("button");
-        deleteButton.className = "btn btn-xs btn-error btn-outline";
-        deleteButton.textContent = t`${"delete"}`;
-        deleteButton.addEventListener("click", () => {
-          this.deleteAreaRegion(region.id);
+          this.startAreaEditing(region.id, true);
         });
 
         actionRow.appendChild(visibilityButton);
         actionRow.appendChild(editButton);
-        actionRow.appendChild(renameButton);
-        actionRow.appendChild(deleteButton);
         card.appendChild(actionRow);
 
         list.appendChild(card);
       }
     }
 
-    root.appendChild(modeCard);
-    root.appendChild(listHeader);
+    const addButton = document.createElement("button");
+    addButton.className = "btn btn-primary btn-sm mt-1";
+    addButton.textContent = t`${"map_filter_area_add"}`;
+    addButton.disabled = !this.mapReady;
+    addButton.addEventListener("click", () => {
+      this.startAreaEditing(null, true);
+    });
+
+    root.appendChild(displayRow);
     root.appendChild(list);
+    root.appendChild(addButton);
 
     container.appendChild(root);
   }
@@ -935,6 +973,24 @@ class MapFilterMenu {
     this.renderAreaManager();
 
     console.log("🧑‍🎨 : Area region visibility toggled:", regionId, target.visible);
+  }
+
+  private async changeAreaRegionColor(regionId: string, nextColor: string) {
+    const target = this.areaRegions.find((region) => region.id === regionId);
+    if (!target) return;
+
+    const color = this.normalizeAreaColor(nextColor);
+    if (color === target.color) return;
+
+    target.color = color;
+    target.updatedAt = Date.now();
+    this.areaRegions.sort((a, b) => b.updatedAt - a.updatedAt);
+
+    await this.persistAreaRegions();
+    this.notifyAreaRegions();
+    this.renderAreaManager();
+
+    console.log("🧑‍🎨 : Area region color changed:", regionId, color);
   }
 
   private async renameAreaRegion(regionId: string) {
@@ -984,7 +1040,7 @@ class MapFilterMenu {
     console.log("🧑‍🎨 : Area region deleted:", regionId);
   }
 
-  private async startAreaEditing(regionId: string | null) {
+  private async startAreaEditing(regionId: string | null, closeModal = false) {
     if (!this.mapReady) return;
 
     const editingRegion = regionId
@@ -999,18 +1055,21 @@ class MapFilterMenu {
     this.editingRegionId = editingRegion?.id ?? null;
     this.editingRegionName = editingRegion?.name ?? "";
 
+    if (closeModal) this.closeAreaManager();
+
     window.postMessage(
       {
         source: "mr-wplace-area-region-edit-start",
         regionId: this.editingRegionId,
         name: this.editingRegionName,
         vertices: editingRegion?.vertices ?? [],
+        saveLabel: t`${"map_filter_area_save_map"}`,
+        cancelLabel: t`${"cancel"}`,
       },
       "*",
     );
 
     this.updateAreaButton();
-    this.renderAreaManager();
 
     console.log("🧑‍🎨 : Area edit requested:", this.editingRegionId ?? "new");
   }
@@ -1130,6 +1189,7 @@ class MapFilterMenu {
     const newRegion: AreaRegion = {
       id: this.createAreaRegionId(),
       name,
+      color: DEFAULT_AREA_COLOR,
       vertices: snapshot.vertices,
       visible: true,
       createdAt: now,
