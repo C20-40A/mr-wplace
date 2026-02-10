@@ -171,10 +171,7 @@ export const findTopLeftControls = (): Element | null => {
 
   const infoButton = document.querySelector(titleSelectors);
 
-  if (infoButton?.parentElement?.parentElement) {
-    // 祖父母要素（.flex.flex-col.gap-3 を想定）を返します。
-    return infoButton.parentElement.parentElement;
-  }
+  if (infoButton?.parentElement) return infoButton.parentElement;
 
   // 2. classベース検索 (元のロジックを維持)
   const topLeftContainer = document.querySelector(

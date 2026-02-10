@@ -6,6 +6,7 @@ import {
 import { storage } from "@/utils/browser-api";
 import { getMapInstanceReady } from "@/states/map-instance-ready";
 import { t } from "@/i18n/manager";
+import { findTopLeftControls } from "@/constants/selectors";
 import type {
   AreaRegion,
   AreaRegionEditSnapshot,
@@ -31,10 +32,7 @@ class AreaManager {
   private areaMeasure = false;
 
   async init() {
-    const stored = await storage.get([
-      AREA_MEASURE_KEY,
-      AREA_REGIONS_KEY,
-    ]);
+    const stored = await storage.get([AREA_MEASURE_KEY, AREA_REGIONS_KEY]);
 
     this.areaMeasure = stored[AREA_MEASURE_KEY] ?? false;
     this.areaRegions = this.normalizeAreaRegions(stored[AREA_REGIONS_KEY]);
@@ -79,21 +77,36 @@ class AreaManager {
   private createAreaButton() {
     this.areaButton = document.createElement("button");
     this.areaButton.className = "btn btn-sm btn-circle";
-    this.areaButton.style.cssText = `
-      position: fixed;
-      left: 47px;
-      top: 84px;
-      font-size: 14px;
-      z-index: 800;
+    this.areaButton.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"
+        fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <!-- polygon fill (optional UI hint) -->
+      <path d="M6.2 7.2 L17.2 6.2 L18.2 16.4 L10.3 18.2 L5.6 13.4 Z" fill="currentColor" opacity="0.12" stroke="none"/>
+      <!-- outline -->
+      <path d="M6.2 7.2 L17.2 6.2 L18.2 16.4 L10.3 18.2 L5.6 13.4 Z"/>
+      <!-- vertices -->
+      <circle cx="6.2" cy="7.2" r="1.2" fill="currentColor" stroke="none"/>
+      <circle cx="17.2" cy="6.2" r="1.2" fill="currentColor" stroke="none"/>
+      <circle cx="18.2" cy="16.4" r="1.2" fill="currentColor" stroke="none"/>
+      <circle cx="10.3" cy="18.2" r="1.2" fill="currentColor" stroke="none"/>
+      <circle cx="5.6" cy="13.4" r="1.2" fill="currentColor" stroke="none"/>
+    </svg>
     `;
-    this.areaButton.innerHTML = "📐";
+
     this.areaButton.title = t`${"map_filter_area_manager_title"}`;
     this.areaButton.addEventListener("click", (e) => {
       e.stopPropagation();
       this.openAreaManager();
     });
     this.updateAreaButton();
-    document.body.appendChild(this.areaButton);
+    const container = findTopLeftControls();
+    if (container) {
+      // gapが広すぎるので、調整する
+      container.classList.remove("gap-3");
+      container.classList.add("gap-1");
+
+      container.appendChild(this.areaButton);
+    } else document.body.appendChild(this.areaButton);
   }
 
   private updateAreaButton() {

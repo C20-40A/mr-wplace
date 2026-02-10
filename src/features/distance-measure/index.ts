@@ -1,6 +1,7 @@
 import { storage } from "@/utils/browser-api";
 import { getMapInstanceReady } from "@/states/map-instance-ready";
 import { t } from "@/i18n/manager";
+import { findTopLeftControls } from "@/constants/selectors";
 
 const SCALE_DISPLAY_KEY = "mapFilter_scaleDisplay";
 
@@ -34,13 +35,6 @@ const toggleScaleDisplay = async () => {
 const createScaleButton = () => {
   scaleButton = document.createElement("button");
   scaleButton.className = "btn btn-sm btn-circle";
-  scaleButton.style.cssText = `
-    position: fixed;
-    left: 47px;
-    top: 46px;
-    font-size: 14px;
-    z-index: 800;
-  `;
   scaleButton.innerHTML = "📏";
   scaleButton.title = t`${"map_filter_scaleDisplay"}`;
   scaleButton.addEventListener("click", (e) => {
@@ -48,7 +42,9 @@ const createScaleButton = () => {
     toggleScaleDisplay();
   });
   updateScaleButton();
-  document.body.appendChild(scaleButton);
+  const container = findTopLeftControls();
+  if (container) container.appendChild(scaleButton);
+  else document.body.appendChild(scaleButton);
 };
 
 const init = async () => {
