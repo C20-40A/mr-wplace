@@ -481,12 +481,13 @@ export function buildOverlayModeSelectHtml(
   const isXs = controlSize === "xs";
   const options: Array<{
     value: "true" | "false";
-    label: "独立" | "合成";
+    labelKey: string;
   }> = [
-    { value: "false", label: "合成" },
-    { value: "true", label: "独立" },
+    { value: "false", labelKey: "popup_overlay_mode_composite" },
+    { value: "true", labelKey: "popup_overlay_mode_layer" },
   ];
-  const currentLabel = enabled ? "独立" : "合成";
+  const currentOption = options.find((o) => (o.value === "true") === enabled);
+  const currentLabelKey = currentOption?.labelKey ?? "popup_overlay_mode_composite";
 
   return `
     <div class="overlay-mode-container" style="position: relative;">
@@ -508,12 +509,12 @@ export function buildOverlayModeSelectHtml(
               onmouseup="this.style.transform='scale(1)';"
               ontouchstart="this.style.transform='scale(0.98)'; this.style.boxShadow='0 1px 2px rgba(0, 0, 0, 0.1)';"
               ontouchend="this.style.transform='scale(1)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)';">
-        <span style="font-size: ${isXs ? "0.75rem" : "0.875rem"};">オーバーレイ：</span>
+        <span style="font-size: ${isXs ? "0.75rem" : "0.875rem"};">${t`${"popup_overlay_mode"}`}</span>
         <span class="overlay-mode-current-name"
               style="font-size: ${isXs ? "0.75rem" : "0.875rem"};
                      font-weight: 600;
                      color: #22c55e;
-                     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">${currentLabel}</span>
+                     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">${t`${currentLabelKey}`}</span>
       </button>
       <div class="overlay-mode-dropdown"
            style="display: none;
@@ -549,7 +550,7 @@ export function buildOverlayModeSelectHtml(
               <button class="overlay-mode-item"
                       data-overlay-mode="${option.value}"
                       type="button"
-                      style="padding: ${isXs ? "0.15rem 0.3rem" : "0.2rem 0.4rem"};
+                      style="padding: ${isXs ? "0.35rem 0.5rem" : "0.5rem 0.75rem"};
                              background-color: ${bgColor};
                              border: ${borderWidth} solid ${borderColor};
                              border-radius: 0.375rem;
@@ -571,7 +572,7 @@ export function buildOverlayModeSelectHtml(
                       onmouseup="this.style.transform='translateX(4px)';"
                       ontouchstart="this.style.transform='scale(0.98)';"
                       ontouchend="this.style.transform='scale(1)';">
-                ${option.label}
+                ${t`${option.labelKey}`}
               </button>
             `;
             })
