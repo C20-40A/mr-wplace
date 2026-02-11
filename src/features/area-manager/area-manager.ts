@@ -6,7 +6,6 @@ import {
 import { storage } from "@/utils/browser-api";
 import { getMapInstanceReady } from "@/states/map-instance-ready";
 import { t } from "@/i18n/manager";
-import { findTopLeftControls } from "@/constants/selectors";
 import type {
   AreaRegion,
   AreaRegionEditSnapshot,
@@ -21,7 +20,6 @@ const DEFAULT_AREA_COLOR = "#0f766e";
 const AUTO_AREA_COLOR_GOLDEN_ANGLE = 137.508;
 
 class AreaManager {
-  private areaButton: HTMLButtonElement | null = null;
   private areaManagerModal: ModalElements | null = null;
   private areaRegions: AreaRegion[] = [];
   private areaEditMode = false;
@@ -36,8 +34,6 @@ class AreaManager {
 
     this.areaMeasure = stored[AREA_MEASURE_KEY] ?? false;
     this.areaRegions = this.normalizeAreaRegions(stored[AREA_REGIONS_KEY]);
-
-    this.createAreaButton();
 
     this.mapReady = getMapInstanceReady();
     if (this.mapReady) this.syncMapDependentState();
@@ -69,59 +65,11 @@ class AreaManager {
   }
 
   private syncMapDependentState() {
-    this.updateAreaButton();
     this.notifyAreaMeasure();
     this.notifyAreaRegions();
   }
 
-  private createAreaButton() {
-    this.areaButton = document.createElement("button");
-    this.areaButton.className = "btn btn-sm btn-circle";
-    this.areaButton.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"
-        fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <!-- polygon fill (optional UI hint) -->
-      <path d="M6.2 7.2 L17.2 6.2 L18.2 16.4 L10.3 18.2 L5.6 13.4 Z" fill="currentColor" opacity="0.12" stroke="none"/>
-      <!-- outline -->
-      <path d="M6.2 7.2 L17.2 6.2 L18.2 16.4 L10.3 18.2 L5.6 13.4 Z"/>
-      <!-- vertices -->
-      <circle cx="6.2" cy="7.2" r="1.2" fill="currentColor" stroke="none"/>
-      <circle cx="17.2" cy="6.2" r="1.2" fill="currentColor" stroke="none"/>
-      <circle cx="18.2" cy="16.4" r="1.2" fill="currentColor" stroke="none"/>
-      <circle cx="10.3" cy="18.2" r="1.2" fill="currentColor" stroke="none"/>
-      <circle cx="5.6" cy="13.4" r="1.2" fill="currentColor" stroke="none"/>
-    </svg>
-    `;
-
-    this.areaButton.title = t`${"map_filter_area_manager_title"}`;
-    this.areaButton.addEventListener("click", (e) => {
-      e.stopPropagation();
-      this.openAreaManager();
-    });
-    this.updateAreaButton();
-    const container = findTopLeftControls();
-    if (container) {
-      // gapが広すぎるので、調整する
-      container.classList.remove("gap-3");
-      container.classList.add("gap-1");
-
-      container.appendChild(this.areaButton);
-    } else document.body.appendChild(this.areaButton);
-  }
-
-  private updateAreaButton() {
-    if (!this.areaButton) return;
-
-    const disabled = !this.mapReady;
-    this.areaButton.disabled = disabled;
-    this.areaButton.classList.toggle(
-      "btn-active",
-      this.areaMeasure || this.areaEditMode,
-    );
-    this.areaButton.classList.toggle("opacity-50", disabled);
-  }
-
-  private async setAreaMeasureEnabled(enabled: boolean) {
+  async setAreaMeasureEnabled(enabled: boolean) {
     this.areaMeasure = enabled;
     await storage.set({ [AREA_MEASURE_KEY]: enabled });
 
@@ -130,10 +78,13 @@ class AreaManager {
     }
 
     this.notifyAreaMeasure();
-    this.updateAreaButton();
     this.renderAreaManager();
 
     console.log("🧑‍🎨 : Filter toggled:", "areaMeasure", enabled);
+  }
+
+  isAreaMeasureEnabled(): boolean {
+    return this.areaMeasure;
   }
 
   private notifyAreaMeasure() {
@@ -880,7 +831,7 @@ class AreaManager {
     );
   }
 
-  private openAreaManager() {
+  openAreaManager() {
     this.ensureAreaManagerModal();
     this.renderAreaManager();
 
@@ -901,26 +852,6 @@ class AreaManager {
 
     const root = document.createElement("div");
     root.className = "flex flex-col gap-2";
-
-    const displayRow = document.createElement("label");
-    displayRow.className =
-      "label cursor-pointer justify-start gap-3 py-1 pl-1 w-fit";
-
-    const displayToggle = document.createElement("input");
-    displayToggle.type = "checkbox";
-    displayToggle.className = "toggle toggle-sm";
-    displayToggle.checked = this.areaMeasure;
-    displayToggle.disabled = !this.mapReady;
-    displayToggle.addEventListener("change", () => {
-      this.setAreaMeasureEnabled(displayToggle.checked);
-    });
-
-    const displayText = document.createElement("span");
-    displayText.className = "label-text";
-    displayText.textContent = t`${"map_filter_areaMeasure"}`;
-
-    displayRow.appendChild(displayToggle);
-    displayRow.appendChild(displayText);
 
     const list = document.createElement("div");
     list.className = "flex flex-col gap-2";
@@ -1082,7 +1013,6 @@ class AreaManager {
     actionRow.appendChild(addButton);
     actionRow.appendChild(importExportButton);
 
-    root.appendChild(displayRow);
     root.appendChild(list);
     root.appendChild(actionRow);
 
@@ -1194,7 +1124,6 @@ class AreaManager {
     await this.persistAreaRegions();
     this.notifyAreaRegions();
     this.renderAreaManager();
-    this.updateAreaButton();
 
     console.log("🧑‍🎨 : Area region deleted:", regionId);
   }
@@ -1231,8 +1160,6 @@ class AreaManager {
       "*",
     );
 
-    this.updateAreaButton();
-
     console.log("🧑‍🎨 : Area edit requested:", this.editingRegionId ?? "new");
   }
 
@@ -1245,7 +1172,6 @@ class AreaManager {
 
     window.postMessage({ source: "mr-wplace-area-region-edit-stop" }, "*");
 
-    this.updateAreaButton();
     if (!skipRender) this.renderAreaManager();
 
     console.log("🧑‍🎨 : Area edit stopped");
@@ -1371,9 +1297,34 @@ class AreaManager {
   }
 }
 
+let areaManagerInstance: AreaManager | null = null;
+
 export const areaManagerAPI = {
   initAreaManager: async () => {
-    const instance = new AreaManager();
-    await instance.init();
+    if (!areaManagerInstance) {
+      areaManagerInstance = new AreaManager();
+    }
+    await areaManagerInstance.init();
+  },
+  openAreaManager: () => {
+    areaManagerInstance?.openAreaManager();
+  },
+  setAreaMeasureEnabled: async (enabled: boolean) => {
+    if (areaManagerInstance) {
+      await areaManagerInstance.setAreaMeasureEnabled(enabled);
+      return;
+    }
+
+    await storage.set({ [AREA_MEASURE_KEY]: enabled });
+    window.postMessage(
+      {
+        source: "mr-wplace-area-measure-update",
+        visible: enabled,
+      },
+      "*",
+    );
+  },
+  getAreaMeasureEnabled: () => {
+    return areaManagerInstance?.isAreaMeasureEnabled();
   },
 };

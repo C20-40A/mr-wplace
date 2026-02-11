@@ -469,7 +469,7 @@ export const jaTranslations = {
   map_filter_tileBoundaries: "タイル境界",
   map_filter_gridDisplay: "ピクセルグリッド",
   map_filter_scaleDisplay: "距離計測",
-  map_filter_areaMeasure: "表示",
+  map_filter_areaMeasure: "エリア表示",
   map_filter_area_manager_title: "エリア管理",
   map_filter_area_mode: "モード",
   map_filter_area_mode_display: "表示専用",

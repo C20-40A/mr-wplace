@@ -1,12 +1,14 @@
 import { storage } from "@/utils/browser-api";
 import { getMapInstanceReady } from "@/states/map-instance-ready";
 import { t } from "@/i18n/manager";
+import { areaManagerAPI } from "@/features/area-manager";
 
 const HIGH_CONTRAST_KEY = "mapFilter_highContrast";
 const HIGH_CONTRAST_STYLE_ID = "mr-wplace-high-contrast-style";
 const BACKGROUND_COLOR_ENABLED_KEY = "mapFilter_backgroundColorEnabled";
 const BACKGROUND_COLOR_VALUE_KEY = "mapFilter_backgroundColorValue";
 const GRID_DISPLAY_KEY = "mapFilter_gridDisplay";
+const AREA_MEASURE_KEY = "mapFilter_areaMeasure";
 
 type FilterState = {
   darkTheme: "custom-winter" | "dark";
@@ -18,6 +20,7 @@ type FilterState = {
   map3d: boolean;
   map3dDragRotate: boolean;
   scaleDisplay: boolean;
+  areaMeasure: boolean;
 };
 
 type FilterId =
@@ -114,6 +117,7 @@ class MapFilterMenu {
     map3d: false,
     map3dDragRotate: false,
     scaleDisplay: false,
+    areaMeasure: false,
   };
 
   async init() {
@@ -128,6 +132,7 @@ class MapFilterMenu {
       BACKGROUND_COLOR_ENABLED_KEY,
       BACKGROUND_COLOR_VALUE_KEY,
       GRID_DISPLAY_KEY,
+      AREA_MEASURE_KEY,
     ]);
 
     this.state.highContrast = stored[HIGH_CONTRAST_KEY] ?? false;
@@ -136,6 +141,7 @@ class MapFilterMenu {
       stored[BACKGROUND_COLOR_ENABLED_KEY] ?? false;
     this.state.backgroundColorValue =
       stored[BACKGROUND_COLOR_VALUE_KEY] ?? "#000000";
+    this.state.areaMeasure = stored[AREA_MEASURE_KEY] ?? false;
 
     this.applyDarkTheme(this.state.darkTheme);
     if (this.state.highContrast) this.applyHighContrastStyle();
@@ -153,6 +159,12 @@ class MapFilterMenu {
       ) {
         this.mapReady = true;
         this.syncMapDependentState();
+        return;
+      }
+
+      if (event.data.source === "mr-wplace-area-measure-update") {
+        this.state.areaMeasure = event.data.visible === true;
+        if (this.isOpen) this.updatePopoverItems();
       }
     });
 
@@ -292,6 +304,55 @@ class MapFilterMenu {
       itemsWrapper.appendChild(itemWrapper);
     }
 
+    const areaSection = document.createElement("div");
+    areaSection.className = "flex flex-col gap-2 pt-2 mt-1 border-t border-base-300";
+
+    const areaToggleRow = document.createElement("div");
+    areaToggleRow.className = "flex items-center justify-between";
+
+    const areaTextContainer = document.createElement("span");
+    areaTextContainer.className = "flex items-center gap-2";
+    if (!this.mapReady) areaTextContainer.classList.add("opacity-50");
+
+    const areaIcon = document.createElement("span");
+    areaIcon.textContent = "📍";
+
+    const areaLabel = document.createElement("span");
+    areaLabel.textContent = t`${"map_filter_areaMeasure"}`;
+
+    areaTextContainer.appendChild(areaIcon);
+    areaTextContainer.appendChild(areaLabel);
+
+    const areaToggle = document.createElement("input");
+    areaToggle.type = "checkbox";
+    areaToggle.className = "toggle toggle-sm";
+    areaToggle.checked = this.state.areaMeasure;
+    areaToggle.disabled = !this.mapReady;
+    areaToggle.addEventListener("change", () => {
+      this.toggleAreaMeasure(areaToggle.checked);
+    });
+
+    areaToggleRow.appendChild(areaTextContainer);
+    areaToggleRow.appendChild(areaToggle);
+    areaSection.appendChild(areaToggleRow);
+
+    const openAreaManagerButton = document.createElement("button");
+    openAreaManagerButton.className =
+      "btn btn-xs btn-outline justify-start gap-2";
+    openAreaManagerButton.disabled = !this.mapReady;
+    openAreaManagerButton.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
+        <path d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 294q122-112 181-203.5T720-552q0-109-69.5-178.5T480-800q-101 0-170.5 69.5T240-552q0 71 59 162.5T480-186Zm0 106Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Zm0-480Z"/>
+      </svg>
+      ${t`${"map_filter_area_manager_title"}`}
+    `;
+    openAreaManagerButton.addEventListener("click", () => {
+      areaManagerAPI.openAreaManager();
+      this.closePopover();
+    });
+    areaSection.appendChild(openAreaManagerButton);
+
+    itemsWrapper.appendChild(areaSection);
     container.appendChild(itemsWrapper);
   }
 
@@ -378,6 +439,10 @@ class MapFilterMenu {
   private openPopover() {
     if (this.popover && this.triggerButton) {
       this.mapReady = getMapInstanceReady();
+      const areaMeasure = areaManagerAPI.getAreaMeasureEnabled();
+      if (typeof areaMeasure === "boolean") {
+        this.state.areaMeasure = areaMeasure;
+      }
       const storedTheme = localStorage.getItem("theme");
       this.state.darkTheme =
         storedTheme === "dark" || storedTheme === "custom-winter"
@@ -489,6 +554,13 @@ class MapFilterMenu {
       },
       "*",
     );
+  }
+
+  private async toggleAreaMeasure(enabled: boolean) {
+    this.state.areaMeasure = enabled;
+    await areaManagerAPI.setAreaMeasureEnabled(enabled);
+    this.updatePopoverItems();
+    console.log("🧑‍🎨 : Filter toggled:", "areaMeasure", enabled);
   }
 }
 

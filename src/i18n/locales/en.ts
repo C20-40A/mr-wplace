@@ -461,7 +461,7 @@ export const enTranslations = {
   map_filter_tileBoundaries: "Tile Boundaries",
   map_filter_gridDisplay: "Pixel Grid",
   map_filter_scaleDisplay: "Distance Measure",
-  map_filter_areaMeasure: "Display",
+  map_filter_areaMeasure: "Area Display",
   map_filter_area_manager_title: "Area Manager",
   map_filter_area_mode: "Mode",
   map_filter_area_mode_display: "Display",
