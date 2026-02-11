@@ -631,6 +631,7 @@ window.postMessage(
 - 背景タイル更新時に guide point を自動クリアしない（mismatch が短時間で消えないようにする）
 - `paint session` の active/inactive を導入し、inactive 中は guide 更新を受け付けない
 - `paint modal` クローズ時は guide point を **即時一括クリア**（順次消える/復活する挙動を防ぐ）
+- `paintedPixelMap.delete/clear`（消しゴム含む）を hook し、該当 mismatch guide を即時クリア
 
 パフォーマンス設計:
 - ペイント1イベントで更新するのは guide source のみ（GeoJSON `setData`、debounce 50ms）

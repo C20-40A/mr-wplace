@@ -24,6 +24,12 @@ const captureOrder: string[] = [];
 // Paint event listener for external modules (e.g., paint-stats-updater)
 type PaintListener = (coord: CapturedPaintedCoordinate) => void;
 let paintListener: PaintListener | null = null;
+type PaintDeleteListener = (
+  coord: Pick<CapturedPaintedCoordinate, "tileX" | "tileY" | "pixelX" | "pixelY">
+) => void;
+let paintDeleteListener: PaintDeleteListener | null = null;
+type PaintClearListener = () => void;
+let paintClearListener: PaintClearListener | null = null;
 type PaintSessionListener = (active: boolean) => void;
 let paintSessionListener: PaintSessionListener | null = null;
 
@@ -35,6 +41,18 @@ export const setPaintSessionListener = (
   listener: PaintSessionListener | null
 ): void => {
   paintSessionListener = listener;
+};
+
+export const setPaintDeleteListener = (
+  listener: PaintDeleteListener | null
+): void => {
+  paintDeleteListener = listener;
+};
+
+export const setPaintClearListener = (
+  listener: PaintClearListener | null
+): void => {
+  paintClearListener = listener;
 };
 
 const isTargetKey = (key: unknown): key is string =>
@@ -229,12 +247,21 @@ const handleSet = (mapRef: unknown, key: string, value: unknown): void => {
 const handleDelete = (mapRef: unknown, key: unknown): void => {
   if (mapRef !== targetPaintedPixelMap) return;
   if (!isTargetKey(key)) return;
+  const parsed = parseTargetKey(key);
+  if (parsed)
+    paintDeleteListener?.({
+      tileX: parsed.tileX,
+      tileY: parsed.tileY,
+      pixelX: parsed.pixelX,
+      pixelY: parsed.pixelY,
+    });
   deleteCapturedCoordinate(key);
   exposeCaptureState({ mapRef: targetPaintedPixelMap });
 };
 
 const handleClear = (mapRef: unknown): void => {
   if (mapRef !== targetPaintedPixelMap) return;
+  if (capturedCoordinates.size > 0) paintClearListener?.();
   clearCapturedCoordinates();
   exposeCaptureState({ mapRef: targetPaintedPixelMap });
 };

@@ -6,9 +6,13 @@ import { initSnapshotRepository } from "./db/snapshot-repository";
 import {
   resolveMapInstanceAsync,
   setFrontTilePaintGuideActive,
+  clearFrontTilePaintGuide,
+  clearFrontTilePaintGuideAll,
   setupPaintedCoordinatesCapture,
   setPaintListener,
   setPaintSessionListener,
+  setPaintDeleteListener,
+  setPaintClearListener,
 } from "./features/map-instance";
 import { handlePaintForStats } from "./features/paint-stats-updater";
 
@@ -44,6 +48,12 @@ import { handlePaintForStats } from "./features/paint-stats-updater";
   try {
     setupPaintedCoordinatesCapture();
     setPaintListener(handlePaintForStats);
+    setPaintDeleteListener(({ tileX, tileY, pixelX, pixelY }) => {
+      clearFrontTilePaintGuide(tileX, tileY, pixelX, pixelY);
+    });
+    setPaintClearListener(() => {
+      clearFrontTilePaintGuideAll();
+    });
     setPaintSessionListener((active) => {
       setFrontTilePaintGuideActive(active, { clearNow: !active });
     });

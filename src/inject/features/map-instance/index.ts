@@ -16,6 +16,7 @@ export {
   refreshFrontTileLayer,
   setFrontTilePaintGuideActive,
   clearFrontTilePaintGuideAll,
+  clearFrontTilePaintGuide,
 } from "./front-tile-layer";
 export {
   setupPaintedCoordinatesCapture,
@@ -23,4 +24,6 @@ export {
   getCapturedPaintedCoordinates,
   setPaintListener,
   setPaintSessionListener,
+  setPaintDeleteListener,
+  setPaintClearListener,
 } from "./painted-coordinates-capture";
