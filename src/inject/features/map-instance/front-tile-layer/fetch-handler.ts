@@ -5,6 +5,9 @@ const FAKE_TILE_PROTOCOL = "mr-wplace-overlay";
 const TILE_SIZE = 1000;
 const SUPPORTED_MIN_ZOOM = 10;
 const BASE_TILE_ZOOM = 11;
+const CACHE_CONTROL_HEADER = "public, max-age=31536000, immutable";
+
+let transparentTileBlobPromise: Promise<Blob> | null = null;
 
 const renderBaseZoomTile = async (
   x: number,
@@ -65,23 +68,38 @@ const renderZoom10Tile = async (
   const ctx = canvas.getContext("2d");
   if (!ctx) return emptyBlob;
 
-  let hasDrawableChild = false;
-  for (const child of children) {
-    if (!child.blob) continue;
-    const bitmap = await createImageBitmap(child.blob);
+  const drawableChildren = children.filter(
+    (child): child is { dx: number; dy: number; blob: Blob } =>
+      child.blob instanceof Blob
+  );
+  if (drawableChildren.length === 0) return emptyBlob;
+
+  const bitmaps = await Promise.all(
+    drawableChildren.map(async (child) => ({
+      dx: child.dx,
+      dy: child.dy,
+      bitmap: await createImageBitmap(child.blob),
+    }))
+  );
+
+  for (const { dx, dy, bitmap } of bitmaps) {
     ctx.drawImage(
       bitmap,
-      child.dx * childTileSize,
-      child.dy * childTileSize,
+      dx * childTileSize,
+      dy * childTileSize,
       childTileSize,
       childTileSize
     );
     bitmap.close();
-    hasDrawableChild = true;
   }
 
-  if (!hasDrawableChild) return emptyBlob;
   return await canvas.convertToBlob({ type: "image/png" });
+};
+
+const getTransparentTileBlob = (): Promise<Blob> => {
+  if (!transparentTileBlobPromise)
+    transparentTileBlobPromise = createTransparentTileBlob();
+  return transparentTileBlobPromise;
 };
 
 /**
@@ -108,7 +126,7 @@ export const handleFrontLayerTileRequest = async (
 
   try {
     // Create transparent background blob (1000x1000)
-    const emptyBlob = await createTransparentTileBlob();
+    const emptyBlob = await getTransparentTileBlob();
     const blob =
       z === BASE_TILE_ZOOM
         ? await renderBaseZoomTile(x, y, emptyBlob)
@@ -118,7 +136,7 @@ export const handleFrontLayerTileRequest = async (
       status: 200,
       headers: new Headers({
         "Content-Type": "image/png",
-        "Cache-Control": "no-cache",
+        "Cache-Control": CACHE_CONTROL_HEADER,
       }),
     });
   } catch (error) {
@@ -146,7 +164,7 @@ const createTransparentTileResponse = (blob: Blob): Response => {
     status: 200,
     headers: new Headers({
       "Content-Type": "image/png",
-      "Cache-Control": "no-cache",
+      "Cache-Control": CACHE_CONTROL_HEADER,
     }),
   });
 };
@@ -167,7 +185,7 @@ const createEmptyTileResponse = (): Response => {
     status: 200,
     headers: new Headers({
       "Content-Type": "image/png",
-      "Cache-Control": "no-cache",
+      "Cache-Control": CACHE_CONTROL_HEADER,
     }),
   });
 };
