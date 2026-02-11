@@ -8,12 +8,15 @@ const PIXEL_HOVER_LAYER = "pixel-hover";
 const FAKE_TILE_PROTOCOL = "mr-wplace-overlay";
 const PENDING_REFRESH_DEBOUNCE_MS = 120;
 const MAX_PENDING_COMPARISON_TILES = 256;
+const MAX_PENDING_PAINT_TILES = 256;
 
 let layerAdded = false;
 let sourceAdded = false;
 let currentSourceVersion = 0;
 let frontLayerOperational = false;
 const pendingComparisonTiles = new Set<string>();
+const pendingPaintTiles = new Set<string>();
+let pendingComparisonRefreshQueued = false;
 let pendingRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
 const isEnabled = () => window.mrWplaceFrontTileLayerEnabled ?? false;
@@ -33,6 +36,12 @@ const updateFrontLayerOperational = (map?: any): void => {
   frontLayerOperational = Boolean(
     mapInstance.getLayer(FRONT_LAYER_ID) && mapInstance.getSource(FRONT_SOURCE_ID),
   );
+  if (
+    frontLayerOperational &&
+    (pendingComparisonRefreshQueued || pendingPaintTiles.size > 0)
+  ) {
+    schedulePendingComparisonRefresh();
+  }
 };
 
 const clearPendingRefreshTimer = (): void => {
@@ -46,8 +55,12 @@ const schedulePendingComparisonRefresh = (): void => {
 
   pendingRefreshTimer = setTimeout(() => {
     pendingRefreshTimer = null;
-    if (pendingComparisonTiles.size === 0) return;
+    const shouldRefresh =
+      pendingComparisonRefreshQueued || pendingPaintTiles.size > 0;
+    if (!shouldRefresh) return;
     if (!isFrontTileLayerOperational()) return;
+    pendingComparisonRefreshQueued = false;
+    pendingPaintTiles.clear();
     refreshFrontTileLayer();
   }, PENDING_REFRESH_DEBOUNCE_MS);
 };
@@ -74,6 +87,21 @@ export const notifyFrontTileComparisonReady = (
   if (!isEnabled()) return;
   const key = `${tileX},${tileY}`;
   if (!pendingComparisonTiles.delete(key)) return;
+  pendingComparisonRefreshQueued = true;
+  schedulePendingComparisonRefresh();
+};
+
+export const notifyFrontTilePendingPaintChanged = (
+  tileX: number,
+  tileY: number,
+): void => {
+  if (!isEnabled()) return;
+  const key = `${tileX},${tileY}`;
+  pendingPaintTiles.add(key);
+  if (pendingPaintTiles.size > MAX_PENDING_PAINT_TILES) {
+    const oldest = pendingPaintTiles.values().next().value;
+    if (oldest) pendingPaintTiles.delete(oldest);
+  }
   schedulePendingComparisonRefresh();
 };
 
@@ -170,6 +198,8 @@ const removeFrontLayer = (map: any): void => {
   sourceAdded = false;
   frontLayerOperational = false;
   pendingComparisonTiles.clear();
+  pendingPaintTiles.clear();
+  pendingComparisonRefreshQueued = false;
   clearPendingRefreshTimer();
 
   console.log("🧑‍🎨 : Front tile layer and source removed");

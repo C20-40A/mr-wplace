@@ -11,6 +11,8 @@
 import { colorpalette } from "@/constants/colors";
 import { overlayLayers, perTileColorStats } from "./tile-draw/states";
 import type { CapturedPaintedCoordinate } from "@/inject/types";
+import { upsertPendingPaint } from "./tile-draw/pending-paint-state";
+import { notifyFrontTilePendingPaintChanged } from "./map-instance/front-tile-layer";
 
 // colorIdx → "r,g,b" の高速ルックアップ
 const colorIdxToRgbKey = new Map<number, string>();
@@ -106,6 +108,13 @@ const scheduleNotify = (imageKey: string, tileKey: string): void => {
 export const handlePaintForStats = (
   coord: CapturedPaintedCoordinate
 ): void => {
+  if (window.mrWplaceFrontTileLayerEnabled) {
+    const pendingChanged = upsertPendingPaint(coord);
+    if (pendingChanged) {
+      notifyFrontTilePendingPaintChanged(coord.tileX, coord.tileY);
+    }
+  }
+
   if (coord.colorIdx == null) return;
 
   const paintedRgbKey = colorIdxToRgbKey.get(coord.colorIdx);

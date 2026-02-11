@@ -599,9 +599,38 @@ window.postMessage(
 - 配置済みピクセルは`showUnplacedColor`で表示
 - 未配置ピクセルは通常のエンハンスモードで表示
 
-### ⚠️ 今後の検討事項
+### ✅ 描画モード視認性（2026-02-11 修正完了）
 
-**描画モード時の視認性改善:**
-- 問題: 赤い色を含む描画モードで、正しく配置されたピクセルが赤いオーバーレイで隠れる
-- 解決策候補: 配置済みピクセルのオーバーレイを透明化または薄く表示
-- 実装箇所: `tile-overlay-renderer.ts` の `scaleAndRenderWithMode` 関数
+**問題（修正前）**
+- Front layer は透明背景に overlay を描画するため、比較背景が未準備だと「常に未一致」判定になり、赤系モードで見え方が崩れるケースがあった
+
+**現在の挙動（修正後）**
+- `fetch-handler.ts`:
+  - 比較背景（`getOriginalBlob("${x},${y}")`）が無いタイルは **描画しない**（透明返却）
+  - タイルを pending 登録し、比較背景到着後に再描画させる
+- `fetch-interceptor.ts`:
+  - `setOriginalBlob()` 後に `notifyFrontTileComparisonReady(tileX, tileY)` を呼ぶ
+  - 通常タイルの overlay 合成スキップ条件は `enabled` ではなく `isFrontTileLayerOperational()`（実働状態）を使用
+- `front-tile-layer/index.ts`:
+  - `frontLayerOperational` を導入
+  - pending 比較タイルを `Set` で管理し、debounce 付きで `refreshFrontTileLayer()` を実行
+  - pending 上限 (`MAX_PENDING_COMPARISON_TILES`) を設け、高頻度移動時のメモリ増加を抑制
+
+### ✅ ペイント「途中」状態の即時反映（2026-02-11 実装）
+
+実装内容:
+- `painted-coordinates-capture.ts` の差分イベント（`setPaintListener`）から pending paint を更新
+- `tile-draw/pending-paint-state.ts` で `tileKey -> Map<pixelIndex, rgbInt>` を保持（疎データ）
+- `tile-overlay-renderer.ts` で描画時に O(1) 参照
+  - pending 色と template 色が一致: そのピクセルは即時で overlay 非表示
+  - pending 色と template 色が不一致: 警告クロス（黄）を描画
+- `fetch-interceptor.ts` で背景タイル更新時に pending をクリア
+- `front-tile-layer/index.ts` の debounce refresh に pending paint 更新を統合
+
+パフォーマンス設計:
+- 全画面再計算なし（差分イベント駆動）
+- pending タイル数・タイル内ピクセル数に上限あり
+- pending データに TTL を設け、古い途中状態を自動破棄
+
+注意:
+- 警告は「途中状態」の可視化。背景タイル更新後は pending クリア + refresh で通常表示に戻る

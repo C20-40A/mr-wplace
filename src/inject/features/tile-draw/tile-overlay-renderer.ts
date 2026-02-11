@@ -14,6 +14,7 @@ import {
   isColorFilterActive,
 } from "../../states/colorFilterState";
 import { overlayLayers, perTileColorStats } from "./states";
+import { getPendingPaintsForTile } from "./pending-paint-state";
 
 /**
  * RGBA配列を毎回生成せずに色一致判定する
@@ -180,6 +181,7 @@ const computeStatsWithBackground = (
 const scaleAndRenderWithMode = (
   data: Uint8ClampedArray,
   comparisonData: Uint8ClampedArray | null,
+  pendingPaintPixels: ReadonlyMap<number, number> | null,
   width: number,
   height: number,
   bgData: Uint8ClampedArray,
@@ -198,6 +200,11 @@ const scaleAndRenderWithMode = (
   const scaledData = new Uint8ClampedArray(scaledWidth * scaledHeight * 4);
   const scaledStride = scaledWidth * 4;
   const [ecR, ecG, ecB] = enhancedColor;
+  const warningR = 255;
+  const warningG = 191;
+  const warningB = 0;
+  const hasPendingPaints =
+    pendingPaintPixels !== null && pendingPaintPixels.size > 0;
 
   if (shouldSkipRendering) {
     return scaledData; // 透明データを返す
@@ -230,6 +237,59 @@ const scaleAndRenderWithMode = (
       const cmpB = useOriginalComparison ? comparisonData[srcI + 2] : b;
       const cmpA = useOriginalComparison ? comparisonData[srcI + 3] : a;
       if (cmpA === 0) continue;
+
+      if (hasPendingPaints) {
+        const tilePixelIndex =
+          (offsetY + y1) * TILE_DRAW_CONSTANTS.TILE_SIZE + (offsetX + x1);
+        const pendingPaintRgbInt = pendingPaintPixels!.get(tilePixelIndex);
+        if (pendingPaintRgbInt != null) {
+          const templateR = comparisonData ? comparisonData[srcI] : r;
+          const templateG = comparisonData ? comparisonData[srcI + 1] : g;
+          const templateB = comparisonData ? comparisonData[srcI + 2] : b;
+          const templateRgbInt = (templateR << 16) | (templateG << 8) | templateB;
+
+          // 途中ペイントがテンプレ色に一致したら、即時で配置済み扱いにする
+          if (pendingPaintRgbInt === templateRgbInt) continue;
+
+          const baseX = x1 * pixelScale;
+          const baseY = y1 * pixelScale;
+          const row0 = (baseY * scaledWidth + baseX) * 4;
+          const row1 = row0 + scaledStride;
+          const row2 = row1 + scaledStride;
+
+          const topCenter = row0 + 4;
+          const midLeft = row1;
+          const center = row1 + 4;
+          const midRight = row1 + 8;
+          const bottomCenter = row2 + 4;
+
+          scaledData[topCenter] = warningR;
+          scaledData[topCenter + 1] = warningG;
+          scaledData[topCenter + 2] = warningB;
+          scaledData[topCenter + 3] = 255;
+
+          scaledData[midLeft] = warningR;
+          scaledData[midLeft + 1] = warningG;
+          scaledData[midLeft + 2] = warningB;
+          scaledData[midLeft + 3] = 255;
+
+          scaledData[center] = warningR;
+          scaledData[center + 1] = warningG;
+          scaledData[center + 2] = warningB;
+          scaledData[center + 3] = 255;
+
+          scaledData[midRight] = warningR;
+          scaledData[midRight + 1] = warningG;
+          scaledData[midRight + 2] = warningB;
+          scaledData[midRight + 3] = 255;
+
+          scaledData[bottomCenter] = warningR;
+          scaledData[bottomCenter + 1] = warningG;
+          scaledData[bottomCenter + 2] = warningB;
+          scaledData[bottomCenter + 3] = 255;
+          continue;
+        }
+      }
 
       // 背景色取得
       const bgX1 = offsetX + x1;
@@ -665,6 +725,7 @@ const applyOverlayProcessing = async (
   overlayBitmap: ImageBitmap,
   bgPixels: Uint8Array,
   bgWidth: number,
+  pendingPaintPixels: ReadonlyMap<number, number> | null,
   offsetX: number,
   offsetY: number,
   mode: EnhancedMode,
@@ -730,12 +791,16 @@ const applyOverlayProcessing = async (
     colorFilter !== undefined && colorFilter.length === 0;
 
   const showUnplacedOnly = window.mrWplaceShowUnplacedOnly ?? false;
-  const comparisonData = showUnplacedOnly ? getOriginalData() : null;
+  const needsOriginalComparison =
+    showUnplacedOnly ||
+    (pendingPaintPixels !== null && pendingPaintPixels.size > 0);
+  const comparisonData = needsOriginalComparison ? getOriginalData() : null;
   const showUnplacedColor = getShowUnplacedColor();
 
   const scaledData = scaleAndRenderWithMode(
     filteredData,
     comparisonData,
+    pendingPaintPixels,
     width,
     height,
     bgData,
@@ -891,6 +956,7 @@ export const drawOverlayLayersOnTile = async (
 
   // 一時統計マップ: 複数タイルまたがり対応
   const tempStatsMap = new Map<string, ColorStats>();
+  const pendingPaintPixels = getPendingPaintsForTile(tileCoords[0], tileCoords[1]);
 
   // 背景タイル1回デコード（下地描画用）
   const {
@@ -1034,6 +1100,7 @@ export const drawOverlayLayersOnTile = async (
       paintedTilebitmap,
       comparisonBgPixels,
       comparisonBgWidth,
+      pendingPaintPixels,
       offsetX,
       offsetY,
       mode,
