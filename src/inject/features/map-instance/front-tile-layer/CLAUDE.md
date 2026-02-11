@@ -618,21 +618,22 @@ window.postMessage(
   - `refreshFrontTileLayer()` は **soft refresh 優先**（`source.setTiles` / `source.reload`）
   - source API が使えない場合のみ hard refresh（layer/source remove-add）へフォールバック
 
-### ✅ ペイント「途中」状態の即時反映（2026-02-11 実装）
+### ✅ ペイント中UIの分離（2026-02-11 実装）
 
 実装内容:
-- `painted-coordinates-capture.ts` の差分イベント（`setPaintListener`）から pending paint を更新
-- `tile-draw/pending-paint-state.ts` で `tileKey -> Map<pixelIndex, rgbInt>` を保持（疎データ）
-- `tile-overlay-renderer.ts` で描画時に O(1) 参照
-  - pending 色と template 色が一致: そのピクセルは即時で overlay 非表示
-  - pending 色と template 色が不一致: 警告クロス（黄）を描画
-- `fetch-interceptor.ts` で背景タイル更新時に pending をクリア
-- `front-tile-layer/index.ts` の debounce refresh に pending paint 更新を統合
+- 方針を **「overlay本体更新」と「ペイント途中案内UI」を完全分離** に変更
+- `tile-overlay-renderer.ts` は pending paint を参照しない（背景比較ベースの本体描画のみ）
+- `paint-stats-updater.ts` で topmost template 色とペイント色を比較し、結果を UI レイヤーに反映
+- `front-tile-layer/index.ts` に `mr-wplace-paint-guide-*` レイヤーを追加
+  - `mismatch`: 黄 + 黒枠の警告ドット（やや大きめ）
+  - `matched` はガイドを表示せず、該当点をクリア
+- `pixel-art-layer-overlay` は `paint-preview-*` より下に配置（preview の視認性を優先）
+- 背景タイル更新時に guide point を自動クリアしない（mismatch が短時間で消えないようにする）
 
 パフォーマンス設計:
-- 全画面再計算なし（差分イベント駆動）
-- pending タイル数・タイル内ピクセル数に上限あり
-- pending データに TTL を設け、古い途中状態を自動破棄
+- ペイント1イベントで更新するのは guide source のみ（GeoJSON `setData`、debounce 50ms）
+- Front tile 本体のタイル refresh は pending paint では発火させない
+- guide point は TTL と最大件数で上限管理
 
 注意:
-- 警告は「途中状態」の可視化。背景タイル更新後は pending クリア + refresh で通常表示に戻る
+- ペイント中の可視化は guide レイヤーで行うため、front tile 本体の再描画由来フリッカー/重さを抑えられる

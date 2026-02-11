@@ -6,7 +6,6 @@ import {
   invalidateTile,
   setOriginalBlob,
 } from "./features/tile-draw";
-import { clearPendingPaintsForTile } from "./features/tile-draw/pending-paint-state";
 import { invalidateTileCache } from "./cache-storage";
 import { handleUserStatusUpdate } from "./handlers/user-status-handler";
 import { WplaceUserData } from "./types";
@@ -16,7 +15,6 @@ import {
 } from "./features/map-instance/front-tile-layer/fetch-handler";
 import {
   isFrontTileLayerOperational,
-  notifyFrontTilePendingPaintChanged,
   notifyFrontTileComparisonReady,
 } from "./features/map-instance/front-tile-layer";
 
@@ -243,9 +241,6 @@ const handleTileRequest = async (
   // Cache original tile for background pixel checks (area fill, etc.)
   setOriginalBlob(cacheKey, originalTileBlob);
   notifyFrontTileComparisonReady(tileX, tileY);
-  if (clearPendingPaintsForTile(tileX, tileY)) {
-    notifyFrontTilePendingPaintChanged(tileX, tileY);
-  }
 
   // Save snapshot for time travel feature
   window.postMessage(

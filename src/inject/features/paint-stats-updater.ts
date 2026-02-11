@@ -11,13 +11,18 @@
 import { colorpalette } from "@/constants/colors";
 import { overlayLayers, perTileColorStats } from "./tile-draw/states";
 import type { CapturedPaintedCoordinate } from "@/inject/types";
-import { upsertPendingPaint } from "./tile-draw/pending-paint-state";
-import { notifyFrontTilePendingPaintChanged } from "./map-instance/front-tile-layer";
+import {
+  upsertFrontTilePaintGuide,
+  clearFrontTilePaintGuide,
+} from "./map-instance/front-tile-layer";
 
 // colorIdx → "r,g,b" の高速ルックアップ
 const colorIdxToRgbKey = new Map<number, string>();
+const colorIdxToRgbInt = new Map<number, number>();
 for (const entry of colorpalette) {
   colorIdxToRgbKey.set(entry.id, entry.rgb.join(","));
+  const [r, g, b] = entry.rgb;
+  colorIdxToRgbInt.set(entry.id, (r << 16) | (g << 8) | b);
 }
 
 // タイル ImageBitmap → ピクセルデータキャッシュ (tileKey 単位)
@@ -108,22 +113,24 @@ const scheduleNotify = (imageKey: string, tileKey: string): void => {
 export const handlePaintForStats = (
   coord: CapturedPaintedCoordinate
 ): void => {
-  if (window.mrWplaceFrontTileLayerEnabled) {
-    const pendingChanged = upsertPendingPaint(coord);
-    if (pendingChanged) {
-      notifyFrontTilePendingPaintChanged(coord.tileX, coord.tileY);
-    }
-  }
-
-  if (coord.colorIdx == null) return;
-
-  const paintedRgbKey = colorIdxToRgbKey.get(coord.colorIdx);
-  if (!paintedRgbKey) return;
+  const paintedRgbInt =
+    coord.colorIdx != null
+      ? (colorIdxToRgbInt.get(coord.colorIdx) ?? null)
+      : coord.color
+        ? (coord.color.r << 16) | (coord.color.g << 8) | coord.color.b
+        : null;
+  if (paintedRgbInt == null) return;
+  const paintedRgbKey = `${(paintedRgbInt >> 16) & 0xff},${
+    (paintedRgbInt >> 8) & 0xff
+  },${paintedRgbInt & 0xff}`;
 
   const tileKey = `${coord.tileX},${coord.tileY}`;
   const paddedTileKey = toPaddedTileKey(coord.tileX, coord.tileY);
+  let topOverlayRgbInt: number | null = null;
+  let topOverlayOrder = -1;
 
-  for (const instance of overlayLayers) {
+  for (let order = 0; order < overlayLayers.length; order++) {
+    const instance = overlayLayers[order];
     if (!instance.drawEnabled) continue;
     // affectedTileSet で O(1) 判定
     if (
@@ -153,6 +160,14 @@ export const handlePaintForStats = (
     if (pixels[idx + 3] === 0) continue; // 透明ピクセルはスキップ
 
     const overlayRgbKey = `${pixels[idx]},${pixels[idx + 1]},${pixels[idx + 2]}`;
+    const overlayRgbInt =
+      (pixels[idx] << 16) | (pixels[idx + 1] << 8) | pixels[idx + 2];
+
+    // Front guide は最上位レイヤーのテンプレ色を採用
+    if (order >= topOverlayOrder) {
+      topOverlayOrder = order;
+      topOverlayRgbInt = overlayRgbInt;
+    }
 
     // overlay のこの位置の色とペイントした色が一致 → matched +1
     if (overlayRgbKey !== paintedRgbKey) continue;
@@ -174,6 +189,28 @@ export const handlePaintForStats = (
       tileStatsMap.has(tileKey) ? tileKey : paddedTileKey,
     );
   }
+
+  if (!window.mrWplaceFrontTileLayerEnabled) return;
+
+  if (topOverlayRgbInt == null) {
+    clearFrontTilePaintGuide(coord.tileX, coord.tileY, coord.pixelX, coord.pixelY);
+    return;
+  }
+
+  const kind = topOverlayRgbInt === paintedRgbInt ? "matched" : "mismatch";
+  if (kind === "matched") {
+    clearFrontTilePaintGuide(coord.tileX, coord.tileY, coord.pixelX, coord.pixelY);
+    return;
+  }
+
+  upsertFrontTilePaintGuide(
+    coord.tileX,
+    coord.tileY,
+    coord.pixelX,
+    coord.pixelY,
+    "mismatch",
+    topOverlayRgbInt,
+  );
 };
 
 /**
