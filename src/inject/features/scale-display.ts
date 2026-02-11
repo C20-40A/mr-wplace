@@ -1,4 +1,5 @@
 import { getMapInstanceFromWplace } from "./map-instance";
+import { latLonToPixels } from "@/utils/geo-converter";
 
 const SCALE_CONTAINER_ID = "mr-wplace-scale-display";
 const SCALE_LINE_ID = "mr-wplace-scale-line";
@@ -149,13 +150,14 @@ const createScaleContainer = (): HTMLDivElement => {
     transform: translate(-50%, -50%);
     background: rgba(0, 0, 0, 0.82);
     color: #fff;
-    border-radius: 9999px;
-    padding: 2px 8px;
+    border-radius: 12px;
+    padding: 4px 10px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-size: 12px;
     font-weight: 600;
     white-space: nowrap;
-    line-height: 1.2;
+    line-height: 1.3;
+    text-align: center;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
     pointer-events: none;
     z-index: 1;
@@ -255,7 +257,13 @@ const updateScaleDisplay = (map: ScaleMap): void => {
   scaleLine.style.width = `${Math.max(length, 1)}px`;
   scaleLine.style.transform = `translateY(-50%) rotate(${Math.atan2(dy, dx)}rad)`;
 
-  scaleLabel.textContent = formatDistance(getDistanceMeters(pinALngLat, pinBLngLat));
+  // Calculate pixel distance
+  const [px1, py1] = latLonToPixels(pinALngLat.lat, pinALngLat.lng);
+  const [px2, py2] = latLonToPixels(pinBLngLat.lat, pinBLngLat.lng);
+  const pixelDistance = Math.round(Math.hypot(px2 - px1, py2 - py1));
+
+  const distanceText = formatDistance(getDistanceMeters(pinALngLat, pinBLngLat));
+  scaleLabel.innerHTML = `${distanceText}<br><span style="font-size: 10px; opacity: 0.85;">${pixelDistance} px</span>`;
   scaleLabel.style.left = `${(pointA.x + pointB.x) / 2}px`;
   scaleLabel.style.top = `${(pointA.y + pointB.y) / 2 - 12}px`;
 };
