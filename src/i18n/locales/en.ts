@@ -308,7 +308,7 @@ export const enTranslations = {
   sort_order_least_remaining: "Almost Done",
 
   // Compute Device
-  compute_device_label: "Processing",
+  compute_device_label: "Template Rendering Processing",
 
   // Show Unplaced Only
   show_unplaced_only: "Placed",

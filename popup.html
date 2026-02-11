@@ -268,14 +268,16 @@
       <div class="setting-group">
         <label class="setting-label">
           <svg class="icon" viewBox="0 0 12 12">
-            <path d="M2 2h8v8H2zM3 3h6v6H3z" fill="none" stroke="#fff" stroke-width="1" />
-            <rect x="4" y="4" width="4" height="4" />
+            <rect x="2" y="2" width="3" height="3" />
+            <rect x="7" y="2" width="3" height="3" />
+            <rect x="2" y="7" width="3" height="3" />
+            <rect x="7" y="7" width="3" height="3" />
           </svg>
-          <span id="popup-overlay-mode-label">Overlay Rendering Mode</span>
+          <span id="popup-compute-device-label">Processing</span>
         </label>
-        <select id="overlay-mode-select">
-          <option value="false" id="popup-overlay-mode-composite">Composite (Default)</option>
-          <option value="true" id="popup-overlay-mode-layer">Independent Layer</option>
+        <select id="compute-device-select">
+          <option value="gpu">GPU</option>
+          <option value="cpu">CPU</option>
         </select>
       </div>
 

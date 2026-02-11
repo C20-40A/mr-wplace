@@ -41,11 +41,7 @@ import {
   FAB_FEATURES,
   type FabFeature,
 } from "./states/fab-visibility";
-import {
-  loadFrontTileLayerFromStorage,
-  getFrontTileLayer,
-  setFrontTileLayer,
-} from "./states/front-tile-layer";
+import { ColorPaletteStorage } from "@/components/color-palette/storage";
 
 import { tabs } from "@/utils/browser-api";
 import { FEEDBACK_FORM_URL } from "@/constants/url";
@@ -80,9 +76,7 @@ const updateUI = (): void => {
     "popup-fab-time-travel-label": "popup_fab_time_travel",
     "popup-fab-data-saver-label": "popup_fab_data_saver",
     "popup-fab-filter-label": "popup_fab_color_filter",
-    "popup-overlay-mode-label": "popup_overlay_mode",
-    "popup-overlay-mode-composite": "popup_overlay_mode_composite",
-    "popup-overlay-mode-layer": "popup_overlay_mode_layer",
+    "popup-compute-device-label": "compute_device_label",
     "gallery-data-label": "gallery_data",
     "export-btn-label": "export",
     "import-btn-label": "import",
@@ -190,8 +184,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const closeButtonSwapSelect = document.getElementById(
     "close-button-swap-select",
   ) as HTMLSelectElement;
-  const overlayModeSelect = document.getElementById(
-    "overlay-mode-select",
+  const computeDeviceSelect = document.getElementById(
+    "compute-device-select",
   ) as HTMLSelectElement;
 
   // Set Buy Me a Coffee image
@@ -206,7 +200,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentLayerSort = true;
   let currentPaintModeStyle = true;
   let currentCloseButtonSwap = false;
-  let currentOverlayMode = false;
+  let currentComputeDevice: "gpu" | "cpu" = "gpu";
   let mapInstanceReady = false;
 
   try {
@@ -238,9 +232,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadCloseButtonSwapFromStorage();
     currentCloseButtonSwap = getCloseButtonSwap();
 
-    // overlay mode初期化
-    await loadFrontTileLayerFromStorage();
-    currentOverlayMode = getFrontTileLayer();
+    // compute device初期化
+    currentComputeDevice = await ColorPaletteStorage.getComputeDevice();
 
     // fab visibility初期化
     await loadFabVisibilityFromStorage();
@@ -273,7 +266,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   layerSortSelect.value = currentLayerSort.toString();
   paintModeStyleSelect.value = currentPaintModeStyle.toString();
   closeButtonSwapSelect.value = currentCloseButtonSwap.toString();
-  overlayModeSelect.value = currentOverlayMode.toString();
+  computeDeviceSelect.value = currentComputeDevice;
 
   // FAB visibility selector初期化
   const fabVisibility = getFabVisibility();
@@ -418,12 +411,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Overlay mode変更イベント
-  overlayModeSelect.addEventListener("change", async (event) => {
+  // Compute device変更イベント
+  computeDeviceSelect.addEventListener("change", async (event) => {
     const target = event.target as HTMLSelectElement;
-    const newEnabled = target.value === "true";
+    const device = target.value === "cpu" ? "cpu" : "gpu";
 
-    await setFrontTileLayer(newEnabled);
+    await ColorPaletteStorage.setComputeDevice(device);
 
     // content.tsに設定変更を通知
     const [activeTab] = await tabs.query({
@@ -432,8 +425,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     if (activeTab.id) {
       await tabs.sendMessage(activeTab.id, {
-        type: "OVERLAY_MODE_CHANGED",
-        enabled: newEnabled,
+        type: "COMPUTE_DEVICE_CHANGED",
+        device,
       });
     }
   });

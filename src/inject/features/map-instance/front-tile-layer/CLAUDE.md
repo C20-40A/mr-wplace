@@ -583,14 +583,17 @@ window.postMessage(
 - 従来の「source削除→再追加」から「バージョンインクリメント」へ変更
 - パフォーマンスが大幅に向上
 
-### ✅ ポップアップUI完了
+### ✅ 設定UI更新完了
 
 **設定項目を追加:**
-- `popup.html`: 「Overlay Rendering Mode」ドロップダウン
-- `popup.ts`: イベントハンドラー + ストレージ連携
+- `features/color-filter/routes/list/ui.ts`: 「Overlay Rendering Mode」ドロップダウン（カラーフィルター画面へ移動）
 - `states/front-tile-layer.ts`: 設定の永続化
-- `content.ts`: OVERLAY_MODE_CHANGEDメッセージハンドラー
+- `content.ts`: OVERLAY_MODE_CHANGED メッセージハンドラー
 - i18n: 英語・日本語対応
+
+**UI入れ替え（2026-02-11）**
+- Overlay Rendering Mode: popup → color-filter
+- Compute Device (GPU/CPU): color-filter → popup
 
 ### ✅ Show-unplaced-only 対応
 
@@ -608,6 +611,7 @@ window.postMessage(
 - `fetch-handler.ts`:
   - 比較背景（`getOriginalBlob("${x},${y}")`）が無いタイルは **描画しない**（透明返却）
   - タイルを pending 登録し、比較背景到着後に再描画させる
+  - z11 をベースに、z10 は z11 の 2x2 子タイル合成で描画
 - `fetch-interceptor.ts`:
   - `setOriginalBlob()` 後に `notifyFrontTileComparisonReady(tileX, tileY)` を呼ぶ
   - 通常タイルの overlay 合成スキップ条件は `enabled` ではなく `isFrontTileLayerOperational()`（実働状態）を使用
@@ -617,6 +621,7 @@ window.postMessage(
   - pending 上限 (`MAX_PENDING_COMPARISON_TILES`) を設け、高頻度移動時のメモリ増加を抑制
   - `refreshFrontTileLayer()` は **soft refresh 優先**（`source.setTiles` / `source.reload`）
   - source API が使えない場合のみ hard refresh（layer/source remove-add）へフォールバック
+  - raster source の表示範囲を `minzoom: 10` / `maxzoom: 11` に設定
 
 ### ✅ ペイント中UIの分離（2026-02-11 実装）
 

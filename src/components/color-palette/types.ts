@@ -20,6 +20,9 @@ export interface ColorPaletteOptions {
   showComputeDeviceSelect?: boolean;
   onComputeDeviceChange?: (device: ComputeDevice) => void;
   computeDevice?: ComputeDevice;
+  showOverlayModeSelect?: boolean;
+  onOverlayModeChange?: (enabled: boolean) => void;
+  overlayMode?: boolean;
   showUnplacedOnlyToggle?: boolean;
   onShowUnplacedOnlyChange?: (enabled: boolean) => void;
   showUnplacedOnly?: boolean;

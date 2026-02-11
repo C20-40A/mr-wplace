@@ -2,6 +2,87 @@ import { drawOverlayLayersOnTile, getOriginalBlob } from "../../tile-draw";
 import { markFrontTileComparisonPending } from "./index";
 
 const FAKE_TILE_PROTOCOL = "mr-wplace-overlay";
+const TILE_SIZE = 1000;
+const SUPPORTED_MIN_ZOOM = 10;
+const BASE_TILE_ZOOM = 11;
+
+const renderBaseZoomTile = async (
+  x: number,
+  y: number,
+  emptyBlob: Blob
+): Promise<Blob> => {
+  const cacheKey = `${x},${y}`;
+  const comparisonTileBlob = getOriginalBlob(cacheKey);
+
+  // Comparison background is not ready yet.
+  // Defer rendering for this tile until original tile arrives.
+  if (!comparisonTileBlob) {
+    markFrontTileComparisonPending(x, y);
+    return emptyBlob;
+  }
+
+  // Render on transparent layer, but compare against the original tile if available
+  return await drawOverlayLayersOnTile(emptyBlob, [x, y], "gpu", {
+    comparisonTileBlob,
+  });
+};
+
+const renderZoom10Tile = async (
+  x: number,
+  y: number,
+  emptyBlob: Blob
+): Promise<Blob> => {
+  const childTileSize = TILE_SIZE / 2;
+  const childTasks: Array<
+    Promise<{ dx: number; dy: number; blob: Blob | null }>
+  > = [];
+
+  for (let dy = 0; dy < 2; dy++) {
+    for (let dx = 0; dx < 2; dx++) {
+      const childX = x * 2 + dx;
+      const childY = y * 2 + dy;
+      const comparisonTileBlob = getOriginalBlob(`${childX},${childY}`);
+
+      if (!comparisonTileBlob) {
+        markFrontTileComparisonPending(childX, childY);
+        continue;
+      }
+
+      childTasks.push(
+        drawOverlayLayersOnTile(emptyBlob, [childX, childY], "gpu", {
+          comparisonTileBlob,
+        })
+          .then((blob) => ({ dx, dy, blob }))
+          .catch(() => ({ dx, dy, blob: null }))
+      );
+    }
+  }
+
+  if (childTasks.length === 0) return emptyBlob;
+
+  const children = await Promise.all(childTasks);
+  const canvas = new OffscreenCanvas(TILE_SIZE, TILE_SIZE);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return emptyBlob;
+
+  let hasDrawableChild = false;
+  for (const child of children) {
+    if (!child.blob) continue;
+    const bitmap = await createImageBitmap(child.blob);
+    ctx.drawImage(
+      bitmap,
+      child.dx * childTileSize,
+      child.dy * childTileSize,
+      childTileSize,
+      childTileSize
+    );
+    bitmap.close();
+    hasDrawableChild = true;
+  }
+
+  if (!hasDrawableChild) return emptyBlob;
+  return await canvas.convertToBlob({ type: "image/png" });
+};
 
 /**
  * Handle custom protocol tile requests for front layer
@@ -20,28 +101,18 @@ export const handleFrontLayerTileRequest = async (
   const x = parseInt(tileMatch[2], 10);
   const y = parseInt(tileMatch[3], 10);
 
-  // Only support zoom level 11
-  if (z !== 11) {
+  // Support z11 (base) and z10 (zoomed out composition)
+  if (z < SUPPORTED_MIN_ZOOM || z > BASE_TILE_ZOOM) {
     return createEmptyTileResponse();
   }
 
   try {
     // Create transparent background blob (1000x1000)
     const emptyBlob = await createTransparentTileBlob();
-    const cacheKey = `${x},${y}`;
-    const comparisonTileBlob = getOriginalBlob(cacheKey);
-
-    // Comparison background is not ready yet.
-    // Defer rendering for this tile until original tile arrives.
-    if (!comparisonTileBlob) {
-      markFrontTileComparisonPending(x, y);
-      return createTransparentTileResponse(emptyBlob);
-    }
-
-    // Render on transparent layer, but compare against the original tile if available
-    const blob = await drawOverlayLayersOnTile(emptyBlob, [x, y], "gpu", {
-      comparisonTileBlob,
-    });
+    const blob =
+      z === BASE_TILE_ZOOM
+        ? await renderBaseZoomTile(x, y, emptyBlob)
+        : await renderZoom10Tile(x, y, emptyBlob);
 
     return new Response(blob, {
       status: 200,
@@ -60,12 +131,12 @@ export const handleFrontLayerTileRequest = async (
  * Create transparent 1000x1000 tile blob for background
  */
 const createTransparentTileBlob = async (): Promise<Blob> => {
-  const canvas = new OffscreenCanvas(1000, 1000);
+  const canvas = new OffscreenCanvas(TILE_SIZE, TILE_SIZE);
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Failed to get canvas context");
 
   // Fill with transparent
-  ctx.clearRect(0, 0, 1000, 1000);
+  ctx.clearRect(0, 0, TILE_SIZE, TILE_SIZE);
 
   return await canvas.convertToBlob({ type: "image/png" });
 };

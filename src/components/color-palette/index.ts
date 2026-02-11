@@ -31,6 +31,7 @@ export class ColorPalette {
   private enhancedColor: [number, number, number];
   private showUnplacedColor: [number, number, number];
   private sortOrder: SortOrder = "default";
+  private overlayMode: boolean;
   private computeDevice: ComputeDevice;
   private showUnplacedOnly: boolean;
   private boundClickHandler: (e: MouseEvent) => void;
@@ -50,6 +51,7 @@ export class ColorPalette {
     this.enhancedColor = options.enhancedColor ?? [255, 0, 0];
     this.showUnplacedColor = options.showUnplacedColor ?? [160, 160, 160];
     this.sortOrder = options.sortOrder ?? "default";
+    this.overlayMode = options.overlayMode ?? false;
     this.computeDevice = options.computeDevice ?? "gpu";
     this.showUnplacedOnly = options.showUnplacedOnly ?? false;
 
@@ -75,9 +77,11 @@ export class ColorPalette {
       this.options.hasExtraColorsBitmap ?? false,
       this.options.showColorStats ?? false,
       this.options.showEnhancedSelect ?? false,
+      this.options.showOverlayModeSelect ?? false,
       this.options.showComputeDeviceSelect ?? false,
       this.sortOrder,
       this.enhancedMode,
+      this.overlayMode,
       this.computeDevice,
       this.options.showUnplacedOnlyToggle ?? false,
       this.showUnplacedOnly,
@@ -156,6 +160,12 @@ export class ColorPalette {
     if (!(e.target as HTMLElement).closest(".compute-device-container")) {
       const dropdown = this.container.querySelector(
         ".compute-device-dropdown"
+      ) as HTMLElement;
+      if (dropdown) dropdown.style.display = "none";
+    }
+    if (!(e.target as HTMLElement).closest(".overlay-mode-container")) {
+      const dropdown = this.container.querySelector(
+        ".overlay-mode-dropdown"
       ) as HTMLElement;
       if (dropdown) dropdown.style.display = "none";
     }
@@ -277,6 +287,35 @@ export class ColorPalette {
         const isVisible = dropdown.style.display !== "none";
         dropdown.style.display = isVisible ? "none" : "block";
       }
+      return;
+    }
+
+    // Overlay Mode Button
+    if (
+      target.closest(".overlay-mode-button") &&
+      !target.closest(".overlay-mode-item")
+    ) {
+      e.stopPropagation();
+      const dropdown = this.container.querySelector(
+        ".overlay-mode-dropdown"
+      ) as HTMLElement;
+      if (dropdown) {
+        const isVisible = dropdown.style.display !== "none";
+        dropdown.style.display = isVisible ? "none" : "block";
+      }
+      return;
+    }
+
+    // Overlay Mode Item
+    const overlayModeItem = target.closest(".overlay-mode-item") as HTMLElement;
+    if (overlayModeItem) {
+      e.stopPropagation();
+      const nextEnabled = overlayModeItem.dataset.overlayMode === "true";
+      this.handleOverlayModeChange(nextEnabled);
+      const dropdown = this.container.querySelector(
+        ".overlay-mode-dropdown"
+      ) as HTMLElement;
+      if (dropdown) dropdown.style.display = "none";
       return;
     }
 
@@ -497,6 +536,26 @@ export class ColorPalette {
     if (this.options.onComputeDeviceChange) {
       this.options.onComputeDeviceChange(device);
     }
+  }
+
+  private handleOverlayModeChange(enabled: boolean): void {
+    this.overlayMode = enabled;
+
+    const currentName = this.container.querySelector(".overlay-mode-current-name");
+    if (currentName) {
+      currentName.textContent = enabled ? "独立" : "合成";
+    }
+
+    const buttons = this.container.querySelectorAll(".overlay-mode-item");
+    buttons.forEach((button) => {
+      const buttonEnabled = (button as HTMLElement).dataset.overlayMode === "true";
+      const isSelected = buttonEnabled === enabled;
+      const borderColor = isSelected ? "#22c55e" : "#d1d5db";
+      const borderWidth = isSelected ? "2px" : "1px";
+      (button as HTMLElement).style.border = `${borderWidth} solid ${borderColor}`;
+    });
+
+    this.options.onOverlayModeChange?.(enabled);
   }
 
   private handleShowUnplacedOnlyToggle(): void {

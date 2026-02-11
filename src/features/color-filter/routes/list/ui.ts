@@ -1,23 +1,24 @@
 import { ColorPalette } from "@/components/color-palette";
 import type { SortOrder } from "@/components/color-palette/types";
-import { ColorPaletteStorage } from "@/components/color-palette/storage";
-import type { ComputeDevice } from "@/components/color-palette/storage";
 import { getAggregatedColorStats } from "@/utils/inject-bridge";
 import { getAllGalleryMetadata } from "@/core/bridge/gallery-storage-bridge";
 import { findNearestGalleryItem } from "@/utils/gallery-helpers";
 import {
   sendColorFilterToInject,
-  sendComputeDeviceToInject,
   sendShowUnplacedOnlyToInject,
 } from "@/content";
 import {
   getShowUnplacedOnly,
   setShowUnplacedOnly,
 } from "@/states/showUnplacedOnly";
+import {
+  loadFrontTileLayerFromStorage,
+  getFrontTileLayer,
+  setFrontTileLayer,
+} from "@/states/front-tile-layer";
 
 let colorPalette: ColorPalette | null = null;
 let lastSortOrder: SortOrder = "default";
-let lastComputeDevice: ComputeDevice = "gpu";
 const SHOW_UNPLACED_COLOR_SEND_INTERVAL_MS = 100;
 let showUnplacedColorSendTimer: ReturnType<typeof setTimeout> | null = null;
 let lastShowUnplacedColorSentAt = 0;
@@ -49,9 +50,8 @@ export const renderColorFilters = async (
 ): Promise<void> => {
   // 既存インスタンス破棄
   if (colorPalette) colorPalette.destroy();
-
-  // ComputeDevice設定読み込み
-  lastComputeDevice = await ColorPaletteStorage.getComputeDevice();
+  await loadFrontTileLayerFromStorage();
+  const overlayModeEnabled = getFrontTileLayer();
 
   // ShowUnplacedOnly is now a transient state (not loaded from storage)
 
@@ -116,14 +116,17 @@ export const renderColorFilters = async (
     onSortOrderChange: (sort) => {
       lastSortOrder = sort;
     },
-    showComputeDeviceSelect: true,
-    computeDevice: lastComputeDevice,
-    onComputeDeviceChange: async (device) => {
-      lastComputeDevice = device;
-      await ColorPaletteStorage.setComputeDevice(device);
-      console.log(`🧑‍🎨 : Compute device changed:`, device);
-      // Send updated compute device to inject side
-      await sendComputeDeviceToInject();
+    showOverlayModeSelect: true,
+    overlayMode: overlayModeEnabled,
+    onOverlayModeChange: async (enabled) => {
+      await setFrontTileLayer(enabled);
+      window.postMessage(
+        {
+          source: "mr-wplace-front-tile-layer-update",
+          enabled,
+        },
+        "*"
+      );
     },
     showUnplacedOnlyToggle: true,
     showUnplacedOnly: getShowUnplacedOnly(),

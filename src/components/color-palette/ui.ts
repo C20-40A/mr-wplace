@@ -472,6 +472,117 @@ export function buildComputeDeviceSelectHtml(
 }
 
 /**
+ * Overlay modeドロップダウンHTML生成
+ */
+export function buildOverlayModeSelectHtml(
+  enabled: boolean,
+  controlSize: "default" | "xs" = "default",
+): string {
+  const isXs = controlSize === "xs";
+  const options: Array<{
+    value: "true" | "false";
+    label: "独立" | "合成";
+  }> = [
+    { value: "false", label: "合成" },
+    { value: "true", label: "独立" },
+  ];
+  const currentLabel = enabled ? "独立" : "合成";
+
+  return `
+    <div class="overlay-mode-container" style="position: relative;">
+      <button class="overlay-mode-button" type="button"
+              style="padding: ${isXs ? "0.15rem 0.3rem" : "0.2rem 0.4rem"};
+                     border: 2px solid #d1d5db;
+                     border-radius: ${isXs ? "0.4rem" : "0.5rem"};
+                     cursor: pointer;
+                     display: flex;
+                     align-items: center;
+                     gap: 0.5rem;
+                     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                     user-select: none;
+                     -webkit-tap-highlight-color: transparent;"
+              onmouseenter="this.style.boxShadow='0 4px 8px rgba(0, 0, 0, 0.15)'; this.style.borderColor='#22c55e';"
+              onmouseleave="this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)'; this.style.borderColor='#d1d5db';"
+              onmousedown="this.style.transform='scale(0.98)';"
+              onmouseup="this.style.transform='scale(1)';"
+              ontouchstart="this.style.transform='scale(0.98)'; this.style.boxShadow='0 1px 2px rgba(0, 0, 0, 0.1)';"
+              ontouchend="this.style.transform='scale(1)'; this.style.boxShadow='0 1px 3px rgba(0, 0, 0, 0.1)';">
+        <span style="font-size: ${isXs ? "0.75rem" : "0.875rem"};">オーバーレイ：</span>
+        <span class="overlay-mode-current-name"
+              style="font-size: ${isXs ? "0.75rem" : "0.875rem"};
+                     font-weight: 600;
+                     color: #22c55e;
+                     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">${currentLabel}</span>
+      </button>
+      <div class="overlay-mode-dropdown"
+           style="display: none;
+                  position: absolute;
+                  top: 100%;
+                  left: 0;
+                  margin-top: 0.5rem;
+                  background-color: var(--color-base-200, #f9fafb);
+                  border: 2px solid var(--color-base-content, #e5e7eb);
+                  border-radius: 0.5rem;
+                  padding: 0.375rem;
+                  z-index: 1000;
+                  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+                  min-width: ${isXs ? "150px" : "180px"};
+                  animation: slideDown 0.2s ease-out;
+                  transform-origin: top;
+                  backdrop-filter: blur(10px);">
+        <div class="overlay-mode-list" style="display: flex; flex-direction: column; gap: 0.25rem;">
+          ${options
+            .map((option) => {
+              const isSelected = (option.value === "true") === enabled;
+              const borderColor = isSelected
+                ? "#22c55e"
+                : "var(--color-base-content, #e5e7eb)";
+              const borderWidth = isSelected ? "2px" : "1px";
+              const bgColor = isSelected
+                ? "var(--color-primary, #22c55e)"
+                : "var(--color-base-300, #f9fafb)";
+              const textColor = isSelected
+                ? "var(--color-primary-content, #fff)"
+                : "var(--color-base-content, inherit)";
+              return `
+              <button class="overlay-mode-item"
+                      data-overlay-mode="${option.value}"
+                      type="button"
+                      style="padding: ${isXs ? "0.15rem 0.3rem" : "0.2rem 0.4rem"};
+                             background-color: ${bgColor};
+                             border: ${borderWidth} solid ${borderColor};
+                             border-radius: 0.375rem;
+                             cursor: pointer;
+                             text-align: left;
+                             font-size: ${isXs ? "0.75rem" : "0.875rem"};
+                             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                             font-weight: ${isSelected ? "600" : "400"};
+                             color: ${textColor};
+                             user-select: none;
+                             -webkit-tap-highlight-color: transparent;"
+                      onmouseenter="this.style.backgroundColor='${
+                        isSelected
+                          ? "var(--color-primary, #dcfce7)"
+                          : "var(--color-base-200, #f0f0f0)"
+                      }'; this.style.transform='translateX(4px)'; this.style.borderColor='#22c55e';"
+                      onmouseleave="this.style.backgroundColor='${bgColor}'; this.style.transform='translateX(0)'; this.style.borderColor='${borderColor}';"
+                      onmousedown="this.style.transform='scale(0.98)';"
+                      onmouseup="this.style.transform='translateX(4px)';"
+                      ontouchstart="this.style.transform='scale(0.98)';"
+                      ontouchend="this.style.transform='scale(1)';">
+                ${option.label}
+              </button>
+            `;
+            })
+            .join("")}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/**
  * Show Unplaced Only トグルHTML生成
  */
 export function buildShowUnplacedOnlyToggleHtml(
@@ -537,9 +648,11 @@ export function buildControlsHtml(
   hasExtraColorsBitmap: boolean,
   showColorStats: boolean,
   showEnhancedSelect: boolean,
+  showOverlayModeSelect: boolean,
   showComputeDeviceSelect: boolean,
   sortOrder: SortOrder,
   enhancedMode: EnhancedMode,
+  overlayMode: boolean,
   computeDevice: ComputeDevice,
   showUnplacedOnlyToggle: boolean = false,
   showUnplacedOnly: boolean = false,
@@ -581,6 +694,10 @@ export function buildControlsHtml(
 
   const enhancedSelectHTML = showEnhancedSelect
     ? buildEnhancedSelectHtml(enhancedMode, controlSize, enhancedColor)
+    : "";
+
+  const overlayModeSelectHTML = showOverlayModeSelect
+    ? buildOverlayModeSelectHtml(overlayMode, controlSize)
     : "";
 
   const computeDeviceSelectHTML = showComputeDeviceSelect
@@ -646,8 +763,9 @@ export function buildControlsHtml(
       ${disableUnusedButtonHTML}
       ${sortOrderSelectHTML}
       ${enhancedSelectHTML}
-      ${computeDeviceSelectHTML}
       ${showUnplacedOnlyToggleHTML}
+      ${overlayModeSelectHTML}
+      ${computeDeviceSelectHTML}
     </div>
     <style>
       @keyframes slideDown {

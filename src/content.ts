@@ -265,6 +265,17 @@ const registerMessageListeners = () => {
       return;
     }
 
+    if (message.type === "COMPUTE_DEVICE_CHANGED") {
+      window.postMessage(
+        {
+          source: "mr-wplace-compute-device",
+          device: message.device,
+        },
+        "*"
+      );
+      return;
+    }
+
     if (message.type === "FAB_VISIBILITY_CHANGED") {
       applyFabVisibilityStyles(message.visibility ?? getFabVisibility());
       return;

@@ -315,7 +315,7 @@ export const jaTranslations = {
   sort_order_least_remaining: "残りピクセルが少ない",
 
   // Compute Device
-  compute_device_label: "処理方式",
+  compute_device_label: "テンプレート描画処理方式",
 
   // Show Unplaced Only
   show_unplaced_only: "配置済み色",

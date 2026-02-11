@@ -14,6 +14,8 @@ const GUIDE_MISMATCH_LAYER_ID = "mr-wplace-paint-guide-mismatch";
 const LEGACY_GUIDE_MATCH_LAYER_ID = "mr-wplace-paint-guide-match";
 const GUIDE_SYNC_DEBOUNCE_MS = 50;
 const MAX_GUIDE_POINTS = 1500;
+const FRONT_LAYER_MIN_ZOOM = 10;
+const FRONT_LAYER_MAX_ZOOM = 11;
 
 let layerAdded = false;
 let sourceAdded = false;
@@ -373,8 +375,8 @@ const addOverlaySource = (map: any): void => {
       type: "raster",
       tiles: [getFrontSourceTileUrl(version)],
       tileSize: 1000,
-      minzoom: 11,
-      maxzoom: 11,
+      minzoom: FRONT_LAYER_MIN_ZOOM,
+      maxzoom: FRONT_LAYER_MAX_ZOOM,
     });
     sourceAdded = true;
     updateFrontLayerOperational(map);
