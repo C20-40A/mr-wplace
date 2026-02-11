@@ -1,4 +1,5 @@
-import { drawOverlayLayersOnTile } from "../../tile-draw";
+import { drawOverlayLayersOnTile, getOriginalBlob } from "../../tile-draw";
+import { markFrontTileComparisonPending } from "./index";
 
 const FAKE_TILE_PROTOCOL = "mr-wplace-overlay";
 
@@ -27,9 +28,20 @@ export const handleFrontLayerTileRequest = async (
   try {
     // Create transparent background blob (1000x1000)
     const emptyBlob = await createTransparentTileBlob();
+    const cacheKey = `${x},${y}`;
+    const comparisonTileBlob = getOriginalBlob(cacheKey);
 
-    // Use existing tile-draw logic to render overlay on transparent background
-    const blob = await drawOverlayLayersOnTile(emptyBlob, [x, y], "gpu");
+    // Comparison background is not ready yet.
+    // Defer rendering for this tile until original tile arrives.
+    if (!comparisonTileBlob) {
+      markFrontTileComparisonPending(x, y);
+      return createTransparentTileResponse(emptyBlob);
+    }
+
+    // Render on transparent layer, but compare against the original tile if available
+    const blob = await drawOverlayLayersOnTile(emptyBlob, [x, y], "gpu", {
+      comparisonTileBlob,
+    });
 
     return new Response(blob, {
       status: 200,
@@ -56,6 +68,16 @@ const createTransparentTileBlob = async (): Promise<Blob> => {
   ctx.clearRect(0, 0, 1000, 1000);
 
   return await canvas.convertToBlob({ type: "image/png" });
+};
+
+const createTransparentTileResponse = (blob: Blob): Response => {
+  return new Response(blob, {
+    status: 200,
+    headers: new Headers({
+      "Content-Type": "image/png",
+      "Cache-Control": "no-cache",
+    }),
+  });
 };
 
 /**

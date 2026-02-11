@@ -6,22 +6,87 @@ const FRONT_SOURCE_ID = "mr-wplace-overlay-source";
 const PIXEL_ART_LAYER = "pixel-art-layer";
 const PIXEL_HOVER_LAYER = "pixel-hover";
 const FAKE_TILE_PROTOCOL = "mr-wplace-overlay";
+const PENDING_REFRESH_DEBOUNCE_MS = 120;
+const MAX_PENDING_COMPARISON_TILES = 256;
 
 let layerAdded = false;
 let sourceAdded = false;
 let currentSourceVersion = 0;
+let frontLayerOperational = false;
+const pendingComparisonTiles = new Set<string>();
+let pendingRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
 const isEnabled = () => window.mrWplaceFrontTileLayerEnabled ?? false;
+
+const updateFrontLayerOperational = (map?: any): void => {
+  if (!isEnabled()) {
+    frontLayerOperational = false;
+    return;
+  }
+
+  const mapInstance = map ?? (getMapInstanceFromWplace() as any);
+  if (!mapInstance) {
+    frontLayerOperational = false;
+    return;
+  }
+
+  frontLayerOperational = Boolean(
+    mapInstance.getLayer(FRONT_LAYER_ID) && mapInstance.getSource(FRONT_SOURCE_ID),
+  );
+};
+
+const clearPendingRefreshTimer = (): void => {
+  if (pendingRefreshTimer === null) return;
+  clearTimeout(pendingRefreshTimer);
+  pendingRefreshTimer = null;
+};
+
+const schedulePendingComparisonRefresh = (): void => {
+  if (pendingRefreshTimer !== null) return;
+
+  pendingRefreshTimer = setTimeout(() => {
+    pendingRefreshTimer = null;
+    if (pendingComparisonTiles.size === 0) return;
+    if (!isFrontTileLayerOperational()) return;
+    refreshFrontTileLayer();
+  }, PENDING_REFRESH_DEBOUNCE_MS);
+};
+
+export const isFrontTileLayerOperational = (): boolean => frontLayerOperational;
+
+export const markFrontTileComparisonPending = (
+  tileX: number,
+  tileY: number,
+): void => {
+  if (!isEnabled()) return;
+  const key = `${tileX},${tileY}`;
+  pendingComparisonTiles.add(key);
+  if (pendingComparisonTiles.size <= MAX_PENDING_COMPARISON_TILES) return;
+  const oldest = pendingComparisonTiles.values().next().value;
+  if (!oldest) return;
+  pendingComparisonTiles.delete(oldest);
+};
+
+export const notifyFrontTileComparisonReady = (
+  tileX: number,
+  tileY: number,
+): void => {
+  if (!isEnabled()) return;
+  const key = `${tileX},${tileY}`;
+  if (!pendingComparisonTiles.delete(key)) return;
+  schedulePendingComparisonRefresh();
+};
 
 /**
  * Add custom overlay source to map with state version for cache busting
  */
 const addOverlaySource = (map: any): void => {
-  if (sourceAdded) return;
   if (map.getSource(FRONT_SOURCE_ID)) {
     sourceAdded = true;
+    updateFrontLayerOperational(map);
     return;
   }
+  sourceAdded = false;
 
   try {
     const version = getStateVersion();
@@ -35,8 +100,10 @@ const addOverlaySource = (map: any): void => {
       maxzoom: 11,
     });
     sourceAdded = true;
+    updateFrontLayerOperational(map);
     console.log(`🧑‍🎨 : Front tile source added (version: ${version})`);
   } catch (e) {
+    updateFrontLayerOperational(map);
     console.error("🧑‍🎨 : Failed to add overlay source:", e);
   }
 };
@@ -46,18 +113,23 @@ const addOverlaySource = (map: any): void => {
  * Creates sandwich: pixel-art-layer -> pixel-hover -> pixel-art-layer-overlay
  */
 const checkAndAddOverlay = (map: any): void => {
-  if (!isEnabled()) return;
+  if (!isEnabled()) {
+    updateFrontLayerOperational(map);
+    return;
+  }
 
   // Add source first
   addOverlaySource(map);
 
-  if (layerAdded) return;
-  if (!map.getLayer(PIXEL_HOVER_LAYER)) return;
-  if (!map.getLayer(PIXEL_ART_LAYER)) return;
   if (map.getLayer(FRONT_LAYER_ID)) {
     layerAdded = true;
+    updateFrontLayerOperational(map);
     return;
   }
+  layerAdded = false;
+
+  if (!map.getLayer(PIXEL_HOVER_LAYER)) return;
+  if (!map.getLayer(PIXEL_ART_LAYER)) return;
 
   // Add overlay layer at the end (after pixel-hover)
   try {
@@ -71,12 +143,14 @@ const checkAndAddOverlay = (map: any): void => {
       },
     });
     layerAdded = true;
+    updateFrontLayerOperational(map);
     console.log("🧑‍🎨 : Front tile layer added (sandwich created)");
 
     // Verify
     const layers = map.getStyle()?.layers?.map((l: any) => l.id);
     console.log("🧑‍🎨 : Layer order:", layers?.slice(-5));
   } catch (e) {
+    updateFrontLayerOperational(map);
     console.error("🧑‍🎨 : Failed to add overlay layer:", e);
   }
 };
@@ -85,15 +159,18 @@ const checkAndAddOverlay = (map: any): void => {
  * Remove front tile layer and source from map
  */
 const removeFrontLayer = (map: any): void => {
-  if (layerAdded && map.getLayer(FRONT_LAYER_ID)) {
+  if (map.getLayer(FRONT_LAYER_ID)) {
     map.removeLayer(FRONT_LAYER_ID);
-    layerAdded = false;
   }
+  layerAdded = false;
 
-  if (sourceAdded && map.getSource(FRONT_SOURCE_ID)) {
+  if (map.getSource(FRONT_SOURCE_ID)) {
     map.removeSource(FRONT_SOURCE_ID);
-    sourceAdded = false;
   }
+  sourceAdded = false;
+  frontLayerOperational = false;
+  pendingComparisonTiles.clear();
+  clearPendingRefreshTimer();
 
   console.log("🧑‍🎨 : Front tile layer and source removed");
 };
@@ -104,6 +181,7 @@ const removeFrontLayer = (map: any): void => {
 export const setFrontTileLayerEnabled = (enabled: boolean): void => {
   const map = getMapInstanceFromWplace() as any;
   if (!map) {
+    frontLayerOperational = false;
     console.warn("🧑‍🎨 : Map instance not available for front tile layer");
     return;
   }
@@ -114,6 +192,7 @@ export const setFrontTileLayerEnabled = (enabled: boolean): void => {
     removeFrontLayer(map);
   }
 
+  updateFrontLayerOperational(map);
   console.log("🧑‍🎨 : Front tile layer enabled:", enabled);
 };
 
@@ -123,16 +202,28 @@ export const setFrontTileLayerEnabled = (enabled: boolean): void => {
  * Called when overlay state changes (color filter, gallery images, etc.)
  */
 export const refreshFrontTileLayer = (): void => {
-  if (!isEnabled()) return;
+  if (!isEnabled()) {
+    frontLayerOperational = false;
+    return;
+  }
 
   const map = getMapInstanceFromWplace() as any;
-  if (!map) return;
+  if (!map) {
+    frontLayerOperational = false;
+    return;
+  }
 
   const source = map.getSource(FRONT_SOURCE_ID);
-  if (!source) return;
+  if (!source) {
+    updateFrontLayerOperational(map);
+    return;
+  }
 
   const layer = map.getLayer(FRONT_LAYER_ID);
-  if (!layer) return;
+  if (!layer) {
+    updateFrontLayerOperational(map);
+    return;
+  }
 
   try {
     // Increment version to change tile URLs
@@ -151,9 +242,11 @@ export const refreshFrontTileLayer = (): void => {
     // Re-add source with new version
     addOverlaySource(map);
     checkAndAddOverlay(map);
+    updateFrontLayerOperational(map);
 
     console.log(`🧑‍🎨 : Front tile layer refreshed (version: ${newVersion})`);
   } catch (error) {
+    updateFrontLayerOperational(map);
     console.error("🧑‍🎨 : Failed to refresh front tile layer:", error);
   }
 };
@@ -168,7 +261,13 @@ export const setupFrontTileLayerOnMapReady = (mapInstance: any): void => {
 
   // Monitor for style changes (when pixel-hover is added)
   const onStyleData = () => {
-    if (!isEnabled()) return;
+    if (!isEnabled()) {
+      updateFrontLayerOperational(map);
+      return;
+    }
+    // style reload can invalidate source/layer while flags remain true
+    sourceAdded = false;
+    layerAdded = false;
     checkAndAddOverlay(map);
   };
 
@@ -178,5 +277,6 @@ export const setupFrontTileLayerOnMapReady = (mapInstance: any): void => {
   // Initial check if style is already loaded
   if (isEnabled() && map.isStyleLoaded && map.isStyleLoaded()) {
     checkAndAddOverlay(map);
+    updateFrontLayerOperational(map);
   }
 };

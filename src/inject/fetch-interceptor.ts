@@ -13,6 +13,10 @@ import {
   isFrontLayerTileRequest,
   handleFrontLayerTileRequest,
 } from "./features/map-instance/front-tile-layer/fetch-handler";
+import {
+  isFrontTileLayerOperational,
+  notifyFrontTileComparisonReady,
+} from "./features/map-instance/front-tile-layer";
 
 /**
  * Setup fetch interceptor to handle tile requests and user data
@@ -236,6 +240,7 @@ const handleTileRequest = async (
 
   // Cache original tile for background pixel checks (area fill, etc.)
   setOriginalBlob(cacheKey, originalTileBlob);
+  notifyFrontTileComparisonReady(tileX, tileY);
 
   // Save snapshot for time travel feature
   window.postMessage(
@@ -250,7 +255,7 @@ const handleTileRequest = async (
 
   // When front tile layer is enabled, skip overlay compositing on background tiles.
   // Overlays are rendered on the independent front layer instead.
-  if (window.mrWplaceFrontTileLayerEnabled) {
+  if (isFrontTileLayerOperational()) {
     window.postMessage(
       { source: "wplace-studio-drawing-complete", tileX, tileY },
       "*"

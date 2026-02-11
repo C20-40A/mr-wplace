@@ -761,6 +761,9 @@ export const drawOverlayLayersOnTile = async (
   tileBlob: Blob,
   tileCoords: TileCoords,
   computeDevice: "gpu" | "cpu" = "gpu",
+  options: {
+    comparisonTileBlob?: Blob;
+  } = {},
 ): Promise<Blob> => {
   if (overlayLayers.length === 0) return tileBlob;
 
@@ -889,7 +892,7 @@ export const drawOverlayLayersOnTile = async (
   // 一時統計マップ: 複数タイルまたがり対応
   const tempStatsMap = new Map<string, ColorStats>();
 
-  // 背景タイル1回デコード（高速化: 下地用+背景比較用）
+  // 背景タイル1回デコード（下地描画用）
   const {
     pixels: bgPixels,
     width: bgWidth,
@@ -908,6 +911,29 @@ export const drawOverlayLayersOnTile = async (
     );
     finalBgWidth = TILE_DRAW_CONSTANTS.TILE_SIZE;
     finalBgHeight = TILE_DRAW_CONSTANTS.TILE_SIZE;
+  }
+
+  // 背景比較用タイル（未指定時は下地と同一を使い再デコードを避ける）
+  let comparisonBgPixels = finalBgPixels;
+  let comparisonBgWidth = finalBgWidth;
+  const comparisonTileBlob = options.comparisonTileBlob;
+
+  if (comparisonTileBlob && comparisonTileBlob !== tileBlob) {
+    const {
+      pixels: comparePixels,
+      width: compareWidth,
+      height: compareHeight,
+    } = await blobToPixels(comparisonTileBlob);
+
+    if (compareWidth === 1 && compareHeight === 1) {
+      comparisonBgPixels = new Uint8Array(
+        TILE_DRAW_CONSTANTS.TILE_SIZE * TILE_DRAW_CONSTANTS.TILE_SIZE * 4,
+      );
+      comparisonBgWidth = TILE_DRAW_CONSTANTS.TILE_SIZE;
+    } else {
+      comparisonBgPixels = comparePixels;
+      comparisonBgWidth = compareWidth;
+    }
   }
 
   const bgImageData = new ImageData(
@@ -1006,8 +1032,8 @@ export const drawOverlayLayersOnTile = async (
 
     paintedTilebitmap = await applyOverlayProcessing(
       paintedTilebitmap,
-      finalBgPixels,
-      finalBgWidth,
+      comparisonBgPixels,
+      comparisonBgWidth,
       offsetX,
       offsetY,
       mode,
