@@ -720,20 +720,23 @@ export const startAreaFill = async (
     cachedPositions = positions;
   }
 
-  // Get available charge count
-  const availableCharges = statusManagerSingleton.getCurrentChargeCount();
-  console.log(`🧑‍🎨 : Area fill - Available charges: ${availableCharges}`);
-
-  // Calculate remaining positions from last index
-  const remainingPositions = positions.slice(lastProcessedIndex);
-  const maxClicks = Math.min(remainingPositions.length, availableCharges);
-  const limitedPositions = remainingPositions.slice(0, maxClicks);
-
-  if (limitedPositions.length < remainingPositions.length) {
-    console.log(
-      `🧑‍🎨 : Area fill - Limited to ${limitedPositions.length} clicks (charge limit)`,
-    );
+  // Get available charge count (advisory only; never block/limit execution)
+  let availableCharges: number | null = null;
+  try {
+    const value = statusManagerSingleton.getCurrentChargeCount();
+    availableCharges = Number.isFinite(value) ? value : null;
+  } catch {
+    availableCharges = null;
   }
+  if (availableCharges === null) {
+    console.warn("🧑‍🎨 : Area fill - Charge count unavailable, continuing without limit");
+  } else {
+    console.log(`🧑‍🎨 : Area fill - Available charges (advisory): ${availableCharges}`);
+  }
+
+  // Always process all remaining positions (charge shortage must not stop fill)
+  const remainingPositions = positions.slice(lastProcessedIndex);
+  const limitedPositions = remainingPositions;
 
   // Send initial progress
   window.postMessage(
