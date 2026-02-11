@@ -615,6 +615,8 @@ window.postMessage(
   - `frontLayerOperational` を導入
   - pending 比較タイルを `Set` で管理し、debounce 付きで `refreshFrontTileLayer()` を実行
   - pending 上限 (`MAX_PENDING_COMPARISON_TILES`) を設け、高頻度移動時のメモリ増加を抑制
+  - `refreshFrontTileLayer()` は **soft refresh 優先**（`source.setTiles` / `source.reload`）
+  - source API が使えない場合のみ hard refresh（layer/source remove-add）へフォールバック
 
 ### ✅ ペイント「途中」状態の即時反映（2026-02-11 実装）
 

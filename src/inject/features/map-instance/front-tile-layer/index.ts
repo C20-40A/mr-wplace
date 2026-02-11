@@ -20,6 +20,8 @@ let pendingComparisonRefreshQueued = false;
 let pendingRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
 const isEnabled = () => window.mrWplaceFrontTileLayerEnabled ?? false;
+const getFrontSourceTileUrl = (version: number): string =>
+  `${FAKE_TILE_PROTOCOL}://{z}/{x}/{y}.png?v=${version}`;
 
 const updateFrontLayerOperational = (map?: any): void => {
   if (!isEnabled()) {
@@ -63,6 +65,24 @@ const schedulePendingComparisonRefresh = (): void => {
     pendingPaintTiles.clear();
     refreshFrontTileLayer();
   }, PENDING_REFRESH_DEBOUNCE_MS);
+};
+
+const trySoftRefreshSource = (source: any, version: number): boolean => {
+  const tileUrl = getFrontSourceTileUrl(version);
+  let updated = false;
+
+  if (typeof source?.setTiles === "function") {
+    source.setTiles([tileUrl]);
+    updated = true;
+  } else if (source && Array.isArray(source.tiles) && source.tiles.length > 0) {
+    source.tiles = [tileUrl];
+    updated = true;
+  }
+
+  if (!updated) return false;
+
+  if (typeof source?.reload === "function") source.reload();
+  return true;
 };
 
 export const isFrontTileLayerOperational = (): boolean => frontLayerOperational;
@@ -122,7 +142,7 @@ const addOverlaySource = (map: any): void => {
 
     map.addSource(FRONT_SOURCE_ID, {
       type: "raster",
-      tiles: [`${FAKE_TILE_PROTOCOL}://{z}/{x}/{y}.png?v=${version}`],
+      tiles: [getFrontSourceTileUrl(version)],
       tileSize: 1000,
       minzoom: 11,
       maxzoom: 11,
@@ -258,23 +278,29 @@ export const refreshFrontTileLayer = (): void => {
   try {
     // Increment version to change tile URLs
     const newVersion = incrementStateVersion();
+    currentSourceVersion = newVersion;
 
-    // Remove and re-add source with new version URL
-    // This is lighter than full layer reconstruction
+    // Soft refresh: keep layer/source and update source tiles URL only.
+    // This avoids visible flicker from layer/source remove-add.
+    if (trySoftRefreshSource(source, newVersion)) {
+      updateFrontLayerOperational(map);
+      console.log(`🧑‍🎨 : Front tile layer soft-refreshed (version: ${newVersion})`);
+      return;
+    }
+
+    // Fallback: hard refresh when source API is unavailable
     map.removeLayer(FRONT_LAYER_ID);
     map.removeSource(FRONT_SOURCE_ID);
 
     // Reset state flags
     layerAdded = false;
     sourceAdded = false;
-    currentSourceVersion = newVersion;
-
     // Re-add source with new version
     addOverlaySource(map);
     checkAndAddOverlay(map);
     updateFrontLayerOperational(map);
 
-    console.log(`🧑‍🎨 : Front tile layer refreshed (version: ${newVersion})`);
+    console.log(`🧑‍🎨 : Front tile layer hard-refreshed (version: ${newVersion})`);
   } catch (error) {
     updateFrontLayerOperational(map);
     console.error("🧑‍🎨 : Failed to refresh front tile layer:", error);
