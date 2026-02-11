@@ -638,6 +638,7 @@ window.postMessage(
 - guide point は最大件数で上限管理（modal close で即クリア）
 - guide point の座標変換（tile/pixel → lat/lng）は upsert 時に1回だけ実行し、`setData` ごとの再計算を避ける
 - `paint-stats-updater` は色比較を int ベースにして、1ピクセル処理中の文字列生成を削減
+- `showUnplacedColor` の連続入力は content/inject 双方で間引き（送信 interval + refresh debounce）し、`setTiles` の連打を抑制
 
 注意:
 - ペイント中の可視化は guide レイヤーで行うため、front tile 本体の再描画由来フリッカー/重さを抑えられる

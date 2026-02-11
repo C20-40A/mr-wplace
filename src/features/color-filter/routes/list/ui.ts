@@ -18,6 +18,31 @@ import {
 let colorPalette: ColorPalette | null = null;
 let lastSortOrder: SortOrder = "default";
 let lastComputeDevice: ComputeDevice = "gpu";
+const SHOW_UNPLACED_COLOR_SEND_INTERVAL_MS = 100;
+let showUnplacedColorSendTimer: ReturnType<typeof setTimeout> | null = null;
+let lastShowUnplacedColorSentAt = 0;
+
+const scheduleSendColorFilterForUnplaced = (): void => {
+  const colorFilterManager = window.mrWplace?.colorFilterManager;
+  if (!colorFilterManager) return;
+
+  const now = Date.now();
+  const elapsed = now - lastShowUnplacedColorSentAt;
+  if (elapsed >= SHOW_UNPLACED_COLOR_SEND_INTERVAL_MS) {
+    sendColorFilterToInject(colorFilterManager);
+    lastShowUnplacedColorSentAt = now;
+    return;
+  }
+
+  if (showUnplacedColorSendTimer) return;
+  showUnplacedColorSendTimer = setTimeout(() => {
+    showUnplacedColorSendTimer = null;
+    const manager = window.mrWplace?.colorFilterManager;
+    if (!manager) return;
+    sendColorFilterToInject(manager);
+    lastShowUnplacedColorSentAt = Date.now();
+  }, SHOW_UNPLACED_COLOR_SEND_INTERVAL_MS - elapsed);
+};
 
 export const renderColorFilters = async (
   container: HTMLElement
@@ -112,7 +137,7 @@ export const renderColorFilters = async (
     onShowUnplacedColorChange: (color) => {
       colorFilterManager?.setShowUnplacedColor(color);
       console.log(`🧑‍🎨 : Show unplaced color:`, color);
-      if (colorFilterManager) sendColorFilterToInject(colorFilterManager);
+      scheduleSendColorFilterForUnplaced();
     },
   });
 };

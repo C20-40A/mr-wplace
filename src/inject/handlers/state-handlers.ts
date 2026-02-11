@@ -7,6 +7,17 @@ import {
   refreshFrontTileLayer,
 } from "../features/map-instance";
 
+const COLOR_FILTER_REFRESH_DEBOUNCE_MS = 120;
+let colorFilterRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+const scheduleColorFilterRefresh = (): void => {
+  if (colorFilterRefreshTimer) clearTimeout(colorFilterRefreshTimer);
+  colorFilterRefreshTimer = setTimeout(() => {
+    colorFilterRefreshTimer = null;
+    refreshFrontTileLayer();
+  }, COLOR_FILTER_REFRESH_DEBOUNCE_MS);
+};
+
 /**
  * Handle theme update
  */
@@ -72,17 +83,18 @@ export const handleColorFilterUpdate = (data: {
   enhancedColor?: [number, number, number];
   showUnplacedColor?: [number, number, number];
 }): void => {
-  updateColorFilterState({
+  const changed = updateColorFilterState({
     isFilterActive: data.isFilterActive,
     selectedRGBs: data.selectedRGBs,
     enhancedMode: data.enhancedMode,
     enhancedColor: data.enhancedColor ?? [255, 0, 0],
     showUnplacedColor: data.showUnplacedColor ?? [160, 160, 160],
   });
+  if (!changed) return;
 
   // 統計は必要に応じてタイルレンダリング時に計算されるため、
   // 事前の再計算は行わない（不要なタイルfetchを避ける）
-  refreshFrontTileLayer();
+  scheduleColorFilterRefresh();
 };
 
 /**

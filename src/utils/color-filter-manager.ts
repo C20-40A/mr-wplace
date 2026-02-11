@@ -6,6 +6,7 @@ const STORAGE_KEY = "color-filter-selection";
 const ENHANCED_MODE_STORAGE_KEY = "enhanced-mode";
 const ENHANCED_COLOR_STORAGE_KEY = "enhanced-marker-color";
 const SHOW_UNPLACED_COLOR_STORAGE_KEY = "show-unplaced-color";
+const SHOW_UNPLACED_COLOR_SAVE_DEBOUNCE_MS = 120;
 
 export class ColorFilterManager {
   private selectedColorIds: Set<number>;
@@ -14,6 +15,7 @@ export class ColorFilterManager {
   private enhancedColor: [number, number, number] = [255, 0, 0];
   private showUnplacedColor: [number, number, number] = [160, 160, 160];
   private extraColorsBitmap: number | undefined = undefined;
+  private showUnplacedColorSaveTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     this.selectedColorIds = this.getDefaultColorIds();
@@ -143,7 +145,11 @@ export class ColorFilterManager {
 
   setShowUnplacedColor(color: [number, number, number]): void {
     this.showUnplacedColor = color;
-    this.saveShowUnplacedColorToStorage();
+    if (this.showUnplacedColorSaveTimer) clearTimeout(this.showUnplacedColorSaveTimer);
+    this.showUnplacedColorSaveTimer = setTimeout(() => {
+      this.showUnplacedColorSaveTimer = null;
+      void this.saveShowUnplacedColorToStorage();
+    }, SHOW_UNPLACED_COLOR_SAVE_DEBOUNCE_MS);
   }
 
   getShowUnplacedColor(): [number, number, number] {

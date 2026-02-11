@@ -226,20 +226,18 @@ const schedulePendingComparisonRefresh = (): void => {
 
 const trySoftRefreshSource = (source: any, version: number): boolean => {
   const tileUrl = getFrontSourceTileUrl(version);
-  let updated = false;
-
   if (typeof source?.setTiles === "function") {
     source.setTiles([tileUrl]);
-    updated = true;
-  } else if (source && Array.isArray(source.tiles) && source.tiles.length > 0) {
-    source.tiles = [tileUrl];
-    updated = true;
+    return true;
   }
 
-  if (!updated) return false;
+  if (source && Array.isArray(source.tiles) && source.tiles.length > 0) {
+    source.tiles = [tileUrl];
+    if (typeof source?.reload === "function") source.reload();
+    return true;
+  }
 
-  if (typeof source?.reload === "function") source.reload();
-  return true;
+  return false;
 };
 
 export const isFrontTileLayerOperational = (): boolean => frontLayerOperational;

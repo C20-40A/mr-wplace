@@ -21,6 +21,27 @@ let colorFilterState: ColorFilterState = {
   extraColorsBitmap: undefined,
 };
 
+const isSameRgb = (
+  a?: [number, number, number],
+  b?: [number, number, number]
+): boolean => {
+  if (!a || !b) return a === b;
+  return a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
+};
+
+const isSameSelectedRgbs = (
+  a?: [number, number, number][],
+  b?: [number, number, number][]
+): boolean => {
+  if (a === b) return true;
+  if (!a || !b) return a === b;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (!isSameRgb(a[i], b[i])) return false;
+  }
+  return true;
+};
+
 /**
  * Get current color filter state
  */
@@ -67,9 +88,20 @@ export const getExtraColorsBitmap = (): number | undefined =>
  */
 export const updateColorFilterState = (
   newState: Partial<ColorFilterState>
-): void => {
-  colorFilterState = { ...colorFilterState, ...newState };
+): boolean => {
+  const nextState = { ...colorFilterState, ...newState };
+  const changed =
+    colorFilterState.isFilterActive !== nextState.isFilterActive ||
+    !isSameSelectedRgbs(colorFilterState.selectedRGBs, nextState.selectedRGBs) ||
+    colorFilterState.enhancedMode !== nextState.enhancedMode ||
+    !isSameRgb(colorFilterState.enhancedColor, nextState.enhancedColor) ||
+    !isSameRgb(colorFilterState.showUnplacedColor, nextState.showUnplacedColor) ||
+    colorFilterState.extraColorsBitmap !== nextState.extraColorsBitmap;
+  if (!changed) return false;
+
+  colorFilterState = nextState;
   console.log("🧑‍🎨 : Color filter state updated:", colorFilterState);
+  return true;
 };
 
 /**
