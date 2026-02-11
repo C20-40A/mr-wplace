@@ -24,9 +24,17 @@ const captureOrder: string[] = [];
 // Paint event listener for external modules (e.g., paint-stats-updater)
 type PaintListener = (coord: CapturedPaintedCoordinate) => void;
 let paintListener: PaintListener | null = null;
+type PaintSessionListener = (active: boolean) => void;
+let paintSessionListener: PaintSessionListener | null = null;
 
 export const setPaintListener = (listener: PaintListener | null): void => {
   paintListener = listener;
+};
+
+export const setPaintSessionListener = (
+  listener: PaintSessionListener | null
+): void => {
+  paintSessionListener = listener;
 };
 
 const isTargetKey = (key: unknown): key is string =>
@@ -202,6 +210,7 @@ const setTargetPaintedPixelMap = (mapRef: PaintedPixelMap): void => {
   }
 
   exposeCaptureState({ mapRef });
+  paintSessionListener?.(true);
 };
 
 const handleSet = (mapRef: unknown, key: string, value: unknown): void => {
@@ -236,6 +245,7 @@ const resetPaintedMapState = (reason: string): void => {
   targetPaintedPixelMap = null;
   clearCapturedCoordinates();
   exposeCaptureState({ clearMapRef: true });
+  paintSessionListener?.(false);
   console.log(`🧑‍🎨 : Painted pixel map state reset (${reason})`);
 };
 

@@ -123,6 +123,7 @@ export const handlePaintForStats = (
   const paintedRgbKey = `${(paintedRgbInt >> 16) & 0xff},${
     (paintedRgbInt >> 8) & 0xff
   },${paintedRgbInt & 0xff}`;
+  const guideEnabled = window.mrWplaceFrontTileLayerEnabled === true;
 
   const tileKey = `${coord.tileX},${coord.tileY}`;
   const paddedTileKey = toPaddedTileKey(coord.tileX, coord.tileY);
@@ -159,18 +160,17 @@ export const handlePaintForStats = (
     if (idx + 3 >= pixels.length) continue;
     if (pixels[idx + 3] === 0) continue; // 透明ピクセルはスキップ
 
-    const overlayRgbKey = `${pixels[idx]},${pixels[idx + 1]},${pixels[idx + 2]}`;
     const overlayRgbInt =
       (pixels[idx] << 16) | (pixels[idx + 1] << 8) | pixels[idx + 2];
 
     // Front guide は最上位レイヤーのテンプレ色を採用
-    if (order >= topOverlayOrder) {
+    if (guideEnabled && order >= topOverlayOrder) {
       topOverlayOrder = order;
       topOverlayRgbInt = overlayRgbInt;
     }
 
     // overlay のこの位置の色とペイントした色が一致 → matched +1
-    if (overlayRgbKey !== paintedRgbKey) continue;
+    if (overlayRgbInt !== paintedRgbInt) continue;
 
     const tileStatsMap = perTileColorStats.get(instance.imageKey);
     if (!tileStatsMap) continue;
@@ -178,19 +178,19 @@ export const handlePaintForStats = (
       tileStatsMap.get(tileKey) ?? tileStatsMap.get(paddedTileKey);
     if (!tileStats) continue;
 
-    const currentMatched = tileStats.matched.get(overlayRgbKey) || 0;
-    const total = tileStats.total.get(overlayRgbKey) || 0;
+    const currentMatched = tileStats.matched.get(paintedRgbKey) || 0;
+    const total = tileStats.total.get(paintedRgbKey) || 0;
     // matched が total を超えないようにガード
     if (currentMatched >= total) continue;
 
-    tileStats.matched.set(overlayRgbKey, currentMatched + 1);
+    tileStats.matched.set(paintedRgbKey, currentMatched + 1);
     scheduleNotify(
       instance.imageKey,
       tileStatsMap.has(tileKey) ? tileKey : paddedTileKey,
     );
   }
 
-  if (!window.mrWplaceFrontTileLayerEnabled) return;
+  if (!guideEnabled) return;
 
   if (topOverlayRgbInt == null) {
     clearFrontTilePaintGuide(coord.tileX, coord.tileY, coord.pixelX, coord.pixelY);

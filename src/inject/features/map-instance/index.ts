@@ -14,10 +14,13 @@ export {
   setFrontTileLayerEnabled,
   setupFrontTileLayerOnMapReady,
   refreshFrontTileLayer,
+  setFrontTilePaintGuideActive,
+  clearFrontTilePaintGuideAll,
 } from "./front-tile-layer";
 export {
   setupPaintedCoordinatesCapture,
   stopPaintedCoordinatesCapture,
   getCapturedPaintedCoordinates,
   setPaintListener,
+  setPaintSessionListener,
 } from "./painted-coordinates-capture";

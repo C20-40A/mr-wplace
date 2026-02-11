@@ -3,6 +3,8 @@ export {
   setupFrontTileLayerOnMapReady,
   refreshFrontTileLayer,
   upsertFrontTilePaintGuide,
+  setFrontTilePaintGuideActive,
+  clearFrontTilePaintGuideAll,
   clearFrontTilePaintGuide,
   clearFrontTilePaintGuideTile,
 } from "./index";

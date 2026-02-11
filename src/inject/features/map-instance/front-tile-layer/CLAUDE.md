@@ -629,11 +629,15 @@ window.postMessage(
   - `matched` はガイドを表示せず、該当点をクリア
 - `pixel-art-layer-overlay` は `paint-preview-*` より下に配置（preview の視認性を優先）
 - 背景タイル更新時に guide point を自動クリアしない（mismatch が短時間で消えないようにする）
+- `paint session` の active/inactive を導入し、inactive 中は guide 更新を受け付けない
+- `paint modal` クローズ時は guide point を **即時一括クリア**（順次消える/復活する挙動を防ぐ）
 
 パフォーマンス設計:
 - ペイント1イベントで更新するのは guide source のみ（GeoJSON `setData`、debounce 50ms）
 - Front tile 本体のタイル refresh は pending paint では発火させない
-- guide point は TTL と最大件数で上限管理
+- guide point は最大件数で上限管理（modal close で即クリア）
+- guide point の座標変換（tile/pixel → lat/lng）は upsert 時に1回だけ実行し、`setData` ごとの再計算を避ける
+- `paint-stats-updater` は色比較を int ベースにして、1ピクセル処理中の文字列生成を削減
 
 注意:
 - ペイント中の可視化は guide レイヤーで行うため、front tile 本体の再描画由来フリッカー/重さを抑えられる

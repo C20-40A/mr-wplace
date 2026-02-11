@@ -5,8 +5,10 @@ import { initGalleryRepository } from "./db/gallery-repository";
 import { initSnapshotRepository } from "./db/snapshot-repository";
 import {
   resolveMapInstanceAsync,
+  setFrontTilePaintGuideActive,
   setupPaintedCoordinatesCapture,
   setPaintListener,
+  setPaintSessionListener,
 } from "./features/map-instance";
 import { handlePaintForStats } from "./features/paint-stats-updater";
 
@@ -42,6 +44,9 @@ import { handlePaintForStats } from "./features/paint-stats-updater";
   try {
     setupPaintedCoordinatesCapture();
     setPaintListener(handlePaintForStats);
+    setPaintSessionListener((active) => {
+      setFrontTilePaintGuideActive(active, { clearNow: !active });
+    });
     setupFetchInterceptor();
     console.log("🧑‍🎨: Fetch interceptor ready");
   } catch (error) {

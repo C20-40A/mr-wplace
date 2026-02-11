@@ -13,7 +13,6 @@ const GUIDE_SOURCE_ID = "mr-wplace-paint-guide-source";
 const GUIDE_MISMATCH_LAYER_ID = "mr-wplace-paint-guide-mismatch";
 const LEGACY_GUIDE_MATCH_LAYER_ID = "mr-wplace-paint-guide-match";
 const GUIDE_SYNC_DEBOUNCE_MS = 50;
-const GUIDE_POINT_TTL_MS = 20_000;
 const MAX_GUIDE_POINTS = 1500;
 
 let layerAdded = false;
@@ -30,12 +29,14 @@ interface PaintGuidePoint {
   tileY: number;
   pixelX: number;
   pixelY: number;
+  lat: number;
+  lng: number;
   kind: "mismatch";
   colorHex: string;
-  updatedAt: number;
 }
 
 const paintGuidePoints = new Map<string, PaintGuidePoint>();
+let paintGuideActive = false;
 
 const isEnabled = () => window.mrWplaceFrontTileLayerEnabled ?? false;
 const getFrontSourceTileUrl = (version: number): string =>
@@ -139,26 +140,13 @@ const ensureGuideSourceAndLayers = (map: any): void => {
 
 const buildGuideFeatureCollection = (): any => {
   const features: any[] = [];
-  const now = Date.now();
 
-  for (const [key, point] of paintGuidePoints.entries()) {
-    if (now - point.updatedAt > GUIDE_POINT_TTL_MS) {
-      paintGuidePoints.delete(key);
-      continue;
-    }
-
-    const { lat, lng } = tilePixelToLatLng(
-      point.tileX,
-      point.tileY,
-      point.pixelX + 0.5,
-      point.pixelY + 0.5,
-    );
-
+  for (const point of paintGuidePoints.values()) {
     features.push({
       type: "Feature",
       geometry: {
         type: "Point",
-        coordinates: [lng, lat],
+        coordinates: [point.lng, point.lat],
       },
       properties: {
         kind: point.kind,
@@ -289,17 +277,24 @@ export const upsertFrontTilePaintGuide = (
   templateRgbInt: number,
 ): void => {
   if (!isEnabled()) return;
+  if (!paintGuideActive) return;
   if (pixelX < 0 || pixelY < 0 || pixelX >= 1000 || pixelY >= 1000) return;
+  const { lat, lng } = tilePixelToLatLng(tileX, tileY, pixelX + 0.5, pixelY + 0.5);
+  const colorHex = rgbIntToHex(templateRgbInt);
 
   const key = getGuidePointKey(tileX, tileY, pixelX, pixelY);
+  const existing = paintGuidePoints.get(key);
+  if (existing && existing.kind === kind && existing.colorHex === colorHex)
+    return;
   paintGuidePoints.set(key, {
     tileX,
     tileY,
     pixelX,
     pixelY,
+    lat,
+    lng,
     kind,
-    colorHex: rgbIntToHex(templateRgbInt),
-    updatedAt: Date.now(),
+    colorHex,
   });
 
   if (paintGuidePoints.size > MAX_GUIDE_POINTS) {
@@ -310,6 +305,12 @@ export const upsertFrontTilePaintGuide = (
   scheduleGuideSync();
 };
 
+export const clearFrontTilePaintGuideAll = (): void => {
+  if (paintGuidePoints.size === 0) return;
+  paintGuidePoints.clear();
+  scheduleGuideSync();
+};
+
 export const clearFrontTilePaintGuide = (
   tileX: number,
   tileY: number,
@@ -317,6 +318,7 @@ export const clearFrontTilePaintGuide = (
   pixelY: number,
 ): void => {
   if (!isEnabled()) return;
+  if (!paintGuideActive) return;
   const key = getGuidePointKey(tileX, tileY, pixelX, pixelY);
   if (!paintGuidePoints.delete(key)) return;
   scheduleGuideSync();
@@ -327,6 +329,7 @@ export const clearFrontTilePaintGuideTile = (
   tileY: number,
 ): void => {
   if (!isEnabled()) return;
+  if (!paintGuideActive) return;
   let removed = false;
   for (const [key, point] of paintGuidePoints.entries()) {
     if (point.tileX !== tileX || point.tileY !== tileY) continue;
@@ -334,6 +337,22 @@ export const clearFrontTilePaintGuideTile = (
     removed = true;
   }
   if (!removed) return;
+  scheduleGuideSync();
+};
+
+export const setFrontTilePaintGuideActive = (
+  active: boolean,
+  options?: { clearNow?: boolean },
+): void => {
+  paintGuideActive = active;
+  if (active) return;
+  if (paintGuidePoints.size === 0) return;
+  paintGuidePoints.clear();
+  if (options?.clearNow) {
+    clearGuideSyncTimer();
+    syncPaintGuideLayer();
+    return;
+  }
   scheduleGuideSync();
 };
 
@@ -434,6 +453,7 @@ const removeFrontLayer = (map: any): void => {
   pendingComparisonTiles.clear();
   pendingComparisonRefreshQueued = false;
   paintGuidePoints.clear();
+  paintGuideActive = false;
   clearPendingRefreshTimer();
   clearGuideSyncTimer();
   removeGuideLayersAndSource(map);
