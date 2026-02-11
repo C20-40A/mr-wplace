@@ -151,6 +151,7 @@ const createOverlay = (): HTMLDivElement => {
     position: absolute;
     inset: 0;
     pointer-events: none;
+    z-index: 10;
   `;
 
   const svgRoot = document.createElementNS(AREA_SVG_NS, "svg");
@@ -586,10 +587,12 @@ const renderAreaOverlay = (map: AreaMap): void => {
       transform-origin: 0 50%;
       transform: translateY(-50%) rotate(${Math.atan2(dy, dx)}rad);
       pointer-events: auto;
+      touch-action: none;
       cursor: copy;
       background: rgba(0, 0, 0, 0);
     `;
-    hit.addEventListener("click", (event) => {
+    hit.addEventListener("pointerdown", (event) => {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
       event.preventDefault();
       event.stopPropagation();
       insertVertexOnEdge(map, i);
