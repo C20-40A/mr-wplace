@@ -5,6 +5,7 @@ import {
   setCachedBlob,
   invalidateTile,
   setOriginalBlob,
+  setOriginalLastModified,
 } from "./features/tile-draw";
 import { invalidateTileCache } from "./cache-storage";
 import { handleUserStatusUpdate } from "./handlers/user-status-handler";
@@ -240,6 +241,7 @@ const handleTileRequest = async (
 
   // Cache original tile for background pixel checks (area fill, etc.)
   setOriginalBlob(cacheKey, originalTileBlob);
+  setOriginalLastModified(cacheKey, lastModified);
   notifyFrontTileComparisonReady(tileX, tileY);
 
   // Save snapshot for time travel feature

@@ -1,13 +1,85 @@
-import { drawOverlayLayersOnTile, getOriginalBlob } from "../../tile-draw";
+import {
+  drawOverlayLayersOnTile,
+  getOriginalBlob,
+  getOriginalLastModified,
+} from "../../tile-draw";
 import { markFrontTileComparisonPending } from "./index";
+import { getStateVersion } from "./state-version";
 
 const FAKE_TILE_PROTOCOL = "mr-wplace-overlay";
 const TILE_SIZE = 1000;
 const SUPPORTED_MIN_ZOOM = 10;
 const BASE_TILE_ZOOM = 11;
 const CACHE_CONTROL_HEADER = "public, max-age=31536000, immutable";
+const FRONT_RENDER_CACHE_MAX = 40;
 
 let transparentTileBlobPromise: Promise<Blob> | null = null;
+const frontRenderedTileCache = new Map<string, { token: string; blob: Blob }>();
+
+const getRequestedStateVersion = (url: string): string => {
+  const match = url.match(/[?&]v=(\d+)/);
+  if (match) return match[1];
+  return String(getStateVersion());
+};
+
+const getFrontRenderCacheKey = (z: number, x: number, y: number): string =>
+  `${z}:${x},${y}`;
+
+const getCachedFrontRenderedTile = (
+  cacheKey: string,
+  token: string | null
+): Blob | null => {
+  if (!token) return null;
+  const cached = frontRenderedTileCache.get(cacheKey);
+  if (!cached || cached.token !== token) return null;
+  // LRU touch
+  frontRenderedTileCache.delete(cacheKey);
+  frontRenderedTileCache.set(cacheKey, cached);
+  return cached.blob;
+};
+
+const setCachedFrontRenderedTile = (
+  cacheKey: string,
+  token: string | null,
+  blob: Blob
+): void => {
+  if (!token) return;
+  if (frontRenderedTileCache.has(cacheKey)) {
+    frontRenderedTileCache.delete(cacheKey);
+  } else if (frontRenderedTileCache.size >= FRONT_RENDER_CACHE_MAX) {
+    const oldest = frontRenderedTileCache.keys().next().value;
+    if (oldest) frontRenderedTileCache.delete(oldest);
+  }
+  frontRenderedTileCache.set(cacheKey, { token, blob });
+};
+
+const buildBaseTileLastModifiedToken = (
+  x: number,
+  y: number,
+  stateVersion: string
+): string | null => {
+  const lastModified = getOriginalLastModified(`${x},${y}`);
+  if (!lastModified) return null;
+  return `${stateVersion}|${lastModified}`;
+};
+
+const buildZoom10LastModifiedToken = (
+  x: number,
+  y: number,
+  stateVersion: string
+): string | null => {
+  const parts: string[] = [];
+  for (let dy = 0; dy < 2; dy++) {
+    for (let dx = 0; dx < 2; dx++) {
+      const childX = x * 2 + dx;
+      const childY = y * 2 + dy;
+      const lastModified = getOriginalLastModified(`${childX},${childY}`);
+      if (!lastModified) return null;
+      parts.push(lastModified);
+    }
+  }
+  return `${stateVersion}|${parts.join("|")}`;
+};
 
 const renderBaseZoomTile = async (
   x: number,
@@ -125,12 +197,22 @@ export const handleFrontLayerTileRequest = async (
   }
 
   try {
+    const stateVersion = getRequestedStateVersion(url);
+    const cacheKey = getFrontRenderCacheKey(z, x, y);
+    const lastModifiedToken =
+      z === BASE_TILE_ZOOM
+        ? buildBaseTileLastModifiedToken(x, y, stateVersion)
+        : buildZoom10LastModifiedToken(x, y, stateVersion);
+    const cached = getCachedFrontRenderedTile(cacheKey, lastModifiedToken);
+    if (cached) return createTransparentTileResponse(cached);
+
     // Create transparent background blob (1000x1000)
     const emptyBlob = await getTransparentTileBlob();
     const blob =
       z === BASE_TILE_ZOOM
         ? await renderBaseZoomTile(x, y, emptyBlob)
         : await renderZoom10Tile(x, y, emptyBlob);
+    setCachedFrontRenderedTile(cacheKey, lastModifiedToken, blob);
 
     return new Response(blob, {
       status: 200,

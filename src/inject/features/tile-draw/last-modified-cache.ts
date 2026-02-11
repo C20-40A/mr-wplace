@@ -20,6 +20,8 @@ const processedBlobCache = new Map<string, Blob>();
 
 // Original (unprocessed) tile Blob cache: "tileX,tileY" → Blob
 const originalBlobCache = new Map<string, Blob>();
+// Original tile Last-Modified cache: "tileX,tileY" → Last-Modified
+const originalLastModifiedCache = new Map<string, string>();
 
 // State snapshot for change detection
 let lastStateVersion = "";
@@ -51,7 +53,6 @@ export const checkStateChanged = (): boolean => {
     lastStateVersion = current;
     lastModifiedMap.clear();
     processedBlobCache.clear();
-    originalBlobCache.clear();
     return true;
   }
   return false;
@@ -103,6 +104,7 @@ export const invalidateTile = (cacheKey: string): void => {
   lastModifiedMap.delete(cacheKey);
   processedBlobCache.delete(cacheKey);
   originalBlobCache.delete(cacheKey);
+  originalLastModifiedCache.delete(cacheKey);
   console.log(`🧑‍🎨 : Invalidated LastModified cache for tile: ${cacheKey}`);
 };
 
@@ -121,4 +123,33 @@ export const setOriginalBlob = (cacheKey: string, blob: Blob): void => {
     if (oldest) originalBlobCache.delete(oldest);
   }
   originalBlobCache.set(cacheKey, blob);
+};
+
+/**
+ * Get original tile last-modified from cache
+ */
+export const getOriginalLastModified = (cacheKey: string): string | null =>
+  originalLastModifiedCache.get(cacheKey) ?? null;
+
+/**
+ * Save original tile last-modified to cache (LRU)
+ */
+export const setOriginalLastModified = (
+  cacheKey: string,
+  lastModified: string | null,
+): void => {
+  if (!lastModified) {
+    originalLastModifiedCache.delete(cacheKey);
+    return;
+  }
+
+  if (
+    originalLastModifiedCache.size >= MAX_CACHE_SIZE &&
+    !originalLastModifiedCache.has(cacheKey)
+  ) {
+    const oldest = originalLastModifiedCache.keys().next().value;
+    if (oldest) originalLastModifiedCache.delete(oldest);
+  }
+
+  originalLastModifiedCache.set(cacheKey, lastModified);
 };

@@ -22,6 +22,8 @@ export {
   invalidateTile,
   getOriginalBlob,
   setOriginalBlob,
+  getOriginalLastModified,
+  setOriginalLastModified,
 } from "./last-modified-cache";
 
 export { computeTotalStatsFromImage } from "./stats/compute-total";
