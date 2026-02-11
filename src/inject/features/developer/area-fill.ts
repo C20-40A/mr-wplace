@@ -8,6 +8,7 @@ import { getMapInstanceFromWplace } from "../map-instance/get-map-instance";
 import { latLngToTilePixelFloat, tilePixelToLatLng } from "@/utils/coordinate";
 import { TILE_SIZE } from "@/utils/geo-converter";
 import { getOriginalBlob, overlayLayers } from "../tile-draw";
+import type { TileDrawInstance } from "../tile-draw/types";
 import { statusManagerSingleton } from "../user-status/status-manager";
 import { colorpalette } from "@/constants/colors";
 
@@ -210,6 +211,115 @@ interface GenerateResult {
   height: number;
 }
 
+interface TileDrawSource {
+  bitmap: ImageBitmap;
+  offsetX: number;
+  offsetY: number;
+}
+
+const parseTileCoords = (
+  tileKey: string,
+): { tileX: number; tileY: number } | null => {
+  const parts = tileKey.split(",");
+  if (parts.length < 2) return null;
+  const tileX = Number(parts[0]);
+  const tileY = Number(parts[1]);
+  if (!Number.isFinite(tileX) || !Number.isFinite(tileY)) return null;
+  return { tileX, tileY };
+};
+
+const tileIntersectsLayerBounds = (
+  layer: TileDrawInstance,
+  tileX: number,
+  tileY: number,
+): boolean => {
+  if (!layer.bounds) return false;
+
+  const tilePixelLeft = tileX * TILE_SIZE;
+  const tilePixelTop = tileY * TILE_SIZE;
+  const tilePixelRight = tilePixelLeft + TILE_SIZE;
+  const tilePixelBottom = tilePixelTop + TILE_SIZE;
+
+  return (
+    tilePixelRight > layer.bounds.left &&
+    tilePixelLeft < layer.bounds.right &&
+    tilePixelBottom > layer.bounds.top &&
+    tilePixelTop < layer.bounds.bottom
+  );
+};
+
+const getLayerInMemorySources = (
+  layer: TileDrawInstance,
+  tileX: number,
+  tileY: number,
+): TileDrawSource[] => {
+  if (!layer.tiles) return [];
+
+  const sources: TileDrawSource[] = [];
+
+  for (const [key, bitmap] of Object.entries(layer.tiles)) {
+    const parts = key.split(",");
+    if (parts.length < 2) continue;
+
+    const keyTileX = Number(parts[0]);
+    const keyTileY = Number(parts[1]);
+    if (!Number.isFinite(keyTileX) || !Number.isFinite(keyTileY)) continue;
+    if (keyTileX !== tileX || keyTileY !== tileY) continue;
+
+    const offsetX = parts.length >= 4 ? Number(parts[2]) : 0;
+    const offsetY = parts.length >= 4 ? Number(parts[3]) : 0;
+
+    sources.push({
+      bitmap,
+      offsetX: Number.isFinite(offsetX) ? offsetX : 0,
+      offsetY: Number.isFinite(offsetY) ? offsetY : 0,
+    });
+  }
+
+  return sources;
+};
+
+const layerAffectsTile = (
+  layer: TileDrawInstance,
+  tileKey: string,
+  tileX: number,
+  tileY: number,
+): boolean => {
+  if (!layer.drawEnabled) return false;
+
+  // v2 layers: exact affected tile membership
+  if (layer.affectedTiles && layer.affectedTiles.length > 0) {
+    const affectedTileSet =
+      layer.affectedTileSet ?? (layer.affectedTileSet = new Set(layer.affectedTiles));
+    return affectedTileSet.has(tileKey);
+  }
+
+  // Optimized legacy layers: bounds intersection
+  if (layer.isOptimized && layer.bounds) {
+    return tileIntersectsLayerBounds(layer, tileX, tileY);
+  }
+
+  // Legacy in-memory tiles: tile key match
+  if (layer.tiles) {
+    if (!layer.affectedTileSet) {
+      const tileSet = new Set<string>();
+      for (const key of Object.keys(layer.tiles)) {
+        const parts = key.split(",");
+        if (parts.length < 2) continue;
+        const keyTileX = Number(parts[0]);
+        const keyTileY = Number(parts[1]);
+        if (!Number.isFinite(keyTileX) || !Number.isFinite(keyTileY)) continue;
+        tileSet.add(`${keyTileX},${keyTileY}`);
+      }
+      layer.affectedTileSet = tileSet;
+    }
+    return layer.affectedTileSet.has(tileKey);
+  }
+
+  // Fallback: single-tile layers (e.g. snapshot-like data) use anchor coords
+  return layer.coords[0] === tileX && layer.coords[1] === tileY;
+};
+
 /**
  * Generate pixel grid positions within the area
  * Returns array of positions with tile info for filtering, and row width
@@ -348,21 +458,42 @@ const filterByTemplateColor = async (
 
   const result: PixelPosition[] = [];
   const tileImageDataCache = new Map<string, ImageData | null>();
+  const inMemoryTileCache = new Map<string, TileDrawSource[]>();
+  const snapshotBitmapCache = new Map<string, ImageBitmap | null>();
+  const temporaryBitmaps: ImageBitmap[] = [];
   let galleryRepo: any;
   let snapshotRepo: any;
 
   for (const [tileKey, tilePositions] of byTile) {
+    const parsedTile = parseTileCoords(tileKey);
+    if (!parsedTile) continue;
+
+    const { tileX, tileY } = parsedTile;
     const canvas = new OffscreenCanvas(TILE_SIZE, TILE_SIZE);
     const ctx = canvas.getContext("2d")!;
 
     for (const layer of overlayLayers) {
-      if (!layer.drawEnabled) continue;
+      if (!layerAffectsTile(layer, tileKey, tileX, tileY)) continue;
 
-      let tile = layer.tiles?.[tileKey];
-      if (!tile) {
-        const isSnapshot = layer.imageKey.startsWith("snapshot_");
+      const cacheKey = `${layer.imageKey}:${tileKey}`;
+      let sources = inMemoryTileCache.get(cacheKey);
+      if (!sources) {
+        sources = getLayerInMemorySources(layer, tileX, tileY);
+        inMemoryTileCache.set(cacheKey, sources);
+      }
 
-        if (isSnapshot) {
+      if (sources.length > 0) {
+        for (const source of sources) {
+          ctx.drawImage(source.bitmap, source.offsetX, source.offsetY);
+        }
+        continue;
+      }
+
+      const isSnapshot = layer.imageKey.startsWith("snapshot_");
+      if (isSnapshot) {
+        let snapshotBitmap = snapshotBitmapCache.get(layer.imageKey);
+        if (snapshotBitmap === undefined) {
+          snapshotBitmap = null;
           if (!snapshotRepo) {
             try {
               const { getSnapshotRepository } = await import("../../db/snapshot-repository");
@@ -372,22 +503,31 @@ const filterByTemplateColor = async (
           if (snapshotRepo) {
             const snapshotId = layer.imageKey.replace("snapshot_tile_snapshot_", "");
             const blob = await snapshotRepo.getSnapshot(snapshotId);
-            if (blob) tile = await createImageBitmap(blob);
+            if (blob) {
+              snapshotBitmap = await createImageBitmap(blob);
+              temporaryBitmaps.push(snapshotBitmap);
+            }
           }
-        } else {
-          if (!galleryRepo) {
-            try {
-              const { getGalleryRepository } = await import("../../db/gallery-repository");
-              galleryRepo = getGalleryRepository();
-            } catch {}
-          }
-          if (galleryRepo) {
-            const blob = await galleryRepo.getTile(layer.imageKey, tileKey);
-            if (blob) tile = await createImageBitmap(blob);
-          }
+          snapshotBitmapCache.set(layer.imageKey, snapshotBitmap);
+        }
+        if (snapshotBitmap) ctx.drawImage(snapshotBitmap, 0, 0);
+        continue;
+      }
+
+      if (!galleryRepo) {
+        try {
+          const { getGalleryRepository } = await import("../../db/gallery-repository");
+          galleryRepo = getGalleryRepository();
+        } catch {}
+      }
+      if (galleryRepo) {
+        const blob = await galleryRepo.getTile(layer.imageKey, tileKey);
+        if (blob) {
+          const bitmap = await createImageBitmap(blob);
+          temporaryBitmaps.push(bitmap);
+          ctx.drawImage(bitmap, 0, 0);
         }
       }
-      if (tile) ctx.drawImage(tile, 0, 0);
     }
 
     const templateData = ctx.getImageData(0, 0, TILE_SIZE, TILE_SIZE).data;
@@ -431,6 +571,10 @@ const filterByTemplateColor = async (
       }
       // Skip if background already matches template color (no need to paint)
     }
+  }
+
+  for (const bitmap of temporaryBitmaps) {
+    bitmap.close();
   }
 
   return result;

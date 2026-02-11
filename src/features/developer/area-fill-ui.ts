@@ -231,6 +231,7 @@ export const createAreaFillDialogItem = (
 
   // Fill button
   let isRunning = false;
+  let isFillBtnHovered = false;
   let isPaintControlsVisible = !!findPaintPixelControls();
   let currentCornersState = initialCorners;
   const fillBtn = document.createElement("button");
@@ -243,6 +244,7 @@ export const createAreaFillDialogItem = (
     fillBtn.disabled = !canFill;
     fillBtn.style.opacity = canFill ? "1" : "0.4";
     fillBtn.style.cursor = canFill ? "pointer" : "not-allowed";
+    if (!canFill) isFillBtnHovered = false;
   };
 
   const updateSetBtnsStyle = () => {
@@ -257,37 +259,69 @@ export const createAreaFillDialogItem = (
   fillBtn.style.cssText = `
     flex: 1;
     padding: 5px 10px;
-    border: 1px solid ${getColor("primary", 0.4)};
-    border-radius: 3px;
-    background: ${getColor("primary", 0.15)};
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 6px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.12));
     color: #fff;
     font-size: 10px;
-    font-weight: 600;
+    font-weight: 700;
     font-family: 'Consolas', 'Monaco', monospace;
-    letter-spacing: 1px;
+    letter-spacing: 0.9px;
     cursor: pointer;
-    transition: all 0.1s ease;
+    transition: all 0.15s ease;
     text-transform: uppercase;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    text-shadow:
+      0 1px 1px rgba(0, 0, 0, 0.95),
+      1px 0 0 rgba(0, 0, 0, 0.7),
+      -1px 0 0 rgba(0, 0, 0, 0.7),
+      0 -1px 0 rgba(0, 0, 0, 0.7);
+    box-shadow:
+      0 2px 10px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   `;
+
+  const applyFillBtnVisual = () => {
+    if (isRunning) {
+      fillBtn.style.background = isFillBtnHovered
+        ? "linear-gradient(135deg, rgba(255, 110, 110, 0.45), rgba(140, 0, 0, 0.24))"
+        : "linear-gradient(135deg, rgba(255, 100, 100, 0.35), rgba(120, 0, 0, 0.2))";
+      fillBtn.style.borderColor = isFillBtnHovered
+        ? "rgba(255, 130, 130, 0.9)"
+        : "rgba(255, 120, 120, 0.75)";
+      fillBtn.style.color = "rgba(255, 245, 245, 0.98)";
+      fillBtn.style.boxShadow = isFillBtnHovered
+        ? "0 2px 12px rgba(120, 0, 0, 0.45), inset 0 1px 0 rgba(255, 180, 180, 0.45)"
+        : "0 2px 10px rgba(120, 0, 0, 0.35), inset 0 1px 0 rgba(255, 170, 170, 0.35)";
+      return;
+    }
+
+    fillBtn.style.background = isFillBtnHovered
+      ? "linear-gradient(135deg, rgba(255, 255, 255, 0.44), rgba(255, 255, 255, 0.2))"
+      : "linear-gradient(135deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0.12))";
+    fillBtn.style.borderColor = isFillBtnHovered
+      ? "rgba(255, 255, 255, 0.85)"
+      : "rgba(255, 255, 255, 0.6)";
+    fillBtn.style.color = "rgba(255, 255, 255, 0.98)";
+    fillBtn.style.boxShadow = isFillBtnHovered
+      ? "0 2px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.7)"
+      : "0 2px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.5)";
+  };
+
   fillBtn.textContent = "EXEC";
   updateFillBtnStyle();
   updateSetBtnsStyle();
+  applyFillBtnVisual();
   fillBtn.addEventListener("mouseenter", () => {
     if (fillBtn.disabled) return;
-    fillBtn.style.background = isRunning
-      ? "rgba(255, 80, 80, 0.2)"
-      : getColor("primary", 0.2);
-    fillBtn.style.boxShadow = isRunning
-      ? "0 0 8px rgba(255, 80, 80, 0.3)"
-      : `0 0 8px ${getColor("primary", 0.3)}`;
+    isFillBtnHovered = true;
+    applyFillBtnVisual();
   });
   fillBtn.addEventListener("mouseleave", () => {
     if (fillBtn.disabled) return;
-    fillBtn.style.background = isRunning
-      ? "rgba(255, 80, 80, 0.1)"
-      : getColor("primary", 0.1);
-    fillBtn.style.boxShadow = "none";
+    isFillBtnHovered = false;
+    applyFillBtnVisual();
   });
 
   // Clear button
@@ -475,18 +509,7 @@ export const createAreaFillDialogItem = (
   const setRunning = (running: boolean) => {
     isRunning = running;
     fillBtn.textContent = running ? "STOP" : "EXEC";
-    fillBtn.style.background = running
-      ? "rgba(255, 80, 80, 0.1)"
-      : getColor("primary", 0.1);
-    fillBtn.style.borderColor = running
-      ? "rgba(255, 80, 80, 0.4)"
-      : getColor("primary", 0.3);
-    fillBtn.style.color = running
-      ? "rgba(255, 80, 80, 0.9)"
-      : getColor("primary", 0.9);
-    fillBtn.style.boxShadow = running
-      ? "0 0 8px rgba(255, 80, 80, 0.2)"
-      : "none";
+    applyFillBtnVisual();
 
     // Show/hide progress gauge
     progressGauge.style.display = running ? "flex" : "none";
@@ -672,4 +695,3 @@ const createCoordRow = (
 
   return { row, valueSpan, setBtn };
 };
-
