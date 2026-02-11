@@ -1,6 +1,7 @@
 export {
   setFrontTileLayerEnabled,
   setupFrontTileLayerOnMapReady,
+  refreshFrontTileLayer,
 } from "./index";
 export {
   isFrontLayerTileRequest,

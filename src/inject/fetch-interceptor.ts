@@ -248,6 +248,20 @@ const handleTileRequest = async (
     "*"
   );
 
+  // When front tile layer is enabled, skip overlay compositing on background tiles.
+  // Overlays are rendered on the independent front layer instead.
+  if (window.mrWplaceFrontTileLayerEnabled) {
+    window.postMessage(
+      { source: "wplace-studio-drawing-complete", tileX, tileY },
+      "*"
+    );
+    return new Response(originalTileBlob, {
+      headers: response.headers,
+      status: response.status,
+      statusText: response.statusText,
+    });
+  }
+
   // Determine if we should cache the processed result
   const shouldCacheProcessed =
     dataSaver?.enabled || // Case 3: data saver ON (always cache)

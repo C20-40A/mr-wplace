@@ -3,6 +3,7 @@ import {
   removePreparedOverlayImageByKey,
 } from "../features/tile-draw";
 import { loadImageBitmap } from "../utils/image-loader";
+import { refreshFrontTileLayer } from "../features/map-instance";
 
 /**
  * Handle gallery images v2 (IndexedDB v2 based)
@@ -83,6 +84,7 @@ export const handleGalleryImagesV2 = async (data: {
   console.log(
     `🧑‍🎨 : Gallery images v2 sync complete - ${imageKeys.length} layers registered`
   );
+  refreshFrontTileLayer();
 };
 
 /**
@@ -168,6 +170,7 @@ export const handleSnapshotsUpdate = async (data: {
   window.mrWplaceSnapshotKeys = new Set(snapshotKeys);
 
   console.log(`🧑‍🎨 : Snapshots updated: ${snapshotKeys.length} active`);
+  refreshFrontTileLayer();
 };
 
 /**
@@ -234,4 +237,5 @@ export const handleTextLayersUpdate = async (data: {
   window.mrWplaceTextLayerKeys = new Set(textLayerKeys);
 
   console.log(`🧑‍🎨 : Text layers updated: ${data.textLayers.length} active`);
+  refreshFrontTileLayer();
 };

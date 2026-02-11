@@ -9,7 +9,7 @@ const FAKE_TILE_PROTOCOL = "mr-wplace-overlay";
 let layerAdded = false;
 let sourceAdded = false;
 
-let mrWplaceFrontTileLayerEnabled: boolean = true;
+const isEnabled = () => window.mrWplaceFrontTileLayerEnabled ?? false;
 
 /**
  * Add custom overlay source to map
@@ -41,7 +41,7 @@ const addOverlaySource = (map: any): void => {
  * Creates sandwich: pixel-art-layer -> pixel-hover -> pixel-art-layer-overlay
  */
 const checkAndAddOverlay = (map: any): void => {
-  if (!mrWplaceFrontTileLayerEnabled) return;
+  if (!isEnabled()) return;
 
   // Add source first
   addOverlaySource(map);
@@ -103,8 +103,6 @@ export const setFrontTileLayerEnabled = (enabled: boolean): void => {
     return;
   }
 
-  mrWplaceFrontTileLayerEnabled = enabled;
-
   if (enabled) {
     checkAndAddOverlay(map);
   } else {
@@ -115,19 +113,52 @@ export const setFrontTileLayerEnabled = (enabled: boolean): void => {
 };
 
 /**
+ * Refresh front tile layer tiles (force MapLibreGL to re-fetch all tiles)
+ * Called when overlay state changes (color filter, gallery images, etc.)
+ */
+export const refreshFrontTileLayer = (): void => {
+  if (!isEnabled()) return;
+
+  const map = getMapInstanceFromWplace() as any;
+  if (!map) return;
+
+  const source = map.getSource(FRONT_SOURCE_ID);
+  if (!source) return;
+
+  const layer = map.getLayer(FRONT_LAYER_ID);
+  if (!layer) return;
+
+  try {
+    // Remove and re-add source to force MapLibreGL to re-fetch all tiles
+    // This is the most reliable way to refresh raster tiles
+    map.removeLayer(FRONT_LAYER_ID);
+    map.removeSource(FRONT_SOURCE_ID);
+
+    // Reset state flags
+    layerAdded = false;
+    sourceAdded = false;
+
+    // Re-add source and layer
+    addOverlaySource(map);
+    checkAndAddOverlay(map);
+
+    console.log("🧑‍🎨 : Front tile layer refreshed (source removed and re-added)");
+  } catch (error) {
+    console.error("🧑‍🎨 : Failed to refresh front tile layer:", error);
+  }
+};
+
+/**
  * Setup front tile layer with styledata event listener
  */
 export const setupFrontTileLayerOnMapReady = (mapInstance: any): void => {
   console.log("🧑‍🎨 : setupFrontTileLayerOnMapReady called");
 
-  // Enable by default
-  mrWplaceFrontTileLayerEnabled = true;
-
   const map = mapInstance as any;
 
   // Monitor for style changes (when pixel-hover is added)
   const onStyleData = () => {
-    if (!mrWplaceFrontTileLayerEnabled) return;
+    if (!isEnabled()) return;
     checkAndAddOverlay(map);
   };
 
@@ -135,7 +166,7 @@ export const setupFrontTileLayerOnMapReady = (mapInstance: any): void => {
   console.log("🧑‍🎨 : Front tile layer listener setup complete");
 
   // Initial check if style is already loaded
-  if (map.isStyleLoaded && map.isStyleLoaded()) {
+  if (isEnabled() && map.isStyleLoaded && map.isStyleLoaded()) {
     checkAndAddOverlay(map);
   }
 };

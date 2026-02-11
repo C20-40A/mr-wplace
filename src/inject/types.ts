@@ -153,6 +153,7 @@ declare global {
     mrWplaceComputeDevice?: "gpu" | "cpu";
     mrWplaceShowUnplacedOnly?: boolean;
     mrWplaceLayerSortEnabled?: boolean;
+    mrWplaceFrontTileLayerEnabled?: boolean;
     mrWplaceTempPaintedByUser?: PaintedByUser;
     selectedColor?: string; // WPlace's selected color (e.g., "#FF0000")
   }

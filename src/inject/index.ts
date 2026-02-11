@@ -35,6 +35,9 @@ import { handlePaintForStats } from "./features/paint-stats-updater";
   // Initialize layer sort enabled (default: true)
   window.mrWplaceLayerSortEnabled = true;
 
+  // Initialize front tile layer (experimental, default: false)
+  window.mrWplaceFrontTileLayerEnabled = false;
+
   // Setup fetch interceptor synchronously (no await)
   try {
     setupPaintedCoordinatesCapture();
@@ -87,7 +90,7 @@ import { handlePaintForStats } from "./features/paint-stats-updater";
               source: "mr-wplace-map-instance-captured",
               ready: true,
             },
-            "*"
+            "*",
           );
 
           // Setup layer sort with styledata event listener
@@ -96,24 +99,21 @@ import { handlePaintForStats } from "./features/paint-stats-updater";
           setupLayerSortOnMapReady(mapInstance);
 
           // Setup front tile layer with styledata event listener
-          // setupFrontTileLayerOnMapReady(mapInstance);
+          setupFrontTileLayerOnMapReady(mapInstance);
 
           // Setup grid display with styledata event listener
-          const { setupGridDisplayOnMapReady } = await import(
-            "./features/grid-display"
-          );
+          const { setupGridDisplayOnMapReady } =
+            await import("./features/grid-display");
           setupGridDisplayOnMapReady(mapInstance);
 
           // Setup scale display with styledata event listener
-          const { setupScaleDisplayOnMapReady } = await import(
-            "./features/scale-display"
-          );
+          const { setupScaleDisplayOnMapReady } =
+            await import("./features/scale-display");
           setupScaleDisplayOnMapReady(mapInstance);
 
           // Setup area measure with styledata event listener
-          const { setupAreaMeasureOnMapReady } = await import(
-            "./features/area-measure"
-          );
+          const { setupAreaMeasureOnMapReady } =
+            await import("./features/area-measure");
           setupAreaMeasureOnMapReady(mapInstance);
         }
       }),

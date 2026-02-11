@@ -13,6 +13,7 @@ export { sortMapLayers, setupLayerSortOnMapReady } from "./layer-sort";
 export {
   setFrontTileLayerEnabled,
   setupFrontTileLayerOnMapReady,
+  refreshFrontTileLayer,
 } from "./front-tile-layer";
 export {
   setupPaintedCoordinatesCapture,

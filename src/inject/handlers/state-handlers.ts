@@ -1,7 +1,11 @@
 import { EnhancedMode } from "@/types/image";
 import { applyTheme } from "../theme-manager";
 import { updateColorFilterState } from "../states/colorFilterState";
-import { sortMapLayers } from "../features/map-instance";
+import {
+  sortMapLayers,
+  setFrontTileLayerEnabled,
+  refreshFrontTileLayer,
+} from "../features/map-instance";
 
 /**
  * Handle theme update
@@ -55,6 +59,7 @@ export const handleShowUnplacedOnlyUpdate = (data: {
 }): void => {
   window.mrWplaceShowUnplacedOnly = data.enabled;
   console.log("🧑‍🎨 : Show unplaced only updated:", data.enabled);
+  refreshFrontTileLayer();
 };
 
 /**
@@ -77,6 +82,7 @@ export const handleColorFilterUpdate = (data: {
 
   // 統計は必要に応じてタイルレンダリング時に計算されるため、
   // 事前の再計算は行わない（不要なタイルfetchを避ける）
+  refreshFrontTileLayer();
 };
 
 /**
@@ -99,4 +105,15 @@ export const handleLayerSortUpdate = (data: { enabled: boolean }): void => {
   if (data.enabled) {
     sortMapLayers();
   }
+};
+
+/**
+ * Handle front tile layer update
+ */
+export const handleFrontTileLayerUpdate = (data: {
+  enabled: boolean;
+}): void => {
+  window.mrWplaceFrontTileLayerEnabled = data.enabled;
+  setFrontTileLayerEnabled(data.enabled);
+  console.log("🧑‍🎨 : Front tile layer updated:", data.enabled);
 };

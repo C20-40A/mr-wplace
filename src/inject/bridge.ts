@@ -12,6 +12,7 @@ import {
   handleColorFilterUpdate,
   handleCacheClear,
   handleLayerSortUpdate,
+  handleFrontTileLayerUpdate,
 } from "./handlers/state-handlers";
 import {
   handleStatsRequest,
@@ -225,6 +226,7 @@ const messageHandlers: Record<string, MessageHandler> = {
     changeMap3dDragRotateEnabled(data.enabled),
   "mr-wplace-cache-clear": handleCacheClear,
   "mr-wplace-layer-sort-update": handleLayerSortUpdate,
+  "mr-wplace-front-tile-layer-update": handleFrontTileLayerUpdate,
   "mr-wplace-gallery-images-v2": handleGalleryImagesV2,
   "mr-wplace-snapshots": handleSnapshotsUpdate,
   "mr-wplace-text-layers": handleTextLayersUpdate,
