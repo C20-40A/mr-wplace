@@ -6,7 +6,9 @@ import { initSnapshotRepository } from "./db/snapshot-repository";
 import {
   resolveMapInstanceAsync,
   setupPaintedCoordinatesCapture,
+  setPaintListener,
 } from "./features/map-instance";
+import { handlePaintForStats } from "./features/paint-stats-updater";
 
 // CRITICAL: Setup fetch interceptor IMMEDIATELY and SYNCHRONOUSLY
 // to catch /me requests before WPlace app code runs
@@ -36,6 +38,7 @@ import {
   // Setup fetch interceptor synchronously (no await)
   try {
     setupPaintedCoordinatesCapture();
+    setPaintListener(handlePaintForStats);
     setupFetchInterceptor();
     console.log("🧑‍🎨: Fetch interceptor ready");
   } catch (error) {

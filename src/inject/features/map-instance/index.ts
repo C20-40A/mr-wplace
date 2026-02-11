@@ -18,4 +18,5 @@ export {
   setupPaintedCoordinatesCapture,
   stopPaintedCoordinatesCapture,
   getCapturedPaintedCoordinates,
+  setPaintListener,
 } from "./painted-coordinates-capture";

@@ -123,8 +123,33 @@ const displayColorStats = async (): Promise<void> => {
   console.log("🧑‍🎨 : Paint stats: displayed on all color buttons");
 };
 
-// 初期化（画面遷移のたびにstats再表示）
+// debounce付きstats更新
+let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+const REFRESH_DEBOUNCE_MS = 300;
+
+const scheduleRefresh = (): void => {
+  // color buttonsがDOM上にない = ペイントモードでないなら不要
+  if (findColorButtons().length === 0) return;
+  if (refreshTimer) clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(() => {
+    refreshTimer = null;
+    displayColorStats();
+  }, REFRESH_DEBOUNCE_MS);
+};
+
+// inject側のタイルレンダリング後のstats更新を listen
+const setupStatsUpdateListener = (): void => {
+  window.addEventListener("message", (event) => {
+    if (event.data?.source === "mr-wplace-stats-updated") {
+      scheduleRefresh();
+    }
+  });
+};
+
+// 初期化（画面遷移のたびにstats再表示 + stats更新のリアルタイム反映）
 export const initPaintStats = (): void => {
+  setupStatsUpdateListener();
+
   const observer = new MutationObserver(() => {
     const colorButtons = findColorButtons();
     if (colorButtons.length === 0) return;

@@ -21,6 +21,14 @@ let visibilityCheckScheduled = false;
 const capturedCoordinates = new Map<string, CapturedPaintedCoordinate>();
 const captureOrder: string[] = [];
 
+// Paint event listener for external modules (e.g., paint-stats-updater)
+type PaintListener = (coord: CapturedPaintedCoordinate) => void;
+let paintListener: PaintListener | null = null;
+
+export const setPaintListener = (listener: PaintListener | null): void => {
+  paintListener = listener;
+};
+
 const isTargetKey = (key: unknown): key is string =>
   typeof key === "string" &&
   key.startsWith("t=(") &&
@@ -206,6 +214,7 @@ const handleSet = (mapRef: unknown, key: string, value: unknown): void => {
   if (!record) return;
   upsertCapturedCoordinateWithLimit(key, record);
   exposeCaptureState({ mapRef: map });
+  paintListener?.(record);
 };
 
 const handleDelete = (mapRef: unknown, key: unknown): void => {
