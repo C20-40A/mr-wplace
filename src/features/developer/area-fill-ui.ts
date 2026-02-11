@@ -4,6 +4,8 @@ import { AreaFillStorage, AreaFillCorners, type FillPattern } from "./area-fill-
 import { findPaintPixelControls } from "@/constants/selectors";
 import { getColor, TEXT_COLORS, TEXT_OUTLINE } from "./ui-colors";
 import { Toast } from "@/components/toast";
+import { AREA_FILL_MAX_PIXELS } from "@/constants/area-fill";
+import { TILE_SIZE } from "@/utils/geo-converter";
 
 export interface AreaFillUIElements {
   container: HTMLDivElement;
@@ -24,6 +26,25 @@ const formatCoord = (coord: { lat: number; lng: number } | null): string => {
   if (!coord) return "Not set";
   const { TLX, TLY, PxX, PxY } = latLngToTilePixel(coord.lat, coord.lng);
   return `${TLX}-${TLY}-${PxX}-${PxY}`;
+};
+
+const getAreaPixelCount = (
+  topLeft: { lat: number; lng: number } | null,
+  bottomRight: { lat: number; lng: number } | null,
+): number | null => {
+  if (!topLeft || !bottomRight) return null;
+
+  const tl = latLngToTilePixel(topLeft.lat, topLeft.lng);
+  const br = latLngToTilePixel(bottomRight.lat, bottomRight.lng);
+
+  const tlWorldX = tl.TLX * TILE_SIZE + tl.PxX;
+  const tlWorldY = tl.TLY * TILE_SIZE + tl.PxY;
+  const brWorldX = br.TLX * TILE_SIZE + br.PxX;
+  const brWorldY = br.TLY * TILE_SIZE + br.PxY;
+
+  const width = Math.abs(brWorldX - tlWorldX) + 1;
+  const height = Math.abs(brWorldY - tlWorldY) + 1;
+  return width * height;
 };
 
 /**
@@ -128,6 +149,15 @@ export const createAreaFillDialogItem = (
       console.log("🧑‍🎨 : No current position available");
       return;
     }
+    const nextTopLeft = { lat: pos.lat, lng: pos.lng };
+    const nextBottomRight = AreaFillStorage.getCorners().bottomRight;
+    const areaPixelCount = getAreaPixelCount(nextTopLeft, nextBottomRight);
+    if (areaPixelCount && areaPixelCount > AREA_FILL_MAX_PIXELS) {
+      Toast.error(
+        `AREA too large (${areaPixelCount.toLocaleString()} px > ${AREA_FILL_MAX_PIXELS.toLocaleString()} px)`,
+      );
+      return;
+    }
     AreaFillStorage.setTopLeft(pos.lat, pos.lng);
     const corners = AreaFillStorage.getCorners();
     update(corners);
@@ -143,6 +173,15 @@ export const createAreaFillDialogItem = (
       const pos = getCurrentPosition();
       if (!pos) {
         console.log("🧑‍🎨 : No current position available");
+        return;
+      }
+      const nextTopLeft = AreaFillStorage.getCorners().topLeft;
+      const nextBottomRight = { lat: pos.lat, lng: pos.lng };
+      const areaPixelCount = getAreaPixelCount(nextTopLeft, nextBottomRight);
+      if (areaPixelCount && areaPixelCount > AREA_FILL_MAX_PIXELS) {
+        Toast.error(
+          `AREA too large (${areaPixelCount.toLocaleString()} px > ${AREA_FILL_MAX_PIXELS.toLocaleString()} px)`,
+        );
         return;
       }
       AreaFillStorage.setBottomRight(pos.lat, pos.lng);
@@ -542,6 +581,11 @@ export const createAreaFillDialogItem = (
     // Calculate and display estimate if both corners are set
     if (corners.topLeft && corners.bottomRight) {
       estimateDisplay.style.display = "block";
+      const areaPixelCount = getAreaPixelCount(corners.topLeft, corners.bottomRight);
+      if (areaPixelCount && areaPixelCount > AREA_FILL_MAX_PIXELS) {
+        estimateText.textContent = `Area too large: ${areaPixelCount.toLocaleString()} px (max ${AREA_FILL_MAX_PIXELS.toLocaleString()} px)`;
+        return;
+      }
       estimateText.textContent = "Calculating...";
 
       try {

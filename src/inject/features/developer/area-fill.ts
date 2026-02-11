@@ -11,6 +11,7 @@ import { getOriginalBlob, overlayLayers } from "../tile-draw";
 import type { TileDrawInstance } from "../tile-draw/types";
 import { statusManagerSingleton } from "../user-status/status-manager";
 import { colorpalette } from "@/constants/colors";
+import { AREA_FILL_MAX_PIXELS } from "@/constants/area-fill";
 
 interface AreaFillCorners {
   topLeft: { lat: number; lng: number } | null;
@@ -369,6 +370,23 @@ const generatePixelPositions = (
   return { positions, width, height };
 };
 
+const calculateAreaSize = (
+  topLeft: { lat: number; lng: number },
+  bottomRight: { lat: number; lng: number },
+): { width: number; height: number; total: number } => {
+  const tl = latLngToTilePixelFloat(topLeft.lat, topLeft.lng);
+  const br = latLngToTilePixelFloat(bottomRight.lat, bottomRight.lng);
+
+  const tlWorldX = tl.TLX * TILE_SIZE + tl.PxX;
+  const tlWorldY = tl.TLY * TILE_SIZE + tl.PxY;
+  const brWorldX = br.TLX * TILE_SIZE + br.PxX;
+  const brWorldY = br.TLY * TILE_SIZE + br.PxY;
+
+  const width = Math.abs(brWorldX - tlWorldX) + 1;
+  const height = Math.abs(brWorldY - tlWorldY) + 1;
+  return { width, height, total: width * height };
+};
+
 /**
  * Load tile ImageData from cached blob
  */
@@ -641,6 +659,15 @@ export const startAreaFill = async (
     return;
   }
 
+  const area = calculateAreaSize(corners.topLeft, corners.bottomRight);
+  if (area.total > AREA_FILL_MAX_PIXELS) {
+    console.warn(
+      `🧑‍🎨 : Area fill aborted - area too large (${area.total} px > ${AREA_FILL_MAX_PIXELS} px)`,
+    );
+    window.postMessage({ source: "mr-wplace-area-fill-finished" }, "*");
+    return;
+  }
+
   const isResume = !needsRecalculation(corners, options);
   currentCorners = corners;
   isRunning = true;
@@ -849,6 +876,11 @@ export const calculateAreaFillEstimate = async (
   options: AreaFillOptions = DEFAULT_OPTIONS,
 ): Promise<{ total: number; estimated: number } | null> => {
   if (!corners.topLeft || !corners.bottomRight) return null;
+
+  const area = calculateAreaSize(corners.topLeft, corners.bottomRight);
+  if (area.total > AREA_FILL_MAX_PIXELS) {
+    return { total: area.total, estimated: 0 };
+  }
 
   const generated = generatePixelPositions(corners.topLeft, corners.bottomRight);
   let positions = generated.positions;
