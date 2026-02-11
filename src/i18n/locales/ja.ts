@@ -212,7 +212,6 @@ export const jaTranslations = {
   popup_navigation_url_jump: "URLジャンプ",
   popup_lock_button: "ロックボタン拡大（モバイル向け）",
   popup_close_confirm: "ペイント画面を閉じる時に確認",
-  popup_layer_sort: "ペイントアシストを最前面に",
   popup_paint_mode_style: "ペイント時にFABを非表示",
   popup_close_button_swap: "閉じるボタンの位置を入れ替え",
   popup_overlay_mode: "オーバーレイ描画方式",

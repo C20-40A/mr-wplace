@@ -38,9 +38,6 @@ import { handlePaintForStats } from "./features/paint-stats-updater";
   // Initialize show unplaced only (default: false)
   window.mrWplaceShowUnplacedOnly = false;
 
-  // Initialize layer sort enabled (default: true)
-  window.mrWplaceLayerSortEnabled = true;
-
   // Initialize front tile layer (experimental, default: false)
   window.mrWplaceFrontTileLayerEnabled = false;
 
@@ -108,12 +105,9 @@ import { handlePaintForStats } from "./features/paint-stats-updater";
             "*",
           );
 
-          // Setup layer sort with styledata event listener
-          const { setupLayerSortOnMapReady, setupFrontTileLayerOnMapReady } =
-            await import("./features/map-instance");
-          setupLayerSortOnMapReady(mapInstance);
-
           // Setup front tile layer with styledata event listener
+          const { setupFrontTileLayerOnMapReady } =
+            await import("./features/map-instance");
           setupFrontTileLayerOnMapReady(mapInstance);
 
           // Setup grid display with styledata event listener

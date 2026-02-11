@@ -206,7 +206,6 @@ export const enTranslations = {
   popup_navigation_url_jump: "URL Jump",
   popup_lock_button: "Large Lock Button (for Mobile)",
   popup_close_confirm: "Confirm on Close Paint Modal",
-  popup_layer_sort: "Bring Paint Assist to Front",
   popup_paint_mode_style: "Hide FABs on Paint Mode",
   popup_close_button_swap: "Swap Close Button Position",
   popup_overlay_mode: "Overlay Rendering Mode",

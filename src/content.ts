@@ -246,13 +246,6 @@ const registerMessageListeners = () => {
       return;
     }
 
-    if (message.type === "LAYER_SORT_CHANGED") {
-      // Layer sort設定を更新してinjectに通知
-      const { sendLayerSortToInject } = await import("@/features/layer-sort");
-      sendLayerSortToInject(message.enabled);
-      return;
-    }
-
     if (message.type === "OVERLAY_MODE_CHANGED") {
       // Overlay mode設定を更新してinjectに通知
       window.postMessage(

@@ -17,7 +17,6 @@ import { textDrawAPI } from "@/features/text-draw";
 import { mapFilterMenuAPI, dataSaverAPI } from "@/features/map-filter";
 import { distanceMeasureAPI } from "@/features/distance-measure";
 import { areaManagerAPI } from "@/features/area-manager";
-import { layerSortAPI } from "@/features/layer-sort";
 import { DevInject } from "@/features/developer";
 import { ColorIsolate } from "@/features/color-isolate";
 import { PositionInfo } from "@/features/position-info";
@@ -107,7 +106,6 @@ export const initializeFeatures = async () => {
     safeInitAsync("distanceMeasure", () => distanceMeasureAPI.initDistanceMeasure()),
     safeInitAsync("areaManager", () => areaManagerAPI.initAreaManager()),
     safeInitAsync("dataSaver", () => dataSaverAPI.initDataSaver()),
-    safeInitAsync("layerSort", () => layerSortAPI.initLayerSort()),
   ]);
 
   // colorFilterManager.init() - 遅延実行（UI表示をブロックしない）

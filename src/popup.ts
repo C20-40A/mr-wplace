@@ -20,11 +20,6 @@ import {
   setCloseConfirm,
 } from "./states/close-confirm";
 import {
-  loadLayerSortFromStorage,
-  getLayerSort,
-  setLayerSort,
-} from "./states/layer-sort";
-import {
   loadPaintModeStyleFromStorage,
   getPaintModeStyle,
   setPaintModeStyle,
@@ -66,7 +61,6 @@ const updateUI = (): void => {
     "popup-nav-url-jump": "popup_navigation_url_jump",
     "popup-lock-button-label": "popup_lock_button",
     "popup-close-confirm-label": "popup_close_confirm",
-    "popup-layer-sort-label": "popup_layer_sort",
     "popup-paint-mode-style-label": "popup_paint_mode_style",
     "popup-close-button-swap-label": "popup_close_button_swap",
     "popup-bug-report-label": "popup_bug_report",
@@ -175,9 +169,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const closeConfirmSelect = document.getElementById(
     "close-confirm-select",
   ) as HTMLSelectElement;
-  const layerSortSelect = document.getElementById(
-    "layer-sort-select",
-  ) as HTMLSelectElement;
   const paintModeStyleSelect = document.getElementById(
     "paint-mode-style-select",
   ) as HTMLSelectElement;
@@ -197,7 +188,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentMode = false;
   let currentLockButtonEnhancer = false;
   let currentCloseConfirm = false;
-  let currentLayerSort = true;
   let currentPaintModeStyle = true;
   let currentCloseButtonSwap = false;
   let currentComputeDevice: "gpu" | "cpu" = "gpu";
@@ -219,10 +209,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     // close confirm初期化
     await loadCloseConfirmFromStorage();
     currentCloseConfirm = getCloseConfirm();
-
-    // layer sort初期化
-    await loadLayerSortFromStorage();
-    currentLayerSort = getLayerSort();
 
     // paint mode style初期化
     await loadPaintModeStyleFromStorage();
@@ -263,7 +249,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (navigationSelect) navigationSelect.value = currentMode.toString();
   lockButtonEnhancerSelect.value = currentLockButtonEnhancer.toString();
   closeConfirmSelect.value = currentCloseConfirm.toString();
-  layerSortSelect.value = currentLayerSort.toString();
   paintModeStyleSelect.value = currentPaintModeStyle.toString();
   closeButtonSwapSelect.value = currentCloseButtonSwap.toString();
   computeDeviceSelect.value = currentComputeDevice;
@@ -353,27 +338,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     if (activeTab.id) {
       await tabs.reload(activeTab.id);
-    }
-  });
-
-  // Layer sort変更イベント
-  layerSortSelect.addEventListener("change", async (event) => {
-    const target = event.target as HTMLSelectElement;
-    const newEnabled = target.value === "true";
-
-    // 設定を保存
-    await setLayerSort(newEnabled);
-
-    // content.tsに設定変更を通知
-    const [activeTab] = await tabs.query({
-      active: true,
-      currentWindow: true,
-    });
-    if (activeTab.id) {
-      await tabs.sendMessage(activeTab.id, {
-        type: "LAYER_SORT_CHANGED",
-        enabled: newEnabled,
-      });
     }
   });
 

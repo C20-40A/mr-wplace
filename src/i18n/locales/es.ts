@@ -202,7 +202,6 @@ export const esTranslations = {
   popup_navigation_url_jump: "Salto por URL",
   popup_lock_button: "Botón de Bloqueo Grande (Móvil)",
   popup_close_confirm: "Confirmar al Cerrar Panel de Pintura",
-  popup_layer_sort: "Traer Asistente de Pintura al Frente",
   popup_paint_mode_style: "Ocultar FABs en Modo Pintura",
   popup_close_button_swap: "Intercambiar Posición del Botón Cerrar",
   popup_bug_report: "Reportar Error",
