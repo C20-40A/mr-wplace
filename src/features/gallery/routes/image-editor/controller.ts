@@ -1161,16 +1161,13 @@ export class EditorController {
           for (let x = 0; x < width; x++) {
             const idx = rowOffset + x;
             if (!current[idx]) continue;
-            if (
-              x > 0 &&
-              x + 1 < width &&
-              y > 0 &&
-              y + 1 < height &&
-              current[idx - 1] &&
-              current[idx + 1] &&
-              current[idx - width] &&
-              current[idx + width]
-            ) {
+            // Treat image edges as "region continues" so erosion
+            // only shrinks from internal color boundaries, not image borders
+            const left = x === 0 || current[idx - 1];
+            const right = x + 1 === width || current[idx + 1];
+            const up = y === 0 || current[idx - width];
+            const down = y + 1 === height || current[idx + width];
+            if (left && right && up && down) {
               temp[idx] = 1;
             }
           }
