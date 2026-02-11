@@ -11,6 +11,7 @@ import type {
   AreaRegionEditSnapshot,
   AreaRegionVertex,
 } from "@/types/area-region";
+import { latLonToPixels } from "@/utils/geo-converter";
 
 const AREA_MEASURE_KEY = "mapFilter_areaMeasure";
 const AREA_REGIONS_KEY = "areaRegions_v1";
@@ -317,6 +318,43 @@ class AreaManager {
     if (km2 >= 100) return `${km2.toFixed(1)} km²`;
     if (km2 >= 10) return `${km2.toFixed(2)} km²`;
     return `${km2.toFixed(3)} km²`;
+  }
+
+  private normalizeLngNear(lng: number, baseLng: number): number {
+    let out = lng;
+    while (out - baseLng > 180) out -= 360;
+    while (out - baseLng < -180) out += 360;
+    return out;
+  }
+
+  private calculatePixelArea(vertices: AreaRegionVertex[]): number {
+    const n = vertices.length;
+    if (n < 3) return 0;
+
+    let prevLng = vertices[n - 1].lng;
+    let prev = latLonToPixels(vertices[n - 1].lat, prevLng);
+    if (!Number.isFinite(prev[0]) || !Number.isFinite(prev[1])) return 0;
+
+    let sum = 0;
+
+    for (let i = 0; i < n; i++) {
+      const v = vertices[i];
+      const lng = this.normalizeLngNear(v.lng, prevLng);
+      const curr = latLonToPixels(v.lat, lng);
+      if (!Number.isFinite(curr[0]) || !Number.isFinite(curr[1])) return 0;
+
+      sum += prev[0] * curr[1] - curr[0] * prev[1];
+      prev = curr;
+      prevLng = lng;
+    }
+
+    return Math.abs(sum) * 0.5;
+  }
+
+  private formatPixelArea(pixelArea: number): string {
+    if (pixelArea < 1000) return `${Math.round(pixelArea)} px²`;
+    if (pixelArea < 1000000) return `${(pixelArea / 1000).toFixed(1)}K px²`;
+    return `${(pixelArea / 1000000).toFixed(2)}M px²`;
   }
 
   private createAreaRegionId(): string {
@@ -917,7 +955,9 @@ class AreaManager {
 
         const area = document.createElement("span");
         area.className = "text-sm opacity-80";
-        area.textContent = this.formatAreaKm2(region.vertices);
+        const areaKm2 = this.formatAreaKm2(region.vertices);
+        const pixelArea = this.formatPixelArea(this.calculatePixelArea(region.vertices));
+        area.innerHTML = `${areaKm2} <span style="opacity: 0.7; font-size: 0.9em;">(${pixelArea})</span>`;
 
         const colorInput = document.createElement("input");
         colorInput.type = "color";

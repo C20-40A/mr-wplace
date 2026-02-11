@@ -4,6 +4,7 @@ import type {
   AreaRegionVertex,
 } from "@/types/area-region";
 import { getMapInstanceFromWplace } from "./map-instance";
+import { latLonToPixels } from "@/utils/geo-converter";
 
 const AREA_CONTAINER_ID = "mr-wplace-area-measure";
 const AREA_SVG_NS = "http://www.w3.org/2000/svg";
@@ -185,16 +186,19 @@ const createOverlay = (): HTMLDivElement => {
   label.style.cssText = `
     position: absolute;
     transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.82);
     color: #fff;
-    border-radius: 9999px;
-    padding: 4px 10px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 700;
     white-space: nowrap;
-    line-height: 1.2;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    line-height: 1.3;
+    text-align: center;
+    text-shadow:
+      -1px -1px 0 #000,
+      1px -1px 0 #000,
+      -1px 1px 0 #000,
+      1px 1px 0 #000,
+      0 0 3px rgba(0, 0, 0, 0.8);
     pointer-events: none;
     z-index: 2;
     display: none;
@@ -213,13 +217,23 @@ const createOverlay = (): HTMLDivElement => {
     position: absolute;
     transform: translate(-50%, -50%);
     display: none;
-    gap: 8px;
+    gap: 4px;
     z-index: 4;
     pointer-events: auto;
   `;
 
   const saveButton = document.createElement("button");
-  saveButton.className = "btn btn-primary btn-sm";
+  saveButton.style.cssText = `
+    background: #0f766e;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  `;
   saveButton.textContent = editingSaveLabel;
   saveButton.addEventListener("click", (event) => {
     event.preventDefault();
@@ -228,8 +242,18 @@ const createOverlay = (): HTMLDivElement => {
   });
 
   const cancelButton = document.createElement("button");
-  cancelButton.className = "btn btn-outline btn-sm";
-  cancelButton.textContent = editingCancelLabel;
+  cancelButton.style.cssText = `
+    background: rgba(255, 255, 255, 0.95);
+    color: #333;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  `;
+  cancelButton.innerHTML = "✕";
   cancelButton.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -292,6 +316,43 @@ const formatArea = (areaM2: number): string => {
   if (km2 < 10) return `${km2.toFixed(3)} km²`;
   if (km2 < 100) return `${km2.toFixed(2)} km²`;
   return `${km2.toFixed(1)} km²`;
+};
+
+const normalizeLngNear = (lng: number, baseLng: number): number => {
+  let out = lng;
+  while (out - baseLng > 180) out -= 360;
+  while (out - baseLng < -180) out += 360;
+  return out;
+};
+
+const calculatePixelArea = (vertices: LngLat[]): number => {
+  const n = vertices.length;
+  if (n < 3) return 0;
+
+  let prevLng = vertices[n - 1].lng;
+  let prev = latLonToPixels(vertices[n - 1].lat, prevLng);
+  if (!Number.isFinite(prev[0]) || !Number.isFinite(prev[1])) return 0;
+
+  let sum = 0;
+
+  for (let i = 0; i < n; i++) {
+    const v = vertices[i];
+    const lng = normalizeLngNear(v.lng, prevLng);
+    const curr = latLonToPixels(v.lat, lng);
+    if (!Number.isFinite(curr[0]) || !Number.isFinite(curr[1])) return 0;
+
+    sum += prev[0] * curr[1] - curr[0] * prev[1];
+    prev = curr;
+    prevLng = lng;
+  }
+
+  return Math.abs(sum) * 0.5;
+};
+
+const formatPixelArea = (pixelArea: number): string => {
+  if (pixelArea < 1000) return `${Math.round(pixelArea)} px²`;
+  if (pixelArea < 1000000) return `${(pixelArea / 1000).toFixed(1)}K px²`;
+  return `${(pixelArea / 1000000).toFixed(2)}M px²`;
 };
 
 const ensureDefaultVertices = (map: AreaMap): void => {
@@ -601,7 +662,8 @@ const renderAreaOverlay = (map: AreaMap): void => {
   }
 
   const area = calculateAreaSquareMeters(editVertices);
-  areaLabel.textContent = formatArea(area);
+  const pixelArea = calculatePixelArea(editVertices);
+  areaLabel.innerHTML = `${formatArea(area)}<br><span style="font-size: 10px; opacity: 0.8;">${formatPixelArea(pixelArea)}</span>`;
   areaLabel.style.display = "block";
 
   const centerX =
@@ -614,7 +676,7 @@ const renderAreaOverlay = (map: AreaMap): void => {
   if (editActionLayer) {
     editActionLayer.style.display = "flex";
     editActionLayer.style.left = `${centerX}px`;
-    editActionLayer.style.top = `${centerY + 28}px`;
+    editActionLayer.style.top = `${centerY + 26}px`;
   }
 };
 
