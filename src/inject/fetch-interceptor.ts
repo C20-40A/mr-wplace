@@ -9,6 +9,10 @@ import {
 import { invalidateTileCache } from "./cache-storage";
 import { handleUserStatusUpdate } from "./handlers/user-status-handler";
 import { WplaceUserData } from "./types";
+import {
+  isFrontLayerTileRequest,
+  handleFrontLayerTileRequest,
+} from "./features/map-instance/front-tile-layer/fetch-handler";
 
 /**
  * Setup fetch interceptor to handle tile requests and user data
@@ -25,6 +29,11 @@ export const setupFetchInterceptor = (): void => {
         : requestInfo instanceof Request
         ? requestInfo.url
         : requestInfo.toString();
+
+    // Intercept custom protocol tile requests for front layer
+    if (url && isFrontLayerTileRequest(url)) {
+      return handleFrontLayerTileRequest(url);
+    }
 
     // Block Sentry requests to avoid sending extension bugs to WPlace's Sentry
     if (url && (url.includes("sentry.io") || url.includes("sentry"))) {

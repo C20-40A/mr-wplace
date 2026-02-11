@@ -91,10 +91,12 @@ import { handlePaintForStats } from "./features/paint-stats-updater";
           );
 
           // Setup layer sort with styledata event listener
-          const { setupLayerSortOnMapReady } = await import(
-            "./features/map-instance"
-          );
+          const { setupLayerSortOnMapReady, setupFrontTileLayerOnMapReady } =
+            await import("./features/map-instance");
           setupLayerSortOnMapReady(mapInstance);
+
+          // Setup front tile layer with styledata event listener
+          // setupFrontTileLayerOnMapReady(mapInstance);
 
           // Setup grid display with styledata event listener
           const { setupGridDisplayOnMapReady } = await import(
