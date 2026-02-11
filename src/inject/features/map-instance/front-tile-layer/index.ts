@@ -1,4 +1,5 @@
 import { getMapInstanceFromWplace } from "../get-map-instance";
+import { getStateVersion, incrementStateVersion } from "./state-version";
 
 const FRONT_LAYER_ID = "pixel-art-layer-overlay";
 const FRONT_SOURCE_ID = "mr-wplace-overlay-source";
@@ -8,11 +9,12 @@ const FAKE_TILE_PROTOCOL = "mr-wplace-overlay";
 
 let layerAdded = false;
 let sourceAdded = false;
+let currentSourceVersion = 0;
 
 const isEnabled = () => window.mrWplaceFrontTileLayerEnabled ?? false;
 
 /**
- * Add custom overlay source to map
+ * Add custom overlay source to map with state version for cache busting
  */
 const addOverlaySource = (map: any): void => {
   if (sourceAdded) return;
@@ -22,15 +24,18 @@ const addOverlaySource = (map: any): void => {
   }
 
   try {
+    const version = getStateVersion();
+    currentSourceVersion = version;
+
     map.addSource(FRONT_SOURCE_ID, {
       type: "raster",
-      tiles: [`${FAKE_TILE_PROTOCOL}://{z}/{x}/{y}.png`],
+      tiles: [`${FAKE_TILE_PROTOCOL}://{z}/{x}/{y}.png?v=${version}`],
       tileSize: 1000,
       minzoom: 11,
       maxzoom: 11,
     });
     sourceAdded = true;
-    console.log("🧑‍🎨 : Front tile source added");
+    console.log(`🧑‍🎨 : Front tile source added (version: ${version})`);
   } catch (e) {
     console.error("🧑‍🎨 : Failed to add overlay source:", e);
   }
@@ -113,7 +118,8 @@ export const setFrontTileLayerEnabled = (enabled: boolean): void => {
 };
 
 /**
- * Refresh front tile layer tiles (force MapLibreGL to re-fetch all tiles)
+ * Refresh front tile layer tiles by updating state version
+ * Much lighter than remove/re-add approach - only changes URL to trigger re-fetch
  * Called when overlay state changes (color filter, gallery images, etc.)
  */
 export const refreshFrontTileLayer = (): void => {
@@ -129,20 +135,24 @@ export const refreshFrontTileLayer = (): void => {
   if (!layer) return;
 
   try {
-    // Remove and re-add source to force MapLibreGL to re-fetch all tiles
-    // This is the most reliable way to refresh raster tiles
+    // Increment version to change tile URLs
+    const newVersion = incrementStateVersion();
+
+    // Remove and re-add source with new version URL
+    // This is lighter than full layer reconstruction
     map.removeLayer(FRONT_LAYER_ID);
     map.removeSource(FRONT_SOURCE_ID);
 
     // Reset state flags
     layerAdded = false;
     sourceAdded = false;
+    currentSourceVersion = newVersion;
 
-    // Re-add source and layer
+    // Re-add source with new version
     addOverlaySource(map);
     checkAndAddOverlay(map);
 
-    console.log("🧑‍🎨 : Front tile layer refreshed (source removed and re-added)");
+    console.log(`🧑‍🎨 : Front tile layer refreshed (version: ${newVersion})`);
   } catch (error) {
     console.error("🧑‍🎨 : Failed to refresh front tile layer:", error);
   }

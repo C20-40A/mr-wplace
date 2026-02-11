@@ -153,6 +153,20 @@ const initializeMainFeatures = async () => {
     tileSnapshot,
     autoSpoit,
   });
+
+  // Load and send front tile layer setting to inject
+  const { loadFrontTileLayerFromStorage, getFrontTileLayer } = await import(
+    "@/states/front-tile-layer"
+  );
+  await loadFrontTileLayerFromStorage();
+  const frontTileLayerEnabled = getFrontTileLayer();
+  window.postMessage(
+    {
+      source: "mr-wplace-front-tile-layer-update",
+      enabled: frontTileLayerEnabled,
+    },
+    "*"
+  );
 };
 
 const scheduleLegacyTmpTilesCleanup = () => {
@@ -236,6 +250,18 @@ const registerMessageListeners = () => {
       // Layer sort設定を更新してinjectに通知
       const { sendLayerSortToInject } = await import("@/features/layer-sort");
       sendLayerSortToInject(message.enabled);
+      return;
+    }
+
+    if (message.type === "OVERLAY_MODE_CHANGED") {
+      // Overlay mode設定を更新してinjectに通知
+      window.postMessage(
+        {
+          source: "mr-wplace-front-tile-layer-update",
+          enabled: message.enabled,
+        },
+        "*"
+      );
       return;
     }
 

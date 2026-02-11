@@ -41,6 +41,11 @@ import {
   FAB_FEATURES,
   type FabFeature,
 } from "./states/fab-visibility";
+import {
+  loadFrontTileLayerFromStorage,
+  getFrontTileLayer,
+  setFrontTileLayer,
+} from "./states/front-tile-layer";
 
 import { tabs } from "@/utils/browser-api";
 import { FEEDBACK_FORM_URL } from "@/constants/url";
@@ -75,6 +80,9 @@ const updateUI = (): void => {
     "popup-fab-time-travel-label": "popup_fab_time_travel",
     "popup-fab-data-saver-label": "popup_fab_data_saver",
     "popup-fab-filter-label": "popup_fab_color_filter",
+    "popup-overlay-mode-label": "popup_overlay_mode",
+    "popup-overlay-mode-composite": "popup_overlay_mode_composite",
+    "popup-overlay-mode-layer": "popup_overlay_mode_layer",
     "gallery-data-label": "gallery_data",
     "export-btn-label": "export",
     "import-btn-label": "import",
@@ -182,6 +190,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const closeButtonSwapSelect = document.getElementById(
     "close-button-swap-select",
   ) as HTMLSelectElement;
+  const overlayModeSelect = document.getElementById(
+    "overlay-mode-select",
+  ) as HTMLSelectElement;
 
   // Set Buy Me a Coffee image
   const coffeeImg = document.getElementById("coffee-img") as HTMLImageElement;
@@ -195,6 +206,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentLayerSort = true;
   let currentPaintModeStyle = true;
   let currentCloseButtonSwap = false;
+  let currentOverlayMode = false;
   let mapInstanceReady = false;
 
   try {
@@ -225,6 +237,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     // close button swap初期化
     await loadCloseButtonSwapFromStorage();
     currentCloseButtonSwap = getCloseButtonSwap();
+
+    // overlay mode初期化
+    await loadFrontTileLayerFromStorage();
+    currentOverlayMode = getFrontTileLayer();
 
     // fab visibility初期化
     await loadFabVisibilityFromStorage();
@@ -257,6 +273,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   layerSortSelect.value = currentLayerSort.toString();
   paintModeStyleSelect.value = currentPaintModeStyle.toString();
   closeButtonSwapSelect.value = currentCloseButtonSwap.toString();
+  overlayModeSelect.value = currentOverlayMode.toString();
 
   // FAB visibility selector初期化
   const fabVisibility = getFabVisibility();
@@ -398,6 +415,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     if (activeTab.id) {
       await tabs.reload(activeTab.id);
+    }
+  });
+
+  // Overlay mode変更イベント
+  overlayModeSelect.addEventListener("change", async (event) => {
+    const target = event.target as HTMLSelectElement;
+    const newEnabled = target.value === "true";
+
+    await setFrontTileLayer(newEnabled);
+
+    // content.tsに設定変更を通知
+    const [activeTab] = await tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (activeTab.id) {
+      await tabs.sendMessage(activeTab.id, {
+        type: "OVERLAY_MODE_CHANGED",
+        enabled: newEnabled,
+      });
     }
   });
 

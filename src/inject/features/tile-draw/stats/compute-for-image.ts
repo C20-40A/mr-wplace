@@ -1,5 +1,5 @@
 import type { ColorStats } from "@/types/image";
-import { blobToPixels } from "../../../utils/pixel-converters";
+import { blobToPixels } from "@/utils/pixel-converters";
 import { isSameColor, colorToKey } from "../filters/color-processing";
 import { processCpuColorFilter } from "../filters/cpu-filter";
 import { convertImageBitmapToUint8ClampedArray } from "../image-processing/pixel-processing";
@@ -11,14 +11,14 @@ import { convertImageBitmapToUint8ClampedArray } from "../image-processing/pixel
 export const computeStatsForImage = async (
   imageKey: string,
   tiles: Record<string, ImageBitmap>,
-  colorFilter?: number[][]
+  colorFilter?: number[][],
 ): Promise<Map<string, ColorStats>> => {
   const tileStatsMap = new Map<string, ColorStats>();
 
   console.log(
     `🧑‍🎨 : Computing stats for image ${imageKey}, ${
       Object.keys(tiles).length
-    } tiles`
+    } tiles`,
   );
 
   // タイルエントリーを配列化
@@ -62,7 +62,7 @@ export const computeStatsForImage = async (
       } catch (decodeError) {
         console.log(
           `🧑‍🎨 : Skipping stats for tile ${coordStr} (decode failed):`,
-          decodeError
+          decodeError,
         );
         continue;
       }
@@ -110,7 +110,7 @@ export const computeStatsForImage = async (
           const totalColorKey = colorToKey([origR, origG, origB]);
           stats.total.set(
             totalColorKey,
-            (stats.total.get(totalColorKey) || 0) + 1
+            (stats.total.get(totalColorKey) || 0) + 1,
           );
 
           // matched: フィルター適用後の色でカウント
@@ -140,7 +140,7 @@ export const computeStatsForImage = async (
           // 色の一致を判定（フィルター適用後の色で）
           const colorMatches = isSameColor(
             [filteredR, filteredG, filteredB, 255],
-            [bgR, bgG, bgB, bgA]
+            [bgR, bgG, bgB, bgA],
           );
 
           if (colorMatches) {
@@ -151,7 +151,7 @@ export const computeStatsForImage = async (
             ]);
             stats.matched.set(
               matchedColorKey,
-              (stats.matched.get(matchedColorKey) || 0) + 1
+              (stats.matched.get(matchedColorKey) || 0) + 1,
             );
           }
         }
@@ -166,7 +166,7 @@ export const computeStatsForImage = async (
   }
 
   console.log(
-    `🧑‍🎨 : Stats computation complete for image ${imageKey}: ${tileStatsMap.size} tiles`
+    `🧑‍🎨 : Stats computation complete for image ${imageKey}: ${tileStatsMap.size} tiles`,
   );
   return tileStatsMap;
 };
@@ -177,7 +177,7 @@ export const computeStatsForImage = async (
  */
 const fetchBackgroundTile = async (
   tileX: number,
-  tileY: number
+  tileY: number,
 ): Promise<Blob | null> => {
   // タイムアウト用のAbortController
   const controller = new AbortController();
