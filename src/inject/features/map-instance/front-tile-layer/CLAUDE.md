@@ -631,12 +631,13 @@ window.postMessage(
 - `paint-stats-updater.ts` で topmost template 色とペイント色を比較し、結果を UI レイヤーに反映
 - `front-tile-layer/index.ts` に `mr-wplace-paint-guide-*` レイヤーを追加
   - `mismatch`: 黄 + 黒枠の警告ドット（やや大きめ）
-  - `matched` はガイドを表示せず、該当点をクリア
+  - `already`: 水色ドット（テンプレ一致かつ背景も同色で、重ね塗りが無駄な場合）
+  - `matched` はガイドを表示せず、該当点をクリア（背景比較未準備時も安全側で非表示）
 - `pixel-art-layer-overlay` は `paint-preview-*` より下に配置（preview の視認性を優先）
 - 背景タイル更新時に guide point を自動クリアしない（mismatch が短時間で消えないようにする）
 - `paint session` の active/inactive を導入し、inactive 中は guide 更新を受け付けない
 - `paint modal` クローズ時は guide point を **即時一括クリア**（順次消える/復活する挙動を防ぐ）
-- `paintedPixelMap.delete/clear`（消しゴム含む）を hook し、該当 mismatch guide を即時クリア
+- `paintedPixelMap.delete/clear`（消しゴム含む）を hook し、該当 guide（mismatch/already）を即時クリア
 
 パフォーマンス設計:
 - ペイント1イベントで更新するのは guide source のみ（GeoJSON `setData`、debounce 50ms）
@@ -644,6 +645,8 @@ window.postMessage(
 - guide point は最大件数で上限管理（modal close で即クリア）
 - guide point の座標変換（tile/pixel → lat/lng）は upsert 時に1回だけ実行し、`setData` ごとの再計算を避ける
 - `paint-stats-updater` は色比較を int ベースにして、1ピクセル処理中の文字列生成を削減
+- 背景比較は遅延デコード + 小さい LRU キャッシュ（4タイル）で実施し、毎ペイントでの Blob decode を回避
+- 背景デコードの同時実行数を制限（並列上限 2）し、連続入力時のCPUスパイクを抑制
 - `showUnplacedColor` の連続入力は content/inject 双方で間引き（送信 interval + refresh debounce）し、`setTiles` の連打を抑制
 - front tile request でも `last-modified + stateVersion` ベースの描画結果キャッシュを使用し、未変更タイルは再描画をスキップ
 

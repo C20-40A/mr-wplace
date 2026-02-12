@@ -10,6 +10,7 @@
 
 import { colorpalette } from "@/constants/colors";
 import { overlayLayers, perTileColorStats } from "./tile-draw/states";
+import { getOriginalBlob } from "./tile-draw";
 import type { CapturedPaintedCoordinate } from "@/inject/types";
 import {
   upsertFrontTilePaintGuide,
@@ -30,6 +31,23 @@ for (const entry of colorpalette) {
 const tilePixelCache = new Map<string, Uint8ClampedArray>();
 const MAX_TILE_PIXEL_CACHE = 10;
 const tileCacheOrder: string[] = [];
+const backgroundTilePixelCache = new Map<
+  string,
+  {
+    blob: Blob;
+    width: number;
+    height: number;
+    pixels: Uint8ClampedArray;
+  }
+>();
+const MAX_BACKGROUND_TILE_PIXEL_CACHE = 4;
+const MAX_BACKGROUND_DECODE_CONCURRENCY = 2;
+const backgroundTileCacheOrder: string[] = [];
+let backgroundDecodeActiveCount = 0;
+const backgroundDecodeInFlight = new Set<string>();
+const backgroundDecodeQueue: string[] = [];
+const backgroundDecodeQueuedSet = new Set<string>();
+const backgroundDecodeRequestedBlob = new Map<string, Blob>();
 const toPaddedTileKey = (tileX: number, tileY: number): string =>
   `${tileX.toString().padStart(4, "0")},${tileY.toString().padStart(4, "0")}`;
 
@@ -64,6 +82,145 @@ const getCachedTilePixels = (
     if (oldest) tilePixelCache.delete(oldest);
   }
   return data;
+};
+
+const removeBackgroundCache = (tileKey: string): void => {
+  backgroundTilePixelCache.delete(tileKey);
+  const index = backgroundTileCacheOrder.indexOf(tileKey);
+  if (index !== -1) backgroundTileCacheOrder.splice(index, 1);
+};
+
+const touchBackgroundCache = (tileKey: string): void => {
+  const index = backgroundTileCacheOrder.indexOf(tileKey);
+  if (index === -1) return;
+  backgroundTileCacheOrder.splice(index, 1);
+  backgroundTileCacheOrder.push(tileKey);
+};
+
+const setBackgroundCache = (
+  tileKey: string,
+  entry: {
+    blob: Blob;
+    width: number;
+    height: number;
+    pixels: Uint8ClampedArray;
+  }
+): void => {
+  if (backgroundTilePixelCache.has(tileKey)) removeBackgroundCache(tileKey);
+  else if (backgroundTileCacheOrder.length >= MAX_BACKGROUND_TILE_PIXEL_CACHE) {
+    const oldest = backgroundTileCacheOrder.shift();
+    if (oldest) backgroundTilePixelCache.delete(oldest);
+  }
+
+  backgroundTilePixelCache.set(tileKey, entry);
+  backgroundTileCacheOrder.push(tileKey);
+};
+
+const decodeBackgroundTilePixels = async (
+  tileKey: string,
+  blob: Blob
+): Promise<void> => {
+  try {
+    const bitmap = await createImageBitmap(blob);
+    const width = bitmap.width;
+    const height = bitmap.height;
+    let pixels: Uint8ClampedArray | null = null;
+    try {
+      pixels = getTilePixelData(bitmap);
+    } finally {
+      bitmap.close();
+    }
+    if (!pixels) return;
+
+    // Tile was updated while decoding, so skip stale cache.
+    const latestBlob = getOriginalBlob(tileKey);
+    if (!latestBlob || latestBlob !== blob) return;
+
+    setBackgroundCache(tileKey, {
+      blob,
+      width,
+      height,
+      pixels,
+    });
+  } catch {}
+  finally {
+    backgroundDecodeInFlight.delete(tileKey);
+    const requestedBlob = backgroundDecodeRequestedBlob.get(tileKey);
+    if (requestedBlob && requestedBlob !== blob) {
+      if (!backgroundDecodeQueuedSet.has(tileKey)) {
+        backgroundDecodeQueuedSet.add(tileKey);
+        backgroundDecodeQueue.push(tileKey);
+      }
+      return;
+    }
+    backgroundDecodeRequestedBlob.delete(tileKey);
+  }
+};
+
+const pumpBackgroundDecodeQueue = (): void => {
+  while (backgroundDecodeActiveCount < MAX_BACKGROUND_DECODE_CONCURRENCY) {
+    const tileKey = backgroundDecodeQueue.shift();
+    if (!tileKey) return;
+    backgroundDecodeQueuedSet.delete(tileKey);
+    if (backgroundDecodeInFlight.has(tileKey)) continue;
+
+    const blob = backgroundDecodeRequestedBlob.get(tileKey);
+    if (!blob) continue;
+
+    backgroundDecodeInFlight.add(tileKey);
+    backgroundDecodeActiveCount += 1;
+    void decodeBackgroundTilePixels(tileKey, blob).finally(() => {
+      backgroundDecodeActiveCount = Math.max(0, backgroundDecodeActiveCount - 1);
+      pumpBackgroundDecodeQueue();
+    });
+  }
+};
+
+const scheduleBackgroundDecode = (tileKey: string, blob: Blob): void => {
+  backgroundDecodeRequestedBlob.set(tileKey, blob);
+  if (backgroundDecodeInFlight.has(tileKey)) return;
+  if (!backgroundDecodeQueuedSet.has(tileKey)) {
+    backgroundDecodeQueuedSet.add(tileKey);
+    backgroundDecodeQueue.push(tileKey);
+  }
+  pumpBackgroundDecodeQueue();
+};
+
+const getBackgroundPixelRgbInt = (
+  tileX: number,
+  tileY: number,
+  pixelX: number,
+  pixelY: number
+): number | null => {
+  const tileKey = `${tileX},${tileY}`;
+  const blob = getOriginalBlob(tileKey);
+  if (!blob) {
+    removeBackgroundCache(tileKey);
+    backgroundDecodeRequestedBlob.delete(tileKey);
+    return null;
+  }
+
+  const cached = backgroundTilePixelCache.get(tileKey);
+  if (!cached || cached.blob !== blob) {
+    if (cached) removeBackgroundCache(tileKey);
+    scheduleBackgroundDecode(tileKey, blob);
+    return null;
+  }
+
+  touchBackgroundCache(tileKey);
+
+  if (pixelX < 0 || pixelY < 0 || pixelX >= cached.width || pixelY >= cached.height)
+    return null;
+
+  const idx = (pixelY * cached.width + pixelX) * 4;
+  if (idx + 3 >= cached.pixels.length) return null;
+  if (cached.pixels[idx + 3] === 0) return null;
+
+  return (
+    (cached.pixels[idx] << 16) |
+    (cached.pixels[idx + 1] << 8) |
+    cached.pixels[idx + 2]
+  );
 };
 
 // debounce 通知
@@ -201,8 +358,25 @@ export const handlePaintForStats = (
     return;
   }
 
-  const kind = topOverlayRgbInt === paintedRgbInt ? "matched" : "mismatch";
-  if (kind === "matched") {
+  if (topOverlayRgbInt !== paintedRgbInt) {
+    upsertFrontTilePaintGuide(
+      coord.tileX,
+      coord.tileY,
+      coord.pixelX,
+      coord.pixelY,
+      "mismatch",
+      topOverlayRgbInt,
+    );
+    return;
+  }
+
+  const backgroundRgbInt = getBackgroundPixelRgbInt(
+    coord.tileX,
+    coord.tileY,
+    coord.pixelX,
+    coord.pixelY,
+  );
+  if (backgroundRgbInt == null || backgroundRgbInt !== paintedRgbInt) {
     clearFrontTilePaintGuide(coord.tileX, coord.tileY, coord.pixelX, coord.pixelY);
     return;
   }
@@ -212,7 +386,7 @@ export const handlePaintForStats = (
     coord.tileY,
     coord.pixelX,
     coord.pixelY,
-    "mismatch",
+    "already",
     topOverlayRgbInt,
   );
 };

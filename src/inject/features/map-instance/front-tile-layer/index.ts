@@ -11,6 +11,7 @@ const PENDING_REFRESH_DEBOUNCE_MS = 120;
 const MAX_PENDING_COMPARISON_TILES = 256;
 const GUIDE_SOURCE_ID = "mr-wplace-paint-guide-source";
 const GUIDE_MISMATCH_LAYER_ID = "mr-wplace-paint-guide-mismatch";
+const GUIDE_ALREADY_LAYER_ID = "mr-wplace-paint-guide-already";
 const LEGACY_GUIDE_MATCH_LAYER_ID = "mr-wplace-paint-guide-match";
 const GUIDE_SYNC_DEBOUNCE_MS = 50;
 const MAX_GUIDE_POINTS = 1500;
@@ -33,7 +34,8 @@ interface PaintGuidePoint {
   pixelY: number;
   lat: number;
   lng: number;
-  kind: "mismatch";
+  kind: "mismatch" | "already";
+  colorRgbInt: number;
   colorHex: string;
 }
 
@@ -61,6 +63,7 @@ const clearGuideSyncTimer = (): void => {
 const removeGuideLayersAndSource = (map: any): void => {
   if (map.getLayer(LEGACY_GUIDE_MATCH_LAYER_ID))
     map.removeLayer(LEGACY_GUIDE_MATCH_LAYER_ID);
+  if (map.getLayer(GUIDE_ALREADY_LAYER_ID)) map.removeLayer(GUIDE_ALREADY_LAYER_ID);
   if (map.getLayer(GUIDE_MISMATCH_LAYER_ID)) map.removeLayer(GUIDE_MISMATCH_LAYER_ID);
   if (map.getSource(GUIDE_SOURCE_ID)) map.removeSource(GUIDE_SOURCE_ID);
 };
@@ -132,6 +135,25 @@ const ensureGuideSourceAndLayers = (map: any): void => {
           "circle-radius": 3.2,
           "circle-opacity": 1,
           "circle-stroke-color": "#000000",
+          "circle-stroke-width": 1,
+        },
+      },
+      beforeId,
+    );
+  }
+
+  if (!map.getLayer(GUIDE_ALREADY_LAYER_ID)) {
+    map.addLayer(
+      {
+        id: GUIDE_ALREADY_LAYER_ID,
+        type: "circle",
+        source: GUIDE_SOURCE_ID,
+        filter: ["==", ["get", "kind"], "already"],
+        paint: {
+          "circle-color": "#00d4ff",
+          "circle-radius": 2.8,
+          "circle-opacity": 0.95,
+          "circle-stroke-color": "#002433",
           "circle-stroke-width": 1,
         },
       },
@@ -273,19 +295,18 @@ export const upsertFrontTilePaintGuide = (
   tileY: number,
   pixelX: number,
   pixelY: number,
-  kind: "mismatch",
+  kind: "mismatch" | "already",
   templateRgbInt: number,
 ): void => {
   if (!isEnabled()) return;
   if (!paintGuideActive) return;
   if (pixelX < 0 || pixelY < 0 || pixelX >= 1000 || pixelY >= 1000) return;
-  const { lat, lng } = tilePixelToLatLng(tileX, tileY, pixelX + 0.5, pixelY + 0.5);
-  const colorHex = rgbIntToHex(templateRgbInt);
-
   const key = getGuidePointKey(tileX, tileY, pixelX, pixelY);
   const existing = paintGuidePoints.get(key);
-  if (existing && existing.kind === kind && existing.colorHex === colorHex)
-    return;
+  if (existing && existing.kind === kind && existing.colorRgbInt === templateRgbInt) return;
+
+  const { lat, lng } = tilePixelToLatLng(tileX, tileY, pixelX + 0.5, pixelY + 0.5);
+  const colorHex = rgbIntToHex(templateRgbInt);
   paintGuidePoints.set(key, {
     tileX,
     tileY,
@@ -294,6 +315,7 @@ export const upsertFrontTilePaintGuide = (
     lat,
     lng,
     kind,
+    colorRgbInt: templateRgbInt,
     colorHex,
   });
 
