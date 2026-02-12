@@ -1,4 +1,5 @@
 import { getColor, TEXT_COLORS, TEXT_OUTLINE } from "./ui-colors";
+import { t } from "@/i18n/manager";
 
 interface DeveloperDialogElements {
   dialog: HTMLDivElement;
@@ -11,6 +12,7 @@ let onHideCallback: (() => void) | null = null;
 let isDragging = false;
 let dragOffset = { x: 0, y: 0 };
 let isMinimized = false;
+const DEV_WARNING_ACK_KEY = "mr-wplace-dev-warning-ack";
 
 export const createDeveloperDialog = (): DeveloperDialogElements => {
   // 既存のダイアログがあれば再利用
@@ -19,6 +21,8 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
   // 最小化状態を復元
   const savedMinimized = localStorage.getItem("mr-wplace-dev-minimized");
   isMinimized = savedMinimized === "true";
+  const hasAcknowledgedWarning =
+    localStorage.getItem(DEV_WARNING_ACK_KEY) === "true";
 
   const dialog = document.createElement("div");
   dialog.id = "mr-wplace-dev-dialog";
@@ -240,10 +244,93 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
   const content = document.createElement("div");
   content.id = "mr-wplace-dev-dialog-content";
   content.style.cssText = `
-    display: ${isMinimized ? "none" : "flex"};
+    display: ${hasAcknowledgedWarning && !isMinimized ? "flex" : "none"};
     flex-direction: column;
     gap: 8px;
   `;
+
+  const splash = document.createElement("div");
+  splash.style.cssText = `
+    display: ${hasAcknowledgedWarning ? "none" : "flex"};
+    flex-direction: column;
+    gap: 10px;
+    min-width: 260px;
+    max-width: 320px;
+    padding: 4px 0 2px;
+  `;
+
+  const splashTitle = document.createElement("div");
+  splashTitle.style.cssText = `
+    color: ${getColor("primary", 1)};
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-shadow: ${TEXT_OUTLINE};
+  `;
+  splashTitle.textContent = t`${"developer_warning_splash_title"}`;
+
+  const splashBody = document.createElement("div");
+  splashBody.style.cssText = `
+    color: ${TEXT_COLORS.secondary};
+    font-size: 10px;
+    line-height: 1.45;
+    white-space: pre-line;
+    text-shadow: ${TEXT_OUTLINE};
+  `;
+  splashBody.textContent = t`${"developer_warning_splash_body"}`;
+
+  const splashButtonRow = document.createElement("div");
+  splashButtonRow.style.cssText = `
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    margin-top: 2px;
+  `;
+
+  const splashCloseButton = document.createElement("button");
+  splashCloseButton.style.cssText = `
+    margin-top: 2px;
+    padding: 5px 12px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(0, 0, 0, 0.08);
+    color: ${TEXT_COLORS.secondary};
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+  `;
+  splashCloseButton.textContent = t`${"developer_warning_splash_close"}`;
+  splashCloseButton.addEventListener("click", () => {
+    hideDeveloperDialog();
+  });
+
+  const splashOkButton = document.createElement("button");
+  splashOkButton.style.cssText = `
+    padding: 5px 12px;
+    border-radius: 4px;
+    border: 1px solid ${getColor("primary", 0.5)};
+    background: ${getColor("primary", 0.15)};
+    color: ${TEXT_COLORS.primary};
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+  `;
+  splashOkButton.textContent = t`${"developer_warning_splash_ok"}`;
+  splashOkButton.addEventListener("click", () => {
+    localStorage.setItem(DEV_WARNING_ACK_KEY, "true");
+    splash.style.display = "none";
+    header.style.display = "flex";
+    warning.style.display = isMinimized ? "none" : "block";
+    content.style.display = isMinimized ? "none" : "flex";
+  });
+
+  splash.appendChild(splashTitle);
+  splash.appendChild(splashBody);
+  splashButtonRow.appendChild(splashCloseButton);
+  splashButtonRow.appendChild(splashOkButton);
+  splash.appendChild(splashButtonRow);
 
   // 最小化状態をヘッダーに反映
   if (isMinimized) {
@@ -266,7 +353,10 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     if (closeSvg) closeSvg.style.cssText = "width: 10px; height: 10px;";
   }
 
+  header.style.display = hasAcknowledgedWarning ? "flex" : "none";
+
   dialog.appendChild(header);
+  dialog.appendChild(splash);
   dialog.appendChild(content);
   document.body.appendChild(dialog);
 

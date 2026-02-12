@@ -300,6 +300,14 @@ export const enTranslations = {
 • Too fast or unnatural painting may cause misunderstanding as BOT behavior
 • Use at your own risk
 `,
+  developer_warning_splash_title: "Developer Feature Warning",
+  developer_warning_splash_body: `This feature is for developer testing only.
+It is not suitable for normal use.
+
+Using this feature to paint pixels may violate the terms.
+Do not use this feature to paint actual pixels.`,
+  developer_warning_splash_ok: "OK",
+  developer_warning_splash_close: "Close",
 
   // Sort Order
   sort_order_default: "Default",

@@ -96,6 +96,13 @@ const ACTIONS = [
     },
   },
   {
+    label: "Reset Dev Warning Ack",
+    action: () => {
+      localStorage.removeItem("mr-wplace-dev-warning-ack");
+      alert("Reset: mr-wplace-dev-warning-ack");
+    },
+  },
+  {
     label: "Clear Storage",
     action: () => {
       // confirm

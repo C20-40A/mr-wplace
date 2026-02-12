@@ -293,6 +293,14 @@ export const jaTranslations = {
 • 速すぎる不自然な塗り方はBOTだと誤解される原因になります
 • 自己責任で使用してください
 `,
+  developer_warning_splash_title: "開発者機能に関する警告",
+  developer_warning_splash_body: `この機能は開発者向けの検証機能です。
+通常利用には適していません。
+
+この機能を利用して Pixel を塗る行為は、規約違反となる可能性があります。
+この機能を利用して実際に Pixel を塗らないでください。`,
+  developer_warning_splash_ok: "OK",
+  developer_warning_splash_close: "閉じる",
   //   auto_spoit_warning: `【自動スポイト機能について - 重要な注意事項】
 
   // この機能は「iボタン連打で色を取得する作業」を少し楽にするだけの単純な機能です。
