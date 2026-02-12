@@ -46,6 +46,7 @@ import {
   changeBackgroundColor,
   changeMap3dEnabled,
   changeMap3dDragRotateEnabled,
+  getMapInstanceFromWplace,
   handleMapInstanceFlyTo,
 } from "./features/map-instance";
 import { setGridDisplayEnabled } from "./features/grid-display";
@@ -59,6 +60,28 @@ import {
 } from "./features/area-measure";
 
 type MessageHandler = (data: any) => void | Promise<void>;
+const LOCATION_KEY = "location";
+const DEFAULT_AREA_REGION_ZOOM = 11;
+
+const getAreaRegionZoom = (): number => {
+  const mapInstance = getMapInstanceFromWplace() as
+    | { getZoom?: () => number }
+    | null;
+  const mapZoom = mapInstance?.getZoom?.();
+  if (typeof mapZoom === "number" && Number.isFinite(mapZoom)) return mapZoom;
+
+  try {
+    const raw = window.localStorage.getItem(LOCATION_KEY);
+    if (!raw) return DEFAULT_AREA_REGION_ZOOM;
+    const location = JSON.parse(raw) as { zoom?: unknown };
+    const zoom = location?.zoom;
+    if (typeof zoom === "number" && Number.isFinite(zoom)) return zoom;
+  } catch {
+    // Ignore parse failure and use default zoom
+  }
+
+  return DEFAULT_AREA_REGION_ZOOM;
+};
 
 /**
  * Handle processed blob callback (legacy)
@@ -196,8 +219,7 @@ const messageHandlers: Record<string, MessageHandler> = {
     lng: number;
     lat: number;
   }) => {
-    const map = (window as any).wplace?.map;
-    const currentZoom = map?.getZoom?.() ?? 11;
+    const currentZoom = getAreaRegionZoom();
     handleMapInstanceFlyTo({ lat: data.lat, lng: data.lng, zoom: currentZoom });
   },
   "mr-wplace-theme-update": handleThemeUpdate,
