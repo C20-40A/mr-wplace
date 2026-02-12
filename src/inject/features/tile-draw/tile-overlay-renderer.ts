@@ -221,10 +221,10 @@ const scaleAndRenderWithMode = (
       const g = data[srcI + 1];
       const b = data[srcI + 2];
       const a = data[srcI + 3];
-      if (a === 0) continue;
 
       // ON時のみ元画像基準で背景一致判定（OFF時は従来どおり描画データ基準）
       const useOriginalComparison = showUnplacedOnly && comparisonData !== null;
+      if (!useOriginalComparison && a === 0) continue;
       const cmpR = useOriginalComparison ? comparisonData[srcI] : r;
       const cmpG = useOriginalComparison ? comparisonData[srcI + 1] : g;
       const cmpB = useOriginalComparison ? comparisonData[srcI + 2] : b;
@@ -320,6 +320,8 @@ const scaleAndRenderWithMode = (
         scaledData[bottomRight + 3] = matchedA;
         continue;
       }
+      // showUnplacedOnly時でも未配置表示は選択色フィルターに従う
+      if (a === 0) continue;
 
       // border-onlyは枠のみなので中心スキップ
       if (mode !== "border-only") {
