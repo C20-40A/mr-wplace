@@ -9,6 +9,7 @@ import { showNameInputModal } from "@/components/modal";
 import { latLngToTilePixel, tilePixelToLatLng } from "@/utils/coordinate";
 import { Tutorial } from "@/features/tutorial";
 import { runtime } from "@/utils/browser-api";
+import { normalizeTileCoordinate } from "../utils/tile-coordinate";
 
 interface SnapshotRouteOptions {
   showSaveButton: boolean;
@@ -28,7 +29,8 @@ export class SnapshotRoute extends BaseSnapshotRoute {
   }
 
   private async editTileName(): Promise<void> {
-    if (!this.currentTileX || this.currentTileY === undefined) return;
+    if (this.currentTileX === undefined || this.currentTileY === undefined)
+      return;
 
     const newName = await showNameInputModal(
       t`${"edit"}`,
@@ -52,7 +54,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     const editBtn = document.getElementById("edit-tile-name-btn");
     const gotoBtn = document.getElementById("goto-tile-btn");
 
-    if (!this.currentTileX || this.currentTileY === undefined) {
+    if (this.currentTileX === undefined || this.currentTileY === undefined) {
       nameDisplay && (nameDisplay.textContent = "Location unavailable");
       coordinateInfo && (coordinateInfo.textContent = "Tile(-,-)");
       editBtn && editBtn.setAttribute("disabled", "true");
@@ -99,15 +101,20 @@ export class SnapshotRoute extends BaseSnapshotRoute {
       const position = getCurrentPosition();
       if (position) {
         const coords = latLngToTilePixel(position.lat, position.lng);
-        this.currentTileX = coords.TLX;
-        this.currentTileY = coords.TLY;
+        const normalized = normalizeTileCoordinate(coords.TLX, coords.TLY);
+        this.currentTileX = normalized.tileX;
+        this.currentTileY = normalized.tileY;
       } else {
         this.currentTileX = undefined;
         this.currentTileY = undefined;
       }
     } else {
-      this.currentTileX = selectedTile.tileX;
-      this.currentTileY = selectedTile.tileY;
+      const normalized = normalizeTileCoordinate(
+        selectedTile.tileX,
+        selectedTile.tileY,
+      );
+      this.currentTileX = normalized.tileX;
+      this.currentTileY = normalized.tileY;
     }
 
     container.innerHTML = `
@@ -246,7 +253,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
   }
 
   protected async reloadSnapshots(container: HTMLElement): Promise<void> {
-    if (!this.currentTileX || this.currentTileY === undefined) {
+    if (this.currentTileX === undefined || this.currentTileY === undefined) {
       const listContainer = container.querySelector("#wps-snapshots-list");
       if (listContainer) {
         listContainer.innerHTML = `<div class="text-sm text-red-500 text-center p-4">${t`${"location_unavailable"}`}</div>`;
@@ -291,7 +298,8 @@ export class SnapshotRoute extends BaseSnapshotRoute {
   }
 
   private async saveCurrentSnapshot(container: HTMLElement): Promise<void> {
-    if (!this.currentTileX || this.currentTileY === undefined) return;
+    if (this.currentTileX === undefined || this.currentTileY === undefined)
+      return;
 
     // 名称入力Modal表示
     const name = await showNameInputModal(
@@ -374,7 +382,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     if (!canvas || !noImageMessage) return;
 
     // 現在位置がない場合
-    if (!this.currentTileX || this.currentTileY === undefined) {
+    if (this.currentTileX === undefined || this.currentTileY === undefined) {
       canvas.style.display = "none";
       noImageMessage.textContent = t`${"location_unavailable"}`;
       noImageMessage.style.display = "block";

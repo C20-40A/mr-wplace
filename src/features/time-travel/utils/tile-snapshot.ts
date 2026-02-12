@@ -3,6 +3,7 @@ import {
   saveSnapshotToInject,
   getSnapshotDataUrl,
 } from "@/utils/inject-bridge";
+import { normalizeTileCoordinate } from "./tile-coordinate";
 
 /**
  * Convert Blob to dataUrl
@@ -42,7 +43,8 @@ export class TileSnapshot {
   }
 
   async saveTmpTile(tileX: number, tileY: number, blob: Blob): Promise<void> {
-    const key = `${tileX}_${tileY}`;
+    const normalized = normalizeTileCoordinate(tileX, tileY);
+    const key = `${normalized.tileX}_${normalized.tileY}`;
 
     // Check image size and scale down if 3000x3000
     const processedBlob = await this.scaleDownIfNeeded(blob);
@@ -52,7 +54,8 @@ export class TileSnapshot {
   }
 
   async getTmpTile(tileX: number, tileY: number): Promise<Blob | null> {
-    const key = `${tileX}_${tileY}`;
+    const normalized = normalizeTileCoordinate(tileX, tileY);
+    const key = `${normalized.tileX}_${normalized.tileY}`;
     return this.tmpTileCache.get(key) || null;
   }
 
@@ -93,14 +96,17 @@ export class TileSnapshot {
     tileY: number,
     name?: string
   ): Promise<string> {
-    const tmpKey = `${tileX}_${tileY}`;
+    const normalized = normalizeTileCoordinate(tileX, tileY);
+    const tmpKey = `${normalized.tileX}_${normalized.tileY}`;
     const tmpBlob = this.tmpTileCache.get(tmpKey);
 
     if (!tmpBlob)
-      throw new Error(`No tmp data found for tile ${tileX},${tileY}`);
+      throw new Error(
+        `No tmp data found for tile ${tileX},${tileY} (normalized: ${normalized.tileX},${normalized.tileY})`
+      );
 
     const timestamp = Date.now();
-    const snapshotId = `${timestamp}_${tileX}_${tileY}`;
+    const snapshotId = `${timestamp}_${normalized.tileX}_${normalized.tileY}`;
 
     // Convert blob to dataUrl for bridge
     const dataUrl = await blobToDataUrl(tmpBlob);
@@ -109,8 +115,8 @@ export class TileSnapshot {
     const success = await saveSnapshotToInject(snapshotId, dataUrl, {
       id: snapshotId,
       timestamp,
-      tileX,
-      tileY,
+      tileX: normalized.tileX,
+      tileY: normalized.tileY,
       name,
     });
 
@@ -134,11 +140,13 @@ export class TileSnapshot {
     timestamp: number,
     name?: string
   ): Promise<string> {
+    const normalized = normalizeTileCoordinate(tileX, tileY);
+
     // Scale down if needed
     const processedBlob = await this.scaleDownIfNeeded(file);
 
     // Create snapshot ID
-    const snapshotId = `${timestamp}_${tileX}_${tileY}`;
+    const snapshotId = `${timestamp}_${normalized.tileX}_${normalized.tileY}`;
 
     // Convert blob to dataUrl for bridge
     const dataUrl = await blobToDataUrl(processedBlob);
@@ -147,8 +155,8 @@ export class TileSnapshot {
     const success = await saveSnapshotToInject(snapshotId, dataUrl, {
       id: snapshotId,
       timestamp,
-      tileX,
-      tileY,
+      tileX: normalized.tileX,
+      tileY: normalized.tileY,
       name,
     });
 
