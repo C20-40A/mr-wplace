@@ -15,14 +15,24 @@ import { latLonToPixels } from "@/utils/geo-converter";
 
 const AREA_MEASURE_KEY = "mapFilter_areaMeasure";
 const AREA_REGIONS_KEY = "areaRegions_v1";
+const AREA_REGION_GROUPS_KEY = "areaRegionGroups_v1";
 const AREA_SYNC_URL_KEY = "mapFilter_areaSyncUrl";
 const AREA_MANAGER_MODAL_ID = "wplace-studio-area-manager-modal";
 const DEFAULT_AREA_COLOR = "#0f766e";
 const AUTO_AREA_COLOR_GOLDEN_ANGLE = 137.508;
 
+interface AreaRegionGroup {
+  id: string;
+  name: string;
+  regionIds: string[];
+  createdAt: number;
+  updatedAt: number;
+}
+
 class AreaManager {
   private areaManagerModal: ModalElements | null = null;
   private areaRegions: AreaRegion[] = [];
+  private areaRegionGroups: AreaRegionGroup[] = [];
   private areaEditMode = false;
   private editingRegionId: string | null = null;
   private editingRegionName = "";
@@ -31,10 +41,17 @@ class AreaManager {
   private areaMeasure = false;
 
   async init() {
-    const stored = await storage.get([AREA_MEASURE_KEY, AREA_REGIONS_KEY]);
+    const stored = await storage.get([
+      AREA_MEASURE_KEY,
+      AREA_REGIONS_KEY,
+      AREA_REGION_GROUPS_KEY,
+    ]);
 
     this.areaMeasure = stored[AREA_MEASURE_KEY] ?? false;
     this.areaRegions = this.normalizeAreaRegions(stored[AREA_REGIONS_KEY]);
+    this.areaRegionGroups = this.normalizeAreaRegionGroups(
+      stored[AREA_REGION_GROUPS_KEY],
+    );
 
     this.mapReady = getMapInstanceReady();
     if (this.mapReady) this.syncMapDependentState();
@@ -143,6 +160,58 @@ class AreaManager {
         color,
         vertices,
         visible,
+        createdAt,
+        updatedAt,
+      });
+    }
+
+    return normalized.sort((a, b) => b.updatedAt - a.updatedAt);
+  }
+
+  private normalizeAreaRegionGroups(value: unknown): AreaRegionGroup[] {
+    const availableRegionIds = new Set(this.areaRegions.map((region) => region.id));
+    return this.normalizeAreaRegionGroupsWithAvailable(value, availableRegionIds);
+  }
+
+  private normalizeAreaRegionGroupsWithAvailable(
+    value: unknown,
+    availableRegionIds: Set<string>,
+  ): AreaRegionGroup[] {
+    if (!Array.isArray(value)) return [];
+
+    const now = Date.now();
+    const normalized: AreaRegionGroup[] = [];
+
+    for (const raw of value) {
+      if (!raw || typeof raw !== "object") continue;
+      const candidate = raw as Record<string, unknown>;
+      const regionIds = Array.isArray(candidate.regionIds)
+        ? Array.from(
+            new Set(
+              candidate.regionIds
+                .filter((id): id is string => typeof id === "string")
+                .map((id) => id.trim())
+                .filter((id) => id && availableRegionIds.has(id)),
+            ),
+          )
+        : [];
+      if (regionIds.length < 2) continue;
+
+      const id =
+        typeof candidate.id === "string" && candidate.id.trim()
+          ? candidate.id
+          : this.createAreaRegionGroupId();
+      const name =
+        typeof candidate.name === "string" && candidate.name.trim()
+          ? candidate.name.trim()
+          : this.createDefaultAreaGroupName(normalized.length + 1);
+      const createdAt = this.normalizeTimestamp(candidate.createdAt, now);
+      const updatedAt = this.normalizeTimestamp(candidate.updatedAt, createdAt);
+
+      normalized.push({
+        id,
+        name,
+        regionIds,
         createdAt,
         updatedAt,
       });
@@ -361,12 +430,77 @@ class AreaManager {
     return `area_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
   }
 
+  private createAreaRegionGroupId(): string {
+    return `area_group_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  }
+
   private createDefaultAreaName(index: number): string {
     return `${t`${"map_filter_area_default_name"}`} ${index}`;
   }
 
+  private createDefaultAreaGroupName(index: number): string {
+    return `Area Group ${index}`;
+  }
+
   private async persistAreaRegions() {
     await storage.set({ [AREA_REGIONS_KEY]: this.areaRegions });
+  }
+
+  private async persistAreaRegionGroups() {
+    await storage.set({ [AREA_REGION_GROUPS_KEY]: this.areaRegionGroups });
+  }
+
+  private getGroupedRegionIds(): Set<string> {
+    const ids = new Set<string>();
+    for (const group of this.areaRegionGroups) {
+      for (const regionId of group.regionIds) {
+        ids.add(regionId);
+      }
+    }
+    return ids;
+  }
+
+  private getRegionsForGroup(group: AreaRegionGroup): AreaRegion[] {
+    const regionMap = new Map(this.areaRegions.map((region) => [region.id, region]));
+    return group.regionIds
+      .map((regionId) => regionMap.get(regionId))
+      .filter((region): region is AreaRegion => Boolean(region));
+  }
+
+  private cleanupAreaRegionGroups(): boolean {
+    const availableRegionIds = new Set(this.areaRegions.map((region) => region.id));
+    let changed = false;
+    const nextGroups: AreaRegionGroup[] = [];
+
+    for (const group of this.areaRegionGroups) {
+      const regionIds = Array.from(
+        new Set(group.regionIds.filter((id) => availableRegionIds.has(id))),
+      );
+
+      if (regionIds.length < 2) {
+        changed = true;
+        continue;
+      }
+
+      if (
+        regionIds.length !== group.regionIds.length ||
+        regionIds.some((id, index) => id !== group.regionIds[index])
+      ) {
+        changed = true;
+      }
+
+      nextGroups.push({ ...group, regionIds });
+    }
+
+    if (changed) {
+      this.areaRegionGroups = nextGroups.sort((a, b) => b.updatedAt - a.updatedAt);
+    }
+
+    return changed;
+  }
+
+  private getGroupVertices(group: AreaRegionGroup): AreaRegionVertex[] {
+    return this.getRegionsForGroup(group).flatMap((region) => region.vertices);
   }
 
   private toGeoJsonLinearRing(
@@ -386,8 +520,11 @@ class AreaManager {
     return ring;
   }
 
-  private createAreaGeoJson(regions: AreaRegion[]): Record<string, unknown> {
-    return {
+  private createAreaGeoJson(
+    regions: AreaRegion[],
+    groups: AreaRegionGroup[] = [],
+  ): Record<string, unknown> {
+    const payload: Record<string, unknown> = {
       type: "FeatureCollection",
       features: regions.map((region) => ({
         type: "Feature",
@@ -405,6 +542,18 @@ class AreaManager {
         },
       })),
     };
+
+    if (groups.length > 0) {
+      payload.mrWplaceAreaGroups = groups.map((group) => ({
+        id: group.id,
+        name: group.name,
+        regionIds: [...group.regionIds],
+        createdAt: group.createdAt,
+        updatedAt: group.updatedAt,
+      }));
+    }
+
+    return payload;
   }
 
   private parseGeoJsonVertices(geometry: unknown): AreaRegionVertex[] {
@@ -458,20 +607,30 @@ class AreaManager {
     return vertices;
   }
 
-  private normalizeImportedAreaRegions(value: unknown): AreaRegion[] {
-    if (Array.isArray(value)) return this.normalizeAreaRegions(value);
-    if (!value || typeof value !== "object") return [];
+  private normalizeImportedAreaData(value: unknown): {
+    regions: AreaRegion[];
+    groups: AreaRegionGroup[];
+  } {
+    if (Array.isArray(value)) {
+      return { regions: this.normalizeAreaRegions(value), groups: [] };
+    }
+    if (!value || typeof value !== "object") return { regions: [], groups: [] };
 
     const candidate = value as Record<string, unknown>;
     if (Array.isArray(candidate.regions)) {
-      return this.normalizeAreaRegions(candidate.regions);
+      const regions = this.normalizeAreaRegions(candidate.regions);
+      const groups = this.normalizeAreaRegionGroupsWithAvailable(
+        candidate.mrWplaceAreaGroups ?? candidate.areaRegionGroups ?? candidate.groups,
+        new Set(regions.map((region) => region.id)),
+      );
+      return { regions, groups };
     }
 
     if (
       candidate.type !== "FeatureCollection" ||
       !Array.isArray(candidate.features)
     ) {
-      return [];
+      return { regions: [], groups: [] };
     }
 
     const normalizedFeatures = candidate.features
@@ -500,19 +659,28 @@ class AreaManager {
         Boolean(region),
       );
 
-    return this.normalizeAreaRegions(normalizedFeatures);
+    const regions = this.normalizeAreaRegions(normalizedFeatures);
+    const groups = this.normalizeAreaRegionGroupsWithAvailable(
+      candidate.mrWplaceAreaGroups ?? candidate.areaRegionGroups ?? candidate.groups,
+      new Set(regions.map((region) => region.id)),
+    );
+    return { regions, groups };
   }
 
-  private async applyImportedAreaRegions(
-    importedRegions: AreaRegion[],
+  private async applyImportedAreaData(
+    importedData: { regions: AreaRegion[]; groups: AreaRegionGroup[] },
     mode: "merge" | "replace",
   ): Promise<void> {
+    const importedRegions = importedData.regions;
+    const importedGroups = importedData.groups;
+
     if (this.areaEditMode) {
       await this.stopAreaEditing(true);
     }
 
     if (mode === "replace") {
       this.areaRegions = importedRegions;
+      this.areaRegionGroups = importedGroups;
     } else {
       const merged = new Map<string, AreaRegion>();
       for (const region of this.areaRegions) {
@@ -522,10 +690,23 @@ class AreaManager {
         merged.set(region.id, region);
       }
       this.areaRegions = Array.from(merged.values());
+
+      const mergedGroups = new Map<string, AreaRegionGroup>();
+      for (const group of this.areaRegionGroups) {
+        mergedGroups.set(group.id, group);
+      }
+      for (const group of importedGroups) {
+        mergedGroups.set(group.id, group);
+      }
+      this.areaRegionGroups = Array.from(mergedGroups.values());
     }
 
     this.areaRegions.sort((a, b) => b.updatedAt - a.updatedAt);
+    const groupsChanged = this.cleanupAreaRegionGroups();
     await this.persistAreaRegions();
+    if (groupsChanged || mode === "replace" || importedGroups.length > 0) {
+      await this.persistAreaRegionGroups();
+    }
     this.notifyAreaRegions();
     this.renderAreaManager();
   }
@@ -541,13 +722,13 @@ class AreaManager {
       throw new Error(t`${"invalid_file_format"}`);
     }
 
-    const importedRegions = this.normalizeImportedAreaRegions(parsed);
-    if (importedRegions.length === 0) {
+    const importedData = this.normalizeImportedAreaData(parsed);
+    if (importedData.regions.length === 0) {
       throw new Error(t`${"map_filter_area_no_importable_regions"}`);
     }
 
-    await this.applyImportedAreaRegions(importedRegions, mode);
-    return importedRegions.length;
+    await this.applyImportedAreaData(importedData, mode);
+    return importedData.regions.length;
   }
 
   private async importAreaRegionsFromUrl(
@@ -569,7 +750,14 @@ class AreaManager {
       return;
     }
 
-    const payload = this.createAreaGeoJson(regions);
+    const selectedIds = new Set(regions.map((region) => region.id));
+    const groups = this.areaRegionGroups
+      .filter((group) => group.regionIds.every((id) => selectedIds.has(id)))
+      .map((group) => ({
+        ...group,
+        regionIds: [...group.regionIds],
+      }));
+    const payload = this.createAreaGeoJson(regions, groups);
     const blob = new Blob([JSON.stringify(payload, null, 2)], {
       type: "application/geo+json",
     });
@@ -882,6 +1070,150 @@ class AreaManager {
     this.areaManagerModal?.modal.close();
   }
 
+  private async showAreaGroupComposeDialog() {
+    const groupedRegionIds = this.getGroupedRegionIds();
+    const candidates = this.areaRegions.filter(
+      (region) => !groupedRegionIds.has(region.id),
+    );
+    if (candidates.length < 2) {
+      alert("合体可能なエリアが不足しています");
+      return;
+    }
+
+    const modal = document.createElement("dialog");
+    modal.className = "modal";
+    modal.innerHTML = `
+      <div class="modal-box" style="max-width: 32rem; display: flex; flex-direction: column; gap: 0.7rem;">
+        <h3 class="font-bold text-lg">エリア合体</h3>
+        <input id="area-group-name-input" class="input input-sm input-bordered" placeholder="グループ名 (任意)" />
+        <div id="area-group-candidates" style="max-height: 260px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;"></div>
+        <div class="modal-action" style="margin-top: 0.25rem;">
+          <button id="area-group-create-btn" class="btn btn-primary btn-sm" disabled>合体する</button>
+          <button id="area-group-cancel-btn" class="btn btn-outline btn-sm">${t`${"cancel"}`}</button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    `;
+
+    const list = modal.querySelector("#area-group-candidates");
+    const createBtn = modal.querySelector(
+      "#area-group-create-btn",
+    ) as HTMLButtonElement | null;
+    const nameInput = modal.querySelector(
+      "#area-group-name-input",
+    ) as HTMLInputElement | null;
+
+    if (list) {
+      for (const region of candidates) {
+        const row = document.createElement("label");
+        row.className =
+          "flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-base-200";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "checkbox checkbox-sm area-group-candidate";
+        checkbox.dataset.regionId = region.id;
+
+        const swatch = document.createElement("div");
+        swatch.style.cssText = `
+          width: 18px;
+          height: 18px;
+          border-radius: 4px;
+          background: ${region.color};
+          flex-shrink: 0;
+        `;
+
+        const text = document.createElement("span");
+        text.style.flex = "1";
+        text.textContent = region.name;
+
+        row.appendChild(checkbox);
+        row.appendChild(swatch);
+        row.appendChild(text);
+        list.appendChild(row);
+      }
+    }
+
+    const updateCreateButton = () => {
+      const selected = modal.querySelectorAll(".area-group-candidate:checked").length;
+      if (createBtn) createBtn.disabled = selected < 2;
+    };
+
+    modal.querySelectorAll(".area-group-candidate").forEach((element) => {
+      element.addEventListener("change", updateCreateButton);
+    });
+
+    createBtn?.addEventListener("click", async () => {
+      const selectedIds: string[] = [];
+      modal.querySelectorAll(".area-group-candidate:checked").forEach((element) => {
+        const input = element as HTMLInputElement;
+        const id = input.dataset.regionId;
+        if (id) selectedIds.push(id);
+      });
+
+      const uniqueIds = Array.from(new Set(selectedIds));
+      if (uniqueIds.length < 2) return;
+
+      const selectedRegions = this.areaRegions.filter((region) =>
+        uniqueIds.includes(region.id),
+      );
+      if (selectedRegions.length < 2) return;
+
+      const primaryRegion = selectedRegions.reduce((current, region) => {
+        const currentCreated =
+          Number.isFinite(current.createdAt) && current.createdAt > 0
+            ? current.createdAt
+            : Number.MAX_SAFE_INTEGER;
+        const regionCreated =
+          Number.isFinite(region.createdAt) && region.createdAt > 0
+            ? region.createdAt
+            : Number.MAX_SAFE_INTEGER;
+        return regionCreated < currentCreated ? region : current;
+      }, selectedRegions[0]);
+
+      const now = Date.now();
+      const unifiedName = nameInput?.value.trim() || primaryRegion.name;
+      const unifiedColor = primaryRegion.color;
+
+      for (const region of selectedRegions) {
+        region.name = unifiedName;
+        region.color = unifiedColor;
+        region.updatedAt = now;
+      }
+
+      const group: AreaRegionGroup = {
+        id: this.createAreaRegionGroupId(),
+        name: unifiedName || this.createDefaultAreaGroupName(this.areaRegionGroups.length + 1),
+        regionIds: uniqueIds,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      this.areaRegions.sort((a, b) => b.updatedAt - a.updatedAt);
+      this.areaRegionGroups.unshift(group);
+      await this.persistAreaRegions();
+      await this.persistAreaRegionGroups();
+      this.notifyAreaRegions();
+      this.renderAreaManager();
+      modal.close();
+
+      console.log("🧑‍🎨 : Area group created:", group.id, group.regionIds.length);
+    });
+
+    modal.querySelector("#area-group-cancel-btn")?.addEventListener("click", () => {
+      modal.close();
+    });
+
+    modal.addEventListener("close", () => {
+      modal.remove();
+    });
+
+    document.body.appendChild(modal);
+    modal.showModal();
+  }
+
   private renderAreaManager() {
     const container = this.areaManagerModal?.container;
     if (!container) return;
@@ -893,14 +1225,157 @@ class AreaManager {
 
     const list = document.createElement("div");
     list.className = "flex flex-col gap-2";
+    const groupedRegionIds = this.getGroupedRegionIds();
+    const ungroupedRegions = this.areaRegions.filter(
+      (region) => !groupedRegionIds.has(region.id),
+    );
 
-    if (this.areaRegions.length === 0) {
+    if (this.areaRegions.length === 0 && this.areaRegionGroups.length === 0) {
       const empty = document.createElement("div");
       empty.className = "text-sm opacity-70";
       empty.textContent = t`${"map_filter_area_empty"}`;
       list.appendChild(empty);
     } else {
-      for (const region of this.areaRegions) {
+      for (const group of this.areaRegionGroups) {
+        const members = this.getRegionsForGroup(group);
+        if (members.length < 2) continue;
+
+        const groupVisible = members.every((region) => region.visible);
+        const mainColor = members[0]?.color ?? DEFAULT_AREA_COLOR;
+
+        const card = document.createElement("div");
+        card.className = "card bg-base-200";
+        card.style.cssText = `
+          padding: 0.6rem 0.7rem;
+          border: 3px dashed ${mainColor};
+          border-radius: 0.8rem;
+          ${groupVisible ? "" : "opacity: 0.58;"}
+        `;
+
+        const topRow = document.createElement("div");
+        topRow.className = "flex items-start justify-between gap-2";
+
+        const titleRow = document.createElement("div");
+        titleRow.className = "flex items-center gap-2 min-w-0";
+
+        const name = document.createElement("div");
+        name.className = "font-semibold text-base leading-tight truncate";
+        name.style.maxWidth = "14rem";
+        name.textContent = `🔗 ${group.name}`;
+
+        const renameButton = document.createElement("button");
+        renameButton.className = "btn btn-ghost btn-xs";
+        renameButton.title = t`${"map_filter_area_rename"}`;
+        renameButton.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px; opacity: 0.7;">
+            <path d="M16.862 3.487a2.1 2.1 0 0 1 2.97 2.97l-10.5 10.5a2.25 2.25 0 0 1-1.01.57l-3.14.79a.75.75 0 0 1-.91-.91l.79-3.14a2.25 2.25 0 0 1 .57-1.01l10.5-10.5ZM15.8 5.61 7.29 14.12a.75.75 0 0 0-.19.34l-.46 1.83 1.83-.46a.75.75 0 0 0 .34-.19l8.51-8.51L15.8 5.61Z" />
+          </svg>
+        `;
+        renameButton.addEventListener("click", () => {
+          this.renameAreaRegionGroup(group.id);
+        });
+
+        titleRow.appendChild(name);
+        titleRow.appendChild(renameButton);
+
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "btn btn-ghost btn-xs";
+        deleteButton.title = "合体解除";
+        deleteButton.style.color = "#dc2626";
+        deleteButton.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px;">
+            <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 0 1 1.06 0L12 10.94l5.47-5.47a.75.75 0 1 1 1.06 1.06L13.06 12l5.47 5.47a.75.75 0 0 1-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 0 1-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+          </svg>
+        `;
+        deleteButton.addEventListener("click", () => {
+          this.removeAreaRegionGroup(group.id);
+        });
+
+        topRow.appendChild(titleRow);
+        topRow.appendChild(deleteButton);
+        card.appendChild(topRow);
+
+        const area = document.createElement("span");
+        area.className = "text-sm opacity-80";
+        const totalAreaM2 = members.reduce(
+          (sum, region) => sum + this.calculateAreaSquareMeters(region.vertices),
+          0,
+        );
+        const totalPx = members.reduce(
+          (sum, region) => sum + this.calculatePixelArea(region.vertices),
+          0,
+        );
+        const totalKm2 = totalAreaM2 / 1000000;
+        const km2Text =
+          totalKm2 >= 100
+            ? `${totalKm2.toFixed(1)} km²`
+            : totalKm2 >= 10
+              ? `${totalKm2.toFixed(2)} km²`
+              : `${totalKm2.toFixed(3)} km²`;
+        area.innerHTML = `${km2Text} <span style="opacity: 0.7; font-size: 0.9em;">(${this.formatPixelArea(totalPx)})</span>`;
+
+        const actionRow = document.createElement("div");
+        actionRow.className = "flex items-center justify-between gap-2 pt-1";
+
+        const membersText = document.createElement("span");
+        membersText.className = "text-xs opacity-70";
+        membersText.textContent = `${members.length} エリア`;
+
+        const colorInput = document.createElement("input");
+        colorInput.type = "color";
+        colorInput.className = "w-7 h-7 cursor-pointer";
+        colorInput.value = mainColor;
+        colorInput.title = t`${"map_filter_area_color"}`;
+        colorInput.addEventListener("input", (event) => {
+          const target = event.target as HTMLInputElement;
+          card.style.borderColor = this.normalizeAreaColor(
+            target.value,
+            mainColor,
+          );
+        });
+        colorInput.addEventListener("change", (event) => {
+          const target = event.target as HTMLInputElement;
+          this.changeAreaRegionGroupColor(group.id, target.value);
+        });
+
+        const visibilityButton = document.createElement("button");
+        visibilityButton.className = "btn btn-xs btn-outline";
+        visibilityButton.title = groupVisible
+          ? t`${"map_filter_area_hide"}`
+          : t`${"map_filter_area_show"}`;
+        visibilityButton.innerHTML = groupVisible
+          ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px;"><path d="M12 4.5c6.75 0 10.5 7.5 10.5 7.5s-3.75 7.5-10.5 7.5S1.5 12 1.5 12 5.25 4.5 12 4.5Zm0 3a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z"/></svg>`
+          : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 14px; height: 14px;"><path d="M3.53 2.47a.75.75 0 1 0-1.06 1.06l18 18a.75.75 0 1 0 1.06-1.06l-2.134-2.134A10.73 10.73 0 0 0 22.5 12s-3.75-7.5-10.5-7.5a10.8 10.8 0 0 0-4.286.897L3.53 2.47ZM12 7.5c2.485 0 4.5 2.015 4.5 4.5 0 .69-.156 1.343-.435 1.926l-5.99-5.99A4.473 4.473 0 0 1 12 7.5Z"/><path d="M5.315 8.375A13.72 13.72 0 0 0 1.5 12s3.75 7.5 10.5 7.5a10.74 10.74 0 0 0 5.394-1.456l-2.145-2.145A4.48 4.48 0 0 1 12 16.5c-2.485 0-4.5-2.015-4.5-4.5 0-.512.086-1.003.244-1.46L5.315 8.375Z"/></svg>`;
+        visibilityButton.addEventListener("click", () => {
+          this.toggleAreaRegionGroupVisibility(group.id);
+        });
+
+        const gotoButton = document.createElement("button");
+        gotoButton.className = "btn btn-xs btn-outline";
+        gotoButton.title = t`${"map_filter_area_goto"}`;
+        gotoButton.disabled = !this.mapReady;
+        gotoButton.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" style="width: 14px; height: 14px;">
+            <path d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 294q122-112 181-203.5T720-552q0-109-69.5-178.5T480-800q-101 0-170.5 69.5T240-552q0 71 59 162.5T480-186Zm0 106Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Zm0-480Z"/>
+          </svg>
+        `;
+        gotoButton.addEventListener("click", () => {
+          this.gotoAreaRegionGroup(group.id);
+        });
+
+        const rightControls = document.createElement("div");
+        rightControls.className = "flex items-center gap-1";
+        rightControls.appendChild(colorInput);
+        rightControls.appendChild(visibilityButton);
+        rightControls.appendChild(gotoButton);
+
+        actionRow.appendChild(membersText);
+        actionRow.appendChild(rightControls);
+        card.appendChild(actionRow);
+        list.appendChild(card);
+      }
+
+      for (const region of ungroupedRegions) {
         const card = document.createElement("div");
         card.className = "card bg-base-200";
         card.style.cssText = `
@@ -1048,10 +1523,19 @@ class AreaManager {
       this.showAreaImportExportDialog();
     });
 
+    const composeGroupButton = document.createElement("button");
+    composeGroupButton.className = "btn btn-outline btn-sm";
+    composeGroupButton.textContent = "エリア合体";
+    composeGroupButton.disabled = ungroupedRegions.length < 2;
+    composeGroupButton.addEventListener("click", () => {
+      this.showAreaGroupComposeDialog();
+    });
+
     const actionRow = document.createElement("div");
-    actionRow.className = "flex items-center gap-2 mt-1";
+    actionRow.className = "flex items-center gap-2 mt-1 flex-wrap";
     actionRow.appendChild(addButton);
     actionRow.appendChild(importExportButton);
+    actionRow.appendChild(composeGroupButton);
 
     root.appendChild(list);
     root.appendChild(actionRow);
@@ -1081,6 +1565,133 @@ class AreaManager {
     );
 
     console.log("🧑‍🎨 : Goto area region:", regionId);
+  }
+
+  private gotoAreaRegionGroup(groupId: string) {
+    const group = this.areaRegionGroups.find((item) => item.id === groupId);
+    if (!group) return;
+
+    const vertices = this.getGroupVertices(group);
+    if (vertices.length === 0) return;
+
+    const centerLng =
+      vertices.reduce((sum, v) => sum + v.lng, 0) / vertices.length;
+    const centerLat =
+      vertices.reduce((sum, v) => sum + v.lat, 0) / vertices.length;
+
+    window.postMessage(
+      {
+        source: "mr-wplace-area-region-goto",
+        regionId: groupId,
+        lng: centerLng,
+        lat: centerLat,
+      },
+      "*",
+    );
+
+    console.log("🧑‍🎨 : Goto area group:", groupId);
+  }
+
+  private async toggleAreaRegionGroupVisibility(groupId: string) {
+    const group = this.areaRegionGroups.find((item) => item.id === groupId);
+    if (!group) return;
+
+    const targets = this.getRegionsForGroup(group);
+    if (targets.length === 0) return;
+
+    const shouldShow = targets.some((region) => !region.visible);
+    const now = Date.now();
+    for (const region of targets) {
+      region.visible = shouldShow;
+      region.updatedAt = now;
+    }
+
+    group.updatedAt = now;
+    this.areaRegions.sort((a, b) => b.updatedAt - a.updatedAt);
+    this.areaRegionGroups.sort((a, b) => b.updatedAt - a.updatedAt);
+
+    await this.persistAreaRegions();
+    await this.persistAreaRegionGroups();
+    this.notifyAreaRegions();
+    this.renderAreaManager();
+
+    console.log("🧑‍🎨 : Area group visibility toggled:", groupId, shouldShow);
+  }
+
+  private async changeAreaRegionGroupColor(groupId: string, nextColor: string) {
+    const group = this.areaRegionGroups.find((item) => item.id === groupId);
+    if (!group) return;
+
+    const color = this.normalizeAreaColor(nextColor);
+    const targets = this.getRegionsForGroup(group);
+    if (targets.length === 0) return;
+    if (targets.every((region) => region.color === color)) return;
+
+    const now = Date.now();
+    for (const region of targets) {
+      region.color = color;
+      region.updatedAt = now;
+    }
+
+    group.updatedAt = now;
+    this.areaRegions.sort((a, b) => b.updatedAt - a.updatedAt);
+    this.areaRegionGroups.sort((a, b) => b.updatedAt - a.updatedAt);
+
+    await this.persistAreaRegions();
+    await this.persistAreaRegionGroups();
+    this.notifyAreaRegions();
+    this.renderAreaManager();
+
+    console.log("🧑‍🎨 : Area group color changed:", groupId, color);
+  }
+
+  private async renameAreaRegionGroup(groupId: string) {
+    const group = this.areaRegionGroups.find((item) => item.id === groupId);
+    if (!group) return;
+
+    const value = await showNameInputModal(
+      t`${"map_filter_area_rename"}`,
+      t`${"map_filter_area_name_placeholder"}`,
+      group.name,
+    );
+    if (value == null) return;
+
+    const name = value.trim();
+    if (!name) return;
+
+    const now = Date.now();
+    const members = this.getRegionsForGroup(group);
+    for (const region of members) {
+      region.name = name;
+      region.updatedAt = now;
+    }
+
+    group.name = name;
+    group.updatedAt = now;
+    this.areaRegions.sort((a, b) => b.updatedAt - a.updatedAt);
+    this.areaRegionGroups.sort((a, b) => b.updatedAt - a.updatedAt);
+
+    await this.persistAreaRegions();
+    await this.persistAreaRegionGroups();
+    this.notifyAreaRegions();
+    this.renderAreaManager();
+
+    console.log("🧑‍🎨 : Area group renamed:", groupId, name);
+  }
+
+  private async removeAreaRegionGroup(groupId: string) {
+    const group = this.areaRegionGroups.find((item) => item.id === groupId);
+    if (!group) return;
+    if (!confirm("この合体エリアを解除しますか？")) return;
+
+    this.areaRegionGroups = this.areaRegionGroups.filter(
+      (item) => item.id !== groupId,
+    );
+
+    await this.persistAreaRegionGroups();
+    this.renderAreaManager();
+
+    console.log("🧑‍🎨 : Area group removed:", groupId);
   }
 
   private async toggleAreaRegionVisibility(regionId: string) {
@@ -1156,12 +1767,14 @@ class AreaManager {
     this.areaRegions = this.areaRegions.filter(
       (region) => region.id !== regionId,
     );
+    const groupsChanged = this.cleanupAreaRegionGroups();
 
     if (this.editingRegionId === regionId && this.areaEditMode) {
       await this.stopAreaEditing(true);
     }
 
     await this.persistAreaRegions();
+    if (groupsChanged) await this.persistAreaRegionGroups();
     this.notifyAreaRegions();
     this.renderAreaManager();
 
