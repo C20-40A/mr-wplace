@@ -8,7 +8,7 @@ import { getStateVersion } from "./state-version";
 
 const FAKE_TILE_PROTOCOL = "mr-wplace-overlay";
 const TILE_SIZE = 1000;
-const SUPPORTED_MIN_ZOOM = 10;
+const SUPPORTED_MIN_ZOOM = 9;
 const BASE_TILE_ZOOM = 11;
 const CACHE_CONTROL_HEADER = "public, max-age=31536000, immutable";
 const FRONT_RENDER_CACHE_MAX = 40;
@@ -27,7 +27,7 @@ const getFrontRenderCacheKey = (z: number, x: number, y: number): string =>
 
 const getCachedFrontRenderedTile = (
   cacheKey: string,
-  token: string | null
+  token: string | null,
 ): Blob | null => {
   if (!token) return null;
   const cached = frontRenderedTileCache.get(cacheKey);
@@ -41,7 +41,7 @@ const getCachedFrontRenderedTile = (
 const setCachedFrontRenderedTile = (
   cacheKey: string,
   token: string | null,
-  blob: Blob
+  blob: Blob,
 ): void => {
   if (!token) return;
   if (frontRenderedTileCache.has(cacheKey)) {
@@ -56,7 +56,7 @@ const setCachedFrontRenderedTile = (
 const buildBaseTileLastModifiedToken = (
   x: number,
   y: number,
-  stateVersion: string
+  stateVersion: string,
 ): string | null => {
   const lastModified = getOriginalLastModified(`${x},${y}`);
   if (!lastModified) return null;
@@ -66,7 +66,7 @@ const buildBaseTileLastModifiedToken = (
 const buildZoom10LastModifiedToken = (
   x: number,
   y: number,
-  stateVersion: string
+  stateVersion: string,
 ): string | null => {
   const parts: string[] = [];
   for (let dy = 0; dy < 2; dy++) {
@@ -84,7 +84,7 @@ const buildZoom10LastModifiedToken = (
 const renderBaseZoomTile = async (
   x: number,
   y: number,
-  emptyBlob: Blob
+  emptyBlob: Blob,
 ): Promise<Blob> => {
   const cacheKey = `${x},${y}`;
   const comparisonTileBlob = getOriginalBlob(cacheKey);
@@ -105,7 +105,7 @@ const renderBaseZoomTile = async (
 const renderZoom10Tile = async (
   x: number,
   y: number,
-  emptyBlob: Blob
+  emptyBlob: Blob,
 ): Promise<Blob> => {
   const childTileSize = TILE_SIZE / 2;
   const childTasks: Array<
@@ -128,7 +128,7 @@ const renderZoom10Tile = async (
           comparisonTileBlob,
         })
           .then((blob) => ({ dx, dy, blob }))
-          .catch(() => ({ dx, dy, blob: null }))
+          .catch(() => ({ dx, dy, blob: null })),
       );
     }
   }
@@ -142,7 +142,7 @@ const renderZoom10Tile = async (
 
   const drawableChildren = children.filter(
     (child): child is { dx: number; dy: number; blob: Blob } =>
-      child.blob instanceof Blob
+      child.blob instanceof Blob,
   );
   if (drawableChildren.length === 0) return emptyBlob;
 
@@ -151,7 +151,7 @@ const renderZoom10Tile = async (
       dx: child.dx,
       dy: child.dy,
       bitmap: await createImageBitmap(child.blob),
-    }))
+    })),
   );
 
   for (const { dx, dy, bitmap } of bitmaps) {
@@ -160,7 +160,7 @@ const renderZoom10Tile = async (
       dx * childTileSize,
       dy * childTileSize,
       childTileSize,
-      childTileSize
+      childTileSize,
     );
     bitmap.close();
   }
@@ -179,7 +179,7 @@ const getTransparentTileBlob = (): Promise<Blob> => {
  * Pattern: mr-wplace-overlay://{z}/{x}/{y}.png
  */
 export const handleFrontLayerTileRequest = async (
-  url: string
+  url: string,
 ): Promise<Response> => {
   // Extract z, x, y from URL
   const tileMatch = url.match(/(\d+)\/(\d+)\/(\d+)\.png/);
@@ -257,10 +257,10 @@ const createTransparentTileResponse = (blob: Blob): Response => {
 const createEmptyTileResponse = (): Response => {
   // 1x1 transparent PNG
   const emptyPng = Uint8Array.from([
-    137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 1,
-    0, 0, 0, 1, 8, 6, 0, 0, 0, 31, 21, 196, 137, 0, 0, 0, 10, 73, 68, 65, 84,
-    120, 156, 99, 0, 1, 0, 0, 5, 0, 1, 13, 10, 46, 180, 0, 0, 0, 0, 73, 69, 78,
-    68, 174, 66, 96, 130,
+    137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 1, 0,
+    0, 0, 1, 8, 6, 0, 0, 0, 31, 21, 196, 137, 0, 0, 0, 10, 73, 68, 65, 84, 120,
+    156, 99, 0, 1, 0, 0, 5, 0, 1, 13, 10, 46, 180, 0, 0, 0, 0, 73, 69, 78, 68,
+    174, 66, 96, 130,
   ]);
 
   return new Response(emptyPng.buffer, {
