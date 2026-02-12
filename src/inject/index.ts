@@ -19,10 +19,42 @@ import {
   handlePaintDeleteForStats,
 } from "./features/paint-stats-updater";
 
+const LOCATION_KEY = "location";
+const STARTUP_TARGET_ZOOM = 11;
+
+const forceStartupLocationZoom = (): void => {
+  try {
+    const raw = window.localStorage.getItem(LOCATION_KEY);
+    if (!raw) return;
+
+    const parsed = JSON.parse(raw) as {
+      lat?: unknown;
+      lng?: unknown;
+      zoom?: unknown;
+    };
+
+    if (!parsed || typeof parsed !== "object") return;
+    if (typeof parsed.lat !== "number" || typeof parsed.lng !== "number")
+      return;
+    if (parsed.zoom === STARTUP_TARGET_ZOOM) return;
+
+    const next = JSON.stringify({
+      ...parsed,
+      zoom: STARTUP_TARGET_ZOOM,
+    });
+    window.localStorage.setItem(LOCATION_KEY, next);
+    console.log("🧑‍🎨 : Forced startup location zoom to", STARTUP_TARGET_ZOOM);
+  } catch (error) {
+    console.warn("🧑‍🎨 : Failed to force startup location zoom:", error);
+  }
+};
+
 // CRITICAL: Setup fetch interceptor IMMEDIATELY and SYNCHRONOUSLY
 // to catch /me requests before WPlace app code runs
 (() => {
   console.log("🧑‍🎨: Setting up fetch interceptor (sync)...");
+
+  forceStartupLocationZoom();
 
   // Initialize data saver state synchronously
   window.mrWplaceDataSaver = {
