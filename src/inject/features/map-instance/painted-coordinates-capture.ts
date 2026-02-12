@@ -25,7 +25,10 @@ const captureOrder: string[] = [];
 type PaintListener = (coord: CapturedPaintedCoordinate) => void;
 let paintListener: PaintListener | null = null;
 type PaintDeleteListener = (
-  coord: Pick<CapturedPaintedCoordinate, "tileX" | "tileY" | "pixelX" | "pixelY">
+  coord: Pick<
+    CapturedPaintedCoordinate,
+    "tileX" | "tileY" | "pixelX" | "pixelY" | "colorIdx" | "color"
+  >
 ) => void;
 let paintDeleteListener: PaintDeleteListener | null = null;
 type PaintClearListener = () => void;
@@ -247,13 +250,15 @@ const handleSet = (mapRef: unknown, key: string, value: unknown): void => {
 const handleDelete = (mapRef: unknown, key: unknown): void => {
   if (mapRef !== targetPaintedPixelMap) return;
   if (!isTargetKey(key)) return;
-  const parsed = parseTargetKey(key);
-  if (parsed)
+  const deletedRecord = buildRecord(key, targetPaintedPixelMap?.get(key));
+  if (deletedRecord)
     paintDeleteListener?.({
-      tileX: parsed.tileX,
-      tileY: parsed.tileY,
-      pixelX: parsed.pixelX,
-      pixelY: parsed.pixelY,
+      tileX: deletedRecord.tileX,
+      tileY: deletedRecord.tileY,
+      pixelX: deletedRecord.pixelX,
+      pixelY: deletedRecord.pixelY,
+      colorIdx: deletedRecord.colorIdx,
+      color: deletedRecord.color,
     });
   deleteCapturedCoordinate(key);
   exposeCaptureState({ mapRef: targetPaintedPixelMap });

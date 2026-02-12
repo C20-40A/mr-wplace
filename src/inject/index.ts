@@ -14,7 +14,10 @@ import {
   setPaintDeleteListener,
   setPaintClearListener,
 } from "./features/map-instance";
-import { handlePaintForStats } from "./features/paint-stats-updater";
+import {
+  handlePaintForStats,
+  handlePaintDeleteForStats,
+} from "./features/paint-stats-updater";
 
 // CRITICAL: Setup fetch interceptor IMMEDIATELY and SYNCHRONOUSLY
 // to catch /me requests before WPlace app code runs
@@ -45,7 +48,9 @@ import { handlePaintForStats } from "./features/paint-stats-updater";
   try {
     setupPaintedCoordinatesCapture();
     setPaintListener(handlePaintForStats);
-    setPaintDeleteListener(({ tileX, tileY, pixelX, pixelY }) => {
+    setPaintDeleteListener((coord) => {
+      handlePaintDeleteForStats(coord);
+      const { tileX, tileY, pixelX, pixelY } = coord;
       clearFrontTilePaintGuide(tileX, tileY, pixelX, pixelY);
     });
     setPaintClearListener(() => {

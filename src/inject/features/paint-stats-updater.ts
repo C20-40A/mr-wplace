@@ -107,18 +107,22 @@ const scheduleNotify = (imageKey: string, tileKey: string): void => {
   notifyTimer = setTimeout(flushNotify, NOTIFY_DEBOUNCE_MS);
 };
 
+const getPaintedRgbInt = (
+  coord: Pick<CapturedPaintedCoordinate, "colorIdx" | "color">
+): number | null =>
+  coord.colorIdx != null
+    ? (colorIdxToRgbInt.get(coord.colorIdx) ?? null)
+    : coord.color
+      ? (coord.color.r << 16) | (coord.color.g << 8) | coord.color.b
+      : null;
+
 /**
  * ペイント1ピクセルの楽観的統計更新
  */
 export const handlePaintForStats = (
   coord: CapturedPaintedCoordinate
 ): void => {
-  const paintedRgbInt =
-    coord.colorIdx != null
-      ? (colorIdxToRgbInt.get(coord.colorIdx) ?? null)
-      : coord.color
-        ? (coord.color.r << 16) | (coord.color.g << 8) | coord.color.b
-        : null;
+  const paintedRgbInt = getPaintedRgbInt(coord);
   if (paintedRgbInt == null) return;
   const paintedRgbKey = `${(paintedRgbInt >> 16) & 0xff},${
     (paintedRgbInt >> 8) & 0xff
@@ -211,6 +215,66 @@ export const handlePaintForStats = (
     "mismatch",
     topOverlayRgbInt,
   );
+};
+
+export const handlePaintDeleteForStats = (
+  coord: Pick<
+    CapturedPaintedCoordinate,
+    "tileX" | "tileY" | "pixelX" | "pixelY" | "colorIdx" | "color"
+  >
+): void => {
+  const paintedRgbInt = getPaintedRgbInt(coord);
+  if (paintedRgbInt == null) return;
+  const paintedRgbKey = `${(paintedRgbInt >> 16) & 0xff},${
+    (paintedRgbInt >> 8) & 0xff
+  },${paintedRgbInt & 0xff}`;
+
+  const tileKey = `${coord.tileX},${coord.tileY}`;
+  const paddedTileKey = toPaddedTileKey(coord.tileX, coord.tileY);
+
+  for (const instance of overlayLayers) {
+    if (!instance.drawEnabled) continue;
+    if (
+      instance.affectedTileSet &&
+      !instance.affectedTileSet.has(tileKey) &&
+      !instance.affectedTileSet.has(paddedTileKey)
+    )
+      continue;
+
+    const bitmapTileKey = instance.tiles?.[tileKey]
+      ? tileKey
+      : instance.tiles?.[paddedTileKey]
+        ? paddedTileKey
+        : null;
+    if (!bitmapTileKey) continue;
+
+    const bitmap = instance.tiles?.[bitmapTileKey];
+    if (!bitmap) continue;
+
+    const cacheKey = `${instance.imageKey}:${bitmapTileKey}`;
+    const pixels = getCachedTilePixels(cacheKey, bitmap);
+    if (!pixels) continue;
+
+    const idx = (coord.pixelY * bitmap.width + coord.pixelX) * 4;
+    if (idx + 3 >= pixels.length) continue;
+    if (pixels[idx + 3] === 0) continue;
+
+    const overlayRgbInt =
+      (pixels[idx] << 16) | (pixels[idx + 1] << 8) | pixels[idx + 2];
+    if (overlayRgbInt !== paintedRgbInt) continue;
+
+    const tileStatsMap = perTileColorStats.get(instance.imageKey);
+    if (!tileStatsMap) continue;
+    const targetTileKey = tileStatsMap.has(tileKey) ? tileKey : paddedTileKey;
+    const tileStats = tileStatsMap.get(targetTileKey);
+    if (!tileStats) continue;
+
+    const currentMatched = tileStats.matched.get(paintedRgbKey) || 0;
+    if (currentMatched <= 0) continue;
+
+    tileStats.matched.set(paintedRgbKey, currentMatched - 1);
+    scheduleNotify(instance.imageKey, targetTileKey);
+  }
 };
 
 /**
