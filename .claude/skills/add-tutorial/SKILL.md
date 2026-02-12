@@ -1,6 +1,7 @@
-# Add Tutorial
-
-チュートリアルGIFを追加し、Tutorial機能に新しいチュートリアル項目を登録するスキル
+---
+name: add-tutorial
+description: チュートリアルGIFを追加し、Tutorial機能に新しいチュートリアル項目を登録するSKILL
+---
 
 ## 使用方法
 
@@ -29,12 +30,14 @@
 
 ```json
 {
-  "web_accessible_resources": [{
-    "resources": [
-      "assets/images/tutorial/how_to_draw.gif",
-      "assets/images/tutorial/<new-gif-filename>"  // 追加
-    ]
-  }]
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/images/tutorial/how_to_draw.gif",
+        "assets/images/tutorial/<new-gif-filename>" // 追加
+      ]
+    }
+  ]
 }
 ```
 

@@ -184,6 +184,21 @@ tabs.reload(tabId);
 
 ### Internationalization
 
+**対応言語:** en (English), ja (日本語), es (Español), fr (Français), pt (Português), ru (Русский), vi (Tiếng Việt)
+
+翻訳キーの追加・削除・更新は `bun scripts/i18n.ts` CLIを使用する。localeファイルを直接Readしない。
+詳細は `.claude/skills/i18n/SKILL.md` を参照。
+
+```bash
+bun scripts/i18n.ts list                              # キー数確認
+bun scripts/i18n.ts missing                           # 不足キー確認
+bun scripts/i18n.ts get <key>                         # 全言語の値確認
+bun scripts/i18n.ts search <pattern>                  # 検索
+bun scripts/i18n.ts add <key> --en "val" --ja "val"   # 追加
+bun scripts/i18n.ts remove <key>                      # 削除
+bun scripts/i18n.ts update <key> --en "val"           # 更新
+```
+
 ```typescript
 import { t } from "@/i18n/manager";
 
