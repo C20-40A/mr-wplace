@@ -6,7 +6,7 @@
 - 3dモードだとエリア頂点がぶっとぶ
 - ドイツ語対応
 - 塗り方、塊優先の塗り方がほしい。
-- TMPL_ONLY + EXEC -> Paint 0 になってもpainting続く
+
 - エリアカウント正しい？
 
 - ブックマークのサムネ化
@@ -97,6 +97,10 @@
 - PC のブックマーク一覧を 4 行ぐらいにしたい。が、その tailwind のメディアクエリがないから、設定が面倒
 - exclude_globs にメインのもの以外含める？
   - all_frames false (デフォルト)系は false．まあデフォルトが false だから不要か
+
+# DONE v2.5.5
+
+- TMPL_ONLY + EXEC -> Paint 0 になってもpainting続く
 
 # DONE v2.5.4
 

@@ -421,9 +421,8 @@ class AreaManager {
   }
 
   private formatPixelArea(pixelArea: number): string {
-    if (pixelArea < 1000) return `${Math.round(pixelArea)} px²`;
-    if (pixelArea < 1000000) return `${(pixelArea / 1000).toFixed(1)}K px²`;
-    return `${(pixelArea / 1000000).toFixed(2)}M px²`;
+    const rounded = Math.round(pixelArea);
+    return `${rounded.toLocaleString()} px²`;
   }
 
   private createAreaRegionId(): string {
