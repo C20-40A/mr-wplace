@@ -24,6 +24,8 @@ const captureOrder: string[] = [];
 // Paint event listener for external modules (e.g., paint-stats-updater)
 type PaintListener = (coord: CapturedPaintedCoordinate) => void;
 let paintListener: PaintListener | null = null;
+// Secondary paint listener (e.g., area-fill charge tracking)
+let secondaryPaintListener: PaintListener | null = null;
 type PaintDeleteListener = (
   coord: Pick<
     CapturedPaintedCoordinate,
@@ -38,6 +40,12 @@ let paintSessionListener: PaintSessionListener | null = null;
 
 export const setPaintListener = (listener: PaintListener | null): void => {
   paintListener = listener;
+};
+
+export const setSecondaryPaintListener = (
+  listener: PaintListener | null
+): void => {
+  secondaryPaintListener = listener;
 };
 
 export const setPaintSessionListener = (
@@ -245,6 +253,7 @@ const handleSet = (mapRef: unknown, key: string, value: unknown): void => {
   upsertCapturedCoordinateWithLimit(key, record);
   exposeCaptureState({ mapRef: map });
   paintListener?.(record);
+  secondaryPaintListener?.(record);
 };
 
 const handleDelete = (mapRef: unknown, key: unknown): void => {

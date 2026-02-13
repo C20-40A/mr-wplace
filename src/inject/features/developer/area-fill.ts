@@ -10,6 +10,7 @@ import { TILE_SIZE } from "@/utils/geo-converter";
 import { getOriginalBlob, overlayLayers } from "../tile-draw";
 import type { TileDrawInstance } from "../tile-draw/types";
 import { statusManagerSingleton } from "../user-status/status-manager";
+import { setSecondaryPaintListener } from "../map-instance";
 import { colorpalette } from "@/constants/colors";
 import { AREA_FILL_MAX_PIXELS } from "@/constants/area-fill";
 
@@ -747,21 +748,31 @@ export const startAreaFill = async (
     cachedPositions = positions;
   }
 
-  // Get available charge count (advisory only; never block/limit execution)
+  // Get available charge count for exhaustion detection
+  // null = unavailable (skip check), 0 = no charges (also skip — /me not yet polled)
   let availableCharges: number | null = null;
   try {
-    const value = statusManagerSingleton.getCurrentChargeCount();
-    availableCharges = Number.isFinite(value) ? value : null;
+    const userData = statusManagerSingleton.getCurrentUserData();
+    if (userData?.charges) {
+      const value = statusManagerSingleton.getCurrentChargeCount();
+      if (Number.isFinite(value) && value > 0) availableCharges = value;
+    }
   } catch {
-    availableCharges = null;
+    // ignore
   }
   if (availableCharges === null) {
     console.warn("🧑‍🎨 : Area fill - Charge count unavailable, continuing without limit");
   } else {
-    console.log(`🧑‍🎨 : Area fill - Available charges (advisory): ${availableCharges}`);
+    console.log(`🧑‍🎨 : Area fill - Available charges: ${availableCharges}`);
   }
 
-  // Always process all remaining positions (charge shortage must not stop fill)
+  // Track actual paint consumption via painted-coordinates-capture
+  let paintConsumed = 0;
+  const trackPaint = availableCharges !== null;
+  if (trackPaint) {
+    setSecondaryPaintListener(() => { paintConsumed++; });
+  }
+
   const remainingPositions = positions.slice(lastProcessedIndex);
   const limitedPositions = remainingPositions;
 
@@ -780,6 +791,14 @@ export const startAreaFill = async (
     if (stopRequested) {
       console.log(
         `🧑‍🎨 : Area fill stopped by user at ${lastProcessedIndex + clickCount}/${positions.length}`,
+      );
+      break;
+    }
+
+    // Stop when charges are exhausted
+    if (trackPaint && paintConsumed >= availableCharges!) {
+      console.log(
+        `🧑‍🎨 : Area fill paused - charges exhausted (used ${paintConsumed}/${availableCharges})`,
       );
       break;
     }
@@ -810,6 +829,9 @@ export const startAreaFill = async (
 
     await sleep(getGradualInterval(lastProcessedIndex));
   }
+
+  // Cleanup secondary paint listener
+  if (trackPaint) setSecondaryPaintListener(null);
 
   const isComplete = lastProcessedIndex >= positions.length;
   isRunning = false;
