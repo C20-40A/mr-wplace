@@ -24,6 +24,7 @@ import { PaletteToggle } from "@/features/palette-toggle";
 import { ShowUnplacedOnly } from "@/features/show-unplaced-only";
 import { LockButtonEnhancer } from "@/features/lock-button-enhancer";
 import { PaintPixelIcon } from "@/features/paint-pixel-icon";
+import { UserStatusHint } from "@/features/user-status-hint";
 import { CloseConfirm } from "@/features/close-confirm";
 import { PaintModeStyle } from "@/features/paint-mode-style";
 import { di } from "@/core/di";
@@ -94,6 +95,7 @@ export const initializeFeatures = async () => {
   safeInit("showUnplacedOnly", () => new ShowUnplacedOnly());
   safeInit("lockButtonEnhancer", () => new LockButtonEnhancer());
   safeInit("paintPixelIcon", () => new PaintPixelIcon());
+  safeInit("userStatusHint", () => new UserStatusHint());
   safeInit("closeConfirm", () => new CloseConfirm());
   safeInit("paintModeStyle", () => new PaintModeStyle());
   safeInit("paintStats", () => initPaintStats());

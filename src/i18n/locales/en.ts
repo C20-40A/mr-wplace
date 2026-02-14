@@ -532,4 +532,6 @@ Do not use this feature to paint actual pixels.`,
     "Experimental but powerful: we added a new mode. Please try ",
   hint_overlay_mode_independent_suffix:
     " mode (if you find bugs, please report them via Popup > BugReport).",
+  hint_user_status_container:
+    "Press here to configure the alarm for when Paint has accumulated",
 };

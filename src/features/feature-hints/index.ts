@@ -10,7 +10,8 @@ export type FeatureHintId =
   | "show-unplaced-only"
   | "color-isolate"
   | "data-saver"
-  | "overlay-mode-independent";
+  | "overlay-mode-independent"
+  | "user-status-container";
 
 interface FeatureHintDefinition {
   messageKey?: string;
@@ -48,6 +49,11 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
       `${t("hint_overlay_mode_independent_prefix")}「${t("popup_overlay_mode_layer")}」${t("hint_overlay_mode_independent_suffix")}`,
     iconSrc: HINT_DIALOG_ICON,
     placement: "top",
+  },
+  "user-status-container": {
+    messageKey: "hint_user_status_container",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "bottom",
   },
 };
 

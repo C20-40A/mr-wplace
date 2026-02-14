@@ -74,6 +74,22 @@ if (overlayModeContainer instanceof HTMLElement) {
 }
 ```
 
+inject 側で生成された要素にも、content 側から参照できる通常 DOM であれば適用可能:
+
+```ts
+setupElementObserver([
+  {
+    id: "user-status-container",
+    getTargetElement: () => document.getElementById("user-status-container"),
+    createElement: (container) => {
+      if (container instanceof HTMLElement) {
+        showFeatureHint("user-status-container", container);
+      }
+    },
+  },
+]);
+```
+
 ## 動作仕様
 
 - 表示は `id` ごとに 1 回だけ
