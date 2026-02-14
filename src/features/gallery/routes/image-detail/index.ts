@@ -97,7 +97,7 @@ export class GalleryImageDetail {
 
     // モーダルのタイトルを画像のタイトルに設定
     if (this.ui) {
-      this.ui.setTitle(item.title || item.key);
+      this.ui.setTitle(item.title || t("image_detail"));
     }
 
     // 既存のImageInspectorがあれば破棄
@@ -131,52 +131,62 @@ export class GalleryImageDetail {
 
         <div id="image-detail-container" style="flex: 1; position: relative; min-height: 60vh; overflow-y: auto; overflow-x: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;">
           <canvas id="image-detail-canvas" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);"></canvas>
-          <div id="image-dpad-container" style="position: absolute; bottom: 8px; right: 8px; opacity: 0.7;"></div>
         </div>
 
         <!-- 座標編集エリア -->
-        <div style="padding: 0 8px; display: flex; flex-direction: column; gap: 4px;">
-          ${
-            item.drawPosition
-              ? (() => {
+        <div style="display: flex; align-items: center; align-self: center;">
+          <!-- 左側: 上段と下段 -->
+          <div style="display: flex; flex-direction: column; align-items: center;">
+            <!-- 上段: マップ移動ボタン + 経度緯度表示 -->
+            ${
+              item.drawPosition
+                ? `
+              <div style="display: flex; align-items: center;">
+                <button id="goto-map-btn" class="btn btn-sm btn-ghost"
+                style="height: 28px; min-height: 28px; padding: 0 8px; flex-shrink: 0;" title="${t`${"goto_map"}`}">
+                  📍
+                </button>
+                ${(() => {
                   const { lat, lng } = tilePixelToLatLng(
                     item.drawPosition.TLX,
                     item.drawPosition.TLY,
                     item.drawPosition.PxX,
                     item.drawPosition.PxY,
                   );
-                  return `<div id="lat-lng-display" style="text-align: center; font-size: 10px; color: #666; cursor: pointer; user-select: none;" title="Click to copy">${lat.toFixed(6)}, ${lng.toFixed(6)}</div>`;
-                })()
-              : ""
-          }
-          <div style="display: flex; align-items: center; gap: 4px; justify-content: center;">
-            <button id="goto-map-btn" class="btn btn-sm btn-ghost" ${
-              !item.drawPosition ? "disabled" : ""
-            } style="height: 28px; min-height: 28px; padding: 0 8px;" title="${t`${"goto_map"}`}">
-              📍
-            </button>
-            <input id="coord-tlx" type="number" placeholder="TLX" value="${
-              item.drawPosition?.TLX ?? 0
-            }" style="width: 60px; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: 12px;">
-            <input id="coord-tly" type="number" placeholder="TLY" value="${
-              item.drawPosition?.TLY ?? 0
-            }" style="width: 60px; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: 12px;">
-            <input id="coord-pxx" type="number" placeholder="PxX" value="${
-              item.drawPosition?.PxX ?? 0
-            }" min="0" max="999" style="width: 60px; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: 12px;">
-            <input id="coord-pxy" type="number" placeholder="PxY" value="${
-              item.drawPosition?.PxY ?? 0
-            }" min="0" max="999" style="width: 60px; padding: 4px; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: 12px;">
-            <button id="update-coords-btn" class="btn btn-sm btn-ghost" style="height: 28px; min-height: 28px; padding: 0 8px;" title="${t`${"update"}`}">
-              🔄
-            </button>
-            <button id="copy-coords-btn" class="btn btn-sm btn-ghost" style="height: 28px; min-height: 28px; padding: 0 8px;" title="Copy">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-            </button>
+                  return `<div id="lat-lng-display" style="text-align: center; font-size: 11px; cursor: pointer; user-select: none; padding: 4px;" title="Click to copy">${lat.toFixed(6)}, ${lng.toFixed(6)}</div>`;
+                })()}
+              </div>`
+                : ""
+            }
+
+            <!-- 下段: コピー + 入力欄 + 更新 -->
+            <div style="display: flex; align-items: center; gap: 2px;">
+              <button id="copy-coords-btn" class="btn btn-sm btn-ghost" style="height: 28px; min-height: 28px; padding: 0 8px; flex-shrink: 0;" title="Copy">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </button>
+              <input id="coord-tlx" type="number" placeholder="TLX" value="${
+                item.drawPosition?.TLX ?? 0
+              }" style="width: 2.8rem; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: .7rem;">
+              <input id="coord-tly" type="number" placeholder="TLY" value="${
+                item.drawPosition?.TLY ?? 0
+              }" style="width: 2.8rem; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: .7rem;">
+              <input id="coord-pxx" type="number" placeholder="PxX" value="${
+                item.drawPosition?.PxX ?? 0
+              }" min="0" max="999" style="width: 2.8rem; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: .7rem;">
+              <input id="coord-pxy" type="number" placeholder="PxY" value="${
+                item.drawPosition?.PxY ?? 0
+              }" min="0" max="999" style="width: 2.8rem; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: .7rem;">
+              <button id="update-coords-btn" class="btn btn-sm btn-ghost" style="height: 28px; min-height: 28px; padding: 0 8px; flex-shrink: 0;" title="${t`${"update"}`}">
+                🔄
+              </button>
+            </div>
           </div>
+
+          <!-- 右側: D-Pad -->
+          <div id="image-dpad-container" style=""></div>
         </div>
 
         <div style="padding: 0 8px 8px;">
