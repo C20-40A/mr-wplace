@@ -104,6 +104,7 @@ export const moveImage = async (
     ...item,
     drawPosition: newCoords,
   });
+  item.drawPosition = newCoords;
 
   // Notify inject side to update overlay layers
   await sendGalleryImagesToInject();

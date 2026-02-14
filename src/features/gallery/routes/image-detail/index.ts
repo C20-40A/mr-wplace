@@ -310,7 +310,6 @@ export class GalleryImageDetail {
         await drawImageAtMapCenter(this.currentItem);
 
         // ボタン表示を更新
-        drawOnMapBtn.style.display = "none";
         const drawToggleBtn = document.getElementById("draw-toggle-btn");
         if (drawToggleBtn) drawToggleBtn.style.display = "";
         const shareBtn = document.getElementById("share-btn");
