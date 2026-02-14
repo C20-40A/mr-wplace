@@ -4,7 +4,10 @@ import type {
   AreaRegionVertex,
 } from "@/types/area-region";
 import { getMapInstanceFromWplace } from "./map-instance";
-import { latLonToPixels } from "@/utils/geo-converter";
+import {
+  calculateGeodesicAreaSquareMeters,
+  calculatePixelAreaSquare,
+} from "@/utils/coordinate";
 
 const AREA_CONTAINER_ID = "mr-wplace-area-measure";
 const AREA_SVG_NS = "http://www.w3.org/2000/svg";
@@ -282,29 +285,6 @@ const createOverlay = (): HTMLDivElement => {
   return root;
 };
 
-const toRadians = (value: number): number => (value * Math.PI) / 180;
-
-const toMercatorMeters = (lngLat: LngLat): { x: number; y: number } => {
-  const earthRadius = 6378137;
-  const maxLat = 85.05112878;
-  const lat = Math.max(Math.min(lngLat.lat, maxLat), -maxLat);
-  const x = earthRadius * toRadians(lngLat.lng);
-  const y = earthRadius * Math.log(Math.tan(Math.PI / 4 + toRadians(lat) / 2));
-  return { x, y };
-};
-
-const calculateAreaSquareMeters = (input: LngLat[]): number => {
-  if (input.length < 3) return 0;
-
-  let sum = 0;
-  for (let i = 0; i < input.length; i++) {
-    const curr = toMercatorMeters(input[i]);
-    const next = toMercatorMeters(input[(i + 1) % input.length]);
-    sum += curr.x * next.y - next.x * curr.y;
-  }
-  return Math.abs(sum) / 2;
-};
-
 const formatArea = (areaM2: number): string => {
   if (areaM2 < 1000000) {
     if (areaM2 < 100) return `${areaM2.toFixed(2)} m²`;
@@ -316,37 +296,6 @@ const formatArea = (areaM2: number): string => {
   if (km2 < 10) return `${km2.toFixed(3)} km²`;
   if (km2 < 100) return `${km2.toFixed(2)} km²`;
   return `${km2.toFixed(1)} km²`;
-};
-
-const normalizeLngNear = (lng: number, baseLng: number): number => {
-  let out = lng;
-  while (out - baseLng > 180) out -= 360;
-  while (out - baseLng < -180) out += 360;
-  return out;
-};
-
-const calculatePixelArea = (vertices: LngLat[]): number => {
-  const n = vertices.length;
-  if (n < 3) return 0;
-
-  let prevLng = vertices[n - 1].lng;
-  let prev = latLonToPixels(vertices[n - 1].lat, prevLng);
-  if (!Number.isFinite(prev[0]) || !Number.isFinite(prev[1])) return 0;
-
-  let sum = 0;
-
-  for (let i = 0; i < n; i++) {
-    const v = vertices[i];
-    const lng = normalizeLngNear(v.lng, prevLng);
-    const curr = latLonToPixels(v.lat, lng);
-    if (!Number.isFinite(curr[0]) || !Number.isFinite(curr[1])) return 0;
-
-    sum += prev[0] * curr[1] - curr[0] * prev[1];
-    prev = curr;
-    prevLng = lng;
-  }
-
-  return Math.abs(sum) * 0.5;
 };
 
 const formatPixelArea = (pixelArea: number): string => {
@@ -660,8 +609,8 @@ const renderAreaOverlay = (map: AreaMap): void => {
     edgeHitLayer.appendChild(hit);
   }
 
-  const area = calculateAreaSquareMeters(editVertices);
-  const pixelArea = calculatePixelArea(editVertices);
+  const area = calculateGeodesicAreaSquareMeters(editVertices);
+  const pixelArea = calculatePixelAreaSquare(editVertices);
   areaLabel.innerHTML = `${formatArea(area)}<br><span style="font-size: 10px; opacity: 0.8;">${formatPixelArea(pixelArea)}</span>`;
   areaLabel.style.display = "block";
 

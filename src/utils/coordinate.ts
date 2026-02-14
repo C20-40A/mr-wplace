@@ -6,6 +6,29 @@ import {
   TILE_SIZE,
 } from "./geo-converter";
 
+interface LngLatLike {
+  lat: number;
+  lng: number;
+}
+
+const EARTH_RADIUS_METERS = 6378137;
+
+const toRadians = (value: number): number => (value * Math.PI) / 180;
+
+const normalizeLngDeltaRadians = (delta: number): number => {
+  let out = delta;
+  while (out > Math.PI) out -= Math.PI * 2;
+  while (out < -Math.PI) out += Math.PI * 2;
+  return out;
+};
+
+const normalizeLngNear = (lng: number, baseLng: number): number => {
+  let out = lng;
+  while (out - baseLng > 180) out -= 360;
+  while (out - baseLng < -180) out += 360;
+  return out;
+};
+
 /**
  * 緯度・経度からタイルインデックスとタイル内ピクセル座標へ変換
  */
@@ -56,4 +79,58 @@ export const tilePixelToLatLng = (
   const [lat, lng] = metersToLatLon(metersX, metersY);
 
   return { lat, lng };
+};
+
+/**
+ * 緯度経度ポリゴンの測地面積を球面近似で計算 (m²)
+ */
+export const calculateGeodesicAreaSquareMeters = (
+  vertices: LngLatLike[]
+): number => {
+  const n = vertices.length;
+  if (n < 3) return 0;
+
+  let sum = 0;
+  for (let i = 0; i < n; i++) {
+    const curr = vertices[i];
+    const next = vertices[(i + 1) % n];
+    const lat1 = toRadians(curr.lat);
+    const lat2 = toRadians(next.lat);
+    const lng1 = toRadians(curr.lng);
+    const lng2 = toRadians(next.lng);
+    const deltaLng = normalizeLngDeltaRadians(lng2 - lng1);
+    sum += deltaLng * (Math.sin(lat1) + Math.sin(lat2));
+  }
+
+  const sphereArea = 4 * Math.PI * EARTH_RADIUS_METERS * EARTH_RADIUS_METERS;
+  const area = Math.abs(sum) * EARTH_RADIUS_METERS * EARTH_RADIUS_METERS * 0.5;
+  const normalized = Math.min(area, sphereArea - area);
+  return Number.isFinite(normalized) ? Math.max(0, normalized) : 0;
+};
+
+/**
+ * Wplace world pixel 座標系でのポリゴン面積 (px²)
+ */
+export const calculatePixelAreaSquare = (vertices: LngLatLike[]): number => {
+  const n = vertices.length;
+  if (n < 3) return 0;
+
+  let prevLng = vertices[n - 1].lng;
+  let prev = latLonToPixels(vertices[n - 1].lat, prevLng);
+  if (!Number.isFinite(prev[0]) || !Number.isFinite(prev[1])) return 0;
+
+  let sum = 0;
+
+  for (let i = 0; i < n; i++) {
+    const v = vertices[i];
+    const lng = normalizeLngNear(v.lng, prevLng);
+    const curr = latLonToPixels(v.lat, lng);
+    if (!Number.isFinite(curr[0]) || !Number.isFinite(curr[1])) return 0;
+
+    sum += prev[0] * curr[1] - curr[0] * prev[1];
+    prev = curr;
+    prevLng = lng;
+  }
+
+  return Math.max(0, Math.abs(sum) * 0.5);
 };

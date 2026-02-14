@@ -11,7 +11,10 @@ import type {
   AreaRegionEditSnapshot,
   AreaRegionVertex,
 } from "@/types/area-region";
-import { latLonToPixels } from "@/utils/geo-converter";
+import {
+  calculateGeodesicAreaSquareMeters,
+  calculatePixelAreaSquare,
+} from "@/utils/coordinate";
 
 const AREA_MEASURE_KEY = "mapFilter_areaMeasure";
 const AREA_REGIONS_KEY = "areaRegions_v1";
@@ -356,68 +359,11 @@ class AreaManager {
     return this.hslToHex(bestHue, 72, 52);
   }
 
-  private toRadians(value: number): number {
-    return (value * Math.PI) / 180;
-  }
-
-  private toMercatorMeters(vertex: AreaRegionVertex): { x: number; y: number } {
-    const earthRadius = 6378137;
-    const maxLat = 85.05112878;
-    const lat = Math.max(Math.min(vertex.lat, maxLat), -maxLat);
-    const x = earthRadius * this.toRadians(vertex.lng);
-    const y =
-      earthRadius * Math.log(Math.tan(Math.PI / 4 + this.toRadians(lat) / 2));
-    return { x, y };
-  }
-
-  private calculateAreaSquareMeters(vertices: AreaRegionVertex[]): number {
-    if (vertices.length < 3) return 0;
-
-    let sum = 0;
-    for (let i = 0; i < vertices.length; i++) {
-      const curr = this.toMercatorMeters(vertices[i]);
-      const next = this.toMercatorMeters(vertices[(i + 1) % vertices.length]);
-      sum += curr.x * next.y - next.x * curr.y;
-    }
-    return Math.abs(sum) / 2;
-  }
-
   private formatAreaKm2(vertices: AreaRegionVertex[]): string {
-    const km2 = this.calculateAreaSquareMeters(vertices) / 1000000;
+    const km2 = calculateGeodesicAreaSquareMeters(vertices) / 1000000;
     if (km2 >= 100) return `${km2.toFixed(1)} km²`;
     if (km2 >= 10) return `${km2.toFixed(2)} km²`;
     return `${km2.toFixed(3)} km²`;
-  }
-
-  private normalizeLngNear(lng: number, baseLng: number): number {
-    let out = lng;
-    while (out - baseLng > 180) out -= 360;
-    while (out - baseLng < -180) out += 360;
-    return out;
-  }
-
-  private calculatePixelArea(vertices: AreaRegionVertex[]): number {
-    const n = vertices.length;
-    if (n < 3) return 0;
-
-    let prevLng = vertices[n - 1].lng;
-    let prev = latLonToPixels(vertices[n - 1].lat, prevLng);
-    if (!Number.isFinite(prev[0]) || !Number.isFinite(prev[1])) return 0;
-
-    let sum = 0;
-
-    for (let i = 0; i < n; i++) {
-      const v = vertices[i];
-      const lng = this.normalizeLngNear(v.lng, prevLng);
-      const curr = latLonToPixels(v.lat, lng);
-      if (!Number.isFinite(curr[0]) || !Number.isFinite(curr[1])) return 0;
-
-      sum += prev[0] * curr[1] - curr[0] * prev[1];
-      prev = curr;
-      prevLng = lng;
-    }
-
-    return Math.abs(sum) * 0.5;
   }
 
   private formatPixelArea(pixelArea: number): string {
@@ -1297,11 +1243,12 @@ class AreaManager {
         const area = document.createElement("span");
         area.className = "text-sm opacity-80";
         const totalAreaM2 = members.reduce(
-          (sum, region) => sum + this.calculateAreaSquareMeters(region.vertices),
+          (sum, region) =>
+            sum + calculateGeodesicAreaSquareMeters(region.vertices),
           0,
         );
         const totalPx = members.reduce(
-          (sum, region) => sum + this.calculatePixelArea(region.vertices),
+          (sum, region) => sum + calculatePixelAreaSquare(region.vertices),
           0,
         );
         const totalKm2 = totalAreaM2 / 1000000;
@@ -1430,7 +1377,9 @@ class AreaManager {
         const area = document.createElement("span");
         area.className = "text-sm opacity-80";
         const areaKm2 = this.formatAreaKm2(region.vertices);
-        const pixelArea = this.formatPixelArea(this.calculatePixelArea(region.vertices));
+        const pixelArea = this.formatPixelArea(
+          calculatePixelAreaSquare(region.vertices),
+        );
         area.innerHTML = `${areaKm2} <span style="opacity: 0.7; font-size: 0.9em;">(${pixelArea})</span>`;
 
         const colorInput = document.createElement("input");
