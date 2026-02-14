@@ -1,397 +1,136 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with this repository.
 
 ## Project Overview
 
-**Mr. Wplace** is a Chrome extension for WPlace, an online collaborative pixel placement map. The extension provides advanced drawing, gallery management, and map customization features.
+**Mr. Wplace** is a Chrome/Edge Manifest V3 extension for WPlace.
 
-- Project Name: mr-wplace
-- Target: Chrome/Edge Manifest V3 extension
-- Build Tool: esbuild + Bun
+- Project name: `mr-wplace`
+- Build tool: `esbuild + Bun`
+- Main goal: drawing/gallery/map customization on collaborative pixel tiles
 
 ## Architecture
 
 ### Entry Points
 
-The extension has 3 main entry points that esbuild bundles:
+esbuild bundles these 3 entry points:
 
-1. **`src/content.ts`** - Main content script, initializes all features and DI container
-2. **`src/inject.ts`** - Injected into page context for fetch interception and map instance access
-3. **`src/popup.ts`** - Extension popup UI
+1. `src/content.ts` - content script, feature initialization, storage management
+2. `src/inject.ts` - page-context script entry (`src/inject/index.ts`)
+3. `src/popup.ts` - extension popup UI
 
-### Content ↔ Inject Communication
+### Content ↔ Inject Boundary (Single Source)
 
-**Critical:** The extension operates in two isolated contexts:
+The extension runs in two isolated contexts:
 
-- **Content Script** (`content.ts`): Chrome extension context with access to Chrome APIs
-- **Injected Script** (`inject/index.ts`): Page context with access to WPlace's map instance and fetch API
+- **Content (`src/content.ts`)**
+  - Can use extension APIs via `@/utils/browser-api`
+  - Owns storage/state sync decisions
+- **Inject (`src/inject/index.ts`)**
+  - Can access page `window`, map instance, `fetch`
+  - Owns tile rendering/image processing/fetch interception
 
-Communication flow:
+Communication:
 
-```
-content.ts → inject script tag → inject/index.ts
-     ↓                                    ↓
-  postMessage ←→ window.addEventListener("message")
-```
-
-**Key messages (content → inject):**
-
-- `mr-wplace-gallery-images-v2`: Gallery images metadata with affectedTiles (IndexedDB v2)
-- `mr-wplace-snapshots`: Time-travel snapshot overlays
-- `mr-wplace-color-filter`: Color filter state
-- `mr-wplace-theme-update`: Theme changes
-- `mr-wplace-map-flyto`: Position navigation
-
-**Popup → Content → Inject:**
-
-Popup cannot directly postMessage to inject (different context). Use `tabs.sendMessage`:
-
-```typescript
-// popup.ts
-chrome.tabs.sendMessage(tabId, { type: "GALLERY_SAVE_ITEM", ... });
-
-// content.ts handles and forwards to inject via postMessage
+```text
+popup -> content (tabs.sendMessage)
+content <-> inject (window.postMessage / message listener)
 ```
 
-**Key messages (inject → content):**
+### Dependency Injection
 
-- `mr-wplace-request-stats` / `response-stats`: Color statistics
-- `mr-wplace-request-pixel-color` / `response-pixel-color`: Overlay pixel color
-- `mr-wplace-stats-updated`: Save statistics to storage
-- `mr-wplace-me`: User data from API
+Location: `src/core/di.ts`
 
-### Dependency Injection (DI Container)
+- Register feature APIs in `content.ts`
+- Access cross-feature APIs via `di.get(...)`
+- Types are defined in `FeatureRegistry`
 
-**Location**: `src/core/di.ts`
+### Directory Guide
 
-Features register their APIs in the DI container to avoid circular dependencies:
-
-```typescript
-// Registration (in content.ts)
-di.register("gallery", galleryAPI);
-di.register("tileOverlay", tileOverlayAPI);
-
-// Usage (in any feature)
-const gallery = di.get("gallery");
-```
-
-All feature APIs are typed in `src/core/di.ts` under `FeatureRegistry`.
-
-### File Structure
-
-```
+```text
 src/
-├── content.ts              # Main entry, message listeners, initialization orchestration
-├── popup.ts                # Extension popup UI
-├── inject.ts               # Inject entry point (bundles inject/index.ts)
-├── inject/                 # Page-context scripts (see inject/CLAUDE.md)
-│   ├── index.ts           # Initialization flow (sync fetch interceptor + async parallel init)
-│   ├── types.ts           # Type definitions, window extensions
-│   ├── fetch-interceptor.ts   # Tile & /me API interception
-│   ├── bridge.ts          # postMessage dispatcher (setupMessageHandler)
-│   ├── db/                # IndexedDB (Repository Pattern, LRU cache)
-│   ├── workers/           # Web Worker (tile splitting)
-│   ├── handlers/          # Message handlers (overlay, state, request)
-│   ├── states/            # State management (colorFilter, migration)
-│   ├── features/          # Inject-side features (map-instance, grid-display)
-│   └── tile-draw/         # Tile rendering (stats, filters, processing)
-├── core/
-│   ├── di.ts              # DI container & API types
-│   ├── initializer.ts     # Feature initialization orchestration (with error isolation)
-│   ├── message-handlers.ts # Content-side message handlers
-│   └── bridge/            # Content ↔ Inject communication (gallery, settings, overlay, etc.)
-├── features/              # Feature modules (gallery, drawing, etc.)
-├── states/                # Content script state (GalleryStorage, etc.)
-├── utils/
-│   ├── inject-bridge.ts   # Content ↔ Inject communication helpers
-│   ├── browser-api.ts     # Chrome/Firefox API wrapper (storage, runtime, tabs)
-│   └── ...                # Router, modal, coordinate, position, etc.
-└── i18n/                  # Internationalization
+  content.ts
+  popup.ts
+  inject.ts
+  inject/       # page-context logic
+  core/         # DI, initializer, bridges
+  features/     # feature modules
+  states/       # content-side states
+  utils/        # browser-api, inject-bridge, helpers
+  i18n/
 ```
-
-### Key Features
-
-Each feature is self-contained in `src/features/`:
-
-- **gallery**: Image upload, storage, editing
-- **tile-overlay**: Drawing images on map tiles
-- **drawing**: Manual pixel drawing
-- **time-travel**: Tile snapshot & restoration
-- **color-filter**: Color filters & drawing modes
-- **color-isolate**: Color isolation mode
-- **bookmark**: Saved locations
-- **map-filter**: Dark theme, high contrast
-- **data-saver**: Data saving mode
-- **text-draw**: Text rendering on map
-- **position-info**: Current coordinate display
-- **paint-stats**: User painting statistics
-- **show-unplaced-only**: Show unplaced pixels only
-- **friends-book**: Friends management
 
 ## Coding Standards
 
 ### Core Rules
 
-1. **Minimal implementation principle** - Solve one problem at a time
-2. **Error handling at boundaries** - Individual features are wrapped with try-catch in `core/initializer.ts` so one failure doesn't break others. Feature code itself should throw errors.
-3. **Arrow functions** - Prefer `const fn = () => {}` over `function fn() {}`
-4. **Path alias** - Use `@/` instead of relative paths: `import { di } from "@/core/di"`
+- Keep implementation minimal and focused on one problem at a time.
+- Prefer early return and `const` arrow functions.
+- Keep code simple; avoid boilerplate and repeated patterns.
+- If implementation gets complex, consider a simpler alternative first.
+- Feature-internal errors can be thrown; boundary isolation is handled by `core/initializer.ts`.
+- Use `@/` path aliases.
+- Avoid toast usage by default.
+- If API knowledge is insufficient, report it and ask for help.
 
 ### Logging
 
-Always use the 🧑‍🎨 icon for extension logs:
+Use a simple unified format:
 
-```typescript
-console.log("🧑‍🎨 : your message");
+```ts
+console.log("🧑‍🎨 : sample log");
 ```
-
-### Styling
-
-Chrome extensions have limited CSS. Use inline styles when Tailwind classes are uncertain:
-
-```typescript
-button.className = "btn btn-sm"; // Safe Tailwind classes
-button.style.cssText = `position: fixed; z-index: 800;`; // Custom styles
-```
-
-**Mobile scrolling fix**: Always include `-webkit-overflow-scrolling: touch; overscroll-behavior: contain;` for overflow scroll elements to ensure Android compatibility.
 
 ### Chrome APIs
 
-**Never import `chrome` directly.** Use the browser-api wrapper:
+Never import `chrome` directly. Use `@/utils/browser-api`.
 
-```typescript
+```ts
 import { storage, runtime, tabs } from "@/utils/browser-api";
-
-// Storage - NEVER use storage.get(null), use getKeys() instead
-await storage.get("key"); // Get single key
-await storage.get(["key1", "key2"]); // Get multiple keys
-await storage.getKeys(); // Get all keys (memory efficient)
-await storage.set({ key: "value" });
-await storage.remove("key");
-
-const url = runtime.getURL("dist/inject.js");
-runtime.sendMessage({ type: "reload" });
-runtime.onMessage.addListener(callback);
-
-const currentTab = await tabs.query({ active: true });
-tabs.sendMessage(tabId, message);
-tabs.reload(tabId);
 ```
 
-**Important:** `storage.get(null)` is intentionally not supported. Use `storage.getKeys()` to get all keys without loading values into memory, then fetch only the keys you need.
+- `storage.get(null)` is not supported.
+- Use `storage.getKeys()` to discover keys, then fetch only needed keys.
 
-### Internationalization
+### i18n
 
-**対応言語:** en (English), ja (日本語), es (Español), fr (Français), pt (Português), ru (Русский), vi (Tiếng Việt)
+- Do not read locale files directly (`src/i18n/locales/*.ts`).
+- Use `bun scripts/i18n.ts` for add/update/remove/search/list/missing.
+- Follow `.claude/skills/i18n/SKILL.md`.
+- Reuse existing translation keys before creating new keys.
+- Prefer UI designs that reduce new text when possible (and therefore reduce i18n surface).
 
-翻訳キーの追加・削除・更新は `bun scripts/i18n.ts` CLIを使用する。localeファイルを直接Readしない。
-詳細は `.claude/skills/i18n/SKILL.md` を参照。
+### Tutorial Additions
 
-```bash
-bun scripts/i18n.ts list                              # キー数確認
-bun scripts/i18n.ts missing                           # 不足キー確認
-bun scripts/i18n.ts get <key>                         # 全言語の値確認
-bun scripts/i18n.ts search <pattern>                  # 検索
-bun scripts/i18n.ts add <key> --en "val" --ja "val"   # 追加
-bun scripts/i18n.ts remove <key>                      # 削除
-bun scripts/i18n.ts update <key> --en "val"           # 更新
-```
-
-```typescript
-import { t } from "@/i18n/manager";
-
-const textAlt = t("feature_gallery_title"); // Function call syntax
-const text = t`${"feature_gallery_title"}`; // Template literal syntax (also supported)
-// don't use like this: t`title`
-```
-
-### Adding Tutorial
-
-Tutorial機能に新しいチュートリアル項目を追加する場合は、`.claude/skills/add-tutorial.md` を参照してください。
-
-**必要な作業:**
-
-1. GIF ファイルを `public/assets/images/tutorial/` に配置
-2. `manifest.json` と `manifest.template.json` の `web_accessible_resources` に GIF を追加
-3. `src/features/tutorial/index.ts` の `tutorials` 配列に項目を追加
-4. `src/i18n/locales/en.ts` と `src/i18n/locales/ja.ts` に翻訳キーを追加
-
-詳細な手順、命名規則、チェックリストは `.claude/skills/add-tutorial.md` を参照。
-
-## Important Utilities
-
-- `utils/router.ts`: Base Router class with history & i18n header
-- `utils/modal.ts`: Common modal creation helper
-- `utils/coordinate.ts`: Coordinate conversions (`llzToTilePixel`, `tilePixelToLatLng`)
-- `utils/position.ts`: Position navigation (`gotoPosition`, `getCurrentPosition`)
-- `utils/color-filter-manager.ts`: Color filter state management
-- `utils/image-storage.ts`: Gallery image persistence
-- `utils/inject-bridge.ts`: Content ↔ Inject communication helpers
+For tutorial item additions, follow `.claude/skills/add-tutorial/SKILL.md`.
 
 ## Critical Implementation Notes
 
-### Tile Overlay Architecture
+### Tile Overlay
 
-**IMPORTANT:** All tile overlay rendering happens in **inject context (page context)**, not content script context.
+- Overlay rendering is handled in **inject context only**.
+- Do not process overlay images in content script.
+- Do not use WASM in inject context for this feature.
+- Content manages persistence; inject handles rendering/compositing.
+- After overlay-related data changes in content, sync to inject:
+  - `sendGalleryImagesToInject()`
+  - `sendSnapshotsToInject()`
+  - `sendColorFilterToInject()`
 
-**Reason:** Firefox's security constraints prevent `ImageBitmap`/`ImageData` operations in extension context.
+For detailed inject-side architecture, see `src/inject/CLAUDE.md`.
 
-#### Content vs Inject Roles
+### Request/Response Bridge
 
-1. **Content script** (`src/content.ts`):
-   - Manages storage (gallery, snapshots, settings)
-   - Sends data to inject via `postMessage`
+When content needs computed data from inject (stats/pixel color), use helpers in:
 
-2. **Inject script** (`src/inject`):
-   - Receives data via message listeners
-   - Performs image processing (split, filter, render)
-   - Intercepts tile fetch and applies overlays
+- `src/utils/inject-bridge.ts`
 
-#### Data Sync Functions
+## Wplace Spec (Short)
 
-Always call these after modifying overlay-related data:
-
-```typescript
-import { sendGalleryImagesToInject } from "@/content";
-import { sendSnapshotsToInject } from "@/content";
-import { sendColorFilterToInject } from "@/content";
-
-// After gallery changes
-await sendGalleryImagesToInject();
-
-// After snapshot changes
-await sendSnapshotsToInject();
-
-// After color filter changes
-await sendColorFilterToInject();
-```
-
-#### Async Request/Response Pattern
-
-For features that need data FROM inject (stats, pixel color), use the helpers in `utils/inject-bridge.ts`:
-
-```typescript
-import { getAggregatedColorStats } from "@/utils/inject-bridge";
-
-const stats = await getAggregatedColorStats(imageKeys);
-```
-
-#### Key Constraints
-
-- ❌ **Never use WASM in inject context**
-- ❌ **Never process images in content script**
-- ✅ **Use Canvas API for image processing in inject**
-- ✅ **Content manages storage, inject handles rendering**
-
-See [src/inject/CLAUDE.md](src/inject/CLAUDE.md) for detailed inject architecture.
-
-### Statistics Persistence
-
-**Statistics are automatically saved and restored:**
-
-1. **On load**: Statistics are restored from Chrome storage to inject context
-2. **On tile visit**: Statistics are computed and saved to storage
-3. **On reload**: Statistics persist across browser restarts
-
-No manual intervention needed. Statistics persist across browser restarts.
-
-### Common Issues
-
-**Overlays don't update after data change:**
-
-- Ensure `sendGalleryImagesToInject()` is awaited
-- Check tile cache is cleared: `window.mrWplaceDataSaver?.tileCache.clear()`
-
-**Statistics not showing:**
-
-- Visit tiles first to compute statistics
-- Statistics are computed incrementally as you navigate
-
-**Scroll not working on card/item elements:**
-
-- Card/item elements can block wheel events from reaching parent scroll containers
-- Use `attachCardScrollPassthrough()` helper (cards) or `attachWheelPassthrough()` (gallery items)
-- These helpers manually propagate wheel/touch events to the nearest scrollable ancestor
-- Example: `attachCardScrollPassthrough(gridContainer)` after rendering cards
-
-**Debugging:**
-
-```typescript
-// Check inject state in browser console
-console.log("🧑‍🎨 : overlayLayers", window.overlayLayers);
-console.log("🧑‍🎨 : cache size", window.mrWplaceDataSaver?.tileCache.size);
-```
-
-### GalleryItem
-
-you can use GalleryStorage & Types
-
-```ts
-import { GalleryStorage, GalleryItem } from "@/states/galleryStorage";
-```
-
-```ts
-export interface GalleryItem {
-  key: string;
-  timestamp: number;
-  // Legacy: dataUrl is deprecated, will be removed in future versions
-  // New images use thumbnail + IndexedDB blob storage instead
-  dataUrl?: string;
-  // Thumbnail (128x128) for UI display, generated on save
-  thumbnail?: string;
-  title?: string;
-  drawPosition?: { TLX: number; TLY: number; PxX: number; PxY: number };
-  drawEnabled?: boolean;
-  layerOrder?: number;
-  matchedColorStats?: Record<string, number>;
-  totalColorStats?: Record<string, number>;
-  perTileColorStats?: Record<
-    string,
-    { matched: Record<string, number>; total: Record<string, number> }
-  >;
-}
-```
-
----
-
-**Coding Style:**
-
-- シンプルかつ最も効果的で単純明瞭なコードを書く
-- 早期リターン/const arrow を利用
-- if の内容が 1 行ならかっこでくくらないこともある
-- トーストは基本的に利用しない
-- 抽象化を意識した設計
-- パフォーマンスを意識
-- 実装のためにコードが複雑になりそうなら、別方法の検討もする
-- ボイラープレートや繰り返しを避ける
-- できるだけ短く最小限の変更が好ましい
-- 実装 API の知識が足りなければ、必ず報告し、ユーザの協力を要請
-- 必ずしもキリよく終わらせる必要はない
-- 不明点、実装上の問題点があれば、報告すること
-- 実装後、コードをチェックし、パフォーマンスやバグになりそうな注意点を確認・報告する
-- 実装後、候補になる commit message を表示する
-- コーディング前の方針を決める際は、自然言語で抽象的に設計する
-
-## wplace 仕様
-
-- 世界地図の上に、pixel art を描くサービス
-- pixel art は共有キャンバス
-- 1tile = web メルカトル zoomlevel 11 の単位 = 1000x1000px の png = 1fetch 単位
-- wplace はタイルを polling して更新している
-- polling に fetch intercept をして、画像サイズを大きくして、新しい pixel を描くことで、疑似的に overlay を実現
-- maplibreglを利用
-- themeはdocs/theme.mdを参照
-
-# 注意点
-
-- inject,content のそれぞれの機能は限定的
-- inject: window の context が直で使える
-- inject: chrome.storage が使えないので、多くの storage 設定は content で管理
-- inject: indexedDb をメインで利用。特に重い画像データは chrome.storage では避ける
-- content: window の context が使えないので、messaging で inject に委任
-- content: indexedDb も使えるが、面倒なので、inject に委任することが多い
-- content: メイン機能はすべてここに入れているが、描画などの処理は inject で担当させている
-- content: browserAPI が使えるが、crossplatform のために、src/utils/browser-api.ts を利用する必要がある
-- localizationのファイルはかなり大きい。基本的にREADはしないでほしい。localesをreadする場合、一部のみをreadするか、検索をする。どうしても必要なら、en.tsかja.tsのみをREADする。
+- Shared pixel art on a world map
+- `1 tile = WebMercator z11 tile = 1000x1000 PNG = 1 fetch unit`
+- Wplace updates tiles by polling
+- Overlay is implemented by fetch interception + compositing
+- Map engine: `maplibregl`
+- Theme reference: `docs/theme.md`
