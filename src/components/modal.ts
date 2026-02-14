@@ -16,6 +16,7 @@ export interface ModalElements {
   titleElement: HTMLElement;
   backButton: HTMLElement;
   container: HTMLElement;
+  minimizeButton: HTMLElement;
   destroy: () => void;
 }
 
@@ -26,7 +27,7 @@ export interface ModalElements {
 export const showNameInputModal = (
   title: string,
   placeholder: string,
-  defaultValue = ""
+  defaultValue = "",
 ): Promise<string | null> => {
   return new Promise((resolve) => {
     const modal = document.createElement("dialog");
@@ -52,7 +53,7 @@ export const showNameInputModal = (
     const saveBtn = modal.querySelector("#save-btn") as HTMLButtonElement;
     const cancelBtn = modal.querySelector("#cancel-btn") as HTMLButtonElement;
     const backdropBtn = modal.querySelector(
-      "#backdrop-btn"
+      "#backdrop-btn",
     ) as HTMLButtonElement;
 
     let resolved = false;
@@ -133,8 +134,8 @@ export const createModal = (options: ModalOptions): ModalElements => {
       <div class="flex justify-between items-center mb-4" style="flex-shrink: 0;">
         <div class="flex items-center gap-2">
           <button id="${id}-back-btn" class="btn btn-sm btn-ghost ${
-    hasBackButton ? "" : "hidden"
-  }">
+            hasBackButton ? "" : "hidden"
+          }">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
               <path fill-rule="evenodd" d="M7.72 12.53a.75.75 0 010-1.06l7.5-7.5a.75.75 0 111.06 1.06L9.31 12l6.97 6.97a.75.75 0 11-1.06 1.06l-7.5-7.5z" clip-rule="evenodd" />
             </svg>
@@ -142,11 +143,18 @@ export const createModal = (options: ModalOptions): ModalElements => {
           </button>
           <h3 id="${id}-title" class="font-bold text-lg">${title}</h3>
         </div>
-        <button id="${id}-close-btn" class="btn btn-sm btn-ghost">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
-            <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd" />
-          </svg>
-        </button>
+        <div class="flex items-center gap-1">
+          <button id="${id}-minimize-btn" class="btn btn-sm btn-ghost">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+              <path fill-rule="evenodd" d="M3 9a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75A.75.75 0 013 9zm0 6.75a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75z" clip-rule="evenodd" />
+            </svg>
+          </button>
+          <button id="${id}-close-btn" class="btn btn-sm btn-ghost">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+              <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <!-- Content Area -->
@@ -164,22 +172,51 @@ export const createModal = (options: ModalOptions): ModalElements => {
   const titleElement = modal.querySelector(`#${id}-title`) as HTMLElement;
   const backButton = modal.querySelector(`#${id}-back-btn`) as HTMLElement;
   const container = modal.querySelector(`#${id}-content`) as HTMLElement;
+  const minimizeButton = modal.querySelector(
+    `#${id}-minimize-btn`,
+  ) as HTMLButtonElement;
   const closeButton = modal.querySelector(
-    `#${id}-close-btn`
+    `#${id}-close-btn`,
   ) as HTMLButtonElement;
   const backdropButton = modal.querySelector(
-    `#${id}-backdrop-btn`
+    `#${id}-backdrop-btn`,
   ) as HTMLButtonElement;
+  const modalBox = modal.querySelector(".modal-box") as HTMLElement;
 
   // イベントハンドラーを関数として保持（removeEventListenerで使用するため）
   const handleBack = onBack || (() => {});
   const handleClose = () => modal.close();
+
+  let isMinimized = false;
+  const handleMinimize = () => {
+    isMinimized = !isMinimized;
+    if (isMinimized) {
+      container.style.display = "none";
+      modalBox.style.position = "fixed";
+      modalBox.style.top = "1rem";
+      modalBox.style.left = "50%";
+      modalBox.style.transform = "translateX(-50%)";
+      modalBox.style.width = "fit-content";
+      modalBox.style.maxWidth = "fit-content";
+      modalBox.style.margin = "0";
+    } else {
+      container.style.display = "";
+      modalBox.style.position = "";
+      modalBox.style.top = "";
+      modalBox.style.left = "";
+      modalBox.style.transform = "";
+      modalBox.style.width = "";
+      modalBox.style.maxWidth = "";
+      modalBox.style.margin = "";
+    }
+  };
 
   // 一度だけ登録（once オプション使用不可のため、手動管理）
   if (onBack) {
     backButton?.addEventListener("click", handleBack);
   }
 
+  minimizeButton.addEventListener("click", handleMinimize);
   closeButton.addEventListener("click", handleClose);
   backdropButton.addEventListener("click", handleClose);
 
@@ -187,6 +224,7 @@ export const createModal = (options: ModalOptions): ModalElements => {
   const cleanup = () => {
     // イベントリスナー解除
     if (onBack) backButton?.removeEventListener("click", handleBack);
+    minimizeButton.removeEventListener("click", handleMinimize);
     closeButton.removeEventListener("click", handleClose);
     backdropButton.removeEventListener("click", handleClose);
 
@@ -215,6 +253,7 @@ export const createModal = (options: ModalOptions): ModalElements => {
     titleElement,
     backButton,
     container,
+    minimizeButton,
     destroy,
   };
 };
