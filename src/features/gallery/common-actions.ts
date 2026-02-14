@@ -47,17 +47,25 @@ export const gotoMapPosition = async (item: GalleryItem): Promise<void> => {
 
 /**
  * 画像を位置情報ファイル名でダウンロード
+ * 位置情報がない場合はタイトルのみでダウンロード
  */
 export const downloadImage = (item: GalleryItem, canvasId: string): void => {
-  if (!item.drawPosition) throw new Error("Item has no drawPosition");
-
   const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
   if (!canvas) throw new Error("Canvas not found");
 
-  const { TLX, TLY, PxX, PxY } = item.drawPosition;
-  const coords = `${TLX}-${TLY}-${PxX}-${PxY}`;
-  const baseFilename = item.title ? `${item.title}_${coords}` : coords;
-  const filename = sanitizeFilename(baseFilename) + ".png";
+  let filename: string;
+
+  if (item.drawPosition) {
+    // 位置情報がある場合: タイトル_座標.png または 座標.png
+    const { TLX, TLY, PxX, PxY } = item.drawPosition;
+    const coords = `${TLX}-${TLY}-${PxX}-${PxY}`;
+    const baseFilename = item.title ? `${item.title}_${coords}` : coords;
+    filename = sanitizeFilename(baseFilename) + ".png";
+  } else {
+    // 位置情報がない場合: タイトル.png または image.png
+    const baseFilename = item.title || "image";
+    filename = sanitizeFilename(baseFilename) + ".png";
+  }
 
   console.log("🧑‍🎨 : Downloading image with filename:", filename);
 

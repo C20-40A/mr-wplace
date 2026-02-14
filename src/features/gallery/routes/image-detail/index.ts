@@ -194,11 +194,17 @@ export class GalleryImageDetail {
             <button id="edit-btn" class="btn btn-primary">
               ✏️ ${t`${"edit"}`}
             </button>
-            <div class="tooltip" data-tip="${t`${"share_description"}`}" style="width: 100%;">
-              <button id="download-btn" class="btn btn-accent" title="${t`${"share_description"}`}" style="width: 100%;">
-                📥 ${t`${"download"}`}
-              </button>
-            </div>
+            ${
+              item.drawPosition
+                ? `<div class="tooltip" data-tip="${t`${"share_description"}`}" style="width: 100%;">
+                     <button id="download-btn" class="btn btn-accent" title="${t`${"share_description"}`}" style="width: 100%;">
+                       📥 ${t`${"download"}`}
+                     </button>
+                   </div>`
+                : `<button id="download-btn" class="btn btn-accent" style="width: 100%;">
+                     📥 ${t`${"download"}`}
+                   </button>`
+            }
           </div>
         </div>
       </div>
@@ -445,8 +451,13 @@ export class GalleryImageDetail {
     downloadBtn?.addEventListener("click", () => {
       if (!this.currentItem) return;
 
-      downloadImage(this.currentItem, "image-detail-canvas");
-      Toast.success(t`${"download_success"}`);
+      try {
+        downloadImage(this.currentItem, "image-detail-canvas");
+        Toast.success(t`${"download_success"}`);
+      } catch (err) {
+        console.error("🧑‍🎨 : Failed to download image", err);
+        Toast.error(String(err));
+      }
     });
 
     // 座標更新ボタン
