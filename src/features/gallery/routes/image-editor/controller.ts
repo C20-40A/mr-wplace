@@ -287,6 +287,7 @@ export class EditorController {
       showColorStats: true,
       showDisableUnusedButton: true,
       controlSize: "xs",
+      sortOrder: "least-remaining",
     });
   }
 
