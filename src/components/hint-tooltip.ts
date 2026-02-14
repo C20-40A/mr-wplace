@@ -58,14 +58,14 @@ const ensureStyles = (): void => {
     }
 
     .${TOOLTIP_CLASS}[data-placement="top"]::after {
-      left: calc(50% - 7px);
+      left: var(--mr-hint-arrow-x, calc(50% - 7px));
       top: 100%;
       border-width: 8px 7px 0 7px;
       border-color: rgba(18, 20, 28, 0.96) transparent transparent transparent;
     }
 
     .${TOOLTIP_CLASS}[data-placement="bottom"]::after {
-      left: calc(50% - 7px);
+      left: var(--mr-hint-arrow-x, calc(50% - 7px));
       bottom: 100%;
       border-width: 0 7px 8px 7px;
       border-color: transparent transparent rgba(18, 20, 28, 0.96) transparent;
@@ -73,14 +73,14 @@ const ensureStyles = (): void => {
 
     .${TOOLTIP_CLASS}[data-placement="left"]::after {
       left: 100%;
-      top: calc(50% - 7px);
+      top: var(--mr-hint-arrow-y, calc(50% - 7px));
       border-width: 7px 0 7px 8px;
       border-color: transparent transparent transparent rgba(18, 20, 28, 0.96);
     }
 
     .${TOOLTIP_CLASS}[data-placement="right"]::after {
       right: 100%;
-      top: calc(50% - 7px);
+      top: var(--mr-hint-arrow-y, calc(50% - 7px));
       border-width: 7px 8px 7px 0;
       border-color: transparent rgba(18, 20, 28, 0.96) transparent transparent;
     }
@@ -188,6 +188,40 @@ const clamp = (value: number, min: number, max: number): number => {
   return value;
 };
 
+const ARROW_HALF = 7;
+const ARROW_FULL = ARROW_HALF * 2;
+const ARROW_EDGE_PADDING = 10;
+
+const updateArrowOffset = (
+  tooltip: HTMLDivElement,
+  targetRect: DOMRect,
+  placement: HintPlacement,
+  tooltipRect: DOMRect,
+  left: number,
+  top: number,
+): void => {
+  if (placement === "top" || placement === "bottom") {
+    const targetCenterX = targetRect.left + targetRect.width / 2;
+    const arrowLeft = clamp(
+      targetCenterX - left - ARROW_HALF,
+      ARROW_EDGE_PADDING,
+      tooltipRect.width - ARROW_FULL - ARROW_EDGE_PADDING,
+    );
+    tooltip.style.setProperty("--mr-hint-arrow-x", `${arrowLeft}px`);
+    tooltip.style.removeProperty("--mr-hint-arrow-y");
+    return;
+  }
+
+  const targetCenterY = targetRect.top + targetRect.height / 2;
+  const arrowTop = clamp(
+    targetCenterY - top - ARROW_HALF,
+    ARROW_EDGE_PADDING,
+    tooltipRect.height - ARROW_FULL - ARROW_EDGE_PADDING,
+  );
+  tooltip.style.setProperty("--mr-hint-arrow-y", `${arrowTop}px`);
+  tooltip.style.removeProperty("--mr-hint-arrow-x");
+};
+
 const positionTooltip = (
   tooltip: HTMLDivElement,
   target: HTMLElement,
@@ -223,8 +257,26 @@ const positionTooltip = (
   }
 
   tooltip.dataset.placement = placement;
-  tooltip.style.left = `${clamp(left, margin, window.innerWidth - tooltipRect.width - margin)}px`;
-  tooltip.style.top = `${clamp(top, margin, window.innerHeight - tooltipRect.height - margin)}px`;
+  const clampedLeft = clamp(
+    left,
+    margin,
+    window.innerWidth - tooltipRect.width - margin,
+  );
+  const clampedTop = clamp(
+    top,
+    margin,
+    window.innerHeight - tooltipRect.height - margin,
+  );
+  tooltip.style.left = `${clampedLeft}px`;
+  tooltip.style.top = `${clampedTop}px`;
+  updateArrowOffset(
+    tooltip,
+    targetRect,
+    placement,
+    tooltipRect,
+    clampedLeft,
+    clampedTop,
+  );
 };
 
 const dequeueAndShow = async (): Promise<void> => {
