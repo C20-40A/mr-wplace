@@ -3,6 +3,7 @@ import {
   dismissFeatureHint,
   isFeatureHintDismissed,
 } from "@/states/feature-hints";
+import { runtime } from "@/utils/browser-api";
 
 export type HintPlacement = "top" | "bottom" | "left" | "right";
 
@@ -30,107 +31,222 @@ let activeHint: ActiveHintState | null = null;
 const ensureStyles = (): void => {
   if (document.getElementById(STYLE_ID)) return;
 
+  const dotFontUrl = runtime.getURL(
+    "assets/fonts/khdotfont-20150527/KH-Dot-Akihabara-16.ttf",
+  );
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    .${TOOLTIP_CLASS} {
-      position: fixed;
-      max-width: min(22rem, calc(100vw - 1.5rem));
-      padding: 0.75rem 0.875rem;
-      border-radius: 0.75rem;
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      background: rgba(18, 20, 28, 0.96);
-      color: #f5f7ff;
-      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
-      z-index: 12000;
-      pointer-events: auto;
-      line-height: 1.35;
-      font-size: 0.82rem;
-      backdrop-filter: blur(3px);
+    @font-face {
+      font-family: "KHDotAkihabara";
+      src: url("${dotFontUrl}") format("truetype");
     }
 
+    .${TOOLTIP_CLASS} {
+      position: fixed;
+      max-width: min(30ch, calc(100vw - 1.5rem));
+      padding: 8px;
+      border: 2px solid #fff;
+      border-radius: 0;
+      background: #000;
+      color: #fff;
+      box-shadow: none;
+      z-index: 12000;
+      pointer-events: auto;
+      line-height: 1.45;
+      font-size: 12px;
+      font-family: "KHDotAkihabara", monospace;
+      letter-spacing: 0.02em;
+      image-rendering: pixelated;
+    }
+
+    .${TOOLTIP_CLASS}::before,
     .${TOOLTIP_CLASS}::after {
       content: "";
       position: absolute;
-      width: 0;
-      height: 0;
-      border-style: solid;
+      display: none;
+      background: #000;
+      pointer-events: none;
+      box-sizing: border-box;
+    }
+
+    .${TOOLTIP_CLASS}[data-placement="top"]::after,
+    .${TOOLTIP_CLASS}[data-placement="top"]::before {
+      display: block;
     }
 
     .${TOOLTIP_CLASS}[data-placement="top"]::after {
-      left: var(--mr-hint-arrow-x, calc(50% - 7px));
+      left: var(--mr-hint-arrow-x, calc(50% - 4px));
       top: 100%;
-      border-width: 8px 7px 0 7px;
-      border-color: rgba(18, 20, 28, 0.96) transparent transparent transparent;
+      width: 8px;
+      height: 4px;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+    }
+
+    .${TOOLTIP_CLASS}[data-placement="top"]::before {
+      left: calc(var(--mr-hint-arrow-x, calc(50% - 4px)) + 2px);
+      top: calc(100% + 4px);
+      width: 4px;
+      height: 2px;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+    }
+
+    .${TOOLTIP_CLASS}[data-placement="bottom"]::after,
+    .${TOOLTIP_CLASS}[data-placement="bottom"]::before {
+      display: block;
     }
 
     .${TOOLTIP_CLASS}[data-placement="bottom"]::after {
-      left: var(--mr-hint-arrow-x, calc(50% - 7px));
+      left: var(--mr-hint-arrow-x, calc(50% - 4px));
       bottom: 100%;
-      border-width: 0 7px 8px 7px;
-      border-color: transparent transparent rgba(18, 20, 28, 0.96) transparent;
+      width: 8px;
+      height: 4px;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #fff;
+      border-top: 2px solid #fff;
+    }
+
+    .${TOOLTIP_CLASS}[data-placement="bottom"]::before {
+      left: calc(var(--mr-hint-arrow-x, calc(50% - 4px)) + 2px);
+      bottom: calc(100% + 4px);
+      width: 4px;
+      height: 2px;
+      border-left: 2px solid #fff;
+      border-right: 2px solid #fff;
+      border-top: 2px solid #fff;
+    }
+
+    .${TOOLTIP_CLASS}[data-placement="left"]::after,
+    .${TOOLTIP_CLASS}[data-placement="left"]::before {
+      display: block;
     }
 
     .${TOOLTIP_CLASS}[data-placement="left"]::after {
       left: 100%;
-      top: var(--mr-hint-arrow-y, calc(50% - 7px));
-      border-width: 7px 0 7px 8px;
-      border-color: transparent transparent transparent rgba(18, 20, 28, 0.96);
+      top: var(--mr-hint-arrow-y, calc(50% - 4px));
+      width: 4px;
+      height: 8px;
+      border-top: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      border-right: 2px solid #fff;
+    }
+
+    .${TOOLTIP_CLASS}[data-placement="left"]::before {
+      left: calc(100% + 4px);
+      top: calc(var(--mr-hint-arrow-y, calc(50% - 4px)) + 2px);
+      width: 2px;
+      height: 4px;
+      border-top: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      border-right: 2px solid #fff;
+    }
+
+    .${TOOLTIP_CLASS}[data-placement="right"]::after,
+    .${TOOLTIP_CLASS}[data-placement="right"]::before {
+      display: block;
     }
 
     .${TOOLTIP_CLASS}[data-placement="right"]::after {
       right: 100%;
-      top: var(--mr-hint-arrow-y, calc(50% - 7px));
-      border-width: 7px 8px 7px 0;
-      border-color: transparent rgba(18, 20, 28, 0.96) transparent transparent;
+      top: var(--mr-hint-arrow-y, calc(50% - 4px));
+      width: 4px;
+      height: 8px;
+      border-top: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      border-left: 2px solid #fff;
+    }
+
+    .${TOOLTIP_CLASS}[data-placement="right"]::before {
+      right: calc(100% + 4px);
+      top: calc(var(--mr-hint-arrow-y, calc(50% - 4px)) + 2px);
+      width: 2px;
+      height: 4px;
+      border-top: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      border-left: 2px solid #fff;
     }
 
     .${TOOLTIP_CLASS} [data-role="header"] {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.5rem;
-      margin-bottom: 0.35rem;
+      gap: 8px;
+      margin-bottom: 6px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #fff;
     }
 
     .${TOOLTIP_CLASS} [data-role="title"] {
-      font-size: 0.75rem;
-      color: rgba(245, 247, 255, 0.78);
-      font-weight: 700;
-      letter-spacing: 0.02em;
+      font-size: 12px;
+      color: #fff;
+      font-weight: normal;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+      text-transform: uppercase;
     }
 
     .${TOOLTIP_CLASS} [data-role="title-wrap"] {
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 6px;
       min-width: 0;
     }
 
+    .${TOOLTIP_CLASS} [data-role="icon-frame"] {
+      width: 18px;
+      height: 18px;
+      border: 1px solid #fff;
+      padding: 1px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: #000;
+    }
+
     .${TOOLTIP_CLASS} [data-role="icon"] {
-      width: 1rem;
-      height: 1rem;
-      border-radius: 0.25rem;
+      width: 14px;
+      height: 14px;
       flex-shrink: 0;
       object-fit: cover;
+      image-rendering: pixelated;
     }
 
     .${TOOLTIP_CLASS} [data-role="close"] {
-      border: 0;
-      color: rgba(245, 247, 255, 0.85);
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 9999px;
-      width: 1.25rem;
-      height: 1.25rem;
-      font-size: 0.75rem;
+      border: 1px solid #fff;
+      color: #fff;
+      background: #000;
+      width: 16px;
+      height: 16px;
+      font-size: 11px;
       line-height: 1;
       cursor: pointer;
       padding: 0;
       flex-shrink: 0;
+      font-family: inherit;
     }
 
     .${TOOLTIP_CLASS} [data-role="close"]:hover {
-      background: rgba(255, 255, 255, 0.16);
+      background: #fff;
+      color: #000;
+    }
+
+    .${TOOLTIP_CLASS} [data-role="close"]:active {
+      background: #000;
+      color: #fff;
+    }
+
+    .${TOOLTIP_CLASS} [data-role="message"] {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .${TOOLTIP_CLASS} [data-role="message"]::before {
+      content: ">> ";
     }
   `;
 
@@ -188,9 +304,9 @@ const clamp = (value: number, min: number, max: number): number => {
   return value;
 };
 
-const ARROW_HALF = 7;
+const ARROW_HALF = 4;
 const ARROW_FULL = ARROW_HALF * 2;
-const ARROW_EDGE_PADDING = 10;
+const ARROW_EDGE_PADDING = 8;
 
 const updateArrowOffset = (
   tooltip: HTMLDivElement,
@@ -310,11 +426,14 @@ const dequeueAndShow = async (): Promise<void> => {
   titleWrap.dataset.role = "title-wrap";
 
   if (options.iconSrc) {
+    const iconFrame = document.createElement("span");
+    iconFrame.dataset.role = "icon-frame";
     const icon = document.createElement("img");
     icon.dataset.role = "icon";
     icon.src = options.iconSrc;
     icon.alt = "";
-    titleWrap.appendChild(icon);
+    iconFrame.appendChild(icon);
+    titleWrap.appendChild(iconFrame);
   }
 
   const title = document.createElement("div");
@@ -328,6 +447,7 @@ const dequeueAndShow = async (): Promise<void> => {
   closeButton.textContent = "✕";
 
   const message = document.createElement("div");
+  message.dataset.role = "message";
   message.textContent = options.message;
 
   titleWrap.appendChild(title);
