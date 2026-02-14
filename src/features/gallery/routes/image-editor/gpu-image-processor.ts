@@ -153,53 +153,6 @@ export const gpuProcessImage = async (
     outColor = vec4(rgb / 255.0, 1.0);
   }`;
 
-  // Phase1.5: シャープネス適用（アンチエイリアス除去）
-  const fsSharpnessSource = `#version 300 es
-  precision highp float;
-  in vec2 vTexCoord;
-  uniform sampler2D uAdjusted;
-  uniform float uSharpness;
-  uniform vec2 uTexelSize;
-  out vec4 outColor;
-
-  void main(){
-    vec4 center = texture(uAdjusted, vTexCoord);
-
-    // アルファ二値化：透明ピクセルはそのまま出力
-    if (center.a < 0.5) {
-      outColor = vec4(0.0, 0.0, 0.0, 0.0);
-      return;
-    }
-
-    if (uSharpness == 0.0) {
-      // シャープネス無効時はそのまま出力（alpha=1.0に固定）
-      outColor = vec4(center.rgb, 1.0);
-      return;
-    }
-
-    // 8方向シャープネスカーネル
-    float centerWeight = 1.0 + 8.0 * uSharpness;
-    float edgeWeight = -uSharpness;
-
-    vec3 rgb = center.rgb * 255.0;
-
-    // 3x3畳み込み（8方向）
-    vec3 sum = rgb * centerWeight;
-    sum += texture(uAdjusted, vTexCoord + vec2(-uTexelSize.x, -uTexelSize.y)).rgb * 255.0 * edgeWeight; // 左上
-    sum += texture(uAdjusted, vTexCoord + vec2(0.0, -uTexelSize.y)).rgb * 255.0 * edgeWeight;           // 上
-    sum += texture(uAdjusted, vTexCoord + vec2(uTexelSize.x, -uTexelSize.y)).rgb * 255.0 * edgeWeight;  // 右上
-    sum += texture(uAdjusted, vTexCoord + vec2(-uTexelSize.x, 0.0)).rgb * 255.0 * edgeWeight;           // 左
-    sum += texture(uAdjusted, vTexCoord + vec2(uTexelSize.x, 0.0)).rgb * 255.0 * edgeWeight;            // 右
-    sum += texture(uAdjusted, vTexCoord + vec2(-uTexelSize.x, uTexelSize.y)).rgb * 255.0 * edgeWeight;  // 左下
-    sum += texture(uAdjusted, vTexCoord + vec2(0.0, uTexelSize.y)).rgb * 255.0 * edgeWeight;            // 下
-    sum += texture(uAdjusted, vTexCoord + vec2(uTexelSize.x, uTexelSize.y)).rgb * 255.0 * edgeWeight;   // 右下
-
-    // クランプ
-    sum = clamp(sum, 0.0, 255.0);
-
-    outColor = vec4(sum / 255.0, 1.0);
-  }`;
-
   // Phase2: パレット量子化 + ディザリング
   const maxPalette = 64;
   const fsPaletteSource = `#version 300 es
@@ -332,7 +285,6 @@ export const gpuProcessImage = async (
   }`;
 
   const programAdjust = linkProgram(vsSource, fsAdjustSource);
-  const programSharpness = linkProgram(vsSource, fsSharpnessSource);
   const programPalette = linkProgram(vsSource, fsPaletteSource);
 
   // 頂点バッファ
@@ -425,66 +377,9 @@ export const gpuProcessImage = async (
   gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-  // Phase1.5: シャープネス → sharpnessTex
-  const sharpnessTex = gl.createTexture()!;
-  gl.activeTexture(gl.TEXTURE2);
-  gl.bindTexture(gl.TEXTURE_2D, sharpnessTex);
-  gl.texImage2D(
-    gl.TEXTURE_2D,
-    0,
-    gl.RGBA,
-    width,
-    height,
-    0,
-    gl.RGBA,
-    gl.UNSIGNED_BYTE,
-    null
-  );
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-
-  const fbo1_5 = gl.createFramebuffer()!;
-  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo1_5);
-  gl.framebufferTexture2D(
-    gl.FRAMEBUFFER,
-    gl.COLOR_ATTACHMENT0,
-    gl.TEXTURE_2D,
-    sharpnessTex,
-    0
-  );
-  if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
-    throw new Error("Framebuffer1.5 incomplete");
-  }
-
-  gl.useProgram(programSharpness);
-  const aPosLoc1_5 = gl.getAttribLocation(programSharpness, "aPos");
-  gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
-  gl.enableVertexAttribArray(aPosLoc1_5);
-  gl.vertexAttribPointer(aPosLoc1_5, 2, gl.FLOAT, false, 0, 0);
-
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, intermediateTex);
-  gl.uniform1i(gl.getUniformLocation(programSharpness, "uAdjusted"), 0);
-
-  const sharpnessStrength = adjustments.sharpness / 100;
-  gl.uniform1f(
-    gl.getUniformLocation(programSharpness, "uSharpness"),
-    sharpnessStrength
-  );
-  gl.uniform2f(
-    gl.getUniformLocation(programSharpness, "uTexelSize"),
-    1.0 / width,
-    1.0 / height
-  );
-
-  gl.viewport(0, 0, width, height);
-  gl.clearColor(0, 0, 0, 0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.drawArrays(gl.TRIANGLES, 0, 6);
-
   // Phase2: パレット量子化 → 最終テクスチャ
   const finalTex = gl.createTexture()!;
-  gl.activeTexture(gl.TEXTURE3);
+  gl.activeTexture(gl.TEXTURE2);
   gl.bindTexture(gl.TEXTURE_2D, finalTex);
   gl.texImage2D(
     gl.TEXTURE_2D,
@@ -520,7 +415,7 @@ export const gpuProcessImage = async (
   gl.vertexAttribPointer(aPosLoc2, 2, gl.FLOAT, false, 0, 0);
 
   gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, sharpnessTex);
+  gl.bindTexture(gl.TEXTURE_2D, intermediateTex);
   gl.uniform1i(gl.getUniformLocation(programPalette, "uAdjusted"), 0);
 
   const sendCount = Math.min(paletteRGB.length, maxPalette);
@@ -591,14 +486,11 @@ export const gpuProcessImage = async (
   // クリーンアップ
   gl.deleteTexture(sourceTex);
   gl.deleteTexture(intermediateTex);
-  gl.deleteTexture(sharpnessTex);
   gl.deleteTexture(finalTex);
   gl.deleteFramebuffer(fbo1);
-  gl.deleteFramebuffer(fbo1_5);
   gl.deleteFramebuffer(fbo2);
   gl.deleteBuffer(quadBuffer);
   gl.deleteProgram(programAdjust);
-  gl.deleteProgram(programSharpness);
   gl.deleteProgram(programPalette);
 
   // ImageBitmap解放（すべての処理完了後）

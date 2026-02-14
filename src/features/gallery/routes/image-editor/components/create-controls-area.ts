@@ -12,7 +12,7 @@ export const createControlsArea = (
       createSizeControl(createElement, elements),
       createContrastQuantizationControl(createElement, elements),
       createBrightnessSaturationControl(createElement, elements),
-      createDitheringSharpnessControl(createElement, elements),
+      createDitheringOutlineControl(createElement, elements),
       createCoordinateInput(createElement, elements),
       createActionButtons(createElement, elements),
     ],
@@ -53,15 +53,11 @@ const createSizeControl = (
   elements.sizeReductionLabel.textContent = t("size_reduction");
 
   return createElement("div", {}, [
-    createElement(
-      "label",
-      { className: "control-label space-between" },
-      [
-        createElement("span", { className: "label-hint" }, ["0.1x"]),
-        elements.sizeReductionLabel as HTMLElement,
-        createElement("span", { className: "label-hint" }, ["1.0x"]),
-      ],
-    ),
+    createElement("label", { className: "control-label space-between" }, [
+      createElement("span", { className: "label-hint" }, ["0.1x"]),
+      elements.sizeReductionLabel as HTMLElement,
+      createElement("span", { className: "label-hint" }, ["1.0x"]),
+    ]),
     createElement("div", { className: "flex-group" }, [
       elements.scaleSlider as HTMLInputElement,
       createElement("div", { className: "flex-group" }, [
@@ -99,9 +95,7 @@ const createContrastQuantizationControl = (
       createElement("option", { value: "weighted-rgb" }, [
         t("quantization_weighted_rgb"),
       ]),
-      createElement("option", { value: "lab" }, [
-        t("quantization_lab"),
-      ]),
+      createElement("option", { value: "lab" }, [t("quantization_lab")]),
     ],
   ) as HTMLSelectElement;
 
@@ -110,26 +104,20 @@ const createContrastQuantizationControl = (
     { id: "wps-contrast-quantization-container", className: "control-group" },
     [
       createElement("div", { className: "control-item" }, [
-        createElement(
-          "label",
-          { className: "control-label space-between" },
-          [
-            createElement("span", { className: "label-hint" }, ["-100"]),
-            createElement("span", {}, [
-              `${t("contrast")}: `,
-              elements.contrastValue as HTMLElement,
-            ]),
-            createElement("span", { className: "label-hint" }, ["100"]),
-          ],
-        ),
+        createElement("label", { className: "control-label space-between" }, [
+          createElement("span", { className: "label-hint" }, ["-100"]),
+          createElement("span", {}, [
+            `${t("contrast")}: `,
+            elements.contrastValue as HTMLElement,
+          ]),
+          createElement("span", { className: "label-hint" }, ["100"]),
+        ]),
         elements.contrastSlider as HTMLInputElement,
       ]),
       createElement("div", { className: "control-item" }, [
-        createElement(
-          "label",
-          { className: "control-label centered" },
-          [t("quantization_method")],
-        ),
+        createElement("label", { className: "control-label centered" }, [
+          t("quantization_method"),
+        ]),
         elements.quantizationMethod as HTMLSelectElement,
       ]),
     ],
@@ -174,40 +162,32 @@ const createBrightnessSaturationControl = (
     { id: "wps-brightness-saturation-container", className: "control-group" },
     [
       createElement("div", { className: "control-item" }, [
-        createElement(
-          "label",
-          { className: "control-label space-between" },
-          [
-            createElement("span", { className: "label-hint" }, ["-100"]),
-            createElement("span", {}, [
-              `${t("brightness")}: `,
-              elements.brightnessValue as HTMLElement,
-            ]),
-            createElement("span", { className: "label-hint" }, ["100"]),
-          ],
-        ),
+        createElement("label", { className: "control-label space-between" }, [
+          createElement("span", { className: "label-hint" }, ["-100"]),
+          createElement("span", {}, [
+            `${t("brightness")}: `,
+            elements.brightnessValue as HTMLElement,
+          ]),
+          createElement("span", { className: "label-hint" }, ["100"]),
+        ]),
         elements.brightnessSlider as HTMLInputElement,
       ]),
       createElement("div", { className: "control-item" }, [
-        createElement(
-          "label",
-          { className: "control-label space-between" },
-          [
-            createElement("span", { className: "label-hint" }, ["-100"]),
-            createElement("span", {}, [
-              `${t("saturation")}: `,
-              elements.saturationValue as HTMLElement,
-            ]),
-            createElement("span", { className: "label-hint" }, ["100"]),
-          ],
-        ),
+        createElement("label", { className: "control-label space-between" }, [
+          createElement("span", { className: "label-hint" }, ["-100"]),
+          createElement("span", {}, [
+            `${t("saturation")}: `,
+            elements.saturationValue as HTMLElement,
+          ]),
+          createElement("span", { className: "label-hint" }, ["100"]),
+        ]),
         elements.saturationSlider as HTMLInputElement,
       ]),
     ],
   );
 };
 
-const createDitheringSharpnessControl = (
+const createDitheringOutlineControl = (
   createElement: CreateElementFn,
   elements: UIElements,
 ): HTMLElement => {
@@ -232,28 +212,59 @@ const createDitheringSharpnessControl = (
     disabled: true,
   }) as HTMLInputElement;
 
-  elements.sharpnessCheckbox = createElement("input", {
-    id: "wps-sharpness-checkbox",
+  elements.outlineCheckbox = createElement("input", {
+    id: "wps-outline-checkbox",
     type: "checkbox",
     className: "checkbox checkbox-sm",
   }) as HTMLInputElement;
-  elements.sharpnessValue = createElement("span", { id: "wps-sharpness-value" }, [
-    "0",
-  ]);
-  elements.sharpnessSlider = createElement("input", {
-    id: "wps-sharpness-slider",
+  elements.outlineThresholdValue = createElement(
+    "span",
+    { id: "wps-outline-threshold-value" },
+    ["55"],
+  );
+  elements.outlineThresholdSlider = createElement("input", {
+    id: "wps-outline-threshold-slider",
     type: "range",
     min: 0,
-    max: 100,
+    max: 200,
     step: 1,
-    value: 0,
+    value: 55,
     className: "range",
     disabled: true,
   }) as HTMLInputElement;
 
+  elements.outlineWidthValue = createElement(
+    "span",
+    { id: "wps-outline-width-value" },
+    ["1"],
+  );
+  elements.outlineWidthSlider = createElement("input", {
+    id: "wps-outline-width-slider",
+    type: "range",
+    min: 1,
+    max: 4,
+    step: 1,
+    value: 1,
+    className: "range",
+    disabled: true,
+  }) as HTMLInputElement;
+  elements.outlineColorCheckbox = createElement("input", {
+    id: "wps-outline-color-checkbox",
+    type: "checkbox",
+    className: "checkbox checkbox-sm",
+    disabled: true,
+  }) as HTMLInputElement;
+  elements.outlineColorInput = createElement("input", {
+    id: "wps-outline-color-input",
+    type: "color",
+    value: "#000000",
+    disabled: true,
+    style: { width: "2rem", height: "1.5rem", padding: "0", border: "none" },
+  }) as HTMLInputElement;
+
   return createElement(
     "div",
-    { id: "wps-dithering-sharpness-container", className: "control-group" },
+    { id: "wps-dithering-outline-container", className: "control-group" },
     [
       createElement("div", { className: "control-item" }, [
         createElement(
@@ -273,22 +284,41 @@ const createDitheringSharpnessControl = (
           createElement("span", { className: "label-hint-sm" }, ["1500"]),
         ]),
       ]),
-      createElement("div", { className: "control-item" }, [
-        createElement(
-          "label",
-          { className: "control-label centered cursor-pointer" },
-          [
-            elements.sharpnessCheckbox as HTMLInputElement,
-            createElement("span", {}, [
-              `${t("sharpness")}: `,
-              elements.sharpnessValue as HTMLElement,
+      createElement("div", { id: "wps-outline-compact-row", className: "control-item" }, [
+        createElement("div", { id: "wps-outline-line1" }, [
+          createElement(
+            "label",
+            { className: "control-label centered cursor-pointer", style: { margin: "0" } },
+            [
+              elements.outlineCheckbox as HTMLInputElement,
+              createElement("span", {}, [t("outline_preserve")]),
+            ],
+          ),
+          createElement(
+            "label",
+            { className: "control-label centered cursor-pointer", style: { margin: "0" } },
+            [
+              elements.outlineColorCheckbox as HTMLInputElement,
+              createElement("span", { className: "label-hint-sm" }, [t("outline_color")]),
+              elements.outlineColorInput as HTMLInputElement,
+            ],
+          ),
+        ]),
+        createElement("div", { id: "wps-outline-line2" }, [
+          createElement("div", { className: "wps-outline-sensitivity" }, [
+            createElement("span", { className: "label-hint-sm" }, [
+              `${t("outline_sensitivity")}: `,
+              elements.outlineThresholdValue as HTMLElement,
             ]),
-          ],
-        ),
-        createElement("div", { className: "flex-group" }, [
-          createElement("span", { className: "label-hint-sm" }, ["0"]),
-          elements.sharpnessSlider as HTMLInputElement,
-          createElement("span", { className: "label-hint-sm" }, ["100"]),
+            elements.outlineThresholdSlider as HTMLInputElement,
+          ]),
+          createElement("div", { className: "wps-outline-width" }, [
+            createElement("span", { className: "label-hint-sm" }, [
+              `${t("outline_width")}: `,
+              elements.outlineWidthValue as HTMLElement,
+            ]),
+            elements.outlineWidthSlider as HTMLInputElement,
+          ]),
         ]),
       ]),
     ],

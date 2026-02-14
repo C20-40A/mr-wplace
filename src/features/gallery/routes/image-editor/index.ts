@@ -36,8 +36,13 @@ export class GalleryImageEditor {
       onBrightnessChange: (value) => this.controller?.onBrightnessChange(value),
       onContrastChange: (value) => this.controller?.onContrastChange(value),
       onSaturationChange: (value) => this.controller?.onSaturationChange(value),
-      onSharpnessToggle: (enabled) => this.controller?.onSharpnessToggle(enabled),
-      onSharpnessChange: (value) => this.controller?.onSharpnessChange(value),
+      onOutlineToggle: (enabled) => this.controller?.onOutlineToggle(enabled),
+      onOutlineThresholdChange: (value) => this.controller?.onOutlineThresholdChange(value),
+      onOutlineWidthChange: (value) => this.controller?.onOutlineWidthChange(value),
+      onOutlineUseFixedColorChange: (enabled) =>
+        this.controller?.onOutlineUseFixedColorChange(enabled),
+      onOutlineFixedColorChange: (value) =>
+        this.controller?.onOutlineFixedColorChange(value),
       onDitheringChange: (enabled) => this.controller?.onDitheringChange(enabled),
       onDitheringThresholdChange: (threshold) => this.controller?.onDitheringThresholdChange(threshold),
       onQuantizationMethodChange: (method) => this.controller?.onQuantizationMethodChange(method),

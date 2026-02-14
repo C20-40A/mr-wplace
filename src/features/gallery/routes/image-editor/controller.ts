@@ -26,8 +26,11 @@ export class EditorController {
   private brightness = 0;
   private contrast = 0;
   private saturation = 0;
-  private sharpnessEnabled = false;
-  private sharpness = 0;
+  private outlineEnabled = false;
+  private outlineThreshold = 55;
+  private outlineWidth = 1;
+  private outlineUseFixedColor = false;
+  private outlineFixedColor = "#000000";
   private ditheringEnabled = false;
   private ditheringThreshold = 500;
   private quantizationMethod: QuantizationMethod = "rgb-euclidean";
@@ -42,6 +45,8 @@ export class EditorController {
   private editingItemKey: string | null = null;
   private isDesktopMode = true;
   private cachedResizedBitmap: ImageBitmap | null = null;
+  private cachedOutlineBitmap: ImageBitmap | null = null;
+  private cachedOutlineKey = "";
   private cachedScale = 1.0;
   private readonly inspectorContainerSize = 300;
   private transparencyMask: Uint8Array | null = null;
@@ -180,6 +185,7 @@ export class EditorController {
       this.cachedResizedBitmap.close();
       this.cachedResizedBitmap = null;
     }
+    this.clearOutlineBitmapCache();
     this.updateScaledImage();
   }
 
@@ -198,14 +204,35 @@ export class EditorController {
     this.updateScaledImage();
   }
 
-  onSharpnessToggle(enabled: boolean): void {
-    console.log("🧑‍🎨 : Sharpness toggled:", enabled);
-    this.sharpnessEnabled = enabled;
+  onOutlineToggle(enabled: boolean): void {
+    console.log("🧑‍🎨 : Outline preserve toggled:", enabled);
+    this.outlineEnabled = enabled;
+    this.clearOutlineBitmapCache();
     this.updateScaledImage();
   }
 
-  onSharpnessChange(value: number): void {
-    this.sharpness = value;
+  onOutlineThresholdChange(value: number): void {
+    this.outlineThreshold = value;
+    this.clearOutlineBitmapCache();
+    this.updateScaledImage();
+  }
+
+  onOutlineWidthChange(value: number): void {
+    this.outlineWidth = value;
+    this.clearOutlineBitmapCache();
+    this.updateScaledImage();
+  }
+
+  onOutlineUseFixedColorChange(enabled: boolean): void {
+    this.outlineUseFixedColor = enabled;
+    this.clearOutlineBitmapCache();
+    this.updateScaledImage();
+  }
+
+  onOutlineFixedColorChange(value: string): void {
+    if (!/^#[0-9a-f]{6}$/i.test(value)) return;
+    this.outlineFixedColor = value;
+    this.clearOutlineBitmapCache();
     this.updateScaledImage();
   }
 
@@ -299,6 +326,7 @@ export class EditorController {
       this.cachedResizedBitmap.close();
       this.cachedResizedBitmap = null;
     }
+    this.clearOutlineBitmapCache();
 
     this.originalImage = null;
     this.scaledCanvas = null;
@@ -307,8 +335,11 @@ export class EditorController {
     this.brightness = 0;
     this.contrast = 0;
     this.saturation = 0;
-    this.sharpnessEnabled = false;
-    this.sharpness = 0;
+    this.outlineEnabled = false;
+    this.outlineThreshold = 55;
+    this.outlineWidth = 1;
+    this.outlineUseFixedColor = false;
+    this.outlineFixedColor = "#000000";
     this.ditheringEnabled = false;
     this.ditheringThreshold = 500;
     this.quantizationMethod = "rgb-euclidean";
@@ -351,13 +382,27 @@ export class EditorController {
     const saturationValue = this.container.querySelector(
       "#wps-saturation-value",
     );
-    const sharpnessCheckbox = this.container.querySelector(
-      "#wps-sharpness-checkbox",
+    const outlineCheckbox = this.container.querySelector(
+      "#wps-outline-checkbox",
     ) as HTMLInputElement;
-    const sharpnessSlider = this.container.querySelector(
-      "#wps-sharpness-slider",
+    const outlineThresholdSlider = this.container.querySelector(
+      "#wps-outline-threshold-slider",
     ) as HTMLInputElement;
-    const sharpnessValue = this.container.querySelector("#wps-sharpness-value");
+    const outlineThresholdValue = this.container.querySelector(
+      "#wps-outline-threshold-value",
+    );
+    const outlineWidthSlider = this.container.querySelector(
+      "#wps-outline-width-slider",
+    ) as HTMLInputElement;
+    const outlineWidthValue = this.container.querySelector(
+      "#wps-outline-width-value",
+    );
+    const outlineColorCheckbox = this.container.querySelector(
+      "#wps-outline-color-checkbox",
+    ) as HTMLInputElement;
+    const outlineColorInput = this.container.querySelector(
+      "#wps-outline-color-input",
+    ) as HTMLInputElement;
     const ditheringCheckbox = this.container.querySelector(
       "#wps-dithering-checkbox",
     ) as HTMLInputElement;
@@ -392,12 +437,25 @@ export class EditorController {
     if (contrastValue) contrastValue.textContent = "0";
     if (saturationSlider) saturationSlider.value = "0";
     if (saturationValue) saturationValue.textContent = "0";
-    if (sharpnessCheckbox) sharpnessCheckbox.checked = false;
-    if (sharpnessSlider) {
-      sharpnessSlider.value = "0";
-      sharpnessSlider.disabled = true;
+    if (outlineCheckbox) outlineCheckbox.checked = false;
+    if (outlineThresholdSlider) {
+      outlineThresholdSlider.value = "55";
+      outlineThresholdSlider.disabled = true;
     }
-    if (sharpnessValue) sharpnessValue.textContent = "0";
+    if (outlineThresholdValue) outlineThresholdValue.textContent = "55";
+    if (outlineWidthSlider) {
+      outlineWidthSlider.value = "1";
+      outlineWidthSlider.disabled = true;
+    }
+    if (outlineWidthValue) outlineWidthValue.textContent = "1";
+    if (outlineColorCheckbox) {
+      outlineColorCheckbox.checked = false;
+      outlineColorCheckbox.disabled = true;
+    }
+    if (outlineColorInput) {
+      outlineColorInput.value = "#000000";
+      outlineColorInput.disabled = true;
+    }
     if (ditheringCheckbox) ditheringCheckbox.checked = false;
     if (gpuToggle) gpuToggle.checked = true;
     if (tlxInput) tlxInput.value = "";
@@ -522,6 +580,7 @@ export class EditorController {
       this.cachedResizedBitmap.close();
       this.cachedResizedBitmap = null;
     }
+    this.clearOutlineBitmapCache();
     this.resetTransparencyState();
 
     if (originalImage) {
@@ -607,6 +666,7 @@ export class EditorController {
       this.cachedResizedBitmap.close();
       this.cachedResizedBitmap = null;
     }
+    this.clearOutlineBitmapCache();
     this.resetTransparencyState();
 
     const originalImage = this.container.querySelector(
@@ -754,10 +814,7 @@ export class EditorController {
       brightness: this.brightness,
       contrast: this.contrast,
       saturation: this.saturation,
-      sharpness: this.sharpnessEnabled ? this.sharpness : 0,
     };
-
-    let processedCanvas: HTMLCanvasElement;
 
     // スケール変更時のみリサイズを実行、それ以外はキャッシュを利用
     if (!this.cachedResizedBitmap || this.cachedScale !== this.imageScale) {
@@ -785,37 +842,64 @@ export class EditorController {
         },
       );
       this.cachedScale = this.imageScale;
-
-      // リサイズ後の処理
-      const { createProcessedCanvasFromBitmap } =
-        await import("./canvas-processor");
-      processedCanvas = await createProcessedCanvasFromBitmap(
-        this.cachedResizedBitmap,
-        adjustments,
-        this.selectedColorIds,
-        this.ditheringEnabled,
-        this.ditheringThreshold,
-        this.useGpu,
-        this.quantizationMethod,
-        this.transparentColors,
-      );
-    } else {
-      console.log("🧑‍🎨 : Using cached bitmap for processing");
-
-      // キャッシュされたリサイズ済みBitmapを使用
-      const { createProcessedCanvasFromBitmap } =
-        await import("./canvas-processor");
-      processedCanvas = await createProcessedCanvasFromBitmap(
-        this.cachedResizedBitmap,
-        adjustments,
-        this.selectedColorIds,
-        this.ditheringEnabled,
-        this.ditheringThreshold,
-        this.useGpu,
-        this.quantizationMethod,
-        this.transparentColors,
-      );
+      this.clearOutlineBitmapCache();
     }
+    if (!this.cachedResizedBitmap) return;
+
+    let processingSourceBitmap = this.cachedResizedBitmap;
+    if (this.outlineEnabled && this.imageScale < 1) {
+      const outlineKey = [
+        this.imageScale.toFixed(4),
+        this.outlineThreshold,
+        this.outlineWidth,
+        this.outlineUseFixedColor ? 1 : 0,
+        this.outlineFixedColor,
+        this.originalImage.naturalWidth,
+        this.originalImage.naturalHeight,
+      ].join("|");
+
+      if (!this.cachedOutlineBitmap || this.cachedOutlineKey !== outlineKey) {
+        const { createOutlinePreservedBitmap } = await import("./canvas-processor");
+        this.clearOutlineBitmapCache();
+        this.cachedOutlineBitmap = await createOutlinePreservedBitmap(
+          this.originalImage,
+          this.imageScale,
+          {
+            enabled: true,
+            threshold: this.outlineThreshold,
+            width: this.outlineWidth,
+            useFixedColor: this.outlineUseFixedColor,
+            fixedColor: this.outlineFixedColor,
+          },
+        );
+        this.cachedOutlineKey = outlineKey;
+      }
+
+      if (this.cachedOutlineBitmap) {
+        processingSourceBitmap = this.cachedOutlineBitmap;
+      }
+    } else {
+      this.clearOutlineBitmapCache();
+    }
+
+    if (processingSourceBitmap === this.cachedResizedBitmap) {
+      console.log("🧑‍🎨 : Using cached bitmap for processing");
+    } else {
+      console.log("🧑‍🎨 : Using outline-preserved bitmap for processing");
+    }
+
+    const { createProcessedCanvasFromBitmap } =
+      await import("./canvas-processor");
+    const processedCanvas = await createProcessedCanvasFromBitmap(
+      processingSourceBitmap,
+      adjustments,
+      this.selectedColorIds,
+      this.ditheringEnabled,
+      this.ditheringThreshold,
+      this.useGpu,
+      this.quantizationMethod,
+      this.transparentColors,
+    );
 
     // 透過マスク適用（編集後も維持）
     if (this.transparencyMask) {
@@ -1070,6 +1154,14 @@ export class EditorController {
     this.transparencyMaskHeight = 0;
     this.transparencyWorkingCanvas = null;
     this.transparencyBoundaryAdjust = 0;
+  }
+
+  private clearOutlineBitmapCache(): void {
+    if (this.cachedOutlineBitmap) {
+      this.cachedOutlineBitmap.close();
+      this.cachedOutlineBitmap = null;
+    }
+    this.cachedOutlineKey = "";
   }
 
   private ensureTransparencyWorkingMask(width: number, height: number): void {

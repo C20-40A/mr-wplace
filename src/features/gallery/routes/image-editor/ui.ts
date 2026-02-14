@@ -13,8 +13,11 @@ export interface ImageEditorCallbacks {
   onBrightnessChange: (value: number) => void;
   onContrastChange: (value: number) => void;
   onSaturationChange: (value: number) => void;
-  onSharpnessToggle: (enabled: boolean) => void;
-  onSharpnessChange: (value: number) => void;
+  onOutlineToggle: (enabled: boolean) => void;
+  onOutlineThresholdChange: (value: number) => void;
+  onOutlineWidthChange: (value: number) => void;
+  onOutlineUseFixedColorChange: (enabled: boolean) => void;
+  onOutlineFixedColorChange: (value: string) => void;
   onDitheringChange: (enabled: boolean) => void;
   onDitheringThresholdChange: (threshold: number) => void;
   onQuantizationMethodChange: (method: QuantizationMethod) => void;
@@ -215,8 +218,11 @@ export class ImageEditorUI {
       case "wps-saturation-slider":
         (this.elements.saturationValue as HTMLElement).textContent = value;
         break;
-      case "wps-sharpness-slider":
-        (this.elements.sharpnessValue as HTMLElement).textContent = value;
+      case "wps-outline-threshold-slider":
+        (this.elements.outlineThresholdValue as HTMLElement).textContent = value;
+        break;
+      case "wps-outline-width-slider":
+        (this.elements.outlineWidthValue as HTMLElement).textContent = value;
         break;
       case "wps-dithering-threshold-slider":
         (this.elements.ditheringThresholdValue as HTMLElement).textContent =
@@ -248,13 +254,31 @@ export class ImageEditorUI {
       case "wps-saturation-slider":
         this.callbacks.onSaturationChange(parseInt(target.value));
         break;
-      case "wps-sharpness-checkbox":
-        (this.elements.sharpnessSlider as HTMLInputElement).disabled =
+      case "wps-outline-checkbox":
+        (this.elements.outlineThresholdSlider as HTMLInputElement).disabled =
           !target.checked;
-        this.callbacks.onSharpnessToggle(target.checked);
+        (this.elements.outlineWidthSlider as HTMLInputElement).disabled =
+          !target.checked;
+        (this.elements.outlineColorCheckbox as HTMLInputElement).disabled =
+          !target.checked;
+        (this.elements.outlineColorInput as HTMLInputElement).disabled =
+          !target.checked ||
+          !(this.elements.outlineColorCheckbox as HTMLInputElement).checked;
+        this.callbacks.onOutlineToggle(target.checked);
         break;
-      case "wps-sharpness-slider":
-        this.callbacks.onSharpnessChange(parseInt(target.value));
+      case "wps-outline-threshold-slider":
+        this.callbacks.onOutlineThresholdChange(parseInt(target.value));
+        break;
+      case "wps-outline-width-slider":
+        this.callbacks.onOutlineWidthChange(parseInt(target.value));
+        break;
+      case "wps-outline-color-checkbox":
+        (this.elements.outlineColorInput as HTMLInputElement).disabled =
+          !target.checked;
+        this.callbacks.onOutlineUseFixedColorChange(target.checked);
+        break;
+      case "wps-outline-color-input":
+        this.callbacks.onOutlineFixedColorChange(target.value);
         break;
       case "wps-dithering-checkbox":
         (this.elements.ditheringThresholdSlider as HTMLInputElement).disabled =

@@ -451,4 +451,9 @@ export const ruTranslations = {
   map_filter_map3d: "3D вид",
   map_filter_mapSky: "Небо и туман",
   draw_on_map: "Рисовать на карте",
+  outline_preserve: "Сохранение контура",
+  outline_width: "Толщина контура",
+  outline_sensitivity: "Чувствительность",
+  outline_use_fixed_color: "Использовать фиксированный цвет линии",
+  outline_color: "Цвет линии",
 };

@@ -439,4 +439,9 @@ export const viTranslations = {
   map_filter_map3d: "Chế độ 3D",
   map_filter_mapSky: "Bầu trời & Sương",
   draw_on_map: "Vẽ lên bản đồ",
+  outline_preserve: "Giữ viền",
+  outline_width: "Độ dày viền",
+  outline_sensitivity: "Độ nhạy",
+  outline_use_fixed_color: "Dùng màu viền cố định",
+  outline_color: "Màu viền",
 };

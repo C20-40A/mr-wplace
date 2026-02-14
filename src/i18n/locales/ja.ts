@@ -524,4 +524,9 @@ export const jaTranslations = {
   map_filter_map3d_drag_rotate: "回転を有効化",
   map_filter_mapSky: "空とフォグ",
   draw_on_map: "マップに描画",
+  outline_preserve: "輪郭維持",
+  outline_width: "太さ",
+  outline_sensitivity: "感度",
+  outline_use_fixed_color: "線色を固定する",
+  outline_color: "線色",
 };

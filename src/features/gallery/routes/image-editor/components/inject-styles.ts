@@ -1,6 +1,8 @@
 import type { CreateElementFn } from "./types";
 
-export const injectImageEditorStyles = (createElement: CreateElementFn): void => {
+export const injectImageEditorStyles = (
+  createElement: CreateElementFn,
+): void => {
   const styleId = "wps-image-editor-styles";
   if (document.getElementById(styleId)) return;
 
@@ -101,6 +103,58 @@ export const injectImageEditorStyles = (createElement: CreateElementFn): void =>
       .control-item { flex: 1; min-width: 0; }
       .control-item .range { width: 100%; display: block; }
       .cursor-pointer { cursor: pointer; }
+      #wps-outline-compact-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+      #wps-outline-line1 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        align-self: center;
+      }
+      #wps-outline-line1 .control-label {
+        justify-content: flex-start;
+        align-self: center;
+      }
+      #wps-outline-line2 {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      #wps-outline-line2 .wps-outline-sensitivity {
+        flex: 3;
+        min-width: 0;
+      }
+      #wps-outline-line2 .wps-outline-width {
+        flex: 1;
+        min-width: 0;
+      }
+      #wps-outline-line2 .range {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+        display: block;
+      }
+      #wps-outline-line2 .wps-outline-sensitivity,
+      #wps-outline-line2 .wps-outline-width {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+      #wps-outline-line2 .wps-outline-sensitivity .label-hint-sm,
+      #wps-outline-line2 .wps-outline-width .label-hint-sm {
+        flex: 0 0 auto;
+      }
+      #wps-outline-compact-row .label-hint-sm,
+      #wps-outline-line1 .control-label {
+        white-space: nowrap;
+      }
+      #wps-outline-line1 input[type="color"] {
+        flex: 0 0 auto;
+      }
 
       #wps-image-editor-container.mobile .control-group { flex-direction: column; }
       #wps-image-editor-container.desktop .control-group { flex-direction: row; }

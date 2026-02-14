@@ -37,11 +37,10 @@ interface ImageAdjustments {
   brightness: number;  // -100~100
   contrast: number;    // -100~100
   saturation: number;  // -100~100
-  sharpness: number;   // 0~100
 }
 
 applyImageAdjustments(imageData, adjustments): void        // 破壊的変更
-applySharpness(imageData, amount): void                     // 3x3畳み込みシャープネス
+createOutlinePreservedBitmap(source, scale, options): Promise<ImageBitmap>
 quantizeToColorPalette(imageData, selectedColorIds): void  // 破壊的変更
 createProcessedCanvas(img, scale, adjustments, selectedColorIds): HTMLCanvasElement
 ```
@@ -51,37 +50,27 @@ createProcessedCanvas(img, scale, adjustments, selectedColorIds): HTMLCanvasElem
 ```
 createProcessedCanvas()
   1. リサイズ描画
-  2. applyImageAdjustments() 明るさ・コントラスト・彩度・シャープネス
-  3. quantizeToColorPalette() パレット量子化
-  4. 完成canvas返却
+  2. (outline有効時) 暗線抽出(勾配+局所コントラスト) + 膨張 + 縮小後上書き
+  3. applyImageAdjustments() 明るさ・コントラスト・彩度
+  4. quantizeToColorPalette() パレット量子化
+  5. 完成canvas返却
 
 GPU処理フロー (gpu-image-processor.ts)
   Phase1: brightness/contrast/saturation → intermediateTex
-  Phase1.5: sharpness (3x3畳み込み) → sharpnessTex
   Phase2: palette quantization → finalTex
   readPixels → 出力
 ```
 
-### シャープネス処理 (2025-11-10 追加)
+### 輪郭維持処理 (2026-02 追加)
 
-**目的**: アンチエイリアス除去でドット絵風に
+**目的**: 縮小時に細線が消える問題を抑える
 
 - **デフォルトOFF**: パフォーマンスのためトグルで有効化
-- **UI**: チェックボックス + スライダー（ディザリングと同様）
-- **8方向3x3畳み込みカーネル**: エッジ強調＋中間色削除
-- **強度調整**: 0-100 → 正規化 (0-1)
-- **カーネル重み**:
-  ```
-  -s  -s  -s
-  -s  1+8s -s
-  -s  -s  -s
-  ```
-  合計 = 1（正規化済み）
-- **GPU/CPU両対応**: 同一アルゴリズム実装
-- **GPUスキップ最適化**: `sharpness == 0.0` のときPhase1.5をスキップ
-- **境界処理**: 画像の端1ピクセルはスキップ
-- **アルファチャンネル**: 処理対象外（RGB のみ）
-- **適用順序**: パレット量子化の前に適用（中間色を除去してから量子化）
+- **UI**: チェックボックス + 感度 + 線幅 + 固定線色
+- **線抽出**: 暗線 + 局所コントラスト + 勾配の複合判定
+- **線幅調整**: 境界マスクを4近傍で膨張
+- **合成順序**: 本体をNEAREST縮小 → 輪郭色を上書き（固定色も可）
+- **GPU/CPU両対応**: 輪郭合成後の共通パイプライン
 
 ### 色変換アルゴリズム
 
@@ -100,8 +89,11 @@ scaledCanvas: HTMLCanvasElement | null
 imageScale: number              // 0.1-1.0
 selectedColorIds: number[]
 brightness/contrast/saturation: number
-sharpnessEnabled: boolean       // デフォルトfalse
-sharpness: number               // 0-100
+outlineEnabled: boolean         // デフォルトfalse
+outlineThreshold: number        // 0-200 (sensitivity)
+outlineWidth: number            // 1-4
+outlineUseFixedColor: boolean
+outlineFixedColor: string       // #RRGGBB
 ditheringEnabled: boolean
 ditheringThreshold: number
 useGpu: boolean
@@ -120,8 +112,11 @@ onScaleChange(scale); // canvas-processor使用
 onBrightnessChange(value);
 onContrastChange(value);
 onSaturationChange(value);
-onSharpnessToggle(enabled); // 2025-11-10追加
-onSharpnessChange(value);   // 2025-11-10追加
+onOutlineToggle(enabled);
+onOutlineThresholdChange(value);
+onOutlineWidthChange(value);
+onOutlineUseFixedColorChange(enabled);
+onOutlineFixedColorChange(value);
 onDitheringChange(enabled);
 onDitheringThresholdChange(threshold);
 onGpuToggle(enabled);
@@ -180,8 +175,11 @@ interface ImageEditorCallbacks {
   onBrightnessChange: (value: number) => void;
   onContrastChange: (value: number) => void;
   onSaturationChange: (value: number) => void;
-  onSharpnessToggle: (enabled: boolean) => void;  // 2025-11-10追加
-  onSharpnessChange: (value: number) => void;     // 2025-11-10追加
+  onOutlineToggle: (enabled: boolean) => void;
+  onOutlineThresholdChange: (value: number) => void;
+  onOutlineWidthChange: (value: number) => void;
+  onOutlineUseFixedColorChange: (enabled: boolean) => void;
+  onOutlineFixedColorChange: (value: string) => void;
   onDitheringChange: (enabled: boolean) => void;
   onDitheringThresholdChange: (threshold: number) => void;
   onGpuToggle: (enabled: boolean) => void;

@@ -456,4 +456,9 @@ export const frTranslations = {
   map_filter_map3d: "Vue 3D",
   map_filter_mapSky: "Ciel et Brouillard",
   draw_on_map: "Dessiner sur carte",
+  outline_preserve: "Préserver les contours",
+  outline_width: "Épaisseur du contour",
+  outline_sensitivity: "Sensibilité",
+  outline_use_fixed_color: "Utiliser une couleur de ligne fixe",
+  outline_color: "Couleur ligne",
 };

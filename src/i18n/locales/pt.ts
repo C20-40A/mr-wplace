@@ -440,4 +440,9 @@ export const ptTranslations = {
   map_filter_map3d: "Visão 3D",
   map_filter_mapSky: "Céu e Neblina",
   draw_on_map: "Desenhar no mapa",
+  outline_preserve: "Preservar contorno",
+  outline_width: "Espessura do contorno",
+  outline_sensitivity: "Sensibilidade",
+  outline_use_fixed_color: "Usar cor de linha fixa",
+  outline_color: "Cor da linha",
 };
