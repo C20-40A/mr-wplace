@@ -325,7 +325,7 @@ export const jaTranslations = {
   compute_device_label: "テンプレート描画処理方式",
 
   // Show Unplaced Only
-  show_unplaced_only: "配置済み色",
+  show_unplaced_only: "配置済み色を薄く",
   show_unplaced_color: "色",
 
   // Tile Merge
@@ -531,7 +531,7 @@ export const jaTranslations = {
   outline_color: "線色",
   hint_title: "ヒント",
   hint_close: "ヒントを閉じる",
-  hint_show_unplaced_only: "未配置のみ表示は、まだマップに配置していない画像だけを表示します。",
-  hint_color_isolate: "選択色のみ表示は、現在選択中の色だけを目立たせるため、塗るときに集中しやすくなります。",
+  hint_show_unplaced_only: "すでに配置が完了した色を目立たなくする機能です。",
+  hint_color_isolate: "選択中の色のみを表示する機能です。ONにしておくと色を選択したとき、自動で色のフィルターが切り替わります。",
   hint_data_saver: "Data Saver は重いタイル更新を一時停止して通信量と描画負荷を下げます。もう一度押すと通常更新に戻ります。",
 };

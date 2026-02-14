@@ -261,6 +261,9 @@ const dequeueAndShow = async (): Promise<void> => {
   const offset = options.offset ?? 10;
   positionTooltip(tooltip, options.target, placement, offset);
 
+  let settleRafId: number | null = null;
+  let delayedUpdateTimeoutId: number | null = null;
+
   const handlePositionUpdate = () => {
     if (!options.target.isConnected) {
       void activeHint?.close(false);
@@ -268,6 +271,15 @@ const dequeueAndShow = async (): Promise<void> => {
     }
     positionTooltip(tooltip, options.target, placement, offset);
   };
+
+  const settlingStartedAt = performance.now();
+  const runSettlingPositionUpdate = () => {
+    handlePositionUpdate();
+    if (performance.now() - settlingStartedAt >= 1000) return;
+    settleRafId = window.requestAnimationFrame(runSettlingPositionUpdate);
+  };
+  settleRafId = window.requestAnimationFrame(runSettlingPositionUpdate);
+  delayedUpdateTimeoutId = window.setTimeout(handlePositionUpdate, 800);
 
   const handleOutsidePointerDown = (event: MouseEvent) => {
     const eventTarget = event.target as Node | null;
@@ -292,16 +304,23 @@ const dequeueAndShow = async (): Promise<void> => {
     }
   });
   lifecycleObserver.observe(document.body, { childList: true, subtree: true });
+  const targetResizeObserver = new ResizeObserver(handlePositionUpdate);
+  targetResizeObserver.observe(options.target);
 
   const close = async (markDismissed: boolean): Promise<void> => {
     if (activeHint?.id !== options.id) return;
 
+    if (settleRafId !== null) window.cancelAnimationFrame(settleRafId);
+    if (delayedUpdateTimeoutId !== null) {
+      window.clearTimeout(delayedUpdateTimeoutId);
+    }
     window.removeEventListener("resize", handlePositionUpdate);
     window.removeEventListener("scroll", handlePositionUpdate, true);
     document.removeEventListener("mousedown", handleOutsidePointerDown, true);
     document.removeEventListener("keydown", handleEscape, true);
     options.target.removeEventListener("click", handleTargetClick);
     lifecycleObserver.disconnect();
+    targetResizeObserver.disconnect();
 
     tooltip.remove();
 

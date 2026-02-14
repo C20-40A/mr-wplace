@@ -318,7 +318,7 @@ Do not use this feature to paint actual pixels.`,
   compute_device_label: "Template Rendering Processing",
 
   // Show Unplaced Only
-  show_unplaced_only: "Placed",
+  show_unplaced_only: "Dim Placed Colors",
   show_unplaced_color: "Color",
 
   // Tile Merge
@@ -521,7 +521,7 @@ Do not use this feature to paint actual pixels.`,
   hint_title: "Hint",
   hint_close: "Close hint",
   hint_show_unplaced_only:
-    "Show Unplaced Only filters the list to images that are not yet placed on the map.",
+    "This feature makes already placed colors less prominent.",
   hint_color_isolate:
     "Show Selected Color Only highlights only the currently selected color so you can focus while painting.",
   hint_data_saver:

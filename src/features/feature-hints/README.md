@@ -65,6 +65,7 @@ showFeatureHint("your-feature-id", buttonElement);
 ## 動作仕様
 
 - 表示は `id` ごとに 1 回だけ
+- `show-unplaced-only` は「配置済み色を薄くする」補助機能として案内する
 - 閉じる条件:
   - 吹き出しの `✕` ボタン
   - 対象要素のクリック

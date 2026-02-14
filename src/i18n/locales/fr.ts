@@ -290,7 +290,7 @@ export const frTranslations = {
   compute_device_label: "Traitement",
 
   // Show Unplaced Only
-  show_unplaced_only: "Non placés uniquement",
+  show_unplaced_only: "Atténuer les couleurs placées",
 
   // Tile Merge
   tile_merge: "Fusion de tuiles",
@@ -463,7 +463,7 @@ export const frTranslations = {
   outline_color: "Couleur ligne",
   hint_title: "Astuce",
   hint_close: "Fermer l'astuce",
-  hint_show_unplaced_only: "Afficher uniquement les non placées filtre la liste sur les images qui ne sont pas encore placées sur la carte.",
+  hint_show_unplaced_only: "Cette fonctionnalité rend moins visibles les couleurs déjà placées.",
   hint_color_isolate: "Afficher uniquement la couleur sélectionnée met en évidence seulement la couleur actuellement sélectionnée pour mieux vous concentrer pendant la peinture.",
   hint_data_saver: "Le mode économie de données suspend les mises à jour lourdes des tuiles pour réduire la charge réseau et le rendu. Appuyez de nouveau pour reprendre les mises à jour normales.",
 };

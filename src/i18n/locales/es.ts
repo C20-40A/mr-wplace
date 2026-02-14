@@ -290,7 +290,7 @@ export const esTranslations = {
   compute_device_label: "Procesamiento",
 
   // Show Unplaced Only
-  show_unplaced_only: "Solo Sin Colocar",
+  show_unplaced_only: "Atenuar colores colocados",
 
   // Tile Merge
   tile_merge: "Fusionar Bloques",
@@ -464,7 +464,7 @@ export const esTranslations = {
   outline_color: "Color de línea",
   hint_title: "Consejo",
   hint_close: "Cerrar consejo",
-  hint_show_unplaced_only: "Mostrar solo no colocadas filtra la lista a imágenes que aún no se han colocado en el mapa.",
+  hint_show_unplaced_only: "Esta función hace menos notorios los colores ya colocados.",
   hint_color_isolate: "Mostrar solo el color seleccionado resalta solo el color seleccionado actualmente para que puedas concentrarte al pintar.",
   hint_data_saver: "Data Saver pausa las actualizaciones pesadas de tiles para reducir la carga de red y renderizado. Pulsa de nuevo para reanudar las actualizaciones normales.",
 };

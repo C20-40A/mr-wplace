@@ -284,7 +284,7 @@ export const viTranslations = {
   compute_device_label: "Xử lý",
 
   // Show Unplaced Only
-  show_unplaced_only: "Chỉ chưa đặt",
+  show_unplaced_only: "Làm mờ màu đã đặt",
 
   // Tile Merge
   tile_merge: "Hợp nhất ô",
@@ -446,7 +446,7 @@ export const viTranslations = {
   outline_color: "Màu viền",
   hint_title: "Gợi ý",
   hint_close: "Đóng gợi ý",
-  hint_show_unplaced_only: "Chỉ hiển thị chưa đặt sẽ lọc danh sách chỉ còn các hình ảnh chưa được đặt trên bản đồ.",
+  hint_show_unplaced_only: "Tính năng này làm cho các màu đã đặt bớt nổi bật hơn.",
   hint_color_isolate: "Chỉ hiển thị màu đã chọn sẽ làm nổi bật đúng màu đang chọn để bạn tập trung hơn khi vẽ.",
   hint_data_saver: "Tiết kiệm dữ liệu sẽ tạm dừng các cập nhật tile nặng để giảm tải mạng và kết xuất. Nhấn lại để tiếp tục cập nhật bình thường.",
 };
