@@ -42,7 +42,7 @@ export class ColorPalette {
     this.container = container;
     this.options = options;
     this.selectedColorIds = new Set(
-      options.selectedColorIds ?? colorpalette.map((c) => c.id)
+      options.selectedColorIds ?? colorpalette.map((c) => c.id),
     );
     this.currentlySelectedColorId = options.showCurrentlySelected
       ? getCurrentlySelectedColorId()
@@ -71,7 +71,7 @@ export class ColorPalette {
       this.selectedColorIds,
       this.currentlySelectedColorId,
       sortedColors,
-      this.options
+      this.options,
     );
     const controlsHtml = buildControlsHtml(
       this.options.hasExtraColorsBitmap ?? false,
@@ -125,7 +125,7 @@ export class ColorPalette {
         if (img && icons[mode]) img.src = icons[mode];
       });
       const currentIcon = this.container.querySelector(
-        ".enhanced-mode-current-icon"
+        ".enhanced-mode-current-icon",
       ) as HTMLImageElement;
       if (currentIcon && icons[this.enhancedMode])
         currentIcon.src = icons[this.enhancedMode];
@@ -147,25 +147,25 @@ export class ColorPalette {
   private handleDocumentClick(e: MouseEvent): void {
     if (!(e.target as HTMLElement).closest(".sort-order-container")) {
       const dropdown = this.container.querySelector(
-        ".sort-order-dropdown"
+        ".sort-order-dropdown",
       ) as HTMLElement;
       if (dropdown) dropdown.style.display = "none";
     }
     if (!(e.target as HTMLElement).closest(".enhanced-mode-container")) {
       const dropdown = this.container.querySelector(
-        ".enhanced-mode-dropdown"
+        ".enhanced-mode-dropdown",
       ) as HTMLElement;
       if (dropdown) dropdown.style.display = "none";
     }
     if (!(e.target as HTMLElement).closest(".compute-device-container")) {
       const dropdown = this.container.querySelector(
-        ".compute-device-dropdown"
+        ".compute-device-dropdown",
       ) as HTMLElement;
       if (dropdown) dropdown.style.display = "none";
     }
     if (!(e.target as HTMLElement).closest(".overlay-mode-container")) {
       const dropdown = this.container.querySelector(
-        ".overlay-mode-dropdown"
+        ".overlay-mode-dropdown",
       ) as HTMLElement;
       if (dropdown) dropdown.style.display = "none";
     }
@@ -205,7 +205,7 @@ export class ColorPalette {
     ) {
       e.stopPropagation();
       const dropdown = this.container.querySelector(
-        ".sort-order-dropdown"
+        ".sort-order-dropdown",
       ) as HTMLElement;
       if (dropdown) {
         const isVisible = dropdown.style.display !== "none";
@@ -221,7 +221,7 @@ export class ColorPalette {
       const sort = sortOrderItem.dataset.sort as SortOrder;
       this.handleSortOrderChange(sort);
       const dropdown = this.container.querySelector(
-        ".sort-order-dropdown"
+        ".sort-order-dropdown",
       ) as HTMLElement;
       if (dropdown) dropdown.style.display = "none";
       return;
@@ -234,7 +234,7 @@ export class ColorPalette {
     ) {
       e.stopPropagation();
       const dropdown = this.container.querySelector(
-        ".enhanced-mode-dropdown"
+        ".enhanced-mode-dropdown",
       ) as HTMLElement;
       if (dropdown) {
         const isVisible = dropdown.style.display !== "none";
@@ -243,7 +243,7 @@ export class ColorPalette {
           // レスポンシブ対応
           const isMobile = window.innerWidth < 640;
           const grid = dropdown.querySelector(
-            ".enhanced-mode-grid"
+            ".enhanced-mode-grid",
           ) as HTMLElement;
           if (isMobile) {
             dropdown.style.minWidth = "";
@@ -261,14 +261,14 @@ export class ColorPalette {
 
     // Enhanced Mode Item
     const enhancedModeItem = target.closest(
-      ".enhanced-mode-item"
+      ".enhanced-mode-item",
     ) as HTMLElement;
     if (enhancedModeItem) {
       e.stopPropagation();
       const mode = enhancedModeItem.dataset.mode as EnhancedMode;
       this.handleEnhancedModeChange(mode);
       const dropdown = this.container.querySelector(
-        ".enhanced-mode-dropdown"
+        ".enhanced-mode-dropdown",
       ) as HTMLElement;
       if (dropdown) dropdown.style.display = "none";
       return;
@@ -281,7 +281,7 @@ export class ColorPalette {
     ) {
       e.stopPropagation();
       const dropdown = this.container.querySelector(
-        ".compute-device-dropdown"
+        ".compute-device-dropdown",
       ) as HTMLElement;
       if (dropdown) {
         const isVisible = dropdown.style.display !== "none";
@@ -297,7 +297,7 @@ export class ColorPalette {
     ) {
       e.stopPropagation();
       const dropdown = this.container.querySelector(
-        ".overlay-mode-dropdown"
+        ".overlay-mode-dropdown",
       ) as HTMLElement;
       if (dropdown) {
         const isVisible = dropdown.style.display !== "none";
@@ -313,7 +313,7 @@ export class ColorPalette {
       const nextEnabled = overlayModeItem.dataset.overlayMode === "true";
       this.handleOverlayModeChange(nextEnabled);
       const dropdown = this.container.querySelector(
-        ".overlay-mode-dropdown"
+        ".overlay-mode-dropdown",
       ) as HTMLElement;
       if (dropdown) dropdown.style.display = "none";
       return;
@@ -321,14 +321,14 @@ export class ColorPalette {
 
     // Compute Device Item
     const computeDeviceItem = target.closest(
-      ".compute-device-item"
+      ".compute-device-item",
     ) as HTMLElement;
     if (computeDeviceItem) {
       e.stopPropagation();
       const device = computeDeviceItem.dataset.device as ComputeDevice;
       this.handleComputeDeviceChange(device);
       const dropdown = this.container.querySelector(
-        ".compute-device-dropdown"
+        ".compute-device-dropdown",
       ) as HTMLElement;
       if (dropdown) dropdown.style.display = "none";
       return;
@@ -374,7 +374,7 @@ export class ColorPalette {
 
   private enableFreeColors(): void {
     this.selectedColorIds = new Set(
-      colorpalette.filter((c) => !c.premium).map((c) => c.id)
+      colorpalette.filter((c) => !c.premium).map((c) => c.id),
     );
     this.updateAllColorSelections();
     this.notifyChange();
@@ -398,7 +398,7 @@ export class ColorPalette {
       if (stats.total > 0) {
         const [r, g, b] = colorKey.split(",").map(Number);
         const color = colorpalette.find(
-          (c) => c.rgb[0] === r && c.rgb[1] === g && c.rgb[2] === b
+          (c) => c.rgb[0] === r && c.rgb[1] === g && c.rgb[2] === b,
         );
         if (color) usedColorIds.add(color.id);
       }
@@ -417,7 +417,7 @@ export class ColorPalette {
 
   private updateColorSelection(colorId: number): void {
     const colorItem = this.container.querySelector(
-      `[data-color-id="${colorId}"]`
+      `[data-color-id="${colorId}"]`,
     ) as HTMLElement;
     if (!colorItem) return;
 
@@ -463,12 +463,12 @@ export class ColorPalette {
     this.enhancedMode = mode;
 
     const icons = createEnhancedModeIcons(
-      `#${this.enhancedColor.map((c) => c.toString(16).padStart(2, "0")).join("")}`
+      `#${this.enhancedColor.map((c) => c.toString(16).padStart(2, "0")).join("")}`,
     );
 
     // 現在選択中のアイコンと名称を更新
     const currentIcon = this.container.querySelector(
-      ".enhanced-mode-current-icon"
+      ".enhanced-mode-current-icon",
     ) as HTMLImageElement;
     if (currentIcon) {
       currentIcon.src = icons[mode];
@@ -476,7 +476,7 @@ export class ColorPalette {
     }
 
     const currentName = this.container.querySelector(
-      ".enhanced-mode-current-name"
+      ".enhanced-mode-current-name",
     );
     if (currentName) {
       currentName.textContent = t`${getEnhancedModeLabelKey(mode)}`;
@@ -489,20 +489,26 @@ export class ColorPalette {
       const isSelected = buttonMode === mode;
       const borderColor = isSelected ? "#22c55e" : "#d1d5db";
       const borderWidth = isSelected ? "3px" : "2px";
-      (
-        button as HTMLElement
-      ).style.border = `${borderWidth} solid ${borderColor}`;
+      (button as HTMLElement).style.border =
+        `${borderWidth} solid ${borderColor}`;
     });
 
     // カラーピッカーの表示切替
     const RED_BASED: EnhancedMode[] = [
-      "red-cross", "red-border", "huge-red-cross", "huge-red-cross-bold", "huge-red-diamond", "huge-red-ring",
+      "red-cross",
+      "red-border",
+      "huge-red-cross",
+      "huge-red-cross-bold",
+      "huge-red-diamond",
+      "huge-red-ring",
     ];
     const pickerContainer = this.container.querySelector(
-      ".enhanced-color-picker-container"
+      ".enhanced-color-picker-container",
     ) as HTMLElement;
     if (pickerContainer)
-      pickerContainer.style.display = RED_BASED.includes(mode) ? "flex" : "none";
+      pickerContainer.style.display = RED_BASED.includes(mode)
+        ? "flex"
+        : "none";
 
     if (this.options.onEnhancedModeChange) {
       this.options.onEnhancedModeChange(mode);
@@ -514,7 +520,7 @@ export class ColorPalette {
 
     // 現在選択中のデバイス名を更新
     const currentName = this.container.querySelector(
-      ".compute-device-current-name"
+      ".compute-device-current-name",
     );
     if (currentName) {
       const deviceLabel = device === "gpu" ? "GPU" : "CPU";
@@ -528,9 +534,8 @@ export class ColorPalette {
       const isSelected = buttonDevice === device;
       const borderColor = isSelected ? "#22c55e" : "#d1d5db";
       const borderWidth = isSelected ? "2px" : "1px";
-      (
-        button as HTMLElement
-      ).style.border = `${borderWidth} solid ${borderColor}`;
+      (button as HTMLElement).style.border =
+        `${borderWidth} solid ${borderColor}`;
     });
 
     if (this.options.onComputeDeviceChange) {
@@ -541,18 +546,24 @@ export class ColorPalette {
   private handleOverlayModeChange(enabled: boolean): void {
     this.overlayMode = enabled;
 
-    const currentName = this.container.querySelector(".overlay-mode-current-name");
+    const currentName = this.container.querySelector(
+      ".overlay-mode-current-name",
+    );
     if (currentName) {
-      currentName.textContent = enabled ? "独立" : "合成";
+      currentName.textContent = enabled
+        ? t("overlay_mode_independent")
+        : t("overlay_mode_composite");
     }
 
     const buttons = this.container.querySelectorAll(".overlay-mode-item");
     buttons.forEach((button) => {
-      const buttonEnabled = (button as HTMLElement).dataset.overlayMode === "true";
+      const buttonEnabled =
+        (button as HTMLElement).dataset.overlayMode === "true";
       const isSelected = buttonEnabled === enabled;
       const borderColor = isSelected ? "#22c55e" : "#d1d5db";
       const borderWidth = isSelected ? "2px" : "1px";
-      (button as HTMLElement).style.border = `${borderWidth} solid ${borderColor}`;
+      (button as HTMLElement).style.border =
+        `${borderWidth} solid ${borderColor}`;
     });
 
     this.options.onOverlayModeChange?.(enabled);
@@ -563,11 +574,15 @@ export class ColorPalette {
 
     // ボタンの表示を更新
     const toggleButton = this.container.querySelector(
-      ".show-unplaced-only-toggle"
+      ".show-unplaced-only-toggle",
     ) as HTMLElement;
     if (toggleButton) {
-      const bgColor = this.showUnplacedOnly ? "var(--color-success, #22c55e)" : "var(--color-base-300, #e5e7eb)";
-      const textColor = this.showUnplacedOnly ? "var(--color-primary-content, #fff)" : "var(--color-base-content, #6b7280)";
+      const bgColor = this.showUnplacedOnly
+        ? "var(--color-success, #22c55e)"
+        : "var(--color-base-300, #e5e7eb)";
+      const textColor = this.showUnplacedOnly
+        ? "var(--color-primary-content, #fff)"
+        : "var(--color-base-content, #6b7280)";
       const borderColor = this.showUnplacedOnly ? "#22c55e" : "#d1d5db";
 
       toggleButton.style.backgroundColor = bgColor;
@@ -586,7 +601,7 @@ export class ColorPalette {
   }
 
   updateColorStats(
-    colorStats?: Record<string, { matched: number; total: number }>
+    colorStats?: Record<string, { matched: number; total: number }>,
   ): void {
     this.options.colorStats = colorStats;
     if (this.options.showColorStats) {
@@ -617,7 +632,7 @@ export class ColorPalette {
       this.selectedColorIds,
       this.currentlySelectedColorId,
       sortedColors,
-      this.options
+      this.options,
     );
 
     const gridContainer = this.container.querySelector(".color-palette-grid");
@@ -630,7 +645,7 @@ export class ColorPalette {
   private updateSortControlsDisplay(sort: SortOrder): void {
     // 1. ボタンのラベル更新
     const currentName = this.container.querySelector(
-      ".sort-order-current-name"
+      ".sort-order-current-name",
     );
     if (currentName) {
       const currentOption = SORT_ORDER_OPTIONS.find((o) => o.value === sort);
@@ -645,9 +660,8 @@ export class ColorPalette {
       const isSelected = itemSort === sort;
       const borderColor = isSelected ? "#22c55e" : "#d1d5db";
       const borderWidth = isSelected ? "2px" : "1px";
-      (
-        item as HTMLElement
-      ).style.border = `${borderWidth} solid ${borderColor}`;
+      (item as HTMLElement).style.border =
+        `${borderWidth} solid ${borderColor}`;
     });
   }
 }

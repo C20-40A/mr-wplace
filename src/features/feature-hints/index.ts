@@ -1,4 +1,7 @@
-import { showHintTooltipOnce, type HintPlacement } from "@/components/hint-tooltip";
+import {
+  showHintTooltipOnce,
+  type HintPlacement,
+} from "@/components/hint-tooltip";
 import { t } from "@/i18n/manager";
 import { isFeatureHintDismissed } from "@/states/feature-hints";
 
@@ -6,10 +9,12 @@ export type FeatureHintId =
   | "paint-pixel-icon"
   | "show-unplaced-only"
   | "color-isolate"
-  | "data-saver";
+  | "data-saver"
+  | "overlay-mode-independent";
 
 interface FeatureHintDefinition {
-  messageKey: string;
+  messageKey?: string;
+  getMessage?: () => string;
   placement: HintPlacement;
 }
 
@@ -29,6 +34,11 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
   "data-saver": {
     messageKey: "hint_data_saver",
     placement: "left",
+  },
+  "overlay-mode-independent": {
+    getMessage: () =>
+      `${t("hint_overlay_mode_independent_prefix")}「${t("popup_overlay_mode_layer")}」${t("hint_overlay_mode_independent_suffix")}`,
+    placement: "top",
   },
 };
 
@@ -57,11 +67,13 @@ const waitForDependencyAndShow = async (
 
   const definition = HINT_DEFINITIONS[hintId];
   if (!definition) return;
+  const message = definition.getMessage?.();
+  if (!message && !definition.messageKey) return;
 
   void showHintTooltipOnce({
     id: hintId,
     target,
-    message: t(definition.messageKey),
+    message: message ?? t(definition.messageKey!),
     placement: definition.placement,
   });
 };

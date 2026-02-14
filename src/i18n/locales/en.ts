@@ -496,7 +496,8 @@ Do not use this feature to paint actual pixels.`,
   map_filter_area_color: "Color",
   map_filter_area_online_sync_description:
     "Import area data from GeoJSON/JSON URL (e.g. public cloud storage URL)",
-  map_filter_area_import_description: "Import areas from a GeoJSON or JSON file",
+  map_filter_area_import_description:
+    "Import areas from a GeoJSON or JSON file",
   map_filter_area_import_file: "Import from Area File",
   map_filter_area_export_all_description: "Export all saved areas as GeoJSON",
   map_filter_area_export_selected: "Export Selected Areas",
@@ -527,4 +528,8 @@ Do not use this feature to paint actual pixels.`,
   hint_data_saver:
     "Data Saver pauses heavy tile updates to reduce network and rendering load. Tap again to resume normal updates.",
   hint_palette_toggle: "Press here to open the color filter.",
+  hint_overlay_mode_independent_prefix:
+    "Experimental but powerful: we added a new mode. Please try ",
+  hint_overlay_mode_independent_suffix:
+    " mode (if you find bugs, please report them via Popup > BugReport).",
 };

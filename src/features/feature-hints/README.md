@@ -29,6 +29,7 @@ export type FeatureHintId =
   | "show-unplaced-only"
   | "color-isolate"
   | "data-saver"
+  | "overlay-mode-independent"
   | "your-feature-id";
 
 const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
@@ -61,6 +62,15 @@ bun scripts/i18n.ts add hint_your_feature \
 import { showFeatureHint } from "@/features/feature-hints";
 
 showFeatureHint("your-feature-id", buttonElement);
+```
+
+今回追加した例（overlay mode）:
+
+```ts
+const overlayModeContainer = container.querySelector(".overlay-mode-container");
+if (overlayModeContainer instanceof HTMLElement) {
+  showFeatureHint("overlay-mode-independent", overlayModeContainer);
+}
 ```
 
 ## 動作仕様

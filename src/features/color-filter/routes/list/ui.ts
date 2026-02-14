@@ -16,6 +16,7 @@ import {
   getFrontTileLayer,
   setFrontTileLayer,
 } from "@/states/front-tile-layer";
+import { showFeatureHint } from "@/features/feature-hints";
 
 let colorPalette: ColorPalette | null = null;
 let lastSortOrder: SortOrder = "default";
@@ -143,4 +144,9 @@ export const renderColorFilters = async (
       scheduleSendColorFilterForUnplaced();
     },
   });
+
+  const overlayModeContainer = container.querySelector(".overlay-mode-container");
+  if (overlayModeContainer instanceof HTMLElement) {
+    showFeatureHint("overlay-mode-independent", overlayModeContainer);
+  }
 };

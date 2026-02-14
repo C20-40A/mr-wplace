@@ -532,7 +532,13 @@ export const jaTranslations = {
   hint_title: "ヒント",
   hint_close: "ヒントを閉じる",
   hint_show_unplaced_only: "すでに配置が完了した色を目立たなくする機能です。",
-  hint_color_isolate: "選択中の色のみを表示する機能です。ONにしておくと色を選択したとき、自動で色のフィルターが切り替わります。",
-  hint_data_saver: "Data Saver は重いタイル更新を一時停止して通信量と描画負荷を下げます。もう一度押すと通常更新に戻ります。",
+  hint_color_isolate:
+    "選択中の色のみを表示する機能です。ONにしておくと色を選択したとき、自動で色のフィルターが切り替わります。",
+  hint_data_saver:
+    "Data Saver は重いタイル更新を一時停止して通信量と描画負荷を下げます。もう一度押すと通常更新に戻ります。",
   hint_palette_toggle: "ここを押すとカラーフィルターが表示されます。",
+  hint_overlay_mode_independent_prefix:
+    "実験的ですが、強力な新モードを追加しました。ぜひ、",
+  hint_overlay_mode_independent_suffix:
+    " のモードを試してみてください（バグがあれば、ポップアップ > BugReport から報告していただけると助かります）",
 };
