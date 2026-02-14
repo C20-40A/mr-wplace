@@ -41,6 +41,17 @@ export class GalleryUI {
     }
     return this.modalElements.container;
   }
+
+  setTitle(title: string): void {
+    if (!this.modalElements) {
+      throw new Error("Modal not initialized. Call showModal() first.");
+    }
+    this.modalElements.titleElement.textContent = title;
+  }
+
+  getModalElements(): ModalElements | null {
+    return this.modalElements;
+  }
 }
 
 export const createGalleryButton = (): HTMLButtonElement => {

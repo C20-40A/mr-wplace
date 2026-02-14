@@ -2,9 +2,9 @@ import { GalleryStorage, GalleryItem } from "@/states/galleryStorage";
 import {
   toggleDrawState,
   gotoMapPosition,
-  moveImage,
 } from "../../../common-actions";
 import { sendGalleryImagesToInject } from "@/content";
+import { createDPad } from "../../../components/d-pad";
 
 interface LayerItemParams {
   item: any;
@@ -82,7 +82,11 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
   container.appendChild(moveContainer);
 
   // D-pad追加
-  const dPadContainer = createDPad(item, onRefreshOrder);
+  const dPadContainer = createDPad({
+    item,
+    onMove: onRefreshOrder,
+    size: "sm",
+  });
   buttonArea.insertBefore(dPadContainer, buttonArea.firstChild);
 
   return container;
@@ -259,53 +263,6 @@ const createButtonArea = (
   return buttonArea;
 };
 
-// D-pad作成
-const createDPad = (
-  item: any,
-  onRefreshOrder: () => Promise<void>,
-): HTMLElement => {
-  const dPadContainer = document.createElement("div");
-  dPadContainer.style.cssText = `
-    display: grid;
-    grid-template-columns: repeat(3, 20px);
-    grid-template-rows: repeat(3, 20px);
-    touch-action: pan-y;
-  `;
-
-  const createMoveImageButton = (
-    direction: "up" | "down" | "left" | "right",
-    symbol: string,
-    gridColumn: string,
-    gridRow: string,
-  ) => {
-    const btn = document.createElement("button");
-    btn.className = "btn btn-xs btn-info";
-    btn.textContent = symbol;
-    btn.style.cssText = `
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      font-weight: 600;
-      transition: all 0.15s;
-      grid-column: ${gridColumn};
-      grid-row: ${gridRow};
-      user-select: none;
-    `;
-    btn.onclick = async () => {
-      await moveImage(item, direction);
-      await onRefreshOrder();
-    };
-    return btn;
-  };
-
-  dPadContainer.appendChild(createMoveImageButton("up", "↑", "2", "1"));
-  dPadContainer.appendChild(createMoveImageButton("left", "←", "1", "2"));
-  dPadContainer.appendChild(createMoveImageButton("right", "→", "3", "2"));
-  dPadContainer.appendChild(createMoveImageButton("down", "↓", "2", "3"));
-
-  return dPadContainer;
-};
 
 // アクショングリッド作成
 const createActionGrid = (

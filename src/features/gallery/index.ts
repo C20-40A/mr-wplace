@@ -128,7 +128,8 @@ const createGallery = () => {
         () => {
           // 編集ボタンコールバック
           state.editingItem = state.currentDetailItem;
-        }
+        },
+        ui
       );
     },
 
