@@ -537,6 +537,7 @@ export const jaTranslations = {
   hint_data_saver:
     "Data Saver は重いタイル更新を一時停止して通信量と描画負荷を下げます。もう一度押すと通常更新に戻ります。",
   hint_palette_toggle: "ここを押すとカラーフィルターが表示されます。",
+  hint_gallery_btn: "ここから描画する画像を登録できます。",
   hint_overlay_mode_independent_prefix:
     "実験的ですが、強力な新モードを追加しました。ぜひ、",
   hint_overlay_mode_independent_suffix:

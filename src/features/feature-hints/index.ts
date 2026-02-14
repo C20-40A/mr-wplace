@@ -7,6 +7,7 @@ import { isFeatureHintDismissed } from "@/states/feature-hints";
 
 export type FeatureHintId =
   | "paint-pixel-icon"
+  | "gallery-btn"
   | "show-unplaced-only"
   | "color-isolate"
   | "data-saver"
@@ -28,6 +29,11 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     messageKey: "hint_palette_toggle",
     iconSrc: HINT_DIALOG_ICON,
     placement: "top",
+  },
+  "gallery-btn": {
+    messageKey: "hint_gallery_btn",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "right",
   },
   "show-unplaced-only": {
     messageKey: "hint_show_unplaced_only",

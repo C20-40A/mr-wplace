@@ -9,6 +9,7 @@ import { GalleryImageSelector } from "./routes/image-selector";
 import { setupElementObserver } from "../../components/element-observer";
 import { findOpacityContainer } from "../../constants/selectors";
 import type { GalleryAPI } from "../../core/di";
+import { showFeatureHint } from "@/features/feature-hints";
 
 // ========================================
 // クロージャモジュール（内部実装）
@@ -204,6 +205,7 @@ const createGallery = () => {
           button.id = "gallery-btn";
           button.onclick = show;
           container?.appendChild(button);
+          showFeatureHint("gallery-btn", button);
         },
       },
     ]);

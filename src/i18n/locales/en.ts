@@ -528,6 +528,7 @@ Do not use this feature to paint actual pixels.`,
   hint_data_saver:
     "Data Saver pauses heavy tile updates to reduce network and rendering load. Tap again to resume normal updates.",
   hint_palette_toggle: "Press here to open the color filter.",
+  hint_gallery_btn: "You can register images to draw from here.",
   hint_overlay_mode_independent_prefix:
     "Experimental but powerful: we added a new mode. Please try ",
   hint_overlay_mode_independent_suffix:
