@@ -43,7 +43,7 @@ export const showNameInputModal = (
         </div>
       </div>
       <form method="dialog" class="modal-backdrop">
-        <button type="button" id="backdrop-btn">close</button>
+        <button type="button" id="backdrop-btn" aria-label="${t`close`}"></button>
       </form>
     `;
 
@@ -163,7 +163,7 @@ export const createModal = (options: ModalOptions): ModalElements => {
       </div>
     </div>
     <form method="dialog" class="modal-backdrop">
-      <button id="${id}-backdrop-btn">close</button>
+      <button id="${id}-backdrop-btn" aria-label="${t`close`}"></button>
     </form>
   `;
 
@@ -182,6 +182,22 @@ export const createModal = (options: ModalOptions): ModalElements => {
     `#${id}-backdrop-btn`,
   ) as HTMLButtonElement;
   const modalBox = modal.querySelector(".modal-box") as HTMLElement;
+  const backdrop = modal.querySelector(".modal-backdrop") as HTMLElement;
+  const initialStyles = {
+    containerDisplay: container.style.display,
+    modalPointerEvents: modal.style.pointerEvents,
+    modalBoxPointerEvents: modalBox.style.pointerEvents,
+    modalBoxPosition: modalBox.style.position,
+    modalBoxTop: modalBox.style.top,
+    modalBoxLeft: modalBox.style.left,
+    modalBoxTransform: modalBox.style.transform,
+    modalBoxWidth: modalBox.style.width,
+    modalBoxMaxWidth: modalBox.style.maxWidth,
+    modalBoxMargin: modalBox.style.margin,
+    backdropDisplay: backdrop.style.display,
+    backdropPointerEvents: backdrop.style.pointerEvents,
+    backdropBackgroundColor: backdrop.style.backgroundColor,
+  };
 
   // イベントハンドラーを関数として保持（removeEventListenerで使用するため）
   const handleBack = onBack || (() => {});
@@ -191,7 +207,10 @@ export const createModal = (options: ModalOptions): ModalElements => {
   const handleMinimize = () => {
     isMinimized = !isMinimized;
     if (isMinimized) {
+      // 最小化: ヘッダーだけ残し、背面はクリック透過
       container.style.display = "none";
+      modal.style.pointerEvents = "none";
+      modalBox.style.pointerEvents = "auto";
       modalBox.style.position = "fixed";
       modalBox.style.top = "1rem";
       modalBox.style.left = "50%";
@@ -199,15 +218,24 @@ export const createModal = (options: ModalOptions): ModalElements => {
       modalBox.style.width = "fit-content";
       modalBox.style.maxWidth = "fit-content";
       modalBox.style.margin = "0";
+      backdrop.style.display = "none";
+      backdrop.style.pointerEvents = "none";
+      backdrop.style.backgroundColor = "transparent";
     } else {
-      container.style.display = "";
-      modalBox.style.position = "";
-      modalBox.style.top = "";
-      modalBox.style.left = "";
-      modalBox.style.transform = "";
-      modalBox.style.width = "";
-      modalBox.style.maxWidth = "";
-      modalBox.style.margin = "";
+      // 元に戻す: 最小化前スタイルを復元
+      container.style.display = initialStyles.containerDisplay;
+      modal.style.pointerEvents = initialStyles.modalPointerEvents;
+      modalBox.style.pointerEvents = initialStyles.modalBoxPointerEvents;
+      modalBox.style.position = initialStyles.modalBoxPosition;
+      modalBox.style.top = initialStyles.modalBoxTop;
+      modalBox.style.left = initialStyles.modalBoxLeft;
+      modalBox.style.transform = initialStyles.modalBoxTransform;
+      modalBox.style.width = initialStyles.modalBoxWidth;
+      modalBox.style.maxWidth = initialStyles.modalBoxMaxWidth;
+      modalBox.style.margin = initialStyles.modalBoxMargin;
+      backdrop.style.display = initialStyles.backdropDisplay;
+      backdrop.style.pointerEvents = initialStyles.backdropPointerEvents;
+      backdrop.style.backgroundColor = initialStyles.backdropBackgroundColor;
     }
   };
 
