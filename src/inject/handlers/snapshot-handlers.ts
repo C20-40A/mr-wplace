@@ -10,6 +10,7 @@ import {
   initSnapshotRepository,
   type SnapshotMetadata,
 } from "../db/snapshot-repository";
+import { isDangerousMessageAuthorized } from "../security/message-auth";
 
 /**
  * Convert Blob to dataUrl
@@ -196,6 +197,16 @@ export const setupSnapshotHandlers = () => {
         break;
 
       case "mr-wplace-snapshot-delete":
+        if (!isDangerousMessageAuthorized(event.data)) {
+          sendResponse(
+            "mr-wplace-snapshot-delete-response",
+            requestId,
+            false,
+            "Unauthorized request"
+          );
+          console.warn("🧑‍🎨 [Snapshot] Rejected unauthorized delete request");
+          break;
+        }
         await handleDeleteSnapshot(requestId, event.data.id);
         break;
     }

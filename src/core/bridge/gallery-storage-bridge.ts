@@ -9,6 +9,7 @@
  */
 
 import type { GalleryMetadata } from "@/inject/db/schema-v2";
+import { withDangerousMessageAuth } from "./inject-message-auth";
 
 // Re-export for convenience
 export type { GalleryMetadata } from "@/inject/db/schema-v2";
@@ -52,16 +53,22 @@ type MessageSource =
 
 let requestId = 0;
 const generateRequestId = () => `gallery-v2-${++requestId}-${Date.now()}`;
+const isDangerousSource = (source: MessageSource): boolean =>
+  source === "mr-wplace-gallery-v2-delete";
 
 /**
  * Generic request/response helper
  */
-const sendRequest = <T>(
+const sendRequest = async <T>(
   source: MessageSource,
   responseSource: MessageSource,
   data: Record<string, unknown>,
   timeout = 10000
 ): Promise<T> => {
+  const payloadData = isDangerousSource(source)
+    ? await withDangerousMessageAuth(data)
+    : data;
+
   return new Promise((resolve, reject) => {
     const reqId = generateRequestId();
 
@@ -85,7 +92,7 @@ const sendRequest = <T>(
       {
         source,
         requestId: reqId,
-        ...data,
+        ...payloadData,
       },
       "*"
     );

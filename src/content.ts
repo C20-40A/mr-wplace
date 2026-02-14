@@ -4,6 +4,10 @@ import { runtime } from "@/utils/browser-api";
 import { I18nManager } from "@/i18n/manager";
 import { setupMessageHandlers } from "@/core/message-handlers";
 import { sendGalleryImagesToInject } from "@/core/bridge";
+import {
+  ensureDangerousMessageAuthReady,
+  withDangerousMessageAuth,
+} from "@/core/bridge/inject-message-auth";
 import { cleanupLegacyTmpTiles } from "@/features/time-travel";
 import {
   setMapInstanceReady,
@@ -108,6 +112,11 @@ const loadInjectScript = async () => {
   });
 
   console.log("🧑‍🎨: inject.js script injected");
+
+  // Initialize auth channel for dangerous commands (best effort).
+  ensureDangerousMessageAuthReady().catch((error) => {
+    console.warn("🧑‍🎨 : Dangerous message auth init failed:", error);
+  });
 };
 
 const initializeMainFeatures = async () => {
@@ -391,8 +400,12 @@ const registerMessageListeners = () => {
     }
 
     if (message.type === "GALLERY_RESET") {
+      const payload = await withDangerousMessageAuth({
+        source: "mr-wplace-gallery-reset",
+        requestId: Date.now().toString(),
+      });
       window.postMessage(
-        { source: "mr-wplace-gallery-reset", requestId: Date.now().toString() },
+        payload,
         "*"
       );
       return;

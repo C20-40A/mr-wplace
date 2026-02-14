@@ -42,6 +42,10 @@ import {
   resetGallery,
 } from "./utils/gallery-io";
 import {
+  handleDangerousAuthInit,
+  isDangerousMessageAuthorized,
+} from "./security/message-auth";
+import {
   changeTileBoundaryVisibility,
   changeBackgroundColor,
   changeMap3dEnabled,
@@ -157,7 +161,21 @@ const handleGalleryExport = async (data: {
  */
 const handleGalleryReset = async (data: {
   requestId: string;
+  auth?: unknown;
 }): Promise<void> => {
+  if (!isDangerousMessageAuthorized(data)) {
+    window.postMessage(
+      {
+        source: "mr-wplace-gallery-reset-response",
+        requestId: data.requestId,
+        error: "Unauthorized request",
+      },
+      "*"
+    );
+    console.warn("🧑‍🎨 : Rejected unauthorized gallery reset request");
+    return;
+  }
+
   try {
     const count = await resetGallery();
     window.postMessage(
@@ -211,6 +229,7 @@ const handleAreaFillEstimate = async (data: {
 };
 
 const messageHandlers: Record<string, MessageHandler> = {
+  "mr-wplace-auth-init": handleDangerousAuthInit,
   "mr-wplace-processed": handleProcessedBlob,
   "mr-wplace-map-flyto": (data: { lat: number; lng: number; zoom: number }) =>
     handleMapInstanceFlyTo({ lat: data.lat, lng: data.lng, zoom: data.zoom }),

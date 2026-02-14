@@ -3,6 +3,7 @@ import { setupMessageHandler } from "./bridge";
 import { tileCacheDB } from "./cache-storage";
 import { initGalleryRepository } from "./db/gallery-repository";
 import { initSnapshotRepository } from "./db/snapshot-repository";
+import { requestPersistentStorage } from "./storage-persistence";
 import {
   resolveMapInstanceAsync,
   setFrontTilePaintGuideActive,
@@ -105,6 +106,11 @@ const forceStartupLocationZoom = (): void => {
 
     // Run initialization tasks in parallel
     await Promise.all([
+      // Request persistent storage to reduce eviction risk.
+      Promise.resolve(requestPersistentStorage()).catch((error) => {
+        console.warn("🧑‍🎨: Persistent storage request failed:", error);
+      }),
+
       // Initialize IndexedDB (legacy tile cache for data-saver)
       tileCacheDB.init().catch((error) => {
         console.error("🧑‍🎨: Failed to init tile cache DB:", error);

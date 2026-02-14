@@ -4,6 +4,7 @@
  * This module provides functions to request data from the inject context (page context).
  * All functions use postMessage for cross-context communication with request/response pattern.
  */
+import { withDangerousMessageAuth } from "@/core/bridge/inject-message-auth";
 
 let requestIdCounter = 0;
 const generateRequestId = (): string => `req_${Date.now()}_${++requestIdCounter}`;
@@ -377,6 +378,11 @@ export const saveSnapshotToInject = async (
  */
 export const deleteSnapshotFromInject = async (id: string): Promise<boolean> => {
   const requestId = generateRequestId();
+  const payload = await withDangerousMessageAuth({
+    source: "mr-wplace-snapshot-delete",
+    requestId,
+    id,
+  });
 
   return new Promise((resolve) => {
     let timeoutId: ReturnType<typeof setTimeout>;
@@ -393,7 +399,7 @@ export const deleteSnapshotFromInject = async (id: string): Promise<boolean> => 
     };
 
     window.addEventListener("message", handler);
-    window.postMessage({ source: "mr-wplace-snapshot-delete", requestId, id }, "*");
+    window.postMessage(payload, "*");
 
     timeoutId = setTimeout(() => {
       window.removeEventListener("message", handler);

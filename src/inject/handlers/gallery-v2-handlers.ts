@@ -10,6 +10,7 @@ import {
   initGalleryRepository,
 } from "../db/gallery-repository";
 import type { GalleryMetadata } from "../db/schema-v2";
+import { isDangerousMessageAuthorized } from "../security/message-auth";
 
 /**
  * Convert Blob to dataUrl
@@ -291,6 +292,16 @@ export const setupGalleryV2Handlers = () => {
         break;
 
       case "mr-wplace-gallery-v2-delete":
+        if (!isDangerousMessageAuthorized(event.data)) {
+          sendResponse(
+            "mr-wplace-gallery-v2-delete-response",
+            requestId,
+            false,
+            "Unauthorized request"
+          );
+          console.warn("🧑‍🎨 [Gallery V2] Rejected unauthorized delete request");
+          break;
+        }
         await handleDelete(requestId, event.data.id);
         break;
 
