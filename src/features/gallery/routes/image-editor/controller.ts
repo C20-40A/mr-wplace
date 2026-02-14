@@ -865,6 +865,7 @@ export class EditorController {
     const pixelCounts = new Map<string, number>();
 
     // ピクセル数を集計
+    let totalPixels = 0;
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i];
       const g = data[i + 1];
@@ -874,6 +875,7 @@ export class EditorController {
       // 透明ピクセルはスキップ
       if (a === 0) continue;
 
+      totalPixels++;
       const key = `${r},${g},${b}`;
       pixelCounts.set(key, (pixelCounts.get(key) || 0) + 1);
     }
@@ -886,28 +888,58 @@ export class EditorController {
 
     if (this.colorPalette) {
       this.colorPalette.updateColorStats(colorStats);
-      return;
+    } else {
+      const isMobile = !this.isDesktopMode;
+      const containerSelector = isMobile
+        ? "#wps-color-palette-container-mobile"
+        : "#wps-color-palette-container";
+      const container = this.container.querySelector(
+        containerSelector,
+      ) as HTMLElement;
+
+      if (container) {
+        this.colorPalette = new ColorPalette(container, {
+          selectedColorIds: this.selectedColorIds,
+          onChange: (colorIds) => this.onColorSelectionChange(colorIds),
+          hasExtraColorsBitmap: true,
+          showColorStats: true,
+          colorStats,
+          showDisableUnusedButton: true,
+          controlSize: "xs",
+        });
+      }
     }
 
-    const isMobile = !this.isDesktopMode;
-    const containerSelector = isMobile
-      ? "#wps-color-palette-container-mobile"
-      : "#wps-color-palette-container";
-    const container = this.container.querySelector(
-      containerSelector,
+    // ピクセル数と予想時間を更新
+    this.updatePixelCountAndTime(totalPixels);
+  }
+
+  private updatePixelCountAndTime(totalPixels: number): void {
+    const sizeReductionLabel = this.container.querySelector(
+      "#wps-size-reduction-label",
     ) as HTMLElement;
+    if (!sizeReductionLabel) return;
 
-    if (!container) return;
+    if (totalPixels > 0) {
+      const timeStr = this.formatEstimatedTime(totalPixels);
+      sizeReductionLabel.innerHTML = `${t("size_reduction")} <span style="color: #9ca3af; font-size: 0.6875rem;">${totalPixels.toLocaleString()}px(${timeStr})</span>`;
+    } else {
+      sizeReductionLabel.textContent = t("size_reduction");
+    }
+  }
 
-    this.colorPalette = new ColorPalette(container, {
-      selectedColorIds: this.selectedColorIds,
-      onChange: (colorIds) => this.onColorSelectionChange(colorIds),
-      hasExtraColorsBitmap: true,
-      showColorStats: true,
-      colorStats,
-      showDisableUnusedButton: true,
-      controlSize: "xs",
-    });
+  private formatEstimatedTime(remainingPixels: number): string {
+    const totalSeconds = remainingPixels * 30;
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+    const parts: string[] = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+
+    return parts.length > 0 ? parts.join("") : "<1m";
   }
 
   private resetOriginalImageViewport(): void {

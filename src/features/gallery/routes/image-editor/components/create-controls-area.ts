@@ -47,13 +47,18 @@ const createSizeControl = (
     step: 1,
   }) as HTMLInputElement;
 
+  elements.sizeReductionLabel = createElement("span", {
+    id: "wps-size-reduction-label",
+  });
+  elements.sizeReductionLabel.textContent = t("size_reduction");
+
   return createElement("div", {}, [
     createElement(
       "label",
       { className: "control-label space-between" },
       [
         createElement("span", { className: "label-hint" }, ["0.1x"]),
-        createElement("span", {}, [t("size_reduction")]),
+        elements.sizeReductionLabel as HTMLElement,
         createElement("span", { className: "label-hint" }, ["1.0x"]),
       ],
     ),
