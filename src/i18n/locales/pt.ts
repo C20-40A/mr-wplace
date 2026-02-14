@@ -115,7 +115,7 @@ export const ptTranslations = {
   current_image: "Imagem atual",
   reset_edit: "Resetar edição",
   reset_viewport: "Resetar Visualização",
-  size_reduction: "Redução de tamanho",
+  size_reduction: "Tamanho",
   brightness: "Brilho",
   contrast: "Contraste",
   saturation: "Saturação",

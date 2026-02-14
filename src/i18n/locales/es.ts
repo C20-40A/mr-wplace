@@ -118,7 +118,7 @@ export const esTranslations = {
   current_image: "Imagen actual",
   reset_edit: "Restablecer edición",
   reset_viewport: "Restablecer Vista",
-  size_reduction: "Reducción de tamaño",
+  size_reduction: "Tamaño",
   brightness: "Brillo",
   contrast: "Contraste",
   saturation: "Saturación",

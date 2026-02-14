@@ -114,7 +114,7 @@ export const ruTranslations = {
   current_image: "Текущее изображение",
   reset_edit: "Сбросить изменения",
   reset_viewport: "Сбросить вид",
-  size_reduction: "Уменьшение размера",
+  size_reduction: "Размер",
   brightness: "Яркость",
   contrast: "Контраст",
   saturation: "Насыщенность",

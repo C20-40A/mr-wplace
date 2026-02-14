@@ -114,7 +114,7 @@ export const enTranslations = {
   current_image: "Current image",
   reset_edit: "Reset edit",
   reset_viewport: "Reset View",
-  size_reduction: "Size reduction",
+  size_reduction: "Size",
   brightness: "Brightness",
   contrast: "Contrast",
   saturation: "Saturation",

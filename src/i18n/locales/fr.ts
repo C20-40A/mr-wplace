@@ -117,7 +117,7 @@ export const frTranslations = {
   current_image: "Image actuelle",
   reset_edit: "Réinitialiser les modifications",
   reset_viewport: "Réinitialiser la vue",
-  size_reduction: "Réduction de taille",
+  size_reduction: "Taille",
   brightness: "Luminosité",
   contrast: "Contraste",
   saturation: "Saturation",

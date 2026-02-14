@@ -120,3 +120,15 @@ bun scripts/i18n.ts update <key> --en "New value" --ja "新しい値"
 import { t } from "@/i18n/manager";
 const label = t("feature_button_label");
 ```
+
+# usage:
+
+```
+bun scripts/i18n.ts list - Show key count per language
+bun scripts/i18n.ts missing [--base en] - Show missing keys per language
+bun scripts/i18n.ts get <key> - Show value of key in all languages
+bun scripts/i18n.ts search <pattern> - Search keys/values by regex
+bun scripts/i18n.ts add <key> --en "val" --ja "val" ... - Add key to specified languages
+bun scripts/i18n.ts remove <key> - Remove key from all languages
+bun scripts/i18n.ts update <key> --<lang> "val" - Update key value in specified languages
+```

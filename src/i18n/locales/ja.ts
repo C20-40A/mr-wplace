@@ -120,7 +120,7 @@ export const jaTranslations = {
   current_image: "現在の画像",
   reset_edit: "編集リセット",
   reset_viewport: "ビューをリセット",
-  size_reduction: "サイズ縮小",
+  size_reduction: "サイズ",
   brightness: "明るさ",
   contrast: "コントラスト",
   saturation: "彩度",

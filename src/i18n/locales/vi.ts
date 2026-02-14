@@ -113,7 +113,7 @@ export const viTranslations = {
   current_image: "Hình ảnh hiện tại",
   reset_edit: "Đặt lại chỉnh sửa",
   reset_viewport: "Đặt lại chế độ xem",
-  size_reduction: "Giảm kích thước",
+  size_reduction: "Kích thước",
   brightness: "Độ sáng",
   contrast: "Độ tương phản",
   saturation: "Độ bão hòa",
