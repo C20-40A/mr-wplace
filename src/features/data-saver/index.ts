@@ -10,6 +10,7 @@ import {
   IMG_ICON_DATA_SAVER_ON,
 } from "@/assets/iconImages";
 import { showSettingsModal } from "./ui";
+import { showFeatureHint } from "@/features/feature-hints";
 
 let enabled = false;
 let button: HTMLButtonElement | null = null;
@@ -70,6 +71,7 @@ const createButton = (container: Element): void => {
   btnContainer.appendChild(settingsIcon);
   container.className += " flex flex-col-reverse gap-1";
   container.appendChild(btnContainer);
+  showFeatureHint("data-saver", button);
   console.log("🧑‍🎨 : Data saver button created");
 };
 

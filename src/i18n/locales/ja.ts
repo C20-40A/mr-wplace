@@ -529,4 +529,9 @@ export const jaTranslations = {
   outline_sensitivity: "感度",
   outline_use_fixed_color: "線色を固定する",
   outline_color: "線色",
+  hint_title: "ヒント",
+  hint_close: "ヒントを閉じる",
+  hint_show_unplaced_only: "未配置のみ表示は、まだマップに配置していない画像だけを表示します。",
+  hint_color_isolate: "選択色のみ表示は、現在選択中の色だけを目立たせるため、塗るときに集中しやすくなります。",
+  hint_data_saver: "Data Saver は重いタイル更新を一時停止して通信量と描画負荷を下げます。もう一度押すと通常更新に戻ります。",
 };

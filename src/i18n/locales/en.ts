@@ -518,4 +518,12 @@ Do not use this feature to paint actual pixels.`,
   outline_sensitivity: "Sensitivity",
   outline_use_fixed_color: "Use fixed line color",
   outline_color: "Line Color",
+  hint_title: "Hint",
+  hint_close: "Close hint",
+  hint_show_unplaced_only:
+    "Show Unplaced Only filters the list to images that are not yet placed on the map.",
+  hint_color_isolate:
+    "Show Selected Color Only highlights only the currently selected color so you can focus while painting.",
+  hint_data_saver:
+    "Data Saver pauses heavy tile updates to reduce network and rendering load. Tap again to resume normal updates.",
 };

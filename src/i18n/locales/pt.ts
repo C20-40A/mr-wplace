@@ -445,4 +445,9 @@ export const ptTranslations = {
   outline_sensitivity: "Sensibilidade",
   outline_use_fixed_color: "Usar cor de linha fixa",
   outline_color: "Cor da linha",
+  hint_title: "Dica",
+  hint_close: "Fechar dica",
+  hint_show_unplaced_only: "Mostrar apenas não posicionadas filtra a lista para imagens que ainda não foram colocadas no mapa.",
+  hint_color_isolate: "Mostrar apenas a cor selecionada destaca somente a cor selecionada no momento para facilitar o foco ao pintar.",
+  hint_data_saver: "O modo economia de dados pausa atualizações pesadas de tiles para reduzir carga de rede e renderização. Toque novamente para retomar as atualizações normais.",
 };

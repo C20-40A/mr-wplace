@@ -461,4 +461,9 @@ export const frTranslations = {
   outline_sensitivity: "Sensibilité",
   outline_use_fixed_color: "Utiliser une couleur de ligne fixe",
   outline_color: "Couleur ligne",
+  hint_title: "Astuce",
+  hint_close: "Fermer l'astuce",
+  hint_show_unplaced_only: "Afficher uniquement les non placées filtre la liste sur les images qui ne sont pas encore placées sur la carte.",
+  hint_color_isolate: "Afficher uniquement la couleur sélectionnée met en évidence seulement la couleur actuellement sélectionnée pour mieux vous concentrer pendant la peinture.",
+  hint_data_saver: "Le mode économie de données suspend les mises à jour lourdes des tuiles pour réduire la charge réseau et le rendu. Appuyez de nouveau pour reprendre les mises à jour normales.",
 };

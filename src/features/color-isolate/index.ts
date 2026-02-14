@@ -3,6 +3,7 @@ import { findPaintPixelControls } from "../../constants/selectors";
 import { createColorIsolateButton } from "./ui";
 import { sendColorFilterToInject } from "../../content";
 import { t } from "@/i18n/manager";
+import { showFeatureHint } from "@/features/feature-hints";
 
 export class ColorIsolate {
   private enabled: boolean = false;
@@ -35,6 +36,7 @@ export class ColorIsolate {
 
           tooltip.appendChild(this.button);
           container.appendChild(tooltip);
+          showFeatureHint("color-isolate", this.button);
           console.log("🧑‍🎨 : Color isolate button added");
         },
       },

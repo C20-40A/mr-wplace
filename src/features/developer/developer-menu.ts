@@ -25,6 +25,7 @@ import {
 } from "./debugGallerySync";
 
 import { storage } from "@/utils/browser-api";
+import { resetFeatureHintsState } from "@/states/feature-hints";
 
 // ==========================================
 const ACTIONS = [
@@ -100,6 +101,13 @@ const ACTIONS = [
     action: () => {
       localStorage.removeItem("mr-wplace-dev-warning-ack");
       alert("Reset: mr-wplace-dev-warning-ack");
+    },
+  },
+  {
+    label: "Reset Hint State",
+    action: async () => {
+      await resetFeatureHintsState();
+      alert("Reset: feature hint state");
     },
   },
   {

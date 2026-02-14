@@ -8,6 +8,7 @@ import {
   subscribeShowUnplacedOnly,
 } from "@/states/showUnplacedOnly";
 import { t } from "@/i18n";
+import { showFeatureHint } from "@/features/feature-hints";
 
 export class ShowUnplacedOnly {
   private button: HTMLButtonElement | null = null;
@@ -40,6 +41,7 @@ export class ShowUnplacedOnly {
           this.button.addEventListener("click", () => this.toggle());
           tooltip.appendChild(this.button);
           container.appendChild(tooltip);
+          showFeatureHint("show-unplaced-only", this.button);
           console.log("🧑‍🎨 : Show unplaced only button added");
         },
       },

@@ -444,4 +444,9 @@ export const viTranslations = {
   outline_sensitivity: "Độ nhạy",
   outline_use_fixed_color: "Dùng màu viền cố định",
   outline_color: "Màu viền",
+  hint_title: "Gợi ý",
+  hint_close: "Đóng gợi ý",
+  hint_show_unplaced_only: "Chỉ hiển thị chưa đặt sẽ lọc danh sách chỉ còn các hình ảnh chưa được đặt trên bản đồ.",
+  hint_color_isolate: "Chỉ hiển thị màu đã chọn sẽ làm nổi bật đúng màu đang chọn để bạn tập trung hơn khi vẽ.",
+  hint_data_saver: "Tiết kiệm dữ liệu sẽ tạm dừng các cập nhật tile nặng để giảm tải mạng và kết xuất. Nhấn lại để tiếp tục cập nhật bình thường.",
 };
