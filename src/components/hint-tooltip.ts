@@ -11,6 +11,7 @@ export interface HintTooltipOptions {
   target: HTMLElement;
   message: string;
   title?: string;
+  iconSrc?: string;
   placement?: HintPlacement;
   offset?: number;
 }
@@ -97,6 +98,21 @@ const ensureStyles = (): void => {
       color: rgba(245, 247, 255, 0.78);
       font-weight: 700;
       letter-spacing: 0.02em;
+    }
+
+    .${TOOLTIP_CLASS} [data-role="title-wrap"] {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-width: 0;
+    }
+
+    .${TOOLTIP_CLASS} [data-role="icon"] {
+      width: 1rem;
+      height: 1rem;
+      border-radius: 0.25rem;
+      flex-shrink: 0;
+      object-fit: cover;
     }
 
     .${TOOLTIP_CLASS} [data-role="close"] {
@@ -238,6 +254,17 @@ const dequeueAndShow = async (): Promise<void> => {
   const header = document.createElement("div");
   header.dataset.role = "header";
 
+  const titleWrap = document.createElement("div");
+  titleWrap.dataset.role = "title-wrap";
+
+  if (options.iconSrc) {
+    const icon = document.createElement("img");
+    icon.dataset.role = "icon";
+    icon.src = options.iconSrc;
+    icon.alt = "";
+    titleWrap.appendChild(icon);
+  }
+
   const title = document.createElement("div");
   title.dataset.role = "title";
   title.textContent = options.title ?? t("hint_title");
@@ -251,7 +278,8 @@ const dequeueAndShow = async (): Promise<void> => {
   const message = document.createElement("div");
   message.textContent = options.message;
 
-  header.appendChild(title);
+  titleWrap.appendChild(title);
+  header.appendChild(titleWrap);
   header.appendChild(closeButton);
   tooltip.appendChild(header);
   tooltip.appendChild(message);
