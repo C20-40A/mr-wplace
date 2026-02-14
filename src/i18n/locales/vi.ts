@@ -449,4 +449,5 @@ export const viTranslations = {
   hint_show_unplaced_only: "Tính năng này làm cho các màu đã đặt bớt nổi bật hơn.",
   hint_color_isolate: "Chỉ hiển thị màu đã chọn sẽ làm nổi bật đúng màu đang chọn để bạn tập trung hơn khi vẽ.",
   hint_data_saver: "Tiết kiệm dữ liệu sẽ tạm dừng các cập nhật tile nặng để giảm tải mạng và kết xuất. Nhấn lại để tiếp tục cập nhật bình thường.",
+  hint_palette_toggle: "Nhấn vào đây để mở bộ lọc màu.",
 };

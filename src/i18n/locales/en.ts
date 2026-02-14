@@ -526,4 +526,5 @@ Do not use this feature to paint actual pixels.`,
     "Show Selected Color Only highlights only the currently selected color so you can focus while painting.",
   hint_data_saver:
     "Data Saver pauses heavy tile updates to reduce network and rendering load. Tap again to resume normal updates.",
+  hint_palette_toggle: "Press here to open the color filter.",
 };

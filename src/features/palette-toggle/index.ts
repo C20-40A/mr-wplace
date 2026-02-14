@@ -17,11 +17,12 @@ export class PaletteToggle {
   private async init(): Promise<void> {
     console.log("🧑‍🎨 : Palette toggle initialized");
 
-    // Load saved state
-    this.isHidden = await PaletteToggleStorage.get();
-
     this.setupUI();
     this.observeColorChanges();
+
+    // Load saved state without blocking hint/button creation
+    this.isHidden = await PaletteToggleStorage.get();
+    this.applyPaletteStateIfNeeded();
   }
 
   private findPaletteContainer(): HTMLElement | null {

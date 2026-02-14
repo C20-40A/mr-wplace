@@ -25,6 +25,7 @@
 
 ```ts
 export type FeatureHintId =
+  | "paint-pixel-icon"
   | "show-unplaced-only"
   | "color-isolate"
   | "data-saver"

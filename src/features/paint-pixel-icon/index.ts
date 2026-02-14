@@ -2,6 +2,7 @@ import { setupElementObserver } from "@/components/element-observer";
 import { findPaintPixelControls } from "@/constants/selectors";
 import { ColorFilter } from "@/features/color-filter";
 import { IMG_ICON_COLOR_FILTER } from "@/assets/iconImages";
+import { showFeatureHint } from "@/features/feature-hints";
 
 // Paint pixel の多言語テキストリスト
 const PAINT_PIXEL_TEXTS = [
@@ -70,6 +71,7 @@ export class PaintPixelIcon {
       colorFilter?.showModal();
     }); // h2にボタン/UIスタイルを適用
     this.styleH2(h2 as HTMLElement);
+    showFeatureHint("paint-pixel-icon", h2 as HTMLElement);
 
     h2.dataset.mrWplaceIconified = "true";
     console.log("🧑‍🎨 : Paint pixel text replaced with icon, H2 made clickable");

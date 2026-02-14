@@ -467,4 +467,5 @@ export const esTranslations = {
   hint_show_unplaced_only: "Esta función hace menos notorios los colores ya colocados.",
   hint_color_isolate: "Mostrar solo el color seleccionado resalta solo el color seleccionado actualmente para que puedas concentrarte al pintar.",
   hint_data_saver: "Data Saver pausa las actualizaciones pesadas de tiles para reducir la carga de red y renderizado. Pulsa de nuevo para reanudar las actualizaciones normales.",
+  hint_palette_toggle: "Pulsa aquí para abrir el filtro de color.",
 };

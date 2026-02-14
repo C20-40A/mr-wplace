@@ -87,10 +87,10 @@ export const initializeFeatures = async () => {
   safeInit("drawingLoader", () => drawingLoaderAPI.initDrawingLoader());
   safeInit("colorFilter", () => new ColorFilter());
   const colorFilterManager = new ColorFilterManager();
+  safeInit("paletteToggle", () => new PaletteToggle());
   const colorIsolate = new ColorIsolate();
   const autoSpoit = new DevInject(colorFilterManager, colorIsolate);
   safeInit("positionInfo", () => new PositionInfo());
-  safeInit("paletteToggle", () => new PaletteToggle());
   safeInit("showUnplacedOnly", () => new ShowUnplacedOnly());
   safeInit("lockButtonEnhancer", () => new LockButtonEnhancer());
   safeInit("paintPixelIcon", () => new PaintPixelIcon());

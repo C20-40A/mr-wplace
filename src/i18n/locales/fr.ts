@@ -466,4 +466,5 @@ export const frTranslations = {
   hint_show_unplaced_only: "Cette fonctionnalité rend moins visibles les couleurs déjà placées.",
   hint_color_isolate: "Afficher uniquement la couleur sélectionnée met en évidence seulement la couleur actuellement sélectionnée pour mieux vous concentrer pendant la peinture.",
   hint_data_saver: "Le mode économie de données suspend les mises à jour lourdes des tuiles pour réduire la charge réseau et le rendu. Appuyez de nouveau pour reprendre les mises à jour normales.",
+  hint_palette_toggle: "Appuyez ici pour ouvrir le filtre de couleur.",
 };
