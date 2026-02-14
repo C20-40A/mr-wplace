@@ -20,6 +20,120 @@ export interface ModalElements {
   destroy: () => void;
 }
 
+type DialogLikeElement = HTMLDialogElement & {
+  __dialogLike: {
+    isOpen: boolean;
+    returnValue: string;
+  };
+};
+
+const dialogLikeStack: DialogLikeElement[] = [];
+
+const createDialogLikeModal = (): HTMLDialogElement => {
+  const modal = document.createElement("div") as DialogLikeElement;
+  modal.className = "modal";
+  modal.__dialogLike = { isOpen: false, returnValue: "" };
+  const nativeRemove = modal.remove.bind(modal);
+  let escListening = false;
+
+  const addEscListener = () => {
+    if (escListening) return;
+    document.addEventListener("keydown", handleEsc, true);
+    escListening = true;
+  };
+
+  const removeEscListener = () => {
+    if (!escListening) return;
+    document.removeEventListener("keydown", handleEsc, true);
+    escListening = false;
+  };
+
+  const removeFromStack = () => {
+    const index = dialogLikeStack.indexOf(modal);
+    if (index >= 0) dialogLikeStack.splice(index, 1);
+  };
+
+  const moveToStackTop = () => {
+    removeFromStack();
+    dialogLikeStack.push(modal);
+  };
+
+  const setOpenState = (open: boolean) => {
+    modal.__dialogLike.isOpen = open;
+    modal.classList.toggle("modal-open", open);
+    if (open) {
+      moveToStackTop();
+      modal.setAttribute("open", "");
+      addEscListener();
+      return;
+    }
+
+    removeFromStack();
+    modal.removeAttribute("open");
+    removeEscListener();
+  };
+
+  const closeModal = () => {
+    if (!modal.__dialogLike.isOpen) return;
+    setOpenState(false);
+    modal.dispatchEvent(new Event("close"));
+  };
+
+  const handleEsc = (e: KeyboardEvent) => {
+    if (!modal.__dialogLike.isOpen || e.key !== "Escape") return;
+    if (dialogLikeStack[dialogLikeStack.length - 1] !== modal) return;
+    const cancelEvent = new Event("cancel", { cancelable: true });
+    if (!modal.dispatchEvent(cancelEvent)) return;
+    closeModal();
+  };
+
+  Object.defineProperties(modal, {
+    open: {
+      get: () => modal.__dialogLike.isOpen,
+      set: (value: boolean) => setOpenState(Boolean(value)),
+      configurable: true,
+    },
+    returnValue: {
+      get: () => modal.__dialogLike.returnValue,
+      set: (value: string) => {
+        modal.__dialogLike.returnValue = value;
+      },
+      configurable: true,
+    },
+    show: {
+      value: () => {
+        if (modal.__dialogLike.isOpen) return;
+        setOpenState(true);
+      },
+      configurable: true,
+    },
+    showModal: {
+      value: () => {
+        if (modal.__dialogLike.isOpen) return;
+        setOpenState(true);
+      },
+      configurable: true,
+    },
+    close: {
+      value: (returnValue?: string) => {
+        if (typeof returnValue === "string")
+          modal.__dialogLike.returnValue = returnValue;
+        closeModal();
+      },
+      configurable: true,
+    },
+    remove: {
+      value: () => {
+        setOpenState(false);
+        nativeRemove();
+      },
+      configurable: true,
+    },
+  });
+
+  return modal;
+};
+
 /**
  * 名称入力Modal
  * - NOTE: 空文字は''。キャンセルの場合はnullを返す
@@ -30,8 +144,7 @@ export const showNameInputModal = (
   defaultValue = "",
 ): Promise<string | null> => {
   return new Promise((resolve) => {
-    const modal = document.createElement("dialog");
-    modal.className = "modal";
+    const modal = createDialogLikeModal();
     modal.innerHTML = `
       <div class="modal-box">
         <h3 class="font-bold text-lg mb-4">${title}</h3>
@@ -42,9 +155,9 @@ export const showNameInputModal = (
           <button id="save-btn" class="btn btn-primary">Save</button>
         </div>
       </div>
-      <form method="dialog" class="modal-backdrop">
+      <div class="modal-backdrop">
         <button type="button" id="backdrop-btn" aria-label="${t`close`}"></button>
-      </form>
+      </div>
     `;
 
     document.body.appendChild(modal);
@@ -125,9 +238,8 @@ export const createModal = (options: ModalOptions): ModalElements => {
   const onBack =
     explicitOnBack ?? (router ? () => router.navigateBack() : undefined);
 
-  const modal = document.createElement("dialog");
+  const modal = createDialogLikeModal();
   modal.id = id;
-  modal.className = "modal";
   modal.innerHTML = t`
     <div class="modal-box" style="width: 91.666667%; max-width: ${maxWidth}; max-height: 90dvh; display: flex; flex-direction: column; padding: 1.5rem 1rem; ${containerStyle}">
       <!-- Header -->
@@ -162,9 +274,9 @@ export const createModal = (options: ModalOptions): ModalElements => {
         <!-- ルート別コンテンツがここに挿入される -->
       </div>
     </div>
-    <form method="dialog" class="modal-backdrop">
+    <div class="modal-backdrop">
       <button id="${id}-backdrop-btn" aria-label="${t`close`}"></button>
-    </form>
+    </div>
   `;
 
   document.body.appendChild(modal);

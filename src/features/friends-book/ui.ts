@@ -428,7 +428,6 @@ export const createFriendsBookModal = (): ModalElements => {
     id: "friends-book-modal",
     title: t`friends_book`,
     maxWidth: "64rem",
-    containerStyle: "min-height: 35rem;",
   });
 
   modalElements.container.style.display = "flex";

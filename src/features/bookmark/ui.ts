@@ -37,7 +37,6 @@ export const createBookmarkModal = (): ModalElements => {
     id: "wplace-studio-favorite-modal",
     title: t`${"bookmark_list"}`,
     maxWidth: "64rem", // 4xl equivalent
-    containerStyle: "min-height: 35rem;",
   });
 
   // Add bookmark-specific content to container
