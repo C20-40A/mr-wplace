@@ -102,3 +102,65 @@ export const moveImage = async (
 
   console.log("🧑‍🎨 : Image moved", direction, newCoords);
 };
+
+/**
+ * マップ中央に画像を配置（画像中心をマップ中心に）
+ */
+export const drawImageAtMapCenter = async (
+  item: GalleryItem
+): Promise<void> => {
+  if (!item.width || !item.height) {
+    throw new Error("Image dimensions not available");
+  }
+
+  // inject側からマップ中心座標を取得
+  const { getMapCenter } = await import("@/utils/inject-bridge");
+  const center = await getMapCenter();
+
+  if (!center) {
+    throw new Error("Map instance not available");
+  }
+
+  const { latLngToTilePixel } = await import("@/utils/coordinate");
+  const centerCoords = latLngToTilePixel(center.lat, center.lng);
+
+  // 画像中心をマップ中心に配置するため、画像の半分のサイズだけオフセット
+  const halfWidth = Math.floor(item.width / 2);
+  const halfHeight = Math.floor(item.height / 2);
+
+  // 中心座標から画像の半分を引いて左上座標を計算
+  let tlx = centerCoords.TLX;
+  let tly = centerCoords.TLY;
+  let pxx = centerCoords.PxX - halfWidth;
+  let pxy = centerCoords.PxY - halfHeight;
+
+  // ピクセル座標がマイナスの場合、タイル座標を調整
+  while (pxx < 0) {
+    tlx -= 1;
+    pxx += 1000;
+  }
+  while (pxy < 0) {
+    tly -= 1;
+    pxy += 1000;
+  }
+
+  // ピクセル座標が1000を超える場合も調整
+  while (pxx >= 1000) {
+    tlx += 1;
+    pxx -= 1000;
+  }
+  while (pxy >= 1000) {
+    tly += 1;
+    pxy -= 1000;
+  }
+
+  const tileOverlay = window.mrWplace?.tileOverlay;
+  if (!tileOverlay) throw new Error("TileOverlay not available");
+
+  await tileOverlay.drawImageWithCoords(
+    { TLX: tlx, TLY: tly, PxX: pxx, PxY: pxy },
+    item
+  );
+
+  console.log("🧑‍🎨 : Image drawn at map center", { TLX: tlx, TLY: tly, PxX: pxx, PxY: pxy });
+};

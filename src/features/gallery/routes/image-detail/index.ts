@@ -1,7 +1,7 @@
 import { GalleryItem } from "../../../../states/galleryStorage";
 import { GalleryRouter } from "../../router";
 import { ImageInspector } from "../../../../components/image-inspector";
-import { gotoMapPosition, toggleDrawState } from "../../common-actions";
+import { gotoMapPosition, toggleDrawState, drawImageAtMapCenter } from "../../common-actions";
 import { t } from "../../../../i18n/manager";
 import { Toast } from "../../../../components/toast";
 import { showNameInputModal } from "@/components/modal";
@@ -33,6 +33,10 @@ export class GalleryImageDetail {
         
         <!-- ボタンエリア -->
         <div style=" display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin: 0.4rem;">
+          <button id="draw-on-map-btn" class="btn btn-sm btn-accent" style="${item.drawPosition ? "display:none" : ""}">
+            🗺️ ${t`${"draw_on_map"}`}
+          </button>
+
           <button id="draw-toggle-btn" class="btn btn-sm ${
             item.drawEnabled ? "btn-success" : "btn-outline"
           }" style="${item.drawPosition ? "" : "display:none"}">
@@ -144,6 +148,45 @@ export class GalleryImageDetail {
     onEdit?: () => void,
   ): void {
     if (!this.currentItem) return;
+
+    // マップに描画ボタン
+    const drawOnMapBtn = document.getElementById("draw-on-map-btn");
+    drawOnMapBtn?.addEventListener("click", async () => {
+      if (!this.currentItem) return;
+
+      try {
+        await drawImageAtMapCenter(this.currentItem);
+
+        // ボタン表示を更新
+        drawOnMapBtn.style.display = "none";
+        const drawToggleBtn = document.getElementById("draw-toggle-btn");
+        if (drawToggleBtn) drawToggleBtn.style.display = "";
+        const shareBtn = document.getElementById("share-btn");
+        if (shareBtn) shareBtn.style.display = "";
+        const gotoMapBtn = document.getElementById("goto-map-btn");
+        if (gotoMapBtn) gotoMapBtn.removeAttribute("disabled");
+
+        // 座標入力フィールドを更新
+        const storage = new (await import("../../../../states/galleryStorage")).GalleryStorage();
+        const updatedItem = await storage.get(this.currentItem.key);
+        if (updatedItem?.drawPosition) {
+          this.currentItem = updatedItem;
+          const coordTlx = document.getElementById("coord-tlx") as HTMLInputElement;
+          const coordTly = document.getElementById("coord-tly") as HTMLInputElement;
+          const coordPxx = document.getElementById("coord-pxx") as HTMLInputElement;
+          const coordPxy = document.getElementById("coord-pxy") as HTMLInputElement;
+          if (coordTlx) coordTlx.value = String(updatedItem.drawPosition.TLX);
+          if (coordTly) coordTly.value = String(updatedItem.drawPosition.TLY);
+          if (coordPxx) coordPxx.value = String(updatedItem.drawPosition.PxX);
+          if (coordPxy) coordPxy.value = String(updatedItem.drawPosition.PxY);
+        }
+
+        Toast.success(t`${"coordinates_updated"}`);
+      } catch (err) {
+        console.error("🧑‍🎨 : Failed to draw image at map center", err);
+        Toast.error(String(err));
+      }
+    });
 
     // 描画ON/OFFボタン
     const drawToggleBtn = document.getElementById("draw-toggle-btn");

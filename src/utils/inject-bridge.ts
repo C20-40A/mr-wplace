@@ -408,3 +408,35 @@ export const deleteSnapshotFromInject = async (id: string): Promise<boolean> => 
     }, 5000);
   });
 };
+
+/**
+ * Get map center coordinates from inject side
+ * Returns null if map instance is not available
+ */
+export const getMapCenter = async (): Promise<{ lat: number; lng: number } | null> => {
+  const requestId = generateRequestId();
+
+  return new Promise((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-response-map-center" &&
+        event.data.requestId === requestId
+      ) {
+        clearTimeout(timeoutId);
+        window.removeEventListener("message", handler);
+        resolve(event.data.center);
+      }
+    };
+
+    window.addEventListener("message", handler);
+    window.postMessage({ source: "mr-wplace-request-map-center", requestId }, "*");
+
+    timeoutId = setTimeout(() => {
+      window.removeEventListener("message", handler);
+      console.warn("🧑‍🎨 : Map center request timed out");
+      resolve(null);
+    }, 5000);
+  });
+};

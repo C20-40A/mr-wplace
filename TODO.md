@@ -6,8 +6,7 @@
 - 3dモードだとエリア頂点がぶっとぶ
 - ドイツ語対応
 - 塗り方、塊優先の塗り方がほしい。
-- ギャラリーリセットされた. indexed dbのリセットリスクは？
-- pixel count in edit img
+- シャープネス→エッジ強調
 
 - エリアカウント正しい？
 
@@ -102,6 +101,8 @@
 
 # DONE v2.5.5
 
+- ギャラリーリセットされた. されないように
+- pixel count in edit img
 - TMPL_ONLY + EXEC -> Paint 0 になってもpainting続く
 
 # DONE v2.5.4

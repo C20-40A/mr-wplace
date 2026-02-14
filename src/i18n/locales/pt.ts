@@ -439,4 +439,5 @@ export const ptTranslations = {
   map_filter_backgroundColor: "Cor de Fundo",
   map_filter_map3d: "Visão 3D",
   map_filter_mapSky: "Céu e Neblina",
+  draw_on_map: "Desenhar no mapa",
 };

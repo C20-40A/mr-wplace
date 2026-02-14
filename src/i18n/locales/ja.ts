@@ -523,4 +523,5 @@ export const jaTranslations = {
   map_filter_map3d: "3D表示",
   map_filter_map3d_drag_rotate: "回転を有効化",
   map_filter_mapSky: "空とフォグ",
+  draw_on_map: "マップに描画",
 };

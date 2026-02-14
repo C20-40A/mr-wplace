@@ -19,6 +19,7 @@ import {
   handleTileStatsRequest,
   handleImageStatsRequest,
   handleComputeTotalStats,
+  handleMapCenterRequest,
 } from "./handlers/request-handlers";
 import { setupGalleryV2Handlers } from "./handlers/gallery-v2-handlers";
 import { setupSnapshotHandlers } from "./handlers/snapshot-handlers";
@@ -273,6 +274,7 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-request-pixel-color": handlePixelColorRequest,
   "mr-wplace-request-tile-stats": handleTileStatsRequest,
   "mr-wplace-request-image-stats": handleImageStatsRequest,
+  "mr-wplace-request-map-center": handleMapCenterRequest,
   "mr-wplace-compute-total-stats": handleComputeTotalStats,
   "mr-wplace-auto-canvas-click-start": startAutoCanvasClick,
   "mr-wplace-auto-canvas-click-stop": stopAutoCanvasClick,

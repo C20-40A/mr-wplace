@@ -134,3 +134,33 @@ When content needs computed data from inject (stats/pixel color), use helpers in
 - Overlay is implemented by fetch interception + compositing
 - Map engine: `maplibregl`
 - Theme reference: `docs/theme.md`
+
+**Coding Style:**
+
+- シンプルかつ最も効果的で単純明瞭なコードを書く
+- 早期リターン/const arrow を利用
+- if の内容が 1 行ならかっこでくくらないこともある
+- トーストは基本的に利用しない
+- 抽象化を意識した設計
+- パフォーマンスを意識
+- 実装のためにコードが複雑になりそうなら、別方法の検討もする
+- ボイラープレートや繰り返しを避ける
+- できるだけ短く最小限の変更が好ましい
+- 実装 API の知識が足りなければ、必ず報告し、ユーザの協力を要請
+- 必ずしもキリよく終わらせる必要はない
+- 不明点、実装上の問題点があれば、報告すること
+- 実装後、コードをチェックし、パフォーマンスやバグになりそうな注意点を確認・報告する
+- 実装後、候補になる commit message を表示する
+- コーディング前の方針を決める際は、自然言語で抽象的に設計する
+
+# 注意点
+
+- inject,content のそれぞれの機能は限定的
+- inject: window の context が直で使える
+- inject: chrome.storage が使えないので、多くの storage 設定は content で管理
+- inject: indexedDb をメインで利用。特に重い画像データは chrome.storage では避ける
+- content: window の context が使えないので、messaging で inject に委任
+- content: indexedDb も使えるが、面倒なので、inject に委任することが多い
+- content: メイン機能はすべてここに入れているが、描画などの処理は inject で担当させている
+- content: browserAPI が使えるが、crossplatform のために、src/utils/browser-api.ts を利用する必要がある
+- localizationのファイルはかなり大きい。基本的にREADはしないでほしい。localesをreadする場合、一部のみをreadするか、検索をする。どうしても必要なら、en.tsかja.tsのみをREADする。

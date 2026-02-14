@@ -216,3 +216,29 @@ export const handleComputeTotalStats = async (data: {
     );
   }
 };
+
+/**
+ * Handle map center request
+ */
+export const handleMapCenterRequest = (data: { requestId: string }): void => {
+  const { getMapInstanceFromWplace } = require("../features/map-instance/get-map-instance");
+  const mapInstance = getMapInstanceFromWplace();
+
+  let center = null;
+  if (mapInstance) {
+    center = mapInstance.getCenter();
+  }
+
+  window.postMessage(
+    {
+      source: "mr-wplace-response-map-center",
+      requestId: data.requestId,
+      center,
+    },
+    "*"
+  );
+
+  console.log(
+    `🧑‍🎨 : Sent map center: ${center ? `${center.lat}, ${center.lng}` : "null"} (request: ${data.requestId})`
+  );
+};

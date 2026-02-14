@@ -456,4 +456,5 @@ export const esTranslations = {
   map_filter_backgroundColor: "Color de Fondo",
   map_filter_map3d: "Vista 3D",
   map_filter_mapSky: "Cielo y Niebla",
+  draw_on_map: "Dibujar en mapa",
 };

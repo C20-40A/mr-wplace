@@ -438,4 +438,5 @@ export const viTranslations = {
   map_filter_backgroundColor: "Màu nền",
   map_filter_map3d: "Chế độ 3D",
   map_filter_mapSky: "Bầu trời & Sương",
+  draw_on_map: "Vẽ lên bản đồ",
 };
