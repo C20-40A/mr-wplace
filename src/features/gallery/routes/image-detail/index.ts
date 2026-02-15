@@ -85,6 +85,26 @@ export class GalleryImageDetail {
     `;
   }
 
+  private showImageDetailHints(): void {
+    const drawOnMapBtn = document.getElementById("draw-on-map-btn");
+    if (drawOnMapBtn) showFeatureHint("image-detail-draw-on-map", drawOnMapBtn);
+
+    if (this.currentItem?.drawPosition) {
+      const dpadContainer = document.getElementById("image-dpad-container");
+      if (dpadContainer) showFeatureHint("image-detail-dpad", dpadContainer);
+
+      const downloadBtn = document.getElementById("download-btn");
+      if (downloadBtn) showFeatureHint("image-detail-download", downloadBtn);
+    }
+
+    if (this.ui) {
+      const modalElements = this.ui.getModalElements();
+      if (modalElements) {
+        showFeatureHint("image-detail-edit-title", modalElements.titleElement);
+      }
+    }
+  }
+
   render(
     container: HTMLElement,
     router: GalleryRouter,
@@ -378,6 +398,8 @@ export class GalleryImageDetail {
           this.initDPad();
         }
 
+        this.showImageDetailHints();
+
         Toast.success(t`${"coordinates_updated"}`);
       } catch (err) {
         console.error("🧑‍🎨 : Failed to draw image at map center", err);
@@ -553,10 +575,7 @@ export class GalleryImageDetail {
     });
 
     // Feature hints
-    if (drawOnMapBtn) showFeatureHint("image-detail-draw-on-map", drawOnMapBtn);
-    const dpadContainer = document.getElementById("image-dpad-container");
-    if (dpadContainer) showFeatureHint("image-detail-dpad", dpadContainer);
-    if (downloadBtn) showFeatureHint("image-detail-download", downloadBtn);
+    this.showImageDetailHints();
   }
 
   destroy(): void {

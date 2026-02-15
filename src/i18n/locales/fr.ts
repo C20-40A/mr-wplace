@@ -542,4 +542,5 @@ export const frTranslations = {
   hint_image_detail_draw_on_map: "Appuyez ici pour placer l'image au centre de la carte actuelle",
   hint_image_detail_dpad: "Vous pouvez déplacer l'image ici",
   hint_image_detail_download: "Pour partager avec d'autres, téléchargez l'image ici. Le nom du fichier contient les coordonnées, donc le charger placera l'image à la même position",
+  hint_image_detail_edit_title: "Cliquez sur le titre de l'image pour le modifier",
 };

@@ -526,4 +526,5 @@ export const ptTranslations = {
   hint_image_detail_draw_on_map: "Pressione aqui para colocar a imagem no centro do mapa atual",
   hint_image_detail_dpad: "Você pode mover a imagem aqui",
   hint_image_detail_download: "Para compartilhar com outros, baixe a imagem daqui. O nome do arquivo contém as coordenadas, então carregá-lo colocará a imagem na mesma posição",
+  hint_image_detail_edit_title: "Clique no título da imagem para editá-lo",
 };

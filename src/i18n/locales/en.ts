@@ -544,4 +544,5 @@ Do not use this feature to paint actual pixels.`,
   hint_image_detail_download:
     "To share with others, download the image from here. The filename contains the coordinates, so loading it will place the image at the same position",
   tutorial_reset_hints_button: "Show hints again",
+  hint_image_detail_edit_title: "Click the image title to edit it",
 };

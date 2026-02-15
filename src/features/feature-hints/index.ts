@@ -27,7 +27,8 @@ export type FeatureHintId =
   | "edit-card"
   | "image-detail-draw-on-map"
   | "image-detail-dpad"
-  | "image-detail-download";
+  | "image-detail-download"
+  | "image-detail-edit-title";
 
 interface FeatureHintDefinition {
   messageKey?: string;
@@ -180,6 +181,12 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     iconSrc: HINT_DIALOG_ICON,
     placement: "top",
     dependsOn: ["image-detail-dpad"],
+  },
+  "image-detail-edit-title": {
+    messageKey: "hint_image_detail_edit_title",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "bottom",
+    dependsOn: ["image-detail-draw-on-map"],
   },
 };
 
