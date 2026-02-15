@@ -1,5 +1,6 @@
 import { t } from "@/i18n/manager";
 import { runtime } from "@/utils/browser-api";
+import { resetFeatureHintsState } from "@/states/feature-hints";
 
 interface TutorialItem {
   id: string;
@@ -146,8 +147,21 @@ export class Tutorial {
       tutorialList.appendChild(item);
     });
 
+    // リセットヒントボタン
+    const resetHintsBtn = document.createElement("button");
+    resetHintsBtn.className = "btn btn-outline btn-sm w-full mt-4";
+    resetHintsBtn.textContent = t`${"tutorial_reset_hints_button"}`;
+    resetHintsBtn.onclick = async () => {
+      await resetFeatureHintsState();
+      resetHintsBtn.textContent = "✓ " + t`${"tutorial_reset_hints_button"}`;
+      setTimeout(() => {
+        resetHintsBtn.textContent = t`${"tutorial_reset_hints_button"}`;
+      }, 2000);
+    };
+
     modalBox.appendChild(header);
     modalBox.appendChild(tutorialList);
+    modalBox.appendChild(resetHintsBtn);
     this.modal.appendChild(modalBox);
 
     // 背景クリック用のフォーム

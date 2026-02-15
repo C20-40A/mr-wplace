@@ -545,4 +545,5 @@ export const jaTranslations = {
   hint_image_detail_dpad: "ここでイラストを移動できます",
   hint_image_detail_download:
     "ほかの人と共有するときは、ここからイラストをダウンロードしてください。ファイル名が座標になっているので、読み込むと同じ位置にイラストが設置されます",
+  tutorial_reset_hints_button: "ヒントを再表示する",
 };
