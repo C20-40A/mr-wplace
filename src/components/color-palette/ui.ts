@@ -49,7 +49,9 @@ export function buildColorGrid(
 
       const colorKey = getColorKey(r, g, b);
       const stats = options.showColorStats && options.colorStats?.[colorKey];
-      const statsHtml = stats ? createStatsHtml(stats) : "";
+      const statsHtml = stats
+        ? createStatsHtml(stats, options.colorStatsTotalOnly)
+        : "";
 
       return `
         <div class="color-item cursor-pointer p-2 text-xs font-medium flex flex-col items-center justify-center min-h-[3rem]"

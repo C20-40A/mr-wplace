@@ -80,12 +80,15 @@ const formatNumber = (n: number): string => n.toLocaleString();
 /**
  * 統計データからHTML生成
  */
-export const createStatsHtml = (stats: ColorStats): string => {
+export const createStatsHtml = (
+  stats: ColorStats,
+  totalOnly?: boolean,
+): string => {
   const remaining = stats.total - stats.matched;
   const percentage = stats.total > 0 ? (stats.matched / stats.total) * 100 : 0;
 
-  // matched === 0 の場合: total のみ表示（image-editor用）
-  if (stats.matched === 0 && stats.total > 0) {
+  // totalOnly: total のみバッジ表示（image-editor用）
+  if (totalOnly && stats.total > 0) {
     return `
       <div style="position: absolute; top: -0.35rem; right: -0.35rem; font-size: 0.625rem; font-weight: bold; background: rgba(0, 0, 0, 0.7); color: white; padding: 0.125rem 0.3rem; border-radius: 0.3rem; line-height: 1; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);">
         ${formatNumber(stats.total)}
@@ -94,7 +97,7 @@ export const createStatsHtml = (stats: ColorStats): string => {
   }
 
   // 100%完了時: COMPLETE (gold border text) + total pixels (subscript style)
-  if (remaining === 0) {
+  if (remaining === 0 && stats.total > 0) {
     return `
       <div style="width: 100%; margin-top: 0.25rem; display: flex; align-items: center; justify-content: center; gap: 0.125rem;">
         <span style="font-size: 0.65rem; font-weight: bold; color: #facc15; text-shadow: -1px -1px 0 #b45309, 1px -1px 0 #b45309, -1px 1px 0 #b45309, 1px 1px 0 #b45309; line-height: 1;">COMPLETE</span>

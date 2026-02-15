@@ -285,6 +285,7 @@ export class EditorController {
       onChange: (colorIds) => this.onColorSelectionChange(colorIds),
       hasExtraColorsBitmap: true,
       showColorStats: true,
+      colorStatsTotalOnly: true,
       showDisableUnusedButton: true,
       controlSize: "xs",
       sortOrder: "least-remaining",
@@ -312,6 +313,7 @@ export class EditorController {
       onChange: (colorIds) => this.onColorSelectionChange(colorIds),
       hasExtraColorsBitmap: true,
       showColorStats: true,
+      colorStatsTotalOnly: true,
       showDisableUnusedButton: true,
       controlSize: "xs",
     });

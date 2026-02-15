@@ -30,6 +30,8 @@ export interface ColorPaletteOptions {
   onShowUnplacedColorChange?: (color: [number, number, number]) => void;
   showDisableUnusedButton?: boolean;
   controlSize?: "default" | "xs";
+  /** trueの場合、進捗ゲージではなくtotalのみバッジ表示（image-editor用） */
+  colorStatsTotalOnly?: boolean;
 }
 
 export interface ColorStats {
