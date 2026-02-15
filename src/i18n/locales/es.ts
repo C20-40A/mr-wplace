@@ -468,4 +468,6 @@ export const esTranslations = {
   hint_color_isolate: "Mostrar solo el color seleccionado resalta solo el color seleccionado actualmente para que puedas concentrarte al pintar.",
   hint_data_saver: "Data Saver pausa las actualizaciones pesadas de tiles para reducir la carga de red y renderizado. Pulsa de nuevo para reanudar las actualizaciones normales.",
   hint_palette_toggle: "Pulsa aquí para abrir el filtro de color.",
+  hint_drawing_btn: "Draw images on the map from here.",
+  hint_unplaced_grid: "Press an image to draw it on the map.",
 };

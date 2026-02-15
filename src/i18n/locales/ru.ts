@@ -462,4 +462,6 @@ export const ruTranslations = {
   hint_color_isolate: "Показывать только выбранный цвет выделяет только текущий выбранный цвет, чтобы было проще сосредоточиться при рисовании.",
   hint_data_saver: "Режим экономии данных приостанавливает тяжёлые обновления тайлов, чтобы снизить сетевую и графическую нагрузку. Нажмите снова, чтобы вернуть обычные обновления.",
   hint_palette_toggle: "Нажмите здесь, чтобы открыть цветовой фильтр.",
+  hint_drawing_btn: "Draw images on the map from here.",
+  hint_unplaced_grid: "Press an image to draw it on the map.",
 };

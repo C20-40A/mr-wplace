@@ -467,4 +467,6 @@ export const frTranslations = {
   hint_color_isolate: "Afficher uniquement la couleur sélectionnée met en évidence seulement la couleur actuellement sélectionnée pour mieux vous concentrer pendant la peinture.",
   hint_data_saver: "Le mode économie de données suspend les mises à jour lourdes des tuiles pour réduire la charge réseau et le rendu. Appuyez de nouveau pour reprendre les mises à jour normales.",
   hint_palette_toggle: "Appuyez ici pour ouvrir le filtre de couleur.",
+  hint_drawing_btn: "Draw images on the map from here.",
+  hint_unplaced_grid: "Press an image to draw it on the map.",
 };

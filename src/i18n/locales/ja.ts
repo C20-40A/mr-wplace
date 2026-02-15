@@ -542,5 +542,8 @@ export const jaTranslations = {
     "実験的ですが、強力な新モードを追加しました。ぜひ、",
   hint_overlay_mode_independent_suffix:
     " のモードを試してみてください（バグがあれば、ポップアップ > BugReport から報告していただけると助かります）",
-  hint_user_status_container: "ここを押すとPaintがたまったときのアラームの設定ができます",
+  hint_user_status_container:
+    "ここを押すとPaintがたまったときのアラームの設定ができます",
+  hint_drawing_btn: "地図に画像を描くならこちら",
+  hint_unplaced_grid: "押すと地図に配置できます",
 };

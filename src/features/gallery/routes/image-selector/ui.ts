@@ -4,6 +4,7 @@ import { t } from "@/i18n";
 import { runtime } from "@/utils/browser-api";
 import { Tutorial } from "@/features/tutorial";
 import { getStatsPerImage } from "@/utils/inject-bridge";
+import { showFeatureHint } from "@/features/feature-hints";
 import {
   createAddImageButton,
   createUnplacedItem,
@@ -133,6 +134,7 @@ export class GalleryImageSelectorUI {
     } else {
       unplacedGrid.appendChild(itemEl);
     }
+    showFeatureHint("unplaced-item", itemEl);
     this.attachScrollPassthrough();
   }
 
@@ -307,9 +309,11 @@ export class GalleryImageSelectorUI {
     const unplacedGrid = document.createElement("div");
     unplacedGrid.className = "unplaced-grid";
     unplacedGrid.style.cssText = "display: flex; flex-wrap: wrap; gap: 0.5rem;";
+    let firstUnplacedItem: HTMLElement | null = null;
 
     unplacedImages.forEach((item) => {
       const itemEl = createUnplacedItem(item, this.currentOnSelect!, clickHint);
+      if (!firstUnplacedItem) firstUnplacedItem = itemEl;
       unplacedGrid.appendChild(itemEl);
     });
 
@@ -323,6 +327,9 @@ export class GalleryImageSelectorUI {
     unplacedSection.appendChild(unplacedGrid);
 
     this.layerPanel.appendChild(unplacedSection);
+    if (firstUnplacedItem) {
+      showFeatureHint("unplaced-item", firstUnplacedItem);
+    }
 
     // レイヤー画像セクション
     const layerSection = document.createElement("div");

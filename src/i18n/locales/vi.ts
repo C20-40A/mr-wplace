@@ -450,4 +450,6 @@ export const viTranslations = {
   hint_color_isolate: "Chỉ hiển thị màu đã chọn sẽ làm nổi bật đúng màu đang chọn để bạn tập trung hơn khi vẽ.",
   hint_data_saver: "Tiết kiệm dữ liệu sẽ tạm dừng các cập nhật tile nặng để giảm tải mạng và kết xuất. Nhấn lại để tiếp tục cập nhật bình thường.",
   hint_palette_toggle: "Nhấn vào đây để mở bộ lọc màu.",
+  hint_drawing_btn: "Draw images on the map from here.",
+  hint_unplaced_grid: "Press an image to draw it on the map.",
 };

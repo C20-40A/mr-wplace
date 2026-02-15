@@ -15,6 +15,7 @@ export interface HintTooltipOptions {
   iconSrc?: string;
   placement?: HintPlacement;
   offset?: number;
+  onClose?: (markDismissed: boolean) => void | Promise<void>;
 }
 
 interface ActiveHintState {
@@ -529,6 +530,15 @@ const dequeueAndShow = async (): Promise<void> => {
     }
 
     activeHint = null;
+
+    if (options.onClose) {
+      try {
+        await options.onClose(markDismissed);
+      } catch (error) {
+        console.warn("🧑‍🎨 : Failed to run hint tooltip onClose:", error);
+      }
+    }
+
     void dequeueAndShow();
   };
 
@@ -561,3 +571,6 @@ export const showHintTooltipOnce = async (
   queue.push(options);
   void dequeueAndShow();
 };
+
+export const hasActiveHintTooltip = (): boolean =>
+  activeHint !== null || queue.length > 0 || pendingHintIds.size > 0;

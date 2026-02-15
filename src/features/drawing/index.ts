@@ -9,17 +9,20 @@ import { addMapPinButton } from "@/utils/map-pin-helper";
 import { di } from "../../core/di";
 import { t } from "@/i18n/manager";
 import type { GalleryItem } from "@/states/galleryStorage";
+import { showFeatureHint } from "@/features/feature-hints";
 
 const createMapPinButtons = (
   container: Element,
   drawInstance: Drawing
 ): void => {
-  addMapPinButton(container, {
+  const button = addMapPinButton(container, {
     id: "drawing-btn",
     icon: "🖼️",
     text: t`${"draw_image"}`,
     onClick: () => drawInstance.openDrawMode(),
   });
+
+  if (button) showFeatureHint("drawing-btn", button);
 };
 
 /**
@@ -46,6 +49,7 @@ export class Drawing {
           button.id = "draw-btn-fallback";
           button.addEventListener("click", () => this.openDrawMode());
           container.prepend(button);
+          showFeatureHint("drawing-btn", button);
           console.log("🧑‍🎨 : Fallback button created in position modal");
         },
       },

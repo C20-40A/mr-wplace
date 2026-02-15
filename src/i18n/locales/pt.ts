@@ -451,4 +451,6 @@ export const ptTranslations = {
   hint_color_isolate: "Mostrar apenas a cor selecionada destaca somente a cor selecionada no momento para facilitar o foco ao pintar.",
   hint_data_saver: "O modo economia de dados pausa atualizações pesadas de tiles para reduzir carga de rede e renderização. Toque novamente para retomar as atualizações normais.",
   hint_palette_toggle: "Toque aqui para abrir o filtro de cores.",
+  hint_drawing_btn: "Draw images on the map from here.",
+  hint_unplaced_grid: "Press an image to draw it on the map.",
 };

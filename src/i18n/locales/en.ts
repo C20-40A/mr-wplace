@@ -535,4 +535,6 @@ Do not use this feature to paint actual pixels.`,
     " mode (if you find bugs, please report them via Popup > BugReport).",
   hint_user_status_container:
     "Press here to configure the alarm for when Paint has accumulated",
+  hint_drawing_btn: "Draw images on the map from here.",
+  hint_unplaced_grid: "Press an image to draw it on the map.",
 };
