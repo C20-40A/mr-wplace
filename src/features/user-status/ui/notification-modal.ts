@@ -180,15 +180,16 @@ export class NotificationModal {
   private renderInitialContent(): void {
     const sections = [];
 
+    if (this.userData?.charges) {
+      sections.push(this.createChargeSection());
+    }
     if (
       this.userData?.level !== undefined &&
       this.userData?.pixelsPainted !== undefined
     ) {
       sections.push(this.createLevelSection());
     }
-
     if (this.userData?.charges) {
-      sections.push(this.createChargeSection());
       sections.push(this.createChargeMonitorLoadingSection());
     }
 
