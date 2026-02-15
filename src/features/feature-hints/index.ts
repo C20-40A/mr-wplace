@@ -11,6 +11,9 @@ export type FeatureHintId =
   | "paint-pixel-icon"
   | "gallery-btn"
   | "drawing-btn"
+  | "bookmark-btn"
+  | "timetravel-btn"
+  | "text-draw-btn"
   | "unplaced-item"
   | "show-unplaced-only"
   | "color-isolate"
@@ -55,6 +58,7 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     placement: "top",
     dependsOn: ["gallery-btn"],
   },
+
   "unplaced-item": {
     messageKey: "hint_unplaced_grid",
     iconSrc: HINT_DIALOG_ICON,
@@ -88,7 +92,7 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     messageKey: "hint_data_saver",
     iconSrc: HINT_DIALOG_ICON,
     placement: "left",
-    dependsOn: ["color-isolate"],
+    dependsOn: ["show-unplaced-only"],
     condition: () => !hasOpenModal(),
   },
   "overlay-mode-independent": {
@@ -97,6 +101,25 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     iconSrc: HINT_DIALOG_ICON,
     placement: "top",
     dependsOn: ["show-unplaced-only"],
+  },
+  // ------- Map Popup Hints -------
+  "bookmark-btn": {
+    messageKey: "hint_bookmark_btn",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "top",
+    dependsOn: ["show-unplaced-only"],
+  },
+  "timetravel-btn": {
+    messageKey: "hint_timetravel_btn",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "top",
+    dependsOn: ["bookmark-btn"],
+  },
+  "text-draw-btn": {
+    messageKey: "hint_text_draw_btn",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "top",
+    dependsOn: ["timetravel-btn"],
   },
 };
 

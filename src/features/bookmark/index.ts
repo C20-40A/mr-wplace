@@ -26,6 +26,7 @@ import { BookmarkRouter } from "./router";
 import { renderCoordinateJumper } from "./routes/coordinate-jumper";
 import type { BookmarkAPI } from "@/core/di";
 import { Tutorial } from "@/features/tutorial";
+import { showFeatureHint } from "@/features/feature-hints";
 // import { IMG_ICON_BOOKMARK } from "@/assets/iconImages";
 
 const SORT_KEY = "wplace-studio-bookmark-sort";
@@ -452,12 +453,14 @@ const setupModal = (): void => {
 };
 
 const createMapPinButtons = (container: Element): void => {
-  addMapPinButton(container, {
+  const button = addMapPinButton(container, {
     id: "bookmark-btn",
     icon: "⭐",
     text: t`${"save_location"}`,
     onClick: () => addBookmark(),
   });
+
+  if (button) showFeatureHint("bookmark-btn", button);
 };
 
 const init = (): void => {

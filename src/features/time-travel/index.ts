@@ -25,6 +25,7 @@ import { type TimeTravelAPI } from "../../core/di";
 import { t } from "@/i18n/manager";
 import { IMG_ICON_TIME_TRAVEL } from "@/assets/iconImages";
 import { storage } from "@/utils/browser-api";
+import { showFeatureHint } from "@/features/feature-hints";
 
 /**
  * タイムマシン機能
@@ -89,12 +90,14 @@ export const initTimeTravel = (): void => {
   });
 
   const createMapPinButtons = (container: Element): void => {
-    addMapPinButton(container, {
+    const button = addMapPinButton(container, {
       id: "timetravel-btn",
       iconSrc: IMG_ICON_TIME_TRAVEL,
       text: t`${"timetravel"}`,
       onClick: () => showCurrentPosition(),
     });
+
+    if (button) showFeatureHint("timetravel-btn", button);
   };
 
   const buttonConfigs: ElementConfig[] = [

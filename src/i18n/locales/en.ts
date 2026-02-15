@@ -537,4 +537,7 @@ Do not use this feature to paint actual pixels.`,
     "Press here to configure the alarm for when Paint has accumulated",
   hint_drawing_btn: "Draw images on the map from here.",
   hint_unplaced_grid: "Press an image to draw it on the map.",
+  hint_bookmark_btn: "You can bookmark this location",
+  hint_timetravel_btn: "You can save art near this location",
+  hint_text_draw_btn: "You can display text on the map",
 };

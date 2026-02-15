@@ -546,4 +546,7 @@ export const jaTranslations = {
     "ここを押すとPaintがたまったときのアラームの設定ができます",
   hint_drawing_btn: "地図に画像を描くならこちら",
   hint_unplaced_grid: "押すと地図に配置できます",
+  hint_bookmark_btn: "この地点をブックマークできます",
+  hint_timetravel_btn: "この付近のアートを保存できます",
+  hint_text_draw_btn: "マップ上にテキストを表示できます",
 };

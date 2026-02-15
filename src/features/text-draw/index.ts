@@ -8,6 +8,7 @@ import { addMapPinButton } from "@/utils/map-pin-helper";
 import type { TextDrawAPI } from "@/core/di";
 import { drawText, moveText, deleteText } from "./text-manipulator";
 import { t } from "@/i18n/manager";
+import { showFeatureHint } from "@/features/feature-hints";
 
 // ========================================
 // Module-level state
@@ -57,12 +58,14 @@ const handleDeleteText = async (key: string): Promise<void> => {
 };
 
 const createMapPinButtons = (container: Element): void => {
-  addMapPinButton(container, {
+  const button = addMapPinButton(container, {
     id: "text-draw-btn",
     icon: "✏️",
     text: t`${"text_draw"}`,
     onClick: () => showModal(),
   });
+
+  if (button) showFeatureHint("text-draw-btn", button);
 };
 
 // ========================================
