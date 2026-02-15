@@ -254,7 +254,7 @@ export const frTranslations = {
   theme_switched: "Thème changé",
 
   // Enhanced Draw Modes
-  enhanced_mode_label: "Mode de dessin",
+  enhanced_mode_label: "Dessin",
   enhanced_mode_dot: "Point",
   enhanced_mode_cross: "Croix",
   enhanced_mode_fill: "Remplir",
@@ -290,7 +290,7 @@ export const frTranslations = {
   compute_device_label: "Traitement",
 
   // Show Unplaced Only
-  show_unplaced_only: "Atténuer les couleurs placées",
+  show_unplaced_only: "Placés",
 
   // Tile Merge
   tile_merge: "Fusion de tuiles",
@@ -411,7 +411,7 @@ export const frTranslations = {
   tutorial_how_to_draw_step2:
     "Cliquez sur la carte et sélectionnez le bouton « Image »",
   tutorial_how_to_draw_step3:
-    "Cliquez sur l'image que vous souhaitez placer, et elle apparaîtra en superposition sur la tuile de la carte",
+    "Cliquez sur l'image que vous souhaitez placer, et elle apparaîtra comme calque sur la tuile de la carte",
   tutorial_how_to_archive_title:
     "Comment archiver le pixel art sur la carte",
   tutorial_how_to_archive_step1:
@@ -476,7 +476,7 @@ export const frTranslations = {
   transparency_apply: "Appliquer",
   transparency_reset: "Réinitialiser",
   transparency_no_image: "Chargez d'abord une image pour utiliser l'outil de transparence",
-  popup_overlay_mode: "Superposition",
+  popup_overlay_mode: "Calque",
   popup_overlay_mode_composite: "Composite",
   popup_overlay_mode_layer: "Indépendant",
   developer_warning_splash_title: "Avertissement de Fonctionnalité Développeur",
@@ -537,4 +537,6 @@ export const frTranslations = {
   import_snapshot_tile_y_placeholder: "p.ex. 218",
   import_snapshot_datetime_label: "Date/Heure",
   import_snapshot_success: "Importation terminée",
+  hint_map_filter_trigger: "Vous pouvez changer l'apparence de la carte ici",
+  hint_edit_card: "Vous pouvez modifier le nom et ajouter des tags ici",
 };

@@ -254,7 +254,7 @@ export const esTranslations = {
   theme_switched: "Tema cambiado",
 
   // Enhanced Draw Modes
-  enhanced_mode_label: "Modo de Dibujo",
+  enhanced_mode_label: "Dibujo",
   enhanced_mode_dot: "Punto",
   enhanced_mode_cross: "Cruz",
   enhanced_mode_fill: "Rellenar",
@@ -290,7 +290,7 @@ export const esTranslations = {
   compute_device_label: "Procesamiento",
 
   // Show Unplaced Only
-  show_unplaced_only: "Atenuar colores colocados",
+  show_unplaced_only: "Colocados",
 
   // Tile Merge
   tile_merge: "Fusionar Bloques",
@@ -412,7 +412,7 @@ export const esTranslations = {
   tutorial_how_to_draw_step2:
     "Haz clic en el mapa y selecciona el botón «Imagen»",
   tutorial_how_to_draw_step3:
-    "Haz clic en la imagen que quieres colocar y aparecerá como superposición en el bloque del mapa",
+    "Haz clic en la imagen que quieres colocar y aparecerá como capa en el bloque del mapa",
   tutorial_how_to_archive_title:
     "Cómo archivar pixel art en el mapa",
   tutorial_how_to_archive_step1:
@@ -477,7 +477,7 @@ export const esTranslations = {
   transparency_apply: "Aplicar",
   transparency_reset: "Restablecer",
   transparency_no_image: "Primero cargue una imagen para usar la herramienta de transparencia",
-  popup_overlay_mode: "Superposición",
+  popup_overlay_mode: "Capa",
   popup_overlay_mode_composite: "Compuesto",
   popup_overlay_mode_layer: "Independiente",
   developer_warning_splash_title: "Advertencia de Función de Desarrollador",
@@ -538,4 +538,6 @@ export const esTranslations = {
   import_snapshot_tile_y_placeholder: "ej. 218",
   import_snapshot_datetime_label: "Fecha/Hora",
   import_snapshot_success: "Importación completada",
+  hint_map_filter_trigger: "Aquí puedes cambiar cómo se ve el mapa",
+  hint_edit_card: "Aquí puedes cambiar el nombre y agregar etiquetas",
 };

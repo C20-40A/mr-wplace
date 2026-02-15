@@ -10,6 +10,7 @@ import {
 } from "../../components/card";
 import { BookmarkStorage } from "./storage";
 import { runtime } from "../../utils/browser-api";
+import { showFeatureHint } from "../feature-hints";
 
 export const createSaveBookmarkButton = (): HTMLButtonElement => {
   return createResponsiveButton({
@@ -690,6 +691,12 @@ export const renderBookmarks = (
     .join("");
 
   attachCardScrollPassthrough(grid);
+
+  // Show hint for edit button
+  const firstEditBtn = grid.querySelector(".wps-edit-btn");
+  if (firstEditBtn instanceof HTMLElement) {
+    showFeatureHint("edit-card", firstEditBtn);
+  }
 };
 
 // Legacy accessor for modal element

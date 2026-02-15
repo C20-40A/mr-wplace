@@ -251,7 +251,7 @@ export const ptTranslations = {
   theme_switched: "Tema alterado",
 
   // Enhanced Draw Modes
-  enhanced_mode_label: "Modo de Desenho",
+  enhanced_mode_label: "Desenho",
   enhanced_mode_dot: "Ponto",
   enhanced_mode_cross: "Cruz",
   enhanced_mode_fill: "Preencher",
@@ -286,7 +286,7 @@ export const ptTranslations = {
   compute_device_label: "Processamento",
 
   // Show Unplaced Only
-  show_unplaced_only: "Suavizar cores já colocadas",
+  show_unplaced_only: "Colocados",
 
   // Tile Merge
   tile_merge: "Mesclar Blocos",
@@ -404,7 +404,7 @@ export const ptTranslations = {
   tutorial_how_to_draw_step1: "Salve uma imagem na galeria",
   tutorial_how_to_draw_step2: "Clique no mapa e selecione o botão 'Imagem'",
   tutorial_how_to_draw_step3:
-    "Clique na imagem que deseja colocar, e ela aparecerá como sobreposição no tile do mapa",
+    "Clique na imagem que deseja colocar, e ela aparecerá como camada no tile do mapa",
   tutorial_how_to_archive_title: "Como Arquivar Pixel Art no Mapa",
   tutorial_how_to_archive_step1: "Clique no mapa e selecione 'Arquivo'",
   tutorial_how_to_archive_step2: "Clique no botão 'Salvar Tile Atual'",
@@ -460,7 +460,7 @@ export const ptTranslations = {
   transparency_apply: "Aplicar",
   transparency_reset: "Redefinir",
   transparency_no_image: "Carregue uma imagem primeiro para usar a ferramenta de transparência",
-  popup_overlay_mode: "Sobreposição",
+  popup_overlay_mode: "Camada",
   popup_overlay_mode_composite: "Composto",
   popup_overlay_mode_layer: "Independente",
   developer_warning_splash_title: "Aviso de Recurso de Desenvolvedor",
@@ -521,4 +521,6 @@ export const ptTranslations = {
   import_snapshot_tile_y_placeholder: "ex. 218",
   import_snapshot_datetime_label: "Data/Hora",
   import_snapshot_success: "Importação concluída",
+  hint_map_filter_trigger: "Você pode alterar a aparência do mapa aqui",
+  hint_edit_card: "Você pode alterar o nome e adicionar tags aqui",
 };

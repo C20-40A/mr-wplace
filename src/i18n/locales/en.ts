@@ -261,7 +261,7 @@ export const enTranslations = {
   theme_switched: "Theme switched",
 
   // Enhanced Draw Modes
-  enhanced_mode_label: "Draw Mode",
+  enhanced_mode_label: "Draw",
   enhanced_mode_dot: "Dot",
   enhanced_mode_cross: "Cross",
   enhanced_mode_fill: "Fill",
@@ -318,7 +318,7 @@ Do not use this feature to paint actual pixels.`,
   compute_device_label: "Template Rendering Processing",
 
   // Show Unplaced Only
-  show_unplaced_only: "Dim Placed Colors",
+  show_unplaced_only: "Filled",
   show_unplaced_color: "Color",
 
   // Tile Merge
@@ -549,4 +549,6 @@ Do not use this feature to paint actual pixels.`,
   import_snapshot_tile_y_placeholder: "e.g. 218",
   import_snapshot_datetime_label: "Date/Time",
   import_snapshot_success: "Import completed",
+  hint_map_filter_trigger: "You can change how the map looks here",
+  hint_edit_card: "You can change the name and add tags here",
 };

@@ -249,7 +249,7 @@ export const viTranslations = {
   theme_switched: "Đã chuyển giao diện",
 
   // Enhanced Draw Modes
-  enhanced_mode_label: "Chế độ vẽ",
+  enhanced_mode_label: "Vẽ",
   enhanced_mode_dot: "Chấm",
   enhanced_mode_cross: "Chữ thập",
   enhanced_mode_fill: "Tô đầy",
@@ -284,7 +284,7 @@ export const viTranslations = {
   compute_device_label: "Xử lý",
 
   // Show Unplaced Only
-  show_unplaced_only: "Làm mờ màu đã đặt",
+  show_unplaced_only: "Đã đặt",
 
   // Tile Merge
   tile_merge: "Hợp nhất ô",
@@ -402,7 +402,7 @@ export const viTranslations = {
   tutorial_how_to_draw_step1: "Lưu một hình ảnh vào thư viện",
   tutorial_how_to_draw_step2: "Nhấp vào bản đồ và chọn nút 'Hình ảnh'",
   tutorial_how_to_draw_step3:
-    "Nhấp vào hình ảnh bạn muốn đặt, hình ảnh sẽ hiển thị chồng lên ô bản đồ",
+    "Nhấp vào hình ảnh bạn muốn đặt, hình ảnh sẽ hiển thị như một lớp trên ô bản đồ",
   tutorial_how_to_archive_title: "Cách Lưu Trữ Pixel Art Trên Bản Đồ",
   tutorial_how_to_archive_step1: "Nhấp vào bản đồ và chọn 'Lưu trữ'",
   tutorial_how_to_archive_step2: "Nhấp nút 'Lưu ô hiện tại'",
@@ -459,7 +459,7 @@ export const viTranslations = {
   transparency_apply: "Áp dụng",
   transparency_reset: "Đặt lại",
   transparency_no_image: "Tải ảnh trước để sử dụng công cụ trong suốt",
-  popup_overlay_mode: "Lớp phủ",
+  popup_overlay_mode: "Lớp",
   popup_overlay_mode_composite: "Tổng hợp",
   popup_overlay_mode_layer: "Độc lập",
   developer_warning_splash_title: "Cảnh báo Tính năng Nhà phát triển",
@@ -520,4 +520,6 @@ export const viTranslations = {
   import_snapshot_tile_y_placeholder: "vd. 218",
   import_snapshot_datetime_label: "Ngày/Giờ",
   import_snapshot_success: "Nhập hoàn tất",
+  hint_map_filter_trigger: "Bạn có thể thay đổi cách bản đồ hiển thị tại đây",
+  hint_edit_card: "Bạn có thể thay đổi tên và thêm thẻ tại đây",
 };

@@ -253,7 +253,7 @@ export const ruTranslations = {
   theme_switched: "Тема изменена",
 
   // Enhanced Draw Modes
-  enhanced_mode_label: "Режим рисования",
+  enhanced_mode_label: "Рисование",
   enhanced_mode_dot: "Точка",
   enhanced_mode_cross: "Крест",
   enhanced_mode_fill: "Заполнить",
@@ -289,7 +289,7 @@ export const ruTranslations = {
   compute_device_label: "Обработка",
 
   // Show Unplaced Only
-  show_unplaced_only: "Приглушить размещённые цвета",
+  show_unplaced_only: "Размещённые",
 
   // Tile Merge
   tile_merge: "Слияние тайлов",
@@ -415,7 +415,7 @@ export const ruTranslations = {
   tutorial_how_to_draw_step1: "Сохраните изображение в галерею",
   tutorial_how_to_draw_step2: "Нажмите на карту и выберите кнопку 'Изображение'",
   tutorial_how_to_draw_step3:
-    "Нажмите на изображение, которое хотите разместить, и оно появится как наложение на тайле карты",
+    "Нажмите на изображение, которое хотите разместить, и оно появится как слой на тайле карты",
   tutorial_how_to_archive_title: "Как архивировать пиксель-арт на карте",
   tutorial_how_to_archive_step1: "Нажмите на карту и выберите 'Архив'",
   tutorial_how_to_archive_step2: "Нажмите кнопку 'Сохранить текущий снимок'",
@@ -471,7 +471,7 @@ export const ruTranslations = {
   transparency_apply: "Применить",
   transparency_reset: "Сбросить",
   transparency_no_image: "Сначала загрузите изображение, чтобы использовать инструмент прозрачности",
-  popup_overlay_mode: "Наложение",
+  popup_overlay_mode: "Слой",
   popup_overlay_mode_composite: "Композитный",
   popup_overlay_mode_layer: "Независимый",
   developer_warning_splash_title: "Предупреждение о Функции Разработчика",
@@ -526,4 +526,6 @@ export const ruTranslations = {
   hint_bookmarks_btn: "Ваши сохраненные закладки здесь",
   hint_timetravel_fab_btn: "Список архивированных областей здесь",
   hint_save_current_snapshot_btn: "Вы можете архивировать изображения рядом с этим местом",
+  hint_map_filter_trigger: "Здесь вы можете изменить вид карты",
+  hint_edit_card: "Здесь вы можете изменить название и добавить теги",
 };

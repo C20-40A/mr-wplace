@@ -2,6 +2,7 @@ import { storage } from "@/utils/browser-api";
 import { getMapInstanceReady } from "@/states/map-instance-ready";
 import { t } from "@/i18n/manager";
 import { areaManagerAPI } from "@/features/area-manager";
+import { showFeatureHint } from "@/features/feature-hints";
 
 const HIGH_CONTRAST_KEY = "mapFilter_highContrast";
 const HIGH_CONTRAST_STYLE_ID = "mr-wplace-high-contrast-style";
@@ -209,6 +210,7 @@ class MapFilterMenu {
       this.togglePopover();
     });
     document.body.appendChild(this.triggerButton);
+    showFeatureHint("map-filter-trigger", this.triggerButton);
   }
 
   private createPopover() {

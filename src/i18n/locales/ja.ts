@@ -214,7 +214,7 @@ export const jaTranslations = {
   popup_close_confirm: "ペイント画面を閉じる時に確認",
   popup_paint_mode_style: "ペイント時にFABを非表示",
   popup_close_button_swap: "閉じるボタンの位置を入れ替え",
-  popup_overlay_mode: "オーバーレイ",
+  popup_overlay_mode: "レイヤー",
   popup_overlay_mode_composite: "合成",
   popup_overlay_mode_layer: "独立",
   popup_bug_report: "バグ報告",
@@ -267,7 +267,7 @@ export const jaTranslations = {
   theme_switched: "テーマを切り替えました",
 
   // Enhanced Draw Modes
-  enhanced_mode_label: "描画モード",
+  enhanced_mode_label: "表示",
   enhanced_mode_dot: "ドット",
   enhanced_mode_cross: "十字",
   enhanced_mode_fill: "塗りつぶし",
@@ -325,7 +325,7 @@ export const jaTranslations = {
   compute_device_label: "テンプレート描画処理方式",
 
   // Show Unplaced Only
-  show_unplaced_only: "配置済み色を薄く",
+  show_unplaced_only: "配置済み",
   show_unplaced_color: "色",
 
   // Tile Merge
@@ -444,7 +444,7 @@ export const jaTranslations = {
   tutorial_how_to_draw_step1: "ギャラリーに画像を保存する",
   tutorial_how_to_draw_step2: "マップをクリックして、「画像」ボタンを選択",
   tutorial_how_to_draw_step3:
-    "配置したい画像をクリックすると、画像がマップタイルにオーバーレイとして表示される",
+    "配置したい画像をクリックすると、画像がマップタイルにレイヤーとして表示される",
   tutorial_how_to_archive_title: "マップ上のピクセルアートをアーカイブする方法",
   tutorial_how_to_archive_step1: "マップをクリックして「アーカイブ」を選択",
   tutorial_how_to_archive_step2: "「Save Current Tile」ボタンをクリックする",
@@ -552,4 +552,6 @@ export const jaTranslations = {
   hint_bookmarks_btn: "保存したブックマークはここにあります",
   hint_timetravel_fab_btn: "アーカイブした地域の一覧はこちら",
   hint_save_current_snapshot_btn: "この付近の画像アーカイブできます",
+  hint_map_filter_trigger: "ここでマップの見え方を変えられます",
+  hint_edit_card: "ここで名前を変えたりタグをつけることができます",
 };

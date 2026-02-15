@@ -22,7 +22,9 @@ export type FeatureHintId =
   | "color-isolate"
   | "data-saver"
   | "overlay-mode-independent"
-  | "user-status-container";
+  | "user-status-container"
+  | "map-filter-trigger"
+  | "edit-card";
 
 interface FeatureHintDefinition {
   messageKey?: string;
@@ -53,6 +55,13 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     placement: "bottom",
     condition: () => !hasOpenModal(),
     priority: 2,
+  },
+  "map-filter-trigger": {
+    messageKey: "hint_map_filter_trigger",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "right",
+    dependsOn: ["user-status-container"],
+    condition: () => !hasOpenModal(),
   },
   // ------- Drawing Hints -------
   "drawing-btn": {
@@ -144,6 +153,12 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     iconSrc: HINT_DIALOG_ICON,
     placement: "top",
     dependsOn: ["show-unplaced-only"],
+  },
+  // ------- Edit Card Hint -------
+  "edit-card": {
+    messageKey: "hint_edit_card",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "top",
   },
 };
 
