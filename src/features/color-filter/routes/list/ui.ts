@@ -86,6 +86,7 @@ export const renderColorFilters = async (
   }
 
   // ColorPaletteコンポーネント表示
+  const isMobile = window.innerWidth < 640;
   colorPalette = new ColorPalette(container, {
     selectedColorIds: currentSelectedColors,
     onChange: async (colorIds) => {
@@ -143,6 +144,7 @@ export const renderColorFilters = async (
       console.log(`🧑‍🎨 : Show unplaced color:`, color);
       scheduleSendColorFilterForUnplaced();
     },
+    controlSize: isMobile ? "xs" : "default",
   });
 
   const overlayModeContainer = container.querySelector(".overlay-mode-container");
