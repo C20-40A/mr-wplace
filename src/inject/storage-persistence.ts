@@ -1,20 +1,12 @@
 export const requestPersistentStorage = async (): Promise<boolean> => {
-  if (typeof navigator === "undefined") return false;
-  if (!navigator.storage?.persist) {
-    console.log("🧑‍🎨 : Persistent storage API is not supported");
-    return false;
-  }
+  if (!navigator.storage?.persist) return false;
 
   try {
-    const alreadyPersisted = await navigator.storage.persisted?.();
-    if (alreadyPersisted) {
-      console.log("🧑‍🎨 : Persistent storage is already enabled");
-      return true;
-    }
+    if (await navigator.storage.persisted()) return true;
 
     const granted = await navigator.storage.persist();
     console.log(
-      `🧑‍🎨 : Persistent storage request ${granted ? "granted" : "not granted"}`
+      `🧑‍🎨 : Storage persistence ${granted ? "granted" : "denied"}`
     );
     return granted;
   } catch (error) {

@@ -106,10 +106,8 @@ const forceStartupLocationZoom = (): void => {
 
     // Run initialization tasks in parallel
     await Promise.all([
-      // Request persistent storage to reduce eviction risk.
-      Promise.resolve(requestPersistentStorage()).catch((error) => {
-        console.warn("🧑‍🎨: Persistent storage request failed:", error);
-      }),
+      // Request persistent storage to protect gallery-v2 / snapshots from eviction
+      requestPersistentStorage(),
 
       // Initialize IndexedDB (legacy tile cache for data-saver)
       tileCacheDB.init().catch((error) => {
