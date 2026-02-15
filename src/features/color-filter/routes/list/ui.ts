@@ -98,7 +98,7 @@ export const renderColorFilters = async (
     },
     showCurrentlySelected: true,
     showEnhancedSelect: true,
-    enhancedMode: colorFilterManager?.getEnhancedMode() ?? "dot",
+    enhancedMode: colorFilterManager?.getEnhancedMode() ?? "cross",
     enhancedColor: colorFilterManager?.getEnhancedColor() ?? [255, 0, 0],
     onEnhancedModeChange: (mode) => {
       colorFilterManager?.setEnhancedMode(mode);

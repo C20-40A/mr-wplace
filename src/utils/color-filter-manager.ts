@@ -11,7 +11,7 @@ const SHOW_UNPLACED_COLOR_SAVE_DEBOUNCE_MS = 120;
 export class ColorFilterManager {
   private selectedColorIds: Set<number>;
   public selectedRGBs: Array<[number, number, number]> = [];
-  private enhancedMode: EnhancedMode = "dot";
+  private enhancedMode: EnhancedMode = "cross";
   private enhancedColor: [number, number, number] = [255, 0, 0];
   private showUnplacedColor: [number, number, number] = [160, 160, 160];
   private extraColorsBitmap: number | undefined = undefined;
@@ -205,9 +205,9 @@ export class ColorFilterManager {
         "fill",
         "red-border",
       ];
-      this.enhancedMode = validModes.includes(savedMode) ? savedMode : "dot";
+      this.enhancedMode = validModes.includes(savedMode) ? savedMode : "cross";
     } catch {
-      this.enhancedMode = "dot";
+      this.enhancedMode = "cross";
     }
   }
 

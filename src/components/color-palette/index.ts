@@ -47,7 +47,7 @@ export class ColorPalette {
     this.currentlySelectedColorId = options.showCurrentlySelected
       ? getCurrentlySelectedColorId()
       : null;
-    this.enhancedMode = options.enhancedMode ?? "dot";
+    this.enhancedMode = options.enhancedMode ?? "cross";
     this.enhancedColor = options.enhancedColor ?? [255, 0, 0];
     this.showUnplacedColor = options.showUnplacedColor ?? [160, 160, 160];
     this.sortOrder = options.sortOrder ?? "default";

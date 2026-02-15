@@ -15,7 +15,7 @@ export interface ColorFilterState {
 let colorFilterState: ColorFilterState = {
   isFilterActive: false,
   selectedRGBs: undefined,
-  enhancedMode: "dot",
+  enhancedMode: "cross",
   enhancedColor: [255, 0, 0],
   showUnplacedColor: [160, 160, 160],
   extraColorsBitmap: undefined,
