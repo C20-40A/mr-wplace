@@ -29,6 +29,8 @@ type DialogLikeElement = HTMLDialogElement & {
 
 const dialogLikeStack: DialogLikeElement[] = [];
 
+export const hasOpenModal = (): boolean => dialogLikeStack.length > 0;
+
 const createDialogLikeModal = (): HTMLDialogElement => {
   const modal = document.createElement("div") as DialogLikeElement;
   modal.className = "modal";
