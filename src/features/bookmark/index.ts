@@ -474,6 +474,7 @@ const init = (): void => {
         button.addEventListener("click", openModal);
         container.className += " flex flex-col-reverse gap-1";
         container.appendChild(button);
+        showFeatureHint("bookmarks-btn", button);
       },
     },
     // 優先: マップピン周辺にボタン配置

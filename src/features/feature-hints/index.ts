@@ -12,8 +12,11 @@ export type FeatureHintId =
   | "gallery-btn"
   | "drawing-btn"
   | "bookmark-btn"
+  | "bookmarks-btn"
   | "timetravel-btn"
+  | "timetravel-fab-btn"
   | "text-draw-btn"
+  | "save-current-snapshot-btn"
   | "unplaced-item"
   | "show-unplaced-only"
   | "color-isolate"
@@ -120,6 +123,25 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     iconSrc: HINT_DIALOG_ICON,
     placement: "top",
     dependsOn: ["timetravel-btn"],
+  },
+  // ------- Main Map Hint -------
+  "bookmarks-btn": {
+    messageKey: "hint_bookmarks_btn",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "left",
+    dependsOn: ["bookmark-btn"],
+  },
+  "timetravel-fab-btn": {
+    messageKey: "hint_timetravel_fab_btn",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "left",
+    dependsOn: ["timetravel-btn"],
+  },
+  "save-current-snapshot-btn": {
+    messageKey: "hint_save_current_snapshot_btn",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "left",
+    // dependsOn: ["timetravel-fab-btn"],
   },
 };
 

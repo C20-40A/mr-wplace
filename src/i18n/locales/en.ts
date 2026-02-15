@@ -540,4 +540,7 @@ Do not use this feature to paint actual pixels.`,
   hint_bookmark_btn: "You can bookmark this location",
   hint_timetravel_btn: "You can save art near this location",
   hint_text_draw_btn: "You can display text on the map",
+  hint_bookmarks_btn: "Your saved bookmarks are here",
+  hint_timetravel_fab_btn: "List of archived areas is here",
+  hint_save_current_snapshot_btn: "You can archive images near this location",
 };

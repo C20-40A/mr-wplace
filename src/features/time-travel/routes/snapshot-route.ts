@@ -10,6 +10,7 @@ import { latLngToTilePixel, tilePixelToLatLng } from "@/utils/coordinate";
 import { Tutorial } from "@/features/tutorial";
 import { runtime } from "@/utils/browser-api";
 import { normalizeTileCoordinate } from "../utils/tile-coordinate";
+import { showFeatureHint } from "@/features/feature-hints";
 
 interface SnapshotRouteOptions {
   showSaveButton: boolean;
@@ -222,11 +223,14 @@ export class SnapshotRoute extends BaseSnapshotRoute {
 
     // 保存ボタンのイベント
     if (this.options.showSaveButton) {
-      container
-        .querySelector("#wps-save-current-snapshot-btn")
-        ?.addEventListener("click", async () => {
-          await this.saveCurrentSnapshot(container);
-        });
+      const saveBtn = container.querySelector("#wps-save-current-snapshot-btn");
+      saveBtn?.addEventListener("click", async () => {
+        await this.saveCurrentSnapshot(container);
+      });
+
+      if (saveBtn instanceof HTMLElement) {
+        showFeatureHint("save-current-snapshot-btn", saveBtn);
+      }
 
       // ダウンロードボタンのイベント
       container

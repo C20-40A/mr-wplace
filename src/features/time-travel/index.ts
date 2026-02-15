@@ -110,6 +110,7 @@ export const initTimeTravel = (): void => {
         button.addEventListener("click", () => show());
         container.className += " flex flex-col-reverse gap-1";
         container.appendChild(button);
+        showFeatureHint("timetravel-fab-btn", button);
       },
     },
     // 優先: マップピン周辺にボタン配置

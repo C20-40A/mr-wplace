@@ -549,4 +549,7 @@ export const jaTranslations = {
   hint_bookmark_btn: "この地点をブックマークできます",
   hint_timetravel_btn: "この付近のアートを保存できます",
   hint_text_draw_btn: "マップ上にテキストを表示できます",
+  hint_bookmarks_btn: "保存したブックマークはここにあります",
+  hint_timetravel_fab_btn: "アーカイブした地域の一覧はこちら",
+  hint_save_current_snapshot_btn: "この付近の画像アーカイブできます",
 };
