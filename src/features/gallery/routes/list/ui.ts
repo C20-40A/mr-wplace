@@ -8,6 +8,7 @@ export type GallerySortType = "layer" | "distance" | "created";
 export class GalleryListUI {
   private container: HTMLElement | null = null;
   private imageGrid: ImageGridComponent | null = null;
+  private importListener: ((e: MessageEvent) => void) | null = null;
 
   // コールバックを保存して再描画時に再利用
   private onDelete?: (key: string) => void;
@@ -51,7 +52,7 @@ export class GalleryListUI {
 
     this.container.innerHTML = "";
 
-    // Sort dropdown
+    // Sort dropdown + Import/Export buttons
     const sortContainer = document.createElement("div");
     sortContainer.className = "flex items-center gap-2 mb-4";
     sortContainer.innerHTML = `
@@ -60,6 +61,12 @@ export class GalleryListUI {
         <option value="distance">${t`${"sort_distance"}`}</option>
         <option value="created">${t`${"sort_created"}`}</option>
       </select>
+      <button id="wps-gallery-import-export-btn" class="btn btn-outline btn-sm ml-auto">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
+          <path d="M440-367v-465l-64 64-56-57 160-160 160 160-56 57-64-64v465h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
+        </svg>
+        ${t`${"import_export"}`}
+      </button>
     `;
     this.container.appendChild(sortContainer);
 
@@ -70,6 +77,14 @@ export class GalleryListUI {
     sortSelect.addEventListener("change", (e) => {
       this.sortType = (e.target as HTMLSelectElement).value as GallerySortType;
       this.onSortChange?.(this.sortType);
+    });
+
+    // Import/Export dropdown menu
+    const importExportBtn = sortContainer.querySelector(
+      "#wps-gallery-import-export-btn"
+    ) as HTMLButtonElement;
+    importExportBtn.addEventListener("click", () => {
+      this.showImportExportMenu(importExportBtn);
     });
 
     // Grid container
@@ -93,6 +108,92 @@ export class GalleryListUI {
     this.imageGrid.render();
   }
 
+  private showImportExportMenu(anchor: HTMLElement): void {
+    // 既存メニューがあれば閉じる
+    const existing = document.getElementById("wps-gallery-io-menu");
+    if (existing) {
+      existing.remove();
+      return;
+    }
+
+    const menu = document.createElement("div");
+    menu.id = "wps-gallery-io-menu";
+    menu.className = "menu bg-base-200 rounded-box shadow-lg p-2";
+    menu.style.cssText = "position:absolute;z-index:10;min-width:10rem;";
+    menu.innerHTML = `
+      <li><button id="wps-gallery-export-action" class="btn btn-ghost btn-sm justify-start w-full">📤 ${t`${"export_gallery"}`}</button></li>
+      <li><button id="wps-gallery-import-action" class="btn btn-ghost btn-sm justify-start w-full">📥 ${t`${"import_gallery"}`}</button></li>
+    `;
+
+    // anchorの下に配置
+    anchor.style.position = "relative";
+    anchor.parentElement!.style.position = "relative";
+    const rect = anchor.getBoundingClientRect();
+    const parentRect = anchor.parentElement!.getBoundingClientRect();
+    menu.style.top = `${rect.bottom - parentRect.top}px`;
+    menu.style.right = "0";
+
+    anchor.parentElement!.appendChild(menu);
+
+    // Export
+    menu.querySelector("#wps-gallery-export-action")!.addEventListener("click", () => {
+      menu.remove();
+      this.handleExport();
+    });
+
+    // Import
+    menu.querySelector("#wps-gallery-import-action")!.addEventListener("click", () => {
+      menu.remove();
+      this.handleImport();
+    });
+
+    // 外部クリックで閉じる
+    const closeMenu = (e: MouseEvent) => {
+      if (!menu.contains(e.target as Node) && e.target !== anchor) {
+        menu.remove();
+        document.removeEventListener("click", closeMenu);
+      }
+    };
+    requestAnimationFrame(() => document.addEventListener("click", closeMenu));
+  }
+
+  private handleExport(): void {
+    window.postMessage(
+      { source: "mr-wplace-gallery-export", requestId: Date.now().toString() },
+      "*"
+    );
+  }
+
+  private handleImport(): void {
+    // Import後のレスポンスを待ってリフレッシュ
+    this.cleanupImportListener();
+    this.importListener = (e: MessageEvent) => {
+      if (e.data?.source !== "mr-wplace-gallery-import-response") return;
+      this.cleanupImportListener();
+
+      if (e.data.result?.success > 0) {
+        // inject側のオーバーレイも更新
+        import("@/content").then(({ sendGalleryImagesToInject }) =>
+          sendGalleryImagesToInject()
+        );
+        this.onRefresh?.();
+      }
+    };
+    window.addEventListener("message", this.importListener);
+
+    window.postMessage(
+      { source: "mr-wplace-gallery-import", requestId: Date.now().toString() },
+      "*"
+    );
+  }
+
+  private cleanupImportListener(): void {
+    if (this.importListener) {
+      window.removeEventListener("message", this.importListener);
+      this.importListener = null;
+    }
+  }
+
   private async handleDrawToggle(key: string): Promise<void> {
     const newDrawEnabled = await toggleDrawState(key);
     console.log(`🧑‍🎨 : Draw toggle: ${key} -> ${newDrawEnabled}`);
@@ -107,6 +208,7 @@ export class GalleryListUI {
   }
 
   destroy(): void {
+    this.cleanupImportListener();
     if (this.imageGrid) {
       this.imageGrid.destroy();
       this.imageGrid = null;
