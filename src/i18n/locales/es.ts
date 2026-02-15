@@ -540,4 +540,7 @@ export const esTranslations = {
   import_snapshot_success: "Importación completada",
   hint_map_filter_trigger: "Aquí puedes cambiar cómo se ve el mapa",
   hint_edit_card: "Aquí puedes cambiar el nombre y agregar etiquetas",
+  hint_image_detail_draw_on_map: "Presiona aquí para colocar la imagen en el centro del mapa actual",
+  hint_image_detail_dpad: "Puedes mover la imagen aquí",
+  hint_image_detail_download: "Para compartir con otros, descarga la imagen desde aquí. El nombre del archivo contiene las coordenadas, por lo que al cargarlo se colocará la imagen en la misma posición",
 };

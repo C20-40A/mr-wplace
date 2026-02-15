@@ -9,6 +9,7 @@ import {
   downloadImage,
 } from "../../common-actions";
 import { t } from "@/i18n/manager";
+import { showFeatureHint } from "@/features/feature-hints";
 import { Toast } from "@/components/toast";
 import { showNameInputModal } from "@/components/modal";
 import { tilePixelToLatLng } from "@/utils/coordinate";
@@ -549,6 +550,12 @@ export class GalleryImageDetail {
         Toast.error("Failed to copy");
       }
     });
+
+    // Feature hints
+    if (drawOnMapBtn) showFeatureHint("image-detail-draw-on-map", drawOnMapBtn);
+    const dpadContainer = document.getElementById("image-dpad-container");
+    if (dpadContainer) showFeatureHint("image-detail-dpad", dpadContainer);
+    if (downloadBtn) showFeatureHint("image-detail-download", downloadBtn);
   }
 
   destroy(): void {

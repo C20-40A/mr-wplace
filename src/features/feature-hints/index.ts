@@ -24,7 +24,10 @@ export type FeatureHintId =
   | "overlay-mode-independent"
   | "user-status-container"
   | "map-filter-trigger"
-  | "edit-card";
+  | "edit-card"
+  | "image-detail-draw-on-map"
+  | "image-detail-dpad"
+  | "image-detail-download";
 
 interface FeatureHintDefinition {
   messageKey?: string;
@@ -159,6 +162,24 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     messageKey: "hint_edit_card",
     iconSrc: HINT_DIALOG_ICON,
     placement: "top",
+  },
+  // ------- Image Detail Hints -------
+  "image-detail-draw-on-map": {
+    messageKey: "hint_image_detail_draw_on_map",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "right",
+  },
+  "image-detail-dpad": {
+    messageKey: "hint_image_detail_dpad",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "top",
+    dependsOn: ["image-detail-draw-on-map"],
+  },
+  "image-detail-download": {
+    messageKey: "hint_image_detail_download",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "top",
+    dependsOn: ["image-detail-dpad"],
   },
 };
 

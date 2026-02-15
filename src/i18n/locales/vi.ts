@@ -522,4 +522,7 @@ export const viTranslations = {
   import_snapshot_success: "Nhập hoàn tất",
   hint_map_filter_trigger: "Bạn có thể thay đổi cách bản đồ hiển thị tại đây",
   hint_edit_card: "Bạn có thể thay đổi tên và thêm thẻ tại đây",
+  hint_image_detail_draw_on_map: "Nhấn vào đây để đặt hình ảnh vào trung tâm bản đồ hiện tại",
+  hint_image_detail_dpad: "Bạn có thể di chuyển hình ảnh ở đây",
+  hint_image_detail_download: "Để chia sẻ với người khác, tải xuống hình ảnh từ đây. Tên tệp chứa tọa độ, nên khi tải lên sẽ đặt hình ảnh vào cùng vị trí",
 };

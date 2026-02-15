@@ -551,4 +551,7 @@ Do not use this feature to paint actual pixels.`,
   import_snapshot_success: "Import completed",
   hint_map_filter_trigger: "You can change how the map looks here",
   hint_edit_card: "You can change the name and add tags here",
+  hint_image_detail_draw_on_map: "Press here to place the image at the current map center",
+  hint_image_detail_dpad: "You can move the image here",
+  hint_image_detail_download: "To share with others, download the image from here. The filename contains the coordinates, so loading it will place the image at the same position",
 };

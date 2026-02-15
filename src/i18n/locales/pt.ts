@@ -523,4 +523,7 @@ export const ptTranslations = {
   import_snapshot_success: "Importação concluída",
   hint_map_filter_trigger: "Você pode alterar a aparência do mapa aqui",
   hint_edit_card: "Você pode alterar o nome e adicionar tags aqui",
+  hint_image_detail_draw_on_map: "Pressione aqui para colocar a imagem no centro do mapa atual",
+  hint_image_detail_dpad: "Você pode mover a imagem aqui",
+  hint_image_detail_download: "Para compartilhar com outros, baixe a imagem daqui. O nome do arquivo contém as coordenadas, então carregá-lo colocará a imagem na mesma posição",
 };

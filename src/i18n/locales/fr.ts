@@ -539,4 +539,7 @@ export const frTranslations = {
   import_snapshot_success: "Importation terminée",
   hint_map_filter_trigger: "Vous pouvez changer l'apparence de la carte ici",
   hint_edit_card: "Vous pouvez modifier le nom et ajouter des tags ici",
+  hint_image_detail_draw_on_map: "Appuyez ici pour placer l'image au centre de la carte actuelle",
+  hint_image_detail_dpad: "Vous pouvez déplacer l'image ici",
+  hint_image_detail_download: "Pour partager avec d'autres, téléchargez l'image ici. Le nom du fichier contient les coordonnées, donc le charger placera l'image à la même position",
 };

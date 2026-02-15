@@ -554,4 +554,7 @@ export const jaTranslations = {
   hint_save_current_snapshot_btn: "この付近の画像アーカイブできます",
   hint_map_filter_trigger: "ここでマップの見え方を変えられます",
   hint_edit_card: "ここで名前を変えたりタグをつけることができます",
+  hint_image_detail_draw_on_map: "ここを押すと現在の画面中央にイラストを設置できます",
+  hint_image_detail_dpad: "ここでイラストを移動できます",
+  hint_image_detail_download: "ほかの人と共有するときは、ここからイラストをダウンロードしてください。ファイル名が座標になっているので、読み込むと同じ位置にイラストが設置されます",
 };
