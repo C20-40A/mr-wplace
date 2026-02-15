@@ -18,7 +18,7 @@ const findColorButtons = (): NodeListOf<Element> => {
       // 例: color-0, color-35, color-64 はOK
       // 例: color-filter-fab-btn はNG
       return /^color-\d+$/.test(id);
-    }
+    },
   );
 
   // NodeListOf<Element>の代わりにElement[]を返していますが、
@@ -28,31 +28,91 @@ const findColorButtons = (): NodeListOf<Element> => {
   return validButtons as unknown as NodeListOf<Element>; // 互換性のために型キャスト
 };
 
-// stats element作成を分離
-const createStatsElement = (remaining: number): HTMLDivElement => {
+const getContrastColor = (r: number, g: number, b: number): string => {
+  const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  return lum > 0.5 ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.9)";
+};
+
+// 完了チェックマーク
+const createCheckElement = (textColor: string): HTMLDivElement => {
   const div = document.createElement("div");
   div.className = "paint-stats-remaining";
-  div.textContent = remaining.toString();
   div.style.cssText = `
     position: absolute;
-    top: 2px;
-    left: 2px;
-    font-size: 8px;
-    font-weight: 600;
-    color: rgb(10,10,10);
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.7));
-    padding: 2px 3px;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    inset: 0;
     pointer-events: none;
-    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   `;
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("width", "20");
+  svg.setAttribute("height", "20");
+  svg.style.cssText = `opacity: 0.25;`;
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", "M8 12l3 3 6-7");
+  path.setAttribute("stroke-width", "3");
+  path.setAttribute("fill", "none");
+  path.setAttribute("stroke", textColor);
+  path.setAttribute("stroke-linecap", "round");
+  path.setAttribute("stroke-linejoin", "round");
+  svg.appendChild(path);
+  div.appendChild(svg);
+  return div;
+};
+
+// stats element作成（中央テキスト + ボトムゲージ）
+const createStatsElement = (
+  remaining: number,
+  percentage: number,
+  textColor: string,
+): HTMLDivElement => {
+  const div = document.createElement("div");
+  div.className = "paint-stats-remaining";
+  div.style.cssText = `
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  `;
+  // 中央テキスト
+  const text = document.createElement("span");
+  text.textContent = remaining.toString();
+  text.style.cssText = `
+    font-size: 8px;
+    font-weight: 700;
+    color: ${textColor};
+    line-height: 1;
+    text-shadow: 0 0 2px rgba(0,0,0,0.3);
+  `;
+  // ボトムゲージ
+  const gauge = document.createElement("div");
+  gauge.style.cssText = `
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: rgba(255,255,255,0.3);
+  `;
+  const bar = document.createElement("div");
+  bar.style.cssText = `
+    height: 100%;
+    width: ${percentage}%;
+    background: rgba(100,200,255,0.7);
+  `;
+  gauge.appendChild(bar);
+  div.appendChild(text);
+  div.appendChild(gauge);
   return div;
 };
 
 // button群へのstats追加
 const attachStatsToButtons = (
-  colorStats: Record<string, { matched: number; total: number }>
+  colorStats: Record<string, { matched: number; total: number }>,
 ): void => {
   const colorButtons = findColorButtons();
 
@@ -75,13 +135,17 @@ const attachStatsToButtons = (
     if (!stats) return;
 
     const remaining = stats.total - stats.matched;
+    const percentage =
+      stats.total > 0 ? (stats.matched / stats.total) * 100 : 0;
+    const [r, g, b] = color.rgb;
+    const textColor = getContrastColor(r, g, b);
 
-    // remainingが0より大きい場合のみ表示
-    if (remaining > 0) {
-      (button as HTMLElement).style.position = "relative";
-      (button as HTMLElement).style.overflow = "clip";
-      button.appendChild(createStatsElement(remaining));
-    }
+    (button as HTMLElement).style.position = "relative";
+    (button as HTMLElement).style.overflow = "clip";
+
+    if (remaining > 0)
+      button.appendChild(createStatsElement(remaining, percentage, textColor));
+    else button.appendChild(createCheckElement(textColor));
   });
 };
 
@@ -94,7 +158,7 @@ const getColorStats = async (): Promise<Record<
   // coords が存在するアイテムのみを型安全に抽出
   const drawableItems = allMetadata.filter(
     (m): m is typeof m & { coords: NonNullable<typeof m.coords> } =>
-      m.visible && !!m.coords
+      m.visible && !!m.coords,
   );
 
   if (drawableItems.length === 0) return null;
@@ -105,7 +169,7 @@ const getColorStats = async (): Promise<Record<
 
   const stats = await getAggregatedColorStats([nearest.id]);
   console.log(
-    `🧑‍🎨 : Paint stats: nearest template: ${nearest.title || nearest.id}`
+    `🧑‍🎨 : Paint stats: nearest template: ${nearest.title || nearest.id}`,
   );
 
   return Object.keys(stats).length > 0 ? stats : null;
