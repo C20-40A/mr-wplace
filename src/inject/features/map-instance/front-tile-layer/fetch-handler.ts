@@ -16,6 +16,23 @@ const FRONT_RENDER_CACHE_MAX = 40;
 let transparentTileBlobPromise: Promise<Blob> | null = null;
 const frontRenderedTileCache = new Map<string, { token: string; blob: Blob }>();
 
+/**
+ * Invalidate front-rendered tile cache for a specific tile.
+ * Returns true if any cache entry was actually deleted.
+ */
+export const invalidateFrontRenderedTile = (tileX: number, tileY: number): boolean => {
+  const z11Key = getFrontRenderCacheKey(BASE_TILE_ZOOM, tileX, tileY);
+  const deletedZ11 = frontRenderedTileCache.delete(z11Key);
+
+  // Also invalidate z10 parent tile
+  const parentX = Math.floor(tileX / 2);
+  const parentY = Math.floor(tileY / 2);
+  const z10Key = getFrontRenderCacheKey(10, parentX, parentY);
+  const deletedZ10 = frontRenderedTileCache.delete(z10Key);
+
+  return deletedZ11 || deletedZ10;
+};
+
 const getRequestedStateVersion = (url: string): string => {
   const match = url.match(/[?&]v=(\d+)/);
   if (match) return match[1];

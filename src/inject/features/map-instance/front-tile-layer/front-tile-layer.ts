@@ -11,6 +11,7 @@ export {
 export {
   isFrontLayerTileRequest,
   handleFrontLayerTileRequest,
+  invalidateFrontRenderedTile,
 } from "./fetch-handler";
 export {
   incrementStateVersion,

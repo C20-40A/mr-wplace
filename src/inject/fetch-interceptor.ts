@@ -6,6 +6,7 @@ import {
   invalidateTile,
   setOriginalBlob,
   setOriginalLastModified,
+  getOriginalLastModified,
 } from "./features/tile-draw";
 import { invalidateTileCache } from "./cache-storage";
 import { handleUserStatusUpdate } from "./handlers/user-status-handler";
@@ -222,7 +223,12 @@ const handleTileRequest = async (
 
   // LastModified cache check
   const lastModified = response.headers.get("last-modified");
-  if (lastModified) {
+  const frontOperational = isFrontTileLayerOperational();
+
+  // Use processed blob cache only when front-layer is OFF.
+  // When front-layer is ON, we must NOT cache raw tiles here — doing so would
+  // pollute the shared cache and cause overlay to disappear after disabling.
+  if (!frontOperational && lastModified) {
     const lastModifiedCachedBlob = getCachedBlob(cacheKey, lastModified);
     if (lastModifiedCachedBlob) {
       console.log(
@@ -239,10 +245,19 @@ const handleTileRequest = async (
   const clonedResponse = response.clone();
   const originalTileBlob = await clonedResponse.blob();
 
+  // Compare previous last-modified to detect actual background change.
+  // This prevents redundant notifyFrontTileComparisonReady calls on polls
+  // where the tile hasn't actually changed.
+  const prevLastModified = getOriginalLastModified(cacheKey);
+  const backgroundChanged = !lastModified || prevLastModified !== lastModified;
+
   // Cache original tile for background pixel checks (area fill, etc.)
   setOriginalBlob(cacheKey, originalTileBlob);
   setOriginalLastModified(cacheKey, lastModified);
-  notifyFrontTileComparisonReady(tileX, tileY);
+
+  if (backgroundChanged) {
+    notifyFrontTileComparisonReady(tileX, tileY);
+  }
 
   // Save snapshot for time travel feature
   window.postMessage(
@@ -257,7 +272,7 @@ const handleTileRequest = async (
 
   // When front tile layer is enabled, skip overlay compositing on background tiles.
   // Overlays are rendered on the independent front layer instead.
-  if (isFrontTileLayerOperational()) {
+  if (frontOperational) {
     window.postMessage(
       { source: "wplace-studio-drawing-complete", tileX, tileY },
       "*"

@@ -1,6 +1,7 @@
 import { getMapInstanceFromWplace } from "../get-map-instance";
 import { getStateVersion, incrementStateVersion } from "./state-version";
 import { tilePixelToLatLng } from "@/utils/coordinate";
+import { invalidateFrontRenderedTile } from "./fetch-handler";
 
 const FRONT_LAYER_ID = "pixel-art-layer-overlay";
 const FRONT_SOURCE_ID = "mr-wplace-overlay-source";
@@ -285,7 +286,13 @@ export const notifyFrontTileComparisonReady = (
 ): void => {
   if (!isEnabled()) return;
   const key = `${tileX},${tileY}`;
-  if (!pendingComparisonTiles.delete(key)) return;
+  const wasPending = pendingComparisonTiles.delete(key);
+  const invalidated = invalidateFrontRenderedTile(tileX, tileY);
+
+  // Only schedule refresh when there's actual work:
+  // - wasPending: tile was waiting for comparison background
+  // - invalidated: cached front tile was evicted (background changed)
+  if (!wasPending && !invalidated) return;
   pendingComparisonRefreshQueued = true;
   schedulePendingComparisonRefresh();
 };
