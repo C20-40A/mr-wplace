@@ -1,7 +1,15 @@
 import { storage } from "@/utils/browser-api";
 
 // サポート対象ロケール型定義
-export type SupportedLocale = "ja" | "en" | "pt" | "es" | "vi" | "fr" | "ru";
+export type SupportedLocale =
+  | "ja"
+  | "en"
+  | "de"
+  | "pt"
+  | "es"
+  | "vi"
+  | "fr"
+  | "ru";
 
 // 翻訳辞書の型定義
 export interface Translations {
@@ -11,6 +19,7 @@ export interface Translations {
 export interface LocaleData {
   ja: Translations;
   en: Translations;
+  de: Translations;
   pt: Translations;
   es: Translations;
   vi: Translations;
@@ -23,20 +32,42 @@ let currentLocale: SupportedLocale = "en";
 
 // Chrome Storage連携
 const STORAGE_KEY = "mr_wplace_locale";
+const DE_LOCALE_MIGRATION_DONE_KEY = "mr_wplace_de_locale_migration_done";
+
+const isSupportedLocale = (locale: unknown): locale is SupportedLocale => {
+  return (
+    locale === "ja" ||
+    locale === "en" ||
+    locale === "de" ||
+    locale === "pt" ||
+    locale === "es" ||
+    locale === "vi" ||
+    locale === "fr" ||
+    locale === "ru"
+  );
+};
 
 // ストレージから設定を読み込み（成功時true）
 export const loadLocaleFromStorage = async (): Promise<boolean> => {
-  const result = await storage.get([STORAGE_KEY]);
+  const result = await storage.get([
+    STORAGE_KEY,
+    DE_LOCALE_MIGRATION_DONE_KEY,
+  ]);
   const storedLocale = result[STORAGE_KEY] as SupportedLocale | undefined;
-  if (
-    storedLocale === "ja" ||
-    storedLocale === "en" ||
-    storedLocale === "pt" ||
-    storedLocale === "es" ||
-    storedLocale === "vi" ||
-    storedLocale === "fr" ||
-    storedLocale === "ru"
-  ) {
+  const migrationDone = result[DE_LOCALE_MIGRATION_DONE_KEY] === true;
+  const browserLang = navigator.language.substring(0, 2);
+
+  // One-time migration for existing German users who previously had to use English.
+  if (!migrationDone && storedLocale === "en" && browserLang === "de") {
+    currentLocale = "de";
+    await storage.set({
+      [STORAGE_KEY]: "de",
+      [DE_LOCALE_MIGRATION_DONE_KEY]: true,
+    });
+    return true;
+  }
+
+  if (isSupportedLocale(storedLocale)) {
     currentLocale = storedLocale;
     return true;
   }
@@ -47,13 +78,17 @@ export const loadLocaleFromStorage = async (): Promise<boolean> => {
 export const saveLocaleToStorage = async (
   locale: SupportedLocale
 ): Promise<void> => {
-  await storage.set({ [STORAGE_KEY]: locale });
+  await storage.set({
+    [STORAGE_KEY]: locale,
+    [DE_LOCALE_MIGRATION_DONE_KEY]: true,
+  });
 };
 
 // 翻訳辞書
 const translations: LocaleData = {
   ja: {},
   en: {},
+  de: {},
   pt: {},
   es: {},
   vi: {},
@@ -75,17 +110,7 @@ export const getLocale = (): SupportedLocale => {
 // ブラウザ言語検出
 export const detectBrowserLanguage = (): SupportedLocale => {
   const lang = navigator.language.substring(0, 2);
-  if (
-    lang === "ja" ||
-    lang === "en" ||
-    lang === "pt" ||
-    lang === "es" ||
-    lang === "vi" ||
-    lang === "fr" ||
-    lang === "ru"
-  ) {
-    return lang as SupportedLocale;
-  }
+  if (isSupportedLocale(lang)) return lang;
   return "en";
 };
 
@@ -105,6 +130,7 @@ export const formatDate = (
   const localeMap = {
     ja: "ja-JP",
     en: "en-US",
+    de: "de-DE",
     pt: "pt-BR",
     es: "es-ES",
     vi: "vi-VN",
@@ -118,6 +144,7 @@ export const formatDateShort = (date: Date): string => {
   const localeMap = {
     ja: "ja-JP",
     en: "en-US",
+    de: "de-DE",
     pt: "pt-BR",
     es: "es-ES",
     vi: "vi-VN",

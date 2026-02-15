@@ -98,7 +98,8 @@ export class GalleryImageDetail {
 
     // モーダルのタイトルを画像のタイトルに設定
     if (this.ui) {
-      this.ui.setTitle(item.title || t("image_detail"));
+      const displayTitle = (item.title || t("image_detail")) + " ✎";
+      this.ui.setTitle(displayTitle);
     }
 
     // 既存のImageInspectorがあれば破棄

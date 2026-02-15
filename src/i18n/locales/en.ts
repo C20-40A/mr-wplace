@@ -279,19 +279,6 @@ export const enTranslations = {
   // Auto Spoit
   auto_spoit: "Auto Color Picker",
   auto_spoit_tooltip: "Auto color picker",
-  //   auto_spoit_warning: `【Auto Color Picker - Important Notice】
-
-  // This is a simple feature that just makes "repeatedly clicking the i button to pick colors" a bit easier.
-  // However, please pay careful attention to the following:
-
-  // ⚠ Notice
-  // • This is a developer verification feature
-  // • This feature is not publicly available
-  // • Use only for testing the color picker functionality
-  // • To avoid misunderstanding, always paint at a natural speed and in a natural way
-  //   (Paint from edges, paint easier areas first, etc. - paint like a human would)
-  // • Too fast movements or unnatural painting patterns may cause pixel misalignment or misunderstanding
-  // `,
 
   auto_dotter_warning: `
 • This is an experimental feature that "automatically presses Space when hovering over red areas"
@@ -551,7 +538,9 @@ Do not use this feature to paint actual pixels.`,
   import_snapshot_success: "Import completed",
   hint_map_filter_trigger: "You can change how the map looks here",
   hint_edit_card: "You can change the name and add tags here",
-  hint_image_detail_draw_on_map: "Press here to place the image at the current map center",
+  hint_image_detail_draw_on_map:
+    "Press here to place the image at the current map center",
   hint_image_detail_dpad: "You can move the image here",
-  hint_image_detail_download: "To share with others, download the image from here. The filename contains the coordinates, so loading it will place the image at the same position",
+  hint_image_detail_download:
+    "To share with others, download the image from here. The filename contains the coordinates, so loading it will place the image at the same position",
 };

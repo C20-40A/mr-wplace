@@ -301,20 +301,6 @@ export const jaTranslations = {
 この機能を利用して実際に Pixel を塗らないでください。`,
   developer_warning_splash_ok: "OK",
   developer_warning_splash_close: "閉じる",
-  //   auto_spoit_warning: `【自動スポイト機能について - 重要な注意事項】
-
-  // この機能は「iボタン連打で色を取得する作業」を少し楽にするだけの単純な機能です。
-  // ただし、以下の点に十分注意してください：
-
-  // ⚠ 注意事項
-  // • この機能は開発者の検証用機能です
-  // • この機能は一般には公開されていません
-  // • スポイト機能のテスト目的でのみ使用してください
-  // • 自己責任で使用してください
-  // • BOTと誤解されるのを避けるため、必ず自然な速度・自然な塗り方で塗ってください
-  //   （枠から塗る、塗りやすい部分から塗るなど、人間らしい塗り方をしてください）
-  // • 速すぎる動作や不自然な塗り方はピクセルのずれや誤解の原因になります
-  // `,
 
   // Sort Order
   sort_order_default: "デフォルト",
@@ -554,7 +540,9 @@ export const jaTranslations = {
   hint_save_current_snapshot_btn: "この付近の画像アーカイブできます",
   hint_map_filter_trigger: "ここでマップの見え方を変えられます",
   hint_edit_card: "ここで名前を変えたりタグをつけることができます",
-  hint_image_detail_draw_on_map: "ここを押すと現在の画面中央にイラストを設置できます",
+  hint_image_detail_draw_on_map:
+    "ここを押すと現在の画面中央にイラストを設置できます",
   hint_image_detail_dpad: "ここでイラストを移動できます",
-  hint_image_detail_download: "ほかの人と共有するときは、ここからイラストをダウンロードしてください。ファイル名が座標になっているので、読み込むと同じ位置にイラストが設置されます",
+  hint_image_detail_download:
+    "ほかの人と共有するときは、ここからイラストをダウンロードしてください。ファイル名が座標になっているので、読み込むと同じ位置にイラストが設置されます",
 };

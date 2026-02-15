@@ -17,12 +17,13 @@ import { resolve, dirname } from "path";
 
 const LOCALES_DIR = resolve(dirname(import.meta.path), "../src/i18n/locales");
 
-const LANGS = ["en", "ja", "es", "fr", "pt", "ru", "vi"] as const;
+const LANGS = ["en", "ja", "de", "es", "fr", "pt", "ru", "vi"] as const;
 type Lang = (typeof LANGS)[number];
 
 const LANG_NAMES: Record<Lang, string> = {
   en: "English",
   ja: "日本語",
+  de: "Deutsch",
   es: "Español",
   fr: "Français",
   pt: "Português",
