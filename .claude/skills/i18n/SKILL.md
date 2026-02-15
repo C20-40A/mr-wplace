@@ -58,7 +58,6 @@ bun scripts/i18n.ts search <regex-pattern>
 bun scripts/i18n.ts add <key> --en "English" --ja "日本語" --es "Español" ...
 ```
 
-- 最低限 `--en` と `--ja` を指定する
 - 他言語は可能な限り指定。不明な場合はユーザに確認するか、`missing`コマンドで後から確認
 
 ### キーの削除

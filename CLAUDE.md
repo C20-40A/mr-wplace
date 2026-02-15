@@ -163,4 +163,3 @@ When content needs computed data from inject (stats/pixel color), use helpers in
 - content: indexedDb も使えるが、面倒なので、inject に委任することが多い
 - content: メイン機能はすべてここに入れているが、描画などの処理は inject で担当させている
 - content: browserAPI が使えるが、crossplatform のために、src/utils/browser-api.ts を利用する必要がある
-- localizationのファイルはかなり大きい。基本的にREADはしないでほしい。localesをreadする場合、一部のみをreadするか、検索をする。どうしても必要なら、en.tsかja.tsのみをREADする。

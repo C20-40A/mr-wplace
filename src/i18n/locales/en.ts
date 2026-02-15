@@ -526,7 +526,7 @@ Do not use this feature to paint actual pixels.`,
   hint_color_isolate:
     "Show Selected Color Only highlights only the currently selected color so you can focus while painting.",
   hint_data_saver:
-    "Data Saver pauses heavy tile updates to reduce network and rendering load. Tap again to resume normal updates.",
+    "Data Saver reduces network usage by reusing image data. When enabled, pixel art updates are paused.",
   hint_palette_toggle: "Press here to open the color filter.",
   hint_gallery_btn: "You can register images to draw from here.",
   hint_overlay_mode_independent_prefix:
@@ -543,4 +543,10 @@ Do not use this feature to paint actual pixels.`,
   hint_bookmarks_btn: "Your saved bookmarks are here",
   hint_timetravel_fab_btn: "List of archived areas is here",
   hint_save_current_snapshot_btn: "You can archive images near this location",
+  import_snapshot_tile_x_label: "Tile Coordinate X",
+  import_snapshot_tile_y_label: "Tile Coordinate Y",
+  import_snapshot_tile_x_placeholder: "e.g. 520",
+  import_snapshot_tile_y_placeholder: "e.g. 218",
+  import_snapshot_datetime_label: "Date/Time",
+  import_snapshot_success: "Import completed",
 };

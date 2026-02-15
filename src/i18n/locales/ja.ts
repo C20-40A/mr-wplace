@@ -535,7 +535,7 @@ export const jaTranslations = {
   hint_color_isolate:
     "選択中の色のみを表示する機能です。ONにしておくと色を選択したとき、自動で色のフィルターが切り替わります。",
   hint_data_saver:
-    "Data Saver は重いタイル更新を一時停止して通信量と描画負荷を下げます。もう一度押すと通常更新に戻ります。",
+    "データセーバーは、画像データを再利用することで、通信量を削減します。ONにしていると、ピクセルアートの更新が停止します",
   hint_palette_toggle: "ここを押すとカラーフィルターが表示されます。",
   hint_gallery_btn: "ここから描画する画像を登録できます。",
   hint_overlay_mode_independent_prefix:

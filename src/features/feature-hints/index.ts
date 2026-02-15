@@ -74,28 +74,68 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     iconSrc: HINT_DIALOG_ICON,
     placement: "top",
     priority: 1,
-    dependsOn: ["unplaced-item"],
   },
   "color-isolate": {
     messageKey: "hint_color_isolate",
     iconSrc: HINT_DIALOG_ICON,
     placement: "top",
     priority: 2,
-    dependsOn: ["unplaced-item"],
   },
   "show-unplaced-only": {
     messageKey: "hint_show_unplaced_only",
     iconSrc: HINT_DIALOG_ICON,
     placement: "top",
     priority: 3,
-    dependsOn: ["unplaced-item"],
+  },
+
+  // ------- Map Popup Hints -------
+  "bookmark-btn": {
+    messageKey: "hint_bookmark_btn",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "top",
+    dependsOn: ["show-unplaced-only"],
+    condition: () => !hasOpenModal(),
+  },
+  "timetravel-btn": {
+    messageKey: "hint_timetravel_btn",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "top",
+    dependsOn: ["bookmark-btn"],
+    condition: () => !hasOpenModal(),
+  },
+  "text-draw-btn": {
+    messageKey: "hint_text_draw_btn",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "top",
+    dependsOn: ["timetravel-btn"],
+    condition: () => !hasOpenModal(),
+  },
+  // ------- Main Map Hint -------
+  "bookmarks-btn": {
+    messageKey: "hint_bookmarks_btn",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "left",
+    dependsOn: ["bookmark-btn"],
+    condition: () => !hasOpenModal(),
+  },
+  "timetravel-fab-btn": {
+    messageKey: "hint_timetravel_fab_btn",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "left",
+    dependsOn: ["timetravel-btn"],
+    condition: () => !hasOpenModal(),
+  },
+  "save-current-snapshot-btn": {
+    messageKey: "hint_save_current_snapshot_btn",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "left",
   },
   // ------- Main Screen Hint -------
   "data-saver": {
     messageKey: "hint_data_saver",
     iconSrc: HINT_DIALOG_ICON,
     placement: "left",
-    dependsOn: ["show-unplaced-only"],
+    dependsOn: ["save-current-snapshot-btn"],
     condition: () => !hasOpenModal(),
   },
   "overlay-mode-independent": {
@@ -104,44 +144,6 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     iconSrc: HINT_DIALOG_ICON,
     placement: "top",
     dependsOn: ["show-unplaced-only"],
-  },
-  // ------- Map Popup Hints -------
-  "bookmark-btn": {
-    messageKey: "hint_bookmark_btn",
-    iconSrc: HINT_DIALOG_ICON,
-    placement: "top",
-    dependsOn: ["show-unplaced-only"],
-  },
-  "timetravel-btn": {
-    messageKey: "hint_timetravel_btn",
-    iconSrc: HINT_DIALOG_ICON,
-    placement: "top",
-    dependsOn: ["bookmark-btn"],
-  },
-  "text-draw-btn": {
-    messageKey: "hint_text_draw_btn",
-    iconSrc: HINT_DIALOG_ICON,
-    placement: "top",
-    dependsOn: ["timetravel-btn"],
-  },
-  // ------- Main Map Hint -------
-  "bookmarks-btn": {
-    messageKey: "hint_bookmarks_btn",
-    iconSrc: HINT_DIALOG_ICON,
-    placement: "left",
-    dependsOn: ["bookmark-btn"],
-  },
-  "timetravel-fab-btn": {
-    messageKey: "hint_timetravel_fab_btn",
-    iconSrc: HINT_DIALOG_ICON,
-    placement: "left",
-    dependsOn: ["timetravel-btn"],
-  },
-  "save-current-snapshot-btn": {
-    messageKey: "hint_save_current_snapshot_btn",
-    iconSrc: HINT_DIALOG_ICON,
-    placement: "left",
-    // dependsOn: ["timetravel-fab-btn"],
   },
 };
 
