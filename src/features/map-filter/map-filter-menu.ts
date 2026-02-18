@@ -307,7 +307,8 @@ class MapFilterMenu {
     }
 
     const areaSection = document.createElement("div");
-    areaSection.className = "flex flex-col gap-2 pt-2 mt-1 border-t border-base-300";
+    areaSection.className =
+      "flex flex-col gap-2 pt-2 mt-1 border-t border-base-300";
 
     const areaToggleRow = document.createElement("div");
     areaToggleRow.className = "flex items-center justify-between";
@@ -551,7 +552,7 @@ class MapFilterMenu {
   private notifyScaleDisplay() {
     window.postMessage(
       {
-        source: "mr-wplace-scale-display-update",
+        source: "mr-wplace-area-display-update",
         visible: this.state.scaleDisplay,
       },
       "*",

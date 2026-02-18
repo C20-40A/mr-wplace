@@ -55,7 +55,7 @@ import {
   handleMapInstanceFlyTo,
 } from "./features/map-instance";
 import { setGridDisplayEnabled } from "./features/grid-display";
-import { setScaleDisplayEnabled } from "./features/scale-display";
+import { setScaleDisplayEnabled } from "./features/area-display";
 import {
   setAreaDisplayOptions,
   setAreaMeasureEnabled,
@@ -70,9 +70,9 @@ const LOCATION_KEY = "location";
 const DEFAULT_AREA_REGION_ZOOM = 11;
 
 const getAreaRegionZoom = (): number => {
-  const mapInstance = getMapInstanceFromWplace() as
-    | { getZoom?: () => number }
-    | null;
+  const mapInstance = getMapInstanceFromWplace() as {
+    getZoom?: () => number;
+  } | null;
   const mapZoom = mapInstance?.getZoom?.();
   if (typeof mapZoom === "number" && Number.isFinite(mapZoom)) return mapZoom;
 
@@ -116,7 +116,7 @@ const handleGalleryImport = async (data: {
         requestId: data.requestId,
         result,
       },
-      "*"
+      "*",
     );
   } catch (error) {
     window.postMessage(
@@ -125,7 +125,7 @@ const handleGalleryImport = async (data: {
         requestId: data.requestId,
         error: error instanceof Error ? error.message : String(error),
       },
-      "*"
+      "*",
     );
   }
 };
@@ -144,7 +144,7 @@ const handleGalleryExport = async (data: {
         requestId: data.requestId,
         success: true,
       },
-      "*"
+      "*",
     );
   } catch (error) {
     window.postMessage(
@@ -153,7 +153,7 @@ const handleGalleryExport = async (data: {
         requestId: data.requestId,
         error: error instanceof Error ? error.message : String(error),
       },
-      "*"
+      "*",
     );
   }
 };
@@ -172,7 +172,7 @@ const handleGalleryReset = async (data: {
         requestId: data.requestId,
         error: "Unauthorized request",
       },
-      "*"
+      "*",
     );
     console.warn("🧑‍🎨 : Rejected unauthorized gallery reset request");
     return;
@@ -186,7 +186,7 @@ const handleGalleryReset = async (data: {
         requestId: data.requestId,
         count,
       },
-      "*"
+      "*",
     );
   } catch (error) {
     window.postMessage(
@@ -195,7 +195,7 @@ const handleGalleryReset = async (data: {
         requestId: data.requestId,
         error: error instanceof Error ? error.message : String(error),
       },
-      "*"
+      "*",
     );
   }
 };
@@ -216,7 +216,7 @@ const handleAreaFillEstimate = async (data: {
         requestId: data.requestId,
         result,
       },
-      "*"
+      "*",
     );
   } catch (error) {
     window.postMessage(
@@ -225,7 +225,7 @@ const handleAreaFillEstimate = async (data: {
         requestId: data.requestId,
         error: error instanceof Error ? error.message : String(error),
       },
-      "*"
+      "*",
     );
   }
 };
@@ -253,9 +253,10 @@ const messageHandlers: Record<string, MessageHandler> = {
     changeTileBoundaryVisibility(data.visible),
   "mr-wplace-grid-display-update": (data) =>
     setGridDisplayEnabled(data.visible),
-  "mr-wplace-scale-display-update": (data) =>
+  "mr-wplace-area-display-update": (data) =>
     setScaleDisplayEnabled(data.visible),
-  "mr-wplace-area-measure-update": (data) => setAreaMeasureEnabled(data.visible),
+  "mr-wplace-area-measure-update": (data) =>
+    setAreaMeasureEnabled(data.visible),
   "mr-wplace-area-regions-sync": (data) => setAreaRegions(data.regions || []),
   "mr-wplace-area-display-options-update": (data) =>
     setAreaDisplayOptions(data.options || {}),

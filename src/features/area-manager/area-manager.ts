@@ -17,6 +17,16 @@ import {
   calculateGeodesicAreaSquareMeters,
   calculatePixelAreaSquare,
 } from "@/utils/coordinate";
+import { showImportExportDialog } from "./modules/import-export/dialog";
+import { showGroupComposeDialog } from "./modules/group/dialog";
+import { showDisplaySettingsDialog } from "./modules/display-settings/dialog";
+import {
+  applyImportedAreaData as applyImportedAreaDataUsecase,
+  downloadAreaRegions as downloadAreaRegionsUsecase,
+  importAreaRegionsFromText as importAreaRegionsFromTextUsecase,
+  importAreaRegionsFromUrl as importAreaRegionsFromUrlUsecase,
+} from "./modules/import-export/usecase";
+import type { AreaRegionGroup } from "./types";
 
 const AREA_MEASURE_KEY = "mapFilter_areaMeasure";
 const AREA_REGIONS_KEY = "areaRegions_v1";
@@ -31,14 +41,6 @@ const AUTO_AREA_COLOR_GOLDEN_ANGLE = 137.508;
 const DEFAULT_AREA_FILL_OPACITY_PERCENT = 14;
 const DEFAULT_AREA_NAME_CLICK_TO_GOTO = true;
 const DEFAULT_AREA_NAME_DISPLAY_MODE: AreaNameDisplayMode = "always";
-
-interface AreaRegionGroup {
-  id: string;
-  name: string;
-  regionIds: string[];
-  createdAt: number;
-  updatedAt: number;
-}
 
 class AreaManager {
   private areaManagerModal: ModalElements | null = null;
@@ -512,59 +514,6 @@ class AreaManager {
     return this.getRegionsForGroup(group).flatMap((region) => region.vertices);
   }
 
-  private toGeoJsonLinearRing(
-    vertices: AreaRegionVertex[],
-  ): [number, number][] {
-    const ring = vertices.map(
-      (vertex) => [vertex.lng, vertex.lat] as [number, number],
-    );
-    if (ring.length < 3) return ring;
-
-    const first = ring[0];
-    const last = ring[ring.length - 1];
-    if (first[0] !== last[0] || first[1] !== last[1]) {
-      ring.push([first[0], first[1]]);
-    }
-
-    return ring;
-  }
-
-  private createAreaGeoJson(
-    regions: AreaRegion[],
-    groups: AreaRegionGroup[] = [],
-  ): Record<string, unknown> {
-    const payload: Record<string, unknown> = {
-      type: "FeatureCollection",
-      features: regions.map((region) => ({
-        type: "Feature",
-        properties: {
-          id: region.id,
-          name: region.name,
-          color: region.color,
-          visible: region.visible,
-          createdAt: region.createdAt,
-          updatedAt: region.updatedAt,
-        },
-        geometry: {
-          type: "Polygon",
-          coordinates: [this.toGeoJsonLinearRing(region.vertices)],
-        },
-      })),
-    };
-
-    if (groups.length > 0) {
-      payload.mrWplaceAreaGroups = groups.map((group) => ({
-        id: group.id,
-        name: group.name,
-        regionIds: [...group.regionIds],
-        createdAt: group.createdAt,
-        updatedAt: group.updatedAt,
-      }));
-    }
-
-    return payload;
-  }
-
   private parseGeoJsonVertices(geometry: unknown): AreaRegionVertex[] {
     if (!geometry || typeof geometry !== "object") return [];
     const candidate = geometry as Record<string, unknown>;
@@ -680,357 +629,78 @@ class AreaManager {
     importedData: { regions: AreaRegion[]; groups: AreaRegionGroup[] },
     mode: "merge" | "replace",
   ): Promise<void> {
-    const importedRegions = importedData.regions;
-    const importedGroups = importedData.groups;
-
-    if (this.areaEditMode) {
-      await this.stopAreaEditing(true);
-    }
-
-    if (mode === "replace") {
-      this.areaRegions = importedRegions;
-      this.areaRegionGroups = importedGroups;
-    } else {
-      const merged = new Map<string, AreaRegion>();
-      for (const region of this.areaRegions) {
-        merged.set(region.id, region);
-      }
-      for (const region of importedRegions) {
-        merged.set(region.id, region);
-      }
-      this.areaRegions = Array.from(merged.values());
-
-      const mergedGroups = new Map<string, AreaRegionGroup>();
-      for (const group of this.areaRegionGroups) {
-        mergedGroups.set(group.id, group);
-      }
-      for (const group of importedGroups) {
-        mergedGroups.set(group.id, group);
-      }
-      this.areaRegionGroups = Array.from(mergedGroups.values());
-    }
-
-    this.areaRegions.sort((a, b) => b.updatedAt - a.updatedAt);
-    const groupsChanged = this.cleanupAreaRegionGroups();
-    await this.persistAreaRegions();
-    if (groupsChanged || mode === "replace" || importedGroups.length > 0) {
-      await this.persistAreaRegionGroups();
-    }
-    this.notifyAreaRegions();
-    this.renderAreaManager();
+    await applyImportedAreaDataUsecase({
+      importedData,
+      mode,
+      areaEditMode: this.areaEditMode,
+      areaRegions: this.areaRegions,
+      areaRegionGroups: this.areaRegionGroups,
+      stopAreaEditing: (skipRender) => this.stopAreaEditing(skipRender),
+      cleanupAreaRegionGroups: () => this.cleanupAreaRegionGroups(),
+      persistAreaRegions: () => this.persistAreaRegions(),
+      persistAreaRegionGroups: () => this.persistAreaRegionGroups(),
+      notifyAreaRegions: () => this.notifyAreaRegions(),
+      renderAreaManager: () => this.renderAreaManager(),
+      setAreaRegions: (regions) => {
+        this.areaRegions = regions;
+      },
+      setAreaRegionGroups: (groups) => {
+        this.areaRegionGroups = groups;
+      },
+    });
   }
 
   private async importAreaRegionsFromText(
     text: string,
     mode: "merge" | "replace",
   ): Promise<number> {
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      throw new Error(t`${"invalid_file_format"}`);
-    }
-
-    const importedData = this.normalizeImportedAreaData(parsed);
-    if (importedData.regions.length === 0) {
-      throw new Error(t`${"map_filter_area_no_importable_regions"}`);
-    }
-
-    await this.applyImportedAreaData(importedData, mode);
-    return importedData.regions.length;
+    return importAreaRegionsFromTextUsecase({
+      text,
+      mode,
+      normalizeImportedAreaData: (value) => this.normalizeImportedAreaData(value),
+      applyImportedAreaData: (data, nextMode) =>
+        this.applyImportedAreaData(data, nextMode),
+    });
   }
 
   private async importAreaRegionsFromUrl(
     url: string,
     mode: "merge" | "replace",
   ): Promise<number> {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const text = await response.text();
-    return this.importAreaRegionsFromText(text, mode);
+    return importAreaRegionsFromUrlUsecase({
+      url,
+      mode,
+      importAreaRegionsFromText: (text, nextMode) =>
+        this.importAreaRegionsFromText(text, nextMode),
+    });
   }
 
   private downloadAreaRegions(regions: AreaRegion[]): void {
-    if (regions.length === 0) {
-      alert(t`${"map_filter_area_no_export_regions"}`);
-      return;
-    }
-
-    const selectedIds = new Set(regions.map((region) => region.id));
-    const groups = this.areaRegionGroups
-      .filter((group) => group.regionIds.every((id) => selectedIds.has(id)))
-      .map((group) => ({
-        ...group,
-        regionIds: [...group.regionIds],
-      }));
-    const payload = this.createAreaGeoJson(regions, groups);
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-      type: "application/geo+json",
+    downloadAreaRegionsUsecase({
+      regions,
+      areaRegionGroups: this.areaRegionGroups,
     });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    const timestamp = new Date()
-      .toISOString()
-      .replace(/[:]/g, "-")
-      .replace(/\..+$/, "");
-
-    anchor.href = url;
-    anchor.download = `mr-wplace-areas-${timestamp}.geojson`;
-    anchor.click();
-    URL.revokeObjectURL(url);
   }
 
   private async showAreaImportExportDialog(): Promise<void> {
-    const saved = await storage.get([AREA_SYNC_URL_KEY]);
-    const savedSyncUrl =
-      typeof saved[AREA_SYNC_URL_KEY] === "string"
-        ? saved[AREA_SYNC_URL_KEY]
-        : "";
-
-    const modal = document.createElement("dialog");
-    modal.className = "modal";
-    modal.innerHTML = `
-      <div class="modal-box" style="max-width: 34rem; display: flex; flex-direction: column; gap: 0.6rem;">
-        <h3 class="font-bold text-lg mb-4">${t`${"import_export"}`}</h3>
-
-        <div style="padding: 1rem; border: 1px solid oklch(var(--bc) / 0.2); border-radius: 8px;">
-          <h4 style="font-weight: 600; margin-bottom: 0.5rem;">${t`${"online_sync"}`}</h4>
-          <p style="font-size: 0.875rem; color: oklch(var(--bc) / 0.6); margin-bottom: 0.75rem;">${t`${"map_filter_area_online_sync_description"}`}</p>
-          <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-            <input id="area-sync-url-input" type="text" placeholder="https://example.com/areas.geojson"
-              class="input input-sm input-bordered" style="flex: 1; font-size: 0.75rem;" />
-            <button id="area-sync-url-open-btn" class="btn btn-sm btn-ghost btn-square" title="${t`${"open_url"}`}">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
-                <path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h280v80H200v560h560v-280h80v280q0 33-23.5 56.5T760-120H200Zm188-212-56-56 372-372H560v-80h280v280h-80v-144L388-332Z"/>
-              </svg>
-            </button>
-          </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <button id="area-sync-merge-btn" class="btn btn-primary btn-sm" style="flex: 1;">
-              ${t`${"sync_merge"}`}
-            </button>
-            <button id="area-sync-replace-btn" class="btn btn-outline btn-sm" style="flex: 1;">
-              ${t`${"sync_replace"}`}
-            </button>
-          </div>
-        </div>
-
-        <div style="padding: 1rem; border: 1px solid oklch(var(--bc) / 0.2); border-radius: 8px;">
-          <h4 style="font-weight: 600; margin-bottom: 0.5rem;">${t`${"import"}`}</h4>
-          <p style="font-size: 0.875rem; color: oklch(var(--bc) / 0.6); margin-bottom: 0.75rem;">${t`${"map_filter_area_import_description"}`}</p>
-          <button id="area-dialog-import-btn" class="btn btn-primary btn-sm w-full">${t`${"map_filter_area_import_file"}`}</button>
-          <input id="area-dialog-import-file" type="file" accept=".geojson,.json,application/geo+json,application/json" style="display: none;" />
-        </div>
-
-        <div style="padding: 1rem; border: 1px solid oklch(var(--bc) / 0.2); border-radius: 8px;">
-          <h4 style="font-weight: 600; margin-bottom: 0.5rem;">${t`${"export"}`}</h4>
-          <p style="font-size: 0.875rem; color: oklch(var(--bc) / 0.6); margin-bottom: 0.75rem;">${t`${"map_filter_area_export_all_description"}`}</p>
-          <button id="area-dialog-export-all-btn" class="btn btn-primary btn-sm w-full">${t`${"export_all"}`} (${this.areaRegions.length})</button>
-        </div>
-
-        <div style="padding: 1rem; border: 1px solid oklch(var(--bc) / 0.2); border-radius: 8px;">
-          <h4 style="font-weight: 600; margin-bottom: 0.5rem;">${t`${"map_filter_area_export_selected"}`}</h4>
-          <p style="font-size: 0.875rem; color: oklch(var(--bc) / 0.6); margin-bottom: 0.75rem;">${t`${"map_filter_area_export_selected_description"}`}</p>
-          <div id="area-dialog-export-list" style="max-height: 200px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; margin-bottom: 0.75rem;"></div>
-          <button id="area-dialog-export-selected-btn" class="btn btn-primary btn-sm w-full" disabled>${t`${"map_filter_area_export_selected_button"}`}</button>
-        </div>
-
-        <div class="modal-action">
-          <button id="area-dialog-close-btn" class="btn btn-outline btn-sm">${t`${"close"}`}</button>
-        </div>
-      </div>
-      <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-      </form>
-    `;
-
-    document.body.appendChild(modal);
-    modal.showModal();
-
-    const syncUrlInput = modal.querySelector(
-      "#area-sync-url-input",
-    ) as HTMLInputElement | null;
-    const importFileInput = modal.querySelector(
-      "#area-dialog-import-file",
-    ) as HTMLInputElement | null;
-    const exportSelectedButton = modal.querySelector(
-      "#area-dialog-export-selected-btn",
-    ) as HTMLButtonElement | null;
-    const exportList = modal.querySelector("#area-dialog-export-list");
-
-    if (syncUrlInput) {
-      syncUrlInput.value = savedSyncUrl;
-    }
-
-    if (exportList) {
-      if (this.areaRegions.length === 0) {
-        const empty = document.createElement("p");
-        empty.style.cssText =
-          "text-align: center; color: oklch(var(--bc) / 0.4); padding: 1rem;";
-        empty.textContent = t`${"map_filter_area_no_regions_available"}`;
-        exportList.appendChild(empty);
-      } else {
-        for (const region of this.areaRegions) {
-          const row = document.createElement("label");
-          row.className =
-            "flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-base-200";
-          row.style.marginBottom = "0.25rem";
-
-          const checkbox = document.createElement("input");
-          checkbox.type = "checkbox";
-          checkbox.className = "checkbox checkbox-sm area-region-checkbox";
-          checkbox.dataset.regionId = region.id;
-
-          const swatch = document.createElement("div");
-          swatch.style.cssText = `
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
-            background: ${region.color};
-            flex-shrink: 0;
-          `;
-
-          const name = document.createElement("span");
-          name.style.flex = "1";
-          name.textContent = region.name;
-
-          const count = document.createElement("span");
-          count.style.cssText =
-            "font-size: 0.75rem; color: oklch(var(--bc) / 0.6);";
-          count.textContent = `(${region.vertices.length} ${t`${"map_filter_area_points"}`})`;
-
-          row.appendChild(checkbox);
-          row.appendChild(swatch);
-          row.appendChild(name);
-          row.appendChild(count);
-          exportList.appendChild(row);
-        }
-      }
-    }
-
-    const updateExportSelectedButton = () => {
-      const selectedCount = modal.querySelectorAll(
-        ".area-region-checkbox:checked",
-      ).length;
-      if (exportSelectedButton) {
-        exportSelectedButton.disabled = selectedCount === 0;
-      }
-    };
-
-    modal.querySelectorAll(".area-region-checkbox").forEach((checkbox) => {
-      checkbox.addEventListener("change", updateExportSelectedButton);
-    });
-
-    syncUrlInput?.addEventListener("blur", async () => {
-      const url = syncUrlInput.value.trim();
-      await storage.set({ [AREA_SYNC_URL_KEY]: url });
-    });
-
-    modal
-      .querySelector("#area-sync-url-open-btn")
-      ?.addEventListener("click", () => {
-        const url = syncUrlInput?.value.trim();
-        if (!url) return;
-        window.open(url, "_blank");
-      });
-
-    modal
-      .querySelector("#area-sync-merge-btn")
-      ?.addEventListener("click", async () => {
-        const url = syncUrlInput?.value.trim();
-        if (!url) {
-          alert(t`${"please_enter_sync_url"}`);
-          return;
-        }
-
-        try {
-          await storage.set({ [AREA_SYNC_URL_KEY]: url });
-          await this.importAreaRegionsFromUrl(url, "merge");
-          modal.close();
-        } catch (error) {
-          console.error("🧑‍🎨 : Area sync merge failed", error);
-          alert(`${t`${"sync_failed"}`}: ${(error as Error).message}`);
-        }
-      });
-
-    modal
-      .querySelector("#area-sync-replace-btn")
-      ?.addEventListener("click", async () => {
-        const url = syncUrlInput?.value.trim();
-        if (!url) {
-          alert(t`${"please_enter_sync_url"}`);
-          return;
-        }
-
-        const confirmed = confirm(t`${"map_filter_area_sync_replace_confirm"}`);
-        if (!confirmed) return;
-
-        try {
-          await storage.set({ [AREA_SYNC_URL_KEY]: url });
-          await this.importAreaRegionsFromUrl(url, "replace");
-          modal.close();
-        } catch (error) {
-          console.error("🧑‍🎨 : Area sync replace failed", error);
-          alert(`${t`${"sync_failed"}`}: ${(error as Error).message}`);
-        }
-      });
-
-    modal
-      .querySelector("#area-dialog-import-btn")
-      ?.addEventListener("click", () => {
-        importFileInput?.click();
-      });
-
-    importFileInput?.addEventListener("change", async () => {
-      const file = importFileInput.files?.[0];
-      if (!file) return;
-
-      try {
-        const text = await file.text();
-        await this.importAreaRegionsFromText(text, "merge");
-        modal.close();
-      } catch (error) {
-        console.error("🧑‍🎨 : Area import failed", error);
-        alert(`${t`${"sync_failed"}`}: ${(error as Error).message}`);
-      } finally {
-        importFileInput.value = "";
-      }
-    });
-
-    modal
-      .querySelector("#area-dialog-export-all-btn")
-      ?.addEventListener("click", () => {
-        this.downloadAreaRegions(this.areaRegions);
-        modal.close();
-      });
-
-    exportSelectedButton?.addEventListener("click", () => {
-      const selectedIds = new Set<string>();
-      modal
-        .querySelectorAll(".area-region-checkbox:checked")
-        .forEach((checkbox) => {
-          const input = checkbox as HTMLInputElement;
-          if (input.dataset.regionId) selectedIds.add(input.dataset.regionId);
-        });
-
-      const selectedRegions = this.areaRegions.filter((region) =>
-        selectedIds.has(region.id),
-      );
-      this.downloadAreaRegions(selectedRegions);
-      modal.close();
-    });
-
-    modal
-      .querySelector("#area-dialog-close-btn")
-      ?.addEventListener("click", () => {
-        modal.close();
-      });
-
-    modal.addEventListener("close", () => {
-      modal.remove();
+    await showImportExportDialog({
+      areaRegions: this.areaRegions,
+      getSavedSyncUrl: async () => {
+        const saved = await storage.get([AREA_SYNC_URL_KEY]);
+        return typeof saved[AREA_SYNC_URL_KEY] === "string"
+          ? saved[AREA_SYNC_URL_KEY]
+          : "";
+      },
+      saveSyncUrl: async (url) => {
+        await storage.set({ [AREA_SYNC_URL_KEY]: url });
+      },
+      importFromUrl: async (url, mode) => {
+        await this.importAreaRegionsFromUrl(url, mode);
+      },
+      importFromText: async (text, mode) => {
+        await this.importAreaRegionsFromText(text, mode);
+      },
+      downloadRegions: (regions) => this.downloadAreaRegions(regions),
     });
   }
 
@@ -1084,143 +754,58 @@ class AreaManager {
     const candidates = this.areaRegions.filter(
       (region) => !groupedRegionIds.has(region.id),
     );
-    if (candidates.length < 2) {
-      alert("合体可能なエリアが不足しています");
-      return;
-    }
+    await showGroupComposeDialog({
+      candidates,
+      onCreate: async (selectedIds, groupName) => {
+        if (selectedIds.length < 2) return;
 
-    const modal = document.createElement("dialog");
-    modal.className = "modal";
-    modal.innerHTML = `
-      <div class="modal-box" style="max-width: 32rem; display: flex; flex-direction: column; gap: 0.7rem;">
-        <h3 class="font-bold text-lg">エリア合体</h3>
-        <input id="area-group-name-input" class="input input-sm input-bordered" placeholder="グループ名 (任意)" />
-        <div id="area-group-candidates" style="max-height: 260px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;"></div>
-        <div class="modal-action" style="margin-top: 0.25rem;">
-          <button id="area-group-create-btn" class="btn btn-primary btn-sm" disabled>合体する</button>
-          <button id="area-group-cancel-btn" class="btn btn-outline btn-sm">${t`${"cancel"}`}</button>
-        </div>
-      </div>
-      <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-      </form>
-    `;
+        const selectedRegions = this.areaRegions.filter((region) =>
+          selectedIds.includes(region.id),
+        );
+        if (selectedRegions.length < 2) return;
 
-    const list = modal.querySelector("#area-group-candidates");
-    const createBtn = modal.querySelector(
-      "#area-group-create-btn",
-    ) as HTMLButtonElement | null;
-    const nameInput = modal.querySelector(
-      "#area-group-name-input",
-    ) as HTMLInputElement | null;
+        const primaryRegion = selectedRegions.reduce((current, region) => {
+          const currentCreated =
+            Number.isFinite(current.createdAt) && current.createdAt > 0
+              ? current.createdAt
+              : Number.MAX_SAFE_INTEGER;
+          const regionCreated =
+            Number.isFinite(region.createdAt) && region.createdAt > 0
+              ? region.createdAt
+              : Number.MAX_SAFE_INTEGER;
+          return regionCreated < currentCreated ? region : current;
+        }, selectedRegions[0]);
 
-    if (list) {
-      for (const region of candidates) {
-        const row = document.createElement("label");
-        row.className =
-          "flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-base-200";
+        const now = Date.now();
+        const unifiedName = groupName || primaryRegion.name;
+        const unifiedColor = primaryRegion.color;
 
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.className = "checkbox checkbox-sm area-group-candidate";
-        checkbox.dataset.regionId = region.id;
+        for (const region of selectedRegions) {
+          region.name = unifiedName;
+          region.color = unifiedColor;
+          region.updatedAt = now;
+        }
 
-        const swatch = document.createElement("div");
-        swatch.style.cssText = `
-          width: 18px;
-          height: 18px;
-          border-radius: 4px;
-          background: ${region.color};
-          flex-shrink: 0;
-        `;
+        const group: AreaRegionGroup = {
+          id: this.createAreaRegionGroupId(),
+          name:
+            unifiedName ||
+            this.createDefaultAreaGroupName(this.areaRegionGroups.length + 1),
+          regionIds: selectedIds,
+          createdAt: now,
+          updatedAt: now,
+        };
 
-        const text = document.createElement("span");
-        text.style.flex = "1";
-        text.textContent = region.name;
+        this.areaRegions.sort((a, b) => b.updatedAt - a.updatedAt);
+        this.areaRegionGroups.unshift(group);
+        await this.persistAreaRegions();
+        await this.persistAreaRegionGroups();
+        this.notifyAreaRegions();
+        this.renderAreaManager();
 
-        row.appendChild(checkbox);
-        row.appendChild(swatch);
-        row.appendChild(text);
-        list.appendChild(row);
-      }
-    }
-
-    const updateCreateButton = () => {
-      const selected = modal.querySelectorAll(".area-group-candidate:checked").length;
-      if (createBtn) createBtn.disabled = selected < 2;
-    };
-
-    modal.querySelectorAll(".area-group-candidate").forEach((element) => {
-      element.addEventListener("change", updateCreateButton);
+        console.log("🧑‍🎨 : Area group created:", group.id, group.regionIds.length);
+      },
     });
-
-    createBtn?.addEventListener("click", async () => {
-      const selectedIds: string[] = [];
-      modal.querySelectorAll(".area-group-candidate:checked").forEach((element) => {
-        const input = element as HTMLInputElement;
-        const id = input.dataset.regionId;
-        if (id) selectedIds.push(id);
-      });
-
-      const uniqueIds = Array.from(new Set(selectedIds));
-      if (uniqueIds.length < 2) return;
-
-      const selectedRegions = this.areaRegions.filter((region) =>
-        uniqueIds.includes(region.id),
-      );
-      if (selectedRegions.length < 2) return;
-
-      const primaryRegion = selectedRegions.reduce((current, region) => {
-        const currentCreated =
-          Number.isFinite(current.createdAt) && current.createdAt > 0
-            ? current.createdAt
-            : Number.MAX_SAFE_INTEGER;
-        const regionCreated =
-          Number.isFinite(region.createdAt) && region.createdAt > 0
-            ? region.createdAt
-            : Number.MAX_SAFE_INTEGER;
-        return regionCreated < currentCreated ? region : current;
-      }, selectedRegions[0]);
-
-      const now = Date.now();
-      const unifiedName = nameInput?.value.trim() || primaryRegion.name;
-      const unifiedColor = primaryRegion.color;
-
-      for (const region of selectedRegions) {
-        region.name = unifiedName;
-        region.color = unifiedColor;
-        region.updatedAt = now;
-      }
-
-      const group: AreaRegionGroup = {
-        id: this.createAreaRegionGroupId(),
-        name: unifiedName || this.createDefaultAreaGroupName(this.areaRegionGroups.length + 1),
-        regionIds: uniqueIds,
-        createdAt: now,
-        updatedAt: now,
-      };
-
-      this.areaRegions.sort((a, b) => b.updatedAt - a.updatedAt);
-      this.areaRegionGroups.unshift(group);
-      await this.persistAreaRegions();
-      await this.persistAreaRegionGroups();
-      this.notifyAreaRegions();
-      this.renderAreaManager();
-      modal.close();
-
-      console.log("🧑‍🎨 : Area group created:", group.id, group.regionIds.length);
-    });
-
-    modal.querySelector("#area-group-cancel-btn")?.addEventListener("click", () => {
-      modal.close();
-    });
-
-    modal.addEventListener("close", () => {
-      modal.remove();
-    });
-
-    document.body.appendChild(modal);
-    modal.showModal();
   }
 
   private async updateAreaFillOpacityPercent(
@@ -1253,100 +838,19 @@ class AreaManager {
   }
 
   private showAreaDisplaySettingsDialog() {
-    const modal = document.createElement("dialog");
-    modal.className = "modal";
-    modal.innerHTML = `
-      <div class="modal-box" style="max-width: 27rem; display: flex; flex-direction: column; gap: 0.8rem;">
-        <h3 class="font-bold text-lg">表示設定</h3>
-
-        <div style="padding: 0.8rem; border: 1px solid oklch(var(--bc) / 0.2); border-radius: 8px;">
-          <label style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem;">
-            <span style="min-width: 6.5rem;">エリア透明度</span>
-            <input id="area-display-opacity-input" type="range" class="range range-xs" min="0" max="100" step="1" style="flex: 1;" />
-            <span id="area-display-opacity-value" class="tabular-nums" style="width: 3rem; text-align: right;"></span>
-          </label>
-        </div>
-
-        <div style="padding: 0.8rem; border: 1px solid oklch(var(--bc) / 0.2); border-radius: 8px; display: flex; flex-direction: column; gap: 0.7rem;">
-          <label style="display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; font-size: 0.9rem;">
-            <span>マップ上の名前クリックで移動</span>
-            <input id="area-display-name-click-toggle" type="checkbox" class="toggle toggle-sm" />
-          </label>
-          <label style="display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; font-size: 0.9rem;">
-            <span>エリア名表示</span>
-            <select id="area-display-name-mode-select" class="select select-sm select-bordered" style="min-width: 12rem;">
-              <option value="always">表示する</option>
-              <option value="off">表示しない</option>
-              <option value="hide-on-zoom-out">ズームアウト時に隠す</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="modal-action">
-          <button id="area-display-settings-close-btn" class="btn btn-outline btn-sm">${t`${"close"}`}</button>
-        </div>
-      </div>
-      <form method="dialog" class="modal-backdrop">
-        <button>close</button>
-      </form>
-    `;
-
-    const opacityInput = modal.querySelector(
-      "#area-display-opacity-input",
-    ) as HTMLInputElement | null;
-    const opacityValue = modal.querySelector(
-      "#area-display-opacity-value",
-    ) as HTMLSpanElement | null;
-    const nameClickToggle = modal.querySelector(
-      "#area-display-name-click-toggle",
-    ) as HTMLInputElement | null;
-    const nameModeSelect = modal.querySelector(
-      "#area-display-name-mode-select",
-    ) as HTMLSelectElement | null;
-
-    if (opacityInput && opacityValue) {
-      opacityInput.value = String(this.areaFillOpacityPercent);
-      opacityValue.textContent = `${this.areaFillOpacityPercent}%`;
-
-      opacityInput.addEventListener("input", (event) => {
-        const target = event.target as HTMLInputElement;
-        const next = this.normalizeAreaFillOpacityPercent(Number(target.value));
-        opacityValue.textContent = `${next}%`;
-        void this.updateAreaFillOpacityPercent(next, false);
-      });
-      opacityInput.addEventListener("change", (event) => {
-        const target = event.target as HTMLInputElement;
-        void this.updateAreaFillOpacityPercent(Number(target.value), true);
-      });
-    }
-
-    if (nameClickToggle) {
-      nameClickToggle.checked = this.areaNameClickToGoto;
-      nameClickToggle.addEventListener("change", () => {
-        void this.setAreaNameClickToGoto(nameClickToggle.checked);
-      });
-    }
-
-    if (nameModeSelect) {
-      nameModeSelect.value = this.areaNameDisplayMode;
-      nameModeSelect.addEventListener("change", () => {
-        const mode = this.normalizeAreaNameDisplayMode(nameModeSelect.value);
-        void this.setAreaNameDisplayMode(mode);
-      });
-    }
-
-    modal
-      .querySelector("#area-display-settings-close-btn")
-      ?.addEventListener("click", () => {
-        modal.close();
-      });
-
-    modal.addEventListener("close", () => {
-      modal.remove();
+    showDisplaySettingsDialog({
+      fillOpacityPercent: this.areaFillOpacityPercent,
+      areaNameClickToGoto: this.areaNameClickToGoto,
+      areaNameDisplayMode: this.areaNameDisplayMode,
+      normalizeAreaFillOpacityPercent: (value) =>
+        this.normalizeAreaFillOpacityPercent(value),
+      normalizeAreaNameDisplayMode: (value) =>
+        this.normalizeAreaNameDisplayMode(value),
+      updateAreaFillOpacityPercent: (value, persist) =>
+        this.updateAreaFillOpacityPercent(value, persist),
+      setAreaNameClickToGoto: (enabled) => this.setAreaNameClickToGoto(enabled),
+      setAreaNameDisplayMode: (mode) => this.setAreaNameDisplayMode(mode),
     });
-
-    document.body.appendChild(modal);
-    modal.showModal();
   }
 
   private renderAreaManager() {
