@@ -114,6 +114,16 @@ export interface WplaceMap {
     speed?: number;
     screenSpeed?: number;
   }) => void;
+  fitBounds?: (
+    bounds: [[number, number], [number, number]],
+    options?: {
+      padding?:
+        | number
+        | { top: number; bottom: number; left: number; right: number };
+      maxZoom?: number;
+      duration?: number;
+    },
+  ) => void;
   jumpTo: (options: { center: [number, number]; zoom: number }) => void;
   setPaintProperty: (layer: string, property: string, value: any) => void;
   getLayer: (layerId: string) => any;

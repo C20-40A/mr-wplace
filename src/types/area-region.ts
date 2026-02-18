@@ -3,6 +3,13 @@ export interface AreaRegionVertex {
   lat: number;
 }
 
+export interface AreaRegionBounds {
+  west: number;
+  south: number;
+  east: number;
+  north: number;
+}
+
 export interface AreaRegion {
   id: string;
   name: string;

@@ -158,12 +158,12 @@ const forceStartupLocationZoom = (): void => {
 
           // Setup scale display with styledata event listener
           const { setupScaleDisplayOnMapReady } =
-            await import("./features/area-display");
+            await import("./features/scale-display");
           setupScaleDisplayOnMapReady(mapInstance);
 
           // Setup area measure with styledata event listener
           const { setupAreaMeasureOnMapReady } =
-            await import("./features/area-measure");
+            await import("./features/area-display");
           setupAreaMeasureOnMapReady(mapInstance);
         }
       }),

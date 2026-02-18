@@ -7,6 +7,7 @@ export {
   changeBackgroundColor,
   changeMap3dEnabled,
   changeMap3dDragRotateEnabled,
+  handleMapInstanceAreaGoto,
   handleMapInstanceFlyTo,
 } from "./map-control";
 export {

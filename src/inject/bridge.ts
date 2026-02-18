@@ -51,11 +51,12 @@ import {
   changeBackgroundColor,
   changeMap3dEnabled,
   changeMap3dDragRotateEnabled,
+  handleMapInstanceAreaGoto,
   getMapInstanceFromWplace,
   handleMapInstanceFlyTo,
 } from "./features/map-instance";
 import { setGridDisplayEnabled } from "./features/grid-display";
-import { setScaleDisplayEnabled } from "./features/area-display";
+import { setScaleDisplayEnabled } from "./features/scale-display";
 import {
   setAreaDisplayOptions,
   setAreaMeasureEnabled,
@@ -63,7 +64,7 @@ import {
   startAreaRegionEdit,
   stopAreaRegionEdit,
   respondAreaRegionEditRequest,
-} from "./features/area-measure";
+} from "./features/area-display";
 
 type MessageHandler = (data: any) => void | Promise<void>;
 const LOCATION_KEY = "location";
@@ -239,9 +240,15 @@ const messageHandlers: Record<string, MessageHandler> = {
     regionId: string;
     lng: number;
     lat: number;
+    bounds?: unknown;
   }) => {
     const currentZoom = getAreaRegionZoom();
-    handleMapInstanceFlyTo({ lat: data.lat, lng: data.lng, zoom: currentZoom });
+    handleMapInstanceAreaGoto({
+      lat: data.lat,
+      lng: data.lng,
+      zoom: currentZoom,
+      bounds: data.bounds,
+    });
   },
   "mr-wplace-theme-update": handleThemeUpdate,
   "mr-wplace-data-saver-update": handleDataSaverUpdate,

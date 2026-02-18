@@ -1,4 +1,5 @@
 import { getMapInstanceFromWplace } from "./get-map-instance";
+import type { AreaRegionBounds } from "@/types/area-region";
 
 export const changeTileBoundaryVisibility = (visible: boolean): void => {
   const mapInstance = getMapInstanceFromWplace();
@@ -155,6 +156,30 @@ export const changeMap3dDragRotateEnabled = (enabled: boolean): void => {
 
 // Distance threshold for smart navigation (adjustable)
 const SMART_NAV_THRESHOLD = 4;
+const AREA_GOTO_PADDING = 56;
+const AREA_GOTO_MAX_ZOOM = 16;
+
+const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === "number" && Number.isFinite(value);
+
+const normalizeAreaBounds = (value: unknown): AreaRegionBounds | null => {
+  if (!value || typeof value !== "object") return null;
+  const candidate = value as Partial<AreaRegionBounds>;
+  if (
+    !isFiniteNumber(candidate.west) ||
+    !isFiniteNumber(candidate.south) ||
+    !isFiniteNumber(candidate.east) ||
+    !isFiniteNumber(candidate.north)
+  ) {
+    return null;
+  }
+
+  const west = Math.min(candidate.west, candidate.east);
+  const east = Math.max(candidate.west, candidate.east);
+  const south = Math.min(candidate.south, candidate.north);
+  const north = Math.max(candidate.south, candidate.north);
+  return { west, south, east, north };
+};
 
 /**
  * Handle flyTo/jumpTo requests with smart navigation
@@ -205,5 +230,49 @@ export const handleMapInstanceFlyTo = (data: {
     mapInstance.jumpTo({ center: [lng, lat], zoom });
   } else {
     mapInstance.flyTo({ center: [lng, lat], zoom });
+  }
+};
+
+export const handleMapInstanceAreaGoto = (data: {
+  lat: number;
+  lng: number;
+  zoom: number;
+  bounds?: AreaRegionBounds | null;
+}): void => {
+  const mapInstance = getMapInstanceFromWplace();
+  const bounds = normalizeAreaBounds(data.bounds);
+  if (
+    !mapInstance ||
+    !bounds ||
+    typeof mapInstance.fitBounds !== "function"
+  ) {
+    handleMapInstanceFlyTo(data);
+    return;
+  }
+
+  const width = bounds.east - bounds.west;
+  const height = bounds.north - bounds.south;
+  if (width < Number.EPSILON && height < Number.EPSILON) {
+    handleMapInstanceFlyTo(data);
+    return;
+  }
+
+  try {
+    mapInstance.fitBounds(
+      [
+        [bounds.west, bounds.south],
+        [bounds.east, bounds.north],
+      ],
+      {
+        padding: AREA_GOTO_PADDING,
+        maxZoom: AREA_GOTO_MAX_ZOOM,
+        duration: 650,
+      },
+    );
+
+    console.log("🧑‍🎨 : fitBounds area goto", bounds);
+  } catch (error) {
+    console.warn("🧑‍🎨 : fitBounds failed, fallback to flyTo", error);
+    handleMapInstanceFlyTo(data);
   }
 };

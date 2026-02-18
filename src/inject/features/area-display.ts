@@ -1,13 +1,26 @@
-import { getMapInstanceFromWplace } from "./map-instance";
-import { latLonToPixels } from "@/utils/geo-converter";
+import type {
+  AreaDisplayOptions,
+  AreaRegionBounds,
+  AreaNameDisplayMode,
+  AreaRegion,
+  AreaRegionEditSnapshot,
+  AreaRegionVertex,
+} from "@/types/area-region";
+import {
+  getMapInstanceFromWplace,
+  handleMapInstanceAreaGoto,
+} from "./map-instance";
+import {
+  calculateGeodesicAreaSquareMeters,
+  calculatePixelAreaSquare,
+} from "@/utils/coordinate";
 
-const SCALE_CONTAINER_ID = "mr-wplace-scale-display";
-const SCALE_LINE_ID = "mr-wplace-scale-line";
-const SCALE_LABEL_ID = "mr-wplace-scale-label";
-const SCALE_PIN_A_ID = "mr-wplace-scale-pin-a";
-const SCALE_PIN_B_ID = "mr-wplace-scale-pin-b";
-const DEFAULT_PIN_OFFSET_PX = 140;
+const AREA_CONTAINER_ID = "mr-wplace-area-measure";
+const AREA_SVG_NS = "http://www.w3.org/2000/svg";
 const MAP_UPDATE_EVENTS = ["move", "zoom", "rotate", "pitch", "resize"];
+const DEFAULT_AREA_FILL_OPACITY = 0.14;
+const DEFAULT_AREA_NAME_DISPLAY_MODE: AreaNameDisplayMode = "always";
+const AREA_NAME_HIDE_ZOOM_THRESHOLD = 9;
 
 interface LngLat {
   lng: number;
@@ -19,8 +32,9 @@ interface ScreenPoint {
   y: number;
 }
 
-interface ScaleMap {
+interface AreaMap {
   getCenter: () => LngLat;
+  getZoom?: () => number;
   project: (lngLat: LngLat | [number, number]) => ScreenPoint;
   unproject: (point: ScreenPoint | [number, number]) => LngLat;
   getContainer?: () => HTMLElement;
@@ -32,244 +46,371 @@ interface ScaleMap {
   };
 }
 
-type DragTarget = "A" | "B" | null;
+interface AreaRegionEditStartPayload {
+  regionId?: string | null;
+  name?: string;
+  color?: string;
+  vertices?: AreaRegionVertex[];
+  saveLabel?: string;
+  cancelLabel?: string;
+}
 
-let scaleEnabled = false;
+let areaEnabled = false;
 
-let scaleContainer: HTMLDivElement | null = null;
-let scaleLine: HTMLDivElement | null = null;
-let scaleLabel: HTMLDivElement | null = null;
-let pinAElement: HTMLDivElement | null = null;
-let pinBElement: HTMLDivElement | null = null;
+let container: HTMLDivElement | null = null;
+let svg: SVGSVGElement | null = null;
+let regionsLayer: SVGGElement | null = null;
+let editPolygon: SVGPolygonElement | null = null;
+let edgeHitLayer: HTMLDivElement | null = null;
+let areaLabel: HTMLDivElement | null = null;
+let regionLabelLayer: HTMLDivElement | null = null;
+let editActionLayer: HTMLDivElement | null = null;
+let saveEditButton: HTMLButtonElement | null = null;
+let cancelEditButton: HTMLButtonElement | null = null;
 
-let pinALngLat: LngLat | null = null;
-let pinBLngLat: LngLat | null = null;
+let areaRegions: AreaRegion[] = [];
+let editMode = false;
+let editingRegionId: string | null = null;
+let editingRegionName = "";
+let editingColor = "#0f766e";
+let areaFillOpacity = DEFAULT_AREA_FILL_OPACITY;
+let areaNameDisplayMode: AreaNameDisplayMode = DEFAULT_AREA_NAME_DISPLAY_MODE;
+let areaNameClickToGoto = true;
+let editingSaveLabel = "Save";
+let editingCancelLabel = "Cancel";
+let editVertices: LngLat[] = [];
+let vertexElements: HTMLDivElement[] = [];
 
-let activeMap: ScaleMap | null = null;
-let activeDragTarget: DragTarget = null;
-
+let activeMap: AreaMap | null = null;
+let activeDragIndex: number | null = null;
 let mapUpdateHandler: (() => void) | null = null;
-let pinAPointerDownHandler: ((e: PointerEvent) => void) | null = null;
-let pinBPointerDownHandler: ((e: PointerEvent) => void) | null = null;
 let pointerMoveHandler: ((e: PointerEvent) => void) | null = null;
 let pointerUpHandler: (() => void) | null = null;
 
-const isValidLngLat = (value: unknown): value is LngLat => {
-  if (!value || typeof value !== "object") return false;
-  const candidate = value as Record<string, unknown>;
-  return (
-    typeof candidate.lng === "number" &&
-    Number.isFinite(candidate.lng) &&
-    typeof candidate.lat === "number" &&
-    Number.isFinite(candidate.lat)
-  );
+const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === "number" && Number.isFinite(value);
+
+const isValidVertex = (vertex: unknown): vertex is AreaRegionVertex => {
+  if (!vertex || typeof vertex !== "object") return false;
+  const candidate = vertex as Record<string, unknown>;
+  return isFiniteNumber(candidate.lng) && isFiniteNumber(candidate.lat);
 };
 
-const getMapContainer = (map: ScaleMap): HTMLElement | null => {
+const sanitizeVertices = (vertices: unknown): LngLat[] => {
+  if (!Array.isArray(vertices)) return [];
+  return vertices.filter(isValidVertex).map((vertex) => ({
+    lng: vertex.lng,
+    lat: vertex.lat,
+  }));
+};
+
+const cloneVertices = (vertices: LngLat[]): AreaRegionVertex[] =>
+  vertices.map((vertex) => ({ lng: vertex.lng, lat: vertex.lat }));
+
+const getAreaBounds = (
+  vertices: AreaRegionVertex[],
+): AreaRegionBounds | null => {
+  if (vertices.length === 0) return null;
+
+  let west = vertices[0].lng;
+  let east = vertices[0].lng;
+  let south = vertices[0].lat;
+  let north = vertices[0].lat;
+
+  for (const vertex of vertices) {
+    if (!isFiniteNumber(vertex.lng) || !isFiniteNumber(vertex.lat)) continue;
+    if (vertex.lng < west) west = vertex.lng;
+    if (vertex.lng > east) east = vertex.lng;
+    if (vertex.lat < south) south = vertex.lat;
+    if (vertex.lat > north) north = vertex.lat;
+  }
+
+  return { west, south, east, north };
+};
+
+const normalizeHexColor = (value: unknown, fallback = "#0f766e"): string => {
+  if (typeof value !== "string") return fallback;
+  const normalized = value.trim();
+  if (!/^#([0-9a-fA-F]{6})$/.test(normalized)) return fallback;
+  return normalized.toLowerCase();
+};
+
+const normalizeFillOpacityPercent = (value: unknown): number => {
+  if (typeof value !== "number" || !Number.isFinite(value))
+    return DEFAULT_AREA_FILL_OPACITY;
+  return Math.min(1, Math.max(0, value / 100));
+};
+
+const normalizeAreaNameDisplayMode = (value: unknown): AreaNameDisplayMode => {
+  if (value === "always" || value === "off" || value === "hide-on-zoom-out") {
+    return value;
+  }
+  return DEFAULT_AREA_NAME_DISPLAY_MODE;
+};
+
+const shouldRenderAreaNames = (map: AreaMap): boolean => {
+  if (areaNameDisplayMode === "off") return false;
+  if (areaNameDisplayMode === "always") return true;
+
+  const zoom = map.getZoom?.();
+  if (typeof zoom !== "number" || !Number.isFinite(zoom)) return true;
+  return zoom >= AREA_NAME_HIDE_ZOOM_THRESHOLD;
+};
+
+const getCurrentAreaGotoZoom = (map: AreaMap): number => {
+  const zoom = map.getZoom?.();
+  if (typeof zoom === "number" && Number.isFinite(zoom)) return zoom;
+  return 11;
+};
+
+const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
+  const matched = /^#([0-9a-fA-F]{6})$/.exec(hex);
+  if (!matched) return null;
+  const value = matched[1];
+  return {
+    r: Number.parseInt(value.slice(0, 2), 16),
+    g: Number.parseInt(value.slice(2, 4), 16),
+    b: Number.parseInt(value.slice(4, 6), 16),
+  };
+};
+
+const getContrastTextColor = (bgHex: string): string => {
+  const rgb = hexToRgb(bgHex);
+  if (!rgb) return "#000";
+  const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+  return luminance > 0.5 ? "#000" : "#fff";
+};
+
+const getMapContainer = (map: AreaMap): HTMLElement | null => {
   const byApi = map.getContainer?.();
   if (byApi instanceof HTMLElement) return byApi;
-
   return (
     document.querySelector<HTMLElement>(".maplibregl-map") ??
     document.querySelector<HTMLElement>(".maplibregl-canvas-container")
   );
 };
 
-const createPinElement = (id: string, label: string, color: string): HTMLDivElement => {
-  const pin = document.createElement("div");
-  pin.id = id;
-  pin.style.cssText = `
+const createVertexElement = (): HTMLDivElement => {
+  const vertex = document.createElement("div");
+  vertex.style.cssText = `
     position: absolute;
-    width: 24px;
-    height: 24px;
-    transform: translate(-50%, -100%);
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    cursor: grab;
+    width: 14px;
+    height: 14px;
+    transform: translate(-50%, -50%);
+    border: 2px solid #fff;
+    border-radius: 9999px;
+    background: #a31616;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
     pointer-events: auto;
+    cursor: grab;
     user-select: none;
     touch-action: none;
-    z-index: 2;
+    z-index: 3;
   `;
-
-  const body = document.createElement("div");
-  body.style.cssText = `
-    width: 18px;
-    height: 18px;
-    border-radius: 50% 50% 50% 0;
-    background: ${color};
-    border: 2px solid #fff;
-    transform: rotate(-45deg);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  `;
-
-  const text = document.createElement("span");
-  text.textContent = label;
-  text.style.cssText = `
-    transform: rotate(45deg);
-    color: #fff;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-  `;
-
-  body.appendChild(text);
-  pin.appendChild(body);
-  return pin;
+  return vertex;
 };
 
-const createScaleContainer = (): HTMLDivElement => {
-  const container = document.createElement("div");
-  container.id = SCALE_CONTAINER_ID;
-  container.style.cssText = `
+const createOverlay = (): HTMLDivElement => {
+  const root = document.createElement("div");
+  root.id = AREA_CONTAINER_ID;
+  root.style.cssText = `
     position: absolute;
     inset: 0;
     pointer-events: none;
-    z-index: 650;
+    z-index: 10;
   `;
 
-  const line = document.createElement("div");
-  line.id = SCALE_LINE_ID;
-  line.style.cssText = `
-    position: absolute;
-    height: 2px;
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(33, 33, 33, 0.65);
-    transform-origin: 0 50%;
-    box-sizing: border-box;
-  `;
+  const svgRoot = document.createElementNS(AREA_SVG_NS, "svg");
+  svgRoot.setAttribute("width", "100%");
+  svgRoot.setAttribute("height", "100%");
+  svgRoot.setAttribute("viewBox", "0 0 1 1");
+  svgRoot.style.pointerEvents = "none";
 
-  const label = document.createElement("div");
-  label.id = SCALE_LABEL_ID;
-  label.style.cssText = `
+  const regionsGroup = document.createElementNS(AREA_SVG_NS, "g");
+
+  const editingPolygon = document.createElementNS(AREA_SVG_NS, "polygon");
+  editingPolygon.setAttribute("fill", "rgba(15, 118, 110, 0.2)");
+  editingPolygon.setAttribute("stroke", "rgba(15, 118, 110, 0.95)");
+  editingPolygon.setAttribute("stroke-width", "3");
+  editingPolygon.setAttribute("vector-effect", "non-scaling-stroke");
+  editingPolygon.style.pointerEvents = "none";
+  editingPolygon.style.display = "none";
+
+  svgRoot.appendChild(regionsGroup);
+  svgRoot.appendChild(editingPolygon);
+
+  const hitLayer = document.createElement("div");
+  hitLayer.style.cssText = `
     position: absolute;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.82);
-    color: #fff;
-    border-radius: 12px;
-    padding: 4px 10px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    white-space: nowrap;
-    line-height: 1.3;
-    text-align: center;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    inset: 0;
     pointer-events: none;
     z-index: 1;
   `;
 
-  const pinA = createPinElement(SCALE_PIN_A_ID, "A", "#e74c3c");
-  const pinB = createPinElement(SCALE_PIN_B_ID, "B", "#2980b9");
+  const label = document.createElement("div");
+  label.style.cssText = `
+    position: absolute;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    line-height: 1.3;
+    text-align: center;
+    text-shadow:
+      -1px -1px 0 #000,
+      1px -1px 0 #000,
+      -1px 1px 0 #000,
+      1px 1px 0 #000,
+      0 0 3px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+    z-index: 2;
+    display: none;
+  `;
 
-  container.appendChild(line);
-  container.appendChild(label);
-  container.appendChild(pinA);
-  container.appendChild(pinB);
+  const labelsLayer = document.createElement("div");
+  labelsLayer.style.cssText = `
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+  `;
 
-  scaleLine = line;
-  scaleLabel = label;
-  pinAElement = pinA;
-  pinBElement = pinB;
-  return container;
+  const actionLayer = document.createElement("div");
+  actionLayer.style.cssText = `
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: none;
+    gap: 4px;
+    z-index: 4;
+    pointer-events: auto;
+  `;
+
+  const saveButton = document.createElement("button");
+  saveButton.style.cssText = `
+    background: #0f766e;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  `;
+  saveButton.textContent = editingSaveLabel;
+  saveButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    window.postMessage({ source: "mr-wplace-area-region-save-click" }, "*");
+  });
+
+  const cancelButton = document.createElement("button");
+  cancelButton.style.cssText = `
+    background: rgba(255, 255, 255, 0.95);
+    color: #333;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  `;
+  cancelButton.innerHTML = "✕";
+  cancelButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    window.postMessage({ source: "mr-wplace-area-region-cancel-click" }, "*");
+  });
+
+  actionLayer.appendChild(saveButton);
+  actionLayer.appendChild(cancelButton);
+
+  root.appendChild(svgRoot);
+  root.appendChild(hitLayer);
+  root.appendChild(labelsLayer);
+  root.appendChild(label);
+  root.appendChild(actionLayer);
+
+  svg = svgRoot;
+  regionsLayer = regionsGroup;
+  editPolygon = editingPolygon;
+  edgeHitLayer = hitLayer;
+  regionLabelLayer = labelsLayer;
+  areaLabel = label;
+  editActionLayer = actionLayer;
+  saveEditButton = saveButton;
+  cancelEditButton = cancelButton;
+
+  return root;
 };
 
-const getDefaultPins = (map: ScaleMap): { pinA: LngLat; pinB: LngLat } => {
+const formatArea = (areaM2: number): string => {
+  if (areaM2 < 1000000) {
+    if (areaM2 < 100) return `${areaM2.toFixed(2)} m²`;
+    if (areaM2 < 10000) return `${areaM2.toFixed(1)} m²`;
+    return `${Math.round(areaM2)} m²`;
+  }
+
+  const km2 = areaM2 / 1000000;
+  if (km2 < 10) return `${km2.toFixed(3)} km²`;
+  if (km2 < 100) return `${km2.toFixed(2)} km²`;
+  return `${km2.toFixed(1)} km²`;
+};
+
+const formatPixelArea = (pixelArea: number): string => {
+  const rounded = Math.round(pixelArea);
+  return `${rounded.toLocaleString()} px²`;
+};
+
+const ensureDefaultVertices = (map: AreaMap): void => {
+  if (editVertices.length >= 3) return;
+
   const center = map.getCenter();
   const centerPoint = map.project(center);
-  const pinA = map.unproject({
-    x: centerPoint.x - DEFAULT_PIN_OFFSET_PX,
-    y: centerPoint.y,
-  });
-  const pinB = map.unproject({
-    x: centerPoint.x + DEFAULT_PIN_OFFSET_PX,
-    y: centerPoint.y,
-  });
-  return { pinA, pinB };
+  const offsets = [
+    { x: -120, y: 40 },
+    { x: 0, y: -110 },
+    { x: 120, y: 40 },
+  ];
+  editVertices = offsets.map((offset) =>
+    map.unproject({
+      x: centerPoint.x + offset.x,
+      y: centerPoint.y + offset.y,
+    }),
+  );
 };
 
-const toRadians = (value: number): number => (value * Math.PI) / 180;
-
-const getDistanceMeters = (a: LngLat, b: LngLat): number => {
-  const earthRadiusMeters = 6371008.8;
-  const deltaLat = toRadians(b.lat - a.lat);
-  const deltaLng = toRadians(b.lng - a.lng);
-  const lat1 = toRadians(a.lat);
-  const lat2 = toRadians(b.lat);
-  const sinLat = Math.sin(deltaLat / 2);
-  const sinLng = Math.sin(deltaLng / 2);
-  const haversine =
-    sinLat * sinLat + Math.cos(lat1) * Math.cos(lat2) * sinLng * sinLng;
-  const centralAngle =
-    2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
-  return earthRadiusMeters * centralAngle;
+const clearEdgeHitLines = (): void => {
+  if (!edgeHitLayer) return;
+  while (edgeHitLayer.firstChild)
+    edgeHitLayer.removeChild(edgeHitLayer.firstChild);
 };
 
-const formatDistance = (distanceMeters: number): string => {
-  if (distanceMeters < 1000) {
-    if (distanceMeters < 10) return `${distanceMeters.toFixed(2)} m`;
-    if (distanceMeters < 100) return `${distanceMeters.toFixed(1)} m`;
-    return `${Math.round(distanceMeters)} m`;
+const clearVertexElements = (): void => {
+  for (const vertex of vertexElements) vertex.remove();
+  vertexElements = [];
+};
+
+const syncVertexElements = (): void => {
+  if (!container) return;
+
+  while (vertexElements.length < editVertices.length) {
+    const vertex = createVertexElement();
+    vertexElements.push(vertex);
+    container.appendChild(vertex);
   }
 
-  const km = distanceMeters / 1000;
-  if (km < 10) return `${km.toFixed(2)} km`;
-  if (km < 100) return `${km.toFixed(1)} km`;
-  return `${Math.round(km)} km`;
-};
-
-const applyPinScreenPosition = (
-  pinElement: HTMLDivElement,
-  map: ScaleMap,
-  lngLat: LngLat,
-): ScreenPoint => {
-  const point = map.project(lngLat);
-  pinElement.style.left = `${point.x}px`;
-  pinElement.style.top = `${point.y}px`;
-  return point;
-};
-
-const updateScaleDisplay = (map: ScaleMap): void => {
-  if (
-    !scaleLine ||
-    !scaleLabel ||
-    !pinAElement ||
-    !pinBElement ||
-    !pinALngLat ||
-    !pinBLngLat
-  ) {
-    return;
+  while (vertexElements.length > editVertices.length) {
+    const vertex = vertexElements.pop();
+    vertex?.remove();
   }
-
-  const pointA = applyPinScreenPosition(pinAElement, map, pinALngLat);
-  const pointB = applyPinScreenPosition(pinBElement, map, pinBLngLat);
-
-  const dx = pointB.x - pointA.x;
-  const dy = pointB.y - pointA.y;
-  const length = Math.hypot(dx, dy);
-
-  scaleLine.style.left = `${pointA.x}px`;
-  scaleLine.style.top = `${pointA.y}px`;
-  scaleLine.style.width = `${Math.max(length, 1)}px`;
-  scaleLine.style.transform = `translateY(-50%) rotate(${Math.atan2(dy, dx)}rad)`;
-
-  // Calculate pixel distance
-  const [px1, py1] = latLonToPixels(pinALngLat.lat, pinALngLat.lng);
-  const [px2, py2] = latLonToPixels(pinBLngLat.lat, pinBLngLat.lng);
-  const pixelDistance = Math.round(Math.hypot(px2 - px1, py2 - py1));
-
-  const distanceText = formatDistance(getDistanceMeters(pinALngLat, pinBLngLat));
-  scaleLabel.innerHTML = `${distanceText}<br><span style="font-size: 10px; opacity: 0.85;">${pixelDistance} px</span>`;
-  scaleLabel.style.left = `${(pointA.x + pointB.x) / 2}px`;
-  scaleLabel.style.top = `${(pointA.y + pointB.y) / 2 - 12}px`;
 };
 
-const setPinFromPointer = (map: ScaleMap, event: PointerEvent): void => {
-  if (!activeDragTarget) return;
+const setVertexFromPointer = (map: AreaMap, event: PointerEvent): void => {
+  if (activeDragIndex == null) return;
 
   const mapContainer = getMapContainer(map);
   if (!mapContainer) return;
@@ -277,18 +418,13 @@ const setPinFromPointer = (map: ScaleMap, event: PointerEvent): void => {
   const rect = mapContainer.getBoundingClientRect();
   const x = Math.min(Math.max(event.clientX - rect.left, 0), rect.width);
   const y = Math.min(Math.max(event.clientY - rect.top, 0), rect.height);
-  const lngLat = map.unproject({ x, y });
-
-  if (activeDragTarget === "A") pinALngLat = lngLat;
-  if (activeDragTarget === "B") pinBLngLat = lngLat;
-  updateScaleDisplay(map);
+  editVertices[activeDragIndex] = map.unproject({ x, y });
+  renderAreaOverlay(map);
 };
 
-const stopDragging = (): void => {
+const stopVertexDrag = (): void => {
   if (!activeMap) return;
 
-  pinAElement?.style.setProperty("cursor", "grab");
-  pinBElement?.style.setProperty("cursor", "grab");
   activeMap.dragPan?.enable();
 
   if (pointerMoveHandler) {
@@ -301,125 +437,488 @@ const stopDragging = (): void => {
     pointerUpHandler = null;
   }
 
-  activeDragTarget = null;
-  updateScaleDisplay(activeMap);
+  for (const vertex of vertexElements) vertex.style.cursor = "grab";
+  activeDragIndex = null;
+  renderAreaOverlay(activeMap);
 };
 
-const startDragging = (
-  map: ScaleMap,
-  target: Exclude<DragTarget, null>,
+const startVertexDrag = (
+  map: AreaMap,
+  index: number,
   event: PointerEvent,
 ): void => {
   if (event.pointerType === "mouse" && event.button !== 0) return;
-  if (activeDragTarget) stopDragging();
+  if (activeDragIndex !== null) stopVertexDrag();
   event.preventDefault();
+  event.stopPropagation();
 
   activeMap = map;
-  activeDragTarget = target;
-  map.dragPan?.disable();
-
-  if (target === "A") pinAElement?.style.setProperty("cursor", "grabbing");
-  if (target === "B") pinBElement?.style.setProperty("cursor", "grabbing");
+  activeDragIndex = index;
+  activeMap.dragPan?.disable();
+  if (vertexElements[index]) vertexElements[index].style.cursor = "grabbing";
 
   pointerMoveHandler = (moveEvent) => {
     if (!activeMap) return;
-    setPinFromPointer(activeMap, moveEvent);
+    setVertexFromPointer(activeMap, moveEvent);
   };
-  pointerUpHandler = () => stopDragging();
+  pointerUpHandler = () => stopVertexDrag();
 
   window.addEventListener("pointermove", pointerMoveHandler, { passive: true });
   window.addEventListener("pointerup", pointerUpHandler, { passive: true });
   window.addEventListener("pointercancel", pointerUpHandler, { passive: true });
 
-  setPinFromPointer(map, event);
+  setVertexFromPointer(map, event);
 };
 
-const addScaleDisplay = (map: ScaleMap): void => {
-  if (scaleContainer) return;
+const insertVertexOnEdge = (map: AreaMap, edgeIndex: number): void => {
+  const current = map.project(editVertices[edgeIndex]);
+  const next = map.project(editVertices[(edgeIndex + 1) % editVertices.length]);
+  const midpoint = map.unproject({
+    x: (current.x + next.x) / 2,
+    y: (current.y + next.y) / 2,
+  });
+
+  editVertices.splice(edgeIndex + 1, 0, midpoint);
+  renderAreaOverlay(map);
+};
+
+const createRegionPolygon = (
+  map: AreaMap,
+  region: AreaRegion,
+): { polygon: SVGPolygonElement; center: ScreenPoint } | null => {
+  if (region.vertices.length < 3) return null;
+  const points = region.vertices.map((vertex) => map.project(vertex));
+  if (points.length < 3) return null;
+
+  const polygon = document.createElementNS(AREA_SVG_NS, "polygon");
+  const color = normalizeHexColor(region.color);
+  const rgb = hexToRgb(color) ?? { r: 15, g: 118, b: 110 };
+  polygon.setAttribute(
+    "points",
+    points.map((point) => `${point.x},${point.y}`).join(" "),
+  );
+  polygon.setAttribute(
+    "fill",
+    `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${areaFillOpacity})`,
+  );
+  polygon.setAttribute("stroke", color);
+  polygon.setAttribute("stroke-width", "3");
+  polygon.setAttribute("vector-effect", "non-scaling-stroke");
+  polygon.style.pointerEvents = "none";
+
+  const center = {
+    x: points.reduce((sum, point) => sum + point.x, 0) / points.length,
+    y: points.reduce((sum, point) => sum + point.y, 0) / points.length,
+  };
+
+  return { polygon, center };
+};
+
+const clearEditingUI = (): void => {
+  if (editPolygon) editPolygon.style.display = "none";
+  if (areaLabel) areaLabel.style.display = "none";
+  if (editActionLayer) editActionLayer.style.display = "none";
+  clearEdgeHitLines();
+  clearVertexElements();
+};
+
+const renderAreaOverlay = (map: AreaMap): void => {
+  if (
+    !svg ||
+    !regionsLayer ||
+    !edgeHitLayer ||
+    !areaLabel ||
+    !regionLabelLayer ||
+    !container
+  ) {
+    return;
+  }
+
+  const mapContainer = getMapContainer(map);
+  if (!mapContainer) return;
+
+  const width = mapContainer.clientWidth;
+  const height = mapContainer.clientHeight;
+  svg.setAttribute(
+    "viewBox",
+    `0 0 ${Math.max(width, 1)} ${Math.max(height, 1)}`,
+  );
+
+  while (regionsLayer.firstChild)
+    regionsLayer.removeChild(regionsLayer.firstChild);
+  while (regionLabelLayer.firstChild)
+    regionLabelLayer.removeChild(regionLabelLayer.firstChild);
+  const showAreaNames = shouldRenderAreaNames(map);
+  regionLabelLayer.style.pointerEvents = "none";
+
+  for (const region of areaRegions) {
+    if (!region.visible) continue;
+    if (editMode && editingRegionId && region.id === editingRegionId) continue;
+
+    const rendered = createRegionPolygon(map, region);
+    if (!rendered) continue;
+
+    regionsLayer.appendChild(rendered.polygon);
+
+    if (showAreaNames) {
+      const regionColor = normalizeHexColor(region.color);
+      const textColor = getContrastTextColor(regionColor);
+
+      const label = document.createElement("div");
+      label.style.cssText = `
+        position: absolute;
+        transform: translate(-50%, -50%);
+        border-radius: 9999px;
+        padding: 2px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1.2;
+        white-space: nowrap;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+        pointer-events: none;
+      `;
+      label.style.background = regionColor;
+      label.style.color = textColor;
+      label.style.left = `${rendered.center.x}px`;
+      label.style.top = `${rendered.center.y}px`;
+      if (areaNameClickToGoto) {
+        label.style.pointerEvents = "auto";
+        label.style.cursor = "pointer";
+        label.title = "移動";
+        label.addEventListener("click", () => {
+          const bounds = getAreaBounds(region.vertices);
+          const centerLng =
+            region.vertices.reduce((sum, v) => sum + v.lng, 0) /
+            region.vertices.length;
+          const centerLat =
+            region.vertices.reduce((sum, v) => sum + v.lat, 0) /
+            region.vertices.length;
+          handleMapInstanceAreaGoto({
+            lat: centerLat,
+            lng: centerLng,
+            zoom: getCurrentAreaGotoZoom(map),
+            bounds,
+          });
+        });
+      } else {
+        label.style.pointerEvents = "none";
+      }
+      label.textContent = region.name;
+      regionLabelLayer.appendChild(label);
+    }
+  }
+
+  if (!editMode || !editPolygon) {
+    clearEditingUI();
+    return;
+  }
+
+  ensureDefaultVertices(map);
+  if (editVertices.length < 3) {
+    clearEditingUI();
+    return;
+  }
+
+  const points = editVertices.map((lngLat) => map.project(lngLat));
+  const editingHex = normalizeHexColor(editingColor);
+  const editingRgb = hexToRgb(editingHex) ?? { r: 15, g: 118, b: 110 };
+  editPolygon.style.display = "block";
+  editPolygon.setAttribute(
+    "fill",
+    `rgba(${editingRgb.r}, ${editingRgb.g}, ${editingRgb.b}, 0.2)`,
+  );
+  editPolygon.setAttribute(
+    "stroke",
+    `rgba(${editingRgb.r}, ${editingRgb.g}, ${editingRgb.b}, 0.95)`,
+  );
+  editPolygon.setAttribute(
+    "points",
+    points.map((point) => `${point.x},${point.y}`).join(" "),
+  );
+
+  syncVertexElements();
+  for (let i = 0; i < vertexElements.length; i++) {
+    const point = points[i];
+    const vertex = vertexElements[i];
+    vertex.style.background = editingHex;
+    vertex.style.left = `${point.x}px`;
+    vertex.style.top = `${point.y}px`;
+    vertex.dataset.index = String(i);
+
+    if (!(vertex as { _mrAreaEventsBound?: boolean })._mrAreaEventsBound) {
+      const onPointerDown = (event: PointerEvent) => {
+        const index = Number(vertex.dataset.index);
+        if (!Number.isFinite(index)) return;
+        startVertexDrag(map, index, event);
+      };
+
+      const onDoubleClick = (event: MouseEvent) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const index = Number(vertex.dataset.index);
+        if (!Number.isFinite(index)) return;
+        if (editVertices.length <= 3) return;
+        editVertices.splice(index, 1);
+        renderAreaOverlay(map);
+      };
+
+      vertex.addEventListener("pointerdown", onPointerDown);
+      vertex.addEventListener("dblclick", onDoubleClick);
+      (vertex as { _mrAreaEventsBound?: boolean })._mrAreaEventsBound = true;
+    }
+  }
+
+  clearEdgeHitLines();
+  for (let i = 0; i < points.length; i++) {
+    const current = points[i];
+    const next = points[(i + 1) % points.length];
+    const dx = next.x - current.x;
+    const dy = next.y - current.y;
+    const length = Math.hypot(dx, dy);
+    if (length < 1) continue;
+
+    const hit = document.createElement("div");
+    hit.style.cssText = `
+      position: absolute;
+      left: ${current.x}px;
+      top: ${current.y}px;
+      width: ${length}px;
+      height: 14px;
+      transform-origin: 0 50%;
+      transform: translateY(-50%) rotate(${Math.atan2(dy, dx)}rad);
+      pointer-events: auto;
+      touch-action: none;
+      cursor: copy;
+      background: rgba(0, 0, 0, 0);
+    `;
+    hit.addEventListener("pointerdown", (event) => {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      insertVertexOnEdge(map, i);
+    });
+    edgeHitLayer.appendChild(hit);
+  }
+
+  const area = calculateGeodesicAreaSquareMeters(editVertices);
+  const pixelArea = calculatePixelAreaSquare(editVertices);
+  areaLabel.innerHTML = `${formatArea(area)}<br><span style="font-size: 10px; opacity: 0.8;">${formatPixelArea(pixelArea)}</span>`;
+  areaLabel.style.display = "block";
+
+  const centerX =
+    points.reduce((sum, point) => sum + point.x, 0) / points.length;
+  const centerY =
+    points.reduce((sum, point) => sum + point.y, 0) / points.length;
+  areaLabel.style.left = `${centerX}px`;
+  areaLabel.style.top = `${centerY}px`;
+
+  if (editActionLayer) {
+    editActionLayer.style.display = "flex";
+    editActionLayer.style.left = `${centerX}px`;
+    editActionLayer.style.top = `${centerY + 26}px`;
+  }
+};
+
+const addAreaOverlay = (map: AreaMap): void => {
+  if (container) return;
 
   const mapContainer = getMapContainer(map);
   if (!mapContainer) {
-    console.warn("🧑‍🎨 : Map container not found for scale display");
+    console.warn("🧑‍🎨 : Map container not found for area measure");
     return;
   }
 
-  const existingContainer = document.getElementById(SCALE_CONTAINER_ID);
-  if (existingContainer) existingContainer.remove();
+  const existing = document.getElementById(AREA_CONTAINER_ID);
+  if (existing) existing.remove();
 
-  scaleContainer = createScaleContainer();
-  mapContainer.appendChild(scaleContainer);
+  container = createOverlay();
+  mapContainer.appendChild(container);
 
-  const defaultPins = getDefaultPins(map);
-  if (!isValidLngLat(pinALngLat)) pinALngLat = defaultPins.pinA;
-  if (!isValidLngLat(pinBLngLat)) pinBLngLat = defaultPins.pinB;
+  mapUpdateHandler = () => renderAreaOverlay(map);
+  for (const eventName of MAP_UPDATE_EVENTS)
+    map.on(eventName, mapUpdateHandler);
 
-  pinAPointerDownHandler = (event) => startDragging(map, "A", event);
-  pinBPointerDownHandler = (event) => startDragging(map, "B", event);
-  pinAElement?.addEventListener("pointerdown", pinAPointerDownHandler);
-  pinBElement?.addEventListener("pointerdown", pinBPointerDownHandler);
-
-  mapUpdateHandler = () => updateScaleDisplay(map);
-  for (const eventName of MAP_UPDATE_EVENTS) map.on(eventName, mapUpdateHandler);
-
-  updateScaleDisplay(map);
-  console.log("🧑‍🎨 : Scale display added (2 draggable pins)");
+  renderAreaOverlay(map);
+  console.log("🧑‍🎨 : Area measure added");
 };
 
-const removeScaleDisplay = (map: ScaleMap): void => {
+const removeAreaOverlay = (map: AreaMap): void => {
   if (mapUpdateHandler) {
-    for (const eventName of MAP_UPDATE_EVENTS) map.off(eventName, mapUpdateHandler);
+    for (const eventName of MAP_UPDATE_EVENTS)
+      map.off(eventName, mapUpdateHandler);
     mapUpdateHandler = null;
   }
 
-  stopDragging();
+  stopVertexDrag();
+  clearVertexElements();
 
-  if (pinAPointerDownHandler && pinAElement) {
-    pinAElement.removeEventListener("pointerdown", pinAPointerDownHandler);
-  }
-  if (pinBPointerDownHandler && pinBElement) {
-    pinBElement.removeEventListener("pointerdown", pinBPointerDownHandler);
-  }
-  pinAPointerDownHandler = null;
-  pinBPointerDownHandler = null;
-
-  scaleContainer?.remove();
-  scaleContainer = null;
-  scaleLine = null;
-  scaleLabel = null;
-  pinAElement = null;
-  pinBElement = null;
-  pinALngLat = null;
-  pinBLngLat = null;
+  container?.remove();
+  container = null;
+  svg = null;
+  regionsLayer = null;
+  editPolygon = null;
+  edgeHitLayer = null;
+  areaLabel = null;
+  regionLabelLayer = null;
+  editActionLayer = null;
+  saveEditButton = null;
+  cancelEditButton = null;
   activeMap = null;
-  activeDragTarget = null;
+  activeDragIndex = null;
 
-  console.log("🧑‍🎨 : Scale display removed");
+  console.log("🧑‍🎨 : Area measure removed");
 };
 
-export const setScaleDisplayEnabled = (enabled: boolean): void => {
-  scaleEnabled = enabled;
-  const map = getMapInstanceFromWplace() as ScaleMap | null;
+const getCurrentEditSnapshot = (): AreaRegionEditSnapshot | null => {
+  if (!editMode || editVertices.length < 3) return null;
+  return {
+    regionId: editingRegionId,
+    name: editingRegionName,
+    vertices: cloneVertices(editVertices),
+  };
+};
+
+export const setAreaRegions = (regions: AreaRegion[]): void => {
+  areaRegions = Array.isArray(regions)
+    ? regions
+        .map((region) => {
+          if (!region || typeof region !== "object") return null;
+          const vertices = sanitizeVertices(
+            (region as { vertices?: unknown }).vertices,
+          );
+          if (vertices.length < 3) return null;
+
+          return {
+            id: String((region as { id?: unknown }).id ?? ""),
+            name: String((region as { name?: unknown }).name ?? ""),
+            color: normalizeHexColor((region as { color?: unknown }).color),
+            visible:
+              typeof (region as { visible?: unknown }).visible === "boolean"
+                ? Boolean((region as { visible?: unknown }).visible)
+                : true,
+            createdAt: Number(
+              (region as { createdAt?: unknown }).createdAt ?? 0,
+            ),
+            updatedAt: Number(
+              (region as { updatedAt?: unknown }).updatedAt ?? 0,
+            ),
+            vertices,
+          } satisfies AreaRegion;
+        })
+        .filter((region): region is AreaRegion => Boolean(region))
+    : [];
+
+  const map = getMapInstanceFromWplace() as AreaMap | null;
+  if (map && areaEnabled) renderAreaOverlay(map);
+
+  console.log("🧑‍🎨 : Area regions synced:", areaRegions.length);
+};
+
+export const setAreaDisplayOptions = (
+  options: Partial<AreaDisplayOptions> = {},
+): void => {
+  if ("fillOpacityPercent" in options) {
+    areaFillOpacity = normalizeFillOpacityPercent(options.fillOpacityPercent);
+  }
+  if ("nameDisplayMode" in options) {
+    areaNameDisplayMode = normalizeAreaNameDisplayMode(options.nameDisplayMode);
+  }
+  if ("nameClickToGoto" in options) {
+    areaNameClickToGoto = options.nameClickToGoto !== false;
+  }
+
+  const map = getMapInstanceFromWplace() as AreaMap | null;
+  if (map && areaEnabled) renderAreaOverlay(map);
+
+  console.log("🧑‍🎨 : Area display options updated", {
+    opacity: areaFillOpacity,
+    nameDisplayMode: areaNameDisplayMode,
+    nameClickToGoto: areaNameClickToGoto,
+  });
+};
+
+export const startAreaRegionEdit = (
+  payload: AreaRegionEditStartPayload = {},
+): void => {
+  const map = getMapInstanceFromWplace() as AreaMap | null;
   if (!map) {
-    console.warn("🧑‍🎨 : Map instance not available for scale display");
+    console.warn("🧑‍🎨 : Map instance not available for area edit");
     return;
   }
 
-  if (enabled) addScaleDisplay(map);
-  else removeScaleDisplay(map);
+  if (!areaEnabled) {
+    setAreaMeasureEnabled(true);
+  }
 
-  console.log("🧑‍🎨 : Scale display enabled:", enabled);
+  editMode = true;
+  editingRegionId = payload.regionId ?? null;
+  editingRegionName = payload.name?.trim() || "";
+  editingColor = normalizeHexColor(payload.color);
+  editingSaveLabel = payload.saveLabel?.trim() || "Save";
+  editingCancelLabel = payload.cancelLabel?.trim() || "Cancel";
+  if (saveEditButton) saveEditButton.textContent = editingSaveLabel;
+  if (cancelEditButton) cancelEditButton.textContent = editingCancelLabel;
+  editVertices = sanitizeVertices(payload.vertices);
+  ensureDefaultVertices(map);
+  renderAreaOverlay(map);
+
+  console.log("🧑‍🎨 : Area edit started", {
+    regionId: editingRegionId,
+    points: editVertices.length,
+  });
 };
 
-export const setupScaleDisplayOnMapReady = (mapInstance: unknown): void => {
-  const map = mapInstance as ScaleMap;
+export const stopAreaRegionEdit = (): void => {
+  stopVertexDrag();
+  editMode = false;
+  editingRegionId = null;
+  editingRegionName = "";
+  editingColor = "#0f766e";
+  editVertices = [];
 
+  const map = getMapInstanceFromWplace() as AreaMap | null;
+  if (map && areaEnabled) renderAreaOverlay(map);
+
+  console.log("🧑‍🎨 : Area edit stopped");
+};
+
+export const respondAreaRegionEditRequest = (data: {
+  requestId?: string;
+}): void => {
+  if (!data.requestId) return;
+
+  window.postMessage(
+    {
+      source: "mr-wplace-area-region-edit-response",
+      requestId: data.requestId,
+      result: getCurrentEditSnapshot(),
+    },
+    "*",
+  );
+};
+
+export const setAreaMeasureEnabled = (enabled: boolean): void => {
+  areaEnabled = enabled;
+  const map = getMapInstanceFromWplace() as AreaMap | null;
+  if (!map) {
+    console.warn("🧑‍🎨 : Map instance not available for area measure");
+    return;
+  }
+
+  if (enabled) addAreaOverlay(map);
+  else removeAreaOverlay(map);
+
+  console.log("🧑‍🎨 : Area measure enabled:", enabled);
+};
+
+export const setupAreaMeasureOnMapReady = (mapInstance: unknown): void => {
+  const map = mapInstance as AreaMap;
   const onStyleData = () => {
-    if (!scaleEnabled) return;
-    updateScaleDisplay(map);
+    if (!areaEnabled) return;
+    renderAreaOverlay(map);
   };
-
   map.on("styledata", onStyleData);
-  if (scaleEnabled) addScaleDisplay(map);
+  if (areaEnabled) addAreaOverlay(map);
 
-  console.log("🧑‍🎨 : Scale display listener setup complete");
+  console.log("🧑‍🎨 : Area measure listener setup complete");
 };

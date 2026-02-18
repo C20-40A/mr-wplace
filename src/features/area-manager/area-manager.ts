@@ -8,6 +8,7 @@ import { getMapInstanceReady } from "@/states/map-instance-ready";
 import { t } from "@/i18n/manager";
 import type {
   AreaDisplayOptions,
+  AreaRegionBounds,
   AreaNameDisplayMode,
   AreaRegion,
   AreaRegionEditSnapshot,
@@ -1216,6 +1217,7 @@ class AreaManager {
   private gotoAreaRegion(regionId: string) {
     const target = this.areaRegions.find((region) => region.id === regionId);
     if (!target || target.vertices.length === 0) return;
+    const bounds = this.getAreaBounds(target.vertices);
 
     const centerLng =
       target.vertices.reduce((sum, v) => sum + v.lng, 0) /
@@ -1230,6 +1232,7 @@ class AreaManager {
         regionId,
         lng: centerLng,
         lat: centerLat,
+        bounds,
       },
       "*",
     );
@@ -1243,6 +1246,7 @@ class AreaManager {
 
     const vertices = this.getGroupVertices(group);
     if (vertices.length === 0) return;
+    const bounds = this.getAreaBounds(vertices);
 
     const centerLng =
       vertices.reduce((sum, v) => sum + v.lng, 0) / vertices.length;
@@ -1255,11 +1259,33 @@ class AreaManager {
         regionId: groupId,
         lng: centerLng,
         lat: centerLat,
+        bounds,
       },
       "*",
     );
 
     console.log("🧑‍🎨 : Goto area group:", groupId);
+  }
+
+  private getAreaBounds(
+    vertices: AreaRegionVertex[],
+  ): AreaRegionBounds | null {
+    if (vertices.length === 0) return null;
+
+    let west = vertices[0].lng;
+    let east = vertices[0].lng;
+    let south = vertices[0].lat;
+    let north = vertices[0].lat;
+
+    for (const vertex of vertices) {
+      if (!Number.isFinite(vertex.lng) || !Number.isFinite(vertex.lat)) continue;
+      if (vertex.lng < west) west = vertex.lng;
+      if (vertex.lng > east) east = vertex.lng;
+      if (vertex.lat < south) south = vertex.lat;
+      if (vertex.lat > north) north = vertex.lat;
+    }
+
+    return { west, south, east, north };
   }
 
   private async toggleAreaRegionGroupVisibility(groupId: string) {
