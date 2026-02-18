@@ -187,6 +187,7 @@ div#mr-wplace-area-measure (container, pointer-events: none)
 - inject 側のモジュール変数 (let) で状態を保持 (クラスではない)
 - `scheduleAreaOverlayRender()` は高頻度イベントの間引き目的。重い処理は `renderAreaOverlayNow()` に集約
 - 確定リージョン名ラベルは表示専用 (マップ上ラベルクリックで移動しない)
+- `hide-on-zoom-out` のとき、ラベル文字サイズはズームに応じて段階的に縮小し、しきい値未満で非表示になる
 - 頂点ドラッグ中は `renderEditingOverlay()` を優先し、確定リージョン再生成を避ける
 - 色は `#rrggbb` 6桁hex のみ対応 (`normalizeAreaColor` で検証)
 - リージョンは `updatedAt` 降順でソート

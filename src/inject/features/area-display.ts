@@ -24,6 +24,13 @@ const AREA_SVG_NS = "http://www.w3.org/2000/svg";
 const MAP_UPDATE_EVENTS = ["move", "zoom", "rotate", "pitch", "resize"];
 const DEFAULT_AREA_FILL_OPACITY = 0.14;
 const AREA_NAME_HIDE_ZOOM_THRESHOLD = 9;
+const AREA_NAME_SCALE_START_ZOOM = 13;
+const AREA_NAME_BASE_FONT_SIZE_PX = 14;
+const AREA_NAME_MIN_FONT_SIZE_PX = 6;
+const AREA_NAME_BASE_PADDING_X_PX = 8;
+const AREA_NAME_BASE_PADDING_Y_PX = 2;
+const AREA_NAME_MIN_PADDING_X_PX = 4;
+const AREA_NAME_MIN_PADDING_Y_PX = 1;
 
 interface LngLat {
   lng: number;
@@ -121,13 +128,66 @@ const normalizeFillOpacityPercent = (value: unknown): number => {
 };
 
 
-const shouldRenderAreaNames = (map: AreaMap): boolean => {
-  if (areaNameDisplayMode === "off") return false;
-  if (areaNameDisplayMode === "always") return true;
+const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
+
+const getAreaNameRenderStyle = (
+  map: AreaMap,
+): { visible: boolean; fontSizePx: number; paddingX: number; paddingY: number } => {
+  if (areaNameDisplayMode === "off")
+    return {
+      visible: false,
+      fontSizePx: AREA_NAME_BASE_FONT_SIZE_PX,
+      paddingX: AREA_NAME_BASE_PADDING_X_PX,
+      paddingY: AREA_NAME_BASE_PADDING_Y_PX,
+    };
+
+  if (areaNameDisplayMode === "always")
+    return {
+      visible: true,
+      fontSizePx: AREA_NAME_BASE_FONT_SIZE_PX,
+      paddingX: AREA_NAME_BASE_PADDING_X_PX,
+      paddingY: AREA_NAME_BASE_PADDING_Y_PX,
+    };
 
   const zoom = map.getZoom?.();
-  if (typeof zoom !== "number" || !Number.isFinite(zoom)) return true;
-  return zoom >= AREA_NAME_HIDE_ZOOM_THRESHOLD;
+  if (typeof zoom !== "number" || !Number.isFinite(zoom))
+    return {
+      visible: true,
+      fontSizePx: AREA_NAME_BASE_FONT_SIZE_PX,
+      paddingX: AREA_NAME_BASE_PADDING_X_PX,
+      paddingY: AREA_NAME_BASE_PADDING_Y_PX,
+    };
+  if (zoom < AREA_NAME_HIDE_ZOOM_THRESHOLD)
+    return {
+      visible: false,
+      fontSizePx: AREA_NAME_MIN_FONT_SIZE_PX,
+      paddingX: AREA_NAME_MIN_PADDING_X_PX,
+      paddingY: AREA_NAME_MIN_PADDING_Y_PX,
+    };
+
+  if (zoom >= AREA_NAME_SCALE_START_ZOOM)
+    return {
+      visible: true,
+      fontSizePx: AREA_NAME_BASE_FONT_SIZE_PX,
+      paddingX: AREA_NAME_BASE_PADDING_X_PX,
+      paddingY: AREA_NAME_BASE_PADDING_Y_PX,
+    };
+
+  const zoomProgress = clamp01(
+    (zoom - AREA_NAME_HIDE_ZOOM_THRESHOLD) /
+      (AREA_NAME_SCALE_START_ZOOM - AREA_NAME_HIDE_ZOOM_THRESHOLD),
+  );
+  const fontSizePx =
+    AREA_NAME_MIN_FONT_SIZE_PX +
+    (AREA_NAME_BASE_FONT_SIZE_PX - AREA_NAME_MIN_FONT_SIZE_PX) * zoomProgress;
+  const paddingX =
+    AREA_NAME_MIN_PADDING_X_PX +
+    (AREA_NAME_BASE_PADDING_X_PX - AREA_NAME_MIN_PADDING_X_PX) * zoomProgress;
+  const paddingY =
+    AREA_NAME_MIN_PADDING_Y_PX +
+    (AREA_NAME_BASE_PADDING_Y_PX - AREA_NAME_MIN_PADDING_Y_PX) * zoomProgress;
+
+  return { visible: true, fontSizePx, paddingX, paddingY };
 };
 
 const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
@@ -511,7 +571,7 @@ const clearEditingUI = (): void => {
 const renderRegionLayer = (map: AreaMap): void => {
   if (!regionsLayer || !regionLabelLayer) return;
 
-  const showAreaNames = shouldRenderAreaNames(map);
+  const areaNameRenderStyle = getAreaNameRenderStyle(map);
   // Keep layer transparent to map interactions; labels are display-only.
   regionLabelLayer.style.pointerEvents = "none";
   const activeRegionKeys = new Set<string>();
@@ -538,7 +598,7 @@ const renderRegionLayer = (map: AreaMap): void => {
     polygon.setAttribute("stroke", projected.stroke);
     regionsLayer.appendChild(polygon);
 
-    if (!showAreaNames) continue;
+    if (!areaNameRenderStyle.visible) continue;
 
     let label = regionLabelCache.get(regionRenderKey);
     if (!label) {
@@ -549,6 +609,8 @@ const renderRegionLayer = (map: AreaMap): void => {
     label.style.color = getContrastTextColor(projected.stroke);
     label.style.left = `${projected.center.x}px`;
     label.style.top = `${projected.center.y}px`;
+    label.style.fontSize = `${areaNameRenderStyle.fontSizePx.toFixed(1)}px`;
+    label.style.padding = `${areaNameRenderStyle.paddingY.toFixed(1)}px ${areaNameRenderStyle.paddingX.toFixed(1)}px`;
     label.style.pointerEvents = "none";
     label.style.cursor = "default";
     label.removeAttribute("title");
@@ -568,7 +630,7 @@ const renderRegionLayer = (map: AreaMap): void => {
       regionLabelCache.delete(regionRenderKey);
       continue;
     }
-    if (!showAreaNames) label.remove();
+    if (!areaNameRenderStyle.visible) label.remove();
   }
 };
 
