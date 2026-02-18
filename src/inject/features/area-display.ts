@@ -87,6 +87,7 @@ let editingSaveLabel = "Save";
 let editingCancelLabel = "Cancel";
 let editVertices: LngLat[] = [];
 let vertexElements: HTMLDivElement[] = [];
+let overlayMap: AreaMap | null = null;
 
 let activeMap: AreaMap | null = null;
 let activeDragIndex: number | null = null;
@@ -96,6 +97,8 @@ let pointerUpHandler: (() => void) | null = null;
 let cachedMapContainer: HTMLElement | null = null;
 let pendingRenderMap: AreaMap | null = null;
 let renderFrameId: number | null = null;
+const regionPolygonCache = new Map<string, SVGPolygonElement>();
+const regionLabelCache = new Map<string, HTMLDivElement>();
 
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === "number" && Number.isFinite(value);
@@ -172,6 +175,52 @@ const resolveMapContainer = (map: AreaMap): HTMLElement | null => {
   if (!nextContainer) return null;
   cachedMapContainer = nextContainer;
   return cachedMapContainer;
+};
+
+const getRegionRenderKey = (region: AreaRegion, index: number): string => {
+  const trimmedId = region.id.trim();
+  if (trimmedId) return trimmedId;
+  return `__area_region_${index}`;
+};
+
+const getRegionCenter = (vertices: AreaRegionVertex[]): LngLat => ({
+  lng: vertices.reduce((sum, vertex) => sum + vertex.lng, 0) / vertices.length,
+  lat: vertices.reduce((sum, vertex) => sum + vertex.lat, 0) / vertices.length,
+});
+
+const createRegionLabelElement = (): HTMLDivElement => {
+  const label = document.createElement("div");
+  label.style.cssText = `
+    position: absolute;
+    transform: translate(-50%, -50%);
+    border-radius: 9999px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+  `;
+  label.addEventListener("click", () => {
+    if (!areaNameClickToGoto) return;
+    if (!overlayMap) return;
+
+    const regionId = label.dataset.regionId;
+    if (!regionId) return;
+
+    const region = areaRegions.find((candidate) => candidate.id === regionId);
+    if (!region || region.vertices.length < 3) return;
+
+    const center = getRegionCenter(region.vertices);
+    handleMapInstanceAreaGoto({
+      lat: center.lat,
+      lng: center.lng,
+      zoom: getCurrentAreaGotoZoom(overlayMap),
+      bounds: getAreaBounds(region.vertices),
+    });
+  });
+  return label;
 };
 
 const createVertexElement = (): HTMLDivElement => {
@@ -463,33 +512,27 @@ const insertVertexOnEdge = (map: AreaMap, edgeIndex: number): void => {
 const createRegionPolygon = (
   map: AreaMap,
   region: AreaRegion,
-): { polygon: SVGPolygonElement; center: ScreenPoint } | null => {
+): {
+  pointsAttr: string;
+  center: ScreenPoint;
+  fill: string;
+  stroke: string;
+} | null => {
   if (region.vertices.length < 3) return null;
   const points = region.vertices.map((vertex) => map.project(vertex));
   if (points.length < 3) return null;
 
-  const polygon = document.createElementNS(AREA_SVG_NS, "polygon");
   const color = normalizeAreaColor(region.color);
   const rgb = hexToRgb(color) ?? { r: 15, g: 118, b: 110 };
-  polygon.setAttribute(
-    "points",
-    points.map((point) => `${point.x},${point.y}`).join(" "),
-  );
-  polygon.setAttribute(
-    "fill",
-    `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${areaFillOpacity})`,
-  );
-  polygon.setAttribute("stroke", color);
-  polygon.setAttribute("stroke-width", "3");
-  polygon.setAttribute("vector-effect", "non-scaling-stroke");
-  polygon.style.pointerEvents = "none";
+  const pointsAttr = points.map((point) => `${point.x},${point.y}`).join(" ");
+  const fill = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${areaFillOpacity})`;
 
   const center = {
     x: points.reduce((sum, point) => sum + point.x, 0) / points.length,
     y: points.reduce((sum, point) => sum + point.y, 0) / points.length,
   };
 
-  return { polygon, center };
+  return { pointsAttr, center, fill, stroke: color };
 };
 
 const clearEditingUI = (): void => {
@@ -503,66 +546,71 @@ const clearEditingUI = (): void => {
 const renderRegionLayer = (map: AreaMap): void => {
   if (!regionsLayer || !regionLabelLayer) return;
 
-  regionsLayer.replaceChildren();
-  regionLabelLayer.replaceChildren();
   const showAreaNames = shouldRenderAreaNames(map);
+  // Keep layer transparent to map interactions; only labels can receive clicks.
   regionLabelLayer.style.pointerEvents = "none";
+  const activeRegionKeys = new Set<string>();
 
-  for (const region of areaRegions) {
+  for (const [index, region] of areaRegions.entries()) {
     if (!region.visible) continue;
     if (editMode && editingRegionId && region.id === editingRegionId) continue;
 
-    const rendered = createRegionPolygon(map, region);
-    if (!rendered) continue;
+    const regionRenderKey = getRegionRenderKey(region, index);
+    const projected = createRegionPolygon(map, region);
+    if (!projected) continue;
+    activeRegionKeys.add(regionRenderKey);
 
-    regionsLayer.appendChild(rendered.polygon);
+    let polygon = regionPolygonCache.get(regionRenderKey);
+    if (!polygon) {
+      polygon = document.createElementNS(AREA_SVG_NS, "polygon");
+      polygon.setAttribute("stroke-width", "3");
+      polygon.setAttribute("vector-effect", "non-scaling-stroke");
+      polygon.style.pointerEvents = "none";
+      regionPolygonCache.set(regionRenderKey, polygon);
+    }
+    polygon.setAttribute("points", projected.pointsAttr);
+    polygon.setAttribute("fill", projected.fill);
+    polygon.setAttribute("stroke", projected.stroke);
+    regionsLayer.appendChild(polygon);
 
     if (!showAreaNames) continue;
 
-    const regionColor = normalizeAreaColor(region.color);
-    const textColor = getContrastTextColor(regionColor);
-
-    const label = document.createElement("div");
-    label.style.cssText = `
-      position: absolute;
-      transform: translate(-50%, -50%);
-      border-radius: 9999px;
-      padding: 2px 8px;
-      font-size: 11px;
-      font-weight: 700;
-      line-height: 1.2;
-      white-space: nowrap;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-      pointer-events: none;
-    `;
-    label.style.background = regionColor;
-    label.style.color = textColor;
-    label.style.left = `${rendered.center.x}px`;
-    label.style.top = `${rendered.center.y}px`;
-    if (areaNameClickToGoto) {
+    let label = regionLabelCache.get(regionRenderKey);
+    if (!label) {
+      label = createRegionLabelElement();
+      regionLabelCache.set(regionRenderKey, label);
+    }
+    label.dataset.regionId = region.id;
+    label.style.background = projected.stroke;
+    label.style.color = getContrastTextColor(projected.stroke);
+    label.style.left = `${projected.center.x}px`;
+    label.style.top = `${projected.center.y}px`;
+    if (areaNameClickToGoto && Boolean(region.id.trim())) {
       label.style.pointerEvents = "auto";
       label.style.cursor = "pointer";
       label.title = "移動";
-      label.addEventListener("click", () => {
-        const bounds = getAreaBounds(region.vertices);
-        const centerLng =
-          region.vertices.reduce((sum, v) => sum + v.lng, 0) /
-          region.vertices.length;
-        const centerLat =
-          region.vertices.reduce((sum, v) => sum + v.lat, 0) /
-          region.vertices.length;
-        handleMapInstanceAreaGoto({
-          lat: centerLat,
-          lng: centerLng,
-          zoom: getCurrentAreaGotoZoom(map),
-          bounds,
-        });
-      });
     } else {
       label.style.pointerEvents = "none";
+      label.style.cursor = "default";
+      label.removeAttribute("title");
     }
     label.textContent = region.name;
     regionLabelLayer.appendChild(label);
+  }
+
+  for (const [regionRenderKey, polygon] of regionPolygonCache) {
+    if (activeRegionKeys.has(regionRenderKey)) continue;
+    polygon.remove();
+    regionPolygonCache.delete(regionRenderKey);
+  }
+
+  for (const [regionRenderKey, label] of regionLabelCache) {
+    if (!activeRegionKeys.has(regionRenderKey)) {
+      label.remove();
+      regionLabelCache.delete(regionRenderKey);
+      continue;
+    }
+    if (!showAreaNames) label.remove();
   }
 };
 
@@ -741,6 +789,7 @@ const addAreaOverlay = (map: AreaMap): void => {
   container = createOverlay();
   mapContainer.appendChild(container);
   cachedMapContainer = mapContainer;
+  overlayMap = map;
 
   mapUpdateHandler = () => scheduleAreaOverlayRender(map);
   for (const eventName of MAP_UPDATE_EVENTS)
@@ -775,7 +824,10 @@ const removeAreaOverlay = (map: AreaMap): void => {
   cancelEditButton = null;
   activeMap = null;
   activeDragIndex = null;
+  overlayMap = null;
   cachedMapContainer = null;
+  regionPolygonCache.clear();
+  regionLabelCache.clear();
 
   console.log("🧑‍🎨 : Area measure removed");
 };

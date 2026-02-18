@@ -232,6 +232,17 @@ div#mr-wplace-area-measure (container, pointer-events: none)
   - move/zoom/drag連打時の無駄な再描画回数を削減
   - エディット時の体感応答を改善しやすい構造へ整理
 
+### 2026-02-18 Phase 4 (完了)
+
+- 目的: `renderRegionLayer()` の全DOM再生成を削減
+- 実施:
+  - リージョン polygon/label をIDベースで再利用するキャッシュを導入
+  - `renderRegionLayer()` を差分更新化し、不要ノードのみ削除する方式に変更
+  - label click は要素使い回し前提で dataset + 現在state参照へ切替
+- 結果:
+  - map操作時のDOM作成/破棄回数をさらに削減
+  - ラベル再描画時のイベント再登録コストを回避
+
 ### Review Result
 
 - 実行確認: `npm run build` 成功
@@ -240,7 +251,7 @@ div#mr-wplace-area-measure (container, pointer-events: none)
   - 既存 message source と payload 形は維持
 - 未対応/次フェーズ候補:
   - `renderAreaManager()` の巨大化 (UI構築責務分割)
-  - `renderRegionLayer()` の差分更新化 (リージョンDOMの再利用)
+  - polygon points 文字列生成コストのさらなる削減 (頂点数が多い場合の最適化)
   - map-ready source (`mr-wplace-map-instance-captured`) も将来的に定数化候補
 
 ## Mermaid Diagram
