@@ -483,7 +483,6 @@ export const ptTranslations = {
   map_filter_area_points: "pontos",
   map_filter_area_show: "Mostrar",
   map_filter_area_hide: "Ocultar",
-  map_filter_area_goto: "Ir para localização",
   map_filter_area_rename: "Renomear",
   map_filter_area_delete_confirm: "Excluir esta área salva?",
   map_filter_area_name_placeholder: "Nome da área",

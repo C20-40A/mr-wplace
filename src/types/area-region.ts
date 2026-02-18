@@ -30,6 +30,5 @@ export type AreaNameDisplayMode = "always" | "off" | "hide-on-zoom-out";
 
 export interface AreaDisplayOptions {
   fillOpacityPercent: number;
-  nameClickToGoto: boolean;
   nameDisplayMode: AreaNameDisplayMode;
 }

@@ -499,7 +499,6 @@ export const frTranslations = {
   map_filter_area_points: "points",
   map_filter_area_show: "Afficher",
   map_filter_area_hide: "Masquer",
-  map_filter_area_goto: "Aller à l'emplacement",
   map_filter_area_rename: "Renommer",
   map_filter_area_delete_confirm: "Supprimer cette zone enregistrée?",
   map_filter_area_name_placeholder: "Nom de la zone",

@@ -50,12 +50,10 @@ const AREA_REGIONS_KEY = "areaRegions_v1";
 const AREA_REGION_GROUPS_KEY = "areaRegionGroups_v1";
 const AREA_SYNC_URL_KEY = "mapFilter_areaSyncUrl";
 const AREA_FILL_OPACITY_KEY = "mapFilter_areaFillOpacityPercent";
-const AREA_NAME_CLICK_TO_GOTO_KEY = "mapFilter_areaNameClickToGoto";
 const AREA_NAME_DISPLAY_MODE_KEY = "mapFilter_areaNameDisplayMode";
 const AREA_MANAGER_MODAL_ID = "wplace-studio-area-manager-modal";
 const AUTO_AREA_COLOR_GOLDEN_ANGLE = 137.508;
 const DEFAULT_AREA_FILL_OPACITY_PERCENT = 14;
-const DEFAULT_AREA_NAME_CLICK_TO_GOTO = true;
 
 class AreaManager {
   private areaManagerModal: ModalElements | null = null;
@@ -68,7 +66,6 @@ class AreaManager {
   private mapReady = false;
   private areaMeasure = false;
   private areaFillOpacityPercent = DEFAULT_AREA_FILL_OPACITY_PERCENT;
-  private areaNameClickToGoto = DEFAULT_AREA_NAME_CLICK_TO_GOTO;
   private areaNameDisplayMode: AreaNameDisplayMode =
     DEFAULT_AREA_NAME_DISPLAY_MODE;
 
@@ -78,7 +75,6 @@ class AreaManager {
       AREA_REGIONS_KEY,
       AREA_REGION_GROUPS_KEY,
       AREA_FILL_OPACITY_KEY,
-      AREA_NAME_CLICK_TO_GOTO_KEY,
       AREA_NAME_DISPLAY_MODE_KEY,
     ]);
 
@@ -89,9 +85,6 @@ class AreaManager {
     );
     this.areaFillOpacityPercent = this.normalizeAreaFillOpacityPercent(
       stored[AREA_FILL_OPACITY_KEY],
-    );
-    this.areaNameClickToGoto = this.normalizeAreaNameClickToGoto(
-      stored[AREA_NAME_CLICK_TO_GOTO_KEY],
     );
     this.areaNameDisplayMode = normalizeAreaNameDisplayMode(
       stored[AREA_NAME_DISPLAY_MODE_KEY],
@@ -156,7 +149,6 @@ class AreaManager {
   private getAreaDisplayOptions(): AreaDisplayOptions {
     return {
       fillOpacityPercent: this.areaFillOpacityPercent,
-      nameClickToGoto: this.areaNameClickToGoto,
       nameDisplayMode: this.areaNameDisplayMode,
     };
   }
@@ -292,10 +284,6 @@ class AreaManager {
     if (typeof value !== "number" || !Number.isFinite(value))
       return DEFAULT_AREA_FILL_OPACITY_PERCENT;
     return Math.min(100, Math.max(0, Math.round(value)));
-  }
-
-  private normalizeAreaNameClickToGoto(value: unknown): boolean {
-    return typeof value === "boolean" ? value : DEFAULT_AREA_NAME_CLICK_TO_GOTO;
   }
 
   private hueDistance(a: number, b: number): number {
@@ -789,13 +777,6 @@ class AreaManager {
     }
   }
 
-  private async setAreaNameClickToGoto(enabled: boolean): Promise<void> {
-    if (enabled === this.areaNameClickToGoto) return;
-    this.areaNameClickToGoto = enabled;
-    await storage.set({ [AREA_NAME_CLICK_TO_GOTO_KEY]: enabled });
-    this.notifyAreaDisplayOptions();
-  }
-
   private async setAreaNameDisplayMode(mode: AreaNameDisplayMode): Promise<void> {
     if (mode === this.areaNameDisplayMode) return;
     this.areaNameDisplayMode = mode;
@@ -806,7 +787,6 @@ class AreaManager {
   private showAreaDisplaySettingsDialog() {
     showDisplaySettingsDialog({
       fillOpacityPercent: this.areaFillOpacityPercent,
-      areaNameClickToGoto: this.areaNameClickToGoto,
       areaNameDisplayMode: this.areaNameDisplayMode,
       normalizeAreaFillOpacityPercent: (value) =>
         this.normalizeAreaFillOpacityPercent(value),
@@ -814,7 +794,6 @@ class AreaManager {
         normalizeAreaNameDisplayMode(value),
       updateAreaFillOpacityPercent: (value, persist) =>
         this.updateAreaFillOpacityPercent(value, persist),
-      setAreaNameClickToGoto: (enabled) => this.setAreaNameClickToGoto(enabled),
       setAreaNameDisplayMode: (mode) => this.setAreaNameDisplayMode(mode),
     });
   }
@@ -868,7 +847,7 @@ class AreaManager {
         name.style.maxWidth = "14rem";
         name.style.cursor = this.mapReady ? "pointer" : "default";
         if (this.mapReady) {
-          name.title = t`${"map_filter_area_goto"}`;
+          name.title = t`${"goto_map"}`;
           name.addEventListener("click", () => {
             this.gotoAreaRegionGroup(group.id);
           });
@@ -965,7 +944,7 @@ class AreaManager {
 
         const gotoButton = document.createElement("button");
         gotoButton.className = "btn btn-xs btn-outline";
-        gotoButton.title = t`${"map_filter_area_goto"}`;
+        gotoButton.title = t`${"goto_map"}`;
         gotoButton.disabled = !this.mapReady;
         gotoButton.innerHTML = `
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" style="width: 14px; height: 14px;">
@@ -1009,7 +988,7 @@ class AreaManager {
         name.style.maxWidth = "14rem";
         name.style.cursor = this.mapReady ? "pointer" : "default";
         if (this.mapReady) {
-          name.title = t`${"map_filter_area_goto"}`;
+          name.title = t`${"goto_map"}`;
           name.addEventListener("click", () => {
             this.gotoAreaRegion(region.id);
           });
@@ -1090,7 +1069,7 @@ class AreaManager {
 
         const gotoButton = document.createElement("button");
         gotoButton.className = "btn btn-xs btn-outline";
-        gotoButton.title = t`${"map_filter_area_goto"}`;
+        gotoButton.title = t`${"goto_map"}`;
         gotoButton.disabled = !this.mapReady;
         gotoButton.innerHTML = `
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" style="width: 14px; height: 14px;">

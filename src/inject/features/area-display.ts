@@ -6,10 +6,7 @@ import type {
   AreaRegionVertex,
 } from "@/types/area-region";
 import { AREA_MESSAGE_SOURCE } from "@/constants/area-message";
-import {
-  getMapInstanceFromWplace,
-  handleMapInstanceAreaGoto,
-} from "./map-instance";
+import { getMapInstanceFromWplace } from "./map-instance";
 import {
   calculateGeodesicAreaSquareMeters,
   calculatePixelAreaSquare,
@@ -18,7 +15,6 @@ import {
   DEFAULT_AREA_COLOR,
   DEFAULT_AREA_NAME_DISPLAY_MODE,
   formatPixelArea,
-  getAreaBounds,
   normalizeAreaColor,
   normalizeAreaNameDisplayMode,
 } from "@/utils/area-region";
@@ -82,12 +78,10 @@ let editingRegionName = "";
 let editingColor = DEFAULT_AREA_COLOR;
 let areaFillOpacity = DEFAULT_AREA_FILL_OPACITY;
 let areaNameDisplayMode: AreaNameDisplayMode = DEFAULT_AREA_NAME_DISPLAY_MODE;
-let areaNameClickToGoto = true;
 let editingSaveLabel = "Save";
 let editingCancelLabel = "Cancel";
 let editVertices: LngLat[] = [];
 let vertexElements: HTMLDivElement[] = [];
-let overlayMap: AreaMap | null = null;
 
 let activeMap: AreaMap | null = null;
 let activeDragIndex: number | null = null;
@@ -136,12 +130,6 @@ const shouldRenderAreaNames = (map: AreaMap): boolean => {
   return zoom >= AREA_NAME_HIDE_ZOOM_THRESHOLD;
 };
 
-const getCurrentAreaGotoZoom = (map: AreaMap): number => {
-  const zoom = map.getZoom?.();
-  if (typeof zoom === "number" && Number.isFinite(zoom)) return zoom;
-  return 11;
-};
-
 const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
   const matched = /^#([0-9a-fA-F]{6})$/.exec(hex);
   if (!matched) return null;
@@ -183,11 +171,6 @@ const getRegionRenderKey = (region: AreaRegion, index: number): string => {
   return `__area_region_${index}`;
 };
 
-const getRegionCenter = (vertices: AreaRegionVertex[]): LngLat => ({
-  lng: vertices.reduce((sum, vertex) => sum + vertex.lng, 0) / vertices.length,
-  lat: vertices.reduce((sum, vertex) => sum + vertex.lat, 0) / vertices.length,
-});
-
 const createRegionLabelElement = (): HTMLDivElement => {
   const label = document.createElement("div");
   label.style.cssText = `
@@ -202,24 +185,6 @@ const createRegionLabelElement = (): HTMLDivElement => {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
     pointer-events: none;
   `;
-  label.addEventListener("click", () => {
-    if (!areaNameClickToGoto) return;
-    if (!overlayMap) return;
-
-    const regionId = label.dataset.regionId;
-    if (!regionId) return;
-
-    const region = areaRegions.find((candidate) => candidate.id === regionId);
-    if (!region || region.vertices.length < 3) return;
-
-    const center = getRegionCenter(region.vertices);
-    handleMapInstanceAreaGoto({
-      lat: center.lat,
-      lng: center.lng,
-      zoom: getCurrentAreaGotoZoom(overlayMap),
-      bounds: getAreaBounds(region.vertices),
-    });
-  });
   return label;
 };
 
@@ -547,7 +512,7 @@ const renderRegionLayer = (map: AreaMap): void => {
   if (!regionsLayer || !regionLabelLayer) return;
 
   const showAreaNames = shouldRenderAreaNames(map);
-  // Keep layer transparent to map interactions; only labels can receive clicks.
+  // Keep layer transparent to map interactions; labels are display-only.
   regionLabelLayer.style.pointerEvents = "none";
   const activeRegionKeys = new Set<string>();
 
@@ -580,20 +545,13 @@ const renderRegionLayer = (map: AreaMap): void => {
       label = createRegionLabelElement();
       regionLabelCache.set(regionRenderKey, label);
     }
-    label.dataset.regionId = region.id;
     label.style.background = projected.stroke;
     label.style.color = getContrastTextColor(projected.stroke);
     label.style.left = `${projected.center.x}px`;
     label.style.top = `${projected.center.y}px`;
-    if (areaNameClickToGoto && Boolean(region.id.trim())) {
-      label.style.pointerEvents = "auto";
-      label.style.cursor = "pointer";
-      label.title = "移動";
-    } else {
-      label.style.pointerEvents = "none";
-      label.style.cursor = "default";
-      label.removeAttribute("title");
-    }
+    label.style.pointerEvents = "none";
+    label.style.cursor = "default";
+    label.removeAttribute("title");
     label.textContent = region.name;
     regionLabelLayer.appendChild(label);
   }
@@ -789,7 +747,6 @@ const addAreaOverlay = (map: AreaMap): void => {
   container = createOverlay();
   mapContainer.appendChild(container);
   cachedMapContainer = mapContainer;
-  overlayMap = map;
 
   mapUpdateHandler = () => scheduleAreaOverlayRender(map);
   for (const eventName of MAP_UPDATE_EVENTS)
@@ -824,7 +781,6 @@ const removeAreaOverlay = (map: AreaMap): void => {
   cancelEditButton = null;
   activeMap = null;
   activeDragIndex = null;
-  overlayMap = null;
   cachedMapContainer = null;
   regionPolygonCache.clear();
   regionLabelCache.clear();
@@ -886,17 +842,12 @@ export const setAreaDisplayOptions = (
   if ("nameDisplayMode" in options) {
     areaNameDisplayMode = normalizeAreaNameDisplayMode(options.nameDisplayMode);
   }
-  if ("nameClickToGoto" in options) {
-    areaNameClickToGoto = options.nameClickToGoto !== false;
-  }
-
   const map = getMapInstanceFromWplace() as AreaMap | null;
   if (map && areaEnabled) scheduleAreaOverlayRender(map);
 
   console.log("🧑‍🎨 : Area display options updated", {
     opacity: areaFillOpacity,
     nameDisplayMode: areaNameDisplayMode,
-    nameClickToGoto: areaNameClickToGoto,
   });
 };
 

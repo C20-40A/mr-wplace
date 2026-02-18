@@ -500,7 +500,6 @@ export const esTranslations = {
   map_filter_area_points: "puntos",
   map_filter_area_show: "Mostrar",
   map_filter_area_hide: "Ocultar",
-  map_filter_area_goto: "Ir a la ubicación",
   map_filter_area_rename: "Renombrar",
   map_filter_area_delete_confirm: "¿Eliminar esta área guardada?",
   map_filter_area_name_placeholder: "Nombre del área",

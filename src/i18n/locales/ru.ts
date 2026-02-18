@@ -494,7 +494,6 @@ export const ruTranslations = {
   map_filter_area_points: "точки",
   map_filter_area_show: "Показать",
   map_filter_area_hide: "Скрыть",
-  map_filter_area_goto: "Перейти к местоположению",
   map_filter_area_rename: "Переименовать",
   map_filter_area_delete_confirm: "Удалить эту сохраненную область?",
   map_filter_area_name_placeholder: "Название области",

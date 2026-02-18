@@ -482,7 +482,6 @@ export const viTranslations = {
   map_filter_area_points: "điểm",
   map_filter_area_show: "Hiển thị",
   map_filter_area_hide: "Ẩn",
-  map_filter_area_goto: "Đến vị trí",
   map_filter_area_rename: "Đổi tên",
   map_filter_area_delete_confirm: "Xóa vùng đã lưu này?",
   map_filter_area_name_placeholder: "Tên vùng",

@@ -3,12 +3,10 @@ import type { AreaNameDisplayMode } from "@/types/area-region";
 
 interface DisplaySettingsDialogDeps {
   fillOpacityPercent: number;
-  areaNameClickToGoto: boolean;
   areaNameDisplayMode: AreaNameDisplayMode;
   normalizeAreaFillOpacityPercent: (value: number) => number;
   normalizeAreaNameDisplayMode: (value: unknown) => AreaNameDisplayMode;
   updateAreaFillOpacityPercent: (value: number, persist: boolean) => Promise<void>;
-  setAreaNameClickToGoto: (enabled: boolean) => Promise<void>;
   setAreaNameDisplayMode: (mode: AreaNameDisplayMode) => Promise<void>;
 }
 
@@ -30,10 +28,6 @@ export const showDisplaySettingsDialog = (
       </div>
 
       <div style="padding: 0.8rem; border: 1px solid oklch(var(--bc) / 0.2); border-radius: 8px; display: flex; flex-direction: column; gap: 0.7rem;">
-        <label style="display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; font-size: 0.9rem;">
-          <span>マップ上の名前クリックで移動</span>
-          <input id="area-display-name-click-toggle" type="checkbox" class="toggle toggle-sm" />
-        </label>
         <label style="display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; font-size: 0.9rem;">
           <span>エリア名表示</span>
           <select id="area-display-name-mode-select" class="select select-sm select-bordered" style="min-width: 12rem;">
@@ -59,9 +53,6 @@ export const showDisplaySettingsDialog = (
   const opacityValue = modal.querySelector(
     "#area-display-opacity-value",
   ) as HTMLSpanElement | null;
-  const nameClickToggle = modal.querySelector(
-    "#area-display-name-click-toggle",
-  ) as HTMLInputElement | null;
   const nameModeSelect = modal.querySelector(
     "#area-display-name-mode-select",
   ) as HTMLSelectElement | null;
@@ -79,13 +70,6 @@ export const showDisplaySettingsDialog = (
     opacityInput.addEventListener("change", (event) => {
       const target = event.target as HTMLInputElement;
       void deps.updateAreaFillOpacityPercent(Number(target.value), true);
-    });
-  }
-
-  if (nameClickToggle) {
-    nameClickToggle.checked = deps.areaNameClickToGoto;
-    nameClickToggle.addEventListener("change", () => {
-      void deps.setAreaNameClickToGoto(nameClickToggle.checked);
     });
   }
 

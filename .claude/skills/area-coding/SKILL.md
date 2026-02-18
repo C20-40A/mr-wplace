@@ -39,7 +39,7 @@ inject側の `area-display.ts` がマップ上のSVGオーバーレイ描画・�
   - `AreaRegionBounds`: { west, south, east, north }
   - `AreaRegionEditSnapshot`: { regionId, name, vertices }
   - `AreaNameDisplayMode`: "always" | "off" | "hide-on-zoom-out"
-  - `AreaDisplayOptions`: { fillOpacityPercent, nameClickToGoto, nameDisplayMode }
+  - `AreaDisplayOptions`: { fillOpacityPercent, nameDisplayMode }
 - `src/features/area-manager/types.ts` — content側専用
   - `AreaRegionGroup`: { id, name, regionIds, createdAt, updatedAt }
 
@@ -80,7 +80,6 @@ inject側の `area-display.ts` がマップ上のSVGオーバーレイ描画・�
 | `areaRegionGroups_v1`              | AreaRegionGroup[]   | []       | グループデータ     |
 | `mapFilter_areaSyncUrl`            | string              | ""       | オンライン同期URL  |
 | `mapFilter_areaFillOpacityPercent` | number              | 14       | 塗り透明度(0-100)  |
-| `mapFilter_areaNameClickToGoto`    | boolean             | true     | 名前クリックで移動 |
 | `mapFilter_areaNameDisplayMode`    | AreaNameDisplayMode | "always" | 名前表示モード     |
 
 ## Content側: AreaManager クラス
@@ -187,6 +186,7 @@ div#mr-wplace-area-measure (container, pointer-events: none)
 - inject 側は `chrome.storage` を使えない → content が storage 管理
 - inject 側のモジュール変数 (let) で状態を保持 (クラスではない)
 - `scheduleAreaOverlayRender()` は高頻度イベントの間引き目的。重い処理は `renderAreaOverlayNow()` に集約
+- 確定リージョン名ラベルは表示専用 (マップ上ラベルクリックで移動しない)
 - 頂点ドラッグ中は `renderEditingOverlay()` を優先し、確定リージョン再生成を避ける
 - 色は `#rrggbb` 6桁hex のみ対応 (`normalizeAreaColor` で検証)
 - リージョンは `updatedAt` 降順でソート
