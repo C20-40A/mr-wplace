@@ -93,6 +93,9 @@ let activeDragIndex: number | null = null;
 let mapUpdateHandler: (() => void) | null = null;
 let pointerMoveHandler: ((e: PointerEvent) => void) | null = null;
 let pointerUpHandler: (() => void) | null = null;
+let cachedMapContainer: HTMLElement | null = null;
+let pendingRenderMap: AreaMap | null = null;
+let renderFrameId: number | null = null;
 
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === "number" && Number.isFinite(value);
@@ -161,6 +164,14 @@ const getMapContainer = (map: AreaMap): HTMLElement | null => {
     document.querySelector<HTMLElement>(".maplibregl-map") ??
     document.querySelector<HTMLElement>(".maplibregl-canvas-container")
   );
+};
+
+const resolveMapContainer = (map: AreaMap): HTMLElement | null => {
+  if (cachedMapContainer?.isConnected) return cachedMapContainer;
+  const nextContainer = getMapContainer(map);
+  if (!nextContainer) return null;
+  cachedMapContainer = nextContainer;
+  return cachedMapContainer;
 };
 
 const createVertexElement = (): HTMLDivElement => {
@@ -353,8 +364,7 @@ const ensureDefaultVertices = (map: AreaMap): void => {
 
 const clearEdgeHitLines = (): void => {
   if (!edgeHitLayer) return;
-  while (edgeHitLayer.firstChild)
-    edgeHitLayer.removeChild(edgeHitLayer.firstChild);
+  edgeHitLayer.replaceChildren();
 };
 
 const clearVertexElements = (): void => {
@@ -380,14 +390,14 @@ const syncVertexElements = (): void => {
 const setVertexFromPointer = (map: AreaMap, event: PointerEvent): void => {
   if (activeDragIndex == null) return;
 
-  const mapContainer = getMapContainer(map);
+  const mapContainer = resolveMapContainer(map);
   if (!mapContainer) return;
 
   const rect = mapContainer.getBoundingClientRect();
   const x = Math.min(Math.max(event.clientX - rect.left, 0), rect.width);
   const y = Math.min(Math.max(event.clientY - rect.top, 0), rect.height);
   editVertices[activeDragIndex] = map.unproject({ x, y });
-  renderAreaOverlay(map);
+  renderEditingOverlay(map);
 };
 
 const stopVertexDrag = (): void => {
@@ -407,7 +417,7 @@ const stopVertexDrag = (): void => {
 
   for (const vertex of vertexElements) vertex.style.cursor = "grab";
   activeDragIndex = null;
-  renderAreaOverlay(activeMap);
+  if (areaEnabled) scheduleAreaOverlayRender(activeMap);
 };
 
 const startVertexDrag = (
@@ -447,7 +457,7 @@ const insertVertexOnEdge = (map: AreaMap, edgeIndex: number): void => {
   });
 
   editVertices.splice(edgeIndex + 1, 0, midpoint);
-  renderAreaOverlay(map);
+  renderEditingOverlay(map);
 };
 
 const createRegionPolygon = (
@@ -490,32 +500,11 @@ const clearEditingUI = (): void => {
   clearVertexElements();
 };
 
-const renderAreaOverlay = (map: AreaMap): void => {
-  if (
-    !svg ||
-    !regionsLayer ||
-    !edgeHitLayer ||
-    !areaLabel ||
-    !regionLabelLayer ||
-    !container
-  ) {
-    return;
-  }
+const renderRegionLayer = (map: AreaMap): void => {
+  if (!regionsLayer || !regionLabelLayer) return;
 
-  const mapContainer = getMapContainer(map);
-  if (!mapContainer) return;
-
-  const width = mapContainer.clientWidth;
-  const height = mapContainer.clientHeight;
-  svg.setAttribute(
-    "viewBox",
-    `0 0 ${Math.max(width, 1)} ${Math.max(height, 1)}`,
-  );
-
-  while (regionsLayer.firstChild)
-    regionsLayer.removeChild(regionsLayer.firstChild);
-  while (regionLabelLayer.firstChild)
-    regionLabelLayer.removeChild(regionLabelLayer.firstChild);
+  regionsLayer.replaceChildren();
+  regionLabelLayer.replaceChildren();
   const showAreaNames = shouldRenderAreaNames(map);
   regionLabelLayer.style.pointerEvents = "none";
 
@@ -528,54 +517,57 @@ const renderAreaOverlay = (map: AreaMap): void => {
 
     regionsLayer.appendChild(rendered.polygon);
 
-    if (showAreaNames) {
-      const regionColor = normalizeAreaColor(region.color);
-      const textColor = getContrastTextColor(regionColor);
+    if (!showAreaNames) continue;
 
-      const label = document.createElement("div");
-      label.style.cssText = `
-        position: absolute;
-        transform: translate(-50%, -50%);
-        border-radius: 9999px;
-        padding: 2px 8px;
-        font-size: 11px;
-        font-weight: 700;
-        line-height: 1.2;
-        white-space: nowrap;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-        pointer-events: none;
-      `;
-      label.style.background = regionColor;
-      label.style.color = textColor;
-      label.style.left = `${rendered.center.x}px`;
-      label.style.top = `${rendered.center.y}px`;
-      if (areaNameClickToGoto) {
-        label.style.pointerEvents = "auto";
-        label.style.cursor = "pointer";
-        label.title = "移動";
-        label.addEventListener("click", () => {
-          const bounds = getAreaBounds(region.vertices);
-          const centerLng =
-            region.vertices.reduce((sum, v) => sum + v.lng, 0) /
-            region.vertices.length;
-          const centerLat =
-            region.vertices.reduce((sum, v) => sum + v.lat, 0) /
-            region.vertices.length;
-          handleMapInstanceAreaGoto({
-            lat: centerLat,
-            lng: centerLng,
-            zoom: getCurrentAreaGotoZoom(map),
-            bounds,
-          });
+    const regionColor = normalizeAreaColor(region.color);
+    const textColor = getContrastTextColor(regionColor);
+
+    const label = document.createElement("div");
+    label.style.cssText = `
+      position: absolute;
+      transform: translate(-50%, -50%);
+      border-radius: 9999px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+      pointer-events: none;
+    `;
+    label.style.background = regionColor;
+    label.style.color = textColor;
+    label.style.left = `${rendered.center.x}px`;
+    label.style.top = `${rendered.center.y}px`;
+    if (areaNameClickToGoto) {
+      label.style.pointerEvents = "auto";
+      label.style.cursor = "pointer";
+      label.title = "移動";
+      label.addEventListener("click", () => {
+        const bounds = getAreaBounds(region.vertices);
+        const centerLng =
+          region.vertices.reduce((sum, v) => sum + v.lng, 0) /
+          region.vertices.length;
+        const centerLat =
+          region.vertices.reduce((sum, v) => sum + v.lat, 0) /
+          region.vertices.length;
+        handleMapInstanceAreaGoto({
+          lat: centerLat,
+          lng: centerLng,
+          zoom: getCurrentAreaGotoZoom(map),
+          bounds,
         });
-      } else {
-        label.style.pointerEvents = "none";
-      }
-      label.textContent = region.name;
-      regionLabelLayer.appendChild(label);
+      });
+    } else {
+      label.style.pointerEvents = "none";
     }
+    label.textContent = region.name;
+    regionLabelLayer.appendChild(label);
   }
+};
 
+const renderEditingOverlay = (map: AreaMap): void => {
+  if (!editPolygon || !edgeHitLayer || !areaLabel || !container) return;
   if (!editMode || !editPolygon) {
     clearEditingUI();
     return;
@@ -627,7 +619,7 @@ const renderAreaOverlay = (map: AreaMap): void => {
         if (!Number.isFinite(index)) return;
         if (editVertices.length <= 3) return;
         editVertices.splice(index, 1);
-        renderAreaOverlay(map);
+        renderEditingOverlay(map);
       };
 
       vertex.addEventListener("pointerdown", onPointerDown);
@@ -687,10 +679,57 @@ const renderAreaOverlay = (map: AreaMap): void => {
   }
 };
 
+const renderAreaOverlayNow = (map: AreaMap): void => {
+  if (
+    !svg ||
+    !regionsLayer ||
+    !edgeHitLayer ||
+    !areaLabel ||
+    !regionLabelLayer ||
+    !container
+  ) {
+    return;
+  }
+
+  const mapContainer = resolveMapContainer(map);
+  if (!mapContainer) return;
+
+  const width = mapContainer.clientWidth;
+  const height = mapContainer.clientHeight;
+  svg.setAttribute(
+    "viewBox",
+    `0 0 ${Math.max(width, 1)} ${Math.max(height, 1)}`,
+  );
+
+  renderRegionLayer(map);
+  renderEditingOverlay(map);
+};
+
+const cancelAreaOverlayRender = (): void => {
+  if (renderFrameId !== null) {
+    window.cancelAnimationFrame(renderFrameId);
+    renderFrameId = null;
+  }
+  pendingRenderMap = null;
+};
+
+const scheduleAreaOverlayRender = (map: AreaMap): void => {
+  pendingRenderMap = map;
+  if (renderFrameId !== null) return;
+
+  renderFrameId = window.requestAnimationFrame(() => {
+    renderFrameId = null;
+    const nextMap = pendingRenderMap;
+    pendingRenderMap = null;
+    if (!nextMap || !areaEnabled) return;
+    renderAreaOverlayNow(nextMap);
+  });
+};
+
 const addAreaOverlay = (map: AreaMap): void => {
   if (container) return;
 
-  const mapContainer = getMapContainer(map);
+  const mapContainer = resolveMapContainer(map);
   if (!mapContainer) {
     console.warn("🧑‍🎨 : Map container not found for area measure");
     return;
@@ -701,16 +740,19 @@ const addAreaOverlay = (map: AreaMap): void => {
 
   container = createOverlay();
   mapContainer.appendChild(container);
+  cachedMapContainer = mapContainer;
 
-  mapUpdateHandler = () => renderAreaOverlay(map);
+  mapUpdateHandler = () => scheduleAreaOverlayRender(map);
   for (const eventName of MAP_UPDATE_EVENTS)
     map.on(eventName, mapUpdateHandler);
 
-  renderAreaOverlay(map);
+  scheduleAreaOverlayRender(map);
   console.log("🧑‍🎨 : Area measure added");
 };
 
 const removeAreaOverlay = (map: AreaMap): void => {
+  cancelAreaOverlayRender();
+
   if (mapUpdateHandler) {
     for (const eventName of MAP_UPDATE_EVENTS)
       map.off(eventName, mapUpdateHandler);
@@ -733,6 +775,7 @@ const removeAreaOverlay = (map: AreaMap): void => {
   cancelEditButton = null;
   activeMap = null;
   activeDragIndex = null;
+  cachedMapContainer = null;
 
   console.log("🧑‍🎨 : Area measure removed");
 };
@@ -777,7 +820,7 @@ export const setAreaRegions = (regions: AreaRegion[]): void => {
     : [];
 
   const map = getMapInstanceFromWplace() as AreaMap | null;
-  if (map && areaEnabled) renderAreaOverlay(map);
+  if (map && areaEnabled) scheduleAreaOverlayRender(map);
 
   console.log("🧑‍🎨 : Area regions synced:", areaRegions.length);
 };
@@ -796,7 +839,7 @@ export const setAreaDisplayOptions = (
   }
 
   const map = getMapInstanceFromWplace() as AreaMap | null;
-  if (map && areaEnabled) renderAreaOverlay(map);
+  if (map && areaEnabled) scheduleAreaOverlayRender(map);
 
   console.log("🧑‍🎨 : Area display options updated", {
     opacity: areaFillOpacity,
@@ -828,7 +871,7 @@ export const startAreaRegionEdit = (
   if (cancelEditButton) cancelEditButton.textContent = editingCancelLabel;
   editVertices = sanitizeVertices(payload.vertices);
   ensureDefaultVertices(map);
-  renderAreaOverlay(map);
+  scheduleAreaOverlayRender(map);
 
   console.log("🧑‍🎨 : Area edit started", {
     regionId: editingRegionId,
@@ -845,7 +888,7 @@ export const stopAreaRegionEdit = (): void => {
   editVertices = [];
 
   const map = getMapInstanceFromWplace() as AreaMap | null;
-  if (map && areaEnabled) renderAreaOverlay(map);
+  if (map && areaEnabled) scheduleAreaOverlayRender(map);
 
   console.log("🧑‍🎨 : Area edit stopped");
 };
@@ -883,7 +926,7 @@ export const setupAreaMeasureOnMapReady = (mapInstance: unknown): void => {
   const map = mapInstance as AreaMap;
   const onStyleData = () => {
     if (!areaEnabled) return;
-    renderAreaOverlay(map);
+    scheduleAreaOverlayRender(map);
   };
   map.on("styledata", onStyleData);
   if (areaEnabled) addAreaOverlay(map);

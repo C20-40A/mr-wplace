@@ -142,10 +142,11 @@ div#mr-wplace-area-measure (container, pointer-events: none)
 ### 描画フロー
 
 1. `addAreaOverlay(map)` — コンテナ生成、マップイベント(move/zoom/rotate/pitch/resize)にバインド
-2. `renderAreaOverlay(map)` — 毎フレーム的に呼ばれる中心関数
+2. `scheduleAreaOverlayRender(map)` — 描画要求を `requestAnimationFrame` で1フレームに集約
+3. `renderAreaOverlayNow(map)` — 実描画の中心関数
    - SVG viewBox をマップコンテナサイズに合わせる
-   - 確定リージョン: `createRegionPolygon()` でSVGポリゴン生成 + ラベル生成
-   - 編集モード: 頂点をスクリーン座標に投影、ドラッグハンドル配置、エッジhit領域配置
+   - 確定リージョン: `renderRegionLayer()` でSVGポリゴン + ラベルを再構築
+   - 編集モード: `renderEditingOverlay()` で頂点/UIのみ更新
 
 ### 頂点編集
 
@@ -185,7 +186,8 @@ div#mr-wplace-area-measure (container, pointer-events: none)
 
 - inject 側は `chrome.storage` を使えない → content が storage 管理
 - inject 側のモジュール変数 (let) で状態を保持 (クラスではない)
-- `renderAreaOverlay()` はマップイベントごとに呼ばれるため軽量に保つ
+- `scheduleAreaOverlayRender()` は高頻度イベントの間引き目的。重い処理は `renderAreaOverlayNow()` に集約
+- 頂点ドラッグ中は `renderEditingOverlay()` を優先し、確定リージョン再生成を避ける
 - 色は `#rrggbb` 6桁hex のみ対応 (`normalizeAreaColor` で検証)
 - リージョンは `updatedAt` 降順でソート
 - Content↔Inject の area message source は `src/constants/area-message.ts` を使って定義を一元化する
@@ -218,6 +220,18 @@ div#mr-wplace-area-measure (container, pointer-events: none)
   - `AreaManager` の通信詳細依存を縮小
   - 通信仕様変更時の変更点を gateway に集約可能
 
+### 2026-02-18 Phase 3 (完了)
+
+- 目的: inject 側オーバーレイ再描画の負荷を削減
+- 実施:
+  - `area-display.ts` に `scheduleAreaOverlayRender()` を追加し、描画を `requestAnimationFrame` に集約
+  - `renderAreaOverlayNow()` / `renderRegionLayer()` / `renderEditingOverlay()` に責務分割
+  - 頂点ドラッグ時は編集レイヤーのみ更新し、確定リージョンの再生成を回避
+  - map container 解決結果をキャッシュし、毎回DOM探索を避ける
+- 結果:
+  - move/zoom/drag連打時の無駄な再描画回数を削減
+  - エディット時の体感応答を改善しやすい構造へ整理
+
 ### Review Result
 
 - 実行確認: `npm run build` 成功
@@ -226,7 +240,7 @@ div#mr-wplace-area-measure (container, pointer-events: none)
   - 既存 message source と payload 形は維持
 - 未対応/次フェーズ候補:
   - `renderAreaManager()` の巨大化 (UI構築責務分割)
-  - `renderAreaOverlay()` の全再生成コスト最適化 (差分更新 / rAF間引き)
+  - `renderRegionLayer()` の差分更新化 (リージョンDOMの再利用)
   - map-ready source (`mr-wplace-map-instance-captured`) も将来的に定数化候補
 
 ## Mermaid Diagram
@@ -305,7 +319,7 @@ sequenceDiagram
 
     User->>AD: Drag vertex / Click edge
     AD->>Map: unproject → update lngLat
-    AD->>AD: renderAreaOverlay()
+    AD->>AD: renderEditingOverlay() (drag時)
 
     User->>AD: Click Save button
     AD->>AM: postMessage(save-click)
@@ -315,5 +329,5 @@ sequenceDiagram
     AD->>AM: postMessage(edit-response, {snapshot})
     AM->>AM: persist to storage
     AM->>Bridge: postMessage(regions-sync)
-    Bridge->>AD: setAreaRegions() → re-render
+    Bridge->>AD: setAreaRegions() → scheduleAreaOverlayRender()
 ```
