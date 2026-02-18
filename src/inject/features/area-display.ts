@@ -13,9 +13,11 @@ import {
 } from "@/utils/coordinate";
 import {
   DEFAULT_AREA_COLOR,
+  DEFAULT_AREA_NAME_FONT_SIZE_PX,
   DEFAULT_AREA_NAME_DISPLAY_MODE,
   formatPixelArea,
   normalizeAreaColor,
+  normalizeAreaNameFontSizePx,
   normalizeAreaNameDisplayMode,
 } from "@/utils/area-region";
 
@@ -30,10 +32,6 @@ const AREA_REGION_LABEL_LAYER_ID = "mr-wplace-area-regions-label";
 const AREA_EDIT_SOURCE_ID = "mr-wplace-area-edit-source";
 const AREA_EDIT_FILL_LAYER_ID = "mr-wplace-area-edit-fill";
 const AREA_EDIT_LINE_LAYER_ID = "mr-wplace-area-edit-line";
-const AREA_NAME_HIDE_ZOOM_THRESHOLD = 9;
-const AREA_NAME_SCALE_START_ZOOM = 13;
-const AREA_NAME_BASE_FONT_SIZE_PX = 14;
-const AREA_NAME_MIN_FONT_SIZE_PX = 6;
 
 interface LngLat {
   lng: number;
@@ -98,6 +96,7 @@ let editingRegionName = "";
 let editingColor = DEFAULT_AREA_COLOR;
 let areaFillOpacity = DEFAULT_AREA_FILL_OPACITY;
 let areaNameDisplayMode: AreaNameDisplayMode = DEFAULT_AREA_NAME_DISPLAY_MODE;
+let areaNameFontSizePx = DEFAULT_AREA_NAME_FONT_SIZE_PX;
 let editingSaveLabel = "Save";
 let editingCancelLabel = "Cancel";
 let editVertices: LngLat[] = [];
@@ -149,78 +148,17 @@ const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
   };
 };
 
-const rgbToHex = (rgb: { r: number; g: number; b: number }): string => {
-  const toHex = (value: number): string =>
-    Math.min(255, Math.max(0, Math.round(value))).toString(16).padStart(2, "0");
-  return `#${toHex(rgb.r)}${toHex(rgb.g)}${toHex(rgb.b)}`;
-};
+const toHex = (value: number): string =>
+  Math.min(255, Math.max(0, Math.round(value))).toString(16).padStart(2, "0");
 
-const rgbToHsl = (rgb: {
-  r: number;
-  g: number;
-  b: number;
-}): { h: number; s: number; l: number } => {
-  const r = rgb.r / 255;
-  const g = rgb.g / 255;
-  const b = rgb.b / 255;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const l = (max + min) / 2;
-  const delta = max - min;
-  if (delta < Number.EPSILON) return { h: 0, s: 0, l };
-
-  const s = l > 0.5 ? delta / (2 - max - min) : delta / (max + min);
-  let h = 0;
-  if (max === r) h = (g - b) / delta + (g < b ? 6 : 0);
-  else if (max === g) h = (b - r) / delta + 2;
-  else h = (r - g) / delta + 4;
-
-  return { h: h / 6, s, l };
-};
-
-const hslToRgb = (hsl: {
-  h: number;
-  s: number;
-  l: number;
-}): { r: number; g: number; b: number } => {
-  const { h, s, l } = hsl;
-  if (s < Number.EPSILON) {
-    const gray = l * 255;
-    return { r: gray, g: gray, b: gray };
-  }
-
-  const hueToRgb = (p: number, q: number, tRaw: number): number => {
-    let t = tRaw;
-    if (t < 0) t += 1;
-    if (t > 1) t -= 1;
-    if (t < 1 / 6) return p + (q - p) * 6 * t;
-    if (t < 1 / 2) return q;
-    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-    return p;
-  };
-
-  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-  const p = 2 * l - q;
-  return {
-    r: hueToRgb(p, q, h + 1 / 3) * 255,
-    g: hueToRgb(p, q, h) * 255,
-    b: hueToRgb(p, q, h - 1 / 3) * 255,
-  };
-};
-
-const getInvertedLightnessStrokeColor = (hexColor: string): string => {
+const getNeutralLabelHaloColor = (hexColor: string): string => {
   const rgb = hexToRgb(hexColor);
-  if (!rgb) return "#333333";
-  const hsl = rgbToHsl(rgb);
-  const invertedLightness = 1 - hsl.l;
-  const clampedLightness = Math.min(0.62, Math.max(0.18, invertedLightness));
-  return rgbToHex(
-    hslToRgb({
-      h: hsl.h,
-      s: hsl.s,
-      l: clampedLightness,
-    }),
-  );
+  if (!rgb) return "#2b2b2b";
+
+  const luminance =
+    (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
+  const tone = Math.round(28 + Math.min(0.35, luminance) * 64);
+  return `#${toHex(tone)}${toHex(tone)}${toHex(tone)}`;
 };
 
 const getMapContainer = (map: AreaMap): HTMLElement | null => {
@@ -327,13 +265,13 @@ const ensureAreaRegionLayers = (map: AreaMap): void => {
       source: AREA_REGION_SOURCE_ID,
       layout: {
         "text-field": ["get", "name"],
-        "text-size": AREA_NAME_BASE_FONT_SIZE_PX,
+        "text-size": areaNameFontSizePx,
         "text-anchor": "center",
         "text-allow-overlap": false,
       },
       paint: {
         "text-color": "#ffffff",
-        "text-halo-color": ["get", "labelStrokeColor"],
+        "text-halo-color": ["get", "labelHaloColor"],
         "text-halo-width": 1.6,
         "text-halo-blur": 0.2,
       },
@@ -398,7 +336,7 @@ const buildAreaRegionFeatureCollection = (): GeoJsonPolygonFeatureCollection => 
         id: region.id,
         name: region.name,
         color: areaColor,
-        labelStrokeColor: getInvertedLightnessStrokeColor(areaColor),
+        labelHaloColor: getNeutralLabelHaloColor(areaColor),
       },
       geometry: {
         type: "Polygon",
@@ -423,33 +361,8 @@ const applyAreaNameLayerStyle = (map: AreaMap): void => {
   }
 
   map.setLayoutProperty(AREA_REGION_LABEL_LAYER_ID, "visibility", "visible");
-
-  if (areaNameDisplayMode === "always") {
-    map.setLayoutProperty(
-      AREA_REGION_LABEL_LAYER_ID,
-      "text-size",
-      AREA_NAME_BASE_FONT_SIZE_PX,
-    );
-    map.setPaintProperty(AREA_REGION_LABEL_LAYER_ID, "text-opacity", 1);
-    return;
-  }
-
-  map.setLayoutProperty(AREA_REGION_LABEL_LAYER_ID, "text-size", [
-    "interpolate",
-    ["linear"],
-    ["zoom"],
-    AREA_NAME_HIDE_ZOOM_THRESHOLD,
-    AREA_NAME_MIN_FONT_SIZE_PX,
-    AREA_NAME_SCALE_START_ZOOM,
-    AREA_NAME_BASE_FONT_SIZE_PX,
-  ]);
-  map.setPaintProperty(AREA_REGION_LABEL_LAYER_ID, "text-opacity", [
-    "step",
-    ["zoom"],
-    0,
-    AREA_NAME_HIDE_ZOOM_THRESHOLD,
-    1,
-  ]);
+  map.setLayoutProperty(AREA_REGION_LABEL_LAYER_ID, "text-size", areaNameFontSizePx);
+  map.setPaintProperty(AREA_REGION_LABEL_LAYER_ID, "text-opacity", 1);
 };
 
 const syncAreaRegionLayerData = (map: AreaMap): void => {
@@ -1047,12 +960,16 @@ export const setAreaDisplayOptions = (
   if ("nameDisplayMode" in options) {
     areaNameDisplayMode = normalizeAreaNameDisplayMode(options.nameDisplayMode);
   }
+  if ("nameFontSizePx" in options) {
+    areaNameFontSizePx = normalizeAreaNameFontSizePx(options.nameFontSizePx);
+  }
   const map = getMapInstanceFromWplace() as AreaMap | null;
   if (map && areaEnabled) scheduleAreaOverlayRender(map);
 
   console.log("🧑‍🎨 : Area display options updated", {
     opacity: areaFillOpacity,
     nameDisplayMode: areaNameDisplayMode,
+    nameFontSizePx: areaNameFontSizePx,
   });
 };
 

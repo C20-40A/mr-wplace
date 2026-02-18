@@ -1,13 +1,19 @@
 import { t } from "@/i18n/manager";
 import type { AreaNameDisplayMode } from "@/types/area-region";
+import {
+  MAX_AREA_NAME_FONT_SIZE_PX,
+  MIN_AREA_NAME_FONT_SIZE_PX,
+} from "@/utils/area-region";
 
 interface DisplaySettingsDialogDeps {
   fillOpacityPercent: number;
   areaNameDisplayMode: AreaNameDisplayMode;
+  areaNameFontSizePx: number;
   normalizeAreaFillOpacityPercent: (value: number) => number;
   normalizeAreaNameDisplayMode: (value: unknown) => AreaNameDisplayMode;
   updateAreaFillOpacityPercent: (value: number, persist: boolean) => Promise<void>;
   setAreaNameDisplayMode: (mode: AreaNameDisplayMode) => Promise<void>;
+  updateAreaNameFontSizePx: (value: number, persist: boolean) => Promise<void>;
 }
 
 export const showDisplaySettingsDialog = (
@@ -33,8 +39,12 @@ export const showDisplaySettingsDialog = (
           <select id="area-display-name-mode-select" class="select select-sm select-bordered" style="min-width: 12rem;">
             <option value="always">表示する</option>
             <option value="off">表示しない</option>
-            <option value="hide-on-zoom-out">ズームアウト時に隠す</option>
           </select>
+        </label>
+        <label style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem;">
+          <span style="min-width: 6.5rem;">文字サイズ</span>
+          <input id="area-display-name-font-size-input" type="range" class="range range-xs" min="${MIN_AREA_NAME_FONT_SIZE_PX}" max="${MAX_AREA_NAME_FONT_SIZE_PX}" step="1" style="flex: 1;" />
+          <span id="area-display-name-font-size-value" class="tabular-nums" style="width: 3.5rem; text-align: right;"></span>
         </label>
       </div>
 
@@ -56,6 +66,12 @@ export const showDisplaySettingsDialog = (
   const nameModeSelect = modal.querySelector(
     "#area-display-name-mode-select",
   ) as HTMLSelectElement | null;
+  const nameFontSizeInput = modal.querySelector(
+    "#area-display-name-font-size-input",
+  ) as HTMLInputElement | null;
+  const nameFontSizeValue = modal.querySelector(
+    "#area-display-name-font-size-value",
+  ) as HTMLSpanElement | null;
 
   if (opacityInput && opacityValue) {
     opacityInput.value = String(deps.fillOpacityPercent);
@@ -78,6 +94,22 @@ export const showDisplaySettingsDialog = (
     nameModeSelect.addEventListener("change", () => {
       const mode = deps.normalizeAreaNameDisplayMode(nameModeSelect.value);
       void deps.setAreaNameDisplayMode(mode);
+    });
+  }
+
+  if (nameFontSizeInput && nameFontSizeValue) {
+    nameFontSizeInput.value = String(deps.areaNameFontSizePx);
+    nameFontSizeValue.textContent = `${deps.areaNameFontSizePx}px`;
+
+    nameFontSizeInput.addEventListener("input", (event) => {
+      const target = event.target as HTMLInputElement;
+      const next = Number(target.value);
+      nameFontSizeValue.textContent = `${next}px`;
+      void deps.updateAreaNameFontSizePx(next, false);
+    });
+    nameFontSizeInput.addEventListener("change", (event) => {
+      const target = event.target as HTMLInputElement;
+      void deps.updateAreaNameFontSizePx(Number(target.value), true);
     });
   }
 

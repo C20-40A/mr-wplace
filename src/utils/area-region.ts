@@ -6,6 +6,9 @@ import type {
 
 export const DEFAULT_AREA_COLOR = "#0f766e";
 export const DEFAULT_AREA_NAME_DISPLAY_MODE: AreaNameDisplayMode = "always";
+export const DEFAULT_AREA_NAME_FONT_SIZE_PX = 14;
+export const MIN_AREA_NAME_FONT_SIZE_PX = 8;
+export const MAX_AREA_NAME_FONT_SIZE_PX = 32;
 
 export const normalizeAreaColor = (
   value: unknown,
@@ -20,10 +23,17 @@ export const normalizeAreaColor = (
 export const normalizeAreaNameDisplayMode = (
   value: unknown,
 ): AreaNameDisplayMode => {
-  if (value === "always" || value === "off" || value === "hide-on-zoom-out") {
-    return value;
-  }
+  if (value === "always" || value === "off") return value;
   return DEFAULT_AREA_NAME_DISPLAY_MODE;
+};
+
+export const normalizeAreaNameFontSizePx = (value: unknown): number => {
+  if (typeof value !== "number" || !Number.isFinite(value))
+    return DEFAULT_AREA_NAME_FONT_SIZE_PX;
+  return Math.min(
+    MAX_AREA_NAME_FONT_SIZE_PX,
+    Math.max(MIN_AREA_NAME_FONT_SIZE_PX, Math.round(value)),
+  );
 };
 
 export const getAreaBounds = (

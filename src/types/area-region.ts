@@ -26,9 +26,10 @@ export interface AreaRegionEditSnapshot {
   vertices: AreaRegionVertex[];
 }
 
-export type AreaNameDisplayMode = "always" | "off" | "hide-on-zoom-out";
+export type AreaNameDisplayMode = "always" | "off";
 
 export interface AreaDisplayOptions {
   fillOpacityPercent: number;
   nameDisplayMode: AreaNameDisplayMode;
+  nameFontSizePx: number;
 }

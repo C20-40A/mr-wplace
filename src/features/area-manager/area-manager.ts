@@ -14,10 +14,12 @@ import type {
 } from "@/types/area-region";
 import {
   DEFAULT_AREA_COLOR,
+  DEFAULT_AREA_NAME_FONT_SIZE_PX,
   DEFAULT_AREA_NAME_DISPLAY_MODE,
   formatPixelArea,
   getAreaBounds,
   normalizeAreaColor,
+  normalizeAreaNameFontSizePx,
   normalizeAreaNameDisplayMode,
 } from "@/utils/area-region";
 import {
@@ -51,6 +53,7 @@ const AREA_REGION_GROUPS_KEY = "areaRegionGroups_v1";
 const AREA_SYNC_URL_KEY = "mapFilter_areaSyncUrl";
 const AREA_FILL_OPACITY_KEY = "mapFilter_areaFillOpacityPercent";
 const AREA_NAME_DISPLAY_MODE_KEY = "mapFilter_areaNameDisplayMode";
+const AREA_NAME_FONT_SIZE_KEY = "mapFilter_areaNameFontSizePx";
 const AREA_MANAGER_MODAL_ID = "wplace-studio-area-manager-modal";
 const AUTO_AREA_COLOR_GOLDEN_ANGLE = 137.508;
 const DEFAULT_AREA_FILL_OPACITY_PERCENT = 14;
@@ -68,6 +71,7 @@ class AreaManager {
   private areaFillOpacityPercent = DEFAULT_AREA_FILL_OPACITY_PERCENT;
   private areaNameDisplayMode: AreaNameDisplayMode =
     DEFAULT_AREA_NAME_DISPLAY_MODE;
+  private areaNameFontSizePx = DEFAULT_AREA_NAME_FONT_SIZE_PX;
 
   async init() {
     const stored = await storage.get([
@@ -76,6 +80,7 @@ class AreaManager {
       AREA_REGION_GROUPS_KEY,
       AREA_FILL_OPACITY_KEY,
       AREA_NAME_DISPLAY_MODE_KEY,
+      AREA_NAME_FONT_SIZE_KEY,
     ]);
 
     this.areaMeasure = stored[AREA_MEASURE_KEY] ?? false;
@@ -88,6 +93,9 @@ class AreaManager {
     );
     this.areaNameDisplayMode = normalizeAreaNameDisplayMode(
       stored[AREA_NAME_DISPLAY_MODE_KEY],
+    );
+    this.areaNameFontSizePx = normalizeAreaNameFontSizePx(
+      stored[AREA_NAME_FONT_SIZE_KEY],
     );
 
     this.mapReady = getMapInstanceReady();
@@ -150,6 +158,7 @@ class AreaManager {
     return {
       fillOpacityPercent: this.areaFillOpacityPercent,
       nameDisplayMode: this.areaNameDisplayMode,
+      nameFontSizePx: this.areaNameFontSizePx,
     };
   }
 
@@ -784,10 +793,26 @@ class AreaManager {
     this.notifyAreaDisplayOptions();
   }
 
+  private async updateAreaNameFontSizePx(
+    value: number,
+    persist = true,
+  ): Promise<void> {
+    const normalized = normalizeAreaNameFontSizePx(value);
+    if (normalized === this.areaNameFontSizePx && !persist) return;
+
+    this.areaNameFontSizePx = normalized;
+    this.notifyAreaDisplayOptions();
+
+    if (persist) {
+      await storage.set({ [AREA_NAME_FONT_SIZE_KEY]: normalized });
+    }
+  }
+
   private showAreaDisplaySettingsDialog() {
     showDisplaySettingsDialog({
       fillOpacityPercent: this.areaFillOpacityPercent,
       areaNameDisplayMode: this.areaNameDisplayMode,
+      areaNameFontSizePx: this.areaNameFontSizePx,
       normalizeAreaFillOpacityPercent: (value) =>
         this.normalizeAreaFillOpacityPercent(value),
       normalizeAreaNameDisplayMode: (value) =>
@@ -795,6 +820,8 @@ class AreaManager {
       updateAreaFillOpacityPercent: (value, persist) =>
         this.updateAreaFillOpacityPercent(value, persist),
       setAreaNameDisplayMode: (mode) => this.setAreaNameDisplayMode(mode),
+      updateAreaNameFontSizePx: (value, persist) =>
+        this.updateAreaNameFontSizePx(value, persist),
     });
   }
 
