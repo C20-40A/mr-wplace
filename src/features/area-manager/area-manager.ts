@@ -7,6 +7,8 @@ import { storage } from "@/utils/browser-api";
 import { getMapInstanceReady } from "@/states/map-instance-ready";
 import { t } from "@/i18n/manager";
 import type {
+  AreaDisplayOptions,
+  AreaNameDisplayMode,
   AreaRegion,
   AreaRegionEditSnapshot,
   AreaRegionVertex,
@@ -20,9 +22,15 @@ const AREA_MEASURE_KEY = "mapFilter_areaMeasure";
 const AREA_REGIONS_KEY = "areaRegions_v1";
 const AREA_REGION_GROUPS_KEY = "areaRegionGroups_v1";
 const AREA_SYNC_URL_KEY = "mapFilter_areaSyncUrl";
+const AREA_FILL_OPACITY_KEY = "mapFilter_areaFillOpacityPercent";
+const AREA_NAME_CLICK_TO_GOTO_KEY = "mapFilter_areaNameClickToGoto";
+const AREA_NAME_DISPLAY_MODE_KEY = "mapFilter_areaNameDisplayMode";
 const AREA_MANAGER_MODAL_ID = "wplace-studio-area-manager-modal";
 const DEFAULT_AREA_COLOR = "#0f766e";
 const AUTO_AREA_COLOR_GOLDEN_ANGLE = 137.508;
+const DEFAULT_AREA_FILL_OPACITY_PERCENT = 14;
+const DEFAULT_AREA_NAME_CLICK_TO_GOTO = true;
+const DEFAULT_AREA_NAME_DISPLAY_MODE: AreaNameDisplayMode = "always";
 
 interface AreaRegionGroup {
   id: string;
@@ -42,18 +50,34 @@ class AreaManager {
   private areaRequestCounter = 0;
   private mapReady = false;
   private areaMeasure = false;
+  private areaFillOpacityPercent = DEFAULT_AREA_FILL_OPACITY_PERCENT;
+  private areaNameClickToGoto = DEFAULT_AREA_NAME_CLICK_TO_GOTO;
+  private areaNameDisplayMode: AreaNameDisplayMode =
+    DEFAULT_AREA_NAME_DISPLAY_MODE;
 
   async init() {
     const stored = await storage.get([
       AREA_MEASURE_KEY,
       AREA_REGIONS_KEY,
       AREA_REGION_GROUPS_KEY,
+      AREA_FILL_OPACITY_KEY,
+      AREA_NAME_CLICK_TO_GOTO_KEY,
+      AREA_NAME_DISPLAY_MODE_KEY,
     ]);
 
     this.areaMeasure = stored[AREA_MEASURE_KEY] ?? false;
     this.areaRegions = this.normalizeAreaRegions(stored[AREA_REGIONS_KEY]);
     this.areaRegionGroups = this.normalizeAreaRegionGroups(
       stored[AREA_REGION_GROUPS_KEY],
+    );
+    this.areaFillOpacityPercent = this.normalizeAreaFillOpacityPercent(
+      stored[AREA_FILL_OPACITY_KEY],
+    );
+    this.areaNameClickToGoto = this.normalizeAreaNameClickToGoto(
+      stored[AREA_NAME_CLICK_TO_GOTO_KEY],
+    );
+    this.areaNameDisplayMode = this.normalizeAreaNameDisplayMode(
+      stored[AREA_NAME_DISPLAY_MODE_KEY],
     );
 
     this.mapReady = getMapInstanceReady();
@@ -88,6 +112,7 @@ class AreaManager {
   private syncMapDependentState() {
     this.notifyAreaMeasure();
     this.notifyAreaRegions();
+    this.notifyAreaDisplayOptions();
   }
 
   async setAreaMeasureEnabled(enabled: boolean) {
@@ -123,6 +148,24 @@ class AreaManager {
       {
         source: "mr-wplace-area-regions-sync",
         regions: this.areaRegions,
+      },
+      "*",
+    );
+  }
+
+  private getAreaDisplayOptions(): AreaDisplayOptions {
+    return {
+      fillOpacityPercent: this.areaFillOpacityPercent,
+      nameClickToGoto: this.areaNameClickToGoto,
+      nameDisplayMode: this.areaNameDisplayMode,
+    };
+  }
+
+  private notifyAreaDisplayOptions() {
+    window.postMessage(
+      {
+        source: "mr-wplace-area-display-options-update",
+        options: this.getAreaDisplayOptions(),
       },
       "*",
     );
@@ -259,6 +302,27 @@ class AreaManager {
     const normalized = value.trim();
     if (!/^#([0-9a-fA-F]{6})$/.test(normalized)) return fallback;
     return normalized.toLowerCase();
+  }
+
+  private normalizeAreaFillOpacityPercent(value: unknown): number {
+    if (typeof value !== "number" || !Number.isFinite(value))
+      return DEFAULT_AREA_FILL_OPACITY_PERCENT;
+    return Math.min(100, Math.max(0, Math.round(value)));
+  }
+
+  private normalizeAreaNameClickToGoto(value: unknown): boolean {
+    return typeof value === "boolean" ? value : DEFAULT_AREA_NAME_CLICK_TO_GOTO;
+  }
+
+  private normalizeAreaNameDisplayMode(value: unknown): AreaNameDisplayMode {
+    if (
+      value === "always" ||
+      value === "off" ||
+      value === "hide-on-zoom-out"
+    ) {
+      return value;
+    }
+    return DEFAULT_AREA_NAME_DISPLAY_MODE;
   }
 
   private hueDistance(a: number, b: number): number {
@@ -1159,6 +1223,132 @@ class AreaManager {
     modal.showModal();
   }
 
+  private async updateAreaFillOpacityPercent(
+    value: number,
+    persist = true,
+  ): Promise<void> {
+    const normalized = this.normalizeAreaFillOpacityPercent(value);
+    if (normalized === this.areaFillOpacityPercent && !persist) return;
+
+    this.areaFillOpacityPercent = normalized;
+    this.notifyAreaDisplayOptions();
+
+    if (persist) {
+      await storage.set({ [AREA_FILL_OPACITY_KEY]: normalized });
+    }
+  }
+
+  private async setAreaNameClickToGoto(enabled: boolean): Promise<void> {
+    if (enabled === this.areaNameClickToGoto) return;
+    this.areaNameClickToGoto = enabled;
+    await storage.set({ [AREA_NAME_CLICK_TO_GOTO_KEY]: enabled });
+    this.notifyAreaDisplayOptions();
+  }
+
+  private async setAreaNameDisplayMode(mode: AreaNameDisplayMode): Promise<void> {
+    if (mode === this.areaNameDisplayMode) return;
+    this.areaNameDisplayMode = mode;
+    await storage.set({ [AREA_NAME_DISPLAY_MODE_KEY]: mode });
+    this.notifyAreaDisplayOptions();
+  }
+
+  private showAreaDisplaySettingsDialog() {
+    const modal = document.createElement("dialog");
+    modal.className = "modal";
+    modal.innerHTML = `
+      <div class="modal-box" style="max-width: 27rem; display: flex; flex-direction: column; gap: 0.8rem;">
+        <h3 class="font-bold text-lg">表示設定</h3>
+
+        <div style="padding: 0.8rem; border: 1px solid oklch(var(--bc) / 0.2); border-radius: 8px;">
+          <label style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem;">
+            <span style="min-width: 6.5rem;">エリア透明度</span>
+            <input id="area-display-opacity-input" type="range" class="range range-xs" min="0" max="100" step="1" style="flex: 1;" />
+            <span id="area-display-opacity-value" class="tabular-nums" style="width: 3rem; text-align: right;"></span>
+          </label>
+        </div>
+
+        <div style="padding: 0.8rem; border: 1px solid oklch(var(--bc) / 0.2); border-radius: 8px; display: flex; flex-direction: column; gap: 0.7rem;">
+          <label style="display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; font-size: 0.9rem;">
+            <span>マップ上の名前クリックで移動</span>
+            <input id="area-display-name-click-toggle" type="checkbox" class="toggle toggle-sm" />
+          </label>
+          <label style="display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; font-size: 0.9rem;">
+            <span>エリア名表示</span>
+            <select id="area-display-name-mode-select" class="select select-sm select-bordered" style="min-width: 12rem;">
+              <option value="always">表示する</option>
+              <option value="off">表示しない</option>
+              <option value="hide-on-zoom-out">ズームアウト時に隠す</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="modal-action">
+          <button id="area-display-settings-close-btn" class="btn btn-outline btn-sm">${t`${"close"}`}</button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+      </form>
+    `;
+
+    const opacityInput = modal.querySelector(
+      "#area-display-opacity-input",
+    ) as HTMLInputElement | null;
+    const opacityValue = modal.querySelector(
+      "#area-display-opacity-value",
+    ) as HTMLSpanElement | null;
+    const nameClickToggle = modal.querySelector(
+      "#area-display-name-click-toggle",
+    ) as HTMLInputElement | null;
+    const nameModeSelect = modal.querySelector(
+      "#area-display-name-mode-select",
+    ) as HTMLSelectElement | null;
+
+    if (opacityInput && opacityValue) {
+      opacityInput.value = String(this.areaFillOpacityPercent);
+      opacityValue.textContent = `${this.areaFillOpacityPercent}%`;
+
+      opacityInput.addEventListener("input", (event) => {
+        const target = event.target as HTMLInputElement;
+        const next = this.normalizeAreaFillOpacityPercent(Number(target.value));
+        opacityValue.textContent = `${next}%`;
+        void this.updateAreaFillOpacityPercent(next, false);
+      });
+      opacityInput.addEventListener("change", (event) => {
+        const target = event.target as HTMLInputElement;
+        void this.updateAreaFillOpacityPercent(Number(target.value), true);
+      });
+    }
+
+    if (nameClickToggle) {
+      nameClickToggle.checked = this.areaNameClickToGoto;
+      nameClickToggle.addEventListener("change", () => {
+        void this.setAreaNameClickToGoto(nameClickToggle.checked);
+      });
+    }
+
+    if (nameModeSelect) {
+      nameModeSelect.value = this.areaNameDisplayMode;
+      nameModeSelect.addEventListener("change", () => {
+        const mode = this.normalizeAreaNameDisplayMode(nameModeSelect.value);
+        void this.setAreaNameDisplayMode(mode);
+      });
+    }
+
+    modal
+      .querySelector("#area-display-settings-close-btn")
+      ?.addEventListener("click", () => {
+        modal.close();
+      });
+
+    modal.addEventListener("close", () => {
+      modal.remove();
+    });
+
+    document.body.appendChild(modal);
+    modal.showModal();
+  }
+
   private renderAreaManager() {
     const container = this.areaManagerModal?.container;
     if (!container) return;
@@ -1206,6 +1396,13 @@ class AreaManager {
         const name = document.createElement("div");
         name.className = "font-semibold text-base leading-tight truncate";
         name.style.maxWidth = "14rem";
+        name.style.cursor = this.mapReady ? "pointer" : "default";
+        if (this.mapReady) {
+          name.title = t`${"map_filter_area_goto"}`;
+          name.addEventListener("click", () => {
+            this.gotoAreaRegionGroup(group.id);
+          });
+        }
         name.textContent = `🔗 ${group.name}`;
 
         const renameButton = document.createElement("button");
@@ -1340,6 +1537,13 @@ class AreaManager {
         const name = document.createElement("div");
         name.className = "font-semibold text-base leading-tight truncate";
         name.style.maxWidth = "14rem";
+        name.style.cursor = this.mapReady ? "pointer" : "default";
+        if (this.mapReady) {
+          name.title = t`${"map_filter_area_goto"}`;
+          name.addEventListener("click", () => {
+            this.gotoAreaRegion(region.id);
+          });
+        }
         name.textContent = region.name;
 
         const renameButton = document.createElement("button");
@@ -1479,14 +1683,28 @@ class AreaManager {
       this.showAreaGroupComposeDialog();
     });
 
+    const settingsButton = document.createElement("button");
+    settingsButton.className = "btn btn-outline btn-sm btn-circle";
+    settingsButton.title = "表示設定";
+    settingsButton.style.marginLeft = "auto";
+    settingsButton.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" style="width: 16px; height: 16px;">
+        <path d="m370-80-16-128q-13-5-24.5-12T307-236l-119 50-85-146 103-78q-2-14-2-30t2-30L103-548l85-146 119 50q11-9 22.5-16t24.5-12l16-128h220l16 128q13 5 24.5 12t22.5 16l119-50 85 146-103 78q2 14 2 30t-2 30l103 78-85 146-119-50q-11 9-22.5 16T606-208L590-80H370Zm110-280q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35Z"/>
+      </svg>
+    `;
+    settingsButton.addEventListener("click", () => {
+      this.showAreaDisplaySettingsDialog();
+    });
+
     const actionRow = document.createElement("div");
-    actionRow.className = "flex items-center gap-2 mt-1 flex-wrap";
+    actionRow.className = "flex items-center gap-2 flex-wrap";
     actionRow.appendChild(addButton);
     actionRow.appendChild(importExportButton);
     actionRow.appendChild(composeGroupButton);
+    actionRow.appendChild(settingsButton);
 
-    root.appendChild(list);
     root.appendChild(actionRow);
+    root.appendChild(list);
 
     container.appendChild(root);
   }

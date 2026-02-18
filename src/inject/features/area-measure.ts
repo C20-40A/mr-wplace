@@ -1,4 +1,6 @@
 import type {
+  AreaDisplayOptions,
+  AreaNameDisplayMode,
   AreaRegion,
   AreaRegionEditSnapshot,
   AreaRegionVertex,
@@ -12,6 +14,9 @@ import {
 const AREA_CONTAINER_ID = "mr-wplace-area-measure";
 const AREA_SVG_NS = "http://www.w3.org/2000/svg";
 const MAP_UPDATE_EVENTS = ["move", "zoom", "rotate", "pitch", "resize"];
+const DEFAULT_AREA_FILL_OPACITY = 0.14;
+const DEFAULT_AREA_NAME_DISPLAY_MODE: AreaNameDisplayMode = "always";
+const AREA_NAME_HIDE_ZOOM_THRESHOLD = 9;
 
 interface LngLat {
   lng: number;
@@ -25,6 +30,7 @@ interface ScreenPoint {
 
 interface AreaMap {
   getCenter: () => LngLat;
+  getZoom?: () => number;
   project: (lngLat: LngLat | [number, number]) => ScreenPoint;
   unproject: (point: ScreenPoint | [number, number]) => LngLat;
   getContainer?: () => HTMLElement;
@@ -63,6 +69,9 @@ let editMode = false;
 let editingRegionId: string | null = null;
 let editingRegionName = "";
 let editingColor = "#0f766e";
+let areaFillOpacity = DEFAULT_AREA_FILL_OPACITY;
+let areaNameDisplayMode: AreaNameDisplayMode = DEFAULT_AREA_NAME_DISPLAY_MODE;
+let areaNameClickToGoto = true;
 let editingSaveLabel = "Save";
 let editingCancelLabel = "Cancel";
 let editVertices: LngLat[] = [];
@@ -99,6 +108,32 @@ const normalizeHexColor = (value: unknown, fallback = "#0f766e"): string => {
   const normalized = value.trim();
   if (!/^#([0-9a-fA-F]{6})$/.test(normalized)) return fallback;
   return normalized.toLowerCase();
+};
+
+const normalizeFillOpacityPercent = (value: unknown): number => {
+  if (typeof value !== "number" || !Number.isFinite(value))
+    return DEFAULT_AREA_FILL_OPACITY;
+  return Math.min(1, Math.max(0, value / 100));
+};
+
+const normalizeAreaNameDisplayMode = (value: unknown): AreaNameDisplayMode => {
+  if (
+    value === "always" ||
+    value === "off" ||
+    value === "hide-on-zoom-out"
+  ) {
+    return value;
+  }
+  return DEFAULT_AREA_NAME_DISPLAY_MODE;
+};
+
+const shouldRenderAreaNames = (map: AreaMap): boolean => {
+  if (areaNameDisplayMode === "off") return false;
+  if (areaNameDisplayMode === "always") return true;
+
+  const zoom = map.getZoom?.();
+  if (typeof zoom !== "number" || !Number.isFinite(zoom)) return true;
+  return zoom >= AREA_NAME_HIDE_ZOOM_THRESHOLD;
 };
 
 const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
@@ -435,7 +470,10 @@ const createRegionPolygon = (
     "points",
     points.map((point) => `${point.x},${point.y}`).join(" "),
   );
-  polygon.setAttribute("fill", `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.14)`);
+  polygon.setAttribute(
+    "fill",
+    `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${areaFillOpacity})`,
+  );
   polygon.setAttribute("stroke", color);
   polygon.setAttribute("stroke-width", "3");
   polygon.setAttribute("vector-effect", "non-scaling-stroke");
@@ -483,6 +521,7 @@ const renderAreaOverlay = (map: AreaMap): void => {
     regionsLayer.removeChild(regionsLayer.firstChild);
   while (regionLabelLayer.firstChild)
     regionLabelLayer.removeChild(regionLabelLayer.firstChild);
+  const showAreaNames = shouldRenderAreaNames(map);
 
   for (const region of areaRegions) {
     if (!region.visible) continue;
@@ -493,28 +532,56 @@ const renderAreaOverlay = (map: AreaMap): void => {
 
     regionsLayer.appendChild(rendered.polygon);
 
-    const regionColor = normalizeHexColor(region.color);
-    const textColor = getContrastTextColor(regionColor);
+    if (showAreaNames) {
+      const regionColor = normalizeHexColor(region.color);
+      const textColor = getContrastTextColor(regionColor);
 
-    const label = document.createElement("div");
-    label.style.cssText = `
-      position: absolute;
-      transform: translate(-50%, -50%);
-      border-radius: 9999px;
-      padding: 2px 8px;
-      font-size: 11px;
-      font-weight: 700;
-      line-height: 1.2;
-      white-space: nowrap;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-      pointer-events: none;
-    `;
-    label.style.background = regionColor;
-    label.style.color = textColor;
-    label.style.left = `${rendered.center.x}px`;
-    label.style.top = `${rendered.center.y}px`;
-    label.textContent = region.name;
-    regionLabelLayer.appendChild(label);
+      const label = document.createElement("div");
+      label.style.cssText = `
+        position: absolute;
+        transform: translate(-50%, -50%);
+        border-radius: 9999px;
+        padding: 2px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1.2;
+        white-space: nowrap;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+        pointer-events: none;
+      `;
+      label.style.background = regionColor;
+      label.style.color = textColor;
+      label.style.left = `${rendered.center.x}px`;
+      label.style.top = `${rendered.center.y}px`;
+      if (areaNameClickToGoto) {
+        label.style.pointerEvents = "auto";
+        label.style.cursor = "pointer";
+        label.title = "移動";
+        label.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const centerLng =
+            region.vertices.reduce((sum, v) => sum + v.lng, 0) /
+            region.vertices.length;
+          const centerLat =
+            region.vertices.reduce((sum, v) => sum + v.lat, 0) /
+            region.vertices.length;
+          window.postMessage(
+            {
+              source: "mr-wplace-area-region-goto",
+              regionId: region.id,
+              lng: centerLng,
+              lat: centerLat,
+            },
+            "*",
+          );
+        });
+      } else {
+        label.style.pointerEvents = "none";
+      }
+      label.textContent = region.name;
+      regionLabelLayer.appendChild(label);
+    }
   }
 
   if (!editMode || !editPolygon) {
@@ -721,6 +788,29 @@ export const setAreaRegions = (regions: AreaRegion[]): void => {
   if (map && areaEnabled) renderAreaOverlay(map);
 
   console.log("🧑‍🎨 : Area regions synced:", areaRegions.length);
+};
+
+export const setAreaDisplayOptions = (
+  options: Partial<AreaDisplayOptions> = {},
+): void => {
+  if ("fillOpacityPercent" in options) {
+    areaFillOpacity = normalizeFillOpacityPercent(options.fillOpacityPercent);
+  }
+  if ("nameDisplayMode" in options) {
+    areaNameDisplayMode = normalizeAreaNameDisplayMode(options.nameDisplayMode);
+  }
+  if ("nameClickToGoto" in options) {
+    areaNameClickToGoto = options.nameClickToGoto !== false;
+  }
+
+  const map = getMapInstanceFromWplace() as AreaMap | null;
+  if (map && areaEnabled) renderAreaOverlay(map);
+
+  console.log("🧑‍🎨 : Area display options updated", {
+    opacity: areaFillOpacity,
+    nameDisplayMode: areaNameDisplayMode,
+    nameClickToGoto: areaNameClickToGoto,
+  });
 };
 
 export const startAreaRegionEdit = (

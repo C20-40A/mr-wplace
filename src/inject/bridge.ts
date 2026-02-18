@@ -57,6 +57,7 @@ import {
 import { setGridDisplayEnabled } from "./features/grid-display";
 import { setScaleDisplayEnabled } from "./features/scale-display";
 import {
+  setAreaDisplayOptions,
   setAreaMeasureEnabled,
   setAreaRegions,
   startAreaRegionEdit,
@@ -256,6 +257,8 @@ const messageHandlers: Record<string, MessageHandler> = {
     setScaleDisplayEnabled(data.visible),
   "mr-wplace-area-measure-update": (data) => setAreaMeasureEnabled(data.visible),
   "mr-wplace-area-regions-sync": (data) => setAreaRegions(data.regions || []),
+  "mr-wplace-area-display-options-update": (data) =>
+    setAreaDisplayOptions(data.options || {}),
   "mr-wplace-area-region-edit-start": (data) => startAreaRegionEdit(data),
   "mr-wplace-area-region-edit-stop": () => stopAreaRegionEdit(),
   "mr-wplace-area-region-edit-request": (data) =>
