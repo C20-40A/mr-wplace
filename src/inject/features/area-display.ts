@@ -1,11 +1,11 @@
 import type {
   AreaDisplayOptions,
-  AreaRegionBounds,
   AreaNameDisplayMode,
   AreaRegion,
   AreaRegionEditSnapshot,
   AreaRegionVertex,
 } from "@/types/area-region";
+import { AREA_MESSAGE_SOURCE } from "@/constants/area-message";
 import {
   getMapInstanceFromWplace,
   handleMapInstanceAreaGoto,
@@ -14,12 +14,19 @@ import {
   calculateGeodesicAreaSquareMeters,
   calculatePixelAreaSquare,
 } from "@/utils/coordinate";
+import {
+  DEFAULT_AREA_COLOR,
+  DEFAULT_AREA_NAME_DISPLAY_MODE,
+  formatPixelArea,
+  getAreaBounds,
+  normalizeAreaColor,
+  normalizeAreaNameDisplayMode,
+} from "@/utils/area-region";
 
 const AREA_CONTAINER_ID = "mr-wplace-area-measure";
 const AREA_SVG_NS = "http://www.w3.org/2000/svg";
 const MAP_UPDATE_EVENTS = ["move", "zoom", "rotate", "pitch", "resize"];
 const DEFAULT_AREA_FILL_OPACITY = 0.14;
-const DEFAULT_AREA_NAME_DISPLAY_MODE: AreaNameDisplayMode = "always";
 const AREA_NAME_HIDE_ZOOM_THRESHOLD = 9;
 
 interface LngLat {
@@ -72,7 +79,7 @@ let areaRegions: AreaRegion[] = [];
 let editMode = false;
 let editingRegionId: string | null = null;
 let editingRegionName = "";
-let editingColor = "#0f766e";
+let editingColor = DEFAULT_AREA_COLOR;
 let areaFillOpacity = DEFAULT_AREA_FILL_OPACITY;
 let areaNameDisplayMode: AreaNameDisplayMode = DEFAULT_AREA_NAME_DISPLAY_MODE;
 let areaNameClickToGoto = true;
@@ -107,46 +114,12 @@ const sanitizeVertices = (vertices: unknown): LngLat[] => {
 const cloneVertices = (vertices: LngLat[]): AreaRegionVertex[] =>
   vertices.map((vertex) => ({ lng: vertex.lng, lat: vertex.lat }));
 
-const getAreaBounds = (
-  vertices: AreaRegionVertex[],
-): AreaRegionBounds | null => {
-  if (vertices.length === 0) return null;
-
-  let west = vertices[0].lng;
-  let east = vertices[0].lng;
-  let south = vertices[0].lat;
-  let north = vertices[0].lat;
-
-  for (const vertex of vertices) {
-    if (!isFiniteNumber(vertex.lng) || !isFiniteNumber(vertex.lat)) continue;
-    if (vertex.lng < west) west = vertex.lng;
-    if (vertex.lng > east) east = vertex.lng;
-    if (vertex.lat < south) south = vertex.lat;
-    if (vertex.lat > north) north = vertex.lat;
-  }
-
-  return { west, south, east, north };
-};
-
-const normalizeHexColor = (value: unknown, fallback = "#0f766e"): string => {
-  if (typeof value !== "string") return fallback;
-  const normalized = value.trim();
-  if (!/^#([0-9a-fA-F]{6})$/.test(normalized)) return fallback;
-  return normalized.toLowerCase();
-};
-
 const normalizeFillOpacityPercent = (value: unknown): number => {
   if (typeof value !== "number" || !Number.isFinite(value))
     return DEFAULT_AREA_FILL_OPACITY;
   return Math.min(1, Math.max(0, value / 100));
 };
 
-const normalizeAreaNameDisplayMode = (value: unknown): AreaNameDisplayMode => {
-  if (value === "always" || value === "off" || value === "hide-on-zoom-out") {
-    return value;
-  }
-  return DEFAULT_AREA_NAME_DISPLAY_MODE;
-};
 
 const shouldRenderAreaNames = (map: AreaMap): boolean => {
   if (areaNameDisplayMode === "off") return false;
@@ -303,7 +276,7 @@ const createOverlay = (): HTMLDivElement => {
   saveButton.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
-    window.postMessage({ source: "mr-wplace-area-region-save-click" }, "*");
+    window.postMessage({ source: AREA_MESSAGE_SOURCE.REGION_SAVE_CLICK }, "*");
   });
 
   const cancelButton = document.createElement("button");
@@ -322,7 +295,7 @@ const createOverlay = (): HTMLDivElement => {
   cancelButton.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
-    window.postMessage({ source: "mr-wplace-area-region-cancel-click" }, "*");
+    window.postMessage({ source: AREA_MESSAGE_SOURCE.REGION_CANCEL_CLICK }, "*");
   });
 
   actionLayer.appendChild(saveButton);
@@ -358,11 +331,6 @@ const formatArea = (areaM2: number): string => {
   if (km2 < 10) return `${km2.toFixed(3)} km²`;
   if (km2 < 100) return `${km2.toFixed(2)} km²`;
   return `${km2.toFixed(1)} km²`;
-};
-
-const formatPixelArea = (pixelArea: number): string => {
-  const rounded = Math.round(pixelArea);
-  return `${rounded.toLocaleString()} px²`;
 };
 
 const ensureDefaultVertices = (map: AreaMap): void => {
@@ -491,7 +459,7 @@ const createRegionPolygon = (
   if (points.length < 3) return null;
 
   const polygon = document.createElementNS(AREA_SVG_NS, "polygon");
-  const color = normalizeHexColor(region.color);
+  const color = normalizeAreaColor(region.color);
   const rgb = hexToRgb(color) ?? { r: 15, g: 118, b: 110 };
   polygon.setAttribute(
     "points",
@@ -561,7 +529,7 @@ const renderAreaOverlay = (map: AreaMap): void => {
     regionsLayer.appendChild(rendered.polygon);
 
     if (showAreaNames) {
-      const regionColor = normalizeHexColor(region.color);
+      const regionColor = normalizeAreaColor(region.color);
       const textColor = getContrastTextColor(regionColor);
 
       const label = document.createElement("div");
@@ -620,7 +588,7 @@ const renderAreaOverlay = (map: AreaMap): void => {
   }
 
   const points = editVertices.map((lngLat) => map.project(lngLat));
-  const editingHex = normalizeHexColor(editingColor);
+  const editingHex = normalizeAreaColor(editingColor);
   const editingRgb = hexToRgb(editingHex) ?? { r: 15, g: 118, b: 110 };
   editPolygon.style.display = "block";
   editPolygon.setAttribute(
@@ -791,7 +759,7 @@ export const setAreaRegions = (regions: AreaRegion[]): void => {
           return {
             id: String((region as { id?: unknown }).id ?? ""),
             name: String((region as { name?: unknown }).name ?? ""),
-            color: normalizeHexColor((region as { color?: unknown }).color),
+            color: normalizeAreaColor((region as { color?: unknown }).color),
             visible:
               typeof (region as { visible?: unknown }).visible === "boolean"
                 ? Boolean((region as { visible?: unknown }).visible)
@@ -853,7 +821,7 @@ export const startAreaRegionEdit = (
   editMode = true;
   editingRegionId = payload.regionId ?? null;
   editingRegionName = payload.name?.trim() || "";
-  editingColor = normalizeHexColor(payload.color);
+  editingColor = normalizeAreaColor(payload.color);
   editingSaveLabel = payload.saveLabel?.trim() || "Save";
   editingCancelLabel = payload.cancelLabel?.trim() || "Cancel";
   if (saveEditButton) saveEditButton.textContent = editingSaveLabel;
@@ -873,7 +841,7 @@ export const stopAreaRegionEdit = (): void => {
   editMode = false;
   editingRegionId = null;
   editingRegionName = "";
-  editingColor = "#0f766e";
+  editingColor = DEFAULT_AREA_COLOR;
   editVertices = [];
 
   const map = getMapInstanceFromWplace() as AreaMap | null;
@@ -889,7 +857,7 @@ export const respondAreaRegionEditRequest = (data: {
 
   window.postMessage(
     {
-      source: "mr-wplace-area-region-edit-response",
+      source: AREA_MESSAGE_SOURCE.REGION_EDIT_RESPONSE,
       requestId: data.requestId,
       result: getCurrentEditSnapshot(),
     },

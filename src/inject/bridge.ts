@@ -65,6 +65,7 @@ import {
   stopAreaRegionEdit,
   respondAreaRegionEditRequest,
 } from "./features/area-display";
+import { AREA_MESSAGE_SOURCE } from "@/constants/area-message";
 
 type MessageHandler = (data: any) => void | Promise<void>;
 const LOCATION_KEY = "location";
@@ -236,7 +237,7 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-processed": handleProcessedBlob,
   "mr-wplace-map-flyto": (data: { lat: number; lng: number; zoom: number }) =>
     handleMapInstanceFlyTo({ lat: data.lat, lng: data.lng, zoom: data.zoom }),
-  "mr-wplace-area-region-goto": (data: {
+  [AREA_MESSAGE_SOURCE.REGION_GOTO]: (data: {
     regionId: string;
     lng: number;
     lat: number;
@@ -262,14 +263,14 @@ const messageHandlers: Record<string, MessageHandler> = {
     setGridDisplayEnabled(data.visible),
   "mr-wplace-area-display-update": (data) =>
     setScaleDisplayEnabled(data.visible),
-  "mr-wplace-area-measure-update": (data) =>
+  [AREA_MESSAGE_SOURCE.MEASURE_UPDATE]: (data) =>
     setAreaMeasureEnabled(data.visible),
-  "mr-wplace-area-regions-sync": (data) => setAreaRegions(data.regions || []),
-  "mr-wplace-area-display-options-update": (data) =>
+  [AREA_MESSAGE_SOURCE.REGIONS_SYNC]: (data) => setAreaRegions(data.regions || []),
+  [AREA_MESSAGE_SOURCE.DISPLAY_OPTIONS_UPDATE]: (data) =>
     setAreaDisplayOptions(data.options || {}),
-  "mr-wplace-area-region-edit-start": (data) => startAreaRegionEdit(data),
-  "mr-wplace-area-region-edit-stop": () => stopAreaRegionEdit(),
-  "mr-wplace-area-region-edit-request": (data) =>
+  [AREA_MESSAGE_SOURCE.REGION_EDIT_START]: (data) => startAreaRegionEdit(data),
+  [AREA_MESSAGE_SOURCE.REGION_EDIT_STOP]: () => stopAreaRegionEdit(),
+  [AREA_MESSAGE_SOURCE.REGION_EDIT_REQUEST]: (data) =>
     respondAreaRegionEditRequest(data),
   "mr-wplace-background-color-update": (data) =>
     changeBackgroundColor(data.color),

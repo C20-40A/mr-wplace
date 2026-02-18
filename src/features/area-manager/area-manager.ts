@@ -6,14 +6,22 @@ import {
 import { storage } from "@/utils/browser-api";
 import { getMapInstanceReady } from "@/states/map-instance-ready";
 import { t } from "@/i18n/manager";
+import { AREA_MESSAGE_SOURCE } from "@/constants/area-message";
 import type {
   AreaDisplayOptions,
-  AreaRegionBounds,
   AreaNameDisplayMode,
   AreaRegion,
   AreaRegionEditSnapshot,
   AreaRegionVertex,
 } from "@/types/area-region";
+import {
+  DEFAULT_AREA_COLOR,
+  DEFAULT_AREA_NAME_DISPLAY_MODE,
+  formatPixelArea,
+  getAreaBounds,
+  normalizeAreaColor,
+  normalizeAreaNameDisplayMode,
+} from "@/utils/area-region";
 import {
   calculateGeodesicAreaSquareMeters,
   calculatePixelAreaSquare,
@@ -37,11 +45,9 @@ const AREA_FILL_OPACITY_KEY = "mapFilter_areaFillOpacityPercent";
 const AREA_NAME_CLICK_TO_GOTO_KEY = "mapFilter_areaNameClickToGoto";
 const AREA_NAME_DISPLAY_MODE_KEY = "mapFilter_areaNameDisplayMode";
 const AREA_MANAGER_MODAL_ID = "wplace-studio-area-manager-modal";
-const DEFAULT_AREA_COLOR = "#0f766e";
 const AUTO_AREA_COLOR_GOLDEN_ANGLE = 137.508;
 const DEFAULT_AREA_FILL_OPACITY_PERCENT = 14;
 const DEFAULT_AREA_NAME_CLICK_TO_GOTO = true;
-const DEFAULT_AREA_NAME_DISPLAY_MODE: AreaNameDisplayMode = "always";
 
 class AreaManager {
   private areaManagerModal: ModalElements | null = null;
@@ -79,7 +85,7 @@ class AreaManager {
     this.areaNameClickToGoto = this.normalizeAreaNameClickToGoto(
       stored[AREA_NAME_CLICK_TO_GOTO_KEY],
     );
-    this.areaNameDisplayMode = this.normalizeAreaNameDisplayMode(
+    this.areaNameDisplayMode = normalizeAreaNameDisplayMode(
       stored[AREA_NAME_DISPLAY_MODE_KEY],
     );
 
@@ -99,12 +105,12 @@ class AreaManager {
         return;
       }
 
-      if (event.data.source === "mr-wplace-area-region-save-click") {
+      if (event.data.source === AREA_MESSAGE_SOURCE.REGION_SAVE_CLICK) {
         this.saveAreaEditing();
         return;
       }
 
-      if (event.data.source === "mr-wplace-area-region-cancel-click") {
+      if (event.data.source === AREA_MESSAGE_SOURCE.REGION_CANCEL_CLICK) {
         this.stopAreaEditing();
       }
     });
@@ -139,7 +145,7 @@ class AreaManager {
   private notifyAreaMeasure() {
     window.postMessage(
       {
-        source: "mr-wplace-area-measure-update",
+        source: AREA_MESSAGE_SOURCE.MEASURE_UPDATE,
         visible: this.areaMeasure,
       },
       "*",
@@ -149,7 +155,7 @@ class AreaManager {
   private notifyAreaRegions() {
     window.postMessage(
       {
-        source: "mr-wplace-area-regions-sync",
+        source: AREA_MESSAGE_SOURCE.REGIONS_SYNC,
         regions: this.areaRegions,
       },
       "*",
@@ -167,7 +173,7 @@ class AreaManager {
   private notifyAreaDisplayOptions() {
     window.postMessage(
       {
-        source: "mr-wplace-area-display-options-update",
+        source: AREA_MESSAGE_SOURCE.DISPLAY_OPTIONS_UPDATE,
         options: this.getAreaDisplayOptions(),
       },
       "*",
@@ -194,7 +200,7 @@ class AreaManager {
         typeof candidate.name === "string" && candidate.name.trim()
           ? candidate.name.trim()
           : this.createDefaultAreaName(normalized.length + 1);
-      const color = this.normalizeAreaColor(
+      const color = normalizeAreaColor(
         candidate.color,
         this.createDistinctAreaColor(normalized),
       );
@@ -297,16 +303,6 @@ class AreaManager {
       : fallback;
   }
 
-  private normalizeAreaColor(
-    value: unknown,
-    fallback = DEFAULT_AREA_COLOR,
-  ): string {
-    if (typeof value !== "string") return fallback;
-    const normalized = value.trim();
-    if (!/^#([0-9a-fA-F]{6})$/.test(normalized)) return fallback;
-    return normalized.toLowerCase();
-  }
-
   private normalizeAreaFillOpacityPercent(value: unknown): number {
     if (typeof value !== "number" || !Number.isFinite(value))
       return DEFAULT_AREA_FILL_OPACITY_PERCENT;
@@ -317,24 +313,13 @@ class AreaManager {
     return typeof value === "boolean" ? value : DEFAULT_AREA_NAME_CLICK_TO_GOTO;
   }
 
-  private normalizeAreaNameDisplayMode(value: unknown): AreaNameDisplayMode {
-    if (
-      value === "always" ||
-      value === "off" ||
-      value === "hide-on-zoom-out"
-    ) {
-      return value;
-    }
-    return DEFAULT_AREA_NAME_DISPLAY_MODE;
-  }
-
   private hueDistance(a: number, b: number): number {
     const diff = Math.abs(a - b);
     return Math.min(diff, 360 - diff);
   }
 
   private getColorHue(color: string): number | null {
-    const normalized = this.normalizeAreaColor(color, "");
+    const normalized = normalizeAreaColor(color, "");
     if (!normalized) return null;
 
     const r = Number.parseInt(normalized.slice(1, 3), 16) / 255;
@@ -431,11 +416,6 @@ class AreaManager {
     if (km2 >= 100) return `${km2.toFixed(1)} km²`;
     if (km2 >= 10) return `${km2.toFixed(2)} km²`;
     return `${km2.toFixed(3)} km²`;
-  }
-
-  private formatPixelArea(pixelArea: number): string {
-    const rounded = Math.round(pixelArea);
-    return `${rounded.toLocaleString()} px²`;
   }
 
   private createAreaRegionId(): string {
@@ -846,7 +826,7 @@ class AreaManager {
       normalizeAreaFillOpacityPercent: (value) =>
         this.normalizeAreaFillOpacityPercent(value),
       normalizeAreaNameDisplayMode: (value) =>
-        this.normalizeAreaNameDisplayMode(value),
+        normalizeAreaNameDisplayMode(value),
       updateAreaFillOpacityPercent: (value, persist) =>
         this.updateAreaFillOpacityPercent(value, persist),
       setAreaNameClickToGoto: (enabled) => this.setAreaNameClickToGoto(enabled),
@@ -960,7 +940,7 @@ class AreaManager {
             : totalKm2 >= 10
               ? `${totalKm2.toFixed(2)} km²`
               : `${totalKm2.toFixed(3)} km²`;
-        area.innerHTML = `${km2Text} <span style="opacity: 0.7; font-size: 0.9em;">(${this.formatPixelArea(totalPx)})</span>`;
+        area.innerHTML = `${km2Text} <span style="opacity: 0.7; font-size: 0.9em;">(${formatPixelArea(totalPx)})</span>`;
 
         const actionRow = document.createElement("div");
         actionRow.className = "flex items-center justify-between gap-2 pt-1";
@@ -976,7 +956,7 @@ class AreaManager {
         colorInput.title = t`${"map_filter_area_color"}`;
         colorInput.addEventListener("input", (event) => {
           const target = event.target as HTMLInputElement;
-          card.style.borderColor = this.normalizeAreaColor(
+          card.style.borderColor = normalizeAreaColor(
             target.value,
             mainColor,
           );
@@ -1086,7 +1066,7 @@ class AreaManager {
         const area = document.createElement("span");
         area.className = "text-sm opacity-80";
         const areaKm2 = this.formatAreaKm2(region.vertices);
-        const pixelArea = this.formatPixelArea(
+        const pixelArea = formatPixelArea(
           calculatePixelAreaSquare(region.vertices),
         );
         area.innerHTML = `${areaKm2} <span style="opacity: 0.7; font-size: 0.9em;">(${pixelArea})</span>`;
@@ -1098,7 +1078,7 @@ class AreaManager {
         colorInput.title = t`${"map_filter_area_color"}`;
         colorInput.addEventListener("input", (event) => {
           const target = event.target as HTMLInputElement;
-          card.style.borderColor = this.normalizeAreaColor(
+          card.style.borderColor = normalizeAreaColor(
             target.value,
             region.color,
           );
@@ -1217,7 +1197,7 @@ class AreaManager {
   private gotoAreaRegion(regionId: string) {
     const target = this.areaRegions.find((region) => region.id === regionId);
     if (!target || target.vertices.length === 0) return;
-    const bounds = this.getAreaBounds(target.vertices);
+    const bounds = getAreaBounds(target.vertices);
 
     const centerLng =
       target.vertices.reduce((sum, v) => sum + v.lng, 0) /
@@ -1228,7 +1208,7 @@ class AreaManager {
 
     window.postMessage(
       {
-        source: "mr-wplace-area-region-goto",
+        source: AREA_MESSAGE_SOURCE.REGION_GOTO,
         regionId,
         lng: centerLng,
         lat: centerLat,
@@ -1246,7 +1226,7 @@ class AreaManager {
 
     const vertices = this.getGroupVertices(group);
     if (vertices.length === 0) return;
-    const bounds = this.getAreaBounds(vertices);
+    const bounds = getAreaBounds(vertices);
 
     const centerLng =
       vertices.reduce((sum, v) => sum + v.lng, 0) / vertices.length;
@@ -1255,7 +1235,7 @@ class AreaManager {
 
     window.postMessage(
       {
-        source: "mr-wplace-area-region-goto",
+        source: AREA_MESSAGE_SOURCE.REGION_GOTO,
         regionId: groupId,
         lng: centerLng,
         lat: centerLat,
@@ -1265,27 +1245,6 @@ class AreaManager {
     );
 
     console.log("🧑‍🎨 : Goto area group:", groupId);
-  }
-
-  private getAreaBounds(
-    vertices: AreaRegionVertex[],
-  ): AreaRegionBounds | null {
-    if (vertices.length === 0) return null;
-
-    let west = vertices[0].lng;
-    let east = vertices[0].lng;
-    let south = vertices[0].lat;
-    let north = vertices[0].lat;
-
-    for (const vertex of vertices) {
-      if (!Number.isFinite(vertex.lng) || !Number.isFinite(vertex.lat)) continue;
-      if (vertex.lng < west) west = vertex.lng;
-      if (vertex.lng > east) east = vertex.lng;
-      if (vertex.lat < south) south = vertex.lat;
-      if (vertex.lat > north) north = vertex.lat;
-    }
-
-    return { west, south, east, north };
   }
 
   private async toggleAreaRegionGroupVisibility(groupId: string) {
@@ -1318,7 +1277,7 @@ class AreaManager {
     const group = this.areaRegionGroups.find((item) => item.id === groupId);
     if (!group) return;
 
-    const color = this.normalizeAreaColor(nextColor);
+    const color = normalizeAreaColor(nextColor);
     const targets = this.getRegionsForGroup(group);
     if (targets.length === 0) return;
     if (targets.every((region) => region.color === color)) return;
@@ -1413,7 +1372,7 @@ class AreaManager {
     const target = this.areaRegions.find((region) => region.id === regionId);
     if (!target) return;
 
-    const color = this.normalizeAreaColor(nextColor);
+    const color = normalizeAreaColor(nextColor);
     if (color === target.color) return;
 
     target.color = color;
@@ -1496,7 +1455,7 @@ class AreaManager {
 
     window.postMessage(
       {
-        source: "mr-wplace-area-region-edit-start",
+        source: AREA_MESSAGE_SOURCE.REGION_EDIT_START,
         regionId: this.editingRegionId,
         name: this.editingRegionName,
         color:
@@ -1519,7 +1478,7 @@ class AreaManager {
     this.editingRegionId = null;
     this.editingRegionName = "";
 
-    window.postMessage({ source: "mr-wplace-area-region-edit-stop" }, "*");
+    window.postMessage({ source: AREA_MESSAGE_SOURCE.REGION_EDIT_STOP }, "*");
 
     if (!skipRender) this.renderAreaManager();
 
@@ -1543,7 +1502,7 @@ class AreaManager {
 
       const handler = (event: MessageEvent) => {
         if (
-          event.data.source !== "mr-wplace-area-region-edit-response" ||
+          event.data.source !== AREA_MESSAGE_SOURCE.REGION_EDIT_RESPONSE ||
           event.data.requestId !== requestId
         ) {
           return;
@@ -1575,7 +1534,7 @@ class AreaManager {
 
       window.postMessage(
         {
-          source: "mr-wplace-area-region-edit-request",
+          source: AREA_MESSAGE_SOURCE.REGION_EDIT_REQUEST,
           requestId,
         },
         "*",
@@ -1667,7 +1626,7 @@ export const areaManagerAPI = {
     await storage.set({ [AREA_MEASURE_KEY]: enabled });
     window.postMessage(
       {
-        source: "mr-wplace-area-measure-update",
+        source: AREA_MESSAGE_SOURCE.MEASURE_UPDATE,
         visible: enabled,
       },
       "*",
