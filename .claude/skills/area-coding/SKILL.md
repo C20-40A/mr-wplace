@@ -123,20 +123,28 @@ inject側の `area-display.ts` がマップ上のSVGオーバーレイ描画・�
 
 ## Inject側: area-display.ts
 
-### 描画構造 (DOM)
+### 描画構造 (DOM + MapLibre Layer)
 
 ```
 div#mr-wplace-area-measure (container, pointer-events: none)
 ├── svg (viewBox=マップサイズ)
-│   ├── g (regionsLayer: 確定リージョンポリゴン群)
-│   └── polygon (editPolygon: 編集中ポリゴン)
+│   └── polygon (editPolygon: 互換用途, 通常は非表示)
 ├── div (edgeHitLayer: エッジクリック用透明hit領域)
-├── div (regionLabelLayer: 確定リージョン名ラベル群)
 ├── div (areaLabel: 編集中の面積表示)
 └── div (editActionLayer: Save/Cancelボタン)
     ├── button (Save)
     └── button (Cancel)
 ```
+
+MapLibre style layer:
+
+- `mr-wplace-area-regions-source` (GeoJSON)
+- `mr-wplace-area-regions-fill` (fill)
+- `mr-wplace-area-regions-line` (line)
+- `mr-wplace-area-regions-label` (symbol)
+- `mr-wplace-area-edit-source` (GeoJSON)
+- `mr-wplace-area-edit-fill` (fill)
+- `mr-wplace-area-edit-line` (line)
 
 ### 描画フロー
 
@@ -144,8 +152,8 @@ div#mr-wplace-area-measure (container, pointer-events: none)
 2. `scheduleAreaOverlayRender(map)` — 描画要求を `requestAnimationFrame` で1フレームに集約
 3. `renderAreaOverlayNow(map)` — 実描画の中心関数
    - SVG viewBox をマップコンテナサイズに合わせる
-   - 確定リージョン: `renderRegionLayer()` でSVGポリゴン + ラベルを再構築
-   - 編集モード: `renderEditingOverlay()` で頂点/UIのみ更新
+   - 確定リージョン: `renderRegionLayer()` で MapLibre source/layer を更新
+   - 編集モード: `renderEditingOverlay()` で edit layer + 頂点UIを更新
 
 ### 頂点編集
 
@@ -186,7 +194,7 @@ div#mr-wplace-area-measure (container, pointer-events: none)
 - inject 側は `chrome.storage` を使えない → content が storage 管理
 - inject 側のモジュール変数 (let) で状態を保持 (クラスではない)
 - `scheduleAreaOverlayRender()` は高頻度イベントの間引き目的。重い処理は `renderAreaOverlayNow()` に集約
-- 確定リージョン名ラベルは表示専用 (マップ上ラベルクリックで移動しない)
+- 確定リージョン名ラベルは `symbol` layer で表示専用 (クリック移動なし)
 - `hide-on-zoom-out` のとき、ラベル文字サイズはズームに応じて段階的に縮小し、しきい値未満で非表示になる
 - 頂点ドラッグ中は `renderEditingOverlay()` を優先し、確定リージョン再生成を避ける
 - 色は `#rrggbb` 6桁hex のみ対応 (`normalizeAreaColor` で検証)
@@ -243,6 +251,18 @@ div#mr-wplace-area-measure (container, pointer-events: none)
 - 結果:
   - map操作時のDOM作成/破棄回数をさらに削減
   - ラベル再描画時のイベント再登録コストを回避
+
+### 2026-02-18 Phase 5 (完了)
+
+- 目的: 3D pitch時の頂点投影破綻を回避
+- 実施:
+  - 確定リージョン描画を SVG から MapLibre `fill/line/symbol` layer に移行
+  - 編集中ポリゴンも MapLibre `fill/line` layer へ移行
+  - 既存DOMは頂点ハンドル・エッジhit・面積ラベル・Save/CancelのUI専用に縮小
+  - disable時に area source/layer を確実に remove する後始末を追加
+- 結果:
+  - 3Dで地平線付近に入った頂点をMapエンジン側のクリップ/投影に委譲可能
+  - `map.project()` 直描画由来の「上に吹き飛ぶ」症状の根本要因を除去
 
 ### Review Result
 

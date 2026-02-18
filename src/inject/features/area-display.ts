@@ -23,14 +23,17 @@ const AREA_CONTAINER_ID = "mr-wplace-area-measure";
 const AREA_SVG_NS = "http://www.w3.org/2000/svg";
 const MAP_UPDATE_EVENTS = ["move", "zoom", "rotate", "pitch", "resize"];
 const DEFAULT_AREA_FILL_OPACITY = 0.14;
+const AREA_REGION_SOURCE_ID = "mr-wplace-area-regions-source";
+const AREA_REGION_FILL_LAYER_ID = "mr-wplace-area-regions-fill";
+const AREA_REGION_LINE_LAYER_ID = "mr-wplace-area-regions-line";
+const AREA_REGION_LABEL_LAYER_ID = "mr-wplace-area-regions-label";
+const AREA_EDIT_SOURCE_ID = "mr-wplace-area-edit-source";
+const AREA_EDIT_FILL_LAYER_ID = "mr-wplace-area-edit-fill";
+const AREA_EDIT_LINE_LAYER_ID = "mr-wplace-area-edit-line";
 const AREA_NAME_HIDE_ZOOM_THRESHOLD = 9;
 const AREA_NAME_SCALE_START_ZOOM = 13;
 const AREA_NAME_BASE_FONT_SIZE_PX = 14;
 const AREA_NAME_MIN_FONT_SIZE_PX = 6;
-const AREA_NAME_BASE_PADDING_X_PX = 8;
-const AREA_NAME_BASE_PADDING_Y_PX = 2;
-const AREA_NAME_MIN_PADDING_X_PX = 4;
-const AREA_NAME_MIN_PADDING_Y_PX = 1;
 
 interface LngLat {
   lng: number;
@@ -48,6 +51,18 @@ interface AreaMap {
   project: (lngLat: LngLat | [number, number]) => ScreenPoint;
   unproject: (point: ScreenPoint | [number, number]) => LngLat;
   getContainer?: () => HTMLElement;
+  getLayer?: (id: string) => unknown;
+  addLayer?: (layer: unknown, beforeId?: string) => void;
+  removeLayer?: (id: string) => void;
+  getSource?: (id: string) => unknown;
+  addSource?: (id: string, source: unknown) => void;
+  removeSource?: (id: string) => void;
+  setPaintProperty?: (layer: string, property: string, value: unknown) => void;
+  setLayoutProperty?: (
+    layer: string,
+    property: string,
+    value: unknown,
+  ) => void;
   on: (event: string, handler: () => void) => void;
   off: (event: string, handler: () => void) => void;
   dragPan?: {
@@ -69,11 +84,9 @@ let areaEnabled = false;
 
 let container: HTMLDivElement | null = null;
 let svg: SVGSVGElement | null = null;
-let regionsLayer: SVGGElement | null = null;
 let editPolygon: SVGPolygonElement | null = null;
 let edgeHitLayer: HTMLDivElement | null = null;
 let areaLabel: HTMLDivElement | null = null;
-let regionLabelLayer: HTMLDivElement | null = null;
 let editActionLayer: HTMLDivElement | null = null;
 let saveEditButton: HTMLButtonElement | null = null;
 let cancelEditButton: HTMLButtonElement | null = null;
@@ -98,8 +111,6 @@ let pointerUpHandler: (() => void) | null = null;
 let cachedMapContainer: HTMLElement | null = null;
 let pendingRenderMap: AreaMap | null = null;
 let renderFrameId: number | null = null;
-const regionPolygonCache = new Map<string, SVGPolygonElement>();
-const regionLabelCache = new Map<string, HTMLDivElement>();
 
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === "number" && Number.isFinite(value);
@@ -127,69 +138,6 @@ const normalizeFillOpacityPercent = (value: unknown): number => {
   return Math.min(1, Math.max(0, value / 100));
 };
 
-
-const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
-
-const getAreaNameRenderStyle = (
-  map: AreaMap,
-): { visible: boolean; fontSizePx: number; paddingX: number; paddingY: number } => {
-  if (areaNameDisplayMode === "off")
-    return {
-      visible: false,
-      fontSizePx: AREA_NAME_BASE_FONT_SIZE_PX,
-      paddingX: AREA_NAME_BASE_PADDING_X_PX,
-      paddingY: AREA_NAME_BASE_PADDING_Y_PX,
-    };
-
-  if (areaNameDisplayMode === "always")
-    return {
-      visible: true,
-      fontSizePx: AREA_NAME_BASE_FONT_SIZE_PX,
-      paddingX: AREA_NAME_BASE_PADDING_X_PX,
-      paddingY: AREA_NAME_BASE_PADDING_Y_PX,
-    };
-
-  const zoom = map.getZoom?.();
-  if (typeof zoom !== "number" || !Number.isFinite(zoom))
-    return {
-      visible: true,
-      fontSizePx: AREA_NAME_BASE_FONT_SIZE_PX,
-      paddingX: AREA_NAME_BASE_PADDING_X_PX,
-      paddingY: AREA_NAME_BASE_PADDING_Y_PX,
-    };
-  if (zoom < AREA_NAME_HIDE_ZOOM_THRESHOLD)
-    return {
-      visible: false,
-      fontSizePx: AREA_NAME_MIN_FONT_SIZE_PX,
-      paddingX: AREA_NAME_MIN_PADDING_X_PX,
-      paddingY: AREA_NAME_MIN_PADDING_Y_PX,
-    };
-
-  if (zoom >= AREA_NAME_SCALE_START_ZOOM)
-    return {
-      visible: true,
-      fontSizePx: AREA_NAME_BASE_FONT_SIZE_PX,
-      paddingX: AREA_NAME_BASE_PADDING_X_PX,
-      paddingY: AREA_NAME_BASE_PADDING_Y_PX,
-    };
-
-  const zoomProgress = clamp01(
-    (zoom - AREA_NAME_HIDE_ZOOM_THRESHOLD) /
-      (AREA_NAME_SCALE_START_ZOOM - AREA_NAME_HIDE_ZOOM_THRESHOLD),
-  );
-  const fontSizePx =
-    AREA_NAME_MIN_FONT_SIZE_PX +
-    (AREA_NAME_BASE_FONT_SIZE_PX - AREA_NAME_MIN_FONT_SIZE_PX) * zoomProgress;
-  const paddingX =
-    AREA_NAME_MIN_PADDING_X_PX +
-    (AREA_NAME_BASE_PADDING_X_PX - AREA_NAME_MIN_PADDING_X_PX) * zoomProgress;
-  const paddingY =
-    AREA_NAME_MIN_PADDING_Y_PX +
-    (AREA_NAME_BASE_PADDING_Y_PX - AREA_NAME_MIN_PADDING_Y_PX) * zoomProgress;
-
-  return { visible: true, fontSizePx, paddingX, paddingY };
-};
-
 const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
   const matched = /^#([0-9a-fA-F]{6})$/.exec(hex);
   if (!matched) return null;
@@ -201,11 +149,78 @@ const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
   };
 };
 
-const getContrastTextColor = (bgHex: string): string => {
-  const rgb = hexToRgb(bgHex);
-  if (!rgb) return "#000";
-  const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
-  return luminance > 0.5 ? "#000" : "#fff";
+const rgbToHex = (rgb: { r: number; g: number; b: number }): string => {
+  const toHex = (value: number): string =>
+    Math.min(255, Math.max(0, Math.round(value))).toString(16).padStart(2, "0");
+  return `#${toHex(rgb.r)}${toHex(rgb.g)}${toHex(rgb.b)}`;
+};
+
+const rgbToHsl = (rgb: {
+  r: number;
+  g: number;
+  b: number;
+}): { h: number; s: number; l: number } => {
+  const r = rgb.r / 255;
+  const g = rgb.g / 255;
+  const b = rgb.b / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const delta = max - min;
+  if (delta < Number.EPSILON) return { h: 0, s: 0, l };
+
+  const s = l > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+  let h = 0;
+  if (max === r) h = (g - b) / delta + (g < b ? 6 : 0);
+  else if (max === g) h = (b - r) / delta + 2;
+  else h = (r - g) / delta + 4;
+
+  return { h: h / 6, s, l };
+};
+
+const hslToRgb = (hsl: {
+  h: number;
+  s: number;
+  l: number;
+}): { r: number; g: number; b: number } => {
+  const { h, s, l } = hsl;
+  if (s < Number.EPSILON) {
+    const gray = l * 255;
+    return { r: gray, g: gray, b: gray };
+  }
+
+  const hueToRgb = (p: number, q: number, tRaw: number): number => {
+    let t = tRaw;
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  return {
+    r: hueToRgb(p, q, h + 1 / 3) * 255,
+    g: hueToRgb(p, q, h) * 255,
+    b: hueToRgb(p, q, h - 1 / 3) * 255,
+  };
+};
+
+const getInvertedLightnessStrokeColor = (hexColor: string): string => {
+  const rgb = hexToRgb(hexColor);
+  if (!rgb) return "#333333";
+  const hsl = rgbToHsl(rgb);
+  const invertedLightness = 1 - hsl.l;
+  const clampedLightness = Math.min(0.62, Math.max(0.18, invertedLightness));
+  return rgbToHex(
+    hslToRgb({
+      h: hsl.h,
+      s: hsl.s,
+      l: clampedLightness,
+    }),
+  );
 };
 
 const getMapContainer = (map: AreaMap): HTMLElement | null => {
@@ -225,27 +240,277 @@ const resolveMapContainer = (map: AreaMap): HTMLElement | null => {
   return cachedMapContainer;
 };
 
-const getRegionRenderKey = (region: AreaRegion, index: number): string => {
-  const trimmedId = region.id.trim();
-  if (trimmedId) return trimmedId;
-  return `__area_region_${index}`;
+interface GeoJsonPolygonFeatureCollection {
+  type: "FeatureCollection";
+  features: Array<{
+    type: "Feature";
+    properties: Record<string, unknown>;
+    geometry: {
+      type: "Polygon";
+      coordinates: number[][][];
+    };
+  }>;
+}
+
+const EMPTY_POLYGON_FEATURE_COLLECTION: GeoJsonPolygonFeatureCollection = {
+  type: "FeatureCollection",
+  features: [],
 };
 
-const createRegionLabelElement = (): HTMLDivElement => {
-  const label = document.createElement("div");
-  label.style.cssText = `
-    position: absolute;
-    transform: translate(-50%, -50%);
-    border-radius: 9999px;
-    padding: 2px 8px;
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 1.2;
-    white-space: nowrap;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-    pointer-events: none;
-  `;
-  return label;
+const toClosedPolygonRing = (vertices: LngLat[]): number[][] | null => {
+  if (vertices.length < 3) return null;
+  const ring = vertices.map((vertex) => [vertex.lng, vertex.lat]);
+  const first = ring[0];
+  const last = ring[ring.length - 1];
+  if (first[0] !== last[0] || first[1] !== last[1]) ring.push([...first]);
+  return ring;
+};
+
+const getGeoJsonSource = (
+  map: AreaMap,
+  sourceId: string,
+): { setData?: (data: unknown) => void } | null => {
+  const source = map.getSource?.(sourceId);
+  if (!source || typeof source !== "object") return null;
+  return source as { setData?: (data: unknown) => void };
+};
+
+const ensureGeoJsonSource = (
+  map: AreaMap,
+  sourceId: string,
+  data: GeoJsonPolygonFeatureCollection,
+): void => {
+  if (!map.addSource || !map.getSource) return;
+  if (map.getSource(sourceId)) return;
+  map.addSource(sourceId, {
+    type: "geojson",
+    data,
+  });
+};
+
+const ensureAreaRegionLayers = (map: AreaMap): void => {
+  ensureGeoJsonSource(map, AREA_REGION_SOURCE_ID, EMPTY_POLYGON_FEATURE_COLLECTION);
+  if (!map.addLayer || !map.getLayer) return;
+
+  if (!map.getLayer(AREA_REGION_FILL_LAYER_ID)) {
+    map.addLayer({
+      id: AREA_REGION_FILL_LAYER_ID,
+      type: "fill",
+      source: AREA_REGION_SOURCE_ID,
+      paint: {
+        "fill-color": ["get", "color"],
+        "fill-opacity": areaFillOpacity,
+      },
+    });
+  }
+
+  if (!map.getLayer(AREA_REGION_LINE_LAYER_ID)) {
+    map.addLayer({
+      id: AREA_REGION_LINE_LAYER_ID,
+      type: "line",
+      source: AREA_REGION_SOURCE_ID,
+      paint: {
+        "line-color": ["get", "color"],
+        "line-width": 3,
+      },
+      layout: {
+        "line-cap": "round",
+        "line-join": "round",
+      },
+    });
+  }
+
+  if (!map.getLayer(AREA_REGION_LABEL_LAYER_ID)) {
+    map.addLayer({
+      id: AREA_REGION_LABEL_LAYER_ID,
+      type: "symbol",
+      source: AREA_REGION_SOURCE_ID,
+      layout: {
+        "text-field": ["get", "name"],
+        "text-size": AREA_NAME_BASE_FONT_SIZE_PX,
+        "text-anchor": "center",
+        "text-allow-overlap": false,
+      },
+      paint: {
+        "text-color": "#ffffff",
+        "text-halo-color": ["get", "labelStrokeColor"],
+        "text-halo-width": 1.6,
+        "text-halo-blur": 0.2,
+      },
+    });
+  }
+};
+
+const ensureAreaEditLayers = (map: AreaMap): void => {
+  ensureGeoJsonSource(map, AREA_EDIT_SOURCE_ID, EMPTY_POLYGON_FEATURE_COLLECTION);
+  if (!map.addLayer || !map.getLayer) return;
+
+  if (!map.getLayer(AREA_EDIT_FILL_LAYER_ID)) {
+    map.addLayer({
+      id: AREA_EDIT_FILL_LAYER_ID,
+      type: "fill",
+      source: AREA_EDIT_SOURCE_ID,
+      paint: {
+        "fill-color": ["get", "color"],
+        "fill-opacity": 0.2,
+      },
+    });
+  }
+
+  if (!map.getLayer(AREA_EDIT_LINE_LAYER_ID)) {
+    map.addLayer({
+      id: AREA_EDIT_LINE_LAYER_ID,
+      type: "line",
+      source: AREA_EDIT_SOURCE_ID,
+      paint: {
+        "line-color": ["get", "color"],
+        "line-width": 3,
+      },
+      layout: {
+        "line-cap": "round",
+        "line-join": "round",
+      },
+    });
+  }
+};
+
+const setGeoJsonSourceData = (
+  map: AreaMap,
+  sourceId: string,
+  data: GeoJsonPolygonFeatureCollection,
+): void => {
+  const source = getGeoJsonSource(map, sourceId);
+  source?.setData?.(data);
+};
+
+const buildAreaRegionFeatureCollection = (): GeoJsonPolygonFeatureCollection => {
+  const features: GeoJsonPolygonFeatureCollection["features"] = [];
+
+  for (const region of areaRegions) {
+    if (!region.visible) continue;
+    if (editMode && editingRegionId && region.id === editingRegionId) continue;
+    const ring = toClosedPolygonRing(region.vertices);
+    if (!ring) continue;
+    const areaColor = normalizeAreaColor(region.color);
+    features.push({
+      type: "Feature",
+      properties: {
+        id: region.id,
+        name: region.name,
+        color: areaColor,
+        labelStrokeColor: getInvertedLightnessStrokeColor(areaColor),
+      },
+      geometry: {
+        type: "Polygon",
+        coordinates: [ring],
+      },
+    });
+  }
+
+  return {
+    type: "FeatureCollection",
+    features,
+  };
+};
+
+const applyAreaNameLayerStyle = (map: AreaMap): void => {
+  if (!map.getLayer?.(AREA_REGION_LABEL_LAYER_ID)) return;
+  if (!map.setLayoutProperty || !map.setPaintProperty) return;
+
+  if (areaNameDisplayMode === "off") {
+    map.setLayoutProperty(AREA_REGION_LABEL_LAYER_ID, "visibility", "none");
+    return;
+  }
+
+  map.setLayoutProperty(AREA_REGION_LABEL_LAYER_ID, "visibility", "visible");
+
+  if (areaNameDisplayMode === "always") {
+    map.setLayoutProperty(
+      AREA_REGION_LABEL_LAYER_ID,
+      "text-size",
+      AREA_NAME_BASE_FONT_SIZE_PX,
+    );
+    map.setPaintProperty(AREA_REGION_LABEL_LAYER_ID, "text-opacity", 1);
+    return;
+  }
+
+  map.setLayoutProperty(AREA_REGION_LABEL_LAYER_ID, "text-size", [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    AREA_NAME_HIDE_ZOOM_THRESHOLD,
+    AREA_NAME_MIN_FONT_SIZE_PX,
+    AREA_NAME_SCALE_START_ZOOM,
+    AREA_NAME_BASE_FONT_SIZE_PX,
+  ]);
+  map.setPaintProperty(AREA_REGION_LABEL_LAYER_ID, "text-opacity", [
+    "step",
+    ["zoom"],
+    0,
+    AREA_NAME_HIDE_ZOOM_THRESHOLD,
+    1,
+  ]);
+};
+
+const syncAreaRegionLayerData = (map: AreaMap): void => {
+  ensureAreaRegionLayers(map);
+  setGeoJsonSourceData(map, AREA_REGION_SOURCE_ID, buildAreaRegionFeatureCollection());
+  if (map.setPaintProperty && map.getLayer?.(AREA_REGION_FILL_LAYER_ID)) {
+    map.setPaintProperty(AREA_REGION_FILL_LAYER_ID, "fill-opacity", areaFillOpacity);
+  }
+  applyAreaNameLayerStyle(map);
+};
+
+const syncAreaEditLayerData = (map: AreaMap): void => {
+  ensureAreaEditLayers(map);
+  if (!editMode || editVertices.length < 3) {
+    setGeoJsonSourceData(map, AREA_EDIT_SOURCE_ID, EMPTY_POLYGON_FEATURE_COLLECTION);
+    return;
+  }
+
+  const ring = toClosedPolygonRing(editVertices);
+  if (!ring) {
+    setGeoJsonSourceData(map, AREA_EDIT_SOURCE_ID, EMPTY_POLYGON_FEATURE_COLLECTION);
+    return;
+  }
+
+  setGeoJsonSourceData(map, AREA_EDIT_SOURCE_ID, {
+    type: "FeatureCollection",
+    features: [
+      {
+        type: "Feature",
+        properties: {
+          color: normalizeAreaColor(editingColor),
+        },
+        geometry: {
+          type: "Polygon",
+          coordinates: [ring],
+        },
+      },
+    ],
+  });
+};
+
+const safeRemoveLayer = (map: AreaMap, layerId: string): void => {
+  if (!map.getLayer || !map.removeLayer) return;
+  if (!map.getLayer(layerId)) return;
+  map.removeLayer(layerId);
+};
+
+const safeRemoveSource = (map: AreaMap, sourceId: string): void => {
+  if (!map.getSource || !map.removeSource) return;
+  if (!map.getSource(sourceId)) return;
+  map.removeSource(sourceId);
+};
+
+const removeAreaMapLayers = (map: AreaMap): void => {
+  safeRemoveLayer(map, AREA_EDIT_LINE_LAYER_ID);
+  safeRemoveLayer(map, AREA_EDIT_FILL_LAYER_ID);
+  safeRemoveLayer(map, AREA_REGION_LABEL_LAYER_ID);
+  safeRemoveLayer(map, AREA_REGION_LINE_LAYER_ID);
+  safeRemoveLayer(map, AREA_REGION_FILL_LAYER_ID);
+  safeRemoveSource(map, AREA_EDIT_SOURCE_ID);
+  safeRemoveSource(map, AREA_REGION_SOURCE_ID);
 };
 
 const createVertexElement = (): HTMLDivElement => {
@@ -284,8 +549,6 @@ const createOverlay = (): HTMLDivElement => {
   svgRoot.setAttribute("viewBox", "0 0 1 1");
   svgRoot.style.pointerEvents = "none";
 
-  const regionsGroup = document.createElementNS(AREA_SVG_NS, "g");
-
   const editingPolygon = document.createElementNS(AREA_SVG_NS, "polygon");
   editingPolygon.setAttribute("fill", "rgba(15, 118, 110, 0.2)");
   editingPolygon.setAttribute("stroke", "rgba(15, 118, 110, 0.95)");
@@ -294,7 +557,6 @@ const createOverlay = (): HTMLDivElement => {
   editingPolygon.style.pointerEvents = "none";
   editingPolygon.style.display = "none";
 
-  svgRoot.appendChild(regionsGroup);
   svgRoot.appendChild(editingPolygon);
 
   const hitLayer = document.createElement("div");
@@ -325,14 +587,6 @@ const createOverlay = (): HTMLDivElement => {
     pointer-events: none;
     z-index: 2;
     display: none;
-  `;
-
-  const labelsLayer = document.createElement("div");
-  labelsLayer.style.cssText = `
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 2;
   `;
 
   const actionLayer = document.createElement("div");
@@ -388,15 +642,12 @@ const createOverlay = (): HTMLDivElement => {
 
   root.appendChild(svgRoot);
   root.appendChild(hitLayer);
-  root.appendChild(labelsLayer);
   root.appendChild(label);
   root.appendChild(actionLayer);
 
   svg = svgRoot;
-  regionsLayer = regionsGroup;
   editPolygon = editingPolygon;
   edgeHitLayer = hitLayer;
-  regionLabelLayer = labelsLayer;
   areaLabel = label;
   editActionLayer = actionLayer;
   saveEditButton = saveButton;
@@ -534,32 +785,6 @@ const insertVertexOnEdge = (map: AreaMap, edgeIndex: number): void => {
   renderEditingOverlay(map);
 };
 
-const createRegionPolygon = (
-  map: AreaMap,
-  region: AreaRegion,
-): {
-  pointsAttr: string;
-  center: ScreenPoint;
-  fill: string;
-  stroke: string;
-} | null => {
-  if (region.vertices.length < 3) return null;
-  const points = region.vertices.map((vertex) => map.project(vertex));
-  if (points.length < 3) return null;
-
-  const color = normalizeAreaColor(region.color);
-  const rgb = hexToRgb(color) ?? { r: 15, g: 118, b: 110 };
-  const pointsAttr = points.map((point) => `${point.x},${point.y}`).join(" ");
-  const fill = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${areaFillOpacity})`;
-
-  const center = {
-    x: points.reduce((sum, point) => sum + point.x, 0) / points.length,
-    y: points.reduce((sum, point) => sum + point.y, 0) / points.length,
-  };
-
-  return { pointsAttr, center, fill, stroke: color };
-};
-
 const clearEditingUI = (): void => {
   if (editPolygon) editPolygon.style.display = "none";
   if (areaLabel) areaLabel.style.display = "none";
@@ -569,100 +794,28 @@ const clearEditingUI = (): void => {
 };
 
 const renderRegionLayer = (map: AreaMap): void => {
-  if (!regionsLayer || !regionLabelLayer) return;
-
-  const areaNameRenderStyle = getAreaNameRenderStyle(map);
-  // Keep layer transparent to map interactions; labels are display-only.
-  regionLabelLayer.style.pointerEvents = "none";
-  const activeRegionKeys = new Set<string>();
-
-  for (const [index, region] of areaRegions.entries()) {
-    if (!region.visible) continue;
-    if (editMode && editingRegionId && region.id === editingRegionId) continue;
-
-    const regionRenderKey = getRegionRenderKey(region, index);
-    const projected = createRegionPolygon(map, region);
-    if (!projected) continue;
-    activeRegionKeys.add(regionRenderKey);
-
-    let polygon = regionPolygonCache.get(regionRenderKey);
-    if (!polygon) {
-      polygon = document.createElementNS(AREA_SVG_NS, "polygon");
-      polygon.setAttribute("stroke-width", "3");
-      polygon.setAttribute("vector-effect", "non-scaling-stroke");
-      polygon.style.pointerEvents = "none";
-      regionPolygonCache.set(regionRenderKey, polygon);
-    }
-    polygon.setAttribute("points", projected.pointsAttr);
-    polygon.setAttribute("fill", projected.fill);
-    polygon.setAttribute("stroke", projected.stroke);
-    regionsLayer.appendChild(polygon);
-
-    if (!areaNameRenderStyle.visible) continue;
-
-    let label = regionLabelCache.get(regionRenderKey);
-    if (!label) {
-      label = createRegionLabelElement();
-      regionLabelCache.set(regionRenderKey, label);
-    }
-    label.style.background = projected.stroke;
-    label.style.color = getContrastTextColor(projected.stroke);
-    label.style.left = `${projected.center.x}px`;
-    label.style.top = `${projected.center.y}px`;
-    label.style.fontSize = `${areaNameRenderStyle.fontSizePx.toFixed(1)}px`;
-    label.style.padding = `${areaNameRenderStyle.paddingY.toFixed(1)}px ${areaNameRenderStyle.paddingX.toFixed(1)}px`;
-    label.style.pointerEvents = "none";
-    label.style.cursor = "default";
-    label.removeAttribute("title");
-    label.textContent = region.name;
-    regionLabelLayer.appendChild(label);
-  }
-
-  for (const [regionRenderKey, polygon] of regionPolygonCache) {
-    if (activeRegionKeys.has(regionRenderKey)) continue;
-    polygon.remove();
-    regionPolygonCache.delete(regionRenderKey);
-  }
-
-  for (const [regionRenderKey, label] of regionLabelCache) {
-    if (!activeRegionKeys.has(regionRenderKey)) {
-      label.remove();
-      regionLabelCache.delete(regionRenderKey);
-      continue;
-    }
-    if (!areaNameRenderStyle.visible) label.remove();
-  }
+  syncAreaRegionLayerData(map);
 };
 
 const renderEditingOverlay = (map: AreaMap): void => {
-  if (!editPolygon || !edgeHitLayer || !areaLabel || !container) return;
-  if (!editMode || !editPolygon) {
+  if (!edgeHitLayer || !areaLabel || !container) return;
+  if (!editMode) {
+    syncAreaEditLayerData(map);
     clearEditingUI();
     return;
   }
 
   ensureDefaultVertices(map);
   if (editVertices.length < 3) {
+    syncAreaEditLayerData(map);
     clearEditingUI();
     return;
   }
 
+  syncAreaEditLayerData(map);
   const points = editVertices.map((lngLat) => map.project(lngLat));
   const editingHex = normalizeAreaColor(editingColor);
-  const editingRgb = hexToRgb(editingHex) ?? { r: 15, g: 118, b: 110 };
-  editPolygon.style.display = "block";
-  editPolygon.setAttribute(
-    "fill",
-    `rgba(${editingRgb.r}, ${editingRgb.g}, ${editingRgb.b}, 0.2)`,
-  );
-  editPolygon.setAttribute(
-    "stroke",
-    `rgba(${editingRgb.r}, ${editingRgb.g}, ${editingRgb.b}, 0.95)`,
-  );
-  editPolygon.setAttribute(
-    "points",
-    points.map((point) => `${point.x},${point.y}`).join(" "),
-  );
+  if (editPolygon) editPolygon.style.display = "none";
 
   syncVertexElements();
   for (let i = 0; i < vertexElements.length; i++) {
@@ -748,14 +901,7 @@ const renderEditingOverlay = (map: AreaMap): void => {
 };
 
 const renderAreaOverlayNow = (map: AreaMap): void => {
-  if (
-    !svg ||
-    !regionsLayer ||
-    !edgeHitLayer ||
-    !areaLabel ||
-    !regionLabelLayer ||
-    !container
-  ) {
+  if (!svg || !edgeHitLayer || !areaLabel || !container) {
     return;
   }
 
@@ -829,23 +975,20 @@ const removeAreaOverlay = (map: AreaMap): void => {
 
   stopVertexDrag();
   clearVertexElements();
+  removeAreaMapLayers(map);
 
   container?.remove();
   container = null;
   svg = null;
-  regionsLayer = null;
   editPolygon = null;
   edgeHitLayer = null;
   areaLabel = null;
-  regionLabelLayer = null;
   editActionLayer = null;
   saveEditButton = null;
   cancelEditButton = null;
   activeMap = null;
   activeDragIndex = null;
   cachedMapContainer = null;
-  regionPolygonCache.clear();
-  regionLabelCache.clear();
 
   console.log("🧑‍🎨 : Area measure removed");
 };
