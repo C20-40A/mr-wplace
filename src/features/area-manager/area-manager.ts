@@ -6,12 +6,10 @@ import {
 import { storage } from "@/utils/browser-api";
 import { getMapInstanceReady } from "@/states/map-instance-ready";
 import { t } from "@/i18n/manager";
-import { AREA_MESSAGE_SOURCE } from "@/constants/area-message";
 import type {
   AreaDisplayOptions,
   AreaNameDisplayMode,
   AreaRegion,
-  AreaRegionEditSnapshot,
   AreaRegionVertex,
 } from "@/types/area-region";
 import {
@@ -29,6 +27,16 @@ import {
 import { showImportExportDialog } from "./modules/import-export/dialog";
 import { showGroupComposeDialog } from "./modules/group/dialog";
 import { showDisplaySettingsDialog } from "./modules/display-settings/dialog";
+import {
+  bindAreaManagerMessageHandlers,
+  postAreaDisplayOptionsUpdate,
+  postAreaMeasureUpdate,
+  postAreaRegionEditStart,
+  postAreaRegionEditStop,
+  postAreaRegionGoto,
+  postAreaRegionsSync,
+  requestAreaEditSnapshot,
+} from "./modules/inject-gateway";
 import {
   applyImportedAreaData as applyImportedAreaDataUsecase,
   downloadAreaRegions as downloadAreaRegionsUsecase,
@@ -51,12 +59,12 @@ const DEFAULT_AREA_NAME_CLICK_TO_GOTO = true;
 
 class AreaManager {
   private areaManagerModal: ModalElements | null = null;
+  private releaseMessageHandlers: (() => void) | null = null;
   private areaRegions: AreaRegion[] = [];
   private areaRegionGroups: AreaRegionGroup[] = [];
   private areaEditMode = false;
   private editingRegionId: string | null = null;
   private editingRegionName = "";
-  private areaRequestCounter = 0;
   private mapReady = false;
   private areaMeasure = false;
   private areaFillOpacityPercent = DEFAULT_AREA_FILL_OPACITY_PERCENT;
@@ -94,26 +102,21 @@ class AreaManager {
 
     this.notifyAreaRegions();
 
-    window.addEventListener("message", (event: MessageEvent) => {
-      if (
-        event.data.source === "mr-wplace-map-instance-captured" &&
-        event.data.ready
-      ) {
-        this.mapReady = true;
-        this.syncMapDependentState();
-        this.renderAreaManager();
-        return;
-      }
-
-      if (event.data.source === AREA_MESSAGE_SOURCE.REGION_SAVE_CLICK) {
-        this.saveAreaEditing();
-        return;
-      }
-
-      if (event.data.source === AREA_MESSAGE_SOURCE.REGION_CANCEL_CLICK) {
-        this.stopAreaEditing();
-      }
-    });
+    if (!this.releaseMessageHandlers) {
+      this.releaseMessageHandlers = bindAreaManagerMessageHandlers({
+        onMapReady: () => {
+          this.mapReady = true;
+          this.syncMapDependentState();
+          this.renderAreaManager();
+        },
+        onSaveClick: () => {
+          void this.saveAreaEditing();
+        },
+        onCancelClick: () => {
+          void this.stopAreaEditing();
+        },
+      });
+    }
 
     console.log("🧑‍🎨 : Area manager initialized");
   }
@@ -143,23 +146,11 @@ class AreaManager {
   }
 
   private notifyAreaMeasure() {
-    window.postMessage(
-      {
-        source: AREA_MESSAGE_SOURCE.MEASURE_UPDATE,
-        visible: this.areaMeasure,
-      },
-      "*",
-    );
+    postAreaMeasureUpdate(this.areaMeasure);
   }
 
   private notifyAreaRegions() {
-    window.postMessage(
-      {
-        source: AREA_MESSAGE_SOURCE.REGIONS_SYNC,
-        regions: this.areaRegions,
-      },
-      "*",
-    );
+    postAreaRegionsSync(this.areaRegions);
   }
 
   private getAreaDisplayOptions(): AreaDisplayOptions {
@@ -171,13 +162,7 @@ class AreaManager {
   }
 
   private notifyAreaDisplayOptions() {
-    window.postMessage(
-      {
-        source: AREA_MESSAGE_SOURCE.DISPLAY_OPTIONS_UPDATE,
-        options: this.getAreaDisplayOptions(),
-      },
-      "*",
-    );
+    postAreaDisplayOptionsUpdate(this.getAreaDisplayOptions());
   }
 
   private normalizeAreaRegions(value: unknown): AreaRegion[] {
@@ -1206,16 +1191,12 @@ class AreaManager {
       target.vertices.reduce((sum, v) => sum + v.lat, 0) /
       target.vertices.length;
 
-    window.postMessage(
-      {
-        source: AREA_MESSAGE_SOURCE.REGION_GOTO,
-        regionId,
-        lng: centerLng,
-        lat: centerLat,
-        bounds,
-      },
-      "*",
-    );
+    postAreaRegionGoto({
+      regionId,
+      lng: centerLng,
+      lat: centerLat,
+      bounds,
+    });
 
     console.log("🧑‍🎨 : Goto area region:", regionId);
   }
@@ -1233,16 +1214,12 @@ class AreaManager {
     const centerLat =
       vertices.reduce((sum, v) => sum + v.lat, 0) / vertices.length;
 
-    window.postMessage(
-      {
-        source: AREA_MESSAGE_SOURCE.REGION_GOTO,
-        regionId: groupId,
-        lng: centerLng,
-        lat: centerLat,
-        bounds,
-      },
-      "*",
-    );
+    postAreaRegionGoto({
+      regionId: groupId,
+      lng: centerLng,
+      lat: centerLat,
+      bounds,
+    });
 
     console.log("🧑‍🎨 : Goto area group:", groupId);
   }
@@ -1453,20 +1430,14 @@ class AreaManager {
 
     if (closeModal) this.closeAreaManager();
 
-    window.postMessage(
-      {
-        source: AREA_MESSAGE_SOURCE.REGION_EDIT_START,
-        regionId: this.editingRegionId,
-        name: this.editingRegionName,
-        color:
-          editingRegion?.color ??
-          this.createDistinctAreaColor(this.areaRegions),
-        vertices: editingRegion?.vertices ?? [],
-        saveLabel: t`${"map_filter_area_save_map"}`,
-        cancelLabel: t`${"cancel"}`,
-      },
-      "*",
-    );
+    postAreaRegionEditStart({
+      regionId: this.editingRegionId,
+      name: this.editingRegionName,
+      color: editingRegion?.color ?? this.createDistinctAreaColor(this.areaRegions),
+      vertices: editingRegion?.vertices ?? [],
+      saveLabel: t`${"map_filter_area_save_map"}`,
+      cancelLabel: t`${"cancel"}`,
+    });
 
     console.log("🧑‍🎨 : Area edit requested:", this.editingRegionId ?? "new");
   }
@@ -1478,80 +1449,19 @@ class AreaManager {
     this.editingRegionId = null;
     this.editingRegionName = "";
 
-    window.postMessage({ source: AREA_MESSAGE_SOURCE.REGION_EDIT_STOP }, "*");
+    postAreaRegionEditStop();
 
     if (!skipRender) this.renderAreaManager();
 
     console.log("🧑‍🎨 : Area edit stopped");
   }
 
-  private generateAreaEditRequestId(): string {
-    return `area_edit_${Date.now()}_${++this.areaRequestCounter}`;
-  }
-
-  private async requestAreaEditSnapshot(): Promise<AreaRegionEditSnapshot | null> {
-    const requestId = this.generateAreaEditRequestId();
-
-    return new Promise((resolve) => {
-      let timeoutId: ReturnType<typeof setTimeout>;
-
-      const cleanup = () => {
-        window.removeEventListener("message", handler);
-        clearTimeout(timeoutId);
-      };
-
-      const handler = (event: MessageEvent) => {
-        if (
-          event.data.source !== AREA_MESSAGE_SOURCE.REGION_EDIT_RESPONSE ||
-          event.data.requestId !== requestId
-        ) {
-          return;
-        }
-
-        cleanup();
-
-        const result = event.data.result as AreaRegionEditSnapshot | null;
-        if (!result || typeof result !== "object") {
-          resolve(null);
-          return;
-        }
-
-        const vertices = this.normalizeAreaVertices(result.vertices);
-        if (vertices.length < 3) {
-          resolve(null);
-          return;
-        }
-
-        resolve({
-          regionId:
-            typeof result.regionId === "string" ? result.regionId : null,
-          name: typeof result.name === "string" ? result.name : "",
-          vertices,
-        });
-      };
-
-      window.addEventListener("message", handler);
-
-      window.postMessage(
-        {
-          source: AREA_MESSAGE_SOURCE.REGION_EDIT_REQUEST,
-          requestId,
-        },
-        "*",
-      );
-
-      timeoutId = setTimeout(() => {
-        cleanup();
-        console.warn("🧑‍🎨 : Area edit request timed out");
-        resolve(null);
-      }, 5000);
-    });
-  }
-
   private async saveAreaEditing() {
     if (!this.areaEditMode) return;
 
-    const snapshot = await this.requestAreaEditSnapshot();
+    const snapshot = await requestAreaEditSnapshot({
+      normalizeVertices: (value) => this.normalizeAreaVertices(value),
+    });
     if (!snapshot || snapshot.vertices.length < 3) {
       alert(t`${"map_filter_area_need_polygon"}`);
       return;
@@ -1624,13 +1534,7 @@ export const areaManagerAPI = {
     }
 
     await storage.set({ [AREA_MEASURE_KEY]: enabled });
-    window.postMessage(
-      {
-        source: AREA_MESSAGE_SOURCE.MEASURE_UPDATE,
-        visible: enabled,
-      },
-      "*",
-    );
+    postAreaMeasureUpdate(enabled);
   },
   getAreaMeasureEnabled: () => {
     return areaManagerInstance?.isAreaMeasureEnabled();

@@ -25,6 +25,7 @@ inject側の `area-display.ts` がマップ上のSVGオーバーレイ描画・�
 | インポート/エクスポートダイアログ | content | `src/features/area-manager/modules/import-export/dialog.ts`    |
 | インポート/エクスポート処理       | content | `src/features/area-manager/modules/import-export/usecase.ts`   |
 | GeoJSON変換ユーティリティ         | content | `src/features/area-manager/modules/import-export/utils.ts`     |
+| Content↔Inject通信ゲートウェイ    | content | `src/features/area-manager/modules/inject-gateway.ts`          |
 | Areaメッセージ定数               | shared  | `src/constants/area-message.ts`                                |
 | Area共通ユーティリティ            | shared  | `src/utils/area-region.ts`                                     |
 | マップ上SVG描画・頂点編集         | inject  | `src/inject/features/area-display.ts`                          |
@@ -88,7 +89,7 @@ inject側の `area-display.ts` がマップ上のSVGオーバーレイ描画・�
 
 1. `init()` でストレージから全設定をロード
 2. `mapReady` 判定 → ready なら `syncMapDependentState()` で inject に通知
-3. `window.addEventListener("message")` で save/cancel クリックと map-ready を監視
+3. `bindAreaManagerMessageHandlers()` で save/cancel クリックと map-ready を監視
 
 ### 主要メソッド
 
@@ -188,6 +189,45 @@ div#mr-wplace-area-measure (container, pointer-events: none)
 - 色は `#rrggbb` 6桁hex のみ対応 (`normalizeAreaColor` で検証)
 - リージョンは `updatedAt` 降順でソート
 - Content↔Inject の area message source は `src/constants/area-message.ts` を使って定義を一元化する
+- AreaManager から直接 `window.postMessage` を呼ぶより `modules/inject-gateway.ts` 経由を優先する
+
+## Refactor Worklog (Handover)
+
+### 2026-02-18 Phase 1 (完了)
+
+- 目的: 重複ロジックとメッセージ文字列散在を削減
+- 実施:
+  - `src/constants/area-message.ts` を追加して area message source を一元化
+  - `src/utils/area-region.ts` を追加して color/name-mode/bounds/pixel-area を共通化
+  - `area-manager.ts`, `area-display.ts`, `bridge.ts` に適用
+- 結果:
+  - 文字列タイポリスク低減
+  - content/inject 間の仕様変更追従コストを削減
+
+### 2026-02-18 Phase 2 (完了)
+
+- 目的: `AreaManager` の責務から通信境界を分離
+- 実施:
+  - `src/features/area-manager/modules/inject-gateway.ts` を追加
+  - 以下を `AreaManager` から gateway へ移動:
+    - map-ready/save/cancel の message listener バインド
+    - measure/regions/display-options/goto/edit-start/edit-stop の postMessage 送信
+    - edit snapshot request/response (timeout付き)
+  - `AreaManager` 側は gateway 呼び出しに置換
+- 結果:
+  - `AreaManager` の通信詳細依存を縮小
+  - 通信仕様変更時の変更点を gateway に集約可能
+
+### Review Result
+
+- 実行確認: `npm run build` 成功
+- 挙動回帰リスク(低):
+  - listener は `init()` 再実行時に重複登録されないようガード済み
+  - 既存 message source と payload 形は維持
+- 未対応/次フェーズ候補:
+  - `renderAreaManager()` の巨大化 (UI構築責務分割)
+  - `renderAreaOverlay()` の全再生成コスト最適化 (差分更新 / rAF間引き)
+  - map-ready source (`mr-wplace-map-instance-captured`) も将来的に定数化候補
 
 ## Mermaid Diagram
 
@@ -201,11 +241,13 @@ graph TB
         IED["ImportExport<br/>Dialog"]
         UC["import-export/<br/>usecase.ts"]
         UTIL["import-export/<br/>utils.ts"]
+        GW["inject-gateway.ts<br/>(message gateway)"]
 
         AM -->|read/write| Storage
         AM -->|open| DSD
         AM -->|open| GCD
         AM -->|open| IED
+        AM -->|delegate| GW
         IED -->|delegate| UC
         UC -->|GeoJSON| UTIL
     end
@@ -228,7 +270,7 @@ graph TB
         AGT["area-manager/types.ts<br/>AreaRegionGroup"]
     end
 
-    AM -- "postMessage<br/>area-measure-update<br/>area-regions-sync<br/>area-display-options-update<br/>area-region-edit-start/stop<br/>area-region-goto" --> Bridge
+    GW -- "postMessage<br/>area-measure-update<br/>area-regions-sync<br/>area-display-options-update<br/>area-region-edit-start/stop<br/>area-region-goto" --> Bridge
     AD -- "postMessage<br/>area-region-save-click<br/>area-region-cancel-click<br/>area-region-edit-response" --> AM
 
     AM -.->|uses| AT
@@ -244,6 +286,7 @@ graph TB
 sequenceDiagram
     participant User
     participant AM as AreaManager<br/>(content)
+    participant GW as inject-gateway.ts<br/>(content)
     participant Bridge as bridge.ts<br/>(inject)
     participant AD as area-display.ts<br/>(inject)
     participant Map as maplibregl
@@ -254,7 +297,8 @@ sequenceDiagram
     AM->>AM: renderAreaManager() (DOM)
 
     User->>AM: Click "Add" or "Edit"
-    AM->>Bridge: postMessage(edit-start, {regionId, vertices, color})
+    AM->>GW: startAreaRegionEdit(...)
+    GW->>Bridge: postMessage(edit-start, {regionId, vertices, color})
     Bridge->>AD: startAreaRegionEdit(payload)
     AD->>Map: project vertices → screen coords
     AD->>AD: render SVG polygon + vertex handles
@@ -265,7 +309,8 @@ sequenceDiagram
 
     User->>AD: Click Save button
     AD->>AM: postMessage(save-click)
-    AM->>Bridge: postMessage(edit-request, {requestId})
+    AM->>GW: requestAreaEditSnapshot()
+    GW->>Bridge: postMessage(edit-request, {requestId})
     Bridge->>AD: respondAreaRegionEditRequest()
     AD->>AM: postMessage(edit-response, {snapshot})
     AM->>AM: persist to storage
