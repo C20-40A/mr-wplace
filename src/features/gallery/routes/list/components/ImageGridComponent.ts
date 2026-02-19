@@ -427,10 +427,10 @@ export class ImageGridComponent {
     // 100% Complete: リッチな達成表示
     if (remaining === 0) {
       return `
-        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0.375rem 0.625rem; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-top: 1px solid #fbbf24;">
+        <div class="border-t" style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0.375rem 0.625rem;">
           <div style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
-            <span style="font-size: 0.875rem; font-weight: bold; color: #facc15; text-shadow: -1px -1px 0 #b45309, 1px -1px 0 #b45309, -1px 1px 0 #b45309, 1px 1px 0 #b45309; letter-spacing: 0.05em;">COMPLETE</span>
-            <span style="font-size: 0.625rem; color: #92400e; font-family: ui-monospace, monospace; opacity: 0.8;">${total.toLocaleString()} pixels</span>
+            <span class="text-success" style="font-size: 0.875rem; font-weight: bold; letter-spacing: 0.05em;">COMPLETE</span>
+            <span style="font-size: 0.625rem; font-family: ui-monospace, monospace;">${total.toLocaleString()} pixels</span>
           </div>
         </div>
       `;
@@ -438,11 +438,14 @@ export class ImageGridComponent {
 
     // 進行中: 通常のプログレスバー
     const timeStr = this.formatEstimatedTime(remaining);
+    const isDarkTheme =
+      document.documentElement.getAttribute("data-theme") === "dark";
+    const percentageTextColor = isDarkTheme ? "#60a5fa" : "#3b82f6";
 
     return `
-      <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0.375rem 0.625rem; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
+      <div class="border-t" style="background-color: oklch(var(--color-base-100)); flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0.375rem 0.625rem;">
         <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-          <span style="font-size: 0.75rem; font-weight: 600; color: #3b82f6; font-family: ui-monospace, monospace;">${percentage.toFixed(
+          <span style="font-size: 0.75rem; font-weight: 600; color: ${percentageTextColor}; font-family: ui-monospace, monospace;">${percentage.toFixed(
             1,
           )}%</span>
           <div style="flex: 1; position: relative; height: 0.375rem; background-color: #e5e7eb; border-radius: 0.25rem; overflow: hidden;">
@@ -451,11 +454,11 @@ export class ImageGridComponent {
             )}%; transition: width 0.3s ease;"></div>
           </div>
         </div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.6875rem; color: #6b7280; font-family: ui-monospace, monospace; letter-spacing: 0.025em; flex-wrap: wrap;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.6875rem; font-family: ui-monospace, monospace; letter-spacing: 0.025em; flex-wrap: wrap;">
           <span>${matched.toLocaleString()}/${total.toLocaleString()}</span>
           ${
             remaining > 0
-              ? `<span style="color: #9ca3af;">${remaining}px(${timeStr})</span>`
+              ? `<span style="opacity: 0.8;">${remaining}px(${timeStr})</span>`
               : ""
           }
         </div>
