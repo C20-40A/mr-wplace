@@ -149,6 +149,7 @@ When content needs computed data from inject (stats/pixel color), use helpers in
 - 実装 API の知識が足りなければ、必ず報告し、ユーザの協力を要請
 - 必ずしもキリよく終わらせる必要はない
 - 不明点、実装上の問題点があれば、報告すること
+- モバイルモードになった時 overflow-y: auto　これを消す(mobileだとこれがあるとdragできなくなる)
 - 実装後、コードをチェックし、パフォーマンスやバグになりそうな注意点を確認・報告する
 - 実装後、候補になる commit message を表示する
 - コーディング前の方針を決める際は、自然言語で抽象的に設計する

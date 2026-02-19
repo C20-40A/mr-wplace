@@ -57,7 +57,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
 
     if (this.currentTileX === undefined || this.currentTileY === undefined) {
       nameDisplay && (nameDisplay.textContent = "Location unavailable");
-      coordinateInfo && (coordinateInfo.textContent = "Tile(-,-)");
+      coordinateInfo && (coordinateInfo.textContent = "(-,-)");
       editBtn && editBtn.setAttribute("disabled", "true");
       gotoBtn && gotoBtn.setAttribute("disabled", "true");
       return;
@@ -72,7 +72,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
 
     nameDisplay && (nameDisplay.textContent = displayName);
     coordinateInfo &&
-      (coordinateInfo.textContent = `Tile(${this.currentTileX}, ${this.currentTileY})`);
+      (coordinateInfo.textContent = `${this.currentTileX}, ${this.currentTileY}`);
     editBtn && editBtn.removeAttribute("disabled");
     gotoBtn && gotoBtn.removeAttribute("disabled");
   }
@@ -121,22 +121,21 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     container.innerHTML = `
       <!-- タイル名称管理UI + Import Button -->
       <div class="mb-4 p-3 border rounded bg-gray-50" style="display: flex; align-items: center; gap: 12px;">
-        <div id="tile-info-section" style="flex: 1; display: flex; align-items: center; gap: 12px;">
-          <div style="flex: 1;">
+        <div id="tile-info-section" style="flex: 1; display: flex; align-items: center; gap: 8px;">
+          <div style="flex: 1; display: flex; align-items: center; gap: 6px;">
             <div id="tile-name-display" class="font-bold text-base">Loading...</div>
+            <button id="edit-tile-name-btn" class="btn btn-sm btn-ghost" style="padding: 4px; min-height: auto; height: auto;" title="Edit tile name">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+                <path d="M21.731 2.269a2.625 2.625 0 00-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 000-3.712zM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 00-1.32 2.214l-.8 2.685a.75.75 0 00.933.933l2.685-.8a5.25 5.25 0 002.214-1.32l8.4-8.4z" />
+                <path d="M5.25 5.25a3 3 0 00-3 3v10.5a3 3 0 003 3h10.5a3 3 0 003-3V13.5a.75.75 0 00-1.5 0v5.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5V8.25a1.5 1.5 0 011.5-1.5h5.25a.75.75 0 000-1.5H5.25z" />
+              </svg>
+            </button>
           </div>
-          <button id="edit-tile-name-btn" class="btn btn-sm btn-outline" title="Edit tile name">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
-              <path d="M21.731 2.269a2.625 2.625 0 00-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 000-3.712zM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 00-1.32 2.214l-.8 2.685a.75.75 0 00.933.933l2.685-.8a5.25 5.25 0 002.214-1.32l8.4-8.4z" />
-              <path d="M5.25 5.25a3 3 0 00-3 3v10.5a3 3 0 003 3h10.5a3 3 0 003-3V13.5a.75.75 0 00-1.5 0v5.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5V8.25a1.5 1.5 0 011.5-1.5h5.25a.75.75 0 000-1.5H5.25z" />
-            </svg>
-            Edit
-          </button>
-          <div id="tile-coordinate-info" class="text-sm text-gray-600">Tile(-,-)</div>
-          <button id="goto-tile-btn" class="btn btn-sm btn-ghost" title="Go to location">
+          <button id="goto-tile-btn" class="btn btn-sm btn-ghost" style="display: flex; align-items: center; gap: 4px; padding: 4px 8px;" title="Go to location">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
               <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
             </svg>
+            <span id="tile-coordinate-info" class="text-sm">Tile(-,-)</span>
           </button>
         </div>
 
@@ -161,7 +160,6 @@ export class SnapshotRoute extends BaseSnapshotRoute {
           overflow-y: auto;
           border: 1px solid #e5e7eb;
           border-radius: 4px;
-          padding: 8px;
         }
         .current-tile-container {
           flex: 2;
@@ -184,6 +182,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
           .snapshot-list-container {
             flex: none;
             min-height: 400px;
+            overflow-y: visible;
           }
         }
       </style>
