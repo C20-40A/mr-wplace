@@ -15,6 +15,7 @@ import {
 export class SnapshotDetailRoute {
   private imageInspector?: ImageInspector;
   private router?: TimeTravelRouter;
+  private isMobile = false;
 
   render(container: HTMLElement, router: TimeTravelRouter): void {
     this.router = router;
@@ -25,10 +26,13 @@ export class SnapshotDetailRoute {
       return;
     }
 
+    // モバイル判定
+    this.isMobile = window.innerWidth <= 768;
+
     container.innerHTML = t`
       <div style="height: 75vh; display: flex; flex-direction: column;">
-        <div style="flex: 1; position: relative; min-height: 0; overflow: hidden;">
-          <canvas id="wps-snapshot-canvas" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);"></canvas>
+        <div style="flex: 1; position: relative; min-height: 0; display: flex; align-items: center; justify-content: center; background-color: #f9fafb; max-height: 55vh;">
+          <canvas id="wps-snapshot-canvas" style="${this.isMobile ? "max-width: 100%; max-height: 100%; object-fit: contain;" : "position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);"}"></canvas>
         </div>
         
         <div style="height: 60px; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
@@ -128,7 +132,7 @@ export class SnapshotDetailRoute {
     if (!dataUrl) throw new Error("Snapshot not found");
 
     const canvas = document.getElementById(
-      "wps-snapshot-canvas"
+      "wps-snapshot-canvas",
     ) as HTMLCanvasElement;
     if (!canvas) return;
 
@@ -139,16 +143,19 @@ export class SnapshotDetailRoute {
       const ctx = canvas.getContext("2d")!;
       ctx.drawImage(img, 0, 0);
 
-      // ImageInspector初期化（キャンバスエリアサイズに合わせて動的計算）
-      const canvasArea = canvas.parentElement!;
-      const containerSize =
-        Math.min(canvasArea.offsetWidth, canvasArea.offsetHeight) * 0.9;
+      // モバイルではImageInspectorを使わない（シンプルな画像表示のみ）
+      if (!this.isMobile) {
+        // ImageInspector初期化（キャンバスエリアサイズに合わせて動的計算）
+        const canvasArea = canvas.parentElement!;
+        const containerSize =
+          Math.min(canvasArea.offsetWidth, canvasArea.offsetHeight) * 0.9;
 
-      this.imageInspector = new ImageInspector(canvas, {
-        containerSize: containerSize,
-        minZoom: 1.0,
-        maxZoom: 10.0,
-      });
+        this.imageInspector = new ImageInspector(canvas, {
+          containerSize: containerSize,
+          minZoom: 1.0,
+          maxZoom: 10.0,
+        });
+      }
     };
     img.src = dataUrl;
   }
@@ -168,7 +175,7 @@ export class SnapshotDetailRoute {
     // 現在の状態確認
     const currentState = await TimeTravelStorage.getActiveSnapshotForTile(
       tileX,
-      tileY
+      tileY,
     );
     const willDraw = !currentState || currentState.fullKey !== fullKey;
 
@@ -184,7 +191,7 @@ export class SnapshotDetailRoute {
       tileX,
       tileY,
       file,
-      fullKey
+      fullKey,
     );
 
     const timeTravel = di.get("timeTravel");
@@ -192,7 +199,7 @@ export class SnapshotDetailRoute {
 
     await this.updateButtonStates(fullKey);
     Toast.success(
-      isDrawing ? "Snapshot drawn successfully" : "Snapshot removed"
+      isDrawing ? "Snapshot drawn successfully" : "Snapshot removed",
     );
   }
 
