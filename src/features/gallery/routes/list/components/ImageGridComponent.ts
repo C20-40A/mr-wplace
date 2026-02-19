@@ -427,10 +427,10 @@ export class ImageGridComponent {
     // 100% Complete: リッチな達成表示
     if (remaining === 0) {
       return `
-        <div class="border-t" style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0.375rem 0.625rem;">
+        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0.375rem 0.625rem; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-top: 1px solid #fbbf24;">
           <div style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
-            <span class="text-success" style="font-size: 0.875rem; font-weight: bold; letter-spacing: 0.05em;">COMPLETE</span>
-            <span style="font-size: 0.625rem; font-family: ui-monospace, monospace;">${total.toLocaleString()} pixels</span>
+            <span style="font-size: 0.875rem; font-weight: bold; color: #facc15; text-shadow: -1px -1px 0 #b45309, 1px -1px 0 #b45309, -1px 1px 0 #b45309, 1px 1px 0 #b45309; letter-spacing: 0.05em;">COMPLETE</span>
+            <span style="font-size: 0.625rem; color: #92400e; font-family: ui-monospace, monospace; opacity: 0.8;">${total.toLocaleString()} pixels</span>
           </div>
         </div>
       `;
