@@ -38,9 +38,27 @@ import {
 } from "./states/fab-visibility";
 import { ColorPaletteStorage } from "@/components/color-palette/storage";
 
-import { tabs } from "@/utils/browser-api";
+import { storage, tabs } from "@/utils/browser-api";
 import { FEEDBACK_FORM_URL } from "@/constants/url";
 import { BUY_ME_COFFEE_IMAGE } from "./assets/buyMeACoffee";
+
+const AREA_REGIONS_KEY = "areaRegions_v1";
+const AREA_REGION_GROUPS_KEY = "areaRegionGroups_v1";
+
+const isNoContentReceiverError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) return false;
+  return (
+    error.message.includes("Could not establish connection") ||
+    error.message.includes("Receiving end does not exist")
+  );
+};
+
+const resetAreasInPopupStorage = async (): Promise<void> => {
+  await storage.set({
+    [AREA_REGIONS_KEY]: [],
+    [AREA_REGION_GROUPS_KEY]: [],
+  });
+};
 
 const updateUI = (): void => {
   // Update feedback form URL based on current locale
@@ -74,7 +92,10 @@ const updateUI = (): void => {
     "gallery-data-label": "gallery_data",
     "export-btn-label": "export",
     "import-btn-label": "import",
-    "reset-btn-label": "reset_gallery",
+    "danger-zone-label": "danger_zone",
+    "danger-zone-toggle-label": "danger_zone_show",
+    "reset-gallery-btn-label": "reset_gallery",
+    "reset-areas-btn-label": "reset_areas",
   };
   for (const [id, key] of Object.entries(labelMap)) {
     const el = document.getElementById(id);
@@ -417,10 +438,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Gallery export/import/reset
+  // Gallery export/import
   const exportBtn = document.getElementById("export-gallery-btn");
   const importBtn = document.getElementById("import-gallery-btn");
-  const resetBtn = document.getElementById("reset-gallery-btn");
 
   if (exportBtn) {
     exportBtn.addEventListener("click", async () => {
@@ -434,9 +454,36 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  if (resetBtn) {
-    resetBtn.addEventListener("click", async () => {
-      await handleReset();
+  // Danger Zone toggle
+  const toggleDangerZoneBtn = document.getElementById("toggle-danger-zone-btn");
+  const dangerZoneContent = document.getElementById("danger-zone-content");
+  const dangerZoneToggleLabel = document.getElementById(
+    "danger-zone-toggle-label",
+  );
+
+  if (toggleDangerZoneBtn && dangerZoneContent && dangerZoneToggleLabel) {
+    toggleDangerZoneBtn.addEventListener("click", () => {
+      const isHidden = dangerZoneContent.style.display === "none";
+      dangerZoneContent.style.display = isHidden ? "block" : "none";
+      dangerZoneToggleLabel.textContent = isHidden
+        ? t("danger_zone_hide")
+        : t("danger_zone_show");
+    });
+  }
+
+  // Danger Zone - Reset buttons
+  const resetGalleryBtn = document.getElementById("reset-gallery-btn");
+  const resetAreasBtn = document.getElementById("reset-areas-btn");
+
+  if (resetGalleryBtn) {
+    resetGalleryBtn.addEventListener("click", async () => {
+      await handleResetGallery();
+    });
+  }
+
+  if (resetAreasBtn) {
+    resetAreasBtn.addEventListener("click", async () => {
+      await handleResetAreas();
     });
   }
 });
@@ -486,7 +533,7 @@ const handleImport = async (): Promise<void> => {
 };
 
 // Gallery reset handler - delegates to inject
-const handleReset = async (): Promise<void> => {
+const handleResetGallery = async (): Promise<void> => {
   if (!confirm(t`${"confirm_reset"}`)) return;
 
   const resetBtn = document.getElementById(
@@ -501,21 +548,56 @@ const handleReset = async (): Promise<void> => {
     await notifyContentScript({ type: "GALLERY_RESET" });
     alert(t("gallery_reset_success"));
   } catch (error) {
-    console.error("🧑‍🎨 : Reset failed:", error);
+    console.error("🧑‍🎨 : Gallery reset failed:", error);
     alert(t("reset_failed"));
   } finally {
     resetBtn.disabled = false;
-    resetBtn.innerHTML = `🗑️ <span id="reset-btn-label">${t("reset_gallery")}</span>`;
+    resetBtn.innerHTML = `🗑️ <span id="reset-gallery-btn-label">${t("reset_gallery")}</span>`;
+  }
+};
+
+// Area reset handler - delegates to content
+const handleResetAreas = async (): Promise<void> => {
+  if (!confirm(t`${"confirm_reset_areas"}`)) return;
+
+  const resetBtn = document.getElementById(
+    "reset-areas-btn",
+  ) as HTMLButtonElement;
+  if (!resetBtn) return;
+
+  try {
+    resetBtn.disabled = true;
+    resetBtn.innerHTML = `⏳ ${t`${"resetting"}`}`;
+
+    try {
+      const response = await notifyContentScript({ type: "AREA_RESET" });
+      if (response?.success === false) {
+        throw new Error(response.error || "Area reset failed");
+      }
+    } catch (error) {
+      if (!isNoContentReceiverError(error)) throw error;
+      await resetAreasInPopupStorage();
+      console.log("🧑‍🎨 : Area reset completed from popup storage fallback");
+    }
+
+    alert(t("areas_reset_success"));
+  } catch (error) {
+    console.error("🧑‍🎨 : Area reset failed:", error);
+    alert(t("reset_failed"));
+  } finally {
+    resetBtn.disabled = false;
+    resetBtn.innerHTML = `🗑️ <span id="reset-areas-btn-label">${t("reset_areas")}</span>`;
   }
 };
 
 // Notify content script to sync data with inject
-const notifyContentScript = async (message: any): Promise<void> => {
+const notifyContentScript = async (message: any): Promise<any> => {
   const [activeTab] = await tabs.query({
     active: true,
     currentWindow: true,
   });
   if (activeTab.id) {
-    await tabs.sendMessage(activeTab.id, message);
+    return await tabs.sendMessage(activeTab.id, message);
   }
+  throw new Error("No active tab found");
 };

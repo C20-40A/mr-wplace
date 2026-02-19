@@ -20,6 +20,7 @@ interface DisplaySettingsDialogDeps {
   setAreaNameDisplayMode: (mode: AreaNameDisplayMode) => Promise<void>;
   updateAreaNameFontSizePx: (value: number, persist: boolean) => Promise<void>;
   setAreaNameStyleMode: (mode: AreaNameStyleMode) => Promise<void>;
+  onResetAreas?: () => Promise<void>;
 }
 
 export const showDisplaySettingsDialog = (
@@ -60,6 +61,18 @@ export const showDisplaySettingsDialog = (
           </select>
         </label>
       </div>
+
+      ${
+        deps.onResetAreas
+          ? `
+      <div style="padding: 0.8rem; border: 1px solid #dc2626; border-radius: 8px; border-style: dashed;">
+        <button id="area-display-settings-reset-btn" class="btn btn-sm w-full" style="background: #dc2626; color: white; border-color: #dc2626;">
+          🗑️ ${t`${"reset_areas"}`}
+        </button>
+      </div>
+      `
+          : ""
+      }
 
       <div class="modal-action">
         <button id="area-display-settings-close-btn" class="btn btn-outline btn-sm">${t`${"close"}`}</button>
@@ -142,6 +155,17 @@ export const showDisplaySettingsDialog = (
     ?.addEventListener("click", () => {
       modal.close();
     });
+
+  if (deps.onResetAreas) {
+    modal
+      .querySelector("#area-display-settings-reset-btn")
+      ?.addEventListener("click", async () => {
+        if (confirm(t`${"confirm_reset_areas"}`)) {
+          await deps.onResetAreas?.();
+          modal.close();
+        }
+      });
+  }
 
   modal.addEventListener("close", () => {
     modal.remove();

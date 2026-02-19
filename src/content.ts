@@ -410,6 +410,21 @@ const registerMessageListeners = () => {
       );
       return;
     }
+
+    if (message.type === "AREA_RESET") {
+      const { areaManagerAPI } = await import("@/features/area-manager");
+      try {
+        await areaManagerAPI.resetAllAreas();
+        sendResponse({ success: true });
+      } catch (error) {
+        sendResponse({
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+      return true;
+    }
+
   });
 };
 

@@ -57,6 +57,7 @@ import {
   importAreaRegionsFromText as importAreaRegionsFromTextUsecase,
   importAreaRegionsFromUrl as importAreaRegionsFromUrlUsecase,
 } from "./modules/import-export/usecase";
+import { resetAllAreas as resetAllAreasUsecase } from "./modules/reset/usecase";
 import type { AreaRegionGroup } from "./types";
 
 const AREA_MEASURE_KEY = "mapFilter_areaMeasure";
@@ -630,6 +631,21 @@ class AreaManager {
     this.notifyAreaDisplayOptions();
   }
 
+  async resetAllAreas(): Promise<void> {
+    await resetAllAreasUsecase({
+      clearRegions: async () => {
+        this.areaRegions = [];
+        await this.persistAreaRegions();
+      },
+      clearGroups: async () => {
+        this.areaRegionGroups = [];
+        await this.persistAreaRegionGroups();
+      },
+      notifyAreaRegions: () => this.notifyAreaRegions(),
+      renderAreaManager: () => this.renderAreaManager(),
+    });
+  }
+
   private showAreaDisplaySettingsDialog() {
     showDisplaySettingsDialog({
       fillOpacityPercent: this.areaFillOpacityPercent,
@@ -646,6 +662,7 @@ class AreaManager {
       updateAreaNameFontSizePx: (value, persist) =>
         this.updateAreaNameFontSizePx(value, persist),
       setAreaNameStyleMode: (mode) => this.setAreaNameStyleMode(mode),
+      onResetAreas: () => this.resetAllAreas(),
     });
   }
 
@@ -1361,5 +1378,8 @@ export const areaManagerAPI = {
   },
   getAreaMeasureEnabled: () => {
     return areaManagerInstance?.isAreaMeasureEnabled();
+  },
+  resetAllAreas: async () => {
+    await areaManagerInstance?.resetAllAreas();
   },
 };

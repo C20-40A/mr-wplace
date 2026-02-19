@@ -546,4 +546,10 @@ export const jaTranslations = {
     "ほかの人と共有するときは、ここからイラストをダウンロードしてください。ファイル名が座標になっているので、読み込むと同じ位置にイラストが設置されます",
   tutorial_reset_hints_button: "ヒントを再表示する",
   hint_image_detail_edit_title: "画像タイトルを押すとタイトルを編集できます",
+  danger_zone: "デンジャーゾーン",
+  danger_zone_show: "リセットオプションを表示",
+  danger_zone_hide: "リセットオプションを隠す",
+  reset_areas: "全エリアを削除",
+  confirm_reset_areas: "すべてのエリアを削除してもよろしいですか？この操作は取り消せません。",
+  areas_reset_success: "すべてのエリアが削除されました。",
 };

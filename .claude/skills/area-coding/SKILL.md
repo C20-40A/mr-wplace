@@ -1,6 +1,6 @@
 ---
 name: area-coding
-description: area-manager,area-displayなどの、エリアに関する機能のcodingをするためのスキル.このskillにknowledgeがある.これを読んでからareaに関するcodingをすること.
+description: area-manager,area-displayなどの、エリアに関する機能のcodingをするためのスキル.このskillにknowledgeがある.これを読んでからareaに関するcodingをすること.trigger:area-manager,area-display,エリア
 ---
 
 # Area Feature Knowledge
@@ -25,8 +25,9 @@ inject側の `area-display.ts` がマップ上のSVGオーバーレイ描画・�
 | インポート/エクスポートダイアログ | content | `src/features/area-manager/modules/import-export/dialog.ts`    |
 | インポート/エクスポート処理       | content | `src/features/area-manager/modules/import-export/usecase.ts`   |
 | GeoJSON変換ユーティリティ         | content | `src/features/area-manager/modules/import-export/utils.ts`     |
+| リセット処理                      | content | `src/features/area-manager/modules/reset/usecase.ts`           |
 | Content↔Inject通信ゲートウェイ    | content | `src/features/area-manager/modules/inject-gateway.ts`          |
-| Areaメッセージ定数               | shared  | `src/constants/area-message.ts`                                |
+| Areaメッセージ定数                | shared  | `src/constants/area-message.ts`                                |
 | Area共通ユーティリティ            | shared  | `src/utils/area-region.ts`                                     |
 | マップ上SVG描画・頂点編集         | inject  | `src/inject/features/area-display.ts`                          |
 | メッセージルーティング            | inject  | `src/inject/bridge.ts`                                         |
@@ -101,6 +102,7 @@ inject側の `area-display.ts` がマップ上のSVGオーバーレイ描画・�
 - `stopAreaEditing(skipRender)` — 編集モード終了、inject に `edit-stop` 送信
 - `saveAreaEditing()` — inject に snapshot リクエスト → 応答を受けて保存
 - `renderAreaManager()` — モーダル内のリージョン/グループ一覧をDOM生成
+- `resetAllAreas()` — 全エリアを確認ダイアログ付きでリセット (表示設定ダイアログ・popup経由)
 
 ### データフロー (保存時の例)
 
@@ -267,6 +269,21 @@ MapLibre style layer:
 - 結果:
   - 3Dで地平線付近に入った頂点をMapエンジン側のクリップ/投影に委譲可能
   - `map.project()` 直描画由来の「上に吹き飛ぶ」症状の根本要因を除去
+
+### 2026-02-19 Phase 6 (完了)
+
+- 目的: エリアリセット機能の追加とDanger Zone UIの統合
+- 実施:
+  - `src/features/area-manager/modules/reset/usecase.ts` を追加し、再利用可能なリセットロジックを実装
+  - 表示設定ダイアログに赤いリセットボタンを追加
+  - popup.html に Danger Zone セクションを追加し、ギャラリーリセットとエリアリセットを統合
+  - `resetAllAreas()` は常に確認ダイアログを表示する統一実装
+  - popup側では確認を行わず、`resetAllAreas()` を呼び出すのみ
+  - i18n キーを追加: `danger_zone`, `danger_zone_show/hide`, `reset_areas`, `confirm_reset_areas`, `areas_reset_success`
+- 結果:
+  - エリアリセット機能が複数の場所から呼び出し可能に
+  - popup の Danger Zone で危険な操作を明示的に分離
+  - 確認ダイアログは常に `resetAllAreas()` 内で一元管理
 
 ### Review Result
 

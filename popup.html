@@ -341,9 +341,6 @@
         <button id="import-gallery-btn">
           📥 <span id="import-btn-label">Import</span>
         </button>
-        <button id="reset-gallery-btn" class="btn-danger">
-          🗑️ <span id="reset-btn-label">Reset Gallery</span>
-        </button>
 
         <input
           type="file"
@@ -351,6 +348,33 @@
           accept=".zip"
           style="display: none"
         />
+      </div>
+
+      <div class="setting-group">
+        <label class="setting-label">
+          <svg class="icon" viewBox="0 0 12 12">
+            <path
+              d="M6 1L6 11M1 6L11 6"
+              stroke="#f00"
+              stroke-width="1.5"
+              fill="none"
+            />
+          </svg>
+          <span id="danger-zone-label" style="color: #f00">Danger Zone</span>
+        </label>
+
+        <button id="toggle-danger-zone-btn" style="border-color: #f00; color: #f00">
+          <span id="danger-zone-toggle-label">Show Reset Options</span>
+        </button>
+
+        <div id="danger-zone-content" style="display: none; margin-top: 4px">
+          <button id="reset-gallery-btn" class="btn-danger">
+            🗑️ <span id="reset-gallery-btn-label">Reset Gallery</span>
+          </button>
+          <button id="reset-areas-btn" class="btn-danger">
+            🗑️ <span id="reset-areas-btn-label">Reset Areas</span>
+          </button>
+        </div>
       </div>
 
       <div class="coffee-support">
