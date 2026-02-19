@@ -30,7 +30,7 @@ export class GalleryListUI {
     onCloseModal?: () => void,
     sortType?: GallerySortType,
     onSortChange?: (sortType: GallerySortType) => void,
-    onRefresh?: () => void
+    onRefresh?: () => void,
   ): void {
     if (!container) return;
 
@@ -51,6 +51,7 @@ export class GalleryListUI {
     if (!this.container) return;
 
     this.container.innerHTML = "";
+    this.container.style.paddingBottom = "1.6rem"; // 下部スペース確保（FABと被らないように）
 
     // Sort dropdown + Import/Export buttons
     const sortContainer = document.createElement("div");
@@ -71,7 +72,7 @@ export class GalleryListUI {
     this.container.appendChild(sortContainer);
 
     const sortSelect = sortContainer.querySelector(
-      "#wps-gallery-sort"
+      "#wps-gallery-sort",
     ) as HTMLSelectElement;
     sortSelect.value = this.sortType;
     sortSelect.addEventListener("change", (e) => {
@@ -81,7 +82,7 @@ export class GalleryListUI {
 
     // Import/Export dropdown menu
     const importExportBtn = sortContainer.querySelector(
-      "#wps-gallery-import-export-btn"
+      "#wps-gallery-import-export-btn",
     ) as HTMLButtonElement;
     importExportBtn.addEventListener("click", () => {
       this.showImportExportMenu(importExportBtn);
@@ -136,16 +137,20 @@ export class GalleryListUI {
     anchor.parentElement!.appendChild(menu);
 
     // Export
-    menu.querySelector("#wps-gallery-export-action")!.addEventListener("click", () => {
-      menu.remove();
-      this.handleExport();
-    });
+    menu
+      .querySelector("#wps-gallery-export-action")!
+      .addEventListener("click", () => {
+        menu.remove();
+        this.handleExport();
+      });
 
     // Import
-    menu.querySelector("#wps-gallery-import-action")!.addEventListener("click", () => {
-      menu.remove();
-      this.handleImport();
-    });
+    menu
+      .querySelector("#wps-gallery-import-action")!
+      .addEventListener("click", () => {
+        menu.remove();
+        this.handleImport();
+      });
 
     // 外部クリックで閉じる
     const closeMenu = (e: MouseEvent) => {
@@ -160,7 +165,7 @@ export class GalleryListUI {
   private handleExport(): void {
     window.postMessage(
       { source: "mr-wplace-gallery-export", requestId: Date.now().toString() },
-      "*"
+      "*",
     );
   }
 
@@ -174,7 +179,7 @@ export class GalleryListUI {
       if (e.data.result?.success > 0) {
         // inject側のオーバーレイも更新
         import("@/content").then(({ sendGalleryImagesToInject }) =>
-          sendGalleryImagesToInject()
+          sendGalleryImagesToInject(),
         );
         this.onRefresh?.();
       }
@@ -183,7 +188,7 @@ export class GalleryListUI {
 
     window.postMessage(
       { source: "mr-wplace-gallery-import", requestId: Date.now().toString() },
-      "*"
+      "*",
     );
   }
 
