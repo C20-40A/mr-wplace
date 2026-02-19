@@ -44,10 +44,12 @@ import { BUY_ME_COFFEE_IMAGE } from "./assets/buyMeACoffee";
 
 const AREA_REGIONS_KEY = "areaRegions_v1";
 const AREA_REGION_GROUPS_KEY = "areaRegionGroups_v1";
+const NO_CONTENT_RECEIVER_ERROR_MESSAGE = "No active tab content receiver available";
 
 const isNoContentReceiverError = (error: unknown): boolean => {
   if (!(error instanceof Error)) return false;
   return (
+    error.message.includes(NO_CONTENT_RECEIVER_ERROR_MESSAGE) ||
     error.message.includes("Could not establish connection") ||
     error.message.includes("Receiving end does not exist")
   );
@@ -218,46 +220,31 @@ document.addEventListener("DOMContentLoaded", async () => {
     // i18n初期化（ブラウザ言語検出）
     await I18nManager.init(currentLocale);
     currentLocale = I18nManager.getCurrentLocale();
+    languageSelect.value = currentLocale;
+    updateUI();
 
-    // navigation mode初期化
-    await loadNavigationModeFromStorage();
+    await Promise.all([
+      loadNavigationModeFromStorage(),
+      loadLockButtonEnhancerFromStorage(),
+      loadCloseConfirmFromStorage(),
+      loadPaintModeStyleFromStorage(),
+      loadCloseButtonSwapFromStorage(),
+      loadFabVisibilityFromStorage(),
+    ]);
+
     currentMode = getNavigationMode();
-
-    // lock button enhancer初期化
-    await loadLockButtonEnhancerFromStorage();
     currentLockButtonEnhancer = getLockButtonEnhancer();
-
-    // close confirm初期化
-    await loadCloseConfirmFromStorage();
     currentCloseConfirm = getCloseConfirm();
-
-    // paint mode style初期化
-    await loadPaintModeStyleFromStorage();
     currentPaintModeStyle = getPaintModeStyle();
-
-    // close button swap初期化
-    await loadCloseButtonSwapFromStorage();
     currentCloseButtonSwap = getCloseButtonSwap();
-
-    // compute device初期化
     currentComputeDevice = await ColorPaletteStorage.getComputeDevice();
 
-    // fab visibility初期化
-    await loadFabVisibilityFromStorage();
-
-    // Get map instance ready state from content script
-    const currentTab = (
-      await tabs.query({ active: true, currentWindow: true })
-    )[0];
-    if (currentTab?.id) {
-      try {
-        const response = await tabs.sendMessage(currentTab.id, {
-          type: "GET_MAP_INSTANCE_READY",
-        });
-        mapInstanceReady = response?.ready || false;
-      } catch (error) {
+    try {
+      const response = await notifyContentScript({ type: "GET_MAP_INSTANCE_READY" });
+      mapInstanceReady = response?.ready || false;
+    } catch (error) {
+      if (!isNoContentReceiverError(error))
         console.warn("🧑‍🎨 : Failed to get map instance ready state:", error);
-      }
     }
   } catch (error) {
     console.warn(
@@ -304,17 +291,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     // UI更新
     updateUI();
 
-    // content.tsに言語変更を通知
-    const [activeTab] = await tabs.query({
-      active: true,
-      currentWindow: true,
+    // content.tsに言語変更を通知（best effort）
+    await notifyContentScriptBestEffort({
+      type: "LOCALE_CHANGED",
+      locale: newLocale,
     });
-    if (activeTab.id) {
-      await tabs.sendMessage(activeTab.id, {
-        type: "LOCALE_CHANGED",
-        locale: newLocale,
-      });
-    }
   });
 
   // ナビゲーション変更イベント
@@ -403,17 +384,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await ColorPaletteStorage.setComputeDevice(device);
 
-    // content.tsに設定変更を通知
-    const [activeTab] = await tabs.query({
-      active: true,
-      currentWindow: true,
+    // content.tsに設定変更を通知（best effort）
+    await notifyContentScriptBestEffort({
+      type: "COMPUTE_DEVICE_CHANGED",
+      device,
     });
-    if (activeTab.id) {
-      await tabs.sendMessage(activeTab.id, {
-        type: "COMPUTE_DEVICE_CHANGED",
-        device,
-      });
-    }
   });
 
   // FAB visibility変更イベント
@@ -596,8 +571,19 @@ const notifyContentScript = async (message: any): Promise<any> => {
     active: true,
     currentWindow: true,
   });
-  if (activeTab.id) {
-    return await tabs.sendMessage(activeTab.id, message);
+  if (!activeTab?.id) {
+    throw new Error(NO_CONTENT_RECEIVER_ERROR_MESSAGE);
   }
-  throw new Error("No active tab found");
+  return await tabs.sendMessage(activeTab.id, message);
+};
+
+const notifyContentScriptBestEffort = async (
+  message: any,
+): Promise<any | undefined> => {
+  try {
+    return await notifyContentScript(message);
+  } catch (error) {
+    if (!isNoContentReceiverError(error)) throw error;
+    return undefined;
+  }
 };
