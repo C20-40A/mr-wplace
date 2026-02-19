@@ -157,10 +157,11 @@ export class ImageGridComponent {
   private createDeleteButtonHtml(itemKey: string): string {
     return `
       <button
-        class="btn btn-xs btn-circle btn-ghost absolute -top-1 -right-1 z-10 opacity-50 hover:opacity-80 bg-white border border-gray-200 shadow-sm"
+        class="btn btn-xs btn-circle btn-ghost"
         data-delete="${itemKey}"
+        style="position: absolute; top: 0.25rem; right: 0.25rem; z-index: 10; background: none; border: none; padding: 0;"
         >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
           <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd"/>
         </svg>
       </button>
@@ -173,12 +174,12 @@ export class ImageGridComponent {
   private createGotoPositionButtonHtml(item: GalleryItem): string {
     return `
       <button
-        class="btn btn-xs btn-circle btn-ghost opacity-70 hover:opacity-100 border border-gray-200 shadow-sm"
+        class="btn btn-xs btn-circle btn-ghost"
         data-goto-position="${item.key}"
         title="Go to map position"
-        style="position: absolute; top: 0.25rem; left: 2rem; z-index: 10; background-color: #f3f4f6;"
+        style="position: absolute; top: calc(8rem - 1.5rem); left: 0.25rem; z-index: 10; background: none; border: none; padding: 0;"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3" style="color: #059669;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
           <path fill-rule="evenodd" d="m11.54 22.351.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
         </svg>
       </button>
@@ -186,10 +187,7 @@ export class ImageGridComponent {
   }
   private createDrawToggleButtonHtml(item: GalleryItem): string {
     const isEnabled = item.drawEnabled;
-    const eyeStyle = isEnabled ? "color: #16a34a;" : "color: #9ca3af;";
-    const bgStyle = isEnabled
-      ? "background-color: #dcfce7;"
-      : "background-color: #f3f4f6;";
+    const opacityStyle = isEnabled ? "" : "opacity: 0.5;";
 
     // 描画有効時は開いた目、無効時は閉じた目
     const eyeIcon = isEnabled
@@ -198,12 +196,12 @@ export class ImageGridComponent {
 
     return `
       <button
-        class="btn btn-xs btn-circle btn-ghost opacity-70 hover:opacity-100 border border-gray-200 shadow-sm"
+        class="btn btn-xs btn-circle btn-ghost"
         data-draw-toggle="${item.key}"
         title="${isEnabled ? "Hide drawing" : "Show drawing"}"
-        style="position: absolute; top: 0.25rem; left: 0.25rem; z-index: 10; ${bgStyle}"
+        style="position: absolute; top: 0.25rem; left: 0.25rem; z-index: 10; background: none; border: none; padding: 0; ${opacityStyle}"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-3" style="${eyeStyle}">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
           ${eyeIcon}
         </svg>
       </button>
@@ -444,7 +442,7 @@ export class ImageGridComponent {
     return `
       <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0.375rem 0.625rem; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
         <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-          <span style="font-size: 0.75rem; font-weight: 600; color: #3b82f6; font-family: ui-monospace, monospace; min-width: 3rem;">${percentage.toFixed(
+          <span style="font-size: 0.75rem; font-weight: 600; color: #3b82f6; font-family: ui-monospace, monospace;">${percentage.toFixed(
             1,
           )}%</span>
           <div style="flex: 1; position: relative; height: 0.375rem; background-color: #e5e7eb; border-radius: 0.25rem; overflow: hidden;">
@@ -455,7 +453,6 @@ export class ImageGridComponent {
         </div>
         <div style="display: flex; justify-content: space-between; font-size: 0.6875rem; color: #6b7280; font-family: ui-monospace, monospace; letter-spacing: 0.025em; flex-wrap: wrap;">
           <span>${matched.toLocaleString()}/${total.toLocaleString()}</span>
-          <span style="min-width: 9px;"></span>
           ${
             remaining > 0
               ? `<span style="color: #9ca3af;">${remaining}px(${timeStr})</span>`
