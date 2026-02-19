@@ -31,10 +31,41 @@
         padding: 12px;
       }
 
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
       .header h2 {
-        margin: 0 0 8px 0;
+        margin: 0;
         font-size: 14px;
         font-weight: normal;
+      }
+
+      .header-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        color: #fff;
+        text-decoration: none;
+      }
+
+      .header-link:hover {
+        opacity: 0.8;
+      }
+
+      .header-link:active {
+        opacity: 0.6;
+      }
+
+      .header-link .icon {
+        width: 14px;
+        height: 14px;
       }
 
       .setting-group {
@@ -162,10 +193,35 @@
   </head>
 
   <body>
-    <div class="container">
-      <div class="header">
-        <h2>Mr. WPlace</h2>
-      </div>
+      <div class="container">
+        <div class="header">
+          <h2>Mr. WPlace</h2>
+          <a
+            class="header-link"
+            href="https://wplace.live/"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Open WPlace Official Site"
+            aria-label="Open WPlace Official Site"
+          >
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle
+                cx="12"
+                cy="12"
+                r="9"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+              />
+              <path
+                d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.3"
+              />
+            </svg>
+          </a>
+        </div>
 
       <div class="setting-group">
         <label class="setting-label">

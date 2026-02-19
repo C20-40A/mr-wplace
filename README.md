@@ -44,6 +44,7 @@ Want to contribute or build from source? Check out our [Contributing Guide](CONT
 ## ✨ Features
 
 ### 🖼️ Gallery & Image Management
+
 - Upload, edit, and manage template images with thumbnails
 - Layer-based image management with drag-and-drop reordering
 - Image editing: brightness, contrast, saturation, sharpness, dithering
@@ -53,6 +54,7 @@ Want to contribute or build from source? Check out our [Contributing Guide](CONT
 - Progress tracking with remaining pixels and estimated completion time
 
 ### 🎨 Advanced Drawing Tools
+
 - Draw images and texts on map tiles with overlay rendering
 - 5 pixel fonts support (including custom Japanese fonts)
 - Color palette with pixel count display
@@ -62,51 +64,60 @@ Want to contribute or build from source? Check out our [Contributing Guide](CONT
 - "Color Isolate" mode: display only selected color automatically
 
 ### ⏱️ Time Travel
+
 - Save and restore tile snapshots for rollback protection
 - Share tiles with coordinates and timestamps
 - Merge adjacent archived tiles into single image
 
 ### 🎨 Color Filter & Visual Aids
+
 - Apply color filters aligned with WPlace's color palette
 - Multiple drawing mode visualizations
 - High contrast mode for better visibility
 - Tile boundary display
 
 ### 📍 Bookmarks & Navigation
+
 - Save favorite locations with tags (create, edit, filter by tags)
 - Export/import bookmarks by tag
 - Search locations by place name and jump to coordinates
 - Convert between lat/lng and WPlace coordinates
 
 ### 🌓 Theme & Display
+
 - Dark theme for map and UI
 - High contrast mode
 - GPU/CPU rendering mode switch for compatibility
 
 ### 💾 Data Saver Mode
+
 - Offline tile cache with LRU (Least Recently Used) eviction
 - Configurable cache size limit
 - Storage usage monitoring
 - Reduce bandwidth and improve performance
 
 ### 📊 Statistics & Analytics
+
 - Paint statistics per user
 - Color statistics per tile with breakdown by color
 - Per-tile color statistics (matched/total)
 - Aggregated statistics across multiple images
 
 ### 🔔 Notifications
+
 - Get notified when paint accumulates (customizable threshold from 10% to 100%)
 - Optional Google Calendar link integration
 - Toggle notifications ON/OFF from popup
 
 ### 👥 Friends Book
+
 - Save other players' information with tags
 - Add notes for each player
 - Import/export player list as CSV
 - Hover to display player notes
 
 ### 🛠️ Developer Mode
+
 - 10-click easter egg to enable dev mode (or Konami code)
 - IndexedDB ↔ chrome.storage full sync feature
 - Advanced tools for debugging and testing
@@ -117,8 +128,7 @@ Mozilla Public License 2.0
 
 ## 🔗 Related Links
 
-- [WPlace Official Site](https://wplace.jp/)
-- [DaisyUI](https://daisyui.com/)
+- [WPlace Official Site](https://wplace.live/)
 - [Wplace - Code of Conduct](https://wplace.live/terms/code-of-conduct)
 
 ---
