@@ -39,6 +39,8 @@ export class ColorFilter {
           button.addEventListener("click", () => this.showModal());
           container.className += " flex flex-col-reverse gap-1";
           container.appendChild(button);
+          const mgr = window.mrWplace?.colorFilterManager;
+          if (mgr) button.style.filter = mgr.selectedRGBs.length === 0 ? "grayscale(1)" : "";
         },
       },
     ]);

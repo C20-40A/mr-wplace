@@ -38,5 +38,8 @@ export const sendColorFilterToInject = (
     "*"
   );
 
+  const btn = document.getElementById("color-filter-fab-btn");
+  if (btn) btn.style.filter = colorFilterManager.selectedRGBs.length === 0 ? "grayscale(1)" : "";
+
   console.log(`🧑‍🎨 : Sent color filter state to inject side`);
 };

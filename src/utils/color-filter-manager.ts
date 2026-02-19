@@ -15,7 +15,8 @@ export class ColorFilterManager {
   private enhancedColor: [number, number, number] = [255, 0, 0];
   private showUnplacedColor: [number, number, number] = [160, 160, 160];
   private extraColorsBitmap: number | undefined = undefined;
-  private showUnplacedColorSaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private showUnplacedColorSaveTimer: ReturnType<typeof setTimeout> | null =
+    null;
 
   constructor() {
     this.selectedColorIds = this.getDefaultColorIds();
@@ -54,10 +55,11 @@ export class ColorFilterManager {
   private isColorMatch(r: number, g: number, b: number): boolean {
     if (this.selectedRGBs.length === 0) return false;
     return this.selectedRGBs.some(
-      ([pr, pg, pb]) => r === pr && g === pg && b === pb
+      ([pr, pg, pb]) => r === pr && g === pg && b === pb,
     );
   }
 
+  // @deprecated
   applyColorFilter(imageBitmap: ImageBitmap): ImageBitmap | null {
     if (this.selectedRGBs.length === colorpalette.length) return imageBitmap;
 
@@ -75,7 +77,7 @@ export class ColorFilterManager {
       0,
       0,
       imageBitmap.width,
-      imageBitmap.height
+      imageBitmap.height,
     );
     const data = imageData.data;
 
@@ -145,7 +147,8 @@ export class ColorFilterManager {
 
   setShowUnplacedColor(color: [number, number, number]): void {
     this.showUnplacedColor = color;
-    if (this.showUnplacedColorSaveTimer) clearTimeout(this.showUnplacedColorSaveTimer);
+    if (this.showUnplacedColorSaveTimer)
+      clearTimeout(this.showUnplacedColorSaveTimer);
     this.showUnplacedColorSaveTimer = setTimeout(() => {
       this.showUnplacedColorSaveTimer = null;
       void this.saveShowUnplacedColorToStorage();
