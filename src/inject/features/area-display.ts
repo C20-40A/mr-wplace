@@ -118,6 +118,21 @@ let pointerUpHandler: (() => void) | null = null;
 let cachedMapContainer: HTMLElement | null = null;
 let pendingRenderMap: AreaMap | null = null;
 let renderFrameId: number | null = null;
+let regionLayerDataDirty = true;
+let regionLayerStyleDirty = true;
+let editLayerDataDirty = true;
+
+const markRegionLayerDataDirty = (): void => {
+  regionLayerDataDirty = true;
+};
+
+const markRegionLayerStyleDirty = (): void => {
+  regionLayerStyleDirty = true;
+};
+
+const markEditLayerDataDirty = (): void => {
+  editLayerDataDirty = true;
+};
 
 const isFiniteNumber = (value: unknown): value is number =>
   typeof value === "number" && Number.isFinite(value);
@@ -510,23 +525,47 @@ const applyAreaNameLayerStyle = (map: AreaMap): void => {
 };
 
 const syncAreaRegionLayerData = (map: AreaMap): void => {
+  const needsSetup =
+    !map.getSource?.(AREA_REGION_SOURCE_ID) ||
+    !map.getLayer?.(AREA_REGION_FILL_LAYER_ID) ||
+    !map.getLayer?.(AREA_REGION_LINE_LAYER_ID) ||
+    !map.getLayer?.(AREA_REGION_LABEL_LAYER_ID) ||
+    !map.getLayer?.(AREA_REGION_BADGE_LABEL_LAYER_ID);
+
+  if (!regionLayerDataDirty && !regionLayerStyleDirty && !needsSetup) return;
+
   ensureAreaRegionLayers(map);
-  setGeoJsonSourceData(
-    map,
-    AREA_REGION_SOURCE_ID,
-    buildAreaRegionFeatureCollection(),
-  );
-  if (map.setPaintProperty && map.getLayer?.(AREA_REGION_FILL_LAYER_ID)) {
+  if (regionLayerDataDirty || needsSetup) {
+    setGeoJsonSourceData(
+      map,
+      AREA_REGION_SOURCE_ID,
+      buildAreaRegionFeatureCollection(),
+    );
+    regionLayerDataDirty = false;
+  }
+  if (
+    (regionLayerStyleDirty || needsSetup) &&
+    map.setPaintProperty &&
+    map.getLayer?.(AREA_REGION_FILL_LAYER_ID)
+  ) {
     map.setPaintProperty(
       AREA_REGION_FILL_LAYER_ID,
       "fill-opacity",
       areaFillOpacity,
     );
+    applyAreaNameLayerStyle(map);
+    regionLayerStyleDirty = false;
   }
-  applyAreaNameLayerStyle(map);
 };
 
 const syncAreaEditLayerData = (map: AreaMap): void => {
+  const needsSetup =
+    !map.getSource?.(AREA_EDIT_SOURCE_ID) ||
+    !map.getLayer?.(AREA_EDIT_FILL_LAYER_ID) ||
+    !map.getLayer?.(AREA_EDIT_LINE_LAYER_ID);
+
+  if (!editLayerDataDirty && !needsSetup) return;
+
   ensureAreaEditLayers(map);
   if (!editMode || editVertices.length < 3) {
     setGeoJsonSourceData(
@@ -534,6 +573,7 @@ const syncAreaEditLayerData = (map: AreaMap): void => {
       AREA_EDIT_SOURCE_ID,
       EMPTY_POLYGON_FEATURE_COLLECTION,
     );
+    editLayerDataDirty = false;
     return;
   }
 
@@ -544,6 +584,7 @@ const syncAreaEditLayerData = (map: AreaMap): void => {
       AREA_EDIT_SOURCE_ID,
       EMPTY_POLYGON_FEATURE_COLLECTION,
     );
+    editLayerDataDirty = false;
     return;
   }
 
@@ -562,6 +603,7 @@ const syncAreaEditLayerData = (map: AreaMap): void => {
       },
     ],
   });
+  editLayerDataDirty = false;
 };
 
 const safeRemoveLayer = (map: AreaMap, layerId: string): void => {
@@ -762,6 +804,7 @@ const ensureDefaultVertices = (map: AreaMap): void => {
       y: centerPoint.y + offset.y,
     }),
   );
+  markEditLayerDataDirty();
 };
 
 const clearEdgeHitLines = (): void => {
@@ -799,6 +842,7 @@ const setVertexFromPointer = (map: AreaMap, event: PointerEvent): void => {
   const x = Math.min(Math.max(event.clientX - rect.left, 0), rect.width);
   const y = Math.min(Math.max(event.clientY - rect.top, 0), rect.height);
   editVertices[activeDragIndex] = map.unproject({ x, y });
+  markEditLayerDataDirty();
   renderEditingOverlay(map);
 };
 
@@ -859,6 +903,7 @@ const insertVertexOnEdge = (map: AreaMap, edgeIndex: number): void => {
   });
 
   editVertices.splice(edgeIndex + 1, 0, midpoint);
+  markEditLayerDataDirty();
   renderEditingOverlay(map);
 };
 
@@ -917,6 +962,7 @@ const renderEditingOverlay = (map: AreaMap): void => {
         if (!Number.isFinite(index)) return;
         if (editVertices.length <= 3) return;
         editVertices.splice(index, 1);
+        markEditLayerDataDirty();
         renderEditingOverlay(map);
       };
 
@@ -1033,7 +1079,10 @@ const addAreaOverlay = (map: AreaMap): void => {
   mapContainer.appendChild(container);
   cachedMapContainer = mapContainer;
 
-  mapUpdateHandler = () => scheduleAreaOverlayRender(map);
+  mapUpdateHandler = () => {
+    if (!editMode) return;
+    scheduleAreaOverlayRender(map);
+  };
   for (const eventName of MAP_UPDATE_EVENTS)
     map.on(eventName, mapUpdateHandler);
 
@@ -1109,6 +1158,8 @@ export const setAreaRegions = (regions: AreaRegion[]): void => {
         .filter((region): region is AreaRegion => Boolean(region))
     : [];
 
+  markRegionLayerDataDirty();
+
   const map = getMapInstanceFromWplace() as AreaMap | null;
   if (map && areaEnabled) scheduleAreaOverlayRender(map);
 
@@ -1118,18 +1169,24 @@ export const setAreaRegions = (regions: AreaRegion[]): void => {
 export const setAreaDisplayOptions = (
   options: Partial<AreaDisplayOptions> = {},
 ): void => {
+  let hasStyleChange = false;
   if ("fillOpacityPercent" in options) {
     areaFillOpacity = normalizeFillOpacityPercent(options.fillOpacityPercent);
+    hasStyleChange = true;
   }
   if ("nameDisplayMode" in options) {
     areaNameDisplayMode = normalizeAreaNameDisplayMode(options.nameDisplayMode);
+    hasStyleChange = true;
   }
   if ("nameFontSizePx" in options) {
     areaNameFontSizePx = normalizeAreaNameFontSizePx(options.nameFontSizePx);
+    hasStyleChange = true;
   }
   if ("nameStyleMode" in options) {
     areaNameStyleMode = normalizeAreaNameStyleMode(options.nameStyleMode);
+    hasStyleChange = true;
   }
+  if (hasStyleChange) markRegionLayerStyleDirty();
   const map = getMapInstanceFromWplace() as AreaMap | null;
   if (map && areaEnabled) scheduleAreaOverlayRender(map);
 
@@ -1164,6 +1221,8 @@ export const startAreaRegionEdit = (
   if (cancelEditButton) cancelEditButton.textContent = editingCancelLabel;
   editVertices = sanitizeVertices(payload.vertices);
   ensureDefaultVertices(map);
+  markRegionLayerDataDirty();
+  markEditLayerDataDirty();
   scheduleAreaOverlayRender(map);
 
   console.log("🧑‍🎨 : Area edit started", {
@@ -1179,6 +1238,8 @@ export const stopAreaRegionEdit = (): void => {
   editingRegionName = "";
   editingColor = DEFAULT_AREA_COLOR;
   editVertices = [];
+  markRegionLayerDataDirty();
+  markEditLayerDataDirty();
 
   const map = getMapInstanceFromWplace() as AreaMap | null;
   if (map && areaEnabled) scheduleAreaOverlayRender(map);
@@ -1209,7 +1270,12 @@ export const setAreaMeasureEnabled = (enabled: boolean): void => {
     return;
   }
 
-  if (enabled) addAreaOverlay(map);
+  if (enabled) {
+    markRegionLayerDataDirty();
+    markRegionLayerStyleDirty();
+    markEditLayerDataDirty();
+    addAreaOverlay(map);
+  }
   else removeAreaOverlay(map);
 
   console.log("🧑‍🎨 : Area measure enabled:", enabled);
@@ -1219,6 +1285,9 @@ export const setupAreaMeasureOnMapReady = (mapInstance: unknown): void => {
   const map = mapInstance as AreaMap;
   const onStyleData = () => {
     if (!areaEnabled) return;
+    markRegionLayerDataDirty();
+    markRegionLayerStyleDirty();
+    markEditLayerDataDirty();
     scheduleAreaOverlayRender(map);
   };
   map.on("styledata", onStyleData);

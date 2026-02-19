@@ -287,6 +287,20 @@ MapLibre style layer:
   - popup の Danger Zone で危険な操作を明示的に分離
   - 確認ダイアログは常に `resetAllAreas()` 内で一元管理
 
+### 2026-02-19 Phase 7 (完了)
+
+- 目的: map操作時の不要な `setData` 連打を抑止して表示負荷を削減
+- 実施:
+  - `area-display.ts` に region/edit 用の dirty flag を追加
+  - `renderRegionLayer()` / `renderEditingOverlay()` 内の GeoJSON source 更新を dirty 時のみ実行
+  - 通常表示時 (`editMode=false`) は map update event で再描画を走らせないよう変更
+  - `styledata` 発火時は dirty を立てて source/layer 再同期を強制
+  - 頂点ドラッグ/追加/削除時のみ edit source を dirty にするよう更新
+- 結果:
+  - pan/zoom/rotate/pitch 中の全リージョン再生成・`setData` 更新を回避
+  - 編集時も頂点未変更フレームでは edit source 更新を回避
+  - 体感上の引っかかりやCPU使用率悪化を抑えやすい構造に改善
+
 ### Review Result
 
 - 実行確認: `npm run build` 成功
@@ -297,6 +311,7 @@ MapLibre style layer:
   - `renderAreaManager()` の巨大化 (UI構築責務分割)
   - polygon points 文字列生成コストのさらなる削減 (頂点数が多い場合の最適化)
   - map-ready source (`mr-wplace-map-instance-captured`) も将来的に定数化候補
+  - 編集オーバーレイの edge hit 要素再生成を差分更新化 (大量頂点時)
 
 ## Mermaid Diagram
 
