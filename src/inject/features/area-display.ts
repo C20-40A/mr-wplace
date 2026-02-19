@@ -37,6 +37,10 @@ const AREA_EDIT_SOURCE_ID = "mr-wplace-area-edit-source";
 const AREA_EDIT_FILL_LAYER_ID = "mr-wplace-area-edit-fill";
 const AREA_EDIT_LINE_LAYER_ID = "mr-wplace-area-edit-line";
 const AREA_LABEL_BADGE_IMAGE_ID_PREFIX = "mr-wplace-area-label-badge-";
+const AREA_REGION_SYNC_BATCH_SIZE = 160;
+const AREA_REGION_SYNC_TIME_BUDGET_MS = 6;
+const AREA_REGION_RENDER_COMMIT_STEP = 640;
+const AREA_REGION_BEST_EFFORT_MAX = 2500;
 
 interface LngLat {
   lng: number;
@@ -121,6 +125,8 @@ let renderFrameId: number | null = null;
 let regionLayerDataDirty = true;
 let regionLayerStyleDirty = true;
 let editLayerDataDirty = true;
+let areaRegionSyncJobId = 0;
+let areaRegionSyncFrameId: number | null = null;
 
 const markRegionLayerDataDirty = (): void => {
   regionLayerDataDirty = true;
@@ -132,6 +138,13 @@ const markRegionLayerStyleDirty = (): void => {
 
 const markEditLayerDataDirty = (): void => {
   editLayerDataDirty = true;
+};
+
+const cancelAreaRegionSync = (): void => {
+  areaRegionSyncJobId += 1;
+  if (areaRegionSyncFrameId === null) return;
+  window.cancelAnimationFrame(areaRegionSyncFrameId);
+  areaRegionSyncFrameId = null;
 };
 
 const isFiniteNumber = (value: unknown): value is number =>
@@ -149,6 +162,26 @@ const sanitizeVertices = (vertices: unknown): LngLat[] => {
     lng: vertex.lng,
     lat: vertex.lat,
   }));
+};
+
+const sanitizeAreaRegion = (region: unknown): AreaRegion | null => {
+  if (!region || typeof region !== "object") return null;
+
+  const vertices = sanitizeVertices((region as { vertices?: unknown }).vertices);
+  if (vertices.length < 3) return null;
+
+  return {
+    id: String((region as { id?: unknown }).id ?? ""),
+    name: String((region as { name?: unknown }).name ?? ""),
+    color: normalizeAreaColor((region as { color?: unknown }).color),
+    visible:
+      typeof (region as { visible?: unknown }).visible === "boolean"
+        ? Boolean((region as { visible?: unknown }).visible)
+        : true,
+    createdAt: Number((region as { createdAt?: unknown }).createdAt ?? 0),
+    updatedAt: Number((region as { updatedAt?: unknown }).updatedAt ?? 0),
+    vertices,
+  } satisfies AreaRegion;
 };
 
 const cloneVertices = (vertices: LngLat[]): AreaRegionVertex[] =>
@@ -1129,41 +1162,73 @@ const getCurrentEditSnapshot = (): AreaRegionEditSnapshot | null => {
 };
 
 export const setAreaRegions = (regions: AreaRegion[]): void => {
-  areaRegions = Array.isArray(regions)
-    ? regions
-        .map((region) => {
-          if (!region || typeof region !== "object") return null;
-          const vertices = sanitizeVertices(
-            (region as { vertices?: unknown }).vertices,
-          );
-          if (vertices.length < 3) return null;
+  cancelAreaRegionSync();
 
-          return {
-            id: String((region as { id?: unknown }).id ?? ""),
-            name: String((region as { name?: unknown }).name ?? ""),
-            color: normalizeAreaColor((region as { color?: unknown }).color),
-            visible:
-              typeof (region as { visible?: unknown }).visible === "boolean"
-                ? Boolean((region as { visible?: unknown }).visible)
-                : true,
-            createdAt: Number(
-              (region as { createdAt?: unknown }).createdAt ?? 0,
-            ),
-            updatedAt: Number(
-              (region as { updatedAt?: unknown }).updatedAt ?? 0,
-            ),
-            vertices,
-          } satisfies AreaRegion;
-        })
-        .filter((region): region is AreaRegion => Boolean(region))
-    : [];
-
+  const sourceRegions = Array.isArray(regions) ? regions : [];
+  areaRegions = [];
   markRegionLayerDataDirty();
 
-  const map = getMapInstanceFromWplace() as AreaMap | null;
-  if (map && areaEnabled) scheduleAreaOverlayRender(map);
+  const syncMap = getMapInstanceFromWplace() as AreaMap | null;
+  if (syncMap && areaEnabled) scheduleAreaOverlayRender(syncMap);
 
-  console.log("🧑‍🎨 : Area regions synced:", areaRegions.length);
+  if (sourceRegions.length === 0) {
+    console.log("🧑‍🎨 : Area regions synced:", 0);
+    return;
+  }
+
+  const syncJobId = ++areaRegionSyncJobId;
+  let index = 0;
+  let invalidCount = 0;
+  let droppedCount = 0;
+  let lastCommittedCount = 0;
+
+  const processNextChunk = () => {
+    if (syncJobId !== areaRegionSyncJobId) return;
+
+    const startedAt = performance.now();
+    let processedInChunk = 0;
+
+    while (
+      index < sourceRegions.length &&
+      processedInChunk < AREA_REGION_SYNC_BATCH_SIZE &&
+      performance.now() - startedAt < AREA_REGION_SYNC_TIME_BUDGET_MS
+    ) {
+      const sanitized = sanitizeAreaRegion(sourceRegions[index]);
+      if (!sanitized) invalidCount += 1;
+      else if (areaRegions.length < AREA_REGION_BEST_EFFORT_MAX)
+        areaRegions.push(sanitized);
+      else droppedCount += 1;
+
+      index += 1;
+      processedInChunk += 1;
+    }
+
+    const shouldCommit =
+      areaRegions.length - lastCommittedCount >= AREA_REGION_RENDER_COMMIT_STEP ||
+      index >= sourceRegions.length;
+
+    if (shouldCommit) {
+      markRegionLayerDataDirty();
+      const map = getMapInstanceFromWplace() as AreaMap | null;
+      if (map && areaEnabled) scheduleAreaOverlayRender(map);
+      lastCommittedCount = areaRegions.length;
+    }
+
+    if (index >= sourceRegions.length) {
+      areaRegionSyncFrameId = null;
+      console.log("🧑‍🎨 : Area regions synced:", areaRegions.length, {
+        total: sourceRegions.length,
+        invalid: invalidCount,
+        dropped: droppedCount,
+      });
+      return;
+    }
+
+    areaRegionSyncFrameId = window.requestAnimationFrame(processNextChunk);
+  };
+
+  areaRegionSyncFrameId = window.requestAnimationFrame(processNextChunk);
+  console.log("🧑‍🎨 : Area regions sync started:", sourceRegions.length);
 };
 
 export const setAreaDisplayOptions = (

@@ -301,6 +301,20 @@ MapLibre style layer:
   - 編集時も頂点未変更フレームでは edit source 更新を回避
   - 体感上の引っかかりやCPU使用率悪化を抑えやすい構造に改善
 
+### 2026-02-19 Phase 8 (完了)
+
+- 目的: 大量リージョン同期時の起動直後フリーズを軽減 (best-effort 読み込み)
+- 実施:
+  - `setAreaRegions()` の同期 `map/filter` 処理を廃止し、`requestAnimationFrame` ベースのチャンク同期へ変更
+  - 1チャンクあたりの処理件数/時間予算を設定し、メインスレッド占有を抑制
+  - 一定件数ごとにのみ `setData` 更新をコミットし、更新回数を制限
+  - best-effort 上限 (`AREA_REGION_BEST_EFFORT_MAX`) を導入し、過剰件数は描画対象から除外
+  - 新規同期開始時に進行中ジョブをキャンセルする仕組みを追加
+- 結果:
+  - 何千件規模のリージョンでも一括処理を避け、UI操作不能時間を短縮しやすくなった
+  - 読み込み途中でも段階的に表示されるため、初期表示の体感が改善
+  - 最悪ケースでは一部リージョンを省略しても操作継続を優先できる
+
 ### Review Result
 
 - 実行確認: `npm run build` 成功
@@ -312,6 +326,7 @@ MapLibre style layer:
   - polygon points 文字列生成コストのさらなる削減 (頂点数が多い場合の最適化)
   - map-ready source (`mr-wplace-map-instance-captured`) も将来的に定数化候補
   - 編集オーバーレイの edge hit 要素再生成を差分更新化 (大量頂点時)
+  - content→inject の postMessage 自体も chunk 送信化して structured clone 負荷を分散
 
 ## Mermaid Diagram
 
