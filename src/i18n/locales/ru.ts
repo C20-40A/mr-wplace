@@ -201,7 +201,6 @@ export const ruTranslations = {
   popup_lock_button: "Большая Кнопка Блокировки (Мобильная)",
   popup_close_confirm: "Подтверждение при Закрытии Панели Рисования",
   popup_paint_mode_style: "Скрыть FAB в Режиме Рисования",
-  popup_close_button_swap: "Поменять Позицию Кнопки Закрытия",
   popup_bug_report: "Сообщить об Ошибке",
   popup_fab_visibility: "Видимость FAB",
   popup_fab_gallery: "Галерея",
@@ -531,4 +530,5 @@ export const ruTranslations = {
   hint_image_detail_dpad: "Вы можете переместить изображение здесь",
   hint_image_detail_download: "Чтобы поделиться с другими, загрузите изображение отсюда. Имя файла содержит координаты, поэтому при загрузке изображение будет размещено в той же позиции",
   hint_image_detail_edit_title: "Нажмите на название изображения, чтобы изменить его",
+  popup_close_button_big: "Большая Кнопка Закрытия",
 };

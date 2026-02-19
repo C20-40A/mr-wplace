@@ -25,10 +25,10 @@ import {
   setPaintModeStyle,
 } from "./states/paint-mode-style";
 import {
-  loadCloseButtonSwapFromStorage,
-  getCloseButtonSwap,
-  setCloseButtonSwap,
-} from "./states/close-button-swap";
+  loadCloseButtonBigFromStorage,
+  getCloseButtonBig,
+  setCloseButtonBig,
+} from "./states/close-button-big";
 import {
   loadFabVisibilityFromStorage,
   getFabVisibility,
@@ -82,7 +82,7 @@ const updateUI = (): void => {
     "popup-lock-button-label": "popup_lock_button",
     "popup-close-confirm-label": "popup_close_confirm",
     "popup-paint-mode-style-label": "popup_paint_mode_style",
-    "popup-close-button-swap-label": "popup_close_button_swap",
+    "popup-close-button-big-label": "popup_close_button_big",
     "popup-bug-report-label": "popup_bug_report",
     "popup-fab-visibility-label": "popup_fab_visibility",
     "popup-fab-gallery-label": "popup_fab_gallery",
@@ -195,8 +195,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const paintModeStyleSelect = document.getElementById(
     "paint-mode-style-select",
   ) as HTMLSelectElement;
-  const closeButtonSwapSelect = document.getElementById(
-    "close-button-swap-select",
+  const closeButtonBigSelect = document.getElementById(
+    "close-button-big-select",
   ) as HTMLSelectElement;
   const computeDeviceSelect = document.getElementById(
     "compute-device-select",
@@ -212,7 +212,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentLockButtonEnhancer = false;
   let currentCloseConfirm = false;
   let currentPaintModeStyle = true;
-  let currentCloseButtonSwap = false;
+  let currentCloseButtonBig = false;
   let currentComputeDevice: "gpu" | "cpu" = "gpu";
   let mapInstanceReady = false;
 
@@ -228,7 +228,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       loadLockButtonEnhancerFromStorage(),
       loadCloseConfirmFromStorage(),
       loadPaintModeStyleFromStorage(),
-      loadCloseButtonSwapFromStorage(),
+      loadCloseButtonBigFromStorage(),
       loadFabVisibilityFromStorage(),
     ]);
 
@@ -236,7 +236,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     currentLockButtonEnhancer = getLockButtonEnhancer();
     currentCloseConfirm = getCloseConfirm();
     currentPaintModeStyle = getPaintModeStyle();
-    currentCloseButtonSwap = getCloseButtonSwap();
+    currentCloseButtonBig = getCloseButtonBig();
     currentComputeDevice = await ColorPaletteStorage.getComputeDevice();
 
     try {
@@ -258,7 +258,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   lockButtonEnhancerSelect.value = currentLockButtonEnhancer.toString();
   closeConfirmSelect.value = currentCloseConfirm.toString();
   paintModeStyleSelect.value = currentPaintModeStyle.toString();
-  closeButtonSwapSelect.value = currentCloseButtonSwap.toString();
+  closeButtonBigSelect.value = currentCloseButtonBig.toString();
   computeDeviceSelect.value = currentComputeDevice;
 
   // FAB visibility selector初期化
@@ -360,12 +360,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Close button swap変更イベント
-  closeButtonSwapSelect.addEventListener("change", async (event) => {
+  // Close button big変更イベント
+  closeButtonBigSelect.addEventListener("change", async (event) => {
     const target = event.target as HTMLSelectElement;
     const newEnabled = target.value === "true";
 
-    await setCloseButtonSwap(newEnabled);
+    await setCloseButtonBig(newEnabled);
 
     // ページをリロードして設定を反映
     const [activeTab] = await tabs.query({

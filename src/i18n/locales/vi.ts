@@ -198,7 +198,6 @@ export const viTranslations = {
   popup_lock_button: "Nút Khóa Lớn (Di động)",
   popup_close_confirm: "Xác nhận khi Đóng Bảng Vẽ",
   popup_paint_mode_style: "Ẩn FAB khi Chế độ Vẽ",
-  popup_close_button_swap: "Đổi Vị trí Nút Đóng",
   popup_bug_report: "Báo Lỗi",
   popup_fab_visibility: "Hiện/Ẩn FAB",
   popup_fab_gallery: "Thư viện",
@@ -525,4 +524,5 @@ export const viTranslations = {
   hint_image_detail_dpad: "Bạn có thể di chuyển hình ảnh ở đây",
   hint_image_detail_download: "Để chia sẻ với người khác, tải xuống hình ảnh từ đây. Tên tệp chứa tọa độ, nên khi tải lên sẽ đặt hình ảnh vào cùng vị trí",
   hint_image_detail_edit_title: "Nhấn vào tiêu đề ảnh để chỉnh sửa",
+  popup_close_button_big: "Nút Đóng Lớn",
 };

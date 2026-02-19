@@ -207,7 +207,6 @@ export const enTranslations = {
   popup_lock_button: "Large Lock Button (for Mobile)",
   popup_close_confirm: "Confirm on Close Paint Modal",
   popup_paint_mode_style: "Hide FABs on Paint Mode",
-  popup_close_button_swap: "Swap Close Button Position",
   popup_overlay_mode: "Overlay",
   popup_overlay_mode_composite: "Composite",
   popup_overlay_mode_layer: "Independent",
@@ -560,4 +559,5 @@ Do not use this feature to paint actual pixels.`,
   complete: "Complete",
   map_filter_area_large_file_warning: "Large file detected. Processing may take some time. Continue?",
   file_size: "File size",
+  popup_close_button_big: "Big Close Button",
 };

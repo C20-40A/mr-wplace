@@ -200,7 +200,6 @@ export const ptTranslations = {
   popup_lock_button: "Botão de Bloqueio Grande (Mobile)",
   popup_close_confirm: "Confirmar ao Fechar Painel de Pintura",
   popup_paint_mode_style: "Ocultar FABs no Modo Pintura",
-  popup_close_button_swap: "Trocar Posição do Botão Fechar",
   popup_bug_report: "Reportar Bug",
   popup_fab_visibility: "Visibilidade dos FABs",
   popup_fab_gallery: "Galeria",
@@ -526,4 +525,5 @@ export const ptTranslations = {
   hint_image_detail_dpad: "Você pode mover a imagem aqui",
   hint_image_detail_download: "Para compartilhar com outros, baixe a imagem daqui. O nome do arquivo contém as coordenadas, então carregá-lo colocará a imagem na mesma posição",
   hint_image_detail_edit_title: "Clique no título da imagem para editá-lo",
+  popup_close_button_big: "Botão de Fechar Grande",
 };

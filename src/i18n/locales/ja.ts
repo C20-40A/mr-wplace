@@ -213,7 +213,6 @@ export const jaTranslations = {
   popup_lock_button: "ロックボタン拡大（モバイル向け）",
   popup_close_confirm: "ペイント画面を閉じる時に確認",
   popup_paint_mode_style: "ペイント時にFABを非表示",
-  popup_close_button_swap: "閉じるボタンの位置を入れ替え",
   popup_overlay_mode: "レイヤー",
   popup_overlay_mode_composite: "合成",
   popup_overlay_mode_layer: "独立",
@@ -562,4 +561,5 @@ export const jaTranslations = {
   complete: "完了",
   map_filter_area_large_file_warning: "大きなファイルが検出されました。処理に時間がかかる可能性があります。続行しますか？",
   file_size: "ファイルサイズ",
+  popup_close_button_big: "閉じるボタンを大きくする",
 };

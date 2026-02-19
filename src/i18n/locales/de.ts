@@ -211,7 +211,6 @@ export const deTranslations = {
   popup_lock_button: "Großer Sperrbutton (für Mobilgeräte)",
   popup_close_confirm: "Bestätigung beim Schließen des Paint-Modals",
   popup_paint_mode_style: "FABs im Zeichenmodus ausblenden",
-  popup_close_button_swap: "Position der Schließen-Schaltfläche tauschen",
   popup_overlay_mode: "Overlay",
   popup_overlay_mode_composite: "Komposit",
   popup_overlay_mode_layer: "Unabhängig",
@@ -559,4 +558,5 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
     "Zum Teilen mit anderen kannst du das Bild hier herunterladen. Der Dateiname enthält die Koordinaten, sodass das Bild beim Laden an derselben Position platziert wird",
   tutorial_reset_hints_button: "Hinweise erneut anzeigen",
   hint_image_detail_edit_title: "Klicke auf den Bildtitel, um ihn zu bearbeiten",
+  popup_close_button_big: "Schließen-Schaltfläche vergrößern",
 };

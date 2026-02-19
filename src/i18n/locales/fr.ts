@@ -203,7 +203,6 @@ export const frTranslations = {
   popup_lock_button: "Grand Bouton de Verrouillage (Mobile)",
   popup_close_confirm: "Confirmer la Fermeture du Panneau de Peinture",
   popup_paint_mode_style: "Masquer les FAB en Mode Peinture",
-  popup_close_button_swap: "Inverser la Position du Bouton Fermer",
   popup_bug_report: "Signaler un Bug",
   popup_fab_visibility: "Visibilité des FAB",
   popup_fab_gallery: "Galerie",
@@ -542,4 +541,5 @@ export const frTranslations = {
   hint_image_detail_dpad: "Vous pouvez déplacer l'image ici",
   hint_image_detail_download: "Pour partager avec d'autres, téléchargez l'image ici. Le nom du fichier contient les coordonnées, donc le charger placera l'image à la même position",
   hint_image_detail_edit_title: "Cliquez sur le titre de l'image pour le modifier",
+  popup_close_button_big: "Grand Bouton de Fermeture",
 };
