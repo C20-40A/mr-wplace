@@ -11,7 +11,7 @@ const clickPositionModalCloseButton = () => {
   if (!positionModalElement) return;
 
   const closeButton = positionModalElement.querySelector<HTMLButtonElement>(
-    'button:has(path[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"])'
+    'button:has(path[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"])',
   );
   closeButton?.click();
 };
@@ -46,7 +46,7 @@ export const resolveMapInstanceAsync = async (): Promise<
   const forceTrigger = () => {
     if (mapInstance) return;
     const canvas: HTMLCanvasElement | null = document.querySelector(
-      "canvas.maplibregl-canvas"
+      "canvas.maplibregl-canvas",
     );
     if (!canvas) return;
 
@@ -57,12 +57,12 @@ export const resolveMapInstanceAsync = async (): Promise<
         clientX: canvas.width / 2,
         clientY: canvas.height / 2,
         button: 0,
-      })
+      }),
     );
   };
 
-  for (let i = 0; i < 10; i++) {
-    await delay(300);
+  for (let i = 0; i < 5; i++) {
+    await delay(300 + i * 200);
     if (mapInstance) {
       console.log("🧑‍🎨 Map instance found:", mapInstance);
       clickPositionModalCloseButton();
