@@ -684,8 +684,15 @@ class AreaManager {
 
     if (this.areaRegions.length === 0 && this.areaRegionGroups.length === 0) {
       const empty = document.createElement("div");
-      empty.className = "text-sm opacity-70";
-      empty.textContent = t`${"map_filter_area_empty"}`;
+      empty.className = "flex flex-col items-center justify-center gap-3 py-8";
+      empty.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" style="width: 64px; height: 64px; opacity: 0.3;">
+          <path d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 294q122-112 181-203.5T720-552q0-109-69.5-178.5T480-800q-101 0-170.5 69.5T240-552q0 71 59 162.5T480-186Zm0 106Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Zm0-480Z"/>
+        </svg>
+        <div style="opacity: 0.6; text-align: center; font-size: 0.875rem;">
+          ${t`${"map_filter_area_empty"}`}
+        </div>
+      `;
       list.appendChild(empty);
     } else {
       for (const group of this.areaRegionGroups) {
