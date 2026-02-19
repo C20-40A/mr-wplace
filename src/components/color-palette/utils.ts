@@ -33,16 +33,19 @@ export const ENHANCED_MODE_OPTIONS: EnhancedModeOption[] = [
     value: "huge-red-cross-bold",
     labelKey: "enhanced_mode_huge_red_cross_bold",
     speed: "slow",
+    maxPixels: 500,
   },
   {
     value: "huge-red-diamond",
     labelKey: "enhanced_mode_huge_red_diamond",
     speed: "slow",
+    maxPixels: 300,
   },
   {
     value: "huge-red-ring",
     labelKey: "enhanced_mode_huge_red_ring",
     speed: "slow",
+    maxPixels: 100,
   },
 ];
 

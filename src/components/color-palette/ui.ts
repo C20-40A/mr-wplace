@@ -295,11 +295,17 @@ export function buildEnhancedSelectHtml(
                       isXs ? "0.7rem" : "0.8rem"
                     };">⌛</span>`
                   : "";
+            // Tooltip: label + max pixel limit (no i18n needed)
+            const limitInfo = mode.maxPixels != null
+              ? ` (MAX ${mode.maxPixels}px)`
+              : mode.speed === "slow"
+                ? ` (∞)`
+                : "";
             return `
               <button class="enhanced-mode-item"
                       data-mode="${mode.value}"
                       type="button"
-                      title="${t`${mode.labelKey}`}"
+                      title="${t`${mode.labelKey}`}${limitInfo}"
                       style="position: relative;
                              padding: ${isXs ? "0.35rem" : "0.5rem"};
                              background-color: ${bgColor};

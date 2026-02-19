@@ -45,6 +45,8 @@ export interface EnhancedModeOption {
   value: EnhancedMode;
   labelKey: string;
   speed?: SpeedTier;
+  /** Max unplaced pixels for 2nd-pass rendering. undefined = no limit */
+  maxPixels?: number;
 }
 
 export interface SortOrderOption {

@@ -3,6 +3,7 @@ import { latLngToTilePixel } from "@/utils/coordinate";
 import { blobToPixels } from "@/utils/pixel-converters";
 import type { TileDrawInstance, ColorStats, EnhancedMode } from "./types";
 import { getAuxiliaryColor, colorToKey } from "./filters/color-processing";
+import { ENHANCED_MODE_OPTIONS } from "@/components/color-palette/utils";
 import { convertImageBitmapToUint8ClampedArray } from "./image-processing/pixel-processing";
 import { processGpuColorFilter } from "./filters/gpu-filter";
 import { processCpuColorFilter } from "./filters/cpu-filter";
@@ -514,12 +515,13 @@ const scaleAndRenderWithMode = (
   }
 
   // 2nd pass: huge marker 描画
-  // Skip if too many unplaced pixels (>100) for performance
-  const HUGE_MARKER_MAX_PIXELS = 100;
+  // Per-mode pixel limit (undefined = no limit)
+  const modeOption = ENHANCED_MODE_OPTIONS.find((o) => o.value === mode);
+  const maxPixels = modeOption?.maxPixels;
   if (
     needsHugeMarker &&
     unplacedCenters.length > 0 &&
-    unplacedCenters.length <= HUGE_MARKER_MAX_PIXELS
+    (maxPixels === undefined || unplacedCenters.length <= maxPixels)
   ) {
     const armLength = 30;
     const centerSize = 1; // 中央3x3の半径（±1 = 3px）
