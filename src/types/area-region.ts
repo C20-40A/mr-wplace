@@ -27,9 +27,11 @@ export interface AreaRegionEditSnapshot {
 }
 
 export type AreaNameDisplayMode = "always" | "off";
+export type AreaNameStyleMode = "halo" | "color-badge";
 
 export interface AreaDisplayOptions {
   fillOpacityPercent: number;
   nameDisplayMode: AreaNameDisplayMode;
   nameFontSizePx: number;
+  nameStyleMode: AreaNameStyleMode;
 }

@@ -1,6 +1,7 @@
 import type {
   AreaDisplayOptions,
   AreaNameDisplayMode,
+  AreaNameStyleMode,
   AreaRegion,
   AreaRegionEditSnapshot,
   AreaRegionVertex,
@@ -15,10 +16,12 @@ import {
   DEFAULT_AREA_COLOR,
   DEFAULT_AREA_NAME_FONT_SIZE_PX,
   DEFAULT_AREA_NAME_DISPLAY_MODE,
+  DEFAULT_AREA_NAME_STYLE_MODE,
   formatPixelArea,
   normalizeAreaColor,
   normalizeAreaNameFontSizePx,
   normalizeAreaNameDisplayMode,
+  normalizeAreaNameStyleMode,
 } from "@/utils/area-region";
 
 const AREA_CONTAINER_ID = "mr-wplace-area-measure";
@@ -29,9 +32,11 @@ const AREA_REGION_SOURCE_ID = "mr-wplace-area-regions-source";
 const AREA_REGION_FILL_LAYER_ID = "mr-wplace-area-regions-fill";
 const AREA_REGION_LINE_LAYER_ID = "mr-wplace-area-regions-line";
 const AREA_REGION_LABEL_LAYER_ID = "mr-wplace-area-regions-label";
+const AREA_REGION_BADGE_LABEL_LAYER_ID = "mr-wplace-area-regions-label-badge";
 const AREA_EDIT_SOURCE_ID = "mr-wplace-area-edit-source";
 const AREA_EDIT_FILL_LAYER_ID = "mr-wplace-area-edit-fill";
 const AREA_EDIT_LINE_LAYER_ID = "mr-wplace-area-edit-line";
+const AREA_LABEL_BADGE_IMAGE_ID_PREFIX = "mr-wplace-area-label-badge-";
 
 interface LngLat {
   lng: number;
@@ -56,11 +61,13 @@ interface AreaMap {
   addSource?: (id: string, source: unknown) => void;
   removeSource?: (id: string) => void;
   setPaintProperty?: (layer: string, property: string, value: unknown) => void;
-  setLayoutProperty?: (
-    layer: string,
-    property: string,
-    value: unknown,
+  setLayoutProperty?: (layer: string, property: string, value: unknown) => void;
+  addImage?: (
+    id: string,
+    image: ImageData | { width: number; height: number; data: Uint8Array },
+    options?: Record<string, unknown>,
   ) => void;
+  hasImage?: (id: string) => boolean;
   on: (event: string, handler: () => void) => void;
   off: (event: string, handler: () => void) => void;
   dragPan?: {
@@ -97,6 +104,7 @@ let editingColor = DEFAULT_AREA_COLOR;
 let areaFillOpacity = DEFAULT_AREA_FILL_OPACITY;
 let areaNameDisplayMode: AreaNameDisplayMode = DEFAULT_AREA_NAME_DISPLAY_MODE;
 let areaNameFontSizePx = DEFAULT_AREA_NAME_FONT_SIZE_PX;
+let areaNameStyleMode: AreaNameStyleMode = DEFAULT_AREA_NAME_STYLE_MODE;
 let editingSaveLabel = "Save";
 let editingCancelLabel = "Cancel";
 let editVertices: LngLat[] = [];
@@ -149,16 +157,83 @@ const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
 };
 
 const toHex = (value: number): string =>
-  Math.min(255, Math.max(0, Math.round(value))).toString(16).padStart(2, "0");
+  Math.min(255, Math.max(0, Math.round(value)))
+    .toString(16)
+    .padStart(2, "0");
 
 const getNeutralLabelHaloColor = (hexColor: string): string => {
   const rgb = hexToRgb(hexColor);
   if (!rgb) return "#2b2b2b";
 
-  const luminance =
-    (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
+  const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
   const tone = Math.round(28 + Math.min(0.35, luminance) * 64);
   return `#${toHex(tone)}${toHex(tone)}${toHex(tone)}`;
+};
+
+const getContrastTextColor = (hexColor: string): string => {
+  const rgb = hexToRgb(hexColor);
+  if (!rgb) return "#ffffff";
+  const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
+  return luminance > 0.56 ? "#141414" : "#ffffff";
+};
+
+const getLabelBadgeImageId = (hexColor: string): string =>
+  `${AREA_LABEL_BADGE_IMAGE_ID_PREFIX}${hexColor.slice(1).toLowerCase()}`;
+
+const createRoundRectImageData = (hexColor: string): ImageData | null => {
+  const canvas = document.createElement("canvas");
+  canvas.width = 52;
+  canvas.height = 28;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const radius = Math.floor(canvas.height / 2) - 1;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.beginPath();
+  ctx.moveTo(radius, 1);
+  ctx.lineTo(canvas.width - radius - 1, 1);
+  ctx.arcTo(canvas.width - 1, 1, canvas.width - 1, radius + 1, radius);
+  ctx.lineTo(canvas.width - 1, canvas.height - radius - 1);
+  ctx.arcTo(
+    canvas.width - 1,
+    canvas.height - 1,
+    canvas.width - radius - 1,
+    canvas.height - 1,
+    radius,
+  );
+  ctx.lineTo(radius, canvas.height - 1);
+  ctx.arcTo(1, canvas.height - 1, 1, canvas.height - radius - 1, radius);
+  ctx.lineTo(1, radius + 1);
+  ctx.arcTo(1, 1, radius + 1, 1, radius);
+  ctx.closePath();
+
+  ctx.fillStyle = hexColor;
+  ctx.fill();
+  return ctx.getImageData(0, 0, canvas.width, canvas.height);
+};
+
+const ensureAreaLabelBadgeImages = (map: AreaMap): void => {
+  if (!map.addImage || !map.hasImage) return;
+
+  const colors = new Set(
+    areaRegions
+      .map((region) => normalizeAreaColor(region.color))
+      .filter(Boolean),
+  );
+
+  for (const color of colors) {
+    const imageId = getLabelBadgeImageId(color);
+    if (map.hasImage(imageId)) continue;
+
+    const imageData = createRoundRectImageData(color);
+    if (!imageData) continue;
+    map.addImage(imageId, imageData, {
+      pixelRatio: 1,
+      stretchX: [[13, 39]],
+      stretchY: [[8, 20]],
+      content: [11, 5, 41, 23],
+    });
+  }
 };
 
 const getMapContainer = (map: AreaMap): HTMLElement | null => {
@@ -227,7 +302,12 @@ const ensureGeoJsonSource = (
 };
 
 const ensureAreaRegionLayers = (map: AreaMap): void => {
-  ensureGeoJsonSource(map, AREA_REGION_SOURCE_ID, EMPTY_POLYGON_FEATURE_COLLECTION);
+  ensureGeoJsonSource(
+    map,
+    AREA_REGION_SOURCE_ID,
+    EMPTY_POLYGON_FEATURE_COLLECTION,
+  );
+  ensureAreaLabelBadgeImages(map);
   if (!map.addLayer || !map.getLayer) return;
 
   if (!map.getLayer(AREA_REGION_FILL_LAYER_ID)) {
@@ -277,10 +357,40 @@ const ensureAreaRegionLayers = (map: AreaMap): void => {
       },
     });
   }
+
+  if (!map.getLayer(AREA_REGION_BADGE_LABEL_LAYER_ID)) {
+    map.addLayer({
+      id: AREA_REGION_BADGE_LABEL_LAYER_ID,
+      type: "symbol",
+      source: AREA_REGION_SOURCE_ID,
+      layout: {
+        "text-field": ["get", "name"],
+        "text-size": areaNameFontSizePx,
+        "text-anchor": "center",
+        "text-allow-overlap": false,
+        "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+        "icon-image": ["get", "labelBadgeImageId"],
+        "icon-anchor": "center",
+        "icon-text-fit": "both",
+        "icon-text-fit-padding": [0.5, 2, 0.5, 2],
+      },
+      paint: {
+        "icon-opacity": 0.97,
+        "text-color": ["get", "labelTextColor"],
+        "text-halo-color": "rgba(0, 0, 0, 0)",
+        "text-halo-width": 0,
+        "text-halo-blur": 0,
+      },
+    });
+  }
 };
 
 const ensureAreaEditLayers = (map: AreaMap): void => {
-  ensureGeoJsonSource(map, AREA_EDIT_SOURCE_ID, EMPTY_POLYGON_FEATURE_COLLECTION);
+  ensureGeoJsonSource(
+    map,
+    AREA_EDIT_SOURCE_ID,
+    EMPTY_POLYGON_FEATURE_COLLECTION,
+  );
   if (!map.addLayer || !map.getLayer) return;
 
   if (!map.getLayer(AREA_EDIT_FILL_LAYER_ID)) {
@@ -321,55 +431,97 @@ const setGeoJsonSourceData = (
   source?.setData?.(data);
 };
 
-const buildAreaRegionFeatureCollection = (): GeoJsonPolygonFeatureCollection => {
-  const features: GeoJsonPolygonFeatureCollection["features"] = [];
+const buildAreaRegionFeatureCollection =
+  (): GeoJsonPolygonFeatureCollection => {
+    const features: GeoJsonPolygonFeatureCollection["features"] = [];
 
-  for (const region of areaRegions) {
-    if (!region.visible) continue;
-    if (editMode && editingRegionId && region.id === editingRegionId) continue;
-    const ring = toClosedPolygonRing(region.vertices);
-    if (!ring) continue;
-    const areaColor = normalizeAreaColor(region.color);
-    features.push({
-      type: "Feature",
-      properties: {
-        id: region.id,
-        name: region.name,
-        color: areaColor,
-        labelHaloColor: getNeutralLabelHaloColor(areaColor),
-      },
-      geometry: {
-        type: "Polygon",
-        coordinates: [ring],
-      },
-    });
-  }
+    for (const region of areaRegions) {
+      if (!region.visible) continue;
+      if (editMode && editingRegionId && region.id === editingRegionId)
+        continue;
+      const ring = toClosedPolygonRing(region.vertices);
+      if (!ring) continue;
+      const areaColor = normalizeAreaColor(region.color);
+      features.push({
+        type: "Feature",
+        properties: {
+          id: region.id,
+          name: region.name,
+          color: areaColor,
+          labelHaloColor: getNeutralLabelHaloColor(areaColor),
+          labelBadgeImageId: getLabelBadgeImageId(areaColor),
+          labelTextColor: getContrastTextColor(areaColor),
+        },
+        geometry: {
+          type: "Polygon",
+          coordinates: [ring],
+        },
+      });
+    }
 
-  return {
-    type: "FeatureCollection",
-    features,
+    return {
+      type: "FeatureCollection",
+      features,
+    };
   };
-};
 
 const applyAreaNameLayerStyle = (map: AreaMap): void => {
-  if (!map.getLayer?.(AREA_REGION_LABEL_LAYER_ID)) return;
+  if (
+    !map.getLayer?.(AREA_REGION_LABEL_LAYER_ID) ||
+    !map.getLayer?.(AREA_REGION_BADGE_LABEL_LAYER_ID)
+  ) {
+    return;
+  }
   if (!map.setLayoutProperty || !map.setPaintProperty) return;
 
   if (areaNameDisplayMode === "off") {
     map.setLayoutProperty(AREA_REGION_LABEL_LAYER_ID, "visibility", "none");
+    map.setLayoutProperty(
+      AREA_REGION_BADGE_LABEL_LAYER_ID,
+      "visibility",
+      "none",
+    );
     return;
   }
 
-  map.setLayoutProperty(AREA_REGION_LABEL_LAYER_ID, "visibility", "visible");
-  map.setLayoutProperty(AREA_REGION_LABEL_LAYER_ID, "text-size", areaNameFontSizePx);
+  const showBadge = areaNameStyleMode === "color-badge";
+  map.setLayoutProperty(
+    AREA_REGION_LABEL_LAYER_ID,
+    "visibility",
+    showBadge ? "none" : "visible",
+  );
+  map.setLayoutProperty(
+    AREA_REGION_BADGE_LABEL_LAYER_ID,
+    "visibility",
+    showBadge ? "visible" : "none",
+  );
+  map.setLayoutProperty(
+    AREA_REGION_LABEL_LAYER_ID,
+    "text-size",
+    areaNameFontSizePx,
+  );
+  map.setLayoutProperty(
+    AREA_REGION_BADGE_LABEL_LAYER_ID,
+    "text-size",
+    areaNameFontSizePx,
+  );
   map.setPaintProperty(AREA_REGION_LABEL_LAYER_ID, "text-opacity", 1);
+  map.setPaintProperty(AREA_REGION_BADGE_LABEL_LAYER_ID, "text-opacity", 1);
 };
 
 const syncAreaRegionLayerData = (map: AreaMap): void => {
   ensureAreaRegionLayers(map);
-  setGeoJsonSourceData(map, AREA_REGION_SOURCE_ID, buildAreaRegionFeatureCollection());
+  setGeoJsonSourceData(
+    map,
+    AREA_REGION_SOURCE_ID,
+    buildAreaRegionFeatureCollection(),
+  );
   if (map.setPaintProperty && map.getLayer?.(AREA_REGION_FILL_LAYER_ID)) {
-    map.setPaintProperty(AREA_REGION_FILL_LAYER_ID, "fill-opacity", areaFillOpacity);
+    map.setPaintProperty(
+      AREA_REGION_FILL_LAYER_ID,
+      "fill-opacity",
+      areaFillOpacity,
+    );
   }
   applyAreaNameLayerStyle(map);
 };
@@ -377,13 +529,21 @@ const syncAreaRegionLayerData = (map: AreaMap): void => {
 const syncAreaEditLayerData = (map: AreaMap): void => {
   ensureAreaEditLayers(map);
   if (!editMode || editVertices.length < 3) {
-    setGeoJsonSourceData(map, AREA_EDIT_SOURCE_ID, EMPTY_POLYGON_FEATURE_COLLECTION);
+    setGeoJsonSourceData(
+      map,
+      AREA_EDIT_SOURCE_ID,
+      EMPTY_POLYGON_FEATURE_COLLECTION,
+    );
     return;
   }
 
   const ring = toClosedPolygonRing(editVertices);
   if (!ring) {
-    setGeoJsonSourceData(map, AREA_EDIT_SOURCE_ID, EMPTY_POLYGON_FEATURE_COLLECTION);
+    setGeoJsonSourceData(
+      map,
+      AREA_EDIT_SOURCE_ID,
+      EMPTY_POLYGON_FEATURE_COLLECTION,
+    );
     return;
   }
 
@@ -419,6 +579,7 @@ const safeRemoveSource = (map: AreaMap, sourceId: string): void => {
 const removeAreaMapLayers = (map: AreaMap): void => {
   safeRemoveLayer(map, AREA_EDIT_LINE_LAYER_ID);
   safeRemoveLayer(map, AREA_EDIT_FILL_LAYER_ID);
+  safeRemoveLayer(map, AREA_REGION_BADGE_LABEL_LAYER_ID);
   safeRemoveLayer(map, AREA_REGION_LABEL_LAYER_ID);
   safeRemoveLayer(map, AREA_REGION_LINE_LAYER_ID);
   safeRemoveLayer(map, AREA_REGION_FILL_LAYER_ID);
@@ -547,7 +708,10 @@ const createOverlay = (): HTMLDivElement => {
   cancelButton.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
-    window.postMessage({ source: AREA_MESSAGE_SOURCE.REGION_CANCEL_CLICK }, "*");
+    window.postMessage(
+      { source: AREA_MESSAGE_SOURCE.REGION_CANCEL_CLICK },
+      "*",
+    );
   });
 
   actionLayer.appendChild(saveButton);
@@ -963,6 +1127,9 @@ export const setAreaDisplayOptions = (
   if ("nameFontSizePx" in options) {
     areaNameFontSizePx = normalizeAreaNameFontSizePx(options.nameFontSizePx);
   }
+  if ("nameStyleMode" in options) {
+    areaNameStyleMode = normalizeAreaNameStyleMode(options.nameStyleMode);
+  }
   const map = getMapInstanceFromWplace() as AreaMap | null;
   if (map && areaEnabled) scheduleAreaOverlayRender(map);
 
@@ -970,6 +1137,7 @@ export const setAreaDisplayOptions = (
     opacity: areaFillOpacity,
     nameDisplayMode: areaNameDisplayMode,
     nameFontSizePx: areaNameFontSizePx,
+    nameStyleMode: areaNameStyleMode,
   });
 };
 

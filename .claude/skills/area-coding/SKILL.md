@@ -39,7 +39,8 @@ inject側の `area-display.ts` がマップ上のSVGオーバーレイ描画・�
   - `AreaRegionBounds`: { west, south, east, north }
   - `AreaRegionEditSnapshot`: { regionId, name, vertices }
   - `AreaNameDisplayMode`: "always" | "off"
-  - `AreaDisplayOptions`: { fillOpacityPercent, nameDisplayMode, nameFontSizePx }
+  - `AreaNameStyleMode`: "halo" | "color-badge"
+  - `AreaDisplayOptions`: { fillOpacityPercent, nameDisplayMode, nameFontSizePx, nameStyleMode }
 - `src/features/area-manager/types.ts` — content側専用
   - `AreaRegionGroup`: { id, name, regionIds, createdAt, updatedAt }
 
@@ -82,6 +83,7 @@ inject側の `area-display.ts` がマップ上のSVGオーバーレイ描画・�
 | `mapFilter_areaFillOpacityPercent` | number              | 14       | 塗り透明度(0-100)  |
 | `mapFilter_areaNameDisplayMode`    | AreaNameDisplayMode | "always" | 名前表示モード     |
 | `mapFilter_areaNameFontSizePx`     | number              | 14       | 名前文字サイズ(px) |
+| `mapFilter_areaNameStyleMode`      | AreaNameStyleMode   | "halo"   | 名前の見え方       |
 
 ## Content側: AreaManager クラス
 
@@ -167,7 +169,7 @@ MapLibre style layer:
 
 - `setAreaMeasureEnabled(enabled)` — オーバーレイの表示/非表示
 - `setAreaRegions(regions)` — 確定リージョン一覧を更新、再描画
-- `setAreaDisplayOptions(options)` — 透明度・名前表示モード・名前文字サイズ変更、再描画
+- `setAreaDisplayOptions(options)` — 透明度・名前表示モード・名前文字サイズ・名前見え方変更、再描画
 - `startAreaRegionEdit(payload)` — 編集モード開始
 - `stopAreaRegionEdit()` — 編集モード終了
 - `respondAreaRegionEditRequest(data)` — 編集スナップショット応答
@@ -197,6 +199,7 @@ MapLibre style layer:
 - `scheduleAreaOverlayRender()` は高頻度イベントの間引き目的。重い処理は `renderAreaOverlayNow()` に集約
 - 確定リージョン名ラベルは `symbol` layer で表示専用 (クリック移動なし)
 - エリア名ラベルは `always/off` で表示切替し、文字サイズは設定値(px)をそのまま適用する
+- エリア名ラベルの見え方は `halo`（従来）と `color-badge`（エリア色の丸背景）を切替可能
 - 頂点ドラッグ中は `renderEditingOverlay()` を優先し、確定リージョン再生成を避ける
 - 色は `#rrggbb` 6桁hex のみ対応 (`normalizeAreaColor` で検証)
 - リージョンは `updatedAt` 降順でソート

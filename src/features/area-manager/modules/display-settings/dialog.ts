@@ -1,5 +1,8 @@
 import { t } from "@/i18n/manager";
-import type { AreaNameDisplayMode } from "@/types/area-region";
+import type {
+  AreaNameDisplayMode,
+  AreaNameStyleMode,
+} from "@/types/area-region";
 import {
   MAX_AREA_NAME_FONT_SIZE_PX,
   MIN_AREA_NAME_FONT_SIZE_PX,
@@ -9,11 +12,14 @@ interface DisplaySettingsDialogDeps {
   fillOpacityPercent: number;
   areaNameDisplayMode: AreaNameDisplayMode;
   areaNameFontSizePx: number;
+  areaNameStyleMode: AreaNameStyleMode;
   normalizeAreaFillOpacityPercent: (value: number) => number;
   normalizeAreaNameDisplayMode: (value: unknown) => AreaNameDisplayMode;
+  normalizeAreaNameStyleMode: (value: unknown) => AreaNameStyleMode;
   updateAreaFillOpacityPercent: (value: number, persist: boolean) => Promise<void>;
   setAreaNameDisplayMode: (mode: AreaNameDisplayMode) => Promise<void>;
   updateAreaNameFontSizePx: (value: number, persist: boolean) => Promise<void>;
+  setAreaNameStyleMode: (mode: AreaNameStyleMode) => Promise<void>;
 }
 
 export const showDisplaySettingsDialog = (
@@ -46,6 +52,13 @@ export const showDisplaySettingsDialog = (
           <input id="area-display-name-font-size-input" type="range" class="range range-xs" min="${MIN_AREA_NAME_FONT_SIZE_PX}" max="${MAX_AREA_NAME_FONT_SIZE_PX}" step="1" style="flex: 1;" />
           <span id="area-display-name-font-size-value" class="tabular-nums" style="width: 3.5rem; text-align: right;"></span>
         </label>
+        <label style="display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; font-size: 0.9rem;">
+          <span>文字見え方</span>
+          <select id="area-display-name-style-mode-select" class="select select-sm select-bordered" style="min-width: 12rem;">
+            <option value="halo">標準</option>
+            <option value="color-badge">丸背景バッジ</option>
+          </select>
+        </label>
       </div>
 
       <div class="modal-action">
@@ -72,6 +85,9 @@ export const showDisplaySettingsDialog = (
   const nameFontSizeValue = modal.querySelector(
     "#area-display-name-font-size-value",
   ) as HTMLSpanElement | null;
+  const nameStyleModeSelect = modal.querySelector(
+    "#area-display-name-style-mode-select",
+  ) as HTMLSelectElement | null;
 
   if (opacityInput && opacityValue) {
     opacityInput.value = String(deps.fillOpacityPercent);
@@ -110,6 +126,14 @@ export const showDisplaySettingsDialog = (
     nameFontSizeInput.addEventListener("change", (event) => {
       const target = event.target as HTMLInputElement;
       void deps.updateAreaNameFontSizePx(Number(target.value), true);
+    });
+  }
+
+  if (nameStyleModeSelect) {
+    nameStyleModeSelect.value = deps.areaNameStyleMode;
+    nameStyleModeSelect.addEventListener("change", () => {
+      const next = deps.normalizeAreaNameStyleMode(nameStyleModeSelect.value);
+      void deps.setAreaNameStyleMode(next);
     });
   }
 

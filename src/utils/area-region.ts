@@ -1,11 +1,13 @@
 import type {
   AreaNameDisplayMode,
+  AreaNameStyleMode,
   AreaRegionBounds,
   AreaRegionVertex,
 } from "@/types/area-region";
 
 export const DEFAULT_AREA_COLOR = "#0f766e";
 export const DEFAULT_AREA_NAME_DISPLAY_MODE: AreaNameDisplayMode = "always";
+export const DEFAULT_AREA_NAME_STYLE_MODE: AreaNameStyleMode = "halo";
 export const DEFAULT_AREA_NAME_FONT_SIZE_PX = 14;
 export const MIN_AREA_NAME_FONT_SIZE_PX = 8;
 export const MAX_AREA_NAME_FONT_SIZE_PX = 32;
@@ -25,6 +27,13 @@ export const normalizeAreaNameDisplayMode = (
 ): AreaNameDisplayMode => {
   if (value === "always" || value === "off") return value;
   return DEFAULT_AREA_NAME_DISPLAY_MODE;
+};
+
+export const normalizeAreaNameStyleMode = (
+  value: unknown,
+): AreaNameStyleMode => {
+  if (value === "halo" || value === "color-badge") return value;
+  return DEFAULT_AREA_NAME_STYLE_MODE;
 };
 
 export const normalizeAreaNameFontSizePx = (value: unknown): number => {

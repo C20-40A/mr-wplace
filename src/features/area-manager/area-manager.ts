@@ -9,6 +9,7 @@ import { t } from "@/i18n/manager";
 import type {
   AreaDisplayOptions,
   AreaNameDisplayMode,
+  AreaNameStyleMode,
   AreaRegion,
   AreaRegionVertex,
 } from "@/types/area-region";
@@ -16,11 +17,13 @@ import {
   DEFAULT_AREA_COLOR,
   DEFAULT_AREA_NAME_FONT_SIZE_PX,
   DEFAULT_AREA_NAME_DISPLAY_MODE,
+  DEFAULT_AREA_NAME_STYLE_MODE,
   formatPixelArea,
   getAreaBounds,
   normalizeAreaColor,
   normalizeAreaNameFontSizePx,
   normalizeAreaNameDisplayMode,
+  normalizeAreaNameStyleMode,
 } from "@/utils/area-region";
 import {
   calculateGeodesicAreaSquareMeters,
@@ -54,6 +57,7 @@ const AREA_SYNC_URL_KEY = "mapFilter_areaSyncUrl";
 const AREA_FILL_OPACITY_KEY = "mapFilter_areaFillOpacityPercent";
 const AREA_NAME_DISPLAY_MODE_KEY = "mapFilter_areaNameDisplayMode";
 const AREA_NAME_FONT_SIZE_KEY = "mapFilter_areaNameFontSizePx";
+const AREA_NAME_STYLE_MODE_KEY = "mapFilter_areaNameStyleMode";
 const AREA_MANAGER_MODAL_ID = "wplace-studio-area-manager-modal";
 const AUTO_AREA_COLOR_GOLDEN_ANGLE = 137.508;
 const DEFAULT_AREA_FILL_OPACITY_PERCENT = 14;
@@ -72,6 +76,7 @@ class AreaManager {
   private areaNameDisplayMode: AreaNameDisplayMode =
     DEFAULT_AREA_NAME_DISPLAY_MODE;
   private areaNameFontSizePx = DEFAULT_AREA_NAME_FONT_SIZE_PX;
+  private areaNameStyleMode: AreaNameStyleMode = DEFAULT_AREA_NAME_STYLE_MODE;
 
   async init() {
     const stored = await storage.get([
@@ -81,6 +86,7 @@ class AreaManager {
       AREA_FILL_OPACITY_KEY,
       AREA_NAME_DISPLAY_MODE_KEY,
       AREA_NAME_FONT_SIZE_KEY,
+      AREA_NAME_STYLE_MODE_KEY,
     ]);
 
     this.areaMeasure = stored[AREA_MEASURE_KEY] ?? false;
@@ -96,6 +102,9 @@ class AreaManager {
     );
     this.areaNameFontSizePx = normalizeAreaNameFontSizePx(
       stored[AREA_NAME_FONT_SIZE_KEY],
+    );
+    this.areaNameStyleMode = normalizeAreaNameStyleMode(
+      stored[AREA_NAME_STYLE_MODE_KEY],
     );
 
     this.mapReady = getMapInstanceReady();
@@ -159,6 +168,7 @@ class AreaManager {
       fillOpacityPercent: this.areaFillOpacityPercent,
       nameDisplayMode: this.areaNameDisplayMode,
       nameFontSizePx: this.areaNameFontSizePx,
+      nameStyleMode: this.areaNameStyleMode,
     };
   }
 
@@ -808,20 +818,31 @@ class AreaManager {
     }
   }
 
+  private async setAreaNameStyleMode(mode: AreaNameStyleMode): Promise<void> {
+    if (mode === this.areaNameStyleMode) return;
+    this.areaNameStyleMode = mode;
+    await storage.set({ [AREA_NAME_STYLE_MODE_KEY]: mode });
+    this.notifyAreaDisplayOptions();
+  }
+
   private showAreaDisplaySettingsDialog() {
     showDisplaySettingsDialog({
       fillOpacityPercent: this.areaFillOpacityPercent,
       areaNameDisplayMode: this.areaNameDisplayMode,
       areaNameFontSizePx: this.areaNameFontSizePx,
+      areaNameStyleMode: this.areaNameStyleMode,
       normalizeAreaFillOpacityPercent: (value) =>
         this.normalizeAreaFillOpacityPercent(value),
       normalizeAreaNameDisplayMode: (value) =>
         normalizeAreaNameDisplayMode(value),
+      normalizeAreaNameStyleMode: (value) =>
+        normalizeAreaNameStyleMode(value),
       updateAreaFillOpacityPercent: (value, persist) =>
         this.updateAreaFillOpacityPercent(value, persist),
       setAreaNameDisplayMode: (mode) => this.setAreaNameDisplayMode(mode),
       updateAreaNameFontSizePx: (value, persist) =>
         this.updateAreaNameFontSizePx(value, persist),
+      setAreaNameStyleMode: (mode) => this.setAreaNameStyleMode(mode),
     });
   }
 
