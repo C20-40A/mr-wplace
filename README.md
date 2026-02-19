@@ -34,88 +34,12 @@ Get Mr. Wplace from the official stores:
 
 ### For Developers
 
-#### Prerequisites
+Want to contribute or build from source? Check out our [Contributing Guide](CONTRIBUTING.md) for:
 
-- [Bun](https://bun.sh/) (JavaScript runtime & package manager)
-- Git
-
-#### Setup Development Environment
-
-1. **Clone the repository**
-
-   ```bash
-   git clone git@github.com:C20-40A/mr-wplace.git
-   cd mr-wplace
-   ```
-
-2. **Install dependencies**
-
-   ```bash
-   bun install
-   ```
-
-3. **Build the extension**
-
-   ```bash
-   bun run build
-   ```
-
-   This compiles `src/content.ts` → `dist/content.js`
-
-4. **Load in Chrome**
-
-   - Open `chrome://extensions/`
-   - Enable "Developer mode" (toggle in top right)
-   - Click "Load unpacked"
-   - Select the project root folder
-
-5. **Start development mode** (optional)
-   ```bash
-   bun run dev
-   ```
-   This watches for file changes and auto-rebuilds the extension.
-
-## 📦 Building for Production
-
-### Version Management
-
-Before building a release, update the version number using bump commands:
-
-```bash
-# Patch version (1.6.5 → 1.6.6) - for bug fixes
-bun run bump:patch
-
-# Minor version (1.6.5 → 1.7.0) - for new features
-bun run bump:minor
-
-# Major version (1.6.5 → 2.0.0) - for breaking changes
-bun run bump:major
-```
-
-These commands automatically update version numbers in both `package.json` and `manifest.json`.
-
-### Create Distribution Package
-
-```bash
-bun run build:release
-```
-
-This generates a `.zip` file (e.g., `mr-wplace-v1.6.5.zip`) ready for:
-
-- Chrome Web Store submission
-- Microsoft Edge Add-ons submission
-- Manual distribution
-
-## 🛠️ Available Commands
-
-| Command                 | Description                                  |
-| ----------------------- | -------------------------------------------- |
-| `bun run build`         | Build extension for development              |
-| `bun run dev`           | Build + watch mode (auto-rebuild on changes) |
-| `bun run build:release` | Create production-ready zip package          |
-| `bun run bump:patch`    | Bump patch version (x.x.X)                   |
-| `bun run bump:minor`    | Bump minor version (x.X.0)                   |
-| `bun run bump:major`    | Bump major version (X.0.0)                   |
+- Development environment setup
+- Build and release commands
+- Coding guidelines and architecture overview
+- i18n workflow
 
 ## ✨ Features
 
