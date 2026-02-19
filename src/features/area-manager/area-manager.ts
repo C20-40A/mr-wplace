@@ -26,9 +26,18 @@ import {
   normalizeAreaNameStyleMode,
 } from "@/utils/area-region";
 import {
-  calculateGeodesicAreaSquareMeters,
-  calculatePixelAreaSquare,
-} from "@/utils/coordinate";
+  createAreaRegionId,
+  createAreaRegionGroupId,
+  createDefaultAreaName,
+  createDefaultAreaGroupName,
+  createDistinctAreaColor,
+  formatAreaKm2,
+  normalizeAreaFillOpacityPercent,
+  normalizeAreaVertices,
+  normalizeTimestamp,
+  parseGeoJsonVertices,
+} from "./utils";
+import { calculatePixelAreaSquare } from "@/utils/coordinate";
 import { showImportExportDialog } from "./modules/import-export/dialog";
 import { showGroupComposeDialog } from "./modules/group/dialog";
 import { showDisplaySettingsDialog } from "./modules/display-settings/dialog";
@@ -59,7 +68,6 @@ const AREA_NAME_DISPLAY_MODE_KEY = "mapFilter_areaNameDisplayMode";
 const AREA_NAME_FONT_SIZE_KEY = "mapFilter_areaNameFontSizePx";
 const AREA_NAME_STYLE_MODE_KEY = "mapFilter_areaNameStyleMode";
 const AREA_MANAGER_MODAL_ID = "wplace-studio-area-manager-modal";
-const AUTO_AREA_COLOR_GOLDEN_ANGLE = 137.508;
 const DEFAULT_AREA_FILL_OPACITY_PERCENT = 14;
 
 class AreaManager {
@@ -94,9 +102,10 @@ class AreaManager {
     this.areaRegionGroups = this.normalizeAreaRegionGroups(
       stored[AREA_REGION_GROUPS_KEY],
     );
-    this.areaFillOpacityPercent = this.normalizeAreaFillOpacityPercent(
-      stored[AREA_FILL_OPACITY_KEY],
-    );
+    this.areaFillOpacityPercent =
+      typeof stored[AREA_FILL_OPACITY_KEY] === "number"
+        ? normalizeAreaFillOpacityPercent(stored[AREA_FILL_OPACITY_KEY])
+        : DEFAULT_AREA_FILL_OPACITY_PERCENT;
     this.areaNameDisplayMode = normalizeAreaNameDisplayMode(
       stored[AREA_NAME_DISPLAY_MODE_KEY],
     );
@@ -185,25 +194,25 @@ class AreaManager {
     for (const raw of value) {
       if (!raw || typeof raw !== "object") continue;
       const candidate = raw as Record<string, unknown>;
-      const vertices = this.normalizeAreaVertices(candidate.vertices);
+      const vertices = normalizeAreaVertices(candidate.vertices);
       if (vertices.length < 3) continue;
 
       const id =
         typeof candidate.id === "string" && candidate.id.trim()
           ? candidate.id
-          : this.createAreaRegionId();
+          : createAreaRegionId();
       const name =
         typeof candidate.name === "string" && candidate.name.trim()
           ? candidate.name.trim()
-          : this.createDefaultAreaName(normalized.length + 1);
+          : createDefaultAreaName(normalized.length + 1);
       const color = normalizeAreaColor(
         candidate.color,
-        this.createDistinctAreaColor(normalized),
+        createDistinctAreaColor(normalized),
       );
       const visible =
         typeof candidate.visible === "boolean" ? candidate.visible : true;
-      const createdAt = this.normalizeTimestamp(candidate.createdAt, now);
-      const updatedAt = this.normalizeTimestamp(candidate.updatedAt, createdAt);
+      const createdAt = normalizeTimestamp(candidate.createdAt, now);
+      const updatedAt = normalizeTimestamp(candidate.updatedAt, createdAt);
 
       normalized.push({
         id,
@@ -251,13 +260,13 @@ class AreaManager {
       const id =
         typeof candidate.id === "string" && candidate.id.trim()
           ? candidate.id
-          : this.createAreaRegionGroupId();
+          : createAreaRegionGroupId();
       const name =
         typeof candidate.name === "string" && candidate.name.trim()
           ? candidate.name.trim()
-          : this.createDefaultAreaGroupName(normalized.length + 1);
-      const createdAt = this.normalizeTimestamp(candidate.createdAt, now);
-      const updatedAt = this.normalizeTimestamp(candidate.updatedAt, createdAt);
+          : createDefaultAreaGroupName(normalized.length + 1);
+      const createdAt = normalizeTimestamp(candidate.createdAt, now);
+      const updatedAt = normalizeTimestamp(candidate.updatedAt, createdAt);
 
       normalized.push({
         id,
@@ -271,160 +280,6 @@ class AreaManager {
     return normalized.sort((a, b) => b.updatedAt - a.updatedAt);
   }
 
-  private normalizeAreaVertices(value: unknown): AreaRegionVertex[] {
-    if (!Array.isArray(value)) return [];
-
-    const vertices: AreaRegionVertex[] = [];
-    for (const raw of value) {
-      if (!raw || typeof raw !== "object") continue;
-      const candidate = raw as Record<string, unknown>;
-      const lng = candidate.lng;
-      const lat = candidate.lat;
-      if (
-        typeof lng === "number" &&
-        Number.isFinite(lng) &&
-        typeof lat === "number" &&
-        Number.isFinite(lat)
-      ) {
-        vertices.push({ lng, lat });
-      }
-    }
-
-    return vertices;
-  }
-
-  private normalizeTimestamp(value: unknown, fallback: number): number {
-    return typeof value === "number" && Number.isFinite(value)
-      ? value
-      : fallback;
-  }
-
-  private normalizeAreaFillOpacityPercent(value: unknown): number {
-    if (typeof value !== "number" || !Number.isFinite(value))
-      return DEFAULT_AREA_FILL_OPACITY_PERCENT;
-    return Math.min(100, Math.max(0, Math.round(value)));
-  }
-
-  private hueDistance(a: number, b: number): number {
-    const diff = Math.abs(a - b);
-    return Math.min(diff, 360 - diff);
-  }
-
-  private getColorHue(color: string): number | null {
-    const normalized = normalizeAreaColor(color, "");
-    if (!normalized) return null;
-
-    const r = Number.parseInt(normalized.slice(1, 3), 16) / 255;
-    const g = Number.parseInt(normalized.slice(3, 5), 16) / 255;
-    const b = Number.parseInt(normalized.slice(5, 7), 16) / 255;
-
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    const delta = max - min;
-
-    if (delta === 0) return 0;
-
-    let hue = 0;
-    if (max === r) hue = ((g - b) / delta) % 6;
-    else if (max === g) hue = (b - r) / delta + 2;
-    else hue = (r - g) / delta + 4;
-
-    return (hue * 60 + 360) % 360;
-  }
-
-  private hslToHex(hue: number, saturation: number, lightness: number): string {
-    const h = ((hue % 360) + 360) % 360;
-    const s = Math.max(0, Math.min(100, saturation)) / 100;
-    const l = Math.max(0, Math.min(100, lightness)) / 100;
-
-    const c = (1 - Math.abs(2 * l - 1)) * s;
-    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-    const m = l - c / 2;
-
-    let rPrime = 0;
-    let gPrime = 0;
-    let bPrime = 0;
-
-    if (h < 60) {
-      rPrime = c;
-      gPrime = x;
-    } else if (h < 120) {
-      rPrime = x;
-      gPrime = c;
-    } else if (h < 180) {
-      gPrime = c;
-      bPrime = x;
-    } else if (h < 240) {
-      gPrime = x;
-      bPrime = c;
-    } else if (h < 300) {
-      rPrime = x;
-      bPrime = c;
-    } else {
-      rPrime = c;
-      bPrime = x;
-    }
-
-    const toHex = (value: number): string =>
-      Math.round((value + m) * 255)
-        .toString(16)
-        .padStart(2, "0");
-
-    return `#${toHex(rPrime)}${toHex(gPrime)}${toHex(bPrime)}`;
-  }
-
-  private createDistinctAreaColor(
-    regions: AreaRegion[] = this.areaRegions,
-  ): string {
-    const usedHues = regions
-      .map((region) => this.getColorHue(region.color))
-      .filter((hue): hue is number => hue !== null);
-
-    const seedHue = (regions.length * AUTO_AREA_COLOR_GOLDEN_ANGLE) % 360;
-    const candidateCount = Math.max(18, usedHues.length * 3);
-    let bestHue = seedHue;
-    let bestDistance = -1;
-
-    for (let i = 0; i < candidateCount; i++) {
-      const hue = (seedHue + i * AUTO_AREA_COLOR_GOLDEN_ANGLE) % 360;
-      const nearestDistance =
-        usedHues.length === 0
-          ? 180
-          : Math.min(
-              ...usedHues.map((usedHue) => this.hueDistance(hue, usedHue)),
-            );
-
-      if (nearestDistance > bestDistance) {
-        bestDistance = nearestDistance;
-        bestHue = hue;
-      }
-    }
-
-    return this.hslToHex(bestHue, 72, 52);
-  }
-
-  private formatAreaKm2(vertices: AreaRegionVertex[]): string {
-    const km2 = calculateGeodesicAreaSquareMeters(vertices) / 1000000;
-    if (km2 >= 100) return `${km2.toFixed(1)} km²`;
-    if (km2 >= 10) return `${km2.toFixed(2)} km²`;
-    return `${km2.toFixed(3)} km²`;
-  }
-
-  private createAreaRegionId(): string {
-    return `area_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-  }
-
-  private createAreaRegionGroupId(): string {
-    return `area_group_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-  }
-
-  private createDefaultAreaName(index: number): string {
-    return `${t`${"map_filter_area_default_name"}`} ${index}`;
-  }
-
-  private createDefaultAreaGroupName(index: number): string {
-    return `Area Group ${index}`;
-  }
 
   private async persistAreaRegions() {
     await storage.set({ [AREA_REGIONS_KEY]: this.areaRegions });
@@ -487,56 +342,6 @@ class AreaManager {
     return this.getRegionsForGroup(group).flatMap((region) => region.vertices);
   }
 
-  private parseGeoJsonVertices(geometry: unknown): AreaRegionVertex[] {
-    if (!geometry || typeof geometry !== "object") return [];
-    const candidate = geometry as Record<string, unknown>;
-    const type = candidate.type;
-    const coordinates = candidate.coordinates;
-
-    let ring: unknown[] | null = null;
-    if (
-      type === "Polygon" &&
-      Array.isArray(coordinates) &&
-      Array.isArray(coordinates[0])
-    ) {
-      ring = coordinates[0] as unknown[];
-    }
-
-    if (
-      type === "MultiPolygon" &&
-      Array.isArray(coordinates) &&
-      Array.isArray(coordinates[0]) &&
-      Array.isArray((coordinates[0] as unknown[])[0])
-    ) {
-      ring = (coordinates[0] as unknown[])[0] as unknown[];
-    }
-
-    if (!ring) return [];
-
-    const vertices: AreaRegionVertex[] = [];
-    for (const pointRaw of ring) {
-      if (!Array.isArray(pointRaw) || pointRaw.length < 2) continue;
-      const [lng, lat] = pointRaw;
-      if (
-        typeof lng === "number" &&
-        Number.isFinite(lng) &&
-        typeof lat === "number" &&
-        Number.isFinite(lat)
-      ) {
-        vertices.push({ lng, lat });
-      }
-    }
-
-    if (vertices.length >= 4) {
-      const first = vertices[0];
-      const last = vertices[vertices.length - 1];
-      if (first.lng === last.lng && first.lat === last.lat) {
-        vertices.pop();
-      }
-    }
-
-    return vertices;
-  }
 
   private normalizeImportedAreaData(value: unknown): {
     regions: AreaRegion[];
@@ -568,7 +373,7 @@ class AreaManager {
       .map((feature) => {
         if (!feature || typeof feature !== "object") return null;
         const rawFeature = feature as Record<string, unknown>;
-        const vertices = this.parseGeoJsonVertices(rawFeature.geometry);
+        const vertices = parseGeoJsonVertices(rawFeature.geometry);
         if (vertices.length < 3) return null;
 
         const properties =
@@ -760,10 +565,10 @@ class AreaManager {
         }
 
         const group: AreaRegionGroup = {
-          id: this.createAreaRegionGroupId(),
+          id: createAreaRegionGroupId(),
           name:
             unifiedName ||
-            this.createDefaultAreaGroupName(this.areaRegionGroups.length + 1),
+            createDefaultAreaGroupName(this.areaRegionGroups.length + 1),
           regionIds: selectedIds,
           createdAt: now,
           updatedAt: now,
@@ -785,7 +590,7 @@ class AreaManager {
     value: number,
     persist = true,
   ): Promise<void> {
-    const normalized = this.normalizeAreaFillOpacityPercent(value);
+    const normalized = normalizeAreaFillOpacityPercent(value);
     if (normalized === this.areaFillOpacityPercent && !persist) return;
 
     this.areaFillOpacityPercent = normalized;
@@ -831,10 +636,8 @@ class AreaManager {
       areaNameDisplayMode: this.areaNameDisplayMode,
       areaNameFontSizePx: this.areaNameFontSizePx,
       areaNameStyleMode: this.areaNameStyleMode,
-      normalizeAreaFillOpacityPercent: (value) =>
-        this.normalizeAreaFillOpacityPercent(value),
-      normalizeAreaNameDisplayMode: (value) =>
-        normalizeAreaNameDisplayMode(value),
+      normalizeAreaFillOpacityPercent,
+      normalizeAreaNameDisplayMode,
       normalizeAreaNameStyleMode: (value) =>
         normalizeAreaNameStyleMode(value),
       updateAreaFillOpacityPercent: (value, persist) =>
@@ -936,22 +739,15 @@ class AreaManager {
 
         const area = document.createElement("span");
         area.className = "text-sm opacity-80";
-        const totalAreaM2 = members.reduce(
-          (sum, region) =>
-            sum + calculateGeodesicAreaSquareMeters(region.vertices),
-          0,
-        );
+        const allVertices = members.flatMap((region) => region.vertices);
+        const km2Text =
+          allVertices.length > 0
+            ? formatAreaKm2(allVertices)
+            : "0 km²";
         const totalPx = members.reduce(
           (sum, region) => sum + calculatePixelAreaSquare(region.vertices),
           0,
         );
-        const totalKm2 = totalAreaM2 / 1000000;
-        const km2Text =
-          totalKm2 >= 100
-            ? `${totalKm2.toFixed(1)} km²`
-            : totalKm2 >= 10
-              ? `${totalKm2.toFixed(2)} km²`
-              : `${totalKm2.toFixed(3)} km²`;
         area.innerHTML = `${km2Text} <span style="opacity: 0.7; font-size: 0.9em;">(${formatPixelArea(totalPx)})</span>`;
 
         const actionRow = document.createElement("div");
@@ -1077,7 +873,7 @@ class AreaManager {
 
         const area = document.createElement("span");
         area.className = "text-sm opacity-80";
-        const areaKm2 = this.formatAreaKm2(region.vertices);
+        const areaKm2 = formatAreaKm2(region.vertices);
         const pixelArea = formatPixelArea(
           calculatePixelAreaSquare(region.vertices),
         );
@@ -1460,7 +1256,7 @@ class AreaManager {
     postAreaRegionEditStart({
       regionId: this.editingRegionId,
       name: this.editingRegionName,
-      color: editingRegion?.color ?? this.createDistinctAreaColor(this.areaRegions),
+      color: editingRegion?.color ?? createDistinctAreaColor(this.areaRegions),
       vertices: editingRegion?.vertices ?? [],
       saveLabel: t`${"map_filter_area_save_map"}`,
       cancelLabel: t`${"cancel"}`,
@@ -1487,7 +1283,7 @@ class AreaManager {
     if (!this.areaEditMode) return;
 
     const snapshot = await requestAreaEditSnapshot({
-      normalizeVertices: (value) => this.normalizeAreaVertices(value),
+      normalizeVertices: (value) => normalizeAreaVertices(value),
     });
     if (!snapshot || snapshot.vertices.length < 3) {
       alert(t`${"map_filter_area_need_polygon"}`);
@@ -1521,11 +1317,11 @@ class AreaManager {
 
     const name =
       nameInput.trim() ||
-      this.createDefaultAreaName(this.areaRegions.length + 1);
+      createDefaultAreaName(this.areaRegions.length + 1);
     const newRegion: AreaRegion = {
-      id: this.createAreaRegionId(),
+      id: createAreaRegionId(),
       name,
-      color: this.createDistinctAreaColor(this.areaRegions),
+      color: createDistinctAreaColor(this.areaRegions),
       vertices: snapshot.vertices,
       visible: true,
       createdAt: now,
