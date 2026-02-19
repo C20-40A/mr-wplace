@@ -3,6 +3,7 @@ import { findPaintPixelControls } from "@/constants/selectors";
 import { sendShowUnplacedOnlyToInject } from "@/content";
 import { createShowUnplacedOnlyButton } from "./ui";
 import {
+  loadShowUnplacedOnlyFromStorage,
   getShowUnplacedOnly,
   setShowUnplacedOnly,
   subscribeShowUnplacedOnly,
@@ -18,11 +19,17 @@ export class ShowUnplacedOnly {
     this.init();
   }
 
-  private init(): void {
+  private async init(): Promise<void> {
+    await loadShowUnplacedOnlyFromStorage();
+    const enabled = getShowUnplacedOnly();
+
     // Subscribe to state changes
     this.unsubscribe = subscribeShowUnplacedOnly((enabled) => {
       this.updateButton(enabled);
     });
+
+    // Send initial state to inject
+    sendShowUnplacedOnlyToInject(enabled);
 
     this.setupUI();
   }
@@ -56,9 +63,9 @@ export class ShowUnplacedOnly {
     }
   }
 
-  toggle(): void {
+  async toggle(): Promise<void> {
     const newState = !getShowUnplacedOnly();
-    setShowUnplacedOnly(newState);
+    await setShowUnplacedOnly(newState);
     sendShowUnplacedOnlyToInject(newState);
     console.log("🧑‍🎨 : Show unplaced only toggled:", newState);
   }
