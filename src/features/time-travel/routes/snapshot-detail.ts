@@ -31,7 +31,7 @@ export class SnapshotDetailRoute {
 
     container.innerHTML = t`
       <div style="height: 75vh; display: flex; flex-direction: column;">
-        <div style="flex: 1; position: relative; min-height: 0; display: flex; align-items: center; justify-content: center; background-color: #f9fafb; max-height: 55vh;">
+        <div style="flex: 1; position: relative; min-height: 0; display: flex; align-items: center; justify-content: center; background-color: #f9fafb; max-height: 55vh; ${this.isMobile ? "" : "overflow-y: auto;"}">
           <canvas id="wps-snapshot-canvas" style="${this.isMobile ? "max-width: 100%; max-height: 100%; object-fit: contain;" : "position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);"}"></canvas>
         </div>
         
