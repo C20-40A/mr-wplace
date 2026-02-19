@@ -37,7 +37,8 @@ const forceStartupLocationZoom = (): void => {
     if (!parsed || typeof parsed !== "object") return;
     if (typeof parsed.lat !== "number" || typeof parsed.lng !== "number")
       return;
-    if (parsed.zoom === STARTUP_TARGET_ZOOM) return;
+    if (typeof parsed.zoom === "number" && parsed.zoom >= STARTUP_TARGET_ZOOM)
+      return;
 
     const next = JSON.stringify({
       ...parsed,
