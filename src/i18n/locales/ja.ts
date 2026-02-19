@@ -552,4 +552,12 @@ export const jaTranslations = {
   reset_areas: "全エリアを削除",
   confirm_reset_areas: "すべてのエリアを削除してもよろしいですか？この操作は取り消せません。",
   areas_reset_success: "すべてのエリアが削除されました。",
+  import_mode: "インポートモード",
+  map_filter_area_enable_display: "インポート後にエリア表示を有効化",
+  map_filter_area_groups: "グループ",
+  processing: "処理中...",
+  saving: "保存中...",
+  complete: "完了",
+  map_filter_area_large_file_warning: "大きなファイルが検出されました。処理に時間がかかる可能性があります。続行しますか？",
+  file_size: "ファイルサイズ",
 };

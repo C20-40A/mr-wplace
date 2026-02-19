@@ -2,6 +2,7 @@ import { t } from "@/i18n/manager";
 import type { AreaRegion } from "@/types/area-region";
 import type { AreaRegionGroup } from "@/features/area-manager/types";
 import { createAreaGeoJson } from "./utils";
+import { showProgressDialog } from "./progress-dialog";
 
 interface ImportedAreaData {
   regions: AreaRegion[];
@@ -22,13 +23,18 @@ interface ApplyImportedAreaDataParams {
   renderAreaManager: () => void;
   setAreaRegions: (regions: AreaRegion[]) => void;
   setAreaRegionGroups: (groups: AreaRegionGroup[]) => void;
+  showProgress?: boolean;
 }
 
 interface ImportAreaRegionsFromTextParams {
   text: string;
   mode: "merge" | "replace";
-  normalizeImportedAreaData: (value: unknown) => ImportedAreaData;
+  normalizeImportedAreaData: (
+    value: unknown,
+    onProgress?: (percent: number, message: string) => void,
+  ) => Promise<ImportedAreaData>;
   applyImportedAreaData: (data: ImportedAreaData, mode: "merge" | "replace") => Promise<void>;
+  showProgress?: boolean;
 }
 
 interface ImportAreaRegionsFromUrlParams {
@@ -42,63 +48,142 @@ interface DownloadAreaRegionsParams {
   areaRegionGroups: AreaRegionGroup[];
 }
 
+const yieldToMainThread = async (): Promise<void> => {
+  const schedulerAny = globalThis as typeof globalThis & {
+    scheduler?: { yield?: () => Promise<void> };
+  };
+  if (schedulerAny.scheduler?.yield) {
+    await schedulerAny.scheduler.yield();
+    return;
+  }
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+};
+
+const maybeYield = async (startedAt: number, budgetMs = 8): Promise<number> => {
+  if (performance.now() - startedAt < budgetMs) return startedAt;
+  await yieldToMainThread();
+  return performance.now();
+};
+
 export const applyImportedAreaData = async (
   params: ApplyImportedAreaDataParams,
 ): Promise<void> => {
-  const { importedData, mode } = params;
+  const { importedData, mode, showProgress = false } = params;
   const importedRegions = importedData.regions;
   const importedGroups = importedData.groups;
   let nextRegions: AreaRegion[] = params.areaRegions;
   let nextGroups: AreaRegionGroup[] = params.areaRegionGroups;
 
-  if (params.areaEditMode) {
-    await params.stopAreaEditing(true);
-  }
+  const progress = showProgress ? showProgressDialog(t`${"import"}`) : null;
 
-  if (mode === "replace") {
-    nextRegions = importedRegions;
-    nextGroups = importedGroups;
-  } else {
-    const mergedRegions = new Map<string, AreaRegion>();
-    for (const region of params.areaRegions) mergedRegions.set(region.id, region);
-    for (const region of importedRegions) mergedRegions.set(region.id, region);
-    nextRegions = Array.from(mergedRegions.values());
+  try {
+    if (params.areaEditMode) {
+      progress?.update(42, t`${"processing"}`);
+      await params.stopAreaEditing(true);
+    }
 
-    const mergedGroups = new Map<string, AreaRegionGroup>();
-    for (const group of params.areaRegionGroups) mergedGroups.set(group.id, group);
-    for (const group of importedGroups) mergedGroups.set(group.id, group);
-    nextGroups = Array.from(mergedGroups.values());
-  }
+    progress?.update(45, t`${"processing"}`);
+    await yieldToMainThread();
 
-  nextRegions.sort((a, b) => b.updatedAt - a.updatedAt);
-  params.setAreaRegions(nextRegions);
-  params.setAreaRegionGroups(nextGroups);
-  const groupsChanged = params.cleanupAreaRegionGroups();
-  await params.persistAreaRegions();
-  if (groupsChanged || mode === "replace" || importedGroups.length > 0) {
-    await params.persistAreaRegionGroups();
+    if (mode === "replace") {
+      nextRegions = importedRegions;
+      nextGroups = importedGroups;
+    } else {
+      const mergedRegions = new Map<string, AreaRegion>();
+      for (const region of params.areaRegions) mergedRegions.set(region.id, region);
+
+      const CHUNK_SIZE = 100;
+      let startedAt = performance.now();
+      for (let i = 0; i < importedRegions.length; ) {
+        const end = Math.min(i + CHUNK_SIZE, importedRegions.length);
+        for (; i < end; i++) {
+          mergedRegions.set(importedRegions[i].id, importedRegions[i]);
+        }
+
+        const percent = 45 + (i / importedRegions.length) * 20;
+        progress?.update(percent, `${t`${"processing"}`} (${i}/${importedRegions.length})`);
+        startedAt = await maybeYield(startedAt);
+      }
+      nextRegions = Array.from(mergedRegions.values());
+
+      const mergedGroups = new Map<string, AreaRegionGroup>();
+      for (const group of params.areaRegionGroups) mergedGroups.set(group.id, group);
+      for (const group of importedGroups) mergedGroups.set(group.id, group);
+      nextGroups = Array.from(mergedGroups.values());
+    }
+
+    progress?.update(70, t`${"processing"}`);
+    await yieldToMainThread();
+
+    nextRegions.sort((a, b) => b.updatedAt - a.updatedAt);
+    params.setAreaRegions(nextRegions);
+    params.setAreaRegionGroups(nextGroups);
+
+    progress?.update(75, t`${"processing"}`);
+    await yieldToMainThread();
+
+    const groupsChanged = params.cleanupAreaRegionGroups();
+
+    progress?.update(80, t`${"saving"}`);
+    await params.persistAreaRegions();
+
+    progress?.update(90, t`${"saving"}`);
+    if (groupsChanged || mode === "replace" || importedGroups.length > 0) {
+      await params.persistAreaRegionGroups();
+    }
+
+    progress?.update(95, t`${"processing"}`);
+    await yieldToMainThread();
+
+    params.notifyAreaRegions();
+    params.renderAreaManager();
+
+    progress?.update(100, t`${"complete"}`);
+    await yieldToMainThread();
+  } finally {
+    if (progress) {
+      setTimeout(() => progress.close(), 300);
+    }
   }
-  params.notifyAreaRegions();
-  params.renderAreaManager();
 };
 
 export const importAreaRegionsFromText = async (
   params: ImportAreaRegionsFromTextParams,
 ): Promise<number> => {
-  let parsed: unknown;
+  const { showProgress = false } = params;
+  const progress = showProgress ? showProgressDialog(t`${"import"}`) : null;
+
   try {
-    parsed = JSON.parse(params.text);
-  } catch {
-    throw new Error(t`${"invalid_file_format"}`);
-  }
+    progress?.update(0, t`${"processing"}`);
+    await yieldToMainThread();
 
-  const importedData = params.normalizeImportedAreaData(parsed);
-  if (importedData.regions.length === 0) {
-    throw new Error(t`${"map_filter_area_no_importable_regions"}`);
-  }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(params.text);
+    } catch {
+      throw new Error(t`${"invalid_file_format"}`);
+    }
 
-  await params.applyImportedAreaData(importedData, params.mode);
-  return importedData.regions.length;
+    progress?.update(5, t`${"processing"}`);
+    await yieldToMainThread();
+
+    const importedData = await params.normalizeImportedAreaData(
+      parsed,
+      (percent, message) => progress?.update(percent, message),
+    );
+    if (importedData.regions.length === 0) {
+      throw new Error(t`${"map_filter_area_no_importable_regions"}`);
+    }
+
+    progress?.update(40, t`${"processing"}`);
+    progress?.close();
+
+    await params.applyImportedAreaData(importedData, params.mode);
+    return importedData.regions.length;
+  } catch (error) {
+    progress?.close();
+    throw error;
+  }
 };
 
 export const importAreaRegionsFromUrl = async (

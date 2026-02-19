@@ -404,9 +404,93 @@ class AreaManager {
     return { regions, groups };
   }
 
+  private async normalizeImportedAreaDataAsync(
+    value: unknown,
+    onProgress?: (percent: number, message: string) => void,
+  ): Promise<{
+    regions: AreaRegion[];
+    groups: AreaRegionGroup[];
+  }> {
+    if (Array.isArray(value)) {
+      return { regions: this.normalizeAreaRegions(value), groups: [] };
+    }
+    if (!value || typeof value !== "object") return { regions: [], groups: [] };
+
+    const candidate = value as Record<string, unknown>;
+    if (Array.isArray(candidate.regions)) {
+      const regions = this.normalizeAreaRegions(candidate.regions);
+      const groups = this.normalizeAreaRegionGroupsWithAvailable(
+        candidate.mrWplaceAreaGroups ?? candidate.areaRegionGroups ?? candidate.groups,
+        new Set(regions.map((region) => region.id)),
+      );
+      return { regions, groups };
+    }
+
+    if (
+      candidate.type !== "FeatureCollection" ||
+      !Array.isArray(candidate.features)
+    ) {
+      return { regions: [], groups: [] };
+    }
+
+    const features = candidate.features;
+    const normalizedFeatures: Array<{
+      id: unknown;
+      name: unknown;
+      color: unknown;
+      visible: unknown;
+      createdAt: unknown;
+      updatedAt: unknown;
+      vertices: AreaRegionVertex[];
+    }> = [];
+
+    const CHUNK_SIZE = 50;
+    let startedAt = performance.now();
+    for (let i = 0; i < features.length; ) {
+      const end = Math.min(i + CHUNK_SIZE, features.length);
+      for (; i < end; i++) {
+        const feature = features[i];
+        if (!feature || typeof feature !== "object") continue;
+        const rawFeature = feature as Record<string, unknown>;
+        const vertices = parseGeoJsonVertices(rawFeature.geometry);
+        if (vertices.length < 3) continue;
+
+        const properties =
+          rawFeature.properties && typeof rawFeature.properties === "object"
+            ? (rawFeature.properties as Record<string, unknown>)
+            : {};
+
+        normalizedFeatures.push({
+          id: properties.id,
+          name: properties.name,
+          color: properties.color,
+          visible: properties.visible,
+          createdAt: properties.createdAt,
+          updatedAt: properties.updatedAt,
+          vertices,
+        });
+      }
+
+      const percent = 5 + (i / features.length) * 35;
+      onProgress?.(percent, `${t`${"processing"}`} (${i}/${features.length})`);
+      if (performance.now() - startedAt >= 8) {
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+        startedAt = performance.now();
+      }
+    }
+
+    const regions = this.normalizeAreaRegions(normalizedFeatures);
+    const groups = this.normalizeAreaRegionGroupsWithAvailable(
+      candidate.mrWplaceAreaGroups ?? candidate.areaRegionGroups ?? candidate.groups,
+      new Set(regions.map((region) => region.id)),
+    );
+    return { regions, groups };
+  }
+
   private async applyImportedAreaData(
     importedData: { regions: AreaRegion[]; groups: AreaRegionGroup[] },
     mode: "merge" | "replace",
+    showProgress = false,
   ): Promise<void> {
     await applyImportedAreaDataUsecase({
       importedData,
@@ -426,6 +510,7 @@ class AreaManager {
       setAreaRegionGroups: (groups) => {
         this.areaRegionGroups = groups;
       },
+      showProgress,
     });
   }
 
@@ -433,13 +518,29 @@ class AreaManager {
     text: string,
     mode: "merge" | "replace",
   ): Promise<number> {
-    return importAreaRegionsFromTextUsecase({
+    const fileSizeKB = Math.round(text.length / 1024);
+    if (fileSizeKB > 500) {
+      const confirmed = confirm(
+        `${t`${"map_filter_area_large_file_warning"}`}\n${t`${"file_size"}`}: ${fileSizeKB} KB`,
+      );
+      if (!confirmed) return 0;
+    }
+
+    const result = await importAreaRegionsFromTextUsecase({
       text,
       mode,
-      normalizeImportedAreaData: (value) => this.normalizeImportedAreaData(value),
+      normalizeImportedAreaData: (value, onProgress) =>
+        this.normalizeImportedAreaDataAsync(value, onProgress),
       applyImportedAreaData: (data, nextMode) =>
-        this.applyImportedAreaData(data, nextMode),
+        this.applyImportedAreaData(data, nextMode, true),
+      showProgress: true,
     });
+
+    if (!this.areaMeasure) {
+      await this.setAreaMeasureEnabled(true);
+    }
+
+    return result;
   }
 
   private async importAreaRegionsFromUrl(
