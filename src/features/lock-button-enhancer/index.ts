@@ -32,12 +32,19 @@ export class LockButtonEnhancer {
   }
 
   private findLockButton(): Element | null {
-    // title="Lock" or title="Loja" (Portuguese)
+    // title="Lock" or title="Unlock" (when locked)
     const lockButton = document.querySelector('[title="Lock"]');
     if (lockButton) return lockButton;
 
+    const unlockButton = document.querySelector('[title="Unlock"]');
+    if (unlockButton) return unlockButton;
+
+    // Portuguese: "Loja" (Lock) or "Desbloquear" (Unlock)
     const lojaButton = document.querySelector('[title="Loja"]');
-    return lojaButton;
+    if (lojaButton) return lojaButton;
+
+    const desbloquearButton = document.querySelector('[title="Desbloquear"]');
+    return desbloquearButton;
   }
 
   private enhanceLockButton(lockButton: Element): void {
