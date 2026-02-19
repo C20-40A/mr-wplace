@@ -208,7 +208,7 @@ export const downloadAreaRegions = (params: DownloadAreaRegionsParams): void => 
       regionIds: [...group.regionIds],
     }));
   const payload = createAreaGeoJson(params.regions, groups);
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+  const blob = new Blob([JSON.stringify(payload)], {
     type: "application/geo+json",
   });
   const url = URL.createObjectURL(blob);
