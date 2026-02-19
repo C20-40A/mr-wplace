@@ -1043,7 +1043,7 @@ class AreaManager {
 
     const composeGroupButton = document.createElement("button");
     composeGroupButton.className = "btn btn-outline btn-sm";
-    composeGroupButton.textContent = "エリア合体";
+    composeGroupButton.textContent = t`${"map_filter_area_group_compose"}`;
     composeGroupButton.disabled = ungroupedRegions.length < 2;
     composeGroupButton.addEventListener("click", () => {
       this.showAreaGroupComposeDialog();
@@ -1051,7 +1051,7 @@ class AreaManager {
 
     const settingsButton = document.createElement("button");
     settingsButton.className = "btn btn-outline btn-sm btn-circle";
-    settingsButton.title = "表示設定";
+    settingsButton.title = t`${"map_filter_area_display_settings"}`;
     settingsButton.style.marginLeft = "auto";
     settingsButton.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" style="width: 16px; height: 16px;">

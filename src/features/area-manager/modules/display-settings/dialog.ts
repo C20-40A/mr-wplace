@@ -30,11 +30,11 @@ export const showDisplaySettingsDialog = (
   modal.className = "modal";
   modal.innerHTML = `
     <div class="modal-box" style="max-width: 27rem; display: flex; flex-direction: column; gap: 0.8rem;">
-      <h3 class="font-bold text-lg">表示設定</h3>
+      <h3 class="font-bold text-lg">${t`${"map_filter_area_display_settings"}`}</h3>
 
       <div style="padding: 0.8rem; border: 1px solid oklch(var(--bc) / 0.2); border-radius: 8px;">
         <label style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem;">
-          <span style="min-width: 6.5rem;">エリア透明度</span>
+          <span style="min-width: 6.5rem;">${t`${"map_filter_area_opacity"}`}</span>
           <input id="area-display-opacity-input" type="range" class="range range-xs" min="0" max="100" step="1" style="flex: 1;" />
           <span id="area-display-opacity-value" class="tabular-nums" style="width: 3rem; text-align: right;"></span>
         </label>
@@ -42,22 +42,22 @@ export const showDisplaySettingsDialog = (
 
       <div style="padding: 0.8rem; border: 1px solid oklch(var(--bc) / 0.2); border-radius: 8px; display: flex; flex-direction: column; gap: 0.7rem;">
         <label style="display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; font-size: 0.9rem;">
-          <span>エリア名表示</span>
+          <span>${t`${"map_filter_area_name_display"}`}</span>
           <select id="area-display-name-mode-select" class="select select-sm select-bordered" style="min-width: 12rem;">
-            <option value="always">表示する</option>
-            <option value="off">表示しない</option>
+            <option value="always">${t`${"map_filter_area_name_display_on"}`}</option>
+            <option value="off">${t`${"map_filter_area_name_display_off"}`}</option>
           </select>
         </label>
         <label style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem;">
-          <span style="min-width: 6.5rem;">文字サイズ</span>
+          <span style="min-width: 6.5rem;">${t`${"map_filter_area_name_font_size"}`}</span>
           <input id="area-display-name-font-size-input" type="range" class="range range-xs" min="${MIN_AREA_NAME_FONT_SIZE_PX}" max="${MAX_AREA_NAME_FONT_SIZE_PX}" step="1" style="flex: 1;" />
           <span id="area-display-name-font-size-value" class="tabular-nums" style="width: 3.5rem; text-align: right;"></span>
         </label>
         <label style="display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; font-size: 0.9rem;">
-          <span>文字見え方</span>
+          <span>${t`${"map_filter_area_name_style"}`}</span>
           <select id="area-display-name-style-mode-select" class="select select-sm select-bordered" style="min-width: 12rem;">
-            <option value="halo">標準</option>
-            <option value="color-badge">丸背景バッジ</option>
+            <option value="halo">${t`${"map_filter_area_name_style_halo"}`}</option>
+            <option value="color-badge">${t`${"map_filter_area_name_style_badge"}`}</option>
           </select>
         </label>
       </div>

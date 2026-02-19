@@ -10,7 +10,7 @@ export const showGroupComposeDialog = async (
   deps: GroupComposeDialogDeps,
 ): Promise<void> => {
   if (deps.candidates.length < 2) {
-    alert("合体可能なエリアが不足しています");
+    alert(t`${"map_filter_area_group_not_enough"}`);
     return;
   }
 
@@ -18,11 +18,11 @@ export const showGroupComposeDialog = async (
   modal.className = "modal";
   modal.innerHTML = `
     <div class="modal-box" style="max-width: 32rem; display: flex; flex-direction: column; gap: 0.7rem;">
-      <h3 class="font-bold text-lg">エリア合体</h3>
-      <input id="area-group-name-input" class="input input-sm input-bordered" placeholder="グループ名 (任意)" />
+      <h3 class="font-bold text-lg">${t`${"map_filter_area_group_compose"}`}</h3>
+      <input id="area-group-name-input" class="input input-sm input-bordered" placeholder="${t`${"map_filter_area_group_name_placeholder"}`}" />
       <div id="area-group-candidates" style="max-height: 260px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;"></div>
       <div class="modal-action" style="margin-top: 0.25rem;">
-        <button id="area-group-create-btn" class="btn btn-primary btn-sm" disabled>合体する</button>
+        <button id="area-group-create-btn" class="btn btn-primary btn-sm" disabled>${t`${"map_filter_area_group_compose_action"}`}</button>
         <button id="area-group-cancel-btn" class="btn btn-outline btn-sm">${t`${"cancel"}`}</button>
       </div>
     </div>
