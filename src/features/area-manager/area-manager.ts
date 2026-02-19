@@ -344,69 +344,20 @@ class AreaManager {
   }
 
 
-  private normalizeImportedAreaData(value: unknown): {
-    regions: AreaRegion[];
-    groups: AreaRegionGroup[];
-  } {
-    if (Array.isArray(value)) {
-      return { regions: this.normalizeAreaRegions(value), groups: [] };
-    }
-    if (!value || typeof value !== "object") return { regions: [], groups: [] };
-
-    const candidate = value as Record<string, unknown>;
-    if (Array.isArray(candidate.regions)) {
-      const regions = this.normalizeAreaRegions(candidate.regions);
-      const groups = this.normalizeAreaRegionGroupsWithAvailable(
-        candidate.mrWplaceAreaGroups ?? candidate.areaRegionGroups ?? candidate.groups,
-        new Set(regions.map((region) => region.id)),
-      );
-      return { regions, groups };
-    }
-
-    if (
-      candidate.type !== "FeatureCollection" ||
-      !Array.isArray(candidate.features)
-    ) {
-      return { regions: [], groups: [] };
-    }
-
-    const normalizedFeatures = candidate.features
-      .map((feature) => {
-        if (!feature || typeof feature !== "object") return null;
-        const rawFeature = feature as Record<string, unknown>;
-        const vertices = parseGeoJsonVertices(rawFeature.geometry);
-        if (vertices.length < 3) return null;
-
-        const properties =
-          rawFeature.properties && typeof rawFeature.properties === "object"
-            ? (rawFeature.properties as Record<string, unknown>)
-            : {};
-
-        return {
-          id: properties.id,
-          name: properties.name,
-          color: properties.color,
-          visible: properties.visible,
-          createdAt: properties.createdAt,
-          updatedAt: properties.updatedAt,
-          vertices,
-        };
-      })
-      .filter((region): region is NonNullable<typeof region> =>
-        Boolean(region),
-      );
-
-    const regions = this.normalizeAreaRegions(normalizedFeatures);
-    const groups = this.normalizeAreaRegionGroupsWithAvailable(
-      candidate.mrWplaceAreaGroups ?? candidate.areaRegionGroups ?? candidate.groups,
-      new Set(regions.map((region) => region.id)),
-    );
-    return { regions, groups };
+  private getGeoJsonAreaName(
+    properties: Record<string, unknown>,
+    namePropertyKey: string,
+  ): unknown {
+    const selected = properties[namePropertyKey];
+    if (typeof selected === "string" && selected.trim()) return selected.trim();
+    if (typeof selected === "number" && Number.isFinite(selected)) return String(selected);
+    return properties.name;
   }
 
   private async normalizeImportedAreaDataAsync(
     value: unknown,
     onProgress?: (percent: number, message: string) => void,
+    namePropertyKey = "name",
   ): Promise<{
     regions: AreaRegion[];
     groups: AreaRegionGroup[];
@@ -462,7 +413,7 @@ class AreaManager {
 
         normalizedFeatures.push({
           id: properties.id,
-          name: properties.name,
+          name: this.getGeoJsonAreaName(properties, namePropertyKey),
           color: properties.color,
           visible: properties.visible,
           createdAt: properties.createdAt,
@@ -517,20 +468,17 @@ class AreaManager {
   private async importAreaRegionsFromText(
     text: string,
     mode: "merge" | "replace",
+    options?: { namePropertyKey?: string },
   ): Promise<number> {
-    const fileSizeKB = Math.round(text.length / 1024);
-    if (fileSizeKB > 500) {
-      const confirmed = confirm(
-        `${t`${"map_filter_area_large_file_warning"}`}\n${t`${"file_size"}`}: ${fileSizeKB} KB`,
-      );
-      if (!confirmed) return 0;
-    }
-
     const result = await importAreaRegionsFromTextUsecase({
       text,
       mode,
       normalizeImportedAreaData: (value, onProgress) =>
-        this.normalizeImportedAreaDataAsync(value, onProgress),
+        this.normalizeImportedAreaDataAsync(
+          value,
+          onProgress,
+          options?.namePropertyKey?.trim() || "name",
+        ),
       applyImportedAreaData: (data, nextMode) =>
         this.applyImportedAreaData(data, nextMode, true),
       showProgress: true,
@@ -577,8 +525,8 @@ class AreaManager {
       importFromUrl: async (url, mode) => {
         await this.importAreaRegionsFromUrl(url, mode);
       },
-      importFromText: async (text, mode) => {
-        await this.importAreaRegionsFromText(text, mode);
+      importFromText: async (text, mode, options) => {
+        await this.importAreaRegionsFromText(text, mode, options);
       },
       downloadRegions: (regions) => this.downloadAreaRegions(regions),
     });

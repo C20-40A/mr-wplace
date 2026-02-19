@@ -492,6 +492,8 @@ export const jaTranslations = {
   map_filter_area_import_description:
     "GeoJSON または JSON ファイルからエリアをインポート",
   map_filter_area_import_file: "エリアファイルからインポート",
+  map_filter_area_import_confirm_title: "インポート前の確認",
+  map_filter_area_name_property: "エリア名のプロパティ（デフォルト: name）",
   map_filter_area_export_all_description:
     "保存済みエリアをすべて GeoJSON でエクスポート",
   map_filter_area_export_selected: "エリアを選んでエクスポート",

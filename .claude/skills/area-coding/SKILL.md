@@ -125,6 +125,8 @@ inject側の `area-display.ts` がマップ上のSVGオーバーレイ描画・�
 - `mrWplaceAreaGroups` カスタムフィールドでグループも保存
 - merge: 既存とIDベースでマージ / replace: 全置換
 - URL同期: fetchしたJSONをインポート
+- ファイルインポート時は事前確認ダイアログでファイルサイズを表示し、merge/replace を選択してから読み込む
+- GeoJSON のエリア名は `properties.name` がデフォルトだが、インポート時に任意のプロパティキー（例: `N03_004`）を指定して名寄せ可能
 
 ## Inject側: area-display.ts
 

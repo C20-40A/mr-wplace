@@ -485,6 +485,8 @@ Do not use this feature to paint actual pixels.`,
   map_filter_area_import_description:
     "Import areas from a GeoJSON or JSON file",
   map_filter_area_import_file: "Import from Area File",
+  map_filter_area_import_confirm_title: "Confirm Before Import",
+  map_filter_area_name_property: "Area name property (default: name)",
   map_filter_area_export_all_description: "Export all saved areas as GeoJSON",
   map_filter_area_export_selected: "Export Selected Areas",
   map_filter_area_export_selected_description:

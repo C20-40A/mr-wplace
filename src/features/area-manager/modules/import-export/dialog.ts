@@ -2,15 +2,119 @@ import { t } from "@/i18n/manager";
 import type { AreaRegion } from "@/types/area-region";
 
 type ImportMode = "merge" | "replace";
+type ImportOptions = {
+  namePropertyKey?: string;
+};
 
 interface ImportExportDialogDeps {
   areaRegions: AreaRegion[];
   getSavedSyncUrl: () => Promise<string>;
   saveSyncUrl: (url: string) => Promise<void>;
   importFromUrl: (url: string, mode: ImportMode) => Promise<void>;
-  importFromText: (text: string, mode: ImportMode) => Promise<void>;
+  importFromText: (
+    text: string,
+    mode: ImportMode,
+    options?: ImportOptions,
+  ) => Promise<void>;
   downloadRegions: (regions: AreaRegion[]) => void;
 }
+
+const formatFileSizeLabel = (bytes: number): string => {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+};
+
+const showImportConfirmDialog = async (
+  file: File,
+): Promise<{ mode: ImportMode; namePropertyKey: string } | null> => {
+  const modal = document.createElement("dialog");
+  modal.className = "modal";
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width: 28rem; display: flex; flex-direction: column; gap: 0.8rem;">
+      <h3 class="font-bold text-lg">${t`${"map_filter_area_import_confirm_title"}`}</h3>
+      <div style="font-size: 0.875rem; color: oklch(var(--bc) / 0.7);">
+        <div><strong>${t`${"file_select"}`}:</strong> ${file.name}</div>
+        <div><strong>${t`${"file_size"}`}:</strong> ${formatFileSizeLabel(file.size)}</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+        <div style="font-weight: 600; font-size: 0.9rem;">${t`${"import_mode"}`}</div>
+        <label class="label cursor-pointer justify-start gap-2" style="padding: 0;">
+          <input id="area-import-mode-merge" type="radio" name="area-import-mode" class="radio radio-sm" value="merge" checked />
+          <span class="label-text">${t`${"sync_merge"}`}</span>
+        </label>
+        <label class="label cursor-pointer justify-start gap-2" style="padding: 0;">
+          <input id="area-import-mode-replace" type="radio" name="area-import-mode" class="radio radio-sm" value="replace" />
+          <span class="label-text">${t`${"sync_replace"}`}</span>
+        </label>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+        <label for="area-import-name-property" style="font-size: 0.85rem; color: oklch(var(--bc) / 0.7);">
+          ${t`${"map_filter_area_name_property"}`}
+        </label>
+        <input
+          id="area-import-name-property"
+          type="text"
+          class="input input-sm input-bordered"
+          value="name"
+          placeholder="name"
+        />
+      </div>
+
+      <div class="modal-action" style="margin-top: 0.4rem;">
+        <button id="area-import-confirm-cancel" class="btn btn-ghost btn-sm">${t`${"cancel"}`}</button>
+        <button id="area-import-confirm-submit" class="btn btn-primary btn-sm">${t`${"import"}`}</button>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+      <button>close</button>
+    </form>
+  `;
+
+  document.body.appendChild(modal);
+  modal.showModal();
+
+  const result = await new Promise<{ mode: ImportMode; namePropertyKey: string } | null>(
+    (resolve) => {
+      let settled = false;
+      const closeWith = (value: { mode: ImportMode; namePropertyKey: string } | null) => {
+        if (settled) return;
+        settled = true;
+        if (modal.open) modal.close();
+        resolve(value);
+      };
+
+      const submitButton = modal.querySelector(
+        "#area-import-confirm-submit",
+      ) as HTMLButtonElement | null;
+      const cancelButton = modal.querySelector(
+        "#area-import-confirm-cancel",
+      ) as HTMLButtonElement | null;
+      const namePropertyInput = modal.querySelector(
+        "#area-import-name-property",
+      ) as HTMLInputElement | null;
+
+      submitButton?.addEventListener("click", () => {
+        const checkedMode = modal.querySelector(
+          "input[name='area-import-mode']:checked",
+        ) as HTMLInputElement | null;
+        const mode = checkedMode?.value === "replace" ? "replace" : "merge";
+        const namePropertyKey = namePropertyInput?.value.trim() || "name";
+        closeWith({ mode, namePropertyKey });
+      });
+
+      cancelButton?.addEventListener("click", () => closeWith(null));
+      modal.addEventListener("cancel", () => closeWith(null), { once: true });
+      modal.addEventListener("close", () => closeWith(null), { once: true });
+    },
+  );
+
+  modal.remove();
+  return result;
+};
 
 export const showImportExportDialog = async (
   deps: ImportExportDialogDeps,
@@ -206,7 +310,11 @@ export const showImportExportDialog = async (
     if (!file) return;
 
     try {
-      await deps.importFromText(await file.text(), "merge");
+      const confirmed = await showImportConfirmDialog(file);
+      if (!confirmed) return;
+      await deps.importFromText(await file.text(), confirmed.mode, {
+        namePropertyKey: confirmed.namePropertyKey,
+      });
       modal.close();
     } catch (error) {
       console.error("🧑‍🎨 : Area import failed", error);
