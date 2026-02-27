@@ -1,6 +1,6 @@
 import { setupElementObserver } from "@/components/element-observer";
 import { findPositionModal } from "@/constants/selectors";
-import { getCurrentPosition } from "@/utils/position";
+import { getCurrentPosition, gotoPosition } from "@/utils/position";
 import { latLngToTilePixel } from "@/utils/coordinate";
 import { t } from "@/i18n/manager";
 import { Toast } from "@/components/toast";
@@ -148,26 +148,24 @@ export class PositionInfo {
       "bg-base-100/60 backdrop-blur-sm rounded-box flex items-center gap-1.5 px-3 py-1.5 mb-1 shadow-sm w-fit mx-auto justify-self-center";
     toolbar.style.cssText = "width: fit-content; justify-self: center;";
 
-    // 左端アイコン
-    const markerIcon = document.createElement("span");
-    markerIcon.className = "shrink-0";
-    markerIcon.innerHTML =
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="fill-primary size-4"><path d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 400Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Z"></path></svg>';
+    // 左端アイコン（クリックで現在座標へジャンプ）
+    const markerButton = this.createToolbarButton(
+      "Jump to current coordinates",
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="fill-primary size-4"><path d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 400Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Z"></path></svg>',
+    );
+    markerButton.addEventListener("click", () => {
+      const pos = getCurrentPosition();
+      if (!pos) return;
+      gotoPosition({ lat: pos.lat, lng: pos.lng, zoom: pos.zoom ?? 11 });
+    });
 
     const tileCoordSpan = document.createElement("span");
     tileCoordSpan.id = "position-tile-info";
-    tileCoordSpan.className = "text-base-content/70 text-xs font-mono";
+    tileCoordSpan.className =
+      "text-base-content/70 text-xs font-mono cursor-pointer hover:text-primary transition-colors";
     tileCoordSpan.textContent = `${coords.TLX}-${coords.TLY}-${coords.PxX}-${coords.PxY}`;
-
-    // コピーボタン
-    const copyButton = this.createToolbarButton(
-      "Copy tile coordinates",
-      `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-      </svg>`,
-    );
-    copyButton.addEventListener("click", async () => {
+    tileCoordSpan.title = "Copy tile coordinates";
+    tileCoordSpan.addEventListener("click", async () => {
       const pos = getCurrentPosition();
       if (!pos) return;
       const c = latLngToTilePixel(pos.lat, pos.lng);
@@ -199,7 +197,7 @@ export class PositionInfo {
       );
     });
 
-    toolbar.append(markerIcon, tileCoordSpan, copyButton, clockButton);
+    toolbar.append(markerButton, tileCoordSpan, clockButton);
 
     // モーダル本体の前に独立要素として挿入
     container.prepend(toolbar);
