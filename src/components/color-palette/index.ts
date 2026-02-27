@@ -38,6 +38,7 @@ export class ColorPalette {
   private boundClickHandler: (e: MouseEvent) => void;
   private boundDocumentClickHandler: (e: MouseEvent) => void;
   private boundInputHandler: (e: Event) => void;
+  private boundChangeHandler: (e: Event) => void;
 
   constructor(container: HTMLElement, options: ColorPaletteOptions = {}) {
     this.container = container;
@@ -62,6 +63,7 @@ export class ColorPalette {
     this.boundDocumentClickHandler = (e: MouseEvent) =>
       this.handleDocumentClick(e);
     this.boundInputHandler = (e: Event) => this.handleInput(e);
+    this.boundChangeHandler = (e: Event) => this.handleChange(e);
 
     this.render();
     this.setupEventHandlers();
@@ -106,6 +108,7 @@ export class ColorPalette {
     // イベント委譲で全イベント処理
     this.container.addEventListener("click", this.boundClickHandler);
     this.container.addEventListener("input", this.boundInputHandler);
+    this.container.addEventListener("change", this.boundChangeHandler);
 
     // ドロップダウンを外側クリックで閉じる
     document.addEventListener("click", this.boundDocumentClickHandler);
@@ -114,26 +117,6 @@ export class ColorPalette {
   private handleInput(e: Event): void {
     const target = e.target as HTMLElement;
     if (target.classList.contains("enhanced-color-picker")) {
-      const hex = (target as HTMLInputElement).value;
-      const r = parseInt(hex.slice(1, 3), 16);
-      const g = parseInt(hex.slice(3, 5), 16);
-      const b = parseInt(hex.slice(5, 7), 16);
-      this.enhancedColor = [r, g, b];
-
-      // アイコンを更新
-      const icons = createEnhancedModeIcons(hex);
-      this.container.querySelectorAll(".enhanced-mode-item").forEach((item) => {
-        const mode = (item as HTMLElement).dataset.mode as keyof typeof icons;
-        const img = item.querySelector("img") as HTMLImageElement;
-        if (img && icons[mode]) img.src = icons[mode];
-      });
-      const currentIcon = this.container.querySelector(
-        ".enhanced-mode-current-icon",
-      ) as HTMLImageElement;
-      if (currentIcon && icons[this.enhancedMode])
-        currentIcon.src = icons[this.enhancedMode];
-
-      this.options.onEnhancedColorChange?.(this.enhancedColor);
       return;
     }
 
@@ -145,6 +128,43 @@ export class ColorPalette {
       this.showUnplacedColor = [r, g, b];
       this.options.onShowUnplacedColorChange?.(this.showUnplacedColor);
     }
+  }
+
+  private handleChange(e: Event): void {
+    const target = e.target as HTMLElement;
+    if (!target.classList.contains("enhanced-color-picker")) return;
+    const hex = (target as HTMLInputElement).value;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    if (
+      this.enhancedColor[0] === r &&
+      this.enhancedColor[1] === g &&
+      this.enhancedColor[2] === b
+    )
+      return;
+    this.updateEnhancedColorPreview(hex);
+    this.options.onEnhancedColorChange?.(this.enhancedColor);
+  }
+
+  private updateEnhancedColorPreview(hex: string): void {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    this.enhancedColor = [r, g, b];
+
+    // アイコンを更新
+    const icons = createEnhancedModeIcons(hex);
+    this.container.querySelectorAll(".enhanced-mode-item").forEach((item) => {
+      const mode = (item as HTMLElement).dataset.mode as keyof typeof icons;
+      const img = item.querySelector("img") as HTMLImageElement;
+      if (img && icons[mode]) img.src = icons[mode];
+    });
+    const currentIcon = this.container.querySelector(
+      ".enhanced-mode-current-icon",
+    ) as HTMLImageElement;
+    if (currentIcon && icons[this.enhancedMode])
+      currentIcon.src = icons[this.enhancedMode];
   }
 
   private handleDocumentClick(e: MouseEvent): void {
@@ -652,6 +672,7 @@ export class ColorPalette {
     // イベントリスナー削除
     this.container.removeEventListener("click", this.boundClickHandler);
     this.container.removeEventListener("input", this.boundInputHandler);
+    this.container.removeEventListener("change", this.boundChangeHandler);
     document.removeEventListener("click", this.boundDocumentClickHandler);
 
     // DOM削除
