@@ -272,16 +272,18 @@ const handleTileRequest = async (
     notifyFrontTileComparisonReady(tileX, tileY);
   }
 
-  // Save snapshot for time travel feature
-  window.postMessage(
-    {
-      source: "wplace-studio-snapshot",
-      tileBlob: originalTileBlob,
-      tileX: tileX,
-      tileY: tileY,
-    },
-    "*"
-  );
+  // Save snapshot for time travel feature (when enabled)
+  if (window.mrWplaceSnapshotCaptureEnabled) {
+    window.postMessage(
+      {
+        source: "wplace-studio-snapshot",
+        tileBlob: originalTileBlob,
+        tileX: tileX,
+        tileY: tileY,
+      },
+      "*"
+    );
+  }
 
   // When front tile layer is enabled, skip overlay compositing on background tiles.
   // Overlays are rendered on the independent front layer instead.

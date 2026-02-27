@@ -224,6 +224,20 @@ export const sendSnapshotsToInject = async () => {
   );
 };
 
+/**
+ * Toggle tmp tile snapshot capture in inject context
+ * Used by: time-travel modal open/close
+ */
+export const sendSnapshotCaptureToInject = (enabled: boolean): void => {
+  window.postMessage(
+    {
+      source: "mr-wplace-snapshot-capture-update",
+      enabled,
+    },
+    "*"
+  );
+};
+
 // ============================================
 // Snapshot Repository Bridge Functions
 // ============================================

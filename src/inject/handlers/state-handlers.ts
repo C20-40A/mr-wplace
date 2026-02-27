@@ -161,3 +161,16 @@ export const handleFrontTileLayerUpdate = (data: {
   setFrontTileLayerEnabled(data.enabled);
   console.log("🧑‍🎨 : Front tile layer updated:", data.enabled);
 };
+
+/**
+ * Handle snapshot capture update
+ */
+export const handleSnapshotCaptureUpdate = (data: {
+  enabled: boolean;
+}): void => {
+  const nextEnabled = data.enabled === true;
+  if (window.mrWplaceSnapshotCaptureEnabled === nextEnabled) return;
+
+  window.mrWplaceSnapshotCaptureEnabled = nextEnabled;
+  console.log("🧑‍🎨 : Snapshot capture updated:", nextEnabled);
+};

@@ -81,6 +81,9 @@ const forceStartupLocationZoom = (): void => {
   // Initialize front tile layer (experimental, default: false)
   window.mrWplaceFrontTileLayerEnabled = false;
 
+  // Snapshot capture for time-travel tmp tiles (default: off)
+  window.mrWplaceSnapshotCaptureEnabled = false;
+
   // Setup fetch interceptor synchronously (no await)
   try {
     setupPaintedCoordinatesCapture();

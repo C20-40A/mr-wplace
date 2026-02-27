@@ -26,6 +26,7 @@ import { t } from "@/i18n/manager";
 import { IMG_ICON_TIME_TRAVEL } from "@/assets/iconImages";
 import { storage } from "@/utils/browser-api";
 import { showFeatureHint } from "@/features/feature-hints";
+import { sendSnapshotCaptureToInject } from "@/utils/inject-bridge";
 
 /**
  * タイムマシン機能
@@ -75,6 +76,9 @@ export const cleanupLegacyTmpTiles = async (): Promise<void> => {
 export const initTimeTravel = (): void => {
   router = new TimeTravelRouter();
   ui = new TimeTravelUI(router);
+  ui.setOnModalClosed(() => {
+    sendSnapshotCaptureToInject(false);
+  });
   currentPositionRoute = new SnapshotRoute({ showSaveButton: true });
   tileListRoute = new TileListRoute();
   tileSnapshotsRoute = new SnapshotRoute({ showSaveButton: false });
@@ -174,12 +178,14 @@ const renderCurrentRoute = (route: TimeTravelRoute): void => {
 
 // 外部インターフェース：FABはタイル一覧からスタート
 export const show = (): void => {
+  sendSnapshotCaptureToInject(true);
   ui.showModal(); // モーダルを先に作成
   router.initialize("tile-list");
 };
 
 // 元のボタン用：現在位置のみ表示
 export const showCurrentPosition = (): void => {
+  sendSnapshotCaptureToInject(true);
   ui.showModal(); // モーダルを先に作成
   router.initialize("current-position");
 };
@@ -190,6 +196,7 @@ export const navigateToDetail = (fullKey: string): void => {
 };
 
 export const closeModal = (): void => {
+  sendSnapshotCaptureToInject(false);
   ui.closeModal();
 };
 

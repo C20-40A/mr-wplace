@@ -26,8 +26,13 @@ export const createTimeTravelFAB = (): HTMLButtonElement => {
 
 export class TimeTravelUI {
   private modalElements: ModalElements | null = null;
+  private onModalClosed?: () => void;
 
   constructor(private router: TimeTravelRouter) {}
+
+  setOnModalClosed(callback: () => void): void {
+    this.onModalClosed = callback;
+  }
 
   showModal(): void {
     this.modalElements = createModal({
@@ -36,6 +41,15 @@ export class TimeTravelUI {
       maxWidth: "80rem",
       router: this.router,
     });
+
+    this.modalElements.modal.addEventListener(
+      "close",
+      () => {
+        this.onModalClosed?.();
+        this.modalElements = null;
+      },
+      { once: true },
+    );
 
     this.modalElements.modal.showModal();
   }

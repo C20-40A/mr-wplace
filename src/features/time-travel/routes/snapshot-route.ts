@@ -315,6 +315,33 @@ export class SnapshotRoute extends BaseSnapshotRoute {
 
     const tileSnapshot = window.mrWplace?.tileSnapshot;
     if (!tileSnapshot) throw new Error("TileSnapshot not found");
+
+    // Fallback: If tmp tile is not ready yet, capture from current canvas.
+    const tmpBlob = await tileSnapshot.getTmpTile(
+      this.currentTileX,
+      this.currentTileY,
+    );
+    if (!tmpBlob) {
+      const canvas = document.getElementById(
+        "wps-current-tile-canvas",
+      ) as HTMLCanvasElement | null;
+      const capturedBlob = await new Promise<Blob | null>((resolve) => {
+        if (!canvas || canvas.style.display === "none") {
+          resolve(null);
+          return;
+        }
+        canvas.toBlob((blob) => resolve(blob), "image/png");
+      });
+
+      if (capturedBlob) {
+        await tileSnapshot.saveTmpTile(
+          this.currentTileX,
+          this.currentTileY,
+          capturedBlob,
+        );
+      }
+    }
+
     const snapshotId = await tileSnapshot.saveSnapshot(
       this.currentTileX,
       this.currentTileY,
