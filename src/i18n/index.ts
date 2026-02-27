@@ -32,7 +32,6 @@ let currentLocale: SupportedLocale = "en";
 
 // Chrome Storage連携
 const STORAGE_KEY = "mr_wplace_locale";
-const DE_LOCALE_MIGRATION_DONE_KEY = "mr_wplace_de_locale_migration_done";
 
 const isSupportedLocale = (locale: unknown): locale is SupportedLocale => {
   return (
@@ -49,24 +48,8 @@ const isSupportedLocale = (locale: unknown): locale is SupportedLocale => {
 
 // ストレージから設定を読み込み（成功時true）
 export const loadLocaleFromStorage = async (): Promise<boolean> => {
-  const result = await storage.get([
-    STORAGE_KEY,
-    DE_LOCALE_MIGRATION_DONE_KEY,
-  ]);
+  const result = await storage.get([STORAGE_KEY]);
   const storedLocale = result[STORAGE_KEY] as SupportedLocale | undefined;
-  const migrationDone = result[DE_LOCALE_MIGRATION_DONE_KEY] === true;
-  const browserLang = navigator.language.substring(0, 2);
-
-  // One-time migration for existing German users who previously had to use English.
-  if (!migrationDone && storedLocale === "en" && browserLang === "de") {
-    currentLocale = "de";
-    await storage.set({
-      [STORAGE_KEY]: "de",
-      [DE_LOCALE_MIGRATION_DONE_KEY]: true,
-    });
-    return true;
-  }
-
   if (isSupportedLocale(storedLocale)) {
     currentLocale = storedLocale;
     return true;
@@ -78,10 +61,7 @@ export const loadLocaleFromStorage = async (): Promise<boolean> => {
 export const saveLocaleToStorage = async (
   locale: SupportedLocale
 ): Promise<void> => {
-  await storage.set({
-    [STORAGE_KEY]: locale,
-    [DE_LOCALE_MIGRATION_DONE_KEY]: true,
-  });
+  await storage.set({ [STORAGE_KEY]: locale });
 };
 
 // 翻訳辞書
