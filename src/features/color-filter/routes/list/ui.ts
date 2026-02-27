@@ -7,6 +7,7 @@ import {
   sendColorFilterToInject,
   sendShowUnplacedOnlyToInject,
 } from "@/content";
+import { ColorFilter } from "@/features/color-filter";
 import {
   getShowUnplacedOnly,
   setShowUnplacedOnly,
@@ -96,6 +97,7 @@ export const renderColorFilters = async (
       if (colorFilterManager) {
         sendColorFilterToInject(colorFilterManager);
       }
+      ColorFilter.getInstance()?.refreshFABBadge();
     },
     showCurrentlySelected: true,
     showEnhancedSelect: true,

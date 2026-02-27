@@ -1,7 +1,7 @@
 import { setupElementObserver } from "../../components/element-observer";
 import { findOpacityContainer } from "../../constants/selectors";
 import { ColorFilterRouter } from "./router";
-import { ColorFilterModal, createColorFilterFAB } from "./ui";
+import { ColorFilterModal, createColorFilterFAB, updateColorFilterFABBadge } from "./ui";
 import { renderColorFilters } from "./routes/list";
 
 /**
@@ -40,7 +40,10 @@ export class ColorFilter {
           container.className += " flex flex-col-reverse gap-1";
           container.appendChild(button);
           const mgr = window.mrWplace?.colorFilterManager;
-          if (mgr) button.style.filter = mgr.selectedRGBs.length === 0 ? "grayscale(1)" : "";
+          if (mgr) {
+            button.style.filter = mgr.selectedRGBs.length === 0 ? "grayscale(1)" : "";
+            this.refreshFABBadge();
+          }
         },
       },
     ]);
@@ -64,5 +67,12 @@ export class ColorFilter {
 
   public hideModal(): void {
     this.colorFilterModal.closeModal();
+  }
+
+  public refreshFABBadge(): void {
+    const mgr = window.mrWplace?.colorFilterManager;
+    if (!mgr) return;
+    const rgbs = mgr.selectedRGBs;
+    updateColorFilterFABBadge(rgbs.length === 1 ? rgbs[0] : null);
   }
 }
