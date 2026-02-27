@@ -1,3 +1,8 @@
+import {
+  setupElementObserver,
+  ElementConfig,
+} from "@/components/element-observer";
+import { findMyLocationContainer } from "@/constants/selectors";
 import { storage } from "@/utils/browser-api";
 import { getMapInstanceReady } from "@/states/map-instance-ready";
 import { t } from "@/i18n/manager";
@@ -148,7 +153,7 @@ class MapFilterMenu {
     this.applyDarkTheme(this.state.darkTheme);
     if (this.state.highContrast) this.applyHighContrastStyle();
 
-    this.createTriggerButton();
+    this.observeTriggerButton();
     this.createPopover();
 
     this.mapReady = getMapInstanceReady();
@@ -182,6 +187,10 @@ class MapFilterMenu {
       }
     });
 
+    window.addEventListener("resize", () => {
+      if (this.isOpen) this.updatePopoverPosition();
+    });
+
     console.log("🧑‍🎨 : Map filter menu initialized");
   }
 
@@ -196,22 +205,29 @@ class MapFilterMenu {
     }
   }
 
-  private createTriggerButton() {
+  private observeTriggerButton() {
+    const buttonConfigs: ElementConfig[] = [
+      {
+        id: "map-filter-trigger-btn",
+        getTargetElement: findMyLocationContainer,
+        createElement: (container) => this.createTriggerButton(container),
+      },
+    ];
+    setupElementObserver(buttonConfigs);
+  }
+
+  private createTriggerButton(container: Element) {
     this.triggerButton = document.createElement("button");
-    this.triggerButton.className = "btn btn-sm btn-circle top-2";
-    this.triggerButton.style.cssText = `
-      position: fixed;
-      left: 47px;
-      font-size: 16px;
-      z-index: 800;
-    `;
+    this.triggerButton.id = "map-filter-trigger-btn";
+    this.triggerButton.className = "btn btn-lg sm:btn-xl btn-square shadow-md z-30";
     // this.triggerButton.innerHTML = "🗺️";
-    this.triggerButton.innerHTML = `<img src="${IMG_ICON_MAP}" style="width: calc(var(--spacing)*6); height: calc(var(--spacing)*6); image-rendering: pixelated;" />`;
+    this.triggerButton.innerHTML = `<img src="${IMG_ICON_MAP}" style="width: calc(var(--spacing)*9); height: calc(var(--spacing)*9); image-rendering: pixelated;" />`;
     this.triggerButton.addEventListener("click", (e) => {
       e.stopPropagation();
       this.togglePopover();
     });
-    document.body.appendChild(this.triggerButton);
+    container.className += " flex flex-col-reverse gap-1";
+    container.appendChild(this.triggerButton);
     showFeatureHint("map-filter-trigger", this.triggerButton);
   }
 
@@ -220,8 +236,6 @@ class MapFilterMenu {
     this.popover.className = "card bg-base-100 shadow-xl";
     this.popover.style.cssText = `
       position: fixed;
-      left: 47px;
-      top: 46px;
       z-index: 801;
       display: none;
       min-width: 200px;
@@ -229,6 +243,31 @@ class MapFilterMenu {
     this.popover.innerHTML = `<div class="card-body p-4"></div>`;
     this.updatePopoverItems();
     document.body.appendChild(this.popover);
+  }
+
+  private updatePopoverPosition() {
+    if (!this.popover || !this.triggerButton) return;
+
+    const margin = 8;
+    const triggerRect = this.triggerButton.getBoundingClientRect();
+    const popoverRect = this.popover.getBoundingClientRect();
+
+    let left = triggerRect.right - popoverRect.width;
+    left = Math.max(
+      margin,
+      Math.min(left, window.innerWidth - popoverRect.width - margin),
+    );
+
+    let top = triggerRect.top - popoverRect.height - margin;
+    if (top < margin) {
+      top = triggerRect.bottom + margin;
+    }
+    if (top + popoverRect.height > window.innerHeight - margin) {
+      top = Math.max(margin, window.innerHeight - popoverRect.height - margin);
+    }
+
+    this.popover.style.left = `${Math.round(left)}px`;
+    this.popover.style.top = `${Math.round(top)}px`;
   }
 
   private updatePopoverItems() {
@@ -456,6 +495,7 @@ class MapFilterMenu {
       this.updatePopoverItems();
 
       this.popover.style.display = "block";
+      this.updatePopoverPosition();
       this.triggerButton.classList.add("btn-active");
       this.isOpen = true;
     }
