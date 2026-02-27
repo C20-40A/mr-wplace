@@ -193,13 +193,14 @@ const handleTileRequest = async (
   const tileY = parseInt(tileMatch[2], 10);
   const cacheKey = `${tileX},${tileY}`;
   const dataSaver = window.mrWplaceDataSaver;
+  const dataSaverEnabled = dataSaver?.enabled === true;
 
   // Check memory cache first (data saver)
   let cacheExists = dataSaver?.tileCache.has(cacheKey) ?? false;
   let cachedBlob: Blob | null = null;
 
-  // If not in memory, check IndexedDB
-  if (!cacheExists && dataSaver?.tileCacheDB) {
+  // If not in memory, check IndexedDB only when data saver is enabled
+  if (!cacheExists && dataSaverEnabled && dataSaver?.tileCacheDB) {
     try {
       cachedBlob = await dataSaver.tileCacheDB.getCachedTile(cacheKey);
       if (cachedBlob) {
@@ -215,7 +216,7 @@ const handleTileRequest = async (
   }
 
   // data saver ON + cache exists -> Return cached processed tile
-  if (dataSaver?.enabled && cacheExists && cachedBlob) {
+  if (dataSaverEnabled && cacheExists && cachedBlob) {
     return new Response(cachedBlob, {
       status: 200,
       statusText: "OK (Cached Processed)",
@@ -226,12 +227,16 @@ const handleTileRequest = async (
   // Fetch original tile from network
   const response = await originalFetch.apply(window, args);
 
-  // Check state change (clears LastModified cache if changed)
-  checkStateChanged();
+  const frontOperational = isFrontTileLayerOperational();
+  // LastModified cache is used only when front layer is OFF.
+  // Skip expensive state-version serialization when front layer is ON.
+  if (!frontOperational) {
+    // Check state change (clears LastModified cache if changed)
+    checkStateChanged();
+  }
 
   // LastModified cache check
   const lastModified = response.headers.get("last-modified");
-  const frontOperational = isFrontTileLayerOperational();
 
   // Use processed blob cache only when front-layer is OFF.
   // When front-layer is ON, we must NOT cache raw tiles here — doing so would
