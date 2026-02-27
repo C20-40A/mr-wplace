@@ -28,6 +28,8 @@ export interface ColorPaletteOptions {
   showUnplacedOnly?: boolean;
   showUnplacedColor?: [number, number, number];
   onShowUnplacedColorChange?: (color: [number, number, number]) => void;
+  selectedColorOnlyMark?: boolean;
+  onSelectedColorOnlyMarkChange?: (enabled: boolean) => void;
   showDisableUnusedButton?: boolean;
   controlSize?: "default" | "xs";
   /** trueの場合、進捗ゲージではなくtotalのみバッジ表示（image-editor用） */

@@ -555,4 +555,5 @@ export const frTranslations = {
   map_filter_area_group_compose_action: "Fusionner",
   map_filter_area_group_not_enough: "Pas assez de zones pour fusionner",
   map_filter_area_group_name_placeholder: "Nom du groupe (optionnel)",
+  selected_color_only_mark: "Marquer uniquement la couleur sélectionnée",
 };

@@ -1,6 +1,7 @@
 import { TILE_DRAW_CONSTANTS, TileCoords } from "./constants";
 import { latLngToTilePixel } from "@/utils/coordinate";
 import { blobToPixels } from "@/utils/pixel-converters";
+import { colorpalette } from "@/constants/colors";
 import type { TileDrawInstance, ColorStats, EnhancedMode } from "./types";
 import { getAuxiliaryColor, colorToKey } from "./filters/color-processing";
 import { ENHANCED_MODE_OPTIONS } from "@/components/color-palette/utils";
@@ -192,6 +193,8 @@ const scaleAndRenderWithMode = (
   showUnplacedOnly: boolean = false,
   enhancedColor: readonly [number, number, number] = [255, 0, 0],
   showUnplacedColor: readonly [number, number, number] = [160, 160, 160],
+  selectedColorOnlyMarkRGB: readonly [number, number, number] | null = null,
+  originalDataForMark: Uint8ClampedArray | null = null,
 ): Uint8ClampedArray => {
   const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
   const scaledWidth = width * pixelScale;
@@ -323,6 +326,28 @@ const scaleAndRenderWithMode = (
       }
       // showUnplacedOnly時でも未配置表示は選択色フィルターに従う
       if (a === 0) continue;
+
+      // selectedColorOnlyMark: 選択色以外はdot表示にフォールバック
+      if (selectedColorOnlyMarkRGB && originalDataForMark) {
+        const origR = originalDataForMark[srcI];
+        const origG = originalDataForMark[srcI + 1];
+        const origB = originalDataForMark[srcI + 2];
+        if (
+          origR !== selectedColorOnlyMarkRGB[0] ||
+          origG !== selectedColorOnlyMarkRGB[1] ||
+          origB !== selectedColorOnlyMarkRGB[2]
+        ) {
+          // dot: 中心ピクセルのみ
+          const baseX = x1 * pixelScale;
+          const baseY = y1 * pixelScale;
+          const dotCenter = ((baseY + 1) * scaledWidth + (baseX + 1)) * 4;
+          scaledData[dotCenter] = r;
+          scaledData[dotCenter + 1] = g;
+          scaledData[dotCenter + 2] = b;
+          scaledData[dotCenter + 3] = a;
+          continue;
+        }
+      }
 
       // border-onlyは枠のみなので中心スキップ
       if (mode !== "border-only") {
@@ -737,6 +762,20 @@ const applyOverlayProcessing = async (
   const comparisonData = showUnplacedOnly ? getOriginalData() : null;
   const showUnplacedColor = getShowUnplacedColor();
 
+  // selectedColorOnlyMark: 選択色のRGBを解決
+  let selectedColorOnlyMarkRGB: readonly [number, number, number] | null = null;
+  let originalDataForMark: Uint8ClampedArray | null = null;
+  if (window.mrWplaceSelectedColorOnlyMark) {
+    const selectedColorId = localStorage.getItem("selected-color");
+    if (selectedColorId) {
+      const entry = colorpalette.find((c) => c.id === Number(selectedColorId));
+      if (entry) {
+        selectedColorOnlyMarkRGB = entry.rgb;
+        originalDataForMark = getOriginalData();
+      }
+    }
+  }
+
   const scaledData = scaleAndRenderWithMode(
     filteredData,
     comparisonData,
@@ -751,6 +790,8 @@ const applyOverlayProcessing = async (
     showUnplacedOnly,
     enhancedColor,
     showUnplacedColor,
+    selectedColorOnlyMarkRGB,
+    originalDataForMark,
   );
 
   // Phase 4: ImageBitmap変換

@@ -9,6 +9,7 @@ import {
   handleCacheSizeUpdate,
   handleComputeDeviceUpdate,
   handleShowUnplacedOnlyUpdate,
+  handleSelectedColorOnlyMarkUpdate,
   handleColorFilterUpdate,
   handleCacheClear,
   handleFrontTileLayerUpdate,
@@ -256,6 +257,7 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-cache-size-update": handleCacheSizeUpdate,
   "mr-wplace-compute-device": handleComputeDeviceUpdate,
   "mr-wplace-show-unplaced-only": handleShowUnplacedOnlyUpdate,
+  "mr-wplace-selected-color-only-mark": handleSelectedColorOnlyMarkUpdate,
   "mr-wplace-color-filter": handleColorFilterUpdate,
   "mr-wplace-tile-boundaries-update": (data) =>
     changeTileBoundaryVisibility(data.visible),

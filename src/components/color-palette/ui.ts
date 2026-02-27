@@ -214,6 +214,7 @@ export function buildEnhancedSelectHtml(
   enhancedMode: EnhancedMode,
   controlSize: "default" | "xs" = "default",
   enhancedColor: [number, number, number] = [255, 0, 0],
+  selectedColorOnlyMark: boolean = false,
 ): string {
   const isXs = controlSize === "xs";
   const labelKey = getEnhancedModeLabelKey(enhancedMode);
@@ -356,6 +357,26 @@ export function buildEnhancedSelectHtml(
                         border: 2px solid #d1d5db; cursor: pointer; padding: 0;
                         border-radius: 4px; background: none;" />
           <span style="font-size: ${isXs ? "0.65rem" : "0.75rem"}; color: var(--color-base-content, #6b7280);">${t("marker_color")}</span>
+          <button class="selected-color-only-mark-toggle" type="button"
+                  style="margin-left: auto;
+                         padding: ${isXs ? "0.15rem 0.35rem" : "0.2rem 0.5rem"};
+                         border: 2px solid ${selectedColorOnlyMark ? "#22c55e" : "#d1d5db"};
+                         border-radius: ${isXs ? "0.4rem" : "0.5rem"};
+                         cursor: pointer;
+                         font-size: ${isXs ? "0.65rem" : "0.75rem"};
+                         font-weight: ${selectedColorOnlyMark ? "600" : "400"};
+                         background-color: ${selectedColorOnlyMark ? "var(--color-success, #22c55e)" : "transparent"};
+                         color: ${selectedColorOnlyMark ? "var(--color-primary-content, #fff)" : "var(--color-base-content, #6b7280)"};
+                         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                         white-space: nowrap;
+                         user-select: none;
+                         -webkit-tap-highlight-color: transparent;"
+                  onmouseenter="this.style.borderColor='#22c55e';"
+                  onmouseleave="this.style.borderColor='${selectedColorOnlyMark ? "#22c55e" : "#d1d5db"}';"
+                  onmousedown="this.style.transform='scale(0.95)';"
+                  onmouseup="this.style.transform='scale(1)';"
+                  ontouchstart="this.style.transform='scale(0.95)';"
+                  ontouchend="this.style.transform='scale(1)';">${t("selected_color_only_mark")}</button>
         </div>
       </div>
     </div>
@@ -669,6 +690,7 @@ export function buildControlsHtml(
   showDisableUnusedButton: boolean = false,
   controlSize: "default" | "xs" = "default",
   enhancedColor: [number, number, number] = [255, 0, 0],
+  selectedColorOnlyMark: boolean = false,
 ): string {
   const isXs = controlSize === "xs";
   const sizeClass = isXs ? "btn-xs XS" : "btn-sm";
@@ -702,7 +724,7 @@ export function buildControlsHtml(
     : "";
 
   const enhancedSelectHTML = showEnhancedSelect
-    ? buildEnhancedSelectHtml(enhancedMode, controlSize, enhancedColor)
+    ? buildEnhancedSelectHtml(enhancedMode, controlSize, enhancedColor, selectedColorOnlyMark)
     : "";
 
   const overlayModeSelectHTML = showOverlayModeSelect

@@ -21,6 +21,21 @@ export const sendShowUnplacedOnlyToInject = (enabled: boolean) => {
 };
 
 /**
+ * Send selected color only mark setting to inject side
+ */
+export const sendSelectedColorOnlyMarkToInject = (enabled: boolean) => {
+  window.postMessage(
+    {
+      source: "mr-wplace-selected-color-only-mark",
+      enabled,
+    },
+    "*"
+  );
+
+  console.log(`🧑‍🎨 : Sent selected color only mark to inject side: ${enabled}`);
+};
+
+/**
  * Send color filter state to inject side
  */
 export const sendColorFilterToInject = (

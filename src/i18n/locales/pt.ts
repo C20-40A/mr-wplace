@@ -539,4 +539,5 @@ export const ptTranslations = {
   map_filter_area_group_compose_action: "Mesclar",
   map_filter_area_group_not_enough: "Não há áreas suficientes para mesclar",
   map_filter_area_group_name_placeholder: "Nome do grupo (opcional)",
+  selected_color_only_mark: "Marcar apenas cor selecionada",
 };

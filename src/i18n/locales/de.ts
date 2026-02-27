@@ -559,4 +559,5 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   tutorial_reset_hints_button: "Hinweise erneut anzeigen",
   hint_image_detail_edit_title: "Klicke auf den Bildtitel, um ihn zu bearbeiten",
   popup_close_button_big: "Schließen-Schaltfläche vergrößern",
+  selected_color_only_mark: "Nur ausgewählte Farbe markieren",
 };

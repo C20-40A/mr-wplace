@@ -73,6 +73,51 @@ export const handleShowUnplacedOnlyUpdate = (data: {
 };
 
 /**
+ * Handle selected color only mark update
+ * ONの間、localStorageのselected-colorをポーリングし、変更時にタイル再描画
+ */
+let selectedColorMarkInterval: ReturnType<typeof setInterval> | null = null;
+let lastSelectedColorForMark: string | null = null;
+
+const startSelectedColorMarkMonitoring = (): void => {
+  if (selectedColorMarkInterval) return;
+  lastSelectedColorForMark = localStorage.getItem("selected-color");
+  selectedColorMarkInterval = setInterval(() => {
+    const current = localStorage.getItem("selected-color");
+    if (current !== lastSelectedColorForMark) {
+      lastSelectedColorForMark = current;
+      console.log("🧑‍🎨 : Selected color changed for mark:", current);
+      refreshFrontTileLayer();
+    }
+  }, 100);
+};
+
+const stopSelectedColorMarkMonitoring = (): void => {
+  if (selectedColorMarkInterval) {
+    clearInterval(selectedColorMarkInterval);
+    selectedColorMarkInterval = null;
+    lastSelectedColorForMark = null;
+  }
+};
+
+export const handleSelectedColorOnlyMarkUpdate = (data: {
+  enabled: boolean;
+}): void => {
+  if (window.mrWplaceSelectedColorOnlyMark === data.enabled) return;
+
+  window.mrWplaceSelectedColorOnlyMark = data.enabled;
+  console.log("🧑‍🎨 : Selected color only mark updated:", data.enabled);
+
+  if (data.enabled) {
+    startSelectedColorMarkMonitoring();
+  } else {
+    stopSelectedColorMarkMonitoring();
+  }
+
+  refreshFrontTileLayer();
+};
+
+/**
  * Handle color filter manager update
  */
 export const handleColorFilterUpdate = (data: {

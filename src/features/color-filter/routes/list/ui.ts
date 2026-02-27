@@ -6,12 +6,18 @@ import { findNearestGalleryItem } from "@/utils/gallery-helpers";
 import {
   sendColorFilterToInject,
   sendShowUnplacedOnlyToInject,
+  sendSelectedColorOnlyMarkToInject,
 } from "@/content";
 import { ColorFilter } from "@/features/color-filter";
 import {
   getShowUnplacedOnly,
   setShowUnplacedOnly,
 } from "@/states/showUnplacedOnly";
+import {
+  getSelectedColorOnlyMark,
+  setSelectedColorOnlyMark,
+  loadSelectedColorOnlyMarkFromStorage,
+} from "@/states/selectedColorOnlyMark";
 import {
   loadFrontTileLayerFromStorage,
   getFrontTileLayer,
@@ -53,9 +59,11 @@ export const renderColorFilters = async (
   // 既存インスタンス破棄
   if (colorPalette) colorPalette.destroy();
   await loadFrontTileLayerFromStorage();
+  await loadSelectedColorOnlyMarkFromStorage();
   const overlayModeEnabled = getFrontTileLayer();
 
-  // ShowUnplacedOnly is now a transient state (not loaded from storage)
+  // Send initial selectedColorOnlyMark state to inject
+  sendSelectedColorOnlyMarkToInject(getSelectedColorOnlyMark());
 
   // ColorFilterManagerの現在状態取得
   const colorFilterManager = window.mrWplace?.colorFilterManager;
@@ -145,6 +153,12 @@ export const renderColorFilters = async (
       colorFilterManager?.setShowUnplacedColor(color);
       console.log(`🧑‍🎨 : Show unplaced color:`, color);
       scheduleSendColorFilterForUnplaced();
+    },
+    selectedColorOnlyMark: getSelectedColorOnlyMark(),
+    onSelectedColorOnlyMarkChange: (enabled) => {
+      setSelectedColorOnlyMark(enabled);
+      sendSelectedColorOnlyMarkToInject(enabled);
+      console.log(`🧑‍🎨 : Selected color only mark changed:`, enabled);
     },
     controlSize: isMobile ? "xs" : "default",
   });

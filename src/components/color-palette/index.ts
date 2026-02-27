@@ -34,6 +34,7 @@ export class ColorPalette {
   private overlayMode: boolean;
   private computeDevice: ComputeDevice;
   private showUnplacedOnly: boolean;
+  private selectedColorOnlyMark: boolean;
   private boundClickHandler: (e: MouseEvent) => void;
   private boundDocumentClickHandler: (e: MouseEvent) => void;
   private boundInputHandler: (e: Event) => void;
@@ -54,6 +55,7 @@ export class ColorPalette {
     this.overlayMode = options.overlayMode ?? false;
     this.computeDevice = options.computeDevice ?? "gpu";
     this.showUnplacedOnly = options.showUnplacedOnly ?? false;
+    this.selectedColorOnlyMark = options.selectedColorOnlyMark ?? false;
 
     // イベントハンドラーをbind
     this.boundClickHandler = (e: MouseEvent) => this.handleClick(e);
@@ -89,6 +91,7 @@ export class ColorPalette {
       this.options.showDisableUnusedButton ?? false,
       this.options.controlSize ?? "default",
       this.enhancedColor,
+      this.selectedColorOnlyMark,
     );
 
     this.container.innerHTML = `
@@ -331,6 +334,13 @@ export class ColorPalette {
         ".compute-device-dropdown",
       ) as HTMLElement;
       if (dropdown) dropdown.style.display = "none";
+      return;
+    }
+
+    // Selected Color Only Mark Toggle
+    if (target.closest(".selected-color-only-mark-toggle")) {
+      e.stopPropagation();
+      this.handleSelectedColorOnlyMarkToggle();
       return;
     }
 
@@ -593,6 +603,30 @@ export class ColorPalette {
     if (this.options.onShowUnplacedOnlyChange) {
       this.options.onShowUnplacedOnlyChange(this.showUnplacedOnly);
     }
+  }
+
+  private handleSelectedColorOnlyMarkToggle(): void {
+    this.selectedColorOnlyMark = !this.selectedColorOnlyMark;
+
+    const toggleButton = this.container.querySelector(
+      ".selected-color-only-mark-toggle",
+    ) as HTMLElement;
+    if (toggleButton) {
+      const bgColor = this.selectedColorOnlyMark
+        ? "var(--color-success, #22c55e)"
+        : "transparent";
+      const textColor = this.selectedColorOnlyMark
+        ? "var(--color-primary-content, #fff)"
+        : "var(--color-base-content, #6b7280)";
+      const borderColor = this.selectedColorOnlyMark ? "#22c55e" : "#d1d5db";
+
+      toggleButton.style.backgroundColor = bgColor;
+      toggleButton.style.color = textColor;
+      toggleButton.style.borderColor = borderColor;
+      toggleButton.style.fontWeight = this.selectedColorOnlyMark ? "600" : "400";
+    }
+
+    this.options.onSelectedColorOnlyMarkChange?.(this.selectedColorOnlyMark);
   }
 
   // Public API

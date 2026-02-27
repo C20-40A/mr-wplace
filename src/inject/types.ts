@@ -162,6 +162,7 @@ declare global {
     mrWplaceTextLayerKeys?: Set<string>;
     mrWplaceComputeDevice?: "gpu" | "cpu";
     mrWplaceShowUnplacedOnly?: boolean;
+    mrWplaceSelectedColorOnlyMark?: boolean;
     mrWplaceFrontTileLayerEnabled?: boolean;
     mrWplaceTempPaintedByUser?: PaintedByUser;
     selectedColor?: string; // WPlace's selected color (e.g., "#FF0000")

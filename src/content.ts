@@ -24,6 +24,7 @@ export {
   sendGalleryImagesToInject,
   sendComputeDeviceToInject,
   sendShowUnplacedOnlyToInject,
+  sendSelectedColorOnlyMarkToInject,
   sendColorFilterToInject,
   sendCacheSizeToInject,
   requestTotalStatsComputation,

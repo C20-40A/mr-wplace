@@ -575,4 +575,5 @@ export const jaTranslations = {
   map_filter_area_group_compose_action: "合体する",
   map_filter_area_group_not_enough: "合体可能なエリアが不足しています",
   map_filter_area_group_name_placeholder: "グループ名 (任意)",
+  selected_color_only_mark: "選択中の色のみマーク",
 };

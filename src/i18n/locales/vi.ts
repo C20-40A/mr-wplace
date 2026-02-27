@@ -538,4 +538,5 @@ export const viTranslations = {
   map_filter_area_group_compose_action: "Gộp",
   map_filter_area_group_not_enough: "Không đủ vùng để gộp",
   map_filter_area_group_name_placeholder: "Tên nhóm (tùy chọn)",
+  selected_color_only_mark: "Chỉ đánh dấu màu đã chọn",
 };

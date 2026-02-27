@@ -544,4 +544,5 @@ export const ruTranslations = {
   map_filter_area_group_compose_action: "Объединить",
   map_filter_area_group_not_enough: "Недостаточно областей для объединения",
   map_filter_area_group_name_placeholder: "Название группы (необязательно)",
+  selected_color_only_mark: "Отмечать только выбранный цвет",
 };

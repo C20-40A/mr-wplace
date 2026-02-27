@@ -22,6 +22,11 @@ import { PositionInfo } from "@/features/position-info";
 import { initPaintStats } from "@/features/paint-stats";
 import { PaletteToggle } from "@/features/palette-toggle";
 import { ShowUnplacedOnly } from "@/features/show-unplaced-only";
+import {
+  loadSelectedColorOnlyMarkFromStorage,
+  getSelectedColorOnlyMark,
+} from "@/states/selectedColorOnlyMark";
+import { sendSelectedColorOnlyMarkToInject } from "@/core/bridge";
 import { LockButtonEnhancer } from "@/features/lock-button-enhancer";
 import { PaintPixelIcon } from "@/features/paint-pixel-icon";
 import { UserStatusHint } from "@/features/user-status-hint";
@@ -93,6 +98,10 @@ export const initializeFeatures = async () => {
   const autoSpoit = new DevInject(colorFilterManager, colorIsolate);
   safeInit("positionInfo", () => new PositionInfo());
   safeInit("showUnplacedOnly", () => new ShowUnplacedOnly());
+  safeInitAsync("selectedColorOnlyMark", async () => {
+    await loadSelectedColorOnlyMarkFromStorage();
+    sendSelectedColorOnlyMarkToInject(getSelectedColorOnlyMark());
+  });
   safeInit("lockButtonEnhancer", () => new LockButtonEnhancer());
   safeInit("paintPixelIcon", () => new PaintPixelIcon());
   safeInit("userStatusHint", () => new UserStatusHint());

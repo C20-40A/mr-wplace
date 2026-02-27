@@ -556,4 +556,5 @@ export const esTranslations = {
   map_filter_area_group_compose_action: "Combinar",
   map_filter_area_group_not_enough: "No hay suficientes áreas para combinar",
   map_filter_area_group_name_placeholder: "Nombre del grupo (opcional)",
+  selected_color_only_mark: "Marcar solo color seleccionado",
 };
