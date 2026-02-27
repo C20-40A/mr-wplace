@@ -10,6 +10,7 @@ const FAKE_TILE_PROTOCOL = "mr-wplace-overlay";
 const TILE_SIZE = 1000;
 const SUPPORTED_MIN_ZOOM = 9;
 const BASE_TILE_ZOOM = 11;
+const MID_TILE_ZOOM = 10;
 const CACHE_CONTROL_HEADER = "public, max-age=31536000, immutable";
 const FRONT_RENDER_CACHE_MAX = 40;
 
@@ -27,10 +28,16 @@ export const invalidateFrontRenderedTile = (tileX: number, tileY: number): boole
   // Also invalidate z10 parent tile
   const parentX = Math.floor(tileX / 2);
   const parentY = Math.floor(tileY / 2);
-  const z10Key = getFrontRenderCacheKey(10, parentX, parentY);
+  const z10Key = getFrontRenderCacheKey(MID_TILE_ZOOM, parentX, parentY);
   const deletedZ10 = frontRenderedTileCache.delete(z10Key);
 
-  return deletedZ11 || deletedZ10;
+  // Also invalidate z9 grandparent tile
+  const grandParentX = Math.floor(tileX / 4);
+  const grandParentY = Math.floor(tileY / 4);
+  const z9Key = getFrontRenderCacheKey(SUPPORTED_MIN_ZOOM, grandParentX, grandParentY);
+  const deletedZ9 = frontRenderedTileCache.delete(z9Key);
+
+  return deletedZ11 || deletedZ10 || deletedZ9;
 };
 
 const getRequestedStateVersion = (url: string): string => {
@@ -98,6 +105,24 @@ const buildZoom10LastModifiedToken = (
   return `${stateVersion}|${parts.join("|")}`;
 };
 
+const buildZoom9LastModifiedToken = (
+  x: number,
+  y: number,
+  stateVersion: string,
+): string | null => {
+  const parts: string[] = [];
+  for (let dy = 0; dy < 4; dy++) {
+    for (let dx = 0; dx < 4; dx++) {
+      const childX = x * 4 + dx;
+      const childY = y * 4 + dy;
+      const lastModified = getOriginalLastModified(`${childX},${childY}`);
+      if (!lastModified) return null;
+      parts.push(lastModified);
+    }
+  }
+  return `${stateVersion}|${parts.join("|")}`;
+};
+
 const renderBaseZoomTile = async (
   x: number,
   y: number,
@@ -117,6 +142,43 @@ const renderBaseZoomTile = async (
   return await drawOverlayLayersOnTile(emptyBlob, [x, y], "gpu", {
     comparisonTileBlob,
   });
+};
+
+const composeChildrenToTile = async (
+  children: Array<{ dx: number; dy: number; blob: Blob | null }>,
+  childTileSize: number,
+  emptyBlob: Blob,
+): Promise<Blob> => {
+  const canvas = new OffscreenCanvas(TILE_SIZE, TILE_SIZE);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return emptyBlob;
+
+  const drawableChildren = children.filter(
+    (child): child is { dx: number; dy: number; blob: Blob } =>
+      child.blob instanceof Blob,
+  );
+  if (drawableChildren.length === 0) return emptyBlob;
+
+  const bitmaps = await Promise.all(
+    drawableChildren.map(async (child) => ({
+      dx: child.dx,
+      dy: child.dy,
+      bitmap: await createImageBitmap(child.blob),
+    })),
+  );
+
+  for (const { dx, dy, bitmap } of bitmaps) {
+    ctx.drawImage(
+      bitmap,
+      dx * childTileSize,
+      dy * childTileSize,
+      childTileSize,
+      childTileSize,
+    );
+    bitmap.close();
+  }
+
+  return await canvas.convertToBlob({ type: "image/png" });
 };
 
 const renderZoom10Tile = async (
@@ -151,38 +213,32 @@ const renderZoom10Tile = async (
   }
 
   if (childTasks.length === 0) return emptyBlob;
+  return composeChildrenToTile(await Promise.all(childTasks), childTileSize, emptyBlob);
+};
 
-  const children = await Promise.all(childTasks);
-  const canvas = new OffscreenCanvas(TILE_SIZE, TILE_SIZE);
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return emptyBlob;
+const renderZoom9Tile = async (
+  x: number,
+  y: number,
+  emptyBlob: Blob,
+): Promise<Blob> => {
+  const childTileSize = TILE_SIZE / 2;
+  const childTasks: Array<
+    Promise<{ dx: number; dy: number; blob: Blob | null }>
+  > = [];
 
-  const drawableChildren = children.filter(
-    (child): child is { dx: number; dy: number; blob: Blob } =>
-      child.blob instanceof Blob,
-  );
-  if (drawableChildren.length === 0) return emptyBlob;
-
-  const bitmaps = await Promise.all(
-    drawableChildren.map(async (child) => ({
-      dx: child.dx,
-      dy: child.dy,
-      bitmap: await createImageBitmap(child.blob),
-    })),
-  );
-
-  for (const { dx, dy, bitmap } of bitmaps) {
-    ctx.drawImage(
-      bitmap,
-      dx * childTileSize,
-      dy * childTileSize,
-      childTileSize,
-      childTileSize,
-    );
-    bitmap.close();
+  for (let dy = 0; dy < 2; dy++) {
+    for (let dx = 0; dx < 2; dx++) {
+      const childX = x * 2 + dx;
+      const childY = y * 2 + dy;
+      childTasks.push(
+        renderZoom10Tile(childX, childY, emptyBlob)
+          .then((blob) => ({ dx, dy, blob }))
+          .catch(() => ({ dx, dy, blob: null })),
+      );
+    }
   }
 
-  return await canvas.convertToBlob({ type: "image/png" });
+  return composeChildrenToTile(await Promise.all(childTasks), childTileSize, emptyBlob);
 };
 
 const getTransparentTileBlob = (): Promise<Blob> => {
@@ -208,7 +264,7 @@ export const handleFrontLayerTileRequest = async (
   const x = parseInt(tileMatch[2], 10);
   const y = parseInt(tileMatch[3], 10);
 
-  // Support z11 (base) and z10 (zoomed out composition)
+  // Support z11 (base), z10 and z9 (zoomed out composition)
   if (z < SUPPORTED_MIN_ZOOM || z > BASE_TILE_ZOOM) {
     return createEmptyTileResponse();
   }
@@ -219,7 +275,9 @@ export const handleFrontLayerTileRequest = async (
     const lastModifiedToken =
       z === BASE_TILE_ZOOM
         ? buildBaseTileLastModifiedToken(x, y, stateVersion)
-        : buildZoom10LastModifiedToken(x, y, stateVersion);
+        : z === MID_TILE_ZOOM
+        ? buildZoom10LastModifiedToken(x, y, stateVersion)
+        : buildZoom9LastModifiedToken(x, y, stateVersion);
     const cached = getCachedFrontRenderedTile(cacheKey, lastModifiedToken);
     if (cached) return createTransparentTileResponse(cached);
 
@@ -228,7 +286,9 @@ export const handleFrontLayerTileRequest = async (
     const blob =
       z === BASE_TILE_ZOOM
         ? await renderBaseZoomTile(x, y, emptyBlob)
-        : await renderZoom10Tile(x, y, emptyBlob);
+        : z === MID_TILE_ZOOM
+        ? await renderZoom10Tile(x, y, emptyBlob)
+        : await renderZoom9Tile(x, y, emptyBlob);
     setCachedFrontRenderedTile(cacheKey, lastModifiedToken, blob);
 
     return new Response(blob, {

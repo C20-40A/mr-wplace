@@ -16,7 +16,7 @@ const GUIDE_ALREADY_LAYER_ID = "mr-wplace-paint-guide-already";
 const LEGACY_GUIDE_MATCH_LAYER_ID = "mr-wplace-paint-guide-match";
 const GUIDE_SYNC_DEBOUNCE_MS = 50;
 const MAX_GUIDE_POINTS = 1500;
-const FRONT_LAYER_MIN_ZOOM = 10;
+const FRONT_LAYER_MIN_ZOOM = 9;
 const FRONT_LAYER_MAX_ZOOM = 11;
 
 let layerAdded = false;
@@ -25,6 +25,7 @@ let currentSourceVersion = 0;
 let frontLayerOperational = false;
 const pendingComparisonTiles = new Set<string>();
 let pendingComparisonRefreshQueued = false;
+let deferredRefreshQueued = false;
 let pendingRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 let guideSyncTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -237,6 +238,18 @@ const clearPendingRefreshTimer = (): void => {
   pendingRefreshTimer = null;
 };
 
+const isMapInteracting = (map: any): boolean => {
+  if (!map) return false;
+  try {
+    if (typeof map.isMoving === "function" && map.isMoving()) return true;
+    if (typeof map.isZooming === "function" && map.isZooming()) return true;
+    if (typeof map.isRotating === "function" && map.isRotating()) return true;
+  } catch (error) {
+    console.warn("🧑‍🎨 : Failed to read map interaction state:", error);
+  }
+  return false;
+};
+
 const schedulePendingComparisonRefresh = (): void => {
   if (pendingRefreshTimer !== null) return;
 
@@ -244,9 +257,26 @@ const schedulePendingComparisonRefresh = (): void => {
     pendingRefreshTimer = null;
     if (!pendingComparisonRefreshQueued) return;
     if (!isFrontTileLayerOperational()) return;
+    const map = getMapInstanceFromWplace() as any;
+    if (isMapInteracting(map)) {
+      schedulePendingComparisonRefresh();
+      return;
+    }
     pendingComparisonRefreshQueued = false;
     refreshFrontTileLayer();
   }, PENDING_REFRESH_DEBOUNCE_MS);
+};
+
+const flushDeferredRefresh = (): void => {
+  if (!deferredRefreshQueued) return;
+  const map = getMapInstanceFromWplace() as any;
+  if (!map || !isEnabled()) {
+    deferredRefreshQueued = false;
+    return;
+  }
+  if (isMapInteracting(map)) return;
+  deferredRefreshQueued = false;
+  refreshFrontTileLayer();
 };
 
 const trySoftRefreshSource = (source: any, version: number): boolean => {
@@ -481,6 +511,7 @@ const removeFrontLayer = (map: any): void => {
   frontLayerOperational = false;
   pendingComparisonTiles.clear();
   pendingComparisonRefreshQueued = false;
+  deferredRefreshQueued = false;
   paintGuidePoints.clear();
   paintGuideActive = false;
   clearPendingRefreshTimer();
@@ -525,6 +556,11 @@ export const refreshFrontTileLayer = (): void => {
   const map = getMapInstanceFromWplace() as any;
   if (!map) {
     frontLayerOperational = false;
+    return;
+  }
+
+  if (isMapInteracting(map)) {
+    deferredRefreshQueued = true;
     return;
   }
 
@@ -596,8 +632,13 @@ export const setupFrontTileLayerOnMapReady = (mapInstance: any): void => {
     ensureOverlayLayerOrder(map);
     scheduleGuideSync();
   };
+  const onMapSettled = () => {
+    flushDeferredRefresh();
+  };
 
   map.on("styledata", onStyleData);
+  map.on("moveend", onMapSettled);
+  map.on("idle", onMapSettled);
   console.log("🧑‍🎨 : Front tile layer listener setup complete");
 
   // Initial check if style is already loaded
