@@ -179,36 +179,35 @@ const fetchBackgroundTile = async (
   tileX: number,
   tileY: number,
 ): Promise<Blob | null> => {
-  // タイムアウト用のAbortController
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  // 新旧エンドポイントを両対応にする（公式が切り替え/ロールバックするため）
+  const urls = [
+    `https://backend.wplace.live/tile/${tileX}/${tileY}.png`,
+    `https://backend.wplace.live/tiles/${tileX}/${tileY}.png`,
+    `https://backend.wplace.live/files/s0/tiles/${tileX}/${tileY}.png`,
+  ];
 
-  try {
-    // WPlace API から背景タイルを取得
-    const url = `https://backend.wplace.live/tile/${tileX}/${tileY}.png`;
-    const response = await fetch(url, {
-      signal: controller.signal,
-    });
+  for (const url of urls) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    clearTimeout(timeoutId);
+    try {
+      const response = await fetch(url, {
+        signal: controller.signal,
+      });
 
-    if (!response.ok) {
-      // 404やその他のエラーは静かにスキップ
-      return null;
+      if (!response.ok) continue;
+
+      const blob = await response.blob();
+      if (blob.size === 0) continue;
+
+      return blob;
+    } catch (error) {
+      // ネットワークエラーやタイムアウトは静かにスキップ
+      // エラーログを出さない（大量のログを避けるため）
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    const blob = await response.blob();
-
-    // blobのサイズチェック
-    if (blob.size === 0) {
-      return null;
-    }
-
-    return blob;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    // ネットワークエラーやタイムアウトは静かにスキップ
-    // エラーログを出さない（大量のログを避けるため）
-    return null;
   }
+
+  return null;
 };

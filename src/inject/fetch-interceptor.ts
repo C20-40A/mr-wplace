@@ -20,6 +20,8 @@ import {
   notifyFrontTileComparisonReady,
 } from "./features/map-instance/front-tile-layer";
 
+const TILE_URL_REGEX = /\/tiles?\/(\d+)\/(\d+)\.png(?:[?#].*)?$/;
+
 /**
  * Setup fetch interceptor to handle tile requests and user data
  * CRITICAL: Must be called synchronously to catch early /me requests
@@ -77,7 +79,9 @@ export const setupFetchInterceptor = (): void => {
     }
 
     // Intercept pixel info GET requests (for "Painted by" data)
-    // URL pattern: https://backend.wplace.live/s{season}/pixel/<tileX>/<tileY>?x=<x>&y=<y>
+    // URL pattern: https://backend.wplace.live/[s{season}/]pixel/<tileX>/<tileY>?x=<x>&y=<y>
+    // Matches both season-prefixed (/s1/pixel/) and direct (/pixel/) variants.
+    // /staff/ paths also contain "/pixel/" but are excluded by the "?x=" condition.
     if (url.includes("/pixel/") && url.includes("?x=") && url.includes("&y=")) {
       console.log("🧑‍🎨: Intercepting pixel info GET:", url);
       const response = await originalFetch.apply(this, args);
@@ -117,8 +121,11 @@ export const setupFetchInterceptor = (): void => {
     }
 
     // Intercept pixel paint POST to invalidate cache
-    // URL pattern: https://backend.wplace.live/s{season}/pixel/<tileX>/<tileY>
-    if (url.includes("/pixel/") && !url.includes("?x=")) {
+    // URL pattern: https://backend.wplace.live/[s{season}/]pixel/<tileX>/<tileY>
+    // Matches both season-prefixed (/s1/pixel/) and direct (/pixel/) variants.
+    // /staff/tools/select-area/clear/.../pixel/ could match, but those are POST only via staff,
+    // and the pixelMatch regex /\/pixel\/(\d+)\/(\d+)/ will safely fail on non-tile paths.
+    if (url.includes("/pixel/") && !url.includes("?x=") && !url.includes("/staff/")) {
       const requestInfo = args[0];
       const method =
         typeof requestInfo === "string"
@@ -150,8 +157,9 @@ export const setupFetchInterceptor = (): void => {
       }
     }
 
-    // Intercept all tile requests
-    if (url.includes("/tile/") && url.endsWith(".png")) {
+    // Intercept all tile requests.
+    // Matches both old (/files/s0/tiles/X/Y.png) and new (/tile/X/Y.png) formats.
+    if (TILE_URL_REGEX.test(url)) {
       return handleTileRequest(originalFetch, args, url);
     }
 
@@ -176,7 +184,7 @@ const handleTileRequest = async (
   url: string
 ): Promise<Response> => {
   // Extract tileX, tileY from URL
-  const tileMatch = url.match(/\/tile\/(\d+)\/(\d+)\.png/);
+  const tileMatch = url.match(TILE_URL_REGEX);
   if (!tileMatch) {
     return originalFetch.apply(window, args);
   }
