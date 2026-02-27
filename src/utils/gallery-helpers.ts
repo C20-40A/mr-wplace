@@ -29,13 +29,16 @@ export const findNearestGalleryItem = <T extends ItemWithCoords>(
   const currentPos = getCurrentPosition();
   if (!currentPos) return null;
 
-  const { TLX: cx, TLY: cy } = latLngToTilePixel(currentPos.lat, currentPos.lng);
+  const { TLX: cx, TLY: cy, PxX: cpx, PxY: cpy } = latLngToTilePixel(currentPos.lat, currentPos.lng);
+  const cwx = cx * 1000 + cpx;
+  const cwy = cy * 1000 + cpy;
 
-  // 距離計算 → 最寄り1件を選択
+  // ワールドピクセル座標で距離計算 → 最寄り1件を選択
   const nearest = items.reduce(
     (closest, item) => {
-      const dist =
-        Math.pow(item.coords.TLX - cx, 2) + Math.pow(item.coords.TLY - cy, 2);
+      const dx = item.coords.TLX * 1000 + item.coords.PxX - cwx;
+      const dy = item.coords.TLY * 1000 + item.coords.PxY - cwy;
+      const dist = dx * dx + dy * dy;
       return dist < closest.dist ? { item, dist } : closest;
     },
     { item: items[0], dist: Infinity }
