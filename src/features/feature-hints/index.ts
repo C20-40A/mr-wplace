@@ -1,3 +1,4 @@
+import { IMG_MR_FACE } from "@/assets/iconImages";
 import {
   hasActiveHintTooltip,
   showHintTooltipOnce,
@@ -42,8 +43,7 @@ interface FeatureHintDefinition {
 
 const DEFAULT_HINT_PRIORITY = 1000;
 
-const HINT_DIALOG_ICON =
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAA8UlEQVR42t2WbQrDIAyGc5D+3DG8/216BkdhjkzefNnEsQmCYmuevDFRoj9u/dVLNrU6+j7PeGvtY8znc2drWzzXoPYYN8KxZhx5hJoTZM3zAeBpzGC+9MhTQQEqi39AgZzUs2KsrNdAoDGfZ1fAkPQVAMQ3/hqApoSSJTUqOOp+unHyZENFBkAABKHcinXZsFsFNf8rpSd0+g1FqLwQXfPzeFiX0X3D0jtgBsg8A2Juz4YkBVafY2ZxQSFwqOAC8Va3uwA9FG/r7pcA0D7W87xbEOgsDIAB4QToYQAJSgJA/2gAkR/dAA4nfgSgKARviCcq6ovGz9NsNQAAAABJRU5ErkJggg==";
+const HINT_DIALOG_ICON = IMG_MR_FACE;
 
 const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
   // ------- Main Screen Hint -------

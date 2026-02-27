@@ -18,6 +18,7 @@ import { IMG_ICON_BOOK } from "@/assets/iconImages";
 import { friendsToCSV, csvToFriends, downloadCSV } from "./csv-utils";
 import { Tag } from "./types";
 import { findPositionModal } from "@/constants/selectors";
+import { TOOLBAR_ID } from "@/features/position-info";
 
 /**
  * "Painted by:" 要素を検索
@@ -30,11 +31,35 @@ const findPaintedByContainer = (): Element | null => {
   const container = positionModal.querySelector(".px-3.pb-1\\.5");
   if (container) return container;
 
-  // Fallback: flex items-center gap-2 の親要素
-  const flexContainer = positionModal.querySelector(
-    ".flex.items-center.gap-2",
+  // Fallback: 閉じるボタン行またはflex items-center gap-2 の親要素
+  const flexContainer = (
+    positionModal.querySelector(".flex.items-center.justify-end.gap-1") ||
+    positionModal.querySelector(".flex.items-center.gap-2")
   )?.parentElement;
   return flexContainer || null;
+};
+
+let toolbarFallbackDeadline = 0;
+const findFriendsButtonTarget = (): Element | null => {
+  const toolbar = document.getElementById(TOOLBAR_ID);
+  if (toolbar) {
+    toolbarFallbackDeadline = 0;
+    return toolbar;
+  }
+
+  const container = findPaintedByContainer();
+  if (!container) {
+    toolbarFallbackDeadline = 0;
+    return null;
+  }
+
+  if (!toolbarFallbackDeadline) {
+    toolbarFallbackDeadline = Date.now() + 250;
+    return null;
+  }
+
+  if (Date.now() < toolbarFallbackDeadline) return null;
+  return container;
 };
 
 // 最後に受信したユーザー情報を保存
@@ -50,15 +75,17 @@ let lastPaintedByUser: {
 /**
  * "Painted by:" をタグに置き換え、友人帳に追加ボタンを作成
  */
-const createAddToFriendsButton = async (container: Element): Promise<void> => {
+const createAddToFriendsButton = async (target: Element): Promise<void> => {
   // 既にボタンが存在する場合はスキップ
-  if (container.querySelector("#add-to-friends-btn")) {
+  if (document.getElementById("add-to-friends-btn")) {
     return;
   }
 
   const button = document.createElement("button");
   button.id = "add-to-friends-btn";
-  button.className = "btn btn-xs btn-circle ml-1";
+  button.className = "btn btn-xs btn-ghost btn-circle";
+  button.style.cssText =
+    "color: rgb(156 163 175 / 0.7); height: 1.25rem; min-height: 1.25rem; width: 1.25rem; min-width: 1.25rem; padding: 0;";
   button.innerHTML = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
       <path d="M720-400v-120H600v-80h120v-120h80v120h120v80H800v120h-80Zm-360-80q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM40-160v-112q0-34 17.5-62.5T104-378q62-31 126-46.5T360-440q66 0 130 15.5T616-378q29 15 46.5 43.5T680-272v112H40Zm80-80h480v-32q0-11-5.5-20T580-306q-54-27-109-40.5T360-360q-56 0-111 13.5T140-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T440-640q0-33-23.5-56.5T360-720q-33 0-56.5 23.5T280-640q0 33 23.5 56.5T360-560Zm0-80Zm0 400Z"/>
@@ -75,20 +102,19 @@ const createAddToFriendsButton = async (container: Element): Promise<void> => {
     await showAddFriendDialog(lastPaintedByUser);
   });
 
-  // ボタンを "..." ボタンの前に挿入（兄弟要素として）
-  // .flex.items-center.gap-2 の中の .dropdown の前に配置
-  const flexContainer = container.querySelector(".flex.items-center.gap-2");
-  const moreButton = flexContainer?.querySelector(".dropdown");
-
-  if (moreButton && flexContainer) {
-    flexContainer.insertBefore(button, moreButton);
+  // default: ツールバー配置、fallback: target(container)
+  const toolbar =
+    target.id === TOOLBAR_ID ? target : document.getElementById(TOOLBAR_ID);
+  if (toolbar) {
+    toolbar.appendChild(button);
   } else {
-    // fallback: flex container の最後に追加
-    if (flexContainer) {
-      flexContainer.appendChild(button);
-    } else {
-      container.appendChild(button);
-    }
+    target.appendChild(button);
+  }
+
+  const container = findPaintedByContainer();
+  if (!container) {
+    console.log("🧑‍🎨 : Add to friends button created");
+    return;
   }
 
   // "Painted by:" をタグに置き換え、メモをtooltipで表示
@@ -373,7 +399,7 @@ const init = (): void => {
   const buttonConfigs: ElementConfig[] = [
     {
       id: "add-to-friends-btn",
-      getTargetElement: findPaintedByContainer,
+      getTargetElement: findFriendsButtonTarget,
       createElement: createAddToFriendsButton,
     },
   ];

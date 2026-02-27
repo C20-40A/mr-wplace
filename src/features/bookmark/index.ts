@@ -27,7 +27,7 @@ import { renderCoordinateJumper } from "./routes/coordinate-jumper";
 import type { BookmarkAPI } from "@/core/di";
 import { Tutorial } from "@/features/tutorial";
 import { showFeatureHint } from "@/features/feature-hints";
-// import { IMG_ICON_BOOKMARK } from "@/assets/iconImages";
+import { TOOLBAR_ID } from "@/features/position-info";
 
 const SORT_KEY = "wplace-studio-bookmark-sort";
 
@@ -483,19 +483,36 @@ const init = (): void => {
       getTargetElement: findMapPin,
       createElement: createMapPinButtons,
     },
-    // フォールバック: position modalにボタン配置
+    // フォールバック: ツールバーにブックマークボタン配置
     {
       id: "save-btn-fallback",
-      getTargetElement: findPositionModal,
-      createElement: (positionModal) => {
-        // マップピングループが既に存在する場合はスキップ
+      getTargetElement: () =>
+        document.getElementById(TOOLBAR_ID)?.parentElement
+          ? document.getElementById(TOOLBAR_ID)
+          : findPositionModal(),
+      createElement: (target) => {
         if (document.querySelector("#map-pin-button-group")) return;
 
-        const saveButton = createSaveBookmarkButton();
-        saveButton.id = "save-btn-fallback";
-        saveButton.addEventListener("click", addBookmark);
-        positionModal.prepend(saveButton);
-        console.log("🧑‍🎨 : Fallback button created in position modal");
+        const toolbar = target.id === TOOLBAR_ID ? target : null;
+        const btn = document.createElement("button");
+        btn.id = "save-btn-fallback";
+        btn.title = t`${"bookmark"}`;
+
+        if (toolbar) {
+          btn.className = "btn btn-xs btn-ghost btn-circle";
+          btn.style.cssText =
+            "color: rgb(156 163 175 / 0.7); height: 1.25rem; min-height: 1.25rem; width: 1.25rem; min-width: 1.25rem; padding: 0;";
+          btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 -960 960 960" fill="currentColor"><path d="m354-287 126-76 126 77-33-144 111-96-146-13-58-136-58 135-146 13 111 97-33 143ZM233-120l65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Zm247-350Z"/></svg>`;
+          toolbar.appendChild(btn);
+        } else {
+          const saveButton = createSaveBookmarkButton();
+          saveButton.id = "save-btn-fallback";
+          saveButton.addEventListener("click", addBookmark);
+          target.prepend(saveButton);
+          return;
+        }
+
+        btn.addEventListener("click", addBookmark);
       },
     },
   ];

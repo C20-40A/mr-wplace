@@ -9,6 +9,7 @@ import {
   getCloseButtonBig,
 } from "@/states/close-button-big";
 
+export const TOOLBAR_ID = "mr-wplace-modal-toolbar";
 const CLOSE_SVG_PATH =
   "m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z";
 const CLOSE_BIG_MARKER_ID = "position-close-big-marker";
@@ -117,20 +118,14 @@ export class PositionInfo {
   }
 
   private addTileInfo(container: Element): void {
-    // 座標表示スパンを探す（.text-base-content/70 .shrink-0 .text-xs、ただし自前の要素は除外）
-    const coordSpan = container.querySelector(
-      "span.text-base-content\\/70.shrink-0.text-xs:not(#position-tile-info)",
-    );
-    if (!coordSpan) return;
-
-    // 既に追加済みの場合は座標を更新して終了
+    // 既存ツールバーがあれば座標だけ更新
     const existingTileInfo =
       container.querySelector<HTMLElement>("#position-tile-info");
     if (existingTileInfo) {
-      const newPosition = getCurrentPosition();
-      if (newPosition) {
-        const newCoords = latLngToTilePixel(newPosition.lat, newPosition.lng);
-        existingTileInfo.textContent = `${newCoords.TLX}-${newCoords.TLY}-${newCoords.PxX}-${newCoords.PxY}`;
+      const pos = getCurrentPosition();
+      if (pos) {
+        const c = latLngToTilePixel(pos.lat, pos.lng);
+        existingTileInfo.textContent = `${c.TLX}-${c.TLY}-${c.PxX}-${c.PxY}`;
       }
       if (this.bigEnabled) {
         this.scheduleCloseButtonBig(container);
@@ -145,37 +140,38 @@ export class PositionInfo {
     const { lat, lng } = position;
     const coords = latLngToTilePixel(lat, lng);
 
-    // タイル座標テキストを作成
+    // ツールバーをモーダル上部に作成
+    const toolbar = document.createElement("div");
+    toolbar.id = TOOLBAR_ID;
+    toolbar.className =
+      "bg-base-100/90 backdrop-blur-sm rounded-box flex items-center gap-1.5 px-3 py-1.5 mb-1 shadow-sm";
+
+    // 左端アイコン
+    const markerIcon = document.createElement("span");
+    markerIcon.className = "shrink-0";
+    markerIcon.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="fill-primary size-4"><path d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 400Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Z"></path></svg>';
+
     const tileCoordSpan = document.createElement("span");
     tileCoordSpan.id = "position-tile-info";
-    tileCoordSpan.className = "text-base-content/70 shrink-0 text-xs";
+    tileCoordSpan.className = "text-base-content/70 text-xs font-mono";
     tileCoordSpan.textContent = `${coords.TLX}-${coords.TLY}-${coords.PxX}-${coords.PxY}`;
 
-    // コピーボタンを作成
-    const copyButton = document.createElement("button");
-    copyButton.className = "btn btn-xs btn-ghost shrink-0";
-    copyButton.style.cssText = `
-      color: rgb(156 163 175 / 0.7);
-      height: 1.25rem;
-      min-height: 1.25rem;
-      padding: 0;
-    `;
-    copyButton.title = "Copy tile coordinates";
-    copyButton.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    // コピーボタン
+    const copyButton = this.createToolbarButton(
+      "Copy tile coordinates",
+      `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
         <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-      </svg>
-    `;
-
+      </svg>`,
+    );
     copyButton.addEventListener("click", async () => {
-      const currentPos = getCurrentPosition();
-      if (!currentPos) return;
-      const currentCoords = latLngToTilePixel(currentPos.lat, currentPos.lng);
-      const coordText = `${currentCoords.TLX}-${currentCoords.TLY}-${currentCoords.PxX}-${currentCoords.PxY}`;
-
+      const pos = getCurrentPosition();
+      if (!pos) return;
+      const c = latLngToTilePixel(pos.lat, pos.lng);
+      const text = `${c.TLX}-${c.TLY}-${c.PxX}-${c.PxY}`;
       try {
-        await navigator.clipboard.writeText(coordText);
+        await navigator.clipboard.writeText(text);
         Toast.success(t`${"copied"}`);
       } catch (err) {
         console.error("🧑‍🎨 : Failed to copy coordinates", err);
@@ -183,36 +179,28 @@ export class PositionInfo {
       }
     });
 
-    // 時計アイコンボタンを作成
-    const clockButton = document.createElement("button");
-    clockButton.className = "btn btn-xs btn-ghost shrink-0";
-    clockButton.style.cssText = `
-      color: rgb(156 163 175 / 0.7);
-      height: 1.25rem;
-      min-height: 1.25rem;
-      padding: 0;
-      margin-left: 2px;
-    `;
-    clockButton.title = "Open in Eralyon";
-    clockButton.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    // Eralyonリンクボタン
+    const clockButton = this.createToolbarButton(
+      "Open in Eralyon",
+      `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"/>
         <polyline points="12 6 12 12 16 14"/>
-      </svg>
-    `;
-
+      </svg>`,
+    );
     clockButton.addEventListener("click", () => {
-      const currentPos = getCurrentPosition();
-      if (!currentPos) return;
-      const zoom = currentPos.zoom ?? 11;
-      const url = `https://wplace.eralyon.net/?lat=${currentPos.lat.toFixed(6)}&lng=${currentPos.lng.toFixed(6)}&zoom=${zoom}`;
-      window.open(url, "_blank");
+      const pos = getCurrentPosition();
+      if (!pos) return;
+      const zoom = pos.zoom ?? 11;
+      window.open(
+        `https://wplace.eralyon.net/?lat=${pos.lat.toFixed(6)}&lng=${pos.lng.toFixed(6)}&zoom=${zoom}`,
+        "_blank",
+      );
     });
 
-    // タイル座標とボタンを既存座標の前に挿入
-    coordSpan.insertAdjacentElement("beforebegin", tileCoordSpan);
-    tileCoordSpan.insertAdjacentElement("afterend", copyButton);
-    copyButton.insertAdjacentElement("afterend", clockButton);
+    toolbar.append(markerIcon, tileCoordSpan, copyButton, clockButton);
+
+    // モーダル本体の前に独立要素として挿入
+    container.prepend(toolbar);
 
     // 閉じるボタンを大きくする
     if (this.bigEnabled) {
@@ -220,20 +208,34 @@ export class PositionInfo {
       this.startBigObserver(container);
     }
 
-    // MutationObserver: 座標変更監視
-    this.observer = new MutationObserver(() => {
-      setTimeout(() => {
-        const newPosition = getCurrentPosition();
-        if (!newPosition) return;
-        const { lat, lng } = newPosition;
-        const newCoords = latLngToTilePixel(lat, lng);
-        tileCoordSpan.textContent = `${newCoords.TLX}-${newCoords.TLY}-${newCoords.PxX}-${newCoords.PxY}`;
-      }, 50);
-    });
-    this.observer.observe(coordSpan, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-    });
+    // MutationObserver: 座標変更監視（サイト側の座標spanを監視）
+    const coordSpan = container.querySelector(
+      "span.text-base-content\\/70.text-xs:not(#position-tile-info)",
+    );
+    if (coordSpan) {
+      this.observer = new MutationObserver(() => {
+        setTimeout(() => {
+          const pos = getCurrentPosition();
+          if (!pos) return;
+          const c = latLngToTilePixel(pos.lat, pos.lng);
+          tileCoordSpan.textContent = `${c.TLX}-${c.TLY}-${c.PxX}-${c.PxY}`;
+        }, 50);
+      });
+      this.observer.observe(coordSpan, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+      });
+    }
+  }
+
+  private createToolbarButton(title: string, svgHTML: string): HTMLButtonElement {
+    const btn = document.createElement("button");
+    btn.className = "btn btn-xs btn-ghost btn-circle";
+    btn.style.cssText =
+      "color: rgb(156 163 175 / 0.7); height: 1.25rem; min-height: 1.25rem; width: 1.25rem; min-width: 1.25rem; padding: 0;";
+    btn.title = title;
+    btn.innerHTML = svgHTML;
+    return btn;
   }
 }
