@@ -426,6 +426,7 @@ export const createAreaFillDialogItem = (
   const patterns: { value: FillPattern; label: string }[] = [
     { value: "linear", label: "LINEAR" },
     { value: "spiralPingPong", label: "SPIRAL" },
+    { value: "spiralPingPongReverse", label: "SPIRAL_REV" },
   ];
   for (const p of patterns) {
     const opt = document.createElement("option");

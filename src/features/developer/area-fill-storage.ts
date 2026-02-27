@@ -3,7 +3,7 @@ export interface AreaFillCorners {
   bottomRight: { lat: number; lng: number } | null;
 }
 
-export type FillPattern = "linear" | "spiralPingPong";
+export type FillPattern = "linear" | "spiralPingPong" | "spiralPingPongReverse";
 
 let corners: AreaFillCorners = { topLeft: null, bottomRight: null };
 let templateOnlyMode = false;

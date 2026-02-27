@@ -19,7 +19,7 @@ interface AreaFillCorners {
   bottomRight: { lat: number; lng: number } | null;
 }
 
-type FillPattern = "linear" | "spiralPingPong";
+type FillPattern = "linear" | "spiralPingPong" | "spiralPingPongReverse";
 
 interface AreaFillOptions {
   skipExistingPixels: boolean;
@@ -123,7 +123,8 @@ const applyFillPattern = (
   pattern: FillPattern,
 ): PixelPosition[] => {
   if (pattern === "linear") return positions;
-  return applySpiralPingPongPattern(positions, width, height);
+  const spiral = applySpiralPingPongPattern(positions, width, height);
+  return pattern === "spiralPingPongReverse" ? spiral.reverse() : spiral;
 };
 
 // ============================================
