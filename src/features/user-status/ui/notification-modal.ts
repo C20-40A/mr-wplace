@@ -108,10 +108,14 @@ export class NotificationModal {
     const alarmTime = this.calculateAlarmTime(threshold);
     if (!alarmTime) return t`${"already_reached"}`;
 
-    const month = alarmTime.getMonth() + 1;
-    const day = alarmTime.getDate();
-    const hours = alarmTime.getHours();
-    const minutes = alarmTime.getMinutes();
+    return this.formatMonthDayTime(alarmTime);
+  }
+
+  private formatMonthDayTime(date: Date): string {
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
 
     return `${month}/${day} ${hours}:${minutes.toString().padStart(2, "0")}`;
   }
@@ -293,10 +297,7 @@ export class NotificationModal {
     );
 
     const fullChargeTime = new Date(Date.now() + timeToFullMs);
-    const formattedTime = fullChargeTime.toLocaleTimeString("ja-JP", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const formattedTime = this.formatMonthDayTime(fullChargeTime);
 
     const timeDisplay =
       timeToFullMs > 0
@@ -325,11 +326,7 @@ export class NotificationModal {
   private createAlarmStatusHTML(): string {
     if (this.currentAlarmInfo) {
       const alarmDate = new Date(this.currentAlarmInfo.scheduledTime);
-      const month = alarmDate.getMonth() + 1;
-      const day = alarmDate.getDate();
-      const hours = alarmDate.getHours();
-      const minutes = alarmDate.getMinutes();
-      const alarmTime = `${month}/${day} ${hours}:${minutes.toString().padStart(2, "0")}`;
+      const alarmTime = this.formatMonthDayTime(alarmDate);
       return `
         <div style="background-color: #dcfce7; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #bbf7d0;">
           <div style="font-size: 13px; color: #15803d; font-weight: 500;">${t`${"alarm_active"}`}</div>
