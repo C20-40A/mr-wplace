@@ -17,6 +17,8 @@ import {
 } from "../../states/colorFilterState";
 import { overlayLayers, perTileColorStats } from "./states";
 
+const DEBUG_TILE_OVERLAY_RENDERER = false;
+
 /**
  * RGBA配列を毎回生成せずに色一致判定する
  */
@@ -992,7 +994,7 @@ export const drawOverlayLayersOnTile = async (
   const drawSize =
     Math.max(finalBgWidth, finalBgHeight) * TILE_DRAW_CONSTANTS.RENDER_SCALE;
   const canvas = new OffscreenCanvas(drawSize, drawSize);
-  const context = canvas.getContext("2d", { willReadFrequently: true });
+  const context = canvas.getContext("2d");
   if (!context) throw new Error("tile canvas context not found");
   context.imageSmoothingEnabled = false;
 
@@ -1038,18 +1040,20 @@ export const drawOverlayLayersOnTile = async (
     if (!paintedTilebitmap) {
       // Try new GalleryRepository v2 first
       const repoV2 = await getGalleryRepoV2();
-      console.log(
-        `🧑‍🎨 : Trying to load tile [${
-          instance.imageKey
-        }, ${tileKey}], repoV2 initialized=${!!repoV2}`,
-      );
+      if (DEBUG_TILE_OVERLAY_RENDERER)
+        console.log(
+          `🧑‍🎨 : Trying to load tile [${
+            instance.imageKey
+          }, ${tileKey}], repoV2 initialized=${!!repoV2}`,
+        );
       if (repoV2) {
         const tileBlob = await repoV2.getTile(instance.imageKey, tileKey);
-        console.log(
-          `🧑‍🎨 : getTile result for [${instance.imageKey}, ${tileKey}]: ${
-            tileBlob ? `Blob(${tileBlob.size})` : "null"
-          }`,
-        );
+        if (DEBUG_TILE_OVERLAY_RENDERER)
+          console.log(
+            `🧑‍🎨 : getTile result for [${instance.imageKey}, ${tileKey}]: ${
+              tileBlob ? `Blob(${tileBlob.size})` : "null"
+            }`,
+          );
         if (tileBlob) {
           paintedTilebitmap = await createImageBitmap(tileBlob);
           // Cache in memory for faster subsequent access
@@ -1057,9 +1061,10 @@ export const drawOverlayLayersOnTile = async (
             instance.tiles = {};
           }
           instance.tiles[tileKey] = paintedTilebitmap;
-          console.log(
-            `🧑‍🎨 : Loaded tile ${tileKey} from IndexedDB v2 for ${instance.imageKey}`,
-          );
+          if (DEBUG_TILE_OVERLAY_RENDERER)
+            console.log(
+              `🧑‍🎨 : Loaded tile ${tileKey} from IndexedDB v2 for ${instance.imageKey}`,
+            );
         }
       }
     }
@@ -1089,11 +1094,15 @@ export const drawOverlayLayersOnTile = async (
       enhancedColor,
     );
 
-    context.drawImage(
-      paintedTilebitmap,
-      offsetX * TILE_DRAW_CONSTANTS.RENDER_SCALE,
-      offsetY * TILE_DRAW_CONSTANTS.RENDER_SCALE,
-    );
+    try {
+      context.drawImage(
+        paintedTilebitmap,
+        offsetX * TILE_DRAW_CONSTANTS.RENDER_SCALE,
+        offsetY * TILE_DRAW_CONSTANTS.RENDER_SCALE,
+      );
+    } finally {
+      paintedTilebitmap.close();
+    }
   }
 
   // 一時統計をperTile統計に保存
