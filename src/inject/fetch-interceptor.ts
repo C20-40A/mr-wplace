@@ -77,7 +77,7 @@ export const setupFetchInterceptor = (): void => {
     }
 
     // Intercept pixel info GET requests (for "Painted by" data)
-    // URL pattern: https://backend.wplace.live/pixel/<tileX>/<tileY>?x=<x>&y=<y>
+    // URL pattern: https://backend.wplace.live/s{season}/pixel/<tileX>/<tileY>?x=<x>&y=<y>
     if (url.includes("/pixel/") && url.includes("?x=") && url.includes("&y=")) {
       console.log("🧑‍🎨: Intercepting pixel info GET:", url);
       const response = await originalFetch.apply(this, args);
@@ -117,7 +117,7 @@ export const setupFetchInterceptor = (): void => {
     }
 
     // Intercept pixel paint POST to invalidate cache
-    // URL pattern: https://backend.wplace.live/pixel/<tileX>/<tileY>
+    // URL pattern: https://backend.wplace.live/s{season}/pixel/<tileX>/<tileY>
     if (url.includes("/pixel/") && !url.includes("?x=")) {
       const requestInfo = args[0];
       const method =
