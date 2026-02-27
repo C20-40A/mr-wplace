@@ -581,8 +581,8 @@ export class ColorPalette {
     );
     if (currentName) {
       currentName.textContent = enabled
-        ? t("overlay_mode_independent")
-        : t("overlay_mode_composite");
+        ? t("popup_overlay_mode_layer")
+        : t("popup_overlay_mode_composite");
     }
 
     const buttons = this.container.querySelectorAll(".overlay-mode-item");
