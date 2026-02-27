@@ -119,8 +119,9 @@ export class PositionInfo {
 
   private addTileInfo(container: Element): void {
     // 既存ツールバーがあれば座標だけ更新
-    const existingTileInfo =
-      container.querySelector<HTMLElement>("#position-tile-info");
+    const existingTileInfo = container.querySelector<HTMLElement>(
+      "#position-tile-info",
+    );
     if (existingTileInfo) {
       const pos = getCurrentPosition();
       if (pos) {
@@ -144,7 +145,8 @@ export class PositionInfo {
     const toolbar = document.createElement("div");
     toolbar.id = TOOLBAR_ID;
     toolbar.className =
-      "bg-base-100/90 backdrop-blur-sm rounded-box flex items-center gap-1.5 px-3 py-1.5 mb-1 shadow-sm";
+      "bg-base-100/60 backdrop-blur-sm rounded-box flex items-center gap-1.5 px-3 py-1.5 mb-1 shadow-sm w-fit mx-auto justify-self-center";
+    toolbar.style.cssText = "width: fit-content; justify-self: center;";
 
     // 左端アイコン
     const markerIcon = document.createElement("span");
@@ -229,11 +231,14 @@ export class PositionInfo {
     }
   }
 
-  private createToolbarButton(title: string, svgHTML: string): HTMLButtonElement {
+  private createToolbarButton(
+    title: string,
+    svgHTML: string,
+  ): HTMLButtonElement {
     const btn = document.createElement("button");
-    btn.className = "btn btn-xs btn-ghost btn-circle";
+    btn.className = "btn btn-xs btn-ghost btn-circle text-primary";
     btn.style.cssText =
-      "color: rgb(156 163 175 / 0.7); height: 1.25rem; min-height: 1.25rem; width: 1.25rem; min-width: 1.25rem; padding: 0;";
+      "height: 1.25rem; min-height: 1.25rem; width: 1.25rem; min-width: 1.25rem; padding: 0;";
     btn.title = title;
     btn.innerHTML = svgHTML;
     return btn;

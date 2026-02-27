@@ -27,7 +27,6 @@ import { renderCoordinateJumper } from "./routes/coordinate-jumper";
 import type { BookmarkAPI } from "@/core/di";
 import { Tutorial } from "@/features/tutorial";
 import { showFeatureHint } from "@/features/feature-hints";
-import { TOOLBAR_ID } from "@/features/position-info";
 
 const SORT_KEY = "wplace-studio-bookmark-sort";
 
@@ -79,12 +78,12 @@ const render = async (): Promise<void> => {
         selectedTagFilters.add(tagKey);
       }
       render();
-    }
+    },
   );
 
   renderBookmarks(favorites, sortType, selectedTagFilters);
   const sortSelect = document.getElementById(
-    "wps-bookmark-sort"
+    "wps-bookmark-sort",
   ) as HTMLSelectElement;
   if (sortSelect) sortSelect.value = sortType;
 };
@@ -105,8 +104,8 @@ const addBookmark = async (): Promise<void> => {
   const name = await showNameInputModal(
     t`${"enter_bookmark_name"}`,
     t`${"location_point"} (${position.lat.toFixed(3)}, ${position.lng.toFixed(
-      3
-    )})`
+      3,
+    )})`,
   );
   if (name === null) return;
   const bookmarkName =
@@ -174,7 +173,7 @@ const renderCurrentRoute = async (route: string): Promise<void> => {
 
 const setupNavigationHandlers = (
   modal: HTMLDialogElement,
-  backButton: HTMLElement
+  backButton: HTMLElement,
 ): void => {
   backButton.addEventListener("click", () => router.navigateBack());
 
@@ -239,7 +238,7 @@ const setupBookmarkListHandlers = (modal: HTMLDialogElement): void => {
         async (tags) => {
           const result = await ImportExportService.exportFavoritesByTags(tags);
           Toast.success(result.message);
-        }
+        },
       );
     });
 
@@ -263,7 +262,7 @@ const setupEditScreenHandlers = (modal: HTMLDialogElement): void => {
 
   modal.querySelector("#wps-edit-save")!.addEventListener("click", async () => {
     const nameInput = document.getElementById(
-      "wps-edit-name"
+      "wps-edit-name",
     ) as HTMLInputElement;
     const creationDiv = document.getElementById("wps-edit-tag-creation");
     const editScreen = document.getElementById("wps-bookmark-edit-screen");
@@ -288,10 +287,10 @@ const setupEditScreenHandlers = (modal: HTMLDialogElement): void => {
 
     if (isCreatingNewTag) {
       const tagNameInput = document.getElementById(
-        "wps-edit-tag-name"
+        "wps-edit-tag-name",
       ) as HTMLInputElement;
       const selectedColorBtn = document.querySelector(
-        ".wps-color-btn[style*='border: 3px solid rgb(0, 0, 0)']"
+        ".wps-color-btn[style*='border: 3px solid rgb(0, 0, 0)']",
       ) as HTMLElement;
 
       const tagName = tagNameInput?.value.trim();
@@ -336,7 +335,7 @@ const setupTagSelectionHandlers = (modal: HTMLDialogElement): void => {
           async (oldTag, newTag) => {
             await BookmarkStorage.updateTag(oldTag, newTag);
             const editScreen = document.getElementById(
-              "wps-bookmark-edit-screen"
+              "wps-bookmark-edit-screen",
             );
             if (editScreen?.style.display === "block") {
               const { showEditScreen } = await import("./ui");
@@ -354,7 +353,7 @@ const setupTagSelectionHandlers = (modal: HTMLDialogElement): void => {
             Toast.success(t`${"deleted_message"}`);
 
             const editScreen = document.getElementById(
-              "wps-bookmark-edit-screen"
+              "wps-bookmark-edit-screen",
             );
             if (editScreen?.style.display === "block") {
               const { showEditScreen } = await import("./ui");
@@ -364,19 +363,19 @@ const setupTagSelectionHandlers = (modal: HTMLDialogElement): void => {
               if (bookmark) showEditScreen(bookmark);
             }
             render();
-          }
+          },
         );
 
         return;
       }
 
       const clickableArea = target.closest(
-        ".wps-tag-item-clickable"
+        ".wps-tag-item-clickable",
       ) as HTMLElement | null;
       if (!clickableArea) return;
 
       const tagItem = clickableArea.closest(
-        ".wps-existing-tag-item"
+        ".wps-existing-tag-item",
       ) as HTMLElement | null;
       if (!tagItem) return;
 
@@ -438,7 +437,7 @@ const setupModal = (): void => {
   router = new BookmarkRouter();
   router.setHeaderElements(
     modalElements.titleElement,
-    modalElements.backButton
+    modalElements.backButton,
   );
   router.setOnRouteChange(renderCurrentRoute);
 
@@ -483,36 +482,15 @@ const init = (): void => {
       getTargetElement: findMapPin,
       createElement: createMapPinButtons,
     },
-    // フォールバック: ツールバーにブックマークボタン配置
+    // position modal にブックマークボタン配置
     {
       id: "save-btn-fallback",
-      getTargetElement: () =>
-        document.getElementById(TOOLBAR_ID)?.parentElement
-          ? document.getElementById(TOOLBAR_ID)
-          : findPositionModal(),
+      getTargetElement: findPositionModal,
       createElement: (target) => {
-        if (document.querySelector("#map-pin-button-group")) return;
-
-        const toolbar = target.id === TOOLBAR_ID ? target : null;
-        const btn = document.createElement("button");
-        btn.id = "save-btn-fallback";
-        btn.title = t`${"bookmark"}`;
-
-        if (toolbar) {
-          btn.className = "btn btn-xs btn-ghost btn-circle";
-          btn.style.cssText =
-            "color: rgb(156 163 175 / 0.7); height: 1.25rem; min-height: 1.25rem; width: 1.25rem; min-width: 1.25rem; padding: 0;";
-          btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 -960 960 960" fill="currentColor"><path d="m354-287 126-76 126 77-33-144 111-96-146-13-58-136-58 135-146 13 111 97-33 143ZM233-120l65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Zm247-350Z"/></svg>`;
-          toolbar.appendChild(btn);
-        } else {
-          const saveButton = createSaveBookmarkButton();
-          saveButton.id = "save-btn-fallback";
-          saveButton.addEventListener("click", addBookmark);
-          target.prepend(saveButton);
-          return;
-        }
-
-        btn.addEventListener("click", addBookmark);
+        const saveButton = createSaveBookmarkButton();
+        saveButton.id = "save-btn-fallback";
+        saveButton.addEventListener("click", addBookmark);
+        target.prepend(saveButton);
       },
     },
   ];
