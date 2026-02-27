@@ -12,7 +12,7 @@ const SUPPORTED_MIN_ZOOM = 9;
 const BASE_TILE_ZOOM = 11;
 const MID_TILE_ZOOM = 10;
 const CACHE_CONTROL_HEADER = "public, max-age=31536000, immutable";
-const FRONT_RENDER_CACHE_MAX = 40;
+const FRONT_RENDER_CACHE_MAX = 60;
 
 let transparentTileBlobPromise: Promise<Blob> | null = null;
 const frontRenderedTileCache = new Map<string, { token: string; blob: Blob }>();
