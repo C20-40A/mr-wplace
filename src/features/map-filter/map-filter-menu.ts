@@ -3,6 +3,7 @@ import { getMapInstanceReady } from "@/states/map-instance-ready";
 import { t } from "@/i18n/manager";
 import { areaManagerAPI } from "@/features/area-manager";
 import { showFeatureHint } from "@/features/feature-hints";
+import { IMG_ICON_MAP } from "@/assets/iconImages";
 
 const HIGH_CONTRAST_KEY = "mapFilter_highContrast";
 const HIGH_CONTRAST_STYLE_ID = "mr-wplace-high-contrast-style";
@@ -204,7 +205,8 @@ class MapFilterMenu {
       font-size: 16px;
       z-index: 800;
     `;
-    this.triggerButton.innerHTML = "🗺️";
+    // this.triggerButton.innerHTML = "🗺️";
+    this.triggerButton.innerHTML = `<img src="${IMG_ICON_MAP}" style="width: calc(var(--spacing)*6); height: calc(var(--spacing)*6); image-rendering: pixelated;" />`;
     this.triggerButton.addEventListener("click", (e) => {
       e.stopPropagation();
       this.togglePopover();
