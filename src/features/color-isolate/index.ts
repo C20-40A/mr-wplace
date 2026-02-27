@@ -4,6 +4,7 @@ import { createColorIsolateButton } from "./ui";
 import { sendColorFilterToInject } from "../../content";
 import { t } from "@/i18n/manager";
 import { showFeatureHint } from "@/features/feature-hints";
+import { ColorFilter } from "@/features/color-filter";
 
 export class ColorIsolate {
   private enabled: boolean = false;
@@ -106,6 +107,7 @@ export class ColorIsolate {
     );
 
     sendColorFilterToInject(colorFilterManager);
+    ColorFilter.getInstance()?.refreshFABBadge();
     console.log("🧑‍🎨 : Color isolate updated to color ID:", colorId);
   }
 
@@ -139,6 +141,7 @@ export class ColorIsolate {
         this.lastSelectedColorId = selectedColorId;
         await colorFilterManager.setSelectedColors([selectedColorId]);
         sendColorFilterToInject(colorFilterManager);
+        ColorFilter.getInstance()?.refreshFABBadge();
         console.log(
           "🧑‍🎨 : Color isolate enabled for color ID:",
           selectedColorId
@@ -160,6 +163,7 @@ export class ColorIsolate {
       this.stopMonitoring();
       await colorFilterManager.setSelectedColors(this.originalSelectedColors);
       sendColorFilterToInject(colorFilterManager);
+      ColorFilter.getInstance()?.refreshFABBadge();
       console.log("🧑‍🎨 : Color isolate disabled, restored original colors");
     }
   }

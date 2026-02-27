@@ -1,7 +1,7 @@
 import { setupElementObserver } from "../../components/element-observer";
 import { findOpacityContainer } from "../../constants/selectors";
 import { ColorFilterRouter } from "./router";
-import { ColorFilterModal, createColorFilterFAB, updateColorFilterFABBadge } from "./ui";
+import { ColorFilterModal, createColorFilterFAB, updateColorFilterBadges } from "./ui";
 import { renderColorFilters } from "./routes/list";
 
 /**
@@ -73,6 +73,6 @@ export class ColorFilter {
     const mgr = window.mrWplace?.colorFilterManager;
     if (!mgr) return;
     const rgbs = mgr.selectedRGBs;
-    updateColorFilterFABBadge(rgbs.length === 1 ? rgbs[0] : null);
+    updateColorFilterBadges(rgbs.length === 1 ? rgbs[0] : null);
   }
 }

@@ -13,15 +13,13 @@ export const createColorFilterFAB = (): HTMLButtonElement => {
   return button;
 };
 
-const COLOR_BADGE_ID = "color-filter-fab-badge";
+const COLOR_BADGE_CLASS = "color-filter-badge";
 
-export const updateColorFilterFABBadge = (
+const updateColorBadge = (
+  parent: HTMLElement,
   rgb: [number, number, number] | null
 ): void => {
-  const button = document.getElementById("color-filter-fab-btn");
-  if (!button) return;
-
-  let badge = button.querySelector<HTMLSpanElement>(`#${COLOR_BADGE_ID}`);
+  let badge = parent.querySelector<HTMLSpanElement>(`.${COLOR_BADGE_CLASS}`);
 
   if (!rgb) {
     badge?.remove();
@@ -30,13 +28,28 @@ export const updateColorFilterFABBadge = (
 
   if (!badge) {
     badge = document.createElement("span");
-    badge.id = COLOR_BADGE_ID;
+    badge.className = COLOR_BADGE_CLASS;
     badge.style.cssText =
       "position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.7);pointer-events:none;";
-    button.appendChild(badge);
+    parent.appendChild(badge);
   }
 
   badge.style.backgroundColor = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+};
+
+/** FAB + PaintPixelIcon の両方のバッジを更新 */
+export const COLOR_BADGE_TARGETS = [
+  "color-filter-fab-btn",
+  "paint-pixel-icon-h2",
+] as const;
+
+export const updateColorFilterBadges = (
+  rgb: [number, number, number] | null
+): void => {
+  for (const id of COLOR_BADGE_TARGETS) {
+    const el = document.getElementById(id);
+    if (el) updateColorBadge(el, rgb);
+  }
 };
 
 export class ColorFilterModal {

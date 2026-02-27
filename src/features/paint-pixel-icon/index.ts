@@ -4,6 +4,8 @@ import { ColorFilter } from "@/features/color-filter";
 import { IMG_ICON_COLOR_FILTER } from "@/assets/iconImages";
 import { showFeatureHint } from "@/features/feature-hints";
 
+const H2_ID = "paint-pixel-icon-h2";
+
 // Paint pixel の多言語テキストリスト
 const PAINT_PIXEL_TEXTS = [
   "Paint pixel",
@@ -73,7 +75,9 @@ export class PaintPixelIcon {
     this.styleH2(h2 as HTMLElement);
     showFeatureHint("paint-pixel-icon", h2 as HTMLElement);
 
+    h2.id = H2_ID;
     h2.dataset.mrWplaceIconified = "true";
+    ColorFilter.getInstance()?.refreshFABBadge();
     console.log("🧑‍🎨 : Paint pixel text replaced with icon, H2 made clickable");
   }
 
