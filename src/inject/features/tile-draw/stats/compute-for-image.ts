@@ -185,7 +185,7 @@ const fetchBackgroundTile = async (
 
   try {
     // WPlace API から背景タイルを取得
-    const url = `https://backend.wplace.live/tiles/${tileX}/${tileY}.png`;
+    const url = `https://backend.wplace.live/tile/${tileX}/${tileY}.png`;
     const response = await fetch(url, {
       signal: controller.signal,
     });

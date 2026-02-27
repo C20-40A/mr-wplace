@@ -77,7 +77,7 @@ export const setupFetchInterceptor = (): void => {
     }
 
     // Intercept pixel info GET requests (for "Painted by" data)
-    // URL pattern: https://backend.wplace.live/s0/pixel/<tileX>/<tileY>?x=<x>&y=<y>
+    // URL pattern: https://backend.wplace.live/pixel/<tileX>/<tileY>?x=<x>&y=<y>
     if (url.includes("/pixel/") && url.includes("?x=") && url.includes("&y=")) {
       console.log("🧑‍🎨: Intercepting pixel info GET:", url);
       const response = await originalFetch.apply(this, args);
@@ -117,8 +117,8 @@ export const setupFetchInterceptor = (): void => {
     }
 
     // Intercept pixel paint POST to invalidate cache
-    // URL pattern: https://backend.wplace.live/s0/pixel/<tileX>/<tileY>
-    if (url.includes("/s0/pixel/")) {
+    // URL pattern: https://backend.wplace.live/pixel/<tileX>/<tileY>
+    if (url.includes("/pixel/") && !url.includes("?x=")) {
       const requestInfo = args[0];
       const method =
         typeof requestInfo === "string"
@@ -128,7 +128,7 @@ export const setupFetchInterceptor = (): void => {
           : undefined;
 
       if (method === "POST") {
-        const pixelMatch = url.match(/\/s0\/pixel\/(\d+)\/(\d+)/);
+        const pixelMatch = url.match(/\/pixel\/(\d+)\/(\d+)/);
         if (pixelMatch) {
           const tileX = parseInt(pixelMatch[1], 10);
           const tileY = parseInt(pixelMatch[2], 10);
@@ -151,7 +151,7 @@ export const setupFetchInterceptor = (): void => {
     }
 
     // Intercept all tile requests
-    if (url.includes("tiles/") && url.endsWith(".png")) {
+    if (url.includes("/tile/") && url.endsWith(".png")) {
       return handleTileRequest(originalFetch, args, url);
     }
 
@@ -176,7 +176,7 @@ const handleTileRequest = async (
   url: string
 ): Promise<Response> => {
   // Extract tileX, tileY from URL
-  const tileMatch = url.match(/tiles\/(\d+)\/(\d+)\.png/);
+  const tileMatch = url.match(/\/tile\/(\d+)\/(\d+)\.png/);
   if (!tileMatch) {
     return originalFetch.apply(window, args);
   }
