@@ -194,40 +194,46 @@ const handleTileRequest = async (
   const cacheKey = `${tileX},${tileY}`;
   const dataSaver = window.mrWplaceDataSaver;
   const dataSaverEnabled = dataSaver?.enabled === true;
+  const frontOperational = isFrontTileLayerOperational();
 
-  // Check memory cache first (data saver)
-  let cacheExists = dataSaver?.tileCache.has(cacheKey) ?? false;
+  // In front-layer mode, background tiles should stay raw (no processed-tile reuse).
+  // Skip data-saver cache lookup entirely to avoid unnecessary work.
+  let cacheExists = false;
   let cachedBlob: Blob | null = null;
 
-  // If not in memory, check IndexedDB only when data saver is enabled
-  if (!cacheExists && dataSaverEnabled && dataSaver?.tileCacheDB) {
-    try {
-      cachedBlob = await dataSaver.tileCacheDB.getCachedTile(cacheKey);
-      if (cachedBlob) {
-        // Load into memory cache for faster access
-        dataSaver.tileCache.set(cacheKey, cachedBlob);
-        cacheExists = true;
-      }
-    } catch (error) {
-      console.warn("🧑‍🎨 : Failed to load from IndexedDB:", error);
-    }
-  } else if (cacheExists) {
-    cachedBlob = dataSaver!.tileCache.get(cacheKey)!;
-  }
+  if (!frontOperational) {
+    // Check memory cache first (data saver)
+    cacheExists = dataSaver?.tileCache.has(cacheKey) ?? false;
 
-  // data saver ON + cache exists -> Return cached processed tile
-  if (dataSaverEnabled && cacheExists && cachedBlob) {
-    return new Response(cachedBlob, {
-      status: 200,
-      statusText: "OK (Cached Processed)",
-      headers: new Headers({ "Content-Type": "image/png" }),
-    });
+    // If not in memory, check IndexedDB only when data saver is enabled
+    if (!cacheExists && dataSaverEnabled && dataSaver?.tileCacheDB) {
+      try {
+        cachedBlob = await dataSaver.tileCacheDB.getCachedTile(cacheKey);
+        if (cachedBlob) {
+          // Load into memory cache for faster access
+          dataSaver.tileCache.set(cacheKey, cachedBlob);
+          cacheExists = true;
+        }
+      } catch (error) {
+        console.warn("🧑‍🎨 : Failed to load from IndexedDB:", error);
+      }
+    } else if (cacheExists) {
+      cachedBlob = dataSaver!.tileCache.get(cacheKey)!;
+    }
+
+    // data saver ON + cache exists -> Return cached processed tile
+    if (dataSaverEnabled && cacheExists && cachedBlob) {
+      return new Response(cachedBlob, {
+        status: 200,
+        statusText: "OK (Cached Processed)",
+        headers: new Headers({ "Content-Type": "image/png" }),
+      });
+    }
   }
 
   // Fetch original tile from network
   const response = await originalFetch.apply(window, args);
 
-  const frontOperational = isFrontTileLayerOperational();
   // LastModified cache is used only when front layer is OFF.
   // Skip expensive state-version serialization when front layer is ON.
   if (!frontOperational) {
@@ -237,6 +243,21 @@ const handleTileRequest = async (
 
   // LastModified cache check
   const lastModified = response.headers.get("last-modified");
+  const prevLastModified = getOriginalLastModified(cacheKey);
+  const backgroundChanged = !lastModified || prevLastModified !== lastModified;
+  const snapshotCaptureEnabled = window.mrWplaceSnapshotCaptureEnabled === true;
+
+  // Fast path for front-layer mode:
+  // - Background didn't change (Last-Modified unchanged)
+  // - Snapshot capture is off
+  // In this case, we can return the original response directly without blob decoding.
+  if (frontOperational && !backgroundChanged && !snapshotCaptureEnabled) {
+    window.postMessage(
+      { source: "wplace-studio-drawing-complete", tileX, tileY },
+      "*"
+    );
+    return response;
+  }
 
   // Use processed blob cache only when front-layer is OFF.
   // When front-layer is ON, we must NOT cache raw tiles here — doing so would
@@ -255,14 +276,7 @@ const handleTileRequest = async (
     }
   }
 
-  const clonedResponse = response.clone();
-  const originalTileBlob = await clonedResponse.blob();
-
-  // Compare previous last-modified to detect actual background change.
-  // This prevents redundant notifyFrontTileComparisonReady calls on polls
-  // where the tile hasn't actually changed.
-  const prevLastModified = getOriginalLastModified(cacheKey);
-  const backgroundChanged = !lastModified || prevLastModified !== lastModified;
+  const originalTileBlob = await response.blob();
 
   // Cache original tile for background pixel checks (area fill, etc.)
   setOriginalBlob(cacheKey, originalTileBlob);
