@@ -10,6 +10,8 @@ import {
 } from "@/states/close-button-big";
 
 export const TOOLBAR_ID = "mr-wplace-modal-toolbar";
+export const TOOLBAR_ROW1_ID = "mr-wplace-toolbar-row1";
+export const TOOLBAR_ROW2_ID = "mr-wplace-toolbar-row2";
 const CLOSE_SVG_PATH =
   "m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z";
 const CLOSE_BIG_MARKER_ID = "position-close-big-marker";
@@ -141,12 +143,21 @@ export class PositionInfo {
     const { lat, lng } = position;
     const coords = latLngToTilePixel(lat, lng);
 
-    // ツールバーをモーダル上部に作成
+    // ツールバーをモーダル上部に作成（2段構造）
     const toolbar = document.createElement("div");
     toolbar.id = TOOLBAR_ID;
     toolbar.className =
-      "bg-base-100/60 backdrop-blur-sm rounded-box flex items-center gap-1.5 px-3 py-1.5 mb-1 shadow-sm w-fit mx-auto justify-self-center";
+      "bg-base-100/60 backdrop-blur-sm rounded-box flex flex-col px-3 py-1.5 mb-1 shadow-sm mx-auto";
     toolbar.style.cssText = "width: fit-content; justify-self: center;";
+
+    const row1 = document.createElement("div");
+    row1.id = TOOLBAR_ROW1_ID;
+    row1.className = "flex items-center gap-1.5";
+
+    const row2 = document.createElement("div");
+    row2.id = TOOLBAR_ROW2_ID;
+    row2.className = "flex items-center gap-1.5";
+    row2.style.display = "none";
 
     // 左端アイコン（クリックで現在座標へジャンプ）
     const markerButton = this.createToolbarButton(
@@ -197,7 +208,8 @@ export class PositionInfo {
       );
     });
 
-    toolbar.append(markerButton, tileCoordSpan, clockButton);
+    row1.append(markerButton, tileCoordSpan, clockButton);
+    toolbar.append(row1, row2);
 
     // モーダル本体の前に独立要素として挿入
     container.prepend(toolbar);
@@ -234,7 +246,7 @@ export class PositionInfo {
     svgHTML: string,
   ): HTMLButtonElement {
     const btn = document.createElement("button");
-    btn.className = "btn btn-xs btn-ghost btn-circle text-primary";
+    btn.className = "btn btn-xs btn-ghost";
     btn.style.cssText =
       "height: 1.25rem; min-height: 1.25rem; width: 1.25rem; min-width: 1.25rem; padding: 0;";
     btn.title = title;

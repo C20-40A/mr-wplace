@@ -17,50 +17,12 @@ import { t } from "@/i18n/manager";
 import { IMG_ICON_BOOK } from "@/assets/iconImages";
 import { friendsToCSV, csvToFriends, downloadCSV } from "./csv-utils";
 import { Tag } from "./types";
-import { findPositionModal } from "@/constants/selectors";
-import { TOOLBAR_ID } from "@/features/position-info";
+import { TOOLBAR_ROW1_ID, TOOLBAR_ROW2_ID } from "@/features/position-info";
 
-/**
- * "Painted by:" 要素を検索
- */
-const findPaintedByContainer = (): Element | null => {
-  const positionModal = findPositionModal();
-  if (!positionModal) return null;
+const FRIENDS_INFO_BAR_ID = "friends-book-info-bar";
 
-  // モーダル内の .px-3.pb-1.5 要素を検索
-  const container = positionModal.querySelector(".px-3.pb-1\\.5");
-  if (container) return container;
-
-  // Fallback: 閉じるボタン行またはflex items-center gap-2 の親要素
-  const flexContainer = (
-    positionModal.querySelector(".flex.items-center.justify-end.gap-1") ||
-    positionModal.querySelector(".flex.items-center.gap-2")
-  )?.parentElement;
-  return flexContainer || null;
-};
-
-let toolbarFallbackDeadline = 0;
-const findFriendsButtonTarget = (): Element | null => {
-  const toolbar = document.getElementById(TOOLBAR_ID);
-  if (toolbar) {
-    toolbarFallbackDeadline = 0;
-    return toolbar;
-  }
-
-  const container = findPaintedByContainer();
-  if (!container) {
-    toolbarFallbackDeadline = 0;
-    return null;
-  }
-
-  if (!toolbarFallbackDeadline) {
-    toolbarFallbackDeadline = Date.now() + 250;
-    return null;
-  }
-
-  if (Date.now() < toolbarFallbackDeadline) return null;
-  return container;
-};
+const findFriendsButtonTarget = (): Element | null =>
+  document.getElementById(TOOLBAR_ROW1_ID);
 
 // 最後に受信したユーザー情報を保存
 let lastPaintedByUser: {
@@ -73,17 +35,69 @@ let lastPaintedByUser: {
 } | null = null;
 
 /**
- * "Painted by:" をタグに置き換え、友人帳に追加ボタンを作成
+ * ツールバー下の友人情報バーを更新（情報がある場合のみ表示）
  */
-const createAddToFriendsButton = async (target: Element): Promise<void> => {
-  // 既にボタンが存在する場合はスキップ
-  if (document.getElementById("add-to-friends-btn")) {
+const getRow2 = (): HTMLElement | null =>
+  document.getElementById(TOOLBAR_ROW2_ID);
+
+const syncRow2Visibility = (): void => {
+  const row2 = getRow2();
+  if (!row2) return;
+  row2.style.display = row2.children.length > 0 ? "" : "none";
+};
+
+const updateFriendsInfoBar = async (): Promise<void> => {
+  const row2 = getRow2();
+  if (!row2) return;
+
+  let infoBar = document.getElementById(FRIENDS_INFO_BAR_ID);
+
+  if (!lastPaintedByUser) {
+    infoBar?.remove();
+    syncRow2Visibility();
     return;
   }
 
+  const friend = await FriendsBookStorage.getFriendById(lastPaintedByUser.id);
+  if (!friend?.tag && !friend?.memo) {
+    infoBar?.remove();
+    syncRow2Visibility();
+    return;
+  }
+
+  if (!infoBar) {
+    infoBar = document.createElement("div");
+    infoBar.id = FRIENDS_INFO_BAR_ID;
+    infoBar.style.cssText = "display: flex; align-items: center; gap: 6px; font-size: 11px;";
+    row2.appendChild(infoBar);
+  }
+
+  const tagHTML = friend.tag
+    ? `<span style="display:inline-flex;align-items:center;gap:3px;border:1px solid ${friend.tag.color};border-radius:4px;padding:1px 4px;background:${friend.tag.color}22;font-size:10px;">
+        <span style="width:7px;height:7px;border-radius:50%;background:${friend.tag.color};flex-shrink:0;"></span>
+        ${friend.tag.name || t`tag`}
+      </span>`
+    : "";
+
+  const nameHTML = `<span style="opacity:0.8;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;">${lastPaintedByUser.name}</span>`;
+
+  const memoHTML = friend.memo
+    ? `<span style="opacity:0.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;" title="${friend.memo}">${friend.memo}</span>`
+    : "";
+
+  infoBar.innerHTML = `${tagHTML}${nameHTML}${memoHTML}`;
+  syncRow2Visibility();
+};
+
+/**
+ * 友人帳に追加ボタンを作成（ツールバー1段目に配置）
+ */
+const createAddToFriendsButton = (row1: Element): void => {
+  if (document.getElementById("add-to-friends-btn")) return;
+
   const button = document.createElement("button");
   button.id = "add-to-friends-btn";
-  button.className = "btn btn-xs btn-ghost btn-circle text-primary";
+  button.className = "btn btn-xs btn-ghost";
   button.style.cssText =
     "height: 1.25rem; min-height: 1.25rem; width: 1.25rem; min-width: 1.25rem; padding: 0;";
   button.innerHTML = `
@@ -98,79 +112,12 @@ const createAddToFriendsButton = async (target: Element): Promise<void> => {
       Toast.error(t`location_unavailable`);
       return;
     }
-
     await showAddFriendDialog(lastPaintedByUser);
+    updateFriendsInfoBar();
   });
 
-  // default: ツールバー配置、fallback: target(container)
-  const toolbar =
-    target.id === TOOLBAR_ID ? target : document.getElementById(TOOLBAR_ID);
-  if (toolbar) {
-    toolbar.appendChild(button);
-  } else {
-    target.appendChild(button);
-  }
-
-  const container = findPaintedByContainer();
-  if (!container) {
-    console.log("🧑‍🎨 : Add to friends button created");
-    return;
-  }
-
-  // "Painted by:" をタグに置き換え、メモをtooltipで表示
-  if (lastPaintedByUser) {
-    const friend = await FriendsBookStorage.getFriendById(lastPaintedByUser.id);
-
-    // タグがあれば "Painted by:" を置き換え
-    if (friend?.tag) {
-      const paintedBySpan = container.querySelector("span");
-      if (
-        paintedBySpan &&
-        (paintedBySpan.textContent === "Painted by:" ||
-          paintedBySpan.textContent === "Pintado por:")
-      ) {
-        const tagBadge = document.createElement("div");
-        tagBadge.className = "badge badge-sm gap-1";
-        tagBadge.style.cssText = `background: ${friend.tag.color}20; border-color: ${friend.tag.color};`;
-        tagBadge.innerHTML = `
-          <div style="width: 8px; height: 8px; border-radius: 50%; background: ${
-            friend.tag.color
-          };"></div>
-          ${friend.tag.name || t`tag`}
-        `;
-        paintedBySpan.replaceWith(tagBadge);
-      }
-    }
-
-    // 説明があれば名前にtooltipを追加
-    if (friend?.memo || friend?.tag) {
-      // ユーザー名要素を探す: IDを含むspan
-      const userNameSpan = (
-        Array.from(container.querySelectorAll("span")) as HTMLElement[]
-      ).find(
-        (span) =>
-          span.textContent?.includes(`#${lastPaintedByUser?.id}`) &&
-          !span.querySelector("span"), // Get the innermost span
-      );
-
-      if (userNameSpan) {
-        // The tooltip should be on the parent element, which contains both name and ID
-        const targetElement = userNameSpan.parentElement;
-        if (!targetElement) return;
-
-        targetElement.classList.add("tooltip");
-
-        const tagText = friend.tag ? `[${friend.tag.name || t`tag`}]` : "";
-        const memoText = friend.memo || "";
-        const tooltipText = `${tagText} ${memoText}`.trim();
-
-        if (tooltipText) {
-          targetElement.setAttribute("data-tip", tooltipText);
-        }
-      }
-    }
-  }
-
+  row1.appendChild(button);
+  updateFriendsInfoBar();
   console.log("🧑‍🎨 : Add to friends button created");
 };
 
@@ -422,6 +369,7 @@ const init = (): void => {
         picture: event.data.userData.picture,
       };
       console.log("🧑‍🎨 : Received painted by user data:", lastPaintedByUser);
+      updateFriendsInfoBar();
     }
   });
 

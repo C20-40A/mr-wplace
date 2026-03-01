@@ -6,7 +6,6 @@ import { storage } from "@/utils/browser-api";
 import { Toast } from "@/components/toast";
 import {
   findOpacityContainer,
-  findPositionModal,
   findMapPin,
 } from "@/constants/selectors";
 import { addMapPinButton } from "@/utils/map-pin-helper";
@@ -26,7 +25,7 @@ import { renderCoordinateJumper } from "./routes/coordinate-jumper";
 import type { BookmarkAPI } from "@/core/di";
 import { Tutorial } from "@/features/tutorial";
 import { showFeatureHint } from "@/features/feature-hints";
-import { TOOLBAR_ID } from "@/features/position-info";
+import { TOOLBAR_ROW1_ID } from "@/features/position-info";
 
 const SORT_KEY = "wplace-studio-bookmark-sort";
 
@@ -462,28 +461,8 @@ const createMapPinButtons = (container: Element): void => {
   if (button) showFeatureHint("bookmark-btn", button);
 };
 
-let toolbarFallbackDeadline = 0;
-const findBookmarkButtonTarget = (): Element | null => {
-  const toolbar = document.getElementById(TOOLBAR_ID);
-  if (toolbar) {
-    toolbarFallbackDeadline = 0;
-    return toolbar;
-  }
-
-  const positionModal = findPositionModal();
-  if (!positionModal) {
-    toolbarFallbackDeadline = 0;
-    return null;
-  }
-
-  if (!toolbarFallbackDeadline) {
-    toolbarFallbackDeadline = Date.now() + 250;
-    return null;
-  }
-
-  if (Date.now() < toolbarFallbackDeadline) return null;
-  return positionModal;
-};
+const findBookmarkButtonTarget = (): Element | null =>
+  document.getElementById(TOOLBAR_ROW1_ID);
 
 const init = (): void => {
   const buttonConfigs: ElementConfig[] = [
@@ -505,26 +484,20 @@ const init = (): void => {
       getTargetElement: findMapPin,
       createElement: createMapPinButtons,
     },
-    // default: ツールバー配置（fallback: position modal）
+    // ツールバー1段目に配置
     {
       id: "save-btn-fallback",
       getTargetElement: findBookmarkButtonTarget,
-      createElement: (target) => {
+      createElement: (row1) => {
         const btn = document.createElement("button");
         btn.id = "save-btn-fallback";
         btn.title = t`${"bookmark"}`;
-        btn.className = "btn btn-xs btn-ghost btn-circle text-primary";
+        btn.className = "btn btn-xs btn-ghost";
         btn.style.cssText =
           "height: 1.25rem; min-height: 1.25rem; width: 1.25rem; min-width: 1.25rem; padding: 0;";
         btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/></svg>`;
         btn.addEventListener("click", addBookmark);
-
-        if (target.id === TOOLBAR_ID) {
-          target.appendChild(btn);
-          return;
-        }
-
-        target.prepend(btn);
+        row1.appendChild(btn);
       },
     },
   ];
