@@ -38,13 +38,31 @@ import {
 } from "./states/fab-visibility";
 import { ColorPaletteStorage } from "@/components/color-palette/storage";
 
-import { storage, tabs } from "@/utils/browser-api";
+import { runtime, storage, tabs } from "@/utils/browser-api";
 import { FEEDBACK_FORM_URL } from "@/constants/url";
 import { BUY_ME_COFFEE_IMAGE } from "./assets/buyMeACoffee";
 
 const AREA_REGIONS_KEY = "areaRegions_v1";
 const AREA_REGION_GROUPS_KEY = "areaRegionGroups_v1";
 const NO_CONTENT_RECEIVER_ERROR_MESSAGE = "No active tab content receiver available";
+const POPUP_WINDOW_OPENED = "POPUP_WINDOW_OPENED";
+const POPUP_WINDOW_CLOSED = "POPUP_WINDOW_CLOSED";
+const CLOSE_POPUP_WINDOW = "CLOSE_POPUP_WINDOW";
+
+const notifyPopupWindowState = async (
+  type: typeof POPUP_WINDOW_OPENED | typeof POPUP_WINDOW_CLOSED,
+) => {
+  try {
+    await runtime.sendMessage({ type });
+  } catch {
+    // Ignore if service worker is not reachable
+  }
+};
+
+runtime.onMessage.addListener((message) => {
+  if (message?.type !== CLOSE_POPUP_WINDOW) return;
+  window.close();
+});
 
 const isNoContentReceiverError = (error: unknown): boolean => {
   if (!(error instanceof Error)) return false;
@@ -180,6 +198,8 @@ const setupDevModeEasterEgg = (): void => {
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
+  await notifyPopupWindowState(POPUP_WINDOW_OPENED);
+
   const languageSelect = document.getElementById(
     "language-select",
   ) as HTMLSelectElement;
@@ -461,6 +481,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       await handleResetAreas();
     });
   }
+});
+
+window.addEventListener("beforeunload", () => {
+  void notifyPopupWindowState(POPUP_WINDOW_CLOSED);
 });
 
 // Gallery export handler - delegates to inject

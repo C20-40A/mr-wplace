@@ -25,7 +25,7 @@ const createButton = (container: Element): void => {
   btnContainer.style.cssText = `
     position: fixed;
     left: 47px;
-    top: 8px;
+    top: 46px;
     z-index: 800;
   `;
 
