@@ -1,7 +1,10 @@
 import { t } from "@/i18n/manager";
 import { getCurrentTiles } from "@/states/currentTile";
 import { createCleanImageBitmap } from "@/utils/image-bitmap-compat";
+import { latLngToTilePixel } from "@/utils/coordinate";
+import { getCurrentPosition } from "@/utils/position";
 import { TimeTravelRouter } from "../router";
+import { normalizeTileCoordinate } from "../utils/tile-coordinate";
 
 interface TmpTileEntry {
   tileX: number;
@@ -356,7 +359,9 @@ export class TmpTileBoardRoute {
     }
 
     const currentTiles = Array.from(getCurrentTiles());
-    this.currentTile = this.pickCurrentTile(currentTiles);
+    const previousCurrentTile = this.currentTile;
+    this.currentTile = this.resolveCurrentTile(currentTiles);
+    this.clearSelectionWhenCurrentTileJumps(previousCurrentTile, this.currentTile);
     const filteredTileKeys = this.filterNearbyTiles(currentTiles);
     const entries = await Promise.all(
       filteredTileKeys.map(async (key) => {
@@ -386,6 +391,32 @@ export class TmpTileBoardRoute {
     if (!Number.isFinite(tileX) || !Number.isFinite(tileY)) return null;
 
     return { tileX, tileY };
+  }
+
+  private resolveCurrentTile(tileKeys: string[]): TileCoordinate | null {
+    const position = getCurrentPosition();
+    if (position) {
+      const coords = latLngToTilePixel(position.lat, position.lng);
+      const normalized = normalizeTileCoordinate(coords.TLX, coords.TLY);
+      return { tileX: normalized.tileX, tileY: normalized.tileY };
+    }
+
+    return this.pickCurrentTile(tileKeys);
+  }
+
+  private clearSelectionWhenCurrentTileJumps(
+    prev: TileCoordinate | null,
+    next: TileCoordinate | null,
+  ): void {
+    if (!prev || !next) return;
+
+    const jumpDistance = Math.max(
+      Math.abs(prev.tileX - next.tileX),
+      Math.abs(prev.tileY - next.tileY),
+    );
+    if (jumpDistance <= TmpTileBoardRoute.NEARBY_TILE_RADIUS * 2) return;
+
+    this.selectedTiles.clear();
   }
 
   private filterNearbyTiles(tileKeys: string[]): string[] {
