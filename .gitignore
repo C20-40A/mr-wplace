@@ -17,6 +17,7 @@ prompt.txt
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+.cache/
 
 
 /docs/secret

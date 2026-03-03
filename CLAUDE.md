@@ -105,6 +105,34 @@ import { storage, runtime, tabs } from "@/utils/browser-api";
 
 For tutorial item additions, follow `.claude/skills/add-tutorial/SKILL.md`.
 
+### ts-morph Context Compression (for AI)
+
+Use `ts-morph` scripts to avoid sending large source trees directly to AI.
+
+- Build full structure index:
+  - `bun run analyze:ts`
+- Update index incrementally from git diff:
+  - `bun run analyze:ts:changed`
+- Build token-budgeted AI context markdown:
+  - `bun run context:ts --task friends-book CSV import bug --budget 3200 --max-files 18`
+
+Outputs:
+
+- `.cache/ts-morph-index.json`: machine index (`imports/exports/declarations/dependsOn/usedBy`)
+- `.cache/llm-context.md`: compressed context for LLM input
+
+Recommended flow:
+
+1. `bun run analyze:ts` once initially.
+2. `bun run analyze:ts:changed` while developing.
+3. `bun run context:ts --task <your task> --budget <token budget>` before asking AI.
+
+Notes:
+
+- `--budget` is approximate (char-based estimation), not exact model tokens.
+- If file selection is weak, add clearer keywords in `--task` (feature name, file/module names).
+- If the index is missing or stale, regenerate with `bun run analyze:ts`.
+
 ## Critical Implementation Notes
 
 ### Tile Overlay
@@ -151,8 +179,10 @@ When content needs computed data from inject (stats/pixel color), use helpers in
 - 不明点、実装上の問題点があれば、報告すること
 - モバイルモードになった時 overflow-y: auto　これを消す(mobileだとこれがあるとdragできなくなる)
 - 実装後、コードをチェックし、パフォーマンスやバグになりそうな注意点を確認・報告する
-- 実装後、候補になる commit message を表示する
+- 実装後、候補になる commit message を1つ表示する
 - コーディング前の方針を決める際は、自然言語で抽象的に設計する
+
+- 検索はrgを利用
 
 # 注意点
 
