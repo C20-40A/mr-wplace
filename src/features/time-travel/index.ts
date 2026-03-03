@@ -134,20 +134,20 @@ export const initTimeTravel = (): void => {
       createElement: createMapPinButtons,
     },
     // フォールバック: position modalにボタン配置
-    {
-      id: "timetravel-btn-fallback",
-      getTargetElement: findPositionModal,
-      createElement: (container) => {
-        // マップピングループが既に存在する場合はスキップ
-        if (document.querySelector("#map-pin-button-group")) return;
+    // {
+    //   id: "timetravel-btn-fallback",
+    //   getTargetElement: findPositionModal,
+    //   createElement: (container) => {
+    //     // マップピングループが既に存在する場合はスキップ
+    //     if (document.querySelector("#map-pin-button-group")) return;
 
-        const button = createTimeTravelButton();
-        button.id = "timetravel-btn-fallback";
-        button.addEventListener("click", () => showCurrentPosition());
-        container.prepend(button);
-        console.log("🧑‍🎨 : Fallback button created in position modal");
-      },
-    },
+    //     const button = createTimeTravelButton();
+    //     button.id = "timetravel-btn-fallback";
+    //     button.addEventListener("click", () => showCurrentPosition());
+    //     container.prepend(button);
+    //     console.log("🧑‍🎨 : Fallback button created in position modal");
+    //   },
+    // },
   ];
 
   setupElementObserver(buttonConfigs);

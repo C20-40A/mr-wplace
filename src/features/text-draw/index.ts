@@ -29,11 +29,15 @@ const showModal = (): void => {
     textInstances,
     (key: string, direction: "up" | "down" | "left" | "right") =>
       handleMoveText(key, direction),
-    (key: string) => handleDeleteText(key)
+    (key: string) => handleDeleteText(key),
   );
 };
 
-const handleDrawText = async (text: string, font: string, colorId: number): Promise<void> => {
+const handleDrawText = async (
+  text: string,
+  font: string,
+  colorId: number,
+): Promise<void> => {
   const instance = await drawText(text, font, colorId);
   if (!instance) return;
 
@@ -43,7 +47,7 @@ const handleDrawText = async (text: string, font: string, colorId: number): Prom
 
 const handleMoveText = async (
   key: string,
-  direction: "up" | "down" | "left" | "right"
+  direction: "up" | "down" | "left" | "right",
 ): Promise<void> => {
   const instance = textInstances.find((i) => i.key === key);
   if (!instance) return;
@@ -100,20 +104,20 @@ const init = async (): Promise<void> => {
       createElement: createMapPinButtons,
     },
     // フォールバック: position modalにボタン配置
-    {
-      id: "text-draw-fallback-btn",
-      getTargetElement: findPositionModal,
-      createElement: (container) => {
-        // マップピングループが既に存在する場合はスキップ
-        if (document.querySelector("#map-pin-button-group")) return;
+    // {
+    //   id: "text-draw-fallback-btn",
+    //   getTargetElement: findPositionModal,
+    //   createElement: (container) => {
+    //     // マップピングループが既に存在する場合はスキップ
+    //     if (document.querySelector("#map-pin-button-group")) return;
 
-        const button = createTextInputButton();
-        button.id = "text-draw-fallback-btn";
-        button.addEventListener("click", () => showModal());
-        container.prepend(button);
-        console.log("🧑‍🎨 : Fallback button created in position modal");
-      },
-    },
+    //     const button = createTextInputButton();
+    //     button.id = "text-draw-fallback-btn";
+    //     button.addEventListener("click", () => showModal());
+    //     container.prepend(button);
+    //     console.log("🧑‍🎨 : Fallback button created in position modal");
+    //   },
+    // },
   ];
 
   setupElementObserver(buttonConfigs);
