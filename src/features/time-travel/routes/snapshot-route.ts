@@ -89,6 +89,13 @@ export class SnapshotRoute extends BaseSnapshotRoute {
         <button id="wps-save-current-snapshot-btn" class="btn btn-sm btn-primary" style="flex: 1;">
           ${t`${"save_current_snapshot"}`}
         </button>
+        <button id="wps-open-tmp-tile-board-btn" class="btn btn-sm btn-outline" style="padding: 8px;" title="Open tmp tile board">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+            <path fill-rule="evenodd" d="M3 4.5A1.5 1.5 0 014.5 3h2.379a1.5 1.5 0 011.06.44l.621.621a1.5 1.5 0 001.06.439H19.5A1.5 1.5 0 0121 6v1.5a.75.75 0 01-1.5 0V6H9.621a3 3 0 01-2.121-.879l-.621-.621H4.5V18h5.25a.75.75 0 010 1.5H4.5A1.5 1.5 0 013 18V4.5z" clip-rule="evenodd" />
+            <path fill-rule="evenodd" d="M15.75 10.5a.75.75 0 011.5 0v4.19l1.72-1.72a.75.75 0 111.06 1.06l-3 3a.75.75 0 01-1.06 0l-3-3a.75.75 0 111.06-1.06l1.72 1.72V10.5z" clip-rule="evenodd" />
+            <path d="M12 19.5a.75.75 0 000 1.5h9a.75.75 0 000-1.5h-9z" />
+          </svg>
+        </button>
         <button id="wps-download-current-tile-btn" class="btn btn-sm btn-outline" style="padding: 8px;" title="Download current tile image" disabled>
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
             <path fill-rule="evenodd" d="M12 2.25a.75.75 0 01.75.75v11.69l3.22-3.22a.75.75 0 111.06 1.06l-4.5 4.5a.75.75 0 01-1.06 0l-4.5-4.5a.75.75 0 111.06-1.06l3.22 3.22V3a.75.75 0 01.75-.75zm-9 13.5a.75.75 0 01.75.75v2.25a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5V16.5a.75.75 0 011.5 0v2.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V16.5a.75.75 0 01.75-.75z" clip-rule="evenodd" />
@@ -240,6 +247,12 @@ export class SnapshotRoute extends BaseSnapshotRoute {
       }
 
       // ダウンロードボタンのイベント
+      container
+        .querySelector("#wps-open-tmp-tile-board-btn")
+        ?.addEventListener("click", () => {
+          this.router?.navigate("tmp-tile-board");
+        });
+
       container
         .querySelector("#wps-download-current-tile-btn")
         ?.addEventListener("click", async () => {
