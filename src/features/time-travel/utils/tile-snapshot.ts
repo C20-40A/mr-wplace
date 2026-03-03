@@ -3,6 +3,7 @@ import {
   saveSnapshotToInject,
   getSnapshotDataUrl,
 } from "@/utils/inject-bridge";
+import { MAX_TMP_TILE_TRACK_SIZE } from "@/constants/time-travel";
 import { normalizeTileCoordinate } from "./tile-coordinate";
 
 /**
@@ -33,8 +34,6 @@ const dataUrlToBlob = (dataUrl: string): Blob => {
 };
 
 export class TileSnapshot {
-  private static readonly MAX_TMP_TILE_CACHE_SIZE = 64;
-
   // インメモリキャッシュ（永続化しない）
   private tmpTileCache = new Map<string, Blob>();
 
@@ -50,7 +49,7 @@ export class TileSnapshot {
 
     // Keep a bounded LRU cache to avoid unbounded memory growth while panning.
     if (!this.tmpTileCache.has(key))
-      this.evictOldestTmpTileIfNeeded(TileSnapshot.MAX_TMP_TILE_CACHE_SIZE);
+      this.evictOldestTmpTileIfNeeded(MAX_TMP_TILE_TRACK_SIZE);
 
     this.tmpTileCache.set(key, blob);
   }
