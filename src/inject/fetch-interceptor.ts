@@ -2,6 +2,7 @@ import {
   drawOverlayLayersOnTile,
   checkStateChanged,
   getCachedBlob,
+  getOriginalBlob,
   setCachedBlob,
   invalidateTile,
   setOriginalBlob,
@@ -195,6 +196,21 @@ const handleTileRequest = async (
   const dataSaver = window.mrWplaceDataSaver;
   const dataSaverEnabled = dataSaver?.enabled === true;
   const frontOperational = isFrontTileLayerOperational();
+  const snapshotCaptureEnabled = window.mrWplaceSnapshotCaptureEnabled === true;
+  let reusableProcessedBlob: Blob | null = null;
+
+  const sendTmpSnapshot = (tileBlob: Blob): void => {
+    if (!snapshotCaptureEnabled) return;
+    window.postMessage(
+      {
+        source: "wplace-studio-snapshot",
+        tileBlob,
+        tileX,
+        tileY,
+      },
+      "*"
+    );
+  };
 
   // In front-layer mode, background tiles should stay raw (no processed-tile reuse).
   // Skip data-saver cache lookup entirely to avoid unnecessary work.
@@ -222,12 +238,28 @@ const handleTileRequest = async (
     }
 
     // data saver ON + cache exists -> Return cached processed tile
+    // Snapshot capture ON のときは tmp 更新を優先し、
+    // original blob が無ければ network fetch まで進んで補完する。
     if (dataSaverEnabled && cacheExists && cachedBlob) {
-      return new Response(cachedBlob, {
-        status: 200,
-        statusText: "OK (Cached Processed)",
-        headers: new Headers({ "Content-Type": "image/png" }),
-      });
+      if (snapshotCaptureEnabled) {
+        const cachedOriginalBlob = getOriginalBlob(cacheKey);
+        if (cachedOriginalBlob) {
+          sendTmpSnapshot(cachedOriginalBlob);
+          return new Response(cachedBlob, {
+            status: 200,
+            statusText: "OK (Cached Processed)",
+            headers: new Headers({ "Content-Type": "image/png" }),
+          });
+        }
+
+        reusableProcessedBlob = cachedBlob;
+      } else {
+        return new Response(cachedBlob, {
+          status: 200,
+          statusText: "OK (Cached Processed)",
+          headers: new Headers({ "Content-Type": "image/png" }),
+        });
+      }
     }
   }
 
@@ -245,7 +277,6 @@ const handleTileRequest = async (
   const lastModified = response.headers.get("last-modified");
   const prevLastModified = getOriginalLastModified(cacheKey);
   const backgroundChanged = !lastModified || prevLastModified !== lastModified;
-  const snapshotCaptureEnabled = window.mrWplaceSnapshotCaptureEnabled === true;
 
   // Fast path for front-layer mode:
   // - Background didn't change (Last-Modified unchanged)
@@ -265,14 +296,28 @@ const handleTileRequest = async (
   if (!frontOperational && lastModified) {
     const lastModifiedCachedBlob = getCachedBlob(cacheKey, lastModified);
     if (lastModifiedCachedBlob) {
-      console.log(
-        `🧑‍🎨 : LastModified cache hit for tile (${tileX},${tileY}), skipping processing`
-      );
-      return new Response(lastModifiedCachedBlob, {
-        headers: response.headers,
-        status: response.status,
-        statusText: response.statusText,
-      });
+      if (snapshotCaptureEnabled) {
+        const cachedOriginalBlob = getOriginalBlob(cacheKey);
+        if (cachedOriginalBlob) {
+          sendTmpSnapshot(cachedOriginalBlob);
+          return new Response(lastModifiedCachedBlob, {
+            headers: response.headers,
+            status: response.status,
+            statusText: response.statusText,
+          });
+        }
+
+        reusableProcessedBlob = lastModifiedCachedBlob;
+      } else {
+        console.log(
+          `🧑‍🎨 : LastModified cache hit for tile (${tileX},${tileY}), skipping processing`
+        );
+        return new Response(lastModifiedCachedBlob, {
+          headers: response.headers,
+          status: response.status,
+          statusText: response.statusText,
+        });
+      }
     }
   }
 
@@ -287,17 +332,7 @@ const handleTileRequest = async (
   }
 
   // Save snapshot for time travel feature (when enabled)
-  if (window.mrWplaceSnapshotCaptureEnabled) {
-    window.postMessage(
-      {
-        source: "wplace-studio-snapshot",
-        tileBlob: originalTileBlob,
-        tileX: tileX,
-        tileY: tileY,
-      },
-      "*"
-    );
-  }
+  sendTmpSnapshot(originalTileBlob);
 
   // When front tile layer is enabled, skip overlay compositing on background tiles.
   // Overlays are rendered on the independent front layer instead.
@@ -307,6 +342,20 @@ const handleTileRequest = async (
       "*"
     );
     return new Response(originalTileBlob, {
+      headers: response.headers,
+      status: response.status,
+      statusText: response.statusText,
+    });
+  }
+
+  // Snapshot capture ON + cache hit で network fetch まで進んだケース:
+  // tmp 更新用に original を確保したら、重い再描画は避けて既存processedを返す。
+  if (reusableProcessedBlob) {
+    window.postMessage(
+      { source: "wplace-studio-drawing-complete", tileX, tileY },
+      "*"
+    );
+    return new Response(reusableProcessedBlob, {
       headers: response.headers,
       status: response.status,
       statusText: response.statusText,
