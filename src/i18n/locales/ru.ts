@@ -545,4 +545,5 @@ export const ruTranslations = {
   map_filter_area_group_not_enough: "Недостаточно областей для объединения",
   map_filter_area_group_name_placeholder: "Название группы (необязательно)",
   selected_color_only_mark: "Отмечать только выбранный цвет",
+  tmp_tile_board_data_notice: "Показывает только уже полученные данные тайлов. Чтобы снизить нагрузку на сервер, новые запросы не отправляются.",
 };

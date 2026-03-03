@@ -539,4 +539,5 @@ export const viTranslations = {
   map_filter_area_group_not_enough: "Không đủ vùng để gộp",
   map_filter_area_group_name_placeholder: "Tên nhóm (tùy chọn)",
   selected_color_only_mark: "Chỉ đánh dấu màu đã chọn",
+  tmp_tile_board_data_notice: "Chi hien thi du lieu tile da nhan. De giam tai may chu, khong gui them yeu cau moi.",
 };

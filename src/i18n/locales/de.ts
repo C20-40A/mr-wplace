@@ -560,4 +560,5 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   hint_image_detail_edit_title: "Klicke auf den Bildtitel, um ihn zu bearbeiten",
   popup_close_button_big: "Schließen-Schaltfläche vergrößern",
   selected_color_only_mark: "Nur ausgewählte Farbe markieren",
+  tmp_tile_board_data_notice: "Zeigt nur bereits empfangene Kacheldaten. Zur Reduzierung der Serverlast werden keine neuen Anfragen gesendet.",
 };

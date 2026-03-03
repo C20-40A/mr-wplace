@@ -556,4 +556,5 @@ export const frTranslations = {
   map_filter_area_group_not_enough: "Pas assez de zones pour fusionner",
   map_filter_area_group_name_placeholder: "Nom du groupe (optionnel)",
   selected_color_only_mark: "Marquer uniquement la couleur sélectionnée",
+  tmp_tile_board_data_notice: "Affiche uniquement les donnees de tuiles deja recues. Pour reduire la charge du serveur, aucune nouvelle requete n'est envoyee.",
 };

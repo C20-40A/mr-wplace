@@ -42,7 +42,7 @@ export class TmpTileBoardRoute {
     this.clearEmptyPollTimer();
 
     container.innerHTML = `
-      <div id="wps-tmp-tile-board" style="display: flex; flex-direction: column; gap: 0.75rem; min-height: 320px;">
+      <div id="wps-tmp-tile-board" style="display: flex; flex-direction: column; gap: 0.75rem; min-height: 320px; position: relative; padding-bottom: 1.25rem;">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;">
           <div id="wps-tmp-tile-summary" class="text-sm text-base-content/70">${t`${"loading"}`}</div>
           <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -54,6 +54,7 @@ export class TmpTileBoardRoute {
           <div id="wps-tmp-tile-grid" style="display: grid; gap: 2px; justify-items: center;"></div>
           <div id="wps-tmp-tile-empty" class="text-sm text-base-content/60 text-center p-4" style="display: none;"></div>
         </div>
+        <div class="text-xs text-base-content/60" style="position: absolute; right: 0; bottom: 0; text-align: right;">${t`${"tmp_tile_board_data_notice"}`}</div>
       </div>
     `;
 

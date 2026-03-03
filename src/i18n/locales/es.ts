@@ -557,4 +557,5 @@ export const esTranslations = {
   map_filter_area_group_not_enough: "No hay suficientes áreas para combinar",
   map_filter_area_group_name_placeholder: "Nombre del grupo (opcional)",
   selected_color_only_mark: "Marcar solo color seleccionado",
+  tmp_tile_board_data_notice: "Muestra solo datos de tiles ya recibidos. Para reducir la carga del servidor, no se envian nuevas solicitudes.",
 };

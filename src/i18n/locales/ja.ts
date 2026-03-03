@@ -576,4 +576,5 @@ export const jaTranslations = {
   map_filter_area_group_not_enough: "合体可能なエリアが不足しています",
   map_filter_area_group_name_placeholder: "グループ名 (任意)",
   selected_color_only_mark: "選択中の色のみマーク",
+  tmp_tile_board_data_notice: "受信済みタイルデータのみを表示します。サーバー負荷軽減のため、新規リクエストは送信しません。",
 };
