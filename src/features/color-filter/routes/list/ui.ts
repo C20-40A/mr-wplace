@@ -24,6 +24,7 @@ import {
   setFrontTileLayer,
 } from "@/states/front-tile-layer";
 import { showFeatureHint } from "@/features/feature-hints";
+import { isMobileViewport } from "@/constants/breakpoints";
 
 let colorPalette: ColorPalette | null = null;
 let lastSortOrder: SortOrder = "default";
@@ -95,7 +96,7 @@ export const renderColorFilters = async (
   }
 
   // ColorPaletteコンポーネント表示
-  const isMobile = window.innerWidth < 640;
+  const isMobile = isMobileViewport();
   colorPalette = new ColorPalette(container, {
     selectedColorIds: currentSelectedColors,
     onChange: async (colorIds) => {

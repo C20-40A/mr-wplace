@@ -1,4 +1,5 @@
 import { findPaintPixelControls } from "@/constants/selectors";
+import { isMobileViewport } from "@/constants/breakpoints";
 import {
   loadPaintModeStyleFromStorage,
   getPaintModeStyle,
@@ -11,9 +12,6 @@ import {
  *
  * popupからenable/disableを切り替え可能
  */
-
-/** モバイル判定の閾値（sm breakpoint） */
-const MOBILE_BREAKPOINT = 640;
 
 /** 非表示にするマップ上のFABボタンID一覧 */
 const MAP_FAB_IDS = [
@@ -42,8 +40,6 @@ interface StyleRule {
   /** モバイルのみ適用するか */
   mobileOnly?: boolean;
 }
-
-const isMobile = () => window.innerWidth < MOBILE_BREAKPOINT;
 
 /** findPaintPixelControls() 内の .flex.grow.items-center.gap-1.5 の gap を除去するルール */
 const removeGapRule: StyleRule = {
@@ -109,7 +105,7 @@ export class PaintModeStyle {
     this.active = true;
 
     for (const rule of rules) {
-      if (rule.mobileOnly && !isMobile()) continue;
+      if (rule.mobileOnly && !isMobileViewport()) continue;
       rule.apply(controls);
     }
   }
@@ -118,7 +114,7 @@ export class PaintModeStyle {
     this.active = false;
 
     for (const rule of rules) {
-      if (rule.mobileOnly && !isMobile()) continue;
+      if (rule.mobileOnly && !isMobileViewport()) continue;
       rule.restore();
     }
   }

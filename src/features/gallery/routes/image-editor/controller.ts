@@ -1,5 +1,6 @@
 import { t } from "@/i18n/manager";
 import { colorpalette, TRANSPARENT_COLOR_ID } from "@/constants/colors";
+import { isDesktopViewport } from "@/constants/breakpoints";
 import { ImageInspector } from "@/components/image-inspector";
 import { ColorPalette } from "@/components/color-palette";
 import { DrawPosition, GalleryItem } from "@/states/galleryStorage";
@@ -631,7 +632,7 @@ export class EditorController {
           });
         }
 
-        const isMobile = window.innerWidth < 1024;
+        const isMobile = !isDesktopViewport();
         const colorPaletteContainer = isMobile
           ? (this.container.querySelector(
               "#wps-color-palette-container-mobile",

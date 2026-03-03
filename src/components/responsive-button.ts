@@ -1,3 +1,5 @@
+import { VIEWPORT_MEDIA_QUERIES } from "@/constants/breakpoints";
+
 /**
  * レスポンシブボタン作成
  * 小画面: アイコンのみ
@@ -43,7 +45,7 @@ export const createResponsiveButton = (
     "display: none; font-size: 0.875rem; margin-left: 0.25rem;";
 
   // レスポンシブ対応
-  const mediaQuery = window.matchMedia("(min-width: 640px)");
+  const mediaQuery = window.matchMedia(VIEWPORT_MEDIA_QUERIES.smUp);
   const updateResponsive = () => {
     const isLargeScreen = mediaQuery.matches;
     textElement.style.display = isLargeScreen ? "inline" : "none";

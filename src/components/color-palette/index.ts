@@ -2,6 +2,7 @@ import { colorpalette } from "../../constants/colors";
 import type { EnhancedMode } from "@/types/image";
 import { createEnhancedModeIcons } from "../../assets/enhanced-mode-icons";
 import { t } from "../../i18n/manager";
+import { isMobileViewport } from "@/constants/breakpoints";
 import type { ColorPaletteOptions, SortOrder } from "./types";
 import type { ComputeDevice } from "./storage";
 import {
@@ -264,7 +265,7 @@ export class ColorPalette {
 
         if (!isVisible) {
           // レスポンシブ対応
-          const isMobile = window.innerWidth < 640;
+          const isMobile = isMobileViewport();
           const grid = dropdown.querySelector(
             ".enhanced-mode-grid",
           ) as HTMLElement;

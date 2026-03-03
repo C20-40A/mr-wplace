@@ -6,6 +6,7 @@ import { Toast } from "@/components/toast";
 import { di } from "@/core/di";
 import { gotoPosition } from "@/utils/position";
 import { tilePixelToLatLng } from "@/utils/coordinate";
+import { isTabletOrBelowViewport } from "@/constants/breakpoints";
 import {
   sendSnapshotsToInject,
   getSnapshotDataUrl,
@@ -27,7 +28,7 @@ export class SnapshotDetailRoute {
     }
 
     // モバイル判定
-    this.isMobile = window.innerWidth <= 768;
+    this.isMobile = isTabletOrBelowViewport();
 
     container.innerHTML = t`
       <div style="height: 75vh; display: flex; flex-direction: column;">

@@ -5,6 +5,7 @@ import { createDropzone } from "./components/create-dropzone";
 import { createImageDisplayArea } from "./components/create-image-display-area";
 import { injectImageEditorStyles } from "./components/inject-styles";
 import { TransparencyDialog } from "./components/transparency-dialog";
+import { isDesktopViewport } from "@/constants/breakpoints";
 
 export interface ImageEditorCallbacks {
   onFileHandle: (file: File) => void;
@@ -393,7 +394,7 @@ export class ImageEditorUI {
 
   private setupResponsive(): void {
     const updateLayout = () => {
-      const isDesktop = window.innerWidth >= 1024;
+      const isDesktop = isDesktopViewport();
       if (isDesktop) {
         this.container.classList.add("desktop");
         this.container.classList.remove("mobile");
