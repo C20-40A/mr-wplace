@@ -16,15 +16,28 @@ interface TileBounds {
   maxY: number;
 }
 
+interface TileCoordinate {
+  tileX: number;
+  tileY: number;
+}
+
 export class TmpTileBoardRoute {
   private static readonly TILE_PREVIEW_SIZE = 96;
+  private static readonly CURRENT_TILE_BORDER_COLOR = "rgb(255 215 244)";
+  private static readonly NEARBY_TILE_RADIUS = 8;
+  private static readonly EMPTY_POLL_INTERVAL_MS = 1500;
 
   private selectedTiles: Set<string> = new Set();
   private tileMap: Map<string, TmpTileEntry> = new Map();
   private bounds: TileBounds | null = null;
+  private currentTile: TileCoordinate | null = null;
   private tileObjectUrls: string[] = [];
+  private emptyPollTimer: number | null = null;
+  private renderRequestId = 0;
 
   render(container: HTMLElement, _router: TimeTravelRouter): void {
+    this.clearEmptyPollTimer();
+
     container.innerHTML = `
       <div id="wps-tmp-tile-board" style="display: flex; flex-direction: column; gap: 0.75rem; min-height: 320px;">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;">
@@ -73,6 +86,7 @@ export class TmpTileBoardRoute {
   }
 
   private async renderBoard(container: HTMLElement): Promise<void> {
+    const requestId = ++this.renderRequestId;
     this.clearObjectUrls();
 
     const summary = container.querySelector(
@@ -87,26 +101,44 @@ export class TmpTileBoardRoute {
 
     if (!summary || !grid || !empty) return;
 
+    this.setLoadingState(container, true);
+    empty.style.display = "block";
+    empty.innerHTML = `<div class="text-xs opacity-70">Loading nearby tiles...</div>`;
     summary.textContent = t`${"loading"}`;
 
     const tmpTiles = await this.collectTmpTiles();
+    if (requestId !== this.renderRequestId) return;
+
+    this.setLoadingState(container, false);
     this.tileMap = new Map(
       tmpTiles.map((tile) => [`${tile.tileX}_${tile.tileY}`, tile]),
     );
 
     if (tmpTiles.length === 0) {
       this.selectedTiles.clear();
-      this.bounds = null;
-      grid.innerHTML = "";
+      this.bounds = this.currentTile
+        ? {
+            minX: this.currentTile.tileX,
+            maxX: this.currentTile.tileX,
+            minY: this.currentTile.tileY,
+            maxY: this.currentTile.tileY,
+          }
+        : null;
+      this.renderTileGrid(grid);
       empty.style.display = "block";
-      empty.textContent = t`${"no_items"}`;
-      summary.textContent = "Tmp tiles: 0";
+      empty.innerHTML = `<div class="text-xs opacity-70">Waiting for nearby tile data...</div>`;
+      this.updateSummary(summary);
       this.updateSaveButtonState(container);
+      this.scheduleEmptyPoll(container);
       return;
     }
 
     const xs = tmpTiles.map((tile) => tile.tileX);
     const ys = tmpTiles.map((tile) => tile.tileY);
+    if (this.currentTile) {
+      xs.push(this.currentTile.tileX);
+      ys.push(this.currentTile.tileY);
+    }
     this.bounds = {
       minX: Math.min(...xs),
       maxX: Math.max(...xs),
@@ -122,6 +154,7 @@ export class TmpTileBoardRoute {
     empty.style.display = "none";
     this.updateSummary(summary);
     this.updateSaveButtonState(container);
+    this.clearEmptyPollTimer();
   }
 
   private renderTileGrid(grid: HTMLElement): void {
@@ -140,10 +173,15 @@ export class TmpTileBoardRoute {
       for (let x = minX; x <= maxX; x++) {
         const key = `${x}_${y}`;
         const tile = this.tileMap.get(key);
+        const isCurrentTile =
+          this.currentTile?.tileX === x && this.currentTile?.tileY === y;
 
         if (!tile) {
+          const emptyBorderColor = isCurrentTile
+            ? TmpTileBoardRoute.CURRENT_TILE_BORDER_COLOR
+            : "#d1d5db";
           grid.innerHTML += `
-            <div style="width: ${TmpTileBoardRoute.TILE_PREVIEW_SIZE}px; height: ${TmpTileBoardRoute.TILE_PREVIEW_SIZE}px; border: 1px dashed #d1d5db; border-radius: 6px; opacity: 0.5;"></div>
+            <div style="width: ${TmpTileBoardRoute.TILE_PREVIEW_SIZE}px; height: ${TmpTileBoardRoute.TILE_PREVIEW_SIZE}px; border: 3px dashed ${emptyBorderColor}; border-radius: 6px; opacity: 0.5;"></div>
           `;
           continue;
         }
@@ -153,10 +191,12 @@ export class TmpTileBoardRoute {
         const isSelected = this.selectedTiles.has(key);
         const borderColor = isSelected
           ? "var(--color-accent, #00d3bb)"
+          : isCurrentTile
+            ? TmpTileBoardRoute.CURRENT_TILE_BORDER_COLOR
           : "#d1d5db";
 
         grid.innerHTML += `
-          <button class="wps-tmp-tile-cell" data-tile-key="${key}" style="width: ${TmpTileBoardRoute.TILE_PREVIEW_SIZE}px; height: ${TmpTileBoardRoute.TILE_PREVIEW_SIZE}px; border: 1px solid ${borderColor}; overflow: hidden; padding: 0; background: #fff;">
+          <button class="wps-tmp-tile-cell" data-tile-key="${key}" style="width: ${TmpTileBoardRoute.TILE_PREVIEW_SIZE}px; height: ${TmpTileBoardRoute.TILE_PREVIEW_SIZE}px; border: 3px solid ${borderColor}; overflow: hidden; padding: 0; background: #fff;">
             <img src="${objectUrl}" alt="${key}" style="display: block; width: ${TmpTileBoardRoute.TILE_PREVIEW_SIZE}px; height: ${TmpTileBoardRoute.TILE_PREVIEW_SIZE}px; image-rendering: pixelated;">
             <div style="font-size: 10px; line-height: 1.2; padding: 2px 4px; text-align: center;">${x},${y}</div>
           </button>
@@ -170,12 +210,18 @@ export class TmpTileBoardRoute {
     tileCell: HTMLElement,
     container: HTMLElement,
   ): void {
+    const [tileX, tileY] = key.split("_").map(Number);
+    const isCurrentTile =
+      this.currentTile?.tileX === tileX && this.currentTile?.tileY === tileY;
+
     if (this.selectedTiles.has(key)) {
       this.selectedTiles.delete(key);
-      tileCell.style.borderColor = "#d1d5db";
+      tileCell.style.borderColor = isCurrentTile
+        ? TmpTileBoardRoute.CURRENT_TILE_BORDER_COLOR
+        : "#d1d5db";
     } else {
       this.selectedTiles.add(key);
-      tileCell.style.borderColor = "var(--color-primary, #3b82f6)";
+      tileCell.style.borderColor = "var(--color-accent, #00d3bb)";
     }
 
     const summary = container.querySelector(
@@ -187,13 +233,19 @@ export class TmpTileBoardRoute {
 
   private updateSummary(summary: HTMLElement): void {
     if (!this.bounds) {
-      summary.textContent = "Tmp tiles: 0";
+      const currentTileText = this.currentTile
+        ? ` | Current: ${this.currentTile.tileX},${this.currentTile.tileY}`
+        : " | Current: n/a";
+      summary.textContent = `Tmp tiles: 0${currentTileText}`;
       return;
     }
 
     const cols = this.bounds.maxX - this.bounds.minX + 1;
     const rows = this.bounds.maxY - this.bounds.minY + 1;
-    summary.textContent = `Tmp tiles: ${this.tileMap.size} | ${cols}x${rows} | Selected: ${this.selectedTiles.size}`;
+    const currentTileText = this.currentTile
+      ? ` | Current: ${this.currentTile.tileX},${this.currentTile.tileY}`
+      : " | Current: n/a";
+    summary.textContent = `Tmp tiles: ${this.tileMap.size} | ${cols}x${rows} | Selected: ${this.selectedTiles.size}${currentTileText}`;
   }
 
   private updateSaveButtonState(container: HTMLElement): void {
@@ -269,13 +321,45 @@ export class TmpTileBoardRoute {
     this.tileObjectUrls = [];
   }
 
+  private setLoadingState(container: HTMLElement, isLoading: boolean): void {
+    const refreshBtn = container.querySelector(
+      "#wps-refresh-tmp-tile-board",
+    ) as HTMLButtonElement | null;
+    if (!refreshBtn) return;
+
+    refreshBtn.disabled = isLoading;
+    refreshBtn.textContent = isLoading ? "Loading..." : "Refresh";
+  }
+
+  private scheduleEmptyPoll(container: HTMLElement): void {
+    this.clearEmptyPollTimer();
+    this.emptyPollTimer = window.setTimeout(() => {
+      if (!document.body.contains(container)) {
+        this.clearEmptyPollTimer();
+        return;
+      }
+      this.renderBoard(container);
+    }, TmpTileBoardRoute.EMPTY_POLL_INTERVAL_MS);
+  }
+
+  private clearEmptyPollTimer(): void {
+    if (this.emptyPollTimer === null) return;
+    clearTimeout(this.emptyPollTimer);
+    this.emptyPollTimer = null;
+  }
+
   private async collectTmpTiles(): Promise<TmpTileEntry[]> {
     const tileSnapshot = window.mrWplace?.tileSnapshot;
-    if (!tileSnapshot) return [];
+    if (!tileSnapshot) {
+      this.currentTile = null;
+      return [];
+    }
 
     const currentTiles = Array.from(getCurrentTiles());
+    this.currentTile = this.pickCurrentTile(currentTiles);
+    const filteredTileKeys = this.filterNearbyTiles(currentTiles);
     const entries = await Promise.all(
-      currentTiles.map(async (key) => {
+      filteredTileKeys.map(async (key) => {
         const [tileX, tileY] = key.split(",").map(Number);
         if (!Number.isFinite(tileX) || !Number.isFinite(tileY)) return null;
 
@@ -292,5 +376,31 @@ export class TmpTileBoardRoute {
         if (a.tileY !== b.tileY) return a.tileY - b.tileY;
         return a.tileX - b.tileX;
       });
+  }
+
+  private pickCurrentTile(tileKeys: string[]): TileCoordinate | null {
+    const latestKey = tileKeys[tileKeys.length - 1];
+    if (!latestKey) return null;
+
+    const [tileX, tileY] = latestKey.split(",").map(Number);
+    if (!Number.isFinite(tileX) || !Number.isFinite(tileY)) return null;
+
+    return { tileX, tileY };
+  }
+
+  private filterNearbyTiles(tileKeys: string[]): string[] {
+    if (!this.currentTile) return tileKeys;
+
+    const { tileX: centerX, tileY: centerY } = this.currentTile;
+    const radius = TmpTileBoardRoute.NEARBY_TILE_RADIUS;
+
+    return tileKeys.filter((key) => {
+      const [tileX, tileY] = key.split(",").map(Number);
+      if (!Number.isFinite(tileX) || !Number.isFinite(tileY)) return false;
+
+      return (
+        Math.abs(tileX - centerX) <= radius && Math.abs(tileY - centerY) <= radius
+      );
+    });
   }
 }
