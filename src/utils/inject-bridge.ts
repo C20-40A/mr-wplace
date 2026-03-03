@@ -424,6 +424,49 @@ export const deleteSnapshotFromInject = async (id: string): Promise<boolean> => 
 };
 
 /**
+ * Get original tile image as dataUrl from inject side
+ * Uses in-memory cache first and backend fetch as fallback
+ */
+export const getOriginalTileDataUrl = async (
+  tileX: number,
+  tileY: number
+): Promise<string | null> => {
+  const requestId = generateRequestId();
+
+  return new Promise((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-response-original-tile" &&
+        event.data.requestId === requestId
+      ) {
+        clearTimeout(timeoutId);
+        window.removeEventListener("message", handler);
+        resolve(event.data.dataUrl || null);
+      }
+    };
+
+    window.addEventListener("message", handler);
+    window.postMessage(
+      {
+        source: "mr-wplace-request-original-tile",
+        requestId,
+        tileX,
+        tileY,
+      },
+      "*"
+    );
+
+    timeoutId = setTimeout(() => {
+      window.removeEventListener("message", handler);
+      console.warn("🧑‍🎨 : Get original tile timed out");
+      resolve(null);
+    }, 7000);
+  });
+};
+
+/**
  * Get map center coordinates from inject side
  * Returns null if map instance is not available
  */

@@ -11,6 +11,10 @@ import { Tutorial } from "@/features/tutorial";
 import { runtime } from "@/utils/browser-api";
 import { normalizeTileCoordinate } from "../utils/tile-coordinate";
 import { showFeatureHint } from "@/features/feature-hints";
+import {
+  getOriginalTileDataUrl,
+  getSnapshotDataUrl,
+} from "@/utils/inject-bridge";
 
 interface SnapshotRouteOptions {
   showSaveButton: boolean;
@@ -83,7 +87,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
         <button id="wps-save-current-snapshot-btn" class="btn btn-primary" style="flex: 1;">
           ${t`${"save_current_snapshot"}`}
         </button>
-        <button id="wps-download-current-tile-btn" class="btn btn-outline" style="padding: 8px;" title="Download current tile image">
+        <button id="wps-download-current-tile-btn" class="btn btn-outline" style="padding: 8px;" title="Download current tile image" disabled>
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
             <path fill-rule="evenodd" d="M12 2.25a.75.75 0 01.75.75v11.69l3.22-3.22a.75.75 0 111.06 1.06l-4.5 4.5a.75.75 0 01-1.06 0l-4.5-4.5a.75.75 0 111.06-1.06l3.22 3.22V3a.75.75 0 01.75-.75zm-9 13.5a.75.75 0 01.75.75v2.25a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5V16.5a.75.75 0 011.5 0v2.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V16.5a.75.75 0 01.75-.75z" clip-rule="evenodd" />
           </svg>
@@ -198,7 +202,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
         <div class="current-tile-container">
           <div id="current-tile-image-container" style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background-color: #f9fafb; min-height: 0;">
             <canvas id="wps-current-tile-canvas" style="max-width: 100%; max-height: 100%; object-fit: contain;"></canvas>
-            <div id="no-image-message" class="text-sm text-gray-500" style="display: none; position: absolute;">Tile image not loaded</div>
+            <div id="no-image-message" style="display: none; position: absolute; inset: 12px;"></div>
           </div>
           ${this.options.showSaveButton ? this.renderSaveButton() : ""}
         </div>
@@ -234,8 +238,8 @@ export class SnapshotRoute extends BaseSnapshotRoute {
       // ダウンロードボタンのイベント
       container
         .querySelector("#wps-download-current-tile-btn")
-        ?.addEventListener("click", () => {
-          this.downloadCurrentTile();
+        ?.addEventListener("click", async () => {
+          await this.downloadCurrentTile();
         });
     }
 
@@ -304,51 +308,45 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     if (this.currentTileX === undefined || this.currentTileY === undefined)
       return;
 
-    // 名称入力Modal表示
+    const tileSnapshot = window.mrWplace?.tileSnapshot;
+    if (!tileSnapshot) {
+      this.setNoImageState("Tile snapshot is not ready");
+      Toast.error("Tile snapshot is not available");
+      return;
+    }
+
     const name = await showNameInputModal(
       t`${"save_current_snapshot"}`,
       t`${"enter_snapshot_name"}`,
     );
-
-    // キャンセルされた場合は処理中断
     if (name === null) return;
 
-    const tileSnapshot = window.mrWplace?.tileSnapshot;
-    if (!tileSnapshot) throw new Error("TileSnapshot not found");
-
-    // Fallback: If tmp tile is not ready yet, capture from current canvas.
-    const tmpBlob = await tileSnapshot.getTmpTile(
-      this.currentTileX,
-      this.currentTileY,
-    );
-    if (!tmpBlob) {
-      const canvas = document.getElementById(
-        "wps-current-tile-canvas",
-      ) as HTMLCanvasElement | null;
-      const capturedBlob = await new Promise<Blob | null>((resolve) => {
-        if (!canvas || canvas.style.display === "none") {
-          resolve(null);
-          return;
-        }
-        canvas.toBlob((blob) => resolve(blob), "image/png");
-      });
-
-      if (capturedBlob) {
-        await tileSnapshot.saveTmpTile(
-          this.currentTileX,
-          this.currentTileY,
-          capturedBlob,
+    try {
+      const tmpReady = await this.ensureTmpTileAvailable();
+      if (!tmpReady) {
+        this.setNoImageState(
+          "No tile image available",
+          "Move map slightly or wait for refresh, then try again.",
         );
+        Toast.error("Tile image is not available yet");
+        return;
       }
-    }
 
-    const snapshotId = await tileSnapshot.saveSnapshot(
-      this.currentTileX,
-      this.currentTileY,
-      name === "" ? undefined : name,
-    );
-    Toast.success(`Snapshot saved: ${snapshotId}`);
-    await this.reloadSnapshots(container);
+      const snapshotId = await tileSnapshot.saveSnapshot(
+        this.currentTileX,
+        this.currentTileY,
+        name === "" ? undefined : name,
+      );
+
+      Toast.success(`Snapshot saved: ${snapshotId}`);
+      await Promise.all([
+        this.reloadSnapshots(container),
+        this.loadCurrentTileImage(),
+      ]);
+    } catch (error) {
+      console.error("🧑‍🎨 : Failed to save current snapshot:", error);
+      Toast.error("Failed to save snapshot");
+    }
   }
 
   private async gotoTilePosition(): Promise<void> {
@@ -362,22 +360,28 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     await gotoPosition({ lat, lng, zoom: 11 });
   }
 
-  private downloadCurrentTile(): void {
+  private async downloadCurrentTile(): Promise<void> {
     if (this.currentTileX === undefined || this.currentTileY === undefined) {
       Toast.error("Location unavailable");
       return;
     }
 
-    const canvas = document.getElementById(
+    let canvas = document.getElementById(
       "wps-current-tile-canvas",
-    ) as HTMLCanvasElement;
+    ) as HTMLCanvasElement | null;
+
+    if (!canvas || canvas.style.display === "none") {
+      await this.loadCurrentTileImage();
+      canvas = document.getElementById(
+        "wps-current-tile-canvas",
+      ) as HTMLCanvasElement | null;
+    }
 
     if (!canvas || canvas.style.display === "none") {
       Toast.error("Tile image not loaded");
       return;
     }
 
-    // Canvas をPNGとしてダウンロード
     canvas.toBlob((blob) => {
       if (!blob) {
         Toast.error("Failed to create image");
@@ -404,77 +408,212 @@ export class SnapshotRoute extends BaseSnapshotRoute {
   }
 
   private async loadCurrentTileImage(): Promise<void> {
+    this.setNoImageState("Loading tile image...");
+
+    if (this.currentTileX === undefined || this.currentTileY === undefined) {
+      this.setNoImageState(t`${"location_unavailable"}`);
+      return;
+    }
+
+    const tileSnapshot = window.mrWplace?.tileSnapshot;
+    if (!tileSnapshot) {
+      this.setNoImageState("Tile snapshot is not ready");
+      return;
+    }
+
+    try {
+      const preview = await this.resolveCurrentTileDataUrl();
+
+      if (!preview.dataUrl) {
+        this.setNoImageState(
+          "No tile image available",
+          "Move map slightly or wait for refresh, then save.",
+        );
+        return;
+      }
+
+      if (preview.source === "original") {
+        const fetchedBlob = await this.dataUrlToBlob(preview.dataUrl);
+        await tileSnapshot.saveTmpTile(
+          this.currentTileX,
+          this.currentTileY,
+          fetchedBlob,
+        );
+      }
+
+      await this.drawCurrentTileOnCanvas(preview.dataUrl);
+    } catch (error) {
+      console.error("🧑‍🎨 : Failed to load current tile image:", error);
+      this.setNoImageState("Failed to load tile image");
+    }
+  }
+
+  private setDownloadButtonEnabled(enabled: boolean): void {
+    const downloadBtn = document.getElementById(
+      "wps-download-current-tile-btn",
+    ) as HTMLButtonElement | null;
+    if (!downloadBtn) return;
+    downloadBtn.disabled = !enabled;
+  }
+
+  private setNoImageState(primary: string, secondary?: string): void {
     const canvas = document.getElementById(
       "wps-current-tile-canvas",
-    ) as HTMLCanvasElement;
-    const noImageMessage = document.getElementById("no-image-message");
+    ) as HTMLCanvasElement | null;
+    const noImageMessage = document.getElementById(
+      "no-image-message",
+    ) as HTMLDivElement | null;
 
     if (!canvas || !noImageMessage) return;
 
-    // 現在位置がない場合
-    if (this.currentTileX === undefined || this.currentTileY === undefined) {
-      canvas.style.display = "none";
-      noImageMessage.textContent = t`${"location_unavailable"}`;
-      noImageMessage.style.display = "block";
-      return;
-    }
+    canvas.style.display = "none";
+    noImageMessage.innerHTML = `
+      <div style="height: 100%; min-height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; padding: 12px; border: 1px dashed #d1d5db; border-radius: 8px; background: #ffffff; text-align: center;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#9ca3af" style="width: 28px; height: 28px;">
+          <path fill-rule="evenodd" d="M1.5 6A2.25 2.25 0 013.75 3.75h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zm2.25-.75A.75.75 0 003 6v12c0 .414.336.75.75.75h16.5A.75.75 0 0021 18V6a.75.75 0 00-.75-.75H3.75z" clip-rule="evenodd" />
+          <path d="M7.53 8.47a.75.75 0 011.06 0l2.16 2.16 3.66-3.66a.75.75 0 011.06 1.06l-4.19 4.19a.75.75 0 01-1.06 0L7.53 9.53a.75.75 0 010-1.06z" />
+          <path d="M6 16.5a.75.75 0 000 1.5h12a.75.75 0 000-1.5H6z" />
+        </svg>
+        <div style="font-size: 0.875rem; color: #4b5563; font-weight: 600;">${primary}</div>
+        ${
+          secondary
+            ? `<div style="font-size: 0.75rem; color: #6b7280;">${secondary}</div>`
+            : ""
+        }
+      </div>
+    `;
+    noImageMessage.style.display = "block";
+    this.setDownloadButtonEnabled(false);
+  }
 
-    // tmpタイルをインメモリキャッシュから取得
+  private async drawCurrentTileOnCanvas(dataUrl: string): Promise<void> {
+    const canvas = document.getElementById(
+      "wps-current-tile-canvas",
+    ) as HTMLCanvasElement | null;
+    const noImageMessage = document.getElementById("no-image-message");
+    if (!canvas || !noImageMessage) return;
+
+    await new Promise<void>((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) ctx.drawImage(img, 0, 0);
+        canvas.style.display = "block";
+        noImageMessage.style.display = "none";
+        this.setDownloadButtonEnabled(true);
+        resolve();
+      };
+      img.onerror = () => {
+        this.setNoImageState("Failed to render tile image");
+        resolve();
+      };
+      img.src = dataUrl;
+    });
+  }
+
+  private async resolveCurrentTileDataUrl(): Promise<{
+    dataUrl: string | null;
+    source: "tmp" | "snapshot" | "original" | "none";
+  }> {
+    if (this.currentTileX === undefined || this.currentTileY === undefined)
+      return { dataUrl: null, source: "none" };
+
     const tileSnapshot = window.mrWplace?.tileSnapshot;
-    if (!tileSnapshot) {
-      canvas.style.display = "none";
-      noImageMessage.textContent = "Tile snapshot not available";
-      noImageMessage.style.display = "block";
-      return;
-    }
 
-    const tmpBlob = await tileSnapshot.getTmpTile(
-      this.currentTileX,
-      this.currentTileY,
-    );
-
-    let dataUrl: string | null = null;
-
-    if (tmpBlob) {
-      // Blob から画像表示
-      dataUrl = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(tmpBlob);
-      });
-    } else {
-      // tmpタイルがない場合は、最新のスナップショットを取得
-      const snapshots = await TimeTravelStorage.getSnapshotsForTile(
+    if (tileSnapshot) {
+      const tmpBlob = await tileSnapshot.getTmpTile(
         this.currentTileX,
         this.currentTileY,
       );
-
-      if (snapshots.length > 0) {
-        // 最新のスナップショット（先頭）を取得
-        const latestSnapshot = snapshots[0];
-        const { getSnapshotDataUrl } = await import("@/utils/inject-bridge");
-        const snapshotId = latestSnapshot.fullKey.replace("tile_snapshot_", "");
-        dataUrl = await getSnapshotDataUrl(snapshotId);
+      if (tmpBlob) {
+        return {
+          dataUrl: await this.blobToDataUrl(tmpBlob),
+          source: "tmp",
+        };
       }
     }
 
-    if (!dataUrl) {
-      canvas.style.display = "none";
-      noImageMessage.textContent = "Tile image not loaded";
-      noImageMessage.style.display = "block";
-      return;
+    const snapshots = await TimeTravelStorage.getSnapshotsForTile(
+      this.currentTileX,
+      this.currentTileY,
+    );
+    if (snapshots.length > 0) {
+      const latestSnapshot = snapshots[0];
+      const snapshotId = latestSnapshot.fullKey.replace("tile_snapshot_", "");
+      const snapshotDataUrl = await getSnapshotDataUrl(snapshotId);
+      if (snapshotDataUrl) {
+        return { dataUrl: snapshotDataUrl, source: "snapshot" };
+      }
     }
 
-    const img = new Image();
-    img.onload = () => {
-      // 元画像サイズでcanvas設定
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(img, 0, 0);
-      canvas.style.display = "block";
-      noImageMessage.style.display = "none";
-    };
-    img.src = dataUrl;
+    const originalTileDataUrl = await getOriginalTileDataUrl(
+      this.currentTileX,
+      this.currentTileY,
+    );
+    if (originalTileDataUrl) {
+      return { dataUrl: originalTileDataUrl, source: "original" };
+    }
+
+    return { dataUrl: null, source: "none" };
+  }
+
+  private async ensureTmpTileAvailable(): Promise<boolean> {
+    if (this.currentTileX === undefined || this.currentTileY === undefined)
+      return false;
+
+    const tileSnapshot = window.mrWplace?.tileSnapshot;
+    if (!tileSnapshot) return false;
+
+    const existingTmpBlob = await tileSnapshot.getTmpTile(
+      this.currentTileX,
+      this.currentTileY,
+    );
+    if (existingTmpBlob) return true;
+
+    const canvas = document.getElementById(
+      "wps-current-tile-canvas",
+    ) as HTMLCanvasElement | null;
+    const canvasBlob = await new Promise<Blob | null>((resolve) => {
+      if (!canvas || canvas.style.display === "none") {
+        resolve(null);
+        return;
+      }
+      canvas.toBlob((blob) => resolve(blob), "image/png");
+    });
+
+    if (canvasBlob) {
+      await tileSnapshot.saveTmpTile(
+        this.currentTileX,
+        this.currentTileY,
+        canvasBlob,
+      );
+      return true;
+    }
+
+    const originalTileDataUrl = await getOriginalTileDataUrl(
+      this.currentTileX,
+      this.currentTileY,
+    );
+    if (!originalTileDataUrl) return false;
+
+    const blob = await this.dataUrlToBlob(originalTileDataUrl);
+    await tileSnapshot.saveTmpTile(this.currentTileX, this.currentTileY, blob);
+    return true;
+  }
+
+  private blobToDataUrl(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  private async dataUrlToBlob(dataUrl: string): Promise<Blob> {
+    const response = await fetch(dataUrl);
+    return response.blob();
   }
 }

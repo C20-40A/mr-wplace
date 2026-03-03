@@ -45,6 +45,13 @@ let snapshotShareRoute: SnapshotShareRoute;
 let importSnapshotRoute: ImportSnapshotRoute;
 let tileMergeRoute: TileMergeRoute;
 let tileStatisticsRoute: TileStatisticsRoute;
+let snapshotCaptureEnabled = false;
+
+const setSnapshotCaptureEnabled = (enabled: boolean): void => {
+  if (snapshotCaptureEnabled === enabled) return;
+  snapshotCaptureEnabled = enabled;
+  sendSnapshotCaptureToInject(enabled);
+};
 
 // 既存の tile_tmp_* キーをクリーンアップ（一度だけ実行）
 // IMPORTANT: tile_tmp_* は完全に不要なレガシーデータで削除するだけ
@@ -77,7 +84,7 @@ export const initTimeTravel = (): void => {
   router = new TimeTravelRouter();
   ui = new TimeTravelUI(router);
   ui.setOnModalClosed(() => {
-    sendSnapshotCaptureToInject(false);
+    setSnapshotCaptureEnabled(false);
   });
   currentPositionRoute = new SnapshotRoute({ showSaveButton: true });
   tileListRoute = new TileListRoute();
@@ -178,15 +185,27 @@ const renderCurrentRoute = (route: TimeTravelRoute): void => {
 
 // 外部インターフェース：FABはタイル一覧からスタート
 export const show = (): void => {
-  sendSnapshotCaptureToInject(true);
+  if (ui.isOpen()) {
+    setSnapshotCaptureEnabled(true);
+    router.initialize("tile-list");
+    return;
+  }
+
   ui.showModal(); // モーダルを先に作成
+  setSnapshotCaptureEnabled(true);
   router.initialize("tile-list");
 };
 
 // 元のボタン用：現在位置のみ表示
 export const showCurrentPosition = (): void => {
-  sendSnapshotCaptureToInject(true);
+  if (ui.isOpen()) {
+    setSnapshotCaptureEnabled(true);
+    router.initialize("current-position");
+    return;
+  }
+
   ui.showModal(); // モーダルを先に作成
+  setSnapshotCaptureEnabled(true);
   router.initialize("current-position");
 };
 
@@ -196,7 +215,7 @@ export const navigateToDetail = (fullKey: string): void => {
 };
 
 export const closeModal = (): void => {
-  sendSnapshotCaptureToInject(false);
+  setSnapshotCaptureEnabled(false);
   ui.closeModal();
 };
 

@@ -33,6 +33,8 @@ const dataUrlToBlob = (dataUrl: string): Blob => {
 };
 
 export class TileSnapshot {
+  private static readonly MAX_TMP_TILE_CACHE_SIZE = 64;
+
   // インメモリキャッシュ（永続化しない）
   private tmpTileCache = new Map<string, Blob>();
 
@@ -46,11 +48,11 @@ export class TileSnapshot {
     const normalized = normalizeTileCoordinate(tileX, tileY);
     const key = `${normalized.tileX}_${normalized.tileY}`;
 
-    // Check image size and scale down if 3000x3000
-    const processedBlob = await this.scaleDownIfNeeded(blob);
+    // Keep a bounded LRU cache to avoid unbounded memory growth while panning.
+    if (!this.tmpTileCache.has(key))
+      this.evictOldestTmpTileIfNeeded(TileSnapshot.MAX_TMP_TILE_CACHE_SIZE);
 
-    // インメモリに保存（永続化しない）
-    this.tmpTileCache.set(key, processedBlob);
+    this.tmpTileCache.set(key, blob);
   }
 
   async getTmpTile(tileX: number, tileY: number): Promise<Blob | null> {
@@ -91,6 +93,12 @@ export class TileSnapshot {
     });
   }
 
+  private evictOldestTmpTileIfNeeded(maxSize: number): void {
+    if (this.tmpTileCache.size < maxSize) return;
+    const oldestKey = this.tmpTileCache.keys().next().value;
+    if (oldestKey) this.tmpTileCache.delete(oldestKey);
+  }
+
   async saveSnapshot(
     tileX: number,
     tileY: number,
@@ -105,11 +113,14 @@ export class TileSnapshot {
         `No tmp data found for tile ${tileX},${tileY} (normalized: ${normalized.tileX},${normalized.tileY})`
       );
 
+    // Scale down only when persisting snapshot to reduce per-tile polling overhead.
+    const processedBlob = await this.scaleDownIfNeeded(tmpBlob);
+
     const timestamp = Date.now();
     const snapshotId = `${timestamp}_${normalized.tileX}_${normalized.tileY}`;
 
     // Convert blob to dataUrl for bridge
-    const dataUrl = await blobToDataUrl(tmpBlob);
+    const dataUrl = await blobToDataUrl(processedBlob);
 
     // Save via inject bridge
     const success = await saveSnapshotToInject(snapshotId, dataUrl, {

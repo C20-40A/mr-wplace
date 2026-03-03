@@ -34,7 +34,13 @@ export class TimeTravelUI {
     this.onModalClosed = callback;
   }
 
+  isOpen(): boolean {
+    return this.modalElements?.modal.open === true;
+  }
+
   showModal(): void {
+    if (this.isOpen()) return;
+
     this.modalElements = createModal({
       id: "wplace-studio-timetravel-modal",
       title: t`${"timetravel_modal_title"}`,

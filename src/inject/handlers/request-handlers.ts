@@ -3,8 +3,52 @@ import {
   getStatsPerImage,
   getOverlayPixelColor,
   perTileColorStats,
+  getOriginalBlob,
+  setOriginalBlob,
 } from "../features/tile-draw";
 import { computeTotalStatsFromImage } from "../features/tile-draw";
+
+const TILE_FETCH_TIMEOUT_MS = 5000;
+
+const blobToDataUrl = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+
+const fetchOriginalTileBlob = async (
+  tileX: number,
+  tileY: number,
+): Promise<Blob | null> => {
+  const urls = [
+    `https://backend.wplace.live/tile/${tileX}/${tileY}.png`,
+    `https://backend.wplace.live/tiles/${tileX}/${tileY}.png`,
+    `https://backend.wplace.live/files/s0/tiles/${tileX}/${tileY}.png`,
+  ];
+
+  for (const url of urls) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TILE_FETCH_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      if (!response.ok) continue;
+
+      const blob = await response.blob();
+      if (blob.size === 0) continue;
+
+      return blob;
+    } catch {
+      // Try next endpoint
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  return null;
+};
 
 /**
  * Handle aggregated color stats request
@@ -241,4 +285,53 @@ export const handleMapCenterRequest = (data: { requestId: string }): void => {
   console.log(
     `🧑‍🎨 : Sent map center: ${center ? `${center.lat}, ${center.lng}` : "null"} (request: ${data.requestId})`
   );
+};
+
+/**
+ * Handle original tile image request
+ * Returns original tile image as dataUrl from cache, or fetches from backend as fallback.
+ */
+export const handleOriginalTileRequest = async (data: {
+  tileX: number;
+  tileY: number;
+  requestId: string;
+}): Promise<void> => {
+  const { tileX, tileY, requestId } = data;
+  const cacheKey = `${tileX},${tileY}`;
+
+  try {
+    let blob = getOriginalBlob(cacheKey);
+    let fromCache = true;
+
+    if (!blob) {
+      fromCache = false;
+      blob = await fetchOriginalTileBlob(tileX, tileY);
+      if (blob) setOriginalBlob(cacheKey, blob);
+    }
+
+    const dataUrl = blob ? await blobToDataUrl(blob) : null;
+
+    window.postMessage(
+      {
+        source: "mr-wplace-response-original-tile",
+        requestId,
+        dataUrl,
+      },
+      "*",
+    );
+
+    console.log(
+      `🧑‍🎨 : Sent original tile (${tileX}, ${tileY}) ${dataUrl ? (fromCache ? "from cache" : "from fetch") : "not found"} (request: ${requestId})`,
+    );
+  } catch (error) {
+    console.error("🧑‍🎨 : Failed to get original tile image:", error);
+    window.postMessage(
+      {
+        source: "mr-wplace-response-original-tile",
+        requestId,
+        dataUrl: null,
+      },
+      "*",
+    );
+  }
 };
