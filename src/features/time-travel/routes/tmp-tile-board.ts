@@ -91,6 +91,7 @@ export class TmpTileBoardRoute {
 
   private async renderBoard(container: HTMLElement): Promise<void> {
     const requestId = ++this.renderRequestId;
+    this.clearEmptyPollTimer();
     this.clearObjectUrls();
 
     const summary = container.querySelector(
@@ -117,6 +118,9 @@ export class TmpTileBoardRoute {
     this.tileMap = new Map(
       tmpTiles.map((tile) => [`${tile.tileX}_${tile.tileY}`, tile]),
     );
+    const isCurrentTileMissing =
+      !!this.currentTile &&
+      !this.tileMap.has(`${this.currentTile.tileX}_${this.currentTile.tileY}`);
 
     if (tmpTiles.length === 0) {
       this.selectedTiles.clear();
@@ -158,7 +162,7 @@ export class TmpTileBoardRoute {
     empty.style.display = "none";
     this.updateSummary(summary);
     this.updateSaveButtonState(container);
-    this.clearEmptyPollTimer();
+    if (isCurrentTileMissing) this.scheduleEmptyPoll(container);
   }
 
   private renderTileGrid(grid: HTMLElement): void {
