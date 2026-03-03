@@ -11,6 +11,7 @@ import { Tutorial } from "@/features/tutorial";
 import { runtime } from "@/utils/browser-api";
 import { normalizeTileCoordinate } from "../utils/tile-coordinate";
 import { showFeatureHint } from "@/features/feature-hints";
+import { isTabletOrBelowViewport } from "@/constants/breakpoints";
 import {
   getOriginalTileDataUrl,
   getSnapshotDataUrl,
@@ -26,6 +27,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
   private currentTileY?: number;
   private tutorial: Tutorial;
   private router?: TimeTravelRouter;
+  private isMobile = false;
 
   constructor(options: SnapshotRouteOptions) {
     super();
@@ -84,10 +86,10 @@ export class SnapshotRoute extends BaseSnapshotRoute {
   private renderSaveButton(): string {
     return `
       <div style="margin-top: 8px; display: flex; gap: 8px;">
-        <button id="wps-save-current-snapshot-btn" class="btn btn-primary" style="flex: 1;">
+        <button id="wps-save-current-snapshot-btn" class="btn btn-sm btn-primary" style="flex: 1;">
           ${t`${"save_current_snapshot"}`}
         </button>
-        <button id="wps-download-current-tile-btn" class="btn btn-outline" style="padding: 8px;" title="Download current tile image" disabled>
+        <button id="wps-download-current-tile-btn" class="btn btn-sm btn-outline" style="padding: 8px;" title="Download current tile image" disabled>
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
             <path fill-rule="evenodd" d="M12 2.25a.75.75 0 01.75.75v11.69l3.22-3.22a.75.75 0 111.06 1.06l-4.5 4.5a.75.75 0 01-1.06 0l-4.5-4.5a.75.75 0 111.06-1.06l3.22 3.22V3a.75.75 0 01.75-.75zm-9 13.5a.75.75 0 01.75.75v2.25a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5V16.5a.75.75 0 011.5 0v2.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V16.5a.75.75 0 01.75-.75z" clip-rule="evenodd" />
           </svg>
@@ -98,8 +100,10 @@ export class SnapshotRoute extends BaseSnapshotRoute {
 
   render(container: HTMLElement, router: TimeTravelRouter): void {
     this.router = router;
+    this.isMobile = isTabletOrBelowViewport();
     const currentRoute = router.getCurrentRoute();
     const selectedTile = (router as any).selectedTile;
+    const importButtonText = this.isMobile ? "" : t`${"import"}`;
 
     // current-positionルートでは必ず現在位置を使用
     if (currentRoute === "current-position" || !selectedTile) {
@@ -127,7 +131,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
       <div class="mb-4 p-3 border rounded bg-gray-50" style="display: flex; align-items: center; gap: 12px;">
         <div id="tile-info-section" style="flex: 1; display: flex; align-items: center; gap: 8px;">
           <div style="flex: 1; display: flex; align-items: center; gap: 6px;">
-            <div id="tile-name-display" class="font-bold text-base">Loading...</div>
+            <div id="tile-name-display" class="font-bold text-xs">Loading...</div>
             <button id="edit-tile-name-btn" class="btn btn-sm btn-ghost" style="padding: 4px; min-height: auto; height: auto;" title="Edit tile name">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
                 <path d="M21.731 2.269a2.625 2.625 0 00-3.712 0l-1.157 1.157 3.712 3.712 1.157-1.157a2.625 2.625 0 000-3.712zM19.513 8.199l-3.712-3.712-8.4 8.4a5.25 5.25 0 00-1.32 2.214l-.8 2.685a.75.75 0 00.933.933l2.685-.8a5.25 5.25 0 002.214-1.32l8.4-8.4z" />
@@ -135,20 +139,20 @@ export class SnapshotRoute extends BaseSnapshotRoute {
               </svg>
             </button>
           </div>
-          <button id="goto-tile-btn" class="btn btn-sm btn-ghost" style="display: flex; align-items: center; gap: 4px; padding: 4px 8px;" title="Go to location">
+          <button id="goto-tile-btn" class="btn btn-xs btn-ghost" style="display: flex; align-items: center; gap: 4px; padding: 4px 8px;" title="Go to location">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
               <path fill-rule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
             </svg>
-            <span id="tile-coordinate-info" class="text-sm">Tile(-,-)</span>
+            <span id="tile-coordinate-info" style="font-size: 10px;">Tile(-,-)</span>
           </button>
         </div>
 
         <!-- Import Button -->
-        <button id="wps-import-snapshot-btn" class="btn btn-sm btn-neutral" style="flex-shrink: 0;">
+        <button id="wps-import-snapshot-btn" class="btn btn-xs btn-neutral" style="flex-shrink: 0;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
             <path fill-rule="evenodd" d="M11.47 2.47a.75.75 0 011.06 0l4.5 4.5a.75.75 0 01-1.06 1.06l-3.22-3.22V16.5a.75.75 0 01-1.5 0V4.81L8.03 8.03a.75.75 0 01-1.06-1.06l4.5-4.5zM3 15.75a.75.75 0 01.75.75v2.25a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5V16.5a.75.75 0 011.5 0v2.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V16.5a.75.75 0 01.75-.75z" clip-rule="evenodd" />
           </svg>
-          ${t`${"import"}`}
+          ${importButtonText}
         </button>
       </div>
 
