@@ -2,6 +2,7 @@ import { GalleryItem } from "@/states/galleryStorage";
 import { ImageGridComponent } from "./components/ImageGridComponent";
 import { gotoMapPosition, toggleDrawState } from "../../common-actions";
 import { t } from "@/i18n";
+import { showFeatureHint } from "@/features/feature-hints";
 
 export type GallerySortType = "layer" | "distance" | "created";
 
@@ -87,6 +88,7 @@ export class GalleryListUI {
     importExportBtn.addEventListener("click", () => {
       this.showImportExportMenu(importExportBtn);
     });
+    showFeatureHint("gallery-import-export-btn", importExportBtn);
 
     // Grid container
     const gridContainer = document.createElement("div");
@@ -120,7 +122,7 @@ export class GalleryListUI {
     const menu = document.createElement("div");
     menu.id = "wps-gallery-io-menu";
     menu.className = "menu bg-base-200 rounded-box shadow-lg p-2";
-    menu.style.cssText = "position:absolute;z-index:10;min-width:10rem;";
+    menu.style.cssText = "position:absolute;z-index:20;min-width:10rem;";
     menu.innerHTML = `
       <li><button id="wps-gallery-export-action" class="btn btn-ghost btn-sm justify-start w-full">📤 ${t`${"export_gallery"}`}</button></li>
       <li><button id="wps-gallery-import-action" class="btn btn-ghost btn-sm justify-start w-full">📥 ${t`${"import_gallery"}`}</button></li>

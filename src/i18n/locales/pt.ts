@@ -541,4 +541,5 @@ export const ptTranslations = {
   map_filter_area_group_name_placeholder: "Nome do grupo (opcional)",
   selected_color_only_mark: "Marcar apenas cor selecionada",
   tmp_tile_board_data_notice: "Mostra apenas dados de tiles ja recebidos. Para reduzir a carga do servidor, nenhuma nova solicitacao e enviada.",
+  hint_gallery_backup: "Recomendamos fazer backups frequentemente aqui.",
 };

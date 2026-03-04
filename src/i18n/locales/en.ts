@@ -575,4 +575,5 @@ Do not use this feature to paint actual pixels.`,
   map_filter_area_group_name_placeholder: "Group name (optional)",
   selected_color_only_mark: "Mark selected color only",
   tmp_tile_board_data_notice: "Shows only already received tile data. To reduce server load, no new requests are sent.",
+  hint_gallery_backup: "We recommend making frequent backups here.",
 };

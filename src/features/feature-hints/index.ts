@@ -7,6 +7,7 @@ import {
 import { hasOpenModal } from "@/components/modal";
 import { t } from "@/i18n/manager";
 import { isFeatureHintDismissed } from "@/states/feature-hints";
+import { getAllGalleryMetadata } from "@/core/bridge/gallery-storage-bridge";
 
 export type FeatureHintId =
   | "paint-pixel-icon"
@@ -29,7 +30,8 @@ export type FeatureHintId =
   | "image-detail-draw-on-map"
   | "image-detail-dpad"
   | "image-detail-download"
-  | "image-detail-edit-title";
+  | "image-detail-edit-title"
+  | "gallery-import-export-btn";
 
 interface FeatureHintDefinition {
   messageKey?: string;
@@ -52,6 +54,21 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     iconSrc: HINT_DIALOG_ICON,
     placement: "right",
     priority: 1,
+  },
+  "gallery-import-export-btn": {
+    messageKey: "hint_gallery_backup",
+    iconSrc: HINT_DIALOG_ICON,
+    placement: "right",
+    priority: 2,
+    dependsOn: ["gallery-btn"],
+    condition: async () => {
+      try {
+        const items = await getAllGalleryMetadata();
+        return items.length >= 3;
+      } catch (e) {
+        return false;
+      }
+    },
   },
   "user-status-container": {
     messageKey: "hint_user_status_container",
