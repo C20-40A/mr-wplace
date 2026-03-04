@@ -109,9 +109,6 @@ const updateUI = (): void => {
     "popup-fab-data-saver-label": "popup_fab_data_saver",
     "popup-fab-filter-label": "popup_fab_color_filter",
     "popup-compute-device-label": "compute_device_label",
-    "gallery-data-label": "gallery_data",
-    "export-btn-label": "export",
-    "import-btn-label": "import",
     "danger-zone-label": "danger_zone",
     "danger-zone-toggle-label": "danger_zone_show",
     "reset-gallery-btn-label": "reset_gallery",
@@ -433,22 +430,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Gallery export/import
-  const exportBtn = document.getElementById("export-gallery-btn");
-  const importBtn = document.getElementById("import-gallery-btn");
-
-  if (exportBtn) {
-    exportBtn.addEventListener("click", async () => {
-      await handleExport();
-    });
-  }
-
-  if (importBtn) {
-    importBtn.addEventListener("click", async () => {
-      await handleImport();
-    });
-  }
-
   // Danger Zone toggle
   const toggleDangerZoneBtn = document.getElementById("toggle-danger-zone-btn");
   const dangerZoneContent = document.getElementById("danger-zone-content");
@@ -486,50 +467,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 window.addEventListener("beforeunload", () => {
   void notifyPopupWindowState(POPUP_WINDOW_CLOSED);
 });
-
-// Gallery export handler - delegates to inject
-const handleExport = async (): Promise<void> => {
-  const exportBtn = document.getElementById(
-    "export-gallery-btn",
-  ) as HTMLButtonElement;
-  if (!exportBtn) return;
-
-  try {
-    exportBtn.disabled = true;
-    exportBtn.innerHTML = `⏳ ${t`${"exporting"}`}`;
-
-    await notifyContentScript({ type: "GALLERY_EXPORT" });
-  } catch (error) {
-    console.error("🧑‍🎨 : Export failed:", error);
-    alert(t`${"export_failed"}`);
-  } finally {
-    exportBtn.disabled = false;
-    exportBtn.innerHTML = `📤 <span id="export-btn-label">${t`${"export"}`}</span>`;
-  }
-};
-
-// Gallery import handler - delegates to inject
-const handleImport = async (): Promise<void> => {
-  if (!confirm(t`${"confirm_import"}`)) return;
-
-  const importBtn = document.getElementById(
-    "import-gallery-btn",
-  ) as HTMLButtonElement;
-  if (!importBtn) return;
-
-  try {
-    importBtn.disabled = true;
-    importBtn.innerHTML = `⏳ ${t`${"importing"}`}`;
-
-    await notifyContentScript({ type: "GALLERY_IMPORT" });
-  } catch (error) {
-    console.error("🧑‍🎨 : Import failed:", error);
-    alert(t`${"import_failed"}`);
-  } finally {
-    importBtn.disabled = false;
-    importBtn.innerHTML = `📥 <span id="import-btn-label">${t`${"import"}`}</span>`;
-  }
-};
 
 // Gallery reset handler - delegates to inject
 const handleResetGallery = async (): Promise<void> => {

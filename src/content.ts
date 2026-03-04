@@ -426,29 +426,6 @@ const registerMessageListeners = () => {
       return;
     }
 
-    // Delegate to inject via postMessage
-    if (message.type === "GALLERY_IMPORT") {
-      window.postMessage(
-        {
-          source: "mr-wplace-gallery-import",
-          requestId: Date.now().toString(),
-        },
-        "*"
-      );
-      return;
-    }
-
-    if (message.type === "GALLERY_EXPORT") {
-      window.postMessage(
-        {
-          source: "mr-wplace-gallery-export",
-          requestId: Date.now().toString(),
-        },
-        "*"
-      );
-      return;
-    }
-
     if (message.type === "GALLERY_RESET") {
       const payload = await withDangerousMessageAuth({
         source: "mr-wplace-gallery-reset",
