@@ -220,7 +220,6 @@ class MapFilterMenu {
     this.triggerButton = document.createElement("button");
     this.triggerButton.id = "map-filter-trigger-btn";
     this.triggerButton.className = "btn btn-lg sm:btn-xl btn-square shadow-md z-30";
-    // this.triggerButton.innerHTML = "🗺️";
     this.triggerButton.innerHTML = `<img src="${IMG_ICON_MAP}" style="width: calc(var(--spacing)*9); height: calc(var(--spacing)*9); image-rendering: pixelated;" />`;
     this.triggerButton.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -496,7 +495,7 @@ class MapFilterMenu {
 
       this.popover.style.display = "block";
       this.updatePopoverPosition();
-      this.triggerButton.classList.add("btn-active");
+      this.triggerButton.style.backgroundColor = "var(--color-accent, #00d3bb)";
       this.isOpen = true;
     }
   }
@@ -504,7 +503,7 @@ class MapFilterMenu {
   private closePopover() {
     if (this.popover && this.triggerButton) {
       this.popover.style.display = "none";
-      this.triggerButton.classList.remove("btn-active");
+      this.triggerButton.style.backgroundColor = "";
       this.isOpen = false;
     }
   }
