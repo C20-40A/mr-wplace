@@ -37,6 +37,29 @@ const HANDLERS_BORDER_HOVER = (baseColor: string) => `
   onmouseenter="this.style.borderColor='#22c55e';"
   onmouseleave="this.style.borderColor='${baseColor}';"
 `;
+const getControlHeight = (isXs: boolean): string => (isXs ? "1.8rem" : "2.25rem");
+const getCommonBaseStyle = (isXs: boolean): string => `
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  line-height: 1;
+  border-radius: 9999px;
+  height: ${getControlHeight(isXs)};
+  min-height: ${getControlHeight(isXs)};
+  ${INTERACTIVE_BASE_STYLE}
+`;
+const getDropdownTriggerBaseStyle = (
+  isXs: boolean,
+  fullWidth: boolean = false,
+): string => `
+  ${getCommonBaseStyle(isXs)}
+  padding: ${isXs ? "0 0.5rem" : "0 0.75rem"};
+  border: 2px solid #d1d5db;
+  gap: 0.5rem;
+  ${fullWidth ? "width: 100%;" : ""}
+`;
 type DropdownItemConfig<T> = {
   options: readonly T[];
   isXs: boolean;
@@ -196,14 +219,7 @@ export function buildSortOrderSelectHtml(
   return `
     <div class="sort-order-container" style="position: relative;">
       <button class="sort-order-button" type="button"
-              style="padding: ${isXs ? "0.15rem 0.3rem" : "0.2rem 0.4rem"};
-                     border: 2px solid #d1d5db;
-                     border-radius: ${isXs ? "0.4rem" : "0.5rem"};
-                     cursor: pointer;
-                     display: flex;
-                     align-items: center;
-                     gap: 0.5rem;
-                     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); ${INTERACTIVE_BASE_STYLE}"
+              style="${getDropdownTriggerBaseStyle(isXs)}"
               ${HANDLERS_BORDER_HOVER("#d1d5db")}
               ${HANDLERS_SCALE_98}>
         <span style="display: flex; align-items: center; color: #22c55e;">${sortIconSvg}</span>
@@ -260,15 +276,7 @@ export function buildEnhancedSelectHtml(
   return `
     <div class="enhanced-mode-container" style="position: relative;">
       <button class="enhanced-mode-button" type="button"
-              style="padding: ${isXs ? "0.15rem 0.3rem" : "0.2rem 0.4rem"};
-                     border: 2px solid #d1d5db;
-                     border-radius: ${isXs ? "0.4rem" : "0.5rem"};
-                     cursor: pointer;
-                     display: flex;
-                     align-items: center;
-                     gap: 0.5rem;
-                     width: 100%;
-                     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); ${INTERACTIVE_BASE_STYLE}"
+              style="${getDropdownTriggerBaseStyle(isXs, true)}"
               ${HANDLERS_BORDER_HOVER("#d1d5db")}
               ${HANDLERS_SCALE_98}>
         <img class="enhanced-mode-current-icon"
@@ -426,14 +434,7 @@ export function buildComputeDeviceSelectHtml(
   return `
     <div class="compute-device-container" style="position: relative;">
       <button class="compute-device-button" type="button"
-              style="padding: ${isXs ? "0.15rem 0.3rem" : "0.2rem 0.4rem"};
-                     border: 2px solid #d1d5db;
-                     border-radius: ${isXs ? "0.4rem" : "0.5rem"};
-                     cursor: pointer;
-                     display: flex;
-                     align-items: center;
-                     gap: 0.5rem;
-                     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); ${INTERACTIVE_BASE_STYLE}"
+              style="${getDropdownTriggerBaseStyle(isXs)}"
               ${HANDLERS_BORDER_HOVER("#d1d5db")}
               ${HANDLERS_SCALE_98}>
         <span style="font-size: ${isXs ? "0.75rem" : "0.875rem"};">${t`${"compute_device_label"}`}</span>
@@ -498,14 +499,7 @@ export function buildOverlayModeSelectHtml(
   return `
     <div class="overlay-mode-container" style="position: relative;">
       <button class="overlay-mode-button" type="button"
-              style="padding: ${isXs ? "0.15rem 0.3rem" : "0.2rem 0.4rem"};
-                     border: 2px solid #d1d5db;
-                     border-radius: ${isXs ? "0.4rem" : "0.5rem"};
-                     cursor: pointer;
-                     display: flex;
-                     align-items: center;
-                     gap: 0.5rem;
-                     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); ${INTERACTIVE_BASE_STYLE}"
+              style="${getDropdownTriggerBaseStyle(isXs)}"
               ${HANDLERS_BORDER_HOVER("#d1d5db")}
               ${HANDLERS_SCALE_98}>
         <span style="font-size: ${isXs ? "0.75rem" : "0.875rem"};">${t`${"popup_overlay_mode"}`}</span>
@@ -568,16 +562,12 @@ export function buildShowUnplacedOnlyToggleHtml(
   return `
     <button class="show-unplaced-only-toggle btn ${sizeClass} rounded"
             type="button"
-            style="padding: ${isXs ? "0.3rem 0.45rem" : "0.4rem 0.6rem"};
+            style="${getCommonBaseStyle(isXs)}
+                   padding: ${isXs ? "0 0.45rem" : "0 0.6rem"};
                    border: 2px solid ${borderColor};
-                   border-radius: ${isXs ? "0.4rem" : "0.5rem"};
-                   cursor: pointer;
-                   display: flex;
-                   align-items: center;
                    gap: 0.5rem;
                    background-color: ${bgColor};
-                   color: ${textColor};
-                   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); ${INTERACTIVE_BASE_STYLE}"
+                   color: ${textColor};"
             onmouseenter=" this.style.transform='translateY(-1px)';"
             onmouseleave=" this.style.transform='translateY(0)';"
             ${HANDLERS_SCALE_95}>
@@ -623,23 +613,9 @@ export function buildControlsHtml(
   const isXs = controlSize === "xs";
   const sizeClass = isXs ? "btn-xs XS" : "btn-sm";
 
-  // 1. 共通設定：高さと位置調整を完全に共通化
-  const commonBase = `
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  line-height: 1;
-  border-radius: 9999px; /* カプセル型/正円で統一 */
-  height: ${isXs ? "1.8rem" : "2.25rem"};
-  min-height: ${isXs ? "1.8rem" : "2.25rem"};
-  ${INTERACTIVE_BASE_STYLE}
-`;
-
   // 2. 通常ボタン：横の余白とフォントサイズのみ指定
   const buttonBaseStyle = `
-  ${commonBase}
+  ${getCommonBaseStyle(isXs)}
   /* 上下パディングは height に任せて、左右だけ指定するのが安全 */
   padding: ${isXs ? "0 0.6rem" : "0 1.25rem"}; 
   font-size: ${isXs ? "0.75rem" : "0.875rem"};
@@ -648,7 +624,7 @@ export function buildControlsHtml(
 
   // 3. アイコンボタン：幅を高さに合わせる
   const iconButtonBaseStyle = `
-  ${commonBase}
+  ${getCommonBaseStyle(isXs)}
   width: ${isXs ? "1.8rem" : "2.25rem"};
   min-width: ${isXs ? "1.8rem" : "2.25rem"};
   padding: 0;
