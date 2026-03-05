@@ -21,16 +21,16 @@ export async function readFileAsDataUrl(file: File): Promise<string> {
 
 /**
  * 画像サイズチェック・3択ダイアログ表示
- * 500px超えたら確認→リサイズ/編集/直接追加
+ * 1000px超えたら確認→リサイズ/編集/直接追加
  */
 export async function showImageSizeDialog(
   dataUrl: string,
-  container: HTMLElement
+  container: HTMLElement,
 ): Promise<{ action: "resize" | "edit" | "addToGallery"; dataUrl: string }> {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = async () => {
-      const maxSize = 500;
+      const maxSize = 1000;
       const needsResize = img.width > maxSize || img.height > maxSize;
 
       if (!needsResize) {
@@ -43,7 +43,7 @@ export async function showImageSizeDialog(
         img.width,
         img.height,
         maxSize,
-        container
+        container,
       );
 
       if (action === "resize") {
@@ -66,7 +66,7 @@ export async function showImageSizeDialog(
         ctx.drawImage(img, 0, 0, newWidth, newHeight);
 
         console.log(
-          `🧑‍🎨 : Resized image: ${img.width}x${img.height} → ${newWidth}x${newHeight}`
+          `🧑‍🎨 : Resized image: ${img.width}x${img.height} → ${newWidth}x${newHeight}`,
         );
         resolve({ action: "edit", dataUrl: canvas.toDataURL("image/png") });
       } else {
@@ -84,7 +84,7 @@ const showThreeChoiceDialog = (
   width: number,
   height: number,
   maxSize: number,
-  container: HTMLElement
+  container: HTMLElement,
 ): Promise<"resize" | "edit" | "addToGallery"> => {
   return new Promise((resolve) => {
     // ダイアログHTML生成（オーバーレイ）
@@ -131,14 +131,14 @@ const showThreeChoiceDialog = (
     editBtn?.addEventListener("click", () => handleChoice("edit"));
     addBtn?.addEventListener("click", () => handleChoice("addToGallery"));
   });
-}
+};
 
 /**
  * CanvasからBlob生成
  * Firefox: canvas汚染(tainted)に対応するためgetImageData経由
  */
 export async function createBlobFromCanvas(
-  canvas: HTMLCanvasElement
+  canvas: HTMLCanvasElement,
 ): Promise<Blob> {
   try {
     // 通常のtoBlobを試行
@@ -207,14 +207,14 @@ export const downloadBlob = (blob: Blob, filename: string): void => {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-}
+};
 
 /**
  * ファイル名から座標情報抽出
  * 形式: ${TLX}-${TLY}-${PxX}-${PxY}.png
  */
 export const parseDrawPositionFromFileName = (
-  fileName: string
+  fileName: string,
 ): DrawPosition | null => {
   const match = fileName.match(/^(\d+)-(\d+)-(\d+)-(\d+)\.png$/);
   if (!match) return null;
@@ -225,7 +225,7 @@ export const parseDrawPositionFromFileName = (
     PxX: parseInt(match[3]),
     PxY: parseInt(match[4]),
   };
-}
+};
 
 /**
  * ファイルをテキストとして読み込み
@@ -250,7 +250,7 @@ export async function readFileAsText(file: File): Promise<string> {
  * タイル結合処理含む
  */
 export async function parseBluemarbleJson(
-  jsonText: string
+  jsonText: string,
 ): Promise<{ dataUrl: string; drawPosition: DrawPosition }> {
   const json = JSON.parse(jsonText);
 
@@ -330,7 +330,7 @@ export async function parseBluemarbleJson(
             "→",
             newWidth,
             "x",
-            newHeight
+            newHeight,
           );
 
           // 元画像からImageData取得
@@ -347,7 +347,7 @@ export async function parseBluemarbleJson(
             0,
             0,
             originalWidth,
-            originalHeight
+            originalHeight,
           );
 
           // 中央ピクセル抽出Canvas作成
@@ -361,7 +361,7 @@ export async function parseBluemarbleJson(
           }
           const extractedImageData = extractedCtx.createImageData(
             newWidth,
-            newHeight
+            newHeight,
           );
 
           // 中央ピクセルのみコピー
@@ -405,7 +405,7 @@ export async function parseBluemarbleJson(
           : `data:image/png;base64,${info.base64}`;
         img.src = base64Data;
       });
-    })
+    }),
   );
 
   // Canvas範囲計算: coords基準
@@ -449,7 +449,7 @@ export async function parseBluemarbleJson(
       "size",
       info.width,
       "x",
-      info.height
+      info.height,
     );
   }
 
