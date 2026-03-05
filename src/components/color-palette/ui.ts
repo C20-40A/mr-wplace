@@ -37,6 +37,76 @@ const HANDLERS_BORDER_HOVER = (baseColor: string) => `
   onmouseenter="this.style.borderColor='#22c55e';"
   onmouseleave="this.style.borderColor='${baseColor}';"
 `;
+type DropdownItemConfig<T> = {
+  options: readonly T[];
+  isXs: boolean;
+  selected: (option: T) => boolean;
+  itemClass: string;
+  dataAttr: string;
+  getValue: (option: T) => string;
+  getLabel: (option: T) => string;
+  getIcon?: (option: T) => string;
+  padding: {
+    xs: string;
+    default: string;
+  };
+};
+const buildDropdownItems = <T>({
+  options,
+  isXs,
+  selected,
+  itemClass,
+  dataAttr,
+  getValue,
+  getLabel,
+  getIcon,
+  padding,
+}: DropdownItemConfig<T>): string =>
+  options
+    .map((option) => {
+      const isSelected = selected(option);
+      const borderColor = isSelected
+        ? "#22c55e"
+        : "var(--color-base-content, #e5e7eb)";
+      const borderWidth = isSelected ? "2px" : "1px";
+      const bgColor = isSelected
+        ? "var(--color-primary, #22c55e)"
+        : "var(--color-base-300, #f9fafb)";
+      const textColor = isSelected
+        ? "var(--color-primary-content, #fff)"
+        : "var(--color-base-content, inherit)";
+      const hoverBgColor = isSelected
+        ? "var(--color-primary, #dcfce7)"
+        : "var(--color-base-200, #f0f0f0)";
+      const iconHtml = getIcon ? getIcon(option) : "";
+      return `
+        <button class="${itemClass}"
+                ${dataAttr}="${getValue(option)}"
+                type="button"
+                style="padding: ${isXs ? padding.xs : padding.default};
+                       background-color: ${bgColor};
+                       border: ${borderWidth} solid ${borderColor};
+                       border-radius: 0.375rem;
+                       cursor: pointer;
+                       text-align: left;
+                       font-size: ${isXs ? "0.75rem" : "0.875rem"};
+                       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                       font-weight: ${isSelected ? "600" : "400"};
+                       color: ${textColor};
+                       ${INTERACTIVE_BASE_STYLE}
+                       ${getIcon ? "display: flex; align-items: center; gap: 0.5rem;" : ""}"
+                onmouseenter="this.style.backgroundColor='${hoverBgColor}'; this.style.transform='translateX(4px)'; this.style.borderColor='#22c55e';"
+                onmouseleave="this.style.backgroundColor='${bgColor}'; this.style.transform='translateX(0)'; this.style.borderColor='${borderColor}';"
+                onmousedown="this.style.transform='scale(0.98)';"
+                onmouseup="this.style.transform='translateX(4px)';"
+                ontouchstart="this.style.transform='scale(0.98)';"
+                ontouchend="this.style.transform='scale(1)';">
+          ${iconHtml}
+          <span>${getLabel(option)}</span>
+        </button>
+      `;
+    })
+    .join("");
 
 /**
  * カラーパレットグリッドHTML生成
@@ -154,47 +224,16 @@ export function buildSortOrderSelectHtml(
                   transform-origin: top;
                   backdrop-filter: blur(10px);">
         <div class="sort-order-list" style="display: flex; flex-direction: column; gap: 0.25rem;">
-          ${SORT_ORDER_OPTIONS.map((option) => {
-            const isSelected = sortOrder === option.value;
-            const borderColor = isSelected
-              ? "#22c55e"
-              : "var(--color-base-content, #e5e7eb)";
-            const borderWidth = isSelected ? "2px" : "1px";
-            const bgColor = isSelected
-              ? "var(--color-primary, #22c55e)"
-              : "var(--color-base-300, #f9fafb)";
-            const textColor = isSelected
-              ? "var(--color-primary-content, #fff)"
-              : "var(--color-base-content, inherit)";
-            return `
-              <button class="sort-order-item"
-                      data-sort="${option.value}"
-                      type="button"
-                      style="padding: ${isXs ? "0.35rem 0.5rem" : "0.5rem 0.75rem"};
-                             background-color: ${bgColor};
-                             border: ${borderWidth} solid ${borderColor};
-                             border-radius: 0.375rem;
-                             cursor: pointer;
-                             text-align: left;
-                             font-size: ${isXs ? "0.75rem" : "0.875rem"};
-                             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                             font-weight: ${isSelected ? "600" : "400"};
-                             color: ${textColor};
-                             ${INTERACTIVE_BASE_STYLE}"
-                      onmouseenter="this.style.backgroundColor='${
-                        isSelected
-                          ? "var(--color-primary, #dcfce7)"
-                          : "var(--color-base-200, #f0f0f0)"
-                      }'; this.style.transform='translateX(4px)'; this.style.borderColor='#22c55e';"
-                      onmouseleave="this.style.backgroundColor='${bgColor}'; this.style.transform='translateX(0)'; this.style.borderColor='${borderColor}';"
-                      onmousedown="this.style.transform='scale(0.98)';"
-                      onmouseup="this.style.transform='translateX(4px)';"
-                      ontouchstart="this.style.transform='scale(0.98)';"
-                      ontouchend="this.style.transform='scale(1)';">
-                ${t`${option.labelKey}`}
-              </button>
-            `;
-          }).join("")}
+          ${buildDropdownItems({
+            options: SORT_ORDER_OPTIONS,
+            isXs,
+            selected: (option) => sortOrder === option.value,
+            itemClass: "sort-order-item",
+            dataAttr: "data-sort",
+            getValue: (option) => option.value,
+            getLabel: (option) => t`${option.labelKey}`,
+            padding: { xs: "0.35rem 0.5rem", default: "0.5rem 0.75rem" },
+          })}
         </div>
       </div>
     </div>
@@ -419,55 +458,18 @@ export function buildComputeDeviceSelectHtml(
                   transform-origin: top;
                   backdrop-filter: blur(10px);">
         <div class="compute-device-list" style="display: flex; flex-direction: column; gap: 0.25rem;">
-          ${devices
-            .map((device) => {
-              const isSelected = computeDevice === device.value;
-              const borderColor = isSelected
-                ? "#22c55e"
-                : "var(--color-base-content, #e5e7eb)";
-              const borderWidth = isSelected ? "2px" : "1px";
-              const bgColor = isSelected
-                ? "var(--color-primary, #22c55e)"
-                : "var(--color-base-300, #f9fafb)";
-              const textColor = isSelected
-                ? "var(--color-primary-content, #fff)"
-                : "var(--color-base-content, inherit)";
-              return `
-              <button class="compute-device-item"
-                      data-device="${device.value}"
-                      type="button"
-                      style="padding: ${isXs ? "0.15rem 0.3rem" : "0.2rem 0.4rem"};
-                             background-color: ${bgColor};
-                             border: ${borderWidth} solid ${borderColor};
-                             border-radius: 0.375rem;
-                             cursor: pointer;
-                             text-align: left;
-                             font-size: ${isXs ? "0.75rem" : "0.875rem"};
-                             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                             display: flex;
-                             align-items: center;
-                             gap: 0.5rem;
-                             font-weight: ${isSelected ? "600" : "400"};
-                             color: ${textColor};
-                             ${INTERACTIVE_BASE_STYLE}"
-                      onmouseenter="this.style.backgroundColor='${
-                        isSelected
-                          ? "var(--color-primary, #dcfce7)"
-                          : "var(--color-base-200, #f0f0f0)"
-                      }'; this.style.transform='translateX(4px)'; this.style.borderColor='#22c55e';"
-                      onmouseleave="this.style.backgroundColor='${bgColor}'; this.style.transform='translateX(0)'; this.style.borderColor='${borderColor}';"
-                      onmousedown="this.style.transform='scale(0.98)';"
-                      onmouseup="this.style.transform='translateX(4px)';"
-                      ontouchstart="this.style.transform='scale(0.98)';"
-                      ontouchend="this.style.transform='scale(1)';">
-                <span style="font-size: ${isXs ? "0.85rem" : "1rem"}; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));">${
-                  device.icon
-                }</span>
-                <span>${device.label}</span>
-              </button>
-            `;
-            })
-            .join("")}
+          ${buildDropdownItems({
+            options: devices,
+            isXs,
+            selected: (device) => computeDevice === device.value,
+            itemClass: "compute-device-item",
+            dataAttr: "data-device",
+            getValue: (device) => device.value,
+            getLabel: (device) => device.label,
+            getIcon: (device) =>
+              `<span style="font-size: ${isXs ? "0.85rem" : "1rem"}; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));">${device.icon}</span>`,
+            padding: { xs: "0.15rem 0.3rem", default: "0.2rem 0.4rem" },
+          })}
         </div>
       </div>
     </div>
@@ -528,49 +530,16 @@ export function buildOverlayModeSelectHtml(
                   transform-origin: top;
                   backdrop-filter: blur(10px);">
         <div class="overlay-mode-list" style="display: flex; flex-direction: column; gap: 0.25rem;">
-          ${options
-            .map((option) => {
-              const isSelected = (option.value === "true") === enabled;
-              const borderColor = isSelected
-                ? "#22c55e"
-                : "var(--color-base-content, #e5e7eb)";
-              const borderWidth = isSelected ? "2px" : "1px";
-              const bgColor = isSelected
-                ? "var(--color-primary, #22c55e)"
-                : "var(--color-base-300, #f9fafb)";
-              const textColor = isSelected
-                ? "var(--color-primary-content, #fff)"
-                : "var(--color-base-content, inherit)";
-              return `
-              <button class="overlay-mode-item"
-                      data-overlay-mode="${option.value}"
-                      type="button"
-                      style="padding: ${isXs ? "0.35rem 0.5rem" : "0.5rem 0.75rem"};
-                             background-color: ${bgColor};
-                             border: ${borderWidth} solid ${borderColor};
-                             border-radius: 0.375rem;
-                             cursor: pointer;
-                             text-align: left;
-                             font-size: ${isXs ? "0.75rem" : "0.875rem"};
-                             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                             font-weight: ${isSelected ? "600" : "400"};
-                             color: ${textColor};
-                             ${INTERACTIVE_BASE_STYLE}"
-                      onmouseenter="this.style.backgroundColor='${
-                        isSelected
-                          ? "var(--color-primary, #dcfce7)"
-                          : "var(--color-base-200, #f0f0f0)"
-                      }'; this.style.transform='translateX(4px)'; this.style.borderColor='#22c55e';"
-                      onmouseleave="this.style.backgroundColor='${bgColor}'; this.style.transform='translateX(0)'; this.style.borderColor='${borderColor}';"
-                      onmousedown="this.style.transform='scale(0.98)';"
-                      onmouseup="this.style.transform='translateX(4px)';"
-                      ontouchstart="this.style.transform='scale(0.98)';"
-                      ontouchend="this.style.transform='scale(1)';">
-                ${t`${option.labelKey}`}
-              </button>
-            `;
-            })
-            .join("")}
+          ${buildDropdownItems({
+            options,
+            isXs,
+            selected: (option) => (option.value === "true") === enabled,
+            itemClass: "overlay-mode-item",
+            dataAttr: "data-overlay-mode",
+            getValue: (option) => option.value,
+            getLabel: (option) => t`${option.labelKey}`,
+            padding: { xs: "0.35rem 0.5rem", default: "0.5rem 0.75rem" },
+          })}
         </div>
       </div>
     </div>
