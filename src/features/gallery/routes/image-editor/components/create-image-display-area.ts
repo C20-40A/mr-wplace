@@ -103,11 +103,23 @@ const createCurrentArea = (
     elements.gpuToggle as HTMLInputElement,
     createElement("span", {}, ["⚡GPU"]),
   ]);
+  const expandToggle = createElement(
+    "button",
+    {
+      id: "wps-current-expand-toggle",
+      className: "btn btn-xs",
+      type: "button",
+      title: "Expand current image area",
+      "aria-label": "Expand current image area",
+    },
+    ["⤢"],
+  );
 
   const flexContainer = createElement("div", { className: "flex" }, [
     canvasContainer,
     imageContainer,
     gpuLabel,
+    expandToggle,
     createElement(
       "div",
       {

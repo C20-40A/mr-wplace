@@ -41,6 +41,7 @@ export class ImageEditorUI {
   private controller: any = null;
   private elements: UIElements = {};
   private transparencyDialog: TransparencyDialog | null = null;
+  private isCurrentExpanded = false;
 
   constructor() {
     this.container = this._createElement("div", {
@@ -321,6 +322,9 @@ export class ImageEditorUI {
     if (!target.id) return;
 
     switch (target.id) {
+      case "wps-current-expand-toggle":
+        this.toggleCurrentImageExpand();
+        break;
       case "wps-add-to-gallery":
         this.callbacks.onSaveToGallery();
         break;
@@ -424,4 +428,21 @@ export class ImageEditorUI {
     window.addEventListener("resize", updateLayout);
   }
 
+  private toggleCurrentImageExpand(): void {
+    this.isCurrentExpanded = !this.isCurrentExpanded;
+    this.container.classList.toggle("current-expanded", this.isCurrentExpanded);
+
+    const expandButton = this.container.querySelector(
+      "#wps-current-expand-toggle",
+    ) as HTMLButtonElement | null;
+    if (!expandButton) return;
+
+    const isExpanded = this.isCurrentExpanded;
+    expandButton.textContent = isExpanded ? "⤡" : "⤢";
+    const label = isExpanded
+      ? "Restore current image area"
+      : "Expand current image area";
+    expandButton.title = label;
+    expandButton.setAttribute("aria-label", label);
+  }
 }
