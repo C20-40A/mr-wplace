@@ -198,15 +198,6 @@ export function buildSortOrderSelectHtml(
 const rgbToHex = ([r, g, b]: [number, number, number]): string =>
   `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
 
-const RED_BASED_MODES: EnhancedMode[] = [
-  "red-cross",
-  "red-border",
-  "huge-red-cross",
-  "huge-red-cross-bold",
-  "huge-red-diamond",
-  "huge-red-ring",
-];
-
 /**
  * EnhancedモードドロップダウンHTML生成
  */
@@ -345,7 +336,7 @@ export function buildEnhancedSelectHtml(
           }).join("")}
         </div>
         <div class="enhanced-color-picker-container"
-             style="display: ${RED_BASED_MODES.includes(enhancedMode) ? "flex" : "none"};
+             style="display: flex;
                     align-items: center;
                     gap: 0.5rem;
                     padding: 0.5rem 0.25rem 0;

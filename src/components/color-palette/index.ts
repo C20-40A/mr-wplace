@@ -524,23 +524,6 @@ export class ColorPalette {
         `${borderWidth} solid ${borderColor}`;
     });
 
-    // カラーピッカーの表示切替
-    const RED_BASED: EnhancedMode[] = [
-      "red-cross",
-      "red-border",
-      "huge-red-cross",
-      "huge-red-cross-bold",
-      "huge-red-diamond",
-      "huge-red-ring",
-    ];
-    const pickerContainer = this.container.querySelector(
-      ".enhanced-color-picker-container",
-    ) as HTMLElement;
-    if (pickerContainer)
-      pickerContainer.style.display = RED_BASED.includes(mode)
-        ? "flex"
-        : "none";
-
     if (this.options.onEnhancedModeChange) {
       this.options.onEnhancedModeChange(mode);
     }
