@@ -19,6 +19,25 @@ import {
   getEnhancedModeLabelKey,
 } from "./utils";
 
+const INTERACTIVE_BASE_STYLE =
+  "user-select: none; -webkit-tap-highlight-color: transparent;";
+const HANDLERS_SCALE_98 = `
+  onmousedown="this.style.transform='scale(0.98)';"
+  onmouseup="this.style.transform='scale(1)';"
+  ontouchstart="this.style.transform='scale(0.98)';"
+  ontouchend="this.style.transform='scale(1)';"
+`;
+const HANDLERS_SCALE_95 = `
+  onmousedown="this.style.transform='scale(0.95)';"
+  onmouseup="this.style.transform='scale(1)';"
+  ontouchstart="this.style.transform='scale(0.95)';"
+  ontouchend="this.style.transform='scale(1)';"
+`;
+const HANDLERS_BORDER_HOVER = (baseColor: string) => `
+  onmouseenter="this.style.borderColor='#22c55e';"
+  onmouseleave="this.style.borderColor='${baseColor}';"
+`;
+
 /**
  * カラーパレットグリッドHTML生成
  */
@@ -64,8 +83,7 @@ export function buildColorGrid(
                     border-width: 3px;
                     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                     transform: scale(1);                    cursor: pointer;
-                    user-select: none;
-                    -webkit-tap-highlight-color: transparent;"
+                    ${INTERACTIVE_BASE_STYLE}"
              data-color-id="${color.id}"
              title="${color.name} (${color.premium ? "Premium" : "Free"})"
              onmouseenter="this.style.transform='scale(1.05) translateY(-2px)';"
@@ -115,14 +133,9 @@ export function buildSortOrderSelectHtml(
                      display: flex;
                      align-items: center;
                      gap: 0.5rem;
-                     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);                     user-select: none;
-                     -webkit-tap-highlight-color: transparent;"
-              onmouseenter=" this.style.borderColor='#22c55e';"
-              onmouseleave=" this.style.borderColor='#d1d5db';"
-              onmousedown="this.style.transform='scale(0.98)';"
-              onmouseup="this.style.transform='scale(1)';"
-              ontouchstart="this.style.transform='scale(0.98)';"
-              ontouchend="this.style.transform='scale(1)';">
+                     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); ${INTERACTIVE_BASE_STYLE}"
+              ${HANDLERS_BORDER_HOVER("#d1d5db")}
+              ${HANDLERS_SCALE_98}>
         <span style="display: flex; align-items: center; color: #22c55e;">${sortIconSvg}</span>
         <span class="sort-order-current-name" style="font-size: ${isXs ? "0.75rem" : "0.875rem"}; font-weight: 600; color: #22c55e; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">${t`${currentLabelKey}`}</span>
       </button>
@@ -167,8 +180,7 @@ export function buildSortOrderSelectHtml(
                              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                              font-weight: ${isSelected ? "600" : "400"};
                              color: ${textColor};
-                             user-select: none;
-                             -webkit-tap-highlight-color: transparent;"
+                             ${INTERACTIVE_BASE_STYLE}"
                       onmouseenter="this.style.backgroundColor='${
                         isSelected
                           ? "var(--color-primary, #dcfce7)"
@@ -217,14 +229,9 @@ export function buildEnhancedSelectHtml(
                      align-items: center;
                      gap: 0.5rem;
                      width: 100%;
-                     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);                     user-select: none;
-                     -webkit-tap-highlight-color: transparent;"
-              onmouseenter=" this.style.borderColor='#22c55e';"
-              onmouseleave=" this.style.borderColor='#d1d5db';"
-              onmousedown="this.style.transform='scale(0.98)';"
-              onmouseup="this.style.transform='scale(1)';"
-              ontouchstart="this.style.transform='scale(0.98)';"
-              ontouchend="this.style.transform='scale(1)';">
+                     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); ${INTERACTIVE_BASE_STYLE}"
+              ${HANDLERS_BORDER_HOVER("#d1d5db")}
+              ${HANDLERS_SCALE_98}>
         <img class="enhanced-mode-current-icon"
              src="${icons[enhancedMode]}"
              alt="${enhancedMode}" 
@@ -299,8 +306,7 @@ export function buildEnhancedSelectHtml(
                              align-items: center;
                              gap: ${isXs ? "0.35rem" : "0.5rem"};
                              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                             user-select: none;
-                             -webkit-tap-highlight-color: transparent;"
+                             ${INTERACTIVE_BASE_STYLE}"
                       onmouseenter="this.style.transform='scale(1.05) translateY(-2px)'; this.style.borderColor='#22c55e'; this.querySelector('img').style.transform='scale(1.1) rotate(5deg)';"
                       onmouseleave="this.style.transform='scale(1) translateY(0)'; this.style.borderColor='${borderColor}'; this.querySelector('img').style.transform='scale(1) rotate(0deg)';"
                       onmousedown="this.style.transform='scale(0.95)';"
@@ -350,14 +356,11 @@ export function buildEnhancedSelectHtml(
                          color: ${selectedColorOnlyMark ? "var(--color-primary-content, #fff)" : "var(--color-base-content, #6b7280)"};
                          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                          white-space: nowrap;
-                         user-select: none;
-                         -webkit-tap-highlight-color: transparent;"
-                  onmouseenter="this.style.borderColor='#22c55e';"
-                  onmouseleave="this.style.borderColor='${selectedColorOnlyMark ? "#22c55e" : "#d1d5db"}';"
-                  onmousedown="this.style.transform='scale(0.95)';"
-                  onmouseup="this.style.transform='scale(1)';"
-                  ontouchstart="this.style.transform='scale(0.95)';"
-                  ontouchend="this.style.transform='scale(1)';">${t("selected_color_only_mark")}</button>
+                         ${INTERACTIVE_BASE_STYLE}"
+                  ${HANDLERS_BORDER_HOVER(
+                    selectedColorOnlyMark ? "#22c55e" : "#d1d5db",
+                  )}
+                  ${HANDLERS_SCALE_95}>${t("selected_color_only_mark")}</button>
         </div>
       </div>
     </div>
@@ -391,14 +394,9 @@ export function buildComputeDeviceSelectHtml(
                      display: flex;
                      align-items: center;
                      gap: 0.5rem;
-                     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);                     user-select: none;
-                     -webkit-tap-highlight-color: transparent;"
-              onmouseenter=" this.style.borderColor='#22c55e';"
-              onmouseleave=" this.style.borderColor='#d1d5db';"
-              onmousedown="this.style.transform='scale(0.98)';"
-              onmouseup="this.style.transform='scale(1)';"
-              ontouchstart="this.style.transform='scale(0.98)';"
-              ontouchend="this.style.transform='scale(1)';">
+                     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); ${INTERACTIVE_BASE_STYLE}"
+              ${HANDLERS_BORDER_HOVER("#d1d5db")}
+              ${HANDLERS_SCALE_98}>
         <span style="font-size: ${isXs ? "0.75rem" : "0.875rem"};">${t`${"compute_device_label"}`}</span>
         <span class="compute-device-current-name" 
               style="font-size: ${isXs ? "0.75rem" : "0.875rem"}; 
@@ -451,8 +449,7 @@ export function buildComputeDeviceSelectHtml(
                              gap: 0.5rem;
                              font-weight: ${isSelected ? "600" : "400"};
                              color: ${textColor};
-                             user-select: none;
-                             -webkit-tap-highlight-color: transparent;"
+                             ${INTERACTIVE_BASE_STYLE}"
                       onmouseenter="this.style.backgroundColor='${
                         isSelected
                           ? "var(--color-primary, #dcfce7)"
@@ -506,14 +503,9 @@ export function buildOverlayModeSelectHtml(
                      display: flex;
                      align-items: center;
                      gap: 0.5rem;
-                     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);                     user-select: none;
-                     -webkit-tap-highlight-color: transparent;"
-              onmouseenter=" this.style.borderColor='#22c55e';"
-              onmouseleave=" this.style.borderColor='#d1d5db';"
-              onmousedown="this.style.transform='scale(0.98)';"
-              onmouseup="this.style.transform='scale(1)';"
-              ontouchstart="this.style.transform='scale(0.98)';"
-              ontouchend="this.style.transform='scale(1)';">
+                     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); ${INTERACTIVE_BASE_STYLE}"
+              ${HANDLERS_BORDER_HOVER("#d1d5db")}
+              ${HANDLERS_SCALE_98}>
         <span style="font-size: ${isXs ? "0.75rem" : "0.875rem"};">${t`${"popup_overlay_mode"}`}</span>
         <span class="overlay-mode-current-name"
               style="font-size: ${isXs ? "0.75rem" : "0.875rem"};
@@ -563,8 +555,7 @@ export function buildOverlayModeSelectHtml(
                              transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                              font-weight: ${isSelected ? "600" : "400"};
                              color: ${textColor};
-                             user-select: none;
-                             -webkit-tap-highlight-color: transparent;"
+                             ${INTERACTIVE_BASE_STYLE}"
                       onmouseenter="this.style.backgroundColor='${
                         isSelected
                           ? "var(--color-primary, #dcfce7)"
@@ -617,14 +608,10 @@ export function buildShowUnplacedOnlyToggleHtml(
                    gap: 0.5rem;
                    background-color: ${bgColor};
                    color: ${textColor};
-                   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);                   user-select: none;
-                   -webkit-tap-highlight-color: transparent;"
+                   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); ${INTERACTIVE_BASE_STYLE}"
             onmouseenter=" this.style.transform='translateY(-1px)';"
             onmouseleave=" this.style.transform='translateY(0)';"
-            onmousedown="this.style.transform='scale(0.95)';"
-            onmouseup="this.style.transform='scale(1)';"
-            ontouchstart="this.style.transform='scale(0.95)';"
-            ontouchend="this.style.transform='scale(1)';">
+            ${HANDLERS_SCALE_95}>
       <span style="display: flex; align-items: center; width: ${isXs ? "18px" : "24px"}; height: ${isXs ? "18px" : "24px"};">${SHOW_UNPLACED_ONLY_ICON_SVG}</span>
       <span style="font-size: ${isXs ? "0.75rem" : "0.875rem"}; font-weight: 600;">${t("show_unplaced_only")}</span>
       <input type="color"
@@ -672,8 +659,8 @@ export function buildControlsHtml(
     font-size: ${isXs ? "0.75rem" : "0.875rem"};
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);    user-select: none;
-    -webkit-tap-highlight-color: transparent;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    ${INTERACTIVE_BASE_STYLE}
   `;
   const iconButtonBaseStyle = `
     width: ${isXs ? "1.8rem" : "2.25rem"};
@@ -689,8 +676,8 @@ export function buildControlsHtml(
     font-weight: 700;
     line-height: 1;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);    user-select: none;
-    -webkit-tap-highlight-color: transparent;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    ${INTERACTIVE_BASE_STYLE}
   `;
   const enableAllIconSvg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
@@ -709,13 +696,10 @@ export function buildControlsHtml(
     ? `<button class="owned-colors-btn btn btn-outline ${sizeClass} rounded"
                style="${buttonBaseStyle}
                       border: 2px solid var(--color-secondary, #9333ea);
-                      color: var(--color-secondary, #9333ea);
-               onmouseenter="this.style.backgroundColor='var(--color-base-300, #f0f0f0)'; this.style.borderColor='var(--color-secondary, #9333ea)';"
+                      color: var(--color-secondary, #9333ea);"
+               onmouseenter="this.style.backgroundColor='var(--color-base-300, #f0f0f0)';"
                onmouseleave="this.style.backgroundColor='transparent';"
-               onmousedown="this.style.transform='scale(0.95)';"
-               onmouseup="this.style.transform='scale(1)';"
-               ontouchstart="this.style.transform='scale(0.95)';"
-               ontouchend="this.style.transform='scale(1)';">${t`${"owned_colors_only"}`}</button>`
+               ${HANDLERS_SCALE_95}>${t`${"owned_colors_only"}`}</button>`
     : "";
 
   const sortOrderSelectHTML = showColorStats
@@ -751,13 +735,10 @@ export function buildControlsHtml(
     ? `<button class="disable-unused-btn btn btn-outline ${sizeClass} rounded"
                style="${buttonBaseStyle}
                       border: 2px solid var(--color-warning, #f59e0b);
-                      color: var(--color-warning, #f59e0b);
-               onmouseenter="this.style.backgroundColor='var(--color-base-300, #f0f0f0)'; this.style.borderColor='var(--color-warning, #f59e0b)'; this.style.color='var(--color-warning, #f59e0b)';"
+                      color: var(--color-warning, #f59e0b);"
+               onmouseenter="this.style.backgroundColor='var(--color-base-300, #f0f0f0)'; this.style.color='var(--color-warning, #f59e0b)';"
                onmouseleave="this.style.backgroundColor='transparent'; this.style.color='var(--color-warning, #f59e0b)';"
-               onmousedown="this.style.transform='scale(0.95)';"
-               onmouseup="this.style.transform='scale(1)';"
-               ontouchstart="this.style.transform='scale(0.95)';"
-               ontouchend="this.style.transform='scale(1)';">${t`${"disable_unused_colors"}`}</button>`
+               ${HANDLERS_SCALE_95}>${t`${"disable_unused_colors"}`}</button>`
     : "";
 
   return `
@@ -766,34 +747,27 @@ export function buildControlsHtml(
               style="${iconButtonBaseStyle}
                      background: linear-gradient(145deg, #4ade80 0%, #22c55e 55%, #16a34a 100%);
                      border: 2px solid #15803d;
-                     color: #fff;              onmouseenter="this.style.filter='brightness(1.05)'; this.style.transform='translateY(-1px)';"
+                     color: #fff;"
+              onmouseenter="this.style.filter='brightness(1.05)'; this.style.transform='translateY(-1px)';"
               onmouseleave="this.style.filter='brightness(1)'; this.style.transform='translateY(0)';"
-              onmousedown="this.style.transform='scale(0.95)';"
-              onmouseup="this.style.transform='translateY(-1px)';"
-              ontouchstart="this.style.transform='scale(0.95)';"
-              ontouchend="this.style.transform='scale(1)';"
+              ${HANDLERS_SCALE_95}
               title="${t`${"enable_all"}`}">${enableAllIconSvg}</button>
       <button class="disable-all-btn btn btn-outline ${sizeClass} rounded-full"
               style="${iconButtonBaseStyle}
                      background: linear-gradient(145deg, #f87171 0%, #ef4444 55%, #dc2626 100%);
                      border: 2px solid #b91c1c;
-                     color: #fff;              onmouseenter="this.style.filter='brightness(1.05)'; this.style.transform='translateY(-1px)';"
+                     color: #fff;"
+              onmouseenter="this.style.filter='brightness(1.05)'; this.style.transform='translateY(-1px)';"
               onmouseleave="this.style.filter='brightness(1)'; this.style.transform='translateY(0)';"
-              onmousedown="this.style.transform='scale(0.95)';"
-              onmouseup="this.style.transform='translateY(-1px)';"
-              ontouchstart="this.style.transform='scale(0.95)';"
-              ontouchend="this.style.transform='scale(1)';"
+              ${HANDLERS_SCALE_95}
               title="${t`${"disable_all"}`}">${disableAllIconSvg}</button>
       <button class="free-colors-btn btn btn-outline ${sizeClass} rounded-full"
               style="${iconButtonBaseStyle}
                      border: 2px solid var(--color-info, #2563eb);
-                     color: var(--color-info, #2563eb);
-              onmouseenter="this.style.backgroundColor='var(--color-base-300, #f0f0f0)'; this.style.borderColor='var(--color-info, #2563eb)';"
+                     color: var(--color-info, #2563eb);"
+              onmouseenter="this.style.backgroundColor='var(--color-base-300, #f0f0f0)';"
               onmouseleave="this.style.backgroundColor='transparent';"
-              onmousedown="this.style.transform='scale(0.95)';"
-              onmouseup="this.style.transform='scale(1)';"
-              ontouchstart="this.style.transform='scale(0.95)';"
-              ontouchend="this.style.transform='scale(1)';"
+              ${HANDLERS_SCALE_95}
               title="${t`${"free_colors_only"}`}">💧</button>
       ${ownedColorsButtonHTML}
       ${disableUnusedButtonHTML}
