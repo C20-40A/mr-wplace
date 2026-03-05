@@ -17,12 +17,20 @@ export const injectImageEditorStyles = (
         gap: 0.1rem;
       }
       #wps-image-editor-container.mobile #wps-main-grid {
-        display: flex;
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+          "original current"
+          "palette palette"
+          "controls controls";
         height: auto;
         overflow: visible;
         gap: 0.1rem;
       }
+      #wps-image-editor-container.mobile #wps-original-area { grid-area: original; }
+      #wps-image-editor-container.mobile #wps-current-area { grid-area: current; }
+      #wps-image-editor-container.mobile #wps-palette-area { grid-area: palette; }
+      #wps-image-editor-container.mobile #wps-controls-area { grid-area: controls; }
       #wps-original-area, #wps-current-area, #wps-palette-area, #wps-controls-area {
         border: 1px solid #e5e7eb;
         border-radius: 0.5rem;
