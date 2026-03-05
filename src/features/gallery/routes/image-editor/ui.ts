@@ -393,6 +393,15 @@ export class ImageEditorUI {
   }
 
   private setupResponsive(): void {
+    const updateRangeSizeClass = (isDesktop: boolean) => {
+      const rangeInputs = this.container.querySelectorAll<HTMLInputElement>(
+        'input[type="range"].range',
+      );
+      rangeInputs.forEach((input) => {
+        input.classList.toggle("range-xs", !isDesktop);
+      });
+    };
+
     const updateLayout = () => {
       const isDesktop = isDesktopViewport();
       if (isDesktop) {
@@ -407,6 +416,8 @@ export class ImageEditorUI {
         this.controller.updateColorPaletteContainer(!isDesktop);
         this.controller.updateImageDisplayMode(isDesktop);
       }
+
+      updateRangeSizeClass(isDesktop);
     };
 
     updateLayout();
