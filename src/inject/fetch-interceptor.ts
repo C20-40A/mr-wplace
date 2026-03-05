@@ -22,6 +22,7 @@ import {
 } from "./features/map-instance/front-tile-layer";
 
 const TILE_URL_REGEX = /\/tiles?\/(\d+)\/(\d+)\.png(?:[?#].*)?$/;
+let frontTileXhrInterceptorInstalled = false;
 
 /**
  * Setup fetch interceptor to handle tile requests and user data
@@ -165,6 +166,118 @@ export const setupFetchInterceptor = (): void => {
     }
 
     return originalFetch.apply(this, args);
+  };
+
+  setupFrontTileXhrInterceptor();
+};
+
+const setupFrontTileXhrInterceptor = (): void => {
+  if (frontTileXhrInterceptorInstalled) return;
+  frontTileXhrInterceptorInstalled = true;
+
+  const xhrPrototype = window.XMLHttpRequest?.prototype;
+  if (!xhrPrototype) return;
+
+  const originalOpen = xhrPrototype.open;
+  const originalSend = xhrPrototype.send;
+  const originalSetRequestHeader = xhrPrototype.setRequestHeader;
+
+  type FrontTileXhrMeta = {
+    method: string;
+    url: string;
+    isAsync: boolean;
+    user?: string | null;
+    password?: string | null;
+    headers: Array<{ name: string; value: string }>;
+    blobUrl?: string;
+  };
+
+  const metaMap = new WeakMap<XMLHttpRequest, FrontTileXhrMeta>();
+
+  xhrPrototype.open = function (
+    method: string,
+    url: string | URL,
+    asyncValue?: boolean,
+    user?: string | null,
+    password?: string | null,
+  ): void {
+    const isAsync = asyncValue !== false;
+    const requestUrl = typeof url === "string" ? url : url.toString();
+    if (!isFrontLayerTileRequest(requestUrl)) {
+      metaMap.delete(this);
+      originalOpen.call(this, method, url, isAsync, user, password);
+      return;
+    }
+
+    metaMap.set(this, {
+      method,
+      url: requestUrl,
+      isAsync,
+      user,
+      password,
+      headers: [],
+    });
+
+    // Keep XHR in OPENED state, then swap URL to Blob URL in send().
+    originalOpen.call(this, method, "about:blank", isAsync, user, password);
+  };
+
+  xhrPrototype.setRequestHeader = function (name: string, value: string): void {
+    const meta = metaMap.get(this);
+    if (meta) meta.headers.push({ name, value });
+    originalSetRequestHeader.call(this, name, value);
+  };
+
+  xhrPrototype.send = function (
+    body?: Document | XMLHttpRequestBodyInit | null,
+  ): void {
+    const meta = metaMap.get(this);
+    if (!meta) {
+      originalSend.call(this, body);
+      return;
+    }
+
+    if (!meta.isAsync) {
+      console.warn("🧑‍🎨 : Sync XHR is not supported for front layer tiles");
+      originalSend.call(this, body);
+      return;
+    }
+
+    const xhr = this;
+    const cleanupBlobUrl = () => {
+      if (!meta.blobUrl) return;
+      URL.revokeObjectURL(meta.blobUrl);
+      meta.blobUrl = undefined;
+    };
+
+    void handleFrontLayerTileRequest(meta.url)
+      .then((response) => response.blob())
+      .then((blob) => {
+        cleanupBlobUrl();
+        meta.blobUrl = URL.createObjectURL(blob);
+
+        originalOpen.call(
+          xhr,
+          meta.method,
+          meta.blobUrl,
+          meta.isAsync,
+          meta.user,
+          meta.password,
+        );
+        for (const header of meta.headers) {
+          try {
+            originalSetRequestHeader.call(xhr, header.name, header.value);
+          } catch (error) {
+            console.warn("🧑‍🎨 : Failed to reapply XHR header:", error);
+          }
+        }
+        xhr.addEventListener("loadend", cleanupBlobUrl, { once: true });
+        originalSend.call(xhr, body);
+      })
+      .catch((error) => {
+        console.error("🧑‍🎨 : Failed to handle front layer XHR tile:", error);
+        originalSend.call(xhr, body);
+      });
   };
 };
 
