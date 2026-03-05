@@ -576,4 +576,5 @@ Do not use this feature to paint actual pixels.`,
   selected_color_only_mark: "Mark selected color only",
   tmp_tile_board_data_notice: "Shows only already received tile data. To reduce server load, no new requests are sent.",
   hint_gallery_backup: "We recommend making frequent backups here.",
+  all_short: "ALL",
 };

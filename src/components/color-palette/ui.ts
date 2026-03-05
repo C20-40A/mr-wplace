@@ -622,32 +622,39 @@ export function buildControlsHtml(
 ): string {
   const isXs = controlSize === "xs";
   const sizeClass = isXs ? "btn-xs XS" : "btn-sm";
+
+  // 1. 共通設定：高さと位置調整を完全に共通化
+  const commonBase = `
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  line-height: 1;
+  border-radius: 9999px; /* カプセル型/正円で統一 */
+  height: ${isXs ? "1.8rem" : "2.25rem"};
+  min-height: ${isXs ? "1.8rem" : "2.25rem"};
+  ${INTERACTIVE_BASE_STYLE}
+`;
+
+  // 2. 通常ボタン：横の余白とフォントサイズのみ指定
   const buttonBaseStyle = `
-    padding: ${isXs ? "0.3rem 0.6rem" : "0.625rem 1.25rem"};
-    border-radius: ${isXs ? "0.4rem" : "0.5rem"};
-    font-size: ${isXs ? "0.75rem" : "0.875rem"};
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    ${INTERACTIVE_BASE_STYLE}
-  `;
+  ${commonBase}
+  /* 上下パディングは height に任せて、左右だけ指定するのが安全 */
+  padding: ${isXs ? "0 0.6rem" : "0 1.25rem"}; 
+  font-size: ${isXs ? "0.75rem" : "0.875rem"};
+  font-weight: 500;
+`;
+
+  // 3. アイコンボタン：幅を高さに合わせる
   const iconButtonBaseStyle = `
-    width: ${isXs ? "1.8rem" : "2.25rem"};
-    height: ${isXs ? "1.8rem" : "2.25rem"};
-    min-width: ${isXs ? "1.8rem" : "2.25rem"};
-    min-height: ${isXs ? "1.8rem" : "2.25rem"};
-    padding: 0;
-    border-radius: 9999px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: ${isXs ? "0.9rem" : "1rem"};
-    font-weight: 700;
-    line-height: 1;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    ${INTERACTIVE_BASE_STYLE}
-  `;
+  ${commonBase}
+  width: ${isXs ? "1.8rem" : "2.25rem"};
+  min-width: ${isXs ? "1.8rem" : "2.25rem"};
+  padding: 0;
+  font-size: ${isXs ? "0.9rem" : "1rem"};
+  font-weight: 700;
+`;
   const enableAllIconSvg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
          style="width: ${isXs ? "0.95rem" : "1.1rem"}; height: ${isXs ? "0.95rem" : "1.1rem"}; display: block; pointer-events: none;">
@@ -713,14 +720,14 @@ export function buildControlsHtml(
   return `
     <div class="color-palette-controls flex flex-wrap gap-2 px-4 pb-2">
       <button class="enable-all-btn btn btn-outline ${sizeClass} rounded-full"
-              style="${iconButtonBaseStyle}
+              style="${buttonBaseStyle}
                      background: linear-gradient(145deg, #4ade80 0%, #22c55e 55%, #16a34a 100%);
                      border: 2px solid #15803d;
                      color: #fff;"
               onmouseenter="this.style.filter='brightness(1.05)'; this.style.transform='translateY(-1px)';"
               onmouseleave="this.style.filter='brightness(1)'; this.style.transform='translateY(0)';"
               ${HANDLERS_SCALE_95}
-              title="${t`${"enable_all"}`}">${enableAllIconSvg}</button>
+              title="${t`${"enable_all"}`}">${enableAllIconSvg}${t("all_short")}</button>
       <button class="disable-all-btn btn btn-outline ${sizeClass} rounded-full"
               style="${iconButtonBaseStyle}
                      background: linear-gradient(145deg, #f87171 0%, #ef4444 55%, #dc2626 100%);

@@ -547,4 +547,5 @@ export const ruTranslations = {
   selected_color_only_mark: "Отмечать только выбранный цвет",
   tmp_tile_board_data_notice: "Показывает только уже полученные данные тайлов. Чтобы снизить нагрузку на сервер, новые запросы не отправляются.",
   hint_gallery_backup: "Мы рекомендуем часто делать резервные копии.",
+  all_short: "ВСЕ",
 };

@@ -558,4 +558,5 @@ export const frTranslations = {
   selected_color_only_mark: "Marquer uniquement la couleur sélectionnée",
   tmp_tile_board_data_notice: "Affiche uniquement les donnees de tuiles deja recues. Pour reduire la charge du serveur, aucune nouvelle requete n'est envoyee.",
   hint_gallery_backup: "Nous recommandons de faire des sauvegardes ici fréquemment.",
+  all_short: "TOUT",
 };

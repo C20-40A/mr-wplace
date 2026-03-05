@@ -561,4 +561,5 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   popup_close_button_big: "Schließen-Schaltfläche vergrößern",
   selected_color_only_mark: "Nur ausgewählte Farbe markieren",
   tmp_tile_board_data_notice: "Zeigt nur bereits empfangene Kacheldaten. Zur Reduzierung der Serverlast werden keine neuen Anfragen gesendet.",
+  all_short: "ALLE",
 };

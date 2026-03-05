@@ -559,4 +559,5 @@ export const esTranslations = {
   selected_color_only_mark: "Marcar solo color seleccionado",
   tmp_tile_board_data_notice: "Muestra solo datos de tiles ya recibidos. Para reducir la carga del servidor, no se envian nuevas solicitudes.",
   hint_gallery_backup: "Se recomienda hacer backups aquí frecuentemente.",
+  all_short: "TODO",
 };

@@ -578,4 +578,5 @@ export const jaTranslations = {
   selected_color_only_mark: "選択中の色のみマーク",
   tmp_tile_board_data_notice: "受信済みタイルデータのみを表示します。サーバー負荷軽減のため、新規リクエストは送信しません。",
   hint_gallery_backup: "ここでこまめにバックアップを取ることをお勧めします。",
+  all_short: "すべて",
 };
