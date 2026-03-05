@@ -12,20 +12,17 @@ export const createPaletteArea = (
     "Color Palette",
     createElement("span", { style: { float: "right" } }, ["▼"]),
   ]);
-  const accordion = createElement(
-    "details",
-    { id: "wps-palette-accordion" },
-    [summary, elements.colorPaletteContainerMobile as HTMLElement],
-  );
+  const accordion = createElement("details", { id: "wps-palette-accordion" }, [
+    summary,
+    elements.colorPaletteContainerMobile as HTMLElement,
+  ]);
 
   elements.colorPaletteContainer = createElement("div", {
     id: "wps-color-palette-container",
   });
-  const desktopPalette = createElement(
-    "div",
-    { id: "wps-palette-desktop" },
-    [elements.colorPaletteContainer as HTMLElement],
-  );
+  const desktopPalette = createElement("div", { id: "wps-palette-desktop" }, [
+    elements.colorPaletteContainer as HTMLElement,
+  ]);
 
   const paletteScrollArea = createElement(
     "div",
@@ -63,7 +60,7 @@ const createTransparentSection = (
     "button",
     {
       id: "wps-adjust-tool-btn",
-      className: "btn btn-sm wps-adjust-tool-btn",
+      className: "btn btn-sm btn-primary wps-adjust-tool-btn",
     },
     [t("adjust_tool")],
   );
