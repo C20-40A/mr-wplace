@@ -26,7 +26,10 @@ import {
 import type { ColorIsolate } from "@/features/color-isolate";
 import { setShowUnplacedOnly } from "@/states/showUnplacedOnly";
 import { setupDeveloperMenu } from "./developer-menu";
-import { createAreaFillDialogItem, type AreaFillUIElements } from "./area-fill-ui";
+import {
+  createAreaFillDialogItem,
+  type AreaFillUIElements,
+} from "./area-fill-ui";
 import { AreaFillStorage } from "./area-fill-storage";
 
 export class DevInject {
@@ -42,7 +45,7 @@ export class DevInject {
 
   constructor(
     colorFilterManager: ColorFilterManager,
-    colorIsolate: ColorIsolate
+    colorIsolate: ColorIsolate,
   ) {
     this.colorFilterManager = colorFilterManager;
     this.colorIsolate = colorIsolate;
@@ -59,7 +62,7 @@ export class DevInject {
 
     // Konami code detector setup
     const konamiListener = createKonamiCodeDetector(() =>
-      this.handleKonamiCode()
+      this.handleKonamiCode(),
     );
     document.addEventListener("keydown", konamiListener);
     console.log("🧑‍🎨 : Konami code detector initialized");
@@ -108,7 +111,7 @@ export class DevInject {
     }
     dataElement.setAttribute(
       "data-auto-spoit-dev-mode",
-      this.devMode.toString()
+      this.devMode.toString(),
     );
     console.log("🧑‍🎨 : Dev mode attribute updated:", this.devMode);
   }
@@ -164,7 +167,7 @@ export class DevInject {
       position: fixed;
       top: 10px;
       left: 86px;
-      z-index: 999999;
+      z-index: 800;
       opacity: 0.4;
       transition: opacity 0.2s ease;
     `;
@@ -189,7 +192,8 @@ export class DevInject {
     this.areaFillUI = createAreaFillDialogItem(areaFillCorners);
 
     this.areaFillUI.fillButton.addEventListener("click", () => {
-      const isCurrentlyRunning = this.areaFillUI?.fillButton.textContent === "STOP";
+      const isCurrentlyRunning =
+        this.areaFillUI?.fillButton.textContent === "STOP";
       if (isCurrentlyRunning) {
         // Stop
         window.postMessage({ source: "mr-wplace-area-fill-stop" }, "*");
@@ -199,8 +203,10 @@ export class DevInject {
         // Start
         const corners = AreaFillStorage.getCorners();
         if (!corners.topLeft || !corners.bottomRight) return;
-        const templateOnlyMode = this.areaFillUI?.getTemplateOnlyMode() ?? false;
-        const fillPattern = this.areaFillUI?.getFillPattern() ?? "spiralPingPong";
+        const templateOnlyMode =
+          this.areaFillUI?.getTemplateOnlyMode() ?? false;
+        const fillPattern =
+          this.areaFillUI?.getFillPattern() ?? "spiralPingPong";
         window.postMessage(
           {
             source: "mr-wplace-area-fill-start",
@@ -211,7 +217,7 @@ export class DevInject {
               fillPattern,
             },
           },
-          "*"
+          "*",
         );
         this.areaFillUI?.setRunning(true);
         console.log("🧑‍🎨 : Area fill start requested", corners, {
@@ -233,7 +239,7 @@ export class DevInject {
     // Auto Color Spoit item
     this.autoColorSpoitDialogItem = createAutoColorSpoitDialogItem(
       this.autoColorSpoitEnabled,
-      () => this.toggleAutoColorSpoit()
+      () => this.toggleAutoColorSpoit(),
     );
     content.appendChild(this.autoColorSpoitDialogItem);
 
@@ -320,7 +326,7 @@ export class DevInject {
     if (this.autoCanvasClickDialogItem) {
       updateAutoCanvasClickDialogItem(
         this.autoCanvasClickDialogItem,
-        this.autoCanvasClickEnabled
+        this.autoCanvasClickEnabled,
       );
     }
   }
@@ -363,7 +369,7 @@ export class DevInject {
     if (this.autoColorSpoitDialogItem) {
       updateAutoColorSpoitDialogItem(
         this.autoColorSpoitDialogItem,
-        this.autoColorSpoitEnabled
+        this.autoColorSpoitEnabled,
       );
     }
   }
