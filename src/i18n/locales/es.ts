@@ -560,4 +560,6 @@ export const esTranslations = {
   tmp_tile_board_data_notice: "Muestra solo datos de tiles ya recibidos. Para reducir la carga del servidor, no se envian nuevas solicitudes.",
   hint_gallery_backup: "Se recomienda hacer backups aquí frecuentemente.",
   all_short: "TODO",
+  popup_overlay_mode_composite_detail: "Funciones básicas, alto rendimiento",
+  popup_overlay_mode_layer_detail: "Funciones avanzadas, visualización rápida",
 };

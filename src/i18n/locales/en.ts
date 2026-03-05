@@ -577,4 +577,6 @@ Do not use this feature to paint actual pixels.`,
   tmp_tile_board_data_notice: "Shows only already received tile data. To reduce server load, no new requests are sent.",
   hint_gallery_backup: "We recommend making frequent backups here.",
   all_short: "ALL",
+  popup_overlay_mode_composite_detail: "Low features, high performance",
+  popup_overlay_mode_layer_detail: "Advanced features, fast display",
 };

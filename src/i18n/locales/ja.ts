@@ -579,4 +579,6 @@ export const jaTranslations = {
   tmp_tile_board_data_notice: "受信済みタイルデータのみを表示します。サーバー負荷軽減のため、新規リクエストは送信しません。",
   hint_gallery_backup: "ここでこまめにバックアップを取ることをお勧めします。",
   all_short: "すべて",
+  popup_overlay_mode_composite_detail: "低機能・高パフォーマンス",
+  popup_overlay_mode_layer_detail: "高機能・高速表示",
 };

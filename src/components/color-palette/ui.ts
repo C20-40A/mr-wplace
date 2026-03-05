@@ -68,6 +68,7 @@ type DropdownItemConfig<T> = {
   dataAttr: string;
   getValue: (option: T) => string;
   getLabel: (option: T) => string;
+  getDescription?: (option: T) => string;
   getIcon?: (option: T) => string;
   padding: {
     xs: string;
@@ -82,6 +83,7 @@ const buildDropdownItems = <T>({
   dataAttr,
   getValue,
   getLabel,
+  getDescription,
   getIcon,
   padding,
 }: DropdownItemConfig<T>): string =>
@@ -102,6 +104,7 @@ const buildDropdownItems = <T>({
         ? "var(--color-primary, #dcfce7)"
         : "var(--color-base-200, #f0f0f0)";
       const iconHtml = getIcon ? getIcon(option) : "";
+      const description = getDescription?.(option);
       return `
         <button class="${itemClass}"
                 ${dataAttr}="${getValue(option)}"
@@ -117,7 +120,7 @@ const buildDropdownItems = <T>({
                        font-weight: ${isSelected ? "600" : "400"};
                        color: ${textColor};
                        ${INTERACTIVE_BASE_STYLE}
-                       ${getIcon ? "display: flex; align-items: center; gap: 0.5rem;" : ""}"
+                       ${getIcon ? "display: flex; align-items: center; gap: 0.5rem;" : ""}
                 onmouseenter="this.style.backgroundColor='${hoverBgColor}'; this.style.transform='translateX(4px)'; this.style.borderColor='#22c55e';"
                 onmouseleave="this.style.backgroundColor='${bgColor}'; this.style.transform='translateX(0)'; this.style.borderColor='${borderColor}';"
                 onmousedown="this.style.transform='scale(0.98)';"
@@ -125,7 +128,14 @@ const buildDropdownItems = <T>({
                 ontouchstart="this.style.transform='scale(0.98)';"
                 ontouchend="this.style.transform='scale(1)';">
           ${iconHtml}
-          <span>${getLabel(option)}</span>
+          <span style="display: flex; flex-direction: column; gap: 0.05rem;">
+            <span>${getLabel(option)}</span>
+            ${
+              description
+                ? `<span style="font-size: ${isXs ? "0.65rem" : "0.72rem"}; font-weight: 500; opacity: 0.82;">${description}</span>`
+                : ""
+            }
+          </span>
         </button>
       `;
     })
@@ -485,12 +495,28 @@ export function buildOverlayModeSelectHtml(
   controlSize: "default" | "xs" = "default",
 ): string {
   const isXs = controlSize === "xs";
+  const layerIconSvg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; flex-shrink: 0;">
+      <path d="M12 3l9 4.5-9 4.5-9-4.5L12 3z"/>
+      <path d="M3 12l9 4.5 9-4.5"/>
+      <path d="M3 16.5L12 21l9-4.5"/>
+    </svg>
+  `.trim();
   const options: Array<{
     value: "true" | "false";
     labelKey: string;
+    descriptionKey: string;
   }> = [
-    { value: "false", labelKey: "popup_overlay_mode_composite" },
-    { value: "true", labelKey: "popup_overlay_mode_layer" },
+    {
+      value: "false",
+      labelKey: "popup_overlay_mode_composite",
+      descriptionKey: "popup_overlay_mode_composite_detail",
+    },
+    {
+      value: "true",
+      labelKey: "popup_overlay_mode_layer",
+      descriptionKey: "popup_overlay_mode_layer_detail",
+    },
   ];
   const currentOption = options.find((o) => (o.value === "true") === enabled);
   const currentLabelKey =
@@ -499,10 +525,12 @@ export function buildOverlayModeSelectHtml(
   return `
     <div class="overlay-mode-container" style="position: relative;">
       <button class="overlay-mode-button" type="button"
+              data-tip="${t("popup_overlay_mode")}"
+              title="${t("popup_overlay_mode")}"
               style="${getDropdownTriggerBaseStyle(isXs)}"
               ${HANDLERS_BORDER_HOVER("#d1d5db")}
               ${HANDLERS_SCALE_98}>
-        <span style="font-size: ${isXs ? "0.75rem" : "0.875rem"};">${t`${"popup_overlay_mode"}`}</span>
+        <span style="display: flex; align-items: center; color: #22c55e;">${layerIconSvg}</span>
         <span class="overlay-mode-current-name"
               style="font-size: ${isXs ? "0.75rem" : "0.875rem"};
                      font-weight: 600;
@@ -532,6 +560,7 @@ export function buildOverlayModeSelectHtml(
             dataAttr: "data-overlay-mode",
             getValue: (option) => option.value,
             getLabel: (option) => t`${option.labelKey}`,
+            getDescription: (option) => t`${option.descriptionKey}`,
             padding: { xs: "0.35rem 0.5rem", default: "0.5rem 0.75rem" },
           })}
         </div>

@@ -562,4 +562,6 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   selected_color_only_mark: "Nur ausgewählte Farbe markieren",
   tmp_tile_board_data_notice: "Zeigt nur bereits empfangene Kacheldaten. Zur Reduzierung der Serverlast werden keine neuen Anfragen gesendet.",
   all_short: "ALLE",
+  popup_overlay_mode_composite_detail: "Wenige Funktionen, hohe Leistung",
+  popup_overlay_mode_layer_detail: "Erweiterte Funktionen, schnelle Anzeige",
 };

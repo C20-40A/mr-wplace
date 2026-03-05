@@ -548,4 +548,6 @@ export const ruTranslations = {
   tmp_tile_board_data_notice: "Показывает только уже полученные данные тайлов. Чтобы снизить нагрузку на сервер, новые запросы не отправляются.",
   hint_gallery_backup: "Мы рекомендуем часто делать резервные копии.",
   all_short: "ВСЕ",
+  popup_overlay_mode_composite_detail: "Меньше функций, высокая производительность",
+  popup_overlay_mode_layer_detail: "Расширенные функции, быстрое отображение",
 };

@@ -542,4 +542,6 @@ export const viTranslations = {
   tmp_tile_board_data_notice: "Chi hien thi du lieu tile da nhan. De giam tai may chu, khong gui them yeu cau moi.",
   hint_gallery_backup: "Chúng tôi khuyên bạn nên sao lưu thường xuyên ở đây.",
   all_short: "HẾT",
+  popup_overlay_mode_composite_detail: "Ít tính năng, hiệu năng cao",
+  popup_overlay_mode_layer_detail: "Tính năng nâng cao, hiển thị nhanh",
 };
