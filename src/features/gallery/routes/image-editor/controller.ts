@@ -3,6 +3,7 @@ import { colorpalette, TRANSPARENT_COLOR_ID } from "@/constants/colors";
 import { isDesktopViewport } from "@/constants/breakpoints";
 import { ImageInspector } from "@/components/image-inspector";
 import { ColorPalette } from "@/components/color-palette";
+import { ImageAdjustToolMode } from "@/features/image-adjust-tool";
 import { DrawPosition, GalleryItem } from "@/states/galleryStorage";
 import {
   readFileAsDataUrl,
@@ -57,6 +58,7 @@ export class EditorController {
   private transparencyBoundaryAdjust = 0;
   private transparencyWorkingCanvas: HTMLCanvasElement | null = null;
   private transparencyPreviewHandler?: (canvas: HTMLCanvasElement) => void;
+  private adjustToolMode: ImageAdjustToolMode | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -70,6 +72,12 @@ export class EditorController {
     handler: (canvas: HTMLCanvasElement) => void,
   ): void {
     this.transparencyPreviewHandler = handler;
+  }
+
+  destroy(): void {
+    this.adjustToolMode?.destroy();
+    this.adjustToolMode = null;
+    this.clearImage();
   }
 
   async loadExistingImage(item: GalleryItem): Promise<void> {
@@ -260,6 +268,77 @@ export class EditorController {
     this.updateScaledImage();
   }
 
+  openAdjustTool(): void {
+    if (!this.originalImage) return;
+    if (!this.originalImage.src) return;
+
+    this.adjustToolMode?.destroy();
+    this.adjustToolMode = new ImageAdjustToolMode({
+      imageSrc: this.originalImage.src,
+      naturalWidth: this.originalImage.naturalWidth,
+      naturalHeight: this.originalImage.naturalHeight,
+      initialScale: this.imageScale,
+      onConfirm: ({ widthPx, heightPx, drawPosition }) => {
+        this.applyAdjustToolResult(widthPx, heightPx, drawPosition);
+      },
+      onCancel: () => {
+        this.adjustToolMode = null;
+      },
+    });
+
+    const opened = this.adjustToolMode.open();
+    if (!opened) {
+      this.adjustToolMode = null;
+      return;
+    }
+
+    console.log("🧑‍🎨 : Opened adjust tool mode");
+  }
+
+  private applyAdjustToolResult(
+    targetWidthPx: number,
+    targetHeightPx: number,
+    drawPosition: DrawPosition | null,
+  ): void {
+    if (!this.originalImage) return;
+
+    const widthInput = this.container.querySelector(
+      "#wps-width-input",
+    ) as HTMLInputElement;
+    const heightInput = this.container.querySelector(
+      "#wps-height-input",
+    ) as HTMLInputElement;
+    const slider = this.container.querySelector(
+      "#wps-scale-slider",
+    ) as HTMLInputElement;
+
+    const originalWidth = this.originalImage.naturalWidth;
+    const originalHeight = this.originalImage.naturalHeight;
+    const widthScale = targetWidthPx / originalWidth;
+    const heightScale = targetHeightPx / originalHeight;
+    const nextScale = Math.max(0.01, Math.min(1, Math.min(widthScale, heightScale)));
+    const nextWidth = Math.max(1, Math.round(originalWidth * nextScale));
+    const nextHeight = Math.max(1, Math.round(originalHeight * nextScale));
+
+    if (slider) slider.value = nextScale.toString();
+    if (widthInput) widthInput.value = nextWidth.toString();
+    if (heightInput) heightInput.value = nextHeight.toString();
+
+    if (drawPosition) {
+      this.drawPosition = drawPosition;
+      this.setCoordinateInputs(drawPosition);
+    }
+
+    this.onScaleChange(nextScale);
+    this.adjustToolMode = null;
+
+    console.log(
+      "🧑‍🎨 : Applied adjust tool result:",
+      `${nextWidth}x${nextHeight}`,
+      drawPosition,
+    );
+  }
+
   getProcessedImage(): HTMLCanvasElement | null {
     return this.scaledCanvas;
   }
@@ -321,6 +400,9 @@ export class EditorController {
   }
 
   clearImage(): void {
+    this.adjustToolMode?.destroy();
+    this.adjustToolMode = null;
+
     if (this.imageInspector) {
       this.imageInspector.destroy();
       this.imageInspector = null;
@@ -569,6 +651,9 @@ export class EditorController {
   }
 
   private displayImage(imageSrc: string): void {
+    this.adjustToolMode?.destroy();
+    this.adjustToolMode = null;
+
     const dropzone = this.container.querySelector(
       "#wps-dropzone-container",
     ) as HTMLElement;
@@ -664,6 +749,8 @@ export class EditorController {
 
   private replaceImageDisplay(imageSrc: string): void {
     console.log("🧑‍🎨 : Replacing image, keeping current adjustments");
+    this.adjustToolMode?.destroy();
+    this.adjustToolMode = null;
 
     // 画像を置き換える際はキャッシュをクリア
     if (this.cachedResizedBitmap) {
@@ -738,7 +825,12 @@ export class EditorController {
 
   private updateCoordinateInputs(): void {
     if (!this.drawPosition) return;
+    this.setCoordinateInputs(this.drawPosition);
 
+    console.log("🧑‍🎨 : Auto-filled coordinates:", this.drawPosition);
+  }
+
+  private setCoordinateInputs(position: DrawPosition): void {
     const tlxInput = this.container.querySelector(
       "#wps-coord-tlx",
     ) as HTMLInputElement;
@@ -752,12 +844,10 @@ export class EditorController {
       "#wps-coord-pxy",
     ) as HTMLInputElement;
 
-    if (tlxInput) tlxInput.value = this.drawPosition.TLX.toString();
-    if (tlyInput) tlyInput.value = this.drawPosition.TLY.toString();
-    if (pxxInput) pxxInput.value = this.drawPosition.PxX.toString();
-    if (pxyInput) pxyInput.value = this.drawPosition.PxY.toString();
-
-    console.log("🧑‍🎨 : Auto-filled coordinates:", this.drawPosition);
+    if (tlxInput) tlxInput.value = position.TLX.toString();
+    if (tlyInput) tlyInput.value = position.TLY.toString();
+    if (pxxInput) pxxInput.value = position.PxX.toString();
+    if (pxyInput) pxyInput.value = position.PxY.toString();
   }
 
   private updateOriginalImageDisplay(): void {

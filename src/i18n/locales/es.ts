@@ -562,4 +562,8 @@ export const esTranslations = {
   all_short: "TODO",
   popup_overlay_mode_composite_detail: "Funciones básicas, alto rendimiento",
   popup_overlay_mode_layer_detail: "Funciones avanzadas, visualización rápida",
+  adjust_tool: "Herramienta de ajuste",
+  adjust_tool_confirm: "Confirmar",
+  adjust_tool_cancel_confirm: "¿Salir de la herramienta de ajuste? Los cambios no se aplicarán.",
+  adjust_tool_target_size: "Tamaño objetivo",
 };

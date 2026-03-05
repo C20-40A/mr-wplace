@@ -49,7 +49,7 @@ const createTransparentSection = (
     className: "wps-transparent-divider",
   });
 
-  const btn = createElement(
+  const transparencyBtn = createElement(
     "button",
     {
       id: "wps-transparency-tool-btn",
@@ -57,10 +57,25 @@ const createTransparentSection = (
     },
     [t("transparency_tool")],
   );
-  elements.transparencyToolBtn = btn;
+  elements.transparencyToolBtn = transparencyBtn;
+
+  const adjustBtn = createElement(
+    "button",
+    {
+      id: "wps-adjust-tool-btn",
+      className: "btn btn-sm wps-adjust-tool-btn",
+    },
+    [t("adjust_tool")],
+  );
+  elements.adjustToolBtn = adjustBtn;
+
+  const buttonRow = createElement("div", { className: "wps-tool-btn-row" }, [
+    transparencyBtn,
+    adjustBtn,
+  ]);
 
   return createElement("div", { id: "wps-transparent-section" }, [
     divider,
-    btn,
+    buttonRow,
   ]);
 };

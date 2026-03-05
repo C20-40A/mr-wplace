@@ -25,6 +25,7 @@ export interface ImageEditorCallbacks {
   onGpuToggle: (enabled: boolean) => void;
   onTransparentColorsChange: (colors: Set<string>) => void;
   onOpenTransparencyTool: () => HTMLImageElement | HTMLCanvasElement | null;
+  onOpenAdjustTool: () => void;
   onTransparencyCanvasClick: (x: number, y: number) => void;
   onTransparencyThresholdChange: (value: number) => void;
   onTransparencyApply: () => void;
@@ -316,6 +317,10 @@ export class ImageEditorUI {
     // 透過ツールボタン
     if (target.id === "wps-transparency-tool-btn") {
       this.openTransparencyDialog();
+      return;
+    }
+    if (target.id === "wps-adjust-tool-btn") {
+      this.callbacks.onOpenAdjustTool();
       return;
     }
 

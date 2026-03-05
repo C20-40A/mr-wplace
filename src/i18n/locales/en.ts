@@ -579,4 +579,8 @@ Do not use this feature to paint actual pixels.`,
   all_short: "ALL",
   popup_overlay_mode_composite_detail: "Low features, high performance",
   popup_overlay_mode_layer_detail: "Advanced features, fast display",
+  adjust_tool: "Adjust Tool",
+  adjust_tool_confirm: "Confirm",
+  adjust_tool_cancel_confirm: "Exit adjust tool? Changes will not be applied.",
+  adjust_tool_target_size: "Target size",
 };

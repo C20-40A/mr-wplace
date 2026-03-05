@@ -550,4 +550,8 @@ export const ruTranslations = {
   all_short: "ВСЕ",
   popup_overlay_mode_composite_detail: "Меньше функций, высокая производительность",
   popup_overlay_mode_layer_detail: "Расширенные функции, быстрое отображение",
+  adjust_tool: "Инструмент настройки",
+  adjust_tool_confirm: "Подтвердить",
+  adjust_tool_cancel_confirm: "Выйти из инструмента настройки? Изменения не будут применены.",
+  adjust_tool_target_size: "Целевой размер",
 };

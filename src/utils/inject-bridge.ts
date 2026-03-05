@@ -497,3 +497,47 @@ export const getMapCenter = async (): Promise<{ lat: number; lng: number } | nul
     }, 5000);
   });
 };
+
+type ScreenPoint = { x: number; y: number };
+type MapPixelPoint = { pixelX: number; pixelY: number };
+
+/**
+ * Project viewport client points to wplace pixel coordinates via inject map instance
+ */
+export const projectScreenPointsToMapPixels = async (
+  points: ScreenPoint[],
+): Promise<MapPixelPoint[]> => {
+  if (!points.length) return [];
+  const requestId = generateRequestId();
+
+  return new Promise((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-response-map-pixels-from-screen" &&
+        event.data.requestId === requestId
+      ) {
+        clearTimeout(timeoutId);
+        window.removeEventListener("message", handler);
+        resolve((event.data.points || []) as MapPixelPoint[]);
+      }
+    };
+
+    window.addEventListener("message", handler);
+    window.postMessage(
+      {
+        source: "mr-wplace-request-map-pixels-from-screen",
+        requestId,
+        points,
+      },
+      "*",
+    );
+
+    timeoutId = setTimeout(() => {
+      window.removeEventListener("message", handler);
+      console.warn("🧑‍🎨 : Screen point projection request timed out");
+      resolve([]);
+    }, 5000);
+  });
+};

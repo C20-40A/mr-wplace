@@ -49,6 +49,7 @@ export class GalleryImageEditor {
       onGpuToggle: (enabled) => this.controller?.onGpuToggle(enabled),
       onTransparentColorsChange: (colors) => this.controller?.onTransparentColorsChange(colors),
       onOpenTransparencyTool: () => this.controller?.getProcessedImage() ?? null,
+      onOpenAdjustTool: () => this.controller?.openAdjustTool(),
       onTransparencyCanvasClick: (x, y) => this.controller?.onTransparencyClick(x, y),
       onTransparencyThresholdChange: (value) =>
         this.controller?.onTransparencyBoundaryAdjust(value),
@@ -72,7 +73,7 @@ export class GalleryImageEditor {
     console.log("🧑‍🎨 : Destroying GalleryImageEditor...");
 
     if (this.controller) {
-      // Controller 内の ImageInspector, ColorPalette は自動破棄される
+      this.controller.destroy();
       this.controller = null;
     }
 

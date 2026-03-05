@@ -544,4 +544,8 @@ export const viTranslations = {
   all_short: "HẾT",
   popup_overlay_mode_composite_detail: "Ít tính năng, hiệu năng cao",
   popup_overlay_mode_layer_detail: "Tính năng nâng cao, hiển thị nhanh",
+  adjust_tool: "Công cụ điều chỉnh",
+  adjust_tool_confirm: "Xác nhận",
+  adjust_tool_cancel_confirm: "Thoát công cụ điều chỉnh? Các thay đổi sẽ không được áp dụng.",
+  adjust_tool_target_size: "Kích thước mục tiêu",
 };

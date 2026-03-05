@@ -201,8 +201,16 @@ export const injectImageEditorStyles = (
       #wps-palette-scroll-area { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
       #wps-transparent-section { flex-shrink: 0; padding: 0 0.5rem 0.25rem; }
       .wps-transparent-divider { height: 1px; background: #e5e7eb; margin: 0.25rem 0; }
+      .wps-tool-btn-row {
+        display: flex;
+        gap: 0.35rem;
+        margin-top: 0.25rem;
+      }
       .wps-transparency-tool-btn {
-        width: 100%; margin-top: 0.25rem; font-size: 0.75rem;
+        flex: 1; font-size: 0.75rem;
+      }
+      .wps-adjust-tool-btn {
+        flex: 1; font-size: 0.75rem;
       }
 
       #wps-transparency-overlay {

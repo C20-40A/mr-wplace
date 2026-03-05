@@ -564,4 +564,8 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   all_short: "ALLE",
   popup_overlay_mode_composite_detail: "Wenige Funktionen, hohe Leistung",
   popup_overlay_mode_layer_detail: "Erweiterte Funktionen, schnelle Anzeige",
+  adjust_tool: "Anpassungswerkzeug",
+  adjust_tool_confirm: "Bestätigen",
+  adjust_tool_cancel_confirm: "Anpassungswerkzeug beenden? Änderungen werden nicht angewendet.",
+  adjust_tool_target_size: "Zielgröße",
 };

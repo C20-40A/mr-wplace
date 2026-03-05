@@ -7,6 +7,7 @@ import {
   setOriginalBlob,
 } from "../features/tile-draw";
 import { computeTotalStatsFromImage } from "../features/tile-draw";
+import { latLonToPixels } from "@/utils/geo-converter";
 
 const TILE_FETCH_TIMEOUT_MS = 5000;
 
@@ -284,6 +285,65 @@ export const handleMapCenterRequest = (data: { requestId: string }): void => {
 
   console.log(
     `🧑‍🎨 : Sent map center: ${center ? `${center.lat}, ${center.lng}` : "null"} (request: ${data.requestId})`
+  );
+};
+
+interface MapProjectPoint {
+  x: number;
+  y: number;
+}
+
+interface MapProjectResult {
+  pixelX: number;
+  pixelY: number;
+}
+
+/**
+ * Handle screen point -> wplace pixel projection request
+ */
+export const handleMapPixelsFromScreenRequest = (data: {
+  requestId: string;
+  points: MapProjectPoint[];
+}): void => {
+  const { getMapInstanceFromWplace } = require("../features/map-instance/get-map-instance");
+  const mapInstance = getMapInstanceFromWplace() as {
+    unproject?: (point: { x: number; y: number }) => { lat: number; lng: number };
+    getContainer?: () => HTMLElement;
+  } | null;
+
+  const mapContainer =
+    mapInstance?.getContainer?.() ??
+    document.querySelector<HTMLElement>(".maplibregl-map") ??
+    document.querySelector<HTMLElement>(".maplibregl-canvas-container");
+  const rect = mapContainer?.getBoundingClientRect();
+
+  if (!mapInstance?.unproject || !rect || !data.points?.length) {
+    window.postMessage(
+      {
+        source: "mr-wplace-response-map-pixels-from-screen",
+        requestId: data.requestId,
+        points: [],
+      },
+      "*",
+    );
+    return;
+  }
+
+  const points: MapProjectResult[] = data.points.map((point) => {
+    const localX = Math.min(Math.max(point.x - rect.left, 0), rect.width);
+    const localY = Math.min(Math.max(point.y - rect.top, 0), rect.height);
+    const lngLat = mapInstance.unproject!({ x: localX, y: localY });
+    const [pixelX, pixelY] = latLonToPixels(lngLat.lat, lngLat.lng);
+    return { pixelX, pixelY };
+  });
+
+  window.postMessage(
+    {
+      source: "mr-wplace-response-map-pixels-from-screen",
+      requestId: data.requestId,
+      points,
+    },
+    "*",
   );
 };
 
