@@ -1,5 +1,6 @@
 import { getColor, TEXT_COLORS, TEXT_OUTLINE } from "./ui-colors";
 import { t } from "@/i18n/manager";
+import { toggleDeveloperMenu } from "./developer-menu";
 
 interface DeveloperDialogElements {
   dialog: HTMLDivElement;
@@ -105,6 +106,41 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     transition: all 0.2s ease;
   `;
 
+  const menuBtn = document.createElement("button");
+  menuBtn.style.cssText = `
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    color: ${TEXT_COLORS.secondary};
+    cursor: pointer;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
+  `;
+  menuBtn.textContent = "🛠️";
+  menuBtn.addEventListener("mouseenter", () => {
+    menuBtn.style.color = getColor("primary", 1);
+    menuBtn.style.borderColor = getColor("primary", 0.4);
+    menuBtn.style.background = getColor("primary", 0.1);
+  });
+  menuBtn.addEventListener("mouseleave", () => {
+    menuBtn.style.color = TEXT_COLORS.secondary;
+    menuBtn.style.borderColor = "rgba(0, 0, 0, 0.15)";
+    menuBtn.style.background = "rgba(0, 0, 0, 0.05)";
+  });
+  menuBtn.addEventListener("mousedown", () => {
+    menuBtn.style.transform = "scale(0.95)";
+  });
+  menuBtn.addEventListener("mouseup", () => {
+    menuBtn.style.transform = "scale(1)";
+  });
+  menuBtn.addEventListener("click", () => toggleDeveloperMenu());
+
   // Minimize button
   const minimizeBtn = document.createElement("button");
   minimizeBtn.style.cssText = `
@@ -169,6 +205,9 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
       buttonContainer.style.gap = "2px";
       minimizeBtn.style.width = "16px";
       minimizeBtn.style.height = "16px";
+      menuBtn.style.width = "16px";
+      menuBtn.style.height = "16px";
+      menuBtn.style.fontSize = "10px";
       closeBtn.style.width = "16px";
       closeBtn.style.height = "16px";
       const minimizeSvg = minimizeBtn.querySelector("svg");
@@ -184,6 +223,9 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
       buttonContainer.style.gap = "4px";
       minimizeBtn.style.width = "22px";
       minimizeBtn.style.height = "22px";
+      menuBtn.style.width = "22px";
+      menuBtn.style.height = "22px";
+      menuBtn.style.fontSize = "11px";
       closeBtn.style.width = "22px";
       closeBtn.style.height = "22px";
       const minimizeSvg = minimizeBtn.querySelector("svg");
@@ -234,6 +276,7 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
   });
   closeBtn.addEventListener("click", () => hideDeveloperDialog());
 
+  buttonContainer.appendChild(menuBtn);
   buttonContainer.appendChild(minimizeBtn);
   buttonContainer.appendChild(closeBtn);
 
@@ -345,6 +388,9 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     buttonContainer.style.gap = "2px";
     minimizeBtn.style.width = "16px";
     minimizeBtn.style.height = "16px";
+    menuBtn.style.width = "16px";
+    menuBtn.style.height = "16px";
+    menuBtn.style.fontSize = "10px";
     closeBtn.style.width = "16px";
     closeBtn.style.height = "16px";
     const minimizeSvg = minimizeBtn.querySelector("svg");
@@ -388,6 +434,8 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     if (
       e.target === closeBtn ||
       closeBtn.contains(e.target as Node) ||
+      e.target === menuBtn ||
+      menuBtn.contains(e.target as Node) ||
       e.target === minimizeBtn ||
       minimizeBtn.contains(e.target as Node)
     )
@@ -407,6 +455,8 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     if (
       e.target === closeBtn ||
       closeBtn.contains(e.target as Node) ||
+      e.target === menuBtn ||
+      menuBtn.contains(e.target as Node) ||
       e.target === minimizeBtn ||
       minimizeBtn.contains(e.target as Node)
     )

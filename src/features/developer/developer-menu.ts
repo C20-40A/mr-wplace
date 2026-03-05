@@ -126,6 +126,8 @@ const ACTIONS = [
 // ==========================================
 
 export const setupDeveloperMenu = (): void => {
+  if (document.getElementById("mr-wplace-developer-menu")) return;
+
   // スタイル定義 (CSS in JS)
   const S = {
     font: "12px sans-serif",
@@ -151,6 +153,7 @@ export const setupDeveloperMenu = (): void => {
     box-shadow: 0 4px 12px rgba(0,0,0,0.5); font:${S.font};
   `,
   );
+  menu.id = "mr-wplace-developer-menu";
 
   // Close Button (Right Top)
   const closeBtn = el(
@@ -182,23 +185,13 @@ export const setupDeveloperMenu = (): void => {
     menu.appendChild(btn);
   });
 
-  // --- Toggle Icon (Left Top) ---
-  const icon = el(
-    "button",
-    `
-    position:fixed; top:10px; left:86px; z-index:${S.z};
-    width:20px; height:20px; border-radius:50%; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; font-size:12px;
-  `,
-    "🛠️",
-  );
-
-  icon.onclick = () => {
-    const isHidden = menu.style.display === "none";
-    menu.style.display = isHidden ? "block" : "none";
-  };
-
   // Inject
-  document.body.appendChild(icon);
   document.body.appendChild(menu);
+};
+
+export const toggleDeveloperMenu = (): void => {
+  const menu = document.getElementById("mr-wplace-developer-menu") as HTMLDivElement | null;
+  if (!menu) return;
+  const isHidden = menu.style.display === "none";
+  menu.style.display = isHidden ? "block" : "none";
 };

@@ -1,5 +1,3 @@
-import { setupElementObserver } from "@/components/element-observer";
-import { findPaintPixelControls } from "@/constants/selectors";
 import { AutoSpoitStorage } from "./storage";
 import { AutoCanvasClickStorage } from "./auto-canvas-click-storage";
 import { AutoColorSpoitStorage } from "./auto-color-spoit-storage";
@@ -136,8 +134,10 @@ export class DevInject {
       // 既存のトリガーボタンを削除
       const existingTrigger = document.getElementById("dev-trigger-btn");
       if (existingTrigger) {
-        existingTrigger.parentElement?.remove();
+        existingTrigger.remove();
       }
+      const existingMenu = document.getElementById("mr-wplace-developer-menu");
+      if (existingMenu) existingMenu.remove();
       // ダイアログも削除
       const existingDialog = document.getElementById("mr-wplace-dev-dialog");
       if (existingDialog) {
@@ -146,29 +146,28 @@ export class DevInject {
       return;
     }
 
-    // トリガーボタンをPaintPixelControlsに追加
-    setupElementObserver([
-      {
-        id: "dev-trigger-btn",
-        getTargetElement: findPaintPixelControls,
-        createElement: (container) => {
-          const tooltip = document.createElement("div");
-          tooltip.className = "tooltip";
-          tooltip.setAttribute("data-tip", "Developer Tools");
+    setupDeveloperMenu();
 
-          const triggerButton = createDeveloperTriggerButton();
-          triggerButton.id = "dev-trigger-btn";
-          triggerButton.addEventListener("click", () => {
-            this.ensureDialogContent();
-            this.toggleDialogWithLifecycle();
-          });
+    const existingTrigger = document.getElementById("dev-trigger-btn");
+    if (existingTrigger) return;
 
-          tooltip.appendChild(triggerButton);
-          container.appendChild(tooltip);
-          console.log("🧑‍🎨 : Developer trigger button added");
-        },
-      },
-    ]);
+    const triggerButton = createDeveloperTriggerButton();
+    triggerButton.id = "dev-trigger-btn";
+    triggerButton.style.cssText = `
+      position: fixed;
+      top: 10px;
+      left: 86px;
+      z-index: 999999;
+      opacity: 0.4;
+      transition: opacity 0.2s ease;
+    `;
+    triggerButton.addEventListener("click", () => {
+      this.ensureDialogContent();
+      this.toggleDialogWithLifecycle();
+    });
+
+    document.body.appendChild(triggerButton);
+    console.log("🧑‍🎨 : Developer trigger button added");
   }
 
   /** ダイアログの中身を構築 */

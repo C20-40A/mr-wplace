@@ -180,6 +180,7 @@ When content needs computed data from inject (stats/pixel color), use helpers in
 - モバイルモードになった時 overflow-y: auto　これを消す(mobileだとこれがあるとdragできなくなる)
 - 実装後、コードをチェックし、パフォーマンスやバグになりそうな注意点を確認・報告する
 - 実装後、候補になる commit message を1つ表示する
+- 実装後、リファクタの余地をcode内で見つけた部分があれば、報告する
 - コーディング前の方針を決める際は、自然言語で抽象的に設計する
 
 - 検索はrgを利用
