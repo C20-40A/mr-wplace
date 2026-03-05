@@ -1011,7 +1011,7 @@ export class EditorController {
     if (canvas && this.isDesktopMode) {
       canvas.width = processedCanvas.width;
       canvas.height = processedCanvas.height;
-      const ctx = canvas.getContext("2d");
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
       if (ctx) {
         ctx.drawImage(processedCanvas, 0, 0);
       }
@@ -1035,7 +1035,7 @@ export class EditorController {
   private updateColorPaletteWithPixelCounts(canvas: HTMLCanvasElement): void {
     if (!this.colorPalette) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -1186,7 +1186,7 @@ export class EditorController {
 
   onTransparencyClick(x: number, y: number): void {
     if (!this.scaledCanvas) return;
-    const ctx = this.scaledCanvas.getContext("2d");
+    const ctx = this.scaledCanvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     const width = this.scaledCanvas.width;
@@ -1428,7 +1428,7 @@ export class EditorController {
     canvas: HTMLCanvasElement,
     mask: Uint8Array,
   ): void {
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     this.applyTransparencyMaskToImageData(imageData, mask);
