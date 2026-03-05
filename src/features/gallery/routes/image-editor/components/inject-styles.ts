@@ -86,6 +86,13 @@ export const injectImageEditorStyles = (
       #wps-scaled-image {
         width: 100%; height: auto; image-rendering: pixelated; image-rendering: -webkit-optimize-contrast;
       }
+      #wps-image-editor-container.mobile #wps-scaled-image {
+        width: auto;
+        max-width: 100%;
+        max-height: 40vh;
+        display: block;
+        margin: 0 auto;
+      }
       .gpu-toggle-label {
         position: absolute; bottom: 0.25rem; right: 0.25rem; display: flex; align-items: center; gap: 0.25rem; font-size: 0.7rem; cursor: pointer; background: var(--color-base-300); padding: 0.2rem 0.4rem; border-radius: 0.25rem; opacity: 0.6; transition: opacity 0.2s;
       }
