@@ -1,3 +1,23 @@
+const applyTriggerButtonStyle = (
+  button: HTMLButtonElement,
+  isActive: boolean
+): void => {
+  if (isActive) {
+    button.style.opacity = "1";
+    button.style.background = "rgba(50, 120, 220, 0.2)";
+    button.style.borderColor = "rgba(50, 120, 220, 0.45)";
+    button.style.color = "rgba(30, 80, 170, 1)";
+    button.dataset.active = "true";
+    return;
+  }
+
+  button.style.opacity = "0.4";
+  button.style.background = "";
+  button.style.borderColor = "";
+  button.style.color = "";
+  button.dataset.active = "false";
+};
+
 export const createDeveloperTriggerButton = (): HTMLButtonElement => {
   const button = document.createElement("button");
   button.className = "btn btn-sm btn-circle btn-ghost";
@@ -10,14 +30,24 @@ export const createDeveloperTriggerButton = (): HTMLButtonElement => {
     </svg>
   `;
 
-  button.style.cssText = `opacity: 0.4; transition: opacity 0.2s ease;`;
+  button.style.cssText = `opacity: 0.4; transition: opacity 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;`;
 
   button.addEventListener("mouseenter", () => {
+    if (button.dataset.active === "true") return;
     button.style.opacity = "0.8";
   });
   button.addEventListener("mouseleave", () => {
+    if (button.dataset.active === "true") return;
     button.style.opacity = "0.4";
   });
 
+  applyTriggerButtonStyle(button, false);
   return button;
+};
+
+export const setDeveloperTriggerButtonActive = (
+  button: HTMLButtonElement,
+  isActive: boolean
+): void => {
+  applyTriggerButtonStyle(button, isActive);
 };

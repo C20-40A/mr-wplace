@@ -1,15 +1,15 @@
 import { AutoSpoitStorage } from "./storage";
 import { AutoCanvasClickStorage } from "./auto-canvas-click-storage";
 import { AutoColorSpoitStorage } from "./auto-color-spoit-storage";
-import {
-  createAutoCanvasClickDialogItem,
-  updateAutoCanvasClickDialogItem,
-} from "./auto-canvas-click-ui";
+import { updateAutoCanvasClickDialogItem } from "./auto-canvas-click-ui";
 import {
   createAutoColorSpoitDialogItem,
   updateAutoColorSpoitDialogItem,
 } from "./auto-color-spoit-ui";
-import { createDeveloperTriggerButton } from "./developer-trigger-button";
+import {
+  createDeveloperTriggerButton,
+  setDeveloperTriggerButtonActive,
+} from "./developer-trigger-button";
 import {
   createDeveloperDialog,
   toggleDeveloperDialog,
@@ -36,6 +36,7 @@ export class DevInject {
   private autoColorSpoitEnabled: boolean = false;
   private autoColorSpoitDialogItem: HTMLDivElement | null = null;
   private areaFillUI: AreaFillUIElements | null = null;
+  private triggerButton: HTMLButtonElement | null = null;
   private colorFilterManager: ColorFilterManager;
   private colorIsolate: ColorIsolate;
 
@@ -91,6 +92,7 @@ export class DevInject {
       if (savedVisible === "true") {
         this.ensureDialogContent();
         restoreDeveloperDialogVisibility();
+        this.updateTriggerButtonActiveState(true);
         this.areaFillUI?.mount();
       }
     }
@@ -136,6 +138,7 @@ export class DevInject {
       if (existingTrigger) {
         existingTrigger.remove();
       }
+      this.triggerButton = null;
       const existingMenu = document.getElementById("mr-wplace-developer-menu");
       if (existingMenu) existingMenu.remove();
       // ダイアログも削除
@@ -149,9 +152,13 @@ export class DevInject {
     setupDeveloperMenu();
 
     const existingTrigger = document.getElementById("dev-trigger-btn");
-    if (existingTrigger) return;
+    if (existingTrigger) {
+      this.triggerButton = existingTrigger as HTMLButtonElement;
+      return;
+    }
 
     const triggerButton = createDeveloperTriggerButton();
+    this.triggerButton = triggerButton;
     triggerButton.id = "dev-trigger-btn";
     triggerButton.style.cssText = `
       position: fixed;
@@ -216,12 +223,12 @@ export class DevInject {
 
     content.appendChild(this.areaFillUI.container);
 
-    // Auto Canvas Click item
-    this.autoCanvasClickDialogItem = createAutoCanvasClickDialogItem(
-      this.autoCanvasClickEnabled,
-      () => this.toggleAutoCanvasClick()
-    );
-    content.appendChild(this.autoCanvasClickDialogItem);
+    // Auto Canvas Click item (hidden for now)
+    // this.autoCanvasClickDialogItem = createAutoCanvasClickDialogItem(
+    //   this.autoCanvasClickEnabled,
+    //   () => this.toggleAutoCanvasClick()
+    // );
+    // content.appendChild(this.autoCanvasClickDialogItem);
 
     // Auto Color Spoit item
     this.autoColorSpoitDialogItem = createAutoColorSpoitDialogItem(
@@ -231,7 +238,10 @@ export class DevInject {
     content.appendChild(this.autoColorSpoitDialogItem);
 
     // Register callback for ESC/close button
-    setOnHideCallback(() => this.areaFillUI?.unmount());
+    setOnHideCallback(() => {
+      this.areaFillUI?.unmount();
+      this.updateTriggerButtonActiveState(false);
+    });
 
     console.log("🧑‍🎨 : Developer dialog content initialized");
   }
@@ -242,10 +252,17 @@ export class DevInject {
     toggleDeveloperDialog();
 
     if (isOpening) {
+      this.updateTriggerButtonActiveState(true);
       this.areaFillUI?.mount();
     } else {
+      this.updateTriggerButtonActiveState(false);
       this.areaFillUI?.unmount();
     }
+  }
+
+  private updateTriggerButtonActiveState(isActive: boolean): void {
+    if (!this.triggerButton) return;
+    setDeveloperTriggerButtonActive(this.triggerButton, isActive);
   }
 
   isDevModeEnabled(): boolean {
