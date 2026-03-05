@@ -66,7 +66,7 @@ export const injectImageEditorStyles = (
         max-width: 100%; max-height: 40vh;
       }
       #wps-replace-overlay {
-        position: absolute; inset: 0; background: rgba(0,0,0,0.7); border-radius: 0.25rem; display: none; align-items: center; justify-content: center; color: white; font-size: 0.875rem; text-align: center; padding: 1rem;
+        position: absolute; inset: 0; background: rgba(0,0,0,0.7); border-radius: 0.25rem; display: none; align-items: center; justify-content: center; color: white; font-size: 0.875rem; text-align: center; padding: 1rem; pointer-events: none;
       }
       #wps-current-area .flex {
         justify-content: center; position: relative; width: 100%; height: 100%; box-sizing: border-box;

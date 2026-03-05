@@ -43,6 +43,7 @@ export class ImageEditorUI {
   private elements: UIElements = {};
   private transparencyDialog: TransparencyDialog | null = null;
   private isCurrentExpanded = false;
+  private replaceDragDepth = 0;
 
   constructor() {
     this.container = this._createElement("div", {
@@ -136,18 +137,24 @@ export class ImageEditorUI {
     if (replaceZone) {
       replaceZone.addEventListener(
         "mouseenter",
-        () =>
-          ((this.elements.replaceOverlay as HTMLElement).style.display =
-            "flex"),
+        () => {
+          if (this.replaceDragDepth > 0) return;
+          this.showReplaceOverlay();
+        },
       );
       replaceZone.addEventListener(
         "mouseleave",
-        () =>
-          ((this.elements.replaceOverlay as HTMLElement).style.display =
-            "none"),
+        () => {
+          if (this.replaceDragDepth > 0) return;
+          this.hideReplaceOverlay();
+        },
       );
       replaceZone.addEventListener("click", () =>
         (this.elements.replaceFileInput as HTMLInputElement).click(),
+      );
+      replaceZone.addEventListener(
+        "dragenter",
+        this._handleDragEnter.bind(this),
       );
       replaceZone.addEventListener("dragover", this._handleDragOver.bind(this));
       replaceZone.addEventListener(
@@ -342,25 +349,29 @@ export class ImageEditorUI {
   private _handleDragOver(e: DragEvent): void {
     e.preventDefault();
     e.stopPropagation();
-    const overlay = this.elements.replaceOverlay as HTMLElement;
-    overlay.style.display = "flex";
-    overlay.style.background = "rgba(59, 130, 246, 0.8)";
+    this.showReplaceOverlay(true);
+  }
+
+  private _handleDragEnter(e: DragEvent): void {
+    e.preventDefault();
+    e.stopPropagation();
+    this.replaceDragDepth += 1;
+    this.showReplaceOverlay(true);
   }
 
   private _handleDragLeave(e: DragEvent): void {
     e.preventDefault();
     e.stopPropagation();
-    const overlay = this.elements.replaceOverlay as HTMLElement;
-    overlay.style.background = "rgba(0,0,0,0.7)";
-    overlay.style.display = "none";
+    this.replaceDragDepth = Math.max(0, this.replaceDragDepth - 1);
+    if (this.replaceDragDepth > 0) return;
+    this.hideReplaceOverlay();
   }
 
   private _handleDrop(e: DragEvent): void {
     e.preventDefault();
     e.stopPropagation();
-    const overlay = this.elements.replaceOverlay as HTMLElement;
-    overlay.style.display = "none";
-    overlay.style.background = "rgba(0,0,0,0.7)";
+    this.replaceDragDepth = 0;
+    this.hideReplaceOverlay();
 
     const file = e.dataTransfer?.files?.[0];
     if (
@@ -369,6 +380,22 @@ export class ImageEditorUI {
     ) {
       this.callbacks?.onReplaceImage(file);
     }
+  }
+
+  private showReplaceOverlay(isDragging = false): void {
+    const overlay = this.elements.replaceOverlay as HTMLElement;
+    if (!overlay) return;
+    overlay.style.display = "flex";
+    overlay.style.background = isDragging
+      ? "rgba(59, 130, 246, 0.8)"
+      : "rgba(0,0,0,0.7)";
+  }
+
+  private hideReplaceOverlay(): void {
+    const overlay = this.elements.replaceOverlay as HTMLElement;
+    if (!overlay) return;
+    overlay.style.display = "none";
+    overlay.style.background = "rgba(0,0,0,0.7)";
   }
 
   private openTransparencyDialog(): void {
