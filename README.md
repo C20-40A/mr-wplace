@@ -4,8 +4,7 @@
 
 ![WPlace](.image/wplace.live_400x300.png)
 
-
-![Version](https://img.shields.io/badge/version-2.8.1-blue.svg)
+![Version](https://img.shields.io/badge/version-2.9.0-blue.svg)
 ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green.svg)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-orange.svg)
 ![License](https://img.shields.io/badge/license-MPL--2.0-blue.svg)
@@ -50,8 +49,6 @@ Want to contribute or build from source? Check out our [Contributing Guide](CONT
 
 ### 🖼️ Gallery & Image Management
 
-![Gallery & Image Management](./assets/images/tutorial/how_to_draw.gif)
-
 - Upload, edit, and manage template images with thumbnails
 - Layer-based image management with drag-and-drop reordering
 - Image editing: brightness, contrast, saturation, sharpness, dithering
@@ -72,8 +69,6 @@ Want to contribute or build from source? Check out our [Contributing Guide](CONT
 
 ### ⏱️ Time Travel
 
-![Time Travel](assets/images/tutorial/how_to_draw_archive.gif)
-
 - Save and restore tile snapshots for rollback protection
 - Share tiles with coordinates and timestamps
 - Merge adjacent archived tiles into single image
@@ -86,8 +81,6 @@ Want to contribute or build from source? Check out our [Contributing Guide](CONT
 - Tile boundary display
 
 ### 📍 Bookmarks & Navigation
-
-![Bookmarks & Navigation](./assets/images/tutorial/how_to_bookmark.gif)
 
 - Save favorite locations with tags (create, edit, filter by tags)
 - Export/import bookmarks by tag
@@ -139,4 +132,3 @@ Mozilla Public License 2.0
 
 - [WPlace Official Site](https://wplace.live/)
 - [Wplace - Code of Conduct](https://wplace.live/terms/code-of-conduct)
-
