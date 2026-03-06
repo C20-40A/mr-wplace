@@ -71,6 +71,7 @@ export class ColorPalette {
   }
 
   private render(): void {
+    const isXs = (this.options.controlSize ?? "default") === "xs";
     const sortedColors = sortColors(this.sortOrder, this.options.colorStats);
     const colorGridHtml = buildColorGrid(
       this.selectedColorIds,
@@ -99,7 +100,7 @@ export class ColorPalette {
 
     this.container.innerHTML = `
       ${controlsHtml}
-      <div class="color-palette-grid grid grid-cols-3 sm:grid-cols-6 md:grid-cols-8 gap-2 px-4 pb-4">
+      <div class="color-palette-grid grid grid-cols-3 sm:grid-cols-6 md:grid-cols-8 gap-2 ${isXs ? "px-2" : "px-4"} pb-4">
         ${colorGridHtml}
       </div>
     `;

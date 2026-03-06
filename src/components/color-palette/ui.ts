@@ -150,6 +150,8 @@ export function buildColorGrid(
   sortedColors: typeof colorpalette,
   options: ColorPaletteOptions,
 ): string {
+  const isXs = options.controlSize === "xs";
+
   return sortedColors
     .map((color) => {
       const [r, g, b] = color.rgb;
@@ -176,7 +178,7 @@ export function buildColorGrid(
         : "";
 
       return `
-        <div class="color-item cursor-pointer p-2 text-xs font-medium flex flex-col items-center justify-center min-h-[3rem]"
+        <div class="color-item cursor-pointer ${isXs ? "p-1" : "p-2"} font-medium flex flex-col items-center justify-center min-h-[3rem]"
              style="background-color: ${backgroundColor}; 
                     color: ${textColor}; 
                     border-color: ${borderColor}; 
@@ -184,6 +186,7 @@ export function buildColorGrid(
                     border-radius: 0.5rem; 
                     border-style: solid; 
                     border-width: 3px;
+                    font-size: ${isXs ? "0.6rem" : "0.75rem"};
                     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                     transform: scale(1);                    cursor: pointer;
                     ${INTERACTIVE_BASE_STYLE}"
