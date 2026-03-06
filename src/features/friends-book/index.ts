@@ -18,6 +18,7 @@ import { IMG_ICON_BOOK } from "@/assets/iconImages";
 import { friendsToCSV, csvToFriends, downloadCSV } from "./csv-utils";
 import { Tag } from "./types";
 import { TOOLBAR_ROW1_ID, TOOLBAR_ROW2_ID } from "@/features/position-info";
+import { findTopLeftControls } from "@/constants/selectors";
 
 const FRIENDS_INFO_BAR_ID = "friends-book-info-bar";
 
@@ -125,14 +126,13 @@ const createAddToFriendsButton = (row1: Element): void => {
 /**
  * 友人帳FABボタンを作成（画面右上）
  */
-const createFriendsBookFAB = (): void => {
+const createFriendsBookFAB = (container: Element): void => {
   if (document.querySelector("#friends-book-fab")) return;
 
   const button = document.createElement("button");
   button.id = "friends-book-fab";
-  button.className = "btn btn-sm btn-circle shadow-md top-2";
-  button.style.cssText =
-    "position: absolute; right: 60px; z-index: 800; transition: transform 0.2s;";
+  button.className = "btn btn-sm btn-circle shadow-md";
+  button.style.cssText = "transition: transform 0.2s;";
   button.innerHTML = `
     <img src="${IMG_ICON_BOOK}" style="width: calc(var(--spacing)*5); height: calc(var(--spacing)*5); image-rendering: pixelated;" />
   `;
@@ -147,7 +147,13 @@ const createFriendsBookFAB = (): void => {
 
   button.addEventListener("click", openModal);
 
-  document.body.appendChild(button);
+  const timeTravelButton = container.querySelector("#timetravel-fab-btn");
+  if (timeTravelButton) {
+    container.insertBefore(button, timeTravelButton);
+  } else {
+    container.appendChild(button);
+  }
+
   console.log("🧑‍🎨 : Friends book FAB created");
 };
 
@@ -350,13 +356,15 @@ const init = (): void => {
       getTargetElement: findFriendsButtonTarget,
       createElement: createAddToFriendsButton,
     },
+    {
+      id: "friends-book-fab",
+      getTargetElement: findTopLeftControls,
+      createElement: createFriendsBookFAB,
+    },
   ];
 
   setupElementObserver(buttonConfigs);
   // setupModal は openModal で呼ばれるようになったので、ここでは呼ばない
-
-  // FABボタンを画面右上に配置
-  createFriendsBookFAB();
 
   // Listen for painted by user data from inject
   window.addEventListener("message", (event) => {
