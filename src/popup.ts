@@ -354,6 +354,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (mapInstanceReady)
     document.getElementById("navigation-setting")?.removeAttribute("style");
 
+  // Reveal settings after initialization complete
+  document.getElementById("settings-body")?.removeAttribute("style");
+
   setupDevModeEasterEgg();
 
   // Language change
