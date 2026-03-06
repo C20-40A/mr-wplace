@@ -25,7 +25,7 @@ const createButton = (container: Element): void => {
   btnContainer.style.cssText = `
     position: fixed;
     left: 47px;
-    top: 46px;
+    top: 44px;
     z-index: 800;
   `;
 
@@ -96,7 +96,7 @@ const createBadge = (): void => {
   badgeText.innerHTML = `🪫 ${t`${"data_saver_on"}`}<br><span style="font-size: 10px; opacity: 0.8;">${t`${"data_saver_rendering_paused"}`}</span>`;
   badge.style.cssText = `
     position: fixed;
-    top: 45px;
+    top: 44px;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(88, 88, 88, 0.75);
@@ -133,7 +133,7 @@ const animatePulse = (): void => {
       { boxShadow: "0 0 16px #2ecc71" },
       { boxShadow: "0 0 8px #2ecc71" },
     ],
-    { duration: 600, easing: "ease-in-out" }
+    { duration: 600, easing: "ease-in-out" },
   );
 };
 
@@ -167,7 +167,7 @@ const applyState = (enabled: boolean): void => {
       source: "mr-wplace-data-saver-update",
       enabled,
     },
-    "*"
+    "*",
   );
 };
 
