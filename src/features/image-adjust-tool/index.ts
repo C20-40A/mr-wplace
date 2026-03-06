@@ -6,6 +6,14 @@ import {
   projectScreenPointsToMapPixels,
   setMapProjectionTracking,
 } from "@/utils/inject-bridge";
+import { colorpalette, TRANSPARENT_COLOR_ID } from "@/constants/colors";
+import { ColorPalette } from "@/components/color-palette";
+import type {
+  ColorFlattenMode,
+  DitheringMethod,
+  ImageAdjustments,
+  QuantizationMethod,
+} from "@/features/gallery/routes/image-editor/canvas-processor";
 import {
   IMAGE_ADJUST_TOOL_MAP_Z_INDEX,
   IMAGE_ADJUST_TOOL_OVERLAY_Z_INDEX,
@@ -19,6 +27,7 @@ const OPACITY_SLIDER_MIN = 15;
 const OPACITY_SLIDER_MAX = 100;
 const OPACITY_SLIDER_STEP = 5;
 const DEFAULT_IMAGE_OPACITY = 100;
+const PROCESSING_DEBOUNCE_MS = 200;
 
 type Rect = { x: number; y: number; width: number; height: number };
 type InteractionType = "drag" | "resize";
@@ -38,10 +47,26 @@ type Metrics = {
   topLeftPixelY: number;
 };
 
+export type AdjustToolProcessingParams = {
+  adjustments: ImageAdjustments;
+  selectedColorIds: number[];
+  ditheringEnabled: boolean;
+  ditheringThreshold: number;
+  ditheringMethod: DitheringMethod;
+  quantizationMethod: QuantizationMethod;
+  colorFlattenMode: ColorFlattenMode;
+  outlineEnabled: boolean;
+  outlineThreshold: number;
+  outlineWidth: number;
+  outlineUseFixedColor: boolean;
+  outlineFixedColor: string;
+};
+
 type ConfirmResult = {
   widthPx: number;
   heightPx: number;
   drawPosition: DrawPosition | null;
+  processingParams: AdjustToolProcessingParams;
 };
 
 type ImageAdjustToolOptions = {
@@ -130,6 +155,52 @@ const STYLES = {
     pointer-events: auto;
     min-width: 120px;
   `,
+  toolButtonBar: `
+    position: fixed;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    pointer-events: auto;
+    z-index: ${IMAGE_ADJUST_TOOL_OVERLAY_Z_INDEX + 2};
+  `,
+  toolButton: `
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.72);
+    color: #fff;
+    font-size: 13px;
+    line-height: 1;
+    padding: 0.3rem 0.55rem;
+    border: none;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: background 0.15s;
+  `,
+  toolButtonActive: `
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.9);
+    color: #fff;
+    font-size: 13px;
+    line-height: 1;
+    padding: 0.3rem 0.55rem;
+    border: none;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: background 0.15s;
+  `,
+  floatingPanel: `
+    position: fixed;
+    background: var(--color-base-100, #fff);
+    border-radius: 0.75rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    padding: 0.75rem;
+    pointer-events: auto;
+    z-index: ${IMAGE_ADJUST_TOOL_OVERLAY_Z_INDEX + 3};
+    max-height: 70vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-width: 280px;
+    max-width: 340px;
+  `,
 } as const;
 
 const createElement = <K extends keyof HTMLElementTagNameMap>(
@@ -171,6 +242,32 @@ export class ImageAdjustToolMode {
   private confirmButton: HTMLButtonElement | null = null;
   private baseImage: HTMLImageElement | null = null;
 
+  // Tool UI
+  private toolButtonBar: HTMLDivElement | null = null;
+  private paletteButton: HTMLButtonElement | null = null;
+  private adjustButton: HTMLButtonElement | null = null;
+  private floatingPanel: HTMLDivElement | null = null;
+  private activePanel: "palette" | "adjust" | null = null;
+  private colorPalette: ColorPalette | null = null;
+
+  // Processing state
+  private selectedColorIds: number[] = colorpalette
+    .filter((c) => c.id !== TRANSPARENT_COLOR_ID)
+    .map((c) => c.id);
+  private brightness = 0;
+  private contrast = 0;
+  private saturation = 0;
+  private ditheringEnabled = false;
+  private ditheringThreshold = 500;
+  private ditheringMethod: DitheringMethod = "ordered";
+  private quantizationMethod: QuantizationMethod = "rgb-euclidean";
+  private colorFlattenMode: ColorFlattenMode = "none";
+  private outlineEnabled = false;
+  private outlineThreshold = 55;
+  private outlineWidth = 1;
+  private outlineUseFixedColor = false;
+  private outlineFixedColor = "#000000";
+
   private rect: Rect | null = null;
   private activeInteraction: ActiveInteraction | null = null;
   private metrics: Metrics | null = null;
@@ -184,6 +281,8 @@ export class ImageAdjustToolMode {
   private lastPreviewKey = "";
   private mounted = false;
   private imageOpacity = DEFAULT_IMAGE_OPACITY / 100;
+  private processingDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
 
   private readonly onMapViewChanged = (event: MessageEvent): void => {
     if (event.data?.source !== "mr-wplace-map-view-changed") return;
@@ -316,6 +415,7 @@ export class ImageAdjustToolMode {
     this.previousMapZIndex = this.mapElement.style.zIndex;
     this.mapElement.style.zIndex = `${IMAGE_ADJUST_TOOL_MAP_Z_INDEX}`;
 
+    this.injectStyles();
     this.createOverlay();
     this.mountEvents();
     this.mounted = true;
@@ -326,6 +426,14 @@ export class ImageAdjustToolMode {
 
   destroy(triggerCancel = false): void {
     if (!this.mounted) return;
+
+    if (this.processingDebounceTimer) {
+      clearTimeout(this.processingDebounceTimer);
+      this.processingDebounceTimer = null;
+    }
+
+    this.colorPalette?.destroy();
+    this.colorPalette = null;
 
     this.unmountEvents();
     this.overlay?.remove();
@@ -339,6 +447,11 @@ export class ImageAdjustToolMode {
     this.closeButton = null;
     this.confirmButton = null;
     this.baseImage = null;
+    this.toolButtonBar = null;
+    this.paletteButton = null;
+    this.adjustButton = null;
+    this.floatingPanel = null;
+    this.activePanel = null;
     this.activeInteraction = null;
     this.rect = null;
     this.mapRect = null;
@@ -356,6 +469,39 @@ export class ImageAdjustToolMode {
     setMapProjectionTracking(false);
 
     if (triggerCancel) this.options.onCancel?.();
+  }
+
+  private injectStyles(): void {
+    const styleId = "mr-wplace-adjust-tool-styles";
+    if (document.getElementById(styleId)) return;
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.textContent = `
+      .iat-panel-section { margin-bottom: 0.5rem; }
+      .iat-panel-section:last-child { margin-bottom: 0; }
+      .iat-slider-row {
+        display: flex; align-items: center; gap: 0.4rem;
+      }
+      .iat-slider-row input[type="range"] { flex: 1; min-width: 0; }
+      .iat-slider-label {
+        font-size: 0.75rem; font-weight: 500; margin-bottom: 0.2rem;
+        display: flex; justify-content: space-between; align-items: center;
+      }
+      .iat-slider-value { font-size: 0.7rem; color: #9ca3af; }
+      .iat-hint { font-size: 0.65rem; color: #9ca3af; }
+      .iat-checkbox-row {
+        display: flex; align-items: center; gap: 0.4rem;
+        font-size: 0.75rem; cursor: pointer;
+      }
+      .iat-select { font-size: 0.72rem; padding: 0.2rem 0.4rem; border-radius: 0.25rem; border: 1px solid #d1d5db; }
+      .iat-select-row { display: flex; gap: 0.35rem; align-items: center; }
+      .iat-select-row select { flex: 1; min-width: 0; }
+      .iat-outline-params {
+        display: flex; align-items: center; gap: 0.35rem; margin-top: 0.25rem;
+      }
+      .iat-outline-params .iat-slider-row { flex: 1; }
+    `;
+    document.head.appendChild(style);
   }
 
   private createOverlay(): void {
@@ -417,10 +563,30 @@ export class ImageAdjustToolMode {
       void this.handleConfirm();
     });
 
+    // Tool button bar
+    const toolButtonBar = createElement("div", { style: STYLES.toolButtonBar });
+    const paletteButton = createElement("button", {
+      style: STYLES.toolButton,
+      textContent: "🎨",
+    });
+    paletteButton.type = "button";
+    paletteButton.title = "Color Palette";
+    paletteButton.addEventListener("click", () => this.togglePanel("palette"));
+
+    const adjustButton = createElement("button", {
+      style: STYLES.toolButton,
+      textContent: "⚙️",
+    });
+    adjustButton.type = "button";
+    adjustButton.title = t("contrast") + " / " + t("brightness");
+    adjustButton.addEventListener("click", () => this.togglePanel("adjust"));
+
+    toolButtonBar.append(paletteButton, adjustButton);
+
     topToolBar.append(sizeLabel, opacitySlider);
 
     frame.append(image, resizeHandle);
-    overlay.append(frame, topToolBar, closeButton, confirmButton);
+    overlay.append(frame, topToolBar, toolButtonBar, closeButton, confirmButton);
     document.body.appendChild(overlay);
 
     this.overlay = overlay;
@@ -433,10 +599,348 @@ export class ImageAdjustToolMode {
     this.opacitySlider = opacitySlider;
     this.closeButton = closeButton;
     this.confirmButton = confirmButton;
+    this.toolButtonBar = toolButtonBar;
+    this.paletteButton = paletteButton;
+    this.adjustButton = adjustButton;
 
     this.applyRect(this.getInitialRect());
     this.applyImageOpacity();
   }
+
+  // --- Panel management ---
+
+  private togglePanel(panel: "palette" | "adjust"): void {
+    if (this.activePanel === panel) {
+      this.closePanel();
+      return;
+    }
+    this.openPanel(panel);
+  }
+
+  private openPanel(panel: "palette" | "adjust"): void {
+    this.closePanel();
+    this.activePanel = panel;
+
+    const floatingPanel = createElement("div", { style: STYLES.floatingPanel });
+    floatingPanel.id = "iat-floating-panel";
+
+    if (panel === "palette") {
+      this.buildPalettePanel(floatingPanel);
+      if (this.paletteButton) this.paletteButton.style.cssText = STYLES.toolButtonActive;
+    } else {
+      this.buildAdjustPanel(floatingPanel);
+      if (this.adjustButton) this.adjustButton.style.cssText = STYLES.toolButtonActive;
+    }
+
+    this.overlay?.appendChild(floatingPanel);
+    this.floatingPanel = floatingPanel;
+    this.positionFloatingPanel();
+  }
+
+  private closePanel(): void {
+    this.colorPalette?.destroy();
+    this.colorPalette = null;
+    this.floatingPanel?.remove();
+    this.floatingPanel = null;
+    this.activePanel = null;
+    if (this.paletteButton) this.paletteButton.style.cssText = STYLES.toolButton;
+    if (this.adjustButton) this.adjustButton.style.cssText = STYLES.toolButton;
+  }
+
+  private positionFloatingPanel(): void {
+    if (!this.floatingPanel || !this.toolButtonBar) return;
+    const barRect = this.toolButtonBar.getBoundingClientRect();
+    this.floatingPanel.style.left = `${barRect.left}px`;
+    this.floatingPanel.style.top = `${barRect.top - 8}px`;
+    this.floatingPanel.style.transform = "translateY(-100%)";
+  }
+
+  private buildPalettePanel(container: HTMLDivElement): void {
+    const paletteContainer = document.createElement("div");
+    paletteContainer.style.cssText = "min-height: 100px;";
+    container.appendChild(paletteContainer);
+
+    this.colorPalette = new ColorPalette(paletteContainer, {
+      selectedColorIds: this.selectedColorIds,
+      onChange: (colorIds) => {
+        this.selectedColorIds = colorIds;
+        this.scheduleProcessedPreview();
+      },
+      hasExtraColorsBitmap: true,
+      showDisableUnusedButton: true,
+      controlSize: "xs",
+      sortOrder: "least-remaining",
+    });
+  }
+
+  private buildAdjustPanel(container: HTMLDivElement): void {
+    // Brightness
+    container.appendChild(this.createSliderSection(
+      t("brightness"), this.brightness, -100, 100, 1,
+      (v) => { this.brightness = v; this.scheduleProcessedPreview(); },
+    ));
+
+    // Contrast
+    container.appendChild(this.createSliderSection(
+      t("contrast"), this.contrast, -100, 100, 1,
+      (v) => { this.contrast = v; this.scheduleProcessedPreview(); },
+    ));
+
+    // Saturation
+    container.appendChild(this.createSliderSection(
+      t("saturation"), this.saturation, -100, 100, 1,
+      (v) => { this.saturation = v; this.scheduleProcessedPreview(); },
+    ));
+
+    // Quantization method + color flatten
+    const selectSection = document.createElement("div");
+    selectSection.className = "iat-panel-section";
+    const selectRow = document.createElement("div");
+    selectRow.className = "iat-select-row";
+
+    const qSelect = this.createSelect(
+      [
+        { value: "rgb-euclidean", label: t("quantization_rgb_euclidean") },
+        { value: "weighted-rgb", label: t("quantization_weighted_rgb") },
+        { value: "lab", label: t("quantization_lab") },
+        { value: "oklab", label: t("quantization_oklab") },
+      ],
+      this.quantizationMethod,
+      (v) => { this.quantizationMethod = v as QuantizationMethod; this.scheduleProcessedPreview(); },
+    );
+    const cfSelect = this.createSelect(
+      [
+        { value: "none", label: t("color_flatten_none") },
+        { value: "light", label: t("color_flatten_light") },
+        { value: "medium", label: t("color_flatten_medium") },
+      ],
+      this.colorFlattenMode,
+      (v) => { this.colorFlattenMode = v as ColorFlattenMode; this.scheduleProcessedPreview(); },
+    );
+    selectRow.append(qSelect, cfSelect);
+    selectSection.appendChild(selectRow);
+    container.appendChild(selectSection);
+
+    // Dithering
+    const ditherSection = document.createElement("div");
+    ditherSection.className = "iat-panel-section";
+    const ditherRow = document.createElement("div");
+    ditherRow.className = "iat-checkbox-row";
+    const ditherCb = document.createElement("input");
+    ditherCb.type = "checkbox";
+    ditherCb.className = "checkbox checkbox-sm";
+    ditherCb.checked = this.ditheringEnabled;
+
+    const ditherMethodSelect = this.createSelect(
+      [
+        { value: "ordered", label: "Ordered" },
+        { value: "floyd-steinberg", label: "Floyd" },
+      ],
+      this.ditheringMethod,
+      (v) => { this.ditheringMethod = v as DitheringMethod; this.scheduleProcessedPreview(); },
+    );
+    ditherMethodSelect.disabled = !this.ditheringEnabled;
+    ditherMethodSelect.style.width = "5rem";
+
+    ditherCb.addEventListener("change", () => {
+      this.ditheringEnabled = ditherCb.checked;
+      ditherMethodSelect.disabled = !ditherCb.checked;
+      ditherThresholdSlider.disabled = !ditherCb.checked;
+      this.scheduleProcessedPreview();
+    });
+
+    ditherRow.append(ditherCb, document.createTextNode(t("dithering")), ditherMethodSelect);
+    ditherSection.appendChild(ditherRow);
+
+    const ditherThresholdSlider = this.createRangeInput(
+      this.ditheringThreshold, 0, 1500, 50, !this.ditheringEnabled,
+      (v) => { this.ditheringThreshold = v; this.scheduleProcessedPreview(); },
+    );
+    const ditherSliderRow = document.createElement("div");
+    ditherSliderRow.className = "iat-slider-row";
+    const ditherHintL = document.createElement("span");
+    ditherHintL.className = "iat-hint";
+    ditherHintL.textContent = "0";
+    const ditherHintR = document.createElement("span");
+    ditherHintR.className = "iat-hint";
+    ditherHintR.textContent = "1500";
+    ditherSliderRow.append(ditherHintL, ditherThresholdSlider, ditherHintR);
+    ditherSection.appendChild(ditherSliderRow);
+    container.appendChild(ditherSection);
+
+    // Outline
+    const outlineSection = document.createElement("div");
+    outlineSection.className = "iat-panel-section";
+    const outlineRow = document.createElement("div");
+    outlineRow.className = "iat-checkbox-row";
+    const outlineCb = document.createElement("input");
+    outlineCb.type = "checkbox";
+    outlineCb.className = "checkbox checkbox-sm";
+    outlineCb.checked = this.outlineEnabled;
+
+    const outlineColorCb = document.createElement("input");
+    outlineColorCb.type = "checkbox";
+    outlineColorCb.className = "checkbox checkbox-sm";
+    outlineColorCb.checked = this.outlineUseFixedColor;
+    outlineColorCb.disabled = !this.outlineEnabled;
+
+    const outlineColorInput = document.createElement("input");
+    outlineColorInput.type = "color";
+    outlineColorInput.value = this.outlineFixedColor;
+    outlineColorInput.style.cssText = "width: 1.5rem; height: 1.2rem; padding: 0; border: none;";
+    outlineColorInput.disabled = !this.outlineEnabled || !this.outlineUseFixedColor;
+
+    const thresholdSlider = this.createRangeInput(
+      this.outlineThreshold, 0, 200, 1, !this.outlineEnabled,
+      (v) => { this.outlineThreshold = v; this.scheduleProcessedPreview(); },
+    );
+    const widthSlider = this.createRangeInput(
+      this.outlineWidth, 1, 4, 1, !this.outlineEnabled,
+      (v) => { this.outlineWidth = v; this.scheduleProcessedPreview(); },
+    );
+
+    outlineCb.addEventListener("change", () => {
+      this.outlineEnabled = outlineCb.checked;
+      thresholdSlider.disabled = !outlineCb.checked;
+      widthSlider.disabled = !outlineCb.checked;
+      outlineColorCb.disabled = !outlineCb.checked;
+      outlineColorInput.disabled = !outlineCb.checked || !outlineColorCb.checked;
+      this.scheduleProcessedPreview();
+    });
+
+    outlineColorCb.addEventListener("change", () => {
+      this.outlineUseFixedColor = outlineColorCb.checked;
+      outlineColorInput.disabled = !outlineColorCb.checked;
+      this.scheduleProcessedPreview();
+    });
+
+    outlineColorInput.addEventListener("change", () => {
+      if (!/^#[0-9a-f]{6}$/i.test(outlineColorInput.value)) return;
+      this.outlineFixedColor = outlineColorInput.value;
+      this.scheduleProcessedPreview();
+    });
+
+    outlineRow.append(
+      outlineCb, document.createTextNode(t("outline_preserve")),
+      outlineColorCb, outlineColorInput,
+    );
+    outlineSection.appendChild(outlineRow);
+
+    const outlineParams = document.createElement("div");
+    outlineParams.className = "iat-outline-params";
+    const sensRow = document.createElement("div");
+    sensRow.className = "iat-slider-row";
+    const sensLabel = document.createElement("span");
+    sensLabel.className = "iat-hint";
+    sensLabel.textContent = t("outline_sensitivity");
+    sensRow.append(sensLabel, thresholdSlider);
+    const wRow = document.createElement("div");
+    wRow.className = "iat-slider-row";
+    const wLabel = document.createElement("span");
+    wLabel.className = "iat-hint";
+    wLabel.textContent = t("outline_width");
+    wRow.append(wLabel, widthSlider);
+    outlineParams.append(sensRow, wRow);
+    outlineSection.appendChild(outlineParams);
+    container.appendChild(outlineSection);
+  }
+
+  private createSliderSection(
+    label: string, value: number, min: number, max: number, step: number,
+    onChange: (v: number) => void,
+  ): HTMLDivElement {
+    const section = document.createElement("div");
+    section.className = "iat-panel-section";
+
+    const labelRow = document.createElement("div");
+    labelRow.className = "iat-slider-label";
+    const labelText = document.createElement("span");
+    labelText.textContent = label;
+    const valueSpan = document.createElement("span");
+    valueSpan.className = "iat-slider-value";
+    valueSpan.textContent = `${value}`;
+    labelRow.append(labelText, valueSpan);
+
+    const sliderRow = document.createElement("div");
+    sliderRow.className = "iat-slider-row";
+    const hintL = document.createElement("span");
+    hintL.className = "iat-hint";
+    hintL.textContent = `${min}`;
+    const slider = this.createRangeInput(value, min, max, step, false, (v) => {
+      valueSpan.textContent = `${v}`;
+      onChange(v);
+    });
+    const hintR = document.createElement("span");
+    hintR.className = "iat-hint";
+    hintR.textContent = `${max}`;
+    sliderRow.append(hintL, slider, hintR);
+
+    section.append(labelRow, sliderRow);
+    return section;
+  }
+
+  private createRangeInput(
+    value: number, min: number, max: number, step: number, disabled: boolean,
+    onChange: (v: number) => void,
+  ): HTMLInputElement {
+    const input = document.createElement("input");
+    input.type = "range";
+    input.className = "range range-xs";
+    input.min = `${min}`;
+    input.max = `${max}`;
+    input.step = `${step}`;
+    input.value = `${value}`;
+    input.disabled = disabled;
+    input.addEventListener("input", () => onChange(Number(input.value)));
+    return input;
+  }
+
+  private createSelect(
+    options: { value: string; label: string }[],
+    currentValue: string,
+    onChange: (v: string) => void,
+  ): HTMLSelectElement {
+    const select = document.createElement("select");
+    select.className = "iat-select";
+    for (const opt of options) {
+      const option = document.createElement("option");
+      option.value = opt.value;
+      option.textContent = opt.label;
+      if (opt.value === currentValue) option.selected = true;
+      select.appendChild(option);
+    }
+    select.addEventListener("change", () => onChange(select.value));
+    return select;
+  }
+
+  // --- Processing pipeline ---
+
+  private scheduleProcessedPreview(): void {
+    if (this.processingDebounceTimer) clearTimeout(this.processingDebounceTimer);
+    this.processingDebounceTimer = setTimeout(() => {
+      this.processingDebounceTimer = null;
+      if (this.metrics) this.requestPreviewUpdate(this.metrics, true);
+    }, PROCESSING_DEBOUNCE_MS);
+  }
+
+  private buildProcessingParams(): AdjustToolProcessingParams {
+    return {
+      adjustments: { brightness: this.brightness, contrast: this.contrast, saturation: this.saturation },
+      selectedColorIds: [...this.selectedColorIds],
+      ditheringEnabled: this.ditheringEnabled,
+      ditheringThreshold: this.ditheringThreshold,
+      ditheringMethod: this.ditheringMethod,
+      quantizationMethod: this.quantizationMethod,
+      colorFlattenMode: this.colorFlattenMode,
+      outlineEnabled: this.outlineEnabled,
+      outlineThreshold: this.outlineThreshold,
+      outlineWidth: this.outlineWidth,
+      outlineUseFixedColor: this.outlineUseFixedColor,
+      outlineFixedColor: this.outlineFixedColor,
+    };
+  }
+
+  // --- Event mounting ---
 
   private mountEvents(): void {
     this.frame?.addEventListener("pointerdown", this.onFramePointerDown);
@@ -526,6 +1030,11 @@ export class ImageAdjustToolMode {
     if (this.topToolBar) {
       this.topToolBar.style.left = `${rect.x}px`;
       this.topToolBar.style.top = `${Math.max(8, rect.y - 30)}px`;
+    }
+
+    if (this.toolButtonBar) {
+      this.toolButtonBar.style.left = `${rect.x}px`;
+      this.toolButtonBar.style.top = `${Math.max(8, rect.y - 58)}px`;
     }
   }
 
@@ -672,6 +1181,7 @@ export class ImageAdjustToolMode {
         widthPx: latestMetrics.widthPx,
         heightPx: latestMetrics.heightPx,
         drawPosition,
+        processingParams: this.buildProcessingParams(),
       });
       this.destroy(false);
     } catch (error) {
@@ -681,6 +1191,7 @@ export class ImageAdjustToolMode {
 
   private requestPreviewUpdate(metrics: Metrics, force = false): void {
     const nextKey = `${metrics.widthPx}x${metrics.heightPx}`;
+
     if (!force) {
       const now = Date.now();
       if (nextKey === this.lastPreviewKey) return;
@@ -721,12 +1232,56 @@ export class ImageAdjustToolMode {
       if (!ctx) return;
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(sourceImage, 0, 0, targetWidth, targetHeight);
-      this.frameImage.src = previewCanvas.toDataURL("image/png");
+
+      const processedCanvas = await this.applyProcessing(previewCanvas);
+      this.frameImage.src = processedCanvas.toDataURL("image/png");
     } finally {
       this.previewPending = false;
       const queued = this.queuedPreviewMetrics;
       this.queuedPreviewMetrics = null;
       if (queued) this.requestPreviewUpdate(queued, true);
+    }
+  }
+
+  private async applyProcessing(canvas: HTMLCanvasElement): Promise<HTMLCanvasElement> {
+    const { createProcessedCanvasFromBitmap, createOutlinePreservedBitmap } =
+      await import("@/features/gallery/routes/image-editor/canvas-processor");
+
+    let sourceBitmap: ImageBitmap;
+
+    if (this.outlineEnabled && this.baseImage) {
+      // Outline needs original image + scale to detect edges properly
+      const scale = canvas.width / this.baseImage.naturalWidth;
+      sourceBitmap = await createOutlinePreservedBitmap(
+        this.baseImage,
+        scale,
+        {
+          enabled: true,
+          threshold: this.outlineThreshold,
+          width: this.outlineWidth,
+          useFixedColor: this.outlineUseFixedColor,
+          fixedColor: this.outlineFixedColor,
+        },
+      );
+    } else {
+      sourceBitmap = await createImageBitmap(canvas);
+    }
+
+    try {
+      return await createProcessedCanvasFromBitmap(
+        sourceBitmap,
+        { brightness: this.brightness, contrast: this.contrast, saturation: this.saturation },
+        this.selectedColorIds,
+        this.ditheringEnabled,
+        this.ditheringThreshold,
+        this.ditheringMethod,
+        true, // GPU fixed
+        this.quantizationMethod,
+        this.colorFlattenMode,
+        new Set<string>(),
+      );
+    } finally {
+      sourceBitmap.close();
     }
   }
 

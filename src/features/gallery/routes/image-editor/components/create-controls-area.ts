@@ -70,7 +70,7 @@ const createSizeControl = (
   ]);
 };
 
-const createContrastQuantizationControl = (
+export const createContrastQuantizationControl = (
   createElement: CreateElementFn,
   elements: UIElements,
 ): HTMLElement => {
@@ -152,7 +152,7 @@ const createContrastQuantizationControl = (
   );
 };
 
-const createBrightnessSaturationControl = (
+export const createBrightnessSaturationControl = (
   createElement: CreateElementFn,
   elements: UIElements,
 ): HTMLElement => {
@@ -215,7 +215,7 @@ const createBrightnessSaturationControl = (
   );
 };
 
-const createDitheringOutlineControl = (
+export const createDitheringOutlineControl = (
   createElement: CreateElementFn,
   elements: UIElements,
 ): HTMLElement => {

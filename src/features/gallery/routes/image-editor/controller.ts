@@ -3,7 +3,7 @@ import { colorpalette, TRANSPARENT_COLOR_ID } from "@/constants/colors";
 import { isDesktopViewport } from "@/constants/breakpoints";
 import { ImageInspector } from "@/components/image-inspector";
 import { ColorPalette } from "@/components/color-palette";
-import { ImageAdjustToolMode } from "@/features/image-adjust-tool";
+import { ImageAdjustToolMode, type AdjustToolProcessingParams } from "@/features/image-adjust-tool";
 import { DrawPosition, GalleryItem } from "@/states/galleryStorage";
 import { TransparencyMaskEditor } from "./transparency-mask-editor";
 import {
@@ -291,8 +291,8 @@ export class EditorController {
       naturalWidth: this.originalImage.naturalWidth,
       naturalHeight: this.originalImage.naturalHeight,
       initialScale: this.imageScale,
-      onConfirm: ({ widthPx, heightPx, drawPosition }) => {
-        this.applyAdjustToolResult(widthPx, heightPx, drawPosition);
+      onConfirm: ({ widthPx, heightPx, drawPosition, processingParams }) => {
+        this.applyAdjustToolResult(widthPx, heightPx, drawPosition, processingParams);
       },
       onCancel: () => {
         this.adjustToolMode = null;
@@ -312,6 +312,7 @@ export class EditorController {
     targetWidthPx: number,
     targetHeightPx: number,
     drawPosition: DrawPosition | null,
+    processingParams?: AdjustToolProcessingParams,
   ): void {
     if (!this.originalImage) return;
 
@@ -342,6 +343,11 @@ export class EditorController {
       this.setCoordinateInputs(drawPosition);
     }
 
+    // Apply processing params from adjust tool
+    if (processingParams) {
+      this.applyProcessingParams(processingParams);
+    }
+
     this.onScaleChange(nextScale);
     this.adjustToolMode = null;
 
@@ -349,7 +355,100 @@ export class EditorController {
       "🧑‍🎨 : Applied adjust tool result:",
       `${nextWidth}x${nextHeight}`,
       drawPosition,
+      processingParams ? "with processing params" : "",
     );
+  }
+
+  private applyProcessingParams(params: AdjustToolProcessingParams): void {
+    const { adjustments } = params;
+    this.brightness = adjustments.brightness;
+    this.contrast = adjustments.contrast;
+    this.saturation = adjustments.saturation;
+    this.ditheringEnabled = params.ditheringEnabled;
+    this.ditheringThreshold = params.ditheringThreshold;
+    this.ditheringMethod = params.ditheringMethod;
+    this.quantizationMethod = params.quantizationMethod;
+    this.colorFlattenMode = params.colorFlattenMode;
+    this.outlineEnabled = params.outlineEnabled;
+    this.outlineThreshold = params.outlineThreshold;
+    this.outlineWidth = params.outlineWidth;
+    this.outlineUseFixedColor = params.outlineUseFixedColor;
+    this.outlineFixedColor = params.outlineFixedColor;
+    this.selectedColorIds = params.selectedColorIds;
+
+    // Sync UI controls
+    this.syncControlsUI(params);
+  }
+
+  private syncControlsUI(params: AdjustToolProcessingParams): void {
+    const set = (id: string, value: string) => {
+      const el = this.container.querySelector(`#${id}`) as HTMLInputElement | HTMLSelectElement | null;
+      if (el) (el as any).value = value;
+    };
+    const setChecked = (id: string, checked: boolean) => {
+      const el = this.container.querySelector(`#${id}`) as HTMLInputElement | null;
+      if (el) el.checked = checked;
+    };
+    const setText = (id: string, text: string) => {
+      const el = this.container.querySelector(`#${id}`) as HTMLElement | null;
+      if (el) el.textContent = text;
+    };
+    const setDisabled = (id: string, disabled: boolean) => {
+      const el = this.container.querySelector(`#${id}`) as HTMLInputElement | HTMLSelectElement | null;
+      if (el) el.disabled = disabled;
+    };
+
+    set("wps-brightness-slider", `${params.adjustments.brightness}`);
+    setText("wps-brightness-value", `${params.adjustments.brightness}`);
+    set("wps-contrast-slider", `${params.adjustments.contrast}`);
+    setText("wps-contrast-value", `${params.adjustments.contrast}`);
+    set("wps-saturation-slider", `${params.adjustments.saturation}`);
+    setText("wps-saturation-value", `${params.adjustments.saturation}`);
+
+    setChecked("wps-dithering-checkbox", params.ditheringEnabled);
+    set("wps-dithering-threshold-slider", `${params.ditheringThreshold}`);
+    setText("wps-dithering-threshold-value", `${params.ditheringThreshold}`);
+    set("wps-dithering-method", params.ditheringMethod);
+    setDisabled("wps-dithering-threshold-slider", !params.ditheringEnabled);
+    setDisabled("wps-dithering-method", !params.ditheringEnabled);
+
+    set("wps-quantization-method", params.quantizationMethod);
+    set("wps-color-flatten-mode", params.colorFlattenMode);
+
+    setChecked("wps-outline-checkbox", params.outlineEnabled);
+    set("wps-outline-threshold-slider", `${params.outlineThreshold}`);
+    setText("wps-outline-threshold-value", `${params.outlineThreshold}`);
+    set("wps-outline-width-slider", `${params.outlineWidth}`);
+    setText("wps-outline-width-value", `${params.outlineWidth}`);
+    setChecked("wps-outline-color-checkbox", params.outlineUseFixedColor);
+    set("wps-outline-color-input", params.outlineFixedColor);
+    setDisabled("wps-outline-threshold-slider", !params.outlineEnabled);
+    setDisabled("wps-outline-width-slider", !params.outlineEnabled);
+    setDisabled("wps-outline-color-checkbox", !params.outlineEnabled);
+    setDisabled("wps-outline-color-input", !params.outlineEnabled || !params.outlineUseFixedColor);
+
+    // Update color palette
+    if (this.colorPalette) {
+      this.colorPalette.destroy();
+      this.colorPalette = null;
+    }
+    const isMobile = !this.isDesktopMode;
+    const containerSelector = isMobile
+      ? "#wps-color-palette-container-mobile"
+      : "#wps-color-palette-container";
+    const paletteContainer = this.container.querySelector(containerSelector) as HTMLElement;
+    if (paletteContainer) {
+      this.colorPalette = new ColorPalette(paletteContainer, {
+        selectedColorIds: params.selectedColorIds,
+        onChange: (colorIds) => this.onColorSelectionChange(colorIds),
+        hasExtraColorsBitmap: true,
+        showColorStats: true,
+        colorStatsTotalOnly: true,
+        showDisableUnusedButton: true,
+        controlSize: "xs",
+        sortOrder: "least-remaining",
+      });
+    }
   }
 
   getProcessedImage(): HTMLCanvasElement | null {
