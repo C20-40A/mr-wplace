@@ -135,11 +135,13 @@ export const injectImageEditorStyles = (
       .control-item { flex: 1; min-width: 0; }
       .control-item .range { width: 100%; display: block; }
       .cursor-pointer { cursor: pointer; }
+      #wps-dithering-compact-row,
       #wps-outline-compact-row {
         display: flex;
         flex-direction: column;
         gap: 0.35rem;
       }
+      #wps-dithering-line1,
       #wps-outline-line1 {
         display: flex;
         align-items: center;
@@ -147,10 +149,12 @@ export const injectImageEditorStyles = (
         gap: 0.5rem;
         align-self: center;
       }
+      #wps-dithering-line1 .control-label,
       #wps-outline-line1 .control-label {
         justify-content: flex-start;
         align-self: center;
       }
+      #wps-dithering-line2,
       #wps-outline-line2 {
         display: flex;
         align-items: center;
@@ -164,6 +168,7 @@ export const injectImageEditorStyles = (
         flex: 1;
         min-width: 0;
       }
+      #wps-dithering-line2 .range,
       #wps-outline-line2 .range {
         flex: 1;
         width: auto;
@@ -180,9 +185,19 @@ export const injectImageEditorStyles = (
       #wps-outline-line2 .wps-outline-width .label-hint-sm {
         flex: 0 0 auto;
       }
+      #wps-dithering-compact-row .label-hint-sm,
+      #wps-dithering-line1 .control-label,
       #wps-outline-compact-row .label-hint-sm,
       #wps-outline-line1 .control-label {
         white-space: nowrap;
+      }
+      #wps-dithering-method {
+        width: 5rem;
+        min-height: 1.6rem;
+        padding-left: 0.35rem;
+        padding-right: 0.85rem;
+        font-size: 0.68rem;
+        flex: 0 0 auto;
       }
       #wps-outline-line1 input[type="color"] {
         flex: 0 0 auto;

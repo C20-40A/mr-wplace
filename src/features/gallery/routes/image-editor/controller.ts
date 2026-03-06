@@ -13,7 +13,11 @@ import {
   downloadBlob,
   parseDrawPositionFromFileName,
 } from "./file-handler";
-import { ImageAdjustments, QuantizationMethod } from "./canvas-processor";
+import {
+  DitheringMethod,
+  ImageAdjustments,
+  QuantizationMethod,
+} from "./canvas-processor";
 
 /**
  * 画像エディタController
@@ -35,6 +39,7 @@ export class EditorController {
   private outlineFixedColor = "#000000";
   private ditheringEnabled = false;
   private ditheringThreshold = 500;
+  private ditheringMethod: DitheringMethod = "ordered";
   private quantizationMethod: QuantizationMethod = "rgb-euclidean";
   private useGpu = true;
   private transparentColors = new Set<string>();
@@ -256,6 +261,11 @@ export class EditorController {
     this.updateScaledImage();
   }
 
+  onDitheringMethodChange(method: DitheringMethod): void {
+    this.ditheringMethod = method === "floyd-steinberg" ? method : "ordered";
+    this.updateScaledImage();
+  }
+
   onGpuToggle(enabled: boolean): void {
     console.log("🧑‍🎨 : GPU toggle changed:", enabled);
     this.useGpu = enabled;
@@ -428,6 +438,7 @@ export class EditorController {
     this.outlineFixedColor = "#000000";
     this.ditheringEnabled = false;
     this.ditheringThreshold = 500;
+    this.ditheringMethod = "ordered";
     this.quantizationMethod = "rgb-euclidean";
     this.useGpu = true;
     this.transparentColors.clear();
@@ -492,6 +503,9 @@ export class EditorController {
     const ditheringCheckbox = this.container.querySelector(
       "#wps-dithering-checkbox",
     ) as HTMLInputElement;
+    const ditheringMethodSelect = this.container.querySelector(
+      "#wps-dithering-method",
+    ) as HTMLSelectElement;
     const gpuToggle = this.container.querySelector(
       "#wps-gpu-toggle",
     ) as HTMLInputElement;
@@ -543,6 +557,10 @@ export class EditorController {
       outlineColorInput.disabled = true;
     }
     if (ditheringCheckbox) ditheringCheckbox.checked = false;
+    if (ditheringMethodSelect) {
+      ditheringMethodSelect.value = "ordered";
+      ditheringMethodSelect.disabled = true;
+    }
     if (gpuToggle) gpuToggle.checked = true;
     if (tlxInput) tlxInput.value = "";
     if (tlyInput) tlyInput.value = "";
@@ -990,6 +1008,7 @@ export class EditorController {
       this.selectedColorIds,
       this.ditheringEnabled,
       this.ditheringThreshold,
+      this.ditheringMethod,
       this.useGpu,
       this.quantizationMethod,
       this.transparentColors,

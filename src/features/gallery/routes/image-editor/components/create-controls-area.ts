@@ -211,6 +211,27 @@ const createDitheringOutlineControl = (
     className: "range",
     disabled: true,
   }) as HTMLInputElement;
+  elements.ditheringMethod = createElement(
+    "select",
+    {
+      id: "wps-dithering-method",
+      className: "select select-xs",
+      disabled: true,
+      title: "Dithering method",
+    },
+    [
+      createElement(
+        "option",
+        { value: "ordered", title: "Ordered dithering" },
+        ["ordered"],
+      ),
+      createElement(
+        "option",
+        { value: "floyd-steinberg", title: "Floyd-Steinberg dithering" },
+        ["Floyd"],
+      ),
+    ],
+  ) as HTMLSelectElement;
 
   elements.outlineCheckbox = createElement("input", {
     id: "wps-outline-checkbox",
@@ -266,61 +287,87 @@ const createDitheringOutlineControl = (
     "div",
     { id: "wps-dithering-outline-container", className: "control-group" },
     [
-      createElement("div", { className: "control-item" }, [
-        createElement(
-          "label",
-          { className: "control-label centered cursor-pointer" },
-          [
-            elements.ditheringCheckbox as HTMLInputElement,
-            createElement("span", {}, [
-              `${t("dithering")}: `,
-              elements.ditheringThresholdValue as HTMLElement,
-            ]),
-          ],
-        ),
-        createElement("div", { className: "flex-group" }, [
-          createElement("span", { className: "label-hint-sm" }, ["0"]),
-          elements.ditheringThresholdSlider as HTMLInputElement,
-          createElement("span", { className: "label-hint-sm" }, ["1500"]),
-        ]),
-      ]),
-      createElement("div", { id: "wps-outline-compact-row", className: "control-item" }, [
-        createElement("div", { id: "wps-outline-line1" }, [
+      createElement(
+        "div",
+        { id: "wps-dithering-compact-row", className: "control-item" },
+        [
+          createElement("div", { id: "wps-dithering-line1" }, [
+            createElement(
+              "label",
+              {
+                className: "control-label centered cursor-pointer",
+                style: { margin: "0" },
+              },
+              [
+                elements.ditheringCheckbox as HTMLInputElement,
+                createElement("span", {}, [
+                  `${t("dithering")}: `,
+                  elements.ditheringThresholdValue as HTMLElement,
+                ]),
+              ],
+            ),
+            elements.ditheringMethod as HTMLSelectElement,
+          ]),
           createElement(
-            "label",
-            { className: "control-label centered cursor-pointer", style: { margin: "0" } },
+            "div",
+            { id: "wps-dithering-line2", className: "flex-group" },
             [
-              elements.outlineCheckbox as HTMLInputElement,
-              createElement("span", {}, [t("outline_preserve")]),
+              createElement("span", { className: "label-hint-sm" }, ["0"]),
+              elements.ditheringThresholdSlider as HTMLInputElement,
+              createElement("span", { className: "label-hint-sm" }, ["1500"]),
             ],
           ),
-          createElement(
-            "label",
-            { className: "control-label centered cursor-pointer", style: { margin: "0" } },
-            [
-              elements.outlineColorCheckbox as HTMLInputElement,
-              createElement("span", { className: "label-hint-sm" }, [t("outline_color")]),
-              elements.outlineColorInput as HTMLInputElement,
-            ],
-          ),
-        ]),
-        createElement("div", { id: "wps-outline-line2" }, [
-          createElement("div", { className: "wps-outline-sensitivity" }, [
-            createElement("span", { className: "label-hint-sm" }, [
-              `${t("outline_sensitivity")}: `,
-              elements.outlineThresholdValue as HTMLElement,
-            ]),
-            elements.outlineThresholdSlider as HTMLInputElement,
+        ],
+      ),
+      createElement(
+        "div",
+        { id: "wps-outline-compact-row", className: "control-item" },
+        [
+          createElement("div", { id: "wps-outline-line1" }, [
+            createElement(
+              "label",
+              {
+                className: "control-label centered cursor-pointer",
+                style: { margin: "0" },
+              },
+              [
+                elements.outlineCheckbox as HTMLInputElement,
+                createElement("span", {}, [t("outline_preserve")]),
+              ],
+            ),
+            createElement(
+              "label",
+              {
+                className: "control-label centered cursor-pointer",
+                style: { margin: "0" },
+              },
+              [
+                elements.outlineColorCheckbox as HTMLInputElement,
+                createElement("span", { className: "label-hint-sm" }, [
+                  t("outline_color"),
+                ]),
+                elements.outlineColorInput as HTMLInputElement,
+              ],
+            ),
           ]),
-          createElement("div", { className: "wps-outline-width" }, [
-            createElement("span", { className: "label-hint-sm" }, [
-              `${t("outline_width")}: `,
-              elements.outlineWidthValue as HTMLElement,
+          createElement("div", { id: "wps-outline-line2" }, [
+            createElement("div", { className: "wps-outline-sensitivity" }, [
+              createElement("span", { className: "label-hint-sm" }, [
+                `${t("outline_sensitivity")}: `,
+                elements.outlineThresholdValue as HTMLElement,
+              ]),
+              elements.outlineThresholdSlider as HTMLInputElement,
             ]),
-            elements.outlineWidthSlider as HTMLInputElement,
+            createElement("div", { className: "wps-outline-width" }, [
+              createElement("span", { className: "label-hint-sm" }, [
+                `${t("outline_width")}: `,
+                elements.outlineWidthValue as HTMLElement,
+              ]),
+              elements.outlineWidthSlider as HTMLInputElement,
+            ]),
           ]),
-        ]),
-      ]),
+        ],
+      ),
     ],
   );
 };

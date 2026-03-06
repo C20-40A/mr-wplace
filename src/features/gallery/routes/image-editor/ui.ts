@@ -1,5 +1,5 @@
 import { ImageDropzone } from "@/components/image-dropzone";
-import { QuantizationMethod } from "./canvas-processor";
+import { DitheringMethod, QuantizationMethod } from "./canvas-processor";
 import type { UIElements } from "./components/types";
 import { createDropzone } from "./components/create-dropzone";
 import { createImageDisplayArea } from "./components/create-image-display-area";
@@ -21,6 +21,7 @@ export interface ImageEditorCallbacks {
   onOutlineFixedColorChange: (value: string) => void;
   onDitheringChange: (enabled: boolean) => void;
   onDitheringThresholdChange: (threshold: number) => void;
+  onDitheringMethodChange: (method: DitheringMethod) => void;
   onQuantizationMethodChange: (method: QuantizationMethod) => void;
   onGpuToggle: (enabled: boolean) => void;
   onTransparentColorsChange: (colors: Set<string>) => void;
@@ -242,8 +243,12 @@ export class ImageEditorUI {
   }
 
   private _handleChange(e: Event): void {
-    const target = e.target as HTMLInputElement;
+    const target = e.target as HTMLInputElement | HTMLSelectElement;
     if (!target.id || !this.callbacks) return;
+    const isInput = (element: typeof target): element is HTMLInputElement =>
+      element instanceof HTMLInputElement;
+    const isSelect = (element: typeof target): element is HTMLSelectElement =>
+      element instanceof HTMLSelectElement;
 
     switch (target.id) {
       case "wps-scale-slider":
@@ -256,15 +261,19 @@ export class ImageEditorUI {
         break;
       }
       case "wps-brightness-slider":
+        if (!isInput(target)) return;
         this.callbacks.onBrightnessChange(parseInt(target.value));
         break;
       case "wps-contrast-slider":
+        if (!isInput(target)) return;
         this.callbacks.onContrastChange(parseInt(target.value));
         break;
       case "wps-saturation-slider":
+        if (!isInput(target)) return;
         this.callbacks.onSaturationChange(parseInt(target.value));
         break;
       case "wps-outline-checkbox":
+        if (!isInput(target)) return;
         (this.elements.outlineThresholdSlider as HTMLInputElement).disabled =
           !target.checked;
         (this.elements.outlineWidthSlider as HTMLInputElement).disabled =
@@ -277,36 +286,49 @@ export class ImageEditorUI {
         this.callbacks.onOutlineToggle(target.checked);
         break;
       case "wps-outline-threshold-slider":
+        if (!isInput(target)) return;
         this.callbacks.onOutlineThresholdChange(parseInt(target.value));
         break;
       case "wps-outline-width-slider":
+        if (!isInput(target)) return;
         this.callbacks.onOutlineWidthChange(parseInt(target.value));
         break;
       case "wps-outline-color-checkbox":
+        if (!isInput(target)) return;
         (this.elements.outlineColorInput as HTMLInputElement).disabled =
           !target.checked;
         this.callbacks.onOutlineUseFixedColorChange(target.checked);
         break;
       case "wps-outline-color-input":
+        if (!isInput(target)) return;
         this.callbacks.onOutlineFixedColorChange(target.value);
         break;
       case "wps-dithering-checkbox":
+        if (!isInput(target)) return;
         (this.elements.ditheringThresholdSlider as HTMLInputElement).disabled =
+          !target.checked;
+        (this.elements.ditheringMethod as HTMLSelectElement).disabled =
           !target.checked;
         this.callbacks.onDitheringChange(target.checked);
         break;
       case "wps-dithering-threshold-slider":
+        if (!isInput(target)) return;
         this.callbacks.onDitheringThresholdChange(parseInt(target.value));
         break;
+      case "wps-dithering-method":
+        if (!isSelect(target)) return;
+        this.callbacks.onDitheringMethodChange(target.value as DitheringMethod);
+        break;
       case "wps-quantization-method":
-        this.callbacks.onQuantizationMethodChange(
-          (target as any).value as QuantizationMethod,
-        );
+        if (!isSelect(target)) return;
+        this.callbacks.onQuantizationMethodChange(target.value as QuantizationMethod);
         break;
       case "wps-gpu-toggle":
+        if (!isInput(target)) return;
         this.callbacks.onGpuToggle(target.checked);
         break;
       case "wps-replace-file-input": {
+        if (!isInput(target)) return;
         const file = target.files?.[0];
         if (file) {
           this.callbacks.onReplaceImage(file);

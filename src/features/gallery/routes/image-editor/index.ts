@@ -45,6 +45,7 @@ export class GalleryImageEditor {
         this.controller?.onOutlineFixedColorChange(value),
       onDitheringChange: (enabled) => this.controller?.onDitheringChange(enabled),
       onDitheringThresholdChange: (threshold) => this.controller?.onDitheringThresholdChange(threshold),
+      onDitheringMethodChange: (method) => this.controller?.onDitheringMethodChange(method),
       onQuantizationMethodChange: (method) => this.controller?.onQuantizationMethodChange(method),
       onGpuToggle: (enabled) => this.controller?.onGpuToggle(enabled),
       onTransparentColorsChange: (colors) => this.controller?.onTransparentColorsChange(colors),

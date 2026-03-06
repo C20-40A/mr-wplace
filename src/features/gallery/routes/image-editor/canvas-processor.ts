@@ -23,6 +23,7 @@ export interface OutlinePreserveOptions {
  * 量子化方法
  */
 export type QuantizationMethod = "rgb-euclidean" | "weighted-rgb" | "lab";
+export type DitheringMethod = "ordered" | "floyd-steinberg";
 
 /**
  * RGB (0-255) → Lab 色空間変換
@@ -621,7 +622,8 @@ export const quantizeWithDithering = (
   imageData: ImageData,
   selectedColorIds: number[],
   ditheringThreshold: number,
-  method: QuantizationMethod = "rgb-euclidean"
+  method: QuantizationMethod = "rgb-euclidean",
+  ditheringMethod: DitheringMethod = "ordered",
 ): void => {
   const data = imageData.data;
   const width = imageData.width;
@@ -642,6 +644,95 @@ export const quantizeWithDithering = (
     method === "weighted-rgb"
       ? colorDistWeightedRgb2
       : colorDistRgbEuclidean2;
+
+  const findNearestColor = (
+    r: number,
+    g: number,
+    b: number,
+  ): [number, number, number] => {
+    let minDist = Infinity;
+    let nearest: [number, number, number] = rgbList[0];
+
+    if (method === "lab") {
+      const [L, a, bLab] = rgbToLab(r, g, b);
+      for (let j = 0; j < rgbList.length; j++) {
+        const [pL, pA, pB] = paletteLab[j];
+        const dL = L - pL;
+        const dA = a - pA;
+        const dB = bLab - pB;
+        const dist = dL * dL + dA * dA + dB * dB;
+        if (dist < minDist) {
+          minDist = dist;
+          nearest = rgbList[j];
+        }
+      }
+      return nearest;
+    }
+
+    for (let j = 0; j < rgbList.length; j++) {
+      const c = rgbList[j];
+      const dist = colorDistFn(r, g, b, c[0], c[1], c[2]);
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = c;
+      }
+    }
+    return nearest;
+  };
+
+  if (ditheringMethod === "floyd-steinberg") {
+    const working = new Float32Array(data.length);
+    for (let i = 0; i < data.length; i++) working[i] = data[i];
+    const errorScale = Math.max(0, Math.min(1, ditheringThreshold / 1000));
+
+    const diffuseError = (
+      x: number,
+      y: number,
+      dr: number,
+      dg: number,
+      db: number,
+      weight: number,
+    ): void => {
+      if (x < 0 || x >= width || y < 0 || y >= height) return;
+      const idx = (y * width + x) * 4;
+      if (working[idx + 3] < 128) return;
+      working[idx] = Math.max(0, Math.min(255, working[idx] + dr * weight));
+      working[idx + 1] = Math.max(0, Math.min(255, working[idx + 1] + dg * weight));
+      working[idx + 2] = Math.max(0, Math.min(255, working[idx + 2] + db * weight));
+    };
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4;
+        const alpha = working[i + 3];
+
+        if (alpha < 128) {
+          data[i + 3] = 0;
+          continue;
+        }
+
+        const r = Math.max(0, Math.min(255, working[i]));
+        const g = Math.max(0, Math.min(255, working[i + 1]));
+        const b = Math.max(0, Math.min(255, working[i + 2]));
+        const nearest = findNearestColor(r, g, b);
+
+        data[i] = nearest[0];
+        data[i + 1] = nearest[1];
+        data[i + 2] = nearest[2];
+        data[i + 3] = 255;
+
+        const dr = (r - nearest[0]) * errorScale;
+        const dg = (g - nearest[1]) * errorScale;
+        const db = (b - nearest[2]) * errorScale;
+
+        diffuseError(x + 1, y, dr, dg, db, 7 / 16);
+        diffuseError(x - 1, y + 1, dr, dg, db, 3 / 16);
+        diffuseError(x, y + 1, dr, dg, db, 5 / 16);
+        diffuseError(x + 1, y + 1, dr, dg, db, 1 / 16);
+      }
+    }
+    return;
+  }
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -664,34 +755,7 @@ export const quantizeWithDithering = (
       let b = Math.max(0, Math.min(255, data[i + 2] + ditherAmount));
 
       // 最近色探索
-      let minDist = Infinity;
-      let nearest: [number, number, number] = rgbList[0];
-
-      if (method === "lab") {
-        // Labモード: ピクセルのみLab変換、パレットは事前計算済みを使用
-        const [L, a, bLab] = rgbToLab(r, g, b);
-        for (let j = 0; j < rgbList.length; j++) {
-          const [pL, pA, pB] = paletteLab[j];
-          const dL = L - pL;
-          const dA = a - pA;
-          const dB = bLab - pB;
-          const dist = dL * dL + dA * dA + dB * dB;
-          if (dist < minDist) {
-            minDist = dist;
-            nearest = rgbList[j];
-          }
-        }
-      } else {
-        // RGB/Weighted RGBモード
-        for (let j = 0; j < rgbList.length; j++) {
-          const c = rgbList[j];
-          const dist = colorDistFn(r, g, b, c[0], c[1], c[2]);
-          if (dist < minDist) {
-            minDist = dist;
-            nearest = c;
-          }
-        }
-      }
+      const nearest = findNearestColor(r, g, b);
 
       data[i] = nearest[0];
       data[i + 1] = nearest[1];
@@ -730,15 +794,17 @@ export async function createProcessedCanvasFromBitmap(
   selectedColorIds: number[],
   ditheringEnabled = false,
   ditheringThreshold = 500,
+  ditheringMethod: DitheringMethod = "ordered",
   useGpu = true,
   quantizationMethod: QuantizationMethod = "rgb-euclidean",
   transparentColors?: Set<string>
 ): Promise<HTMLCanvasElement> {
   const newWidth = resizedBitmap.width;
   const newHeight = resizedBitmap.height;
+  const canUseGpu = useGpu && (!ditheringEnabled || ditheringMethod === "ordered");
 
   // GPU処理試行（useGpu=trueの場合のみ）
-  if (useGpu) {
+  if (canUseGpu) {
     try {
       console.log("🧑‍🎨 : Attempting GPU processing (cached bitmap), dithering:", ditheringEnabled, "quantization:", quantizationMethod);
       const paletteRGB = colorpalette
@@ -777,7 +843,11 @@ export async function createProcessedCanvasFromBitmap(
       console.log("🧑‍🎨 : GPU processing failed, fallback to CPU:", error);
     }
   } else {
-    console.log("🧑‍🎨 : CPU processing selected");
+    if (useGpu && ditheringEnabled && ditheringMethod !== "ordered") {
+      console.log("🧑‍🎨 : CPU processing selected for dithering method:", ditheringMethod);
+    } else {
+      console.log("🧑‍🎨 : CPU processing selected");
+    }
   }
 
   // CPU処理
@@ -796,7 +866,13 @@ export async function createProcessedCanvasFromBitmap(
 
   // ディザ処理切り替え
   if (ditheringEnabled) {
-    quantizeWithDithering(imageData, selectedColorIds, ditheringThreshold, quantizationMethod);
+    quantizeWithDithering(
+      imageData,
+      selectedColorIds,
+      ditheringThreshold,
+      quantizationMethod,
+      ditheringMethod,
+    );
   } else {
     quantizeToColorPalette(imageData, selectedColorIds, quantizationMethod);
   }
@@ -828,6 +904,7 @@ export async function createProcessedCanvas(
   selectedColorIds: number[],
   ditheringEnabled = false,
   ditheringThreshold = 500,
+  ditheringMethod: DitheringMethod = "ordered",
   useGpu = true,
   quantizationMethod: QuantizationMethod = "rgb-euclidean"
 ): Promise<HTMLCanvasElement> {
@@ -836,8 +913,10 @@ export async function createProcessedCanvas(
   const newWidth = Math.floor(originalWidth * scale);
   const newHeight = Math.floor(originalHeight * scale);
 
+  const canUseGpu = useGpu && (!ditheringEnabled || ditheringMethod === "ordered");
+
   // GPU処理試行（useGpu=trueの場合のみ）
-  if (useGpu) {
+  if (canUseGpu) {
     try {
       console.log("🧑‍🎨 : Attempting GPU processing, dithering:", ditheringEnabled, "quantization:", quantizationMethod);
       // HTMLImageElementから直接ImageBitmap作成（canvas経由せずリサイズ）
@@ -879,7 +958,11 @@ export async function createProcessedCanvas(
       console.log("🧑‍🎨 : GPU processing failed, fallback to CPU:", error);
     }
   } else {
-    console.log("🧑‍🎨 : CPU processing selected");
+    if (useGpu && ditheringEnabled && ditheringMethod !== "ordered") {
+      console.log("🧑‍🎨 : CPU processing selected for dithering method:", ditheringMethod);
+    } else {
+      console.log("🧑‍🎨 : CPU processing selected");
+    }
   }
 
   // CPU処理（ImageBitmap経由でcanvas汚染を回避）
@@ -908,7 +991,13 @@ export async function createProcessedCanvas(
 
   // ディザ処理切り替え
   if (ditheringEnabled) {
-    quantizeWithDithering(imageData, selectedColorIds, ditheringThreshold, quantizationMethod);
+    quantizeWithDithering(
+      imageData,
+      selectedColorIds,
+      ditheringThreshold,
+      quantizationMethod,
+      ditheringMethod,
+    );
   } else {
     quantizeToColorPalette(imageData, selectedColorIds, quantizationMethod);
   }
