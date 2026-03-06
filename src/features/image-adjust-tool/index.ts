@@ -65,7 +65,7 @@ const STYLES = {
   `,
   frame: `
     position: fixed;
-    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+    border: 1px solid;
     overflow: hidden;
     pointer-events: auto;
     touch-action: none;
@@ -190,6 +190,31 @@ export class ImageAdjustToolMode {
     void this.syncScreenRectFromMap();
   };
 
+  private readonly onOverlayWheel = (event: WheelEvent): void => {
+    const mapRoot = this.mapElement;
+    if (!mapRoot) return;
+    const wheelTarget =
+      mapRoot.querySelector<HTMLElement>(".maplibregl-canvas") ?? mapRoot;
+
+    wheelTarget.dispatchEvent(
+      new WheelEvent("wheel", {
+        deltaX: event.deltaX,
+        deltaY: event.deltaY,
+        deltaZ: event.deltaZ,
+        deltaMode: event.deltaMode,
+        clientX: event.clientX,
+        clientY: event.clientY,
+        ctrlKey: event.ctrlKey,
+        shiftKey: event.shiftKey,
+        altKey: event.altKey,
+        metaKey: event.metaKey,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    event.preventDefault();
+  };
+
   private readonly onFramePointerDown = (event: PointerEvent): void => {
     if (!this.frame || !this.rect) return;
     if (event.button !== 0) return;
@@ -260,7 +285,7 @@ export class ImageAdjustToolMode {
     if (event.pointerId !== this.activeInteraction.pointerId) return;
     this.frame.releasePointerCapture(event.pointerId);
     this.activeInteraction = null;
-    this.requestMetricsUpdate(true);
+    this.requestMetricsUpdate(true, true);
   };
 
   private readonly onWindowResize = (): void => {
@@ -415,7 +440,17 @@ export class ImageAdjustToolMode {
 
   private mountEvents(): void {
     this.frame?.addEventListener("pointerdown", this.onFramePointerDown);
+    this.frame?.addEventListener("wheel", this.onOverlayWheel, { passive: false });
     this.resizeHandle?.addEventListener("pointerdown", this.onResizePointerDown);
+    this.topToolBar?.addEventListener("wheel", this.onOverlayWheel, {
+      passive: false,
+    });
+    this.closeButton?.addEventListener("wheel", this.onOverlayWheel, {
+      passive: false,
+    });
+    this.confirmButton?.addEventListener("wheel", this.onOverlayWheel, {
+      passive: false,
+    });
     window.addEventListener("pointermove", this.onGlobalPointerMove, {
       passive: true,
     });
@@ -431,10 +466,14 @@ export class ImageAdjustToolMode {
 
   private unmountEvents(): void {
     this.frame?.removeEventListener("pointerdown", this.onFramePointerDown);
+    this.frame?.removeEventListener("wheel", this.onOverlayWheel);
     this.resizeHandle?.removeEventListener(
       "pointerdown",
       this.onResizePointerDown,
     );
+    this.topToolBar?.removeEventListener("wheel", this.onOverlayWheel);
+    this.closeButton?.removeEventListener("wheel", this.onOverlayWheel);
+    this.confirmButton?.removeEventListener("wheel", this.onOverlayWheel);
     window.removeEventListener("pointermove", this.onGlobalPointerMove);
     window.removeEventListener("pointerup", this.onGlobalPointerUp);
     window.removeEventListener("pointercancel", this.onGlobalPointerUp);
@@ -495,7 +534,7 @@ export class ImageAdjustToolMode {
     this.frameImage.style.opacity = `${this.imageOpacity}`;
   }
 
-  private requestMetricsUpdate(force = false): void {
+  private requestMetricsUpdate(force = false, snapTopLeftToPixel = false): void {
     if (!force) {
       const now = Date.now();
       if (now - this.lastMetricsRequestedAt < METRICS_DRAG_UPDATE_MS) return;
@@ -503,10 +542,10 @@ export class ImageAdjustToolMode {
     } else {
       this.lastMetricsRequestedAt = Date.now();
     }
-    void this.updateMetrics();
+    void this.updateMetrics(snapTopLeftToPixel);
   }
 
-  private async updateMetrics(): Promise<Metrics | null> {
+  private async updateMetrics(snapTopLeftToPixel = false): Promise<Metrics | null> {
     if (this.metricsPending || !this.rect) return this.metrics;
     this.metricsPending = true;
 
@@ -538,8 +577,12 @@ export class ImageAdjustToolMode {
         ),
       );
 
-      const topLeftPixelX = Math.floor(projected[0].pixelX);
-      const topLeftPixelY = Math.floor(projected[0].pixelY);
+      const topLeftPixelX = snapTopLeftToPixel
+        ? Math.floor(projected[0].pixelX)
+        : projected[0].pixelX;
+      const topLeftPixelY = snapTopLeftToPixel
+        ? Math.floor(projected[0].pixelY)
+        : projected[0].pixelY;
 
       this.metrics = {
         widthPx,
@@ -561,7 +604,7 @@ export class ImageAdjustToolMode {
         }
       }
       this.requestPreviewUpdate(this.metrics);
-      void this.syncScreenRectFromMap(true);
+      if (snapTopLeftToPixel) void this.syncScreenRectFromMap(true);
       return this.metrics;
     } finally {
       this.metricsPending = false;
@@ -617,7 +660,7 @@ export class ImageAdjustToolMode {
   }
 
   private async handleConfirm(): Promise<void> {
-    const latestMetrics = await this.updateMetrics();
+    const latestMetrics = await this.updateMetrics(true);
     if (!latestMetrics) return;
 
     const drawPosition = this.toDrawPosition(
