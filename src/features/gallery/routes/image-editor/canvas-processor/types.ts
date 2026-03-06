@@ -12,13 +12,13 @@ export interface OutlinePreserveOptions {
   fixedColor: string;
 }
 
-export type PerceptualQuantizationMethod = "lab" | "oklab" | "delta-e-2000";
+export type ColorFlattenMode = "none" | "light" | "medium";
+export type PerceptualQuantizationMethod = "lab" | "oklab";
 export type QuantizationMethod =
   | "rgb-euclidean"
   | "weighted-rgb"
   | "lab"
-  | "oklab"
-  | "delta-e-2000";
+  | "oklab";
 export type DitheringMethod = "ordered" | "floyd-steinberg";
 
 export type RgbColor = [number, number, number];

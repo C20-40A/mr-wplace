@@ -1,7 +1,6 @@
 import { colorpalette } from "@/constants/colors";
 import {
   clampByte,
-  colorDistDeltaE2000,
   colorDistPerceptualEuclidean2,
   colorDistRgbEuclidean2,
   colorDistWeightedRgb2,
@@ -39,10 +38,10 @@ const createPerceptualNearestColorFinder = (
     let nearest = rgbList[0];
 
     for (let i = 0; i < rgbList.length; i++) {
-      const dist =
-        method === "delta-e-2000"
-          ? colorDistDeltaE2000(sourcePerceptual, palettePerceptual[i])
-          : colorDistPerceptualEuclidean2(sourcePerceptual, palettePerceptual[i]);
+      const dist = colorDistPerceptualEuclidean2(
+        sourcePerceptual,
+        palettePerceptual[i]
+      );
       if (dist < minDist) {
         minDist = dist;
         nearest = rgbList[i];

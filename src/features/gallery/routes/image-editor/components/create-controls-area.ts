@@ -1,4 +1,5 @@
 import { t } from "@/i18n/manager";
+import type { ColorFlattenMode } from "../canvas-processor";
 import type { CreateElementFn, UIElements } from "./types";
 
 export const createControlsArea = (
@@ -87,7 +88,11 @@ const createContrastQuantizationControl = (
   }) as HTMLInputElement;
   elements.quantizationMethod = createElement(
     "select",
-    { id: "wps-quantization-method", className: "select select-sm w-full" },
+    {
+      id: "wps-quantization-method",
+      className: "select select-sm w-full",
+      title: t("quantization_method"),
+    },
     [
       createElement("option", { value: "rgb-euclidean" }, [
         t("quantization_rgb_euclidean"),
@@ -97,7 +102,25 @@ const createContrastQuantizationControl = (
       ]),
       createElement("option", { value: "lab" }, [t("quantization_lab")]),
       createElement("option", { value: "oklab" }, [t("quantization_oklab")]),
-      createElement("option", { value: "delta-e-2000" }, [t("quantization_delta_e_2000")]),
+    ],
+  ) as HTMLSelectElement;
+  elements.colorFlattenMode = createElement(
+    "select",
+    {
+      id: "wps-color-flatten-mode",
+      className: "select select-sm w-full",
+      title: t("color_flatten"),
+    },
+    [
+      createElement("option", { value: "none" satisfies ColorFlattenMode }, [
+        t("color_flatten_none"),
+      ]),
+      createElement("option", { value: "light" satisfies ColorFlattenMode }, [
+        t("color_flatten_light"),
+      ]),
+      createElement("option", { value: "medium" satisfies ColorFlattenMode }, [
+        t("color_flatten_medium"),
+      ]),
     ],
   ) as HTMLSelectElement;
 
@@ -120,7 +143,10 @@ const createContrastQuantizationControl = (
         createElement("label", { className: "control-label centered" }, [
           t("quantization_method"),
         ]),
-        elements.quantizationMethod as HTMLSelectElement,
+        createElement("div", { id: "wps-quantization-row", className: "flex-group" }, [
+          elements.quantizationMethod as HTMLSelectElement,
+          elements.colorFlattenMode as HTMLSelectElement,
+        ]),
       ]),
     ],
   );

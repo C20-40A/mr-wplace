@@ -596,5 +596,8 @@ export const jaTranslations = {
   popup_fab_status_bar: "ステータスバー",
   popup_hide_my_location: "現在地ボタンを非表示",
   quantization_oklab: "OKLab色空間（低速・より均一）",
-  quantization_delta_e_2000: "DeltaE 2000（最も低速・最も近い）",
+  color_flatten: "色フラット化",
+  color_flatten_none: "フラット: オフ",
+  color_flatten_light: "フラット: 弱",
+  color_flatten_medium: "フラット: 中",
 };

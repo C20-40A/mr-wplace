@@ -15,6 +15,7 @@ import {
   parseDrawPositionFromFileName,
 } from "./file-handler";
 import {
+  ColorFlattenMode,
   DitheringMethod,
   ImageAdjustments,
   QuantizationMethod,
@@ -42,6 +43,7 @@ export class EditorController {
   private ditheringThreshold = 500;
   private ditheringMethod: DitheringMethod = "ordered";
   private quantizationMethod: QuantizationMethod = "rgb-euclidean";
+  private colorFlattenMode: ColorFlattenMode = "none";
   private useGpu = true;
   private transparentColors = new Set<string>();
   private imageInspector: ImageInspector | null = null;
@@ -273,6 +275,12 @@ export class EditorController {
     this.updateScaledImage();
   }
 
+  onColorFlattenModeChange(mode: ColorFlattenMode): void {
+    console.log("🧑‍🎨 : Color flatten mode changed:", mode);
+    this.colorFlattenMode = mode;
+    this.updateScaledImage();
+  }
+
   openAdjustTool(): void {
     if (!this.originalImage) return;
     if (!this.originalImage.src) return;
@@ -435,6 +443,7 @@ export class EditorController {
     this.ditheringThreshold = 500;
     this.ditheringMethod = "ordered";
     this.quantizationMethod = "rgb-euclidean";
+    this.colorFlattenMode = "none";
     this.useGpu = true;
     this.transparentColors.clear();
     this.transparencyMaskEditor.clear();
@@ -498,8 +507,14 @@ export class EditorController {
     const ditheringCheckbox = this.container.querySelector(
       "#wps-dithering-checkbox",
     ) as HTMLInputElement;
+    const quantizationMethodSelect = this.container.querySelector(
+      "#wps-quantization-method",
+    ) as HTMLSelectElement;
     const ditheringMethodSelect = this.container.querySelector(
       "#wps-dithering-method",
+    ) as HTMLSelectElement;
+    const colorFlattenModeSelect = this.container.querySelector(
+      "#wps-color-flatten-mode",
     ) as HTMLSelectElement;
     const gpuToggle = this.container.querySelector(
       "#wps-gpu-toggle",
@@ -552,10 +567,12 @@ export class EditorController {
       outlineColorInput.disabled = true;
     }
     if (ditheringCheckbox) ditheringCheckbox.checked = false;
+    if (quantizationMethodSelect) quantizationMethodSelect.value = "rgb-euclidean";
     if (ditheringMethodSelect) {
       ditheringMethodSelect.value = "ordered";
       ditheringMethodSelect.disabled = true;
     }
+    if (colorFlattenModeSelect) colorFlattenModeSelect.value = "none";
     if (gpuToggle) gpuToggle.checked = true;
     if (tlxInput) tlxInput.value = "";
     if (tlyInput) tlyInput.value = "";
@@ -940,6 +957,7 @@ export class EditorController {
       this.ditheringMethod,
       this.useGpu,
       this.quantizationMethod,
+      this.colorFlattenMode,
       this.transparentColors,
     );
 

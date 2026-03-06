@@ -47,6 +47,7 @@ export class GalleryImageEditor {
       onDitheringThresholdChange: (threshold) => this.controller?.onDitheringThresholdChange(threshold),
       onDitheringMethodChange: (method) => this.controller?.onDitheringMethodChange(method),
       onQuantizationMethodChange: (method) => this.controller?.onQuantizationMethodChange(method),
+      onColorFlattenModeChange: (mode) => this.controller?.onColorFlattenModeChange(mode),
       onGpuToggle: (enabled) => this.controller?.onGpuToggle(enabled),
       onTransparentColorsChange: (colors) => this.controller?.onTransparentColorsChange(colors),
       onOpenTransparencyTool: () => this.controller?.getProcessedImage() ?? null,

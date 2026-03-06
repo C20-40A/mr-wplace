@@ -1,5 +1,9 @@
 import { ImageDropzone } from "@/components/image-dropzone";
-import { DitheringMethod, QuantizationMethod } from "./canvas-processor";
+import {
+  ColorFlattenMode,
+  DitheringMethod,
+  QuantizationMethod,
+} from "./canvas-processor";
 import type { UIElements } from "./components/types";
 import { createDropzone } from "./components/create-dropzone";
 import { createImageDisplayArea } from "./components/create-image-display-area";
@@ -23,6 +27,7 @@ export interface ImageEditorCallbacks {
   onDitheringThresholdChange: (threshold: number) => void;
   onDitheringMethodChange: (method: DitheringMethod) => void;
   onQuantizationMethodChange: (method: QuantizationMethod) => void;
+  onColorFlattenModeChange: (mode: ColorFlattenMode) => void;
   onGpuToggle: (enabled: boolean) => void;
   onTransparentColorsChange: (colors: Set<string>) => void;
   onOpenTransparencyTool: () => HTMLImageElement | HTMLCanvasElement | null;
@@ -322,6 +327,10 @@ export class ImageEditorUI {
       case "wps-quantization-method":
         if (!isSelect(target)) return;
         this.callbacks.onQuantizationMethodChange(target.value as QuantizationMethod);
+        break;
+      case "wps-color-flatten-mode":
+        if (!isSelect(target)) return;
+        this.callbacks.onColorFlattenModeChange(target.value as ColorFlattenMode);
         break;
       case "wps-gpu-toggle":
         if (!isInput(target)) return;

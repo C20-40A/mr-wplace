@@ -199,6 +199,20 @@ export const injectImageEditorStyles = (
         font-size: 0.68rem;
         flex: 0 0 auto;
       }
+      #wps-quantization-row {
+        display: flex;
+        gap: 0.35rem;
+        align-items: center;
+      }
+      #wps-quantization-method,
+      #wps-color-flatten-mode {
+        min-width: 0;
+        font-size: 0.72rem;
+        padding-left: 0.45rem;
+        padding-right: 1.1rem;
+      }
+      #wps-quantization-method { flex: 1.15; }
+      #wps-color-flatten-mode { flex: 0.85; }
       #wps-outline-line1 input[type="color"] {
         flex: 0 0 auto;
       }

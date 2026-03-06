@@ -1,4 +1,5 @@
 export type {
+  ColorFlattenMode,
   DitheringMethod,
   ImageAdjustments,
   OutlinePreserveOptions,

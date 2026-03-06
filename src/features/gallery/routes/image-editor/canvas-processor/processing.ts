@@ -7,6 +7,7 @@ import {
   quantizeWithDithering,
 } from "./quantization";
 import type {
+  ColorFlattenMode,
   DitheringMethod,
   ImageAdjustments,
   QuantizationMethod,
@@ -36,19 +37,122 @@ const createImageDataFromBitmap = (bitmap: ImageBitmap): ImageData => {
 const canUseGpuProcessing = (
   useGpu: boolean,
   ditheringEnabled: boolean,
-  ditheringMethod: DitheringMethod
-): boolean => useGpu && (!ditheringEnabled || ditheringMethod === "ordered");
+  ditheringMethod: DitheringMethod,
+  colorFlattenMode: ColorFlattenMode
+): boolean =>
+  useGpu &&
+  colorFlattenMode === "none" &&
+  (!ditheringEnabled || ditheringMethod === "ordered");
 
 const logProcessingMode = (
   useGpu: boolean,
   ditheringEnabled: boolean,
-  ditheringMethod: DitheringMethod
+  ditheringMethod: DitheringMethod,
+  colorFlattenMode: ColorFlattenMode
 ): void => {
+  if (useGpu && colorFlattenMode !== "none") {
+    console.log("🧑‍🎨 : CPU processing selected for color flatten:", colorFlattenMode);
+    return;
+  }
   if (useGpu && ditheringEnabled && ditheringMethod !== "ordered") {
     console.log("🧑‍🎨 : CPU processing selected for dithering method:", ditheringMethod);
     return;
   }
   console.log("🧑‍🎨 : CPU processing selected");
+};
+
+const applyColorFlatten = (
+  imageData: ImageData,
+  mode: ColorFlattenMode
+): void => {
+  if (mode === "none") return;
+
+  const config =
+    mode === "medium"
+      ? { passes: 2, mix: 0.58, colorSigma: 42, lumaSigma: 24 }
+      : { passes: 1, mix: 0.38, colorSigma: 28, lumaSigma: 18 };
+
+  const { width, height } = imageData;
+  let source = new Uint8ClampedArray(imageData.data);
+  let target = new Uint8ClampedArray(source.length);
+  const spatialWeights = [
+    [0.65, 1, 0.65],
+    [1, 1.35, 1],
+    [0.65, 1, 0.65],
+  ];
+  const colorSigma2 = config.colorSigma * config.colorSigma;
+  const lumaSigma2 = config.lumaSigma * config.lumaSigma;
+
+  for (let pass = 0; pass < config.passes; pass++) {
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = (y * width + x) * 4;
+        const alpha = source[idx + 3];
+        if (alpha < 128) {
+          target[idx] = source[idx];
+          target[idx + 1] = source[idx + 1];
+          target[idx + 2] = source[idx + 2];
+          target[idx + 3] = 0;
+          continue;
+        }
+
+        const baseR = source[idx];
+        const baseG = source[idx + 1];
+        const baseB = source[idx + 2];
+        const baseLuma = 0.299 * baseR + 0.587 * baseG + 0.114 * baseB;
+
+        let weightSum = 1.35;
+        let rSum = baseR * 1.35;
+        let gSum = baseG * 1.35;
+        let bSum = baseB * 1.35;
+
+        for (let offsetY = -1; offsetY <= 1; offsetY++) {
+          const sampleY = y + offsetY;
+          if (sampleY < 0 || sampleY >= height) continue;
+
+          for (let offsetX = -1; offsetX <= 1; offsetX++) {
+            if (offsetX === 0 && offsetY === 0) continue;
+
+            const sampleX = x + offsetX;
+            if (sampleX < 0 || sampleX >= width) continue;
+
+            const sampleIdx = (sampleY * width + sampleX) * 4;
+            if (source[sampleIdx + 3] < 128) continue;
+
+            const sampleR = source[sampleIdx];
+            const sampleG = source[sampleIdx + 1];
+            const sampleB = source[sampleIdx + 2];
+            const dr = sampleR - baseR;
+            const dg = sampleG - baseG;
+            const db = sampleB - baseB;
+            const colorDist2 = dr * dr + dg * dg + db * db;
+            const sampleLuma = 0.299 * sampleR + 0.587 * sampleG + 0.114 * sampleB;
+            const lumaDist2 = (sampleLuma - baseLuma) * (sampleLuma - baseLuma);
+            const similarity = Math.exp(-colorDist2 / colorSigma2 - lumaDist2 / lumaSigma2);
+            const weight = spatialWeights[offsetY + 1][offsetX + 1] * similarity;
+
+            weightSum += weight;
+            rSum += sampleR * weight;
+            gSum += sampleG * weight;
+            bSum += sampleB * weight;
+          }
+        }
+
+        const smoothR = rSum / weightSum;
+        const smoothG = gSum / weightSum;
+        const smoothB = bSum / weightSum;
+
+        target[idx] = baseR + (smoothR - baseR) * config.mix;
+        target[idx + 1] = baseG + (smoothG - baseG) * config.mix;
+        target[idx + 2] = baseB + (smoothB - baseB) * config.mix;
+        target[idx + 3] = 255;
+      }
+    }
+
+    [source, target] = [target, source];
+  }
+
+  imageData.data.set(source);
 };
 
 const createGpuProcessedCanvas = async (
@@ -90,12 +194,14 @@ const createCpuProcessedCanvas = (
   ditheringThreshold: number,
   ditheringMethod: DitheringMethod,
   quantizationMethod: QuantizationMethod,
+  colorFlattenMode: ColorFlattenMode,
   transparentColors?: Set<string>
 ): HTMLCanvasElement => {
   console.log("🧑‍🎨 : Starting CPU processing via ImageBitmap");
 
   const imageData = createImageDataFromBitmap(sourceBitmap);
   applyImageAdjustments(imageData, adjustments);
+  applyColorFlatten(imageData, colorFlattenMode);
 
   if (ditheringEnabled) {
     quantizeWithDithering(
@@ -172,15 +278,18 @@ export const createProcessedCanvasFromBitmap = async (
   ditheringMethod: DitheringMethod = "ordered",
   useGpu = true,
   quantizationMethod: QuantizationMethod = "rgb-euclidean",
+  colorFlattenMode: ColorFlattenMode = "none",
   transparentColors?: Set<string>
 ): Promise<HTMLCanvasElement> => {
-  if (canUseGpuProcessing(useGpu, ditheringEnabled, ditheringMethod)) {
+  if (canUseGpuProcessing(useGpu, ditheringEnabled, ditheringMethod, colorFlattenMode)) {
     try {
       console.log(
         "🧑‍🎨 : Attempting GPU processing via ImageBitmap, dithering:",
         ditheringEnabled,
         "quantization:",
-        quantizationMethod
+        quantizationMethod,
+        "flatten:",
+        colorFlattenMode
       );
 
       const canvas = await createGpuProcessedCanvas(
@@ -198,7 +307,7 @@ export const createProcessedCanvasFromBitmap = async (
       console.log("🧑‍🎨 : GPU processing failed, fallback to CPU:", error);
     }
   } else {
-    logProcessingMode(useGpu, ditheringEnabled, ditheringMethod);
+    logProcessingMode(useGpu, ditheringEnabled, ditheringMethod, colorFlattenMode);
   }
 
   return createCpuProcessedCanvas(
@@ -209,6 +318,7 @@ export const createProcessedCanvasFromBitmap = async (
     ditheringThreshold,
     ditheringMethod,
     quantizationMethod,
+    colorFlattenMode,
     transparentColors
   );
 };
@@ -222,7 +332,8 @@ export const createProcessedCanvas = async (
   ditheringThreshold = 500,
   ditheringMethod: DitheringMethod = "ordered",
   useGpu = true,
-  quantizationMethod: QuantizationMethod = "rgb-euclidean"
+  quantizationMethod: QuantizationMethod = "rgb-euclidean",
+  colorFlattenMode: ColorFlattenMode = "none"
 ): Promise<HTMLCanvasElement> => {
   const resizedBitmap = await createResizedImageBitmap(img, {
     width: Math.floor(img.naturalWidth * scale),
@@ -239,7 +350,8 @@ export const createProcessedCanvas = async (
       ditheringThreshold,
       ditheringMethod,
       useGpu,
-      quantizationMethod
+      quantizationMethod,
+      colorFlattenMode
     );
   } finally {
     resizedBitmap.close();
