@@ -567,4 +567,5 @@ export const ptTranslations = {
     "Sair da ferramenta de ajuste? As alterações não serão aplicadas.",
   adjust_tool_target_size: "Tamanho alvo",
   popup_hide_my_location: "Ocultar botão de localização",
+  quantization_oklab: "Espaco de Cor OKLab (Lento, Mais Uniforme)",
 };

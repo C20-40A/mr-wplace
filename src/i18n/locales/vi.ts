@@ -562,4 +562,5 @@ export const viTranslations = {
     "Thoát công cụ điều chỉnh? Các thay đổi sẽ không được áp dụng.",
   adjust_tool_target_size: "Kích thước mục tiêu",
   popup_hide_my_location: "Ẩn nút vị trí của tôi",
+  quantization_oklab: "Khong Gian Mau OKLab (Cham, Dong Deu Hon)",
 };

@@ -595,4 +595,5 @@ export const jaTranslations = {
   popup_fab_friends_book: "友人帳",
   popup_fab_status_bar: "ステータスバー",
   popup_hide_my_location: "現在地ボタンを非表示",
+  quantization_oklab: "OKLab色空間（低速・より均一）",
 };

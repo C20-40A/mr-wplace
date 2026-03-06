@@ -42,6 +42,31 @@ export const rgbToLab = (r: number, g: number, b: number): RgbColor => {
   return [l, a, bLab];
 };
 
+export const rgbToOklab = (r: number, g: number, b: number): RgbColor => {
+  const toLinear = (channel: number): number =>
+    channel <= 0.04045
+      ? channel / 12.92
+      : Math.pow((channel + 0.055) / 1.055, 2.4);
+
+  const rLinear = toLinear(r / 255);
+  const gLinear = toLinear(g / 255);
+  const bLinear = toLinear(b / 255);
+
+  const l = 0.4122214708 * rLinear + 0.5363325363 * gLinear + 0.0514459929 * bLinear;
+  const m = 0.2119034982 * rLinear + 0.6806995451 * gLinear + 0.1073969566 * bLinear;
+  const s = 0.0883024619 * rLinear + 0.2817188376 * gLinear + 0.6299787005 * bLinear;
+
+  const lRoot = Math.cbrt(l);
+  const mRoot = Math.cbrt(m);
+  const sRoot = Math.cbrt(s);
+
+  return [
+    0.2104542553 * lRoot + 0.793617785 * mRoot - 0.0040720468 * sRoot,
+    1.9779984951 * lRoot - 2.428592205 * mRoot + 0.4505937099 * sRoot,
+    0.0259040371 * lRoot + 0.7827717662 * mRoot - 0.808675766 * sRoot,
+  ];
+};
+
 export const colorDistRgbEuclidean2 = (
   r1: number,
   g1: number,

@@ -1,4 +1,4 @@
-import { rgbToLab } from "./canvas-processor/color-utils";
+import { rgbToLab, rgbToOklab } from "./canvas-processor/color-utils";
 import type { ImageAdjustments, QuantizationMethod } from "./canvas-processor/types";
 
 /**
@@ -111,11 +111,11 @@ export const gpuProcessImage = async (
   uniform sampler2D uAdjusted;
   uniform int uPaletteCount;
   uniform vec3 uPalette[${maxPalette}];
-  uniform vec3 uPaletteLab[${maxPalette}]; // 事前計算済みパレットLab
+  uniform vec3 uPalettePerceptual[${maxPalette}];
   uniform bool uDitheringEnabled;
   uniform float uSnapThreshold;
   uniform float uBayerMatrix[16];
-  uniform int uQuantizationMethod; // 0: RGB Euclidean, 1: Weighted RGB, 2: Lab
+  uniform int uQuantizationMethod; // 0: RGB Euclidean, 1: Weighted RGB, 2: Lab, 3: OKLab
   out vec4 outColor;
 
   // RGB (0-255) → Lab 色空間変換
@@ -160,9 +160,32 @@ export const gpuProcessImage = async (
     return vec3(L, a, b);
   }
 
+  vec3 rgbToOklab(vec3 rgb) {
+    vec3 srgb = rgb / 255.0;
+    vec3 linear;
+    for (int i = 0; i < 3; i++) {
+      float c = srgb[i];
+      linear[i] = (c <= 0.04045) ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4);
+    }
+
+    float l = 0.4122214708 * linear.r + 0.5363325363 * linear.g + 0.0514459929 * linear.b;
+    float m = 0.2119034982 * linear.r + 0.6806995451 * linear.g + 0.1073969566 * linear.b;
+    float s = 0.0883024619 * linear.r + 0.2817188376 * linear.g + 0.6299787005 * linear.b;
+
+    float lRoot = pow(l, 1.0 / 3.0);
+    float mRoot = pow(m, 1.0 / 3.0);
+    float sRoot = pow(s, 1.0 / 3.0);
+
+    return vec3(
+      0.2104542553 * lRoot + 0.7936177850 * mRoot - 0.0040720468 * sRoot,
+      1.9779984951 * lRoot - 2.4285922050 * mRoot + 0.4505937099 * sRoot,
+      0.0259040371 * lRoot + 0.7827717662 * mRoot - 0.8086757660 * sRoot
+    );
+  }
+
   // 色距離計算（量子化方法に応じて）
-  // paletteLab: 事前計算済みパレット色のLab値（Labモード時のみ使用）
-  float colorDistance(vec3 rgb1, vec3 rgb2, vec3 paletteLab) {
+  // palettePerceptual: Lab/OKLab の事前計算済みパレット値
+  float colorDistance(vec3 rgb1, vec3 rgb2, vec3 palettePerceptual) {
     if (uQuantizationMethod == 0) {
       // RGB Euclidean 距離の2乗
       vec3 diff = rgb1 - rgb2;
@@ -173,10 +196,13 @@ export const gpuProcessImage = async (
       vec3 weights = vec3(0.3, 0.59, 0.11); // R, G, B
       vec3 weightedDiff = diff * diff * weights;
       return weightedDiff.r + weightedDiff.g + weightedDiff.b;
-    } else {
-      // Lab色空間での距離（パレット色は事前計算済みを使用）
+    } else if (uQuantizationMethod == 2) {
       vec3 lab1 = rgbToLab(rgb1);
-      vec3 diff = lab1 - paletteLab;
+      vec3 diff = lab1 - palettePerceptual;
+      return dot(diff, diff);
+    } else {
+      vec3 oklab1 = rgbToOklab(rgb1);
+      vec3 diff = oklab1 - palettePerceptual;
       return dot(diff, diff);
     }
   }
@@ -197,7 +223,7 @@ export const gpuProcessImage = async (
     vec3 nearest = uPalette[0];
     for (int i = 0; i < ${maxPalette}; ++i) {
       if (i >= uPaletteCount) break;
-      float dist = colorDistance(rgb, uPalette[i], uPaletteLab[i]);
+      float dist = colorDistance(rgb, uPalette[i], uPalettePerceptual[i]);
       if (dist < minDist) {
         minDist = dist;
         nearest = uPalette[i];
@@ -222,7 +248,7 @@ export const gpuProcessImage = async (
       vec3 nearest2 = uPalette[0];
       for (int i = 0; i < ${maxPalette}; ++i) {
         if (i >= uPaletteCount) break;
-        float dist2 = colorDistance(rgb, uPalette[i], uPaletteLab[i]);
+        float dist2 = colorDistance(rgb, uPalette[i], uPalettePerceptual[i]);
         if (dist2 < minDist2) {
           minDist2 = dist2;
           nearest2 = uPalette[i];
@@ -375,21 +401,24 @@ export const gpuProcessImage = async (
   );
 
   const paletteFlat = new Float32Array(maxPalette * 3);
-  const paletteLabFlat = new Float32Array(maxPalette * 3);
+  const palettePerceptualFlat = new Float32Array(maxPalette * 3);
   for (let i = 0; i < sendCount; i++) {
     const [r, g, b] = paletteRGB[i];
     paletteFlat[i * 3 + 0] = r;
     paletteFlat[i * 3 + 1] = g;
     paletteFlat[i * 3 + 2] = b;
 
-    // パレット色のLab変換（事前計算）
-    const [L, a, bLab] = rgbToLab(r, g, b);
-    paletteLabFlat[i * 3 + 0] = L;
-    paletteLabFlat[i * 3 + 1] = a;
-    paletteLabFlat[i * 3 + 2] = bLab;
+    const [c0, c1, c2] =
+      quantizationMethod === "oklab" ? rgbToOklab(r, g, b) : rgbToLab(r, g, b);
+    palettePerceptualFlat[i * 3 + 0] = c0;
+    palettePerceptualFlat[i * 3 + 1] = c1;
+    palettePerceptualFlat[i * 3 + 2] = c2;
   }
   gl.uniform3fv(gl.getUniformLocation(programPalette, "uPalette"), paletteFlat);
-  gl.uniform3fv(gl.getUniformLocation(programPalette, "uPaletteLab"), paletteLabFlat);
+  gl.uniform3fv(
+    gl.getUniformLocation(programPalette, "uPalettePerceptual"),
+    palettePerceptualFlat
+  );
 
   // ディザリング設定
   gl.uniform1i(
@@ -407,6 +436,8 @@ export const gpuProcessImage = async (
       ? 1
       : quantizationMethod === "lab"
       ? 2
+      : quantizationMethod === "oklab"
+      ? 3
       : 0;
   gl.uniform1i(
     gl.getUniformLocation(programPalette, "uQuantizationMethod"),

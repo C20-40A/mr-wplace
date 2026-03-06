@@ -96,6 +96,7 @@ const createContrastQuantizationControl = (
         t("quantization_weighted_rgb"),
       ]),
       createElement("option", { value: "lab" }, [t("quantization_lab")]),
+      createElement("option", { value: "oklab" }, [t("quantization_oklab")]),
     ],
   ) as HTMLSelectElement;
 

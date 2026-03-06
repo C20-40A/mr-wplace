@@ -584,4 +584,5 @@ export const frTranslations = {
     "Quitter l'outil d'ajustement ? Les modifications ne seront pas appliquées.",
   adjust_tool_target_size: "Taille cible",
   popup_hide_my_location: "Masquer le bouton de localisation",
+  quantization_oklab: "Espace colorimetrique OKLab (Lent, plus uniforme)",
 };

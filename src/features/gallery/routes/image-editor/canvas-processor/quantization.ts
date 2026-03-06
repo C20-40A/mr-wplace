@@ -4,6 +4,7 @@ import {
   colorDistRgbEuclidean2,
   colorDistWeightedRgb2,
   rgbToLab,
+  rgbToOklab,
 } from "./color-utils";
 import type {
   DitheringMethod,
@@ -28,7 +29,12 @@ const createNearestColorFinder = (
   const rgbList = getPaletteColors(selectedColorIds);
   if (rgbList.length === 0) return null;
 
-  const paletteLab = method === "lab" ? rgbList.map(([r, g, b]) => rgbToLab(r, g, b)) : [];
+  const palettePerceptual =
+    method === "lab"
+      ? rgbList.map(([r, g, b]) => rgbToLab(r, g, b))
+      : method === "oklab"
+        ? rgbList.map(([r, g, b]) => rgbToOklab(r, g, b))
+        : [];
   const colorDistFn =
     method === "weighted-rgb" ? colorDistWeightedRgb2 : colorDistRgbEuclidean2;
 
@@ -36,14 +42,15 @@ const createNearestColorFinder = (
     let minDist = Infinity;
     let nearest = rgbList[0];
 
-    if (method === "lab") {
-      const [l, a, bLab] = rgbToLab(r, g, b);
+    if (method === "lab" || method === "oklab") {
+      const [c0, c1, c2] =
+        method === "lab" ? rgbToLab(r, g, b) : rgbToOklab(r, g, b);
       for (let i = 0; i < rgbList.length; i++) {
-        const [pL, pA, pB] = paletteLab[i];
-        const dL = l - pL;
-        const dA = a - pA;
-        const dB = bLab - pB;
-        const dist = dL * dL + dA * dA + dB * dB;
+        const [p0, p1, p2] = palettePerceptual[i];
+        const d0 = c0 - p0;
+        const d1 = c1 - p1;
+        const d2 = c2 - p2;
+        const dist = d0 * d0 + d1 * d1 + d2 * d2;
         if (dist < minDist) {
           minDist = dist;
           nearest = rgbList[i];
