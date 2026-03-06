@@ -41,9 +41,13 @@ Important:
   - source of truth for editor state
   - render orchestration
   - bitmap caches
-  - transparency tool state
+  - delegates transparency mask editing
 - `file-handler.ts`
   - file read/write helpers
+- `transparency-mask-editor.ts`
+  - transparency flood-fill selection state
+  - boundary expand/shrink logic
+  - preview + committed mask application
 - `canvas-processor.ts`
   - stable barrel; keep imports pointed here from controller/ui
 - `canvas-processor/types.ts`
@@ -130,7 +134,6 @@ Best low-risk boundaries:
 
 Next safe split for `controller.ts`:
 
-- extract transparency tool state/algorithms
 - extract render pipeline helpers
 - keep save/load and gallery integration in controller for now
 
