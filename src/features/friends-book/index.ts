@@ -68,7 +68,8 @@ const updateFriendsInfoBar = async (): Promise<void> => {
   if (!infoBar) {
     infoBar = document.createElement("div");
     infoBar.id = FRIENDS_INFO_BAR_ID;
-    infoBar.style.cssText = "display: flex; align-items: center; gap: 6px; font-size: 11px;";
+    infoBar.style.cssText =
+      "display: flex; align-items: center; gap: 6px; font-size: 11px;";
     row2.appendChild(infoBar);
   }
 
@@ -133,7 +134,7 @@ const createFriendsBookFAB = (): void => {
   button.style.cssText =
     "position: absolute; right: 60px; z-index: 800; transition: transform 0.2s;";
   button.innerHTML = `
-    <img src="${IMG_ICON_BOOK}" style="width: calc(var(--spacing)*6); height: calc(var(--spacing)*6); image-rendering: pixelated;" />
+    <img src="${IMG_ICON_BOOK}" style="width: calc(var(--spacing)*5); height: calc(var(--spacing)*5); image-rendering: pixelated;" />
   `;
   button.title = t`friends_book`;
 

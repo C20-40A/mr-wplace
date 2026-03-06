@@ -71,7 +71,7 @@ const createButton = (container: Element) => {
   btn.title = "Focus mode";
   btn.innerHTML = EXPAND_SVG;
   btn.addEventListener("click", toggle);
-  container.appendChild(btn);
+  container.prepend(btn);
 };
 
 export class FocusMode {

@@ -3,7 +3,7 @@ import {
   ElementConfig,
 } from "@/components/element-observer";
 import {
-  findOpacityContainer,
+  findTopLeftControls,
   findPositionModal,
   findMapPin,
 } from "@/constants/selectors";
@@ -117,12 +117,10 @@ export const initTimeTravel = (): void => {
   const buttonConfigs: ElementConfig[] = [
     {
       id: "timetravel-fab-btn",
-      getTargetElement: findOpacityContainer,
+      getTargetElement: findTopLeftControls,
       createElement: (container) => {
         const button = createTimeTravelFAB();
-        button.id = "timetravel-fab-btn";
         button.addEventListener("click", () => show());
-        container.className += " flex flex-col-reverse gap-1";
         container.appendChild(button);
         showFeatureHint("timetravel-fab-btn", button);
       },

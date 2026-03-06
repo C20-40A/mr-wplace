@@ -17,10 +17,9 @@ export const createTimeTravelButton = (): HTMLButtonElement => {
 export const createTimeTravelFAB = (): HTMLButtonElement => {
   const button = document.createElement("button");
   button.id = "timetravel-fab-btn";
-  button.className =
-    "btn btn-lg sm:btn-xl btn-square shadow-md text-base-content/80 z-30";
+  button.className = "btn btn-sm btn-circle";
   button.title = t`${"timetravel"}`;
-  button.innerHTML = `<img src="${IMG_ICON_TIME_TRAVEL}" alt="${t`${"timetravel"}`}" style="image-rendering: pixelated; width: calc(var(--spacing)*9); height: calc(var(--spacing)*9);">`;
+  button.innerHTML = `<img src="${IMG_ICON_TIME_TRAVEL}" alt="${t`${"timetravel"}`}" style="image-rendering: pixelated; width: calc(var(--spacing)*6); height: calc(var(--spacing)*6);">`;
   return button;
 };
 
