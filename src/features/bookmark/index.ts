@@ -5,7 +5,7 @@ import {
 import { storage } from "@/utils/browser-api";
 import { Toast } from "@/components/toast";
 import {
-  findOpacityContainer,
+  findMyLocationContainer,
   findMapPin,
 } from "@/constants/selectors";
 import { addMapPinButton } from "@/utils/map-pin-helper";
@@ -468,12 +468,13 @@ const init = (): void => {
   const buttonConfigs: ElementConfig[] = [
     {
       id: "bookmarks-btn",
-      getTargetElement: findOpacityContainer,
+      getTargetElement: findMyLocationContainer,
       createElement: (container) => {
         const button = createBookmarkButton();
         button.id = "bookmarks-btn";
         button.addEventListener("click", openModal);
         container.className += " flex flex-col-reverse gap-1";
+        button.style.order = "1";
         container.appendChild(button);
         showFeatureHint("bookmarks-btn", button);
       },
