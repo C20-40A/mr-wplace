@@ -4,46 +4,78 @@ export interface ElementConfig {
   createElement: (element: Element) => void;
 }
 
+interface ObserverGroup {
+  configs: ElementConfig[];
+  createdElements: Map<string, Element>;
+}
+
+const observerGroups: ObserverGroup[] = [];
+let sharedObserver: MutationObserver | null = null;
+let renderScheduled = false;
+
+const renderMissingItems = (group: ObserverGroup): void => {
+  group.configs.forEach((config) => {
+    const existing = group.createdElements.get(config.id);
+    // element.isConnected はO(1)でDOMクエリ不要
+    if (existing?.isConnected) return;
+
+    const target = config.getTargetElement();
+    if (!target) return;
+
+    config.createElement(target);
+
+    // 作成された要素の参照を保持
+    const created = document.getElementById(config.id);
+    if (created) group.createdElements.set(config.id, created);
+  });
+};
+
+const renderAllGroups = (): void => {
+  observerGroups.forEach(renderMissingItems);
+};
+
+const scheduleRenderAllGroups = (): void => {
+  if (renderScheduled) return;
+  renderScheduled = true;
+  requestAnimationFrame(() => {
+    renderScheduled = false;
+    renderAllGroups();
+  });
+};
+
+const shouldRenderGroup = (
+  group: ObserverGroup,
+  mutations: MutationRecord[],
+): boolean => {
+  if (group.createdElements.size !== group.configs.length) return true;
+  return mutations.some((mutation) => mutation.removedNodes.length > 0);
+};
+
+const ensureSharedObserver = (): void => {
+  if (sharedObserver) return;
+
+  sharedObserver = new MutationObserver((mutations) => {
+    if (!observerGroups.some((group) => shouldRenderGroup(group, mutations))) {
+      return;
+    }
+
+    scheduleRenderAllGroups();
+  });
+
+  sharedObserver.observe(document.body, { childList: true, subtree: true });
+};
+
 /**
  * Elementを監視して、存在しない場合に生成する
  * 要素が削除された場合も再生成する
  */
 export const setupElementObserver = (configs: ElementConfig[]): void => {
-  const createdElements = new Map<string, Element>();
-
-  const renderMissingItems = () => {
-    configs.forEach((config) => {
-      const existing = createdElements.get(config.id);
-      // element.isConnected はO(1)でDOMクエリ不要
-      if (existing?.isConnected) return;
-
-      const target = config.getTargetElement();
-      if (!target) return;
-
-      config.createElement(target);
-
-      // 作成された要素の参照を保持
-      const created = document.getElementById(config.id);
-      if (created) createdElements.set(config.id, created);
-    });
+  const group: ObserverGroup = {
+    configs,
+    createdElements: new Map(),
   };
 
-  let scheduled = false;
-  const observer = new MutationObserver((mutations) => {
-    // 全要素が作成済み && removedNodesがない場合はスキップ
-    if (createdElements.size === configs.length) {
-      const hasRemovals = mutations.some((m) => m.removedNodes.length > 0);
-      if (!hasRemovals) return;
-    }
-
-    if (scheduled) return;
-    scheduled = true;
-    requestAnimationFrame(() => {
-      scheduled = false;
-      renderMissingItems();
-    });
-  });
-
-  observer.observe(document.body, { childList: true, subtree: true });
-  renderMissingItems();
+  observerGroups.push(group);
+  ensureSharedObserver();
+  renderMissingItems(group);
 };
