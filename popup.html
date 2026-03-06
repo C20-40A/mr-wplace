@@ -203,6 +203,30 @@
         max-height: 32px;
         display: block;
       }
+
+      /* Retro loading indicator */
+      .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 24px 0;
+      }
+
+      .loading-dot {
+        width: 4px;
+        height: 4px;
+        background: #fff;
+        animation: blink 1s step-end infinite;
+      }
+
+      .loading-dot:nth-child(2) { animation-delay: 0.33s; }
+      .loading-dot:nth-child(3) { animation-delay: 0.66s; }
+
+      @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+      }
     </style>
   </head>
 
@@ -235,6 +259,12 @@
             />
           </svg>
         </a>
+      </div>
+
+      <div id="loading-indicator" class="loading">
+        <div class="loading-dot"></div>
+        <div class="loading-dot"></div>
+        <div class="loading-dot"></div>
       </div>
 
       <div id="settings-body" style="display: none">

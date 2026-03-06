@@ -304,6 +304,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   } catch (error) {
     console.warn("🧑‍🎨 : Failed to initialize popup:", error);
+  } finally {
+    // Hide loader and reveal settings regardless of init result
+    document.getElementById("loading-indicator")?.remove();
+    document.getElementById("settings-body")?.removeAttribute("style");
   }
 
   languageSelect.value = currentLocale;
@@ -353,9 +357,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Show navigation setting only if map instance is ready
   if (mapInstanceReady)
     document.getElementById("navigation-setting")?.removeAttribute("style");
-
-  // Reveal settings after initialization complete
-  document.getElementById("settings-body")?.removeAttribute("style");
 
   setupDevModeEasterEgg();
 
