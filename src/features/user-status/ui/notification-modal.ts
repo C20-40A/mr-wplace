@@ -345,7 +345,7 @@ export class NotificationModal {
   private createChargeMonitorLoadingSection(): string {
     return `
       <div id="alarm-section-container" class="mb-6 border-t pt-4" style="border-top: 1px solid #e5e7eb; margin-bottom: 24px; padding-top: 16px;">
-        <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 12px;">🔔 ${t`${"charge_alarm"}`}</h4>
+        <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 12px;">${t`${"charge_alarm"}`}</h4>
         <div style="display: flex; align-items: center; justify-content: center; padding: 24px;">
           <span>${t`${"loading_alarm_settings"}`}</span>
         </div>

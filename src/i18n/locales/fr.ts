@@ -411,21 +411,18 @@ export const frTranslations = {
     "Cliquez sur la carte et sélectionnez le bouton « Image »",
   tutorial_how_to_draw_step3:
     "Cliquez sur l'image que vous souhaitez placer, et elle apparaîtra comme calque sur la tuile de la carte",
-  tutorial_how_to_archive_title:
-    "Comment archiver le pixel art sur la carte",
+  tutorial_how_to_archive_title: "Comment archiver le pixel art sur la carte",
   tutorial_how_to_archive_step1:
     "Cliquez sur la carte et sélectionnez « Archive »",
   tutorial_how_to_archive_step2:
     "Cliquez sur le bouton « Enregistrer l'instantané actuel »",
-  tutorial_how_to_draw_archive_title:
-    "Comment dessiner le pixel art archivé",
+  tutorial_how_to_draw_archive_title: "Comment dessiner le pixel art archivé",
   tutorial_how_to_draw_archive_step1:
     "Cliquez sur la carte et sélectionnez « Archive »",
   tutorial_how_to_draw_archive_step2:
     "Cliquez sur l'archive que vous souhaitez afficher",
   tutorial_how_to_draw_archive_step3: "Cliquez sur le bouton dessiner",
-  tutorial_how_to_draw_text_title:
-    "Comment afficher du texte sur la carte",
+  tutorial_how_to_draw_text_title: "Comment afficher du texte sur la carte",
   tutorial_how_to_draw_text_step1:
     "Cliquez sur la carte et sélectionnez « Texte »",
   tutorial_how_to_draw_text_step2:
@@ -462,19 +459,24 @@ export const frTranslations = {
   outline_color: "Couleur ligne",
   hint_title: "Astuce",
   hint_close: "Fermer l'astuce",
-  hint_show_unplaced_only: "Cette fonctionnalité rend moins visibles les couleurs déjà placées.",
-  hint_color_isolate: "Afficher uniquement la couleur sélectionnée met en évidence seulement la couleur actuellement sélectionnée pour mieux vous concentrer pendant la peinture.",
-  hint_data_saver: "L'économie de données réduit l'utilisation du réseau en réutilisant les données d'image. Lorsqu'il est activé, les mises à jour de pixel art sont suspendues.",
+  hint_show_unplaced_only:
+    "Cette fonctionnalité rend moins visibles les couleurs déjà placées.",
+  hint_color_isolate:
+    "Afficher uniquement la couleur sélectionnée met en évidence seulement la couleur actuellement sélectionnée pour mieux vous concentrer pendant la peinture.",
+  hint_data_saver:
+    "L'économie de données réduit l'utilisation du réseau en réutilisant les données d'image. Lorsqu'il est activé, les mises à jour de pixel art sont suspendues.",
   hint_palette_toggle: "Appuyez ici pour ouvrir le filtre de couleur.",
   hint_drawing_btn: "Draw images on the map from here.",
   hint_unplaced_grid: "Press an image to draw it on the map.",
   transparency_tool: "Outil de Transparence",
   transparency_flood_fill: "Remplissage de Contour",
-  transparency_flood_fill_desc: "Cliquez sur un point pour rendre transparente la région connectée de la même couleur. Utilisez l'ajustement de contour pour agrandir ou réduire.",
+  transparency_flood_fill_desc:
+    "Cliquez sur un point pour rendre transparente la région connectée de la même couleur. Utilisez l'ajustement de contour pour agrandir ou réduire.",
   transparency_threshold: "Ajustement de Contour",
   transparency_apply: "Appliquer",
   transparency_reset: "Réinitialiser",
-  transparency_no_image: "Chargez d'abord une image pour utiliser l'outil de transparence",
+  transparency_no_image:
+    "Chargez d'abord une image pour utiliser l'outil de transparence",
   popup_overlay_mode: "Calque",
   popup_overlay_mode_composite: "Composite",
   popup_overlay_mode_layer: "Indépendant",
@@ -507,28 +509,37 @@ export const frTranslations = {
   map_filter_area_add: "Ajouter une Zone",
   map_filter_area_save_map: "Enregistrer la Zone",
   map_filter_area_color: "Couleur",
-  map_filter_area_online_sync_description: "Importer des données de zone depuis une URL GeoJSON/JSON (par ex. URL de stockage cloud public)",
-  map_filter_area_import_description: "Importer des zones depuis un fichier GeoJSON ou JSON",
+  map_filter_area_online_sync_description:
+    "Importer des données de zone depuis une URL GeoJSON/JSON (par ex. URL de stockage cloud public)",
+  map_filter_area_import_description:
+    "Importer des zones depuis un fichier GeoJSON ou JSON",
   map_filter_area_import_file: "Importer depuis Fichier de Zone",
-  map_filter_area_export_all_description: "Exporter toutes les zones enregistrées en GeoJSON",
+  map_filter_area_export_all_description:
+    "Exporter toutes les zones enregistrées en GeoJSON",
   map_filter_area_export_selected: "Exporter les Zones Sélectionnées",
-  map_filter_area_export_selected_description: "Exporter uniquement les zones cochées en GeoJSON",
+  map_filter_area_export_selected_description:
+    "Exporter uniquement les zones cochées en GeoJSON",
   map_filter_area_export_selected_button: "Exporter les Zones Sélectionnées",
   map_filter_area_no_regions_available: "Aucune zone disponible",
   map_filter_area_no_export_regions: "Aucune zone à exporter",
   map_filter_area_no_importable_regions: "Aucune zone importable trouvée",
-  map_filter_area_sync_replace_confirm: "Remplacer toutes les zones enregistrées par les données de l'URL?\nLes zones actuelles seront écrasées.",
+  map_filter_area_sync_replace_confirm:
+    "Remplacer toutes les zones enregistrées par les données de l'URL?\nLes zones actuelles seront écrasées.",
   map_filter_map3d_drag_rotate: "Activer la Rotation",
   hint_gallery_btn: "Vous pouvez enregistrer des images à dessiner depuis ici.",
-  hint_overlay_mode_independent_prefix: "Expérimental mais puissant : nous avons ajouté un nouveau mode. Veuillez essayer le mode ",
-  hint_overlay_mode_independent_suffix: " (si vous trouvez des bugs, veuillez les signaler via Popup > BugReport).",
-  hint_user_status_container: "Appuyez ici pour configurer l'alarme lorsque Paint s'est accumulé",
+  hint_overlay_mode_independent_prefix:
+    "Expérimental mais puissant : nous avons ajouté un nouveau mode. Veuillez essayer le mode ",
+  hint_overlay_mode_independent_suffix:
+    " (si vous trouvez des bugs, veuillez les signaler via Popup > BugReport).",
+  hint_user_status_container:
+    "Appuyez ici pour configurer l'alarme lorsque Paint s'est accumulé",
   hint_bookmark_btn: "Vous pouvez marquer cet emplacement",
   hint_timetravel_btn: "Vous pouvez sauvegarder l'art près de cet emplacement",
   hint_text_draw_btn: "Vous pouvez afficher du texte sur la carte",
   hint_bookmarks_btn: "Vos favoris enregistrés sont ici",
   hint_timetravel_fab_btn: "La liste des zones archivées est ici",
-  hint_save_current_snapshot_btn: "Vous pouvez archiver des images près de cet emplacement",
+  hint_save_current_snapshot_btn:
+    "Vous pouvez archiver des images près de cet emplacement",
   import_snapshot_tile_x_label: "Coordonnée de Tuile X",
   import_snapshot_tile_y_label: "Coordonnée de Tuile Y",
   import_snapshot_tile_x_placeholder: "p.ex. 520",
@@ -537,10 +548,13 @@ export const frTranslations = {
   import_snapshot_success: "Importation terminée",
   hint_map_filter_trigger: "Vous pouvez changer l'apparence de la carte ici",
   hint_edit_card: "Vous pouvez modifier le nom et ajouter des tags ici",
-  hint_image_detail_draw_on_map: "Appuyez ici pour placer l'image au centre de la carte actuelle",
+  hint_image_detail_draw_on_map:
+    "Appuyez ici pour placer l'image au centre de la carte actuelle",
   hint_image_detail_dpad: "Vous pouvez déplacer l'image ici",
-  hint_image_detail_download: "Pour partager avec d'autres, téléchargez l'image ici. Le nom du fichier contient les coordonnées, donc le charger placera l'image à la même position",
-  hint_image_detail_edit_title: "Cliquez sur le titre de l'image pour le modifier",
+  hint_image_detail_download:
+    "Pour partager avec d'autres, téléchargez l'image ici. Le nom du fichier contient les coordonnées, donc le charger placera l'image à la même position",
+  hint_image_detail_edit_title:
+    "Cliquez sur le titre de l'image pour le modifier",
   popup_close_button_big: "Grand Bouton de Fermeture",
   map_filter_area_display_settings: "Paramètres d'affichage",
   map_filter_area_opacity: "Opacité de la zone",
@@ -556,13 +570,17 @@ export const frTranslations = {
   map_filter_area_group_not_enough: "Pas assez de zones pour fusionner",
   map_filter_area_group_name_placeholder: "Nom du groupe (optionnel)",
   selected_color_only_mark: "Marquer uniquement la couleur sélectionnée",
-  tmp_tile_board_data_notice: "Affiche uniquement les donnees de tuiles deja recues. Pour reduire la charge du serveur, aucune nouvelle requete n'est envoyee.",
-  hint_gallery_backup: "Nous recommandons de faire des sauvegardes ici fréquemment.",
+  tmp_tile_board_data_notice:
+    "Affiche uniquement les donnees de tuiles deja recues. Pour reduire la charge du serveur, aucune nouvelle requete n'est envoyee.",
+  hint_gallery_backup:
+    "Nous recommandons de faire des sauvegardes ici fréquemment.",
   all_short: "TOUT",
-  popup_overlay_mode_composite_detail: "Fonctions limitées, hautes performances",
+  popup_overlay_mode_composite_detail:
+    "Fonctions limitées, hautes performances",
   popup_overlay_mode_layer_detail: "Fonctions avancées, affichage rapide",
   adjust_tool: "Outil d'ajustement",
   adjust_tool_confirm: "Confirmer",
-  adjust_tool_cancel_confirm: "Quitter l'outil d'ajustement ? Les modifications ne seront pas appliquées.",
+  adjust_tool_cancel_confirm:
+    "Quitter l'outil d'ajustement ? Les modifications ne seront pas appliquées.",
   adjust_tool_target_size: "Taille cible",
 };

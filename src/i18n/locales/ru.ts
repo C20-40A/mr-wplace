@@ -412,7 +412,8 @@ export const ruTranslations = {
   tutorial_title: "Руководство",
   tutorial_how_to_draw_title: "Как рисовать изображения на карте",
   tutorial_how_to_draw_step1: "Сохраните изображение в галерею",
-  tutorial_how_to_draw_step2: "Нажмите на карту и выберите кнопку 'Изображение'",
+  tutorial_how_to_draw_step2:
+    "Нажмите на карту и выберите кнопку 'Изображение'",
   tutorial_how_to_draw_step3:
     "Нажмите на изображение, которое хотите разместить, и оно появится как слой на тайле карты",
   tutorial_how_to_archive_title: "Как архивировать пиксель-арт на карте",
@@ -429,7 +430,8 @@ export const ruTranslations = {
     "Введите текст, выберите шрифт и нажмите кнопку 'Рисовать'",
   tutorial_how_to_draw_text_step3:
     "Необязательно: используйте кнопки со стрелками для настройки позиции",
-  tutorial_how_to_bookmark_title: "Как добавлять закладки и перемещаться по ним",
+  tutorial_how_to_bookmark_title:
+    "Как добавлять закладки и перемещаться по ним",
   tutorial_how_to_bookmark_step1: "Нажмите на карту и выберите иконку ⭐",
   tutorial_how_to_bookmark_step2: "Введите название закладки и сохраните",
   tutorial_how_to_bookmark_step3:
@@ -457,19 +459,24 @@ export const ruTranslations = {
   outline_color: "Цвет линии",
   hint_title: "Подсказка",
   hint_close: "Закрыть подсказку",
-  hint_show_unplaced_only: "Эта функция делает уже размещённые цвета менее заметными.",
-  hint_color_isolate: "Показывать только выбранный цвет выделяет только текущий выбранный цвет, чтобы было проще сосредоточиться при рисовании.",
-  hint_data_saver: "Экономия данных снижает использование сети за счёт повторного использования данных изображений. При включении обновления пиксель-арта приостанавливаются.",
+  hint_show_unplaced_only:
+    "Эта функция делает уже размещённые цвета менее заметными.",
+  hint_color_isolate:
+    "Показывать только выбранный цвет выделяет только текущий выбранный цвет, чтобы было проще сосредоточиться при рисовании.",
+  hint_data_saver:
+    "Экономия данных снижает использование сети за счёт повторного использования данных изображений. При включении обновления пиксель-арта приостанавливаются.",
   hint_palette_toggle: "Нажмите здесь, чтобы открыть цветовой фильтр.",
   hint_drawing_btn: "Draw images on the map from here.",
   hint_unplaced_grid: "Press an image to draw it on the map.",
   transparency_tool: "Инструмент Прозрачности",
   transparency_flood_fill: "Заполнение Границ",
-  transparency_flood_fill_desc: "Нажмите на точку, чтобы сделать прозрачной связанную область того же цвета. Используйте настройку границ для расширения или сужения.",
+  transparency_flood_fill_desc:
+    "Нажмите на точку, чтобы сделать прозрачной связанную область того же цвета. Используйте настройку границ для расширения или сужения.",
   transparency_threshold: "Настройка Границы",
   transparency_apply: "Применить",
   transparency_reset: "Сбросить",
-  transparency_no_image: "Сначала загрузите изображение, чтобы использовать инструмент прозрачности",
+  transparency_no_image:
+    "Сначала загрузите изображение, чтобы использовать инструмент прозрачности",
   popup_overlay_mode: "Слой",
   popup_overlay_mode_composite: "Композитный",
   popup_overlay_mode_layer: "Независимый",
@@ -502,34 +509,47 @@ export const ruTranslations = {
   map_filter_area_add: "Добавить Область",
   map_filter_area_save_map: "Сохранить Область",
   map_filter_area_color: "Цвет",
-  map_filter_area_online_sync_description: "Импорт данных области из URL GeoJSON/JSON (например, URL общедоступного облачного хранилища)",
-  map_filter_area_import_description: "Импорт областей из файла GeoJSON или JSON",
+  map_filter_area_online_sync_description:
+    "Импорт данных области из URL GeoJSON/JSON (например, URL общедоступного облачного хранилища)",
+  map_filter_area_import_description:
+    "Импорт областей из файла GeoJSON или JSON",
   map_filter_area_import_file: "Импорт из Файла Области",
-  map_filter_area_export_all_description: "Экспорт всех сохраненных областей в GeoJSON",
+  map_filter_area_export_all_description:
+    "Экспорт всех сохраненных областей в GeoJSON",
   map_filter_area_export_selected: "Экспортировать Выбранные Области",
-  map_filter_area_export_selected_description: "Экспорт только отмеченных областей в GeoJSON",
+  map_filter_area_export_selected_description:
+    "Экспорт только отмеченных областей в GeoJSON",
   map_filter_area_export_selected_button: "Экспортировать Выбранные Области",
   map_filter_area_no_regions_available: "Нет доступных областей",
   map_filter_area_no_export_regions: "Нет областей для экспорта",
   map_filter_area_no_importable_regions: "Импортируемые области не найдены",
-  map_filter_area_sync_replace_confirm: "Заменить все сохраненные области данными из URL?\nТекущие области будут перезаписаны.",
+  map_filter_area_sync_replace_confirm:
+    "Заменить все сохраненные области данными из URL?\nТекущие области будут перезаписаны.",
   map_filter_map3d_drag_rotate: "Включить Вращение",
-  hint_gallery_btn: "Вы можете зарегистрировать изображения для рисования отсюда.",
-  hint_overlay_mode_independent_prefix: "Экспериментально, но мощно: мы добавили новый режим. Пожалуйста, попробуйте режим ",
-  hint_overlay_mode_independent_suffix: " (если вы найдете ошибки, сообщите о них через Popup > BugReport).",
-  hint_user_status_container: "Нажмите здесь, чтобы настроить сигнал, когда накопится Paint",
+  hint_gallery_btn:
+    "Вы можете зарегистрировать изображения для рисования отсюда.",
+  hint_overlay_mode_independent_prefix:
+    "Экспериментально, но мощно: мы добавили новый режим. Пожалуйста, попробуйте режим ",
+  hint_overlay_mode_independent_suffix:
+    " (если вы найдете ошибки, сообщите о них через Popup > BugReport).",
+  hint_user_status_container:
+    "Нажмите здесь, чтобы настроить сигнал, когда накопится Paint",
   hint_bookmark_btn: "Вы можете добавить это место в закладки",
   hint_timetravel_btn: "Вы можете сохранить искусство рядом с этим местом",
   hint_text_draw_btn: "Вы можете отобразить текст на карте",
   hint_bookmarks_btn: "Ваши сохраненные закладки здесь",
   hint_timetravel_fab_btn: "Список архивированных областей здесь",
-  hint_save_current_snapshot_btn: "Вы можете архивировать изображения рядом с этим местом",
+  hint_save_current_snapshot_btn:
+    "Вы можете архивировать изображения рядом с этим местом",
   hint_map_filter_trigger: "Здесь вы можете изменить вид карты",
   hint_edit_card: "Здесь вы можете изменить название и добавить теги",
-  hint_image_detail_draw_on_map: "Нажмите здесь, чтобы разместить изображение в центре текущей карты",
+  hint_image_detail_draw_on_map:
+    "Нажмите здесь, чтобы разместить изображение в центре текущей карты",
   hint_image_detail_dpad: "Вы можете переместить изображение здесь",
-  hint_image_detail_download: "Чтобы поделиться с другими, загрузите изображение отсюда. Имя файла содержит координаты, поэтому при загрузке изображение будет размещено в той же позиции",
-  hint_image_detail_edit_title: "Нажмите на название изображения, чтобы изменить его",
+  hint_image_detail_download:
+    "Чтобы поделиться с другими, загрузите изображение отсюда. Имя файла содержит координаты, поэтому при загрузке изображение будет размещено в той же позиции",
+  hint_image_detail_edit_title:
+    "Нажмите на название изображения, чтобы изменить его",
   popup_close_button_big: "Большая Кнопка Закрытия",
   map_filter_area_display_settings: "Настройки отображения",
   map_filter_area_opacity: "Прозрачность области",
@@ -545,13 +565,16 @@ export const ruTranslations = {
   map_filter_area_group_not_enough: "Недостаточно областей для объединения",
   map_filter_area_group_name_placeholder: "Название группы (необязательно)",
   selected_color_only_mark: "Отмечать только выбранный цвет",
-  tmp_tile_board_data_notice: "Показывает только уже полученные данные тайлов. Чтобы снизить нагрузку на сервер, новые запросы не отправляются.",
+  tmp_tile_board_data_notice:
+    "Показывает только уже полученные данные тайлов. Чтобы снизить нагрузку на сервер, новые запросы не отправляются.",
   hint_gallery_backup: "Мы рекомендуем часто делать резервные копии.",
   all_short: "ВСЕ",
-  popup_overlay_mode_composite_detail: "Меньше функций, высокая производительность",
+  popup_overlay_mode_composite_detail:
+    "Меньше функций, высокая производительность",
   popup_overlay_mode_layer_detail: "Расширенные функции, быстрое отображение",
   adjust_tool: "Инструмент настройки",
   adjust_tool_confirm: "Подтвердить",
-  adjust_tool_cancel_confirm: "Выйти из инструмента настройки? Изменения не будут применены.",
+  adjust_tool_cancel_confirm:
+    "Выйти из инструмента настройки? Изменения не будут применены.",
   adjust_tool_target_size: "Целевой размер",
 };

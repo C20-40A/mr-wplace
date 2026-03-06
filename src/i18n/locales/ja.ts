@@ -551,7 +551,8 @@ export const jaTranslations = {
   danger_zone_show: "リセットオプションを表示",
   danger_zone_hide: "リセットオプションを隠す",
   reset_areas: "全エリアを削除",
-  confirm_reset_areas: "すべてのエリアを削除してもよろしいですか？この操作は取り消せません。",
+  confirm_reset_areas:
+    "すべてのエリアを削除してもよろしいですか？この操作は取り消せません。",
   areas_reset_success: "すべてのエリアが削除されました。",
   import_mode: "インポートモード",
   map_filter_area_enable_display: "インポート後にエリア表示を有効化",
@@ -559,7 +560,8 @@ export const jaTranslations = {
   processing: "処理中...",
   saving: "保存中...",
   complete: "完了",
-  map_filter_area_large_file_warning: "大きなファイルが検出されました。処理に時間がかかる可能性があります。続行しますか？",
+  map_filter_area_large_file_warning:
+    "大きなファイルが検出されました。処理に時間がかかる可能性があります。続行しますか？",
   file_size: "ファイルサイズ",
   popup_close_button_big: "閉じるボタンを大きくする",
   map_filter_area_display_settings: "表示設定",
@@ -576,15 +578,20 @@ export const jaTranslations = {
   map_filter_area_group_not_enough: "合体可能なエリアが不足しています",
   map_filter_area_group_name_placeholder: "グループ名 (任意)",
   selected_color_only_mark: "選択中の色のみマーク",
-  tmp_tile_board_data_notice: "受信済みタイルデータのみを表示します。サーバー負荷軽減のため、新規リクエストは送信しません。",
+  tmp_tile_board_data_notice:
+    "受信済みタイルデータのみを表示します。サーバー負荷軽減のため、新規リクエストは送信しません。",
   hint_gallery_backup: "ここでこまめにバックアップを取ることをお勧めします。",
   all_short: "すべて",
   popup_overlay_mode_composite_detail: "低機能・高パフォーマンス",
   popup_overlay_mode_layer_detail: "高機能・高速表示",
   adjust_tool: "調節ツール",
   adjust_tool_confirm: "決定",
-  adjust_tool_cancel_confirm: "調節ツールを終了しますか？変更は反映されません。",
+  adjust_tool_cancel_confirm:
+    "調節ツールを終了しますか？変更は反映されません。",
   adjust_tool_target_size: "目標サイズ",
   popup_fab_visibility_show: "ボタン設定を表示",
   popup_fab_visibility_hide: "ボタン設定を隠す",
+  popup_fab_popup_launch: "Mrのボタン",
+  popup_fab_friends_book: "友人帳",
+  popup_fab_status_bar: "ステータスバー",
 };

@@ -418,8 +418,7 @@ export const ptTranslations = {
   tutorial_how_to_draw_text_step3:
     "Opcional: use os botões de seta para ajustar a posição",
   tutorial_how_to_bookmark_title: "Como Adicionar e Navegar Favoritos",
-  tutorial_how_to_bookmark_step1:
-    "Clique no mapa e selecione o ícone ⭐",
+  tutorial_how_to_bookmark_step1: "Clique no mapa e selecione o ícone ⭐",
   tutorial_how_to_bookmark_step2: "Digite um nome de favorito e salve",
   tutorial_how_to_bookmark_step3:
     "Clique no botão ⭐ no canto inferior esquerdo e selecione um favorito para navegar",
@@ -446,19 +445,24 @@ export const ptTranslations = {
   outline_color: "Cor da linha",
   hint_title: "Dica",
   hint_close: "Fechar dica",
-  hint_show_unplaced_only: "Este recurso deixa menos destacadas as cores já posicionadas.",
-  hint_color_isolate: "Mostrar apenas a cor selecionada destaca somente a cor selecionada no momento para facilitar o foco ao pintar.",
-  hint_data_saver: "A economia de dados reduz o uso de rede reutilizando dados de imagem. Quando ativado, as atualizações de pixel art são pausadas.",
+  hint_show_unplaced_only:
+    "Este recurso deixa menos destacadas as cores já posicionadas.",
+  hint_color_isolate:
+    "Mostrar apenas a cor selecionada destaca somente a cor selecionada no momento para facilitar o foco ao pintar.",
+  hint_data_saver:
+    "A economia de dados reduz o uso de rede reutilizando dados de imagem. Quando ativado, as atualizações de pixel art são pausadas.",
   hint_palette_toggle: "Toque aqui para abrir o filtro de cores.",
   hint_drawing_btn: "Draw images on the map from here.",
   hint_unplaced_grid: "Press an image to draw it on the map.",
   transparency_tool: "Ferramenta de Transparência",
   transparency_flood_fill: "Preenchimento de Contorno",
-  transparency_flood_fill_desc: "Clique em um ponto para tornar transparente a região conectada da mesma cor. Use ajuste de contorno para expandir ou reduzir.",
+  transparency_flood_fill_desc:
+    "Clique em um ponto para tornar transparente a região conectada da mesma cor. Use ajuste de contorno para expandir ou reduzir.",
   transparency_threshold: "Ajuste de Contorno",
   transparency_apply: "Aplicar",
   transparency_reset: "Redefinir",
-  transparency_no_image: "Carregue uma imagem primeiro para usar a ferramenta de transparência",
+  transparency_no_image:
+    "Carregue uma imagem primeiro para usar a ferramenta de transparência",
   popup_overlay_mode: "Camada",
   popup_overlay_mode_composite: "Composto",
   popup_overlay_mode_layer: "Independente",
@@ -491,28 +495,37 @@ export const ptTranslations = {
   map_filter_area_add: "Adicionar Área",
   map_filter_area_save_map: "Salvar Área",
   map_filter_area_color: "Cor",
-  map_filter_area_online_sync_description: "Importar dados de área de URL GeoJSON/JSON (ex. URL de armazenamento em nuvem pública)",
-  map_filter_area_import_description: "Importar áreas de um arquivo GeoJSON ou JSON",
+  map_filter_area_online_sync_description:
+    "Importar dados de área de URL GeoJSON/JSON (ex. URL de armazenamento em nuvem pública)",
+  map_filter_area_import_description:
+    "Importar áreas de um arquivo GeoJSON ou JSON",
   map_filter_area_import_file: "Importar de Arquivo de Área",
-  map_filter_area_export_all_description: "Exportar todas as áreas salvas como GeoJSON",
+  map_filter_area_export_all_description:
+    "Exportar todas as áreas salvas como GeoJSON",
   map_filter_area_export_selected: "Exportar Áreas Selecionadas",
-  map_filter_area_export_selected_description: "Exportar apenas as áreas marcadas como GeoJSON",
+  map_filter_area_export_selected_description:
+    "Exportar apenas as áreas marcadas como GeoJSON",
   map_filter_area_export_selected_button: "Exportar Áreas Selecionadas",
   map_filter_area_no_regions_available: "Nenhuma área disponível",
   map_filter_area_no_export_regions: "Nenhuma área para exportar",
   map_filter_area_no_importable_regions: "Nenhuma área importável encontrada",
-  map_filter_area_sync_replace_confirm: "Substituir todas as áreas salvas pelos dados da URL?\nAs áreas atuais serão sobrescritas.",
+  map_filter_area_sync_replace_confirm:
+    "Substituir todas as áreas salvas pelos dados da URL?\nAs áreas atuais serão sobrescritas.",
   map_filter_map3d_drag_rotate: "Habilitar Rotação",
   hint_gallery_btn: "Você pode registrar imagens para desenhar daqui.",
-  hint_overlay_mode_independent_prefix: "Experimental mas poderoso: adicionamos um novo modo. Por favor, experimente o modo ",
-  hint_overlay_mode_independent_suffix: " (se encontrar bugs, por favor reporte via Popup > BugReport).",
-  hint_user_status_container: "Pressione aqui para configurar o alarme quando Paint tiver acumulado",
+  hint_overlay_mode_independent_prefix:
+    "Experimental mas poderoso: adicionamos um novo modo. Por favor, experimente o modo ",
+  hint_overlay_mode_independent_suffix:
+    " (se encontrar bugs, por favor reporte via Popup > BugReport).",
+  hint_user_status_container:
+    "Pressione aqui para configurar o alarme quando Paint tiver acumulado",
   hint_bookmark_btn: "Você pode marcar esta localização",
   hint_timetravel_btn: "Você pode salvar arte perto desta localização",
   hint_text_draw_btn: "Você pode exibir texto no mapa",
   hint_bookmarks_btn: "Seus marcadores salvos estão aqui",
   hint_timetravel_fab_btn: "A lista de áreas arquivadas está aqui",
-  hint_save_current_snapshot_btn: "Você pode arquivar imagens perto desta localização",
+  hint_save_current_snapshot_btn:
+    "Você pode arquivar imagens perto desta localização",
   import_snapshot_tile_x_label: "Coordenada de Tile X",
   import_snapshot_tile_y_label: "Coordenada de Tile Y",
   import_snapshot_tile_x_placeholder: "ex. 520",
@@ -521,9 +534,11 @@ export const ptTranslations = {
   import_snapshot_success: "Importação concluída",
   hint_map_filter_trigger: "Você pode alterar a aparência do mapa aqui",
   hint_edit_card: "Você pode alterar o nome e adicionar tags aqui",
-  hint_image_detail_draw_on_map: "Pressione aqui para colocar a imagem no centro do mapa atual",
+  hint_image_detail_draw_on_map:
+    "Pressione aqui para colocar a imagem no centro do mapa atual",
   hint_image_detail_dpad: "Você pode mover a imagem aqui",
-  hint_image_detail_download: "Para compartilhar com outros, baixe a imagem daqui. O nome do arquivo contém as coordenadas, então carregá-lo colocará a imagem na mesma posição",
+  hint_image_detail_download:
+    "Para compartilhar com outros, baixe a imagem daqui. O nome do arquivo contém as coordenadas, então carregá-lo colocará a imagem na mesma posição",
   hint_image_detail_edit_title: "Clique no título da imagem para editá-lo",
   popup_close_button_big: "Botão de Fechar Grande",
   map_filter_area_display_settings: "Configurações de exibição",
@@ -540,13 +555,15 @@ export const ptTranslations = {
   map_filter_area_group_not_enough: "Não há áreas suficientes para mesclar",
   map_filter_area_group_name_placeholder: "Nome do grupo (opcional)",
   selected_color_only_mark: "Marcar apenas cor selecionada",
-  tmp_tile_board_data_notice: "Mostra apenas dados de tiles ja recebidos. Para reduzir a carga do servidor, nenhuma nova solicitacao e enviada.",
+  tmp_tile_board_data_notice:
+    "Mostra apenas dados de tiles ja recebidos. Para reduzir a carga do servidor, nenhuma nova solicitacao e enviada.",
   hint_gallery_backup: "Recomendamos fazer backups frequentemente aqui.",
   all_short: "TUDO",
   popup_overlay_mode_composite_detail: "Recursos limitados, alto desempenho",
   popup_overlay_mode_layer_detail: "Recursos avançados, exibição rápida",
   adjust_tool: "Ferramenta de ajuste",
   adjust_tool_confirm: "Confirmar",
-  adjust_tool_cancel_confirm: "Sair da ferramenta de ajuste? As alterações não serão aplicadas.",
+  adjust_tool_cancel_confirm:
+    "Sair da ferramenta de ajuste? As alterações não serão aplicadas.",
   adjust_tool_target_size: "Tamanho alvo",
 };

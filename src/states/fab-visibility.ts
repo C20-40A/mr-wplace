@@ -8,6 +8,10 @@ export const FAB_FEATURES = [
   "time-travel",
   "data-saver",
   "filter",
+  "popup-launch",
+  "friends-book",
+  "map-filter",
+  "status-bar",
 ] as const;
 
 export type FabFeature = (typeof FAB_FEATURES)[number];
@@ -19,6 +23,10 @@ let currentVisibility: Record<FabFeature, boolean> = {
   "time-travel": true,
   "data-saver": true,
   filter: true,
+  "popup-launch": true,
+  "friends-book": true,
+  "map-filter": true,
+  "status-bar": true,
 };
 
 export const loadFabVisibilityFromStorage = async (): Promise<void> => {

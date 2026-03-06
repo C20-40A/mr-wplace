@@ -407,8 +407,7 @@ export const viTranslations = {
   tutorial_how_to_archive_step2: "Nhấp nút 'Lưu ô hiện tại'",
   tutorial_how_to_draw_archive_title: "Cách Vẽ Pixel Art Đã Lưu Trữ",
   tutorial_how_to_draw_archive_step1: "Nhấp vào bản đồ và chọn 'Lưu trữ'",
-  tutorial_how_to_draw_archive_step2:
-    "Nhấp vào bản lưu trữ bạn muốn hiển thị",
+  tutorial_how_to_draw_archive_step2: "Nhấp vào bản lưu trữ bạn muốn hiển thị",
   tutorial_how_to_draw_archive_step3: "Nhấp nút vẽ",
   tutorial_how_to_draw_text_title: "Cách Hiển Thị Văn Bản Trên Bản Đồ",
   tutorial_how_to_draw_text_step1: "Nhấp vào bản đồ và chọn 'Văn bản'",
@@ -417,8 +416,7 @@ export const viTranslations = {
   tutorial_how_to_draw_text_step3:
     "Tùy chọn: dùng các nút mũi tên để chỉnh vị trí",
   tutorial_how_to_bookmark_title: "Cách Thêm Và Đi Đến Đánh Dấu",
-  tutorial_how_to_bookmark_step1:
-    "Nhấp vào bản đồ và chọn biểu tượng ⭐",
+  tutorial_how_to_bookmark_step1: "Nhấp vào bản đồ và chọn biểu tượng ⭐",
   tutorial_how_to_bookmark_step2: "Nhập tên đánh dấu và lưu",
   tutorial_how_to_bookmark_step3:
     "Nhấp nút ⭐ ở góc dưới bên trái và chọn một đánh dấu để đi đến",
@@ -445,15 +443,19 @@ export const viTranslations = {
   outline_color: "Màu viền",
   hint_title: "Gợi ý",
   hint_close: "Đóng gợi ý",
-  hint_show_unplaced_only: "Tính năng này làm cho các màu đã đặt bớt nổi bật hơn.",
-  hint_color_isolate: "Chỉ hiển thị màu đã chọn sẽ làm nổi bật đúng màu đang chọn để bạn tập trung hơn khi vẽ.",
-  hint_data_saver: "Tiết kiệm dữ liệu giảm lưu lượng mạng bằng cách tái sử dụng dữ liệu hình ảnh. Khi bật, cập nhật pixel art sẽ tạm dừng.",
+  hint_show_unplaced_only:
+    "Tính năng này làm cho các màu đã đặt bớt nổi bật hơn.",
+  hint_color_isolate:
+    "Chỉ hiển thị màu đã chọn sẽ làm nổi bật đúng màu đang chọn để bạn tập trung hơn khi vẽ.",
+  hint_data_saver:
+    "Tiết kiệm dữ liệu giảm lưu lượng mạng bằng cách tái sử dụng dữ liệu hình ảnh. Khi bật, cập nhật pixel art sẽ tạm dừng.",
   hint_palette_toggle: "Nhấn vào đây để mở bộ lọc màu.",
   hint_drawing_btn: "Draw images on the map from here.",
   hint_unplaced_grid: "Press an image to draw it on the map.",
   transparency_tool: "Công cụ Trong suốt",
   transparency_flood_fill: "Tô Viền",
-  transparency_flood_fill_desc: "Nhấp vào một điểm để làm trong suốt vùng cùng màu liền kề. Sử dụng điều chỉnh viền để mở rộng hoặc thu nhỏ.",
+  transparency_flood_fill_desc:
+    "Nhấp vào một điểm để làm trong suốt vùng cùng màu liền kề. Sử dụng điều chỉnh viền để mở rộng hoặc thu nhỏ.",
   transparency_threshold: "Điều chỉnh Viền",
   transparency_apply: "Áp dụng",
   transparency_reset: "Đặt lại",
@@ -490,22 +492,29 @@ export const viTranslations = {
   map_filter_area_add: "Thêm Vùng",
   map_filter_area_save_map: "Lưu Vùng",
   map_filter_area_color: "Màu sắc",
-  map_filter_area_online_sync_description: "Nhập dữ liệu vùng từ URL GeoJSON/JSON (ví dụ: URL lưu trữ đám mây công khai)",
+  map_filter_area_online_sync_description:
+    "Nhập dữ liệu vùng từ URL GeoJSON/JSON (ví dụ: URL lưu trữ đám mây công khai)",
   map_filter_area_import_description: "Nhập vùng từ tệp GeoJSON hoặc JSON",
   map_filter_area_import_file: "Nhập từ Tệp Vùng",
-  map_filter_area_export_all_description: "Xuất tất cả vùng đã lưu dưới dạng GeoJSON",
+  map_filter_area_export_all_description:
+    "Xuất tất cả vùng đã lưu dưới dạng GeoJSON",
   map_filter_area_export_selected: "Xuất Vùng Đã chọn",
-  map_filter_area_export_selected_description: "Chỉ xuất các vùng đã đánh dấu dưới dạng GeoJSON",
+  map_filter_area_export_selected_description:
+    "Chỉ xuất các vùng đã đánh dấu dưới dạng GeoJSON",
   map_filter_area_export_selected_button: "Xuất Vùng Đã chọn",
   map_filter_area_no_regions_available: "Không có vùng nào",
   map_filter_area_no_export_regions: "Không có vùng để xuất",
   map_filter_area_no_importable_regions: "Không tìm thấy vùng có thể nhập",
-  map_filter_area_sync_replace_confirm: "Thay thế tất cả vùng đã lưu bằng dữ liệu từ URL?\nVùng hiện tại sẽ bị ghi đè.",
+  map_filter_area_sync_replace_confirm:
+    "Thay thế tất cả vùng đã lưu bằng dữ liệu từ URL?\nVùng hiện tại sẽ bị ghi đè.",
   map_filter_map3d_drag_rotate: "Bật Xoay",
   hint_gallery_btn: "Bạn có thể đăng ký hình ảnh để vẽ từ đây.",
-  hint_overlay_mode_independent_prefix: "Thử nghiệm nhưng mạnh mẽ: chúng tôi đã thêm chế độ mới. Vui lòng thử chế độ ",
-  hint_overlay_mode_independent_suffix: " (nếu bạn tìm thấy lỗi, vui lòng báo cáo qua Popup > BugReport).",
-  hint_user_status_container: "Nhấn vào đây để cấu hình cảnh báo khi Paint đã tích lũy",
+  hint_overlay_mode_independent_prefix:
+    "Thử nghiệm nhưng mạnh mẽ: chúng tôi đã thêm chế độ mới. Vui lòng thử chế độ ",
+  hint_overlay_mode_independent_suffix:
+    " (nếu bạn tìm thấy lỗi, vui lòng báo cáo qua Popup > BugReport).",
+  hint_user_status_container:
+    "Nhấn vào đây để cấu hình cảnh báo khi Paint đã tích lũy",
   hint_bookmark_btn: "Bạn có thể đánh dấu vị trí này",
   hint_timetravel_btn: "Bạn có thể lưu nghệ thuật gần vị trí này",
   hint_text_draw_btn: "Bạn có thể hiển thị văn bản trên bản đồ",
@@ -520,9 +529,11 @@ export const viTranslations = {
   import_snapshot_success: "Nhập hoàn tất",
   hint_map_filter_trigger: "Bạn có thể thay đổi cách bản đồ hiển thị tại đây",
   hint_edit_card: "Bạn có thể thay đổi tên và thêm thẻ tại đây",
-  hint_image_detail_draw_on_map: "Nhấn vào đây để đặt hình ảnh vào trung tâm bản đồ hiện tại",
+  hint_image_detail_draw_on_map:
+    "Nhấn vào đây để đặt hình ảnh vào trung tâm bản đồ hiện tại",
   hint_image_detail_dpad: "Bạn có thể di chuyển hình ảnh ở đây",
-  hint_image_detail_download: "Để chia sẻ với người khác, tải xuống hình ảnh từ đây. Tên tệp chứa tọa độ, nên khi tải lên sẽ đặt hình ảnh vào cùng vị trí",
+  hint_image_detail_download:
+    "Để chia sẻ với người khác, tải xuống hình ảnh từ đây. Tên tệp chứa tọa độ, nên khi tải lên sẽ đặt hình ảnh vào cùng vị trí",
   hint_image_detail_edit_title: "Nhấn vào tiêu đề ảnh để chỉnh sửa",
   popup_close_button_big: "Nút Đóng Lớn",
   map_filter_area_display_settings: "Cài đặt hiển thị",
@@ -539,13 +550,15 @@ export const viTranslations = {
   map_filter_area_group_not_enough: "Không đủ vùng để gộp",
   map_filter_area_group_name_placeholder: "Tên nhóm (tùy chọn)",
   selected_color_only_mark: "Chỉ đánh dấu màu đã chọn",
-  tmp_tile_board_data_notice: "Chi hien thi du lieu tile da nhan. De giam tai may chu, khong gui them yeu cau moi.",
+  tmp_tile_board_data_notice:
+    "Chi hien thi du lieu tile da nhan. De giam tai may chu, khong gui them yeu cau moi.",
   hint_gallery_backup: "Chúng tôi khuyên bạn nên sao lưu thường xuyên ở đây.",
   all_short: "HẾT",
   popup_overlay_mode_composite_detail: "Ít tính năng, hiệu năng cao",
   popup_overlay_mode_layer_detail: "Tính năng nâng cao, hiển thị nhanh",
   adjust_tool: "Công cụ điều chỉnh",
   adjust_tool_confirm: "Xác nhận",
-  adjust_tool_cancel_confirm: "Thoát công cụ điều chỉnh? Các thay đổi sẽ không được áp dụng.",
+  adjust_tool_cancel_confirm:
+    "Thoát công cụ điều chỉnh? Các thay đổi sẽ không được áp dụng.",
   adjust_tool_target_size: "Kích thước mục tiêu",
 };

@@ -205,6 +205,10 @@ const FAB_SELECTOR_MAP: Record<FabFeature, string[]> = {
   "time-travel": ["#timetravel-fab-btn"],
   "data-saver": ["#data-saver-btn"],
   filter: ["#color-filter-fab-btn"],
+  "popup-launch": [`#${POPUP_LAUNCH_BUTTON_ID}`],
+  "friends-book": ["#friends-book-fab"],
+  "map-filter": ["#map-filter-trigger-btn"],
+  "status-bar": ["#user-status-container"],
 };
 
 const applyFabVisibilityStyles = (

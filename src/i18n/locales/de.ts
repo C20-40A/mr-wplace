@@ -78,7 +78,8 @@ export const deTranslations = {
   export_all: "Alle exportieren",
   export_all_description: "Alle Lesezeichen exportieren",
   export_by_tag: "Nach Tag exportieren",
-  export_by_tag_description: "Nur Lesezeichen mit ausgewählten Tags exportieren",
+  export_by_tag_description:
+    "Nur Lesezeichen mit ausgewählten Tags exportieren",
   export_selected_tags: "Ausgewählte Tags exportieren",
   no_tags_available: "Keine Tags verfügbar",
   no_name: "Kein Name",
@@ -138,8 +139,7 @@ export const deTranslations = {
     "Lade zuerst ein Bild, um das Transparenzwerkzeug zu nutzen",
   add_to_gallery: "Zur Galerie hinzufügen",
   download: "Herunterladen",
-  clear_image_confirm:
-    "Bild löschen und in den Ausgangszustand zurückkehren?",
+  clear_image_confirm: "Bild löschen und in den Ausgangszustand zurückkehren?",
   saved_to_gallery: "Bild in der Galerie gespeichert",
   large_image_resize_confirm:
     "Die Bildgröße ist groß und kann die Verarbeitung verlangsamen.\nMöchtest du das Bild skalieren?",
@@ -431,13 +431,11 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   tutorial_how_to_draw_step3:
     "Klicke auf das Bild, das du platzieren möchtest; es erscheint als Overlay auf der Kartenkachel",
   tutorial_how_to_archive_title: "So archivierst du Pixelkunst auf der Karte",
-  tutorial_how_to_archive_step1:
-    "Klicke auf die Karte und wähle 'Archiv'",
+  tutorial_how_to_archive_step1: "Klicke auf die Karte und wähle 'Archiv'",
   tutorial_how_to_archive_step2:
     "Klicke auf die Schaltfläche 'Aktuelle Kachel speichern'",
   tutorial_how_to_draw_archive_title: "So zeichnest du archivierte Pixelkunst",
-  tutorial_how_to_draw_archive_step1:
-    "Klicke auf die Karte und wähle 'Archiv'",
+  tutorial_how_to_draw_archive_step1: "Klicke auf die Karte und wähle 'Archiv'",
   tutorial_how_to_draw_archive_step2:
     "Klicke auf das Archiv, das du anzeigen möchtest",
   tutorial_how_to_draw_archive_step3: "Klicke auf die Zeichnen-Schaltfläche",
@@ -447,10 +445,12 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
     "Gib Text ein, wähle eine Schriftart und klicke auf die Schaltfläche 'Zeichnen'",
   tutorial_how_to_draw_text_step3:
     "Optional: Passe die Position mit den Pfeiltasten an",
-  tutorial_how_to_bookmark_title: "So fügst du Lesezeichen hinzu und navigierst",
+  tutorial_how_to_bookmark_title:
+    "So fügst du Lesezeichen hinzu und navigierst",
   tutorial_how_to_bookmark_step1:
     "Klicke auf die Karte und wähle das ⭐-Symbol",
-  tutorial_how_to_bookmark_step2: "Gib einen Lesezeichennamen ein und speichere",
+  tutorial_how_to_bookmark_step2:
+    "Gib einen Lesezeichennamen ein und speichere",
   tutorial_how_to_bookmark_step3:
     "Klicke unten links auf die ⭐-Schaltfläche und wähle ein Lesezeichen zur Navigation",
 
@@ -548,8 +548,7 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   import_snapshot_tile_y_placeholder: "z. B. 218",
   import_snapshot_datetime_label: "Datum/Uhrzeit",
   import_snapshot_success: "Import abgeschlossen",
-  hint_map_filter_trigger:
-    "Hier kannst du ändern, wie die Karte aussieht",
+  hint_map_filter_trigger: "Hier kannst du ändern, wie die Karte aussieht",
   hint_edit_card: "Hier kannst du den Namen ändern und Tags hinzufügen",
   hint_image_detail_draw_on_map:
     "Hier drücken, um das Bild im aktuellen Kartenzentrum zu platzieren",
@@ -557,15 +556,18 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   hint_image_detail_download:
     "Zum Teilen mit anderen kannst du das Bild hier herunterladen. Der Dateiname enthält die Koordinaten, sodass das Bild beim Laden an derselben Position platziert wird",
   tutorial_reset_hints_button: "Hinweise erneut anzeigen",
-  hint_image_detail_edit_title: "Klicke auf den Bildtitel, um ihn zu bearbeiten",
+  hint_image_detail_edit_title:
+    "Klicke auf den Bildtitel, um ihn zu bearbeiten",
   popup_close_button_big: "Schließen-Schaltfläche vergrößern",
   selected_color_only_mark: "Nur ausgewählte Farbe markieren",
-  tmp_tile_board_data_notice: "Zeigt nur bereits empfangene Kacheldaten. Zur Reduzierung der Serverlast werden keine neuen Anfragen gesendet.",
+  tmp_tile_board_data_notice:
+    "Zeigt nur bereits empfangene Kacheldaten. Zur Reduzierung der Serverlast werden keine neuen Anfragen gesendet.",
   all_short: "ALLE",
   popup_overlay_mode_composite_detail: "Wenige Funktionen, hohe Leistung",
   popup_overlay_mode_layer_detail: "Erweiterte Funktionen, schnelle Anzeige",
   adjust_tool: "Anpassungswerkzeug",
   adjust_tool_confirm: "Bestätigen",
-  adjust_tool_cancel_confirm: "Anpassungswerkzeug beenden? Änderungen werden nicht angewendet.",
+  adjust_tool_cancel_confirm:
+    "Anpassungswerkzeug beenden? Änderungen werden nicht angewendet.",
   adjust_tool_target_size: "Zielgröße",
 };
