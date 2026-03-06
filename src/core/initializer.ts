@@ -32,6 +32,7 @@ import { PaintPixelIcon } from "@/features/paint-pixel-icon";
 import { UserStatusHint } from "@/features/user-status-hint";
 import { CloseConfirm } from "@/features/close-confirm";
 import { PaintModeStyle } from "@/features/paint-mode-style";
+import { HideMyLocation } from "@/features/hide-my-location";
 import { FocusMode } from "@/features/focus-mode";
 import { di } from "@/core/di";
 import {
@@ -108,6 +109,7 @@ export const initializeFeatures = async () => {
   safeInit("userStatusHint", () => new UserStatusHint());
   safeInit("closeConfirm", () => new CloseConfirm());
   safeInit("paintModeStyle", () => new PaintModeStyle());
+  safeInit("hideMyLocation", () => new HideMyLocation());
   safeInit("focusMode", () => new FocusMode());
   safeInit("paintStats", () => initPaintStats());
 

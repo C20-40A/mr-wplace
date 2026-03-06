@@ -594,4 +594,5 @@ export const jaTranslations = {
   popup_fab_popup_launch: "Mrのボタン",
   popup_fab_friends_book: "友人帳",
   popup_fab_status_bar: "ステータスバー",
+  popup_hide_my_location: "現在地ボタンを非表示",
 };

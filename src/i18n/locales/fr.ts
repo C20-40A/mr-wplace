@@ -583,4 +583,5 @@ export const frTranslations = {
   adjust_tool_cancel_confirm:
     "Quitter l'outil d'ajustement ? Les modifications ne seront pas appliquées.",
   adjust_tool_target_size: "Taille cible",
+  popup_hide_my_location: "Masquer le bouton de localisation",
 };

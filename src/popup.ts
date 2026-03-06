@@ -25,6 +25,11 @@ import {
   setPaintModeStyle,
 } from "./states/paint-mode-style";
 import {
+  loadHideMyLocationFromStorage,
+  getHideMyLocation,
+  setHideMyLocation,
+} from "./states/hide-my-location";
+import {
   loadCloseButtonBigFromStorage,
   getCloseButtonBig,
   setCloseButtonBig,
@@ -136,6 +141,7 @@ const updateUI = (): void => {
     "popup-lock-button-label": "popup_lock_button",
     "popup-close-confirm-label": "popup_close_confirm",
     "popup-paint-mode-style-label": "popup_paint_mode_style",
+    "popup-hide-my-location-label": "popup_hide_my_location",
     "popup-close-button-big-label": "popup_close_button_big",
     "popup-bug-report-label": "popup_bug_report",
     "popup-fab-visibility-label": "popup_fab_visibility",
@@ -292,6 +298,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       loadLockButtonEnhancerFromStorage(),
       loadCloseConfirmFromStorage(),
       loadPaintModeStyleFromStorage(),
+      loadHideMyLocationFromStorage(),
       loadCloseButtonBigFromStorage(),
       loadFabVisibilityFromStorage(),
     ]);
@@ -329,6 +336,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   setupToggle("paint-mode-style-toggle", getPaintModeStyle(), async (v) => {
     await setPaintModeStyle(v);
+    await reloadActiveTab();
+  });
+  setupToggle("hide-my-location-toggle", getHideMyLocation(), async (v) => {
+    await setHideMyLocation(v);
     await reloadActiveTab();
   });
   setupToggle("close-button-big-toggle", getCloseButtonBig(), async (v) => {

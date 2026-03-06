@@ -258,37 +258,38 @@ export const findMapPin = (): Element | null => {
   return null;
 };
 
+const MY_LOCATION_BUTTON_TITLES = [
+  "My location", // 英語 (d7)
+  "Minha localização", // ポルトガル語 (p7)
+  "我的位置", // 中国語 (f7)
+  "Mein Standort", // ドイツ語 (_7)
+  "Mi ubicación", // スペイン語 (m7)
+  "Ma position", // フランス語 (g7)
+  "La mia posizione", // イタリア語 (v7)
+  "現在地", // 日本語 (y7)
+  "Moja lokalizacja", // ポーランド語 (x7)
+  "Моё местоположение", // ロシア語 (b7)
+  "Моє місцезнаходження", // ウクライナ語 (w7)
+  "Vị trí của tôi", // ベトナム語 (T7)
+] as const;
+
+const myLocationTitleSelector = MY_LOCATION_BUTTON_TITLES
+  .map((title) => `button[title="${title}"]`)
+  .join(", ");
+
+/**
+ * "My location" ボタン自体を検索
+ */
+export const findMyLocationButton = (): Element | null =>
+  document.querySelector(myLocationTitleSelector);
+
 /**
  * "My location" ボタンのコンテナを検索（右下）
  */
 export const findMyLocationContainer = (): Element | null => {
-  // 1. "My location" の多言語テキストリスト
-  // d7, p7, f7, _7, m7, g7, v7, y7, x7, b7, w7, T7 に対応
-  const myLocationButtonTitles = [
-    "My location", // 英語 (d7)
-    "Minha localização", // ポルトガル語 (p7)
-    "我的位置", // 中国語 (f7)
-    "Mein Standort", // ドイツ語 (_7)
-    "Mi ubicación", // スペイン語 (m7)
-    "Ma position", // フランス語 (g7)
-    "La mia posizione", // イタリア語 (v7)
-    "現在地", // 日本語 (y7)
-    "Moja lokalizacja", // ポーランド語 (x7)
-    "Моё местоположение", // ロシア語 (b7)
-    "Моє місцезнаходження", // ウクライナ語 (w7)
-    "Vị trí của tôi", // ベトナム語 (T7)
-  ];
-
-  // 1. "My location" ボタンを検索 → 親要素取得（多言語対応）
-  // すべての多言語タイトルを OR 検索文字列として結合
-  const titleSelectors = myLocationButtonTitles
-    .map((title) => `button[title="${title}"]`)
-    .join(", ");
-
-  const myLocationButton = document.querySelector(titleSelectors);
+  const myLocationButton = findMyLocationButton();
 
   if (myLocationButton?.parentElement) {
-    // ボタンの親要素（コンテナを想定）を返します。
     return myLocationButton.parentElement;
   }
 

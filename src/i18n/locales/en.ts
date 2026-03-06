@@ -591,4 +591,5 @@ Do not use this feature to paint actual pixels.`,
   popup_fab_popup_launch: "Popup Button",
   popup_fab_friends_book: "Friends",
   popup_fab_status_bar: "Status Bar",
+  popup_hide_my_location: "Hide My Location Button",
 };
