@@ -10,7 +10,9 @@ import {
 const MIN_FRAME_WIDTH = 48;
 const FRAME_MARGIN = 8;
 const MAX_VIEWPORT_RATIO = 0.9;
-const METRICS_REFRESH_MS = 200;
+const METRICS_REFRESH_MS = 600;
+const METRICS_DRAG_UPDATE_MS = 80;
+const PREVIEW_UPDATE_MS = 160;
 const OPACITY_SLIDER_MIN = 15;
 const OPACITY_SLIDER_MAX = 100;
 const OPACITY_SLIDER_STEP = 5;
@@ -165,12 +167,18 @@ export class ImageAdjustToolMode {
   private opacitySlider: HTMLInputElement | null = null;
   private closeButton: HTMLButtonElement | null = null;
   private confirmButton: HTMLButtonElement | null = null;
+  private baseImage: HTMLImageElement | null = null;
 
   private rect: Rect | null = null;
   private activeInteraction: ActiveInteraction | null = null;
   private metrics: Metrics | null = null;
   private metricsTimer: ReturnType<typeof setInterval> | null = null;
   private metricsPending = false;
+  private lastMetricsRequestedAt = 0;
+  private previewPending = false;
+  private queuedPreviewMetrics: Metrics | null = null;
+  private lastPreviewRequestedAt = 0;
+  private lastPreviewKey = "";
   private mounted = false;
   private imageOpacity = DEFAULT_IMAGE_OPACITY / 100;
 
@@ -258,12 +266,13 @@ export class ImageAdjustToolMode {
     if (event.pointerId !== this.activeInteraction.pointerId) return;
     this.frame.releasePointerCapture(event.pointerId);
     this.activeInteraction = null;
+    this.requestMetricsUpdate(true);
   };
 
   private readonly onWindowResize = (): void => {
     if (!this.rect) return;
     this.applyRect(this.getClampedRect(this.rect));
-    this.requestMetricsUpdate();
+    this.requestMetricsUpdate(true);
   };
 
   constructor(options: ImageAdjustToolOptions) {
@@ -292,7 +301,7 @@ export class ImageAdjustToolMode {
     this.createOverlay();
     this.mountEvents();
     this.mounted = true;
-    this.requestMetricsUpdate();
+    this.requestMetricsUpdate(true);
     this.metricsTimer = setInterval(() => {
       this.requestMetricsUpdate();
     }, METRICS_REFRESH_MS);
@@ -318,6 +327,7 @@ export class ImageAdjustToolMode {
     this.opacitySlider = null;
     this.closeButton = null;
     this.confirmButton = null;
+    this.baseImage = null;
     this.activeInteraction = null;
 
     if (this.mapElement) {
@@ -340,6 +350,8 @@ export class ImageAdjustToolMode {
     image.src = this.options.imageSrc;
     image.draggable = false;
     image.alt = "adjust-target";
+    const baseImage = createElement("img");
+    baseImage.src = this.options.imageSrc;
 
     const sizeLabel = createElement("div", { style: STYLES.sizeLabel });
     sizeLabel.textContent = `${t("adjust_tool_target_size")}: ...`;
@@ -397,6 +409,7 @@ export class ImageAdjustToolMode {
     this.overlay = overlay;
     this.frame = frame;
     this.frameImage = image;
+    this.baseImage = baseImage;
     this.resizeHandle = resizeHandle;
     this.topToolBar = topToolBar;
     this.sizeLabel = sizeLabel;
@@ -505,7 +518,14 @@ export class ImageAdjustToolMode {
     this.frameImage.style.opacity = `${this.imageOpacity}`;
   }
 
-  private requestMetricsUpdate(): void {
+  private requestMetricsUpdate(force = false): void {
+    if (!force) {
+      const now = Date.now();
+      if (now - this.lastMetricsRequestedAt < METRICS_DRAG_UPDATE_MS) return;
+      this.lastMetricsRequestedAt = now;
+    } else {
+      this.lastMetricsRequestedAt = Date.now();
+    }
     void this.updateMetrics();
   }
 
@@ -549,8 +569,12 @@ export class ImageAdjustToolMode {
       };
 
       if (this.sizeLabel) {
-        this.sizeLabel.textContent = `${t("adjust_tool_target_size")}: ${widthPx}×${heightPx}px`;
+        const labelText = `${t("adjust_tool_target_size")}: ${widthPx}×${heightPx}px`;
+        if (this.sizeLabel.textContent !== labelText) {
+          this.sizeLabel.textContent = labelText;
+        }
       }
+      this.requestPreviewUpdate(this.metrics);
       return this.metrics;
     } finally {
       this.metricsPending = false;
@@ -574,6 +598,57 @@ export class ImageAdjustToolMode {
       this.destroy(false);
     } catch (error) {
       console.error("🧑‍🎨 : Failed to apply adjust tool result", error);
+    }
+  }
+
+  private requestPreviewUpdate(metrics: Metrics, force = false): void {
+    const nextKey = `${metrics.widthPx}x${metrics.heightPx}`;
+    if (!force) {
+      const now = Date.now();
+      if (nextKey === this.lastPreviewKey) return;
+      if (now - this.lastPreviewRequestedAt < PREVIEW_UPDATE_MS) return;
+      this.lastPreviewRequestedAt = now;
+    } else {
+      this.lastPreviewRequestedAt = Date.now();
+    }
+    this.lastPreviewKey = nextKey;
+
+    if (this.previewPending) {
+      this.queuedPreviewMetrics = metrics;
+      return;
+    }
+    void this.updatePreview(metrics);
+  }
+
+  private async updatePreview(metrics: Metrics): Promise<void> {
+    this.previewPending = true;
+    try {
+      const sourceImage = this.baseImage;
+      if (!sourceImage || !this.frameImage) return;
+
+      if (!sourceImage.complete || sourceImage.naturalWidth < 1) {
+        await new Promise<void>((resolve, reject) => {
+          sourceImage.onload = () => resolve();
+          sourceImage.onerror = () =>
+            reject(new Error("adjust tool preview source load failed"));
+        });
+      }
+
+      const targetWidth = Math.max(1, Math.round(metrics.widthPx));
+      const targetHeight = Math.max(1, Math.round(metrics.heightPx));
+      const previewCanvas = document.createElement("canvas");
+      previewCanvas.width = targetWidth;
+      previewCanvas.height = targetHeight;
+      const ctx = previewCanvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(sourceImage, 0, 0, targetWidth, targetHeight);
+      this.frameImage.src = previewCanvas.toDataURL("image/png");
+    } finally {
+      this.previewPending = false;
+      const queued = this.queuedPreviewMetrics;
+      this.queuedPreviewMetrics = null;
+      if (queued) this.requestPreviewUpdate(queued, true);
     }
   }
 
