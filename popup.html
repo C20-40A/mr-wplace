@@ -254,7 +254,7 @@
         </div>
       </div>
 
-      <!-- FAB Visibility -->
+      <!-- FAB Visibility (collapsible) -->
       <div class="setting-group">
         <label class="setting-label">
           <svg class="icon" viewBox="0 0 12 12">
@@ -263,7 +263,10 @@
           </svg>
           <span id="popup-fab-visibility-label">FAB Visibility</span>
         </label>
-        <div id="fab-visibility-selectors">
+        <button id="toggle-fab-visibility-btn">
+          <span id="fab-visibility-toggle-label">Show Button Settings</span>
+        </button>
+        <div id="fab-visibility-content" style="display: none; margin-top: 4px">
           <div class="setting-row">
             <span id="popup-fab-gallery-label">Gallery</span>
             <button class="toggle-btn" data-fab="gallery" data-on="true">ON</button>
@@ -287,20 +290,26 @@
         </div>
       </div>
 
-      <!-- Boolean toggle settings (1 row each) -->
+      <!-- Boolean toggle settings (1 row each, separated) -->
       <div class="setting-group">
         <div class="setting-row">
           <span id="popup-lock-button-label">Large Lock Button (for Mobile)</span>
           <button class="toggle-btn" id="lock-button-enhancer-toggle" data-on="false">OFF</button>
         </div>
+      </div>
+      <div class="setting-group">
         <div class="setting-row">
           <span id="popup-close-confirm-label">Confirm on Close Paint Modal</span>
           <button class="toggle-btn" id="close-confirm-toggle" data-on="false">OFF</button>
         </div>
+      </div>
+      <div class="setting-group">
         <div class="setting-row">
-          <span id="popup-paint-mode-style-label">Hide FABs on Paint Mode</span>
+          <span id="popup-paint-mode-style-label">Hide Buttons on Paint Mode</span>
           <button class="toggle-btn" id="paint-mode-style-toggle" data-on="true">ON</button>
         </div>
+      </div>
+      <div class="setting-group">
         <div class="setting-row">
           <span id="popup-close-button-big-label">Big Close Button</span>
           <button class="toggle-btn" id="close-button-big-toggle" data-on="true">ON</button>

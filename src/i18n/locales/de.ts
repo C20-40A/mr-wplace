@@ -210,7 +210,7 @@ export const deTranslations = {
   popup_navigation_url_jump: "URL-Sprung",
   popup_lock_button: "Großer Sperrbutton (für Mobilgeräte)",
   popup_close_confirm: "Bestätigung beim Schließen des Paint-Modals",
-  popup_paint_mode_style: "FABs im Zeichenmodus ausblenden",
+  popup_paint_mode_style: "Schaltflächen im Zeichenmodus ausblenden",
   popup_overlay_mode: "Overlay",
   popup_overlay_mode_composite: "Komposit",
   popup_overlay_mode_layer: "Unabhängig",

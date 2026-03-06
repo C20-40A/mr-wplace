@@ -197,7 +197,7 @@ export const viTranslations = {
   popup_navigation_url_jump: "Nhảy theo URL",
   popup_lock_button: "Nút Khóa Lớn (Di động)",
   popup_close_confirm: "Xác nhận khi Đóng Bảng Vẽ",
-  popup_paint_mode_style: "Ẩn FAB khi Chế độ Vẽ",
+  popup_paint_mode_style: "Ẩn Nút khi Chế độ Vẽ",
   popup_bug_report: "Báo Lỗi",
   popup_fab_visibility: "Hiện/Ẩn Nút",
   popup_fab_gallery: "Thư viện",

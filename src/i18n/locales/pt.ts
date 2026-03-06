@@ -199,7 +199,7 @@ export const ptTranslations = {
   popup_navigation_url_jump: "Saltar por URL",
   popup_lock_button: "Botão de Bloqueio Grande (Mobile)",
   popup_close_confirm: "Confirmar ao Fechar Painel de Pintura",
-  popup_paint_mode_style: "Ocultar FABs no Modo Pintura",
+  popup_paint_mode_style: "Ocultar Botões no Modo Pintura",
   popup_bug_report: "Reportar Bug",
   popup_fab_visibility: "Visibilidade dos Botões",
   popup_fab_gallery: "Galeria",

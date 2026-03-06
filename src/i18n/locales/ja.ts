@@ -212,7 +212,7 @@ export const jaTranslations = {
   popup_navigation_url_jump: "URLジャンプ",
   popup_lock_button: "ロックボタン拡大（モバイル向け）",
   popup_close_confirm: "ペイント画面を閉じる時に確認",
-  popup_paint_mode_style: "ペイント時にFABを非表示",
+  popup_paint_mode_style: "ペイント時にボタンを非表示",
   popup_overlay_mode: "レイヤー",
   popup_overlay_mode_composite: "合成",
   popup_overlay_mode_layer: "独立",
@@ -585,4 +585,6 @@ export const jaTranslations = {
   adjust_tool_confirm: "決定",
   adjust_tool_cancel_confirm: "調節ツールを終了しますか？変更は反映されません。",
   adjust_tool_target_size: "目標サイズ",
+  popup_fab_visibility_show: "ボタン設定を表示",
+  popup_fab_visibility_hide: "ボタン設定を隠す",
 };

@@ -202,7 +202,7 @@ export const frTranslations = {
   popup_navigation_url_jump: "Saut par URL",
   popup_lock_button: "Grand Bouton de Verrouillage (Mobile)",
   popup_close_confirm: "Confirmer la Fermeture du Panneau de Peinture",
-  popup_paint_mode_style: "Masquer les FAB en Mode Peinture",
+  popup_paint_mode_style: "Masquer les Boutons en Mode Peinture",
   popup_bug_report: "Signaler un Bug",
   popup_fab_visibility: "Visibilité des Boutons",
   popup_fab_gallery: "Galerie",

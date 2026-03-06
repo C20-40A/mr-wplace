@@ -200,7 +200,7 @@ export const ruTranslations = {
   popup_navigation_url_jump: "Переход по URL",
   popup_lock_button: "Большая Кнопка Блокировки (Мобильная)",
   popup_close_confirm: "Подтверждение при Закрытии Панели Рисования",
-  popup_paint_mode_style: "Скрыть FAB в Режиме Рисования",
+  popup_paint_mode_style: "Скрыть Кнопки в Режиме Рисования",
   popup_bug_report: "Сообщить об Ошибке",
   popup_fab_visibility: "Видимость Кнопок",
   popup_fab_gallery: "Галерея",

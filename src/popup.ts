@@ -145,6 +145,7 @@ const updateUI = (): void => {
     "popup-fab-data-saver-label": "popup_fab_data_saver",
     "popup-fab-filter-label": "popup_fab_color_filter",
     "popup-compute-device-label": "compute_device_label",
+    "fab-visibility-toggle-label": "popup_fab_visibility_show",
     "danger-zone-label": "danger_zone",
     "danger-zone-toggle-label": "danger_zone_show",
     "reset-gallery-btn-label": "reset_gallery",
@@ -373,6 +374,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     const device = (event.target as HTMLSelectElement).value === "cpu" ? "cpu" : "gpu";
     await ColorPaletteStorage.setComputeDevice(device);
     await notifyContentScriptBestEffort({ type: "COMPUTE_DEVICE_CHANGED", device });
+  });
+
+  // FAB Visibility toggle
+  const fabContent = document.getElementById("fab-visibility-content");
+  const fabLabel = document.getElementById("fab-visibility-toggle-label");
+  document.getElementById("toggle-fab-visibility-btn")?.addEventListener("click", () => {
+    if (!fabContent || !fabLabel) return;
+    const isHidden = fabContent.style.display === "none";
+    fabContent.style.display = isHidden ? "block" : "none";
+    fabLabel.textContent = isHidden ? t("popup_fab_visibility_hide") : t("popup_fab_visibility_show");
   });
 
   // Danger Zone toggle
