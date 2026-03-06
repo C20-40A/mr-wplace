@@ -1,295 +1,168 @@
-# Gallery Image Editor - AI 向けナレッジ
+# Gallery Image Editor
 
-## アーキテクチャ
+## Goal
 
-```
-GalleryImageEditor → {ImageEditorUI, EditorController}
-         ↓                ↓              ↓
-    render()        DOM生成+event    状態管理+統合
-         ↓                              ↓
-   Callbacks連携                file-handler.ts
-                                canvas-processor.ts
-```
+- Edit one image for gallery save/download.
+- Keep UI state in `controller.ts`.
+- Keep file IO in `file-handler.ts`.
+- Keep pixel processing in `canvas-processor.ts` + `canvas-processor/*`.
+- Keep WebGL backend in `gpu-image-processor.ts`.
 
-## ファイル構成
+## Mental model
 
-- **index.ts**: GalleryImageEditor（UI+Controller 統合）
-- **ui.ts**: ImageEditorUI（DOM 生成+callbacks interface）
-- **controller.ts**: EditorController（状態管理・DOM 参照・統合処理）
-- **file-handler.ts**: ファイル IO 純粋関数群
-- **canvas-processor.ts**: Canvas 処理純粋関数群
+`canvas-processor.ts` is not "CPU only". It is the public processing entry.
 
-## file-handler.ts - ファイル IO 純粋関数
+Flow:
 
-```typescript
-readFileAsDataUrl(file): Promise<string>
-resizeImageIfNeeded(dataUrl): Promise<string>  // 500px超確認→リサイズ
-createBlobFromCanvas(canvas): Promise<Blob>
-blobToDataUrl(blob): Promise<string>
-downloadBlob(blob, filename): void
-parseDrawPositionFromFileName(fileName): DrawPosition | null
-```
+1. `controller.ts`
+   - owns editor state
+   - caches resized bitmap and outline bitmap
+   - decides when re-render is needed
+2. `canvas-processor/processing.ts`
+   - receives a bitmap + options
+   - decides backend: GPU or CPU
+3. `gpu-image-processor.ts`
+   - only handles adjustment + quantization backend
+   - no storage, no DOM state, no UI logic
 
-## canvas-processor.ts - Canvas 処理純粋関数
+Important:
 
-```typescript
-interface ImageAdjustments {
-  brightness: number;  // -100~100
-  contrast: number;    // -100~100
-  saturation: number;  // -100~100
-}
+- GPU toggle affects only the final image-processing backend.
+- Resize, `createImageBitmap`, `OffscreenCanvas`, and outline precompose may still use browser internals that are hardware accelerated, but app-level WebGL processing is skipped when `useGpu = false`.
+- So "GPU off" means "do not use `gpuProcessImage()`", not "never touch any browser GPU path".
 
-applyImageAdjustments(imageData, adjustments): void        // 破壊的変更
-createOutlinePreservedBitmap(source, scale, options): Promise<ImageBitmap>
-quantizeToColorPalette(imageData, selectedColorIds): void  // 破壊的変更
-createProcessedCanvas(img, scale, adjustments, selectedColorIds): HTMLCanvasElement
-```
+## File map
 
-### 処理フロー
+- `index.ts`
+  - wires UI + controller
+- `ui.ts`
+  - DOM creation and event binding
+- `controller.ts`
+  - source of truth for editor state
+  - render orchestration
+  - bitmap caches
+  - transparency tool state
+- `file-handler.ts`
+  - file read/write helpers
+- `canvas-processor.ts`
+  - stable barrel; keep imports pointed here from controller/ui
+- `canvas-processor/types.ts`
+  - shared processing types
+- `canvas-processor/color-utils.ts`
+  - Lab conversion and color distance helpers
+- `canvas-processor/outline.ts`
+  - outline mask extraction and outline-preserved bitmap creation
+- `canvas-processor/quantization.ts`
+  - CPU palette quantization, dithering, transparent-color pass
+- `canvas-processor/processing.ts`
+  - backend selection and shared processing entrypoints
+- `gpu-image-processor.ts`
+  - WebGL2 pipeline for adjustments + quantization
 
-```
-createProcessedCanvas()
-  1. リサイズ描画
-  2. (outline有効時) 暗線抽出(勾配+局所コントラスト) + 膨張 + 縮小後上書き
-  3. applyImageAdjustments() 明るさ・コントラスト・彩度
-  4. quantizeToColorPalette() パレット量子化
-  5. 完成canvas返却
+## Runtime pipeline
 
-GPU処理フロー (gpu-image-processor.ts)
-  Phase1: brightness/contrast/saturation → intermediateTex
-  Phase2: palette quantization → finalTex
-  readPixels → 出力
-```
+`controller.updateScaledImage()` does:
 
-### 輪郭維持処理 (2026-02 追加)
+1. ensure resized bitmap cache exists for current scale
+2. optionally build/use outline bitmap cache
+3. call `createProcessedCanvasFromBitmap(...)`
+4. apply transparency mask on resulting canvas
+5. update visible output
+6. recalculate palette pixel stats
 
-**目的**: 縮小時に細線が消える問題を抑える
+Backend selection inside `createProcessedCanvasFromBitmap(...)`:
 
-- **デフォルトOFF**: パフォーマンスのためトグルで有効化
-- **UI**: チェックボックス + 感度 + 線幅 + 固定線色
-- **線抽出**: 暗線 + 局所コントラスト + 勾配の複合判定
-- **線幅調整**: 境界マスクを4近傍で膨張
-- **合成順序**: 本体をNEAREST縮小 → 輪郭色を上書き（固定色も可）
-- **GPU/CPU両対応**: 輪郭合成後の共通パイプライン
+- GPU path when `useGpu === true` and dithering is `ordered` or disabled
+- CPU path when `useGpu === false`
+- CPU path when dithering is `floyd-steinberg`
+- CPU fallback when WebGL2 processing throws
 
-### 色変換アルゴリズム
+So:
 
-```typescript
-// RGB Euclidean距離（√省略版）
-colorDist2(r1,g1,b1, r2,g2,b2) = (r1-r2)² + (g1-g2)² + (b1-b2)²
-```
+- outline feature runs before backend selection
+- transparency mask runs after backend selection
+- GPU toggle does not disable outline generation or browser bitmap resizing
 
-## EditorController (controller.ts)
+## Why GPU toggle exists
 
-### 状態管理
+Likely reason: platform-specific rendering bugs or readback differences.
 
-```typescript
-originalImage: HTMLImageElement | null
-scaledCanvas: HTMLCanvasElement | null
-imageScale: number              // 0.1-1.0
-selectedColorIds: number[]
-brightness/contrast/saturation: number
-outlineEnabled: boolean         // デフォルトfalse
-outlineThreshold: number        // 0-200 (sensitivity)
-outlineWidth: number            // 1-4
-outlineUseFixedColor: boolean
-outlineFixedColor: string       // #RRGGBB
-ditheringEnabled: boolean
-ditheringThreshold: number
-useGpu: boolean
-imageInspector: ImageInspector | null
-colorPalette: ColorPalette | null
-currentFileName: string | null
-drawPosition: DrawPosition | null
-```
+Observed code-level reason:
 
-### 公開メソッド
+- GPU backend depends on WebGL2
+- final pixels are read back to CPU (`readPixels`)
+- mobile Safari / iPhone class bugs are plausible here
+- CPU fallback already exists and is intentionally preserved
 
-```typescript
-handleFile(file); // 初期読込: 調整パラメータリセット
-replaceImage(file); // 画像置換: 調整パラメータ保持（2025-11-07追加）
-onScaleChange(scale); // canvas-processor使用
-onBrightnessChange(value);
-onContrastChange(value);
-onSaturationChange(value);
-onOutlineToggle(enabled);
-onOutlineThresholdChange(value);
-onOutlineWidthChange(value);
-onOutlineUseFixedColorChange(enabled);
-onOutlineFixedColorChange(value);
-onDitheringChange(enabled);
-onDitheringThresholdChange(threshold);
-onGpuToggle(enabled);
-onColorSelectionChange(colorIds);
-clearImage();
-saveToGallery(); // file-handler使用
-downloadImage(); // file-handler使用
-initColorPalette(container);
-updateColorPaletteContainer(isMobile);
-loadExistingImage(item); // ギャラリーからの編集
-```
+Inference:
 
-### 内部メソッド
+- your guess is reasonable; this toggle is consistent with "some devices produce wrong colors or unstable output on GPU"
 
-```typescript
-displayImage(imageSrc); // 初期表示: ImageInspector初期化、パラメータリセット
-replaceImageDisplay(imageSrc); // 画像置換: パラメータ保持、再描画のみ（2025-11-07追加）
-updateOriginalImageDisplay(); // 小画像拡大表示制御
-updateScaledImage(); // canvas-processor統合処理呼出
-saveCanvasToGallery(blob); // GalleryStorage保存+座標付与
-updateCoordinateInputs(); // 座標UI自動入力
-updateSaveButtonLabel(); // 保存/更新ボタンラベル切替
-```
+## Performance notes
 
-### 処理フロー
+Fast parts:
 
-```
-handleFile()  // 初期読込
-  → readFileAsDataUrl()
-  → resizeImageIfNeeded()
-  → displayImage()
-    → updateOriginalImageDisplay()
-    → ImageInspector初期化
-    → initColorPalette()
-    → updateScaledImage()
-      → createProcessedCanvas()  // canvas-processor
+- resized bitmap cache avoids repeated resize work on slider changes
+- outline bitmap cache avoids repeated line extraction when only color adjustments change
+- GPU backend is efficient for repeated adjust + quantize on larger images
 
-replaceImage()  // 画像置換（2025-11-07追加）
-  → readFileAsDataUrl()
-  → resizeImageIfNeeded()
-  → replaceImageDisplay()  // パラメータ保持
-    → updateOriginalImageDisplay()
-    → updateScaledImage()  // 既存パラメータで再描画
-      → createProcessedCanvas()
+Expensive parts:
+
+- outline creation scans full image and builds masks
+- Floyd-Steinberg dithering is CPU only and writes diffusion errors pixel-by-pixel
+- `processedCanvas.toDataURL()` on mobile path is expensive
+- `updateColorPaletteWithPixelCounts()` reads whole canvas every render
+- transparency preview / flood fill is CPU-side
+
+Practical reading:
+
+- `useGpu` helps most for large images when outline cache is already valid
+- if palette stats feel slow, they can dominate after the main processing is done
+- if iPhone is problematic, disabling GPU only removes the WebGL stage, not all bitmap/canvas work
+
+## Safe refactor direction
+
+Best low-risk boundaries:
+
+- keep `controller.ts` as orchestration and cache owner
+- keep one public processing entry (`canvas-processor.ts`)
+- keep GPU backend isolated behind `processing.ts`
+
+Next safe split for `controller.ts`:
+
+- extract transparency tool state/algorithms
+- extract render pipeline helpers
+- keep save/load and gallery integration in controller for now
+
+Avoid for now:
+
+- merging GPU logic into controller
+- duplicating CPU/GPU option-shaping in multiple places
+- letting UI directly call processor modules
+
+## High-signal APIs
+
+Controller-facing:
+
+```ts
+createOutlinePreservedBitmap(source, scale, outlineOptions)
+createProcessedCanvasFromBitmap(bitmap, adjustments, selectedColorIds, ditheringEnabled, ditheringThreshold, ditheringMethod, useGpu, quantizationMethod, transparentColors)
 ```
 
-## ImageEditorUI (ui.ts)
+CPU processing internals:
 
-### Callbacks Interface
-
-```typescript
-interface ImageEditorCallbacks {
-  onFileHandle: (file: File) => void;
-  onReplaceImage: (file: File) => void; // 画像置き換え（調整パラメータ保持）
-  onScaleChange: (scale: number) => void;
-  onBrightnessChange: (value: number) => void;
-  onContrastChange: (value: number) => void;
-  onSaturationChange: (value: number) => void;
-  onOutlineToggle: (enabled: boolean) => void;
-  onOutlineThresholdChange: (value: number) => void;
-  onOutlineWidthChange: (value: number) => void;
-  onOutlineUseFixedColorChange: (enabled: boolean) => void;
-  onOutlineFixedColorChange: (value: string) => void;
-  onDitheringChange: (enabled: boolean) => void;
-  onDitheringThresholdChange: (threshold: number) => void;
-  onGpuToggle: (enabled: boolean) => void;
-  onClear: () => void;
-  onSaveToGallery: () => void;
-  onDownload: () => void;
-}
+```ts
+applyImageAdjustments(imageData, adjustments)
+quantizeToColorPalette(imageData, selectedColorIds, method)
+quantizeWithDithering(imageData, selectedColorIds, threshold, method, ditheringMethod)
+applyTransparentColors(imageData, transparentColors)
 ```
 
-### UI 構造（レスポンシブ）
+## Editing guidance
 
-```
-[PC] 2x2グリッド
-├─ 左上: 元画像（#wps-original-area）
-│   └─ 画像置き換えゾーン（hover時オーバーレイ表示、クリック/D&D対応）
-├─ 右上: 処理後画像（#wps-current-area + ImageInspector）
-├─ 左下: ColorPalette（常時表示）
-└─ 右下: 調整スライダー+ボタン
-
-[Mobile] 縦1カラム
-├─ 元画像（画像置き換え対応）
-├─ 処理後画像
-├─ ColorPalette（アコーディオン）
-└─ 調整スライダー+ボタン
-```
-
-### 画像置き換え機能（2025-11-07 追加）
-
-- **元画像エリア**にホバー時、オーバーレイ表示
-- **クリック**でファイル選択ダイアログ表示
-- **ドラッグ&ドロップ**で画像置き換え
-- 置き換え時、現在の調整パラメータ（scale/brightness/contrast/saturation/dithering）を保持
-- `replaceImage()`メソッドで実装（controller.ts:108-145）
-
-### コンポーネント統合
-
-- **ImageDropzone**: autoHide=true
-- **ImageInspector**: canvas zoom/pan 自動付与
-- **画像置き換えゾーン**: #wps-image-replace-zone（ui.ts:408-466）
-
-## GalleryImageEditor (index.ts)
-
-### 初期化フロー
-
-```typescript
-render(container)
-  → ui.createAndGetContainer()
-  → new EditorController(uiContainer)
-  → ui.setupUI(callbacks)  // controller methods bind
-```
-
-## 技術仕様
-
-### Canvas 処理
-
-- **imageSmoothingEnabled: false** → ピクセルアート保持
-- **image-rendering: pixelated** → CSS 側でもピクセル保持
-
-### 色変換
-
-- **colorpalette 依存**: constants/colors.ts
-- **ImageData 破壊的変更**: applyAdjustments/quantize 直接変更
-- **距離計算**: √ 省略版（二乗和のみ）
-
-### 座標情報
-
-- **ファイル名形式**: `${TLX}-${TLY}-${PxX}-${PxY}.png`
-- **parseDrawPositionFromFileName()**: 正規表現抽出
-- **保存時付与**: drawPosition + drawEnabled=true
-
-### リサイズ確認
-
-- **閾値**: 500px
-- **confirm dialog**: t`${"large_image_resize_confirm"}`
-- **高品質**: imageSmoothingQuality="high"
-
-## 設計パターン
-
-### 純粋関数分離
-
-- **file-handler.ts**: 副作用（File 読込/保存/DL）抽出
-- **canvas-processor.ts**: Canvas 計算ロジック純粋化
-- **controller.ts**: 状態管理・DOM 参照・統合のみ
-
-### 責任分離
-
-```
-UI層（ui.ts）
-  ↓ callbacks
-Controller層（controller.ts）
-  ↓ 関数呼出
-Utils層（file-handler, canvas-processor）
-```
-
-### 型安全
-
-- **ImageAdjustments**: 調整パラメータ型定義
-- **DrawPosition**: 座標情報型（storage.ts）
-- **Callbacks**: UI-Controller 間インターフェース
-
-## パフォーマンス
-
-- **ImageData 直接変更**: getImageData 1 回 → 処理 →putImageData 1 回
-- **Canvas 再利用**: updateScaledImage 内で同 canvas 更新
-- **setTimeout(50ms)**: パレット変更 debounce
-
-## 制約
-
-- **colorpalette 依存**: 色変換完全依存
-- **Chrome Extension**: window.mrWplace global 依存
-- **canvas 最大表示**: 300px（小画像拡大）
-
-**Core**: UI/Controller/Utils 3 層分離、純粋関数抽出、状態管理集約、Canvas 処理統合
+- If changing UI state flow, start in `controller.ts`.
+- If changing pixel math, start in `canvas-processor/*`.
+- If changing WebGL behavior only, start in `gpu-image-processor.ts`.
+- Preserve `canvas-processor.ts` as a barrel unless all imports are updated together.
+- Do not remove CPU fallback.
+- Treat iPhone/Safari rendering differences as real unless verified otherwise.

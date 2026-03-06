@@ -922,77 +922,9 @@ export class EditorController {
       "#wps-scaled-image",
     ) as HTMLImageElement;
 
-    const adjustments: ImageAdjustments = {
-      brightness: this.brightness,
-      contrast: this.contrast,
-      saturation: this.saturation,
-    };
-
-    // スケール変更時のみリサイズを実行、それ以外はキャッシュを利用
-    if (!this.cachedResizedBitmap || this.cachedScale !== this.imageScale) {
-      console.log("🧑‍🎨 : Scale changed, creating new resized bitmap");
-
-      // リサイズ実行
-      const { createResizedImageBitmap } =
-        await import("@/utils/image-bitmap-compat");
-      const originalWidth = this.originalImage.naturalWidth;
-      const originalHeight = this.originalImage.naturalHeight;
-      const newWidth = Math.floor(originalWidth * this.imageScale);
-      const newHeight = Math.floor(originalHeight * this.imageScale);
-
-      // 古いキャッシュをクリア
-      if (this.cachedResizedBitmap) {
-        this.cachedResizedBitmap.close();
-      }
-
-      this.cachedResizedBitmap = await createResizedImageBitmap(
-        this.originalImage,
-        {
-          width: newWidth,
-          height: newHeight,
-          quality: "pixelated",
-        },
-      );
-      this.cachedScale = this.imageScale;
-      this.clearOutlineBitmapCache();
-    }
-    if (!this.cachedResizedBitmap) return;
-
-    let processingSourceBitmap = this.cachedResizedBitmap;
-    if (this.outlineEnabled && this.imageScale < 1) {
-      const outlineKey = [
-        this.imageScale.toFixed(4),
-        this.outlineThreshold,
-        this.outlineWidth,
-        this.outlineUseFixedColor ? 1 : 0,
-        this.outlineFixedColor,
-        this.originalImage.naturalWidth,
-        this.originalImage.naturalHeight,
-      ].join("|");
-
-      if (!this.cachedOutlineBitmap || this.cachedOutlineKey !== outlineKey) {
-        const { createOutlinePreservedBitmap } = await import("./canvas-processor");
-        this.clearOutlineBitmapCache();
-        this.cachedOutlineBitmap = await createOutlinePreservedBitmap(
-          this.originalImage,
-          this.imageScale,
-          {
-            enabled: true,
-            threshold: this.outlineThreshold,
-            width: this.outlineWidth,
-            useFixedColor: this.outlineUseFixedColor,
-            fixedColor: this.outlineFixedColor,
-          },
-        );
-        this.cachedOutlineKey = outlineKey;
-      }
-
-      if (this.cachedOutlineBitmap) {
-        processingSourceBitmap = this.cachedOutlineBitmap;
-      }
-    } else {
-      this.clearOutlineBitmapCache();
-    }
+    const adjustments = this.buildImageAdjustments();
+    const processingSourceBitmap = await this.resolveProcessingSourceBitmap();
+    if (!processingSourceBitmap) return;
 
     if (processingSourceBitmap === this.cachedResizedBitmap) {
       console.log("🧑‍🎨 : Using cached bitmap for processing");
@@ -1000,6 +932,8 @@ export class EditorController {
       console.log("🧑‍🎨 : Using outline-preserved bitmap for processing");
     }
 
+    // GPU toggle affects only the final adjustment/quantization backend.
+    // Resizing and outline bitmap generation still happen through the browser image/canvas path.
     const { createProcessedCanvasFromBitmap } =
       await import("./canvas-processor");
     const processedCanvas = await createProcessedCanvasFromBitmap(
@@ -1049,6 +983,89 @@ export class EditorController {
 
     // ピクセル数を集計してColorPaletteを更新
     this.updateColorPaletteWithPixelCounts(processedCanvas);
+  }
+
+  private buildImageAdjustments(): ImageAdjustments {
+    return {
+      brightness: this.brightness,
+      contrast: this.contrast,
+      saturation: this.saturation,
+    };
+  }
+
+  private async ensureResizedBitmap(): Promise<ImageBitmap | null> {
+    if (!this.originalImage) return null;
+
+    if (this.cachedResizedBitmap && this.cachedScale === this.imageScale) {
+      return this.cachedResizedBitmap;
+    }
+
+    console.log("🧑‍🎨 : Scale changed, creating new resized bitmap");
+
+    const { createResizedImageBitmap } =
+      await import("@/utils/image-bitmap-compat");
+    const newWidth = Math.floor(this.originalImage.naturalWidth * this.imageScale);
+    const newHeight = Math.floor(this.originalImage.naturalHeight * this.imageScale);
+
+    if (this.cachedResizedBitmap) {
+      this.cachedResizedBitmap.close();
+    }
+
+    this.cachedResizedBitmap = await createResizedImageBitmap(
+      this.originalImage,
+      {
+        width: newWidth,
+        height: newHeight,
+        quality: "pixelated",
+      },
+    );
+    this.cachedScale = this.imageScale;
+    this.clearOutlineBitmapCache();
+    return this.cachedResizedBitmap;
+  }
+
+  private buildOutlineCacheKey(): string {
+    if (!this.originalImage) return "";
+
+    return [
+      this.imageScale.toFixed(4),
+      this.outlineThreshold,
+      this.outlineWidth,
+      this.outlineUseFixedColor ? 1 : 0,
+      this.outlineFixedColor,
+      this.originalImage.naturalWidth,
+      this.originalImage.naturalHeight,
+    ].join("|");
+  }
+
+  private async resolveProcessingSourceBitmap(): Promise<ImageBitmap | null> {
+    const resizedBitmap = await this.ensureResizedBitmap();
+    if (!resizedBitmap || !this.originalImage) return null;
+
+    if (!this.outlineEnabled || this.imageScale >= 1) {
+      this.clearOutlineBitmapCache();
+      return resizedBitmap;
+    }
+
+    const outlineKey = this.buildOutlineCacheKey();
+    if (!this.cachedOutlineBitmap || this.cachedOutlineKey !== outlineKey) {
+      const { createOutlinePreservedBitmap } = await import("./canvas-processor");
+      this.clearOutlineBitmapCache();
+      this.cachedOutlineBitmap = await createOutlinePreservedBitmap(
+        this.originalImage,
+        this.imageScale,
+        {
+          enabled: true,
+          threshold: this.outlineThreshold,
+          width: this.outlineWidth,
+          useFixedColor: this.outlineUseFixedColor,
+          fixedColor: this.outlineFixedColor,
+        },
+      );
+      this.cachedOutlineKey = outlineKey;
+    }
+
+    return this.cachedOutlineBitmap ?? resizedBitmap;
   }
 
   private updateColorPaletteWithPixelCounts(canvas: HTMLCanvasElement): void {
