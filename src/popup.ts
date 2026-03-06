@@ -41,6 +41,10 @@ import {
   FAB_FEATURES,
 } from "./states/fab-visibility";
 import { ColorPaletteStorage } from "@/components/color-palette/storage";
+import {
+  mountLoadingIndicator,
+  removeLoadingIndicator,
+} from "@/components/loading-indicator";
 
 import { runtime, storage, tabs } from "@/utils/browser-api";
 import { FEEDBACK_FORM_URL } from "@/constants/url";
@@ -276,6 +280,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   const languageSelect = document.getElementById("language-select") as HTMLSelectElement;
   const navigationSelect = document.getElementById("navigation-select") as HTMLSelectElement | null;
   const computeDeviceSelect = document.getElementById("compute-device-select") as HTMLSelectElement;
+  const settingsBody = document.getElementById("settings-body") as HTMLElement | null;
+
+  if (settingsBody) mountLoadingIndicator(settingsBody);
 
   // Set Buy Me a Coffee image
   const coffeeImg = document.getElementById("coffee-img") as HTMLImageElement;
@@ -317,8 +324,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.warn("🧑‍🎨 : Failed to initialize popup:", error);
   } finally {
     // Hide loader and reveal settings regardless of init result
-    document.getElementById("loading-indicator")?.remove();
-    document.getElementById("settings-body")?.removeAttribute("style");
+    removeLoadingIndicator();
+    settingsBody?.removeAttribute("style");
   }
 
   languageSelect.value = currentLocale;

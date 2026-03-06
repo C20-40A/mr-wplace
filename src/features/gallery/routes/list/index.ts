@@ -5,6 +5,7 @@ import { getStatsPerImage } from "@/utils/inject-bridge";
 import { storage as browserStorage } from "@/utils/browser-api";
 import { getCurrentPosition } from "@/utils/position";
 import { latLngToTilePixel } from "@/utils/coordinate";
+import { renderLoadingIndicator } from "@/components/loading-indicator";
 
 const SORT_KEY = "wplace-studio-gallery-sort";
 
@@ -92,61 +93,71 @@ export class GalleryList {
     onCloseModal?: () => void
   ): Promise<void> {
     this.onDrawToggleCallback = onDrawToggle;
-    const items = await this.storage.getAll();
-    console.log("🧑‍🎨 : Fetched gallery items (thumbnails):", items);
+    renderLoadingIndicator(container, {
+      id: "gallery-list-loading-indicator",
+      minHeight: "240px",
+    });
 
-    // ソート設定を取得
-    const result = await browserStorage.get([SORT_KEY]);
-    const sortType: GallerySortType = result[SORT_KEY] || "layer";
+    try {
+      const items = await this.storage.getAll();
+      console.log("🧑‍🎨 : Fetched gallery items (thumbnails):", items);
 
-    // アイテムをソート
-    const sortedItems = this.sortItems(items, sortType);
+      // ソート設定を取得
+      const result = await browserStorage.get([SORT_KEY]);
+      const sortType: GallerySortType = result[SORT_KEY] || "layer";
 
-    // 描画位置がある画像の統計を取得
-    const itemsWithDrawPosition = sortedItems.filter(
-      (item) => item.drawPosition
-    );
-    if (itemsWithDrawPosition.length > 0) {
-      const imageKeys = itemsWithDrawPosition.map((item) => item.key);
-      const statsPerImage = await getStatsPerImage(imageKeys);
+      // アイテムをソート
+      const sortedItems = this.sortItems(items, sortType);
 
-      console.log("🧑‍🎨 : Fetched stats for gallery images:", statsPerImage);
+      // 描画位置がある画像の統計を取得
+      const itemsWithDrawPosition = sortedItems.filter(
+        (item) => item.drawPosition
+      );
+      if (itemsWithDrawPosition.length > 0) {
+        const imageKeys = itemsWithDrawPosition.map((item) => item.key);
+        const statsPerImage = await getStatsPerImage(imageKeys);
 
-      // 統計データを各アイテムに設定
-      for (const item of itemsWithDrawPosition) {
-        const stats = statsPerImage[item.key];
-        if (stats) {
-          item.matchedColorStats = stats.matched;
-          item.totalColorStats = stats.total;
+        console.log("🧑‍🎨 : Fetched stats for gallery images:", statsPerImage);
+
+        // 統計データを各アイテムに設定
+        for (const item of itemsWithDrawPosition) {
+          const stats = statsPerImage[item.key];
+          if (stats) {
+            item.matchedColorStats = stats.matched;
+            item.totalColorStats = stats.total;
+          }
         }
       }
+
+      const refresh = () =>
+        this.render(container, router, onImageClick, onDrawToggle, onCloseModal);
+
+      this.ui.render(
+        sortedItems,
+        async (key: string) => {
+          await this.storage.delete(key);
+
+          // Notify inject side to update overlay layers
+          const { sendGalleryImagesToInject } = await import("@/content");
+          await sendGalleryImagesToInject();
+
+          refresh();
+        },
+        container,
+        () => router.navigate("image-editor"),
+        onImageClick,
+        onCloseModal,
+        sortType,
+        async (newSortType: GallerySortType) => {
+          await browserStorage.set({ [SORT_KEY]: newSortType });
+          refresh();
+        },
+        refresh
+      );
+    } catch (error) {
+      console.error("🧑‍🎨 : Failed to render gallery list:", error);
+      container.replaceChildren();
     }
-
-    const refresh = () =>
-      this.render(container, router, onImageClick, onDrawToggle, onCloseModal);
-
-    this.ui.render(
-      sortedItems,
-      async (key: string) => {
-        await this.storage.delete(key);
-
-        // Notify inject side to update overlay layers
-        const { sendGalleryImagesToInject } = await import("@/content");
-        await sendGalleryImagesToInject();
-
-        refresh();
-      },
-      container,
-      () => router.navigate("image-editor"),
-      onImageClick,
-      onCloseModal,
-      sortType,
-      async (newSortType: GallerySortType) => {
-        await browserStorage.set({ [SORT_KEY]: newSortType });
-        refresh();
-      },
-      refresh
-    );
   }
 
   destroy(): void {

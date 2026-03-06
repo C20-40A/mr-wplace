@@ -51,6 +51,7 @@ Location: `src/core/di.ts`
 ```text
 src/
   content.ts
+  components/   # shared UI parts (e.g. loading-indicator)
   popup.ts
   inject.ts
   inject/       # page-context logic
