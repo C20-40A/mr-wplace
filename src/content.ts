@@ -37,21 +37,20 @@ export {
  */
 const runMigrationWithModal = async (): Promise<void> => {
   const importStartedAt = performance.now();
-  const { needsMigration, runDataMigration } = await import(
-    "@/features/migration/data-migrator"
-  );
+  const { needsMigration, runDataMigration } =
+    await import("@/features/migration/data-migrator");
   console.log(
     `🧑‍🎨 [Migration] data-migrator import completed in ${Math.round(
-      performance.now() - importStartedAt
-    )}ms`
+      performance.now() - importStartedAt,
+    )}ms`,
   );
 
   const needsCheckStartedAt = performance.now();
   const shouldMigrate = await needsMigration();
   console.log(
     `🧑‍🎨 [Migration] needsMigration resolved in ${Math.round(
-      performance.now() - needsCheckStartedAt
-    )}ms (result=${shouldMigrate})`
+      performance.now() - needsCheckStartedAt,
+    )}ms (result=${shouldMigrate})`,
   );
 
   if (!shouldMigrate) {
@@ -61,9 +60,8 @@ const runMigrationWithModal = async (): Promise<void> => {
 
   console.log("🧑‍🎨 [Migration] Migration needed, showing modal...");
 
-  const { MigrationModal } = await import(
-    "@/features/migration/migration-modal"
-  );
+  const { MigrationModal } =
+    await import("@/features/migration/migration-modal");
   const modal = new MigrationModal();
   modal.show();
 
@@ -75,14 +73,14 @@ const runMigrationWithModal = async (): Promise<void> => {
     if (result.failed.length > 0) {
       console.warn(
         `🧑‍🎨 [Migration] Some items failed to migrate: ${result.failed.join(
-          ", "
-        )}`
+          ", ",
+        )}`,
       );
     }
 
     await modal.complete();
     console.log(
-      `🧑‍🎨 [Migration] Complete: ${result.migrated} migrated, ${result.skipped} skipped`
+      `🧑‍🎨 [Migration] Complete: ${result.migrated} migrated, ${result.skipped} skipped`,
     );
   } catch (error) {
     console.error("🧑‍🎨 [Migration] Migration failed:", error);
@@ -147,8 +145,8 @@ const initializeMainFeatures = async () => {
   }
   console.log(
     `🧑‍🎨: DOM gate passed in ${Math.round(
-      performance.now() - domWaitStartedAt
-    )}ms (readyState=${document.readyState}, hasBody=${Boolean(document.body)})`
+      performance.now() - domWaitStartedAt,
+    )}ms (readyState=${document.readyState}, hasBody=${Boolean(document.body)})`,
   );
 
   // Initialize all features
@@ -166,9 +164,8 @@ const initializeMainFeatures = async () => {
   });
 
   // Load and send front tile layer setting to inject
-  const { loadFrontTileLayerFromStorage, getFrontTileLayer } = await import(
-    "@/states/front-tile-layer"
-  );
+  const { loadFrontTileLayerFromStorage, getFrontTileLayer } =
+    await import("@/states/front-tile-layer");
   await loadFrontTileLayerFromStorage();
   const frontTileLayerEnabled = getFrontTileLayer();
   window.postMessage(
@@ -176,7 +173,7 @@ const initializeMainFeatures = async () => {
       source: "mr-wplace-front-tile-layer-update",
       enabled: frontTileLayerEnabled,
     },
-    "*"
+    "*",
   );
 };
 
@@ -212,7 +209,7 @@ const FAB_SELECTOR_MAP: Record<FabFeature, string[]> = {
 };
 
 const applyFabVisibilityStyles = (
-  visibility: Readonly<Record<FabFeature, boolean>>
+  visibility: Readonly<Record<FabFeature, boolean>>,
 ) => {
   const hiddenSelectors: string[] = [];
 
@@ -258,7 +255,7 @@ const setupPopupLaunchButton = () => {
   button.title = "Mr. Wplace Settings";
   button.className = "btn btn-sm btn-circle";
   button.innerHTML = `
-    <img src="${IMG_MR_FACE}" alt="Mr. Wplace Settings" style="image-rendering: pixelated; width: calc(var(--spacing)*6); height: calc(var(--spacing)*6);">
+    <img src="${IMG_MR_FACE}" alt="Mr. Wplace Settings" style="image-rendering: pixelated; width: calc(var(--spacing)*5); height: calc(var(--spacing)*5);">
   `;
   button.style.cssText = `
     transition: transform 0.2s ease;
@@ -316,7 +313,7 @@ const registerMessageListeners = () => {
           source: "mr-wplace-front-tile-layer-update",
           enabled: message.enabled,
         },
-        "*"
+        "*",
       );
       return;
     }
@@ -327,7 +324,7 @@ const registerMessageListeners = () => {
           source: "mr-wplace-compute-device",
           device: message.device,
         },
-        "*"
+        "*",
       );
       return;
     }
@@ -339,14 +336,13 @@ const registerMessageListeners = () => {
 
     // Popup -> Content -> Inject bridge for gallery operations
     if (message.type === "GALLERY_SAVE_ITEM") {
-      const { saveGalleryItem } = await import(
-        "@/core/bridge/gallery-storage-bridge"
-      );
+      const { saveGalleryItem } =
+        await import("@/core/bridge/gallery-storage-bridge");
       try {
         const result = await saveGalleryItem(
           message.id,
           message.imageDataUrl,
-          message.metadata
+          message.metadata,
         );
         sendResponse({ success: true, result });
       } catch (error) {
@@ -359,9 +355,8 @@ const registerMessageListeners = () => {
     }
 
     if (message.type === "GALLERY_DELETE_ITEM") {
-      const { deleteGalleryItem } = await import(
-        "@/core/bridge/gallery-storage-bridge"
-      );
+      const { deleteGalleryItem } =
+        await import("@/core/bridge/gallery-storage-bridge");
       try {
         await deleteGalleryItem(message.id);
         sendResponse({ success: true });
@@ -375,9 +370,8 @@ const registerMessageListeners = () => {
     }
 
     if (message.type === "GALLERY_GET_ALL") {
-      const { getAllGalleryMetadata } = await import(
-        "@/core/bridge/gallery-storage-bridge"
-      );
+      const { getAllGalleryMetadata } =
+        await import("@/core/bridge/gallery-storage-bridge");
       try {
         const result = await getAllGalleryMetadata();
         sendResponse({ success: true, result });
@@ -435,10 +429,7 @@ const registerMessageListeners = () => {
         source: "mr-wplace-gallery-reset",
         requestId: Date.now().toString(),
       });
-      window.postMessage(
-        payload,
-        "*"
-      );
+      window.postMessage(payload, "*");
       return;
     }
 
@@ -455,7 +446,6 @@ const registerMessageListeners = () => {
       }
       return true;
     }
-
   });
 };
 
@@ -473,8 +463,8 @@ registerMessageListeners();
     await loadInjectScript();
     console.log(
       `🧑‍🎨: loadInjectScript completed in ${Math.round(
-        performance.now() - injectStartedAt
-      )}ms`
+        performance.now() - injectStartedAt,
+      )}ms`,
     );
 
     // Run migration before initializing features (blocking)
@@ -482,24 +472,24 @@ registerMessageListeners();
     await runMigrationWithModal();
     console.log(
       `🧑‍🎨: migration check completed in ${Math.round(
-        performance.now() - migrationStartedAt
-      )}ms`
+        performance.now() - migrationStartedAt,
+      )}ms`,
     );
 
     const featureInitStartedAt = performance.now();
     await initializeMainFeatures();
     console.log(
       `🧑‍🎨: initializeMainFeatures completed in ${Math.round(
-        performance.now() - featureInitStartedAt
-      )}ms`
+        performance.now() - featureInitStartedAt,
+      )}ms`,
     );
     setupPopupLaunchButton();
     scheduleLegacyTmpTilesCleanup();
     console.log("🧑‍🎨: scheduled legacy tmp cleanup on idle");
     console.log(
       `🧑‍🎨: wakeup sequence completed in ${Math.round(
-        performance.now() - wakeupStartedAt
-      )}ms`
+        performance.now() - wakeupStartedAt,
+      )}ms`,
     );
   } catch (error) {
     console.error("🧑‍🎨: Critical initialization error:", error);

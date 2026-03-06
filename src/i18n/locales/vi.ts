@@ -341,7 +341,7 @@ export const viTranslations = {
   data_saver: "Tiết kiệm dữ liệu",
   data_saver_on: "Tiết kiệm dữ liệu BẬT",
   data_saver_off: "Tiết kiệm dữ liệu TẮT",
-  data_saver_rendering_paused: "Đang tạm dừng kết xuất",
+  data_saver_rendering_paused: "Đang dùng cache offline",
   storage_usage: "Sử dụng lưu trữ",
   cache_usage: "Sử dụng bộ nhớ cache",
   offline_cache_settings: "Cài đặt bộ nhớ cache ngoại tuyến",

@@ -369,7 +369,7 @@ export const jaTranslations = {
   data_saver: "データセーバー",
   data_saver_on: "データセーバー ON",
   data_saver_off: "データセーバー OFF",
-  data_saver_rendering_paused: "画像更新停止中",
+  data_saver_rendering_paused: "オフラインキャッシュ利用中",
   storage_usage: "ストレージ使用量",
   cache_usage: "キャッシュ使用量",
   offline_cache_settings: "オフラインキャッシュ設定",

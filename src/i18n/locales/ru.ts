@@ -345,7 +345,7 @@ export const ruTranslations = {
   data_saver: "Экономия трафика",
   data_saver_on: "Экономия трафика ВКЛ",
   data_saver_off: "Экономия трафика ВЫКЛ",
-  data_saver_rendering_paused: "Рендеринг приостановлен",
+  data_saver_rendering_paused: "Используется офлайн-кеш",
   storage_usage: "Использование хранилища",
   cache_usage: "Использование кэша",
   offline_cache_settings: "Настройки кэша офлайн",

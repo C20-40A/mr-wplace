@@ -347,7 +347,7 @@ export const frTranslations = {
   data_saver: "Économiseur de données",
   data_saver_on: "Économiseur de données ACTIVÉ",
   data_saver_off: "Économiseur de données DÉSACTIVÉ",
-  data_saver_rendering_paused: "Rendu en pause",
+  data_saver_rendering_paused: "Cache hors ligne en service",
   storage_usage: "Utilisation du stockage",
   cache_usage: "Utilisation du cache",
   offline_cache_settings: "Paramètres du cache hors ligne",

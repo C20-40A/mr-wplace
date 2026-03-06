@@ -347,7 +347,7 @@ export const esTranslations = {
   data_saver: "Ahorro de Datos",
   data_saver_on: "Ahorro de Datos ACTIVADO",
   data_saver_off: "Ahorro de Datos DESACTIVADO",
-  data_saver_rendering_paused: "Renderizado Pausado",
+  data_saver_rendering_paused: "Usando caché sin conexión",
   storage_usage: "Uso de Almacenamiento",
   cache_usage: "Uso de Caché",
   offline_cache_settings: "Configuración de Caché Sin Conexión",

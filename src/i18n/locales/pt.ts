@@ -343,7 +343,7 @@ export const ptTranslations = {
   data_saver: "Economizador de Dados",
   data_saver_on: "Economizador de Dados ATIVADO",
   data_saver_off: "Economizador de Dados DESATIVADO",
-  data_saver_rendering_paused: "Renderização Pausada",
+  data_saver_rendering_paused: "Usando cache offline",
   storage_usage: "Uso de Armazenamento",
   cache_usage: "Uso de Cache",
   offline_cache_settings: "Configurações de Cache Offline",

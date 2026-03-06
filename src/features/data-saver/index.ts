@@ -1,62 +1,11 @@
-import {
-  setupElementObserver,
-  ElementConfig,
-} from "@/components/element-observer";
 import { DataSaverStorage } from "./storage";
 import { t } from "@/i18n/manager";
-import {
-  IMG_ICON_DATA_SAVER_OFF,
-  IMG_ICON_DATA_SAVER_ON,
-} from "@/assets/iconImages";
 import { showSettingsModal } from "./ui";
-import { showFeatureHint } from "@/features/feature-hints";
 
 let enabled = false;
-let button: HTMLButtonElement | null = null;
 let badge: HTMLDivElement | null = null;
 let badgeText: HTMLDivElement | null = null;
 let settingsButton: HTMLButtonElement | null = null;
-
-const createButton = (container: Element): void => {
-  if (document.querySelector("#data-saver-btn")) return;
-
-  // Create button container
-  const btnContainer = document.createElement("div");
-  btnContainer.style.cssText = `
-    position: fixed;
-    left: 47px;
-    top: 44px;
-    z-index: 800;
-  `;
-
-  button = document.createElement("button");
-  button.id = "data-saver-btn";
-  button.className = "btn btn-sm btn-circle";
-
-  const iconSrc = enabled ? IMG_ICON_DATA_SAVER_ON : IMG_ICON_DATA_SAVER_OFF;
-  button.innerHTML = `
-    <img src="${iconSrc}" alt="${t`${"data_saver"}`}" style="image-rendering: pixelated; width: calc(var(--spacing)*6); height: calc(var(--spacing)*6);">
-  `;
-  button.style.cssText = `
-    background-color: ${enabled ? "#2ecc71" : ""};
-    box-shadow: 0 0 8px ${enabled ? "#2ecc71" : ""};
-    transition: all 0.3s ease;
-  `;
-
-  button.addEventListener("mouseenter", () => {
-    if (button) button.style.transform = "scale(1.1)";
-  });
-  button.addEventListener("mouseleave", () => {
-    if (button) button.style.transform = "scale(1)";
-  });
-
-  button.addEventListener("click", toggle);
-
-  btnContainer.appendChild(button);
-  container.appendChild(btnContainer);
-  showFeatureHint("data-saver", button);
-  console.log("🧑‍🎨 : Data saver button created");
-};
 
 const createSettingsButton = (): void => {
   if (document.querySelector("#data-saver-settings-btn")) return;
@@ -76,6 +25,7 @@ const createSettingsButton = (): void => {
     transform: translateY(-50%);
     z-index: 46;
     pointer-events: auto;
+    transition: opacity 0.3s ease;
   `;
 
   settingsButton.addEventListener("click", (e) => {
@@ -91,6 +41,8 @@ const createBadge = (): void => {
 
   badge = document.createElement("div");
   badge.id = "data-saver-badge";
+  badge.className =
+    "shadow-md border border-base-300 bg-base-100 text-base-content";
   badgeText = document.createElement("div");
   badgeText.id = "data-saver-badge-text";
   badgeText.innerHTML = `🪫 ${t`${"data_saver_on"}`}<br><span style="font-size: 10px; opacity: 0.8;">${t`${"data_saver_rendering_paused"}`}</span>`;
@@ -99,12 +51,9 @@ const createBadge = (): void => {
     top: 44px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(88, 88, 88, 0.75);
-    color: white;
     font-size: 12px;
     padding: 4px 8px;
     border-radius: 9999px;
-    box-shadow: 0 0 8px rgba(77, 77, 77, 0.6);
     z-index: 45;
     transition: opacity 0.3s ease;
     opacity: ${enabled ? "1" : "0"};
@@ -120,42 +69,19 @@ const createBadge = (): void => {
 const toggle = async (): Promise<void> => {
   enabled = !enabled;
   await DataSaverStorage.set(enabled);
-  animatePulse();
   applyState(enabled);
   console.log("🧑‍🎨 : Data saver toggled:", enabled);
 };
 
-const animatePulse = (): void => {
-  if (!button) return;
-  button.animate(
-    [
-      { boxShadow: "0 0 8px #2ecc71" },
-      { boxShadow: "0 0 16px #2ecc71" },
-      { boxShadow: "0 0 8px #2ecc71" },
-    ],
-    { duration: 600, easing: "ease-in-out" },
-  );
-};
-
 const updateUI = (): void => {
-  if (!button || !badge) return;
-
-  button.style.backgroundColor = enabled ? "#2ecc71" : "";
-  button.style.boxShadow = enabled ? "0 0 8px #2ecc71" : "";
-
-  // Update icon image based on state
-  const iconSrc = enabled ? IMG_ICON_DATA_SAVER_ON : IMG_ICON_DATA_SAVER_OFF;
-  const img = button.querySelector("img");
-  if (img) {
-    img.src = iconSrc;
-  }
+  if (!badge) return;
 
   if (badgeText) {
-    badgeText.innerHTML = `🪫 ${t`${"data_saver_on"}`}<br><span style="font-size: 10px; opacity: 0.8;">${t`${"data_saver_rendering_paused"}`}</span>`;
+    badgeText.innerHTML = `🪫 ${t`${"data_saver_on"}`}<br><span style="font-size: 9px; opacity: 0.6;">${t`${"data_saver_rendering_paused"}`}</span>`;
   }
-  badge.style.opacity = enabled ? "1" : "0";
+  badge.style.opacity = enabled ? "0.8" : "0";
   if (settingsButton) {
-    settingsButton.style.opacity = enabled ? "1" : "0";
+    settingsButton.style.opacity = enabled ? "0.8" : "0";
     settingsButton.style.pointerEvents = enabled ? "auto" : "none";
   }
 };
@@ -173,16 +99,6 @@ const applyState = (enabled: boolean): void => {
 
 const init = async (): Promise<void> => {
   enabled = await DataSaverStorage.get();
-
-  const buttonConfigs: ElementConfig[] = [
-    {
-      id: "data-saver-btn",
-      getTargetElement: () => document.body,
-      createElement: createButton,
-    },
-  ];
-
-  setupElementObserver(buttonConfigs);
   createBadge();
   applyState(enabled);
   console.log("🧑‍🎨 : Data saver initialized");
@@ -190,4 +106,7 @@ const init = async (): Promise<void> => {
 
 export const dataSaverAPI = {
   initDataSaver: init,
+  getEnabled: () => enabled,
+  toggleDataSaver: toggle,
+  openSettings: showSettingsModal,
 };
