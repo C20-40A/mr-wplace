@@ -202,7 +202,7 @@ export const ruTranslations = {
   popup_close_confirm: "Подтверждение при Закрытии Панели Рисования",
   popup_paint_mode_style: "Скрыть FAB в Режиме Рисования",
   popup_bug_report: "Сообщить об Ошибке",
-  popup_fab_visibility: "Видимость FAB",
+  popup_fab_visibility: "Видимость Кнопок",
   popup_fab_gallery: "Галерея",
   popup_fab_bookmark: "Закладки",
   popup_fab_time_travel: "Путешествие во Времени",

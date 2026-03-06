@@ -211,7 +211,7 @@ export const enTranslations = {
   popup_overlay_mode_composite: "Composite",
   popup_overlay_mode_layer: "Independent",
   popup_bug_report: "Bug Report",
-  popup_fab_visibility: "FAB Visibility",
+  popup_fab_visibility: "Button Visibility",
   popup_fab_gallery: "Gallery",
   popup_fab_bookmark: "Bookmark",
   popup_fab_time_travel: "Time Travel",

@@ -215,7 +215,7 @@ export const deTranslations = {
   popup_overlay_mode_composite: "Komposit",
   popup_overlay_mode_layer: "Unabhängig",
   popup_bug_report: "Fehler melden",
-  popup_fab_visibility: "FAB-Sichtbarkeit",
+  popup_fab_visibility: "Schaltflächen-Sichtbarkeit",
   popup_fab_gallery: "Galerie",
   popup_fab_bookmark: "Lesezeichen",
   popup_fab_time_travel: "Zeitreise",

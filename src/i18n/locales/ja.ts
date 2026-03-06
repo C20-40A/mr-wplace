@@ -217,7 +217,7 @@ export const jaTranslations = {
   popup_overlay_mode_composite: "合成",
   popup_overlay_mode_layer: "独立",
   popup_bug_report: "バグ報告",
-  popup_fab_visibility: "FABボタン表示",
+  popup_fab_visibility: "ボタン表示",
   popup_fab_gallery: "ギャラリー",
   popup_fab_bookmark: "ブックマーク",
   popup_fab_time_travel: "タイムトラベル",

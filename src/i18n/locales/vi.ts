@@ -199,7 +199,7 @@ export const viTranslations = {
   popup_close_confirm: "Xác nhận khi Đóng Bảng Vẽ",
   popup_paint_mode_style: "Ẩn FAB khi Chế độ Vẽ",
   popup_bug_report: "Báo Lỗi",
-  popup_fab_visibility: "Hiện/Ẩn FAB",
+  popup_fab_visibility: "Hiện/Ẩn Nút",
   popup_fab_gallery: "Thư viện",
   popup_fab_bookmark: "Dấu trang",
   popup_fab_time_travel: "Du hành thời gian",

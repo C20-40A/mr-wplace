@@ -34,7 +34,6 @@ import {
   getFabVisibility,
   setFabVisibility,
   FAB_FEATURES,
-  type FabFeature,
 } from "./states/fab-visibility";
 import { ColorPaletteStorage } from "@/components/color-palette/storage";
 
@@ -73,25 +72,62 @@ const isNoContentReceiverError = (error: unknown): boolean => {
   );
 };
 
-const resetAreasInPopupStorage = async (): Promise<void> => {
-  await storage.set({
-    [AREA_REGIONS_KEY]: [],
-    [AREA_REGION_GROUPS_KEY]: [],
+// --- Toggle button helpers ---
+
+const updateToggleBtn = (btn: HTMLButtonElement, on: boolean) => {
+  btn.dataset.on = on.toString();
+  btn.textContent = on ? "ON" : "OFF";
+};
+
+const getToggle = (id: string) =>
+  document.getElementById(id) as HTMLButtonElement | null;
+
+const setupToggle = (
+  id: string,
+  initial: boolean,
+  onChange: (value: boolean) => Promise<void>,
+) => {
+  const btn = getToggle(id);
+  if (!btn) return;
+  updateToggleBtn(btn, initial);
+  btn.addEventListener("click", async () => {
+    const next = btn.dataset.on !== "true";
+    updateToggleBtn(btn, next);
+    await onChange(next);
   });
 };
 
+const reloadActiveTab = async () => {
+  const [activeTab] = await tabs.query({ active: true, currentWindow: true });
+  if (activeTab.id) await tabs.reload(activeTab.id);
+};
+
+// --- Notify helpers ---
+
+const notifyContentScript = async (message: any): Promise<any> => {
+  const [activeTab] = await tabs.query({ active: true, currentWindow: true });
+  if (!activeTab?.id) throw new Error(NO_CONTENT_RECEIVER_ERROR_MESSAGE);
+  return await tabs.sendMessage(activeTab.id, message);
+};
+
+const notifyContentScriptBestEffort = async (message: any): Promise<any | undefined> => {
+  try {
+    return await notifyContentScript(message);
+  } catch (error) {
+    if (!isNoContentReceiverError(error)) throw error;
+    return undefined;
+  }
+};
+
+// --- i18n UI update ---
+
 const updateUI = (): void => {
-  // Update feedback form URL based on current locale
-  const feedbackLink = document.getElementById(
-    "feedback-link",
-  ) as HTMLAnchorElement;
+  const feedbackLink = document.getElementById("feedback-link") as HTMLAnchorElement;
   if (feedbackLink) {
-    const currentLocale = I18nManager.getCurrentLocale();
-    const localeKey = currentLocale as keyof typeof FEEDBACK_FORM_URL;
+    const localeKey = I18nManager.getCurrentLocale() as keyof typeof FEEDBACK_FORM_URL;
     feedbackLink.href = FEEDBACK_FORM_URL[localeKey] || FEEDBACK_FORM_URL.en;
   }
 
-  // Update all popup labels
   const labelMap: Record<string, string> = {
     "popup-language-label": "popup_language",
     "popup-navigation-label": "popup_navigation",
@@ -118,19 +154,10 @@ const updateUI = (): void => {
     const el = document.getElementById(id);
     if (el) el.textContent = t(key);
   }
-
-  // Update Enabled/Disabled options
-  const enabledText = t("enabled");
-  const disabledText = t("disabled");
-  document.querySelectorAll<HTMLOptionElement>(".popup-enabled-option").forEach(
-    (el) => (el.textContent = enabledText),
-  );
-  document
-    .querySelectorAll<HTMLOptionElement>(".popup-disabled-option")
-    .forEach((el) => (el.textContent = disabledText));
 };
 
-// Dev mode easter egg
+// --- Dev mode easter egg ---
+
 let titleClickCount = 0;
 const setupDevModeEasterEgg = (): void => {
   const title = document.querySelector(".header h2") as HTMLHeadingElement;
@@ -142,7 +169,6 @@ const setupDevModeEasterEgg = (): void => {
   title.addEventListener("click", async () => {
     titleClickCount++;
 
-    // Visual effect based on click count
     const effects = [
       () => (title.style.transform = "scale(1.1)"),
       () => (title.style.color = "#ff0"),
@@ -168,24 +194,13 @@ const setupDevModeEasterEgg = (): void => {
       },
     ];
 
-    if (titleClickCount <= effects.length) {
-      effects[titleClickCount - 1]?.();
-    }
+    if (titleClickCount <= effects.length) effects[titleClickCount - 1]?.();
 
     if (titleClickCount === 10) {
-      // Enable dev mode
       const { storage } = await import("@/utils/browser-api");
       await storage.set({ "mr-wplace-auto-spoit-dev-mode": true });
-
-      // Notify content script to reload
-      const [activeTab] = await tabs.query({
-        active: true,
-        currentWindow: true,
-      });
-      if (activeTab.id) {
-        await tabs.reload(activeTab.id);
-      }
-
+      const [activeTab] = await tabs.query({ active: true, currentWindow: true });
+      if (activeTab.id) await tabs.reload(activeTab.id);
       setTimeout(() => {
         alert("🛠️ Developer Mode Activated!");
         window.close();
@@ -194,47 +209,74 @@ const setupDevModeEasterEgg = (): void => {
   });
 };
 
+// --- Reset handlers ---
+
+const handleResetGallery = async (): Promise<void> => {
+  if (!confirm(t`${"confirm_reset"}`)) return;
+  const btn = document.getElementById("reset-gallery-btn") as HTMLButtonElement;
+  if (!btn) return;
+
+  try {
+    btn.disabled = true;
+    btn.innerHTML = `⏳ ${t`${"resetting"}`}`;
+    await notifyContentScript({ type: "GALLERY_RESET" });
+    alert(t("gallery_reset_success"));
+  } catch (error) {
+    console.error("🧑‍🎨 : Gallery reset failed:", error);
+    alert(t("reset_failed"));
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `🗑️ <span id="reset-gallery-btn-label">${t("reset_gallery")}</span>`;
+  }
+};
+
+const handleResetAreas = async (): Promise<void> => {
+  if (!confirm(t`${"confirm_reset_areas"}`)) return;
+  const btn = document.getElementById("reset-areas-btn") as HTMLButtonElement;
+  if (!btn) return;
+
+  try {
+    btn.disabled = true;
+    btn.innerHTML = `⏳ ${t`${"resetting"}`}`;
+    try {
+      const response = await notifyContentScript({ type: "AREA_RESET" });
+      if (response?.success === false)
+        throw new Error(response.error || "Area reset failed");
+    } catch (error) {
+      if (!isNoContentReceiverError(error)) throw error;
+      await storage.set({ [AREA_REGIONS_KEY]: [], [AREA_REGION_GROUPS_KEY]: [] });
+      console.log("🧑‍🎨 : Area reset completed from popup storage fallback");
+    }
+    alert(t("areas_reset_success"));
+  } catch (error) {
+    console.error("🧑‍🎨 : Area reset failed:", error);
+    alert(t("reset_failed"));
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `🗑️ <span id="reset-areas-btn-label">${t("reset_areas")}</span>`;
+  }
+};
+
+// --- Main ---
+
 document.addEventListener("DOMContentLoaded", async () => {
   await notifyPopupWindowState(POPUP_WINDOW_OPENED);
 
-  const languageSelect = document.getElementById(
-    "language-select",
-  ) as HTMLSelectElement;
-  const navigationSelect = document.getElementById(
-    "navigation-select",
-  ) as HTMLSelectElement | null;
-  const lockButtonEnhancerSelect = document.getElementById(
-    "lock-button-enhancer-select",
-  ) as HTMLSelectElement;
-  const closeConfirmSelect = document.getElementById(
-    "close-confirm-select",
-  ) as HTMLSelectElement;
-  const paintModeStyleSelect = document.getElementById(
-    "paint-mode-style-select",
-  ) as HTMLSelectElement;
-  const closeButtonBigSelect = document.getElementById(
-    "close-button-big-select",
-  ) as HTMLSelectElement;
-  const computeDeviceSelect = document.getElementById(
-    "compute-device-select",
-  ) as HTMLSelectElement;
+  const languageSelect = document.getElementById("language-select") as HTMLSelectElement;
+  const navigationSelect = document.getElementById("navigation-select") as HTMLSelectElement | null;
+  const computeDeviceSelect = document.getElementById("compute-device-select") as HTMLSelectElement;
 
   // Set Buy Me a Coffee image
   const coffeeImg = document.getElementById("coffee-img") as HTMLImageElement;
   if (coffeeImg && BUY_ME_COFFEE_IMAGE) coffeeImg.src = BUY_ME_COFFEE_IMAGE;
 
-  // Initialize with defaults, then try to load from storage
+  // Initialize defaults
   let currentLocale = detectBrowserLanguage();
   let currentMode = false;
-  let currentLockButtonEnhancer = false;
-  let currentCloseConfirm = false;
-  let currentPaintModeStyle = true;
-  let currentCloseButtonBig = false;
   let currentComputeDevice: "gpu" | "cpu" = "gpu";
   let mapInstanceReady = false;
 
   try {
-    // i18n初期化（ブラウザ言語検出）
     await I18nManager.init(currentLocale);
     currentLocale = I18nManager.getCurrentLocale();
     languageSelect.value = currentLocale;
@@ -250,10 +292,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     ]);
 
     currentMode = getNavigationMode();
-    currentLockButtonEnhancer = getLockButtonEnhancer();
-    currentCloseConfirm = getCloseConfirm();
-    currentPaintModeStyle = getPaintModeStyle();
-    currentCloseButtonBig = getCloseButtonBig();
     currentComputeDevice = await ColorPaletteStorage.getComputeDevice();
 
     try {
@@ -264,287 +302,94 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.warn("🧑‍🎨 : Failed to get map instance ready state:", error);
     }
   } catch (error) {
-    console.warn(
-      "🧑‍🎨 : Failed to initialize popup (limited browser API support):",
-      error,
-    );
+    console.warn("🧑‍🎨 : Failed to initialize popup:", error);
   }
 
   languageSelect.value = currentLocale;
   if (navigationSelect) navigationSelect.value = currentMode.toString();
-  lockButtonEnhancerSelect.value = currentLockButtonEnhancer.toString();
-  closeConfirmSelect.value = currentCloseConfirm.toString();
-  paintModeStyleSelect.value = currentPaintModeStyle.toString();
-  closeButtonBigSelect.value = currentCloseButtonBig.toString();
   computeDeviceSelect.value = currentComputeDevice;
 
-  // FAB visibility selector初期化
+  // Boolean toggle settings (save + reload tab)
+  setupToggle("lock-button-enhancer-toggle", getLockButtonEnhancer(), async (v) => {
+    await setLockButtonEnhancer(v);
+    await reloadActiveTab();
+  });
+  setupToggle("close-confirm-toggle", getCloseConfirm(), async (v) => {
+    await setCloseConfirm(v);
+    await reloadActiveTab();
+  });
+  setupToggle("paint-mode-style-toggle", getPaintModeStyle(), async (v) => {
+    await setPaintModeStyle(v);
+    await reloadActiveTab();
+  });
+  setupToggle("close-button-big-toggle", getCloseButtonBig(), async (v) => {
+    await setCloseButtonBig(v);
+    await reloadActiveTab();
+  });
+
+  // FAB visibility toggles
   const fabVisibility = getFabVisibility();
   for (const feature of FAB_FEATURES) {
-    const selector = document.querySelector<HTMLSelectElement>(
-      `select[data-fab="${feature}"]`,
-    );
-    if (selector) selector.value = fabVisibility[feature].toString();
+    const btn = document.querySelector<HTMLButtonElement>(`.toggle-btn[data-fab="${feature}"]`);
+    if (!btn) continue;
+    updateToggleBtn(btn, fabVisibility[feature]);
+    btn.addEventListener("click", async () => {
+      const next = btn.dataset.on !== "true";
+      updateToggleBtn(btn, next);
+      const current = getFabVisibility();
+      const updated = { ...current, [feature]: next };
+      await setFabVisibility(updated);
+      try {
+        await notifyContentScript({ type: "FAB_VISIBILITY_CHANGED", visibility: updated });
+      } catch (error) {
+        console.warn("🧑‍🎨 : Failed to notify FAB visibility change:", error);
+      }
+    });
   }
 
   updateUI();
 
   // Show navigation setting only if map instance is ready
-  if (mapInstanceReady) {
-    document.getElementById("navigation-setting")?.removeAttribute("style"); // remove display: none
-  }
+  if (mapInstanceReady)
+    document.getElementById("navigation-setting")?.removeAttribute("style");
 
-  // Setup dev mode easter egg
   setupDevModeEasterEgg();
 
-  // 言語変更イベント
+  // Language change
   languageSelect.addEventListener("change", async (event) => {
-    const target = event.target as HTMLSelectElement;
-    const newLocale = target.value as SupportedLocale;
-
-    // 設定を保存（setLocale経由）
+    const newLocale = (event.target as HTMLSelectElement).value as SupportedLocale;
     await setLocale(newLocale);
-
-    // UI更新
     updateUI();
-
-    // content.tsに言語変更を通知（best effort）
-    await notifyContentScriptBestEffort({
-      type: "LOCALE_CHANGED",
-      locale: newLocale,
-    });
+    await notifyContentScriptBestEffort({ type: "LOCALE_CHANGED", locale: newLocale });
   });
 
-  // ナビゲーション変更イベント
+  // Navigation change
   navigationSelect?.addEventListener("change", async (event) => {
-    const target = event.target as HTMLSelectElement;
-    const newMode = target.value === "true";
-
-    // 設定を保存
-    await setNavigationMode(newMode);
+    await setNavigationMode((event.target as HTMLSelectElement).value === "true");
   });
 
-  // Lockボタン強化変更イベント
-  lockButtonEnhancerSelect.addEventListener("change", async (event) => {
-    const target = event.target as HTMLSelectElement;
-    const newEnabled = target.value === "true";
-
-    // 設定を保存
-    await setLockButtonEnhancer(newEnabled);
-
-    // ページをリロードして設定を反映
-    const [activeTab] = await tabs.query({
-      active: true,
-      currentWindow: true,
-    });
-    if (activeTab.id) {
-      await tabs.reload(activeTab.id);
-    }
-  });
-
-  // Close confirm変更イベント
-  closeConfirmSelect.addEventListener("change", async (event) => {
-    const target = event.target as HTMLSelectElement;
-    const newEnabled = target.value === "true";
-
-    // 設定を保存
-    await setCloseConfirm(newEnabled);
-
-    // ページをリロードして設定を反映
-    const [activeTab] = await tabs.query({
-      active: true,
-      currentWindow: true,
-    });
-    if (activeTab.id) {
-      await tabs.reload(activeTab.id);
-    }
-  });
-
-  // Paint mode style変更イベント
-  paintModeStyleSelect.addEventListener("change", async (event) => {
-    const target = event.target as HTMLSelectElement;
-    const newEnabled = target.value === "true";
-
-    await setPaintModeStyle(newEnabled);
-
-    // ページをリロードして設定を反映
-    const [activeTab] = await tabs.query({
-      active: true,
-      currentWindow: true,
-    });
-    if (activeTab.id) {
-      await tabs.reload(activeTab.id);
-    }
-  });
-
-  // Close button big変更イベント
-  closeButtonBigSelect.addEventListener("change", async (event) => {
-    const target = event.target as HTMLSelectElement;
-    const newEnabled = target.value === "true";
-
-    await setCloseButtonBig(newEnabled);
-
-    // ページをリロードして設定を反映
-    const [activeTab] = await tabs.query({
-      active: true,
-      currentWindow: true,
-    });
-    if (activeTab.id) {
-      await tabs.reload(activeTab.id);
-    }
-  });
-
-  // Compute device変更イベント
+  // Compute device change
   computeDeviceSelect.addEventListener("change", async (event) => {
-    const target = event.target as HTMLSelectElement;
-    const device = target.value === "cpu" ? "cpu" : "gpu";
-
+    const device = (event.target as HTMLSelectElement).value === "cpu" ? "cpu" : "gpu";
     await ColorPaletteStorage.setComputeDevice(device);
-
-    // content.tsに設定変更を通知（best effort）
-    await notifyContentScriptBestEffort({
-      type: "COMPUTE_DEVICE_CHANGED",
-      device,
-    });
-  });
-
-  // FAB visibility変更イベント
-  const fabSelectorContainer = document.getElementById(
-    "fab-visibility-selectors",
-  );
-  fabSelectorContainer?.addEventListener("change", async (event) => {
-    const target = event.target as HTMLSelectElement;
-    const feature = target.dataset.fab as FabFeature | undefined;
-    if (!feature) return;
-
-    const current = getFabVisibility();
-    const next = { ...current, [feature]: target.value === "true" };
-    await setFabVisibility(next);
-    try {
-      await notifyContentScript({
-        type: "FAB_VISIBILITY_CHANGED",
-        visibility: next,
-      });
-    } catch (error) {
-      console.warn("🧑‍🎨 : Failed to notify FAB visibility change:", error);
-    }
+    await notifyContentScriptBestEffort({ type: "COMPUTE_DEVICE_CHANGED", device });
   });
 
   // Danger Zone toggle
-  const toggleDangerZoneBtn = document.getElementById("toggle-danger-zone-btn");
-  const dangerZoneContent = document.getElementById("danger-zone-content");
-  const dangerZoneToggleLabel = document.getElementById(
-    "danger-zone-toggle-label",
-  );
+  const dangerContent = document.getElementById("danger-zone-content");
+  const dangerLabel = document.getElementById("danger-zone-toggle-label");
+  document.getElementById("toggle-danger-zone-btn")?.addEventListener("click", () => {
+    if (!dangerContent || !dangerLabel) return;
+    const isHidden = dangerContent.style.display === "none";
+    dangerContent.style.display = isHidden ? "block" : "none";
+    dangerLabel.textContent = isHidden ? t("danger_zone_hide") : t("danger_zone_show");
+  });
 
-  if (toggleDangerZoneBtn && dangerZoneContent && dangerZoneToggleLabel) {
-    toggleDangerZoneBtn.addEventListener("click", () => {
-      const isHidden = dangerZoneContent.style.display === "none";
-      dangerZoneContent.style.display = isHidden ? "block" : "none";
-      dangerZoneToggleLabel.textContent = isHidden
-        ? t("danger_zone_hide")
-        : t("danger_zone_show");
-    });
-  }
-
-  // Danger Zone - Reset buttons
-  const resetGalleryBtn = document.getElementById("reset-gallery-btn");
-  const resetAreasBtn = document.getElementById("reset-areas-btn");
-
-  if (resetGalleryBtn) {
-    resetGalleryBtn.addEventListener("click", async () => {
-      await handleResetGallery();
-    });
-  }
-
-  if (resetAreasBtn) {
-    resetAreasBtn.addEventListener("click", async () => {
-      await handleResetAreas();
-    });
-  }
+  // Reset buttons
+  document.getElementById("reset-gallery-btn")?.addEventListener("click", handleResetGallery);
+  document.getElementById("reset-areas-btn")?.addEventListener("click", handleResetAreas);
 });
 
 window.addEventListener("beforeunload", () => {
   void notifyPopupWindowState(POPUP_WINDOW_CLOSED);
 });
-
-// Gallery reset handler - delegates to inject
-const handleResetGallery = async (): Promise<void> => {
-  if (!confirm(t`${"confirm_reset"}`)) return;
-
-  const resetBtn = document.getElementById(
-    "reset-gallery-btn",
-  ) as HTMLButtonElement;
-  if (!resetBtn) return;
-
-  try {
-    resetBtn.disabled = true;
-    resetBtn.innerHTML = `⏳ ${t`${"resetting"}`}`;
-
-    await notifyContentScript({ type: "GALLERY_RESET" });
-    alert(t("gallery_reset_success"));
-  } catch (error) {
-    console.error("🧑‍🎨 : Gallery reset failed:", error);
-    alert(t("reset_failed"));
-  } finally {
-    resetBtn.disabled = false;
-    resetBtn.innerHTML = `🗑️ <span id="reset-gallery-btn-label">${t("reset_gallery")}</span>`;
-  }
-};
-
-// Area reset handler - delegates to content
-const handleResetAreas = async (): Promise<void> => {
-  if (!confirm(t`${"confirm_reset_areas"}`)) return;
-
-  const resetBtn = document.getElementById(
-    "reset-areas-btn",
-  ) as HTMLButtonElement;
-  if (!resetBtn) return;
-
-  try {
-    resetBtn.disabled = true;
-    resetBtn.innerHTML = `⏳ ${t`${"resetting"}`}`;
-
-    try {
-      const response = await notifyContentScript({ type: "AREA_RESET" });
-      if (response?.success === false) {
-        throw new Error(response.error || "Area reset failed");
-      }
-    } catch (error) {
-      if (!isNoContentReceiverError(error)) throw error;
-      await resetAreasInPopupStorage();
-      console.log("🧑‍🎨 : Area reset completed from popup storage fallback");
-    }
-
-    alert(t("areas_reset_success"));
-  } catch (error) {
-    console.error("🧑‍🎨 : Area reset failed:", error);
-    alert(t("reset_failed"));
-  } finally {
-    resetBtn.disabled = false;
-    resetBtn.innerHTML = `🗑️ <span id="reset-areas-btn-label">${t("reset_areas")}</span>`;
-  }
-};
-
-// Notify content script to sync data with inject
-const notifyContentScript = async (message: any): Promise<any> => {
-  const [activeTab] = await tabs.query({
-    active: true,
-    currentWindow: true,
-  });
-  if (!activeTab?.id) {
-    throw new Error(NO_CONTENT_RECEIVER_ERROR_MESSAGE);
-  }
-  return await tabs.sendMessage(activeTab.id, message);
-};
-
-const notifyContentScriptBestEffort = async (
-  message: any,
-): Promise<any | undefined> => {
-  try {
-    return await notifyContentScript(message);
-  } catch (error) {
-    if (!isNoContentReceiverError(error)) throw error;
-    return undefined;
-  }
-};

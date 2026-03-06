@@ -204,7 +204,7 @@ export const esTranslations = {
   popup_close_confirm: "Confirmar al Cerrar Panel de Pintura",
   popup_paint_mode_style: "Ocultar FABs en Modo Pintura",
   popup_bug_report: "Reportar Error",
-  popup_fab_visibility: "Visibilidad de FABs",
+  popup_fab_visibility: "Visibilidad de Botones",
   popup_fab_gallery: "Galería",
   popup_fab_bookmark: "Marcadores",
   popup_fab_time_travel: "Viaje en el Tiempo",
