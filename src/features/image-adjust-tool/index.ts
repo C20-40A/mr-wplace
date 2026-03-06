@@ -41,12 +41,32 @@ export type ImageAdjustToolOptions = {
   naturalWidth: number;
   naturalHeight: number;
   initialScale: number;
+  initialProcessingState?: Partial<ProcessingState>;
   onConfirm: (result: ConfirmResult) => void | Promise<void>;
   onCancel?: () => void;
 };
 
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(Math.max(value, min), max);
+
+const createDefaultProcessingState = (): ProcessingState => ({
+  brightness: 0,
+  contrast: 0,
+  saturation: 0,
+  ditheringEnabled: false,
+  ditheringThreshold: 500,
+  ditheringMethod: "ordered",
+  quantizationMethod: "rgb-euclidean",
+  colorFlattenMode: "none",
+  outlineEnabled: false,
+  outlineThreshold: 55,
+  outlineWidth: 1,
+  outlineUseFixedColor: false,
+  outlineFixedColor: "#000000",
+  selectedColorIds: colorpalette
+    .filter((c) => c.id !== TRANSPARENT_COLOR_ID)
+    .map((c) => c.id),
+});
 
 export class ImageAdjustToolMode {
   private readonly options: ImageAdjustToolOptions;
@@ -60,24 +80,7 @@ export class ImageAdjustToolMode {
   private panelManager: PanelManager | null = null;
   private baseImage: HTMLImageElement | null = null;
 
-  private readonly processingState: ProcessingState = {
-    brightness: 0,
-    contrast: 0,
-    saturation: 0,
-    ditheringEnabled: false,
-    ditheringThreshold: 500,
-    ditheringMethod: "ordered",
-    quantizationMethod: "rgb-euclidean",
-    colorFlattenMode: "none",
-    outlineEnabled: false,
-    outlineThreshold: 55,
-    outlineWidth: 1,
-    outlineUseFixedColor: false,
-    outlineFixedColor: "#000000",
-    selectedColorIds: colorpalette
-      .filter((c) => c.id !== TRANSPARENT_COLOR_ID)
-      .map((c) => c.id),
-  };
+  private readonly processingState: ProcessingState;
 
   private imageOpacity = DEFAULT_IMAGE_OPACITY / 100;
   private rect: Rect | null = null;
@@ -209,6 +212,15 @@ export class ImageAdjustToolMode {
       0.0001,
       options.naturalWidth / Math.max(1, options.naturalHeight),
     );
+    const defaultProcessingState = createDefaultProcessingState();
+    this.processingState = {
+      ...defaultProcessingState,
+      ...options.initialProcessingState,
+      selectedColorIds:
+        options.initialProcessingState?.selectedColorIds
+          ? [...options.initialProcessingState.selectedColorIds]
+          : defaultProcessingState.selectedColorIds,
+    };
   }
 
   open(): boolean {

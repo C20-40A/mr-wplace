@@ -4,6 +4,7 @@ import { isDesktopViewport } from "@/constants/breakpoints";
 import { ImageInspector } from "@/components/image-inspector";
 import { ColorPalette } from "@/components/color-palette";
 import { ImageAdjustToolMode, type AdjustToolProcessingParams } from "@/features/image-adjust-tool";
+import type { ProcessingState } from "@/features/image-adjust-tool/panel";
 import { DrawPosition, GalleryItem } from "@/states/galleryStorage";
 import { TransparencyMaskEditor } from "./transparency-mask-editor";
 import {
@@ -291,6 +292,7 @@ export class EditorController {
       naturalWidth: this.originalImage.naturalWidth,
       naturalHeight: this.originalImage.naturalHeight,
       initialScale: this.imageScale,
+      initialProcessingState: this.buildAdjustToolInitialState(),
       onConfirm: ({ widthPx, heightPx, drawPosition, processingParams }) => {
         this.applyAdjustToolResult(widthPx, heightPx, drawPosition, processingParams);
       },
@@ -1096,6 +1098,25 @@ export class EditorController {
       brightness: this.brightness,
       contrast: this.contrast,
       saturation: this.saturation,
+    };
+  }
+
+  private buildAdjustToolInitialState(): ProcessingState {
+    return {
+      brightness: this.brightness,
+      contrast: this.contrast,
+      saturation: this.saturation,
+      selectedColorIds: [...this.selectedColorIds],
+      ditheringEnabled: this.ditheringEnabled,
+      ditheringThreshold: this.ditheringThreshold,
+      ditheringMethod: this.ditheringMethod,
+      quantizationMethod: this.quantizationMethod,
+      colorFlattenMode: this.colorFlattenMode,
+      outlineEnabled: this.outlineEnabled,
+      outlineThreshold: this.outlineThreshold,
+      outlineWidth: this.outlineWidth,
+      outlineUseFixedColor: this.outlineUseFixedColor,
+      outlineFixedColor: this.outlineFixedColor,
     };
   }
 
