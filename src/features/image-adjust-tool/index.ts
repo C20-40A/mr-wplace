@@ -1,16 +1,18 @@
 import type { DrawPosition } from "@/states/galleryStorage";
 import { t } from "@/i18n/manager";
 import { TILE_SIZE } from "@/utils/geo-converter";
-import { projectScreenPointsToMapPixels } from "@/utils/inject-bridge";
+import {
+  projectMapPixelsToScreenPoints,
+  projectScreenPointsToMapPixels,
+  setMapProjectionTracking,
+} from "@/utils/inject-bridge";
 import {
   IMAGE_ADJUST_TOOL_MAP_Z_INDEX,
   IMAGE_ADJUST_TOOL_OVERLAY_Z_INDEX,
 } from "./constants";
 
 const MIN_FRAME_WIDTH = 48;
-const FRAME_MARGIN = 8;
 const MAX_VIEWPORT_RATIO = 0.9;
-const METRICS_REFRESH_MS = 600;
 const METRICS_DRAG_UPDATE_MS = 80;
 const PREVIEW_UPDATE_MS = 160;
 const OPACITY_SLIDER_MIN = 15;
@@ -172,8 +174,9 @@ export class ImageAdjustToolMode {
   private rect: Rect | null = null;
   private activeInteraction: ActiveInteraction | null = null;
   private metrics: Metrics | null = null;
-  private metricsTimer: ReturnType<typeof setInterval> | null = null;
+  private mapRect: Rect | null = null;
   private metricsPending = false;
+  private mapSyncPending = false;
   private lastMetricsRequestedAt = 0;
   private previewPending = false;
   private queuedPreviewMetrics: Metrics | null = null;
@@ -181,6 +184,11 @@ export class ImageAdjustToolMode {
   private lastPreviewKey = "";
   private mounted = false;
   private imageOpacity = DEFAULT_IMAGE_OPACITY / 100;
+
+  private readonly onMapViewChanged = (event: MessageEvent): void => {
+    if (event.data?.source !== "mr-wplace-map-view-changed") return;
+    void this.syncScreenRectFromMap();
+  };
 
   private readonly onFramePointerDown = (event: PointerEvent): void => {
     if (!this.frame || !this.rect) return;
@@ -233,21 +241,7 @@ export class ImageAdjustToolMode {
     }
 
     const startRect = this.activeInteraction.startRect;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const maxWidthByViewport = Math.min(
-      viewportWidth * MAX_VIEWPORT_RATIO,
-      viewportWidth - startRect.x - FRAME_MARGIN,
-    );
-    const maxHeightByViewport = Math.min(
-      viewportHeight * MAX_VIEWPORT_RATIO,
-      viewportHeight - startRect.y - FRAME_MARGIN,
-    );
-    const maxWidth = Math.max(
-      MIN_FRAME_WIDTH,
-      Math.min(maxWidthByViewport, maxHeightByViewport * this.aspectRatio),
-    );
-    const nextWidth = clamp(startRect.width + dx, MIN_FRAME_WIDTH, maxWidth);
+    const nextWidth = Math.max(MIN_FRAME_WIDTH, startRect.width + dx);
     const nextHeight = nextWidth / this.aspectRatio;
 
     this.applyRect(
@@ -270,9 +264,8 @@ export class ImageAdjustToolMode {
   };
 
   private readonly onWindowResize = (): void => {
-    if (!this.rect) return;
-    this.applyRect(this.getClampedRect(this.rect));
-    this.requestMetricsUpdate(true);
+    if (!this.mapRect) return;
+    void this.syncScreenRectFromMap();
   };
 
   constructor(options: ImageAdjustToolOptions) {
@@ -302,19 +295,12 @@ export class ImageAdjustToolMode {
     this.mountEvents();
     this.mounted = true;
     this.requestMetricsUpdate(true);
-    this.metricsTimer = setInterval(() => {
-      this.requestMetricsUpdate();
-    }, METRICS_REFRESH_MS);
+    setMapProjectionTracking(true);
     return true;
   }
 
   destroy(triggerCancel = false): void {
     if (!this.mounted) return;
-
-    if (this.metricsTimer) {
-      clearInterval(this.metricsTimer);
-      this.metricsTimer = null;
-    }
 
     this.unmountEvents();
     this.overlay?.remove();
@@ -329,6 +315,11 @@ export class ImageAdjustToolMode {
     this.confirmButton = null;
     this.baseImage = null;
     this.activeInteraction = null;
+    this.rect = null;
+    this.mapRect = null;
+    this.metrics = null;
+    this.mapSyncPending = false;
+    this.metricsPending = false;
 
     if (this.mapElement) {
       this.mapElement.style.zIndex = this.previousMapZIndex;
@@ -337,6 +328,7 @@ export class ImageAdjustToolMode {
     this.mapElement = null;
     this.previousMapZIndex = "";
     this.mounted = false;
+    setMapProjectionTracking(false);
 
     if (triggerCancel) this.options.onCancel?.();
   }
@@ -434,6 +426,7 @@ export class ImageAdjustToolMode {
       passive: true,
     });
     window.addEventListener("resize", this.onWindowResize, { passive: true });
+    window.addEventListener("message", this.onMapViewChanged);
   }
 
   private unmountEvents(): void {
@@ -446,6 +439,7 @@ export class ImageAdjustToolMode {
     window.removeEventListener("pointerup", this.onGlobalPointerUp);
     window.removeEventListener("pointercancel", this.onGlobalPointerUp);
     window.removeEventListener("resize", this.onWindowResize);
+    window.removeEventListener("message", this.onMapViewChanged);
   }
 
   private getInitialRect(): Rect {
@@ -471,31 +465,14 @@ export class ImageAdjustToolMode {
   }
 
   private getClampedRect(rect: Rect): Rect {
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-
-    const maxWidthByViewport = Math.min(
-      viewportWidth * MAX_VIEWPORT_RATIO,
-      viewportWidth - FRAME_MARGIN * 2,
-    );
-    const maxHeightByViewport = Math.min(
-      viewportHeight * MAX_VIEWPORT_RATIO,
-      viewportHeight - FRAME_MARGIN * 2,
-    );
-    const maxWidth = Math.max(
-      MIN_FRAME_WIDTH,
-      Math.min(maxWidthByViewport, maxHeightByViewport * this.aspectRatio),
-    );
-    const width = clamp(rect.width, MIN_FRAME_WIDTH, maxWidth);
+    const width = Math.max(MIN_FRAME_WIDTH, rect.width);
     const height = width / this.aspectRatio;
-    const maxX = Math.max(FRAME_MARGIN, viewportWidth - width - FRAME_MARGIN);
-    const maxY = Math.max(FRAME_MARGIN, viewportHeight - height - FRAME_MARGIN);
 
     return {
       width,
       height,
-      x: clamp(rect.x, FRAME_MARGIN, maxX),
-      y: clamp(rect.y, FRAME_MARGIN, maxY),
+      x: rect.x,
+      y: rect.y,
     };
   }
 
@@ -561,11 +538,20 @@ export class ImageAdjustToolMode {
         ),
       );
 
+      const topLeftPixelX = Math.floor(projected[0].pixelX);
+      const topLeftPixelY = Math.floor(projected[0].pixelY);
+
       this.metrics = {
         widthPx,
         heightPx,
-        topLeftPixelX: projected[0].pixelX,
-        topLeftPixelY: projected[0].pixelY,
+        topLeftPixelX,
+        topLeftPixelY,
+      };
+      this.mapRect = {
+        x: topLeftPixelX,
+        y: topLeftPixelY,
+        width: widthPx,
+        height: heightPx,
       };
 
       if (this.sizeLabel) {
@@ -575,9 +561,58 @@ export class ImageAdjustToolMode {
         }
       }
       this.requestPreviewUpdate(this.metrics);
+      void this.syncScreenRectFromMap(true);
       return this.metrics;
     } finally {
       this.metricsPending = false;
+    }
+  }
+
+  private async syncScreenRectFromMap(allowDuringInteraction = false): Promise<void> {
+    if (
+      this.mapSyncPending ||
+      !this.mapRect ||
+      (!allowDuringInteraction && this.activeInteraction)
+    ) {
+      return;
+    }
+    this.mapSyncPending = true;
+
+    try {
+      const projected = await projectMapPixelsToScreenPoints([
+        { pixelX: this.mapRect.x, pixelY: this.mapRect.y },
+        {
+          pixelX: this.mapRect.x + this.mapRect.width,
+          pixelY: this.mapRect.y,
+        },
+        {
+          pixelX: this.mapRect.x,
+          pixelY: this.mapRect.y + this.mapRect.height,
+        },
+      ]);
+
+      if (projected.length < 3) return;
+
+      this.applyRect({
+        x: projected[0].x,
+        y: projected[0].y,
+        width: Math.max(
+          MIN_FRAME_WIDTH,
+          Math.hypot(
+            projected[1].x - projected[0].x,
+            projected[1].y - projected[0].y,
+          ),
+        ),
+        height: Math.max(
+          MIN_FRAME_WIDTH / this.aspectRatio,
+          Math.hypot(
+            projected[2].x - projected[0].x,
+            projected[2].y - projected[0].y,
+          ),
+        ),
+      });
+    } finally {
+      this.mapSyncPending = false;
     }
   }
 

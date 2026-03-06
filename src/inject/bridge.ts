@@ -23,6 +23,8 @@ import {
   handleComputeTotalStats,
   handleMapCenterRequest,
   handleMapPixelsFromScreenRequest,
+  handleMapProjectionTrackingUpdate,
+  handleScreenPointsFromMapPixelsRequest,
   handleOriginalTileRequest,
 } from "./handlers/request-handlers";
 import { setupGalleryV2Handlers } from "./handlers/gallery-v2-handlers";
@@ -294,6 +296,9 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-request-image-stats": handleImageStatsRequest,
   "mr-wplace-request-map-center": handleMapCenterRequest,
   "mr-wplace-request-map-pixels-from-screen": handleMapPixelsFromScreenRequest,
+  "mr-wplace-map-projection-tracking": handleMapProjectionTrackingUpdate,
+  "mr-wplace-request-screen-points-from-map-pixels":
+    handleScreenPointsFromMapPixelsRequest,
   "mr-wplace-request-original-tile": handleOriginalTileRequest,
   "mr-wplace-compute-total-stats": handleComputeTotalStats,
   "mr-wplace-auto-canvas-click-start": startAutoCanvasClick,

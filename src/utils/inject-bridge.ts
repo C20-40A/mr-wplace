@@ -501,13 +501,13 @@ export const getMapCenter = async (): Promise<{ lat: number; lng: number } | nul
 type ScreenPoint = { x: number; y: number };
 type MapPixelPoint = { pixelX: number; pixelY: number };
 
-/**
- * Project viewport client points to wplace pixel coordinates via inject map instance
- */
-export const projectScreenPointsToMapPixels = async (
-  points: ScreenPoint[],
-): Promise<MapPixelPoint[]> => {
-  if (!points.length) return [];
+const requestProjectionPoints = <TRequestPoint, TResponsePoint>(params: {
+  requestSource: string;
+  responseSource: string;
+  timeoutMessage: string;
+  points: TRequestPoint[];
+}): Promise<TResponsePoint[]> => {
+  if (!params.points.length) return Promise.resolve([]);
   const requestId = generateRequestId();
 
   return new Promise((resolve) => {
@@ -515,29 +515,71 @@ export const projectScreenPointsToMapPixels = async (
 
     const handler = (event: MessageEvent) => {
       if (
-        event.data.source === "mr-wplace-response-map-pixels-from-screen" &&
+        event.data.source === params.responseSource &&
         event.data.requestId === requestId
       ) {
         clearTimeout(timeoutId);
         window.removeEventListener("message", handler);
-        resolve((event.data.points || []) as MapPixelPoint[]);
+        resolve((event.data.points || []) as TResponsePoint[]);
       }
     };
 
     window.addEventListener("message", handler);
     window.postMessage(
       {
-        source: "mr-wplace-request-map-pixels-from-screen",
+        source: params.requestSource,
         requestId,
-        points,
+        points: params.points,
       },
       "*",
     );
 
     timeoutId = setTimeout(() => {
       window.removeEventListener("message", handler);
-      console.warn("🧑‍🎨 : Screen point projection request timed out");
+      console.warn(`🧑‍🎨 : ${params.timeoutMessage}`);
       resolve([]);
     }, 5000);
   });
+};
+
+/**
+ * Project viewport client points to wplace pixel coordinates via inject map instance
+ */
+export const projectScreenPointsToMapPixels = async (
+  points: ScreenPoint[],
+): Promise<MapPixelPoint[]> => {
+  return requestProjectionPoints<ScreenPoint, MapPixelPoint>({
+    requestSource: "mr-wplace-request-map-pixels-from-screen",
+    responseSource: "mr-wplace-response-map-pixels-from-screen",
+    timeoutMessage: "Screen point projection request timed out",
+    points,
+  });
+};
+
+/**
+ * Project wplace pixel coordinates to viewport client points via inject map instance
+ */
+export const projectMapPixelsToScreenPoints = async (
+  points: MapPixelPoint[],
+): Promise<ScreenPoint[]> => {
+  return requestProjectionPoints<MapPixelPoint, ScreenPoint>({
+    requestSource: "mr-wplace-request-screen-points-from-map-pixels",
+    responseSource: "mr-wplace-response-screen-points-from-map-pixels",
+    timeoutMessage: "Map pixel projection request timed out",
+    points,
+  });
+};
+
+/**
+ * Enable/disable inject-side map projection tracking events.
+ * When enabled, inject posts "mr-wplace-map-view-changed" on map movement.
+ */
+export const setMapProjectionTracking = (enabled: boolean): void => {
+  window.postMessage(
+    {
+      source: "mr-wplace-map-projection-tracking",
+      enabled,
+    },
+    "*",
+  );
 };

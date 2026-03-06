@@ -7,9 +7,53 @@ import {
   setOriginalBlob,
 } from "../features/tile-draw";
 import { computeTotalStatsFromImage } from "../features/tile-draw";
-import { latLonToPixels } from "@/utils/geo-converter";
+import { latLonToPixels, metersToLatLon, pixelsToMeters } from "@/utils/geo-converter";
 
 const TILE_FETCH_TIMEOUT_MS = 5000;
+const MAP_VIEW_EVENTS = ["move", "zoom", "rotate", "pitch", "resize"] as const;
+
+type ProjectionTrackingMap = {
+  on?: (event: string, handler: () => void) => void;
+  off?: (event: string, handler: () => void) => void;
+};
+
+let projectionTrackingEnabled = false;
+let trackedMap: ProjectionTrackingMap | null = null;
+let trackedMapHandler: (() => void) | null = null;
+let mapViewNotifyQueued = false;
+
+const notifyMapViewChanged = (): void => {
+  if (!projectionTrackingEnabled || mapViewNotifyQueued) return;
+  mapViewNotifyQueued = true;
+  requestAnimationFrame(() => {
+    mapViewNotifyQueued = false;
+    if (!projectionTrackingEnabled) return;
+    window.postMessage({ source: "mr-wplace-map-view-changed" }, "*");
+  });
+};
+
+const detachMapProjectionTracking = (): void => {
+  if (!trackedMap || !trackedMapHandler || typeof trackedMap.off !== "function") {
+    trackedMap = null;
+    trackedMapHandler = null;
+    return;
+  }
+  for (const event of MAP_VIEW_EVENTS) trackedMap.off(event, trackedMapHandler);
+  trackedMap = null;
+  trackedMapHandler = null;
+};
+
+const attachMapProjectionTracking = (): void => {
+  const { getMapInstanceFromWplace } = require("../features/map-instance/get-map-instance");
+  const mapInstance = getMapInstanceFromWplace() as ProjectionTrackingMap | null;
+  if (!mapInstance || typeof mapInstance.on !== "function") return;
+  if (trackedMap === mapInstance && trackedMapHandler) return;
+
+  detachMapProjectionTracking();
+  trackedMap = mapInstance;
+  trackedMapHandler = () => notifyMapViewChanged();
+  for (const event of MAP_VIEW_EVENTS) mapInstance.on(event, trackedMapHandler);
+};
 
 const blobToDataUrl = (blob: Blob): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -330,8 +374,8 @@ export const handleMapPixelsFromScreenRequest = (data: {
   }
 
   const points: MapProjectResult[] = data.points.map((point) => {
-    const localX = Math.min(Math.max(point.x - rect.left, 0), rect.width);
-    const localY = Math.min(Math.max(point.y - rect.top, 0), rect.height);
+    const localX = point.x - rect.left;
+    const localY = point.y - rect.top;
     const lngLat = mapInstance.unproject!({ x: localX, y: localY });
     const [pixelX, pixelY] = latLonToPixels(lngLat.lat, lngLat.lng);
     return { pixelX, pixelY };
@@ -345,6 +389,72 @@ export const handleMapPixelsFromScreenRequest = (data: {
     },
     "*",
   );
+};
+
+/**
+ * Handle wplace pixel -> screen point projection request
+ */
+export const handleScreenPointsFromMapPixelsRequest = (data: {
+  requestId: string;
+  points: MapProjectResult[];
+}): void => {
+  const { getMapInstanceFromWplace } = require("../features/map-instance/get-map-instance");
+  const mapInstance = getMapInstanceFromWplace() as {
+    project?: (lngLat: { lng: number; lat: number }) => { x: number; y: number };
+    getContainer?: () => HTMLElement;
+  } | null;
+
+  const mapContainer =
+    mapInstance?.getContainer?.() ??
+    document.querySelector<HTMLElement>(".maplibregl-map") ??
+    document.querySelector<HTMLElement>(".maplibregl-canvas-container");
+  const rect = mapContainer?.getBoundingClientRect();
+
+  if (!mapInstance?.project || !rect || !data.points?.length) {
+    window.postMessage(
+      {
+        source: "mr-wplace-response-screen-points-from-map-pixels",
+        requestId: data.requestId,
+        points: [],
+      },
+      "*",
+    );
+    return;
+  }
+
+  const points = data.points.map((point) => {
+    const [metersX, metersY] = pixelsToMeters(point.pixelX, point.pixelY);
+    const [lat, lng] = metersToLatLon(metersX, metersY);
+    const localPoint = mapInstance.project!({ lat, lng });
+    return {
+      x: rect.left + localPoint.x,
+      y: rect.top + localPoint.y,
+    };
+  });
+
+  window.postMessage(
+    {
+      source: "mr-wplace-response-screen-points-from-map-pixels",
+      requestId: data.requestId,
+      points,
+    },
+    "*",
+  );
+};
+
+/**
+ * Enable/disable map projection tracking notifications.
+ */
+export const handleMapProjectionTrackingUpdate = (data: {
+  enabled: boolean;
+}): void => {
+  projectionTrackingEnabled = Boolean(data.enabled);
+  if (!projectionTrackingEnabled) {
+    detachMapProjectionTracking();
+    return;
+  }
+  attachMapProjectionTracking();
+  notifyMapViewChanged();
 };
 
 /**
