@@ -24,6 +24,8 @@ export class PositionInfo {
   private bigObserver: MutationObserver | null = null;
   private bigEnabled = false;
   private bigScheduled = false;
+  private observedCoordSpan: Element | null = null;
+  private observedBigContainer: Element | null = null;
 
   constructor() {
     this.init();
@@ -95,8 +97,10 @@ export class PositionInfo {
 
   private startBigObserver(container: Element): void {
     if (!this.bigEnabled) return;
+    if (this.observedBigContainer === container && this.bigObserver) return;
 
     this.bigObserver?.disconnect();
+    this.observedBigContainer = container;
 
     let scheduled = false;
     this.bigObserver = new MutationObserver(() => {
@@ -108,6 +112,29 @@ export class PositionInfo {
       });
     });
     this.bigObserver.observe(container, { childList: true, subtree: true });
+  }
+
+  private observeCoordSpan(
+    coordSpan: Element,
+    tileCoordSpan: HTMLElement,
+  ): void {
+    if (this.observedCoordSpan === coordSpan && this.observer) return;
+
+    this.observer?.disconnect();
+    this.observedCoordSpan = coordSpan;
+    this.observer = new MutationObserver(() => {
+      setTimeout(() => {
+        const pos = getCurrentPosition();
+        if (!pos) return;
+        const c = latLngToTilePixel(pos.lat, pos.lng);
+        tileCoordSpan.textContent = `${c.TLX}-${c.TLY}-${c.PxX}-${c.PxY}`;
+      }, 50);
+    });
+    this.observer.observe(coordSpan, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
   }
 
   private ensureBigMarker(container: Element): void {
@@ -224,21 +251,7 @@ export class PositionInfo {
     const coordSpan = container.querySelector(
       "span.text-base-content\\/70.text-xs:not(#position-tile-info)",
     );
-    if (coordSpan) {
-      this.observer = new MutationObserver(() => {
-        setTimeout(() => {
-          const pos = getCurrentPosition();
-          if (!pos) return;
-          const c = latLngToTilePixel(pos.lat, pos.lng);
-          tileCoordSpan.textContent = `${c.TLX}-${c.TLY}-${c.PxX}-${c.PxY}`;
-        }, 50);
-      });
-      this.observer.observe(coordSpan, {
-        childList: true,
-        subtree: true,
-        characterData: true,
-      });
-    }
+    if (coordSpan) this.observeCoordSpan(coordSpan, tileCoordSpan);
   }
 
   private createToolbarButton(

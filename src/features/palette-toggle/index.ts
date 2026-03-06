@@ -8,7 +8,9 @@ export class PaletteToggle {
   private button: HTMLButtonElement | null = null;
   private colorDisplay: HTMLDivElement | null = null;
   private colorObserver: MutationObserver | null = null;
+  private domObserver: MutationObserver | null = null;
   private isHidden: boolean = false;
+  private colorObserverRefreshScheduled = false;
 
   constructor() {
     this.init();
@@ -196,27 +198,38 @@ export class PaletteToggle {
       this.updateCurrentColor();
     });
 
-    // Watch for attribute changes on color buttons
-    const observeColors = () => {
-      const colorButtons = document.querySelectorAll('button[id^="color-"]');
-      colorButtons.forEach((button) => {
-        this.colorObserver?.observe(button, {
-          attributes: true,
-          attributeFilter: ["class"],
-        });
-      });
-    };
-
-    // Watch for DOM changes to catch new color buttons
-    const domObserver = new MutationObserver(() => {
-      observeColors();
+    this.domObserver = new MutationObserver(() => {
+      this.scheduleColorObserverRefresh();
     });
 
-    domObserver.observe(document.body, {
+    this.domObserver.observe(document.body, {
       childList: true,
       subtree: true,
     });
 
-    observeColors();
+    this.refreshColorObservers();
+  }
+
+  private scheduleColorObserverRefresh(): void {
+    if (this.colorObserverRefreshScheduled) return;
+    this.colorObserverRefreshScheduled = true;
+    requestAnimationFrame(() => {
+      this.colorObserverRefreshScheduled = false;
+      this.refreshColorObservers();
+    });
+  }
+
+  private refreshColorObservers(): void {
+    this.colorObserver?.disconnect();
+
+    const colorButtons = document.querySelectorAll('button[id^="color-"]');
+    colorButtons.forEach((button) => {
+      this.colorObserver?.observe(button, {
+        attributes: true,
+        attributeFilter: ["class"],
+      });
+    });
+
+    this.updateCurrentColor();
   }
 }
