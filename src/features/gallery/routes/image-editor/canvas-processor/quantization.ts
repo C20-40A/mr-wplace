@@ -1,13 +1,16 @@
 import { colorpalette } from "@/constants/colors";
 import {
   clampByte,
+  colorDistDeltaE2000,
+  colorDistPerceptualEuclidean2,
   colorDistRgbEuclidean2,
   colorDistWeightedRgb2,
-  rgbToLab,
-  rgbToOklab,
+  isPerceptualQuantizationMethod,
+  rgbToPerceptualColor,
 } from "./color-utils";
 import type {
   DitheringMethod,
+  PerceptualQuantizationMethod,
   QuantizationMethod,
   RgbColor,
 } from "./types";
@@ -22,42 +25,50 @@ const BAYER_MATRIX_4X4 = [
 const getPaletteColors = (selectedColorIds: number[]): RgbColor[] =>
   colorpalette.filter((color) => selectedColorIds.includes(color.id)).map((color) => color.rgb);
 
+const createPerceptualNearestColorFinder = (
+  rgbList: RgbColor[],
+  method: PerceptualQuantizationMethod
+): ((r: number, g: number, b: number) => RgbColor) => {
+  const palettePerceptual = rgbList.map(([r, g, b]) =>
+    rgbToPerceptualColor(method, r, g, b)
+  );
+
+  return (r: number, g: number, b: number): RgbColor => {
+    const sourcePerceptual = rgbToPerceptualColor(method, r, g, b);
+    let minDist = Infinity;
+    let nearest = rgbList[0];
+
+    for (let i = 0; i < rgbList.length; i++) {
+      const dist =
+        method === "delta-e-2000"
+          ? colorDistDeltaE2000(sourcePerceptual, palettePerceptual[i])
+          : colorDistPerceptualEuclidean2(sourcePerceptual, palettePerceptual[i]);
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = rgbList[i];
+      }
+    }
+
+    return nearest;
+  };
+};
+
 const createNearestColorFinder = (
   selectedColorIds: number[],
   method: QuantizationMethod
 ): ((r: number, g: number, b: number) => RgbColor) | null => {
   const rgbList = getPaletteColors(selectedColorIds);
   if (rgbList.length === 0) return null;
+  if (isPerceptualQuantizationMethod(method)) {
+    return createPerceptualNearestColorFinder(rgbList, method);
+  }
 
-  const palettePerceptual =
-    method === "lab"
-      ? rgbList.map(([r, g, b]) => rgbToLab(r, g, b))
-      : method === "oklab"
-        ? rgbList.map(([r, g, b]) => rgbToOklab(r, g, b))
-        : [];
   const colorDistFn =
     method === "weighted-rgb" ? colorDistWeightedRgb2 : colorDistRgbEuclidean2;
 
   return (r: number, g: number, b: number): RgbColor => {
     let minDist = Infinity;
     let nearest = rgbList[0];
-
-    if (method === "lab" || method === "oklab") {
-      const [c0, c1, c2] =
-        method === "lab" ? rgbToLab(r, g, b) : rgbToOklab(r, g, b);
-      for (let i = 0; i < rgbList.length; i++) {
-        const [p0, p1, p2] = palettePerceptual[i];
-        const d0 = c0 - p0;
-        const d1 = c1 - p1;
-        const d2 = c2 - p2;
-        const dist = d0 * d0 + d1 * d1 + d2 * d2;
-        if (dist < minDist) {
-          minDist = dist;
-          nearest = rgbList[i];
-        }
-      }
-      return nearest;
-    }
 
     for (let i = 0; i < rgbList.length; i++) {
       const color = rgbList[i];

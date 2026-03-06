@@ -568,4 +568,5 @@ export const ptTranslations = {
   adjust_tool_target_size: "Tamanho alvo",
   popup_hide_my_location: "Ocultar botão de localização",
   quantization_oklab: "Espaco de Cor OKLab (Lento, Mais Uniforme)",
+  quantization_delta_e_2000: "DeltaE 2000 (Mais Lento, Melhor Correspondencia)",
 };

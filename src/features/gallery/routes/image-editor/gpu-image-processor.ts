@@ -1,5 +1,12 @@
-import { rgbToLab, rgbToOklab } from "./canvas-processor/color-utils";
-import type { ImageAdjustments, QuantizationMethod } from "./canvas-processor/types";
+import {
+  isPerceptualQuantizationMethod,
+  rgbToPerceptualColor,
+} from "./canvas-processor/color-utils";
+import type {
+  ImageAdjustments,
+  PerceptualQuantizationMethod,
+  QuantizationMethod,
+} from "./canvas-processor/types";
 
 /**
  * GPU画像処理: brightness/contrast/saturation + パレット量子化 + ディザリング
@@ -15,6 +22,19 @@ export const gpuProcessImage = async (
 ): Promise<Uint8ClampedArray> => {
   const width = sourceBitmap.width;
   const height = sourceBitmap.height;
+
+  const getQuantizationMethodInt = (method: QuantizationMethod): number => {
+    if (method === "weighted-rgb") return 1;
+    if (method === "lab") return 2;
+    if (method === "oklab") return 3;
+    if (method === "delta-e-2000") return 4;
+    return 0;
+  };
+
+  const getPerceptualMode = (
+    method: QuantizationMethod
+  ): PerceptualQuantizationMethod | null =>
+    isPerceptualQuantizationMethod(method) ? method : null;
 
   // WebGL2コンテキスト作成
   const glCanvas = new OffscreenCanvas(width, height);
@@ -115,7 +135,7 @@ export const gpuProcessImage = async (
   uniform bool uDitheringEnabled;
   uniform float uSnapThreshold;
   uniform float uBayerMatrix[16];
-  uniform int uQuantizationMethod; // 0: RGB Euclidean, 1: Weighted RGB, 2: Lab, 3: OKLab
+  uniform int uQuantizationMethod; // 0: RGB Euclidean, 1: Weighted RGB, 2: Lab, 3: OKLab, 4: DeltaE2000
   out vec4 outColor;
 
   // RGB (0-255) → Lab 色空間変換
@@ -183,6 +203,79 @@ export const gpuProcessImage = async (
     );
   }
 
+  float deltaE2000(vec3 lab1, vec3 lab2) {
+    float c1 = length(lab1.yz);
+    float c2 = length(lab2.yz);
+    float cAvg = (c1 + c2) * 0.5;
+    float cAvg7 = pow(cAvg, 7.0);
+    float g = 0.5 * (1.0 - sqrt(cAvg7 / (cAvg7 + pow(25.0, 7.0))));
+
+    float a1Prime = (1.0 + g) * lab1.y;
+    float a2Prime = (1.0 + g) * lab2.y;
+    float c1Prime = sqrt(a1Prime * a1Prime + lab1.z * lab1.z);
+    float c2Prime = sqrt(a2Prime * a2Prime + lab2.z * lab2.z);
+
+    float h1Prime = degrees(atan(lab1.z, a1Prime));
+    float h2Prime = degrees(atan(lab2.z, a2Prime));
+    if (h1Prime < 0.0) h1Prime += 360.0;
+    if (h2Prime < 0.0) h2Prime += 360.0;
+
+    float deltaLPrime = lab2.x - lab1.x;
+    float deltaCPrime = c2Prime - c1Prime;
+
+    float deltaHPrime = 0.0;
+    if (c1Prime > 0.0 && c2Prime > 0.0) {
+      float hDiff = h2Prime - h1Prime;
+      if (abs(hDiff) <= 180.0) deltaHPrime = hDiff;
+      else if (h2Prime <= h1Prime) deltaHPrime = hDiff + 360.0;
+      else deltaHPrime = hDiff - 360.0;
+    }
+
+    float deltaBigHPrime =
+      2.0 * sqrt(c1Prime * c2Prime) * sin(radians(deltaHPrime * 0.5));
+
+    float lBarPrime = (lab1.x + lab2.x) * 0.5;
+    float cBarPrime = (c1Prime + c2Prime) * 0.5;
+
+    float hBarPrime = h1Prime + h2Prime;
+    if (c1Prime > 0.0 && c2Prime > 0.0) {
+      if (abs(h1Prime - h2Prime) > 180.0) {
+        hBarPrime += (h1Prime + h2Prime < 360.0) ? 360.0 : -360.0;
+      }
+      hBarPrime *= 0.5;
+    } else {
+      hBarPrime *= 0.5;
+    }
+
+    float t =
+      1.0 -
+      0.17 * cos(radians(hBarPrime - 30.0)) +
+      0.24 * cos(radians(2.0 * hBarPrime)) +
+      0.32 * cos(radians(3.0 * hBarPrime + 6.0)) -
+      0.20 * cos(radians(4.0 * hBarPrime - 63.0));
+
+    float lBarPrimeMinus50Sq = (lBarPrime - 50.0) * (lBarPrime - 50.0);
+    float sL = 1.0 + (0.015 * lBarPrimeMinus50Sq) / sqrt(20.0 + lBarPrimeMinus50Sq);
+    float sC = 1.0 + 0.045 * cBarPrime;
+    float sH = 1.0 + 0.015 * cBarPrime * t;
+    float deltaTheta = 30.0 * exp(-pow((hBarPrime - 275.0) / 25.0, 2.0));
+    float rC = 2.0 * sqrt(pow(cBarPrime, 7.0) / (pow(cBarPrime, 7.0) + pow(25.0, 7.0)));
+    float rT = -rC * sin(radians(2.0 * deltaTheta));
+
+    float lTerm = deltaLPrime / sL;
+    float cTerm = deltaCPrime / sC;
+    float hTerm = deltaBigHPrime / sH;
+
+    return sqrt(
+      lTerm * lTerm + cTerm * cTerm + hTerm * hTerm + rT * cTerm * hTerm
+    );
+  }
+
+  vec3 rgbToPerceptual(vec3 rgb) {
+    if (uQuantizationMethod == 3) return rgbToOklab(rgb);
+    return rgbToLab(rgb);
+  }
+
   // 色距離計算（量子化方法に応じて）
   // palettePerceptual: Lab/OKLab の事前計算済みパレット値
   float colorDistance(vec3 rgb1, vec3 rgb2, vec3 palettePerceptual) {
@@ -196,13 +289,12 @@ export const gpuProcessImage = async (
       vec3 weights = vec3(0.3, 0.59, 0.11); // R, G, B
       vec3 weightedDiff = diff * diff * weights;
       return weightedDiff.r + weightedDiff.g + weightedDiff.b;
-    } else if (uQuantizationMethod == 2) {
-      vec3 lab1 = rgbToLab(rgb1);
-      vec3 diff = lab1 - palettePerceptual;
-      return dot(diff, diff);
     } else {
-      vec3 oklab1 = rgbToOklab(rgb1);
-      vec3 diff = oklab1 - palettePerceptual;
+      vec3 perceptual1 = rgbToPerceptual(rgb1);
+      if (uQuantizationMethod == 4) {
+        return deltaE2000(perceptual1, palettePerceptual);
+      }
+      vec3 diff = perceptual1 - palettePerceptual;
       return dot(diff, diff);
     }
   }
@@ -402,17 +494,19 @@ export const gpuProcessImage = async (
 
   const paletteFlat = new Float32Array(maxPalette * 3);
   const palettePerceptualFlat = new Float32Array(maxPalette * 3);
+  const perceptualMode = getPerceptualMode(quantizationMethod);
   for (let i = 0; i < sendCount; i++) {
     const [r, g, b] = paletteRGB[i];
     paletteFlat[i * 3 + 0] = r;
     paletteFlat[i * 3 + 1] = g;
     paletteFlat[i * 3 + 2] = b;
 
-    const [c0, c1, c2] =
-      quantizationMethod === "oklab" ? rgbToOklab(r, g, b) : rgbToLab(r, g, b);
-    palettePerceptualFlat[i * 3 + 0] = c0;
-    palettePerceptualFlat[i * 3 + 1] = c1;
-    palettePerceptualFlat[i * 3 + 2] = c2;
+    if (perceptualMode) {
+      const [c0, c1, c2] = rgbToPerceptualColor(perceptualMode, r, g, b);
+      palettePerceptualFlat[i * 3 + 0] = c0;
+      palettePerceptualFlat[i * 3 + 1] = c1;
+      palettePerceptualFlat[i * 3 + 2] = c2;
+    }
   }
   gl.uniform3fv(gl.getUniformLocation(programPalette, "uPalette"), paletteFlat);
   gl.uniform3fv(
@@ -431,17 +525,9 @@ export const gpuProcessImage = async (
   );
 
   // 量子化方法設定
-  const quantizationMethodInt =
-    quantizationMethod === "weighted-rgb"
-      ? 1
-      : quantizationMethod === "lab"
-      ? 2
-      : quantizationMethod === "oklab"
-      ? 3
-      : 0;
   gl.uniform1i(
     gl.getUniformLocation(programPalette, "uQuantizationMethod"),
-    quantizationMethodInt
+    getQuantizationMethodInt(quantizationMethod)
   );
 
   // ベイヤー行列（4x4、正規化済み -0.5 ~ 0.5）

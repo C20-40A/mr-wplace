@@ -593,4 +593,5 @@ Do not use this feature to paint actual pixels.`,
   popup_fab_status_bar: "Status Bar",
   popup_hide_my_location: "Hide My Location Button",
   quantization_oklab: "OKLab Color Space (Slow, More Uniform)",
+  quantization_delta_e_2000: "DeltaE 2000 (Slowest, Best Match)",
 };

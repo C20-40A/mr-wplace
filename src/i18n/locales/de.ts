@@ -571,4 +571,5 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
     "Anpassungswerkzeug beenden? Änderungen werden nicht angewendet.",
   adjust_tool_target_size: "Zielgröße",
   quantization_oklab: "OKLab-Farbraum (Langsam, gleichmaessiger)",
+  quantization_delta_e_2000: "DeltaE 2000 (Am langsamsten, beste Uebereinstimmung)",
 };

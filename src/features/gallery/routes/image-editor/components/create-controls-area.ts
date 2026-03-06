@@ -97,6 +97,7 @@ const createContrastQuantizationControl = (
       ]),
       createElement("option", { value: "lab" }, [t("quantization_lab")]),
       createElement("option", { value: "oklab" }, [t("quantization_oklab")]),
+      createElement("option", { value: "delta-e-2000" }, [t("quantization_delta_e_2000")]),
     ],
   ) as HTMLSelectElement;
 

@@ -563,4 +563,5 @@ export const viTranslations = {
   adjust_tool_target_size: "Kích thước mục tiêu",
   popup_hide_my_location: "Ẩn nút vị trí của tôi",
   quantization_oklab: "Khong Gian Mau OKLab (Cham, Dong Deu Hon)",
+  quantization_delta_e_2000: "DeltaE 2000 (Cham Nhat, Khop Tot Nhat)",
 };

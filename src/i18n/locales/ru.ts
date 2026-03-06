@@ -579,4 +579,5 @@ export const ruTranslations = {
   adjust_tool_target_size: "Целевой размер",
   popup_hide_my_location: "Скрыть кнопку местоположения",
   quantization_oklab: "Цветовое пространство OKLab (Медленно, более равномерно)",
+  quantization_delta_e_2000: "DeltaE 2000 (Самый медленный, лучшее совпадение)",
 };
