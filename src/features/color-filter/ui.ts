@@ -1,4 +1,4 @@
-import { t } from "../../i18n/manager";
+import { t } from "@/i18n/manager";
 import { ColorFilterRouter } from "./router";
 import { createModal, ModalElements } from "@/components/modal";
 import { IMG_ICON_COLOR_FILTER } from "../../assets/iconImages";
@@ -17,7 +17,7 @@ const COLOR_BADGE_CLASS = "color-filter-badge";
 
 const updateColorBadge = (
   parent: HTMLElement,
-  rgb: [number, number, number] | null
+  rgb: [number, number, number] | null,
 ): void => {
   let badge = parent.querySelector<HTMLSpanElement>(`.${COLOR_BADGE_CLASS}`);
 
@@ -44,7 +44,7 @@ export const COLOR_BADGE_TARGETS = [
 ] as const;
 
 export const updateColorFilterBadges = (
-  rgb: [number, number, number] | null
+  rgb: [number, number, number] | null,
 ): void => {
   for (const id of COLOR_BADGE_TARGETS) {
     const el = document.getElementById(id);
