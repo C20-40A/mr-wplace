@@ -12,6 +12,7 @@ export const PROCESSING_DEBOUNCE_MS = 200;
 export const PREVIEW_UPDATE_MS = 160;
 
 const OVERLAY_Z_INDEX = 2001;
+const PANEL_VIEWPORT_MARGIN = 12;
 
 // --- Types ---
 
@@ -74,12 +75,12 @@ const STYLES = {
     background: var(--color-base-100, #fff);
     border-radius: 0.75rem;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-    padding: 0.75rem;
     pointer-events: auto;
     z-index: ${OVERLAY_Z_INDEX + 3};
     max-height: 70vh;
     overflow-y: auto;
-    min-width: 280px;
+    width: min(340px, calc(100vw - ${PANEL_VIEWPORT_MARGIN * 2}px));
+    min-width: min(280px, calc(100vw - ${PANEL_VIEWPORT_MARGIN * 2}px));
     max-width: 340px;
   `,
 } as const;
@@ -115,6 +116,43 @@ export const injectPanelStyles = (): void => {
       display: flex; align-items: center; gap: 0.35rem; margin-top: 0.25rem;
     }
     .iat-outline-params .iat-slider-row { flex: 1; }
+    .iat-floating-panel-header {
+      position: sticky;
+      top: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.75rem 0.75rem 0.5rem;
+      background: var(--color-base-100, #fff);
+      border-bottom: 1px solid rgba(156, 163, 175, 0.25);
+      border-radius: 0.75rem 0.75rem 0 0;
+      cursor: move;
+      touch-action: none;
+      z-index: 1;
+    }
+    .iat-floating-panel-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .iat-floating-panel-close {
+      width: 1.75rem;
+      height: 1.75rem;
+      min-width: 1.75rem;
+      border: none;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.08);
+      cursor: pointer;
+      font-size: 0.9rem;
+      line-height: 1;
+    }
+    .iat-floating-panel-close:hover {
+      background: rgba(0, 0, 0, 0.14);
+    }
+    .iat-floating-panel-body {
+      padding: 0.75rem;
+    }
   `;
   document.head.appendChild(style);
 };
@@ -125,6 +163,9 @@ export class PanelManager {
   private activePanel: PanelType | null = null;
   private floatingPanel: HTMLDivElement | null = null;
   private colorPalette: ColorPalette | null = null;
+  private panelPosition: { left: number; top: number } | null = null;
+  private draggingPointerId: number | null = null;
+  private dragOffset = { x: 0, y: 0 };
 
   constructor(
     private readonly overlay: HTMLDivElement,
@@ -133,7 +174,9 @@ export class PanelManager {
     private readonly adjustButton: HTMLButtonElement,
     private readonly state: ProcessingState,
     private readonly onStateChange: () => void,
-  ) {}
+  ) {
+    window.addEventListener("resize", this.onWindowResize, { passive: true });
+  }
 
   toggle(panel: PanelType): void {
     if (this.activePanel === panel) {
@@ -144,6 +187,12 @@ export class PanelManager {
   }
 
   close(): void {
+    if (this.floatingPanel) {
+      this.floatingPanel.removeEventListener("pointermove", this.onPanelPointerMove);
+      this.floatingPanel.removeEventListener("pointerup", this.onPanelPointerUp);
+      this.floatingPanel.removeEventListener("pointercancel", this.onPanelPointerUp);
+    }
+    this.draggingPointerId = null;
     this.colorPalette?.destroy();
     this.colorPalette = null;
     this.floatingPanel?.remove();
@@ -155,6 +204,7 @@ export class PanelManager {
 
   destroy(): void {
     this.close();
+    window.removeEventListener("resize", this.onWindowResize);
   }
 
   private open(panel: PanelType): void {
@@ -164,15 +214,22 @@ export class PanelManager {
     const floatingPanel = document.createElement("div");
     floatingPanel.style.cssText = STYLES.floatingPanel;
     floatingPanel.id = "iat-floating-panel";
+    const panelBody = document.createElement("div");
+    panelBody.className = "iat-floating-panel-body";
+    this.attachPanelHeader(
+      floatingPanel,
+      panel === "palette" ? "Color Palette" : `${t("contrast")} / ${t("brightness")}`,
+    );
 
     if (panel === "palette") {
-      this.buildPalettePanel(floatingPanel);
+      this.buildPalettePanel(panelBody);
       this.paletteButton.style.cssText = STYLES.toolButtonActive;
     } else {
-      this.buildAdjustPanel(floatingPanel);
+      this.buildAdjustPanel(panelBody);
       this.adjustButton.style.cssText = STYLES.toolButtonActive;
     }
 
+    floatingPanel.appendChild(panelBody);
     this.overlay.appendChild(floatingPanel);
     this.floatingPanel = floatingPanel;
     this.positionPanel();
@@ -180,10 +237,96 @@ export class PanelManager {
 
   private positionPanel(): void {
     if (!this.floatingPanel) return;
+    const nextPosition = this.panelPosition ?? this.getDefaultPanelPosition();
+    this.applyPanelPosition(nextPosition.left, nextPosition.top);
+  }
+
+  private attachPanelHeader(container: HTMLDivElement, title: string): void {
+    const header = document.createElement("div");
+    header.className = "iat-floating-panel-header";
+
+    const titleEl = document.createElement("div");
+    titleEl.className = "iat-floating-panel-title";
+    titleEl.textContent = title;
+
+    const closeButton = document.createElement("button");
+    closeButton.className = "iat-floating-panel-close";
+    closeButton.type = "button";
+    closeButton.title = t("close");
+    closeButton.textContent = "✕";
+    closeButton.addEventListener("click", () => this.close());
+
+    header.append(titleEl, closeButton);
+    header.addEventListener("pointerdown", this.onHeaderPointerDown);
+    container.appendChild(header);
+  }
+
+  private getDefaultPanelPosition(): { left: number; top: number } {
     const barRect = this.toolButtonBar.getBoundingClientRect();
-    this.floatingPanel.style.left = `${barRect.left}px`;
-    this.floatingPanel.style.top = `${barRect.top - 8}px`;
-    this.floatingPanel.style.transform = "translateY(-100%)";
+    const panelRect = this.floatingPanel?.getBoundingClientRect();
+    const panelHeight = panelRect?.height ?? 0;
+    return {
+      left: barRect.left,
+      top: barRect.top - panelHeight - 8,
+    };
+  }
+
+  private clampPanelPosition(left: number, top: number): { left: number; top: number } {
+    const panelRect = this.floatingPanel?.getBoundingClientRect();
+    const panelWidth = panelRect?.width ?? 0;
+    const panelHeight = panelRect?.height ?? 0;
+    const maxLeft = Math.max(PANEL_VIEWPORT_MARGIN, window.innerWidth - panelWidth - PANEL_VIEWPORT_MARGIN);
+    const maxTop = Math.max(PANEL_VIEWPORT_MARGIN, window.innerHeight - panelHeight - PANEL_VIEWPORT_MARGIN);
+    return {
+      left: Math.min(Math.max(PANEL_VIEWPORT_MARGIN, left), maxLeft),
+      top: Math.min(Math.max(PANEL_VIEWPORT_MARGIN, top), maxTop),
+    };
+  }
+
+  private applyPanelPosition(left: number, top: number): void {
+    if (!this.floatingPanel) return;
+    const next = this.clampPanelPosition(left, top);
+    this.panelPosition = next;
+    this.floatingPanel.style.left = `${next.left}px`;
+    this.floatingPanel.style.top = `${next.top}px`;
+  }
+
+  private readonly onHeaderPointerDown = (event: PointerEvent): void => {
+    if (!this.floatingPanel) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest("button")) return;
+    const rect = this.floatingPanel.getBoundingClientRect();
+    this.draggingPointerId = event.pointerId;
+    this.dragOffset = {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    };
+    this.floatingPanel.setPointerCapture(event.pointerId);
+    this.floatingPanel.addEventListener("pointermove", this.onPanelPointerMove);
+    this.floatingPanel.addEventListener("pointerup", this.onPanelPointerUp);
+    this.floatingPanel.addEventListener("pointercancel", this.onPanelPointerUp);
+    event.preventDefault();
+  };
+
+  private readonly onPanelPointerMove = (event: PointerEvent): void => {
+    if (!this.floatingPanel || this.draggingPointerId !== event.pointerId) return;
+    this.applyPanelPosition(
+      event.clientX - this.dragOffset.x,
+      event.clientY - this.dragOffset.y,
+    );
+  };
+
+  private readonly onPanelPointerUp = (event: PointerEvent): void => {
+    if (!this.floatingPanel || this.draggingPointerId !== event.pointerId) return;
+    this.draggingPointerId = null;
+    this.floatingPanel.releasePointerCapture(event.pointerId);
+    this.floatingPanel.removeEventListener("pointermove", this.onPanelPointerMove);
+    this.floatingPanel.removeEventListener("pointerup", this.onPanelPointerUp);
+    this.floatingPanel.removeEventListener("pointercancel", this.onPanelPointerUp);
+  };
+
+  private readonly onWindowResize = (): void => {
+    this.positionPanel();
   }
 
   private buildPalettePanel(container: HTMLDivElement): void {
