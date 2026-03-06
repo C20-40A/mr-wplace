@@ -2,10 +2,13 @@
  * カード表示用の共通コンポーネント
  */
 
+import { isMobileViewport } from "@/constants/breakpoints";
+
 export interface CardConfig {
   id: string;
   title: string;
   subtitle?: string;
+  padding?: string;
   badge?: string;
   hasActiveIcon?: boolean;
   onDelete?: boolean;
@@ -20,6 +23,7 @@ export interface CardConfig {
  * 共通カードUIを生成
  */
 export const createCard = (config: CardConfig): string => {
+  const isMobile = isMobileViewport();
   const dataAttrs = config.data
     ? Object.entries(config.data)
         .map(([key, value]) => `data-${key}="${value}"`)
@@ -36,7 +40,7 @@ export const createCard = (config: CardConfig): string => {
         cursor: ${config.onClick ? "pointer" : "default"};
         border-radius: 10px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        padding: 11px 14px 20px 10px;
+        padding: ${config.padding || "11px 14px 20px 10px"};
         transition: all 0.25s ease;
         transform: translateY(0);
         overflow: hidden;
@@ -133,8 +137,8 @@ export const createCard = (config: CardConfig): string => {
           <div style="
             background: ${config.tagColor};
             border-radius: 4px;
-            padding: 2px 6px;
-            font-size: 10px;
+            padding: ${isMobile ? "2px 4px" : "2px 6px"};
+            font-size: ${isMobile ? "8.5px" : "10px"};
             font-weight: 600;
             color: white;
             flex-shrink: 0;
@@ -146,7 +150,7 @@ export const createCard = (config: CardConfig): string => {
             : ""
         }
         <h4 class="text-base-content" style="
-          font-size: 13px;
+          font-size: ${isMobile ? "11px" : "13px"};
           font-weight: 500;
           line-height: 1.4;
           overflow: hidden;

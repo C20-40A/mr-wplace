@@ -678,9 +678,7 @@ export const renderBookmarks = (
       const cardConfig: CardConfig = {
         id: fav.id.toString(),
         title: fav.name,
-        subtitle: `📍${fav.lat?.toFixed(3) || "N/A"}, ${
-          fav.lng?.toFixed(3) || "N/A"
-        }`,
+        padding: "11px 14px 10px 10px",
         onDelete: true,
         onEdit: true,
         onClick: true,
