@@ -126,6 +126,15 @@ export class ImageAdjustToolMode {
     event.preventDefault();
   };
 
+  private readonly onMapClickCapture = (event: MouseEvent): void => {
+    const overlay = this.elements?.overlay;
+    if (!overlay) return;
+    const target = event.target as Node | null;
+    if (target && overlay.contains(target)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  };
+
   private readonly onFramePointerDown = (event: PointerEvent): void => {
     const frame = this.elements?.frame;
     if (!frame || !this.rect) return;
@@ -334,10 +343,11 @@ export class ImageAdjustToolMode {
       this.elements!;
     frame.addEventListener("pointerdown", this.onFramePointerDown);
     frame.addEventListener("wheel", this.onOverlayWheel, { passive: false });
-    resizeHandle.addEventListener("pointerdown", this.onResizePointerDown);
     topToolBar.addEventListener("wheel", this.onOverlayWheel, { passive: false });
+    resizeHandle.addEventListener("pointerdown", this.onResizePointerDown);
     closeButton.addEventListener("wheel", this.onOverlayWheel, { passive: false });
     confirmButton.addEventListener("wheel", this.onOverlayWheel, { passive: false });
+    this.mapElement?.addEventListener("click", this.onMapClickCapture, true);
     window.addEventListener("pointermove", this.onGlobalPointerMove, { passive: true });
     window.addEventListener("pointerup", this.onGlobalPointerUp, { passive: true });
     window.addEventListener("pointercancel", this.onGlobalPointerUp, { passive: true });
@@ -353,6 +363,7 @@ export class ImageAdjustToolMode {
     el?.topToolBar.removeEventListener("wheel", this.onOverlayWheel);
     el?.closeButton.removeEventListener("wheel", this.onOverlayWheel);
     el?.confirmButton.removeEventListener("wheel", this.onOverlayWheel);
+    this.mapElement?.removeEventListener("click", this.onMapClickCapture, true);
     window.removeEventListener("pointermove", this.onGlobalPointerMove);
     window.removeEventListener("pointerup", this.onGlobalPointerUp);
     window.removeEventListener("pointercancel", this.onGlobalPointerUp);
