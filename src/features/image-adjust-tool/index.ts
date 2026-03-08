@@ -41,6 +41,7 @@ export type ImageAdjustToolOptions = {
   naturalWidth: number;
   naturalHeight: number;
   initialScale: number;
+  initialDrawPosition?: { TLX: number; TLY: number; PxX: number; PxY: number };
   initialProcessingState?: Partial<ProcessingState>;
   onConfirm: (result: ConfirmResult) => void | Promise<void>;
   onCancel?: () => void;
@@ -251,8 +252,8 @@ export class ImageAdjustToolMode {
     this.createUI();
     this.mountEvents();
     this.mounted = true;
-    this.requestMetricsUpdate(true);
     setMapProjectionTracking(true);
+    void this.initPositionFromDrawPosition();
     return true;
   }
 
@@ -369,6 +370,24 @@ export class ImageAdjustToolMode {
     window.removeEventListener("pointercancel", this.onGlobalPointerUp);
     window.removeEventListener("resize", this.onWindowResize);
     window.removeEventListener("message", this.onMapViewChanged);
+  }
+
+  private async initPositionFromDrawPosition(): Promise<void> {
+    const dp = this.options.initialDrawPosition;
+    if (dp && (dp.TLX !== 0 || dp.TLY !== 0 || dp.PxX !== 0 || dp.PxY !== 0)) {
+      const worldX = dp.TLX * TILE_SIZE + dp.PxX;
+      const worldY = dp.TLY * TILE_SIZE + dp.PxY;
+      const naturalW = this.options.naturalWidth;
+      const naturalH = this.options.naturalHeight;
+      const scale = this.options.initialScale;
+      const widthPx = Math.max(1, Math.round(naturalW * scale));
+      const heightPx = Math.max(1, Math.round(naturalH * scale));
+      this.mapRect = { x: worldX, y: worldY, width: widthPx, height: heightPx };
+      await this.syncScreenRectFromMap(true);
+      this.requestMetricsUpdate(true);
+    } else {
+      this.requestMetricsUpdate(true);
+    }
   }
 
   private getInitialRect(): Rect {

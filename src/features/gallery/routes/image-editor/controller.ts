@@ -292,6 +292,7 @@ export class EditorController {
       naturalWidth: this.originalImage.naturalWidth,
       naturalHeight: this.originalImage.naturalHeight,
       initialScale: this.imageScale,
+      initialDrawPosition: this.drawPosition ?? undefined,
       initialProcessingState: this.buildAdjustToolInitialState(),
       onConfirm: ({ widthPx, heightPx, drawPosition, processingParams }) => {
         this.applyAdjustToolResult(widthPx, heightPx, drawPosition, processingParams);
