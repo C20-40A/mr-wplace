@@ -17,6 +17,7 @@
     "analyze:ts": "bun ./scripts/ts-morph-index.ts",
     "analyze:ts:changed": "bun ./scripts/ts-morph-index.ts --changed",
     "context:ts": "bun ./scripts/ts-context-build.ts",
+    "context:api": "bun ./scripts/ts-api-context.ts",
     "test:chrome": "bun run playwright test --headed --project=chromium",
     "test:firefox": "bun run playwright test --headed --project=firefox",
     "test:safari": "bun run playwright test --headed --project=webkit"

@@ -205,3 +205,7 @@ When content needs computed data from inject (stats/pixel color), use helpers in
 # contexts
 
 .prompts/context/responsive-breakpoints.md : responsiveUIを作成するときREAD
+
+@.prompts/context/utils-components-api.md
+
+- utils/components.これらを編集追加したら、`bun run context:api`を実行して更新すること
