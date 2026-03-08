@@ -35,15 +35,15 @@ export class Tutorial {
         "tutorial_how_to_draw_step3",
       ],
     },
-    {
-      id: "how_to_archive",
-      titleKey: "tutorial_how_to_archive_title",
-      gifUrl: runtime.getURL("assets/images/tutorial/how_to_archive.gif"),
-      steps: [
-        "tutorial_how_to_archive_step1",
-        "tutorial_how_to_archive_step2",
-      ],
-    },
+    // {
+    //   id: "how_to_archive",
+    //   titleKey: "tutorial_how_to_archive_title",
+    //   gifUrl: runtime.getURL("assets/images/tutorial/how_to_archive.gif"),
+    //   steps: [
+    //     "tutorial_how_to_archive_step1",
+    //     "tutorial_how_to_archive_step2",
+    //   ],
+    // },
     {
       id: "how_to_draw_archive",
       titleKey: "tutorial_how_to_draw_archive_title",
@@ -120,7 +120,8 @@ export class Tutorial {
 
     const modalBox = document.createElement("div");
     modalBox.className = "modal-box max-w-2xl";
-    modalBox.style.cssText = "max-height: 80vh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;";
+    modalBox.style.cssText =
+      "max-height: 80vh; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;";
 
     // ヘッダー
     const header = document.createElement("div");
