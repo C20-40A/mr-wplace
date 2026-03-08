@@ -6,6 +6,8 @@ import { ColorPalette } from "@/components/color-palette";
 import { ImageAdjustToolMode, type AdjustToolProcessingParams } from "@/features/image-adjust-tool";
 import type { ProcessingState } from "@/features/image-adjust-tool/panel";
 import { DrawPosition, GalleryItem } from "@/states/galleryStorage";
+import { tilePixelToLatLng } from "@/utils/coordinate";
+import { gotoPosition } from "@/utils/position";
 import { TransparencyMaskEditor } from "./transparency-mask-editor";
 import {
   readFileAsDataUrl,
@@ -306,6 +308,12 @@ export class EditorController {
     if (!opened) {
       this.adjustToolMode = null;
       return;
+    }
+
+    const dp = this.drawPosition;
+    if (dp && (dp.TLX !== 0 || dp.TLY !== 0 || dp.PxX !== 0 || dp.PxY !== 0)) {
+      const { lat, lng } = tilePixelToLatLng(dp.TLX, dp.TLY, dp.PxX, dp.PxY);
+      void gotoPosition({ lat, lng, zoom: 14 });
     }
 
     console.log("🧑‍🎨 : Opened adjust tool mode");

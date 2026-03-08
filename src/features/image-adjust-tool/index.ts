@@ -558,6 +558,22 @@ export class ImageAdjustToolMode {
     void this.updatePreview(metrics);
   }
 
+  private updatePaletteColorStats(canvas: HTMLCanvasElement): void {
+    if (!this.panelManager) return;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return;
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const counts = new Map<string, number>();
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] === 0) continue;
+      const key = `${data[i]},${data[i + 1]},${data[i + 2]}`;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    const colorStats: Record<string, { matched: number; total: number }> = {};
+    for (const [key, count] of counts.entries()) colorStats[key] = { matched: 0, total: count };
+    this.panelManager.updateColorStats(colorStats);
+  }
+
   private async updatePreview(metrics: Metrics): Promise<void> {
     this.previewPending = true;
     try {
@@ -575,6 +591,7 @@ export class ImageAdjustToolMode {
         sourceImage,
       );
       this.elements.frameImage.src = processedCanvas.toDataURL("image/png");
+      this.updatePaletteColorStats(processedCanvas);
     } finally {
       this.previewPending = false;
       const queued = this.queuedPreviewMetrics;

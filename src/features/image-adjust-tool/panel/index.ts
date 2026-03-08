@@ -166,6 +166,7 @@ export class PanelManager {
   private panelPosition: { left: number; top: number } | null = null;
   private draggingPointerId: number | null = null;
   private dragOffset = { x: 0, y: 0 };
+  private cachedColorStats: Record<string, { matched: number; total: number }> | null = null;
 
   constructor(
     private readonly overlay: HTMLDivElement,
@@ -205,6 +206,11 @@ export class PanelManager {
   destroy(): void {
     this.close();
     window.removeEventListener("resize", this.onWindowResize);
+  }
+
+  updateColorStats(colorStats: Record<string, { matched: number; total: number }>): void {
+    this.cachedColorStats = colorStats;
+    this.colorPalette?.updateColorStats(colorStats);
   }
 
   private open(panel: PanelType): void {
@@ -341,6 +347,9 @@ export class PanelManager {
         this.onStateChange();
       },
       hasExtraColorsBitmap: true,
+      showColorStats: true,
+      colorStats: this.cachedColorStats ?? undefined,
+      colorStatsTotalOnly: true,
       showDisableUnusedButton: true,
       controlSize: "xs",
       sortOrder: "least-remaining",
@@ -648,7 +657,7 @@ const createSelect = (
   onChange: (v: string) => void,
 ): HTMLSelectElement => {
   const select = document.createElement("select");
-  select.className = "iat-select";
+  select.style.cssText = "font-size:0.72rem;padding:0.2rem 0.4rem;border-radius:0.25rem;border:1px solid #d1d5db;flex:1;min-width:0;background:#fff;";
   for (const opt of options) {
     const option = document.createElement("option");
     option.value = opt.value;
