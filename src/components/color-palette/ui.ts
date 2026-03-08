@@ -37,7 +37,8 @@ const HANDLERS_BORDER_HOVER = (baseColor: string) => `
   onmouseenter="this.style.borderColor='#22c55e';"
   onmouseleave="this.style.borderColor='${baseColor}';"
 `;
-const getControlHeight = (isXs: boolean): string => (isXs ? "1.8rem" : "2.25rem");
+const getControlHeight = (isXs: boolean): string =>
+  isXs ? "1.8rem" : "2.25rem";
 const getCommonBaseStyle = (isXs: boolean): string => `
   display: inline-flex;
   align-items: center;
@@ -394,7 +395,6 @@ export function buildEnhancedSelectHtml(
         <div class="enhanced-color-picker-container"
              style="display: flex;
                     align-items: center;
-                    gap: 0.5rem;
                     padding: 0.5rem 0.25rem 0;
                     border-top: 1px solid var(--color-base-content, #e5e7eb);
                     margin-top: 0.5rem;">
