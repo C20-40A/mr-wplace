@@ -199,7 +199,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
       <div class="snapshot-layout">
         <!-- スナップショット一覧 -->
         <div class="snapshot-list-container border">
-          <div id="wps-snapshots-list">
+          <div id="wps-snapshots-list" style="height: 100%">
             <div class="text-sm text-gray-500 text-center p-4">${t`${"loading"}`}</div>
           </div>
         </div>
@@ -297,7 +297,8 @@ export class SnapshotRoute extends BaseSnapshotRoute {
         if (this.options.showSaveButton) {
           const stickyDiv = document.createElement("div");
           stickyDiv.className = "border-b bg-base-200";
-          stickyDiv.style.cssText = "position: sticky; top: 0; z-index: 1; padding: 8px;";
+          stickyDiv.style.cssText =
+            "position: sticky; top: 0; z-index: 1; padding: 8px;";
           stickyDiv.innerHTML = this.renderSaveButton();
           listContainer.insertBefore(stickyDiv, listContainer.firstChild);
           const saveBtn = stickyDiv.querySelector(
@@ -324,7 +325,7 @@ export class SnapshotRoute extends BaseSnapshotRoute {
 
   private renderEmptySnapshotState(listContainer: HTMLElement): void {
     listContainer.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1rem; gap: 1rem;">
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1rem; gap: 1rem; height: 100%;">
         <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; text-align: center; opacity: 0.45;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 32px; height: 32px;">
             <path fill-rule="evenodd" d="M3 6a3 3 0 013-3h12a3 3 0 013 3v12a3 3 0 01-3 3H6a3 3 0 01-3-3V6zm14.25 6a.75.75 0 01-.22.53l-2.25 2.25a.75.75 0 01-1.06-1.06L15.44 12l-1.72-1.72a.75.75 0 011.06-1.06l2.25 2.25c.141.14.22.331.22.53zm-10.28-.53a.75.75 0 000 1.06l2.25 2.25a.75.75 0 101.06-1.06L8.56 12l1.72-1.72a.75.75 0 00-1.06-1.06l-2.25 2.25z" clip-rule="evenodd" />
