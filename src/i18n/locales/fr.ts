@@ -589,4 +589,5 @@ export const frTranslations = {
   color_flatten_none: "Aplat: Off",
   color_flatten_light: "Aplat: Leger",
   color_flatten_medium: "Aplat: Moyen",
+  open_tmp_tile_board: "Télécharger les alentours",
 };

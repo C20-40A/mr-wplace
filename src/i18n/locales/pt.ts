@@ -572,4 +572,5 @@ export const ptTranslations = {
   color_flatten_none: "Flat: Off",
   color_flatten_light: "Flat: Leve",
   color_flatten_medium: "Flat: Medio",
+  open_tmp_tile_board: "Baixar arredores",
 };

@@ -583,4 +583,5 @@ export const ruTranslations = {
   color_flatten_none: "Flat: Выкл",
   color_flatten_light: "Flat: Слабый",
   color_flatten_medium: "Flat: Средний",
+  open_tmp_tile_board: "Скачать окрестности",
 };

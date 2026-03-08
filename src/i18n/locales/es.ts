@@ -582,4 +582,5 @@ export const esTranslations = {
   color_flatten_none: "Plano: Off",
   color_flatten_light: "Plano: Suave",
   color_flatten_medium: "Plano: Medio",
+  open_tmp_tile_board: "Descargar alrededores",
 };

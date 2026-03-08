@@ -8,7 +8,6 @@ import { t } from "@/i18n/manager";
 import { showNameInputModal } from "@/components/modal";
 import { latLngToTilePixel, tilePixelToLatLng } from "@/utils/coordinate";
 import { Tutorial } from "@/features/tutorial";
-import { runtime } from "@/utils/browser-api";
 import { normalizeTileCoordinate } from "../utils/tile-coordinate";
 import { showFeatureHint } from "@/features/feature-hints";
 import { isTabletOrBelowViewport } from "@/constants/breakpoints";
@@ -83,23 +82,22 @@ export class SnapshotRoute extends BaseSnapshotRoute {
     gotoBtn && gotoBtn.removeAttribute("disabled");
   }
 
-  private renderSaveButton(): string {
+  private renderActionButtons(): string {
     return `
-      <div style="margin-top: 8px; display: flex; gap: 8px;">
-        <button id="wps-save-current-snapshot-btn" class="btn btn-sm btn-primary" style="flex: 1;">
-          ${t`${"save_current_snapshot"}`}
-        </button>
-        <button id="wps-open-tmp-tile-board-btn" class="btn btn-sm btn-outline" style="padding: 8px;" title="Open tmp tile board">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+      <div style="display: flex; gap: 8px; margin-top: 8px;">
+        <button id="wps-open-tmp-tile-board-btn" class="btn btn-sm btn-outline" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
             <path fill-rule="evenodd" d="M3 4.5A1.5 1.5 0 014.5 3h2.379a1.5 1.5 0 011.06.44l.621.621a1.5 1.5 0 001.06.439H19.5A1.5 1.5 0 0121 6v1.5a.75.75 0 01-1.5 0V6H9.621a3 3 0 01-2.121-.879l-.621-.621H4.5V18h5.25a.75.75 0 010 1.5H4.5A1.5 1.5 0 013 18V4.5z" clip-rule="evenodd" />
             <path fill-rule="evenodd" d="M15.75 10.5a.75.75 0 011.5 0v4.19l1.72-1.72a.75.75 0 111.06 1.06l-3 3a.75.75 0 01-1.06 0l-3-3a.75.75 0 111.06-1.06l1.72 1.72V10.5z" clip-rule="evenodd" />
             <path d="M12 19.5a.75.75 0 000 1.5h9a.75.75 0 000-1.5h-9z" />
           </svg>
+          <span>${t`${"open_tmp_tile_board"}`}</span>
         </button>
-        <button id="wps-download-current-tile-btn" class="btn btn-sm btn-outline" style="padding: 8px;" title="Download current tile image" disabled>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+        <button id="wps-download-current-tile-btn" class="btn btn-sm btn-outline" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
             <path fill-rule="evenodd" d="M12 2.25a.75.75 0 01.75.75v11.69l3.22-3.22a.75.75 0 111.06 1.06l-4.5 4.5a.75.75 0 01-1.06 0l-4.5-4.5a.75.75 0 111.06-1.06l3.22 3.22V3a.75.75 0 01.75-.75zm-9 13.5a.75.75 0 01.75.75v2.25a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5V16.5a.75.75 0 011.5 0v2.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V16.5a.75.75 0 01.75-.75z" clip-rule="evenodd" />
           </svg>
+          <span>${t`${"download"}`}</span>
         </button>
       </div>
     `;
@@ -209,13 +207,13 @@ export class SnapshotRoute extends BaseSnapshotRoute {
           </div>
         </div>
 
-        <!-- 現在タイル画像 + 保存ボタン（モバイルでは上に表示） -->
+        <!-- 現在タイル画像 + 操作ボタン（モバイルでは上に表示） -->
         <div class="current-tile-container">
           <div id="current-tile-image-container" style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background-color: #f9fafb; min-height: 0;">
             <canvas id="wps-current-tile-canvas" style="max-width: 100%; max-height: 100%; object-fit: contain;"></canvas>
             <div id="no-image-message" style="display: none; position: absolute; inset: 12px;"></div>
           </div>
-          ${this.options.showSaveButton ? this.renderSaveButton() : ""}
+          ${this.options.showSaveButton ? this.renderActionButtons() : ""}
         </div>
       </div>
     `;
@@ -235,18 +233,16 @@ export class SnapshotRoute extends BaseSnapshotRoute {
         this.router?.navigate("import-snapshot");
       });
 
-    // 保存ボタンのイベント
     if (this.options.showSaveButton) {
-      const saveBtn = container.querySelector("#wps-save-current-snapshot-btn");
-      saveBtn?.addEventListener("click", async () => {
-        await this.saveCurrentSnapshot(container);
+      // 保存ボタン: DOMが後から追加されるので委譲
+      container.addEventListener("click", async (e) => {
+        if (
+          (e.target as HTMLElement).closest("#wps-save-current-snapshot-btn")
+        ) {
+          await this.saveCurrentSnapshot(container);
+        }
       });
 
-      if (saveBtn instanceof HTMLElement) {
-        showFeatureHint("save-current-snapshot-btn", saveBtn);
-      }
-
-      // ダウンロードボタンのイベント
       container
         .querySelector("#wps-open-tmp-tile-board-btn")
         ?.addEventListener("click", () => {
@@ -301,24 +297,46 @@ export class SnapshotRoute extends BaseSnapshotRoute {
           snapshots.map((snapshot) => this.renderSnapshotItem(snapshot)),
         );
         listContainer.innerHTML = renderedItems.join("");
+        if (this.options.showSaveButton) {
+          const stickyDiv = document.createElement("div");
+          stickyDiv.style.cssText =
+            "position: sticky; bottom: 0; padding: 8px; background: white; border-top: 1px solid #e5e7eb;";
+          stickyDiv.innerHTML = this.renderSaveButton();
+          listContainer.appendChild(stickyDiv);
+          const saveBtn = stickyDiv.querySelector(
+            "#wps-save-current-snapshot-btn",
+          );
+          if (saveBtn instanceof HTMLElement)
+            showFeatureHint("save-current-snapshot-btn", saveBtn);
+        }
       }
     }
   }
 
+  private renderSaveButton(): string {
+    return `
+      <button id="wps-save-current-snapshot-btn" class="btn btn-sm btn-primary" style="width: 100%;">
+        ${t`${"save_current_snapshot"}`}
+      </button>
+    `;
+  }
+
   private renderEmptySnapshotState(listContainer: HTMLElement): void {
-    const tutorialGifUrl = runtime.getURL(
-      "assets/images/tutorial/how_to_archive.gif",
-    );
-
     listContainer.innerHTML = `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1rem; gap: 1.5rem;">
-        <img src="${tutorialGifUrl}" alt="How to archive" style="width: 16rem; height: auto; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
-
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1rem; gap: 1rem;">
         <div style="text-align: center; max-width: 350px;">
           <p style="font-size: 0.95rem; color: #6b7280;">${t`${"empty_archive_message"}`}</p>
         </div>
+        ${this.options.showSaveButton ? this.renderSaveButton() : ""}
       </div>
     `;
+    if (this.options.showSaveButton) {
+      const saveBtn = listContainer.querySelector(
+        "#wps-save-current-snapshot-btn",
+      );
+      if (saveBtn instanceof HTMLElement)
+        showFeatureHint("save-current-snapshot-btn", saveBtn);
+    }
   }
 
   private async saveCurrentSnapshot(container: HTMLElement): Promise<void> {

@@ -575,4 +575,5 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   color_flatten_none: "Flat: Aus",
   color_flatten_light: "Flat: Leicht",
   color_flatten_medium: "Flat: Mittel",
+  open_tmp_tile_board: "Umgebung herunterladen",
 };

@@ -600,4 +600,5 @@ export const jaTranslations = {
   color_flatten_none: "フラット: オフ",
   color_flatten_light: "フラット: 弱",
   color_flatten_medium: "フラット: 中",
+  open_tmp_tile_board: "周囲をダウンロード",
 };

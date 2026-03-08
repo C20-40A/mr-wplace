@@ -597,4 +597,5 @@ Do not use this feature to paint actual pixels.`,
   color_flatten_none: "Flat: Off",
   color_flatten_light: "Flat: Light",
   color_flatten_medium: "Flat: Medium",
+  open_tmp_tile_board: "Download Surroundings",
 };

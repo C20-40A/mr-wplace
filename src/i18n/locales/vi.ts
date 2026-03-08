@@ -567,4 +567,5 @@ export const viTranslations = {
   color_flatten_none: "Flat: Tat",
   color_flatten_light: "Flat: Nhe",
   color_flatten_medium: "Flat: Vua",
+  open_tmp_tile_board: "Tải vùng xung quanh",
 };
