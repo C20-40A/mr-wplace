@@ -1,7 +1,7 @@
 import { getColor, TEXT_COLORS, TEXT_OUTLINE } from "./ui-colors";
 
 export const createAutoColorSpoitButton = (
-  enabled: boolean
+  enabled: boolean,
 ): HTMLButtonElement => {
   const button = document.createElement("button");
   button.className = "btn btn-sm btn-circle btn-ghost";
@@ -24,7 +24,7 @@ export const createAutoColorSpoitButton = (
 /** Dialog内用のコンパクトなUIアイテム */
 export const createAutoColorSpoitDialogItem = (
   enabled: boolean,
-  onClick: () => void
+  onClick: () => void,
 ): HTMLDivElement => {
   const item = document.createElement("div");
   item.style.cssText = `
@@ -39,15 +39,23 @@ export const createAutoColorSpoitDialogItem = (
     transition: all 0.1s ease;
   `;
   item.addEventListener("mouseenter", () => {
-    item.style.background = enabled ? getColor("primary", 0.2) : "rgba(255, 255, 255, 0.12)";
+    item.style.background = enabled
+      ? getColor("primary", 0.2)
+      : "rgba(255, 255, 255, 0.12)";
   });
   item.addEventListener("mouseleave", () => {
-    item.style.background = enabled ? getColor("primary", 0.15) : "rgba(255, 255, 255, 0.08)";
+    item.style.background = enabled
+      ? getColor("primary", 0.15)
+      : "rgba(255, 255, 255, 0.08)";
   });
 
   const icon = document.createElement("span");
   icon.style.cssText = `font-size: 14px; filter: ${enabled ? "none" : "grayscale(1) opacity(0.6)"};`;
   icon.textContent = "🪄";
+  // icon.innerHTML = `
+  //     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4.5">
+  //     <path d="M7.5 5.6L10 7 8.6 4.5 10 2 7.5 3.4 5 2l1.4 2.5L5 7zm12 9.8L17 14l1.4 2.5L17 19l2.5-1.4L22 19l-1.4-2.5L22 14zM22 2l-2.5 1.4L17 2l1.4 2.5L17 7l2.5-1.4L22 7l-1.4-2.5zm-7.63 5.29c-.39-.39-1.02-.39-1.41 0L1.29 18.96c-.39.39-.39 1.02 0 1.41l2.34 2.34c.39.39 1.02.39 1.41 0L16.7 11.05c.39-.39.39-1.02 0-1.41l-2.33-2.35zm-1.03 5.49l-2.12-2.12 2.44-2.44 2.12 2.12-2.44 2.44z"/>
+  //   </svg>`;
 
   const label = document.createElement("span");
   label.style.cssText = `
@@ -88,11 +96,15 @@ export const createAutoColorSpoitDialogItem = (
 
 export const updateAutoColorSpoitDialogItem = (
   item: HTMLDivElement,
-  enabled: boolean
+  enabled: boolean,
 ): void => {
   // Update item style
-  item.style.background = enabled ? getColor("primary", 0.15) : "rgba(255, 255, 255, 0.08)";
-  item.style.borderColor = enabled ? getColor("primary", 0.4) : "rgba(0, 0, 0, 0.1)";
+  item.style.background = enabled
+    ? getColor("primary", 0.15)
+    : "rgba(255, 255, 255, 0.08)";
+  item.style.borderColor = enabled
+    ? getColor("primary", 0.4)
+    : "rgba(0, 0, 0, 0.1)";
 
   // Update icon
   const icon = item.querySelector("span:first-child") as HTMLSpanElement;
@@ -100,13 +112,20 @@ export const updateAutoColorSpoitDialogItem = (
 
   // Update label
   const label = item.querySelector("span:nth-child(2)") as HTMLSpanElement;
-  if (label) label.style.color = enabled ? getColor("primary", 1) : TEXT_COLORS.primary;
+  if (label)
+    label.style.color = enabled ? getColor("primary", 1) : TEXT_COLORS.primary;
 
   // Update toggle
-  const toggle = item.querySelector(".auto-color-spoit-toggle") as HTMLDivElement;
+  const toggle = item.querySelector(
+    ".auto-color-spoit-toggle",
+  ) as HTMLDivElement;
   if (toggle) {
-    toggle.style.background = enabled ? getColor("primary", 1) : "rgba(0, 0, 0, 0.15)";
-    toggle.style.boxShadow = enabled ? `0 0 4px ${getColor("primary", 0.5)}` : "none";
+    toggle.style.background = enabled
+      ? getColor("primary", 1)
+      : "rgba(0, 0, 0, 0.15)";
+    toggle.style.boxShadow = enabled
+      ? `0 0 4px ${getColor("primary", 0.5)}`
+      : "none";
     toggle.innerHTML = enabled
       ? `<span style="position:absolute;left:3px;top:1px;font-size:7px;color:#fff;font-weight:bold;font-family:monospace;">ON</span>`
       : `<span style="position:absolute;right:2px;top:1px;font-size:7px;color:${TEXT_COLORS.tertiary};font-family:monospace;">OFF</span>`;

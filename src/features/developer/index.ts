@@ -1,7 +1,10 @@
 import { AutoSpoitStorage } from "./storage";
 import { AutoCanvasClickStorage } from "./auto-canvas-click-storage";
 import { AutoColorSpoitStorage } from "./auto-color-spoit-storage";
-import { updateAutoCanvasClickDialogItem } from "./auto-canvas-click-ui";
+import {
+  createAutoCanvasClickDialogItem,
+  updateAutoCanvasClickDialogItem,
+} from "./auto-canvas-click-ui";
 import {
   createAutoColorSpoitDialogItem,
   updateAutoColorSpoitDialogItem,
@@ -229,12 +232,11 @@ export class DevInject {
 
     content.appendChild(this.areaFillUI.container);
 
-    // Auto Canvas Click item (hidden for now)
-    // this.autoCanvasClickDialogItem = createAutoCanvasClickDialogItem(
-    //   this.autoCanvasClickEnabled,
-    //   () => this.toggleAutoCanvasClick()
-    // );
-    // content.appendChild(this.autoCanvasClickDialogItem);
+    this.autoCanvasClickDialogItem = createAutoCanvasClickDialogItem(
+      this.autoCanvasClickEnabled,
+      () => this.toggleAutoCanvasClick(),
+    );
+    content.appendChild(this.autoCanvasClickDialogItem);
 
     // Auto Color Spoit item
     this.autoColorSpoitDialogItem = createAutoColorSpoitDialogItem(
