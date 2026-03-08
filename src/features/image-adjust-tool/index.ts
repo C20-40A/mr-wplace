@@ -292,6 +292,52 @@ export class ImageAdjustToolMode {
     if (triggerCancel) this.options.onCancel?.();
   }
 
+  private createDPad(): HTMLElement {
+    const container = document.createElement("div");
+    container.style.cssText = `
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, 28px);
+      grid-template-rows: repeat(3, 28px);
+      pointer-events: auto;
+      z-index: 2002;
+    `;
+
+    const addBtn = (symbol: string, col: string, row: string, dx: number, dy: number) => {
+      const btn = document.createElement("button");
+      btn.className = "btn btn-xs btn-neutral";
+      btn.textContent = symbol;
+      btn.style.cssText = `
+        grid-column: ${col};
+        grid-row: ${row};
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        padding: 0;
+        opacity: 0.85;
+      `;
+      btn.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        if (!this.mapRect) return;
+        const step = e.shiftKey ? 10 : 1;
+        this.mapRect = { ...this.mapRect, x: this.mapRect.x + dx * step, y: this.mapRect.y + dy * step };
+        await this.syncScreenRectFromMap(true);
+        this.requestMetricsUpdate(true, false);
+      });
+      container.appendChild(btn);
+    };
+
+    addBtn("↑", "2", "1", 0, -1);
+    addBtn("←", "1", "2", -1, 0);
+    addBtn("→", "3", "2", 1, 0);
+    addBtn("↓", "2", "3", 0, 1);
+
+    return container;
+  }
+
   private createUI(): void {
     const baseImage = document.createElement("img");
     baseImage.src = this.options.imageSrc;
@@ -322,6 +368,7 @@ export class ImageAdjustToolMode {
     });
 
     elements.overlay.appendChild(bar);
+    elements.overlay.appendChild(this.createDPad());
     document.body.appendChild(elements.overlay);
 
     this.elements = elements;
