@@ -5,14 +5,16 @@ import type {
   DitheringMethod,
   QuantizationMethod,
 } from "@/features/gallery/routes/image-editor/canvas-processor";
+import { STYLES, PANEL_VIEWPORT_MARGIN_PX } from "./styles";
+import { createSliderSection, createRangeInput, createSelect } from "./ui-helpers";
+
+export { injectPanelStyles } from "./styles";
+export { createToolButtonBar } from "./ui-helpers";
 
 // --- Constants ---
 
 export const PROCESSING_DEBOUNCE_MS = 200;
 export const PREVIEW_UPDATE_MS = 160;
-
-const OVERLAY_Z_INDEX = 2001;
-const PANEL_VIEWPORT_MARGIN = 12;
 
 // --- Types ---
 
@@ -33,128 +35,6 @@ export type ProcessingState = {
   outlineUseFixedColor: boolean;
   outlineFixedColor: string;
   selectedColorIds: number[];
-};
-
-// --- Styles ---
-
-const STYLES = {
-  toolButtonBar: `
-    position: fixed;
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    pointer-events: auto;
-    z-index: ${OVERLAY_Z_INDEX + 2};
-  `,
-  toolButton: `
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.72);
-    color: #fff;
-    font-size: 13px;
-    line-height: 1;
-    padding: 0.3rem 0.55rem;
-    border: none;
-    cursor: pointer;
-    pointer-events: auto;
-    transition: background 0.15s;
-  `,
-  toolButtonActive: `
-    border-radius: 999px;
-    background: rgba(37, 99, 235, 0.9);
-    color: #fff;
-    font-size: 13px;
-    line-height: 1;
-    padding: 0.3rem 0.55rem;
-    border: none;
-    cursor: pointer;
-    pointer-events: auto;
-    transition: background 0.15s;
-  `,
-  floatingPanel: `
-    position: fixed;
-    background: var(--color-base-100, #fff);
-    border-radius: 0.75rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-    pointer-events: auto;
-    z-index: ${OVERLAY_Z_INDEX + 3};
-    max-height: 70vh;
-    overflow-y: auto;
-    width: min(340px, calc(100vw - ${PANEL_VIEWPORT_MARGIN * 2}px));
-    min-width: min(280px, calc(100vw - ${PANEL_VIEWPORT_MARGIN * 2}px));
-    max-width: 340px;
-  `,
-} as const;
-
-// --- CSS injection ---
-
-export const injectPanelStyles = (): void => {
-  const styleId = "mr-wplace-adjust-tool-styles";
-  if (document.getElementById(styleId)) return;
-  const style = document.createElement("style");
-  style.id = styleId;
-  style.textContent = `
-    .iat-panel-section { margin-bottom: 0.5rem; }
-    .iat-panel-section:last-child { margin-bottom: 0; }
-    .iat-slider-row {
-      display: flex; align-items: center; gap: 0.4rem;
-    }
-    .iat-slider-row input[type="range"] { flex: 1; min-width: 0; }
-    .iat-slider-label {
-      font-size: 0.75rem; font-weight: 500; margin-bottom: 0.2rem;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .iat-slider-value { font-size: 0.7rem; color: #9ca3af; }
-    .iat-hint { font-size: 0.65rem; color: #9ca3af; }
-    .iat-checkbox-row {
-      display: flex; align-items: center; gap: 0.4rem;
-      font-size: 0.75rem; cursor: pointer;
-    }
-    .iat-select { font-size: 0.72rem; padding: 0.2rem 0.4rem; border-radius: 0.25rem; border: 1px solid #d1d5db; }
-    .iat-select-row { display: flex; gap: 0.35rem; align-items: center; }
-    .iat-select-row select { flex: 1; min-width: 0; }
-    .iat-outline-params {
-      display: flex; align-items: center; gap: 0.35rem; margin-top: 0.25rem;
-    }
-    .iat-outline-params .iat-slider-row { flex: 1; }
-    .iat-floating-panel-header {
-      position: sticky;
-      top: 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
-      padding: 0.75rem 0.75rem 0.5rem;
-      background: var(--color-base-100, #fff);
-      border-bottom: 1px solid rgba(156, 163, 175, 0.25);
-      border-radius: 0.75rem 0.75rem 0 0;
-      cursor: move;
-      touch-action: none;
-      z-index: 1;
-    }
-    .iat-floating-panel-title {
-      font-size: 0.78rem;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-    .iat-floating-panel-close {
-      width: 1.75rem;
-      height: 1.75rem;
-      min-width: 1.75rem;
-      border: none;
-      border-radius: 999px;
-      background: rgba(0, 0, 0, 0.08);
-      cursor: pointer;
-      font-size: 0.9rem;
-      line-height: 1;
-    }
-    .iat-floating-panel-close:hover {
-      background: rgba(0, 0, 0, 0.14);
-    }
-    .iat-floating-panel-body {
-      padding: 0.75rem;
-    }
-  `;
-  document.head.appendChild(style);
 };
 
 // --- Panel manager ---
@@ -281,11 +161,12 @@ export class PanelManager {
     const panelRect = this.floatingPanel?.getBoundingClientRect();
     const panelWidth = panelRect?.width ?? 0;
     const panelHeight = panelRect?.height ?? 0;
-    const maxLeft = Math.max(PANEL_VIEWPORT_MARGIN, window.innerWidth - panelWidth - PANEL_VIEWPORT_MARGIN);
-    const maxTop = Math.max(PANEL_VIEWPORT_MARGIN, window.innerHeight - panelHeight - PANEL_VIEWPORT_MARGIN);
+    const m = PANEL_VIEWPORT_MARGIN_PX;
+    const maxLeft = Math.max(m, window.innerWidth - panelWidth - m);
+    const maxTop = Math.max(m, window.innerHeight - panelHeight - m);
     return {
-      left: Math.min(Math.max(PANEL_VIEWPORT_MARGIN, left), maxLeft),
-      top: Math.min(Math.max(PANEL_VIEWPORT_MARGIN, top), maxTop),
+      left: Math.min(Math.max(m, left), maxLeft),
+      top: Math.min(Math.max(m, top), maxTop),
     };
   }
 
@@ -333,7 +214,7 @@ export class PanelManager {
 
   private readonly onWindowResize = (): void => {
     this.positionPanel();
-  }
+  };
 
   private buildPalettePanel(container: HTMLDivElement): void {
     const paletteContainer = document.createElement("div");
@@ -357,23 +238,17 @@ export class PanelManager {
   }
 
   private buildAdjustPanel(container: HTMLDivElement): void {
+    const s = this.state;
+    const onChange = this.onStateChange;
+
     container.appendChild(
-      createSliderSection(t("brightness"), this.state.brightness, -100, 100, 1, (v) => {
-        this.state.brightness = v;
-        this.onStateChange();
-      }),
+      createSliderSection(t("brightness"), s.brightness, -100, 100, 1, (v) => { s.brightness = v; onChange(); }),
     );
     container.appendChild(
-      createSliderSection(t("contrast"), this.state.contrast, -100, 100, 1, (v) => {
-        this.state.contrast = v;
-        this.onStateChange();
-      }),
+      createSliderSection(t("contrast"), s.contrast, -100, 100, 1, (v) => { s.contrast = v; onChange(); }),
     );
     container.appendChild(
-      createSliderSection(t("saturation"), this.state.saturation, -100, 100, 1, (v) => {
-        this.state.saturation = v;
-        this.onStateChange();
-      }),
+      createSliderSection(t("saturation"), s.saturation, -100, 100, 1, (v) => { s.saturation = v; onChange(); }),
     );
 
     // Quantization + color flatten
@@ -388,11 +263,8 @@ export class PanelManager {
         { value: "lab", label: t("quantization_lab") },
         { value: "oklab", label: t("quantization_oklab") },
       ],
-      this.state.quantizationMethod,
-      (v) => {
-        this.state.quantizationMethod = v as QuantizationMethod;
-        this.onStateChange();
-      },
+      s.quantizationMethod,
+      (v) => { s.quantizationMethod = v as QuantizationMethod; onChange(); },
     );
     const cfSelect = createSelect(
       [
@@ -400,11 +272,8 @@ export class PanelManager {
         { value: "light", label: t("color_flatten_light") },
         { value: "medium", label: t("color_flatten_medium") },
       ],
-      this.state.colorFlattenMode,
-      (v) => {
-        this.state.colorFlattenMode = v as ColorFlattenMode;
-        this.onStateChange();
-      },
+      s.colorFlattenMode,
+      (v) => { s.colorFlattenMode = v as ColorFlattenMode; onChange(); },
     );
     selectRow.append(qSelect, cfSelect);
     selectSection.appendChild(selectRow);
@@ -418,39 +287,29 @@ export class PanelManager {
     const ditherCb = document.createElement("input");
     ditherCb.type = "checkbox";
     ditherCb.className = "checkbox checkbox-sm";
-    ditherCb.checked = this.state.ditheringEnabled;
+    ditherCb.checked = s.ditheringEnabled;
 
     const ditherMethodSelect = createSelect(
       [
         { value: "ordered", label: "Ordered" },
         { value: "floyd-steinberg", label: "Floyd" },
       ],
-      this.state.ditheringMethod,
-      (v) => {
-        this.state.ditheringMethod = v as DitheringMethod;
-        this.onStateChange();
-      },
+      s.ditheringMethod,
+      (v) => { s.ditheringMethod = v as DitheringMethod; onChange(); },
     );
-    ditherMethodSelect.disabled = !this.state.ditheringEnabled;
+    ditherMethodSelect.disabled = !s.ditheringEnabled;
     ditherMethodSelect.style.width = "5rem";
 
-    const ditherThresholdSlider = createRangeInput(
-      this.state.ditheringThreshold,
-      0,
-      1500,
-      50,
-      !this.state.ditheringEnabled,
-      (v) => {
-        this.state.ditheringThreshold = v;
-        this.onStateChange();
-      },
-    );
+    const ditherThresholdSlider = createRangeInput(s.ditheringThreshold, 0, 1500, 50, !s.ditheringEnabled, (v) => {
+      s.ditheringThreshold = v;
+      onChange();
+    });
 
     ditherCb.addEventListener("change", () => {
-      this.state.ditheringEnabled = ditherCb.checked;
+      s.ditheringEnabled = ditherCb.checked;
       ditherMethodSelect.disabled = !ditherCb.checked;
       ditherThresholdSlider.disabled = !ditherCb.checked;
-      this.onStateChange();
+      onChange();
     });
 
     ditherRow.append(ditherCb, document.createTextNode(t("dithering")), ditherMethodSelect);
@@ -476,70 +335,51 @@ export class PanelManager {
     const outlineCb = document.createElement("input");
     outlineCb.type = "checkbox";
     outlineCb.className = "checkbox checkbox-sm";
-    outlineCb.checked = this.state.outlineEnabled;
+    outlineCb.checked = s.outlineEnabled;
 
     const outlineColorCb = document.createElement("input");
     outlineColorCb.type = "checkbox";
     outlineColorCb.className = "checkbox checkbox-sm";
-    outlineColorCb.checked = this.state.outlineUseFixedColor;
-    outlineColorCb.disabled = !this.state.outlineEnabled;
+    outlineColorCb.checked = s.outlineUseFixedColor;
+    outlineColorCb.disabled = !s.outlineEnabled;
 
     const outlineColorInput = document.createElement("input");
     outlineColorInput.type = "color";
-    outlineColorInput.value = this.state.outlineFixedColor;
+    outlineColorInput.value = s.outlineFixedColor;
     outlineColorInput.style.cssText = "width: 1.5rem; height: 1.2rem; padding: 0; border: none;";
-    outlineColorInput.disabled = !this.state.outlineEnabled || !this.state.outlineUseFixedColor;
+    outlineColorInput.disabled = !s.outlineEnabled || !s.outlineUseFixedColor;
 
-    const thresholdSlider = createRangeInput(
-      this.state.outlineThreshold,
-      0,
-      200,
-      1,
-      !this.state.outlineEnabled,
-      (v) => {
-        this.state.outlineThreshold = v;
-        this.onStateChange();
-      },
-    );
-    const widthSlider = createRangeInput(
-      this.state.outlineWidth,
-      1,
-      4,
-      1,
-      !this.state.outlineEnabled,
-      (v) => {
-        this.state.outlineWidth = v;
-        this.onStateChange();
-      },
-    );
+    const thresholdSlider = createRangeInput(s.outlineThreshold, 0, 200, 1, !s.outlineEnabled, (v) => {
+      s.outlineThreshold = v;
+      onChange();
+    });
+    const widthSlider = createRangeInput(s.outlineWidth, 1, 4, 1, !s.outlineEnabled, (v) => {
+      s.outlineWidth = v;
+      onChange();
+    });
 
     outlineCb.addEventListener("change", () => {
-      this.state.outlineEnabled = outlineCb.checked;
+      s.outlineEnabled = outlineCb.checked;
       thresholdSlider.disabled = !outlineCb.checked;
       widthSlider.disabled = !outlineCb.checked;
       outlineColorCb.disabled = !outlineCb.checked;
       outlineColorInput.disabled = !outlineCb.checked || !outlineColorCb.checked;
-      this.onStateChange();
+      onChange();
     });
 
     outlineColorCb.addEventListener("change", () => {
-      this.state.outlineUseFixedColor = outlineColorCb.checked;
+      s.outlineUseFixedColor = outlineColorCb.checked;
       outlineColorInput.disabled = !outlineColorCb.checked;
-      this.onStateChange();
+      onChange();
     });
 
     outlineColorInput.addEventListener("change", () => {
       if (!/^#[0-9a-f]{6}$/i.test(outlineColorInput.value)) return;
-      this.state.outlineFixedColor = outlineColorInput.value;
-      this.onStateChange();
+      s.outlineFixedColor = outlineColorInput.value;
+      onChange();
     });
 
-    outlineRow.append(
-      outlineCb,
-      document.createTextNode(t("outline_preserve")),
-      outlineColorCb,
-      outlineColorInput,
-    );
+    outlineRow.append(outlineCb, document.createTextNode(t("outline_preserve")), outlineColorCb, outlineColorInput);
     outlineSection.appendChild(outlineRow);
 
     const outlineParams = document.createElement("div");
@@ -561,110 +401,3 @@ export class PanelManager {
     container.appendChild(outlineSection);
   }
 }
-
-// --- Tool button bar ---
-
-export const createToolButtonBar = (options: {
-  paletteTitle: string;
-  adjustTitle: string;
-  onPalette: () => void;
-  onAdjust: () => void;
-}): { bar: HTMLDivElement; paletteButton: HTMLButtonElement; adjustButton: HTMLButtonElement } => {
-  const bar = document.createElement("div");
-  bar.style.cssText = STYLES.toolButtonBar;
-
-  const paletteButton = document.createElement("button");
-  paletteButton.style.cssText = STYLES.toolButton;
-  paletteButton.textContent = "🎨";
-  paletteButton.type = "button";
-  paletteButton.title = options.paletteTitle;
-  paletteButton.addEventListener("click", options.onPalette);
-
-  const adjustButton = document.createElement("button");
-  adjustButton.style.cssText = STYLES.toolButton;
-  adjustButton.textContent = "⚙️";
-  adjustButton.type = "button";
-  adjustButton.title = options.adjustTitle;
-  adjustButton.addEventListener("click", options.onAdjust);
-
-  bar.append(paletteButton, adjustButton);
-  return { bar, paletteButton, adjustButton };
-};
-
-// --- UI helpers (panel-local) ---
-
-const createSliderSection = (
-  label: string,
-  value: number,
-  min: number,
-  max: number,
-  step: number,
-  onChange: (v: number) => void,
-): HTMLDivElement => {
-  const section = document.createElement("div");
-  section.className = "iat-panel-section";
-
-  const labelRow = document.createElement("div");
-  labelRow.className = "iat-slider-label";
-  const labelText = document.createElement("span");
-  labelText.textContent = label;
-  const valueSpan = document.createElement("span");
-  valueSpan.className = "iat-slider-value";
-  valueSpan.textContent = `${value}`;
-  labelRow.append(labelText, valueSpan);
-
-  const sliderRow = document.createElement("div");
-  sliderRow.className = "iat-slider-row";
-  const hintL = document.createElement("span");
-  hintL.className = "iat-hint";
-  hintL.textContent = `${min}`;
-  const slider = createRangeInput(value, min, max, step, false, (v) => {
-    valueSpan.textContent = `${v}`;
-    onChange(v);
-  });
-  const hintR = document.createElement("span");
-  hintR.className = "iat-hint";
-  hintR.textContent = `${max}`;
-  sliderRow.append(hintL, slider, hintR);
-
-  section.append(labelRow, sliderRow);
-  return section;
-};
-
-const createRangeInput = (
-  value: number,
-  min: number,
-  max: number,
-  step: number,
-  disabled: boolean,
-  onChange: (v: number) => void,
-): HTMLInputElement => {
-  const input = document.createElement("input");
-  input.type = "range";
-  input.className = "range range-xs";
-  input.min = `${min}`;
-  input.max = `${max}`;
-  input.step = `${step}`;
-  input.value = `${value}`;
-  input.disabled = disabled;
-  input.addEventListener("input", () => onChange(Number(input.value)));
-  return input;
-};
-
-const createSelect = (
-  options: { value: string; label: string }[],
-  currentValue: string,
-  onChange: (v: string) => void,
-): HTMLSelectElement => {
-  const select = document.createElement("select");
-  select.style.cssText = "font-size:0.72rem;padding:0.2rem 0.4rem;border-radius:0.25rem;border:1px solid #d1d5db;flex:1;min-width:0;background:#fff;";
-  for (const opt of options) {
-    const option = document.createElement("option");
-    option.value = opt.value;
-    option.textContent = opt.label;
-    if (opt.value === currentValue) option.selected = true;
-    select.appendChild(option);
-  }
-  select.addEventListener("change", () => onChange(select.value));
-  return select;
-};
