@@ -139,6 +139,20 @@ export class SnapshotRepository {
     });
   }
 
+  async updateMetadata(
+    id: string,
+    updates: Partial<Omit<SnapshotMetadata, "id">>
+  ): Promise<void> {
+    const current = await this.getMetadata(id);
+    if (!current) throw new Error(`Snapshot metadata not found: ${id}`);
+
+    await this.saveMetadata({
+      ...current,
+      ...updates,
+      id,
+    });
+  }
+
   async deleteMetadata(id: string): Promise<void> {
     const db = this.getDb();
     return new Promise((resolve, reject) => {

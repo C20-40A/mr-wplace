@@ -143,6 +143,27 @@ const handleSaveSnapshot = async (
   }
 };
 
+const handleUpdateSnapshotMetadata = async (
+  requestId: string,
+  id: string,
+  updates: Partial<Omit<SnapshotMetadata, "id">>
+) => {
+  try {
+    const repo = await initSnapshotRepository();
+    await repo.updateMetadata(id, updates);
+    sendResponse("mr-wplace-snapshot-update-metadata-response", requestId, true);
+    console.log(`🧑‍🎨 [Snapshot] Updated metadata ${id}`);
+  } catch (error) {
+    console.error("🧑‍🎨 [Snapshot] Update metadata failed:", error);
+    sendResponse(
+      "mr-wplace-snapshot-update-metadata-response",
+      requestId,
+      false,
+      error instanceof Error ? error.message : "Unknown error"
+    );
+  }
+};
+
 /**
  * Handle delete snapshot with metadata request
  */
@@ -193,6 +214,14 @@ export const setupSnapshotHandlers = () => {
           event.data.id,
           event.data.dataUrl,
           event.data.metadata
+        );
+        break;
+
+      case "mr-wplace-snapshot-update-metadata":
+        await handleUpdateSnapshotMetadata(
+          requestId,
+          event.data.id,
+          event.data.updates
         );
         break;
 

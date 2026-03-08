@@ -387,6 +387,40 @@ export const saveSnapshotToInject = async (
   });
 };
 
+export const updateSnapshotMetadataInInject = async (
+  id: string,
+  updates: Partial<Omit<SnapshotMetadata, "id">>
+): Promise<boolean> => {
+  const requestId = generateRequestId();
+
+  return new Promise((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-snapshot-update-metadata-response" &&
+        event.data.requestId === requestId
+      ) {
+        clearTimeout(timeoutId);
+        window.removeEventListener("message", handler);
+        resolve(event.data.result === true);
+      }
+    };
+
+    window.addEventListener("message", handler);
+    window.postMessage(
+      { source: "mr-wplace-snapshot-update-metadata", requestId, id, updates },
+      "*"
+    );
+
+    timeoutId = setTimeout(() => {
+      window.removeEventListener("message", handler);
+      console.warn("🧑‍🎨 : Update snapshot metadata timed out");
+      resolve(false);
+    }, 5000);
+  });
+};
+
 /**
  * Delete snapshot with metadata from inject side IndexedDB
  */
