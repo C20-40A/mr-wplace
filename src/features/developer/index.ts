@@ -168,10 +168,10 @@ export class DevInject {
     triggerButton.id = "dev-trigger-btn";
     triggerButton.style.cssText = `
       position: fixed;
-      top: 10px;
+      top: 8px;
       left: 86px;
       z-index: 800;
-      opacity: 0.4;
+      opacity: 0.6;
       transition: opacity 0.2s ease;
     `;
     triggerButton.addEventListener("click", () => {
