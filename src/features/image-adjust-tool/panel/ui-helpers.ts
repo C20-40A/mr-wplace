@@ -64,7 +64,7 @@ export const createSelect = (
   onChange: (v: string) => void,
 ): HTMLSelectElement => {
   const select = document.createElement("select");
-  select.style.cssText = "font-size:0.72rem;padding:0.2rem 0.4rem;border-radius:0.25rem;border:1px solid #d1d5db;flex:1;min-width:0;background:#fff;";
+  select.className = "select select-sm w-full";
   for (const opt of options) {
     const option = document.createElement("option");
     option.value = opt.value;
