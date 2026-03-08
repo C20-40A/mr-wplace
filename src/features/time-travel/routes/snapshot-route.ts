@@ -171,14 +171,12 @@ export class SnapshotRoute extends BaseSnapshotRoute {
         .snapshot-list-container {
           flex: 3;
           overflow-y: auto;
-          border: 1px solid #e5e7eb;
           border-radius: 4px;
         }
         .current-tile-container {
           flex: 2;
           display: flex;
           flex-direction: column;
-          border: 1px solid #e5e7eb;
           border-radius: 4px;
           padding: 8px;
         }
@@ -194,22 +192,21 @@ export class SnapshotRoute extends BaseSnapshotRoute {
           }
           .snapshot-list-container {
             flex: none;
-            min-height: 400px;
             overflow-y: visible;
           }
         }
       </style>
       <div class="snapshot-layout">
         <!-- スナップショット一覧 -->
-        <div class="snapshot-list-container">
+        <div class="snapshot-list-container border">
           <div id="wps-snapshots-list">
             <div class="text-sm text-gray-500 text-center p-4">${t`${"loading"}`}</div>
           </div>
         </div>
 
         <!-- 現在タイル画像 + 操作ボタン（モバイルでは上に表示） -->
-        <div class="current-tile-container">
-          <div id="current-tile-image-container" style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background-color: #f9fafb; min-height: 0;">
+        <div class="current-tile-container border">
+          <div id="current-tile-image-container" style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background-color: oklch(var(--color-base-200)); min-height: 0;">
             <canvas id="wps-current-tile-canvas" style="max-width: 100%; max-height: 100%; object-fit: contain;"></canvas>
             <div id="no-image-message" style="display: none; position: absolute; inset: 12px;"></div>
           </div>
@@ -299,10 +296,10 @@ export class SnapshotRoute extends BaseSnapshotRoute {
         listContainer.innerHTML = renderedItems.join("");
         if (this.options.showSaveButton) {
           const stickyDiv = document.createElement("div");
-          stickyDiv.style.cssText =
-            "position: sticky; bottom: 0; padding: 8px; background: white; border-top: 1px solid #e5e7eb;";
+          stickyDiv.className = "border-b bg-base-200";
+          stickyDiv.style.cssText = "position: sticky; top: 0; z-index: 1; padding: 8px;";
           stickyDiv.innerHTML = this.renderSaveButton();
-          listContainer.appendChild(stickyDiv);
+          listContainer.insertBefore(stickyDiv, listContainer.firstChild);
           const saveBtn = stickyDiv.querySelector(
             "#wps-save-current-snapshot-btn",
           );
@@ -315,17 +312,24 @@ export class SnapshotRoute extends BaseSnapshotRoute {
 
   private renderSaveButton(): string {
     return `
-      <button id="wps-save-current-snapshot-btn" class="btn btn-sm btn-primary" style="width: 100%;">
-        ${t`${"save_current_snapshot"}`}
-      </button>
+      <div id="wps-save-current-snapshot-btn" class="border bg-base-100 hover:bg-base-200" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; cursor: pointer; border-radius: 6px; user-select: none; transition: background 0.15s;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 16px; height: 16px; flex-shrink: 0; opacity: 0.6;">
+          <path d="M12 9a3.75 3.75 0 100 7.5A3.75 3.75 0 0012 9z" />
+          <path fill-rule="evenodd" d="M9.344 3.071a49.52 49.52 0 015.312 0c.967.052 1.83.585 2.332 1.39l.821 1.317c.24.383.645.643 1.11.71.386.054.77.113 1.152.177 1.432.239 2.429 1.493 2.429 2.909V18a3 3 0 01-3 3h-15a3 3 0 01-3-3V9.574c0-1.416.997-2.67 2.429-2.909.382-.064.766-.123 1.151-.178a1.56 1.56 0 001.11-.71l.822-1.315a2.942 2.942 0 012.332-1.39zM6.75 12.75a5.25 5.25 0 1110.5 0 5.25 5.25 0 01-10.5 0zM12 10.5a.75.75 0 01.75.75V12h.75a.75.75 0 010 1.5h-.75v.75a.75.75 0 01-1.5 0V13.5h-.75a.75.75 0 010-1.5h.75v-.75a.75.75 0 01.75-.75z" clip-rule="evenodd" />
+        </svg>
+        <span style="font-size: 0.8rem;">${t`${"save_current_snapshot"}`}</span>
+      </div>
     `;
   }
 
   private renderEmptySnapshotState(listContainer: HTMLElement): void {
     listContainer.innerHTML = `
       <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1rem; gap: 1rem;">
-        <div style="text-align: center; max-width: 350px;">
-          <p style="font-size: 0.95rem; color: #6b7280;">${t`${"empty_archive_message"}`}</p>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; text-align: center; opacity: 0.45;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 32px; height: 32px;">
+            <path fill-rule="evenodd" d="M3 6a3 3 0 013-3h12a3 3 0 013 3v12a3 3 0 01-3 3H6a3 3 0 01-3-3V6zm14.25 6a.75.75 0 01-.22.53l-2.25 2.25a.75.75 0 01-1.06-1.06L15.44 12l-1.72-1.72a.75.75 0 011.06-1.06l2.25 2.25c.141.14.22.331.22.53zm-10.28-.53a.75.75 0 000 1.06l2.25 2.25a.75.75 0 101.06-1.06L8.56 12l1.72-1.72a.75.75 0 00-1.06-1.06l-2.25 2.25z" clip-rule="evenodd" />
+          </svg>
+          <span style="font-size: 0.85rem;">${t`${"empty_archive_message"}`}</span>
         </div>
         ${this.options.showSaveButton ? this.renderSaveButton() : ""}
       </div>
@@ -503,18 +507,14 @@ export class SnapshotRoute extends BaseSnapshotRoute {
 
     canvas.style.display = "none";
     noImageMessage.innerHTML = `
-      <div style="height: 100%; min-height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; padding: 12px; border: 1px dashed #d1d5db; border-radius: 8px; background: #ffffff; text-align: center;">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#9ca3af" style="width: 28px; height: 28px;">
+      <div class="border bg-base-100" style="height: 100%; min-height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; padding: 12px; border-style: dashed; border-radius: 8px; text-align: center;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 28px; height: 28px; opacity: 0.4;">
           <path fill-rule="evenodd" d="M1.5 6A2.25 2.25 0 013.75 3.75h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zm2.25-.75A.75.75 0 003 6v12c0 .414.336.75.75.75h16.5A.75.75 0 0021 18V6a.75.75 0 00-.75-.75H3.75z" clip-rule="evenodd" />
           <path d="M7.53 8.47a.75.75 0 011.06 0l2.16 2.16 3.66-3.66a.75.75 0 011.06 1.06l-4.19 4.19a.75.75 0 01-1.06 0L7.53 9.53a.75.75 0 010-1.06z" />
           <path d="M6 16.5a.75.75 0 000 1.5h12a.75.75 0 000-1.5H6z" />
         </svg>
-        <div style="font-size: 0.875rem; color: #4b5563; font-weight: 600;">${primary}</div>
-        ${
-          secondary
-            ? `<div style="font-size: 0.75rem; color: #6b7280;">${secondary}</div>`
-            : ""
-        }
+        <div style="font-size: 0.875rem; font-weight: 600; opacity: 0.8;">${primary}</div>
+        ${secondary ? `<div style="font-size: 0.75rem; opacity: 0.5;">${secondary}</div>` : ""}
       </div>
     `;
     noImageMessage.style.display = "block";
