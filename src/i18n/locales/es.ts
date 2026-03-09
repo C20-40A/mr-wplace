@@ -523,10 +523,6 @@ export const esTranslations = {
     "¿Reemplazar todas las áreas guardadas con los datos de la URL?\nLas áreas actuales se sobrescribirán.",
   map_filter_map3d_drag_rotate: "Habilitar Rotación",
   hint_gallery_btn: "Puedes registrar imágenes para dibujar desde aquí.",
-  hint_overlay_mode_independent_prefix:
-    "Experimental pero potente: agregamos un nuevo modo. Por favor prueba el modo ",
-  hint_overlay_mode_independent_suffix:
-    " (si encuentras errores, repórtalos a través de Popup > BugReport).",
   hint_user_status_container:
     "Presiona aquí para configurar la alarma cuando se haya acumulado Paint",
   hint_bookmark_btn: "Puedes marcar esta ubicación",
@@ -582,4 +578,5 @@ export const esTranslations = {
   color_flatten_light: "Plano: Suave",
   color_flatten_medium: "Plano: Medio",
   open_tmp_tile_board: "Descargar alrededores",
+  hint_overlay_mode_performance: "Si el renderizado es lento, prueba otro modo",
 };

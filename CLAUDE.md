@@ -187,7 +187,6 @@ When content needs computed data from inject (stats/pixel color), use helpers in
 - contextを消費しないように、コマンドなどを駆使する
 - ファイル種別での分割ではなく、機能単位で分割する
 
-- 検索はrgを利用
 - ts-morph利用可能
 
 # 注意点

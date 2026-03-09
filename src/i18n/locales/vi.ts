@@ -509,10 +509,6 @@ export const viTranslations = {
     "Thay thế tất cả vùng đã lưu bằng dữ liệu từ URL?\nVùng hiện tại sẽ bị ghi đè.",
   map_filter_map3d_drag_rotate: "Bật Xoay",
   hint_gallery_btn: "Bạn có thể đăng ký hình ảnh để vẽ từ đây.",
-  hint_overlay_mode_independent_prefix:
-    "Thử nghiệm nhưng mạnh mẽ: chúng tôi đã thêm chế độ mới. Vui lòng thử chế độ ",
-  hint_overlay_mode_independent_suffix:
-    " (nếu bạn tìm thấy lỗi, vui lòng báo cáo qua Popup > BugReport).",
   hint_user_status_container:
     "Nhấn vào đây để cấu hình cảnh báo khi Paint đã tích lũy",
   hint_bookmark_btn: "Bạn có thể đánh dấu vị trí này",
@@ -567,4 +563,5 @@ export const viTranslations = {
   color_flatten_light: "Flat: Nhe",
   color_flatten_medium: "Flat: Vua",
   open_tmp_tile_board: "Tải vùng xung quanh",
+  hint_overlay_mode_performance: "Nếu việc kết xuất chậm, hãy thử chế độ khác",
 };

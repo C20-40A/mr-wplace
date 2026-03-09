@@ -511,19 +511,19 @@ export function buildOverlayModeSelectHtml(
     descriptionKey: string;
   }> = [
     {
-      value: "false",
-      labelKey: "popup_overlay_mode_composite",
-      descriptionKey: "popup_overlay_mode_composite_detail",
-    },
-    {
       value: "true",
       labelKey: "popup_overlay_mode_layer",
       descriptionKey: "popup_overlay_mode_layer_detail",
     },
+    {
+      value: "false",
+      labelKey: "popup_overlay_mode_composite",
+      descriptionKey: "popup_overlay_mode_composite_detail",
+    },
   ];
   const currentOption = options.find((o) => (o.value === "true") === enabled);
   const currentLabelKey =
-    currentOption?.labelKey ?? "popup_overlay_mode_composite";
+    currentOption?.labelKey ?? "popup_overlay_mode_layer";
 
   return `
     <div class="overlay-mode-container" style="position: relative;">

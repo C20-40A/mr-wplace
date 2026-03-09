@@ -152,8 +152,7 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     condition: () => !hasOpenModal(),
   },
   "overlay-mode-independent": {
-    getMessage: () =>
-      `${t("hint_overlay_mode_independent_prefix")}「${t("popup_overlay_mode_layer")}」${t("hint_overlay_mode_independent_suffix")}`,
+    messageKey: "hint_overlay_mode_performance",
     placement: "top",
     dependsOn: ["show-unplaced-only"],
   },

@@ -528,10 +528,6 @@ export const ruTranslations = {
   map_filter_map3d_drag_rotate: "Включить Вращение",
   hint_gallery_btn:
     "Вы можете зарегистрировать изображения для рисования отсюда.",
-  hint_overlay_mode_independent_prefix:
-    "Экспериментально, но мощно: мы добавили новый режим. Пожалуйста, попробуйте режим ",
-  hint_overlay_mode_independent_suffix:
-    " (если вы найдете ошибки, сообщите о них через Popup > BugReport).",
   hint_user_status_container:
     "Нажмите здесь, чтобы настроить сигнал, когда накопится Paint",
   hint_bookmark_btn: "Вы можете добавить это место в закладки",
@@ -583,4 +579,5 @@ export const ruTranslations = {
   color_flatten_light: "Flat: Слабый",
   color_flatten_medium: "Flat: Средний",
   open_tmp_tile_board: "Скачать окрестности",
+  hint_overlay_mode_performance: "Если рендеринг медленный, попробуйте другой режим",
 };

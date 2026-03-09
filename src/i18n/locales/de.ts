@@ -527,10 +527,6 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
     "Datensparer reduziert die Netzwerknutzung durch Wiederverwendung von Bilddaten. Bei Aktivierung werden Pixelkunst-Updates pausiert.",
   hint_palette_toggle: "Hier drücken, um den Farbfilter zu öffnen.",
   hint_gallery_btn: "Hier kannst du Bilder zum Zeichnen registrieren.",
-  hint_overlay_mode_independent_prefix:
-    "Experimentell, aber leistungsstark: Wir haben einen neuen Modus hinzugefügt. Bitte probiere den ",
-  hint_overlay_mode_independent_suffix:
-    "-Modus aus (wenn du Bugs findest, melde sie bitte über Popup > Bug Report).",
   hint_user_status_container:
     "Hier drücken, um den Alarm einzustellen, wenn sich Paint aufgeladen hat",
   hint_drawing_btn: "Hier kannst du Bilder auf der Karte zeichnen.",
@@ -575,4 +571,5 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   color_flatten_light: "Flat: Leicht",
   color_flatten_medium: "Flat: Mittel",
   open_tmp_tile_board: "Umgebung herunterladen",
+  hint_overlay_mode_performance: "Falls das Rendern langsam ist, probiere einen anderen Modus",
 };

@@ -524,10 +524,6 @@ export const jaTranslations = {
     "データセーバーは、画像データを再利用することで、通信量を削減します。ONにしていると、ピクセルアートの更新が停止します",
   hint_palette_toggle: "ここを押すとカラーフィルターが表示されます。",
   hint_gallery_btn: "ここから描画する画像を登録できます。",
-  hint_overlay_mode_independent_prefix:
-    "実験的ですが、強力な新モードを追加しました。ぜひ、",
-  hint_overlay_mode_independent_suffix:
-    " のモードを試してみてください（バグがあれば、ポップアップ > BugReport から報告していただけると助かります）",
   hint_user_status_container:
     "ここを押すとPaintがたまったときのアラームの設定ができます",
   hint_drawing_btn: "地図に画像を描くならこちら",
@@ -600,4 +596,5 @@ export const jaTranslations = {
   color_flatten_light: "フラット: 弱",
   color_flatten_medium: "フラット: 中",
   open_tmp_tile_board: "周囲をダウンロード",
+  hint_overlay_mode_performance: "処理が重い場合は、別のモードを試してみてください",
 };

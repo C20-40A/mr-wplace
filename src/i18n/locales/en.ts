@@ -516,10 +516,6 @@ Do not use this feature to paint actual pixels.`,
     "Data Saver reduces network usage by reusing image data. When enabled, pixel art updates are paused.",
   hint_palette_toggle: "Press here to open the color filter.",
   hint_gallery_btn: "You can register images to draw from here.",
-  hint_overlay_mode_independent_prefix:
-    "Experimental but powerful: we added a new mode. Please try ",
-  hint_overlay_mode_independent_suffix:
-    " mode (if you find bugs, please report them via Popup > BugReport).",
   hint_user_status_container:
     "Press here to configure the alarm for when Paint has accumulated",
   hint_drawing_btn: "Draw images on the map from here.",
@@ -597,4 +593,5 @@ Do not use this feature to paint actual pixels.`,
   color_flatten_light: "Flat: Light",
   color_flatten_medium: "Flat: Medium",
   open_tmp_tile_board: "Download Surroundings",
+  hint_overlay_mode_performance: "If rendering feels slow, try a different mode",
 };

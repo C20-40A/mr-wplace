@@ -527,10 +527,6 @@ export const frTranslations = {
     "Remplacer toutes les zones enregistrées par les données de l'URL?\nLes zones actuelles seront écrasées.",
   map_filter_map3d_drag_rotate: "Activer la Rotation",
   hint_gallery_btn: "Vous pouvez enregistrer des images à dessiner depuis ici.",
-  hint_overlay_mode_independent_prefix:
-    "Expérimental mais puissant : nous avons ajouté un nouveau mode. Veuillez essayer le mode ",
-  hint_overlay_mode_independent_suffix:
-    " (si vous trouvez des bugs, veuillez les signaler via Popup > BugReport).",
   hint_user_status_container:
     "Appuyez ici pour configurer l'alarme lorsque Paint s'est accumulé",
   hint_bookmark_btn: "Vous pouvez marquer cet emplacement",
@@ -589,4 +585,5 @@ export const frTranslations = {
   color_flatten_light: "Aplat: Leger",
   color_flatten_medium: "Aplat: Moyen",
   open_tmp_tile_board: "Télécharger les alentours",
+  hint_overlay_mode_performance: "Si le rendu est lent, essayez un autre mode",
 };
