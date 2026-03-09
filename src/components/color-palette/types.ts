@@ -2,6 +2,7 @@ import type { EnhancedMode } from "@/types/image";
 import type { ComputeDevice } from "./storage";
 
 export type SortOrder = "default" | "most-missing" | "least-remaining";
+export type OverlayModeValue = "true" | "false" | "false-lite";
 
 export interface ColorPaletteOptions {
   onChange?: (colorIds: number[]) => void;
@@ -22,7 +23,9 @@ export interface ColorPaletteOptions {
   computeDevice?: ComputeDevice;
   showOverlayModeSelect?: boolean;
   onOverlayModeChange?: (enabled: boolean) => void;
+  onOverlayLightweightModeChange?: (enabled: boolean) => void;
   overlayMode?: boolean;
+  overlayLightweightMode?: boolean;
   showUnplacedOnlyToggle?: boolean;
   onShowUnplacedOnlyChange?: (enabled: boolean) => void;
   showUnplacedOnly?: boolean;

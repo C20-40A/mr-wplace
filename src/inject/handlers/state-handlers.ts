@@ -73,6 +73,20 @@ export const handleShowUnplacedOnlyUpdate = (data: {
 };
 
 /**
+ * Handle overlay lightweight mode update
+ */
+export const handleOverlayLightweightModeUpdate = (data: {
+  enabled: boolean;
+}): void => {
+  window.mrWplaceOverlayLightweightMode = data.enabled === true;
+  console.log(
+    "🧑‍🎨 : Overlay lightweight mode updated:",
+    window.mrWplaceOverlayLightweightMode,
+  );
+  refreshFrontTileLayer();
+};
+
+/**
  * Handle selected color only mark update
  * ONの間、localStorageのselected-colorをポーリングし、変更時にタイル再描画
  */

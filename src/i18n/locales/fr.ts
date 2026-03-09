@@ -479,6 +479,7 @@ export const frTranslations = {
     "Chargez d'abord une image pour utiliser l'outil de transparence",
   popup_overlay_mode: "Calque",
   popup_overlay_mode_composite: "Composite",
+  popup_overlay_mode_composite_lite: "Composite + Minimal",
   popup_overlay_mode_layer: "Indépendant",
   developer_warning_splash_title: "Avertissement de Fonctionnalité Développeur",
   developer_warning_splash_ok: "OK",
@@ -571,6 +572,8 @@ export const frTranslations = {
   all_short: "TOUT",
   popup_overlay_mode_composite_detail:
     "Fonctions limitées, hautes performances",
+  popup_overlay_mode_composite_lite_detail:
+    "Minimal et le plus léger (transparent + point, sans comparaison/statistiques)",
   popup_overlay_mode_layer_detail: "Fonctions avancées, affichage rapide",
   adjust_tool: "Outil d'ajustement",
   adjust_tool_confirm: "Confirmer",

@@ -20,6 +20,7 @@ export {
 export {
   sendShowUnplacedOnlyToInject,
   sendSelectedColorOnlyMarkToInject,
+  sendOverlayLightweightModeToInject,
   sendColorFilterToInject,
 } from "./overlay-bridge";
 

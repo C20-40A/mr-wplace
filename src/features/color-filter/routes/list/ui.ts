@@ -7,6 +7,7 @@ import {
   sendColorFilterToInject,
   sendShowUnplacedOnlyToInject,
   sendSelectedColorOnlyMarkToInject,
+  sendOverlayLightweightModeToInject,
 } from "@/content";
 import { ColorFilter } from "@/features/color-filter";
 import {
@@ -23,6 +24,11 @@ import {
   getFrontTileLayer,
   setFrontTileLayer,
 } from "@/states/front-tile-layer";
+import {
+  loadOverlayLightweightModeFromStorage,
+  getOverlayLightweightMode,
+  setOverlayLightweightMode,
+} from "@/states/overlay-lightweight-mode";
 import { showFeatureHint } from "@/features/feature-hints";
 import { isMobileViewport } from "@/constants/breakpoints";
 
@@ -60,8 +66,12 @@ export const renderColorFilters = async (
   // 既存インスタンス破棄
   if (colorPalette) colorPalette.destroy();
   await loadFrontTileLayerFromStorage();
+  await loadOverlayLightweightModeFromStorage();
   await loadSelectedColorOnlyMarkFromStorage();
   const overlayModeEnabled = getFrontTileLayer();
+  const overlayLightweightModeEnabled = getOverlayLightweightMode();
+
+  sendOverlayLightweightModeToInject(overlayLightweightModeEnabled);
 
   // Send initial selectedColorOnlyMark state to inject
   sendSelectedColorOnlyMarkToInject(getSelectedColorOnlyMark());
@@ -131,6 +141,7 @@ export const renderColorFilters = async (
     },
     showOverlayModeSelect: true,
     overlayMode: overlayModeEnabled,
+    overlayLightweightMode: overlayLightweightModeEnabled,
     onOverlayModeChange: async (enabled) => {
       await setFrontTileLayer(enabled);
       window.postMessage(
@@ -140,6 +151,12 @@ export const renderColorFilters = async (
         },
         "*"
       );
+      location.reload();
+    },
+    onOverlayLightweightModeChange: async (enabled) => {
+      await setOverlayLightweightMode(enabled);
+      sendOverlayLightweightModeToInject(enabled);
+      location.reload();
     },
     showUnplacedOnlyToggle: true,
     showUnplacedOnly: getShowUnplacedOnly(),

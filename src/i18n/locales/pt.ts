@@ -465,6 +465,7 @@ export const ptTranslations = {
     "Carregue uma imagem primeiro para usar a ferramenta de transparência",
   popup_overlay_mode: "Camada",
   popup_overlay_mode_composite: "Composto",
+  popup_overlay_mode_composite_lite: "Composto + Mínimo",
   popup_overlay_mode_layer: "Independente",
   developer_warning_splash_title: "Aviso de Recurso de Desenvolvedor",
   developer_warning_splash_ok: "OK",
@@ -554,6 +555,8 @@ export const ptTranslations = {
   hint_gallery_backup: "Recomendamos fazer backups frequentemente aqui.",
   all_short: "TUDO",
   popup_overlay_mode_composite_detail: "Recursos limitados, alto desempenho",
+  popup_overlay_mode_composite_lite_detail:
+    "Mínimo e mais leve (transparente + ponto, sem comparação/estatísticas)",
   popup_overlay_mode_layer_detail: "Recursos avançados, exibição rápida",
   adjust_tool: "Ferramenta de ajuste",
   adjust_tool_confirm: "Confirmar",

@@ -75,6 +75,9 @@ const forceStartupLocationZoom = (): void => {
   // Initialize show unplaced only (default: false)
   window.mrWplaceShowUnplacedOnly = false;
 
+  // Initialize overlay lightweight mode (default: false)
+  window.mrWplaceOverlayLightweightMode = false;
+
   // Initialize selected color only mark (default: false)
   window.mrWplaceSelectedColorOnlyMark = false;
 

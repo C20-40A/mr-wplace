@@ -26,6 +26,7 @@ export {
   sendComputeDeviceToInject,
   sendShowUnplacedOnlyToInject,
   sendSelectedColorOnlyMarkToInject,
+  sendOverlayLightweightModeToInject,
   sendColorFilterToInject,
   sendCacheSizeToInject,
   requestTotalStatsComputation,
@@ -172,6 +173,19 @@ const initializeMainFeatures = async () => {
     {
       source: "mr-wplace-front-tile-layer-update",
       enabled: frontTileLayerEnabled,
+    },
+    "*",
+  );
+
+  const {
+    loadOverlayLightweightModeFromStorage,
+    getOverlayLightweightMode,
+  } = await import("@/states/overlay-lightweight-mode");
+  await loadOverlayLightweightModeFromStorage();
+  window.postMessage(
+    {
+      source: "mr-wplace-overlay-lightweight-mode",
+      enabled: getOverlayLightweightMode(),
     },
     "*",
   );

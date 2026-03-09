@@ -495,6 +495,7 @@ export function buildComputeDeviceSelectHtml(
  */
 export function buildOverlayModeSelectHtml(
   enabled: boolean,
+  lightweightMode: boolean = false,
   controlSize: "default" | "xs" = "default",
 ): string {
   const isXs = controlSize === "xs";
@@ -506,7 +507,7 @@ export function buildOverlayModeSelectHtml(
     </svg>
   `.trim();
   const options: Array<{
-    value: "true" | "false";
+    value: "true" | "false" | "false-lite";
     labelKey: string;
     descriptionKey: string;
   }> = [
@@ -520,8 +521,17 @@ export function buildOverlayModeSelectHtml(
       labelKey: "popup_overlay_mode_composite",
       descriptionKey: "popup_overlay_mode_composite_detail",
     },
+    {
+      value: "false-lite",
+      labelKey: "popup_overlay_mode_composite_lite",
+      descriptionKey: "popup_overlay_mode_composite_lite_detail",
+    },
   ];
-  const currentOption = options.find((o) => (o.value === "true") === enabled);
+  const currentOption = options.find((o) => {
+    if (enabled) return o.value === "true";
+    if (lightweightMode) return o.value === "false-lite";
+    return o.value === "false";
+  });
   const currentLabelKey =
     currentOption?.labelKey ?? "popup_overlay_mode_layer";
 
@@ -558,7 +568,11 @@ export function buildOverlayModeSelectHtml(
           ${buildDropdownItems({
             options,
             isXs,
-            selected: (option) => (option.value === "true") === enabled,
+            selected: (option) => {
+              if (enabled) return option.value === "true";
+              if (lightweightMode) return option.value === "false-lite";
+              return option.value === "false";
+            },
             itemClass: "overlay-mode-item",
             dataAttr: "data-overlay-mode",
             getValue: (option) => option.value,
@@ -633,6 +647,7 @@ export function buildControlsHtml(
   sortOrder: SortOrder,
   enhancedMode: EnhancedMode,
   overlayMode: boolean,
+  overlayLightweightMode: boolean,
   computeDevice: ComputeDevice,
   showUnplacedOnlyToggle: boolean = false,
   showUnplacedOnly: boolean = false,
@@ -700,7 +715,11 @@ export function buildControlsHtml(
     : "";
 
   const overlayModeSelectHTML = showOverlayModeSelect
-    ? buildOverlayModeSelectHtml(overlayMode, controlSize)
+    ? buildOverlayModeSelectHtml(
+        overlayMode,
+        overlayLightweightMode,
+        controlSize,
+      )
     : "";
 
   const computeDeviceSelectHTML = showComputeDeviceSelect

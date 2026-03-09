@@ -3,7 +3,7 @@ import type { EnhancedMode } from "@/types/image";
 import { createEnhancedModeIcons } from "../../assets/enhanced-mode-icons";
 import { t } from "../../i18n/manager";
 import { isMobileViewport } from "@/constants/breakpoints";
-import type { ColorPaletteOptions, SortOrder } from "./types";
+import type { ColorPaletteOptions, OverlayModeValue, SortOrder } from "./types";
 import type { ComputeDevice } from "./storage";
 import {
   ENABLED_BADGE_HTML,
@@ -33,6 +33,7 @@ export class ColorPalette {
   private showUnplacedColor: [number, number, number];
   private sortOrder: SortOrder = "default";
   private overlayMode: boolean;
+  private overlayLightweightMode: boolean;
   private computeDevice: ComputeDevice;
   private showUnplacedOnly: boolean;
   private selectedColorOnlyMark: boolean;
@@ -55,6 +56,7 @@ export class ColorPalette {
     this.showUnplacedColor = options.showUnplacedColor ?? [160, 160, 160];
     this.sortOrder = options.sortOrder ?? "default";
     this.overlayMode = options.overlayMode ?? false;
+    this.overlayLightweightMode = options.overlayLightweightMode ?? false;
     this.computeDevice = options.computeDevice ?? "gpu";
     this.showUnplacedOnly = options.showUnplacedOnly ?? false;
     this.selectedColorOnlyMark = options.selectedColorOnlyMark ?? false;
@@ -88,6 +90,7 @@ export class ColorPalette {
       this.sortOrder,
       this.enhancedMode,
       this.overlayMode,
+      this.overlayLightweightMode,
       this.computeDevice,
       this.options.showUnplacedOnlyToggle ?? false,
       this.showUnplacedOnly,
@@ -335,8 +338,9 @@ export class ColorPalette {
     const overlayModeItem = target.closest(".overlay-mode-item") as HTMLElement;
     if (overlayModeItem) {
       e.stopPropagation();
-      const nextEnabled = overlayModeItem.dataset.overlayMode === "true";
-      this.handleOverlayModeChange(nextEnabled);
+      const nextMode = (overlayModeItem.dataset.overlayMode ||
+        "true") as OverlayModeValue;
+      this.handleOverlayModeSelection(nextMode);
       const dropdown = this.container.querySelector(
         ".overlay-mode-dropdown",
       ) as HTMLElement;
@@ -558,8 +562,11 @@ export class ColorPalette {
     }
   }
 
-  private handleOverlayModeChange(enabled: boolean): void {
+  private handleOverlayModeSelection(mode: OverlayModeValue): void {
+    const enabled = mode === "true";
+    const lightweightMode = mode === "false-lite";
     this.overlayMode = enabled;
+    this.overlayLightweightMode = lightweightMode;
 
     const currentName = this.container.querySelector(
       ".overlay-mode-current-name",
@@ -567,14 +574,16 @@ export class ColorPalette {
     if (currentName) {
       currentName.textContent = enabled
         ? t("popup_overlay_mode_layer")
-        : t("popup_overlay_mode_composite");
+        : lightweightMode
+          ? t("popup_overlay_mode_composite_lite")
+          : t("popup_overlay_mode_composite");
     }
 
     const buttons = this.container.querySelectorAll(".overlay-mode-item");
     buttons.forEach((button) => {
-      const buttonEnabled =
-        (button as HTMLElement).dataset.overlayMode === "true";
-      const isSelected = buttonEnabled === enabled;
+      const buttonMode = ((button as HTMLElement).dataset.overlayMode ||
+        "true") as OverlayModeValue;
+      const isSelected = buttonMode === mode;
       const borderColor = isSelected ? "#22c55e" : "#d1d5db";
       const borderWidth = isSelected ? "2px" : "1px";
       (button as HTMLElement).style.border =
@@ -582,6 +591,7 @@ export class ColorPalette {
     });
 
     this.options.onOverlayModeChange?.(enabled);
+    this.options.onOverlayLightweightModeChange?.(lightweightMode);
   }
 
   private handleShowUnplacedOnlyToggle(): void {

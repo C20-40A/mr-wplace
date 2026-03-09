@@ -162,6 +162,7 @@ declare global {
     mrWplaceTextLayerKeys?: Set<string>;
     mrWplaceComputeDevice?: "gpu" | "cpu";
     mrWplaceShowUnplacedOnly?: boolean;
+    mrWplaceOverlayLightweightMode?: boolean;
     mrWplaceSelectedColorOnlyMark?: boolean;
     mrWplaceFrontTileLayerEnabled?: boolean;
     mrWplaceSnapshotCaptureEnabled?: boolean;

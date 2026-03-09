@@ -462,6 +462,7 @@ export const viTranslations = {
   transparency_no_image: "Tải ảnh trước để sử dụng công cụ trong suốt",
   popup_overlay_mode: "Lớp",
   popup_overlay_mode_composite: "Tổng hợp",
+  popup_overlay_mode_composite_lite: "Tổng hợp + Tối giản",
   popup_overlay_mode_layer: "Độc lập",
   developer_warning_splash_title: "Cảnh báo Tính năng Nhà phát triển",
   developer_warning_splash_ok: "OK",
@@ -550,6 +551,8 @@ export const viTranslations = {
   hint_gallery_backup: "Chúng tôi khuyên bạn nên sao lưu thường xuyên ở đây.",
   all_short: "HẾT",
   popup_overlay_mode_composite_detail: "Ít tính năng, hiệu năng cao",
+  popup_overlay_mode_composite_lite_detail:
+    "Tối giản và nhẹ nhất (trong suốt + chấm, bỏ so sánh/thống kê)",
   popup_overlay_mode_layer_detail: "Tính năng nâng cao, hiển thị nhanh",
   adjust_tool: "Công cụ điều chỉnh",
   adjust_tool_confirm: "Xác nhận",

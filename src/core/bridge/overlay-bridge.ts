@@ -36,6 +36,23 @@ export const sendSelectedColorOnlyMarkToInject = (enabled: boolean) => {
 };
 
 /**
+ * Send overlay lightweight mode setting to inject side
+ */
+export const sendOverlayLightweightModeToInject = (enabled: boolean) => {
+  window.postMessage(
+    {
+      source: "mr-wplace-overlay-lightweight-mode",
+      enabled,
+    },
+    "*"
+  );
+
+  console.log(
+    `🧑‍🎨 : Sent overlay lightweight mode to inject side: ${enabled}`
+  );
+};
+
+/**
  * Send color filter state to inject side
  */
 export const sendColorFilterToInject = (

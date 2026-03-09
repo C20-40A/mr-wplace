@@ -192,6 +192,7 @@ const scaleAndRenderWithMode = (
   offsetY: number,
   mode: EnhancedMode,
   shouldSkipRendering: boolean,
+  skipBackgroundComparison: boolean = false,
   showUnplacedOnly: boolean = false,
   enhancedColor: readonly [number, number, number] = [255, 0, 0],
   showUnplacedColor: readonly [number, number, number] = [160, 160, 160],
@@ -237,27 +238,30 @@ const scaleAndRenderWithMode = (
       const cmpA = useOriginalComparison ? comparisonData[srcI + 3] : a;
       if (cmpA === 0) continue;
 
-      // 背景色取得
-      const bgX1 = offsetX + x1;
-      const bgY1 = offsetY + y1;
-      const bgI1 = (bgY1 * bgWidth + bgX1) * 4;
+      let colorMatches = false;
+      if (!skipBackgroundComparison) {
+        // 背景色取得
+        const bgX1 = offsetX + x1;
+        const bgY1 = offsetY + y1;
+        const bgI1 = (bgY1 * bgWidth + bgX1) * 4;
 
-      if (bgI1 + 3 >= bgData.length) continue;
+        if (bgI1 + 3 >= bgData.length) continue;
 
-      const bgR = bgData[bgI1];
-      const bgG = bgData[bgI1 + 1];
-      const bgB = bgData[bgI1 + 2];
-      const bgA = bgData[bgI1 + 3];
+        const bgR = bgData[bgI1];
+        const bgG = bgData[bgI1 + 1];
+        const bgB = bgData[bgI1 + 2];
+        const bgA = bgData[bgI1 + 3];
 
-      const colorMatches = isSameColorComponents(
-        cmpR,
-        cmpG,
-        cmpB,
-        bgR,
-        bgG,
-        bgB,
-        bgA,
-      );
+        colorMatches = isSameColorComponents(
+          cmpR,
+          cmpG,
+          cmpB,
+          bgR,
+          bgG,
+          bgB,
+          bgA,
+        );
+      }
 
       // 通常: 配置済みピクセルは非表示
       // トグルON: 配置済みピクセルを専用色レイヤーで表示する
@@ -686,6 +690,42 @@ const convertToImageBitmap = async (
 };
 
 /**
+ * Lightweight mode fast path:
+ * - Skip background comparison and stats
+ * - Keep transparent background
+ * - Render dot only (center 1px in x3 cell) for each visible pixel
+ */
+const renderLightweightFastPath = async (
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+): Promise<ImageBitmap> => {
+  const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
+  const scaledWidth = width * pixelScale;
+  const scaledHeight = height * pixelScale;
+  const scaledData = new Uint8ClampedArray(scaledWidth * scaledHeight * 4);
+
+  // dot mode: each source pixel becomes one center pixel on a transparent 3x3 cell
+  for (let y = 0; y < height; y++) {
+    const rowBase = y * width;
+    const scaledRow = (y * pixelScale + 1) * scaledWidth;
+    for (let x = 0; x < width; x++) {
+      const srcI = (rowBase + x) * 4;
+      const a = data[srcI + 3];
+      if (a === 0) continue;
+
+      const dstI = (scaledRow + x * pixelScale + 1) * 4;
+      scaledData[dstI] = data[srcI];
+      scaledData[dstI + 1] = data[srcI + 1];
+      scaledData[dstI + 2] = data[srcI + 2];
+      scaledData[dstI + 3] = a;
+    }
+  }
+
+  return await convertToImageBitmap(scaledData, scaledWidth, scaledHeight);
+};
+
+/**
  * オーバーレイ最終処理（メイン関数）
  * 1. 背景比較+統計計算（x1サイズ）- カラーフィルター無関係
  * 2. カラーフィルター適用（x1サイズ）- 描画用
@@ -723,10 +763,13 @@ const applyOverlayProcessing = async (
 
   // 背景データ準備
   const bgData = new Uint8ClampedArray(bgPixels.buffer);
+  const showUnplacedOnly = window.mrWplaceShowUnplacedOnly ?? false;
+  const lightweightMode = window.mrWplaceOverlayLightweightMode === true;
+  const skipBackgroundComparison = lightweightMode && !showUnplacedOnly;
 
   // Phase 1: 背景比較 + 統計計算（カラーフィルター無関係）
   // Skip if we already have stats for this tile
-  if (!skipStatsComputation) {
+  if (!skipStatsComputation && !lightweightMode) {
     // 統計初期化
     if (!tempStatsMap.has(imageKey)) {
       tempStatsMap.set(imageKey, {
@@ -760,7 +803,15 @@ const applyOverlayProcessing = async (
   const shouldSkipRendering =
     colorFilter !== undefined && colorFilter.length === 0;
 
-  const showUnplacedOnly = window.mrWplaceShowUnplacedOnly ?? false;
+  if (
+    lightweightMode &&
+    !showUnplacedOnly &&
+    !window.mrWplaceSelectedColorOnlyMark &&
+    !shouldSkipRendering
+  ) {
+    return await renderLightweightFastPath(filteredData, width, height);
+  }
+
   const comparisonData = showUnplacedOnly ? getOriginalData() : null;
   const showUnplacedColor = getShowUnplacedColor();
 
@@ -789,6 +840,7 @@ const applyOverlayProcessing = async (
     offsetY,
     mode,
     shouldSkipRendering,
+    skipBackgroundComparison,
     showUnplacedOnly,
     enhancedColor,
     showUnplacedColor,
@@ -964,8 +1016,15 @@ export const drawOverlayLayersOnTile = async (
   let comparisonBgPixels = finalBgPixels;
   let comparisonBgWidth = finalBgWidth;
   const comparisonTileBlob = options.comparisonTileBlob;
+  const lightweightMode = window.mrWplaceOverlayLightweightMode === true;
+  const showUnplacedOnly = window.mrWplaceShowUnplacedOnly ?? false;
+  const needsComparisonTile = !lightweightMode || showUnplacedOnly;
 
-  if (comparisonTileBlob && comparisonTileBlob !== tileBlob) {
+  if (
+    needsComparisonTile &&
+    comparisonTileBlob &&
+    comparisonTileBlob !== tileBlob
+  ) {
     const {
       pixels: comparePixels,
       width: compareWidth,

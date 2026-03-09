@@ -479,6 +479,7 @@ export const ruTranslations = {
     "Сначала загрузите изображение, чтобы использовать инструмент прозрачности",
   popup_overlay_mode: "Слой",
   popup_overlay_mode_composite: "Композитный",
+  popup_overlay_mode_composite_lite: "Композитный + Минимум",
   popup_overlay_mode_layer: "Независимый",
   developer_warning_splash_title: "Предупреждение о Функции Разработчика",
   developer_warning_splash_ok: "OK",
@@ -565,6 +566,8 @@ export const ruTranslations = {
   all_short: "ВСЕ",
   popup_overlay_mode_composite_detail:
     "Меньше функций, высокая производительность",
+  popup_overlay_mode_composite_lite_detail:
+    "Минимум и самый лёгкий (прозрачный + точка, без сравнения/статистики)",
   popup_overlay_mode_layer_detail: "Расширенные функции, быстрое отображение",
   adjust_tool: "Инструмент настройки",
   adjust_tool_confirm: "Подтвердить",

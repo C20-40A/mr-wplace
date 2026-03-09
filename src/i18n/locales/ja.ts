@@ -215,6 +215,7 @@ export const jaTranslations = {
   popup_paint_mode_style: "ペイント時にボタンを非表示",
   popup_overlay_mode: "レイヤー",
   popup_overlay_mode_composite: "合成",
+  popup_overlay_mode_composite_lite: "合成+最小機能",
   popup_overlay_mode_layer: "独立",
   popup_bug_report: "バグ報告",
   popup_fab_visibility: "ボタン表示",
@@ -578,6 +579,8 @@ export const jaTranslations = {
   hint_gallery_backup: "ここでこまめにバックアップを取ることをお勧めします。",
   all_short: "すべて",
   popup_overlay_mode_composite_detail: "低機能・高パフォーマンス",
+  popup_overlay_mode_composite_lite_detail:
+    "最小機能・最軽量（透過+dot表示、背景比較/統計を省略）",
   popup_overlay_mode_layer_detail: "高機能・高速表示",
   adjust_tool: "調節ツール",
   adjust_tool_confirm: "決定",

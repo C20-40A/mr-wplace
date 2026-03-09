@@ -475,6 +475,7 @@ export const esTranslations = {
     "Primero cargue una imagen para usar la herramienta de transparencia",
   popup_overlay_mode: "Capa",
   popup_overlay_mode_composite: "Compuesto",
+  popup_overlay_mode_composite_lite: "Compuesto + Mínimo",
   popup_overlay_mode_layer: "Independiente",
   developer_warning_splash_title: "Advertencia de Función de Desarrollador",
   developer_warning_splash_ok: "OK",
@@ -564,6 +565,8 @@ export const esTranslations = {
   hint_gallery_backup: "Se recomienda hacer backups aquí frecuentemente.",
   all_short: "TODO",
   popup_overlay_mode_composite_detail: "Funciones básicas, alto rendimiento",
+  popup_overlay_mode_composite_lite_detail:
+    "Mínimo y más ligero (transparente + punto, sin comparación/estadísticas)",
   popup_overlay_mode_layer_detail: "Funciones avanzadas, visualización rápida",
   adjust_tool: "Herramienta de ajuste",
   adjust_tool_confirm: "Confirmar",
