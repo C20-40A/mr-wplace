@@ -10,7 +10,14 @@ import { computeTotalStatsFromImage } from "../features/tile-draw";
 import { latLonToPixels, metersToLatLon, pixelsToMeters } from "@/utils/geo-converter";
 
 const TILE_FETCH_TIMEOUT_MS = 5000;
-const MAP_VIEW_EVENTS = ["move", "zoom", "rotate", "pitch", "resize"] as const;
+const MAP_VIEW_LIVE_EVENTS = ["move", "zoom", "rotate", "pitch"] as const;
+const MAP_VIEW_SETTLED_EVENTS = [
+  "moveend",
+  "zoomend",
+  "rotateend",
+  "pitchend",
+  "resize",
+] as const;
 
 type ProjectionTrackingMap = {
   on?: (event: string, handler: () => void) => void;
@@ -19,40 +26,55 @@ type ProjectionTrackingMap = {
 
 let projectionTrackingEnabled = false;
 let trackedMap: ProjectionTrackingMap | null = null;
-let trackedMapHandler: (() => void) | null = null;
-let mapViewNotifyQueued = false;
+let trackedMapLiveHandler: (() => void) | null = null;
+let trackedMapSettledHandler: (() => void) | null = null;
+let liveMapViewNotifyQueued = false;
 
-const notifyMapViewChanged = (): void => {
-  if (!projectionTrackingEnabled || mapViewNotifyQueued) return;
-  mapViewNotifyQueued = true;
+const notifyMapViewChanged = (settled: boolean): void => {
+  if (!projectionTrackingEnabled) return;
+  if (settled) {
+    window.postMessage({ source: "mr-wplace-map-view-changed", settled: true }, "*");
+    return;
+  }
+  if (liveMapViewNotifyQueued) return;
+  liveMapViewNotifyQueued = true;
   requestAnimationFrame(() => {
-    mapViewNotifyQueued = false;
+    liveMapViewNotifyQueued = false;
     if (!projectionTrackingEnabled) return;
-    window.postMessage({ source: "mr-wplace-map-view-changed" }, "*");
+    window.postMessage({ source: "mr-wplace-map-view-changed", settled: false }, "*");
   });
 };
 
 const detachMapProjectionTracking = (): void => {
-  if (!trackedMap || !trackedMapHandler || typeof trackedMap.off !== "function") {
+  if (!trackedMap || typeof trackedMap.off !== "function") {
     trackedMap = null;
-    trackedMapHandler = null;
+    trackedMapLiveHandler = null;
+    trackedMapSettledHandler = null;
     return;
   }
-  for (const event of MAP_VIEW_EVENTS) trackedMap.off(event, trackedMapHandler);
+  if (trackedMapLiveHandler)
+    for (const event of MAP_VIEW_LIVE_EVENTS) trackedMap.off(event, trackedMapLiveHandler);
+  if (trackedMapSettledHandler)
+    for (const event of MAP_VIEW_SETTLED_EVENTS)
+      trackedMap.off(event, trackedMapSettledHandler);
   trackedMap = null;
-  trackedMapHandler = null;
+  trackedMapLiveHandler = null;
+  trackedMapSettledHandler = null;
 };
 
 const attachMapProjectionTracking = (): void => {
   const { getMapInstanceFromWplace } = require("../features/map-instance/get-map-instance");
   const mapInstance = getMapInstanceFromWplace() as ProjectionTrackingMap | null;
   if (!mapInstance || typeof mapInstance.on !== "function") return;
-  if (trackedMap === mapInstance && trackedMapHandler) return;
+  if (trackedMap === mapInstance && trackedMapLiveHandler && trackedMapSettledHandler) return;
 
   detachMapProjectionTracking();
   trackedMap = mapInstance;
-  trackedMapHandler = () => notifyMapViewChanged();
-  for (const event of MAP_VIEW_EVENTS) mapInstance.on(event, trackedMapHandler);
+  trackedMapLiveHandler = () => notifyMapViewChanged(false);
+  trackedMapSettledHandler = () => notifyMapViewChanged(true);
+  for (const event of MAP_VIEW_LIVE_EVENTS) mapInstance.on(event, trackedMapLiveHandler);
+  for (const event of MAP_VIEW_SETTLED_EVENTS)
+    mapInstance.on(event, trackedMapSettledHandler);
 };
 
 const blobToDataUrl = (blob: Blob): Promise<string> =>
@@ -454,7 +476,7 @@ export const handleMapProjectionTrackingUpdate = (data: {
     return;
   }
   attachMapProjectionTracking();
-  notifyMapViewChanged();
+  notifyMapViewChanged(true);
 };
 
 /**

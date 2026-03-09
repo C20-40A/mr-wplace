@@ -606,7 +606,8 @@ export const projectMapPixelsToScreenPoints = async (
 
 /**
  * Enable/disable inject-side map projection tracking events.
- * When enabled, inject posts "mr-wplace-map-view-changed" on map movement.
+ * When enabled, inject posts "mr-wplace-map-view-changed" during map movement
+ * and a final settled event after movement ends.
  */
 export const setMapProjectionTracking = (enabled: boolean): void => {
   window.postMessage(

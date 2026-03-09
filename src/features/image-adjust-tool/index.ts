@@ -90,6 +90,8 @@ export class ImageAdjustToolMode {
   private mapRect: Rect | null = null;
   private metricsPending = false;
   private mapSyncPending = false;
+  private queuedMapSync = false;
+  private lastMapViewSyncAt = 0;
   private lastMetricsRequestedAt = 0;
   private previewPending = false;
   private queuedPreviewMetrics: Metrics | null = null;
@@ -100,6 +102,16 @@ export class ImageAdjustToolMode {
 
   private readonly onMapViewChanged = (event: MessageEvent): void => {
     if (event.data?.source !== "mr-wplace-map-view-changed") return;
+    const settled = event.data?.settled === true;
+    if (settled) {
+      this.lastMapViewSyncAt = Date.now();
+      void this.syncScreenRectFromMap();
+      return;
+    }
+
+    const now = Date.now();
+    if (now - this.lastMapViewSyncAt < METRICS_DRAG_UPDATE_MS) return;
+    this.lastMapViewSyncAt = now;
     void this.syncScreenRectFromMap();
   };
 
@@ -557,7 +569,11 @@ export class ImageAdjustToolMode {
   }
 
   private async syncScreenRectFromMap(allowDuringInteraction = false): Promise<void> {
-    if (this.mapSyncPending || !this.mapRect || (!allowDuringInteraction && this.activeInteraction))
+    if (this.mapSyncPending) {
+      this.queuedMapSync = true;
+      return;
+    }
+    if (!this.mapRect || (!allowDuringInteraction && this.activeInteraction))
       return;
     this.mapSyncPending = true;
 
@@ -583,6 +599,10 @@ export class ImageAdjustToolMode {
       });
     } finally {
       this.mapSyncPending = false;
+      if (this.queuedMapSync) {
+        this.queuedMapSync = false;
+        void this.syncScreenRectFromMap(allowDuringInteraction);
+      }
     }
   }
 
