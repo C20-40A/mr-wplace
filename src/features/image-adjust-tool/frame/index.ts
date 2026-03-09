@@ -79,8 +79,8 @@ const STYLES = {
     pointer-events: auto;
     z-index: ${OVERLAY_Z_INDEX + 1};
   `,
-  sizeLabel: `
-    position: relative;
+  sizeInfo: `
+    position: fixed;
     border-radius: 999px;
     background: rgba(0, 0, 0, 0.72);
     color: #fff;
@@ -88,6 +88,7 @@ const STYLES = {
     line-height: 1;
     padding: 0.25rem 0.45rem;
     pointer-events: none;
+    z-index: ${OVERLAY_Z_INDEX + 1};
   `,
   opacitySlider: `
     width: 84px;
@@ -139,7 +140,7 @@ export type FrameElements = {
   frameImage: HTMLImageElement;
   resizeHandle: HTMLDivElement;
   topToolBar: HTMLDivElement;
-  sizeLabel: HTMLDivElement;
+  sizeInfo: HTMLDivElement;
   opacitySlider: HTMLInputElement;
   closeButton: HTMLButtonElement;
   confirmButton: HTMLButtonElement;
@@ -166,8 +167,8 @@ export const createFrameElements = (options: {
 
   const resizeHandle = createElement("div", { style: STYLES.resizeHandle });
 
-  const sizeLabel = createElement("div", { style: STYLES.sizeLabel });
-  sizeLabel.textContent = options.sizeLabelText;
+  const sizeInfo = createElement("div", { style: STYLES.sizeInfo });
+  sizeInfo.textContent = options.sizeLabelText;
 
   const opacitySlider = createElement("input", {
     style: STYLES.opacitySlider,
@@ -190,7 +191,7 @@ export const createFrameElements = (options: {
   });
 
   const topToolBar = createElement("div", { style: STYLES.topToolBar });
-  topToolBar.append(sizeLabel, opacitySlider);
+  topToolBar.append(opacitySlider);
 
   const closeButton = createElement("button", {
     className: "btn btn-sm btn-circle btn-error",
@@ -210,7 +211,7 @@ export const createFrameElements = (options: {
   confirmButton.addEventListener("click", options.onConfirm);
 
   frame.append(frameImage, resizeHandle);
-  overlay.append(frame, topToolBar, closeButton, confirmButton);
+  overlay.append(frame, topToolBar, sizeInfo, closeButton, confirmButton);
 
   return {
     overlay,
@@ -218,7 +219,7 @@ export const createFrameElements = (options: {
     frameImage,
     resizeHandle,
     topToolBar,
-    sizeLabel,
+    sizeInfo,
     opacitySlider,
     closeButton,
     confirmButton,
@@ -230,15 +231,21 @@ export const applyRectToFrame = (
   frame: HTMLDivElement,
   topToolBar: HTMLDivElement,
   toolButtonBar: HTMLDivElement,
+  sizeInfo: HTMLDivElement,
 ): void => {
   frame.style.left = `${rect.x}px`;
   frame.style.top = `${rect.y}px`;
   frame.style.width = `${rect.width}px`;
   frame.style.height = `${rect.height}px`;
 
+  const belowY = rect.y + rect.height + 4;
   topToolBar.style.left = `${rect.x}px`;
-  topToolBar.style.top = `${Math.max(8, rect.y - 30)}px`;
+  topToolBar.style.top = `${belowY}px`;
 
   toolButtonBar.style.left = `${rect.x}px`;
-  toolButtonBar.style.top = `${Math.max(8, rect.y - 58)}px`;
+  toolButtonBar.style.top = `${rect.y - 30}px`;
+
+  sizeInfo.style.left = `${rect.x + rect.width}px`;
+  sizeInfo.style.top = `${belowY}px`;
+  sizeInfo.style.transform = "translateX(-100%)";
 };

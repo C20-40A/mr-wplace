@@ -115,6 +115,7 @@ export const injectPanelStyles = (): void => {
       background: rgba(0, 0, 0, 0.14);
     }
     .iat-floating-panel-body {
+     padding: 0.3rem;
     }
   `;
   document.head.appendChild(style);

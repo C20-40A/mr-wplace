@@ -238,10 +238,9 @@ export class ImageAdjustToolMode {
     this.processingState = {
       ...defaultProcessingState,
       ...options.initialProcessingState,
-      selectedColorIds:
-        options.initialProcessingState?.selectedColorIds
-          ? [...options.initialProcessingState.selectedColorIds]
-          : defaultProcessingState.selectedColorIds,
+      selectedColorIds: options.initialProcessingState?.selectedColorIds
+        ? [...options.initialProcessingState.selectedColorIds]
+        : defaultProcessingState.selectedColorIds,
     };
   }
 
@@ -317,7 +316,13 @@ export class ImageAdjustToolMode {
       z-index: 2002;
     `;
 
-    const addBtn = (symbol: string, col: string, row: string, dx: number, dy: number) => {
+    const addBtn = (
+      symbol: string,
+      col: string,
+      row: string,
+      dx: number,
+      dy: number,
+    ) => {
       const btn = document.createElement("button");
       btn.className = "btn btn-xs btn-neutral";
       btn.textContent = symbol;
@@ -335,7 +340,11 @@ export class ImageAdjustToolMode {
         e.stopPropagation();
         if (!this.mapRect) return;
         const step = e.shiftKey ? 10 : 1;
-        this.mapRect = { ...this.mapRect, x: this.mapRect.x + dx * step, y: this.mapRect.y + dy * step };
+        this.mapRect = {
+          ...this.mapRect,
+          x: this.mapRect.x + dx * step,
+          y: this.mapRect.y + dy * step,
+        };
         await this.syncScreenRectFromMap(true);
         this.requestMetricsUpdate(true, false);
       });
@@ -364,7 +373,8 @@ export class ImageAdjustToolMode {
 
     const elements = createFrameElements({
       imageSrc: this.options.imageSrc,
-      sizeLabelText: `${t("adjust_tool_target_size")}: ...`,
+      // sizeLabelText: `${t("adjust_tool_target_size")}: ...`,
+      sizeLabelText: `...`,
       opacityLabelText: t("map_filter_area_opacity"),
       confirmText: t("adjust_tool_confirm"),
       closeText: t("close"),
@@ -403,14 +413,26 @@ export class ImageAdjustToolMode {
       this.elements!;
     frame.addEventListener("pointerdown", this.onFramePointerDown);
     frame.addEventListener("wheel", this.onOverlayWheel, { passive: false });
-    topToolBar.addEventListener("wheel", this.onOverlayWheel, { passive: false });
+    topToolBar.addEventListener("wheel", this.onOverlayWheel, {
+      passive: false,
+    });
     resizeHandle.addEventListener("pointerdown", this.onResizePointerDown);
-    closeButton.addEventListener("wheel", this.onOverlayWheel, { passive: false });
-    confirmButton.addEventListener("wheel", this.onOverlayWheel, { passive: false });
+    closeButton.addEventListener("wheel", this.onOverlayWheel, {
+      passive: false,
+    });
+    confirmButton.addEventListener("wheel", this.onOverlayWheel, {
+      passive: false,
+    });
     this.mapElement?.addEventListener("click", this.onMapClickCapture, true);
-    window.addEventListener("pointermove", this.onGlobalPointerMove, { passive: true });
-    window.addEventListener("pointerup", this.onGlobalPointerUp, { passive: true });
-    window.addEventListener("pointercancel", this.onGlobalPointerUp, { passive: true });
+    window.addEventListener("pointermove", this.onGlobalPointerMove, {
+      passive: true,
+    });
+    window.addEventListener("pointerup", this.onGlobalPointerUp, {
+      passive: true,
+    });
+    window.addEventListener("pointercancel", this.onGlobalPointerUp, {
+      passive: true,
+    });
     window.addEventListener("resize", this.onWindowResize, { passive: true });
     window.addEventListener("message", this.onMapViewChanged);
   }
@@ -419,7 +441,10 @@ export class ImageAdjustToolMode {
     const el = this.elements;
     el?.frame.removeEventListener("pointerdown", this.onFramePointerDown);
     el?.frame.removeEventListener("wheel", this.onOverlayWheel);
-    el?.resizeHandle.removeEventListener("pointerdown", this.onResizePointerDown);
+    el?.resizeHandle.removeEventListener(
+      "pointerdown",
+      this.onResizePointerDown,
+    );
     el?.topToolBar.removeEventListener("wheel", this.onOverlayWheel);
     el?.closeButton.removeEventListener("wheel", this.onOverlayWheel);
     el?.confirmButton.removeEventListener("wheel", this.onOverlayWheel);
@@ -475,7 +500,13 @@ export class ImageAdjustToolMode {
   private applyRect(rect: Rect): void {
     if (!this.elements || !this.toolButtonBar) return;
     this.rect = rect;
-    applyRectToFrame(rect, this.elements.frame, this.elements.topToolBar, this.toolButtonBar);
+    applyRectToFrame(
+      rect,
+      this.elements.frame,
+      this.elements.topToolBar,
+      this.toolButtonBar,
+      this.elements.sizeInfo,
+    );
   }
 
   private applyImageOpacity(): void {
@@ -484,7 +515,8 @@ export class ImageAdjustToolMode {
   }
 
   private scheduleProcessedPreview(): void {
-    if (this.processingDebounceTimer) clearTimeout(this.processingDebounceTimer);
+    if (this.processingDebounceTimer)
+      clearTimeout(this.processingDebounceTimer);
     this.processingDebounceTimer = setTimeout(() => {
       this.processingDebounceTimer = null;
       if (this.metrics) this.requestPreviewUpdate(this.metrics, true);
@@ -513,7 +545,10 @@ export class ImageAdjustToolMode {
     };
   }
 
-  private requestMetricsUpdate(force = false, snapTopLeftToPixel = false): void {
+  private requestMetricsUpdate(
+    force = false,
+    snapTopLeftToPixel = false,
+  ): void {
     if (!force) {
       const now = Date.now();
       if (now - this.lastMetricsRequestedAt < METRICS_DRAG_UPDATE_MS) return;
@@ -524,7 +559,9 @@ export class ImageAdjustToolMode {
     void this.updateMetrics(snapTopLeftToPixel);
   }
 
-  private async updateMetrics(snapTopLeftToPixel = false): Promise<Metrics | null> {
+  private async updateMetrics(
+    snapTopLeftToPixel = false,
+  ): Promise<Metrics | null> {
     if (this.metricsPending || !this.rect) return this.metrics;
     this.metricsPending = true;
 
@@ -538,11 +575,21 @@ export class ImageAdjustToolMode {
 
       const widthPx = Math.max(
         1,
-        Math.round(Math.hypot(projected[1].pixelX - projected[0].pixelX, projected[1].pixelY - projected[0].pixelY)),
+        Math.round(
+          Math.hypot(
+            projected[1].pixelX - projected[0].pixelX,
+            projected[1].pixelY - projected[0].pixelY,
+          ),
+        ),
       );
       const heightPx = Math.max(
         1,
-        Math.round(Math.hypot(projected[2].pixelX - projected[0].pixelX, projected[2].pixelY - projected[0].pixelY)),
+        Math.round(
+          Math.hypot(
+            projected[2].pixelX - projected[0].pixelX,
+            projected[2].pixelY - projected[0].pixelY,
+          ),
+        ),
       );
       const topLeftPixelX = snapTopLeftToPixel
         ? Math.floor(projected[0].pixelX)
@@ -552,12 +599,17 @@ export class ImageAdjustToolMode {
         : projected[0].pixelY;
 
       this.metrics = { widthPx, heightPx, topLeftPixelX, topLeftPixelY };
-      this.mapRect = { x: topLeftPixelX, y: topLeftPixelY, width: widthPx, height: heightPx };
+      this.mapRect = {
+        x: topLeftPixelX,
+        y: topLeftPixelY,
+        width: widthPx,
+        height: heightPx,
+      };
 
-      if (this.elements?.sizeLabel) {
+      if (this.elements?.sizeInfo) {
         const labelText = `${t("adjust_tool_target_size")}: ${widthPx}×${heightPx}px`;
-        if (this.elements.sizeLabel.textContent !== labelText)
-          this.elements.sizeLabel.textContent = labelText;
+        if (this.elements.sizeInfo.textContent !== labelText)
+          this.elements.sizeInfo.textContent = labelText;
       }
 
       this.requestPreviewUpdate(this.metrics);
@@ -568,7 +620,9 @@ export class ImageAdjustToolMode {
     }
   }
 
-  private async syncScreenRectFromMap(allowDuringInteraction = false): Promise<void> {
+  private async syncScreenRectFromMap(
+    allowDuringInteraction = false,
+  ): Promise<void> {
     if (this.mapSyncPending) {
       this.queuedMapSync = true;
       return;
@@ -581,7 +635,10 @@ export class ImageAdjustToolMode {
       const projected = await projectMapPixelsToScreenPoints([
         { pixelX: this.mapRect.x, pixelY: this.mapRect.y },
         { pixelX: this.mapRect.x + this.mapRect.width, pixelY: this.mapRect.y },
-        { pixelX: this.mapRect.x, pixelY: this.mapRect.y + this.mapRect.height },
+        {
+          pixelX: this.mapRect.x,
+          pixelY: this.mapRect.y + this.mapRect.height,
+        },
       ]);
       if (projected.length < 3) return;
 
@@ -590,11 +647,17 @@ export class ImageAdjustToolMode {
         y: projected[0].y,
         width: Math.max(
           MIN_FRAME_WIDTH,
-          Math.hypot(projected[1].x - projected[0].x, projected[1].y - projected[0].y),
+          Math.hypot(
+            projected[1].x - projected[0].x,
+            projected[1].y - projected[0].y,
+          ),
         ),
         height: Math.max(
           MIN_FRAME_WIDTH / this.aspectRatio,
-          Math.hypot(projected[2].x - projected[0].x, projected[2].y - projected[0].y),
+          Math.hypot(
+            projected[2].x - projected[0].x,
+            projected[2].y - projected[0].y,
+          ),
         ),
       });
     } finally {
@@ -637,7 +700,8 @@ export class ImageAdjustToolMode {
       counts.set(key, (counts.get(key) ?? 0) + 1);
     }
     const colorStats: Record<string, { matched: number; total: number }> = {};
-    for (const [key, count] of counts.entries()) colorStats[key] = { matched: 0, total: count };
+    for (const [key, count] of counts.entries())
+      colorStats[key] = { matched: 0, total: count };
     this.panelManager.updateColorStats(colorStats);
   }
 
