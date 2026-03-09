@@ -5,6 +5,7 @@ import {
   type HintPlacement,
 } from "@/components/hint-tooltip";
 import { hasOpenModal } from "@/components/modal";
+import { findPositionModal } from "@/constants/selectors";
 import { t } from "@/i18n/manager";
 import { isFeatureHintDismissed } from "@/states/feature-hints";
 import { getAllGalleryMetadata } from "@/core/bridge/gallery-storage-bridge";
@@ -45,6 +46,20 @@ interface FeatureHintDefinition {
 const DEFAULT_HINT_PRIORITY = 1000;
 const DEFAULT_HINT_ICON_SRC = IMG_MR_FACE;
 
+const isNoModalOpen = () => !hasOpenModal() && !findPositionModal();
+
+// PositionModal の出現・消滅を監視して hint を再評価する（一度だけセットアップ）
+let positionModalObserverSetup = false;
+const setupPositionModalObserver = () => {
+  if (positionModalObserverSetup) return;
+  positionModalObserverSetup = true;
+
+  const observer = new MutationObserver(() => {
+    if (pendingHints.size > 0) refreshFeatureHints();
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+};
+
 const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
   // ------- Main Screen Hint -------
   "gallery-btn": {
@@ -69,14 +84,14 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
   "user-status-container": {
     messageKey: "hint_user_status_container",
     placement: "bottom",
-    condition: () => !hasOpenModal(),
+    condition: isNoModalOpen,
     priority: 2,
   },
   "map-filter-trigger": {
     messageKey: "hint_map_filter_trigger",
     placement: "right",
     dependsOn: ["user-status-container"],
-    condition: () => !hasOpenModal(),
+    condition: isNoModalOpen,
   },
   // ------- Drawing Hints -------
   "drawing-btn": {
@@ -112,26 +127,26 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     messageKey: "hint_bookmark_btn",
     placement: "top",
     dependsOn: ["show-unplaced-only"],
-    condition: () => !hasOpenModal(),
+    condition: isNoModalOpen,
   },
   "timetravel-btn": {
     messageKey: "hint_timetravel_btn",
     placement: "top",
     dependsOn: ["bookmark-btn"],
-    condition: () => !hasOpenModal(),
+    condition: isNoModalOpen,
   },
   "text-draw-btn": {
     messageKey: "hint_text_draw_btn",
     placement: "top",
     dependsOn: ["timetravel-btn"],
-    condition: () => !hasOpenModal(),
+    condition: isNoModalOpen,
   },
   // ------- Main Map Hint -------
   "bookmarks-btn": {
     messageKey: "hint_bookmarks_btn",
     placement: "left",
     dependsOn: ["bookmark-btn"],
-    condition: () => !hasOpenModal(),
+    condition: isNoModalOpen,
   },
   // "timetravel-fab-btn": {
   //   messageKey: "hint_timetravel_fab_btn",
@@ -144,7 +159,7 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     messageKey: "hint_data_saver",
     placement: "left",
     dependsOn: ["timetravel-btn"],
-    condition: () => !hasOpenModal(),
+    condition: isNoModalOpen,
   },
   "overlay-mode-independent": {
     messageKey: "hint_overlay_mode_performance",
@@ -282,6 +297,7 @@ export const showFeatureHint = (
   target: HTMLElement,
 ): void => {
   if (!target.isConnected) return;
+  setupPositionModalObserver();
   pendingHints.set(hintId, target);
   refreshFeatureHints();
 };
