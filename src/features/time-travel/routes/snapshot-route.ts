@@ -301,11 +301,6 @@ export class SnapshotRoute extends BaseSnapshotRoute {
             "position: sticky; top: 0; z-index: 1; padding: 8px;";
           stickyDiv.innerHTML = this.renderSaveButton();
           listContainer.insertBefore(stickyDiv, listContainer.firstChild);
-          const saveBtn = stickyDiv.querySelector(
-            "#wps-save-current-snapshot-btn",
-          );
-          if (saveBtn instanceof HTMLElement)
-            showFeatureHint("save-current-snapshot-btn", saveBtn);
         }
       }
     }
@@ -335,13 +330,6 @@ export class SnapshotRoute extends BaseSnapshotRoute {
         ${this.options.showSaveButton ? this.renderSaveButton() : ""}
       </div>
     `;
-    if (this.options.showSaveButton) {
-      const saveBtn = listContainer.querySelector(
-        "#wps-save-current-snapshot-btn",
-      );
-      if (saveBtn instanceof HTMLElement)
-        showFeatureHint("save-current-snapshot-btn", saveBtn);
-    }
   }
 
   private async saveCurrentSnapshot(container: HTMLElement): Promise<void> {

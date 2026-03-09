@@ -516,7 +516,6 @@ export const viTranslations = {
   hint_text_draw_btn: "Bạn có thể hiển thị văn bản trên bản đồ",
   hint_bookmarks_btn: "Các dấu trang đã lưu của bạn ở đây",
   hint_timetravel_fab_btn: "Danh sách vùng đã lưu trữ ở đây",
-  hint_save_current_snapshot_btn: "Bạn có thể lưu trữ hình ảnh gần vị trí này",
   import_snapshot_tile_x_label: "Tọa độ Tile X",
   import_snapshot_tile_y_label: "Tọa độ Tile Y",
   import_snapshot_tile_x_placeholder: "vd. 520",

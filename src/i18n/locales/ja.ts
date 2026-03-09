@@ -533,7 +533,6 @@ export const jaTranslations = {
   hint_text_draw_btn: "マップ上にテキストを表示できます",
   hint_bookmarks_btn: "保存したブックマークはここにあります",
   hint_timetravel_fab_btn: "アーカイブした地域の一覧はこちら",
-  hint_save_current_snapshot_btn: "この付近の画像アーカイブできます",
   hint_map_filter_trigger: "ここでマップの見え方を変えられます",
   hint_edit_card: "ここで名前を変えたりタグをつけることができます",
   hint_image_detail_draw_on_map:
@@ -596,5 +595,6 @@ export const jaTranslations = {
   color_flatten_light: "フラット: 弱",
   color_flatten_medium: "フラット: 中",
   open_tmp_tile_board: "周囲をダウンロード",
-  hint_overlay_mode_performance: "処理が重い場合は、別のモードを試してみてください",
+  hint_overlay_mode_performance:
+    "処理が重い場合は、別のモードを試してみてください",
 };

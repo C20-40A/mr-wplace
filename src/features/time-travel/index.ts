@@ -122,7 +122,7 @@ export const initTimeTravel = (): void => {
         const button = createTimeTravelFAB();
         button.addEventListener("click", () => show());
         container.appendChild(button);
-        showFeatureHint("timetravel-fab-btn", button);
+        // showFeatureHint("timetravel-fab-btn", button);
       },
     },
     // 優先: マップピン周辺にボタン配置

@@ -534,8 +534,6 @@ export const frTranslations = {
   hint_text_draw_btn: "Vous pouvez afficher du texte sur la carte",
   hint_bookmarks_btn: "Vos favoris enregistrés sont ici",
   hint_timetravel_fab_btn: "La liste des zones archivées est ici",
-  hint_save_current_snapshot_btn:
-    "Vous pouvez archiver des images près de cet emplacement",
   import_snapshot_tile_x_label: "Coordonnée de Tuile X",
   import_snapshot_tile_y_label: "Coordonnée de Tuile Y",
   import_snapshot_tile_x_placeholder: "p.ex. 520",

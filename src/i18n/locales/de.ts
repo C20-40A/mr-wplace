@@ -536,8 +536,6 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   hint_text_draw_btn: "Du kannst Text auf der Karte anzeigen",
   hint_bookmarks_btn: "Hier sind deine gespeicherten Lesezeichen",
   hint_timetravel_fab_btn: "Hier ist die Liste archivierter Bereiche",
-  hint_save_current_snapshot_btn:
-    "Du kannst Bilder in der Nähe dieses Ortes archivieren",
   import_snapshot_tile_x_label: "Kachelkoordinate X",
   import_snapshot_tile_y_label: "Kachelkoordinate Y",
   import_snapshot_tile_x_placeholder: "z. B. 520",
@@ -571,5 +569,6 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   color_flatten_light: "Flat: Leicht",
   color_flatten_medium: "Flat: Mittel",
   open_tmp_tile_board: "Umgebung herunterladen",
-  hint_overlay_mode_performance: "Falls das Rendern langsam ist, probiere einen anderen Modus",
+  hint_overlay_mode_performance:
+    "Falls das Rendern langsam ist, probiere einen anderen Modus",
 };

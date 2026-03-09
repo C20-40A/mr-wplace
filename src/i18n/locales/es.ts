@@ -530,8 +530,6 @@ export const esTranslations = {
   hint_text_draw_btn: "Puedes mostrar texto en el mapa",
   hint_bookmarks_btn: "Tus marcadores guardados están aquí",
   hint_timetravel_fab_btn: "La lista de áreas archivadas está aquí",
-  hint_save_current_snapshot_btn:
-    "Puedes archivar imágenes cerca de esta ubicación",
   import_snapshot_tile_x_label: "Coordenada de Tile X",
   import_snapshot_tile_y_label: "Coordenada de Tile Y",
   import_snapshot_tile_x_placeholder: "ej. 520",

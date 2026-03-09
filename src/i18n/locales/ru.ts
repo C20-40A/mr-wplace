@@ -535,8 +535,6 @@ export const ruTranslations = {
   hint_text_draw_btn: "Вы можете отобразить текст на карте",
   hint_bookmarks_btn: "Ваши сохраненные закладки здесь",
   hint_timetravel_fab_btn: "Список архивированных областей здесь",
-  hint_save_current_snapshot_btn:
-    "Вы можете архивировать изображения рядом с этим местом",
   hint_map_filter_trigger: "Здесь вы можете изменить вид карты",
   hint_edit_card: "Здесь вы можете изменить название и добавить теги",
   hint_image_detail_draw_on_map:
@@ -573,11 +571,13 @@ export const ruTranslations = {
   adjust_tool_cancel_confirm:
     "Выйти из инструмента настройки? Изменения не будут применены.",
   popup_hide_my_location: "Скрыть кнопку местоположения",
-  quantization_oklab: "Цветовое пространство OKLab (Медленно, более равномерно)",
+  quantization_oklab:
+    "Цветовое пространство OKLab (Медленно, более равномерно)",
   color_flatten: "Сглаживание цветов",
   color_flatten_none: "Flat: Выкл",
   color_flatten_light: "Flat: Слабый",
   color_flatten_medium: "Flat: Средний",
   open_tmp_tile_board: "Скачать окрестности",
-  hint_overlay_mode_performance: "Если рендеринг медленный, попробуйте другой режим",
+  hint_overlay_mode_performance:
+    "Если рендеринг медленный, попробуйте другой режим",
 };

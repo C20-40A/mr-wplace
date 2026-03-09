@@ -520,8 +520,6 @@ export const ptTranslations = {
   hint_text_draw_btn: "Você pode exibir texto no mapa",
   hint_bookmarks_btn: "Seus marcadores salvos estão aqui",
   hint_timetravel_fab_btn: "A lista de áreas arquivadas está aqui",
-  hint_save_current_snapshot_btn:
-    "Você pode arquivar imagens perto desta localização",
   import_snapshot_tile_x_label: "Coordenada de Tile X",
   import_snapshot_tile_y_label: "Coordenada de Tile Y",
   import_snapshot_tile_x_placeholder: "ex. 520",
@@ -568,5 +566,6 @@ export const ptTranslations = {
   color_flatten_light: "Flat: Leve",
   color_flatten_medium: "Flat: Medio",
   open_tmp_tile_board: "Baixar arredores",
-  hint_overlay_mode_performance: "Se a renderização estiver lenta, experimente outro modo",
+  hint_overlay_mode_performance:
+    "Se a renderização estiver lenta, experimente outro modo",
 };

@@ -16,9 +16,8 @@ export type FeatureHintId =
   | "bookmark-btn"
   | "bookmarks-btn"
   | "timetravel-btn"
-  | "timetravel-fab-btn"
+  // | "timetravel-fab-btn"
   | "text-draw-btn"
-  | "save-current-snapshot-btn"
   | "unplaced-item"
   | "show-unplaced-only"
   | "color-isolate"
@@ -134,21 +133,17 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     dependsOn: ["bookmark-btn"],
     condition: () => !hasOpenModal(),
   },
-  "timetravel-fab-btn": {
-    messageKey: "hint_timetravel_fab_btn",
-    placement: "left",
-    dependsOn: ["timetravel-btn"],
-    condition: () => !hasOpenModal(),
-  },
-  "save-current-snapshot-btn": {
-    messageKey: "hint_save_current_snapshot_btn",
-    placement: "left",
-  },
+  // "timetravel-fab-btn": {
+  //   messageKey: "hint_timetravel_fab_btn",
+  //   placement: "left",
+  //   dependsOn: ["timetravel-btn"],
+  //   condition: () => !hasOpenModal(),
+  // },
   // ------- Main Screen Hint -------
   "data-saver": {
     messageKey: "hint_data_saver",
     placement: "left",
-    dependsOn: ["save-current-snapshot-btn"],
+    dependsOn: ["timetravel-btn"],
     condition: () => !hasOpenModal(),
   },
   "overlay-mode-independent": {
