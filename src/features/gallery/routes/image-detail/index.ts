@@ -90,19 +90,19 @@ export class GalleryImageDetail {
     if (drawOnMapBtn) showFeatureHint("image-detail-draw-on-map", drawOnMapBtn);
 
     if (this.currentItem?.drawPosition) {
-      const dpadContainer = document.getElementById("image-dpad-container");
-      if (dpadContainer) showFeatureHint("image-detail-dpad", dpadContainer);
+      // const dpadContainer = document.getElementById("image-dpad-container");
+      // if (dpadContainer) showFeatureHint("image-detail-dpad", dpadContainer);
 
       const downloadBtn = document.getElementById("download-btn");
       if (downloadBtn) showFeatureHint("image-detail-download", downloadBtn);
     }
 
-    if (this.ui) {
-      const modalElements = this.ui.getModalElements();
-      if (modalElements) {
-        showFeatureHint("image-detail-edit-title", modalElements.titleElement);
-      }
-    }
+    // if (this.ui) {
+    //   const modalElements = this.ui.getModalElements();
+    //   if (modalElements) {
+    //     showFeatureHint("image-detail-edit-title", modalElements.titleElement);
+    //   }
+    // }
   }
 
   render(

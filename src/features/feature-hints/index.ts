@@ -28,9 +28,9 @@ export type FeatureHintId =
   | "map-filter-trigger"
   | "edit-card"
   | "image-detail-draw-on-map"
-  | "image-detail-dpad"
+  // | "image-detail-dpad"
   | "image-detail-download"
-  | "image-detail-edit-title"
+  // | "image-detail-edit-title"
   | "gallery-import-export-btn";
 
 interface FeatureHintDefinition {
@@ -44,20 +44,17 @@ interface FeatureHintDefinition {
 }
 
 const DEFAULT_HINT_PRIORITY = 1000;
-
-const HINT_DIALOG_ICON = IMG_MR_FACE;
+const DEFAULT_HINT_ICON_SRC = IMG_MR_FACE;
 
 const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
   // ------- Main Screen Hint -------
   "gallery-btn": {
     messageKey: "hint_gallery_btn",
-    iconSrc: HINT_DIALOG_ICON,
     placement: "right",
     priority: 1,
   },
   "gallery-import-export-btn": {
     messageKey: "hint_gallery_backup",
-    iconSrc: HINT_DIALOG_ICON,
     placement: "right",
     priority: 2,
     dependsOn: ["gallery-btn"],
@@ -72,14 +69,12 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
   },
   "user-status-container": {
     messageKey: "hint_user_status_container",
-    iconSrc: HINT_DIALOG_ICON,
     placement: "bottom",
     condition: () => !hasOpenModal(),
     priority: 2,
   },
   "map-filter-trigger": {
     messageKey: "hint_map_filter_trigger",
-    iconSrc: HINT_DIALOG_ICON,
     placement: "right",
     dependsOn: ["user-status-container"],
     condition: () => !hasOpenModal(),
@@ -87,33 +82,28 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
   // ------- Drawing Hints -------
   "drawing-btn": {
     messageKey: "hint_drawing_btn",
-    iconSrc: HINT_DIALOG_ICON,
     placement: "top",
     dependsOn: ["gallery-btn"],
   },
 
   "unplaced-item": {
     messageKey: "hint_unplaced_grid",
-    iconSrc: HINT_DIALOG_ICON,
     placement: "top",
     dependsOn: ["drawing-btn"],
   },
   // ------- Paint Modal Hints -------
   "paint-pixel-icon": {
     messageKey: "hint_palette_toggle",
-    iconSrc: HINT_DIALOG_ICON,
     placement: "top",
     priority: 1,
   },
   "color-isolate": {
     messageKey: "hint_color_isolate",
-    iconSrc: HINT_DIALOG_ICON,
     placement: "top",
     priority: 2,
   },
   "show-unplaced-only": {
     messageKey: "hint_show_unplaced_only",
-    iconSrc: HINT_DIALOG_ICON,
     placement: "top",
     priority: 3,
   },
@@ -121,21 +111,18 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
   // ------- Map Popup Hints -------
   "bookmark-btn": {
     messageKey: "hint_bookmark_btn",
-    iconSrc: HINT_DIALOG_ICON,
     placement: "top",
     dependsOn: ["show-unplaced-only"],
     condition: () => !hasOpenModal(),
   },
   "timetravel-btn": {
     messageKey: "hint_timetravel_btn",
-    iconSrc: HINT_DIALOG_ICON,
     placement: "top",
     dependsOn: ["bookmark-btn"],
     condition: () => !hasOpenModal(),
   },
   "text-draw-btn": {
     messageKey: "hint_text_draw_btn",
-    iconSrc: HINT_DIALOG_ICON,
     placement: "top",
     dependsOn: ["timetravel-btn"],
     condition: () => !hasOpenModal(),
@@ -143,27 +130,23 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
   // ------- Main Map Hint -------
   "bookmarks-btn": {
     messageKey: "hint_bookmarks_btn",
-    iconSrc: HINT_DIALOG_ICON,
     placement: "left",
     dependsOn: ["bookmark-btn"],
     condition: () => !hasOpenModal(),
   },
   "timetravel-fab-btn": {
     messageKey: "hint_timetravel_fab_btn",
-    iconSrc: HINT_DIALOG_ICON,
     placement: "left",
     dependsOn: ["timetravel-btn"],
     condition: () => !hasOpenModal(),
   },
   "save-current-snapshot-btn": {
     messageKey: "hint_save_current_snapshot_btn",
-    iconSrc: HINT_DIALOG_ICON,
     placement: "left",
   },
   // ------- Main Screen Hint -------
   "data-saver": {
     messageKey: "hint_data_saver",
-    iconSrc: HINT_DIALOG_ICON,
     placement: "left",
     dependsOn: ["save-current-snapshot-btn"],
     condition: () => !hasOpenModal(),
@@ -171,40 +154,34 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
   "overlay-mode-independent": {
     getMessage: () =>
       `${t("hint_overlay_mode_independent_prefix")}「${t("popup_overlay_mode_layer")}」${t("hint_overlay_mode_independent_suffix")}`,
-    iconSrc: HINT_DIALOG_ICON,
     placement: "top",
     dependsOn: ["show-unplaced-only"],
   },
   // ------- Edit Card Hint -------
   "edit-card": {
     messageKey: "hint_edit_card",
-    iconSrc: HINT_DIALOG_ICON,
     placement: "top",
   },
   // ------- Image Detail Hints -------
   "image-detail-draw-on-map": {
     messageKey: "hint_image_detail_draw_on_map",
-    iconSrc: HINT_DIALOG_ICON,
     placement: "right",
-  },
-  "image-detail-dpad": {
-    messageKey: "hint_image_detail_dpad",
-    iconSrc: HINT_DIALOG_ICON,
-    placement: "top",
-    dependsOn: ["image-detail-draw-on-map"],
   },
   "image-detail-download": {
     messageKey: "hint_image_detail_download",
-    iconSrc: HINT_DIALOG_ICON,
     placement: "top",
-    dependsOn: ["image-detail-dpad"],
-  },
-  "image-detail-edit-title": {
-    messageKey: "hint_image_detail_edit_title",
-    iconSrc: HINT_DIALOG_ICON,
-    placement: "bottom",
     dependsOn: ["image-detail-draw-on-map"],
   },
+  // "image-detail-dpad": {
+  //   messageKey: "hint_image_detail_dpad",
+  //   placement: "top",
+  //   dependsOn: ["image-detail-draw-on-map"],
+  // },
+  // "image-detail-edit-title": {
+  //   messageKey: "hint_image_detail_edit_title",
+  //   placement: "bottom",
+  //   dependsOn: ["image-detail-draw-on-map"],
+  // },
 };
 
 const pendingHints = new Map<FeatureHintId, HTMLElement>();
@@ -278,7 +255,7 @@ const tryShowNextHint = async (): Promise<void> => {
       id: hintId,
       target,
       message: message ?? t(definition.messageKey!),
-      iconSrc: definition.iconSrc,
+      iconSrc: definition.iconSrc ?? DEFAULT_HINT_ICON_SRC,
       placement: definition.placement,
       onClose: () => {
         refreshFeatureHints();
