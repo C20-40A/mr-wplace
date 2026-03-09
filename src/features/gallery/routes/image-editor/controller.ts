@@ -3,7 +3,10 @@ import { colorpalette, TRANSPARENT_COLOR_ID } from "@/constants/colors";
 import { isDesktopViewport } from "@/constants/breakpoints";
 import { ImageInspector } from "@/components/image-inspector";
 import { ColorPalette } from "@/components/color-palette";
-import { ImageAdjustToolMode, type AdjustToolProcessingParams } from "@/features/image-adjust-tool";
+import {
+  ImageAdjustToolMode,
+  type AdjustToolProcessingParams,
+} from "@/features/image-adjust-tool";
 import type { ProcessingState } from "@/features/image-adjust-tool/panel";
 import { DrawPosition, GalleryItem } from "@/states/galleryStorage";
 import { tilePixelToLatLng } from "@/utils/coordinate";
@@ -297,7 +300,12 @@ export class EditorController {
       initialDrawPosition: this.drawPosition ?? undefined,
       initialProcessingState: this.buildAdjustToolInitialState(),
       onConfirm: ({ widthPx, heightPx, drawPosition, processingParams }) => {
-        this.applyAdjustToolResult(widthPx, heightPx, drawPosition, processingParams);
+        this.applyAdjustToolResult(
+          widthPx,
+          heightPx,
+          drawPosition,
+          processingParams,
+        );
       },
       onCancel: () => {
         this.adjustToolMode = null;
@@ -313,7 +321,7 @@ export class EditorController {
     const dp = this.drawPosition;
     if (dp && (dp.TLX !== 0 || dp.TLY !== 0 || dp.PxX !== 0 || dp.PxY !== 0)) {
       const { lat, lng } = tilePixelToLatLng(dp.TLX, dp.TLY, dp.PxX, dp.PxY);
-      void gotoPosition({ lat, lng, zoom: 14 });
+      void gotoPosition({ lat, lng, zoom: 12 });
     }
 
     console.log("🧑‍🎨 : Opened adjust tool mode");
@@ -341,7 +349,10 @@ export class EditorController {
     const originalHeight = this.originalImage.naturalHeight;
     const widthScale = targetWidthPx / originalWidth;
     const heightScale = targetHeightPx / originalHeight;
-    const nextScale = Math.max(0.01, Math.min(1, Math.min(widthScale, heightScale)));
+    const nextScale = Math.max(
+      0.01,
+      Math.min(1, Math.min(widthScale, heightScale)),
+    );
     const nextWidth = Math.max(1, Math.round(originalWidth * nextScale));
     const nextHeight = Math.max(1, Math.round(originalHeight * nextScale));
 
@@ -393,11 +404,16 @@ export class EditorController {
 
   private syncControlsUI(params: AdjustToolProcessingParams): void {
     const set = (id: string, value: string) => {
-      const el = this.container.querySelector(`#${id}`) as HTMLInputElement | HTMLSelectElement | null;
+      const el = this.container.querySelector(`#${id}`) as
+        | HTMLInputElement
+        | HTMLSelectElement
+        | null;
       if (el) (el as any).value = value;
     };
     const setChecked = (id: string, checked: boolean) => {
-      const el = this.container.querySelector(`#${id}`) as HTMLInputElement | null;
+      const el = this.container.querySelector(
+        `#${id}`,
+      ) as HTMLInputElement | null;
       if (el) el.checked = checked;
     };
     const setText = (id: string, text: string) => {
@@ -405,7 +421,10 @@ export class EditorController {
       if (el) el.textContent = text;
     };
     const setDisabled = (id: string, disabled: boolean) => {
-      const el = this.container.querySelector(`#${id}`) as HTMLInputElement | HTMLSelectElement | null;
+      const el = this.container.querySelector(`#${id}`) as
+        | HTMLInputElement
+        | HTMLSelectElement
+        | null;
       if (el) el.disabled = disabled;
     };
 
@@ -436,7 +455,10 @@ export class EditorController {
     setDisabled("wps-outline-threshold-slider", !params.outlineEnabled);
     setDisabled("wps-outline-width-slider", !params.outlineEnabled);
     setDisabled("wps-outline-color-checkbox", !params.outlineEnabled);
-    setDisabled("wps-outline-color-input", !params.outlineEnabled || !params.outlineUseFixedColor);
+    setDisabled(
+      "wps-outline-color-input",
+      !params.outlineEnabled || !params.outlineUseFixedColor,
+    );
 
     // Update color palette
     if (this.colorPalette) {
@@ -447,7 +469,9 @@ export class EditorController {
     const containerSelector = isMobile
       ? "#wps-color-palette-container-mobile"
       : "#wps-color-palette-container";
-    const paletteContainer = this.container.querySelector(containerSelector) as HTMLElement;
+    const paletteContainer = this.container.querySelector(
+      containerSelector,
+    ) as HTMLElement;
     if (paletteContainer) {
       this.colorPalette = new ColorPalette(paletteContainer, {
         selectedColorIds: params.selectedColorIds,
@@ -677,7 +701,8 @@ export class EditorController {
       outlineColorInput.disabled = true;
     }
     if (ditheringCheckbox) ditheringCheckbox.checked = false;
-    if (quantizationMethodSelect) quantizationMethodSelect.value = "rgb-euclidean";
+    if (quantizationMethodSelect)
+      quantizationMethodSelect.value = "rgb-euclidean";
     if (ditheringMethodSelect) {
       ditheringMethodSelect.value = "ordered";
       ditheringMethodSelect.disabled = true;
@@ -1140,8 +1165,12 @@ export class EditorController {
 
     const { createResizedImageBitmap } =
       await import("@/utils/image-bitmap-compat");
-    const newWidth = Math.floor(this.originalImage.naturalWidth * this.imageScale);
-    const newHeight = Math.floor(this.originalImage.naturalHeight * this.imageScale);
+    const newWidth = Math.floor(
+      this.originalImage.naturalWidth * this.imageScale,
+    );
+    const newHeight = Math.floor(
+      this.originalImage.naturalHeight * this.imageScale,
+    );
 
     if (this.cachedResizedBitmap) {
       this.cachedResizedBitmap.close();
@@ -1185,7 +1214,8 @@ export class EditorController {
 
     const outlineKey = this.buildOutlineCacheKey();
     if (!this.cachedOutlineBitmap || this.cachedOutlineKey !== outlineKey) {
-      const { createOutlinePreservedBitmap } = await import("./canvas-processor");
+      const { createOutlinePreservedBitmap } =
+        await import("./canvas-processor");
       this.clearOutlineBitmapCache();
       this.cachedOutlineBitmap = await createOutlinePreservedBitmap(
         this.originalImage,
