@@ -560,7 +560,6 @@ export const viTranslations = {
   adjust_tool_confirm: "Xác nhận",
   adjust_tool_cancel_confirm:
     "Thoát công cụ điều chỉnh? Các thay đổi sẽ không được áp dụng.",
-  adjust_tool_target_size: "Kích thước mục tiêu",
   popup_hide_my_location: "Ẩn nút vị trí của tôi",
   quantization_oklab: "Khong Gian Mau OKLab (Cham, Dong Deu Hon)",
   color_flatten: "Lam Phang Mau",

@@ -1291,10 +1291,10 @@ export class EditorController {
     }
 
     // ピクセル数と予想時間を更新
-    this.updatePixelCountAndTime(totalPixels);
+    this.updatePixelCountAndTime(totalPixels, canvas.width, canvas.height);
   }
 
-  private updatePixelCountAndTime(totalPixels: number): void {
+  private updatePixelCountAndTime(totalPixels: number, width?: number, height?: number): void {
     const sizeReductionLabel = this.container.querySelector(
       "#wps-size-reduction-label",
     ) as HTMLElement;
@@ -1302,7 +1302,8 @@ export class EditorController {
 
     if (totalPixels > 0) {
       const timeStr = this.formatEstimatedTime(totalPixels);
-      sizeReductionLabel.innerHTML = `${t("size_reduction")} <span style="color: #9ca3af; font-size: 0.6875rem;">${totalPixels.toLocaleString()}px(${timeStr})</span>`;
+      const sizeStr = width && height ? `${width}×${height}px` : `${totalPixels.toLocaleString()}px`;
+      sizeReductionLabel.innerHTML = `${t("size_reduction")} <span style="color: #9ca3af; font-size: 0.6875rem;">${sizeStr}<br>(${timeStr})</span>`;
     } else {
       sizeReductionLabel.textContent = t("size_reduction");
     }

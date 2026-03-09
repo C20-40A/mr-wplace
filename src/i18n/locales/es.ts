@@ -575,7 +575,6 @@ export const esTranslations = {
   adjust_tool_confirm: "Confirmar",
   adjust_tool_cancel_confirm:
     "¿Salir de la herramienta de ajuste? Los cambios no se aplicarán.",
-  adjust_tool_target_size: "Tamaño objetivo",
   popup_hide_my_location: "Ocultar botón de ubicación",
   quantization_oklab: "Espacio de Color OKLab (Lento, Mas Uniforme)",
   color_flatten: "Aplanado de Color",

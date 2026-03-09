@@ -373,7 +373,6 @@ export class ImageAdjustToolMode {
 
     const elements = createFrameElements({
       imageSrc: this.options.imageSrc,
-      // sizeLabelText: `${t("adjust_tool_target_size")}: ...`,
       sizeLabelText: `...`,
       opacityLabelText: t("map_filter_area_opacity"),
       confirmText: t("adjust_tool_confirm"),
@@ -607,9 +606,11 @@ export class ImageAdjustToolMode {
       };
 
       if (this.elements?.sizeInfo) {
-        const labelText = `${t("adjust_tool_target_size")}: ${widthPx}×${heightPx}px`;
-        if (this.elements.sizeInfo.textContent !== labelText)
-          this.elements.sizeInfo.textContent = labelText;
+        const totalPixels = widthPx * heightPx;
+        const timeStr = this.formatEstimatedTime(totalPixels);
+        const newHtml = `${widthPx}×${heightPx}px<br><span style="color:#9ca3af;font-size:0.6rem;">${timeStr}</span>`;
+        if (this.elements.sizeInfo.innerHTML !== newHtml)
+          this.elements.sizeInfo.innerHTML = newHtml;
       }
 
       this.requestPreviewUpdate(this.metrics);
@@ -750,6 +751,18 @@ export class ImageAdjustToolMode {
     } catch (error) {
       console.error("🧑‍🎨 : Failed to apply adjust tool result", error);
     }
+  }
+
+  private formatEstimatedTime(totalPixels: number): string {
+    const totalSeconds = totalPixels * 30;
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const parts: string[] = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    return parts.length > 0 ? parts.join("") : "<1m";
   }
 
   private toDrawPosition(pixelX: number, pixelY: number) {

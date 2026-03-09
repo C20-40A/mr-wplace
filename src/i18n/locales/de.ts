@@ -569,7 +569,6 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   adjust_tool_confirm: "Bestätigen",
   adjust_tool_cancel_confirm:
     "Anpassungswerkzeug beenden? Änderungen werden nicht angewendet.",
-  adjust_tool_target_size: "Zielgröße",
   quantization_oklab: "OKLab-Farbraum (Langsam, gleichmaessiger)",
   color_flatten: "Farbflaechung",
   color_flatten_none: "Flat: Aus",

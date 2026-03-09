@@ -576,7 +576,6 @@ export const ruTranslations = {
   adjust_tool_confirm: "Подтвердить",
   adjust_tool_cancel_confirm:
     "Выйти из инструмента настройки? Изменения не будут применены.",
-  adjust_tool_target_size: "Целевой размер",
   popup_hide_my_location: "Скрыть кнопку местоположения",
   quantization_oklab: "Цветовое пространство OKLab (Медленно, более равномерно)",
   color_flatten: "Сглаживание цветов",

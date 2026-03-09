@@ -588,7 +588,6 @@ export const jaTranslations = {
   adjust_tool_confirm: "決定",
   adjust_tool_cancel_confirm:
     "調節ツールを終了しますか？変更は反映されません。",
-  adjust_tool_target_size: "目標サイズ",
   popup_fab_visibility_show: "ボタン設定を表示",
   popup_fab_visibility_hide: "ボタン設定を隠す",
   popup_fab_popup_launch: "Mrのボタン",
