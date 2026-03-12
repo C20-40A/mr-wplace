@@ -60,7 +60,7 @@ export const injectImageEditorStyles = (
         position: absolute; inset: 0; cursor: pointer; display: flex; justify-content: center; align-items: center;
       }
       #wps-original-image {
-        border: 1px solid #e5e7eb; border-radius: 0.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: auto; height: auto; max-width: none; max-height: none; object-fit: contain; image-rendering: pixelated; image-rendering: -webkit-optimize-contrast;
+        border: 1px solid #e5e7eb; border-radius: 0.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: auto; height: auto; max-width: none; max-height: none; object-fit: contain; image-rendering: pixelated;
       }
       #wps-image-editor-container.mobile #wps-original-image {
         max-width: 100%; max-height: 40vh;
@@ -84,10 +84,9 @@ export const injectImageEditorStyles = (
       #wps-image-editor-container.mobile #wps-image-container { display: block; }
       #wps-image-editor-container.desktop #wps-image-container { display: none; }
       #wps-scaled-image {
-        width: 100%; height: auto; image-rendering: pixelated; image-rendering: -webkit-optimize-contrast;
+        width: 100%; height: 100%; image-rendering: pixelated; object-fit: contain;
       }
       #wps-image-editor-container.mobile #wps-scaled-image {
-        width: auto;
         max-width: 100%;
         max-height: 40vh;
         display: block;
