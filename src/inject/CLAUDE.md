@@ -26,7 +26,7 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
 
 ## fetch ルート
 
-- custom protocol: `mr-wplace-overlay://{z}/{x}/{y}.png` -> front layer 描画 (`front-tile-layer/fetch-handler.ts`)。
+- dedicated overlay URL: `https://backend.wplace.live/mr-wplace/front-tile/{z}/{x}/{y}.png` -> front layer 描画 (`front-tile-layer/fetch-handler.ts`)。
 - sentry 系 URL は 200 空レスポンスで遮断。
 - `/me` を clone して `handleUserStatusUpdate`。
 - `GET /pixel/...?...x=...&y=...` で paintedBy を `mr-wplace-painted-by-user` 送信。

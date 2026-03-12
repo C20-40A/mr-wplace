@@ -6,13 +6,17 @@ import {
 import { markFrontTileComparisonPending } from "./index";
 import { getStateVersion } from "./state-version";
 
-const FAKE_TILE_PROTOCOL = "mr-wplace-overlay";
 const TILE_SIZE = 1000;
 const SUPPORTED_MIN_ZOOM = 9;
 const BASE_TILE_ZOOM = 11;
 const MID_TILE_ZOOM = 10;
 const CACHE_CONTROL_HEADER = "public, max-age=31536000, immutable";
 const FRONT_RENDER_CACHE_MAX = 60;
+const FRONT_TILE_URL_ORIGIN = "https://backend.wplace.live";
+const FRONT_TILE_URL_PATH_PREFIX = "/mr-wplace/front-tile";
+
+export const buildFrontLayerTileUrl = (version: number): string =>
+  `${FRONT_TILE_URL_ORIGIN}${FRONT_TILE_URL_PATH_PREFIX}/{z}/{x}/{y}.png?v=${version}`;
 
 let transparentTileBlobPromise: Promise<Blob> | null = null;
 const frontRenderedTileCache = new Map<string, { token: string; blob: Blob }>();
@@ -248,14 +252,14 @@ const getTransparentTileBlob = (): Promise<Blob> => {
 };
 
 /**
- * Handle custom protocol tile requests for front layer
- * Pattern: mr-wplace-overlay://{z}/{x}/{y}.png
+ * Handle dedicated front-layer tile requests
+ * Pattern: https://backend.wplace.live/mr-wplace/front-tile/{z}/{x}/{y}.png
  */
 export const handleFrontLayerTileRequest = async (
   url: string,
 ): Promise<Response> => {
   // Extract z, x, y from URL
-  const tileMatch = url.match(/(\d+)\/(\d+)\/(\d+)\.png/);
+  const tileMatch = url.match(/\/front-tile\/(\d+)\/(\d+)\/(\d+)\.png(?:[?#].*)?$/);
   if (!tileMatch) {
     return createEmptyTileResponse();
   }
@@ -353,5 +357,5 @@ const createEmptyTileResponse = (): Response => {
  * Check if URL is a front layer tile request
  */
 export const isFrontLayerTileRequest = (url: string): boolean => {
-  return url.startsWith(`${FAKE_TILE_PROTOCOL}://`);
+  return url.startsWith(`${FRONT_TILE_URL_ORIGIN}${FRONT_TILE_URL_PATH_PREFIX}/`);
 };

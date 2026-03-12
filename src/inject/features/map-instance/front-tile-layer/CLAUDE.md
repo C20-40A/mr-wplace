@@ -16,7 +16,7 @@ WPlace tile fetch → intercept → 背景タイル + overlay 合成 → 返却
 
 ```
 WPlace tile fetch → そのまま返却（背景用）
-Custom protocol (mr-wplace-overlay://{z}/{x}/{y}.png) → intercept → 透明背景 + overlay 合成 → 独立レイヤーとして表示
+Dedicated URL (`https://backend.wplace.live/mr-wplace/front-tile/{z}/{x}/{y}.png`) → intercept → 透明背景 + overlay 合成 → 独立レイヤーとして表示
 ```
 
 ### メリット
@@ -33,7 +33,7 @@ Custom protocol (mr-wplace-overlay://{z}/{x}/{y}.png) → intercept → 透明�
 
 1. **基本レイヤー/ソース管理**
    - カスタムソース追加（`FRONT_SOURCE_ID`: `"mr-wplace-overlay-source"`）
-   - カスタムプロトコル（`mr-wplace-overlay://{z}/{x}/{y}.png`）
+   - 専用 URL（`https://backend.wplace.live/mr-wplace/front-tile/{z}/{x}/{y}.png`）
    - Fetch interceptor 統合（`isFrontLayerTileRequest`, `handleFrontLayerTileRequest`）
    - 透明背景上に `drawOverlayLayersOnTile` でオーバーレイ描画
 
@@ -61,7 +61,7 @@ Custom protocol (mr-wplace-overlay://{z}/{x}/{y}.png) → intercept → 透明�
 ```
 src/inject/features/map-instance/front-tile-layer/
 ├── index.ts              # レイヤー/ソース管理、refresh 処理
-├── fetch-handler.ts      # カスタムプロトコル処理（mr-wplace-overlay://）
+├── fetch-handler.ts      # front layer 専用 URL 処理
 ├── front-tile-layer.ts   # Re-export barrel
 ├── front-layerの実装.md  # 元の作業ログ（アーカイブ）
 └── CLAUDE.md             # このファイル
@@ -87,7 +87,6 @@ src/inject/features/map-instance/front-tile-layer/
 ```typescript
 const FRONT_LAYER_ID = "pixel-art-layer-overlay";
 const FRONT_SOURCE_ID = "mr-wplace-overlay-source";
-const FAKE_TILE_PROTOCOL = "mr-wplace-overlay";
 ```
 
 #### レイヤー sandwich 構造
@@ -107,7 +106,7 @@ pixel-art-layer-overlay (front tile layer、overlay 専用)
 ```typescript
 map.addSource(FRONT_SOURCE_ID, {
   type: "raster",
-  tiles: [`${FAKE_TILE_PROTOCOL}://{z}/{x}/{y}.png`],
+  tiles: ["https://backend.wplace.live/mr-wplace/front-tile/{z}/{x}/{y}.png"],
   tileSize: 1000,
   minzoom: 11,
   maxzoom: 11,
@@ -141,7 +140,7 @@ checkAndAddOverlay(map);
 
 **代替案:**
 
-1. Tile URL に state version をクエリパラメータとして追加（例: `mr-wplace-overlay://{z}/{x}/{y}.png?v={stateVersion}`）→ URL 変更で自動的に再 fetch
+1. Tile URL に state version をクエリパラメータとして追加（例: `https://backend.wplace.live/mr-wplace/front-tile/{z}/{x}/{y}.png?v={stateVersion}`）→ URL 変更で自動的に再 fetch
 2. MapLibreGL の内部 tile cache API を直接操作（undocumented、リスク高）
 3. Layer の opacity を 0 → 1 にアニメーション（視覚的な遅延あり）
 
@@ -155,7 +154,7 @@ Map 準備完了時の初期化。`styledata` イベントリスナーを登録�
 
 #### handleFrontLayerTileRequest(url: string): Promise<Response>
 
-カスタムプロトコルのタイルリクエストを処理:
+front layer 専用 URL のタイルリクエストを処理:
 
 1. URL から z/x/y を抽出（zoom=11 のみサポート）
 2. 透明な 1000x1000px の canvas を生成（`createTransparentTileBlob()`）
@@ -166,10 +165,10 @@ Map 準備完了時の初期化。`styledata` イベントリスナーを登録�
 
 #### isFrontLayerTileRequest(url: string): boolean
 
-カスタムプロトコルかどうかを判定:
+front layer 専用 URL かどうかを判定:
 
 ```typescript
-return url.startsWith(`mr-wplace-overlay://`);
+return url.startsWith("https://backend.wplace.live/mr-wplace/front-tile/");
 ```
 
 #### createTransparentTileBlob(): Promise<Blob>
@@ -329,7 +328,7 @@ window.postMessage(
 2. `window.mrWplaceFrontTileLayerEnabled = true`
 3. `setFrontTileLayerEnabled(true)` → `checkAndAddOverlay(map)`
 4. カスタムソース + レイヤー追加
-5. MapLibreGL が `mr-wplace-overlay://{z}/{x}/{y}.png` をリクエスト
+5. MapLibreGL が `https://backend.wplace.live/mr-wplace/front-tile/{z}/{x}/{y}.png` をリクエスト
 6. Fetch interceptor が `handleFrontLayerTileRequest()` を呼び出し
 7. 透明背景 + overlay 合成して返却
 8. Front layer に overlay が表示される
@@ -381,7 +380,9 @@ const stateVersion = getStateVersion();
 // Source 追加時に URL に含める
 map.addSource(FRONT_SOURCE_ID, {
   type: "raster",
-  tiles: [`${FAKE_TILE_PROTOCOL}://{z}/{x}/{y}.png?v=${stateVersion}`],
+  tiles: [
+    `https://backend.wplace.live/mr-wplace/front-tile/{z}/{x}/{y}.png?v=${stateVersion}`,
+  ],
   tileSize: 1000,
   minzoom: 11,
   maxzoom: 11,

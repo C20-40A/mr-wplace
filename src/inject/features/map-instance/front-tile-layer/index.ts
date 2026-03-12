@@ -1,13 +1,15 @@
 import { getMapInstanceFromWplace } from "../get-map-instance";
 import { getStateVersion, incrementStateVersion } from "./state-version";
 import { tilePixelToLatLng } from "@/utils/coordinate";
-import { invalidateFrontRenderedTile } from "./fetch-handler";
+import {
+  buildFrontLayerTileUrl,
+  invalidateFrontRenderedTile,
+} from "./fetch-handler";
 
 const FRONT_LAYER_ID = "pixel-art-layer-overlay";
 const FRONT_SOURCE_ID = "mr-wplace-overlay-source";
 const PIXEL_ART_LAYER = "pixel-art-layer";
 const PIXEL_HOVER_LAYER = "pixel-hover";
-const FAKE_TILE_PROTOCOL = "mr-wplace-overlay";
 const PENDING_REFRESH_DEBOUNCE_MS = 120;
 const MAX_PENDING_COMPARISON_TILES = 256;
 const GUIDE_SOURCE_ID = "mr-wplace-paint-guide-source";
@@ -46,7 +48,7 @@ let paintGuideActive = false;
 
 const isEnabled = () => window.mrWplaceFrontTileLayerEnabled ?? false;
 const getFrontSourceTileUrl = (version: number): string =>
-  `${FAKE_TILE_PROTOCOL}://{z}/{x}/{y}.png?v=${version}`;
+  buildFrontLayerTileUrl(version);
 const getGuidePointKey = (
   tileX: number,
   tileY: number,
