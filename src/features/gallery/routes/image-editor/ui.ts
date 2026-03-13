@@ -247,6 +247,11 @@ export class ImageEditorUI {
     }
   }
 
+  private _setSectionHidden(id: string, hidden: boolean): void {
+    const element = this.container.querySelector(`#${id}`) as HTMLElement | null;
+    if (element) element.hidden = hidden;
+  }
+
   private _handleChange(e: Event): void {
     const target = e.target as HTMLInputElement | HTMLSelectElement;
     if (!target.id || !this.callbacks) return;
@@ -269,16 +274,41 @@ export class ImageEditorUI {
         if (!isInput(target)) return;
         this.callbacks.onBrightnessChange(parseInt(target.value));
         break;
+      case "wps-mobile-brightness-toggle":
+        if (!isInput(target)) return;
+        this._setSectionHidden("wps-brightness-mobile-slider-section", !target.checked);
+        if (target.checked) return;
+        (this.elements.brightnessSlider as HTMLInputElement).value = "0";
+        (this.elements.brightnessValue as HTMLElement).textContent = "0";
+        this.callbacks.onBrightnessChange(0);
+        break;
       case "wps-contrast-slider":
         if (!isInput(target)) return;
         this.callbacks.onContrastChange(parseInt(target.value));
+        break;
+      case "wps-mobile-contrast-toggle":
+        if (!isInput(target)) return;
+        this._setSectionHidden("wps-contrast-mobile-slider-section", !target.checked);
+        if (target.checked) return;
+        (this.elements.contrastSlider as HTMLInputElement).value = "0";
+        (this.elements.contrastValue as HTMLElement).textContent = "0";
+        this.callbacks.onContrastChange(0);
         break;
       case "wps-saturation-slider":
         if (!isInput(target)) return;
         this.callbacks.onSaturationChange(parseInt(target.value));
         break;
+      case "wps-mobile-saturation-toggle":
+        if (!isInput(target)) return;
+        this._setSectionHidden("wps-saturation-mobile-slider-section", !target.checked);
+        if (target.checked) return;
+        (this.elements.saturationSlider as HTMLInputElement).value = "0";
+        (this.elements.saturationValue as HTMLElement).textContent = "0";
+        this.callbacks.onSaturationChange(0);
+        break;
       case "wps-outline-checkbox":
         if (!isInput(target)) return;
+        this._setSectionHidden("wps-outline-mobile-details", !target.checked);
         (this.elements.outlineThresholdSlider as HTMLInputElement).disabled =
           !target.checked;
         (this.elements.outlineWidthSlider as HTMLInputElement).disabled =
@@ -310,6 +340,7 @@ export class ImageEditorUI {
         break;
       case "wps-dithering-checkbox":
         if (!isInput(target)) return;
+        this._setSectionHidden("wps-dithering-mobile-details", !target.checked);
         (this.elements.ditheringThresholdSlider as HTMLInputElement).disabled =
           !target.checked;
         (this.elements.ditheringMethod as HTMLSelectElement).disabled =

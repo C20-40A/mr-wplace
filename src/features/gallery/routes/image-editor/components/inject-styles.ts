@@ -135,6 +135,24 @@ export const injectImageEditorStyles = (
       .control-item { flex: 1; min-width: 0; }
       .control-item .range { width: 100%; display: block; }
       .cursor-pointer { cursor: pointer; }
+      .wps-mobile-toggle-row {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        min-height: 1.75rem;
+        font-size: 0.76rem;
+        font-weight: 500;
+      }
+      .wps-mobile-toggle-row .checkbox { flex: 0 0 auto; }
+      #wps-contrast-mobile-slider-section,
+      #wps-brightness-mobile-slider-section,
+      #wps-saturation-mobile-slider-section,
+      #wps-dithering-mobile-details,
+      #wps-outline-mobile-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
       #wps-dithering-compact-row,
       #wps-outline-compact-row {
         display: flex;
@@ -159,6 +177,10 @@ export const injectImageEditorStyles = (
         display: flex;
         align-items: center;
         gap: 0.5rem;
+      }
+      #wps-outline-mobile-details #wps-outline-line2 {
+        flex-direction: column;
+        align-items: stretch;
       }
       #wps-outline-line2 .wps-outline-sensitivity {
         flex: 3;
@@ -219,6 +241,12 @@ export const injectImageEditorStyles = (
 
       #wps-image-editor-container.mobile .control-group { flex-direction: column; }
       #wps-image-editor-container.desktop .control-group { flex-direction: row; }
+      #wps-image-editor-container.mobile #wps-outline-mobile-details .wps-outline-sensitivity,
+      #wps-image-editor-container.mobile #wps-outline-mobile-details .wps-outline-width {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+      }
 
       .control-label-sm { display: block; font-size: 0.75rem; font-weight: 500; margin-bottom: 0.25rem; }
       .grid-4-col { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.25rem; }

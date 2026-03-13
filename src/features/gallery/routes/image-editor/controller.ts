@@ -427,6 +427,10 @@ export class EditorController {
         | null;
       if (el) el.disabled = disabled;
     };
+    const setHidden = (id: string, hidden: boolean) => {
+      const el = this.container.querySelector(`#${id}`) as HTMLElement | null;
+      if (el) el.hidden = hidden;
+    };
 
     set("wps-brightness-slider", `${params.adjustments.brightness}`);
     setText("wps-brightness-value", `${params.adjustments.brightness}`);
@@ -434,6 +438,27 @@ export class EditorController {
     setText("wps-contrast-value", `${params.adjustments.contrast}`);
     set("wps-saturation-slider", `${params.adjustments.saturation}`);
     setText("wps-saturation-value", `${params.adjustments.saturation}`);
+    setChecked(
+      "wps-mobile-brightness-toggle",
+      params.adjustments.brightness !== 0,
+    );
+    setHidden(
+      "wps-brightness-mobile-slider-section",
+      params.adjustments.brightness === 0,
+    );
+    setChecked("wps-mobile-contrast-toggle", params.adjustments.contrast !== 0);
+    setHidden(
+      "wps-contrast-mobile-slider-section",
+      params.adjustments.contrast === 0,
+    );
+    setChecked(
+      "wps-mobile-saturation-toggle",
+      params.adjustments.saturation !== 0,
+    );
+    setHidden(
+      "wps-saturation-mobile-slider-section",
+      params.adjustments.saturation === 0,
+    );
 
     setChecked("wps-dithering-checkbox", params.ditheringEnabled);
     set("wps-dithering-threshold-slider", `${params.ditheringThreshold}`);
@@ -441,6 +466,7 @@ export class EditorController {
     set("wps-dithering-method", params.ditheringMethod);
     setDisabled("wps-dithering-threshold-slider", !params.ditheringEnabled);
     setDisabled("wps-dithering-method", !params.ditheringEnabled);
+    setHidden("wps-dithering-mobile-details", !params.ditheringEnabled);
 
     set("wps-quantization-method", params.quantizationMethod);
     set("wps-color-flatten-mode", params.colorFlattenMode);
@@ -459,6 +485,7 @@ export class EditorController {
       "wps-outline-color-input",
       !params.outlineEnabled || !params.outlineUseFixedColor,
     );
+    setHidden("wps-outline-mobile-details", !params.outlineEnabled);
 
     // Update color palette
     if (this.colorPalette) {
@@ -617,6 +644,15 @@ export class EditorController {
     const saturationValue = this.container.querySelector(
       "#wps-saturation-value",
     );
+    const mobileBrightnessToggle = this.container.querySelector(
+      "#wps-mobile-brightness-toggle",
+    ) as HTMLInputElement;
+    const mobileContrastToggle = this.container.querySelector(
+      "#wps-mobile-contrast-toggle",
+    ) as HTMLInputElement;
+    const mobileSaturationToggle = this.container.querySelector(
+      "#wps-mobile-saturation-toggle",
+    ) as HTMLInputElement;
     const outlineCheckbox = this.container.querySelector(
       "#wps-outline-checkbox",
     ) as HTMLInputElement;
@@ -677,11 +713,30 @@ export class EditorController {
     }
     if (brightnessSlider) brightnessSlider.value = "0";
     if (brightnessValue) brightnessValue.textContent = "0";
+    if (mobileBrightnessToggle) mobileBrightnessToggle.checked = false;
+    const brightnessMobileSection = this.container.querySelector(
+      "#wps-brightness-mobile-slider-section",
+    ) as HTMLElement | null;
+    if (brightnessMobileSection) brightnessMobileSection.hidden = true;
     if (contrastSlider) contrastSlider.value = "0";
     if (contrastValue) contrastValue.textContent = "0";
+    if (mobileContrastToggle) mobileContrastToggle.checked = false;
+    const contrastMobileSection = this.container.querySelector(
+      "#wps-contrast-mobile-slider-section",
+    ) as HTMLElement | null;
+    if (contrastMobileSection) contrastMobileSection.hidden = true;
     if (saturationSlider) saturationSlider.value = "0";
     if (saturationValue) saturationValue.textContent = "0";
+    if (mobileSaturationToggle) mobileSaturationToggle.checked = false;
+    const saturationMobileSection = this.container.querySelector(
+      "#wps-saturation-mobile-slider-section",
+    ) as HTMLElement | null;
+    if (saturationMobileSection) saturationMobileSection.hidden = true;
     if (outlineCheckbox) outlineCheckbox.checked = false;
+    const outlineMobileDetails = this.container.querySelector(
+      "#wps-outline-mobile-details",
+    ) as HTMLElement | null;
+    if (outlineMobileDetails) outlineMobileDetails.hidden = true;
     if (outlineThresholdSlider) {
       outlineThresholdSlider.value = "55";
       outlineThresholdSlider.disabled = true;
@@ -701,6 +756,10 @@ export class EditorController {
       outlineColorInput.disabled = true;
     }
     if (ditheringCheckbox) ditheringCheckbox.checked = false;
+    const ditheringMobileDetails = this.container.querySelector(
+      "#wps-dithering-mobile-details",
+    ) as HTMLElement | null;
+    if (ditheringMobileDetails) ditheringMobileDetails.hidden = true;
     if (quantizationMethodSelect)
       quantizationMethodSelect.value = "rgb-euclidean";
     if (ditheringMethodSelect) {
