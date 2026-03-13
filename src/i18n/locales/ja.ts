@@ -598,6 +598,10 @@ export const jaTranslations = {
   color_flatten_light: "フラット: 弱",
   color_flatten_medium: "フラット: 中",
   open_tmp_tile_board: "周囲をダウンロード",
+  hint_blue_marble_color_palette:
+    "もしかして、BlueMarbleを使っていますか？ 同時に起動すると、機能が干渉する可能性があります",
   hint_overlay_mode_performance:
     "処理が重い場合は、別のモードを試してみてください",
+  hint_overlay_mode_blue_marble:
+    "BlueMarbleと干渉する場合は、このモードを「合成」にしてみてください",
 };

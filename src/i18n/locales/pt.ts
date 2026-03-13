@@ -569,6 +569,10 @@ export const ptTranslations = {
   color_flatten_light: "Flat: Leve",
   color_flatten_medium: "Flat: Medio",
   open_tmp_tile_board: "Baixar arredores",
+  hint_blue_marble_color_palette:
+    "Are you using BlueMarble? Running both extensions together may cause feature conflicts",
   hint_overlay_mode_performance:
     "Se a renderização estiver lenta, experimente outro modo",
+  hint_overlay_mode_blue_marble:
+    'If BlueMarble conflicts with this extension, try setting this mode to "Composite"',
 };

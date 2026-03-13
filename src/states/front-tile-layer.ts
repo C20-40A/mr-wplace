@@ -1,4 +1,5 @@
 import { storage } from "@/utils/browser-api";
+import { isBlueMarbleDetected } from "@/utils/blue-marble";
 
 const STORAGE_KEY = "front-tile-layer-enabled";
 const MIGRATION_KEY = "front-tile-layer-migrated-to-independent-v1";
@@ -8,16 +9,19 @@ let subscribers: ((enabled: boolean) => void)[] = [];
 
 /**
  * Load front tile layer setting from storage.
- * One-time migration: force independent mode (true) for all users.
+ * One-time migration: default to composite for BlueMarble users, otherwise independent.
  */
 export const loadFrontTileLayerFromStorage = async (): Promise<void> => {
   try {
     const result = await storage.get([STORAGE_KEY, MIGRATION_KEY]);
     const migrated = result[MIGRATION_KEY] ?? false;
     if (!migrated) {
-      // First time: force independent mode regardless of previous setting
-      frontTileLayerEnabled = true;
-      await storage.set({ [STORAGE_KEY]: true, [MIGRATION_KEY]: true });
+      const defaultEnabled = !isBlueMarbleDetected();
+      frontTileLayerEnabled = defaultEnabled;
+      await storage.set({
+        [STORAGE_KEY]: defaultEnabled,
+        [MIGRATION_KEY]: true,
+      });
     } else {
       frontTileLayerEnabled = result[STORAGE_KEY] ?? true;
     }

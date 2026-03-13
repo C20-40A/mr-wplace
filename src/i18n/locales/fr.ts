@@ -586,5 +586,9 @@ export const frTranslations = {
   color_flatten_light: "Aplat: Leger",
   color_flatten_medium: "Aplat: Moyen",
   open_tmp_tile_board: "Télécharger les alentours",
+  hint_blue_marble_color_palette:
+    "Are you using BlueMarble? Running both extensions together may cause feature conflicts",
   hint_overlay_mode_performance: "Si le rendu est lent, essayez un autre mode",
+  hint_overlay_mode_blue_marble:
+    'If BlueMarble conflicts with this extension, try setting this mode to "Composite"',
 };

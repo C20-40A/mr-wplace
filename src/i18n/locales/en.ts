@@ -595,6 +595,10 @@ Do not use this feature to paint actual pixels.`,
   color_flatten_light: "Flat: Light",
   color_flatten_medium: "Flat: Medium",
   open_tmp_tile_board: "Download Surroundings",
+  hint_blue_marble_color_palette:
+    "Are you using BlueMarble? Running both extensions together may cause feature conflicts",
   hint_overlay_mode_performance:
     "If rendering feels slow, try a different mode",
+  hint_overlay_mode_blue_marble:
+    'If BlueMarble conflicts with this extension, try setting this mode to "Composite"',
 };

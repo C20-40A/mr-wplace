@@ -579,5 +579,9 @@ export const esTranslations = {
   color_flatten_light: "Plano: Suave",
   color_flatten_medium: "Plano: Medio",
   open_tmp_tile_board: "Descargar alrededores",
+  hint_blue_marble_color_palette:
+    "Are you using BlueMarble? Running both extensions together may cause feature conflicts",
   hint_overlay_mode_performance: "Si el renderizado es lento, prueba otro modo",
+  hint_overlay_mode_blue_marble:
+    'If BlueMarble conflicts with this extension, try setting this mode to "Composite"',
 };

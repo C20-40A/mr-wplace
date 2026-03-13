@@ -184,5 +184,6 @@ export const renderColorFilters = async (
   const overlayModeContainer = container.querySelector(".overlay-mode-container");
   if (overlayModeContainer instanceof HTMLElement) {
     showFeatureHint("overlay-mode-independent", overlayModeContainer);
+    showFeatureHint("overlay-mode-blue-marble", overlayModeContainer);
   }
 };

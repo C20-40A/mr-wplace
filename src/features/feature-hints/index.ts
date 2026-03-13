@@ -9,6 +9,7 @@ import { findPositionModal } from "@/constants/selectors";
 import { t } from "@/i18n/manager";
 import { isFeatureHintDismissed } from "@/states/feature-hints";
 import { getAllGalleryMetadata } from "@/core/bridge/gallery-storage-bridge";
+import { isBlueMarbleDetected } from "@/utils/blue-marble";
 
 export type FeatureHintId =
   | "paint-pixel-icon"
@@ -23,7 +24,9 @@ export type FeatureHintId =
   | "show-unplaced-only"
   | "color-isolate"
   | "data-saver"
+  | "blue-marble-color-palette"
   | "overlay-mode-independent"
+  | "overlay-mode-blue-marble"
   | "user-status-container"
   | "map-filter-trigger"
   | "edit-card"
@@ -61,6 +64,17 @@ const setupPositionModalObserver = () => {
 };
 
 const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
+  // ------- Blue Marble Hints -------
+  "blue-marble-color-palette": {
+    messageKey: "hint_blue_marble_color_palette",
+    placement: "right",
+    condition: isBlueMarbleDetected,
+  },
+  "overlay-mode-blue-marble": {
+    messageKey: "hint_overlay_mode_blue_marble",
+    placement: "top",
+    condition: isBlueMarbleDetected,
+  },
   // ------- Main Screen Hint -------
   "gallery-btn": {
     messageKey: "hint_gallery_btn",
@@ -166,6 +180,7 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     placement: "top",
     dependsOn: ["show-unplaced-only"],
   },
+
   // ------- Edit Card Hint -------
   "edit-card": {
     messageKey: "hint_edit_card",

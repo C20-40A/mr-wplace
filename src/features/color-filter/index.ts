@@ -1,8 +1,13 @@
 import { setupElementObserver } from "../../components/element-observer";
 import { findOpacityContainer } from "../../constants/selectors";
 import { ColorFilterRouter } from "./router";
-import { ColorFilterModal, createColorFilterFAB, updateColorFilterBadges } from "./ui";
+import {
+  ColorFilterModal,
+  createColorFilterFAB,
+  updateColorFilterBadges,
+} from "./ui";
 import { renderColorFilters } from "./routes/list";
+import { showFeatureHint } from "../feature-hints";
 
 /**
  * カラーフィルター機能
@@ -39,9 +44,11 @@ export class ColorFilter {
           button.addEventListener("click", () => this.showModal());
           container.className += " flex flex-col-reverse gap-1";
           container.appendChild(button);
+          showFeatureHint("blue-marble-color-palette", button);
           const mgr = window.mrWplace?.colorFilterManager;
           if (mgr) {
-            button.style.filter = mgr.selectedRGBs.length === 0 ? "grayscale(1)" : "";
+            button.style.filter =
+              mgr.selectedRGBs.length === 0 ? "grayscale(1)" : "";
             this.refreshFABBadge();
           }
         },

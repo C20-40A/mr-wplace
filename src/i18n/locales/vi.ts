@@ -565,5 +565,9 @@ export const viTranslations = {
   color_flatten_light: "Flat: Nhe",
   color_flatten_medium: "Flat: Vua",
   open_tmp_tile_board: "Tải vùng xung quanh",
+  hint_blue_marble_color_palette:
+    "Are you using BlueMarble? Running both extensions together may cause feature conflicts",
   hint_overlay_mode_performance: "Nếu việc kết xuất chậm, hãy thử chế độ khác",
+  hint_overlay_mode_blue_marble:
+    'If BlueMarble conflicts with this extension, try setting this mode to "Composite"',
 };
