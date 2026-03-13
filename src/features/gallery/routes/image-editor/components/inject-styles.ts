@@ -18,7 +18,7 @@ export const injectImageEditorStyles = (
       }
       #wps-image-editor-container.mobile #wps-main-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 2fr 3fr;
         grid-template-areas:
           "original current"
           "palette palette"
@@ -115,7 +115,7 @@ export const injectImageEditorStyles = (
       }
 
       #wps-palette-accordion { list-style: none; }
-      #wps-palette-accordion summary { font-size: 0.875rem; font-weight: 500; cursor: pointer; margin: 0.5rem; }
+      #wps-palette-accordion summary { font-size: 0.7rem; font-weight: 500; cursor: pointer; margin: 0.3rem; }
       #wps-image-editor-container.desktop #wps-palette-accordion { display: none; }
       #wps-image-editor-container.mobile #wps-palette-accordion { display: block; }
       #wps-image-editor-container.desktop #wps-palette-desktop { display: block; }
@@ -123,6 +123,7 @@ export const injectImageEditorStyles = (
 
       #wps-controls-container { display: flex; flex-direction: column; gap: 1rem; }
       .control-label { display: flex; align-items: center; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem; }
+      .control-label.mobile { font-size: 0.7rem; margin-bottom: 0.2rem; }
       .control-label.space-between { justify-content: space-between; }
       .control-label.centered { justify-content: center; }
       .label-hint { font-size: 0.75rem; color: #9ca3af; }

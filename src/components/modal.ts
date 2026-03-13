@@ -1,5 +1,6 @@
 import { t } from "@/i18n/manager";
 import { Router } from "../utils/router";
+import { isMobileViewport } from "@/constants/breakpoints";
 
 export interface ModalOptions {
   id: string;
@@ -243,9 +244,9 @@ export const createModal = (options: ModalOptions): ModalElements => {
   const modal = createDialogLikeModal();
   modal.id = id;
   modal.innerHTML = t`
-    <div class="modal-box" style="width: 91.666667%; max-width: ${maxWidth}; max-height: 90dvh; display: flex; flex-direction: column; padding: 1.5rem 1rem; ${containerStyle}">
+    <div class="modal-box" style="width: 91.666667%; max-width: ${maxWidth}; ${isMobileViewport() ? "max-height: 95vh;" : "max-height: 90vh;"} display: flex; flex-direction: column; padding:${isMobileViewport() ? "1rem .5rem" : " 1.5rem 1rem"}; ${containerStyle}">
       <!-- Header -->
-      <div class="flex justify-between items-center mb-4" style="flex-shrink: 0;">
+      <div class="flex justify-between items-center ${isMobileViewport() ? "mb-2" : "mb-4"}" style="flex-shrink: 0;">
         <div class="flex items-center gap-2">
           <button id="${id}-back-btn" class="btn btn-sm btn-ghost ${
             hasBackButton ? "" : "hidden"
@@ -255,7 +256,7 @@ export const createModal = (options: ModalOptions): ModalElements => {
             </svg>
             ${"back"}
           </button>
-          <h3 id="${id}-title" class="font-bold text-lg">${title}</h3>
+          <h3 id="${id}-title" class="font-bold ${isMobileViewport() ? "text" : "text-lg"}">${title}</h3>
         </div>
         <div class="flex items-center gap-1">
           <button id="${id}-minimize-btn" class="btn btn-sm btn-ghost">

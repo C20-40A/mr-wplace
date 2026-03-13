@@ -20,7 +20,7 @@ export class GalleryUI {
     this.modalElements = createModal({
       id: "wplace-studio-gallery-modal",
       title: t`${"gallery"}`,
-      containerStyle: "max-height: 90vh;",
+      containerStyle: "",
       router: this.router,
     });
 

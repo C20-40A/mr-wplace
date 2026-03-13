@@ -1,5 +1,6 @@
 import { t } from "@/i18n/manager";
 import type { CreateElementFn, UIElements } from "./types";
+import { isMobileViewport } from "@/constants/breakpoints";
 
 export const createPaletteArea = (
   createElement: CreateElementFn,
@@ -50,9 +51,9 @@ const createTransparentSection = (
     "button",
     {
       id: "wps-transparency-tool-btn",
-      className: "btn btn-sm wps-transparency-tool-btn",
+      className: `btn btn-sm wps-transparency-tool-btn ${isMobileViewport() ? "btn-xs" : "btn-sm"}`,
     },
-    [t("transparency_tool")],
+    [`🔍` + t("transparency_tool")],
   );
   elements.transparencyToolBtn = transparencyBtn;
 
@@ -60,9 +61,9 @@ const createTransparentSection = (
     "button",
     {
       id: "wps-adjust-tool-btn",
-      className: "btn btn-sm btn-primary wps-adjust-tool-btn",
+      className: `btn btn-primary wps-adjust-tool-btn ${isMobileViewport() ? "btn-xs" : "btn-sm"}`,
     },
-    [t("adjust_tool")],
+    [`🪄` + t("adjust_tool")],
   );
   elements.adjustToolBtn = adjustBtn;
 

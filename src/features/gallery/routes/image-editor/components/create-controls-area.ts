@@ -1,6 +1,10 @@
 import { t } from "@/i18n/manager";
 import type { ColorFlattenMode } from "../canvas-processor";
 import type { CreateElementFn, UIElements } from "./types";
+import { isMobileViewport } from "@/constants/breakpoints";
+
+const controlLabelClassName = (...classNames: string[]) =>
+  `control-label ${isMobileViewport() ? "mobile " : ""}${classNames.join(" ")}`;
 
 export const createControlsArea = (
   createElement: CreateElementFn,
@@ -54,7 +58,7 @@ const createSizeControl = (
   elements.sizeReductionLabel.textContent = t("size_reduction");
 
   return createElement("div", {}, [
-    createElement("label", { className: "control-label space-between" }, [
+    createElement("label", { className: controlLabelClassName("space-between") }, [
       createElement("span", { className: "label-hint" }, ["0.1x"]),
       elements.sizeReductionLabel as HTMLElement,
       createElement("span", { className: "label-hint" }, ["1.0x"]),
@@ -129,7 +133,7 @@ export const createContrastQuantizationControl = (
     { id: "wps-contrast-quantization-container", className: "control-group" },
     [
       createElement("div", { className: "control-item" }, [
-        createElement("label", { className: "control-label space-between" }, [
+        createElement("label", { className: controlLabelClassName("space-between") }, [
           createElement("span", { className: "label-hint" }, ["-100"]),
           createElement("span", {}, [
             `${t("contrast")}: `,
@@ -140,13 +144,17 @@ export const createContrastQuantizationControl = (
         elements.contrastSlider as HTMLInputElement,
       ]),
       createElement("div", { className: "control-item" }, [
-        createElement("label", { className: "control-label centered" }, [
+        createElement("label", { className: controlLabelClassName("centered") }, [
           t("quantization_method"),
         ]),
-        createElement("div", { id: "wps-quantization-row", className: "flex-group" }, [
-          elements.quantizationMethod as HTMLSelectElement,
-          elements.colorFlattenMode as HTMLSelectElement,
-        ]),
+        createElement(
+          "div",
+          { id: "wps-quantization-row", className: "flex-group" },
+          [
+            elements.quantizationMethod as HTMLSelectElement,
+            elements.colorFlattenMode as HTMLSelectElement,
+          ],
+        ),
       ]),
     ],
   );
@@ -190,7 +198,7 @@ export const createBrightnessSaturationControl = (
     { id: "wps-brightness-saturation-container", className: "control-group" },
     [
       createElement("div", { className: "control-item" }, [
-        createElement("label", { className: "control-label space-between" }, [
+        createElement("label", { className: controlLabelClassName("space-between") }, [
           createElement("span", { className: "label-hint" }, ["-100"]),
           createElement("span", {}, [
             `${t("brightness")}: `,
@@ -201,7 +209,7 @@ export const createBrightnessSaturationControl = (
         elements.brightnessSlider as HTMLInputElement,
       ]),
       createElement("div", { className: "control-item" }, [
-        createElement("label", { className: "control-label space-between" }, [
+        createElement("label", { className: controlLabelClassName("space-between") }, [
           createElement("span", { className: "label-hint" }, ["-100"]),
           createElement("span", {}, [
             `${t("saturation")}: `,
@@ -323,7 +331,7 @@ export const createDitheringOutlineControl = (
             createElement(
               "label",
               {
-                className: "control-label centered cursor-pointer",
+                className: controlLabelClassName("centered", "cursor-pointer"),
                 style: { margin: "0" },
               },
               [
@@ -355,7 +363,7 @@ export const createDitheringOutlineControl = (
             createElement(
               "label",
               {
-                className: "control-label centered cursor-pointer",
+                className: controlLabelClassName("centered", "cursor-pointer"),
                 style: { margin: "0" },
               },
               [
@@ -366,7 +374,7 @@ export const createDitheringOutlineControl = (
             createElement(
               "label",
               {
-                className: "control-label centered cursor-pointer",
+                className: controlLabelClassName("centered", "cursor-pointer"),
                 style: { margin: "0" },
               },
               [
