@@ -43,6 +43,17 @@ const ensureStyles = (): void => {
       src: url("${dotFontUrl}") format("truetype");
     }
 
+    @keyframes mr-wplace-hint-tooltip-enter {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     .${TOOLTIP_CLASS} {
       position: fixed;
       max-width: min(30ch, calc(100vw - 1.5rem));
@@ -59,6 +70,14 @@ const ensureStyles = (): void => {
       font-family: "KHDotAkihabara", monospace;
       letter-spacing: 0.02em;
       image-rendering: pixelated;
+      transform-origin: center;
+      animation: mr-wplace-hint-tooltip-enter 0.18s ease-out;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .${TOOLTIP_CLASS} {
+        animation: none;
+      }
     }
 
     .${TOOLTIP_CLASS}::before,

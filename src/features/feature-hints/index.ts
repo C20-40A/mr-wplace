@@ -7,7 +7,10 @@ import {
 import { hasOpenModal } from "@/components/modal";
 import { findPositionModal } from "@/constants/selectors";
 import { t } from "@/i18n/manager";
-import { isFeatureHintDismissed } from "@/states/feature-hints";
+import {
+  getFeatureHintCooldownMs,
+  isFeatureHintDismissed,
+} from "@/states/feature-hints";
 import { getAllGalleryMetadata } from "@/core/bridge/gallery-storage-bridge";
 import { isBlueMarbleDetected } from "@/utils/blue-marble";
 
@@ -211,6 +214,8 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
 const pendingHints = new Map<FeatureHintId, HTMLElement>();
 let isEvaluating = false;
 let shouldEvaluateAgain = false;
+let nextHintAvailableAt = 0;
+let cooldownTimerId: number | null = null;
 
 const getHintPriority = (hintId: FeatureHintId): number =>
   HINT_DEFINITIONS[hintId]?.priority ?? DEFAULT_HINT_PRIORITY;
@@ -236,8 +241,22 @@ const isHintConditionSatisfied = async (
   }
 };
 
+const scheduleHintCooldown = (delayMs: number): void => {
+  if (cooldownTimerId !== null) return;
+  cooldownTimerId = window.setTimeout(() => {
+    cooldownTimerId = null;
+    refreshFeatureHints();
+  }, delayMs);
+};
+
 const tryShowNextHint = async (): Promise<void> => {
   if (hasActiveHintTooltip()) return;
+
+  const cooldownRemainingMs = nextHintAvailableAt - Date.now();
+  if (cooldownRemainingMs > 0) {
+    scheduleHintCooldown(cooldownRemainingMs);
+    return;
+  }
 
   const hintIds = [...pendingHints.keys()].sort(
     (a, b) => getHintPriority(a) - getHintPriority(b),
@@ -281,7 +300,8 @@ const tryShowNextHint = async (): Promise<void> => {
       message: message ?? t(definition.messageKey!),
       iconSrc: definition.iconSrc ?? DEFAULT_HINT_ICON_SRC,
       placement: definition.placement,
-      onClose: () => {
+      onClose: async () => {
+        nextHintAvailableAt = Date.now() + (await getFeatureHintCooldownMs());
         refreshFeatureHints();
       },
     });
