@@ -5,9 +5,46 @@
  * All functions use postMessage for cross-context communication with request/response pattern.
  */
 import { withDangerousMessageAuth } from "@/core/bridge/inject-message-auth";
+import type {
+  ColorFlattenMode,
+  DitheringMethod,
+  ImageAdjustments,
+  QuantizationMethod,
+} from "@/features/gallery/routes/image-editor/canvas-processor";
 
 let requestIdCounter = 0;
 const generateRequestId = (): string => `req_${Date.now()}_${++requestIdCounter}`;
+
+export type AdjustPreviewRequestParams = {
+  sessionId: string;
+  imageSrc: string;
+  widthPx: number;
+  heightPx: number;
+  adjustments: ImageAdjustments;
+  selectedColorIds: number[];
+  ditheringEnabled: boolean;
+  ditheringThreshold: number;
+  ditheringMethod: DitheringMethod;
+  quantizationMethod: QuantizationMethod;
+  colorFlattenMode: ColorFlattenMode;
+  outlineEnabled: boolean;
+  outlineThreshold: number;
+  outlineWidth: number;
+  outlineUseFixedColor: boolean;
+  outlineFixedColor: string;
+};
+
+export type TransparencyPreviewRequestParams = {
+  imageSrc: string;
+  mask: number[];
+  width: number;
+  height: number;
+};
+
+export type AdjustPreviewResult = {
+  dataUrl: string;
+  colorStats: Record<string, { matched: number; total: number }>;
+};
 
 /**
  * Request aggregated color stats from inject side
@@ -187,6 +224,96 @@ export const getStatsPerImage = async (
       console.warn("🧑‍🎨 : Image stats request timed out");
       resolve({});
     }, 5000);
+  });
+};
+
+export const renderAdjustPreviewInInject = async (
+  params: AdjustPreviewRequestParams,
+): Promise<AdjustPreviewResult> => {
+  const requestId = generateRequestId();
+
+  return new Promise((resolve, reject) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-response-adjust-preview" &&
+        event.data.requestId === requestId
+      ) {
+        clearTimeout(timeoutId);
+        window.removeEventListener("message", handler);
+        if (event.data.error) {
+          reject(new Error(event.data.error));
+          return;
+        }
+        resolve(event.data.result);
+      }
+    };
+
+    window.addEventListener("message", handler);
+    window.postMessage(
+      {
+        source: "mr-wplace-request-adjust-preview",
+        requestId,
+        params,
+      },
+      "*",
+    );
+
+    timeoutId = setTimeout(() => {
+      window.removeEventListener("message", handler);
+      reject(new Error("Adjust preview request timed out"));
+    }, 10000);
+  });
+};
+
+export const releaseAdjustPreviewSessionInInject = (sessionId: string): void => {
+  window.postMessage(
+    {
+      source: "mr-wplace-adjust-preview-session-release",
+      sessionId,
+    },
+    "*",
+  );
+};
+
+export const renderTransparencyPreviewInInject = async (
+  params: TransparencyPreviewRequestParams,
+): Promise<string> => {
+  const requestId = generateRequestId();
+
+  return new Promise((resolve, reject) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-response-transparency-preview" &&
+        event.data.requestId === requestId
+      ) {
+        clearTimeout(timeoutId);
+        window.removeEventListener("message", handler);
+        if (event.data.error) {
+          reject(new Error(event.data.error));
+          return;
+        }
+        resolve(event.data.dataUrl);
+      }
+    };
+
+    window.addEventListener("message", handler);
+    window.postMessage(
+      {
+        source: "mr-wplace-request-transparency-preview",
+        requestId,
+        params,
+      },
+      "*",
+    );
+
+    timeoutId = setTimeout(() => {
+      window.removeEventListener("message", handler);
+      reject(new Error("Transparency preview request timed out"));
+    }, 10000);
   });
 };
 

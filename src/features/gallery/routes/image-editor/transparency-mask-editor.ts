@@ -1,3 +1,5 @@
+import { renderTransparencyPreviewInInject } from "@/utils/inject-bridge";
+
 type TransparencyMaskApplyResult = "applied" | "size_mismatch" | "no_mask";
 
 export class TransparencyMaskEditor {
@@ -6,10 +8,12 @@ export class TransparencyMaskEditor {
   private maskWidth = 0;
   private maskHeight = 0;
   private boundaryAdjust = 0;
-  private previewCanvas: HTMLCanvasElement | null = null;
-  private previewHandler?: (canvas: HTMLCanvasElement) => void;
+  private previewHandler?: (image: HTMLImageElement | HTMLCanvasElement) => void;
+  private previewVersion = 0;
 
-  setPreviewHandler(handler?: (canvas: HTMLCanvasElement) => void): void {
+  setPreviewHandler(
+    handler?: (image: HTMLImageElement | HTMLCanvasElement) => void,
+  ): void {
     this.previewHandler = handler;
   }
 
@@ -51,7 +55,7 @@ export class TransparencyMaskEditor {
       if (adjustedRegion[i]) this.workingMask[i] = 1;
     }
 
-    this.updatePreview(imageData, this.workingMask);
+    void this.updatePreview(sourceCanvas, this.workingMask);
   }
 
   applyPendingSelection(): void {
@@ -64,12 +68,12 @@ export class TransparencyMaskEditor {
     }
 
     this.workingMask = null;
-    this.previewCanvas = null;
+    this.previewVersion += 1;
   }
 
   resetPreview(baseCanvas?: HTMLCanvasElement | null): void {
     this.workingMask = null;
-    this.previewCanvas = null;
+    this.previewVersion += 1;
     if (baseCanvas) this.previewHandler?.(baseCanvas);
   }
 
@@ -79,7 +83,7 @@ export class TransparencyMaskEditor {
     this.maskWidth = 0;
     this.maskHeight = 0;
     this.boundaryAdjust = 0;
-    this.previewCanvas = null;
+    this.previewVersion += 1;
   }
 
   applyCommittedMaskToCanvas(
@@ -235,27 +239,29 @@ export class TransparencyMaskEditor {
     return current;
   }
 
-  private updatePreview(baseImageData: ImageData, mask: Uint8Array): void {
+  private async updatePreview(
+    sourceCanvas: HTMLCanvasElement,
+    mask: Uint8Array,
+  ): Promise<void> {
     if (!this.previewHandler) return;
+    const requestVersion = ++this.previewVersion;
+    const dataUrl = await renderTransparencyPreviewInInject({
+      imageSrc: sourceCanvas.toDataURL("image/png"),
+      mask: Array.from(mask),
+      width: sourceCanvas.width,
+      height: sourceCanvas.height,
+    }).catch((error) => {
+      console.warn("🧑‍🎨 : transparency preview request failed", error);
+      return "";
+    });
+    if (!dataUrl || requestVersion !== this.previewVersion) return;
 
-    const previewData = new ImageData(
-      new Uint8ClampedArray(baseImageData.data),
-      baseImageData.width,
-      baseImageData.height
-    );
-    this.applyMaskToImageData(previewData, mask);
-
-    if (!this.previewCanvas) {
-      this.previewCanvas = document.createElement("canvas");
-    }
-
-    this.previewCanvas.width = previewData.width;
-    this.previewCanvas.height = previewData.height;
-    const ctx = this.previewCanvas.getContext("2d");
-    if (!ctx) return;
-
-    ctx.putImageData(previewData, 0, 0);
-    this.previewHandler(this.previewCanvas);
+    const previewImage = new Image();
+    previewImage.onload = () => {
+      if (requestVersion !== this.previewVersion) return;
+      this.previewHandler?.(previewImage);
+    };
+    previewImage.src = dataUrl;
   }
 
   private applyMaskToImageData(imageData: ImageData, mask: Uint8Array): void {

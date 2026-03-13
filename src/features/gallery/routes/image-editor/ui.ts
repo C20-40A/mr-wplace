@@ -486,8 +486,8 @@ export class ImageEditorUI {
     this.controller = controller;
   }
 
-  updateTransparencyPreview(canvas: HTMLCanvasElement): void {
-    this.transparencyDialog?.updatePreview(canvas);
+  updateTransparencyPreview(image: HTMLImageElement | HTMLCanvasElement): void {
+    this.transparencyDialog?.updatePreview(image);
   }
 
   private setupResponsive(): void {

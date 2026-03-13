@@ -77,7 +77,7 @@ export class EditorController {
   }
 
   setTransparencyPreviewHandler(
-    handler: (canvas: HTMLCanvasElement) => void,
+    handler: (image: HTMLImageElement | HTMLCanvasElement) => void,
   ): void {
     this.transparencyMaskEditor.setPreviewHandler(handler);
   }

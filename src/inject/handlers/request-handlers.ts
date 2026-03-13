@@ -8,6 +8,14 @@ import {
 } from "../features/tile-draw";
 import { computeTotalStatsFromImage } from "../features/tile-draw";
 import { latLonToPixels, metersToLatLon, pixelsToMeters } from "@/utils/geo-converter";
+import {
+  renderAdjustPreview,
+  releaseAdjustPreviewSession,
+  renderTransparencyPreview,
+  type InjectAdjustPreviewResult,
+  type InjectAdjustPreviewParams,
+  type InjectTransparencyPreviewParams,
+} from "../features/preview-renderer";
 
 const TILE_FETCH_TIMEOUT_MS = 5000;
 const MAP_VIEW_LIVE_EVENTS = ["move", "zoom", "rotate", "pitch"] as const;
@@ -234,6 +242,64 @@ export const handleImageStatsRequest = async (data: {
   console.log(
     `🧑‍🎨 : Sent image stats for ${data.imageKeys.length} images (request: ${data.requestId})`
   );
+};
+
+export const handleAdjustPreviewRequest = async (data: {
+  requestId: string;
+  params: InjectAdjustPreviewParams;
+}): Promise<void> => {
+  try {
+    const result: InjectAdjustPreviewResult = await renderAdjustPreview(data.params);
+    window.postMessage(
+      {
+        source: "mr-wplace-response-adjust-preview",
+        requestId: data.requestId,
+        result,
+      },
+      "*",
+    );
+  } catch (error) {
+    window.postMessage(
+      {
+        source: "mr-wplace-response-adjust-preview",
+        requestId: data.requestId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "*",
+    );
+  }
+};
+
+export const handleAdjustPreviewSessionRelease = (data: {
+  sessionId: string;
+}): void => {
+  releaseAdjustPreviewSession(data.sessionId);
+};
+
+export const handleTransparencyPreviewRequest = async (data: {
+  requestId: string;
+  params: InjectTransparencyPreviewParams;
+}): Promise<void> => {
+  try {
+    const dataUrl = await renderTransparencyPreview(data.params);
+    window.postMessage(
+      {
+        source: "mr-wplace-response-transparency-preview",
+        requestId: data.requestId,
+        dataUrl,
+      },
+      "*",
+    );
+  } catch (error) {
+    window.postMessage(
+      {
+        source: "mr-wplace-response-transparency-preview",
+        requestId: data.requestId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "*",
+    );
+  }
 };
 
 /**
