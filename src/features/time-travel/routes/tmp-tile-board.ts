@@ -42,7 +42,7 @@ export class TmpTileBoardRoute {
     this.clearEmptyPollTimer();
 
     container.innerHTML = `
-      <div id="wps-tmp-tile-board" style="display: flex; flex-direction: column; gap: 0.75rem; min-height: 320px; position: relative; padding-bottom: 1.25rem;">
+      <div id="wps-tmp-tile-board" style="display: flex; flex-direction: column; gap: 0.75rem; min-height: 320px; position: relative; padding-bottom: 2.2rem;">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;">
           <div id="wps-tmp-tile-summary" class="text-sm text-base-content/70">${t`${"loading"}`}</div>
           <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -201,7 +201,7 @@ export class TmpTileBoardRoute {
           ? "var(--color-accent, #00d3bb)"
           : isCurrentTile
             ? TmpTileBoardRoute.CURRENT_TILE_BORDER_COLOR
-          : "#d1d5db";
+            : "#d1d5db";
 
         grid.innerHTML += `
           <button class="wps-tmp-tile-cell" data-tile-key="${key}" style="width: ${TmpTileBoardRoute.TILE_PREVIEW_SIZE}px; height: ${TmpTileBoardRoute.TILE_PREVIEW_SIZE}px; border: 3px solid ${borderColor}; overflow: hidden; padding: 0; background: #fff;">
@@ -366,7 +366,10 @@ export class TmpTileBoardRoute {
     const currentTiles = Array.from(getCurrentTiles());
     const previousCurrentTile = this.currentTile;
     this.currentTile = this.resolveCurrentTile(currentTiles);
-    this.clearSelectionWhenCurrentTileJumps(previousCurrentTile, this.currentTile);
+    this.clearSelectionWhenCurrentTileJumps(
+      previousCurrentTile,
+      this.currentTile,
+    );
     const filteredTileKeys = this.filterNearbyTiles(currentTiles);
     const entries = await Promise.all(
       filteredTileKeys.map(async (key) => {
@@ -435,7 +438,8 @@ export class TmpTileBoardRoute {
       if (!Number.isFinite(tileX) || !Number.isFinite(tileY)) return false;
 
       return (
-        Math.abs(tileX - centerX) <= radius && Math.abs(tileY - centerY) <= radius
+        Math.abs(tileX - centerX) <= radius &&
+        Math.abs(tileY - centerY) <= radius
       );
     });
   }
