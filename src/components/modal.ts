@@ -244,7 +244,7 @@ export const createModal = (options: ModalOptions): ModalElements => {
   const modal = createDialogLikeModal();
   modal.id = id;
   modal.innerHTML = t`
-    <div class="modal-box" style="width: 91.666667%; max-width: ${maxWidth}; ${isMobileViewport() ? "max-height: 95vh;" : "max-height: 90vh;"} display: flex; flex-direction: column; padding:${isMobileViewport() ? "1rem .5rem" : " 1.5rem 1rem"}; ${containerStyle}">
+    <div class="modal-box" style="width: 90%; max-width: ${maxWidth}; ${isMobileViewport() ? "max-height: 95vh;" : "max-height: 90vh;"} display: flex; flex-direction: column; padding:${isMobileViewport() ? ".5rem" : " 1rem"}; ${containerStyle}">
       <!-- Header -->
       <div class="flex justify-between items-center ${isMobileViewport() ? "mb-2" : "mb-4"}" style="flex-shrink: 0;">
         <div class="flex items-center gap-2">
@@ -256,7 +256,7 @@ export const createModal = (options: ModalOptions): ModalElements => {
             </svg>
             ${"back"}
           </button>
-          <h3 id="${id}-title" class="font-bold ${isMobileViewport() ? "text" : "text-lg"}">${title}</h3>
+          <h3 id="${id}-title" class="font-bold ${isMobileViewport() ? "text" : "text-lg"}" style="margin-left: 0.5rem;">${title}</h3>
         </div>
         <div class="flex items-center gap-1">
           <button id="${id}-minimize-btn" class="btn btn-sm btn-ghost">
@@ -264,7 +264,7 @@ export const createModal = (options: ModalOptions): ModalElements => {
               <path fill-rule="evenodd" d="M3 9a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75A.75.75 0 013 9zm0 6.75a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75z" clip-rule="evenodd" />
             </svg>
           </button>
-          <button id="${id}-close-btn" class="btn btn-sm btn-ghost">
+          <button id="${id}-close-btn" class="btn">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
               <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd" />
             </svg>
