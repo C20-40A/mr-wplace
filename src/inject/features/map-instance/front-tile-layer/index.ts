@@ -5,6 +5,9 @@ import {
   buildFrontLayerTileUrl,
   invalidateFrontRenderedTile,
 } from "./fetch-handler";
+import {
+  CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED,
+} from "../../custom-geojson-guard";
 
 const FRONT_LAYER_ID = "pixel-art-layer-overlay";
 const FRONT_SOURCE_ID = "mr-wplace-overlay-source";
@@ -112,6 +115,8 @@ const ensureOverlayLayerOrder = (map: any): void => {
 };
 
 const ensureGuideSourceAndLayers = (map: any): void => {
+  if (CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) return;
+
   if (map.getLayer(LEGACY_GUIDE_MATCH_LAYER_ID))
     map.removeLayer(LEGACY_GUIDE_MATCH_LAYER_ID);
 
@@ -190,6 +195,7 @@ const buildGuideFeatureCollection = (): any => {
 };
 
 const syncPaintGuideLayer = (): void => {
+  if (CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) return;
   if (!isEnabled()) return;
 
   const map = getMapInstanceFromWplace() as any;
@@ -337,6 +343,8 @@ export const upsertFrontTilePaintGuide = (
   kind: "mismatch" | "already",
   templateRgbInt: number,
 ): void => {
+  if (CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) return;
+
   if (!isEnabled()) return;
   if (!paintGuideActive) return;
   if (pixelX < 0 || pixelY < 0 || pixelX >= 1000 || pixelY >= 1000) return;

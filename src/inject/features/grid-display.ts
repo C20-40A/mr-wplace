@@ -5,6 +5,10 @@ import {
   metersToLatLon,
   ZOOM_LEVEL,
 } from "@/utils/geo-converter";
+import {
+  CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED,
+  logCustomGeoJsonDisabled,
+} from "./custom-geojson-guard";
 
 const GRID_LAYER_ID = "mr-wplace-grid-layer";
 const GRID_SOURCE_ID = "mr-wplace-grid-source";
@@ -202,6 +206,11 @@ const removeGridLayer = (map: any): void => {
  * グリッド表示を切り替え
  */
 export const setGridDisplayEnabled = (enabled: boolean): void => {
+  if (CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) {
+    if (enabled) logCustomGeoJsonDisabled("Grid display");
+    return;
+  }
+
   const map = getMapInstanceFromWplace() as any;
   if (!map) {
     console.warn("🧑‍🎨 : Map instance not available for grid display");
@@ -223,6 +232,8 @@ export const setGridDisplayEnabled = (enabled: boolean): void => {
  * styledataイベントでレイヤー再適用
  */
 export const setupGridDisplayOnMapReady = (mapInstance: any): void => {
+  if (CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) return;
+
   const map = mapInstance as any;
 
   const onStyleData = () => {

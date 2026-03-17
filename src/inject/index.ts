@@ -19,6 +19,10 @@ import {
   handlePaintForStats,
   handlePaintDeleteForStats,
 } from "./features/paint-stats-updater";
+import {
+  CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED,
+  logCustomGeoJsonDisabled,
+} from "./features/custom-geojson-guard";
 
 const LOCATION_KEY = "location";
 const STARTUP_TARGET_ZOOM = 11;
@@ -162,9 +166,13 @@ const forceStartupLocationZoom = (): void => {
           setupFrontTileLayerOnMapReady(mapInstance);
 
           // Setup grid display with styledata event listener
-          const { setupGridDisplayOnMapReady } =
-            await import("./features/grid-display");
-          setupGridDisplayOnMapReady(mapInstance);
+          if (!CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) {
+            const { setupGridDisplayOnMapReady } =
+              await import("./features/grid-display");
+            setupGridDisplayOnMapReady(mapInstance);
+          } else {
+            logCustomGeoJsonDisabled("Grid display");
+          }
 
           // Setup scale display with styledata event listener
           const { setupScaleDisplayOnMapReady } =
@@ -172,9 +180,13 @@ const forceStartupLocationZoom = (): void => {
           setupScaleDisplayOnMapReady(mapInstance);
 
           // Setup area measure with styledata event listener
-          const { setupAreaMeasureOnMapReady } =
-            await import("./features/area-display");
-          setupAreaMeasureOnMapReady(mapInstance);
+          if (!CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) {
+            const { setupAreaMeasureOnMapReady } =
+              await import("./features/area-display");
+            setupAreaMeasureOnMapReady(mapInstance);
+          } else {
+            logCustomGeoJsonDisabled("Area display");
+          }
         }
       }),
 

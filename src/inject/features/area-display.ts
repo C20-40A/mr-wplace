@@ -23,6 +23,10 @@ import {
   normalizeAreaNameDisplayMode,
   normalizeAreaNameStyleMode,
 } from "@/utils/area-region";
+import {
+  CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED,
+  logCustomGeoJsonDisabled,
+} from "./custom-geojson-guard";
 
 const AREA_CONTAINER_ID = "mr-wplace-area-measure";
 const AREA_SVG_NS = "http://www.w3.org/2000/svg";
@@ -1266,6 +1270,11 @@ export const setAreaDisplayOptions = (
 export const startAreaRegionEdit = (
   payload: AreaRegionEditStartPayload = {},
 ): void => {
+  if (CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) {
+    logCustomGeoJsonDisabled("Area edit");
+    return;
+  }
+
   const map = getMapInstanceFromWplace() as AreaMap | null;
   if (!map) {
     console.warn("🧑‍🎨 : Map instance not available for area edit");
@@ -1328,6 +1337,12 @@ export const respondAreaRegionEditRequest = (data: {
 };
 
 export const setAreaMeasureEnabled = (enabled: boolean): void => {
+  if (CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) {
+    if (enabled) logCustomGeoJsonDisabled("Area display");
+    areaEnabled = false;
+    return;
+  }
+
   areaEnabled = enabled;
   const map = getMapInstanceFromWplace() as AreaMap | null;
   if (!map) {
@@ -1347,6 +1362,8 @@ export const setAreaMeasureEnabled = (enabled: boolean): void => {
 };
 
 export const setupAreaMeasureOnMapReady = (mapInstance: unknown): void => {
+  if (CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) return;
+
   const map = mapInstance as AreaMap;
   const onStyleData = () => {
     if (!areaEnabled) return;

@@ -21,6 +21,8 @@ const BACKGROUND_COLOR_ENABLED_KEY = "mapFilter_backgroundColorEnabled";
 const BACKGROUND_COLOR_VALUE_KEY = "mapFilter_backgroundColorValue";
 const GRID_DISPLAY_KEY = "mapFilter_gridDisplay";
 const AREA_MEASURE_KEY = "mapFilter_areaMeasure";
+const GRID_DISPLAY_TEMPORARILY_DISABLED = true;
+const AREA_MEASURE_TEMPORARILY_DISABLED = true;
 
 type FilterState = {
   darkTheme: "custom-winter" | "dark";
@@ -148,7 +150,9 @@ class MapFilterMenu {
     ]);
 
     this.state.highContrast = stored[HIGH_CONTRAST_KEY] ?? false;
-    this.state.gridDisplay = stored[GRID_DISPLAY_KEY] ?? false;
+    this.state.gridDisplay = GRID_DISPLAY_TEMPORARILY_DISABLED
+      ? false
+      : (stored[GRID_DISPLAY_KEY] ?? false);
     this.state.backgroundColorEnabled =
       stored[BACKGROUND_COLOR_ENABLED_KEY] ?? false;
     this.state.backgroundColorValue =
@@ -289,7 +293,9 @@ class MapFilterMenu {
       }
 
       const isEnabled = this.getFilterEnabled(config.id);
-      const disabled = config.requiresMap && !this.mapReady;
+      const forceDisabled =
+        config.id === "gridDisplay" && GRID_DISPLAY_TEMPORARILY_DISABLED;
+      const disabled = forceDisabled || (config.requiresMap && !this.mapReady);
 
       const itemWrapper = document.createElement("div");
       itemWrapper.className = "flex flex-col gap-1";
@@ -313,9 +319,11 @@ class MapFilterMenu {
       const toggle = document.createElement("input");
       toggle.type = "checkbox";
       toggle.className = "toggle toggle-sm";
-      toggle.checked = isEnabled;
+      toggle.checked = forceDisabled ? false : isEnabled;
       toggle.disabled = disabled;
-      toggle.addEventListener("change", () => this.toggleFilter(config.id));
+      if (!forceDisabled) {
+        toggle.addEventListener("change", () => this.toggleFilter(config.id));
+      }
 
       item.appendChild(textContainer);
       item.appendChild(toggle);
@@ -431,11 +439,15 @@ class MapFilterMenu {
     const areaToggle = document.createElement("input");
     areaToggle.type = "checkbox";
     areaToggle.className = "toggle toggle-sm";
-    areaToggle.checked = this.state.areaMeasure;
-    areaToggle.disabled = !this.mapReady;
-    areaToggle.addEventListener("change", () => {
-      this.toggleAreaMeasure(areaToggle.checked);
-    });
+    areaToggle.checked = AREA_MEASURE_TEMPORARILY_DISABLED
+      ? false
+      : this.state.areaMeasure;
+    areaToggle.disabled = AREA_MEASURE_TEMPORARILY_DISABLED || !this.mapReady;
+    if (!AREA_MEASURE_TEMPORARILY_DISABLED) {
+      areaToggle.addEventListener("change", () => {
+        this.toggleAreaMeasure(areaToggle.checked);
+      });
+    }
 
     areaToggleRow.appendChild(areaTextContainer);
     areaToggleRow.appendChild(areaToggle);
@@ -544,9 +556,14 @@ class MapFilterMenu {
   private openPopover() {
     if (this.popover && this.triggerButton) {
       this.mapReady = getMapInstanceReady();
+      if (GRID_DISPLAY_TEMPORARILY_DISABLED) {
+        this.state.gridDisplay = false;
+      }
       const areaMeasure = areaManagerAPI.getAreaMeasureEnabled();
       if (typeof areaMeasure === "boolean") {
-        this.state.areaMeasure = areaMeasure;
+        this.state.areaMeasure = AREA_MEASURE_TEMPORARILY_DISABLED
+          ? false
+          : areaMeasure;
       }
       const storedTheme = localStorage.getItem("theme");
       this.state.darkTheme =
