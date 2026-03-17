@@ -256,6 +256,180 @@ map.addSource("mrw-test-image-blob", {
 - 公式側の GeoJSON worker 更新バグが直るまで、この暫定停止を維持する
 - 復旧時は feature ごとの復帰ではなく、まず最小 GeoJSON source 追加再検証から始める
 
+## 2026-03-18 GeoJSON layer 不調の整理
+
+### 何が分かったか
+
+- Mr. Wplace 側の `geojson` 利用箇所は `grid-display.ts`、`area-display.ts`、`front-tile-layer/index.ts` の paint guide で、いずれも `map.addSource({ type: "geojson" })` を前提にしている
+- 一方で overlay 本体は `front-tile-layer/index.ts` で `raster` source を使っており、`geojson` とは故障経路が別
+- 既存ログの通り、最小の `geojson source` 単体追加でも `addLayer` 前に非同期で `er is not defined` / `tr is not defined` が出ている
+- つまり主因は layer 順序や `beforeId` ではなく、WPlace 公式側の `GeoJSONSource` 登録後の worker 更新経路にある可能性が高い
+
+### 根拠
+
+- `overlay調査ログ` の 2026-03-17 観測では `geojson` source 単体追加で `addSource -> _updateWorkerData -> _dispatchWorkerUpdate` の stack が出ている
+- `raster` source は同条件で通っているため、`addSource` API 全体が壊れているわけではない
+- 現在コードでも `CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED = true` にして、GeoJSON 系機能だけ明示的に止めている
+
+### 現時点の確度高めの仮説
+
+- 公式更新で GeoJSON source を扱う独自処理が bundle に入り、その副作用で custom GeoJSON source 追加時の worker update が壊れている
+- これは「Mr. Wplace の GeoJSON データ内容が悪い」というより「空の FeatureCollection でも落ちる」種類の不具合
+- したがって、GeoJSON layer の復旧は feature ごとの小修正ではなく、まず「最小 GeoJSON source が再び安全に追加できるか」を確認してから判断すべき
+
+### 次に何を試すか
+
+- dev console で `map.style.sourceCaches` / `map.style._otherSourceCaches` 相当を見て、GeoJSON source 追加直後にどこまで生成されているか確認する
+- 公式 overlay UI の開閉で再現性が変わるか再確認する
+- WPlace bundle の `_updateWorkerData` 周辺で未定義参照がどの source type 条件で起きるかを読む
+
+## 2026-03-18 追加切り分け: `setData` と bundle 読み
+
+### 何が分かったか
+
+- dev console で `addSource -> getSource -> setData` を同一スクリプト内で実行すると、`getSource()` は即時に truthy、`setData` も `function` として存在した
+- その状態で `setData(...)` を呼んでも、`addSource` 時と同じ `tr is not defined` が再度発生した
+- 500ms 後も `map.getStyle().sources[id]` と `map.getSource(id)` は truthy のままだったが、`map.style.sourceCaches` / `_otherSourceCaches` は空のままだった
+- したがって `GeoJSONSource` オブジェクト自体は作成されるが、worker update 完了前後で source cache 実働化に失敗している
+
+### dev console で確認したこと
+
+実行:
+
+```js
+const map = window.mrWplace?.wplaceMap;
+const id = `mrw-geojson-live-${Date.now()}`;
+
+map.addSource(id, {
+  type: "geojson",
+  data: { type: "FeatureCollection", features: [] },
+});
+
+const src = map.getSource(id);
+console.log("immediate getSource", !!src);
+console.log("setData fn", typeof src?.setData);
+
+src?.setData({
+  type: "FeatureCollection",
+  features: [
+    {
+      type: "Feature",
+      properties: { a: 1 },
+      geometry: { type: "Point", coordinates: [139.75, 35.68] },
+    },
+  ],
+});
+```
+
+結果:
+
+- `immediate getSource true`
+- `setData fn function`
+- `addSource` 後にも `setData` 後にも `Error {message: 'tr is not defined'}` が発生
+- `after 500ms style has source? true`
+- `after 500ms getSource? true`
+- `after 500ms sourceCaches []`
+- `after 500ms _otherSourceCaches []`
+
+### bundle 断片から読めたこと
+
+- `Fr` (`GeoJSONSource`) の `onAdd()` は `load()` を呼び、`load()` は `_updateWorkerData()` に入る
+- `setData()` も `_updateWorkerData()` に入る
+- 両方とも `_dispatchWorkerUpdate()` で `this.actor.sendAsync({ type: "LD", data: t })` を通る
+- `tr is not defined` は `Fr` 断片内の直接参照ではなく、この `LD` メッセージの受信側または worker 側 load handler で発生している可能性が高い
+
+### 現時点の整理
+
+- `GeoJSONSource` の style 登録と source object 作成までは通る
+- 壊れているのは `addLayer` 前でも `setData` 前でもなく、`LD` を使う worker load/update 経路
+- したがって custom GeoJSON の復旧を追うなら、bundle では `case "LD"` または `type:"LD"` の受信側を追うのが最短
+
+### 次に何を試すか
+
+- `.cache/item.js` で `case "LD"` / `type:"LD"` を検索し、GeoJSON load handler を特定する
+- その handler 内で `tr` 参照がどこから来るかを確認する
+- 公式 overlay UI を開いた状態でも同じ `LD` 経路エラーになるかは、必要になった時だけ再確認する
+
+## 2026-03-18 `tr is not defined` の根本原因特定
+
+### 何が分かったか
+
+`tr is not defined` の直接原因は **WPlace 公式 bundle のトランスパイル不備** であり、worker blob 内で geojsonvt クラスが main-thread-only のヘルパー関数を参照していることにある。
+
+### 根拠: bundle 構造の読み
+
+1. **モジュール構成** (item.js)
+   - L791: `M("shared", ...)` — shared モジュール (L791〜L23152)
+   - L23153: `M("worker", ...)` — worker モジュール (L23153〜L25264)
+   - L25266: `M("index", ...)` — main thread モジュール (L25266〜)
+
+2. **Worker blob の生成** (L781)
+   ```js
+   var U = "var sharedModule = {}; (" + y.shared + ")(sharedModule); (" + y.worker + ")(sharedModule);"
+   ```
+   - Worker は `shared` と `worker` の 2 つのモジュール関数を `.toString()` で文字列化し、Blob として実行する
+   - **トップレベル変数 (L1〜L790) は worker blob に含まれない**
+
+3. **`tr` の定義** (L14)
+   ```js
+   var tr = (v, s, m) => B5(v, typeof s != "symbol" ? s + "" : s, m)
+   ```
+   - これは class field initializer のトランスパイルヘルパー (TypeScript/esbuild 系の `__publicField` 相当)
+   - `B5` (L8) と共に **ファイルのトップレベル** にある
+   - shared/worker どちらのモジュールスコープにも再定義されていない (grep で確認済み)
+
+4. **壊れている場所**: `class ar` (geojsonvt) — L24620〜 (worker モジュール内)
+   ```js
+   class ar {
+       constructor(D, R) {
+           tr(this, "options");    // <-- ここで tr を参照
+           tr(this, "tiles");
+           tr(this, "tileCoords");
+           tr(this, "stats", {});
+           tr(this, "total", 0);
+           tr(this, "source");
+           // ...
+       }
+   }
+   ```
+   - `ar` は `_createGeoJSONIndex` のデフォルト実装 `at()` (L25073) 経由で使われる
+   - `at()` は非 cluster 時に `new ar(K, D.geojsonVtOptions)` を呼ぶ
+   - `ar` コンストラクタ内の `tr(this, ...)` 呼び出しで `ReferenceError: tr is not defined` が発生
+
+5. **呼び出し経路**
+   ```
+   addSource (main) → _updateWorkerData → _dispatchWorkerUpdate
+   → actor.sendAsync({ type: "LD" })
+   → [worker] loadData → loadAndProcessGeoJSON → _loadGeoJSONFromObject
+   → _createGeoJSONIndex(data, params) → at(data, params)
+   → new ar(data, geojsonVtOptions) → tr(this, "options") → ReferenceError
+   ```
+
+### 仮説
+
+- 公式が bundle ツールチェーンを更新した際、geojsonvt のコードが class field syntax を含むようになった
+- トランスパイラが `tr` ヘルパーをファイルトップレベルに配置したが、worker は `shared` + `worker` モジュール関数の文字列結合 blob で動くため、トップレベル変数を参照できない
+- main thread 側では `tr` が可視なので、main thread で直接使う GeoJSON 系は動くかもしれないが、worker 側の `loadData` 経路は完全に壊れる
+- **確度: 高**。実際のエラーメッセージ、stack trace、コード構造すべてがこの仮説と一致
+
+### 影響範囲
+
+- **壊れるもの**: すべての custom GeoJSON source (cluster 無効時)
+- **壊れないもの**: raster source, vector source, image source (別経路)
+- **公式自身のGeoJSONも壊れている可能性**: 公式が自前 GeoJSON を使う場合も同じ worker 経路を通るはず。ただし公式が cluster mode で使っていれば `fe` (supercluster) 経路に入り `ar` を避けられる
+
+### ワークアラウンド候補 (未実装)
+
+1. **cluster: true を付けて addSource する** — supercluster 経路 (`fe`) に入れば `ar` を回避できる可能性。ただし GeoJSON の使い方に制約が出る
+2. **GeoJSON source を使わず、raster tile で代替する** — 現在の暫定停止方針の延長
+3. **公式の修正を待つ** — bundle のトランスパイル不備なので、公式側が気づけば修正される可能性が高い
+
+### 次に何を試すか
+
+- dev console で `cluster: true` 付き GeoJSON source を追加し、`tr is not defined` が出ないか確認する
+- 公式自身が GeoJSON source を使っている箇所があるか bundle 内で確認する (公式が壊れていないなら cluster 経路か別経路を使っているはず)
+- ワークアラウンド 1 の実用性を、grid / area / paint guide それぞれで評価する
+
 ## 2026-03-17 `.wplace` 互換の実装メモ
 
 ### 何が分かったか
