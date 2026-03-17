@@ -543,7 +543,7 @@ export const esTranslations = {
     "Presiona aquí para colocar la imagen en el centro del mapa actual",
   hint_image_detail_dpad: "Puedes mover la imagen aquí",
   hint_image_detail_download:
-    "Para compartir con otros, descarga la imagen desde aquí. El nombre del archivo contiene las coordenadas, por lo que al cargarlo se colocará la imagen en la misma posición",
+    "Descarga aquí como PNG o .wplace. El formato .wplace permite compartir la imagen con su posición",
   hint_image_detail_edit_title: "Pulsa el título de la imagen para editarlo",
   popup_close_button_big: "Botón de Cierre Grande",
   map_filter_area_display_settings: "Configuración de visualización",

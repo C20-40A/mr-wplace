@@ -529,7 +529,7 @@ export const viTranslations = {
     "Nhấn vào đây để đặt hình ảnh vào trung tâm bản đồ hiện tại",
   hint_image_detail_dpad: "Bạn có thể di chuyển hình ảnh ở đây",
   hint_image_detail_download:
-    "Để chia sẻ với người khác, tải xuống hình ảnh từ đây. Tên tệp chứa tọa độ, nên khi tải lên sẽ đặt hình ảnh vào cùng vị trí",
+    "Tải xuống dưới dạng PNG hoặc .wplace tại đây. Định dạng .wplace giúp chia sẻ kèm vị trí của ảnh",
   hint_image_detail_edit_title: "Nhấn vào tiêu đề ảnh để chỉnh sửa",
   popup_close_button_big: "Nút Đóng Lớn",
   map_filter_area_display_settings: "Cài đặt hiển thị",

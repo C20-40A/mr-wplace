@@ -540,7 +540,7 @@ export const jaTranslations = {
     "ここを押すと現在の画面中央にイラストを設置できます",
   hint_image_detail_dpad: "ここでイラストを移動できます",
   hint_image_detail_download:
-    "ほかの人と共有するときは、ここからイラストをダウンロードしてください。ファイル名が座標になっているので、読み込むと同じ位置にイラストが設置されます",
+    "ここからPNGか.wplace形式を選んでダウンロードできます。.wplaceを使うと同じ位置情報つきで共有できます",
   tutorial_reset_hints_button: "ヒントを再表示する",
   hint_image_detail_edit_title: "画像タイトルを押すとタイトルを編集できます",
   danger_zone: "デンジャーゾーン",

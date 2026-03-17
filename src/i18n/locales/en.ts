@@ -538,7 +538,7 @@ Do not use this feature to paint actual pixels.`,
     "Press here to place the image at the current map center",
   hint_image_detail_dpad: "You can move the image here",
   hint_image_detail_download:
-    "To share with others, download the image from here. The filename contains the coordinates, so loading it will place the image at the same position",
+    "Download as PNG or .wplace here. Using .wplace lets you share the image with its position data",
   tutorial_reset_hints_button: "Show hints again",
   hint_image_detail_edit_title: "Click the image title to edit it",
   danger_zone: "Danger Zone",

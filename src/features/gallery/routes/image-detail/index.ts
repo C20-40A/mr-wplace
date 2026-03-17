@@ -7,6 +7,7 @@ import {
   toggleDrawState,
   drawImageAtMapCenter,
   downloadImage,
+  downloadWplaceFile,
 } from "../../common-actions";
 import { t } from "@/i18n/manager";
 import { showFeatureHint } from "@/features/feature-hints";
@@ -14,6 +15,7 @@ import { Toast } from "@/components/toast";
 import { showNameInputModal } from "@/components/modal";
 import { tilePixelToLatLng } from "@/utils/coordinate";
 import { createDPad } from "../../components/d-pad";
+import { showDownloadFormatDialog } from "./download-dialog";
 
 export class GalleryImageDetail {
   private currentItem: GalleryItem | null = null;
@@ -90,9 +92,6 @@ export class GalleryImageDetail {
     if (drawOnMapBtn) showFeatureHint("image-detail-draw-on-map", drawOnMapBtn);
 
     if (this.currentItem?.drawPosition) {
-      // const dpadContainer = document.getElementById("image-dpad-container");
-      // if (dpadContainer) showFeatureHint("image-detail-dpad", dpadContainer);
-
       const downloadBtn = document.getElementById("download-btn");
       if (downloadBtn) showFeatureHint("image-detail-download", downloadBtn);
     }
@@ -216,17 +215,9 @@ export class GalleryImageDetail {
             <button id="edit-btn" class="btn btn-primary">
               ✏️ ${t`${"edit"}`}
             </button>
-            ${
-              item.drawPosition
-                ? `<div class="tooltip" data-tip="${t`${"share_description"}`}" style="width: 100%;">
-                     <button id="download-btn" class="btn btn-accent" title="${t`${"share_description"}`}" style="width: 100%;">
-                       📥 ${t`${"download"}`}
-                     </button>
-                   </div>`
-                : `<button id="download-btn" class="btn btn-accent" style="width: 100%;">
-                     📥 ${t`${"download"}`}
-                   </button>`
-            }
+            <button id="download-btn" class="btn btn-accent" style="width: 100%;">
+              📥 ${t`${"download"}`}
+            </button>
           </div>
         </div>
       </div>
@@ -471,11 +462,21 @@ export class GalleryImageDetail {
 
     // ダウンロードボタン
     const downloadBtn = document.getElementById("download-btn");
-    downloadBtn?.addEventListener("click", () => {
+    downloadBtn?.addEventListener("click", async () => {
       if (!this.currentItem) return;
 
       try {
-        downloadImage(this.currentItem, "image-detail-canvas");
+        const format = await showDownloadFormatDialog(
+          !!this.currentItem.drawPosition,
+        );
+        if (!format) return;
+
+        if (format === "wplace") {
+          await downloadWplaceFile(this.currentItem);
+        } else {
+          downloadImage(this.currentItem, "image-detail-canvas");
+        }
+
         Toast.success(t`${"download_success"}`);
       } catch (err) {
         console.error("🧑‍🎨 : Failed to download image", err);

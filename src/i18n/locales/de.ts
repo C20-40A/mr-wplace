@@ -549,7 +549,7 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
     "Hier drücken, um das Bild im aktuellen Kartenzentrum zu platzieren",
   hint_image_detail_dpad: "Hier kannst du das Bild verschieben",
   hint_image_detail_download:
-    "Zum Teilen mit anderen kannst du das Bild hier herunterladen. Der Dateiname enthält die Koordinaten, sodass das Bild beim Laden an derselben Position platziert wird",
+    "Hier kannst du als PNG oder .wplace herunterladen. Mit .wplace teilst du das Bild samt Position",
   tutorial_reset_hints_button: "Hinweise erneut anzeigen",
   hint_image_detail_edit_title:
     "Klicke auf den Bildtitel, um ihn zu bearbeiten",

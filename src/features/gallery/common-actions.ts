@@ -7,6 +7,7 @@ import { gotoPosition } from "../../utils/position";
 import { tilePixelToLatLng } from "../../utils/coordinate";
 import { sendGalleryImagesToInject } from "@/content";
 import { downloadBlob } from "./routes/image-editor/file-handler";
+import { getImageDataUrl } from "@/utils/indexed-db-bridge";
 
 /**
  * ファイル名のサニタイズ
@@ -73,6 +74,74 @@ export const downloadImage = (item: GalleryItem, canvasId: string): void => {
     if (!blob) throw new Error("Failed to create blob");
     downloadBlob(blob, filename);
   }, "image/png");
+};
+
+const createPngFilename = (item: GalleryItem): string => {
+  if (item.drawPosition) {
+    const { TLX, TLY, PxX, PxY } = item.drawPosition;
+    const coords = `${TLX}-${TLY}-${PxX}-${PxY}`;
+    const baseFilename = item.title ? `${item.title}_${coords}` : coords;
+    return sanitizeFilename(baseFilename) + ".png";
+  }
+
+  const baseFilename = item.title || "image";
+  return sanitizeFilename(baseFilename) + ".png";
+};
+
+const createWplaceFilename = (item: GalleryItem): string => {
+  const baseFilename = item.title || "image";
+  return sanitizeFilename(baseFilename) + ".wplace";
+};
+
+export const downloadWplaceFile = async (item: GalleryItem): Promise<void> => {
+  if (!item.drawPosition) throw new Error("Item has no drawPosition");
+  if (!item.width || !item.height) throw new Error("Image dimensions not available");
+
+  const imageDataUrl = await getImageDataUrl(item, {
+    showToastOnError: true,
+    logContext: "wplace export",
+  });
+
+  if (!imageDataUrl) throw new Error("Failed to load image data");
+
+  const { TLX, TLY, PxX, PxY } = item.drawPosition;
+  const northWest = tilePixelToLatLng(TLX, TLY, PxX, PxY);
+  const southEast = tilePixelToLatLng(TLX, TLY, PxX + item.width, PxY + item.height);
+  const fileName = createWplaceFilename(item);
+  const imageName = createPngFilename(item);
+
+  const payload = {
+    id:
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `mr-wplace-${Date.now()}`,
+    schemaVersion: "1",
+    name: imageName,
+    opacity: 1,
+    image: {
+      dataUrl: imageDataUrl,
+      width: item.width,
+      height: item.height,
+    },
+    bounds: {
+      north: northWest.lat,
+      south: southEast.lat,
+      west: northWest.lng,
+      east: southEast.lng,
+    },
+    colorMetric: "lab",
+    dithering: false,
+    order: item.layerOrder ?? 0,
+    locked: false,
+    hasPlaced: true,
+    visible: item.drawEnabled !== false,
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json",
+  });
+
+  downloadBlob(blob, fileName);
 };
 
 /**

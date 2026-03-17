@@ -255,3 +255,38 @@ map.addSource("mrw-test-image-blob", {
 
 - 公式側の GeoJSON worker 更新バグが直るまで、この暫定停止を維持する
 - 復旧時は feature ごとの復帰ではなく、まず最小 GeoJSON source 追加再検証から始める
+
+## 2026-03-17 `.wplace` 互換の実装メモ
+
+### 何が分かったか
+
+- 公式 `.wplace` は画像本体を `image.dataUrl` に内包している
+- そのため import では公式 IndexedDB を読む必要がない
+- 配置座標は `bounds.north` / `bounds.west` を左上として `latLngToTilePixel()` に通せば既存 gallery 座標へ変換できる
+- export も既存 gallery の `dataUrl + drawPosition + width/height` から十分再構成できる
+
+### 実装したこと
+
+- image editor で `.wplace` import に対応
+- 既存 Bluemarble JSON import は専用ファイルへ切り出し、`.wplace` 判定と共存させた
+- image detail の download ボタンは format 選択ダイアログ式に変更
+- download 時に `PNG` か `.wplace` を選べるようにした
+- `.wplace` export では以下を出力する
+  - `schemaVersion: "1"`
+  - `image.dataUrl`
+  - `bounds`
+  - `order`
+  - `visible`
+  - 固定値の `opacity/colorMetric/dithering/locked/hasPlaced`
+
+### 注意点
+
+- `.wplace` export の `colorMetric` / `dithering` / `locked` は現行 gallery metadata に保持していないため固定値で出している
+- `bounds -> drawPosition` は `north/west` 基準なので、公式実装との差で 1px 丸め差が残る可能性がある
+- 今回は相互運用の最小線を優先し、完全再現はまだ狙っていない
+
+### 次に何を試すか
+
+- 実データで `.wplace` の import → export → 再import を往復確認する
+- 座標が 1px ずれるケースがあるかだけ重点確認する
+- 必要なら export 側に元の `dithering` などを持てる metadata 拡張を検討する
