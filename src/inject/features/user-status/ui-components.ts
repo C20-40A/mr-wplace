@@ -11,7 +11,6 @@ export class StatusUIComponents {
       top: 5px;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 50;
       display: flex;
       align-items: flex-start;
       gap: 8px;

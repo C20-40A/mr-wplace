@@ -177,10 +177,8 @@ const initializeMainFeatures = async () => {
     "*",
   );
 
-  const {
-    loadOverlayLightweightModeFromStorage,
-    getOverlayLightweightMode,
-  } = await import("@/states/overlay-lightweight-mode");
+  const { loadOverlayLightweightModeFromStorage, getOverlayLightweightMode } =
+    await import("@/states/overlay-lightweight-mode");
   await loadOverlayLightweightModeFromStorage();
   window.postMessage(
     {
@@ -260,7 +258,6 @@ const setupPopupLaunchButton = () => {
     position: fixed;
     left: 47px;
     top: 8px;
-    z-index: 800;
   `;
 
   const button = document.createElement("button");
