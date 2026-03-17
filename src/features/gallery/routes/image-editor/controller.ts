@@ -21,6 +21,10 @@ import {
   parseDrawPositionFromFileName,
 } from "./file-handler";
 import {
+  isImportableEditorFile,
+  parseImportedEditorFile,
+} from "./import-file";
+import {
   ColorFlattenMode,
   DitheringMethod,
   ImageAdjustments,
@@ -131,19 +135,14 @@ export class EditorController {
   }
 
   async handleFile(file: File): Promise<void> {
-    // JSON形式チェック
-    if (file.type === "application/json" || file.name.endsWith(".json")) {
-      console.log("🧑‍🎨 : Detected Bluemarble JSON file");
-      const { readFileAsText, parseBluemarbleJson } =
-        await import("./file-handler");
+    if (isImportableEditorFile(file) && !file.type.startsWith("image/")) {
+      const imported = await parseImportedEditorFile(file);
+      if (!imported) return;
 
-      const jsonText = await readFileAsText(file);
-      const { dataUrl, drawPosition } = await parseBluemarbleJson(jsonText);
-
-      this.currentFileName = file.name;
-      this.drawPosition = drawPosition;
-
-      this.displayImage(dataUrl);
+      console.log("🧑‍🎨 : Detected importable overlay file");
+      this.currentFileName = imported.fileName || file.name;
+      this.drawPosition = imported.drawPosition;
+      this.displayImage(imported.dataUrl);
       return;
     }
 
@@ -169,19 +168,14 @@ export class EditorController {
   async replaceImage(file: File): Promise<void> {
     console.log("🧑‍🎨 : Replacing image with:", file.name);
 
-    // JSON形式チェック
-    if (file.type === "application/json" || file.name.endsWith(".json")) {
-      console.log("🧑‍🎨 : Detected Bluemarble JSON file");
-      const { readFileAsText, parseBluemarbleJson } =
-        await import("./file-handler");
+    if (isImportableEditorFile(file) && !file.type.startsWith("image/")) {
+      const imported = await parseImportedEditorFile(file);
+      if (!imported) return;
 
-      const jsonText = await readFileAsText(file);
-      const { dataUrl, drawPosition } = await parseBluemarbleJson(jsonText);
-
-      this.currentFileName = file.name;
-      this.drawPosition = drawPosition;
-
-      this.replaceImageDisplay(dataUrl);
+      console.log("🧑‍🎨 : Detected importable overlay file");
+      this.currentFileName = imported.fileName || file.name;
+      this.drawPosition = imported.drawPosition;
+      this.replaceImageDisplay(imported.dataUrl);
       return;
     }
 

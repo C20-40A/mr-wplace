@@ -91,6 +91,16 @@ export class ImageDropzone {
   }
 
   private showSelectedFile(file: File): void {
+    if (!file.type.startsWith("image/")) {
+      this.dropzoneElement.innerHTML = `
+        <div class="text-center">
+          <p class="text-sm text-gray-600">${file.name}</p>
+          <p class="text-xs text-gray-500 mt-1">クリックで変更</p>
+        </div>
+      `;
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       this.dropzoneElement.innerHTML = `

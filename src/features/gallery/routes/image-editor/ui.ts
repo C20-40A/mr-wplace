@@ -10,6 +10,7 @@ import { createImageDisplayArea } from "./components/create-image-display-area";
 import { injectImageEditorStyles } from "./components/inject-styles";
 import { TransparencyDialog } from "./components/transparency-dialog";
 import { isDesktopViewport } from "@/constants/breakpoints";
+import { isImportableEditorFile } from "./import-file";
 
 export interface ImageEditorCallbacks {
   onFileHandle: (file: File) => void;
@@ -129,7 +130,7 @@ export class ImageEditorUI {
 
     this.imageDropzone = new ImageDropzone(dropzoneContainer, {
       onFileSelected: (file: File) => this.callbacks?.onFileHandle(file),
-      acceptedTypes: "image/*,.json",
+      acceptedTypes: "image/*,.json,.wplace",
       autoHide: true,
     });
   }
@@ -438,7 +439,7 @@ export class ImageEditorUI {
     const file = e.dataTransfer?.files?.[0];
     if (
       file &&
-      (file.type.startsWith("image/") || file.name.endsWith(".json"))
+      isImportableEditorFile(file)
     ) {
       this.callbacks?.onReplaceImage(file);
     }
