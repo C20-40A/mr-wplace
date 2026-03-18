@@ -1,247 +1,346 @@
 import { getMapInstanceFromWplace } from "./map-instance";
-import {
-  latLonToPixels,
-  pixelsToMeters,
-  metersToLatLon,
-  ZOOM_LEVEL,
-} from "@/utils/geo-converter";
-import {
-  CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED,
-  logCustomGeoJsonDisabled,
-} from "./custom-geojson-guard";
+import { TILE_SIZE, latLonToPixels, ZOOM_LEVEL } from "@/utils/geo-converter";
+import { tilePixelToLatLng } from "@/utils/coordinate";
 
-const GRID_LAYER_ID = "mr-wplace-grid-layer";
-const GRID_SOURCE_ID = "mr-wplace-grid-source";
-const GRID_MIN_ZOOM = 14; // Zoom level to show grid
+const GRID_CONTAINER_ID = "mr-wplace-grid-display";
+const GRID_CANVAS_ID = "mr-wplace-grid-canvas";
+const GRID_MIN_ZOOM = 14;
+const GRID_MIN_SCREEN_SPACING = 6;
+const GRID_MAX_LINES_PER_AXIS = 180;
+const GRID_MAX_DPR = 1.5;
+const MAP_UPDATE_EVENTS = ["move", "zoom", "resize", "rotate", "pitch"];
+
+interface LngLat {
+  lng: number;
+  lat: number;
+}
+
+interface GridMap {
+  getCenter: () => LngLat;
+  getZoom: () => number;
+  project?: (lngLat: LngLat | [number, number]) => { x: number; y: number };
+  unproject?: (point: { x: number; y: number } | [number, number]) => LngLat;
+  getContainer?: () => HTMLElement;
+  getBearing?: () => number;
+  getPitch?: () => number;
+  on: (event: string, handler: () => void) => void;
+  off: (event: string, handler: () => void) => void;
+}
 
 let gridEnabled = false;
-let layerAdded = false;
-let moveEndHandler: (() => void) | null = null;
+let gridContainer: HTMLDivElement | null = null;
+let gridCanvas: HTMLCanvasElement | null = null;
+let activeMap: GridMap | null = null;
+let mapUpdateHandler: (() => void) | null = null;
+let renderFrameId: number | null = null;
 
-// Pixel range cache for differential updates
-let prevPixelRange: {
-  sx: number;
-  ex: number;
-  sy: number;
-  ey: number;
-} | null = null;
+const WORLD_PIXEL_SPAN = TILE_SIZE * 2 ** ZOOM_LEVEL;
 
-/**
- * ワールドピクセル座標から緯度経度へ変換
- */
-const pixelToLatLng = (pixelX: number, pixelY: number) => {
-  const [metersX, metersY] = pixelsToMeters(pixelX, pixelY, ZOOM_LEVEL);
-  const [lat, lng] = metersToLatLon(metersX, metersY);
-  return { lat, lng };
+const getMapContainer = (map: GridMap): HTMLElement | null => {
+  const byApi = map.getContainer?.();
+  if (byApi instanceof HTMLElement) return byApi;
+
+  return (
+    document.querySelector<HTMLElement>(".maplibregl-map") ??
+    document.querySelector<HTMLElement>(".maplibregl-canvas-container")
+  );
 };
 
-/**
- * 現在のビューポートに基づいてグリッド線を生成（最適化版：Feature 1個に統合）
- */
-const generateGridGeoJSON = (
-  startPxX: number,
-  endPxX: number,
-  startPxY: number,
-  endPxY: number
-) => {
-  const allLines: number[][][] = [];
+const createGridOverlay = (): HTMLDivElement => {
+  const container = document.createElement("div");
+  container.id = GRID_CONTAINER_ID;
+  container.style.cssText = `
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+    overflow: hidden;
+  `;
 
-  // 縦線（X方向のピクセル境界）
-  for (let pxX = startPxX; pxX <= endPxX; pxX++) {
-    const top = pixelToLatLng(pxX, startPxY);
-    const bottom = pixelToLatLng(pxX, endPxY);
-    allLines.push([
-      [top.lng, top.lat],
-      [bottom.lng, bottom.lat],
-    ]);
+  const canvas = document.createElement("canvas");
+  canvas.id = GRID_CANVAS_ID;
+  canvas.style.cssText = `
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  `;
+
+  container.appendChild(canvas);
+  gridCanvas = canvas;
+  return container;
+};
+
+const clearScheduledRender = (): void => {
+  if (renderFrameId === null) return;
+  window.cancelAnimationFrame(renderFrameId);
+  renderFrameId = null;
+};
+
+const clearGridCanvas = (): void => {
+  if (!gridCanvas) return;
+  const context = gridCanvas.getContext("2d");
+  if (!context) return;
+  context.setTransform(1, 0, 0, 1, 0, 0);
+  context.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
+};
+
+const hideGridOverlay = (): void => {
+  if (gridContainer) gridContainer.style.display = "none";
+  clearGridCanvas();
+};
+
+const isNorthUpFlat = (map: GridMap): boolean => {
+  const bearing = map.getBearing?.() ?? 0;
+  const pitch = map.getPitch?.() ?? 0;
+  return Math.abs(bearing) < 0.01 && pitch < 0.01;
+};
+
+const syncCanvasResolution = (
+  canvas: HTMLCanvasElement,
+  cssWidth: number,
+  cssHeight: number,
+): CanvasRenderingContext2D | null => {
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+
+  const dpr = Math.min(window.devicePixelRatio || 1, GRID_MAX_DPR);
+  const width = Math.max(1, Math.round(cssWidth * dpr));
+  const height = Math.max(1, Math.round(cssHeight * dpr));
+
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
   }
 
-  // 横線（Y方向のピクセル境界）
-  for (let pxY = startPxY; pxY <= endPxY; pxY++) {
-    const left = pixelToLatLng(startPxX, pxY);
-    const right = pixelToLatLng(endPxX, pxY);
-    allLines.push([
-      [left.lng, left.lat],
-      [right.lng, right.lat],
-    ]);
+  context.setTransform(dpr, 0, 0, dpr, 0, 0);
+  context.clearRect(0, 0, cssWidth, cssHeight);
+  return context;
+};
+
+const toAlignedScreen = (value: number): number => Math.round(value) + 0.5;
+
+const wrapWorldPixelX = (value: number): number => {
+  let out = value % WORLD_PIXEL_SPAN;
+  if (out < 0) out += WORLD_PIXEL_SPAN;
+  return out;
+};
+
+const normalizeWorldPixelXNear = (value: number, base: number): number => {
+  let out = value;
+  const halfSpan = WORLD_PIXEL_SPAN / 2;
+  while (out - base > halfSpan) out -= WORLD_PIXEL_SPAN;
+  while (out - base < -halfSpan) out += WORLD_PIXEL_SPAN;
+  return out;
+};
+
+const worldPixelToLngLat = (worldX: number, worldY: number): LngLat => {
+  const wrappedX = wrapWorldPixelX(worldX);
+  const tileX = Math.floor(wrappedX / TILE_SIZE);
+  const tileY = Math.floor(worldY / TILE_SIZE);
+  const pxX = wrappedX - tileX * TILE_SIZE;
+  const pxY = worldY - tileY * TILE_SIZE;
+  return tilePixelToLatLng(tileX, tileY, pxX, pxY);
+};
+
+const canRenderSinglePixelGrid = (
+  scale: number,
+  cssWidth: number,
+  cssHeight: number,
+): boolean => {
+  const visibleWorldWidth = cssWidth / scale;
+  const visibleWorldHeight = cssHeight / scale;
+  const maxVisiblePixels = Math.max(visibleWorldWidth, visibleWorldHeight);
+  if (scale < GRID_MIN_SCREEN_SPACING) return false;
+  return maxVisiblePixels <= GRID_MAX_LINES_PER_AXIS;
+};
+
+const drawGridNow = (map: GridMap): void => {
+  renderFrameId = null;
+
+  if (!gridEnabled || !gridContainer || !gridCanvas) return;
+
+  const mapContainer = getMapContainer(map);
+  if (!mapContainer) {
+    hideGridOverlay();
+    return;
   }
 
-  return {
-    type: "FeatureCollection",
-    features: [
-      {
-        type: "Feature",
-        properties: {},
-        geometry: {
-          type: "MultiLineString",
-          coordinates: allLines,
-        },
-      },
-    ],
-  };
-};
+  const rect = mapContainer.getBoundingClientRect();
+  const cssWidth = Math.round(rect.width);
+  const cssHeight = Math.round(rect.height);
+  if (cssWidth <= 0 || cssHeight <= 0) {
+    hideGridOverlay();
+    return;
+  }
 
-const EMPTY_GRID = {
-  type: "FeatureCollection",
-  features: [],
-};
-
-/**
- * グリッドソースを更新（差分チェック最適化版）
- */
-const updateGridSource = (map: any): void => {
-  // zoom < 14 は完全スキップ（最重要最適化）
-  if (map.getZoom() < GRID_MIN_ZOOM) return;
-
-  const source = map.getSource(GRID_SOURCE_ID) as any;
-  if (!source) return;
-
-  // Pixel range 計算
-  const bounds = map.getBounds();
-  // latLonToPixels returns [pixelX, pixelY]
-  // North = 高緯度 = 小さい pixelY, South = 低緯度 = 大きい pixelY
-  // West = 小さい pixelX, East = 大きい pixelX
-  const [westPx, northPy] = latLonToPixels(
-    bounds.getNorth(),
-    bounds.getWest(),
-    ZOOM_LEVEL
-  );
-  const [eastPx, southPy] = latLonToPixels(
-    bounds.getSouth(),
-    bounds.getEast(),
-    ZOOM_LEVEL
-  );
-
-  const sx = Math.floor(westPx);
-  const ex = Math.ceil(eastPx);
-  const sy = Math.floor(northPy);
-  const ey = Math.ceil(southPy);
-
-  // 差分チェック - 前回と同じ範囲なら何もしない（最大の最適化）
+  const zoom = map.getZoom();
   if (
-    prevPixelRange &&
-    prevPixelRange.sx === sx &&
-    prevPixelRange.ex === ex &&
-    prevPixelRange.sy === sy &&
-    prevPixelRange.ey === ey
+    zoom < GRID_MIN_ZOOM ||
+    !isNorthUpFlat(map) ||
+    !map.project ||
+    !map.unproject
   ) {
+    hideGridOverlay();
     return;
   }
 
-  // 範囲を保存
-  prevPixelRange = { sx, ex, sy, ey };
+  const context = syncCanvasResolution(gridCanvas, cssWidth, cssHeight);
+  if (!context) return;
 
-  // GeoJSON 生成 & 更新
-  const data = generateGridGeoJSON(sx, ex, sy, ey);
-  source.setData(data);
-};
+  gridContainer.style.display = "block";
 
-/**
- * グリッドレイヤーを追加
- */
-const addGridLayer = (map: any): void => {
-  if (layerAdded) return;
-  if (map.getLayer(GRID_LAYER_ID)) {
-    layerAdded = true;
-    return;
-  }
-
-  // ソースを追加
-  if (!map.getSource(GRID_SOURCE_ID)) {
-    map.addSource(GRID_SOURCE_ID, {
-      type: "geojson",
-      data: EMPTY_GRID,
-    });
-  }
-
-  // lineレイヤーを追加
-  map.addLayer({
-    id: GRID_LAYER_ID,
-    type: "line",
-    source: GRID_SOURCE_ID,
-    minzoom: GRID_MIN_ZOOM,
-    paint: {
-      "line-color": "rgba(100, 100, 100, 0.5)",
-      "line-width": 1,
-    },
+  const center = map.getCenter();
+  const [centerWorldX, centerWorldY] = latLonToPixels(
+    center.lat,
+    center.lng,
+    ZOOM_LEVEL,
+  );
+  const topLeft = map.unproject({ x: 0, y: 0 });
+  const topRight = map.unproject({ x: cssWidth, y: 0 });
+  const bottomLeft = map.unproject({ x: 0, y: cssHeight });
+  const bottomRight = map.unproject({ x: cssWidth, y: cssHeight });
+  const corners = [topLeft, topRight, bottomLeft, bottomRight].map((corner) => {
+    const [worldX, worldY] = latLonToPixels(corner.lat, corner.lng, ZOOM_LEVEL);
+    return {
+      x: normalizeWorldPixelXNear(worldX, centerWorldX),
+      y: worldY,
+    };
   });
 
-  // 移動時にグリッドを更新
-  moveEndHandler = () => updateGridSource(map);
-  map.on("moveend", moveEndHandler);
+  const referencePoint = map.project(center);
+  const nextXPoint = map.project(
+    worldPixelToLngLat(centerWorldX + 1, centerWorldY),
+  );
+  const nextYPoint = map.project(
+    worldPixelToLngLat(centerWorldX, centerWorldY + 1),
+  );
+  const scaleX = Math.abs(nextXPoint.x - referencePoint.x);
+  const scaleY = Math.abs(nextYPoint.y - referencePoint.y);
+  const scale = Math.max(Math.min(scaleX, scaleY), 0.0001);
+  if (!canRenderSinglePixelGrid(scale, cssWidth, cssHeight)) {
+    hideGridOverlay();
+    return;
+  }
+  const step = 1;
 
-  layerAdded = true;
+  const leftWorld = Math.min(...corners.map((corner) => corner.x));
+  const topWorld = Math.min(...corners.map((corner) => corner.y));
+  const rightWorld = Math.max(...corners.map((corner) => corner.x));
+  const bottomWorld = Math.max(...corners.map((corner) => corner.y));
 
-  // 初回更新（zoom >= 14 なら即座に表示）
-  updateGridSource(map);
+  const startX = Math.floor(leftWorld / step) * step;
+  const endX = Math.ceil(rightWorld / step) * step;
+  const startY = Math.floor(topWorld / step) * step;
+  const endY = Math.ceil(bottomWorld / step) * step;
 
-  console.log("🧑‍🎨 : Grid layer added");
+  context.beginPath();
+  for (let worldX = startX; worldX <= endX; worldX += step) {
+    const { x } = map.project(worldPixelToLngLat(worldX, centerWorldY));
+    const screenX = toAlignedScreen(x);
+    context.moveTo(screenX, 0);
+    context.lineTo(screenX, cssHeight);
+  }
+
+  for (let worldY = startY; worldY <= endY; worldY += step) {
+    const { y } = map.project(worldPixelToLngLat(centerWorldX, worldY));
+    const screenY = toAlignedScreen(y);
+    context.moveTo(0, screenY);
+    context.lineTo(cssWidth, screenY);
+  }
+
+  context.lineWidth = 1;
+  context.strokeStyle =
+    step === 1 ? "rgba(120, 120, 120, 0.48)" : "rgba(120, 120, 120, 0.34)";
+  context.stroke();
 };
 
-/**
- * グリッドレイヤーを削除
- */
-const removeGridLayer = (map: any): void => {
-  if (!layerAdded) return;
+const scheduleGridRender = (map: GridMap): void => {
+  if (!gridEnabled) return;
+  if (renderFrameId !== null) return;
 
-  if (moveEndHandler) {
-    map.off("moveend", moveEndHandler);
-    moveEndHandler = null;
-  }
-
-  if (map.getLayer(GRID_LAYER_ID)) {
-    map.removeLayer(GRID_LAYER_ID);
-  }
-  if (map.getSource(GRID_SOURCE_ID)) {
-    map.removeSource(GRID_SOURCE_ID);
-  }
-
-  // キャッシュクリア
-  prevPixelRange = null;
-  layerAdded = false;
-  console.log("🧑‍🎨 : Grid layer removed");
+  renderFrameId = window.requestAnimationFrame(() => {
+    const nextMap = activeMap ?? map;
+    if (!nextMap) {
+      renderFrameId = null;
+      return;
+    }
+    drawGridNow(nextMap);
+  });
 };
 
-/**
- * グリッド表示を切り替え
- */
-export const setGridDisplayEnabled = (enabled: boolean): void => {
-  if (CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) {
-    if (enabled) logCustomGeoJsonDisabled("Grid display");
+const attachGridOverlay = (map: GridMap): void => {
+  if (gridContainer) return;
+
+  const mapContainer = getMapContainer(map);
+  if (!mapContainer) {
+    console.warn("🧑‍🎨 : Map container not found for grid display");
     return;
   }
 
-  const map = getMapInstanceFromWplace() as any;
+  const existingContainer = document.getElementById(GRID_CONTAINER_ID);
+  if (existingContainer) existingContainer.remove();
+
+  gridContainer = createGridOverlay();
+  mapContainer.appendChild(gridContainer);
+
+  mapUpdateHandler = () => scheduleGridRender(map);
+  for (const eventName of MAP_UPDATE_EVENTS)
+    map.on(eventName, mapUpdateHandler);
+
+  activeMap = map;
+  scheduleGridRender(map);
+  console.log("🧑‍🎨 : Grid display added");
+};
+
+const removeGridOverlay = (map: GridMap): void => {
+  clearScheduledRender();
+
+  if (mapUpdateHandler) {
+    for (const eventName of MAP_UPDATE_EVENTS)
+      map.off(eventName, mapUpdateHandler);
+    mapUpdateHandler = null;
+  }
+
+  gridContainer?.remove();
+  gridContainer = null;
+  gridCanvas = null;
+  activeMap = null;
+
+  console.log("🧑‍🎨 : Grid display removed");
+};
+
+export const setGridDisplayEnabled = (enabled: boolean): void => {
+  gridEnabled = enabled;
+
+  const map = getMapInstanceFromWplace() as GridMap | null;
   if (!map) {
     console.warn("🧑‍🎨 : Map instance not available for grid display");
     return;
   }
 
-  gridEnabled = enabled;
-
-  if (enabled) {
-    addGridLayer(map);
-  } else {
-    removeGridLayer(map);
-  }
+  if (enabled) attachGridOverlay(map);
+  else removeGridOverlay(map);
 
   console.log("🧑‍🎨 : Grid display enabled:", enabled);
 };
 
-/**
- * styledataイベントでレイヤー再適用
- */
-export const setupGridDisplayOnMapReady = (mapInstance: any): void => {
-  if (CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) return;
-
-  const map = mapInstance as any;
+export const setupGridDisplayOnMapReady = (mapInstance: unknown): void => {
+  const map = mapInstance as GridMap;
 
   const onStyleData = () => {
     if (!gridEnabled) return;
-    // キャッシュクリアして再描画
-    prevPixelRange = null;
-    layerAdded = false;
-    addGridLayer(map);
+    activeMap = map;
+
+    const mapContainer = getMapContainer(map);
+    if (!mapContainer) return;
+    if (gridContainer && gridContainer.parentElement !== mapContainer) {
+      gridContainer.remove();
+      mapContainer.appendChild(gridContainer);
+    }
+
+    scheduleGridRender(map);
   };
 
   map.on("styledata", onStyleData);

@@ -21,7 +21,7 @@ const BACKGROUND_COLOR_ENABLED_KEY = "mapFilter_backgroundColorEnabled";
 const BACKGROUND_COLOR_VALUE_KEY = "mapFilter_backgroundColorValue";
 const GRID_DISPLAY_KEY = "mapFilter_gridDisplay";
 const AREA_MEASURE_KEY = "mapFilter_areaMeasure";
-const GRID_DISPLAY_TEMPORARILY_DISABLED = true;
+const GRID_DISPLAY_TEMPORARILY_DISABLED = false;
 const AREA_MEASURE_TEMPORARILY_DISABLED = true;
 
 type FilterState = {

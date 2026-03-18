@@ -166,13 +166,9 @@ const forceStartupLocationZoom = (): void => {
           setupFrontTileLayerOnMapReady(mapInstance);
 
           // Setup grid display with styledata event listener
-          if (!CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) {
-            const { setupGridDisplayOnMapReady } =
-              await import("./features/grid-display");
-            setupGridDisplayOnMapReady(mapInstance);
-          } else {
-            logCustomGeoJsonDisabled("Grid display");
-          }
+          const { setupGridDisplayOnMapReady } =
+            await import("./features/grid-display");
+          setupGridDisplayOnMapReady(mapInstance);
 
           // Setup scale display with styledata event listener
           const { setupScaleDisplayOnMapReady } =
