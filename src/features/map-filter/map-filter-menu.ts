@@ -294,7 +294,8 @@ class MapFilterMenu {
 
       const isEnabled = this.getFilterEnabled(config.id);
       const forceDisabled =
-        config.id === "gridDisplay" && GRID_DISPLAY_TEMPORARILY_DISABLED;
+        config.id === "gridDisplay" &&
+        (GRID_DISPLAY_TEMPORARILY_DISABLED || this.state.map3d);
       const disabled = forceDisabled || (config.requiresMap && !this.mapReady);
 
       const itemWrapper = document.createElement("div");
@@ -523,6 +524,11 @@ class MapFilterMenu {
       }
       case "map3d": {
         this.state.map3d = !this.state.map3d;
+        if (this.state.map3d && this.state.gridDisplay) {
+          this.state.gridDisplay = false;
+          await storage.set({ [GRID_DISPLAY_KEY]: false });
+          this.notifyGridDisplay();
+        }
         if (!this.state.map3d && this.state.map3dDragRotate) {
           this.state.map3dDragRotate = false;
         }
