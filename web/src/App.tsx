@@ -184,17 +184,19 @@ export default function App() {
             variant="square"
           />
         </div>
-        <div className="reveal flex-[1_1_340px] max-w-[540px] transition-[opacity,transform] duration-700 ease-out">
-          <div className="inline-flex items-center gap-1.5 text-[11px] font-medium tracking-[0.4px] uppercase text-(--brand) [background:var(--brand-bg)] border border-(--brand-border) rounded-full px-3 py-1 mb-7">
+        <div className="reveal flex-[1_1_340px] max-w-135 transition-[opacity,transform] duration-700 ease-out">
+          <div className="inline-flex items-center gap-1.5 text-xs font-medium tracking-[0.4px] uppercase text-(--brand) [background:var(--brand-bg)] border border-(--brand-border) rounded-full px-3 py-1">
             Browser Extension
           </div>
-          <h1 className="text-[clamp(36px,5.5vw,60px)] font-bold tracking-[-1.5px] leading-[1.08] text-foreground m-0 mb-4">
-            Mr. Wplace
-          </h1>
-          <p className="text-[clamp(17px,2.5vw,22px)] font-medium tracking-[-0.3px] text-muted-foreground m-0 mb-4 leading-snug">
-            Draw smarter on Wplace.
-          </p>
-          <p className="text-[15px] leading-[1.7] text-muted-foreground mb-8 max-w-[400px]">
+          <div className="mb-4">
+            <h1 className="text-[clamp(36px,5.5vw,60px)] font-bold tracking-[-1.5px] leading-[1.08] text-foreground m-0">
+              Mr. Wplace
+            </h1>
+            <p className="text-[clamp(17px,2.5vw,22px)] font-medium tracking-[-0.3px] text-muted-foreground m-0 leading-snug">
+              Draw smarter on Wplace.
+            </p>
+          </div>
+          <p className="text-[15px] leading-[1.7] text-muted-foreground mb-8 max-w-100">
             Overlay images, track colors, manage areas, and travel through time
             — all without leaving the map.
           </p>
@@ -219,7 +221,7 @@ export default function App() {
             See Features ↓
           </a>
         </div>
-        <div className="reveal flex-shrink-0 transition-[opacity,transform] duration-700 ease-out sm:order-[-1]">
+        <div className="reveal shrink-0 transition-[opacity,transform] duration-700 ease-out sm:-order-1">
           <img
             src={misterIcon}
             alt="Mr. Wplace"
