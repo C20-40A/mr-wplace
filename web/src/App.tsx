@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import PixelSnow from "./components/PixelSnow";
+import misterIcon from "./assets/mister-icon.png";
 import chromeLogo from "./assets/chrome-logo.svg";
 import firefoxLogo from "./assets/firefox0logo.svg";
 import edgeLogo from "./assets/microsoft-edge-logo.svg";
@@ -183,29 +184,28 @@ export default function App() {
             variant="square"
           />
         </div>
-        <div className="reveal flex-[1_1_340px] max-w-150 transition-[opacity,transform] duration-700 ease-out">
-          <div className="inline-block text-xs font-medium tracking-[0.5px] uppercase text-(--brand) [background:var(--brand-bg)] border border-(--brand-border) rounded-full px-3 py-1 mb-5">
-            Chrome / Firefox / Edge Extension
+        <div className="reveal flex-[1_1_340px] max-w-[540px] transition-[opacity,transform] duration-700 ease-out">
+          <div className="inline-flex items-center gap-1.5 text-[11px] font-medium tracking-[0.4px] uppercase text-(--brand) [background:var(--brand-bg)] border border-(--brand-border) rounded-full px-3 py-1 mb-7">
+            Browser Extension
           </div>
-          <h1 className="text-[clamp(40px,6vw,68px)] font-bold tracking-[-2px] leading-[1.05] text-foreground m-0 mb-3">
+          <h1 className="text-[clamp(36px,5.5vw,60px)] font-bold tracking-[-1.5px] leading-[1.08] text-foreground m-0 mb-4">
             Mr. Wplace
           </h1>
-          <p className="text-[clamp(20px,3vw,28px)] font-semibold tracking-[-0.5px] text-muted-foreground m-0 mb-5">
+          <p className="text-[clamp(17px,2.5vw,22px)] font-medium tracking-[-0.3px] text-muted-foreground m-0 mb-4 leading-snug">
             Draw smarter on Wplace.
           </p>
-          <p className="text-lg leading-relaxed text-muted-foreground mb-9">
+          <p className="text-[15px] leading-[1.7] text-muted-foreground mb-8 max-w-[400px]">
             Overlay images, track colors, manage areas, and travel through time
-            —<br className="sm:hidden" />
-            all without leaving the map.
+            — all without leaving the map.
           </p>
-          <div className="flex gap-2.5 flex-wrap mb-6">
+          <div className="flex gap-2 flex-wrap mb-5">
             {BROWSERS.map((b) => (
               <a
                 key={b.name}
                 href={b.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[10px] border border-border [background:color-mix(in_srgb,var(--muted)_60%,transparent)] text-foreground font-medium text-sm no-underline transition-[background,border-color,transform] duration-200 hover:[background:var(--brand-bg)] hover:border-(--brand-border) hover:-translate-y-px"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border border-border [background:color-mix(in_srgb,var(--muted)_60%,transparent)] text-foreground font-medium text-[13px] no-underline transition-[background,border-color,transform] duration-200 hover:[background:var(--brand-bg)] hover:border-(--brand-border) hover:-translate-y-px"
               >
                 {b.icon}
                 <span>Add to {b.name}</span>
@@ -214,10 +214,19 @@ export default function App() {
           </div>
           <a
             href="#features"
-            className="text-sm text-muted-foreground no-underline transition-colors duration-200 hover:text-foreground"
+            className="text-[13px] text-muted-foreground no-underline transition-colors duration-200 hover:text-foreground"
           >
             See Features ↓
           </a>
+        </div>
+        <div className="reveal flex-shrink-0 transition-[opacity,transform] duration-700 ease-out sm:order-[-1]">
+          <img
+            src={misterIcon}
+            alt="Mr. Wplace"
+            width={128}
+            height={128}
+            className="[image-rendering:pixelated] drop-shadow-[0_0_40px_rgba(134,59,255,0.3)]"
+          />
         </div>
       </section>
 
