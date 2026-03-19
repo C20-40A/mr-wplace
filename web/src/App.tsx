@@ -1,95 +1,163 @@
-import { useEffect, useRef, useState } from 'react'
-import heroImg from './assets/hero.png'
-import PixelSnow from './components/PixelSnow'
-import './App.css'
+import { useEffect } from "react";
+import PixelSnow from "./components/PixelSnow";
+import chromeLogo from "./assets/chrome-logo.svg";
+import firefoxLogo from "./assets/firefox0logo.svg";
+import edgeLogo from "./assets/microsoft-edge-logo.svg";
+import "./App.css";
 
 const FEATURES = [
   {
-    icon: '🖼️',
-    title: 'Image Overlay',
-    desc: 'Place your own artwork directly onto the world map. Preview exactly how it looks before committing pixels.',
+    icon: "🖼️",
+    title: "Image Overlay",
+    desc: "Place your own artwork directly onto the world map. Preview exactly how it looks before committing pixels.",
   },
   {
-    icon: '🎨',
-    title: 'Color Filter',
-    desc: 'Highlight target colors on the canvas. Track placed vs. unplaced pixels at a glance with visual stats.',
+    icon: "🎨",
+    title: "Color Filter",
+    desc: "Highlight target colors on the canvas. Track placed vs. unplaced pixels at a glance with visual stats.",
   },
   {
-    icon: '📸',
-    title: 'Time Travel',
-    desc: 'Snapshot tiles over time. Compare past and present states to see how the canvas has evolved.',
+    icon: "📸",
+    title: "Time Travel",
+    desc: "Snapshot tiles over time. Compare past and present states to see how the canvas has evolved.",
   },
   {
-    icon: '📍',
-    title: 'Area Manager',
-    desc: 'Draw named regions on the map, set colors and labels, and manage collaborative zones with ease.',
+    icon: "📍",
+    title: "Area Manager",
+    desc: "Draw named regions on the map, set colors and labels, and manage collaborative zones with ease.",
   },
   {
-    icon: '🗺️',
-    title: 'Gallery',
-    desc: 'Save reference images with map coordinates. Jump back to any spot instantly.',
+    icon: "🗺️",
+    title: "Gallery",
+    desc: "Save reference images with map coordinates. Jump back to any spot instantly.",
   },
   {
-    icon: '⚡',
-    title: 'Live Stats',
-    desc: 'Real-time progress bars per image. Know how complete your artwork is without counting by hand.',
+    icon: "⚡",
+    title: "Live Stats",
+    desc: "Real-time progress bars per image. Know how complete your artwork is without counting by hand.",
   },
-]
+];
 
-function useInView(threshold = 0.15) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [visible, setVisible] = useState(false)
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const obs = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect() } },
-      { threshold }
-    )
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [threshold])
-  return { ref, visible }
-}
+const BROWSERS = [
+  {
+    name: "Chrome",
+    href: "https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej",
+    icon: <img src={chromeLogo} width="20" height="20" alt="Chrome" />,
+  },
+  {
+    name: "Firefox",
+    href: "https://addons.mozilla.org/ja/firefox/addon/mr-wplace/",
+    icon: <img src={firefoxLogo} width="20" height="20" alt="Firefox" />,
+  },
+  {
+    name: "Edge",
+    href: "https://microsoftedge.microsoft.com/addons/detail/mr-wplace/acdodonamhbokadiikkfnnliplijigip",
+    icon: <img src={edgeLogo} width="20" height="20" alt="Edge" />,
+  },
+];
 
-function FeatureCard({ icon, title, desc, delay }: { icon: string; title: string; desc: string; delay: number }) {
-  const { ref, visible } = useInView()
+const MOBILE_ITEMS = [
+  {
+    platform: "Android",
+    icon: "🤖",
+    items: [
+      {
+        browser: "Edge Canary",
+        desc: "Install the Edge Canary app, then visit the Edge Add-ons page to install automatically.",
+        href: "https://microsoftedge.microsoft.com/addons/detail/mr-wplace/acdodonamhbokadiikkfnnliplijigip",
+      },
+      {
+        browser: "Firefox Nightly",
+        desc: "Install the Firefox Nightly for Developers app, then visit the Firefox Add-ons page and install with one tap.",
+        href: "https://addons.mozilla.org/ja/firefox/addon/mr-wplace",
+      },
+    ],
+  },
+  {
+    platform: "iOS — Orion Browser",
+    icon: "🍎",
+    items: [
+      {
+        browser: "Orion Browser by Kagi",
+        desc: 'Download Orion from the App Store → Settings → Advanced → Enable "Chrome Extensions" → Install from Chrome Web Store.',
+        href: "https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej",
+      },
+    ],
+  },
+];
+
+function FeatureCard({
+  icon,
+  title,
+  desc,
+  delay,
+}: {
+  icon: string;
+  title: string;
+  desc: string;
+  delay: number;
+}) {
   return (
     <div
-      ref={ref}
-      className="feature-card"
-      style={{ transitionDelay: `${delay}ms`, opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(24px)' }}
+      className="feature-card reveal"
+      style={{ "--delay": `${delay}ms` } as React.CSSProperties}
     >
       <span className="feature-icon">{icon}</span>
       <h3>{title}</h3>
       <p>{desc}</p>
     </div>
-  )
+  );
 }
 
-
 export default function App() {
-  const heroSection = useInView(0.05)
-  const ctaSection = useInView(0.2)
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("in-view");
+            obs.unobserve(entry.target);
+          }
+        }
+      },
+      { threshold: 0.1 },
+    );
+    document.querySelectorAll(".reveal").forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
 
   return (
     <>
       {/* Nav */}
       <nav className="nav">
         <span className="nav-brand">Mr. Wplace</span>
-        <a
-          className="nav-cta"
-          href="https://chromewebstore.google.com/detail/mr-wplace/hkpnofjcfphdnmhndopcnaonmimfbpae"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Add to Chrome
-        </a>
+        <div className="nav-browsers">
+          {BROWSERS.map((b) => (
+            <a
+              key={b.name}
+              className="nav-browser-link"
+              href={b.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`Install for ${b.name}`}
+            >
+              {b.icon}
+              <span className="nav-browser-name">{b.name}</span>
+            </a>
+          ))}
+        </div>
       </nav>
 
       {/* Hero */}
       <section className="hero-section">
-        <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 0,
+            pointerEvents: "none",
+          }}
+        >
           <PixelSnow
             color="#aa3bff"
             flakeSize={0.03}
@@ -105,37 +173,35 @@ export default function App() {
             variant="square"
           />
         </div>
-        <div
-          ref={heroSection.ref}
-          className="hero-content"
-          style={{ opacity: heroSection.visible ? 1 : 0, transform: heroSection.visible ? 'translateY(0)' : 'translateY(32px)' }}
-        >
-          <div className="hero-badge">Chrome / Edge Extension</div>
+        <div className="hero-content reveal">
+          <div className="hero-badge">Chrome / Firefox / Edge Extension</div>
           <h1 className="hero-title">
-            Draw smarter on<br />
+            Draw smarter on
+            <br />
             <span className="gradient-text">Wplace</span>
           </h1>
           <p className="hero-sub">
-            Overlay images, track colors, manage areas, and travel through time —<br />
+            Overlay images, track colors, manage areas, and travel through time
+            —<br />
             all without leaving the map.
           </p>
           <div className="hero-actions">
-            <a
-              className="btn-primary"
-              href="https://chromewebstore.google.com/detail/mr-wplace/hkpnofjcfphdnmhndopcnaonmimfbpae"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Install Free
-            </a>
-            <a className="btn-ghost" href="#features">See Features</a>
+            {BROWSERS.map((b) => (
+              <a
+                key={b.name}
+                className="btn-browser"
+                href={b.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {b.icon}
+                <span>Add to {b.name}</span>
+              </a>
+            ))}
           </div>
-        </div>
-        <div className="hero-visual">
-          <div className="hero-img-wrap">
-            <img src={heroImg} alt="Mr. Wplace overlay illustration" className="hero-img" />
-            <div className="hero-glow" />
-          </div>
+          <a className="hero-see-features" href="#features">
+            See Features ↓
+          </a>
         </div>
       </section>
 
@@ -152,23 +218,60 @@ export default function App() {
         </div>
       </section>
 
+      {/* Mobile */}
+      <section id="mobile" className="mobile-section">
+        <div className="mobile-inner reveal">
+          <div className="section-header">
+            <h2>Mobile Support</h2>
+            <p>Use Mr. Wplace on your phone too.</p>
+          </div>
+          <div className="mobile-grid">
+            {MOBILE_ITEMS.map((platform) => (
+              <div key={platform.platform} className="mobile-platform-card">
+                <div className="mobile-platform-title">
+                  <span>{platform.icon}</span>
+                  <span>{platform.platform}</span>
+                </div>
+                <ul className="mobile-steps">
+                  {platform.items.map((item) => (
+                    <li key={item.browser}>
+                      <a
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mobile-browser-name"
+                      >
+                        {item.browser}
+                      </a>
+                      <span className="mobile-step-desc">{item.desc}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="cta-section">
-        <div
-          ref={ctaSection.ref}
-          className="cta-box"
-          style={{ opacity: ctaSection.visible ? 1 : 0, transform: ctaSection.visible ? 'scale(1)' : 'scale(0.96)' }}
-        >
+        <div className="cta-box reveal">
           <h2>Ready to start?</h2>
-          <p>Free. No account needed. Works on Chrome &amp; Edge.</p>
-          <a
-            className="btn-primary"
-            href="https://chromewebstore.google.com/detail/mr-wplace/hkpnofjcfphdnmhndopcnaonmimfbpae"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Add to Chrome — it&apos;s free
-          </a>
+          <p>Free. No account needed. Works on Chrome, Firefox &amp; Edge.</p>
+          <div className="cta-browsers">
+            {BROWSERS.map((b) => (
+              <a
+                key={b.name}
+                className="btn-browser"
+                href={b.href}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {b.icon}
+                <span>Add to {b.name}</span>
+              </a>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -176,5 +279,5 @@ export default function App() {
         <span>© 2026 Mr. Wplace</span>
       </footer>
     </>
-  )
+  );
 }
