@@ -19,10 +19,6 @@ import {
   handlePaintForStats,
   handlePaintDeleteForStats,
 } from "./features/paint-stats-updater";
-import {
-  CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED,
-  logCustomGeoJsonDisabled,
-} from "./features/custom-geojson-guard";
 
 const LOCATION_KEY = "location";
 const STARTUP_TARGET_ZOOM = 11;
@@ -176,13 +172,9 @@ const forceStartupLocationZoom = (): void => {
           setupScaleDisplayOnMapReady(mapInstance);
 
           // Setup area measure with styledata event listener
-          if (!CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) {
-            const { setupAreaMeasureOnMapReady } =
-              await import("./features/area-display");
-            setupAreaMeasureOnMapReady(mapInstance);
-          } else {
-            logCustomGeoJsonDisabled("Area display");
-          }
+          // TODO: area-display is still disabled (GeoJSON layers pending raster migration)
+          // const { setupAreaMeasureOnMapReady } = await import("./features/area-display");
+          // setupAreaMeasureOnMapReady(mapInstance);
         }
       }),
 

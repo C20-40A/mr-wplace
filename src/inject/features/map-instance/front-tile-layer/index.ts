@@ -1,13 +1,18 @@
 import { getMapInstanceFromWplace } from "../get-map-instance";
 import { getStateVersion, incrementStateVersion } from "./state-version";
-import { tilePixelToLatLng } from "@/utils/coordinate";
 import {
   buildFrontLayerTileUrl,
   invalidateFrontRenderedTile,
 } from "./fetch-handler";
 import {
-  CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED,
-} from "../../custom-geojson-guard";
+  upsertPaintGuidePoint,
+  clearPaintGuidePoint,
+  clearPaintGuidePointsTile,
+  clearAllPaintGuidePoints,
+  setPaintGuideActive,
+  setupPaintGuideCanvas,
+  destroyPaintGuideCanvas,
+} from "./paint-guide-canvas";
 
 const FRONT_LAYER_ID = "pixel-art-layer-overlay";
 const FRONT_SOURCE_ID = "mr-wplace-overlay-source";
@@ -15,12 +20,6 @@ const PIXEL_ART_LAYER = "pixel-art-layer";
 const PIXEL_HOVER_LAYER = "pixel-hover";
 const PENDING_REFRESH_DEBOUNCE_MS = 120;
 const MAX_PENDING_COMPARISON_TILES = 256;
-const GUIDE_SOURCE_ID = "mr-wplace-paint-guide-source";
-const GUIDE_MISMATCH_LAYER_ID = "mr-wplace-paint-guide-mismatch";
-const GUIDE_ALREADY_LAYER_ID = "mr-wplace-paint-guide-already";
-const LEGACY_GUIDE_MATCH_LAYER_ID = "mr-wplace-paint-guide-match";
-const GUIDE_SYNC_DEBOUNCE_MS = 50;
-const MAX_GUIDE_POINTS = 1500;
 const FRONT_LAYER_MIN_ZOOM = 9;
 const FRONT_LAYER_MAX_ZOOM = 11;
 
@@ -32,48 +31,10 @@ const pendingComparisonTiles = new Set<string>();
 let pendingComparisonRefreshQueued = false;
 let deferredRefreshQueued = false;
 let pendingRefreshTimer: ReturnType<typeof setTimeout> | null = null;
-let guideSyncTimer: ReturnType<typeof setTimeout> | null = null;
-
-interface PaintGuidePoint {
-  tileX: number;
-  tileY: number;
-  pixelX: number;
-  pixelY: number;
-  lat: number;
-  lng: number;
-  kind: "mismatch" | "already";
-  colorRgbInt: number;
-  colorHex: string;
-}
-
-const paintGuidePoints = new Map<string, PaintGuidePoint>();
-let paintGuideActive = false;
 
 const isEnabled = () => window.mrWplaceFrontTileLayerEnabled ?? false;
 const getFrontSourceTileUrl = (version: number): string =>
   buildFrontLayerTileUrl(version);
-const getGuidePointKey = (
-  tileX: number,
-  tileY: number,
-  pixelX: number,
-  pixelY: number,
-): string => `${tileX},${tileY},${pixelX},${pixelY}`;
-const rgbIntToHex = (rgbInt: number): string =>
-  `#${(rgbInt & 0xffffff).toString(16).padStart(6, "0")}`;
-
-const clearGuideSyncTimer = (): void => {
-  if (guideSyncTimer === null) return;
-  clearTimeout(guideSyncTimer);
-  guideSyncTimer = null;
-};
-
-const removeGuideLayersAndSource = (map: any): void => {
-  if (map.getLayer(LEGACY_GUIDE_MATCH_LAYER_ID))
-    map.removeLayer(LEGACY_GUIDE_MATCH_LAYER_ID);
-  if (map.getLayer(GUIDE_ALREADY_LAYER_ID)) map.removeLayer(GUIDE_ALREADY_LAYER_ID);
-  if (map.getLayer(GUIDE_MISMATCH_LAYER_ID)) map.removeLayer(GUIDE_MISMATCH_LAYER_ID);
-  if (map.getSource(GUIDE_SOURCE_ID)) map.removeSource(GUIDE_SOURCE_ID);
-};
 
 const findPaintCrosshairLayerId = (map: any): string | undefined => {
   const layers = map.getStyle?.()?.layers;
@@ -114,110 +75,6 @@ const ensureOverlayLayerOrder = (map: any): void => {
   }
 };
 
-const ensureGuideSourceAndLayers = (map: any): void => {
-  if (CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) return;
-
-  if (map.getLayer(LEGACY_GUIDE_MATCH_LAYER_ID))
-    map.removeLayer(LEGACY_GUIDE_MATCH_LAYER_ID);
-
-  if (!map.getSource(GUIDE_SOURCE_ID)) {
-    map.addSource(GUIDE_SOURCE_ID, {
-      type: "geojson",
-      data: {
-        type: "FeatureCollection",
-        features: [],
-      },
-    });
-  }
-
-  const beforeId = findPaintCrosshairLayerId(map);
-
-  if (!map.getLayer(GUIDE_MISMATCH_LAYER_ID)) {
-    map.addLayer(
-      {
-        id: GUIDE_MISMATCH_LAYER_ID,
-        type: "circle",
-        source: GUIDE_SOURCE_ID,
-        filter: ["==", ["get", "kind"], "mismatch"],
-        paint: {
-          "circle-color": "#ffbf00",
-          "circle-radius": 3.2,
-          "circle-opacity": 1,
-          "circle-stroke-color": "#000000",
-          "circle-stroke-width": 1,
-        },
-      },
-      beforeId,
-    );
-  }
-
-  if (!map.getLayer(GUIDE_ALREADY_LAYER_ID)) {
-    map.addLayer(
-      {
-        id: GUIDE_ALREADY_LAYER_ID,
-        type: "circle",
-        source: GUIDE_SOURCE_ID,
-        filter: ["==", ["get", "kind"], "already"],
-        paint: {
-          "circle-color": "#00d4ff",
-          "circle-radius": 2.8,
-          "circle-opacity": 0.95,
-          "circle-stroke-color": "#002433",
-          "circle-stroke-width": 1,
-        },
-      },
-      beforeId,
-    );
-  }
-};
-
-const buildGuideFeatureCollection = (): any => {
-  const features: any[] = [];
-
-  for (const point of paintGuidePoints.values()) {
-    features.push({
-      type: "Feature",
-      geometry: {
-        type: "Point",
-        coordinates: [point.lng, point.lat],
-      },
-      properties: {
-        kind: point.kind,
-        color: point.colorHex,
-      },
-    });
-  }
-
-  return {
-    type: "FeatureCollection",
-    features,
-  };
-};
-
-const syncPaintGuideLayer = (): void => {
-  if (CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) return;
-  if (!isEnabled()) return;
-
-  const map = getMapInstanceFromWplace() as any;
-  if (!map || !frontLayerOperational) return;
-
-  try {
-    ensureGuideSourceAndLayers(map);
-    const source = map.getSource(GUIDE_SOURCE_ID) as any;
-    if (!source || typeof source.setData !== "function") return;
-    source.setData(buildGuideFeatureCollection());
-  } catch (error) {
-    console.error("🧑‍🎨 : Failed to sync paint guide layer:", error);
-  }
-};
-
-const scheduleGuideSync = (): void => {
-  if (guideSyncTimer !== null) return;
-  guideSyncTimer = setTimeout(() => {
-    guideSyncTimer = null;
-    syncPaintGuideLayer();
-  }, GUIDE_SYNC_DEBOUNCE_MS);
-};
 
 const updateFrontLayerOperational = (map?: any): void => {
   if (!isEnabled()) {
@@ -237,7 +94,6 @@ const updateFrontLayerOperational = (map?: any): void => {
   if (frontLayerOperational && pendingComparisonRefreshQueued) {
     schedulePendingComparisonRefresh();
   }
-  if (frontLayerOperational && paintGuidePoints.size > 0) scheduleGuideSync();
 };
 
 const clearPendingRefreshTimer = (): void => {
@@ -341,43 +197,14 @@ export const upsertFrontTilePaintGuide = (
   pixelX: number,
   pixelY: number,
   kind: "mismatch" | "already",
-  templateRgbInt: number,
+  _templateRgbInt: number,
 ): void => {
-  if (CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) return;
-
   if (!isEnabled()) return;
-  if (!paintGuideActive) return;
-  if (pixelX < 0 || pixelY < 0 || pixelX >= 1000 || pixelY >= 1000) return;
-  const key = getGuidePointKey(tileX, tileY, pixelX, pixelY);
-  const existing = paintGuidePoints.get(key);
-  if (existing && existing.kind === kind && existing.colorRgbInt === templateRgbInt) return;
-
-  const { lat, lng } = tilePixelToLatLng(tileX, tileY, pixelX + 0.5, pixelY + 0.5);
-  const colorHex = rgbIntToHex(templateRgbInt);
-  paintGuidePoints.set(key, {
-    tileX,
-    tileY,
-    pixelX,
-    pixelY,
-    lat,
-    lng,
-    kind,
-    colorRgbInt: templateRgbInt,
-    colorHex,
-  });
-
-  if (paintGuidePoints.size > MAX_GUIDE_POINTS) {
-    const oldest = paintGuidePoints.keys().next().value;
-    if (oldest) paintGuidePoints.delete(oldest);
-  }
-
-  scheduleGuideSync();
+  upsertPaintGuidePoint(tileX, tileY, pixelX, pixelY, kind);
 };
 
 export const clearFrontTilePaintGuideAll = (): void => {
-  if (paintGuidePoints.size === 0) return;
-  paintGuidePoints.clear();
-  scheduleGuideSync();
+  clearAllPaintGuidePoints();
 };
 
 export const clearFrontTilePaintGuide = (
@@ -386,43 +213,21 @@ export const clearFrontTilePaintGuide = (
   pixelX: number,
   pixelY: number,
 ): void => {
-  if (!isEnabled()) return;
-  if (!paintGuideActive) return;
-  const key = getGuidePointKey(tileX, tileY, pixelX, pixelY);
-  if (!paintGuidePoints.delete(key)) return;
-  scheduleGuideSync();
+  clearPaintGuidePoint(tileX, tileY, pixelX, pixelY);
 };
 
 export const clearFrontTilePaintGuideTile = (
   tileX: number,
   tileY: number,
 ): void => {
-  if (!isEnabled()) return;
-  if (!paintGuideActive) return;
-  let removed = false;
-  for (const [key, point] of paintGuidePoints.entries()) {
-    if (point.tileX !== tileX || point.tileY !== tileY) continue;
-    paintGuidePoints.delete(key);
-    removed = true;
-  }
-  if (!removed) return;
-  scheduleGuideSync();
+  clearPaintGuidePointsTile(tileX, tileY);
 };
 
 export const setFrontTilePaintGuideActive = (
   active: boolean,
   options?: { clearNow?: boolean },
 ): void => {
-  paintGuideActive = active;
-  if (active) return;
-  if (paintGuidePoints.size === 0) return;
-  paintGuidePoints.clear();
-  if (options?.clearNow) {
-    clearGuideSyncTimer();
-    syncPaintGuideLayer();
-    return;
-  }
-  scheduleGuideSync();
+  setPaintGuideActive(active, options);
 };
 
 /**
@@ -522,11 +327,8 @@ const removeFrontLayer = (map: any): void => {
   pendingComparisonTiles.clear();
   pendingComparisonRefreshQueued = false;
   deferredRefreshQueued = false;
-  paintGuidePoints.clear();
-  paintGuideActive = false;
   clearPendingRefreshTimer();
-  clearGuideSyncTimer();
-  removeGuideLayersAndSource(map);
+  destroyPaintGuideCanvas();
 
   console.log("🧑‍🎨 : Front tile layer and source removed");
 };
@@ -596,7 +398,6 @@ export const refreshFrontTileLayer = (): void => {
     if (trySoftRefreshSource(source, newVersion)) {
       updateFrontLayerOperational(map);
       console.log(`🧑‍🎨 : Front tile layer soft-refreshed (version: ${newVersion})`);
-      scheduleGuideSync();
       return;
     }
 
@@ -612,7 +413,6 @@ export const refreshFrontTileLayer = (): void => {
     checkAndAddOverlay(map);
     ensureOverlayLayerOrder(map);
     updateFrontLayerOperational(map);
-    scheduleGuideSync();
 
     console.log(`🧑‍🎨 : Front tile layer hard-refreshed (version: ${newVersion})`);
   } catch (error) {
@@ -640,7 +440,6 @@ export const setupFrontTileLayerOnMapReady = (mapInstance: any): void => {
     layerAdded = false;
     checkAndAddOverlay(map);
     ensureOverlayLayerOrder(map);
-    scheduleGuideSync();
   };
   const onMapSettled = () => {
     flushDeferredRefresh();
@@ -649,6 +448,7 @@ export const setupFrontTileLayerOnMapReady = (mapInstance: any): void => {
   map.on("styledata", onStyleData);
   map.on("moveend", onMapSettled);
   map.on("idle", onMapSettled);
+  setupPaintGuideCanvas();
   console.log("🧑‍🎨 : Front tile layer listener setup complete");
 
   // Initial check if style is already loaded
