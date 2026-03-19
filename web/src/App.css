@@ -11,14 +11,14 @@
   justify-content: space-between;
   padding: 0 32px;
   height: 56px;
-  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  background: color-mix(in srgb, var(--background) 80%, transparent);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
 }
 .nav-brand {
   font-weight: 600;
   font-size: 16px;
-  color: var(--text-h);
+  color: var(--foreground);
   letter-spacing: -0.3px;
 }
 .nav-cta {
@@ -26,7 +26,7 @@
   font-weight: 500;
   padding: 6px 16px;
   border-radius: 8px;
-  background: var(--accent);
+  background: var(--brand);
   color: #fff;
   text-decoration: none;
   transition: opacity 0.2s;
@@ -57,9 +57,9 @@
   font-weight: 500;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 1px solid var(--accent-border);
+  color: var(--brand);
+  background: var(--brand-bg);
+  border: 1px solid var(--brand-border);
   border-radius: 100px;
   padding: 4px 12px;
   margin-bottom: 20px;
@@ -69,11 +69,11 @@
   font-weight: 700;
   letter-spacing: -2px;
   line-height: 1.05;
-  color: var(--text-h);
+  color: var(--foreground);
   margin: 0 0 20px;
 }
 .gradient-text {
-  background: linear-gradient(135deg, var(--accent), #7c3aed);
+  background: linear-gradient(135deg, var(--brand), #7c3aed);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -81,7 +81,7 @@
 .hero-sub {
   font-size: 18px;
   line-height: 1.6;
-  color: var(--text);
+  color: var(--muted-foreground);
   margin-bottom: 36px;
 }
 .hero-actions {
@@ -97,7 +97,7 @@
   gap: 8px;
   padding: 12px 28px;
   border-radius: 10px;
-  background: var(--accent);
+  background: var(--brand);
   color: #fff;
   font-weight: 600;
   font-size: 16px;
@@ -111,13 +111,13 @@
   padding: 12px 24px;
   border-radius: 10px;
   border: 1px solid var(--border);
-  color: var(--text-h);
+  color: var(--foreground);
   font-size: 16px;
   font-weight: 500;
   text-decoration: none;
   transition: background 0.2s;
 }
-.btn-ghost:hover { background: var(--accent-bg); }
+.btn-ghost:hover { background: var(--brand-bg); }
 
 /* ── Hero visual ── */
 .hero-visual {
@@ -170,12 +170,12 @@
   font-size: clamp(28px, 4vw, 42px);
   font-weight: 700;
   letter-spacing: -1px;
-  color: var(--text-h);
+  color: var(--foreground);
   margin: 0 0 12px;
 }
 .section-header p {
   font-size: 18px;
-  color: var(--text);
+  color: var(--muted-foreground);
 }
 .features-grid {
   display: grid;
@@ -188,13 +188,13 @@
   padding: 28px 24px;
   border: 1px solid var(--border);
   border-radius: 16px;
-  background: var(--social-bg);
+  background: color-mix(in srgb, var(--muted) 50%, transparent);
   transition: opacity 0.5s ease, transform 0.5s ease, box-shadow 0.25s;
   text-align: left;
 }
 .feature-card:hover {
   box-shadow: var(--shadow);
-  border-color: var(--accent-border);
+  border-color: var(--brand-border);
 }
 .feature-icon {
   font-size: 28px;
@@ -204,13 +204,13 @@
 .feature-card h3 {
   font-size: 17px;
   font-weight: 600;
-  color: var(--text-h);
+  color: var(--foreground);
   margin: 0 0 8px;
 }
 .feature-card p {
   font-size: 14px;
   line-height: 1.6;
-  color: var(--text);
+  color: var(--muted-foreground);
 }
 
 /* ── CTA ── */
@@ -224,21 +224,21 @@
   max-width: 560px;
   text-align: center;
   padding: 56px 40px;
-  border: 1px solid var(--accent-border);
+  border: 1px solid var(--brand-border);
   border-radius: 24px;
-  background: var(--accent-bg);
+  background: var(--brand-bg);
   transition: opacity 0.6s ease, transform 0.6s ease;
 }
 .cta-box h2 {
   font-size: 36px;
   font-weight: 700;
   letter-spacing: -0.8px;
-  color: var(--text-h);
+  color: var(--foreground);
   margin: 0 0 12px;
 }
 .cta-box p {
   font-size: 16px;
-  color: var(--text);
+  color: var(--muted-foreground);
   margin-bottom: 32px;
 }
 
@@ -248,7 +248,7 @@
   border-top: 1px solid var(--border);
   text-align: center;
   font-size: 13px;
-  color: var(--text);
+  color: var(--muted-foreground);
 }
 
 /* ── Responsive ── */
