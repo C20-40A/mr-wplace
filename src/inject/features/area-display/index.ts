@@ -1,9 +1,5 @@
 import type { AreaDisplayOptions, AreaRegion, AreaRegionEditSnapshot } from "@/types/area-region";
 import { getMapInstanceFromWplace } from "../map-instance";
-import {
-  CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED,
-  logCustomGeoJsonDisabled,
-} from "../custom-geojson-guard";
 import type { AreaMap, AreaRegionEditStartPayload } from "./types";
 import { MAP_UPDATE_EVENTS } from "./types";
 import {
@@ -30,10 +26,8 @@ import {
   setAreaNameDisplayMode,
   setAreaNameFontSizePx,
   setAreaNameStyleMode,
-  setAreaRegionsState,
   setCachedMapContainer,
   setContainer,
-  setEditLayerDataDirty,
   setEditMode,
   setEditVertices,
   setEditingColor,
@@ -52,10 +46,10 @@ import {
   setSvg,
   setActiveDragIndex,
 } from "./state";
-import { scheduleAreaOverlayRender, cancelAreaOverlayRender } from "./render";
-import { removeAreaMapLayers, resolveMapContainer } from "./map-layers";
+import { scheduleAreaOverlayRender, cancelAreaOverlayRender, markCanvasDirtyOnMapMove } from "./render";
+import { removeAreaMapLayers, resolveMapContainer, createAreaCanvases, clearAreaCanvases } from "./map-layers";
 import { createOverlay, clearVertexElements, stopVertexDrag, ensureDefaultVertices } from "./edit-overlay";
-import { syncAreaRegions, cancelAreaRegionSync } from "./region-sync";
+import { syncAreaRegions } from "./region-sync";
 
 const normalizeFillOpacityPercent = (value: unknown): number => {
   if (typeof value !== "number" || !Number.isFinite(value)) return 0.14;
@@ -102,17 +96,21 @@ const addAreaOverlay = (map: AreaMap): void => {
   if (existing) existing.remove();
 
   const newContainer = createOverlay();
+  createAreaCanvases(newContainer);
   setContainer(newContainer);
   mapContainer.appendChild(newContainer);
   setCachedMapContainer(mapContainer);
 
   const handler = () => {
-    if (!editMode) return;
+    markCanvasDirtyOnMapMove();
     scheduleAreaOverlayRender(map);
   };
   setMapUpdateHandler(handler);
   for (const eventName of MAP_UPDATE_EVENTS) map.on(eventName, handler);
 
+  markRegionLayerDataDirty();
+  markRegionLayerStyleDirty();
+  markEditLayerDataDirty();
   scheduleAreaOverlayRender(map);
   console.log("🧑‍🎨 : Area measure added");
 };
@@ -128,6 +126,7 @@ const removeAreaOverlay = (map: AreaMap): void => {
   stopVertexDrag();
   clearVertexElements();
   removeAreaMapLayers(map);
+  clearAreaCanvases();
 
   container?.remove();
   setContainer(null);
@@ -180,11 +179,6 @@ export const setAreaDisplayOptions = (
 export const startAreaRegionEdit = (
   payload: AreaRegionEditStartPayload = {},
 ): void => {
-  if (CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) {
-    logCustomGeoJsonDisabled("Area edit");
-    return;
-  }
-
   const map = getMapInstanceFromWplace() as AreaMap | null;
   if (!map) {
     console.warn("🧑‍🎨 : Map instance not available for area edit");
@@ -244,12 +238,6 @@ export const respondAreaRegionEditRequest = (data: { requestId?: string }): void
 };
 
 export const setAreaMeasureEnabled = (enabled: boolean): void => {
-  if (CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) {
-    if (enabled) logCustomGeoJsonDisabled("Area display");
-    setAreaEnabled(false);
-    return;
-  }
-
   setAreaEnabled(enabled);
   const map = getMapInstanceFromWplace() as AreaMap | null;
   if (!map) {
@@ -268,8 +256,6 @@ export const setAreaMeasureEnabled = (enabled: boolean): void => {
 };
 
 export const setupAreaMeasureOnMapReady = (mapInstance: unknown): void => {
-  if (CUSTOM_GEOJSON_LAYERS_TEMPORARILY_DISABLED) return;
-
   const map = mapInstance as AreaMap;
   const onStyleData = () => {
     if (!areaEnabled) return;

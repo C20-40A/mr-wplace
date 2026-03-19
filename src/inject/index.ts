@@ -172,9 +172,8 @@ const forceStartupLocationZoom = (): void => {
           setupScaleDisplayOnMapReady(mapInstance);
 
           // Setup area measure with styledata event listener
-          // TODO: area-display is still disabled (GeoJSON layers pending raster migration)
-          // const { setupAreaMeasureOnMapReady } = await import("./features/area-display");
-          // setupAreaMeasureOnMapReady(mapInstance);
+          const { setupAreaMeasureOnMapReady } = await import("./features/area-display");
+          setupAreaMeasureOnMapReady(mapInstance);
         }
       }),
 

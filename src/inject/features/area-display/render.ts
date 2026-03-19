@@ -5,9 +5,10 @@ import {
   renderFrameId,
   setRenderFrameId,
   setPendingRenderMap,
-  svg,
+  markRegionLayerDataDirty,
+  markEditLayerDataDirty,
 } from "./state";
-import { resolveMapContainer, syncAreaRegionLayerData } from "./map-layers";
+import { resolveMapContainer, syncAreaRegionLayerData, syncAreaEditLayerData } from "./map-layers";
 import { renderEditingOverlay } from "./edit-overlay";
 
 export const cancelAreaOverlayRender = (): void => {
@@ -19,16 +20,11 @@ export const cancelAreaOverlayRender = (): void => {
 };
 
 export const renderAreaOverlayNow = (map: AreaMap): void => {
-  if (!svg) return;
-
   const mapContainer = resolveMapContainer(map);
   if (!mapContainer) return;
 
-  const width = mapContainer.clientWidth;
-  const height = mapContainer.clientHeight;
-  svg.setAttribute("viewBox", `0 0 ${Math.max(width, 1)} ${Math.max(height, 1)}`);
-
   syncAreaRegionLayerData(map);
+  syncAreaEditLayerData(map);
   renderEditingOverlay(map);
 };
 
@@ -45,4 +41,10 @@ export const scheduleAreaOverlayRender = (map: AreaMap): void => {
       renderAreaOverlayNow(nextMap);
     }),
   );
+};
+
+// map move/zoom/pitch イベントで region canvas も再描画する必要があるため dirty を立てる
+export const markCanvasDirtyOnMapMove = (): void => {
+  markRegionLayerDataDirty();
+  markEditLayerDataDirty();
 };
