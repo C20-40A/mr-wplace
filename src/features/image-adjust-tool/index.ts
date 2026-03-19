@@ -1,5 +1,5 @@
 import { t } from "@/i18n/manager";
-import { TILE_SIZE } from "@/utils/geo-converter";
+import { TILE_SIZE, latLonToPixels } from "@/utils/geo-converter";
 import {
   projectMapPixelsToScreenPoints,
   projectScreenPointsToMapPixels,
@@ -93,6 +93,15 @@ export class ImageAdjustToolMode {
   private queuedMapSync = false;
   private lastMapViewSyncAt = 0;
   private lastMetricsRequestedAt = 0;
+
+  // CSS transform approximation during map movement
+  private frameWrapper: HTMLDivElement | null = null;
+  private transformBase: {
+    centerWorldX: number;
+    centerWorldY: number;
+    zoom: number;
+    screenPerWorld: number; // screen px per world px at base zoom
+  } | null = null;
   private previewPending = false;
   private queuedPreviewMetrics: Metrics | null = null;
   private lastPreviewRequestedAt = 0;
@@ -104,9 +113,21 @@ export class ImageAdjustToolMode {
   private readonly onMapViewChanged = (event: MessageEvent): void => {
     if (event.data?.source !== "mr-wplace-map-view-changed") return;
     const settled = event.data?.settled === true;
+    const center = event.data?.center as { lng: number; lat: number } | undefined;
+    const zoom = event.data?.zoom as number | undefined;
+
     if (settled) {
+      this.clearFrameTransform();
       this.lastMapViewSyncAt = Date.now();
-      void this.syncScreenRectFromMap();
+      void this.syncScreenRectFromMap().then(() => {
+        if (center && zoom !== undefined) this.saveTransformBase(center, zoom);
+      });
+      return;
+    }
+
+    // During map movement: approximate with CSS transform, skip inject roundtrip
+    if (center && zoom !== undefined && this.transformBase) {
+      this.applyTransformApproximation(center, zoom);
       return;
     }
 
@@ -115,6 +136,45 @@ export class ImageAdjustToolMode {
     this.lastMapViewSyncAt = now;
     void this.syncScreenRectFromMap();
   };
+
+  private saveTransformBase(center: { lng: number; lat: number }, zoom: number): void {
+    if (!this.rect || !this.mapRect) return;
+    const [cx, cy] = latLonToPixels(center.lat, center.lng);
+    const screenPerWorld = this.mapRect.width > 0 ? this.rect.width / this.mapRect.width : 0;
+    if (screenPerWorld <= 0) return;
+    this.transformBase = { centerWorldX: cx, centerWorldY: cy, zoom, screenPerWorld };
+  }
+
+  private applyTransformApproximation(center: { lng: number; lat: number }, zoom: number): void {
+    const base = this.transformBase;
+    const wrapper = this.frameWrapper;
+    if (!base || !wrapper) return;
+
+    const [newCx, newCy] = latLonToPixels(center.lat, center.lng);
+    const scaleRatio = Math.pow(2, zoom - base.zoom);
+    const spwNew = base.screenPerWorld * scaleRatio;
+
+    // Frame position in screen coords:
+    //   base:    screenCenter + (worldX - baseCx) * spwBase
+    //   current: screenCenter + (worldX - newCx)  * spwNew
+    // delta = current - base = (baseCx - newCx)*spwNew + worldX*(spwNew - spwBase) - screenCenter*(scaleRatio-1)
+    // Expressed as transform on the wrapper (origin=0,0):
+    //   translate(tx, ty) scale(scaleRatio)
+    // where tx/ty account for both pan and zoom-anchor shift.
+    const screenCx = window.innerWidth / 2;
+    const screenCy = window.innerHeight / 2;
+    const tx = (base.centerWorldX - newCx) * spwNew + screenCx * (1 - scaleRatio);
+    const ty = (base.centerWorldY - newCy) * spwNew + screenCy * (1 - scaleRatio);
+
+    wrapper.style.transformOrigin = "0 0";
+    wrapper.style.transform = `translate(${tx}px, ${ty}px) scale(${scaleRatio})`;
+  }
+
+  private clearFrameTransform(): void {
+    if (!this.frameWrapper) return;
+    this.frameWrapper.style.transform = "";
+    this.frameWrapper.style.transformOrigin = "";
+  }
 
   private readonly onOverlayWheel = (event: WheelEvent): void => {
     const mapRoot = this.mapElement;
@@ -290,6 +350,8 @@ export class ImageAdjustToolMode {
     this.rect = null;
     this.mapRect = null;
     this.metrics = null;
+    this.transformBase = null;
+    this.frameWrapper = null;
     this.mapSyncPending = false;
     this.metricsPending = false;
 
@@ -390,12 +452,17 @@ export class ImageAdjustToolMode {
       onConfirm: () => void this.handleConfirm(),
     });
 
-    elements.overlay.appendChild(bar);
+    // Wrapper for map-tracking elements only (CSS transform target)
+    const frameWrapper = document.createElement("div");
+    frameWrapper.style.cssText = "position: fixed; inset: 0; pointer-events: none;";
+    frameWrapper.append(elements.frame, elements.topToolBar, elements.sizeInfo, bar);
+    elements.overlay.appendChild(frameWrapper);
     elements.overlay.appendChild(this.createDPad());
     document.body.appendChild(elements.overlay);
 
     this.elements = elements;
     this.toolButtonBar = bar;
+    this.frameWrapper = frameWrapper;
     this.panelManager = new PanelManager(
       elements.overlay,
       bar,

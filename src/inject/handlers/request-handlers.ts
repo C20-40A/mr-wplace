@@ -30,6 +30,8 @@ const MAP_VIEW_SETTLED_EVENTS = [
 type ProjectionTrackingMap = {
   on?: (event: string, handler: () => void) => void;
   off?: (event: string, handler: () => void) => void;
+  getCenter?: () => { lng: number; lat: number };
+  getZoom?: () => number;
 };
 
 let projectionTrackingEnabled = false;
@@ -38,10 +40,16 @@ let trackedMapLiveHandler: (() => void) | null = null;
 let trackedMapSettledHandler: (() => void) | null = null;
 let liveMapViewNotifyQueued = false;
 
+const getMapView = (): { center: { lng: number; lat: number }; zoom: number } | undefined => {
+  if (!trackedMap?.getCenter || !trackedMap?.getZoom) return undefined;
+  const c = trackedMap.getCenter();
+  return { center: { lng: c.lng, lat: c.lat }, zoom: trackedMap.getZoom() };
+};
+
 const notifyMapViewChanged = (settled: boolean): void => {
   if (!projectionTrackingEnabled) return;
   if (settled) {
-    window.postMessage({ source: "mr-wplace-map-view-changed", settled: true }, "*");
+    window.postMessage({ source: "mr-wplace-map-view-changed", settled: true, ...getMapView() }, "*");
     return;
   }
   if (liveMapViewNotifyQueued) return;
@@ -49,7 +57,7 @@ const notifyMapViewChanged = (settled: boolean): void => {
   requestAnimationFrame(() => {
     liveMapViewNotifyQueued = false;
     if (!projectionTrackingEnabled) return;
-    window.postMessage({ source: "mr-wplace-map-view-changed", settled: false }, "*");
+    window.postMessage({ source: "mr-wplace-map-view-changed", settled: false, ...getMapView() }, "*");
   });
 };
 
