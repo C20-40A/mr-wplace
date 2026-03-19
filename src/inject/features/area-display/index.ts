@@ -46,7 +46,7 @@ import {
   setSvg,
   setActiveDragIndex,
 } from "./state";
-import { scheduleAreaOverlayRender, cancelAreaOverlayRender, markCanvasDirtyOnMapMove } from "./render";
+import { scheduleAreaOverlayRender, cancelAreaOverlayRender, handleMapMoveTransform } from "./render";
 import { removeAreaMapLayers, resolveMapContainer, createAreaCanvases, clearAreaCanvases } from "./map-layers";
 import { createOverlay, clearVertexElements, stopVertexDrag, ensureDefaultVertices } from "./edit-overlay";
 import { syncAreaRegions } from "./region-sync";
@@ -102,8 +102,7 @@ const addAreaOverlay = (map: AreaMap): void => {
   setCachedMapContainer(mapContainer);
 
   const handler = () => {
-    markCanvasDirtyOnMapMove();
-    scheduleAreaOverlayRender(map);
+    handleMapMoveTransform(map);
   };
   setMapUpdateHandler(handler);
   for (const eventName of MAP_UPDATE_EVENTS) map.on(eventName, handler);

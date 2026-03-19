@@ -25,6 +25,11 @@ import { hexToRgb, getContrastTextColor, getNeutralLabelHaloColor } from "./labe
 let regionCanvas: HTMLCanvasElement | null = null;
 let editCanvas: HTMLCanvasElement | null = null;
 
+// --- CSS transform optimization state ---
+let refAnchor: { lng: number; lat: number } | null = null;
+let refAnchorScreen: { x: number; y: number } | null = null;
+let refZoom = 0;
+
 export const getRegionCanvas = (): HTMLCanvasElement | null => regionCanvas;
 export const getEditCanvas = (): HTMLCanvasElement | null => editCanvas;
 
@@ -34,12 +39,12 @@ export const createAreaCanvases = (container: HTMLDivElement): void => {
 
   const region = document.createElement("canvas");
   region.className = "mr-wplace-area-canvas";
-  region.style.cssText = `position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;`;
+  region.style.cssText = `position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; transform-origin: 0 0; will-change: transform;`;
   container.insertBefore(region, container.firstChild);
 
   const edit = document.createElement("canvas");
   edit.className = "mr-wplace-area-canvas";
-  edit.style.cssText = `position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2;`;
+  edit.style.cssText = `position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; transform-origin: 0 0; will-change: transform;`;
   container.insertBefore(edit, container.firstChild?.nextSibling ?? null);
 
   regionCanvas = region;
@@ -49,6 +54,9 @@ export const createAreaCanvases = (container: HTMLDivElement): void => {
 export const clearAreaCanvases = (): void => {
   regionCanvas = null;
   editCanvas = null;
+  refAnchor = null;
+  refAnchorScreen = null;
+  refZoom = 0;
 };
 
 const resizeCanvas = (canvas: HTMLCanvasElement, width: number, height: number): void => {
@@ -77,6 +85,39 @@ const drawPolygon = (
 };
 
 const parseFontSize = (): number => Math.max(8, Math.min(48, areaNameFontSizePx));
+
+const storeReferenceState = (map: AreaMap): void => {
+  const center = map.getCenter();
+  refAnchor = center;
+  refAnchorScreen = map.project(center);
+  refZoom = map.getZoom?.() ?? 0;
+  if (regionCanvas) regionCanvas.style.transform = "";
+  if (editCanvas) editCanvas.style.transform = "";
+};
+
+// Apply CSS transform to approximate map movement without full re-render.
+// Cost: 1 map.project() call instead of O(regions × vertices).
+export const applyMapTransform = (map: AreaMap): boolean => {
+  if (!refAnchor || !refAnchorScreen) return false;
+
+  const currentScreen = map.project(refAnchor);
+  const currentZoom = map.getZoom?.() ?? 0;
+  const scale = refZoom ? Math.pow(2, currentZoom - refZoom) : 1;
+
+  // For large zoom changes, transform distortion is too visible — force full re-render
+  if (Math.abs(currentZoom - refZoom) > 2) return false;
+
+  const nx = currentScreen.x;
+  const ny = currentScreen.y;
+  const rx = refAnchorScreen.x;
+  const ry = refAnchorScreen.y;
+
+  // translate(-rx, -ry) → scale(s) → translate(nx, ny)
+  const transform = `translate(${nx - rx * scale}px, ${ny - ry * scale}px) scale(${scale})`;
+  if (regionCanvas) regionCanvas.style.transform = transform;
+  if (editCanvas) editCanvas.style.transform = transform;
+  return true;
+};
 
 // --- region layer canvas rendering ---
 export const syncAreaRegionLayerData = (map: AreaMap): void => {
@@ -185,6 +226,9 @@ export const syncAreaRegionLayerData = (map: AreaMap): void => {
 
   setRegionLayerDataDirty(false);
   setRegionLayerStyleDirty(false);
+
+  // store reference state for CSS transform optimization
+  storeReferenceState(map);
 };
 
 // --- edit layer canvas rendering ---
