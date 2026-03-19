@@ -6,340 +6,6 @@ import edgeLogo from "./assets/microsoft-edge-logo.svg";
 import androidLogo from "./assets/android-logo.svg";
 import iosLogo from "./assets/ios-logo.svg";
 
-const APP_STYLES = `
-/* ── Reset / Base ── */
-* { box-sizing: border-box; }
-
-/* ── Nav ── */
-.nav {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 32px;
-  height: 56px;
-  background: color-mix(in srgb, var(--background) 80%, transparent);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
-  gap: 16px;
-}
-.nav-brand {
-  font-weight: 600;
-  font-size: 16px;
-  color: var(--foreground);
-  letter-spacing: -0.3px;
-  flex-shrink: 0;
-}
-.nav-browsers {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.nav-browser-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  color: var(--foreground);
-  font-size: 13px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: background 0.2s, border-color 0.2s;
-}
-.nav-browser-link:hover {
-  background: var(--brand-bg);
-  border-color: var(--brand-border);
-}
-
-/* ── Hero ── */
-.hero-section {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 48px;
-  padding: 80px 32px 96px;
-  overflow: hidden;
-  min-height: calc(100svh - 56px);
-}
-
-.hero-content {
-  flex: 1 1 340px;
-  max-width: 600px;
-  transition: opacity 0.7s ease, transform 0.7s ease;
-}
-.hero-badge {
-  display: inline-block;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: var(--brand);
-  background: var(--brand-bg);
-  border: 1px solid var(--brand-border);
-  border-radius: 100px;
-  padding: 4px 12px;
-  margin-bottom: 20px;
-}
-.hero-title {
-  font-size: clamp(40px, 6vw, 68px);
-  font-weight: 700;
-  letter-spacing: -2px;
-  line-height: 1.05;
-  color: var(--foreground);
-  margin: 0 0 20px;
-}
-.gradient-text {
-  background: linear-gradient(135deg, var(--foreground), var(--muted-foreground));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.hero-sub {
-  font-size: 18px;
-  line-height: 1.6;
-  color: var(--muted-foreground);
-  margin-bottom: 36px;
-}
-.hero-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 24px;
-}
-.hero-see-features {
-  font-size: 14px;
-  color: var(--muted-foreground);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-.hero-see-features:hover { color: var(--foreground); }
-
-/* ── Browser Buttons ── */
-.btn-browser {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--muted) 60%, transparent);
-  color: var(--foreground);
-  font-weight: 500;
-  font-size: 14px;
-  text-decoration: none;
-  transition: background 0.2s, border-color 0.2s, transform 0.2s;
-}
-.btn-browser:hover {
-  background: var(--brand-bg);
-  border-color: var(--brand-border);
-  transform: translateY(-1px);
-}
-
-/* ── Buttons ── */
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 28px;
-  border-radius: 10px;
-  background: var(--brand);
-  color: #fff;
-  font-weight: 600;
-  font-size: 16px;
-  text-decoration: none;
-  transition: opacity 0.2s, transform 0.2s;
-}
-.btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
-.btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  padding: 12px 24px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  color: var(--foreground);
-  font-size: 16px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: background 0.2s;
-}
-.btn-ghost:hover { background: var(--brand-bg); }
-
-/* ── Features ── */
-.features-section {
-  padding: 80px 32px;
-  border-top: 1px solid var(--border);
-}
-.section-header {
-  text-align: center;
-  margin-bottom: 56px;
-}
-.section-header h2 {
-  font-size: clamp(28px, 4vw, 42px);
-  font-weight: 700;
-  letter-spacing: -1px;
-  color: var(--foreground);
-  margin: 0 0 12px;
-}
-.section-header p {
-  font-size: 18px;
-  color: var(--muted-foreground);
-}
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 20px;
-  max-width: 960px;
-  margin: 0 auto;
-}
-.feature-card {
-  padding: 28px 24px;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--muted) 50%, transparent);
-  transition: opacity 0.5s ease, transform 0.5s ease, box-shadow 0.25s;
-  text-align: left;
-}
-.feature-card:hover {
-  box-shadow: var(--shadow);
-  border-color: var(--brand-border);
-}
-.feature-icon {
-  font-size: 28px;
-  display: block;
-  margin-bottom: 14px;
-}
-.feature-card h3 {
-  font-size: 17px;
-  font-weight: 600;
-  color: var(--foreground);
-  margin: 0 0 8px;
-}
-.feature-card p {
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--muted-foreground);
-}
-
-/* ── Mobile ── */
-.mobile-section {
-  padding: 80px 32px;
-  border-top: 1px solid var(--border);
-}
-.mobile-inner {
-  max-width: 960px;
-  margin: 0 auto;
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
-.mobile-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 20px;
-}
-.mobile-platform-card {
-  padding: 28px 24px;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--muted) 50%, transparent);
-}
-.mobile-platform-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 17px;
-  font-weight: 600;
-  color: var(--foreground);
-  margin-bottom: 18px;
-}
-.mobile-steps {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.mobile-steps li {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.mobile-browser-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--brand);
-  text-decoration: none;
-}
-.mobile-browser-name:hover { text-decoration: underline; }
-.mobile-step-desc {
-  font-size: 13px;
-  color: var(--muted-foreground);
-  line-height: 1.55;
-}
-
-/* ── CTA ── */
-.cta-section {
-  padding: 80px 32px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  justify-content: center;
-}
-.cta-box {
-  max-width: 600px;
-  width: 100%;
-  text-align: center;
-  padding: 56px 40px;
-  border: 1px solid var(--brand-border);
-  border-radius: 24px;
-  background: var(--brand-bg);
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
-.cta-box h2 {
-  font-size: 36px;
-  font-weight: 700;
-  letter-spacing: -0.8px;
-  color: var(--foreground);
-  margin: 0 0 12px;
-}
-.cta-box p {
-  font-size: 16px;
-  color: var(--muted-foreground);
-  margin-bottom: 32px;
-}
-.cta-browsers {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-/* ── Footer ── */
-.footer {
-  padding: 24px 32px;
-  border-top: 1px solid var(--border);
-  text-align: center;
-  font-size: 13px;
-  color: var(--muted-foreground);
-}
-
-/* ── Responsive ── */
-@media (max-width: 640px) {
-  .nav { padding: 0 16px; }
-  .nav-browser-name { display: none; }
-  .nav-browser-link { padding: 5px 8px; }
-  .hero-section { padding: 48px 16px 64px; gap: 32px; }
-  .hero-sub br { display: none; }
-  .features-section, .cta-section, .mobile-section { padding: 56px 16px; }
-  .cta-box { padding: 36px 20px; }
-  .mobile-grid { grid-template-columns: 1fr; }
-}
-`;
-
 const FEATURES = [
   {
     icon: "🖼️",
@@ -373,7 +39,7 @@ const FEATURES = [
   },
 ];
 
-const BROWSERS = [
+const BROWSERS: BrowserEntry[] = [
   {
     name: "Chrome",
     href: "https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej",
@@ -391,11 +57,19 @@ const BROWSERS = [
   },
 ];
 
-const MOBILE_ITEMS: {
+interface BrowserEntry {
+  name: string;
+  href: string;
+  icon: React.ReactNode;
+}
+
+interface MobilePlatform {
   platform: string;
   icon: React.ReactNode;
   items: { browser: string; desc: string; href: string }[];
-}[] = [
+}
+
+const MOBILE_ITEMS: MobilePlatform[] = [
   {
     platform: "Android",
     icon: <img src={androidLogo} width="20" height="20" alt="Android" />,
@@ -438,12 +112,14 @@ function FeatureCard({
 }) {
   return (
     <div
-      className="feature-card reveal"
+      className="reveal border border-border rounded-2xl p-7 px-6 text-left transition-[opacity,transform,box-shadow] duration-500 ease-out hover:shadow-(--shadow) hover:border-(--brand-border) [background:color-mix(in_srgb,var(--muted)_50%,transparent)]"
       style={{ "--delay": `${delay}ms` } as React.CSSProperties}
     >
-      <span className="feature-icon">{icon}</span>
-      <h3>{title}</h3>
-      <p>{desc}</p>
+      <span className="text-[28px] block mb-3.5">{icon}</span>
+      <h3 className="text-[17px] font-semibold text-foreground m-0 mb-2">
+        {title}
+      </h3>
+      <p className="text-sm leading-relaxed text-muted-foreground">{desc}</p>
     </div>
   );
 }
@@ -467,38 +143,31 @@ export default function App() {
 
   return (
     <>
-      <style>{APP_STYLES}</style>
-
       {/* Nav */}
-      <nav className="nav">
-        <span className="nav-brand">Mr. Wplace</span>
-        <div className="nav-browsers">
+      <nav className="sticky top-0 z-50 flex items-center justify-between px-8 h-14 gap-4 border-b border-border backdrop-blur-md [background:color-mix(in_srgb,var(--background)_80%,transparent)] sm:px-4">
+        <span className="font-semibold text-base text-foreground tracking-[-0.3px] shrink-0">
+          Mr. Wplace
+        </span>
+        <div className="flex items-center gap-2">
           {BROWSERS.map((b) => (
             <a
               key={b.name}
-              className="nav-browser-link"
               href={b.href}
               target="_blank"
               rel="noopener noreferrer"
               title={`Install for ${b.name}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.25 rounded-lg border border-border text-foreground text-[13px] font-medium no-underline transition-[background,border-color] duration-200 hover:[background:var(--brand-bg)] hover:border-(--brand-border) sm:px-2"
             >
               {b.icon}
-              <span className="nav-browser-name">{b.name}</span>
+              <span className="sm:hidden">{b.name}</span>
             </a>
           ))}
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="hero-section">
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 0,
-            pointerEvents: "none",
-          }}
-        >
+      <section className="relative flex flex-wrap items-center justify-center gap-12 px-8 py-20 pb-24 overflow-hidden min-h-[calc(100svh-56px)] sm:px-4 sm:py-12 sm:pb-16 sm:gap-8">
+        <div className="absolute inset-0 z-0 pointer-events-none">
           <PixelSnow
             color="#ffffff"
             flakeSize={0.03}
@@ -514,45 +183,58 @@ export default function App() {
             variant="square"
           />
         </div>
-        <div className="hero-content reveal">
-          <div className="hero-badge">Chrome / Firefox / Edge Extension</div>
-          <h1 className="hero-title">
-            Draw smarter on
-            <br />
-            <span className="gradient-text">Wplace</span>
+        <div className="reveal flex-[1_1_340px] max-w-150 transition-[opacity,transform] duration-700 ease-out">
+          <div className="inline-block text-xs font-medium tracking-[0.5px] uppercase text-(--brand) [background:var(--brand-bg)] border border-(--brand-border) rounded-full px-3 py-1 mb-5">
+            Chrome / Firefox / Edge Extension
+          </div>
+          <h1 className="text-[clamp(40px,6vw,68px)] font-bold tracking-[-2px] leading-[1.05] text-foreground m-0 mb-3">
+            Mr. Wplace
           </h1>
-          <p className="hero-sub">
+          <p className="text-[clamp(20px,3vw,28px)] font-semibold tracking-[-0.5px] text-muted-foreground m-0 mb-5">
+            Draw smarter on Wplace.
+          </p>
+          <p className="text-lg leading-relaxed text-muted-foreground mb-9">
             Overlay images, track colors, manage areas, and travel through time
-            —<br />
+            —<br className="sm:hidden" />
             all without leaving the map.
           </p>
-          <div className="hero-actions">
+          <div className="flex gap-2.5 flex-wrap mb-6">
             {BROWSERS.map((b) => (
               <a
                 key={b.name}
-                className="btn-browser"
                 href={b.href}
                 target="_blank"
                 rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[10px] border border-border [background:color-mix(in_srgb,var(--muted)_60%,transparent)] text-foreground font-medium text-sm no-underline transition-[background,border-color,transform] duration-200 hover:[background:var(--brand-bg)] hover:border-(--brand-border) hover:-translate-y-px"
               >
                 {b.icon}
                 <span>Add to {b.name}</span>
               </a>
             ))}
           </div>
-          <a className="hero-see-features" href="#features">
+          <a
+            href="#features"
+            className="text-sm text-muted-foreground no-underline transition-colors duration-200 hover:text-foreground"
+          >
             See Features ↓
           </a>
         </div>
       </section>
 
       {/* Features */}
-      <section id="features" className="features-section">
-        <div className="section-header">
-          <h2>Everything you need</h2>
-          <p>A full toolkit built for Wplace collaborators.</p>
+      <section
+        id="features"
+        className="px-8 py-20 border-t border-border sm:px-4 sm:py-14"
+      >
+        <div className="text-center mb-14">
+          <h2 className="text-[clamp(28px,4vw,42px)] font-bold tracking-[-1px] text-foreground m-0 mb-3">
+            Everything you need
+          </h2>
+          <p className="text-lg text-muted-foreground">
+            A full toolkit built for Wplace collaborators.
+          </p>
         </div>
-        <div className="features-grid">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-5 max-w-240 mx-auto">
           {FEATURES.map((f, i) => (
             <FeatureCard key={f.title} {...f} delay={i * 70} />
           ))}
@@ -560,31 +242,43 @@ export default function App() {
       </section>
 
       {/* Mobile */}
-      <section id="mobile" className="mobile-section">
-        <div className="mobile-inner reveal">
-          <div className="section-header">
-            <h2>Mobile Support</h2>
-            <p>Use Mr. Wplace on your phone too.</p>
+      <section
+        id="mobile"
+        className="px-8 py-20 border-t border-border sm:px-4 sm:py-14"
+      >
+        <div className="reveal max-w-240 mx-auto transition-[opacity,transform] duration-600 ease-out">
+          <div className="text-center mb-14">
+            <h2 className="text-[clamp(28px,4vw,42px)] font-bold tracking-[-1px] text-foreground m-0 mb-3">
+              Mobile Support
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Bring Mr. Wplace to Android &amp; iOS.
+            </p>
           </div>
-          <div className="mobile-grid">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-5 sm:grid-cols-[1fr]">
             {MOBILE_ITEMS.map((platform) => (
-              <div key={platform.platform} className="mobile-platform-card">
-                <div className="mobile-platform-title">
+              <div
+                key={platform.platform}
+                className="p-7 px-6 border border-border rounded-2xl [background:color-mix(in_srgb,var(--muted)_50%,transparent)]"
+              >
+                <div className="flex items-center gap-2.5 text-[17px] font-semibold text-foreground mb-4.5">
                   <span>{platform.icon}</span>
                   <span>{platform.platform}</span>
                 </div>
-                <ul className="mobile-steps">
+                <ul className="list-none p-0 m-0 flex flex-col gap-3.5">
                   {platform.items.map((item) => (
-                    <li key={item.browser}>
+                    <li key={item.browser} className="flex flex-col gap-1">
                       <a
                         href={item.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mobile-browser-name"
+                        className="text-sm font-semibold text-(--brand) no-underline hover:underline"
                       >
                         {item.browser}
                       </a>
-                      <span className="mobile-step-desc">{item.desc}</span>
+                      <span className="text-[13px] text-muted-foreground leading-[1.55]">
+                        {item.desc}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -595,18 +289,22 @@ export default function App() {
       </section>
 
       {/* CTA */}
-      <section className="cta-section">
-        <div className="cta-box reveal">
-          <h2>Ready to start?</h2>
-          <p>Free. No account needed. Works on Chrome, Firefox &amp; Edge.</p>
-          <div className="cta-browsers">
+      <section className="px-8 py-20 border-t border-border flex justify-center sm:px-4 sm:py-14">
+        <div className="reveal w-full max-w-150 text-center px-10 py-14 border border-(--brand-border) rounded-3xl [background:var(--brand-bg)] transition-[opacity,transform] duration-600 ease-out sm:px-5 sm:py-9">
+          <h2 className="text-[36px] font-bold tracking-[-0.8px] text-foreground m-0 mb-3">
+            Ready to start?
+          </h2>
+          <p className="text-base text-muted-foreground mb-8">
+            Free. No account needed. Works on Chrome, Firefox &amp; Edge.
+          </p>
+          <div className="flex gap-2.5 flex-wrap justify-center">
             {BROWSERS.map((b) => (
               <a
                 key={b.name}
-                className="btn-browser"
                 href={b.href}
                 target="_blank"
                 rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[10px] border border-border [background:color-mix(in_srgb,var(--muted)_60%,transparent)] text-foreground font-medium text-sm no-underline transition-[background,border-color,transform] duration-200 hover:[background:var(--brand-bg)] hover:border-(--brand-border) hover:-translate-y-px"
               >
                 {b.icon}
                 <span>Add to {b.name}</span>
@@ -616,8 +314,8 @@ export default function App() {
         </div>
       </section>
 
-      <footer className="footer">
-        <span>© 2026 Mr. Wplace</span>
+      <footer className="px-8 py-6 border-t border-border text-center text-[13px] text-muted-foreground">
+        <span>© 2026 C20</span>
       </footer>
     </>
   );

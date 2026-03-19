@@ -176,6 +176,16 @@
   }
 }
 
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+}
+.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: var(--delay, 0ms);
+}
+
 #root {
   width: 100%;
   min-height: 100svh;
