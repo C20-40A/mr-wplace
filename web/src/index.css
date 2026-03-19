@@ -34,10 +34,10 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  /* brand color (purple) */
-  --brand: #aa3bff;
-  --brand-bg: rgba(170, 59, 255, 0.1);
-  --brand-border: rgba(170, 59, 255, 0.5);
+  /* brand color (white/black) */
+  --brand: oklch(0.2 0 0);
+  --brand-bg: oklch(0 0 0 / 0.06);
+  --brand-border: oklch(0 0 0 / 0.18);
 
   --shadow:
     rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
@@ -83,10 +83,10 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 
-  /* brand color (purple) */
-  --brand: #c084fc;
-  --brand-bg: rgba(192, 132, 252, 0.15);
-  --brand-border: rgba(192, 132, 252, 0.5);
+  /* brand color (white/black) */
+  --brand: oklch(0.96 0 0);
+  --brand-bg: oklch(1 0 0 / 0.08);
+  --brand-border: oklch(1 0 0 / 0.25);
 
   --shadow:
     rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
@@ -113,9 +113,9 @@
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.556 0 0);
 
-    --brand: #c084fc;
-    --brand-bg: rgba(192, 132, 252, 0.15);
-    --brand-border: rgba(192, 132, 252, 0.5);
+    --brand: oklch(0.96 0 0);
+    --brand-bg: oklch(1 0 0 / 0.08);
+    --brand-border: oklch(1 0 0 / 0.25);
 
     --shadow:
       rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
