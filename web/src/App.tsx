@@ -189,12 +189,23 @@ export default function App() {
             Browser Extension
           </div>
           <div className="mb-4">
-            <h1 className="text-[clamp(36px,5.5vw,60px)] font-bold tracking-[-1.5px] leading-[1.08] text-foreground m-0">
-              Mr. Wplace
-            </h1>
-            <p className="text-[clamp(17px,2.5vw,22px)] font-medium tracking-[-0.3px] text-muted-foreground m-0 leading-snug">
-              Draw smarter on Wplace.
-            </p>
+            <div className="flex items-center gap-4 max-sm:gap-2.5">
+              <img
+                src={misterIcon}
+                alt="Mr. Wplace"
+                width={256}
+                height={256}
+                className="w-24 h-24 max-sm:w-14 max-sm:h-14 [image-rendering:pixelated] drop-shadow-[0_0_20px_rgba(134,59,255,0.3)] shrink-0"
+              />
+              <div>
+                <h1 className="text-[clamp(36px,5.5vw,60px)] font-bold tracking-[-1.5px] leading-[1.08] text-foreground m-0">
+                  Mr. Wplace
+                </h1>
+                <p className="text-[clamp(17px,2.5vw,22px)] font-medium tracking-[-0.3px] text-muted-foreground m-0 leading-snug">
+                  Draw smarter on Wplace.
+                </p>
+              </div>
+            </div>
           </div>
           <p className="text-[15px] leading-[1.7] text-muted-foreground mb-8 max-w-100">
             Overlay images, track colors, manage areas, and travel through time
@@ -220,15 +231,6 @@ export default function App() {
           >
             See Features ↓
           </a>
-        </div>
-        <div className="reveal shrink-0 transition-[opacity,transform] duration-700 ease-out sm:-order-1">
-          <img
-            src={misterIcon}
-            alt="Mr. Wplace"
-            width={128}
-            height={128}
-            className="[image-rendering:pixelated] drop-shadow-[0_0_40px_rgba(134,59,255,0.3)]"
-          />
         </div>
       </section>
 
