@@ -20,6 +20,7 @@ import {
   type ActiveInteraction,
   type Metrics,
   type FrameElements,
+  type ResizeHandleCorner,
 } from "./frame";
 import {
   PROCESSING_DEBOUNCE_MS,
@@ -213,7 +214,11 @@ export class ImageAdjustToolMode {
     const frame = this.elements?.frame;
     if (!frame || !this.rect) return;
     if (event.button !== 0) return;
-    if (event.target === this.elements?.resizeHandle) return;
+    if (
+      event.target instanceof HTMLElement &&
+      event.target.closest("[data-resize-handle='true']")
+    )
+      return;
 
     this.activeInteraction = {
       type: "drag",
@@ -230,6 +235,11 @@ export class ImageAdjustToolMode {
     const frame = this.elements?.frame;
     if (!frame || !this.rect) return;
     if (event.button !== 0) return;
+    if (!(event.currentTarget instanceof HTMLElement)) return;
+
+    const resizeCorner = event.currentTarget.dataset
+      .resizeCorner as ResizeHandleCorner | undefined;
+    if (!resizeCorner) return;
 
     this.activeInteraction = {
       type: "resize",
@@ -237,6 +247,7 @@ export class ImageAdjustToolMode {
       startClientY: event.clientY,
       startRect: { ...this.rect },
       pointerId: event.pointerId,
+      resizeCorner,
     };
     frame.setPointerCapture(event.pointerId);
     event.preventDefault();
@@ -263,13 +274,33 @@ export class ImageAdjustToolMode {
     }
 
     const startRect = this.activeInteraction.startRect;
-    const nextWidth = Math.max(MIN_FRAME_WIDTH, startRect.width + dx);
+    const resizeCorner = this.activeInteraction.resizeCorner ?? "bottom-right";
+    const widthDeltaMap: Record<ResizeHandleCorner, number> = {
+      "top-left": -dx,
+      "top-right": dx,
+      "bottom-left": -dx,
+      "bottom-right": dx,
+    };
+    const nextWidth = Math.max(
+      MIN_FRAME_WIDTH,
+      startRect.width + widthDeltaMap[resizeCorner],
+    );
+    const nextHeight = nextWidth / this.aspectRatio;
+    const nextX =
+      resizeCorner === "top-left" || resizeCorner === "bottom-left"
+        ? startRect.x + (startRect.width - nextWidth)
+        : startRect.x;
+    const nextY =
+      resizeCorner === "top-left" || resizeCorner === "top-right"
+        ? startRect.y + (startRect.height - nextHeight)
+        : startRect.y;
+
     this.applyRect(
       this.getClampedRect({
-        x: startRect.x,
-        y: startRect.y,
+        x: nextX,
+        y: nextY,
         width: nextWidth,
-        height: nextWidth / this.aspectRatio,
+        height: nextHeight,
       }),
     );
     this.requestMetricsUpdate();
@@ -477,14 +508,16 @@ export class ImageAdjustToolMode {
   }
 
   private mountEvents(): void {
-    const { frame, resizeHandle, topToolBar, closeButton, confirmButton } =
+    const { frame, resizeHandles, topToolBar, closeButton, confirmButton } =
       this.elements!;
     frame.addEventListener("pointerdown", this.onFramePointerDown);
     frame.addEventListener("wheel", this.onOverlayWheel, { passive: false });
     topToolBar.addEventListener("wheel", this.onOverlayWheel, {
       passive: false,
     });
-    resizeHandle.addEventListener("pointerdown", this.onResizePointerDown);
+    Object.values(resizeHandles).forEach((handle) => {
+      handle.addEventListener("pointerdown", this.onResizePointerDown);
+    });
     closeButton.addEventListener("wheel", this.onOverlayWheel, {
       passive: false,
     });
@@ -509,10 +542,9 @@ export class ImageAdjustToolMode {
     const el = this.elements;
     el?.frame.removeEventListener("pointerdown", this.onFramePointerDown);
     el?.frame.removeEventListener("wheel", this.onOverlayWheel);
-    el?.resizeHandle.removeEventListener(
-      "pointerdown",
-      this.onResizePointerDown,
-    );
+    Object.values(el?.resizeHandles ?? {}).forEach((handle) => {
+      handle.removeEventListener("pointerdown", this.onResizePointerDown);
+    });
     el?.topToolBar.removeEventListener("wheel", this.onOverlayWheel);
     el?.closeButton.removeEventListener("wheel", this.onOverlayWheel);
     el?.confirmButton.removeEventListener("wheel", this.onOverlayWheel);

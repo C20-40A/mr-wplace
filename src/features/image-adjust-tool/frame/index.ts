@@ -15,6 +15,7 @@ export const DEFAULT_IMAGE_OPACITY = 100;
 
 export type Rect = { x: number; y: number; width: number; height: number };
 export type InteractionType = "drag" | "resize";
+export type ResizeHandleCorner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 
 export type ActiveInteraction = {
   type: InteractionType;
@@ -22,6 +23,7 @@ export type ActiveInteraction = {
   startClientY: number;
   startRect: Rect;
   pointerId: number;
+  resizeCorner?: ResizeHandleCorner;
 };
 
 export type Metrics = {
@@ -42,12 +44,13 @@ const STYLES = {
   `,
   frame: `
     position: fixed;
-    border: 1px solid;
-    overflow: hidden;
+    border: 1.5px dashed rgba(37, 99, 235, 0.95);
+    overflow: visible;
     pointer-events: auto;
     touch-action: none;
     user-select: none;
     cursor: move;
+    box-sizing: border-box;
   `,
   image: `
     width: 100%;
@@ -60,16 +63,14 @@ const STYLES = {
   `,
   resizeHandle: `
     position: absolute;
-    right: 0.2rem;
-    bottom: 0.2rem;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     border-radius: 999px;
-    background: rgba(37, 99, 235, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.95);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-    cursor: nwse-resize;
+    background: #fff;
+    border: 2px solid rgba(37, 99, 235, 0.95);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
     pointer-events: auto;
+    box-sizing: border-box;
   `,
   topToolBar: `
     position: fixed;
@@ -138,7 +139,7 @@ export type FrameElements = {
   overlay: HTMLDivElement;
   frame: HTMLDivElement;
   frameImage: HTMLImageElement;
-  resizeHandle: HTMLDivElement;
+  resizeHandles: Record<ResizeHandleCorner, HTMLDivElement>;
   topToolBar: HTMLDivElement;
   sizeInfo: HTMLDivElement;
   opacitySlider: HTMLInputElement;
@@ -165,7 +166,44 @@ export const createFrameElements = (options: {
   frameImage.draggable = false;
   frameImage.alt = "adjust-target";
 
-  const resizeHandle = createElement("div", { style: STYLES.resizeHandle });
+  const createResizeHandle = (
+    corner: ResizeHandleCorner,
+    extraStyle: string,
+    cursor: string,
+  ): HTMLDivElement => {
+    const handle = createElement("div", {
+      style: `${STYLES.resizeHandle}${extraStyle}cursor: ${cursor};`,
+      attributes: {
+        "data-resize-handle": "true",
+        "data-resize-corner": corner,
+      },
+    });
+    handle.setAttribute("aria-hidden", "true");
+    return handle;
+  };
+
+  const resizeHandles: Record<ResizeHandleCorner, HTMLDivElement> = {
+    "top-left": createResizeHandle(
+      "top-left",
+      "left: 0; top: 0; transform: translate(-50%, -50%);",
+      "nwse-resize",
+    ),
+    "top-right": createResizeHandle(
+      "top-right",
+      "right: 0; top: 0; transform: translate(50%, -50%);",
+      "nesw-resize",
+    ),
+    "bottom-left": createResizeHandle(
+      "bottom-left",
+      "left: 0; bottom: 0; transform: translate(-50%, 50%);",
+      "nesw-resize",
+    ),
+    "bottom-right": createResizeHandle(
+      "bottom-right",
+      "right: 0; bottom: 0; transform: translate(50%, 50%);",
+      "nwse-resize",
+    ),
+  };
 
   const sizeInfo = createElement("div", { style: STYLES.sizeInfo });
   sizeInfo.textContent = options.sizeLabelText;
@@ -210,14 +248,14 @@ export const createFrameElements = (options: {
   confirmButton.type = "button";
   confirmButton.addEventListener("click", options.onConfirm);
 
-  frame.append(frameImage, resizeHandle);
+  frame.append(frameImage, ...Object.values(resizeHandles));
   overlay.append(frame, topToolBar, sizeInfo, closeButton, confirmButton);
 
   return {
     overlay,
     frame,
     frameImage,
-    resizeHandle,
+    resizeHandles,
     topToolBar,
     sizeInfo,
     opacitySlider,
