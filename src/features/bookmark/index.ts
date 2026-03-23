@@ -511,8 +511,10 @@ const setupModal = (): void => {
   setupColorPickerHandlers(modal);
   setupBottomTabHandlers(modal);
 
-  // Add tutorial button to modal
-  tutorial.createButton(container);
+  // Add tutorial button next to the modal title in bookmark list
+  tutorial.createButton(modalElements.titleElement.parentElement!, {
+    placement: "inline",
+  });
 };
 
 const createMapPinButtons = (container: Element): void => {

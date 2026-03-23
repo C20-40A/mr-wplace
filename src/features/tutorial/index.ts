@@ -9,6 +9,10 @@ interface TutorialItem {
   steps: string[];
 }
 
+interface TutorialButtonOptions {
+  placement?: "floating" | "inline";
+}
+
 /**
  * チュートリアル機能
  * ギャラリーなどの画面にチュートリアルボタンを表示し、モーダルでチュートリアルを表示
@@ -79,24 +83,29 @@ export class Tutorial {
   /**
    * チュートリアルボタンを作成して、指定されたコンテナに追加
    */
-  createButton(container: HTMLElement): HTMLButtonElement {
+  createButton(
+    container: HTMLElement,
+    options: TutorialButtonOptions = {},
+  ): HTMLButtonElement {
+    const { placement = "floating" } = options;
+
     // 既にボタンが存在する場合は再利用
     if (this.button) {
       if (this.button.parentElement !== container) {
         container.appendChild(this.button);
       }
+      this.applyButtonStyle(placement);
       return this.button;
     }
 
     this.button = document.createElement("button");
     this.button.className = "btn btn-circle btn-sm btn-ghost";
-    this.button.style.cssText =
-      "position: fixed; bottom: 1rem; left: 1rem; z-index: 10; opacity: 0.4; transition: opacity 0.2s;";
     this.button.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
         <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm11.378-3.917c-.89-.777-2.366-.777-3.255 0a.75.75 0 01-.988-1.129c1.454-1.272 3.776-1.272 5.23 0 1.513 1.324 1.513 3.518 0 4.842a3.75 3.75 0 01-.837.552c-.676.328-1.028.774-1.028 1.152v.75a.75.75 0 01-1.5 0v-.75c0-1.279 1.06-2.107 1.875-2.502.182-.088.351-.199.503-.331.83-.727.83-1.857 0-2.584zM12 18a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
       </svg>
     `;
+    this.applyButtonStyle(placement);
 
     this.button.addEventListener("mouseenter", this.handleMouseEnter);
     this.button.addEventListener("mouseleave", this.handleMouseLeave);
@@ -104,6 +113,19 @@ export class Tutorial {
 
     container.appendChild(this.button);
     return this.button;
+  }
+
+  private applyButtonStyle(placement: "floating" | "inline"): void {
+    if (!this.button) return;
+
+    if (placement === "inline") {
+      this.button.style.cssText =
+        "position: static; z-index: auto; opacity: 0.7; transition: opacity 0.2s; flex-shrink: 0;";
+      return;
+    }
+
+    this.button.style.cssText =
+      "position: fixed; bottom: 1rem; left: 1rem; z-index: 10; opacity: 0.4; transition: opacity 0.2s;";
   }
 
   /**
