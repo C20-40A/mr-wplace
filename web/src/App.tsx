@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import PixelSnow from "./components/PixelSnow";
 import misterIcon from "./assets/mister-icon.png";
+import bgImg from "./assets/bg-img.webp";
 import chromeLogo from "./assets/chrome-logo.svg";
 import firefoxLogo from "./assets/firefox0logo.svg";
 import edgeLogo from "./assets/microsoft-edge-logo.svg";
@@ -157,10 +158,9 @@ export default function App() {
               target="_blank"
               rel="noopener noreferrer"
               title={`Install for ${b.name}`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.25 rounded-lg border border-border text-foreground text-[13px] font-medium no-underline transition-[background,border-color] duration-200 hover:[background:var(--brand-bg)] hover:border-(--brand-border) sm:px-2"
+              className="inline-flex items-center p-1.5 rounded-lg border border-border text-foreground no-underline transition-[background,border-color] duration-200 hover:[background:var(--brand-bg)] hover:border-(--brand-border)"
             >
               {b.icon}
-              <span className="sm:hidden">{b.name}</span>
             </a>
           ))}
         </div>
@@ -168,6 +168,10 @@ export default function App() {
 
       {/* Hero */}
       <section className="relative flex flex-wrap items-center justify-center gap-12 px-8 py-20 pb-24 overflow-hidden min-h-[calc(100svh-56px)] sm:px-4 sm:py-12 sm:pb-16 sm:gap-8">
+        <div
+          className="absolute inset-0 z-0 pointer-events-none bg-center bg-cover bg-no-repeat opacity-30 blur-[1.5px] scale-[1.02]"
+          style={{ backgroundImage: `url(${bgImg})` }}
+        />
         <div className="absolute inset-0 z-0 pointer-events-none">
           <PixelSnow
             color="#ffffff"
