@@ -168,16 +168,26 @@ export const createBookmarkModal = (): ModalElements => {
     </div>
 
     <!-- Bottom Tabs -->
-    <div id="wps-bottom-tabs" style="flex-shrink: 0; display: flex; border-top: 1px solid oklch(var(--color-base-content) / 0.1); margin-top: 0.5rem;">
-      <button id="wps-tab-bookmark" class="btn btn-ghost flex-1" style="border-radius: 0; border-bottom: 3px solid oklch(var(--color-primary)); color: oklch(var(--color-primary)); font-weight: 700;">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
-          <path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Z"/>
+    <div id="wps-bottom-tabs" style="flex-shrink: 0; display: flex; gap: 0.375rem; border-top: 1px solid color-mix(in oklab, var(--color-base-content) 10%, transparent); margin-top: 0.5rem; padding-top: 0.625rem; background: var(--color-base-100);">
+      <button
+        id="wps-tab-bookmark"
+        class="btn btn-ghost flex-1"
+        aria-pressed="true"
+        style="border-radius: 0.9rem; border: 1px solid var(--color-primary); background: transparent; font-weight: 700; min-height: 3rem; padding: 0.75rem 0.9rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="none" stroke="currentColor" stroke-width="72" stroke-linecap="round" stroke-linejoin="round" class="size-4">
+          <path d="M280-760h400v639l-200-86-200 86v-639Z"/>
         </svg>
         ${"bookmark"}
       </button>
-      <button id="wps-tab-official-fav" class="btn btn-ghost flex-1" style="border-radius: 0; border-bottom: 3px solid transparent; color: oklch(var(--color-base-content) / 0.4); font-weight: 400;">
+      <button
+        id="wps-tab-official-fav"
+        class="btn btn-ghost flex-1"
+        aria-pressed="false"
+        style="border-radius: 0.9rem; border: 1px solid transparent; background: transparent; font-weight: 500; min-height: 3rem; padding: 0.75rem 0.9rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;"
+      >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
-          <path d="m354-287 126-76 126 77-33-144 111-96-146-13-58-136-58 135-146 13 111 97-33 143ZM233-120l65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Z"/>
+          <path d="m233-120 65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Zm247-98 188 113-50-214 165-143-217-19-86-203-86 203-217 19 165 143-50 214 188-113Z"/>
         </svg>
         ${"official_favorites"}
       </button>

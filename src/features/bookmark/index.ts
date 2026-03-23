@@ -441,17 +441,23 @@ const switchTab = (tab: "bookmark" | "official-fav", persist = true): void => {
   if (!bookmarkTab || !officialFavTab || !bookmarkContent || !officialFavContent) return;
   if (persist) storage.set({ [TAB_KEY]: tab });
 
-  const activeStyle = "border-radius: 0; border-bottom: 3px solid oklch(var(--color-primary)); color: oklch(var(--color-primary)); font-weight: 700;";
-  const inactiveStyle = "border-radius: 0; border-bottom: 3px solid transparent; color: oklch(var(--color-base-content) / 0.4); font-weight: 400;";
+  const activeStyle =
+    "border-radius: 0.9rem; border: 1px solid var(--color-primary); background: transparent; font-weight: 700; min-height: 3rem; padding: 0.75rem 0.9rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;";
+  const inactiveStyle =
+    "border-radius: 0.9rem; border: 1px solid transparent; background: transparent; font-weight: 500; min-height: 3rem; padding: 0.75rem 0.9rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;";
 
   if (tab === "bookmark") {
     bookmarkTab.style.cssText = activeStyle;
     officialFavTab.style.cssText = inactiveStyle;
+    bookmarkTab.setAttribute("aria-pressed", "true");
+    officialFavTab.setAttribute("aria-pressed", "false");
     bookmarkContent.style.display = "flex";
     officialFavContent.style.display = "none";
   } else {
     bookmarkTab.style.cssText = inactiveStyle;
     officialFavTab.style.cssText = activeStyle;
+    bookmarkTab.setAttribute("aria-pressed", "false");
+    officialFavTab.setAttribute("aria-pressed", "true");
     bookmarkContent.style.display = "none";
     officialFavContent.style.display = "flex";
     renderFavoriteLocations(favoriteLocations);
