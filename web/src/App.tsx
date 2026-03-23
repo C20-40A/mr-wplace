@@ -8,67 +8,78 @@ import firefoxLogo from "./assets/firefox0logo.svg";
 import edgeLogo from "./assets/microsoft-edge-logo.svg";
 import androidLogo from "./assets/android-logo.svg";
 import iosLogo from "./assets/ios-logo.svg";
-
-const FEATURES = [
-  {
-    icon: "🖼️",
-    title: "Image Overlay",
-    desc: "Project your artwork straight onto the world map, align it precisely, and track image progress in real time before you spend a single pixel.",
-  },
-  {
-    icon: "🎨",
-    title: "Color Filter",
-    desc: "Highlight target colors on the canvas. Track placed vs. unplaced pixels at a glance with visual stats.",
-  },
-  {
-    icon: "📸",
-    title: "Archive View",
-    desc: "Revisit archived map states and restore your reference view before griefing or unwanted edits, so you can keep painting against the version you trust.",
-  },
-  {
-    icon: "⚡",
-    title: "Charge Status",
-    desc: "See at a glance when your next paint is ready, follow your level progress, and jump into notifications or Google Calendar links so you never miss a refill window.",
-  },
-  {
-    icon: "✍️",
-    title: "Text Draw",
-    desc: "Draw custom text directly on the map with multiple fonts and fine-grained controls for spacing, sizing, and placement.",
-  },
-  {
-    icon: "🧊",
-    title: "3D View",
-    desc: "Paint while viewing the world in 3D, making it easier to understand placement, shape, and scale from a whole new angle.",
-  },
-];
+import sc3d from "./assets/showcase/sc3d.webp";
+import sctext from "./assets/showcase/sctext.webp";
+import sc_tile_dl from "./assets/showcase/sc_tile_dl.webp";
+import sc_charge from "./assets/showcase/sc_charge.webp";
+import sc_color_filter from "./assets/showcase/sc_color_filter.webp";
+import sc_image_overlay from "./assets/showcase/sc_image_overlay.webp";
+import sc_more_filters from "./assets/showcase/sc_more_filters.webp";
+import sc_image_gallery from "./assets/showcase/sc_image_gallery.webp";
+import sc_mini_pallete from "./assets/showcase/sc_mini_pallete.webp";
 
 interface ShowcaseItem {
   text: string;
   image: string;
 }
 
+const WPLACE_URL = "https://wplace.live/";
+
+const GlobeIcon = () => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
+    <path
+      d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"
+      stroke="currentColor"
+      strokeWidth="1.35"
+    />
+  </svg>
+);
+
 // Add or replace screenshots here.
 // Keep each item minimal: image + text.
 const SHOWCASE_ITEMS: ShowcaseItem[] = [
   {
-    text: "Image Overlay Alignment",
-    image: bgImg,
-  },
-  {
-    text: "Charge Status Overview",
-    image: bgImg,
+    text: "Image Overlay",
+    image: sc_image_overlay,
   },
   {
     text: "Text Draw Controls",
-    image: bgImg,
+    image: sctext,
   },
   {
-    text: "Archive View Recovery",
-    image: bgImg,
+    text: "3D View",
+    image: sc3d,
   },
   {
-    text: "3D Painting View",
-    image: bgImg,
+    text: "Tile Downloader",
+    image: sc_tile_dl,
+  },
+  {
+    text: "Image Gallery",
+    image: sc_image_gallery,
+  },
+  {
+    text: "Charge Status",
+    image: sc_charge,
+  },
+  {
+    text: "Color Filter",
+    image: sc_color_filter,
+  },
+  {
+    text: "More Filters",
+    image: sc_more_filters,
+  },
+  {
+    text: "Minimize Palette",
+    image: sc_mini_pallete,
   },
 ];
 
@@ -132,31 +143,6 @@ const MOBILE_ITEMS: MobilePlatform[] = [
   },
 ];
 
-function FeatureCard({
-  icon,
-  title,
-  desc,
-  delay,
-}: {
-  icon: string;
-  title: string;
-  desc: string;
-  delay: number;
-}) {
-  return (
-    <div
-      className="reveal border border-border rounded-2xl p-7 px-6 text-left transition-[opacity,transform,box-shadow] duration-500 ease-out hover:shadow-(--shadow) hover:border-(--brand-border) [background:color-mix(in_srgb,var(--muted)_50%,transparent)]"
-      style={{ "--delay": `${delay}ms` } as React.CSSProperties}
-    >
-      <span className="text-[28px] block mb-3.5">{icon}</span>
-      <h3 className="text-[17px] font-semibold text-foreground m-0 mb-2">
-        {title}
-      </h3>
-      <p className="text-sm leading-relaxed text-muted-foreground">{desc}</p>
-    </div>
-  );
-}
-
 export default function App() {
   useEffect(() => {
     const obs = new IntersectionObserver(
@@ -182,6 +168,15 @@ export default function App() {
           Mr. Wplace
         </span>
         <div className="flex items-center gap-2">
+          <a
+            href={WPLACE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Open Wplace"
+            className="inline-flex items-center justify-center rounded-lg border border-border p-2 text-foreground no-underline transition-[background,border-color] duration-200 hover:[background:var(--brand-bg)] hover:border-(--brand-border)"
+          >
+            <GlobeIcon />
+          </a>
           {BROWSERS.map((b) => (
             <a
               key={b.name}
@@ -246,19 +241,30 @@ export default function App() {
             Overlay artwork, watch your paint charge, draw text, inspect the
             world in 3D, and track every pixel without leaving the map.
           </p>
-          <div className="flex gap-2 flex-wrap mb-5">
-            {BROWSERS.map((b) => (
-              <a
-                key={b.name}
-                href={b.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border border-border [background:color-mix(in_srgb,var(--muted)_60%,transparent)] text-foreground font-medium text-[13px] no-underline transition-[background,border-color,transform] duration-200 hover:[background:var(--brand-bg)] hover:border-(--brand-border) hover:-translate-y-px"
-              >
-                {b.icon}
-                <span>Add to {b.name}</span>
-              </a>
-            ))}
+          <div className="mb-5 flex flex-col gap-2.5">
+            <a
+              href={WPLACE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-fit items-center gap-2 px-4 py-2 rounded-[10px] border border-(--brand-border) bg-(--brand) text-background font-medium text-[13px] no-underline transition-[filter,transform] duration-200 hover:brightness-110 hover:-translate-y-px"
+            >
+              <GlobeIcon />
+              <span>Open Wplace.live</span>
+            </a>
+            <div className="flex flex-wrap gap-2">
+              {BROWSERS.map((b) => (
+                <a
+                  key={b.name}
+                  href={b.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border border-border [background:color-mix(in_srgb,var(--muted)_60%,transparent)] text-foreground font-medium text-[13px] no-underline transition-[background,border-color,transform] duration-200 hover:[background:var(--brand-bg)] hover:border-(--brand-border) hover:-translate-y-px"
+                >
+                  {b.icon}
+                  <span>Add to {b.name}</span>
+                </a>
+              ))}
+            </div>
           </div>
           <a
             href="#showcase"
@@ -280,10 +286,10 @@ export default function App() {
               Showcase
             </h2>
             <p className="text-lg text-muted-foreground">
-              Explore the tools in action and see how Mr. Wplace upgrades every part of the drawing workflow.
+              See Mr. Wplace in action.
             </p>
           </div>
-          <div className="reveal relative h-[560px] overflow-hidden sm:h-[420px]">
+          <div className="reveal relative h-140 overflow-hidden sm:h-105">
             <CircularGallery
               items={SHOWCASE_ITEMS}
               bend={1}
@@ -292,29 +298,9 @@ export default function App() {
               scrollSpeed={2}
               scrollEase={0.05}
             />
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-linear-to-r from-background to-transparent sm:w-12" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-linear-to-l from-background to-transparent sm:w-12" />
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-linear-to-r from-background to-transparent max-sm:w-8" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-linear-to-l from-background to-transparent max-sm:w-8" />
           </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section
-        id="features"
-        className="px-8 py-20 border-t border-border sm:px-4 sm:py-14"
-      >
-        <div className="text-center mb-14">
-          <h2 className="text-[clamp(28px,4vw,42px)] font-bold tracking-[-1px] text-foreground m-0 mb-3">
-            Everything you need
-          </h2>
-          <p className="text-lg text-muted-foreground">
-            A full toolkit built for Wplace collaborators.
-          </p>
-        </div>
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-5 max-w-240 mx-auto">
-          {FEATURES.map((f, i) => (
-            <FeatureCard key={f.title} {...f} delay={i * 70} />
-          ))}
         </div>
       </section>
 
