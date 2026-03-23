@@ -19,6 +19,7 @@ import {
   type FabFeature,
 } from "@/states/fab-visibility";
 import { IMG_MR_FACE } from "@/assets/iconImages";
+import { ColorFilter } from "@/features/color-filter";
 
 // Re-export bridge functions for backward compatibility
 export {
@@ -163,6 +164,7 @@ const initializeMainFeatures = async () => {
     tileSnapshot,
     autoSpoit,
   });
+  ColorFilter.getInstance()?.refreshFABBadge();
 
   // Load and send front tile layer setting to inject
   const { loadFrontTileLayerFromStorage, getFrontTileLayer } =

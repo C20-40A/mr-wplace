@@ -2,6 +2,8 @@ import { createResponsiveButton } from "../../components/responsive-button";
 import { t } from "../../i18n/manager";
 import { createModal, ModalElements } from "@/components/modal";
 import { colorpalette } from "@/constants/colors";
+import { tilePixelToLatLng } from "@/utils/coordinate";
+import { gotoPosition } from "@/utils/position";
 
 export interface TextInstance {
   key: string;
@@ -43,6 +45,46 @@ export class TextDrawUI {
   private colorSelect!: HTMLSelectElement;
 
   constructor() {}
+
+  private isTextHiddenByColorFilter(colorId?: number): boolean {
+    const manager = window.mrWplace?.colorFilterManager;
+    if (!manager?.isFilterActive()) return false;
+
+    const targetColorId = colorId ?? 1;
+    return !manager.getSelectedColors().includes(targetColorId);
+  }
+
+  private createCoordsLabel(instance: TextInstance): HTMLButtonElement {
+    const coordsButton = document.createElement("button");
+    coordsButton.textContent =
+      `${instance.coords.TLX}-${instance.coords.TLY}-` +
+      `${instance.coords.PxX}-${instance.coords.PxY}`;
+    coordsButton.title = "Go to this text position";
+    coordsButton.style.cssText = `
+      background: none;
+      border: none;
+      padding: 0;
+      margin-top: 0.125rem;
+      color: #2563eb;
+      cursor: pointer;
+      font-size: 0.625rem;
+      opacity: 0.8;
+      text-align: left;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    `;
+    coordsButton.onclick = async () => {
+      const { lat, lng } = tilePixelToLatLng(
+        instance.coords.TLX,
+        instance.coords.TLY,
+        instance.coords.PxX,
+        instance.coords.PxY,
+      );
+
+      await gotoPosition({ lat, lng, zoom: 14 });
+    };
+    return coordsButton;
+  }
 
   private buildUI(): void {
     if (!this.modalElements) return;
@@ -261,9 +303,20 @@ export class TextDrawUI {
       colorInfo.appendChild(colorDot);
       colorInfo.appendChild(colorName);
 
+      const coordsLabel = this.createCoordsLabel(instance);
+
       textContainer.appendChild(textLabel);
       textContainer.appendChild(fontLabel);
       textContainer.appendChild(colorInfo);
+      textContainer.appendChild(coordsLabel);
+
+      if (this.isTextHiddenByColorFilter(instance.colorId)) {
+        const warning = document.createElement("div");
+        warning.textContent = "Hidden by current color filter";
+        warning.style.cssText =
+          "font-size: 0.625rem; color: #b45309; margin-top: 0.25rem;";
+        textContainer.appendChild(warning);
+      }
 
       // D-pad controls - compact
       const dPadContainer = document.createElement("div");

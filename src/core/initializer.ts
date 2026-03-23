@@ -122,9 +122,15 @@ export const initializeFeatures = async () => {
   ]);
 
   // colorFilterManager.init() - 遅延実行（UI表示をブロックしない）
-  colorFilterManager.init().catch((e) => {
-    console.error("🧑‍🎨: colorFilterManager init failed:", e);
-  });
+  colorFilterManager
+    .init()
+    .then(() => {
+      sendColorFilterToInject(colorFilterManager);
+      ColorFilter.getInstance()?.refreshFABBadge();
+    })
+    .catch((e) => {
+      console.error("🧑‍🎨: colorFilterManager init failed:", e);
+    });
 
   // GalleryとTileOverlayの連携設定（DI経由）
   galleryAPI.setDrawToggleCallback(async (imageKey: string) => {

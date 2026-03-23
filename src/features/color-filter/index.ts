@@ -80,6 +80,6 @@ export class ColorFilter {
     const mgr = window.mrWplace?.colorFilterManager;
     if (!mgr) return;
     const rgbs = mgr.selectedRGBs;
-    updateColorFilterBadges(rgbs.length === 1 ? rgbs[0] : null);
+    updateColorFilterBadges(rgbs.length === 1 ? rgbs[0] : null, rgbs.length === 0);
   }
 }
