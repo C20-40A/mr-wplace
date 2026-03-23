@@ -154,6 +154,7 @@ declare global {
     wplaceMap?: WplaceMap;
     tileProcessingQueue?: TileProcessingQueue;
     mrWplaceDataSaver?: DataSaverState;
+    mrWplaceOriginalFetch?: typeof window.fetch;
     mrWplaceGalleryImages?: Map<string, GalleryItem>;
     mrWplaceGalleryImageKeys?: Set<string>;
     mrWplaceSnapshots?: Map<string, SnapshotImage>;

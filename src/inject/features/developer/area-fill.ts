@@ -10,6 +10,7 @@ import { TILE_SIZE } from "@/utils/geo-converter";
 import { getOriginalBlob, overlayLayers } from "../tile-draw";
 import type { TileDrawInstance } from "../tile-draw/types";
 import { statusManagerSingleton } from "../user-status/status-manager";
+import { ensureUserDataAvailable } from "../user-status/user-data-recovery";
 import { setSecondaryPaintListener } from "../map-instance";
 import { colorpalette } from "@/constants/colors";
 import { AREA_FILL_MAX_PIXELS } from "@/constants/area-fill";
@@ -753,6 +754,7 @@ export const startAreaFill = async (
   // null = unavailable (skip check), 0 = no charges (also skip — /me not yet polled)
   let availableCharges: number | null = null;
   try {
+    await ensureUserDataAvailable("area-fill");
     const userData = statusManagerSingleton.getCurrentUserData();
     if (userData?.charges) {
       const value = statusManagerSingleton.getCurrentChargeCount();

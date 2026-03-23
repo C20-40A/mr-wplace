@@ -30,6 +30,7 @@ let frontTileXhrInterceptorInstalled = false;
  */
 export const setupFetchInterceptor = (): void => {
   const originalFetch = window.fetch;
+  window.mrWplaceOriginalFetch = originalFetch.bind(window);
 
   window.fetch = async function (...args): Promise<Response> {
     const requestInfo = args[0];

@@ -19,6 +19,7 @@ import {
   handlePaintForStats,
   handlePaintDeleteForStats,
 } from "./features/paint-stats-updater";
+import { scheduleStartupUserDataRecovery } from "./features/user-status/user-data-recovery";
 
 const LOCATION_KEY = "location";
 const STARTUP_TARGET_ZOOM = 11;
@@ -103,6 +104,7 @@ const forceStartupLocationZoom = (): void => {
       setFrontTilePaintGuideActive(active, { clearNow: !active });
     });
     setupFetchInterceptor();
+    scheduleStartupUserDataRecovery();
     console.log("🧑‍🎨: Fetch interceptor ready");
   } catch (error) {
     console.error("🧑‍🎨: Failed to setup fetch interceptor:", error);
