@@ -281,7 +281,7 @@ export default function App() {
         className="px-8 py-20 border-t border-border sm:px-4 sm:py-14"
       >
         <div className="max-w-240 mx-auto">
-          <div className="text-center mb-10">
+          <div className="text-center">
             <h2 className="text-[clamp(28px,4vw,42px)] font-bold tracking-[-1px] text-foreground m-0 mb-3">
               Showcase
             </h2>
