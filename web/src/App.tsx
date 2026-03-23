@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import PixelSnow from "./components/PixelSnow";
+import CircularGallery from "./components/CircularGallery";
 import misterIcon from "./assets/mister-icon.png";
 import bgImg from "./assets/bg-img.webp";
 import chromeLogo from "./assets/chrome-logo.svg";
@@ -38,6 +39,36 @@ const FEATURES = [
     icon: "🧊",
     title: "3D View",
     desc: "Paint while viewing the world in 3D, making it easier to understand placement, shape, and scale from a whole new angle.",
+  },
+];
+
+interface ShowcaseItem {
+  text: string;
+  image: string;
+}
+
+// Add or replace screenshots here.
+// Keep each item minimal: image + text.
+const SHOWCASE_ITEMS: ShowcaseItem[] = [
+  {
+    text: "Image Overlay Alignment",
+    image: bgImg,
+  },
+  {
+    text: "Charge Status Overview",
+    image: bgImg,
+  },
+  {
+    text: "Text Draw Controls",
+    image: bgImg,
+  },
+  {
+    text: "Archive View Recovery",
+    image: bgImg,
+  },
+  {
+    text: "3D Painting View",
+    image: bgImg,
   },
 ];
 
@@ -230,11 +261,40 @@ export default function App() {
             ))}
           </div>
           <a
-            href="#features"
+            href="#showcase"
             className="text-[13px] text-muted-foreground no-underline transition-colors duration-200 hover:text-foreground"
           >
-            See Features ↓
+            See Showcase ↓
           </a>
+        </div>
+      </section>
+
+      {/* Showcase */}
+      <section
+        id="showcase"
+        className="px-8 py-20 border-t border-border sm:px-4 sm:py-14"
+      >
+        <div className="max-w-240 mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-[clamp(28px,4vw,42px)] font-bold tracking-[-1px] text-foreground m-0 mb-3">
+              Showcase
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Explore the tools in action and see how Mr. Wplace upgrades every part of the drawing workflow.
+            </p>
+          </div>
+          <div className="reveal relative h-[560px] overflow-hidden sm:h-[420px]">
+            <CircularGallery
+              items={SHOWCASE_ITEMS}
+              bend={1}
+              textColor="#ffffff"
+              borderRadius={0.04}
+              scrollSpeed={2}
+              scrollEase={0.05}
+            />
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-linear-to-r from-background to-transparent sm:w-12" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-linear-to-l from-background to-transparent sm:w-12" />
+          </div>
         </div>
       </section>
 
