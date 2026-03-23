@@ -168,14 +168,14 @@ export const createBookmarkModal = (): ModalElements => {
     </div>
 
     <!-- Bottom Tabs -->
-    <div id="wps-bottom-tabs" style="flex-shrink: 0; display: flex; border-top: 1px solid oklch(var(--bc) / 0.15); margin-top: 0.5rem; background: oklch(var(--b2) / 0.5); padding: 0.25rem; gap: 0.25rem; border-radius: 0 0 var(--rounded-box, 1rem) var(--rounded-box, 1rem);">
-      <button id="wps-tab-bookmark" class="btn flex-1" style="border-radius: calc(var(--rounded-box, 1rem) - 0.25rem); background: oklch(var(--p)); color: oklch(var(--pc)); font-weight: 600; box-shadow: 0 1px 3px oklch(var(--p) / 0.4);">
+    <div id="wps-bottom-tabs" style="flex-shrink: 0; display: flex; border-top: 1px solid oklch(var(--color-base-content) / 0.1); margin-top: 0.5rem;">
+      <button id="wps-tab-bookmark" class="btn btn-ghost flex-1" style="border-radius: 0; border-bottom: 3px solid oklch(var(--color-primary)); color: oklch(var(--color-primary)); font-weight: 700;">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
           <path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Z"/>
         </svg>
         ${"bookmark"}
       </button>
-      <button id="wps-tab-official-fav" class="btn btn-ghost flex-1" style="border-radius: calc(var(--rounded-box, 1rem) - 0.25rem); color: oklch(var(--bc) / 0.5);">
+      <button id="wps-tab-official-fav" class="btn btn-ghost flex-1" style="border-radius: 0; border-bottom: 3px solid transparent; color: oklch(var(--color-base-content) / 0.4); font-weight: 400;">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
           <path d="m354-287 126-76 126 77-33-144 111-96-146-13-58-136-58 135-146 13 111 97-33 143ZM233-120l65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Z"/>
         </svg>

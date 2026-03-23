@@ -441,8 +441,8 @@ const switchTab = (tab: "bookmark" | "official-fav", persist = true): void => {
   if (!bookmarkTab || !officialFavTab || !bookmarkContent || !officialFavContent) return;
   if (persist) storage.set({ [TAB_KEY]: tab });
 
-  const activeStyle = "border-radius: calc(var(--rounded-box, 1rem) - 0.25rem); background: oklch(var(--p)); color: oklch(var(--pc)); font-weight: 600; box-shadow: 0 1px 3px oklch(var(--p) / 0.4);";
-  const inactiveStyle = "border-radius: calc(var(--rounded-box, 1rem) - 0.25rem); background: transparent; color: oklch(var(--bc) / 0.5); box-shadow: none;";
+  const activeStyle = "border-radius: 0; border-bottom: 3px solid oklch(var(--color-primary)); color: oklch(var(--color-primary)); font-weight: 700;";
+  const inactiveStyle = "border-radius: 0; border-bottom: 3px solid transparent; color: oklch(var(--color-base-content) / 0.4); font-weight: 400;";
 
   if (tab === "bookmark") {
     bookmarkTab.style.cssText = activeStyle;
