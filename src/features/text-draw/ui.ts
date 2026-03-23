@@ -1,6 +1,7 @@
 import { createResponsiveButton } from "../../components/responsive-button";
 import { t } from "../../i18n/manager";
 import { createModal, ModalElements } from "@/components/modal";
+import { isMobileViewport } from "@/constants/breakpoints";
 import { colorpalette } from "@/constants/colors";
 import { tilePixelToLatLng } from "@/utils/coordinate";
 import { gotoPosition } from "@/utils/position";
@@ -89,19 +90,39 @@ export class TextDrawUI {
   private buildUI(): void {
     if (!this.modalElements) return;
     const container = this.modalElements.container;
+    const isMobile = isMobileViewport();
 
     const contentContainer = document.createElement("div");
-    contentContainer.style.cssText = "display: flex; gap: 1rem;";
+    contentContainer.style.cssText = `
+      display: flex;
+      flex-direction: ${isMobile ? "column" : "row"};
+      gap: 0.75rem;
+      min-height: 0;
+    `;
 
     // Left: Text list
     this.leftPanel = document.createElement("div");
-    this.leftPanel.style.cssText =
-      "flex: 1; max-height: 400px; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.5rem;";
+    this.leftPanel.style.cssText = `
+      flex: 1 1 0%;
+      min-height: 0;
+      max-height: ${isMobile ? "50vh" : "400px"};
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.375rem;
+      padding: 0.5rem;
+      touch-action: pan-y;
+    `;
 
     // Right: Input form
     const rightPanel = document.createElement("div");
-    rightPanel.style.cssText =
-      "flex: 1; display: flex; flex-direction: column; gap: 0.5rem;";
+    rightPanel.style.cssText = `
+      flex: 0 0 ${isMobile ? "auto" : "min(18rem, 45%)"};
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    `;
 
     this.input = document.createElement("input");
     this.input.type = "text";
@@ -196,8 +217,8 @@ export class TextDrawUI {
     rightPanel.appendChild(this.colorSelect);
     rightPanel.appendChild(buttonContainer);
 
-    contentContainer.appendChild(this.leftPanel);
     contentContainer.appendChild(rightPanel);
+    contentContainer.appendChild(this.leftPanel);
 
     container.appendChild(contentContainer);
   }
