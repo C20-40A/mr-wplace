@@ -18,6 +18,7 @@ import {
   createBookmarkButton,
   createBookmarkModal,
   renderBookmarks,
+  renderFavoriteLocations,
   BookmarkSortType,
 } from "./ui";
 import { BookmarkRouter } from "./router";
@@ -26,12 +27,14 @@ import type { BookmarkAPI } from "@/core/di";
 import { Tutorial } from "@/features/tutorial";
 import { showFeatureHint } from "@/features/feature-hints";
 import { TOOLBAR_ROW1_ID } from "@/features/position-info";
+import type { FavoriteLocation } from "./types";
 
 const SORT_KEY = "wplace-studio-bookmark-sort";
 
 let router: BookmarkRouter;
 let selectedTagFilters: Set<string> = new Set();
 let tutorial: Tutorial;
+let favoriteLocations: FavoriteLocation[] = [];
 
 class TagSelectionState {
   private color: string = "";
@@ -426,6 +429,56 @@ const setupColorPickerHandlers = (modal: HTMLDialogElement): void => {
   });
 };
 
+const switchTab = (tab: "bookmark" | "official-fav"): void => {
+  const bookmarkTab = document.getElementById("wps-tab-bookmark");
+  const officialFavTab = document.getElementById("wps-tab-official-fav");
+  const bookmarkContent = document.getElementById("wps-bookmark-tab-content");
+  const officialFavContent = document.getElementById("wps-official-fav-tab-content");
+  if (!bookmarkTab || !officialFavTab || !bookmarkContent || !officialFavContent) return;
+
+  const activeStyle = "border-radius: 0; border-bottom: 2px solid oklch(var(--p)); color: oklch(var(--p)); font-weight: 600;";
+  const inactiveStyle = "border-radius: 0; border-bottom: 2px solid transparent; color: oklch(var(--bc) / 0.5);";
+
+  if (tab === "bookmark") {
+    bookmarkTab.style.cssText = activeStyle;
+    officialFavTab.style.cssText = inactiveStyle;
+    bookmarkContent.style.display = "flex";
+    officialFavContent.style.display = "none";
+  } else {
+    bookmarkTab.style.cssText = inactiveStyle;
+    officialFavTab.style.cssText = activeStyle;
+    bookmarkContent.style.display = "none";
+    officialFavContent.style.display = "flex";
+    renderFavoriteLocations(favoriteLocations);
+  }
+};
+
+const setupBottomTabHandlers = (modal: HTMLDialogElement): void => {
+  modal
+    .querySelector("#wps-tab-bookmark")!
+    .addEventListener("click", () => switchTab("bookmark"));
+
+  modal
+    .querySelector("#wps-tab-official-fav")!
+    .addEventListener("click", () => switchTab("official-fav"));
+
+  // Official favorites grid click handler (jump only)
+  modal
+    .querySelector("#wps-official-fav-grid")!
+    .addEventListener("click", async (e) => {
+      const target = e.target as HTMLElement;
+      const card = target.closest(".wps-card") as HTMLElement | null;
+      if (card?.dataset.lat && card?.dataset.lng && card?.dataset.zoom) {
+        await gotoPosition({
+          lat: parseFloat(card.dataset.lat),
+          lng: parseFloat(card.dataset.lng),
+          zoom: parseFloat(card.dataset.zoom),
+        });
+        modal.close();
+      }
+    });
+};
+
 const setupModal = (): void => {
   const modalElements = createBookmarkModal();
   const { modal, container } = modalElements;
@@ -445,6 +498,7 @@ const setupModal = (): void => {
   setupEditScreenHandlers(modal);
   setupTagSelectionHandlers(modal);
   setupColorPickerHandlers(modal);
+  setupBottomTabHandlers(modal);
 
   // Add tutorial button to modal
   tutorial.createButton(container);
@@ -503,7 +557,15 @@ const init = (): void => {
     },
   ];
   setupElementObserver(buttonConfigs);
-  // setupModal は openModal で呼ばれるようになったので、ここでは呼ばない
+
+  // Listen for favorite locations from inject (/me response)
+  window.addEventListener("message", (e) => {
+    if (e.data?.source === "mr-wplace-favorite-locations") {
+      favoriteLocations = e.data.favoriteLocations || [];
+      console.log("🧑‍🎨 : Favorite locations received:", favoriteLocations.length);
+    }
+  });
+
   console.log("🧑‍🎨 : Bookmark initialized");
 };
 

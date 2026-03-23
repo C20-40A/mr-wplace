@@ -601,4 +601,6 @@ Do not use this feature to paint actual pixels.`,
     "If rendering feels slow, try a different mode",
   hint_overlay_mode_blue_marble:
     'If BlueMarble conflicts with this extension, try setting this mode to "Composite"',
+  official_favorites: "Official Favorites",
+  empty_official_favorites: "No official favorite locations",
 };

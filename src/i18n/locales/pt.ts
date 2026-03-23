@@ -575,4 +575,6 @@ export const ptTranslations = {
     "Se a renderização estiver lenta, experimente outro modo",
   hint_overlay_mode_blue_marble:
     'If BlueMarble conflicts with this extension, try setting this mode to "Composite"',
+  official_favorites: "Favoritos oficiais",
+  empty_official_favorites: "Nenhum local favorito oficial",
 };

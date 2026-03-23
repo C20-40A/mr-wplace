@@ -591,4 +591,6 @@ export const frTranslations = {
   hint_overlay_mode_performance: "Si le rendu est lent, essayez un autre mode",
   hint_overlay_mode_blue_marble:
     'If BlueMarble conflicts with this extension, try setting this mode to "Composite"',
+  official_favorites: "Favoris officiels",
+  empty_official_favorites: "Aucun lieu favori officiel",
 };

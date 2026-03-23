@@ -604,4 +604,6 @@ export const jaTranslations = {
     "処理が重い場合は、別のモードを試してみてください",
   hint_overlay_mode_blue_marble:
     "BlueMarbleと干渉する場合は、このモードを「合成」にしてみてください",
+  official_favorites: "公式お気に入り",
+  empty_official_favorites: "公式お気に入り地点がありません",
 };

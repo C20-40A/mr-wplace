@@ -12,6 +12,17 @@ export const handleUserStatusUpdate = (userData: WplaceUserData): void => {
 
   // Update from user data
   statusManagerSingleton.updateFromUserData(userData);
+
+  // Forward favorite locations to content script
+  if (userData.favoriteLocations) {
+    window.postMessage(
+      {
+        source: "mr-wplace-favorite-locations",
+        favoriteLocations: userData.favoriteLocations,
+      },
+      "*"
+    );
+  }
 };
 
 const initStatusManager = (): void => {

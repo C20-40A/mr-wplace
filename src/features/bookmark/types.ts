@@ -19,3 +19,10 @@ export interface Bookmark {
   lastAccessedDate?: string;
   tag?: Tag;
 }
+
+export interface FavoriteLocation {
+  id: number;
+  name: string;
+  latitude: number;
+  longitude: number;
+}

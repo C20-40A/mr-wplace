@@ -587,4 +587,6 @@ export const ruTranslations = {
     "Если рендеринг медленный, попробуйте другой режим",
   hint_overlay_mode_blue_marble:
     'If BlueMarble conflicts with this extension, try setting this mode to "Composite"',
+  official_favorites: "Официальное избранное",
+  empty_official_favorites: "Нет официальных избранных мест",
 };

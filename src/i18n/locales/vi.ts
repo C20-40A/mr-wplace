@@ -570,4 +570,6 @@ export const viTranslations = {
   hint_overlay_mode_performance: "Nếu việc kết xuất chậm, hãy thử chế độ khác",
   hint_overlay_mode_blue_marble:
     'If BlueMarble conflicts with this extension, try setting this mode to "Composite"',
+  official_favorites: "Yêu thích chính thức",
+  empty_official_favorites: "Không có địa điểm yêu thích chính thức",
 };
