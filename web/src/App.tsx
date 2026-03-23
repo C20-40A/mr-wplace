@@ -25,9 +25,7 @@ const MESSAGES = {
     installFor: (name: string) => `Install for ${name}`,
     heroBadge: "Browser Extension",
     heroTagline: "Draw smarter on Wplace.",
-    heroDescription:
-      "Overlay artwork, watch your paint charge, draw text, inspect the world in 3D, and track every pixel without leaving the map.",
-    heroOpen: "Open Wplace.live",
+    heroOpen: "Open Wplace",
     heroShowcase: "See Showcase ↓",
     showcaseTitle: "Showcase",
     showcaseDescription: "See Mr. Wplace in action.",
@@ -56,19 +54,17 @@ const MESSAGES = {
   ja: {
     navOpenWplace: "Wplace を開く",
     installFor: (name: string) => `${name} に追加`,
-    heroBadge: "ブラウザ拡張",
-    heroTagline: "Wplace をもっと快適に描こう。",
-    heroDescription:
-      "画像オーバーレイ、ペイント残量確認、文字描画、3D表示、ピクセル追跡をマップ上でまとめて使えます。",
-    heroOpen: "Wplace.live を開く",
-    heroShowcase: "ショーケースを見る ↓",
-    showcaseTitle: "ショーケース",
-    showcaseDescription: "Mr. Wplace の機能をチェック。",
-    mobileTitle: "モバイル対応",
-    mobileDescription: "Android と iOS でも Mr. Wplace を使えます。",
-    ctaTitle: "はじめよう",
+    heroBadge: "ブラウザ拡張機能",
+    heroTagline: "Wplaceに別次元の快適さを",
+    heroOpen: "Wplace を開く",
+    heroShowcase: "Showcase ↓",
+    showcaseTitle: "Showcase",
+    showcaseDescription: "多くの機能を搭載した Mr. Wplace をぜひご覧ください",
+    mobileTitle: "スマホ対応",
+    mobileDescription: "Android と iOS でも Mr. Wplace を使えます",
+    ctaTitle: "はじめましょう",
     ctaDescription:
-      "無料です。アカウント不要。Chrome / Firefox / Edge で使えます。",
+      "完全無料。アカウント不要。Chrome / Firefox / Edge ですぐ使えます。",
     mobileAndroidFirefox:
       "Firefox Nightly for Developers を入れて、Firefox Add-ons ページからワンタップでインストールします。",
     mobileAndroidEdge:
@@ -88,6 +84,11 @@ const MESSAGES = {
     ],
   },
 } as const;
+
+type MessageMap = (typeof MESSAGES)["en"];
+type MessageTextKey = {
+  [K in keyof MessageMap]: MessageMap[K] extends string ? K : never;
+}[keyof MessageMap];
 
 const GlobeIcon = () => (
   <svg
@@ -120,15 +121,26 @@ const SHOWCASE_ITEMS = [
   { image: sc_mini_pallete },
 ];
 
-const BROWSERS: BrowserEntry[] = [
+interface BrowserEntry {
+  name: string;
+  href: string;
+  icon: React.ReactNode;
+}
+
+const getBrowserEntries = (locale: "ja" | "en"): BrowserEntry[] => [
   {
     name: "Chrome",
-    href: "https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej",
+    href: `https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej${
+      locale === "ja" ? "?hl=ja" : ""
+    }`,
     icon: <img src={chromeLogo} width="20" height="20" alt="Chrome" />,
   },
   {
     name: "Firefox",
-    href: "https://addons.mozilla.org/ja/firefox/addon/mr-wplace/",
+    href:
+      locale === "ja"
+        ? "https://addons.mozilla.org/ja/firefox/addon/mr-wplace/"
+        : "https://addons.mozilla.org/firefox/addon/mr-wplace/",
     icon: <img src={firefoxLogo} width="20" height="20" alt="Firefox" />,
   },
   {
@@ -138,18 +150,12 @@ const BROWSERS: BrowserEntry[] = [
   },
 ];
 
-interface BrowserEntry {
-  name: string;
-  href: string;
-  icon: React.ReactNode;
-}
-
 interface MobilePlatform {
   platform: string;
   icon: React.ReactNode;
   items: {
     browser: string;
-    descKey: keyof (typeof MESSAGES)["en"];
+    descKey: MessageTextKey;
     href: string;
   }[];
 }
@@ -187,6 +193,7 @@ const MOBILE_ITEMS: MobilePlatform[] = [
 export default function App() {
   const locale = navigator.language?.startsWith("ja") ? "ja" : "en";
   const t = MESSAGES[locale];
+  const browsers = getBrowserEntries(locale);
   useEffect(() => {
     const obs = new IntersectionObserver(
       (entries) => {
@@ -220,7 +227,7 @@ export default function App() {
           >
             <GlobeIcon />
           </a>
-          {BROWSERS.map((b) => (
+          {browsers.map((b) => (
             <a
               key={b.name}
               href={b.href}
@@ -258,8 +265,10 @@ export default function App() {
           />
         </div>
         <div className="reveal flex-[1_1_340px] max-w-135 transition-[opacity,transform] duration-700 ease-out">
-          <div className="inline-flex items-center gap-1.5 text-xs font-medium tracking-[0.4px] uppercase text-(--brand) [background:var(--brand-bg)] border border-(--brand-border) rounded-full px-3 py-1">
-            {t.heroBadge}
+          <div className="mb-4 flex justify-end">
+            <div className="inline-flex items-center gap-1.5 text-xs font-medium tracking-[0.4px] uppercase text-(--brand) [background:var(--brand-bg)] border border-(--brand-border) rounded-full px-3 py-1">
+              {t.heroBadge}
+            </div>
           </div>
           <div className="mb-4">
             <div className="flex items-center gap-4 max-sm:gap-2.5">
@@ -280,21 +289,9 @@ export default function App() {
               </div>
             </div>
           </div>
-          <p className="text-[15px] leading-[1.7] text-muted-foreground mb-8 max-w-100">
-            {t.heroDescription}
-          </p>
           <div className="mb-5 flex flex-col gap-2.5">
-            <a
-              href={WPLACE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex w-fit items-center gap-2 px-4 py-2 rounded-[10px] border border-(--brand-border) bg-(--brand) text-background font-medium text-[13px] no-underline transition-[filter,transform] duration-200 hover:brightness-110 hover:-translate-y-px"
-            >
-              <GlobeIcon />
-              <span>{t.heroOpen}</span>
-            </a>
             <div className="flex flex-wrap gap-2">
-              {BROWSERS.map((b) => (
+              {browsers.map((b) => (
                 <a
                   key={b.name}
                   href={b.href}
@@ -307,6 +304,15 @@ export default function App() {
                 </a>
               ))}
             </div>
+            <a
+              href={WPLACE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-fit items-center gap-1.5 px-3 py-1.5 rounded-[9px] border border-border [background:color-mix(in_srgb,var(--muted)_45%,transparent)] text-muted-foreground font-medium text-[12px] no-underline transition-[background,border-color,color,transform] duration-200 hover:[background:var(--brand-bg)] hover:border-(--brand-border) hover:text-foreground hover:-translate-y-px"
+            >
+              <GlobeIcon />
+              <span>{t.heroOpen}</span>
+            </a>
           </div>
           <a
             href="#showcase"
@@ -406,7 +412,7 @@ export default function App() {
             {t.ctaDescription}
           </p>
           <div className="flex gap-2.5 flex-wrap justify-center">
-            {BROWSERS.map((b) => (
+            {browsers.map((b) => (
               <a
                 key={b.name}
                 href={b.href}
