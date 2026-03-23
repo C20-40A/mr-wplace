@@ -12,7 +12,7 @@ const FEATURES = [
   {
     icon: "🖼️",
     title: "Image Overlay",
-    desc: "Place your own artwork directly onto the world map. Preview exactly how it looks before committing pixels.",
+    desc: "Project your artwork straight onto the world map, align it precisely, and track image progress in real time before you spend a single pixel.",
   },
   {
     icon: "🎨",
@@ -21,23 +21,23 @@ const FEATURES = [
   },
   {
     icon: "📸",
-    title: "Time Travel",
-    desc: "Snapshot tiles over time. Compare past and present states to see how the canvas has evolved.",
-  },
-  {
-    icon: "📍",
-    title: "Area Manager",
-    desc: "Draw named regions on the map, set colors and labels, and manage collaborative zones with ease.",
-  },
-  {
-    icon: "🗺️",
-    title: "Gallery",
-    desc: "Save reference images with map coordinates. Jump back to any spot instantly.",
+    title: "Archive View",
+    desc: "Revisit archived map states and restore your reference view before griefing or unwanted edits, so you can keep painting against the version you trust.",
   },
   {
     icon: "⚡",
-    title: "Live Stats",
-    desc: "Real-time progress bars per image. Know how complete your artwork is without counting by hand.",
+    title: "Charge Status",
+    desc: "See at a glance when your next paint is ready, follow your level progress, and jump into notifications or Google Calendar links so you never miss a refill window.",
+  },
+  {
+    icon: "✍️",
+    title: "Text Draw",
+    desc: "Draw custom text directly on the map with multiple fonts and fine-grained controls for spacing, sizing, and placement.",
+  },
+  {
+    icon: "🧊",
+    title: "3D View",
+    desc: "Paint while viewing the world in 3D, making it easier to understand placement, shape, and scale from a whole new angle.",
   },
 ];
 
@@ -79,12 +79,12 @@ const MOBILE_ITEMS: MobilePlatform[] = [
       {
         browser: "Firefox Nightly",
         desc: "Install the Firefox Nightly for Developers app, then visit the Firefox Add-ons page and install with one tap.",
-        href: "https://addons.mozilla.org/ja/firefox/addon/mr-wplace",
+        href: "https://play.google.com/store/apps/details?id=org.mozilla.fenix",
       },
       {
         browser: "Edge Canary",
         desc: "Install the Edge Canary app, then visit the Edge Add-ons page to install automatically.",
-        href: "https://microsoftedge.microsoft.com/addons/detail/mr-wplace/acdodonamhbokadiikkfnnliplijigip",
+        href: "https://play.google.com/store/apps/details?id=com.microsoft.emmx.canary",
       },
     ],
   },
@@ -95,7 +95,7 @@ const MOBILE_ITEMS: MobilePlatform[] = [
       {
         browser: "Orion Browser by Kagi",
         desc: 'Download Orion from the App Store → Settings → Advanced → Enable "Chrome Extensions" → Install from Chrome Web Store.',
-        href: "https://chromewebstore.google.com/detail/mr-wplace/klbcmpogekmdckegggoapdjjlehonnej",
+        href: "https://apps.apple.com/us/app/orion-browser-by-kagi/id1484498200",
       },
     ],
   },
@@ -179,9 +179,9 @@ export default function App() {
             minFlakeSize={1.25}
             pixelResolution={220}
             speed={1}
-            density={0.25}
+            density={0.16}
             direction={80}
-            brightness={1}
+            brightness={0.55}
             depthFade={8}
             farPlane={16}
             gamma={0.4545}
@@ -212,8 +212,8 @@ export default function App() {
             </div>
           </div>
           <p className="text-[15px] leading-[1.7] text-muted-foreground mb-8 max-w-100">
-            Overlay images, track colors, manage areas, and travel through time
-            — all without leaving the map.
+            Overlay artwork, watch your paint charge, draw text, inspect the
+            world in 3D, and track every pixel without leaving the map.
           </p>
           <div className="flex gap-2 flex-wrap mb-5">
             {BROWSERS.map((b) => (
