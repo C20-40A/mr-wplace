@@ -35,6 +35,17 @@ let lastPaintedByUser: {
   picture?: string;
 } | null = null;
 
+const hasValidPaintedByUser = (): boolean =>
+  !!lastPaintedByUser?.id && !!lastPaintedByUser.name;
+
+const syncAddToFriendsButtonVisibility = (): void => {
+  const button = document.getElementById("add-to-friends-btn") as
+    | HTMLButtonElement
+    | null;
+  if (!button) return;
+  button.hidden = !hasValidPaintedByUser();
+};
+
 /**
  * ツールバー下の友人情報バーを更新（情報がある場合のみ表示）
  */
@@ -110,7 +121,7 @@ const createAddToFriendsButton = (row1: Element): void => {
   button.title = t`${"add_to_friends"}`;
 
   button.addEventListener("click", async () => {
-    if (!lastPaintedByUser) {
+    if (!hasValidPaintedByUser() || !lastPaintedByUser) {
       Toast.error(t`location_unavailable`);
       return;
     }
@@ -119,6 +130,7 @@ const createAddToFriendsButton = (row1: Element): void => {
   });
 
   row1.appendChild(button);
+  syncAddToFriendsButtonVisibility();
   updateFriendsInfoBar();
   console.log("🧑‍🎨 : Add to friends button created");
 };
@@ -378,6 +390,7 @@ const init = (): void => {
         picture: event.data.userData.picture,
       };
       console.log("🧑‍🎨 : Received painted by user data:", lastPaintedByUser);
+      syncAddToFriendsButtonVisibility();
       updateFriendsInfoBar();
     }
   });
