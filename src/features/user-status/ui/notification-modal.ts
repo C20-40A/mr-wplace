@@ -225,24 +225,23 @@ export class NotificationModal {
       alarmStatusElement.innerHTML = this.createAlarmStatusHTML();
     }
 
-    // Estimated Time更新
+    // Estimated Time + Calendar button更新
     const estimatedTimeElement = document.getElementById("estimatedTime");
     if (estimatedTimeElement) {
       const thresholdTime = this.calculateThresholdTime(this.currentThreshold);
-      estimatedTimeElement.textContent = t`${"estimated_time"}: ${thresholdTime}`;
-
-      // Calendar button disabled制御
-      const calendarButton = document.getElementById(
-        "addToCalendar",
-      ) as HTMLButtonElement | null;
-      if (calendarButton) {
-        const isReached = thresholdTime === "Already reached";
-        calendarButton.disabled = isReached;
-        calendarButton.style.backgroundColor = isReached ? "#9ca3af" : "#3b82f6";
-        calendarButton.style.cursor = isReached ? "not-allowed" : "pointer";
-        calendarButton.style.opacity = isReached ? "0.5" : "1";
-      }
+      estimatedTimeElement.textContent = `${t`${"estimated_time"}`}: ${thresholdTime}`;
+      this.updateCalendarButtonState();
     }
+  }
+
+  private updateCalendarButtonState(): void {
+    const btn = document.getElementById("addToCalendar") as HTMLButtonElement | null;
+    if (!btn) return;
+    const isReached = !this.calculateAlarmTime(this.currentThreshold);
+    btn.disabled = isReached;
+    btn.style.backgroundColor = isReached ? "#9ca3af" : "#3b82f6";
+    btn.style.cursor = isReached ? "not-allowed" : "pointer";
+    btn.style.opacity = isReached ? "0.5" : "1";
   }
 
   private createLevelSection(): string {
@@ -369,7 +368,7 @@ export class NotificationModal {
     const { current, max } = this.getChargeData();
     const thresholdPixels = Math.floor((max * this.currentThreshold) / 100);
     const thresholdTime = this.calculateThresholdTime(this.currentThreshold);
-    const isThresholdReached = thresholdTime === t`${"already_reached"}`;
+    const isThresholdReached = !this.calculateAlarmTime(this.currentThreshold);
 
     return `
       <div style="margin-bottom: 24px;">
@@ -503,15 +502,7 @@ export class NotificationModal {
         const thresholdTime = this.calculateThresholdTime(threshold);
         estimatedTime.textContent = `${t`${"estimated_time"}`}: ${thresholdTime}`;
 
-        // Calendar button disabled制御
-        if (addToCalendarButton) {
-          const btn = addToCalendarButton as HTMLButtonElement;
-          const isReached = thresholdTime === "Already reached";
-          btn.disabled = isReached;
-          btn.style.backgroundColor = isReached ? "#9ca3af" : "#3b82f6";
-          btn.style.cursor = isReached ? "not-allowed" : "pointer";
-          btn.style.opacity = isReached ? "0.5" : "1";
-        }
+        this.updateCalendarButtonState();
 
         // storageに保存
         await storage.set({
