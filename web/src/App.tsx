@@ -18,12 +18,76 @@ import sc_more_filters from "./assets/showcase/sc_more_filters.webp";
 import sc_image_gallery from "./assets/showcase/sc_image_gallery.webp";
 import sc_mini_pallete from "./assets/showcase/sc_mini_pallete.webp";
 
-interface ShowcaseItem {
-  text: string;
-  image: string;
-}
-
 const WPLACE_URL = "https://wplace.live/";
+const MESSAGES = {
+  en: {
+    navOpenWplace: "Open Wplace",
+    installFor: (name: string) => `Install for ${name}`,
+    heroBadge: "Browser Extension",
+    heroTagline: "Draw smarter on Wplace.",
+    heroDescription:
+      "Overlay artwork, watch your paint charge, draw text, inspect the world in 3D, and track every pixel without leaving the map.",
+    heroOpen: "Open Wplace.live",
+    heroShowcase: "See Showcase ↓",
+    showcaseTitle: "Showcase",
+    showcaseDescription: "See Mr. Wplace in action.",
+    mobileTitle: "Mobile Support",
+    mobileDescription: "Bring Mr. Wplace to Android & iOS.",
+    ctaTitle: "Ready to start?",
+    ctaDescription: "Free. No account needed. Works on Chrome, Firefox & Edge.",
+    mobileAndroidFirefox:
+      "Install the Firefox Nightly for Developers app, then visit the Firefox Add-ons page and install with one tap.",
+    mobileAndroidEdge:
+      "Install the Edge Canary app, then visit the Edge Add-ons page to install automatically.",
+    mobileIosOrion:
+      'Download Orion from the App Store → Settings → Advanced → Enable "Chrome Extensions" → Install from Chrome Web Store.',
+    showcaseItems: [
+      "Image Overlay",
+      "Text Draw Controls",
+      "3D View",
+      "Tile Downloader",
+      "Image Gallery",
+      "Charge Status",
+      "Color Filter",
+      "More Filters",
+      "Minimize Palette",
+    ],
+  },
+  ja: {
+    navOpenWplace: "Wplace を開く",
+    installFor: (name: string) => `${name} に追加`,
+    heroBadge: "ブラウザ拡張",
+    heroTagline: "Wplace をもっと快適に描こう。",
+    heroDescription:
+      "画像オーバーレイ、ペイント残量確認、文字描画、3D表示、ピクセル追跡をマップ上でまとめて使えます。",
+    heroOpen: "Wplace.live を開く",
+    heroShowcase: "ショーケースを見る ↓",
+    showcaseTitle: "ショーケース",
+    showcaseDescription: "Mr. Wplace の機能をチェック。",
+    mobileTitle: "モバイル対応",
+    mobileDescription: "Android と iOS でも Mr. Wplace を使えます。",
+    ctaTitle: "はじめよう",
+    ctaDescription:
+      "無料です。アカウント不要。Chrome / Firefox / Edge で使えます。",
+    mobileAndroidFirefox:
+      "Firefox Nightly for Developers を入れて、Firefox Add-ons ページからワンタップでインストールします。",
+    mobileAndroidEdge:
+      "Edge Canary を入れて、Edge Add-ons ページから自動インストールします。",
+    mobileIosOrion:
+      'App Store から Orion を入れて、Settings → Advanced → "Chrome Extensions" を有効化 → Chrome Web Store からインストールします。',
+    showcaseItems: [
+      "画像オーバーレイ",
+      "文字描画",
+      "3Dビュー",
+      "タイル保存",
+      "画像ギャラリー",
+      "チャージ確認",
+      "カラーフィルター",
+      "追加フィルター",
+      "パレット最小化",
+    ],
+  },
+} as const;
 
 const GlobeIcon = () => (
   <svg
@@ -44,43 +108,16 @@ const GlobeIcon = () => (
 
 // Add or replace screenshots here.
 // Keep each item minimal: image + text.
-const SHOWCASE_ITEMS: ShowcaseItem[] = [
-  {
-    text: "Image Overlay",
-    image: sc_image_overlay,
-  },
-  {
-    text: "Text Draw Controls",
-    image: sctext,
-  },
-  {
-    text: "3D View",
-    image: sc3d,
-  },
-  {
-    text: "Tile Downloader",
-    image: sc_tile_dl,
-  },
-  {
-    text: "Image Gallery",
-    image: sc_image_gallery,
-  },
-  {
-    text: "Charge Status",
-    image: sc_charge,
-  },
-  {
-    text: "Color Filter",
-    image: sc_color_filter,
-  },
-  {
-    text: "More Filters",
-    image: sc_more_filters,
-  },
-  {
-    text: "Minimize Palette",
-    image: sc_mini_pallete,
-  },
+const SHOWCASE_ITEMS = [
+  { image: sc_image_overlay },
+  { image: sctext },
+  { image: sc3d },
+  { image: sc_tile_dl },
+  { image: sc_image_gallery },
+  { image: sc_charge },
+  { image: sc_color_filter },
+  { image: sc_more_filters },
+  { image: sc_mini_pallete },
 ];
 
 const BROWSERS: BrowserEntry[] = [
@@ -110,7 +147,11 @@ interface BrowserEntry {
 interface MobilePlatform {
   platform: string;
   icon: React.ReactNode;
-  items: { browser: string; desc: string; href: string }[];
+  items: {
+    browser: string;
+    descKey: keyof (typeof MESSAGES)["en"];
+    href: string;
+  }[];
 }
 
 const MOBILE_ITEMS: MobilePlatform[] = [
@@ -120,12 +161,12 @@ const MOBILE_ITEMS: MobilePlatform[] = [
     items: [
       {
         browser: "Firefox Nightly",
-        desc: "Install the Firefox Nightly for Developers app, then visit the Firefox Add-ons page and install with one tap.",
+        descKey: "mobileAndroidFirefox",
         href: "https://play.google.com/store/apps/details?id=org.mozilla.fenix",
       },
       {
         browser: "Edge Canary",
-        desc: "Install the Edge Canary app, then visit the Edge Add-ons page to install automatically.",
+        descKey: "mobileAndroidEdge",
         href: "https://play.google.com/store/apps/details?id=com.microsoft.emmx.canary",
       },
     ],
@@ -136,7 +177,7 @@ const MOBILE_ITEMS: MobilePlatform[] = [
     items: [
       {
         browser: "Orion Browser by Kagi",
-        desc: 'Download Orion from the App Store → Settings → Advanced → Enable "Chrome Extensions" → Install from Chrome Web Store.',
+        descKey: "mobileIosOrion",
         href: "https://apps.apple.com/us/app/orion-browser-by-kagi/id1484498200",
       },
     ],
@@ -144,6 +185,8 @@ const MOBILE_ITEMS: MobilePlatform[] = [
 ];
 
 export default function App() {
+  const locale = navigator.language?.startsWith("ja") ? "ja" : "en";
+  const t = MESSAGES[locale];
   useEffect(() => {
     const obs = new IntersectionObserver(
       (entries) => {
@@ -172,7 +215,7 @@ export default function App() {
             href={WPLACE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            title="Open Wplace"
+            title={t.navOpenWplace}
             className="inline-flex items-center justify-center rounded-lg border border-border p-2 text-foreground no-underline transition-[background,border-color] duration-200 hover:[background:var(--brand-bg)] hover:border-(--brand-border)"
           >
             <GlobeIcon />
@@ -183,7 +226,7 @@ export default function App() {
               href={b.href}
               target="_blank"
               rel="noopener noreferrer"
-              title={`Install for ${b.name}`}
+              title={t.installFor(b.name)}
               className="inline-flex items-center p-1.5 rounded-lg border border-border text-foreground no-underline transition-[background,border-color] duration-200 hover:[background:var(--brand-bg)] hover:border-(--brand-border)"
             >
               {b.icon}
@@ -216,7 +259,7 @@ export default function App() {
         </div>
         <div className="reveal flex-[1_1_340px] max-w-135 transition-[opacity,transform] duration-700 ease-out">
           <div className="inline-flex items-center gap-1.5 text-xs font-medium tracking-[0.4px] uppercase text-(--brand) [background:var(--brand-bg)] border border-(--brand-border) rounded-full px-3 py-1">
-            Browser Extension
+            {t.heroBadge}
           </div>
           <div className="mb-4">
             <div className="flex items-center gap-4 max-sm:gap-2.5">
@@ -232,14 +275,13 @@ export default function App() {
                   Mr. Wplace
                 </h1>
                 <p className="text-[clamp(17px,2.5vw,22px)] font-medium tracking-[-0.3px] text-muted-foreground m-0 leading-snug">
-                  Draw smarter on Wplace.
+                  {t.heroTagline}
                 </p>
               </div>
             </div>
           </div>
           <p className="text-[15px] leading-[1.7] text-muted-foreground mb-8 max-w-100">
-            Overlay artwork, watch your paint charge, draw text, inspect the
-            world in 3D, and track every pixel without leaving the map.
+            {t.heroDescription}
           </p>
           <div className="mb-5 flex flex-col gap-2.5">
             <a
@@ -249,7 +291,7 @@ export default function App() {
               className="inline-flex w-fit items-center gap-2 px-4 py-2 rounded-[10px] border border-(--brand-border) bg-(--brand) text-background font-medium text-[13px] no-underline transition-[filter,transform] duration-200 hover:brightness-110 hover:-translate-y-px"
             >
               <GlobeIcon />
-              <span>Open Wplace.live</span>
+              <span>{t.heroOpen}</span>
             </a>
             <div className="flex flex-wrap gap-2">
               {BROWSERS.map((b) => (
@@ -261,7 +303,7 @@ export default function App() {
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-[10px] border border-border [background:color-mix(in_srgb,var(--muted)_60%,transparent)] text-foreground font-medium text-[13px] no-underline transition-[background,border-color,transform] duration-200 hover:[background:var(--brand-bg)] hover:border-(--brand-border) hover:-translate-y-px"
                 >
                   {b.icon}
-                  <span>Add to {b.name}</span>
+                  <span>{t.installFor(b.name)}</span>
                 </a>
               ))}
             </div>
@@ -270,7 +312,7 @@ export default function App() {
             href="#showcase"
             className="text-[13px] text-muted-foreground no-underline transition-colors duration-200 hover:text-foreground"
           >
-            See Showcase ↓
+            {t.heroShowcase}
           </a>
         </div>
       </section>
@@ -283,15 +325,18 @@ export default function App() {
         <div className="max-w-240 mx-auto">
           <div className="text-center">
             <h2 className="text-[clamp(28px,4vw,42px)] font-bold tracking-[-1px] text-foreground m-0 mb-3">
-              Showcase
+              {t.showcaseTitle}
             </h2>
             <p className="text-lg text-muted-foreground">
-              See Mr. Wplace in action.
+              {t.showcaseDescription}
             </p>
           </div>
           <div className="reveal relative h-140 overflow-hidden sm:h-105">
             <CircularGallery
-              items={SHOWCASE_ITEMS}
+              items={SHOWCASE_ITEMS.map((item, index) => ({
+                ...item,
+                text: t.showcaseItems[index],
+              }))}
               bend={1}
               textColor="#ffffff"
               borderRadius={0.04}
@@ -312,10 +357,10 @@ export default function App() {
         <div className="reveal max-w-240 mx-auto transition-[opacity,transform] duration-600 ease-out">
           <div className="text-center mb-14">
             <h2 className="text-[clamp(28px,4vw,42px)] font-bold tracking-[-1px] text-foreground m-0 mb-3">
-              Mobile Support
+              {t.mobileTitle}
             </h2>
             <p className="text-lg text-muted-foreground">
-              Bring Mr. Wplace to Android &amp; iOS.
+              {t.mobileDescription}
             </p>
           </div>
           <div className="grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-5 sm:grid-cols-[1fr]">
@@ -340,7 +385,7 @@ export default function App() {
                         {item.browser}
                       </a>
                       <span className="text-[13px] text-muted-foreground leading-[1.55]">
-                        {item.desc}
+                        {t[item.descKey]}
                       </span>
                     </li>
                   ))}
@@ -355,10 +400,10 @@ export default function App() {
       <section className="px-8 py-20 border-t border-border flex justify-center sm:px-4 sm:py-14">
         <div className="reveal w-full max-w-150 text-center px-10 py-14 border border-(--brand-border) rounded-3xl [background:var(--brand-bg)] transition-[opacity,transform] duration-600 ease-out sm:px-5 sm:py-9">
           <h2 className="text-[36px] font-bold tracking-[-0.8px] text-foreground m-0 mb-3">
-            Ready to start?
+            {t.ctaTitle}
           </h2>
           <p className="text-base text-muted-foreground mb-8">
-            Free. No account needed. Works on Chrome, Firefox &amp; Edge.
+            {t.ctaDescription}
           </p>
           <div className="flex gap-2.5 flex-wrap justify-center">
             {BROWSERS.map((b) => (
@@ -370,7 +415,7 @@ export default function App() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[10px] border border-border [background:color-mix(in_srgb,var(--muted)_60%,transparent)] text-foreground font-medium text-sm no-underline transition-[background,border-color,transform] duration-200 hover:[background:var(--brand-bg)] hover:border-(--brand-border) hover:-translate-y-px"
               >
                 {b.icon}
-                <span>Add to {b.name}</span>
+                <span>{t.installFor(b.name)}</span>
               </a>
             ))}
           </div>
