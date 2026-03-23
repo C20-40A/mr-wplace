@@ -189,8 +189,11 @@ export class PositionInfo {
     // 左端アイコン（クリックで現在座標へジャンプ）
     const markerButton = this.createToolbarButton(
       "Jump to current coordinates",
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="fill-primary size-4"><path d="M480-480q33 0 56.5-23.5T560-560q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 33 23.5 56.5T480-480Zm0 400Q319-217 239.5-334.5T160-552q0-150 96.5-239T480-880q127 0 223.5 89T800-552q0 100-79.5 217.5T480-80Z"></path></svg>',
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="none" stroke="currentColor" stroke-width="60" stroke-linecap="round" stroke-linejoin="round" class="size-4 shrink-0 -translate-y-px"><path d="M480-110q-93-78-146.5-154T280-404q0-94 58-155t142-61q84 0 142 61t58 155q0 64-53.5 140T480-110Z"></path><circle cx="480" cy="-465" r="55"></circle></svg>',
     );
+    markerButton.className = "btn btn-xs btn-ghost inline-flex items-center gap-1 px-1.5";
+    markerButton.style.cssText =
+      "height: 1.25rem; min-height: 1.25rem; width: auto; min-width: 0;";
     markerButton.addEventListener("click", () => {
       const pos = getCurrentPosition();
       if (!pos) return;
@@ -203,7 +206,8 @@ export class PositionInfo {
       "text-base-content/70 text-xs font-mono cursor-pointer hover:text-primary transition-colors";
     tileCoordSpan.textContent = `${coords.TLX}-${coords.TLY}-${coords.PxX}-${coords.PxY}`;
     tileCoordSpan.title = "Copy tile coordinates";
-    tileCoordSpan.addEventListener("click", async () => {
+    tileCoordSpan.addEventListener("click", async (event) => {
+      event.stopPropagation();
       const pos = getCurrentPosition();
       if (!pos) return;
       const c = latLngToTilePixel(pos.lat, pos.lng);
@@ -235,7 +239,8 @@ export class PositionInfo {
       );
     });
 
-    row1.append(markerButton, tileCoordSpan, clockButton);
+    markerButton.append(tileCoordSpan);
+    row1.append(markerButton, clockButton);
     toolbar.append(row1, row2);
 
     // モーダル本体の前に独立要素として挿入

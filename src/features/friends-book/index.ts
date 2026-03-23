@@ -19,8 +19,11 @@ import { friendsToCSV, csvToFriends, downloadCSV } from "./csv-utils";
 import { Tag } from "./types";
 import { TOOLBAR_ROW1_ID, TOOLBAR_ROW2_ID } from "@/features/position-info";
 import { findTopLeftControls } from "@/constants/selectors";
+import { isMobileViewport } from "@/constants/breakpoints";
 
 const FRIENDS_INFO_BAR_ID = "friends-book-info-bar";
+const FRIENDS_ADD_TO_FRIENDS_GROUP_ID = "friends-add-to-friends-group";
+const FRIENDS_USER_ID_LABEL_ID = "friends-user-id-label";
 
 const findFriendsButtonTarget = (): Element | null =>
   document.getElementById(TOOLBAR_ROW1_ID);
@@ -38,12 +41,21 @@ let lastPaintedByUser: {
 const hasValidPaintedByUser = (): boolean =>
   !!lastPaintedByUser?.id && !!lastPaintedByUser.name;
 
-const syncAddToFriendsButtonVisibility = (): void => {
+const syncAddToFriendsUI = (): void => {
+  const group = document.getElementById(FRIENDS_ADD_TO_FRIENDS_GROUP_ID);
   const button = document.getElementById("add-to-friends-btn") as
     | HTMLButtonElement
     | null;
-  if (!button) return;
-  button.hidden = !hasValidPaintedByUser();
+  const userIdLabel = document.getElementById(FRIENDS_USER_ID_LABEL_ID);
+  const isVisible = hasValidPaintedByUser();
+
+  if (group) group.hidden = !isVisible;
+  else if (button) button.hidden = !isVisible;
+  if (!userIdLabel) return;
+
+  userIdLabel.textContent =
+    isVisible && lastPaintedByUser ? `#${lastPaintedByUser.id}` : "";
+  userIdLabel.hidden = !isMobileViewport();
 };
 
 /**
@@ -129,8 +141,31 @@ const createAddToFriendsButton = (row1: Element): void => {
     updateFriendsInfoBar();
   });
 
-  row1.appendChild(button);
-  syncAddToFriendsButtonVisibility();
+  const userIdLabel = document.createElement("span");
+  userIdLabel.id = FRIENDS_USER_ID_LABEL_ID;
+  userIdLabel.className = "text-xs font-mono";
+  userIdLabel.style.cssText =
+    "opacity: 0.52; white-space: nowrap; cursor: pointer;";
+  userIdLabel.title = "Copy user ID";
+  userIdLabel.addEventListener("click", async () => {
+    if (!hasValidPaintedByUser() || !lastPaintedByUser) return;
+    try {
+      await navigator.clipboard.writeText(String(lastPaintedByUser.id));
+      Toast.success(t`${"copied"}`);
+    } catch (err) {
+      console.error("🧑‍🎨 : Failed to copy friend user id", err);
+      Toast.error("Failed to copy");
+    }
+  });
+
+  const group = document.createElement("div");
+  group.id = FRIENDS_ADD_TO_FRIENDS_GROUP_ID;
+  group.style.cssText =
+    "display: inline-flex; align-items: center; gap: 0.15rem;";
+  group.append(button, userIdLabel);
+
+  row1.appendChild(group);
+  syncAddToFriendsUI();
   updateFriendsInfoBar();
   console.log("🧑‍🎨 : Add to friends button created");
 };
@@ -390,9 +425,13 @@ const init = (): void => {
         picture: event.data.userData.picture,
       };
       console.log("🧑‍🎨 : Received painted by user data:", lastPaintedByUser);
-      syncAddToFriendsButtonVisibility();
+      syncAddToFriendsUI();
       updateFriendsInfoBar();
     }
+  });
+
+  window.addEventListener("resize", syncAddToFriendsUI, {
+    passive: true,
   });
 
   console.log("🧑‍🎨 : Friends book initialized");
