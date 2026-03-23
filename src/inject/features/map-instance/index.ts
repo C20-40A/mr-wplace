@@ -2,9 +2,9 @@ export {
   resolveMapInstanceAsync,
   getMapInstanceFromWplace,
 } from "./get-map-instance";
+export { changeBackgroundColor } from "./background-color-control";
 export {
   changeTileBoundaryVisibility,
-  changeBackgroundColor,
   changeMap3dEnabled,
   changeMap3dDragRotateEnabled,
   handleMapInstanceAreaGoto,
