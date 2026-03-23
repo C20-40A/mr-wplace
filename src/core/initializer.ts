@@ -34,6 +34,7 @@ import { CloseConfirm } from "@/features/close-confirm";
 import { PaintModeStyle } from "@/features/paint-mode-style";
 import { HideMyLocation } from "@/features/hide-my-location";
 import { FocusMode } from "@/features/focus-mode";
+import { initShareEnhancer } from "@/features/share-enhancer";
 import { di } from "@/core/di";
 import {
   sendGalleryImagesToInject,
@@ -112,6 +113,7 @@ export const initializeFeatures = async () => {
   safeInit("hideMyLocation", () => new HideMyLocation());
   safeInit("focusMode", () => new FocusMode());
   safeInit("paintStats", () => initPaintStats());
+  safeInit("shareEnhancer", () => initShareEnhancer());
 
   // Initialize async features in parallel (each wrapped for error isolation)
   await Promise.all([

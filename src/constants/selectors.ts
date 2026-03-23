@@ -284,6 +284,20 @@ export const findMyLocationButton = (): Element | null =>
   document.querySelector(myLocationTitleSelector);
 
 /**
+ * Share placeモーダルのURL入力コンテナを検索
+ * 構造: .modal-box > div(border-2 + input[readonly] + button.btn-primary)
+ */
+export const findShareModalUrlContainer = (
+  modalBox: Element,
+): HTMLElement | null => {
+  const input = modalBox.querySelector("input[readonly]");
+  if (!input?.parentElement) return null;
+  const container = input.parentElement;
+  if (container.querySelector(".btn-primary")) return container as HTMLElement;
+  return null;
+};
+
+/**
  * "My location" ボタンのコンテナを検索（右下）
  */
 export const findMyLocationContainer = (): Element | null => {

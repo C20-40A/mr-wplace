@@ -191,7 +191,8 @@ export class PositionInfo {
       "Jump to current coordinates",
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="none" stroke="currentColor" stroke-width="60" stroke-linecap="round" stroke-linejoin="round" class="size-4 shrink-0 -translate-y-px"><path d="M480-110q-93-78-146.5-154T280-404q0-94 58-155t142-61q84 0 142 61t58 155q0 64-53.5 140T480-110Z"></path><circle cx="480" cy="-465" r="55"></circle></svg>',
     );
-    markerButton.className = "btn btn-xs btn-ghost inline-flex items-center gap-1 px-1.5";
+    markerButton.className =
+      "btn btn-xs btn-ghost inline-flex items-center gap-1 p-0";
     markerButton.style.cssText =
       "height: 1.25rem; min-height: 1.25rem; width: auto; min-width: 0;";
     markerButton.addEventListener("click", () => {
