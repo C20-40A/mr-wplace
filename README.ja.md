@@ -11,6 +11,8 @@
 
 マップタイル上での高度な画像描画と管理機能を提供する、WPlaceサイト向けの強力なChrome拡張機能です。
 
+公式サイト: [https://c20-40a.github.io/mr-wplace/](https://c20-40a.github.io/mr-wplace/)
+
 ## 🚀 インストール
 
 ### ユーザー向け

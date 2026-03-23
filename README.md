@@ -11,6 +11,8 @@
 
 A powerful Chrome extension for WPlace site that provides advanced image drawing and management features on map tiles.
 
+Official site: [https://c20-40a.github.io/mr-wplace/](https://c20-40a.github.io/mr-wplace/)
+
 ## 🚀 Installation
 
 ### For Users
