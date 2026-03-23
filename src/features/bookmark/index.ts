@@ -30,6 +30,7 @@ import { TOOLBAR_ROW1_ID } from "@/features/position-info";
 import type { FavoriteLocation } from "./types";
 
 const SORT_KEY = "wplace-studio-bookmark-sort";
+const TAB_KEY = "wplace-studio-bookmark-tab";
 
 let router: BookmarkRouter;
 let selectedTagFilters: Set<string> = new Set();
@@ -125,9 +126,12 @@ const addBookmark = async (): Promise<void> => {
   });
 };
 
-const openModal = (): void => {
+const openModal = async (): Promise<void> => {
   setupModal();
   router.initialize("list");
+  const saved = await storage.get([TAB_KEY]);
+  const tab = saved[TAB_KEY] === "official-fav" ? "official-fav" : "bookmark";
+  switchTab(tab, false);
   (
     document.getElementById("wplace-studio-favorite-modal") as HTMLDialogElement
   ).showModal();
@@ -429,15 +433,16 @@ const setupColorPickerHandlers = (modal: HTMLDialogElement): void => {
   });
 };
 
-const switchTab = (tab: "bookmark" | "official-fav"): void => {
+const switchTab = (tab: "bookmark" | "official-fav", persist = true): void => {
   const bookmarkTab = document.getElementById("wps-tab-bookmark");
   const officialFavTab = document.getElementById("wps-tab-official-fav");
   const bookmarkContent = document.getElementById("wps-bookmark-tab-content");
   const officialFavContent = document.getElementById("wps-official-fav-tab-content");
   if (!bookmarkTab || !officialFavTab || !bookmarkContent || !officialFavContent) return;
+  if (persist) storage.set({ [TAB_KEY]: tab });
 
-  const activeStyle = "border-radius: 0; border-bottom: 2px solid oklch(var(--p)); color: oklch(var(--p)); font-weight: 600;";
-  const inactiveStyle = "border-radius: 0; border-bottom: 2px solid transparent; color: oklch(var(--bc) / 0.5);";
+  const activeStyle = "border-radius: calc(var(--rounded-box, 1rem) - 0.25rem); background: oklch(var(--p)); color: oklch(var(--pc)); font-weight: 600; box-shadow: 0 1px 3px oklch(var(--p) / 0.4);";
+  const inactiveStyle = "border-radius: calc(var(--rounded-box, 1rem) - 0.25rem); background: transparent; color: oklch(var(--bc) / 0.5); box-shadow: none;";
 
   if (tab === "bookmark") {
     bookmarkTab.style.cssText = activeStyle;
