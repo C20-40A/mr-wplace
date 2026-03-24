@@ -679,7 +679,7 @@ export class ImageAdjustToolMode {
       ]);
       if (projected.length < 3) return this.metrics;
 
-      const widthPx = Math.max(
+      const rawWidthPx = Math.max(
         1,
         Math.round(
           Math.hypot(
@@ -688,7 +688,7 @@ export class ImageAdjustToolMode {
           ),
         ),
       );
-      const heightPx = Math.max(
+      const rawHeightPx = Math.max(
         1,
         Math.round(
           Math.hypot(
@@ -697,6 +697,8 @@ export class ImageAdjustToolMode {
           ),
         ),
       );
+      const widthPx = Math.min(rawWidthPx, this.options.naturalWidth);
+      const heightPx = Math.min(rawHeightPx, this.options.naturalHeight);
       const topLeftPixelX = snapTopLeftToPixel
         ? Math.floor(projected[0].pixelX)
         : projected[0].pixelX;
