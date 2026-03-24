@@ -59,7 +59,7 @@ const MESSAGES = {
     heroOpen: "Wplace を開く",
     heroShowcase: "Showcase ↓",
     showcaseTitle: "Showcase",
-    showcaseDescription: "多くの機能を搭載した Mr. Wplace をぜひご覧ください",
+    showcaseDescription: "横にスワイプして搭載された機能をご覧ください",
     mobileTitle: "スマホ対応",
     mobileDescription: "Android と iOS でも Mr. Wplace を使えます",
     ctaTitle: "はじめましょう",
