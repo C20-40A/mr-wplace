@@ -756,14 +756,14 @@ export class ImageAdjustToolMode {
         x: projected[0].x,
         y: projected[0].y,
         width: Math.max(
-          MIN_FRAME_WIDTH,
+          1,
           Math.hypot(
             projected[1].x - projected[0].x,
             projected[1].y - projected[0].y,
           ),
         ),
         height: Math.max(
-          MIN_FRAME_WIDTH / this.aspectRatio,
+          1,
           Math.hypot(
             projected[2].x - projected[0].x,
             projected[2].y - projected[0].y,
