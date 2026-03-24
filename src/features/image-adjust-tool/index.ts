@@ -281,9 +281,10 @@ export class ImageAdjustToolMode {
       "bottom-left": -dx,
       "bottom-right": dx,
     };
-    const nextWidth = Math.max(
-      MIN_FRAME_WIDTH,
+    const nextWidth = clamp(
       startRect.width + widthDeltaMap[resizeCorner],
+      MIN_FRAME_WIDTH,
+      this.getMaxScreenWidth(),
     );
     const nextHeight = nextWidth / this.aspectRatio;
     const nextX =
@@ -590,6 +591,11 @@ export class ImageAdjustToolMode {
       x: (vw - adjustedWidth) * 0.5,
       y: (vh - adjustedHeight) * 0.45,
     });
+  }
+
+  private getMaxScreenWidth(): number {
+    if (!this.rect || !this.mapRect || this.mapRect.width <= 0) return Infinity;
+    return this.options.naturalWidth * (this.rect.width / this.mapRect.width);
   }
 
   private getClampedRect(rect: Rect): Rect {
