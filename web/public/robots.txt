@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://c20-40a.github.io/mr-wplace/sitemap.xml

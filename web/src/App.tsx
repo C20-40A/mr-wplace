@@ -191,7 +191,7 @@ const MOBILE_ITEMS: MobilePlatform[] = [
 ];
 
 export default function App() {
-  const locale = navigator.language?.startsWith("ja") ? "ja" : "en";
+  const locale = document.documentElement.lang.startsWith("ja") ? "ja" : "en";
   const t = MESSAGES[locale];
   const browsers = getBrowserEntries(locale);
   useEffect(() => {

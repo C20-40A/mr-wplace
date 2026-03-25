@@ -14,6 +14,14 @@ const getBasePath = () => {
 export default defineConfig(() => ({
   base: getBasePath(),
   plugins: [tailwindcss(), react()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        ja: path.resolve(__dirname, 'ja/index.html'),
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
