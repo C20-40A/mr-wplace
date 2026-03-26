@@ -39,8 +39,18 @@ export class ColorPalette {
   private selectedColorOnlyMark: boolean;
   private boundClickHandler: (e: MouseEvent) => void;
   private boundDocumentClickHandler: (e: MouseEvent) => void;
+  private boundDocumentPortalInputHandler: (e: Event) => void;
+  private boundDocumentPortalChangeHandler: (e: Event) => void;
   private boundInputHandler: (e: Event) => void;
   private boundChangeHandler: (e: Event) => void;
+  private dropdownPortals = new Map<
+    string,
+    {
+      dropdown: HTMLElement;
+      parent: Node;
+      nextSibling: Node | null;
+    }
+  >();
 
   constructor(container: HTMLElement, options: ColorPaletteOptions = {}) {
     this.container = container;
@@ -65,6 +75,10 @@ export class ColorPalette {
     this.boundClickHandler = (e: MouseEvent) => this.handleClick(e);
     this.boundDocumentClickHandler = (e: MouseEvent) =>
       this.handleDocumentClick(e);
+    this.boundDocumentPortalInputHandler = (e: Event) =>
+      this.handleDocumentPortalInput(e);
+    this.boundDocumentPortalChangeHandler = (e: Event) =>
+      this.handleDocumentPortalChange(e);
     this.boundInputHandler = (e: Event) => this.handleInput(e);
     this.boundChangeHandler = (e: Event) => this.handleChange(e);
 
@@ -117,6 +131,8 @@ export class ColorPalette {
 
     // ドロップダウンを外側クリックで閉じる
     document.addEventListener("click", this.boundDocumentClickHandler);
+    document.addEventListener("input", this.boundDocumentPortalInputHandler);
+    document.addEventListener("change", this.boundDocumentPortalChangeHandler);
   }
 
   private handleInput(e: Event): void {
@@ -160,7 +176,8 @@ export class ColorPalette {
 
     // アイコンを更新
     const icons = createEnhancedModeIcons(hex);
-    this.container.querySelectorAll(".enhanced-mode-item").forEach((item) => {
+    const enhancedDropdown = this.getDropdown(".enhanced-mode-dropdown");
+    enhancedDropdown?.querySelectorAll(".enhanced-mode-item").forEach((item) => {
       const mode = (item as HTMLElement).dataset.mode as keyof typeof icons;
       const img = item.querySelector("img") as HTMLImageElement;
       if (img && icons[mode]) img.src = icons[mode];
@@ -172,30 +189,147 @@ export class ColorPalette {
       currentIcon.src = icons[this.enhancedMode];
   }
 
+  private clamp(value: number, min: number, max: number): number {
+    if (value < min) return min;
+    if (value > max) return max;
+    return value;
+  }
+
+  private getDropdown(selector: string): HTMLElement | null {
+    const portal = this.dropdownPortals.get(selector);
+    if (portal) return portal.dropdown;
+    return this.container.querySelector(selector) as HTMLElement | null;
+  }
+
+  private isPortalTarget(target: HTMLElement): boolean {
+    for (const { dropdown } of this.dropdownPortals.values()) {
+      if (dropdown.contains(target)) return true;
+    }
+    return false;
+  }
+
+  private moveDropdownToBody(selector: string, dropdown: HTMLElement): void {
+    if (this.dropdownPortals.has(selector)) return;
+
+    this.dropdownPortals.set(selector, {
+      dropdown,
+      parent: dropdown.parentNode!,
+      nextSibling: dropdown.nextSibling,
+    });
+    document.body.appendChild(dropdown);
+  }
+
+  private restoreDropdown(selector: string): void {
+    const portal = this.dropdownPortals.get(selector);
+    if (!portal) return;
+
+    const { dropdown, parent, nextSibling } = portal;
+    if (nextSibling?.parentNode === parent) {
+      parent.insertBefore(dropdown, nextSibling);
+    } else {
+      parent.appendChild(dropdown);
+    }
+    this.dropdownPortals.delete(selector);
+  }
+
+  private closeDropdown(selector: string): void {
+    const dropdown = this.getDropdown(selector);
+    if (!dropdown) return;
+
+    dropdown.style.display = "none";
+    dropdown.style.position = "";
+    dropdown.style.top = "";
+    dropdown.style.left = "";
+    dropdown.style.right = "";
+    dropdown.style.bottom = "";
+    dropdown.style.zIndex = "";
+    dropdown.style.maxWidth = "";
+    dropdown.style.maxHeight = "";
+    dropdown.style.overflowY = "";
+    this.restoreDropdown(selector);
+  }
+
+  private openDropdown(
+    buttonSelector: string,
+    dropdownSelector: string,
+    onBeforeOpen?: (dropdown: HTMLElement) => void,
+  ): void {
+    const button = this.container.querySelector(buttonSelector) as HTMLElement | null;
+    const dropdown = this.getDropdown(dropdownSelector);
+    if (!button || !dropdown) return;
+
+    const isVisible = dropdown.style.display !== "none";
+    if (isVisible) {
+      this.closeDropdown(dropdownSelector);
+      return;
+    }
+
+    onBeforeOpen?.(dropdown);
+    this.moveDropdownToBody(dropdownSelector, dropdown);
+    dropdown.style.display = "block";
+    dropdown.style.position = "fixed";
+    dropdown.style.left = "0";
+    dropdown.style.top = "0";
+    dropdown.style.right = "auto";
+    dropdown.style.bottom = "auto";
+    dropdown.style.zIndex = "10000";
+
+    const buttonRect = button.getBoundingClientRect();
+    const viewportPadding = 8;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const maxWidth = Math.max(160, viewportWidth - viewportPadding * 2);
+    const maxHeight = Math.max(160, viewportHeight - viewportPadding * 2);
+    dropdown.style.maxWidth = `${maxWidth}px`;
+    dropdown.style.maxHeight = `${maxHeight}px`;
+    dropdown.style.overflowY = "auto";
+
+    const dropdownRect = dropdown.getBoundingClientRect();
+    const left = this.clamp(
+      buttonRect.right - dropdownRect.width,
+      viewportPadding,
+      viewportWidth - dropdownRect.width - viewportPadding,
+    );
+    const top = this.clamp(
+      buttonRect.bottom + 8,
+      viewportPadding,
+      viewportHeight - dropdownRect.height - viewportPadding,
+    );
+
+    dropdown.style.left = `${left}px`;
+    dropdown.style.top = `${top}px`;
+  }
+
+  private handleDocumentPortalInput(e: Event): void {
+    const target = e.target as HTMLElement;
+    if (!this.isPortalTarget(target)) return;
+    this.handleInput(e);
+  }
+
+  private handleDocumentPortalChange(e: Event): void {
+    const target = e.target as HTMLElement;
+    if (!this.isPortalTarget(target)) return;
+    this.handleChange(e);
+  }
+
   private handleDocumentClick(e: MouseEvent): void {
-    if (!(e.target as HTMLElement).closest(".sort-order-container")) {
-      const dropdown = this.container.querySelector(
-        ".sort-order-dropdown",
-      ) as HTMLElement;
-      if (dropdown) dropdown.style.display = "none";
+    const target = e.target as HTMLElement;
+    if (this.isPortalTarget(target)) {
+      this.handleClick(e);
+      return;
     }
-    if (!(e.target as HTMLElement).closest(".enhanced-mode-container")) {
-      const dropdown = this.container.querySelector(
-        ".enhanced-mode-dropdown",
-      ) as HTMLElement;
-      if (dropdown) dropdown.style.display = "none";
+
+    if (!target.closest(".sort-order-container")) {
+      this.closeDropdown(".sort-order-dropdown");
     }
-    if (!(e.target as HTMLElement).closest(".compute-device-container")) {
-      const dropdown = this.container.querySelector(
-        ".compute-device-dropdown",
-      ) as HTMLElement;
-      if (dropdown) dropdown.style.display = "none";
+    if (!target.closest(".enhanced-mode-container")) {
+      this.closeDropdown(".enhanced-mode-dropdown");
     }
-    if (!(e.target as HTMLElement).closest(".overlay-mode-container")) {
-      const dropdown = this.container.querySelector(
-        ".overlay-mode-dropdown",
-      ) as HTMLElement;
-      if (dropdown) dropdown.style.display = "none";
+    if (!target.closest(".compute-device-container")) {
+      this.closeDropdown(".compute-device-dropdown");
+    }
+    if (!target.closest(".overlay-mode-container")) {
+      this.closeDropdown(".overlay-mode-dropdown");
     }
   }
 
@@ -232,13 +366,7 @@ export class ColorPalette {
       !target.closest(".sort-order-item")
     ) {
       e.stopPropagation();
-      const dropdown = this.container.querySelector(
-        ".sort-order-dropdown",
-      ) as HTMLElement;
-      if (dropdown) {
-        const isVisible = dropdown.style.display !== "none";
-        dropdown.style.display = isVisible ? "none" : "block";
-      }
+      this.openDropdown(".sort-order-button", ".sort-order-dropdown");
       return;
     }
 
@@ -248,10 +376,7 @@ export class ColorPalette {
       e.stopPropagation();
       const sort = sortOrderItem.dataset.sort as SortOrder;
       this.handleSortOrderChange(sort);
-      const dropdown = this.container.querySelector(
-        ".sort-order-dropdown",
-      ) as HTMLElement;
-      if (dropdown) dropdown.style.display = "none";
+      this.closeDropdown(".sort-order-dropdown");
       return;
     }
 
@@ -261,29 +386,22 @@ export class ColorPalette {
       !target.closest(".enhanced-mode-item")
     ) {
       e.stopPropagation();
-      const dropdown = this.container.querySelector(
+      this.openDropdown(
+        ".enhanced-mode-button",
         ".enhanced-mode-dropdown",
-      ) as HTMLElement;
-      if (dropdown) {
-        const isVisible = dropdown.style.display !== "none";
-
-        if (!isVisible) {
-          // レスポンシブ対応
+        (dropdown) => {
           const isMobile = isMobileViewport();
-          const grid = dropdown.querySelector(
-            ".enhanced-mode-grid",
-          ) as HTMLElement;
+          const grid = dropdown.querySelector(".enhanced-mode-grid") as HTMLElement;
           if (isMobile) {
             dropdown.style.minWidth = "";
             grid.style.gridTemplateColumns = "repeat(2, 1fr)";
-          } else {
-            dropdown.style.minWidth = "320px";
-            grid.style.gridTemplateColumns = "repeat(4, 1fr)";
+            return;
           }
-        }
 
-        dropdown.style.display = isVisible ? "none" : "block";
-      }
+          dropdown.style.minWidth = "320px";
+          grid.style.gridTemplateColumns = "repeat(4, 1fr)";
+        },
+      );
       return;
     }
 
@@ -295,10 +413,7 @@ export class ColorPalette {
       e.stopPropagation();
       const mode = enhancedModeItem.dataset.mode as EnhancedMode;
       this.handleEnhancedModeChange(mode);
-      const dropdown = this.container.querySelector(
-        ".enhanced-mode-dropdown",
-      ) as HTMLElement;
-      if (dropdown) dropdown.style.display = "none";
+      this.closeDropdown(".enhanced-mode-dropdown");
       return;
     }
 
@@ -308,13 +423,7 @@ export class ColorPalette {
       !target.closest(".compute-device-item")
     ) {
       e.stopPropagation();
-      const dropdown = this.container.querySelector(
-        ".compute-device-dropdown",
-      ) as HTMLElement;
-      if (dropdown) {
-        const isVisible = dropdown.style.display !== "none";
-        dropdown.style.display = isVisible ? "none" : "block";
-      }
+      this.openDropdown(".compute-device-button", ".compute-device-dropdown");
       return;
     }
 
@@ -324,13 +433,7 @@ export class ColorPalette {
       !target.closest(".overlay-mode-item")
     ) {
       e.stopPropagation();
-      const dropdown = this.container.querySelector(
-        ".overlay-mode-dropdown",
-      ) as HTMLElement;
-      if (dropdown) {
-        const isVisible = dropdown.style.display !== "none";
-        dropdown.style.display = isVisible ? "none" : "block";
-      }
+      this.openDropdown(".overlay-mode-button", ".overlay-mode-dropdown");
       return;
     }
 
@@ -341,10 +444,7 @@ export class ColorPalette {
       const nextMode = (overlayModeItem.dataset.overlayMode ||
         "true") as OverlayModeValue;
       this.handleOverlayModeSelection(nextMode);
-      const dropdown = this.container.querySelector(
-        ".overlay-mode-dropdown",
-      ) as HTMLElement;
-      if (dropdown) dropdown.style.display = "none";
+      this.closeDropdown(".overlay-mode-dropdown");
       return;
     }
 
@@ -356,10 +456,7 @@ export class ColorPalette {
       e.stopPropagation();
       const device = computeDeviceItem.dataset.device as ComputeDevice;
       this.handleComputeDeviceChange(device);
-      const dropdown = this.container.querySelector(
-        ".compute-device-dropdown",
-      ) as HTMLElement;
-      if (dropdown) dropdown.style.display = "none";
+      this.closeDropdown(".compute-device-dropdown");
       return;
     }
 
@@ -625,8 +722,12 @@ export class ColorPalette {
 
     const toggleButton = this.container.querySelector(
       ".selected-color-only-mark-toggle",
-    ) as HTMLElement;
-    if (toggleButton) {
+    ) as HTMLElement | null;
+    const portalToggleButton = this.getDropdown(
+      ".enhanced-mode-dropdown",
+    )?.querySelector(".selected-color-only-mark-toggle") as HTMLElement | null;
+    const activeToggleButton = portalToggleButton ?? toggleButton;
+    if (activeToggleButton) {
       const bgColor = this.selectedColorOnlyMark
         ? "var(--color-success, #22c55e)"
         : "transparent";
@@ -635,10 +736,12 @@ export class ColorPalette {
         : "var(--color-base-content, #6b7280)";
       const borderColor = this.selectedColorOnlyMark ? "#22c55e" : "#d1d5db";
 
-      toggleButton.style.backgroundColor = bgColor;
-      toggleButton.style.color = textColor;
-      toggleButton.style.borderColor = borderColor;
-      toggleButton.style.fontWeight = this.selectedColorOnlyMark ? "600" : "400";
+      activeToggleButton.style.backgroundColor = bgColor;
+      activeToggleButton.style.color = textColor;
+      activeToggleButton.style.borderColor = borderColor;
+      activeToggleButton.style.fontWeight = this.selectedColorOnlyMark
+        ? "600"
+        : "400";
     }
 
     this.options.onSelectedColorOnlyMarkChange?.(this.selectedColorOnlyMark);
@@ -664,11 +767,21 @@ export class ColorPalette {
   }
 
   destroy(): void {
+    this.closeDropdown(".sort-order-dropdown");
+    this.closeDropdown(".enhanced-mode-dropdown");
+    this.closeDropdown(".compute-device-dropdown");
+    this.closeDropdown(".overlay-mode-dropdown");
+
     // イベントリスナー削除
     this.container.removeEventListener("click", this.boundClickHandler);
     this.container.removeEventListener("input", this.boundInputHandler);
     this.container.removeEventListener("change", this.boundChangeHandler);
     document.removeEventListener("click", this.boundDocumentClickHandler);
+    document.removeEventListener("input", this.boundDocumentPortalInputHandler);
+    document.removeEventListener(
+      "change",
+      this.boundDocumentPortalChangeHandler,
+    );
 
     // DOM削除
     this.container.innerHTML = "";
