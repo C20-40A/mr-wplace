@@ -24,6 +24,7 @@ export interface TileDrawInstance {
   tiles: Record<string, ImageBitmap> | null;
   imageKey: string;
   drawEnabled: boolean;
+  timestamp?: number;
   isOptimized?: boolean; // true if layer is optimized in IndexedDB
   bounds?: {
     top: number;

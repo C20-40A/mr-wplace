@@ -1,9 +1,58 @@
 import {
   addImageToOverlayLayers,
-  removePreparedOverlayImageByKey,
+  removeOverlayImageByKey,
 } from "../features/tile-draw";
 import { loadImageBitmap } from "../utils/image-loader";
 import { refreshFrontTileLayer } from "../features/map-instance";
+import type { TileDrawInstance } from "../features/tile-draw/types";
+
+const hasSameAffectedTiles = (
+  previous: string[] | undefined,
+  next: string[]
+): boolean => {
+  if (!previous || previous.length !== next.length) return false;
+  return previous.every((tileKey, index) => tileKey === next[index]);
+};
+
+const shouldPreserveGalleryStats = (
+  previousLayer: TileDrawInstance | undefined,
+  nextItem:
+    | {
+        id: string;
+        coords?: { TLX: number; TLY: number; PxX: number; PxY: number };
+        width: number;
+        height: number;
+        affectedTiles: string[];
+        visible: boolean;
+        zIndex: number;
+        timestamp: number;
+      }
+    | undefined
+): boolean => {
+  if (!previousLayer || !nextItem?.coords) return false;
+  if (previousLayer.timestamp !== nextItem.timestamp) return false;
+
+  const [prevTLX, prevTLY, prevPxX, prevPxY] = previousLayer.coords;
+  const { TLX, TLY, PxX, PxY } = nextItem.coords;
+  if (
+    prevTLX !== TLX ||
+    prevTLY !== TLY ||
+    prevPxX !== PxX ||
+    prevPxY !== PxY
+  )
+    return false;
+
+  if (!previousLayer.bounds) return false;
+
+  const width = previousLayer.bounds.right - previousLayer.bounds.left;
+  const height = previousLayer.bounds.bottom - previousLayer.bounds.top;
+  if (width !== nextItem.width || height !== nextItem.height) return false;
+
+  if (!hasSameAffectedTiles(previousLayer.affectedTiles, nextItem.affectedTiles))
+    return false;
+
+  return true;
+};
 
 /**
  * Handle gallery images v2 (IndexedDB v2 based)
@@ -26,10 +75,25 @@ export const handleGalleryImagesV2 = async (data: {
   // stateVersion in last-modified-cache.ts handles this automatically:
   // - overlayLayers changes → stateVersion changes → cache auto-clears on next checkStateChanged()
 
+  const previousGalleryLayers = new Map<string, TileDrawInstance>();
+  const { overlayLayers: existingOverlayLayers } = await import(
+    "../features/tile-draw"
+  );
+  for (const layer of existingOverlayLayers) {
+    if (!window.mrWplaceGalleryImageKeys?.has(layer.imageKey)) continue;
+    previousGalleryLayers.set(layer.imageKey, layer);
+  }
+  const nextItemsById = new Map(data.items.map((item) => [item.id, item]));
+
   // Remove previously tracked gallery images from overlay layers
   if (window.mrWplaceGalleryImageKeys) {
     for (const key of window.mrWplaceGalleryImageKeys) {
-      removePreparedOverlayImageByKey(key);
+      removeOverlayImageByKey(key, {
+        preserveStats: shouldPreserveGalleryStats(
+          previousGalleryLayers.get(key),
+          nextItemsById.get(key)
+        ),
+      });
     }
   }
 
@@ -66,6 +130,7 @@ export const handleGalleryImagesV2 = async (data: {
       tiles: null, // Tiles loaded on-demand from IndexedDB v2
       imageKey: item.id,
       drawEnabled: true,
+      timestamp: item.timestamp,
       isOptimized: true, // v2 items are always optimized
       bounds,
       affectedTiles: item.affectedTiles,

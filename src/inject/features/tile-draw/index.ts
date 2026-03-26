@@ -5,7 +5,9 @@ export {
 
 export {
   addImageToOverlayLayers,
+  clearPerTileColorStats,
   getPerTileColorStats,
+  removeOverlayImageByKey,
   removePreparedOverlayImageByKey,
   setPerTileColorStats,
   toggleDrawEnabled,

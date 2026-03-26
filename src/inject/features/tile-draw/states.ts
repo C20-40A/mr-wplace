@@ -28,9 +28,20 @@ export const setPerTileColorStats = (
   perTileColorStats.set(imageKey, tileStatsMap);
 };
 
-export const removePreparedOverlayImageByKey = (imageKey: string): void => {
-  overlayLayers = overlayLayers.filter((i) => i.imageKey !== imageKey);
+export const clearPerTileColorStats = (imageKey: string): void => {
   perTileColorStats.delete(imageKey);
+};
+
+export const removeOverlayImageByKey = (
+  imageKey: string,
+  options?: { preserveStats?: boolean }
+): void => {
+  overlayLayers = overlayLayers.filter((i) => i.imageKey !== imageKey);
+  if (!options?.preserveStats) clearPerTileColorStats(imageKey);
+};
+
+export const removePreparedOverlayImageByKey = (imageKey: string): void => {
+  removeOverlayImageByKey(imageKey);
 };
 
 /**
