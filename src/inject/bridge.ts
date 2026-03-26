@@ -14,6 +14,7 @@ import {
   handleColorFilterUpdate,
   handleCacheClear,
   handleFrontTileLayerUpdate,
+  handleTransparentPixelFilterUpdate,
   handleSnapshotCaptureUpdate,
 } from "./handlers/state-handlers";
 import {
@@ -291,6 +292,8 @@ const messageHandlers: Record<string, MessageHandler> = {
     changeMap3dDragRotateEnabled(data.enabled),
   "mr-wplace-cache-clear": handleCacheClear,
   "mr-wplace-front-tile-layer-update": handleFrontTileLayerUpdate,
+  "mr-wplace-transparent-pixel-filter-update":
+    handleTransparentPixelFilterUpdate,
   "mr-wplace-snapshot-capture-update": handleSnapshotCaptureUpdate,
   "mr-wplace-gallery-images-v2": handleGalleryImagesV2,
   "mr-wplace-snapshots": handleSnapshotsUpdate,

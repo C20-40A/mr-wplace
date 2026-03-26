@@ -19,6 +19,12 @@ export {
   clearFrontTilePaintGuide,
 } from "./front-tile-layer";
 export {
+  setTransparentPixelFilterEnabled,
+  refreshTransparentPixelFilter,
+  scheduleTransparentPixelFilterRefresh,
+  setupTransparentPixelFilterOnMapReady,
+} from "./transparent-pixel-filter";
+export {
   setupPaintedCoordinatesCapture,
   stopPaintedCoordinatesCapture,
   getCapturedPaintedCoordinates,

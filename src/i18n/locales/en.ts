@@ -498,6 +498,7 @@ Do not use this feature to paint actual pixels.`,
   map_filter_area_sync_replace_confirm:
     "Replace all saved areas with URL data?\nCurrent areas will be overwritten.",
   map_filter_backgroundColor: "Background Color",
+  map_filter_transparentPixelFilter: "Transparent Pixels",
   map_filter_map3d: "3D View",
   map_filter_map3d_drag_rotate: "Enable Rotation",
   map_filter_mapSky: "Sky & Fog",

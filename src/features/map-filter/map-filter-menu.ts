@@ -19,6 +19,7 @@ const HIGH_CONTRAST_KEY = "mapFilter_highContrast";
 const HIGH_CONTRAST_STYLE_ID = "mr-wplace-high-contrast-style";
 const BACKGROUND_COLOR_ENABLED_KEY = "mapFilter_backgroundColorEnabled";
 const BACKGROUND_COLOR_VALUE_KEY = "mapFilter_backgroundColorValue";
+const TRANSPARENT_PIXEL_FILTER_KEY = "mapFilter_transparentPixelFilter";
 const GRID_DISPLAY_KEY = "mapFilter_gridDisplay";
 const AREA_MEASURE_KEY = "mapFilter_areaMeasure";
 const GRID_DISPLAY_TEMPORARILY_DISABLED = false;
@@ -31,6 +32,7 @@ type FilterState = {
   gridDisplay: boolean;
   backgroundColorEnabled: boolean;
   backgroundColorValue: string;
+  transparentPixelFilter: boolean;
   map3d: boolean;
   map3dDragRotate: boolean;
   scaleDisplay: boolean;
@@ -43,6 +45,7 @@ type FilterId =
   | "tileBoundaries"
   | "gridDisplay"
   | "backgroundColor"
+  | "transparentPixelFilter"
   | "map3d"
   | "map3dDragRotate"
   | "scaleDisplay";
@@ -94,6 +97,13 @@ const filterConfig: FilterConfig[] = [
     hasColorPicker: true,
   },
   {
+    id: "transparentPixelFilter",
+    label: () => t`${"map_filter_transparentPixelFilter"}`,
+    iconOn: "🟥",
+    iconOff: "⬛",
+    requiresMap: true,
+  },
+  {
     id: "map3d",
     label: () => t`${"map_filter_map3d"}`,
     iconOn: "🧊",
@@ -128,6 +138,7 @@ class MapFilterMenu {
     gridDisplay: false,
     backgroundColorEnabled: false,
     backgroundColorValue: "#000000",
+    transparentPixelFilter: false,
     map3d: false,
     map3dDragRotate: false,
     scaleDisplay: false,
@@ -145,6 +156,7 @@ class MapFilterMenu {
       HIGH_CONTRAST_KEY,
       BACKGROUND_COLOR_ENABLED_KEY,
       BACKGROUND_COLOR_VALUE_KEY,
+      TRANSPARENT_PIXEL_FILTER_KEY,
       GRID_DISPLAY_KEY,
       AREA_MEASURE_KEY,
     ]);
@@ -157,6 +169,8 @@ class MapFilterMenu {
       stored[BACKGROUND_COLOR_ENABLED_KEY] ?? false;
     this.state.backgroundColorValue =
       stored[BACKGROUND_COLOR_VALUE_KEY] ?? "#000000";
+    this.state.transparentPixelFilter =
+      stored[TRANSPARENT_PIXEL_FILTER_KEY] ?? false;
     this.state.areaMeasure = stored[AREA_MEASURE_KEY] ?? false;
 
     this.applyDarkTheme(this.state.darkTheme);
@@ -208,6 +222,7 @@ class MapFilterMenu {
     this.notifyTileBoundaries();
     this.notifyGridDisplay();
     this.notifyScaleDisplay();
+    this.notifyTransparentPixelFilter();
 
     if (this.state.backgroundColorEnabled) {
       this.applyBackgroundColor(this.state.backgroundColorValue);
@@ -522,6 +537,14 @@ class MapFilterMenu {
         }
         break;
       }
+      case "transparentPixelFilter": {
+        this.state.transparentPixelFilter = !this.state.transparentPixelFilter;
+        await storage.set({
+          [TRANSPARENT_PIXEL_FILTER_KEY]: this.state.transparentPixelFilter,
+        });
+        this.notifyTransparentPixelFilter();
+        break;
+      }
       case "map3d": {
         this.state.map3d = !this.state.map3d;
         if (this.state.map3d && this.state.gridDisplay) {
@@ -673,6 +696,16 @@ class MapFilterMenu {
       this.applyBackgroundColor(color);
     }
     console.log("🧑‍🎨 : Background color value changed to:", color);
+  }
+
+  private notifyTransparentPixelFilter() {
+    window.postMessage(
+      {
+        source: "mr-wplace-transparent-pixel-filter-update",
+        enabled: this.state.transparentPixelFilter,
+      },
+      "*",
+    );
   }
 
   private notifyScaleDisplay() {

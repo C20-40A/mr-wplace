@@ -507,6 +507,7 @@ export const jaTranslations = {
   map_filter_area_sync_replace_confirm:
     "URLのデータで保存済みエリアを上書きしますか？\n現在のエリアは置き換えられます。",
   map_filter_backgroundColor: "背景色",
+  map_filter_transparentPixelFilter: "透明ピクセル",
   map_filter_map3d: "3D表示",
   map_filter_map3d_drag_rotate: "回転を有効化",
   map_filter_mapSky: "空とフォグ",

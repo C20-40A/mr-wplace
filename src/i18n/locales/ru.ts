@@ -449,6 +449,7 @@ export const ruTranslations = {
   map_filter_tileBoundaries: "Границы тайлов",
   map_filter_gridDisplay: "Сетка пикселей",
   map_filter_backgroundColor: "Цвет фона",
+  map_filter_transparentPixelFilter: "Прозрачные пиксели",
   map_filter_map3d: "3D вид",
   map_filter_mapSky: "Небо и туман",
   draw_on_map: "Рисовать на карте",

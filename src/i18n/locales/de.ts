@@ -509,6 +509,7 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   map_filter_area_sync_replace_confirm:
     "Alle gespeicherten Flächen durch URL-Daten ersetzen?\nAktuelle Flächen werden überschrieben.",
   map_filter_backgroundColor: "Hintergrundfarbe",
+  map_filter_transparentPixelFilter: "Transparente Pixel",
   map_filter_map3d: "3D-Ansicht",
   map_filter_map3d_drag_rotate: "Drehung aktivieren",
   map_filter_mapSky: "Himmel & Nebel",

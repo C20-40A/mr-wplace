@@ -4,6 +4,8 @@ import { updateColorFilterState } from "../states/colorFilterState";
 import {
   setFrontTileLayerEnabled,
   refreshFrontTileLayer,
+  setTransparentPixelFilterEnabled,
+  scheduleTransparentPixelFilterRefresh,
 } from "../features/map-instance";
 
 const COLOR_FILTER_REFRESH_DEBOUNCE_MS = 120;
@@ -174,6 +176,18 @@ export const handleFrontTileLayerUpdate = (data: {
   window.mrWplaceFrontTileLayerEnabled = data.enabled;
   setFrontTileLayerEnabled(data.enabled);
   console.log("🧑‍🎨 : Front tile layer updated:", data.enabled);
+};
+
+export const handleTransparentPixelFilterUpdate = (data: {
+  enabled: boolean;
+}): void => {
+  const nextEnabled = data.enabled === true;
+  if (window.mrWplaceTransparentPixelFilterEnabled === nextEnabled) return;
+
+  window.mrWplaceTransparentPixelFilterEnabled = nextEnabled;
+  setTransparentPixelFilterEnabled(nextEnabled);
+  if (nextEnabled) scheduleTransparentPixelFilterRefresh();
+  console.log("🧑‍🎨 : Transparent pixel filter updated:", nextEnabled);
 };
 
 /**

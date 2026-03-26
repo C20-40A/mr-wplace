@@ -166,6 +166,7 @@ declare global {
     mrWplaceOverlayLightweightMode?: boolean;
     mrWplaceSelectedColorOnlyMark?: boolean;
     mrWplaceFrontTileLayerEnabled?: boolean;
+    mrWplaceTransparentPixelFilterEnabled?: boolean;
     mrWplaceSnapshotCaptureEnabled?: boolean;
     mrWplaceTempPaintedByUser?: PaintedByUser;
     selectedColor?: string; // WPlace's selected color (e.g., "#FF0000")

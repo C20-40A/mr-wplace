@@ -85,6 +85,9 @@ const forceStartupLocationZoom = (): void => {
   // Initialize front tile layer (experimental, default: false)
   window.mrWplaceFrontTileLayerEnabled = false;
 
+  // Initialize transparent pixel filter (default: false)
+  window.mrWplaceTransparentPixelFilterEnabled = false;
+
   // Snapshot capture for time-travel tmp tiles (default: off)
   window.mrWplaceSnapshotCaptureEnabled = false;
 
@@ -162,6 +165,10 @@ const forceStartupLocationZoom = (): void => {
           const { setupFrontTileLayerOnMapReady } =
             await import("./features/map-instance");
           setupFrontTileLayerOnMapReady(mapInstance);
+
+          const { setupTransparentPixelFilterOnMapReady } =
+            await import("./features/map-instance");
+          setupTransparentPixelFilterOnMapReady(mapInstance);
 
           // Setup grid display with styledata event listener
           const { setupGridDisplayOnMapReady } =
