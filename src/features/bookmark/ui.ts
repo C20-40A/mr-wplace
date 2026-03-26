@@ -637,12 +637,12 @@ export const renderBookmarks = (
   if (filteredFavorites.length === 0) {
     grid.style.display = "none";
     emptyState.style.display = "block";
-    const tutorialGifUrl = runtime.getURL(
-      "assets/images/tutorial/how_to_bookmark.gif",
+    const emptyStateImageUrl = runtime.getURL(
+      "assets/images/bookmark/bookmark-button-location.png",
     );
     emptyState.innerHTML = `
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100%; padding: 1rem; gap: 1.5rem; max-width: 90%; width: 100%; margin: 0 auto; box-sizing: border-box;">
-          <img src="${tutorialGifUrl}" alt="How to bookmark" style="max-width: 18rem; width: 100%; height: auto; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+          <img src="${emptyStateImageUrl}" alt="How to bookmark" style="max-width: 18rem; width: 100%; height: auto; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
 
           <div style="text-align: center; width: 100%;">
             <p style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--bc); opacity: 0.8;">${t`${"empty_bookmark_message"}`}</p>
