@@ -607,4 +607,5 @@ export const jaTranslations = {
     "BlueMarbleと干渉する場合は、このモードを「合成」にしてみてください",
   official_favorites: "公式お気に入り",
   empty_official_favorites: "公式お気に入り地点がありません",
+  official_favorites_unavailable: "公式お気に入り地点を取得できませんでした",
 };

@@ -590,4 +590,6 @@ export const ruTranslations = {
     'If BlueMarble conflicts with this extension, try setting this mode to "Composite"',
   official_favorites: "Официальное избранное",
   empty_official_favorites: "Нет официальных избранных мест",
+  official_favorites_unavailable:
+    "Не удалось загрузить официальные избранные места",
 };

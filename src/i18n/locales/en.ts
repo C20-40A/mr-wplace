@@ -604,4 +604,5 @@ Do not use this feature to paint actual pixels.`,
     'If BlueMarble conflicts with this extension, try setting this mode to "Composite"',
   official_favorites: "Official Favorites",
   empty_official_favorites: "No official favorite locations",
+  official_favorites_unavailable: "Could not load official favorite locations",
 };

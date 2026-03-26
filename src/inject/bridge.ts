@@ -77,6 +77,7 @@ import {
   respondAreaRegionEditRequest,
 } from "./features/area-display";
 import { AREA_MESSAGE_SOURCE } from "@/constants/area-message";
+import { ensureUserDataAvailable } from "./features/user-status/user-data-recovery";
 
 type MessageHandler = (data: any) => void | Promise<void>;
 const LOCATION_KEY = "location";
@@ -243,6 +244,12 @@ const handleAreaFillEstimate = async (data: {
   }
 };
 
+const handleUserDataRecoveryRequest = async (data: {
+  reason?: string;
+}): Promise<void> => {
+  await ensureUserDataAvailable(data.reason || "manual-request");
+};
+
 const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-auth-init": handleDangerousAuthInit,
   "mr-wplace-processed": handleProcessedBlob,
@@ -324,6 +331,7 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-gallery-import": handleGalleryImport,
   "mr-wplace-gallery-export": handleGalleryExport,
   "mr-wplace-gallery-reset": handleGalleryReset,
+  "mr-wplace-request-user-data": handleUserDataRecoveryRequest,
 };
 
 export const setupMessageHandler = (): void => {

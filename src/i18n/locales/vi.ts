@@ -573,4 +573,6 @@ export const viTranslations = {
     'If BlueMarble conflicts with this extension, try setting this mode to "Composite"',
   official_favorites: "Yêu thích chính thức",
   empty_official_favorites: "Không có địa điểm yêu thích chính thức",
+  official_favorites_unavailable:
+    "Khong the tai cac dia diem yeu thich chinh thuc",
 };

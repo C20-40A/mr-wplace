@@ -578,4 +578,6 @@ export const ptTranslations = {
     'If BlueMarble conflicts with this extension, try setting this mode to "Composite"',
   official_favorites: "Favoritos oficiais",
   empty_official_favorites: "Nenhum local favorito oficial",
+  official_favorites_unavailable:
+    "Nao foi possivel carregar os locais favoritos oficiais",
 };

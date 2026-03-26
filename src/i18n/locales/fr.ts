@@ -594,4 +594,6 @@ export const frTranslations = {
     'If BlueMarble conflicts with this extension, try setting this mode to "Composite"',
   official_favorites: "Favoris officiels",
   empty_official_favorites: "Aucun lieu favori officiel",
+  official_favorites_unavailable:
+    "Impossible de charger les lieux favoris officiels",
 };

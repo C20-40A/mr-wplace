@@ -21,6 +21,7 @@ import {
   renderFavoriteLocations,
   BookmarkSortType,
 } from "./ui";
+import type { OfficialFavoriteLocationsState } from "./ui";
 import { BookmarkRouter } from "./router";
 import { renderCoordinateJumper } from "./routes/coordinate-jumper";
 import type { BookmarkAPI } from "@/core/di";
@@ -35,7 +36,58 @@ const TAB_KEY = "wplace-studio-bookmark-tab";
 let router: BookmarkRouter;
 let selectedTagFilters: Set<string> = new Set();
 let tutorial: Tutorial;
-let favoriteLocations: FavoriteLocation[] = [];
+let favoriteLocations: FavoriteLocation[] | null = null;
+let favoriteLocationsTimeoutId: number | null = null;
+
+const FAVORITE_LOCATIONS_TIMEOUT_MS = 4000;
+
+const isOfficialFavoritesTabActive = (): boolean =>
+  document.getElementById("wps-official-fav-tab-content")?.style.display ===
+  "flex";
+
+const clearFavoriteLocationsTimeout = (): void => {
+  if (favoriteLocationsTimeoutId === null) return;
+  window.clearTimeout(favoriteLocationsTimeoutId);
+  favoriteLocationsTimeoutId = null;
+};
+
+const getOfficialFavoriteLocationsState = (): OfficialFavoriteLocationsState => {
+  if (favoriteLocations !== null) {
+    return {
+      status: "ready",
+      locations: favoriteLocations,
+    };
+  }
+
+  return favoriteLocationsTimeoutId === null
+    ? { status: "error" }
+    : { status: "loading" };
+};
+
+const renderOfficialFavorites = (): void => {
+  renderFavoriteLocations(getOfficialFavoriteLocationsState());
+};
+
+const requestOfficialFavoritesRecovery = (): void => {
+  window.postMessage(
+    {
+      source: "mr-wplace-request-user-data",
+      reason: "official-favorites",
+    },
+    "*",
+  );
+};
+
+const scheduleOfficialFavoritesTimeout = (): void => {
+  if (favoriteLocations !== null || favoriteLocationsTimeoutId !== null) return;
+
+  favoriteLocationsTimeoutId = window.setTimeout(() => {
+    favoriteLocationsTimeoutId = null;
+    if (favoriteLocations === null && isOfficialFavoritesTabActive()) {
+      renderOfficialFavorites();
+    }
+  }, FAVORITE_LOCATIONS_TIMEOUT_MS);
+};
 
 class TagSelectionState {
   private color: string = "";
@@ -460,7 +512,9 @@ const switchTab = (tab: "bookmark" | "official-fav", persist = true): void => {
     officialFavTab.setAttribute("aria-pressed", "true");
     bookmarkContent.style.display = "none";
     officialFavContent.style.display = "flex";
-    renderFavoriteLocations(favoriteLocations);
+    requestOfficialFavoritesRecovery();
+    scheduleOfficialFavoritesTimeout();
+    renderOfficialFavorites();
   }
 };
 
@@ -575,7 +629,9 @@ const init = (): void => {
   window.addEventListener("message", (e) => {
     if (e.data?.source === "mr-wplace-favorite-locations") {
       favoriteLocations = e.data.favoriteLocations || [];
+      clearFavoriteLocationsTimeout();
       console.log("🧑‍🎨 : Favorite locations received:", favoriteLocations.length);
+      if (isOfficialFavoritesTabActive()) renderOfficialFavorites();
     }
   });
 

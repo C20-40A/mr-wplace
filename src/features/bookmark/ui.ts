@@ -749,24 +749,44 @@ export const renderBookmarks = (
   }
 };
 
+export type OfficialFavoriteLocationsState =
+  | { status: "loading" }
+  | { status: "error" }
+  | { status: "ready"; locations: FavoriteLocation[] };
+
 export const renderFavoriteLocations = (
-  locations: FavoriteLocation[],
+  state: OfficialFavoriteLocationsState,
 ): void => {
   const grid = document.getElementById("wps-official-fav-grid") as HTMLElement;
   const emptyState = document.getElementById("wps-official-fav-empty") as HTMLElement;
 
   if (!grid || !emptyState) return;
 
-  if (locations.length === 0) {
+  if (state.status === "loading") {
     grid.style.display = "none";
     emptyState.style.display = "flex";
+    emptyState.innerHTML = `<p style="color: oklch(var(--bc) / 0.5);">${t`${"loading"}`}</p>`;
+    return;
+  }
+
+  if (state.status === "error") {
+    grid.style.display = "none";
+    emptyState.style.display = "flex";
+    emptyState.innerHTML = `<p style="color: oklch(var(--bc) / 0.5);">${t`${"official_favorites_unavailable"}`}</p>`;
+    return;
+  }
+
+  if (state.locations.length === 0) {
+    grid.style.display = "none";
+    emptyState.style.display = "flex";
+    emptyState.innerHTML = `<p style="color: oklch(var(--bc) / 0.5);">${t`${"empty_official_favorites"}`}</p>`;
     return;
   }
 
   emptyState.style.display = "none";
   grid.style.display = "grid";
 
-  grid.innerHTML = locations
+  grid.innerHTML = state.locations
     .map((loc) => {
       const { TLX, TLY, PxX, PxY } = latLngToTilePixel(loc.latitude, loc.longitude);
       const coordLabel = `${TLX}-${TLY}-${PxX}-${PxY}`;
