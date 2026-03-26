@@ -30,7 +30,7 @@ const buildShortRow = (coords: { lat: number; lng: number }): HTMLDivElement => 
   row.className = "text-base-content/60 mt-1 flex items-center gap-1.5 text-xs";
 
   const text = document.createElement("span");
-  text.textContent = `${shortLatLng} | ${pixelCoord}`;
+  text.textContent = `${pixelCoord} | ${shortLatLng}`;
   text.style.fontFamily = "monospace";
 
   const sep = document.createElement("span");
