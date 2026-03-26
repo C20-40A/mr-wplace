@@ -32,12 +32,68 @@ const dialogLikeStack: DialogLikeElement[] = [];
 
 export const hasOpenModal = (): boolean => dialogLikeStack.length > 0;
 
+const animateModalOpen = (
+  modalBox: HTMLElement | null,
+  backdrop: HTMLElement | null,
+): void => {
+  if (!modalBox || !backdrop) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  const originalBoxTransition = modalBox.style.transition;
+  const originalBoxTransform = modalBox.style.transform;
+  const originalBoxOpacity = modalBox.style.opacity;
+  const originalBoxWillChange = modalBox.style.willChange;
+  const originalBackdropTransition = backdrop.style.transition;
+  const originalBackdropOpacity = backdrop.style.opacity;
+  const originalBackdropWillChange = backdrop.style.willChange;
+
+  modalBox.style.transition = "none";
+  modalBox.style.willChange = "transform, opacity";
+  modalBox.style.opacity = "0";
+  modalBox.style.transform = `${originalBoxTransform} translateY(10px) scale(0.99)`.trim();
+
+  backdrop.style.transition = "none";
+  backdrop.style.willChange = "opacity";
+  backdrop.style.opacity = "0";
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      modalBox.style.transition =
+        "transform 220ms cubic-bezier(0.16, 1, 0.3, 1), opacity 220ms cubic-bezier(0.16, 1, 0.3, 1)";
+      backdrop.style.transition = "opacity 120ms ease-out";
+
+      modalBox.style.opacity = originalBoxOpacity || "1";
+      modalBox.style.transform = originalBoxTransform;
+      backdrop.style.opacity = originalBackdropOpacity || "1";
+
+      window.setTimeout(() => {
+        modalBox.style.transition = originalBoxTransition;
+        modalBox.style.willChange = originalBoxWillChange;
+        backdrop.style.transition = originalBackdropTransition;
+        backdrop.style.willChange = originalBackdropWillChange;
+      }, 240);
+    });
+  });
+};
+
 const createDialogLikeModal = (): HTMLDialogElement => {
-  const modal = document.createElement("div") as DialogLikeElement;
+  const modal = document.createElement("div") as unknown as DialogLikeElement;
   modal.className = "modal";
   modal.__dialogLike = { isOpen: false, returnValue: "" };
   const nativeRemove = modal.remove.bind(modal);
   let escListening = false;
+  let openAnimationFrame = 0;
+
+  const runOpenAnimation = () => {
+    if (openAnimationFrame) cancelAnimationFrame(openAnimationFrame);
+    openAnimationFrame = requestAnimationFrame(() => {
+      openAnimationFrame = 0;
+      animateModalOpen(
+        modal.querySelector(".modal-box") as HTMLElement | null,
+        modal.querySelector(".modal-backdrop") as HTMLElement | null,
+      );
+    });
+  };
 
   const addEscListener = () => {
     if (escListening) return;
@@ -78,6 +134,10 @@ const createDialogLikeModal = (): HTMLDialogElement => {
 
   const closeModal = () => {
     if (!modal.__dialogLike.isOpen) return;
+    if (openAnimationFrame) {
+      cancelAnimationFrame(openAnimationFrame);
+      openAnimationFrame = 0;
+    }
     setOpenState(false);
     modal.dispatchEvent(new Event("close"));
   };
@@ -107,6 +167,7 @@ const createDialogLikeModal = (): HTMLDialogElement => {
       value: () => {
         if (modal.__dialogLike.isOpen) return;
         setOpenState(true);
+        runOpenAnimation();
       },
       configurable: true,
     },
@@ -114,6 +175,7 @@ const createDialogLikeModal = (): HTMLDialogElement => {
       value: () => {
         if (modal.__dialogLike.isOpen) return;
         setOpenState(true);
+        runOpenAnimation();
       },
       configurable: true,
     },
@@ -127,6 +189,10 @@ const createDialogLikeModal = (): HTMLDialogElement => {
     },
     remove: {
       value: () => {
+        if (openAnimationFrame) {
+          cancelAnimationFrame(openAnimationFrame);
+          openAnimationFrame = 0;
+        }
         setOpenState(false);
         nativeRemove();
       },
@@ -171,7 +237,6 @@ export const showNameInputModal = (
     const backdropBtn = modal.querySelector(
       "#backdrop-btn",
     ) as HTMLButtonElement;
-
     let resolved = false;
 
     const handleSave = () => {
