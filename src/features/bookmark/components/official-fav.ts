@@ -1,7 +1,7 @@
 import { FavoriteLocation } from "../types";
 import { t } from "@/i18n/manager";
-import { attachCardScrollPassthrough } from "@/components/card";
 import { latLngToTilePixel } from "@/utils/coordinate";
+import { isMobileViewport } from "@/constants/breakpoints";
 import { getAllFavThumbnails, getAllFavMetadata } from "../fav-metadata-db";
 
 export type OfficialFavoriteLocationsState =
@@ -15,10 +15,12 @@ const renderFavCard = (
   loc: FavoriteLocation,
   thumbnailUrl: string | null,
 ): string => {
+  const isMobile = isMobileViewport();
   const { TLX, TLY, PxX, PxY } = latLngToTilePixel(loc.latitude, loc.longitude);
   const coordLabel = `${TLX}-${TLY}-${PxX}-${PxY}`;
   const title = loc.name || coordLabel;
   const subtitle = loc.name ? coordLabel : "";
+  const isCoordOnlyTitle = !loc.name;
 
   const thumbHtml = thumbnailUrl
     ? `<div class="wps-fav-thumb" style="width:100%;aspect-ratio:1;overflow:hidden;border-radius:6px 6px 0 0;margin-bottom:6px;">
@@ -39,48 +41,41 @@ const renderFavCard = (
         border-radius:10px;
         box-shadow:0 1px 3px rgba(0,0,0,0.08);
         padding:0;
-        transition:all 0.25s ease;
-        transform:translateY(0);
         overflow:hidden;
         -webkit-tap-highlight-color:transparent;
+        touch-action:pan-y;
       "
-      onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 4px 10px rgba(0,0,0,0.12)';"
-      onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 1px 3px rgba(0,0,0,0.08)';"
-      onmousedown="this.style.transform='translateY(1px) scale(0.98)';"
-      onmouseup="this.style.transform='translateY(-3px) scale(1)';"
     >
       ${thumbHtml}
-      <div style="padding:8px 10px 10px;">
-        <div style="font-size:0.8rem;font-weight:600;line-height:1.3;word-break:break-all;padding-right:24px;">${title}</div>
-        ${subtitle ? `<div style="font-size:0.7rem;opacity:0.5;margin-top:2px;">${subtitle}</div>` : ""}
+      <div style="padding:8px 10px 8px;display:flex;align-items:center;gap:6px;">
+        <div style="flex:1;">
+          <div style="font-size:${isCoordOnlyTitle && isMobile ? "0.6rem" : "0.8rem"};font-weight:${isCoordOnlyTitle ? "400" : "600"};line-height:1.3;word-break:break-all;">${title}</div>
+          ${subtitle ? `<div style="font-size:${isMobile ? "0.6rem" : "0.7rem"};font-weight:400;opacity:0.5;margin-top:2px;word-break:break-all;">${subtitle}</div>` : ""}
+        </div>
+          <button
+            class="wps-fav-capture-btn"
+            data-fav-id="${loc.id}"
+            style="
+              flex:0 0 auto;
+              background:oklch(var(--b1)/0.85);
+              border:1px solid oklch(var(--bc)/0.14);
+              border-radius:6px;
+              width:26px;
+              height:26px;
+              display:flex;
+              align-items:center;
+              justify-content:center;
+              cursor:pointer;
+              opacity:0.75;
+              transition:opacity 0.2s;
+            "
+            onmouseover="this.style.opacity='1';"
+            onmouseout="this.style.opacity='0.75';"
+            title="マップ画像を保存"
+          >
+            ${CAMERA_ICON_SVG}
+          </button>
       </div>
-      <!-- 📷 capture button -->
-      <button
-        class="wps-fav-capture-btn"
-        data-fav-id="${loc.id}"
-        style="
-          position:absolute;
-          right:6px;
-          top:6px;
-          background:oklch(var(--b1)/0.85);
-          border:none;
-          border-radius:6px;
-          width:26px;
-          height:26px;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          cursor:pointer;
-          opacity:0.75;
-          transition:opacity 0.2s;
-          z-index:10;
-        "
-        onmouseover="this.style.opacity='1';"
-        onmouseout="this.style.opacity='0.75';"
-        title="マップ画像を保存"
-      >
-        ${CAMERA_ICON_SVG}
-      </button>
     </div>
   `;
 };
@@ -134,6 +129,4 @@ export const renderFavoriteLocations = async (
   grid.innerHTML = sorted
     .map((loc) => renderFavCard(loc, thumbnails.get(loc.id) ?? null))
     .join("");
-
-  attachCardScrollPassthrough(grid);
 };
