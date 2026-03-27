@@ -405,8 +405,70 @@ export const handleComputeTotalStats = async (data: {
 /**
  * Handle map center request
  */
+const MAP_THUMBNAIL_SIZE = 256;
+
+/**
+ * Handle map canvas thumbnail capture request
+ * Returns 1:1 cropped center JPEG dataUrl (256x256)
+ */
+export const handleMapThumbnailRequest = async (data: {
+  requestId: string;
+}): Promise<void> => {
+  const { getMapInstanceFromWplace } = require(
+    "../features/map-instance/get-map-instance",
+  );
+  const mapInstance = getMapInstanceFromWplace() as {
+    getCanvas?: () => HTMLCanvasElement;
+  } | null;
+  const mapCanvas = mapInstance?.getCanvas?.();
+
+  if (!mapCanvas) {
+    window.postMessage(
+      { source: "mr-wplace-response-map-thumbnail", requestId: data.requestId, dataUrl: null },
+      "*",
+    );
+    return;
+  }
+
+  // WebGL の preserveDrawingBuffer が false のため、rAF 内でキャプチャする必要がある
+  requestAnimationFrame(async () => {
+    try {
+      const w = mapCanvas.width;
+      const h = mapCanvas.height;
+      const size = Math.min(w, h);
+      const sx = Math.floor((w - size) / 2);
+      const sy = Math.floor((h - size) / 2);
+
+      const offscreen = new OffscreenCanvas(MAP_THUMBNAIL_SIZE, MAP_THUMBNAIL_SIZE);
+      const ctx = offscreen.getContext("2d")!;
+      ctx.drawImage(mapCanvas, sx, sy, size, size, 0, 0, MAP_THUMBNAIL_SIZE, MAP_THUMBNAIL_SIZE);
+
+      const blob = await offscreen.convertToBlob({ type: "image/jpeg", quality: 0.82 });
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+
+      window.postMessage(
+        { source: "mr-wplace-response-map-thumbnail", requestId: data.requestId, dataUrl },
+        "*",
+      );
+      console.log(`🧑‍🎨 : Map thumbnail captured (request: ${data.requestId})`);
+    } catch (error) {
+      console.error("🧑‍🎨 : Failed to capture map thumbnail:", error);
+      window.postMessage(
+        { source: "mr-wplace-response-map-thumbnail", requestId: data.requestId, dataUrl: null },
+        "*",
+      );
+    }
+  });
+};
+
 export const handleMapCenterRequest = (data: { requestId: string }): void => {
-  const { getMapInstanceFromWplace } = require("../features/map-instance/get-map-instance");
+  const { getMapInstanceFromWplace } = require(
+    "../features/map-instance/get-map-instance",
+  );
   const mapInstance = getMapInstanceFromWplace();
 
   let center = null;

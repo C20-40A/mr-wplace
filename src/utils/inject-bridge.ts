@@ -732,6 +732,38 @@ export const projectMapPixelsToScreenPoints = async (
 };
 
 /**
+ * Capture current map view as 256x256 JPEG thumbnail from inject side
+ * Returns dataUrl or null if map canvas is unavailable
+ */
+export const getMapThumbnail = async (): Promise<string | null> => {
+  const requestId = generateRequestId();
+
+  return new Promise((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-response-map-thumbnail" &&
+        event.data.requestId === requestId
+      ) {
+        clearTimeout(timeoutId);
+        window.removeEventListener("message", handler);
+        resolve(event.data.dataUrl ?? null);
+      }
+    };
+
+    window.addEventListener("message", handler);
+    window.postMessage({ source: "mr-wplace-request-map-thumbnail", requestId }, "*");
+
+    timeoutId = setTimeout(() => {
+      window.removeEventListener("message", handler);
+      console.warn("🧑‍🎨 : Map thumbnail request timed out");
+      resolve(null);
+    }, 5000);
+  });
+};
+
+/**
  * Enable/disable inject-side map projection tracking events.
  * When enabled, inject posts "mr-wplace-map-view-changed" during map movement
  * and a final settled event after movement ends.

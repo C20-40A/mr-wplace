@@ -31,6 +31,7 @@ import {
   handleScreenPointsFromMapPixelsRequest,
   handleTransparencyPreviewRequest,
   handleOriginalTileRequest,
+  handleMapThumbnailRequest,
 } from "./handlers/request-handlers";
 import { setupGalleryV2Handlers } from "./handlers/gallery-v2-handlers";
 import { setupSnapshotHandlers } from "./handlers/snapshot-handlers";
@@ -311,6 +312,7 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-request-image-stats": handleImageStatsRequest,
   "mr-wplace-request-adjust-preview": handleAdjustPreviewRequest,
   "mr-wplace-adjust-preview-session-release": handleAdjustPreviewSessionRelease,
+  "mr-wplace-request-map-thumbnail": handleMapThumbnailRequest,
   "mr-wplace-request-map-center": handleMapCenterRequest,
   "mr-wplace-request-map-pixels-from-screen": handleMapPixelsFromScreenRequest,
   "mr-wplace-map-projection-tracking": handleMapProjectionTrackingUpdate,

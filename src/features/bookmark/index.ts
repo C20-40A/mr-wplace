@@ -29,6 +29,8 @@ import { Tutorial } from "@/features/tutorial";
 import { showFeatureHint } from "@/features/feature-hints";
 import { TOOLBAR_ROW1_ID } from "@/features/position-info";
 import type { FavoriteLocation } from "./types";
+import { getMapThumbnail } from "@/utils/inject-bridge";
+import { saveFavThumbnail } from "./fav-metadata-db";
 
 const SORT_KEY = "wplace-studio-bookmark-sort";
 const TAB_KEY = "wplace-studio-bookmark-tab";
@@ -527,11 +529,53 @@ const setupBottomTabHandlers = (modal: HTMLDialogElement): void => {
     .querySelector("#wps-tab-official-fav")!
     .addEventListener("click", () => switchTab("official-fav"));
 
-  // Official favorites grid click handler (jump only)
+  // Official favorites grid click handler
   modal
     .querySelector("#wps-official-fav-grid")!
     .addEventListener("click", async (e) => {
       const target = e.target as HTMLElement;
+
+      // 📷 capture button
+      const captureBtn = target.closest(".wps-fav-capture-btn") as HTMLElement | null;
+      if (captureBtn?.dataset.favId) {
+        e.stopPropagation();
+        const favId = parseInt(captureBtn.dataset.favId);
+        captureBtn.style.opacity = "0.4";
+        captureBtn.style.pointerEvents = "none";
+        try {
+          const dataUrl = await getMapThumbnail();
+          if (dataUrl) {
+            await saveFavThumbnail(favId, dataUrl);
+            // update thumbnail in card immediately
+            const card = captureBtn.closest(".wps-card") as HTMLElement | null;
+            if (card) {
+              let thumb = card.querySelector(".wps-fav-thumb") as HTMLElement | null;
+              if (!thumb) {
+                const thumbWrapper = document.createElement("div");
+                thumbWrapper.className = "wps-fav-thumb";
+                thumbWrapper.style.cssText =
+                  "width:100%;aspect-ratio:1;overflow:hidden;border-radius:6px 6px 0 0;margin-bottom:6px;";
+                const img = document.createElement("img");
+                img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;";
+                img.alt = "";
+                thumbWrapper.appendChild(img);
+                card.insertBefore(thumbWrapper, card.firstChild);
+                thumb = thumbWrapper;
+              }
+              const img = thumb.querySelector("img") as HTMLImageElement;
+              if (img) img.src = dataUrl;
+            }
+          }
+        } catch (err) {
+          console.error("🧑‍🎨 : Failed to capture fav thumbnail:", err);
+        } finally {
+          captureBtn.style.opacity = "0.75";
+          captureBtn.style.pointerEvents = "";
+        }
+        return;
+      }
+
+      // jump to location
       const card = target.closest(".wps-card") as HTMLElement | null;
       if (card?.dataset.lat && card?.dataset.lng && card?.dataset.zoom) {
         await gotoPosition({
