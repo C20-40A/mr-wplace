@@ -31,6 +31,7 @@ const pendingComparisonTiles = new Set<string>();
 let pendingComparisonRefreshQueued = false;
 let deferredRefreshQueued = false;
 let pendingRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingOverlayRestore = false;
 
 const isEnabled = () => window.mrWplaceFrontTileLayerEnabled ?? false;
 const getFrontSourceTileUrl = (version: number): string =>
@@ -141,6 +142,30 @@ const flushDeferredRefresh = (): void => {
   if (isMapInteracting(map)) return;
   deferredRefreshQueued = false;
   refreshFrontTileLayer();
+};
+
+const restoreFrontLayerIfNeeded = (map: any): void => {
+  if (!pendingOverlayRestore) return;
+  if (!map || !isEnabled()) {
+    pendingOverlayRestore = false;
+    return;
+  }
+  if (isMapInteracting(map)) return;
+  if (!map.getLayer(PIXEL_ART_LAYER)) return;
+
+  const hasFrontLayer = Boolean(map.getLayer(FRONT_LAYER_ID));
+  const hasFrontSource = Boolean(map.getSource(FRONT_SOURCE_ID));
+  if (!hasFrontSource || !hasFrontLayer) {
+    checkAndAddOverlay(map);
+    ensureOverlayLayerOrder(map);
+    updateFrontLayerOperational(map);
+  }
+
+  pendingOverlayRestore = Boolean(
+    isEnabled() &&
+      map.getLayer(PIXEL_ART_LAYER) &&
+      (!map.getLayer(FRONT_LAYER_ID) || !map.getSource(FRONT_SOURCE_ID)),
+  );
 };
 
 const trySoftRefreshSource = (source: any, version: number): boolean => {
@@ -327,6 +352,7 @@ const removeFrontLayer = (map: any): void => {
   pendingComparisonTiles.clear();
   pendingComparisonRefreshQueued = false;
   deferredRefreshQueued = false;
+  pendingOverlayRestore = false;
   clearPendingRefreshTimer();
   destroyPaintGuideCanvas();
 
@@ -432,16 +458,19 @@ export const setupFrontTileLayerOnMapReady = (mapInstance: any): void => {
   // Monitor for style changes (when pixel-hover is added)
   const onStyleData = () => {
     if (!isEnabled()) {
+      pendingOverlayRestore = false;
       updateFrontLayerOperational(map);
       return;
     }
-    // style reload can invalidate source/layer while flags remain true
+    // styledata can fire during transient style rebuilds on mobile zoom.
+    // Defer overlay restore until the map settles and the base raster layer exists.
     sourceAdded = false;
     layerAdded = false;
-    checkAndAddOverlay(map);
-    ensureOverlayLayerOrder(map);
+    pendingOverlayRestore = true;
+    updateFrontLayerOperational(map);
   };
   const onMapSettled = () => {
+    restoreFrontLayerIfNeeded(map);
     flushDeferredRefresh();
   };
 
