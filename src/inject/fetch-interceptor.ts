@@ -20,11 +20,6 @@ import {
   isFrontTileLayerOperational,
   notifyFrontTileComparisonReady,
 } from "./features/map-instance/front-tile-layer";
-import {
-  isTransparentPixelFilterTileRequest,
-  handleTransparentPixelFilterTileRequest,
-} from "./features/map-instance/transparent-pixel-filter/fetch-handler";
-import { scheduleTransparentPixelFilterRefresh } from "./features/map-instance/transparent-pixel-filter";
 
 const TILE_URL_REGEX = /\/tiles?\/(\d+)\/(\d+)\.png(?:[?#].*)?$/;
 let frontTileXhrInterceptorInstalled = false;
@@ -49,9 +44,6 @@ export const setupFetchInterceptor = (): void => {
     // Intercept custom protocol tile requests for front layer
     if (url && isFrontLayerTileRequest(url)) {
       return handleFrontLayerTileRequest(url);
-    }
-    if (url && isTransparentPixelFilterTileRequest(url)) {
-      return handleTransparentPixelFilterTileRequest(url);
     }
 
     // Block Sentry requests to avoid sending extension bugs to WPlace's Sentry
@@ -212,10 +204,7 @@ const setupFrontTileXhrInterceptor = (): void => {
   ): void {
     const isAsync = asyncValue !== false;
     const requestUrl = typeof url === "string" ? url : url.toString();
-    if (
-      !isFrontLayerTileRequest(requestUrl) &&
-      !isTransparentPixelFilterTileRequest(requestUrl)
-    ) {
+    if (!isFrontLayerTileRequest(requestUrl)) {
       metaMap.delete(this);
       originalOpen.call(this, method, url, isAsync, user, password);
       return;
@@ -262,11 +251,7 @@ const setupFrontTileXhrInterceptor = (): void => {
       meta.blobUrl = undefined;
     };
 
-    const tileRequestHandler = isFrontLayerTileRequest(meta.url)
-      ? handleFrontLayerTileRequest
-      : handleTransparentPixelFilterTileRequest;
-
-    void tileRequestHandler(meta.url)
+    void handleFrontLayerTileRequest(meta.url)
       .then((response) => response.blob())
       .then((blob) => {
         cleanupBlobUrl();
@@ -458,9 +443,6 @@ const handleTileRequest = async (
 
   if (backgroundChanged) {
     notifyFrontTileComparisonReady(tileX, tileY);
-    if (window.mrWplaceTransparentPixelFilterEnabled) {
-      scheduleTransparentPixelFilterRefresh();
-    }
   }
 
   // Save snapshot for time travel feature (when enabled)

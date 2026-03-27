@@ -5,7 +5,6 @@ import {
   setFrontTileLayerEnabled,
   refreshFrontTileLayer,
   setTransparentPixelFilterEnabled,
-  scheduleTransparentPixelFilterRefresh,
 } from "../features/map-instance";
 
 const COLOR_FILTER_REFRESH_DEBOUNCE_MS = 120;
@@ -186,7 +185,6 @@ export const handleTransparentPixelFilterUpdate = (data: {
 
   window.mrWplaceTransparentPixelFilterEnabled = nextEnabled;
   setTransparentPixelFilterEnabled(nextEnabled);
-  if (nextEnabled) scheduleTransparentPixelFilterRefresh();
   console.log("🧑‍🎨 : Transparent pixel filter updated:", nextEnabled);
 };
 
