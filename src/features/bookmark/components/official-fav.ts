@@ -2,7 +2,7 @@ import { FavoriteLocation } from "../types";
 import { t } from "@/i18n/manager";
 import { attachCardScrollPassthrough } from "@/components/card";
 import { latLngToTilePixel } from "@/utils/coordinate";
-import { getAllFavThumbnails } from "../fav-metadata-db";
+import { getAllFavThumbnails, getAllFavMetadata } from "../fav-metadata-db";
 
 export type OfficialFavoriteLocationsState =
   | { status: "loading" }
@@ -117,9 +117,21 @@ export const renderFavoriteLocations = async (
   emptyState.style.display = "none";
   grid.style.display = "grid";
 
-  const thumbnails = await getAllFavThumbnails().catch(() => new Map<number, string>());
+  const [thumbnails, metadata] = await Promise.all([
+    getAllFavThumbnails().catch(() => new Map<number, string>()),
+    getAllFavMetadata().catch(() => new Map()),
+  ]);
 
-  grid.innerHTML = state.locations
+  const sorted = [...state.locations].sort((a, b) => {
+    const aDate = metadata.get(a.id)?.lastAccessedDate;
+    const bDate = metadata.get(b.id)?.lastAccessedDate;
+    if (!aDate && !bDate) return 0;
+    if (!aDate) return 1;
+    if (!bDate) return -1;
+    return new Date(bDate).getTime() - new Date(aDate).getTime();
+  });
+
+  grid.innerHTML = sorted
     .map((loc) => renderFavCard(loc, thumbnails.get(loc.id) ?? null))
     .join("");
 

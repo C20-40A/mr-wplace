@@ -30,7 +30,7 @@ import { showFeatureHint } from "@/features/feature-hints";
 import { TOOLBAR_ROW1_ID } from "@/features/position-info";
 import type { FavoriteLocation } from "./types";
 import { getMapThumbnail } from "@/utils/inject-bridge";
-import { saveFavThumbnail } from "./fav-metadata-db";
+import { saveFavThumbnail, saveFavMetadata } from "./fav-metadata-db";
 
 const SORT_KEY = "wplace-studio-bookmark-sort";
 const TAB_KEY = "wplace-studio-bookmark-tab";
@@ -578,6 +578,11 @@ const setupBottomTabHandlers = (modal: HTMLDialogElement): void => {
       // jump to location
       const card = target.closest(".wps-card") as HTMLElement | null;
       if (card?.dataset.lat && card?.dataset.lng && card?.dataset.zoom) {
+        const favIdStr = card.dataset.id?.replace("fav-", "");
+        if (favIdStr) {
+          const favId = parseInt(favIdStr);
+          saveFavMetadata(favId, { lastAccessedDate: new Date().toISOString() }).catch(() => {});
+        }
         await gotoPosition({
           lat: parseFloat(card.dataset.lat),
           lng: parseFloat(card.dataset.lng),
