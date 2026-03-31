@@ -31,6 +31,8 @@ import {
   QuantizationMethod,
 } from "./canvas-processor";
 
+const MIN_SCALE = 0.1;
+
 /**
  * 画像エディタController
  * 状態管理・DOM参照・統合処理
@@ -338,19 +340,28 @@ export class EditorController {
     const slider = this.container.querySelector(
       "#wps-scale-slider",
     ) as HTMLInputElement;
+    const scaleMaxInput = this.container.querySelector(
+      "#wps-scale-max-input",
+    ) as HTMLInputElement;
 
     const originalWidth = this.originalImage.naturalWidth;
     const originalHeight = this.originalImage.naturalHeight;
     const widthScale = targetWidthPx / originalWidth;
     const heightScale = targetHeightPx / originalHeight;
     const nextScale = Math.max(
-      0.01,
-      Math.min(1, Math.min(widthScale, heightScale)),
+      MIN_SCALE,
+      Math.min(widthScale, heightScale),
     );
     const nextWidth = Math.max(1, Math.round(originalWidth * nextScale));
     const nextHeight = Math.max(1, Math.round(originalHeight * nextScale));
 
-    if (slider) slider.value = nextScale.toString();
+    if (scaleMaxInput) {
+      scaleMaxInput.value = Math.max(1, nextScale).toString();
+    }
+    if (slider) {
+      slider.max = Math.max(1, nextScale).toString();
+      slider.value = nextScale.toString();
+    }
     if (widthInput) widthInput.value = nextWidth.toString();
     if (heightInput) heightInput.value = nextHeight.toString();
 
@@ -622,6 +633,9 @@ export class EditorController {
     const heightInput = this.container.querySelector(
       "#wps-height-input",
     ) as HTMLInputElement;
+    const scaleMaxInput = this.container.querySelector(
+      "#wps-scale-max-input",
+    ) as HTMLInputElement;
     const brightnessSlider = this.container.querySelector(
       "#wps-brightness-slider",
     ) as HTMLInputElement;
@@ -696,7 +710,10 @@ export class EditorController {
       "#wps-coord-pxy",
     ) as HTMLInputElement;
 
-    if (slider) slider.value = "1";
+    if (slider) {
+      slider.max = "1";
+      slider.value = "1";
+    }
     if (widthInput) {
       widthInput.value = "";
       widthInput.dataset.originalWidth = "";
@@ -705,6 +722,7 @@ export class EditorController {
       heightInput.value = "";
       heightInput.dataset.originalHeight = "";
     }
+    if (scaleMaxInput) scaleMaxInput.value = "1";
     if (brightnessSlider) brightnessSlider.value = "0";
     if (brightnessValue) brightnessValue.textContent = "0";
     if (mobileBrightnessToggle) mobileBrightnessToggle.checked = false;
@@ -908,13 +926,17 @@ export class EditorController {
         if (widthInput && heightInput && this.originalImage) {
           const originalWidth = this.originalImage.naturalWidth;
           const originalHeight = this.originalImage.naturalHeight;
+          const slider = this.container.querySelector(
+            "#wps-scale-slider",
+          ) as HTMLInputElement | null;
 
           widthInput.value = originalWidth.toString();
           heightInput.value = originalHeight.toString();
           widthInput.dataset.originalWidth = originalWidth.toString();
           heightInput.dataset.originalHeight = originalHeight.toString();
-          widthInput.max = originalWidth.toString();
-          heightInput.max = originalHeight.toString();
+          const scaleMaxInput = this.container.querySelector(
+            "#wps-scale-max-input",
+          ) as HTMLInputElement | null;
 
           console.log(
             "🧑‍🎨 : Initialized size inputs:",
@@ -922,6 +944,12 @@ export class EditorController {
             "x",
             originalHeight,
           );
+
+          if (scaleMaxInput) scaleMaxInput.value = "1";
+          if (slider) {
+            slider.max = "1";
+            slider.value = "1";
+          }
         }
 
         const canvas = this.container.querySelector(
@@ -999,6 +1027,9 @@ export class EditorController {
         const slider = this.container.querySelector(
           "#wps-scale-slider",
         ) as HTMLInputElement;
+        const scaleMaxInput = this.container.querySelector(
+          "#wps-scale-max-input",
+        ) as HTMLInputElement;
 
         if (widthInput && heightInput && this.originalImage) {
           const originalWidth = this.originalImage.naturalWidth;
@@ -1013,11 +1044,12 @@ export class EditorController {
           ).toString();
           widthInput.dataset.originalWidth = originalWidth.toString();
           widthInput.dataset.originalHeight = originalHeight.toString();
-          widthInput.max = originalWidth.toString();
-          heightInput.max = originalHeight.toString();
-
           if (slider) {
+            slider.max = Math.max(1, this.imageScale).toString();
             slider.value = this.imageScale.toString();
+          }
+          if (scaleMaxInput) {
+            scaleMaxInput.value = Math.max(1, this.imageScale).toString();
           }
 
           console.log(

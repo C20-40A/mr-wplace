@@ -130,7 +130,7 @@ export const injectImageEditorStyles = (
       .label-hint-sm { font-size: 0.65rem; color: #9ca3af; }
       .flex-group { display: flex; gap: 0.5rem; align-items: center; }
       .flex-group .range { flex: 1; min-width: 0; }
-      #wps-width-input, #wps-height-input { width: 60px; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; text-align: center; }
+      #wps-width-input, #wps-height-input, #wps-scale-max-input { width: 60px; padding: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; text-align: center; }
       .control-group { display: flex; gap: 0.75rem; }
       .control-item { flex: 1; min-width: 0; }
       .control-item .range { width: 100%; display: block; }

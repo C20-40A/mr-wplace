@@ -3,6 +3,8 @@ import type { ColorFlattenMode } from "../canvas-processor";
 import type { CreateElementFn, UIElements } from "./types";
 import { isMobileViewport } from "@/constants/breakpoints";
 
+const MIN_SCALE = 0.1;
+
 const controlLabelClassName = (...classNames: string[]) =>
   `control-label ${isMobileViewport() ? "mobile " : ""}${classNames.join(" ")}`;
 
@@ -43,10 +45,17 @@ const createSizeControl = (
   createElement: CreateElementFn,
   elements: UIElements,
 ): HTMLElement => {
+  elements.scaleMaxInput = createElement("input", {
+    id: "wps-scale-max-input",
+    type: "number",
+    min: 1,
+    step: 1,
+    value: 1,
+  }) as HTMLInputElement;
   elements.scaleSlider = createElement("input", {
     id: "wps-scale-slider",
     type: "range",
-    min: 0.1,
+    min: MIN_SCALE,
     max: 1,
     step: 0.01,
     value: 1,
@@ -72,9 +81,13 @@ const createSizeControl = (
 
   return createElement("div", {}, [
     createElement("label", { className: controlLabelClassName("space-between") }, [
-      createElement("span", { className: "label-hint" }, ["0.1x"]),
+      createElement("span", { className: "label-hint" }, [`${MIN_SCALE.toFixed(1)}x`]),
       elements.sizeReductionLabel as HTMLElement,
-      createElement("span", { className: "label-hint" }, ["1.0x"]),
+      createElement("div", { className: "flex-group" }, [
+        createElement("span", { className: "label-hint" }, ["max"]),
+        elements.scaleMaxInput as HTMLInputElement,
+        createElement("span", { className: "label-hint" }, ["x"]),
+      ]),
     ]),
     createElement("div", { className: "flex-group" }, [
       elements.scaleSlider as HTMLInputElement,

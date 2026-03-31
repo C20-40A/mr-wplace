@@ -12,6 +12,8 @@ import { TransparencyDialog } from "./components/transparency-dialog";
 import { isDesktopViewport } from "@/constants/breakpoints";
 import { isImportableEditorFile } from "./import-file";
 
+const MIN_SCALE = 0.1;
+
 export interface ImageEditorCallbacks {
   onFileHandle: (file: File) => void;
   onReplaceImage: (file: File) => void;
@@ -192,12 +194,22 @@ export class ImageEditorUI {
         heightInput.value = Math.round(originalHeight * scale).toString();
         break;
       }
+      case "wps-scale-max-input": {
+        const maxScale = this.getScaleMax();
+        const slider = this.elements.scaleSlider as HTMLInputElement;
+        slider.max = maxScale.toString();
+        if (parseFloat(slider.value) > maxScale) slider.value = maxScale.toString();
+        this._handleInput({ target: slider } as Event);
+        break;
+      }
       case "wps-width-input": {
         const width = parseInt(value) || 1;
-        const { widthInput, heightInput, scaleSlider } = this.elements as {
+        const { widthInput, heightInput, scaleSlider, scaleMaxInput } = this
+          .elements as {
           widthInput: HTMLInputElement;
           heightInput: HTMLInputElement;
           scaleSlider: HTMLInputElement;
+          scaleMaxInput: HTMLInputElement;
         };
         const originalWidth = parseInt(widthInput.dataset.originalWidth || "1");
         const originalHeight = parseInt(
@@ -206,15 +218,20 @@ export class ImageEditorUI {
         const aspectRatio = originalHeight / originalWidth;
         heightInput.value = Math.round(width * aspectRatio).toString();
         const scale = width / originalWidth;
-        scaleSlider.value = Math.max(0.1, Math.min(1, scale)).toString();
+        const nextMaxScale = Math.max(1, parseFloat(scaleMaxInput.value) || 1, scale);
+        scaleMaxInput.value = nextMaxScale.toString();
+        scaleSlider.max = nextMaxScale.toString();
+        scaleSlider.value = Math.max(MIN_SCALE, Math.min(nextMaxScale, scale)).toString();
         break;
       }
       case "wps-height-input": {
         const height = parseInt(value) || 1;
-        const { widthInput, heightInput, scaleSlider } = this.elements as {
+        const { widthInput, heightInput, scaleSlider, scaleMaxInput } = this
+          .elements as {
           widthInput: HTMLInputElement;
           heightInput: HTMLInputElement;
           scaleSlider: HTMLInputElement;
+          scaleMaxInput: HTMLInputElement;
         };
         const originalWidth = parseInt(widthInput.dataset.originalWidth || "1");
         const originalHeight = parseInt(
@@ -223,7 +240,10 @@ export class ImageEditorUI {
         const aspectRatio = originalWidth / originalHeight;
         widthInput.value = Math.round(height * aspectRatio).toString();
         const scale = height / originalHeight;
-        scaleSlider.value = Math.max(0.1, Math.min(1, scale)).toString();
+        const nextMaxScale = Math.max(1, parseFloat(scaleMaxInput.value) || 1, scale);
+        scaleMaxInput.value = nextMaxScale.toString();
+        scaleSlider.max = nextMaxScale.toString();
+        scaleSlider.value = Math.max(MIN_SCALE, Math.min(nextMaxScale, scale)).toString();
         break;
       }
       case "wps-brightness-slider":
@@ -263,12 +283,14 @@ export class ImageEditorUI {
 
     switch (target.id) {
       case "wps-scale-slider":
+      case "wps-scale-max-input":
       case "wps-width-input":
       case "wps-height-input": {
         const scale = parseFloat(
           (this.elements.scaleSlider as HTMLInputElement).value,
         );
-        this.callbacks.onScaleChange(Math.max(0.01, Math.min(1, scale)));
+        const maxScale = this.getScaleMax();
+        this.callbacks.onScaleChange(Math.max(MIN_SCALE, Math.min(maxScale, scale)));
         break;
       }
       case "wps-brightness-slider":
@@ -378,6 +400,11 @@ export class ImageEditorUI {
         break;
       }
     }
+  }
+
+  private getScaleMax(): number {
+    const input = this.elements.scaleMaxInput as HTMLInputElement | undefined;
+    return Math.max(1, parseFloat(input?.value || "1") || 1);
   }
 
   private _handleClick(e: Event): void {
