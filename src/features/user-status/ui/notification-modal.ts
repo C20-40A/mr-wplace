@@ -427,8 +427,8 @@ export class NotificationModal {
 
     return `
       <div style="margin-bottom: 24px;">
-        <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 8px;">${t`${"charge_alarm"}`}</h4>
-        <div style="font-size: 12px; margin-bottom: 12px;">
+        <h4 style="font-weight: 600; font-size: 16px; margin-bottom: 3px;">${t`${"charge_alarm"}`}</h4>
+        <div style="font-size: 10px; margin-bottom: 8px; opacity: 0.7;">
           ${t`${"alarm_browser_warning"}`}
         </div>
 
@@ -441,7 +441,7 @@ export class NotificationModal {
           <input type="range" id="chargeThreshold" min="10" max="100" value="${
             this.currentThreshold
           }" step="5"
-                 style="width: 100%; margin-bottom: 8px;">
+                 style="width: 100%; margin-bottom: 8px; accent-color: #dc2626;">
           <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
             <input type="number" id="thresholdInput" min="${Math.ceil(
               current,
