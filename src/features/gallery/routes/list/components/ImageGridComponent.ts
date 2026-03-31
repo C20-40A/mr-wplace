@@ -26,6 +26,8 @@ export class ImageGridComponent {
   private container: HTMLElement;
   private options: ImageGridOptions;
   private tutorial: Tutorial;
+  private readonly overlayIconFilter =
+    "drop-shadow(0 0 1px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 2px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 1px rgba(255, 255, 255, 0.45))";
 
   constructor(container: HTMLElement, options: ImageGridOptions) {
     this.container = container;
@@ -159,9 +161,9 @@ export class ImageGridComponent {
       <button
         class="btn btn-xs btn-circle btn-ghost"
         data-delete="${itemKey}"
-        style="position: absolute; top: 0.25rem; right: 0.25rem; z-index: 10; background: none; border: none; padding: 0; opacity: 0.6;"
+        style="position: absolute; top: 0.25rem; right: 0.25rem; z-index: 10; background: none; border: none; padding: 0; opacity: 0.72;"
         >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4" style="filter: ${this.overlayIconFilter};">
           <path fill-rule="evenodd" d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" clip-rule="evenodd"/>
         </svg>
       </button>
@@ -177,9 +179,9 @@ export class ImageGridComponent {
         class="btn btn-xs btn-circle btn-ghost"
         data-goto-position="${item.key}"
         title="Go to map position"
-        style="position: absolute; top: calc(8rem - 1.5rem); left: 0.25rem; z-index: 10; background: none; border: none; padding: 0; opacity: 0.6;"
+        style="position: absolute; top: calc(8rem - 1.5rem); left: 0.25rem; z-index: 10; background: none; border: none; padding: 0; opacity: 0.72;"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4" style="filter: ${this.overlayIconFilter};">
           <path fill-rule="evenodd" d="m11.54 22.351.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
         </svg>
       </button>
@@ -187,7 +189,7 @@ export class ImageGridComponent {
   }
   private createDrawToggleButtonHtml(item: GalleryItem): string {
     const isEnabled = item.drawEnabled;
-    const opacityStyle = isEnabled ? "opacity: 0.6;" : "opacity: 0.45;";
+    const opacityStyle = isEnabled ? "opacity: 0.72;" : "opacity: 0.58;";
 
     // 描画有効時は開いた目、無効時は閉じた目
     const eyeIcon = isEnabled
@@ -201,7 +203,7 @@ export class ImageGridComponent {
         title="${isEnabled ? "Hide drawing" : "Show drawing"}"
         style="position: absolute; top: 0.25rem; left: 0.25rem; z-index: 10; background: none; border: none; padding: 0; ${opacityStyle}"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4" style="filter: ${this.overlayIconFilter};">
           ${eyeIcon}
         </svg>
       </button>
