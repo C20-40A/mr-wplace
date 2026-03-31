@@ -260,6 +260,7 @@ const setupPopupLaunchButton = () => {
     position: fixed;
     left: 47px;
     top: 8px;
+    z-index: 30;
   `;
 
   const button = document.createElement("button");

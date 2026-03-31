@@ -24,6 +24,7 @@ export class StatusUIComponents {
       font-weight: 500;
       cursor: pointer;
       transition: background-color 0.2s, box-shadow 0.2s;
+      z-index: 30;
     `;
     container.id = "user-status-container";
 
