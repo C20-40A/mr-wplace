@@ -24,6 +24,13 @@ export class NotificationModal {
   private static readonly ALARM_ENABLED_STATE_KEY = "ALARM_ENABLED_STATE";
   private currentEnabledState: boolean = false;
 
+  private isAppleCalendarSupportedDevice(): boolean {
+    const userAgent = navigator.userAgent;
+    const platform = navigator.platform;
+
+    return /iPhone/i.test(userAgent) || /Mac/i.test(platform);
+  }
+
   show(userData: WPlaceUserData): void {
     this.userData = userData;
     this.isFirstRender = true;
@@ -146,6 +153,40 @@ export class NotificationModal {
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${eventName}&dates=${startTime}/${endTime}`;
   }
 
+  private generateAppleCalendarLink(alarmTime: Date): string {
+    const endTime = new Date(alarmTime.getTime() + 60 * 1000);
+    const pad = (value: number) => value.toString().padStart(2, "0");
+    const formatUtcDate = (date: Date) =>
+      `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(
+        date.getUTCDate(),
+      )}T${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}${pad(
+        date.getUTCSeconds(),
+      )}Z`;
+    const escapeIcsText = (value: string) =>
+      value
+        .replace(/\\/g, "\\\\")
+        .replace(/\n/g, "\\n")
+        .replace(/,/g, "\\,")
+        .replace(/;/g, "\\;");
+    const eventName = escapeIcsText(t`${"wplace_charged_event"}`);
+    const uid = `wplace-charge-${alarmTime.getTime()}@wplace`;
+    const icsContent = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//WPlace Studio//Charge Alarm//EN",
+      "BEGIN:VEVENT",
+      `UID:${uid}`,
+      `DTSTAMP:${formatUtcDate(new Date())}`,
+      `DTSTART:${formatUtcDate(alarmTime)}`,
+      `DTEND:${formatUtcDate(endTime)}`,
+      `SUMMARY:${eventName}`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+
+    return `data:text/calendar;charset=utf-8,${encodeURIComponent(icsContent)}`;
+  }
+
   private async getAlarmInfo(): Promise<any> {
     const response = await runtime
       .sendMessage({ type: "GET_ALARM_INFO" })
@@ -235,13 +276,26 @@ export class NotificationModal {
   }
 
   private updateCalendarButtonState(): void {
-    const btn = document.getElementById("addToCalendar") as HTMLButtonElement | null;
-    if (!btn) return;
     const isReached = !this.calculateAlarmTime(this.currentThreshold);
-    btn.disabled = isReached;
-    btn.style.backgroundColor = isReached ? "#9ca3af" : "#3b82f6";
-    btn.style.cursor = isReached ? "not-allowed" : "pointer";
-    btn.style.opacity = isReached ? "0.5" : "1";
+    const googleButton = document.getElementById(
+      "addToCalendar",
+    ) as HTMLButtonElement | null;
+    const appleButton = document.getElementById(
+      "addToAppleCalendar",
+    ) as HTMLButtonElement | null;
+
+    if (googleButton) {
+      googleButton.disabled = isReached;
+      googleButton.style.backgroundColor = isReached ? "#9ca3af" : "#3b82f6";
+      googleButton.style.cursor = isReached ? "not-allowed" : "pointer";
+      googleButton.style.opacity = isReached ? "0.5" : "1";
+    }
+
+    if (appleButton) {
+      appleButton.disabled = isReached;
+      appleButton.style.cursor = isReached ? "not-allowed" : "pointer";
+      appleButton.style.opacity = isReached ? "0.5" : "1";
+    }
   }
 
   private createLevelSection(): string {
@@ -369,6 +423,7 @@ export class NotificationModal {
     const thresholdPixels = Math.floor((max * this.currentThreshold) / 100);
     const thresholdTime = this.calculateThresholdTime(this.currentThreshold);
     const isThresholdReached = !this.calculateAlarmTime(this.currentThreshold);
+    const shouldShowAppleButton = this.isAppleCalendarSupportedDevice();
 
     return `
       <div style="margin-bottom: 24px;">
@@ -398,6 +453,13 @@ export class NotificationModal {
             <div id="estimatedTime" style="flex: 1; font-size: 12px; padding: 6px 8px; border-radius: 4px; border: 1px solid #e5e7eb;">
               ${t`${"estimated_time"}`}: ${thresholdTime}
             </div>
+            ${
+              shouldShowAppleButton
+                ? `<button id="addToAppleCalendar" style="background-color: white; color: #111827; padding: 6px 10px; border-radius: 4px; border: 1px solid #d1d5db; cursor: ${isThresholdReached ? "not-allowed" : "pointer"}; font-size: 12px; white-space: nowrap; opacity: ${isThresholdReached ? "0.5" : "1"};" ${isThresholdReached ? "disabled" : ""} title="Apple Calendar">
+              Apple
+            </button>`
+                : ""
+            }
             <button id="addToCalendar" style="background-color: ${isThresholdReached ? "#9ca3af" : "#3b82f6"}; color: white; padding: 6px 12px; border-radius: 4px; border: none; cursor: ${isThresholdReached ? "not-allowed" : "pointer"}; font-size: 12px; white-space: nowrap; opacity: ${isThresholdReached ? "0.5" : "1"};" ${isThresholdReached ? "disabled" : ""} title="${t`${"add_to_calendar_title"}`}">
               📅${t`${"add_to_calendar_title"}`}
             </button>
@@ -431,6 +493,8 @@ export class NotificationModal {
       "thresholdInput",
     ) as HTMLInputElement;
     const estimatedTime = document.getElementById("estimatedTime");
+    const addToAppleCalendarButton =
+      document.getElementById("addToAppleCalendar");
     const addToCalendarButton = document.getElementById("addToCalendar");
 
     if (!enableButton || !disableButton) return;
@@ -538,6 +602,16 @@ export class NotificationModal {
       thresholdInput.addEventListener("change", () =>
         updateThresholdDisplay("input"),
       );
+    }
+
+    if (addToAppleCalendarButton) {
+      addToAppleCalendarButton.addEventListener("click", () => {
+        const alarmTime = this.calculateAlarmTime(this.currentThreshold);
+        if (alarmTime) {
+          const calendarUrl = this.generateAppleCalendarLink(alarmTime);
+          window.open(calendarUrl, "_blank");
+        }
+      });
     }
 
     if (addToCalendarButton) {

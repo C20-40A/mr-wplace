@@ -3,8 +3,7 @@ import {
   ElementConfig,
 } from "../../components/element-observer";
 import { getCurrentPosition } from "../../utils/position";
-import { findPositionModal, findMapPin } from "../../constants/selectors";
-import { createDrawButton } from "./ui";
+import { findMapPin } from "../../constants/selectors";
 import { addMapPinButton } from "@/utils/map-pin-helper";
 import { di } from "../../core/di";
 import { t } from "@/i18n/manager";
@@ -37,22 +36,6 @@ export class Drawing {
         getTargetElement: findMapPin,
         createElement: (container) => createMapPinButtons(container, this),
       },
-      // フォールバック: position modalにボタン配置
-      // {
-      //   id: "draw-btn-fallback",
-      //   getTargetElement: findPositionModal,
-      //   createElement: (container) => {
-      //     // マップピングループが既に存在する場合はスキップ
-      //     if (document.querySelector("#map-pin-button-group")) return;
-
-      //     const button = createDrawButton();
-      //     button.id = "draw-btn-fallback";
-      //     button.addEventListener("click", () => this.openDrawMode());
-      //     container.prepend(button);
-      //     showFeatureHint("drawing-btn", button);
-      //     console.log("🧑‍🎨 : Fallback button created in position modal");
-      //   },
-      // },
     ];
     setupElementObserver(buttonConfigs);
   }
