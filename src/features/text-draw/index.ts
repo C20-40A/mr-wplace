@@ -1,14 +1,12 @@
 import {
   setupElementObserver,
-  ElementConfig,
+  type ElementConfig,
 } from "@/components/element-observer";
-import { findPositionModal, findMapPin } from "@/constants/selectors";
-import { createTextInputButton, TextDrawUI, TextInstance } from "./ui";
-import { addMapPinButton } from "@/utils/map-pin-helper";
+import { TextDrawUI, TextInstance } from "./ui";
+import { createMapPinButtonObserverConfig } from "@/utils/map-pin-helper";
 import type { TextDrawAPI } from "@/core/di";
 import { drawText, moveText, deleteText } from "./text-manipulator";
 import { t } from "@/i18n/manager";
-import { showFeatureHint } from "@/features/feature-hints";
 
 // ========================================
 // Module-level state
@@ -61,17 +59,6 @@ const handleDeleteText = async (key: string): Promise<void> => {
   textDrawUI.updateList(textInstances);
 };
 
-const createMapPinButtons = (container: Element): void => {
-  const button = addMapPinButton(container, {
-    id: "text-draw-btn",
-    icon: "✏️",
-    text: t`${"text_draw"}`,
-    onClick: () => showModal(),
-  });
-
-  if (button) showFeatureHint("text-draw-btn", button);
-};
-
 // ========================================
 // Initialization
 // ========================================
@@ -98,11 +85,14 @@ const init = async (): Promise<void> => {
 
   const buttonConfigs: ElementConfig[] = [
     // 優先: マップピン周辺にボタン配置
-    {
-      id: "text-draw-map-pin-btn",
-      getTargetElement: findMapPin,
-      createElement: createMapPinButtons,
-    },
+    createMapPinButtonObserverConfig({
+      observerId: "text-draw-map-pin-btn",
+      id: "text-draw-btn",
+      icon: "✏️",
+      text: t`${"text_draw"}`,
+      onClick: showModal,
+      hintId: "text-draw-btn",
+    }),
     // フォールバック: position modalにボタン配置
     // {
     //   id: "text-draw-fallback-btn",

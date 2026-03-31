@@ -1,17 +1,12 @@
 import {
   setupElementObserver,
-  ElementConfig,
+  type ElementConfig,
 } from "@/components/element-observer";
-import {
-  findTopLeftControls,
-  findPositionModal,
-  findMapPin,
-} from "@/constants/selectors";
-import { addMapPinButton } from "@/utils/map-pin-helper";
+import { findTopLeftControls } from "@/constants/selectors";
+import { createMapPinButtonObserverConfig } from "@/utils/map-pin-helper";
 import { TimeTravelRouter, TimeTravelRoute } from "./router";
 import {
   TimeTravelUI,
-  createTimeTravelButton,
   createTimeTravelFAB,
 } from "./ui";
 import { TileListRoute } from "./routes/tile-list";
@@ -26,7 +21,6 @@ import { type TimeTravelAPI } from "../../core/di";
 import { t } from "@/i18n/manager";
 import { IMG_ICON_TIME_TRAVEL } from "@/assets/iconImages";
 import { storage } from "@/utils/browser-api";
-import { showFeatureHint } from "@/features/feature-hints";
 import { sendSnapshotCaptureToInject } from "@/utils/inject-bridge";
 
 /**
@@ -103,17 +97,6 @@ export const initTimeTravel = (): void => {
     renderCurrentRoute(route);
   });
 
-  const createMapPinButtons = (container: Element): void => {
-    const button = addMapPinButton(container, {
-      id: "timetravel-btn",
-      iconSrc: IMG_ICON_TIME_TRAVEL,
-      text: t`${"timetravel"}`,
-      onClick: () => showCurrentPosition(),
-    });
-
-    if (button) showFeatureHint("timetravel-btn", button);
-  };
-
   const buttonConfigs: ElementConfig[] = [
     {
       id: "timetravel-fab-btn",
@@ -126,11 +109,14 @@ export const initTimeTravel = (): void => {
       },
     },
     // 優先: マップピン周辺にボタン配置
-    {
-      id: "timetravel-map-pin-btn",
-      getTargetElement: findMapPin,
-      createElement: createMapPinButtons,
-    },
+    createMapPinButtonObserverConfig({
+      observerId: "timetravel-map-pin-btn",
+      id: "timetravel-btn",
+      iconSrc: IMG_ICON_TIME_TRAVEL,
+      text: t`${"timetravel"}`,
+      onClick: showCurrentPosition,
+      hintId: "timetravel-btn",
+    }),
     // フォールバック: position modalにボタン配置
     // {
     //   id: "timetravel-btn-fallback",

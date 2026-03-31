@@ -1,28 +1,12 @@
 import {
   setupElementObserver,
-  ElementConfig,
+  type ElementConfig,
 } from "../../components/element-observer";
 import { getCurrentPosition } from "../../utils/position";
-import { findMapPin } from "../../constants/selectors";
-import { addMapPinButton } from "@/utils/map-pin-helper";
+import { createMapPinButtonObserverConfig } from "@/utils/map-pin-helper";
 import { di } from "../../core/di";
 import { t } from "@/i18n/manager";
 import type { GalleryItem } from "@/states/galleryStorage";
-import { showFeatureHint } from "@/features/feature-hints";
-
-const createMapPinButtons = (
-  container: Element,
-  drawInstance: Drawing,
-): void => {
-  const button = addMapPinButton(container, {
-    id: "drawing-btn",
-    icon: "🖼️",
-    text: t`${"draw_image"}`,
-    onClick: () => drawInstance.openDrawMode(),
-  });
-
-  if (button) showFeatureHint("drawing-btn", button);
-};
 
 /**
  * 画像描画機能の独立モジュール
@@ -30,13 +14,16 @@ const createMapPinButtons = (
 export class Drawing {
   constructor() {
     const buttonConfigs: ElementConfig[] = [
-      // 優先: マップピン周辺にボタン配置
-      {
-        id: "drawing-map-pin-btn",
-        getTargetElement: findMapPin,
-        createElement: (container) => createMapPinButtons(container, this),
-      },
+      createMapPinButtonObserverConfig({
+        observerId: "drawing-map-pin-btn",
+        id: "drawing-btn",
+        icon: "🖼️",
+        text: t`${"draw_image"}`,
+        onClick: () => this.openDrawMode(),
+        hintId: "drawing-btn",
+      }),
     ];
+
     setupElementObserver(buttonConfigs);
   }
 

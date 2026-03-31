@@ -6,9 +6,8 @@ import { storage } from "@/utils/browser-api";
 import { Toast } from "@/components/toast";
 import {
   findMyLocationContainer,
-  findMapPin,
 } from "@/constants/selectors";
-import { addMapPinButton } from "@/utils/map-pin-helper";
+import { createMapPinButtonObserverConfig } from "@/utils/map-pin-helper";
 import { BookmarkStorage } from "./storage";
 import { ImportExportService } from "./import-export";
 import { getCurrentPosition, gotoPosition } from "@/utils/position";
@@ -620,17 +619,6 @@ const setupModal = (): void => {
   });
 };
 
-const createMapPinButtons = (container: Element): void => {
-  const button = addMapPinButton(container, {
-    id: "bookmark-btn",
-    icon: "⭐",
-    text: t`${"save_location"}`,
-    onClick: () => addBookmark(),
-  });
-
-  if (button) showFeatureHint("bookmark-btn", button);
-};
-
 const findBookmarkButtonTarget = (): Element | null =>
   document.getElementById(TOOLBAR_ROW1_ID);
 
@@ -650,11 +638,14 @@ const init = (): void => {
       },
     },
     // 優先: マップピン周辺にボタン配置
-    {
-      id: "bookmark-map-pin-btn",
-      getTargetElement: findMapPin,
-      createElement: createMapPinButtons,
-    },
+    createMapPinButtonObserverConfig({
+      observerId: "bookmark-map-pin-btn",
+      id: "bookmark-btn",
+      icon: "⭐",
+      text: t`${"save_location"}`,
+      onClick: addBookmark,
+      hintId: "bookmark-btn",
+    }),
     // ツールバー1段目に配置
     {
       id: "save-btn-fallback",
