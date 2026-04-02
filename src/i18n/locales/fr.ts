@@ -600,4 +600,5 @@ export const frTranslations = {
   tile_crop_max_selected_pixels: "Pixels sélectionnés maximum",
   tile_crop_include_diagonals: "Inclure les voisins diagonaux",
   tile_crop_redetect: "Relancer la détection",
+  hint_tile_crop_save: "Nouvelle fonctionnalité ! Vous pouvez détecter un pixel art et l'enregistrer.",
 };

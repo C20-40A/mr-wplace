@@ -17,7 +17,7 @@ export const showDownloadFormatDialog = (
           <button id="download-png-btn" class="btn btn-accent">${t("export_png")}</button>
           ${
             hasDrawPosition
-              ? `<button id="download-wplace-btn" class="btn btn-primary">.wplace</button>`
+              ? `<button id="download-wplace-btn" class="btn btn-accent">.wplace</button>`
               : ""
           }
           <button id="download-cancel-btn" class="btn btn-ghost">${t("close")}</button>

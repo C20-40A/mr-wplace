@@ -584,4 +584,5 @@ export const ptTranslations = {
   tile_crop_max_selected_pixels: "Máximo de pixels selecionados",
   tile_crop_include_diagonals: "Incluir vizinhos diagonais",
   tile_crop_redetect: "Detectar novamente",
+  hint_tile_crop_save: "Novo recurso! Você pode detectar pixel art e salvá-lo.",
 };

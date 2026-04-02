@@ -612,4 +612,5 @@ export const jaTranslations = {
   tile_crop_max_selected_pixels: "最大選択ピクセル数",
   tile_crop_include_diagonals: "斜めの隣接ピクセルも含める",
   tile_crop_redetect: "再検出",
+  hint_tile_crop_save: "新機能！ ピクセルアートを判定して保存できます",
 };

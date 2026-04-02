@@ -23,6 +23,7 @@ export type FeatureHintId =
   | "timetravel-btn"
   // | "timetravel-fab-btn"
   | "text-draw-btn"
+  | "tile-crop-save-btn"
   | "unplaced-item"
   | "show-unplaced-only"
   | "color-isolate"
@@ -209,6 +210,11 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
   //   placement: "bottom",
   //   dependsOn: ["image-detail-draw-on-map"],
   // },
+  "tile-crop-save-btn": {
+    messageKey: "hint_tile_crop_save",
+    placement: "top",
+    dependsOn: ["show-unplaced-only"],
+  },
 };
 
 const pendingHints = new Map<FeatureHintId, HTMLElement>();

@@ -3,6 +3,7 @@ import { ImageInspector } from "@/components/image-inspector";
 import { createModal } from "@/components/modal";
 import { Toast } from "@/components/toast";
 import { findPositionModal } from "@/constants/selectors";
+import { showFeatureHint } from "@/features/feature-hints";
 import { TOOLBAR_ROW1_ID } from "@/features/position-info";
 import { t } from "@/i18n/manager";
 import { GalleryStorage } from "@/states/galleryStorage";
@@ -15,7 +16,7 @@ import {
 import { getCurrentPosition } from "@/utils/position";
 import { sendGalleryImagesToInject } from "@/core/bridge";
 
-const BUTTON_ID = "save-btn-fallback";
+const BUTTON_ID = "tile-crop-save-btn";
 const MODAL_MARKER_ID = "tile-crop-save-marker";
 const DEFAULT_MAX_SELECTED_PIXELS = 40_000;
 const DEFAULT_INCLUDE_DIAGONALS = true;
@@ -124,6 +125,8 @@ export class TileCropSave {
     button.style.display = visible ? "" : "none";
     button.disabled = !visible || this.saving;
     button.classList.toggle("loading", this.saving);
+
+    if (visible) showFeatureHint("tile-crop-save-btn", button);
   }
 
   private loadPreviewCanvas = async (

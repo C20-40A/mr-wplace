@@ -26,7 +26,7 @@ const MAP_FAB_IDS = [
   "map-pin-button-group",
   "draw-btn-fallback",
   "text-draw-fallback-btn",
-  "save-btn-fallback",
+  "tile-crop-save-btn",
   "bookmark-map-pin-btn",
   "mr-wplace-popup-launch-btn",
   "mr-wplace-focus-mode-btn",

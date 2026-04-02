@@ -583,4 +583,5 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   tile_crop_max_selected_pixels: "Maximale ausgewählte Pixel",
   tile_crop_include_diagonals: "Diagonale Nachbarn einschließen",
   tile_crop_redetect: "Erneut erkennen",
+  hint_tile_crop_save: "Neue Funktion! Du kannst Pixel-Art erkennen und speichern.",
 };

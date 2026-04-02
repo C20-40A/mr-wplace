@@ -596,4 +596,5 @@ export const ruTranslations = {
   tile_crop_max_selected_pixels: "Максимум выбранных пикселей",
   tile_crop_include_diagonals: "Включать диагональных соседей",
   tile_crop_redetect: "Повторить обнаружение",
+  hint_tile_crop_save: "Новая функция! Вы можете распознать пиксель-арт и сохранить его.",
 };

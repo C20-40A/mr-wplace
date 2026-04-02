@@ -609,4 +609,5 @@ Do not use this feature to paint actual pixels.`,
   tile_crop_max_selected_pixels: "Max selected pixels",
   tile_crop_include_diagonals: "Include diagonal neighbors",
   tile_crop_redetect: "Re-detect",
+  hint_tile_crop_save: "New feature! You can detect pixel art and save it.",
 };

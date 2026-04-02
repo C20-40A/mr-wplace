@@ -579,4 +579,5 @@ export const viTranslations = {
   tile_crop_max_selected_pixels: "Số pixel chọn tối đa",
   tile_crop_include_diagonals: "Bao gồm các pixel chéo liền kề",
   tile_crop_redetect: "Phát hiện lại",
+  hint_tile_crop_save: "Tính năng mới! Bạn có thể phát hiện pixel art và lưu lại.",
 };
