@@ -608,4 +608,8 @@ export const jaTranslations = {
   official_favorites: "公式お気に入り",
   empty_official_favorites: "公式お気に入り地点がありません",
   official_favorites_unavailable: "公式お気に入り地点を取得できませんでした",
+  tile_crop_selection_too_large: "選択範囲が大きすぎます（{count}px）。透明ピクセルはすでに除外されています。追加で除外したい色を選んで、再検出してください。",
+  tile_crop_max_selected_pixels: "最大選択ピクセル数",
+  tile_crop_include_diagonals: "斜めの隣接ピクセルも含める",
+  tile_crop_redetect: "再検出",
 };

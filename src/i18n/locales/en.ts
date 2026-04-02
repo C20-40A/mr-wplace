@@ -605,4 +605,8 @@ Do not use this feature to paint actual pixels.`,
   official_favorites: "Official Favorites",
   empty_official_favorites: "No official favorite locations",
   official_favorites_unavailable: "Could not load official favorite locations",
+  tile_crop_selection_too_large: "Selection is too large ({count}px). Transparent pixels are already excluded. Pick extra colors to ignore, then run detect again.",
+  tile_crop_max_selected_pixels: "Max selected pixels",
+  tile_crop_include_diagonals: "Include diagonal neighbors",
+  tile_crop_redetect: "Re-detect",
 };

@@ -579,4 +579,8 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
     "Falls das Rendern langsam ist, probiere einen anderen Modus",
   hint_overlay_mode_blue_marble:
     'If BlueMarble conflicts with this extension, try setting this mode to "Composite"',
+  tile_crop_selection_too_large: "Die Auswahl ist zu groß ({count}px). Transparente Pixel sind bereits ausgeschlossen. Wähle zusätzliche Farben aus, die ignoriert werden sollen, und starte die Erkennung erneut.",
+  tile_crop_max_selected_pixels: "Maximale ausgewählte Pixel",
+  tile_crop_include_diagonals: "Diagonale Nachbarn einschließen",
+  tile_crop_redetect: "Erneut erkennen",
 };

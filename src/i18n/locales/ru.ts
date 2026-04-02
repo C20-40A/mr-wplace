@@ -592,4 +592,8 @@ export const ruTranslations = {
   empty_official_favorites: "Нет официальных избранных мест",
   official_favorites_unavailable:
     "Не удалось загрузить официальные избранные места",
+  tile_crop_selection_too_large: "Выделенная область слишком велика ({count}px). Прозрачные пиксели уже исключены. Выберите дополнительные цвета для игнорирования и запустите обнаружение снова.",
+  tile_crop_max_selected_pixels: "Максимум выбранных пикселей",
+  tile_crop_include_diagonals: "Включать диагональных соседей",
+  tile_crop_redetect: "Повторить обнаружение",
 };

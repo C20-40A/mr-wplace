@@ -589,4 +589,8 @@ export const esTranslations = {
   empty_official_favorites: "No hay ubicaciones favoritas oficiales",
   official_favorites_unavailable:
     "No se pudieron cargar las ubicaciones favoritas oficiales",
+  tile_crop_selection_too_large: "La selección es demasiado grande ({count}px). Los píxeles transparentes ya están excluidos. Selecciona colores adicionales para ignorar y vuelve a detectar.",
+  tile_crop_max_selected_pixels: "Píxeles máximos seleccionados",
+  tile_crop_include_diagonals: "Incluir vecinos diagonales",
+  tile_crop_redetect: "Detectar de nuevo",
 };

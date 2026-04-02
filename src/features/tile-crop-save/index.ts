@@ -17,7 +17,7 @@ import { sendGalleryImagesToInject } from "@/core/bridge";
 
 const BUTTON_ID = "save-btn-fallback";
 const MODAL_MARKER_ID = "tile-crop-save-marker";
-const DEFAULT_MAX_SELECTED_PIXELS = 60_000;
+const DEFAULT_MAX_SELECTED_PIXELS = 40_000;
 const DEFAULT_INCLUDE_DIAGONALS = true;
 
 export class TileCropSave {
@@ -126,7 +126,9 @@ export class TileCropSave {
     button.classList.toggle("loading", this.saving);
   }
 
-  private loadPreviewCanvas = async (dataUrl: string): Promise<HTMLCanvasElement> => {
+  private loadPreviewCanvas = async (
+    dataUrl: string,
+  ): Promise<HTMLCanvasElement> => {
     const image = new Image();
     image.decoding = "async";
 
@@ -179,7 +181,9 @@ export class TileCropSave {
     </label>
   `;
 
-  private showPreviewModal(result: ConnectedTileRegionResult): Promise<boolean> {
+  private showPreviewModal(
+    result: ConnectedTileRegionResult,
+  ): Promise<boolean> {
     return new Promise((resolve) => {
       const modalElements = createModal({
         id: "wplace-studio-tile-crop-preview-modal",
@@ -266,19 +270,23 @@ export class TileCropSave {
 
       let resolved = false;
       let inspector: ImageInspector | null = null;
+      const tooLargeText = t("tile_crop_selection_too_large").replace(
+        "{count}",
+        String(result.pixelCount),
+      );
 
       modalElements.container.innerHTML = `
         <div style="display:flex; flex-direction:column; gap:0.75rem;">
           <p class="text-sm opacity-80" style="margin:0;">
-            Selection is too large (${result.pixelCount}px). Transparent pixels are already excluded. Pick extra colors to ignore, then run detect again.
+            ${tooLargeText}
           </p>
           <label style="display:flex; flex-direction:column; gap:0.35rem;">
-            <span class="text-sm opacity-80">Max selected pixels</span>
+            <span class="text-sm opacity-80">${t("tile_crop_max_selected_pixels")}</span>
             <input id="tile-crop-max-selected-pixels" type="number" min="1" step="1000" value="${currentMaxSelectedPixels}" class="input input-bordered input-sm">
           </label>
           <label class="label" style="justify-content:flex-start; gap:0.5rem; padding:0;">
             <input id="tile-crop-include-diagonals" type="checkbox" class="checkbox checkbox-sm" ${currentIncludeDiagonals ? "checked" : ""}>
-            <span class="label-text">Include diagonal neighbors</span>
+            <span class="label-text">${t("tile_crop_include_diagonals")}</span>
           </label>
           <div id="tile-crop-too-large-stage" class="border border-base-300 rounded-lg bg-base-200/40" style="position:relative; overflow:hidden; display:flex; justify-content:center; align-items:center; min-height:16rem; height:16rem;"></div>
           <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(10rem, 1fr)); gap:0.5rem;">
@@ -288,7 +296,7 @@ export class TileCropSave {
           </div>
           <div class="modal-action" style="margin-top:0;">
             <button type="button" id="tile-crop-too-large-cancel" class="btn btn-ghost">${t`${"cancel"}`}</button>
-            <button type="button" id="tile-crop-too-large-redetect" class="btn btn-primary">Re-detect</button>
+            <button type="button" id="tile-crop-too-large-redetect" class="btn btn-primary">${t("tile_crop_redetect")}</button>
           </div>
         </div>
       `;
@@ -352,7 +360,8 @@ export class TileCropSave {
             Number.parseInt(maxSelectedPixelsInput?.value ?? "", 10) ||
               currentMaxSelectedPixels,
           ),
-          includeDiagonals: includeDiagonalsInput?.checked ?? currentIncludeDiagonals,
+          includeDiagonals:
+            includeDiagonalsInput?.checked ?? currentIncludeDiagonals,
         });
       });
 
@@ -436,7 +445,9 @@ export class TileCropSave {
     } catch (error) {
       console.error("🧑‍🎨 : Failed to save connected tile region", error);
       Toast.error(
-        error instanceof Error ? error.message : "Failed to save selected template",
+        error instanceof Error
+          ? error.message
+          : "Failed to save selected template",
       );
     } finally {
       this.saving = false;

@@ -575,4 +575,8 @@ export const viTranslations = {
   empty_official_favorites: "Không có địa điểm yêu thích chính thức",
   official_favorites_unavailable:
     "Khong the tai cac dia diem yeu thich chinh thuc",
+  tile_crop_selection_too_large: "Vùng chọn quá lớn ({count}px). Các pixel trong suốt đã được loại trừ. Hãy chọn thêm màu cần bỏ qua rồi phát hiện lại.",
+  tile_crop_max_selected_pixels: "Số pixel chọn tối đa",
+  tile_crop_include_diagonals: "Bao gồm các pixel chéo liền kề",
+  tile_crop_redetect: "Phát hiện lại",
 };

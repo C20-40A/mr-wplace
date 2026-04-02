@@ -580,4 +580,8 @@ export const ptTranslations = {
   empty_official_favorites: "Nenhum local favorito oficial",
   official_favorites_unavailable:
     "Nao foi possivel carregar os locais favoritos oficiais",
+  tile_crop_selection_too_large: "A seleção é grande demais ({count}px). Os pixels transparentes já estão excluídos. Escolha cores adicionais para ignorar e execute a detecção novamente.",
+  tile_crop_max_selected_pixels: "Máximo de pixels selecionados",
+  tile_crop_include_diagonals: "Incluir vizinhos diagonais",
+  tile_crop_redetect: "Detectar novamente",
 };
