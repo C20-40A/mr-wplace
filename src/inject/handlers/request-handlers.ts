@@ -205,11 +205,13 @@ export const handleConnectedTileRegionRequest = async (data: {
   requestId: string;
   excludedColors?: Array<[number, number, number, number]>;
   maxSelectedPixels?: number;
+  includeDiagonals?: boolean;
 }): Promise<void> => {
   try {
     const result = await extractConnectedTileRegion(data.lat, data.lng, {
       excludedColors: data.excludedColors,
       maxSelectedPixels: data.maxSelectedPixels,
+      includeDiagonals: data.includeDiagonals,
     });
 
     window.postMessage(

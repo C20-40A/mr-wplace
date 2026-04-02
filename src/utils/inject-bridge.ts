@@ -214,6 +214,7 @@ export const extractConnectedTileRegion = async (
   lng: number,
   excludedColors: Array<[number, number, number, number]> = [],
   maxSelectedPixels?: number,
+  includeDiagonals = true,
 ): Promise<ConnectedTileRegionResult | ConnectedTileRegionTooLargeResult | null> => {
   const requestId = generateRequestId();
 
@@ -245,6 +246,7 @@ export const extractConnectedTileRegion = async (
         lng,
         excludedColors,
         maxSelectedPixels,
+        includeDiagonals,
         requestId,
       },
       "*",

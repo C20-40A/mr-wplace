@@ -18,6 +18,7 @@ import { sendGalleryImagesToInject } from "@/core/bridge";
 const BUTTON_ID = "save-btn-fallback";
 const MODAL_MARKER_ID = "tile-crop-save-marker";
 const DEFAULT_MAX_SELECTED_PIXELS = 60_000;
+const DEFAULT_INCLUDE_DIAGONALS = true;
 
 export class TileCropSave {
   private button: HTMLButtonElement | null = null;
@@ -250,9 +251,11 @@ export class TileCropSave {
   private showTooLargeModal(
     result: ConnectedTileRegionTooLargeResult,
     currentMaxSelectedPixels: number,
+    currentIncludeDiagonals: boolean,
   ): Promise<{
     excludedColors: Array<[number, number, number, number]>;
     maxSelectedPixels: number;
+    includeDiagonals: boolean;
   } | null> {
     return new Promise((resolve) => {
       const modalElements = createModal({
@@ -272,6 +275,10 @@ export class TileCropSave {
           <label style="display:flex; flex-direction:column; gap:0.35rem;">
             <span class="text-sm opacity-80">Max selected pixels</span>
             <input id="tile-crop-max-selected-pixels" type="number" min="1" step="1000" value="${currentMaxSelectedPixels}" class="input input-bordered input-sm">
+          </label>
+          <label class="label" style="justify-content:flex-start; gap:0.5rem; padding:0;">
+            <input id="tile-crop-include-diagonals" type="checkbox" class="checkbox checkbox-sm" ${currentIncludeDiagonals ? "checked" : ""}>
+            <span class="label-text">Include diagonal neighbors</span>
           </label>
           <div id="tile-crop-too-large-stage" class="border border-base-300 rounded-lg bg-base-200/40" style="position:relative; overflow:hidden; display:flex; justify-content:center; align-items:center; min-height:16rem; height:16rem;"></div>
           <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(10rem, 1fr)); gap:0.5rem;">
@@ -313,6 +320,9 @@ export class TileCropSave {
       const maxSelectedPixelsInput = modalElements.container.querySelector(
         "#tile-crop-max-selected-pixels",
       ) as HTMLInputElement | null;
+      const includeDiagonalsInput = modalElements.container.querySelector(
+        "#tile-crop-include-diagonals",
+      ) as HTMLInputElement | null;
       const checkboxes = Array.from(
         modalElements.container.querySelectorAll<HTMLInputElement>(
           "input[data-color-index]",
@@ -342,6 +352,7 @@ export class TileCropSave {
             Number.parseInt(maxSelectedPixelsInput?.value ?? "", 10) ||
               currentMaxSelectedPixels,
           ),
+          includeDiagonals: includeDiagonalsInput?.checked ?? currentIncludeDiagonals,
         });
       });
 
@@ -363,11 +374,13 @@ export class TileCropSave {
     try {
       let excludedColors: Array<[number, number, number, number]> = [];
       let maxSelectedPixels = DEFAULT_MAX_SELECTED_PIXELS;
+      let includeDiagonals = DEFAULT_INCLUDE_DIAGONALS;
       let result = await extractConnectedTileRegion(
         position.lat,
         position.lng,
         excludedColors,
         maxSelectedPixels,
+        includeDiagonals,
       );
       if (!result) return;
 
@@ -375,16 +388,19 @@ export class TileCropSave {
         const nextDetectionOptions = await this.showTooLargeModal(
           result,
           maxSelectedPixels,
+          includeDiagonals,
         );
         if (!nextDetectionOptions) return;
 
         excludedColors = nextDetectionOptions.excludedColors;
         maxSelectedPixels = nextDetectionOptions.maxSelectedPixels;
+        includeDiagonals = nextDetectionOptions.includeDiagonals;
         result = await extractConnectedTileRegion(
           position.lat,
           position.lng,
           excludedColors,
           maxSelectedPixels,
+          includeDiagonals,
         );
         if (!result) return;
       }
@@ -415,6 +431,7 @@ export class TileCropSave {
         origin: result.origin,
         excludedColors,
         maxSelectedPixels,
+        includeDiagonals,
       });
     } catch (error) {
       console.error("🧑‍🎨 : Failed to save connected tile region", error);

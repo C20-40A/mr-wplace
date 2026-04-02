@@ -47,6 +47,7 @@ export type ConnectedTileRegionResult =
 type ExtractConnectedTileRegionOptions = {
   excludedColors?: SerializableTilePixelColor[];
   maxSelectedPixels?: number;
+  includeDiagonals?: boolean;
 };
 
 const DEFAULT_MAX_SELECTED_PIXELS = 60_000;
@@ -240,6 +241,23 @@ export const extractConnectedTileRegion = async (
     1,
     Math.floor(options.maxSelectedPixels ?? DEFAULT_MAX_SELECTED_PIXELS),
   );
+  const neighborOffsets = options.includeDiagonals === false
+    ? [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ]
+    : [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+        [1, 1],
+        [1, -1],
+        [-1, 1],
+        [-1, -1],
+      ];
   if (isTransparentPixel(startPixel)) return null;
   if (startPixel && excludedColorKeys.has(toColorKey(startPixel))) return null;
 
@@ -292,7 +310,9 @@ export const extractConnectedTileRegion = async (
       };
     }
 
-    queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+    for (const [offsetX, offsetY] of neighborOffsets) {
+      queue.push([x + offsetX, y + offsetY]);
+    }
   }
 
   const width = maxX - minX + 1;
