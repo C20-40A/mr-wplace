@@ -9,6 +9,8 @@ type TilePixelColor = {
   a: number;
 };
 
+type SerializableTilePixelColor = [number, number, number, number];
+
 type DecodedTile = {
   width: number;
   height: number;
@@ -16,6 +18,7 @@ type DecodedTile = {
 };
 
 export type ConnectedTileRegion = {
+  kind: "success";
   dataUrl: string;
   width: number;
   height: number;
@@ -28,7 +31,25 @@ export type ConnectedTileRegion = {
   };
 };
 
-const MAX_SELECTED_PIXELS = 200_000;
+export type ConnectedTileRegionTooLarge = {
+  kind: "too-large";
+  dataUrl: string;
+  width: number;
+  height: number;
+  pixelCount: number;
+  candidateColors: SerializableTilePixelColor[];
+};
+
+export type ConnectedTileRegionResult =
+  | ConnectedTileRegion
+  | ConnectedTileRegionTooLarge;
+
+type ExtractConnectedTileRegionOptions = {
+  excludedColors?: SerializableTilePixelColor[];
+  maxSelectedPixels?: number;
+};
+
+const DEFAULT_MAX_SELECTED_PIXELS = 60_000;
 const tileDecodeCache = new Map<string, Promise<DecodedTile | null>>();
 
 const toWorldPixel = (lat: number, lng: number) => {
@@ -43,6 +64,16 @@ const toWorldPixel = (lat: number, lng: number) => {
 const toTileKey = (tileX: number, tileY: number): string => `${tileX},${tileY}`;
 const toVisitedKey = (x: number, y: number): string => `${x},${y}`;
 const isTransparentPixel = (pixel: TilePixelColor | null): boolean => !pixel || pixel.a === 0;
+const toColorKey = (pixel: TilePixelColor | SerializableTilePixelColor): string =>
+  Array.isArray(pixel)
+    ? `${pixel[0]},${pixel[1]},${pixel[2]},${pixel[3]}`
+    : `${pixel.r},${pixel.g},${pixel.b},${pixel.a}`;
+const toSerializableColor = (pixel: TilePixelColor): SerializableTilePixelColor => [
+  pixel.r,
+  pixel.g,
+  pixel.b,
+  pixel.a,
+];
 
 const worldToTilePixel = (worldX: number, worldY: number) => {
   const tileSize = TILE_DRAW_CONSTANTS.TILE_SIZE;
@@ -198,14 +229,24 @@ export const getTilePixelColor = async (
 export const extractConnectedTileRegion = async (
   lat: number,
   lng: number,
-): Promise<ConnectedTileRegion | null> => {
+  options: ExtractConnectedTileRegionOptions = {},
+): Promise<ConnectedTileRegionResult | null> => {
   const start = toWorldPixel(lat, lng);
   const startPixel = await getTilePixelAtWorld(start.x, start.y);
+  const excludedColorKeys = new Set(
+    (options.excludedColors ?? []).map((color) => toColorKey(color)),
+  );
+  const maxSelectedPixels = Math.max(
+    1,
+    Math.floor(options.maxSelectedPixels ?? DEFAULT_MAX_SELECTED_PIXELS),
+  );
   if (isTransparentPixel(startPixel)) return null;
+  if (startPixel && excludedColorKeys.has(toColorKey(startPixel))) return null;
 
   const queue: Array<[number, number]> = [[start.x, start.y]];
   const visited = new Set<string>();
   const selected = new Map<string, TilePixelColor>();
+  const colorCounts = new Map<string, { color: TilePixelColor; count: number }>();
   let queueIndex = 0;
 
   let minX = start.x;
@@ -221,16 +262,35 @@ export const extractConnectedTileRegion = async (
 
     const pixel = await getTilePixelAtWorld(x, y);
     if (isTransparentPixel(pixel)) continue;
+    if (excludedColorKeys.has(toColorKey(pixel as TilePixelColor))) continue;
 
     selected.set(key, pixel as TilePixelColor);
-    if (selected.size > MAX_SELECTED_PIXELS) {
-      throw new Error("Selected tile region is too large");
-    }
+    const colorKey = toColorKey(pixel as TilePixelColor);
+    const colorCount = colorCounts.get(colorKey);
+    if (colorCount) colorCount.count += 1;
+    else colorCounts.set(colorKey, { color: pixel as TilePixelColor, count: 1 });
 
     if (x < minX) minX = x;
     if (y < minY) minY = y;
     if (x > maxX) maxX = x;
     if (y > maxY) maxY = y;
+
+    if (selected.size > maxSelectedPixels) {
+      const width = maxX - minX + 1;
+      const height = maxY - minY + 1;
+
+      return {
+        kind: "too-large",
+        dataUrl: await renderSelectedRegion(width, height, selected, minX, minY),
+        width,
+        height,
+        pixelCount: selected.size,
+        candidateColors: Array.from(colorCounts.values())
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 12)
+          .map(({ color }) => toSerializableColor(color)),
+      };
+    }
 
     queue.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
   }
@@ -239,6 +299,7 @@ export const extractConnectedTileRegion = async (
   const height = maxY - minY + 1;
 
   return {
+    kind: "success",
     dataUrl: await renderSelectedRegion(width, height, selected, minX, minY),
     width,
     height,

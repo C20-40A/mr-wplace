@@ -1,4 +1,5 @@
 import { setupElementObserver } from "@/components/element-observer";
+import { ImageInspector } from "@/components/image-inspector";
 import { createModal } from "@/components/modal";
 import { Toast } from "@/components/toast";
 import { findPositionModal } from "@/constants/selectors";
@@ -7,6 +8,8 @@ import { t } from "@/i18n/manager";
 import { GalleryStorage } from "@/states/galleryStorage";
 import {
   extractConnectedTileRegion,
+  type ConnectedTileRegionResult,
+  type ConnectedTileRegionTooLargeResult,
   getTilePixelColor,
 } from "@/utils/inject-bridge";
 import { getCurrentPosition } from "@/utils/position";
@@ -14,6 +17,7 @@ import { sendGalleryImagesToInject } from "@/core/bridge";
 
 const BUTTON_ID = "save-btn-fallback";
 const MODAL_MARKER_ID = "tile-crop-save-marker";
+const DEFAULT_MAX_SELECTED_PIXELS = 60_000;
 
 export class TileCropSave {
   private button: HTMLButtonElement | null = null;
@@ -121,9 +125,60 @@ export class TileCropSave {
     button.classList.toggle("loading", this.saving);
   }
 
-  private showPreviewModal(result: Awaited<ReturnType<typeof extractConnectedTileRegion>>): Promise<boolean> {
-    if (!result) return Promise.resolve(false);
+  private loadPreviewCanvas = async (dataUrl: string): Promise<HTMLCanvasElement> => {
+    const image = new Image();
+    image.decoding = "async";
 
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("Failed to load preview image"));
+      image.src = dataUrl;
+    });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth || image.width;
+    canvas.height = image.naturalHeight || image.height;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Failed to create preview canvas");
+    ctx.drawImage(image, 0, 0);
+
+    return canvas;
+  };
+
+  private createInspector = async (
+    container: HTMLElement | null,
+    dataUrl: string,
+    containerSize: number,
+    maxZoom: number,
+  ): Promise<ImageInspector | null> => {
+    if (!container) return null;
+
+    const canvas = await this.loadPreviewCanvas(dataUrl);
+    container.style.padding = "0";
+    canvas.style.position = "absolute";
+    canvas.style.left = "50%";
+    canvas.style.top = "50%";
+    container.appendChild(canvas);
+
+    return new ImageInspector(canvas, {
+      containerSize,
+      maxZoom,
+    });
+  };
+
+  private createColorChipHtml = (
+    color: [number, number, number, number],
+    index: number,
+  ): string => `
+    <label class="btn btn-sm btn-outline" style="display:flex; align-items:center; gap:0.5rem; justify-content:flex-start;">
+      <input type="checkbox" data-color-index="${index}" style="margin:0;">
+      <span style="width:1rem; height:1rem; border-radius:0.25rem; border:1px solid rgba(0,0,0,0.18); background:rgba(${color[0]}, ${color[1]}, ${color[2]}, ${Math.max(color[3] / 255, 0.25)});"></span>
+      rgb(${color[0]}, ${color[1]}, ${color[2]})
+    </label>
+  `;
+
+  private showPreviewModal(result: ConnectedTileRegionResult): Promise<boolean> {
     return new Promise((resolve) => {
       const modalElements = createModal({
         id: "wplace-studio-tile-crop-preview-modal",
@@ -133,11 +188,11 @@ export class TileCropSave {
       });
 
       let resolved = false;
+      let inspector: ImageInspector | null = null;
+
       modalElements.container.innerHTML = `
         <div style="display:flex; flex-direction:column; gap:0.75rem;">
-          <div class="border border-base-300 rounded-lg bg-base-200/40" style="display:flex; justify-content:center; align-items:center; padding:0.75rem; min-height:12rem;">
-            <img src="${result.dataUrl}" alt="Selected pixels preview" style="max-width:100%; max-height:18rem; image-rendering:pixelated; object-fit:contain;">
-          </div>
+          <div id="tile-crop-preview-stage" class="border border-base-300 rounded-lg bg-base-200/40" style="position:relative; overflow:hidden; display:flex; justify-content:center; align-items:center; min-height:18rem; height:18rem;"></div>
           <div class="text-xs opacity-70" style="text-align:center;">
             ${result.width} x ${result.height} / ${result.pixelCount}px
           </div>
@@ -148,7 +203,17 @@ export class TileCropSave {
         </div>
       `;
 
+      void this.createInspector(
+        modalElements.container.querySelector("#tile-crop-preview-stage"),
+        result.dataUrl,
+        280,
+        12,
+      ).then((instance) => {
+        inspector = instance;
+      });
+
       const cleanup = () => {
+        inspector?.destroy();
         modalElements.destroy();
         if (!resolved) {
           resolved = true;
@@ -182,6 +247,109 @@ export class TileCropSave {
     });
   }
 
+  private showTooLargeModal(
+    result: ConnectedTileRegionTooLargeResult,
+    currentMaxSelectedPixels: number,
+  ): Promise<{
+    excludedColors: Array<[number, number, number, number]>;
+    maxSelectedPixels: number;
+  } | null> {
+    return new Promise((resolve) => {
+      const modalElements = createModal({
+        id: "wplace-studio-tile-crop-too-large-modal",
+        title: t`${"add_to_gallery"}`,
+        maxWidth: "32rem",
+      });
+
+      let resolved = false;
+      let inspector: ImageInspector | null = null;
+
+      modalElements.container.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:0.75rem;">
+          <p class="text-sm opacity-80" style="margin:0;">
+            Selection is too large (${result.pixelCount}px). Transparent pixels are already excluded. Pick extra colors to ignore, then run detect again.
+          </p>
+          <label style="display:flex; flex-direction:column; gap:0.35rem;">
+            <span class="text-sm opacity-80">Max selected pixels</span>
+            <input id="tile-crop-max-selected-pixels" type="number" min="1" step="1000" value="${currentMaxSelectedPixels}" class="input input-bordered input-sm">
+          </label>
+          <div id="tile-crop-too-large-stage" class="border border-base-300 rounded-lg bg-base-200/40" style="position:relative; overflow:hidden; display:flex; justify-content:center; align-items:center; min-height:16rem; height:16rem;"></div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(10rem, 1fr)); gap:0.5rem;">
+            ${result.candidateColors
+              .map((color, index) => this.createColorChipHtml(color, index))
+              .join("")}
+          </div>
+          <div class="modal-action" style="margin-top:0;">
+            <button type="button" id="tile-crop-too-large-cancel" class="btn btn-ghost">${t`${"cancel"}`}</button>
+            <button type="button" id="tile-crop-too-large-redetect" class="btn btn-primary">Re-detect</button>
+          </div>
+        </div>
+      `;
+
+      void this.createInspector(
+        modalElements.container.querySelector("#tile-crop-too-large-stage"),
+        result.dataUrl,
+        240,
+        10,
+      ).then((instance) => {
+        inspector = instance;
+      });
+
+      const cleanup = () => {
+        inspector?.destroy();
+        modalElements.destroy();
+        if (!resolved) {
+          resolved = true;
+          resolve(null);
+        }
+      };
+
+      const cancelButton = modalElements.container.querySelector(
+        "#tile-crop-too-large-cancel",
+      ) as HTMLButtonElement | null;
+      const redetectButton = modalElements.container.querySelector(
+        "#tile-crop-too-large-redetect",
+      ) as HTMLButtonElement | null;
+      const maxSelectedPixelsInput = modalElements.container.querySelector(
+        "#tile-crop-max-selected-pixels",
+      ) as HTMLInputElement | null;
+      const checkboxes = Array.from(
+        modalElements.container.querySelectorAll<HTMLInputElement>(
+          "input[data-color-index]",
+        ),
+      );
+
+      cancelButton?.addEventListener("click", () => {
+        if (resolved) return;
+        resolved = true;
+        modalElements.modal.close();
+        resolve(null);
+      });
+
+      redetectButton?.addEventListener("click", () => {
+        if (resolved) return;
+        resolved = true;
+        modalElements.modal.close();
+        resolve({
+          excludedColors: checkboxes
+            .filter((checkbox) => checkbox.checked)
+            .map(
+              (checkbox) =>
+                result.candidateColors[Number(checkbox.dataset.colorIndex)],
+            ),
+          maxSelectedPixels: Math.max(
+            1,
+            Number.parseInt(maxSelectedPixelsInput?.value ?? "", 10) ||
+              currentMaxSelectedPixels,
+          ),
+        });
+      });
+
+      modalElements.modal.addEventListener("close", cleanup, { once: true });
+      modalElements.modal.showModal();
+    });
+  }
+
   private async handleSave(): Promise<void> {
     if (this.saving) return;
 
@@ -193,8 +361,34 @@ export class TileCropSave {
     this.button && (this.button.disabled = true);
 
     try {
-      const result = await extractConnectedTileRegion(position.lat, position.lng);
+      let excludedColors: Array<[number, number, number, number]> = [];
+      let maxSelectedPixels = DEFAULT_MAX_SELECTED_PIXELS;
+      let result = await extractConnectedTileRegion(
+        position.lat,
+        position.lng,
+        excludedColors,
+        maxSelectedPixels,
+      );
       if (!result) return;
+
+      while (result.kind === "too-large") {
+        const nextDetectionOptions = await this.showTooLargeModal(
+          result,
+          maxSelectedPixels,
+        );
+        if (!nextDetectionOptions) return;
+
+        excludedColors = nextDetectionOptions.excludedColors;
+        maxSelectedPixels = nextDetectionOptions.maxSelectedPixels;
+        result = await extractConnectedTileRegion(
+          position.lat,
+          position.lng,
+          excludedColors,
+          maxSelectedPixels,
+        );
+        if (!result) return;
+      }
+
       const shouldSave = await this.showPreviewModal(result);
       if (!shouldSave) return;
 
@@ -219,6 +413,8 @@ export class TileCropSave {
         height: result.height,
         pixelCount: result.pixelCount,
         origin: result.origin,
+        excludedColors,
+        maxSelectedPixels,
       });
     } catch (error) {
       console.error("🧑‍🎨 : Failed to save connected tile region", error);

@@ -47,6 +47,7 @@ export type AdjustPreviewResult = {
 };
 
 export type ConnectedTileRegionResult = {
+  kind: "success";
   dataUrl: string;
   width: number;
   height: number;
@@ -57,6 +58,15 @@ export type ConnectedTileRegionResult = {
     PxX: number;
     PxY: number;
   };
+};
+
+export type ConnectedTileRegionTooLargeResult = {
+  kind: "too-large";
+  dataUrl: string;
+  width: number;
+  height: number;
+  pixelCount: number;
+  candidateColors: Array<[number, number, number, number]>;
 };
 
 /**
@@ -202,7 +212,9 @@ export const getOverlayPixelColor = async (
 export const extractConnectedTileRegion = async (
   lat: number,
   lng: number,
-): Promise<ConnectedTileRegionResult | null> => {
+  excludedColors: Array<[number, number, number, number]> = [],
+  maxSelectedPixels?: number,
+): Promise<ConnectedTileRegionResult | ConnectedTileRegionTooLargeResult | null> => {
   const requestId = generateRequestId();
 
   return new Promise((resolve, reject) => {
@@ -231,6 +243,8 @@ export const extractConnectedTileRegion = async (
         source: "mr-wplace-request-connected-tile-region",
         lat,
         lng,
+        excludedColors,
+        maxSelectedPixels,
         requestId,
       },
       "*",
