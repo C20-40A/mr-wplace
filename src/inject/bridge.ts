@@ -20,6 +20,8 @@ import {
 import {
   handleStatsRequest,
   handlePixelColorRequest,
+  handleTilePixelColorRequest,
+  handleConnectedTileRegionRequest,
   handleTileStatsRequest,
   handleImageStatsRequest,
   handleAdjustPreviewRequest,
@@ -308,6 +310,8 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-text-layers": handleTextLayersUpdate,
   "mr-wplace-request-stats": handleStatsRequest,
   "mr-wplace-request-pixel-color": handlePixelColorRequest,
+  "mr-wplace-request-tile-pixel-color": handleTilePixelColorRequest,
+  "mr-wplace-request-connected-tile-region": handleConnectedTileRegionRequest,
   "mr-wplace-request-tile-stats": handleTileStatsRequest,
   "mr-wplace-request-image-stats": handleImageStatsRequest,
   "mr-wplace-request-adjust-preview": handleAdjustPreviewRequest,

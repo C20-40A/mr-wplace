@@ -35,6 +35,7 @@ import { PaintModeStyle } from "@/features/paint-mode-style";
 import { HideMyLocation } from "@/features/hide-my-location";
 import { FocusMode } from "@/features/focus-mode";
 import { initShareEnhancer } from "@/features/share-enhancer";
+import { TileCropSave } from "@/features/tile-crop-save";
 import { di } from "@/core/di";
 import {
   sendGalleryImagesToInject,
@@ -112,6 +113,7 @@ export const initializeFeatures = async () => {
   safeInit("paintModeStyle", () => new PaintModeStyle());
   safeInit("hideMyLocation", () => new HideMyLocation());
   safeInit("focusMode", () => new FocusMode());
+  safeInit("tileCropSave", () => new TileCropSave());
   safeInit("paintStats", () => initPaintStats());
   safeInit("shareEnhancer", () => initShareEnhancer());
 

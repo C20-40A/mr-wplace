@@ -2,6 +2,10 @@ export {
   drawOverlayLayersOnTile,
   getOverlayPixelColor,
 } from "./tile-overlay-renderer";
+export {
+  extractConnectedTileRegion,
+  getTilePixelColor,
+} from "./connected-region";
 
 export {
   addImageToOverlayLayers,

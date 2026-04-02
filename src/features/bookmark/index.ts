@@ -26,7 +26,6 @@ import { renderCoordinateJumper } from "./routes/coordinate-jumper";
 import type { BookmarkAPI } from "@/core/di";
 import { Tutorial } from "@/features/tutorial";
 import { showFeatureHint } from "@/features/feature-hints";
-import { TOOLBAR_ROW1_ID } from "@/features/position-info";
 import type { FavoriteLocation } from "./types";
 import { getMapThumbnail } from "@/utils/inject-bridge";
 import { saveFavThumbnail, saveFavMetadata } from "./fav-metadata-db";
@@ -619,9 +618,6 @@ const setupModal = (): void => {
   });
 };
 
-const findBookmarkButtonTarget = (): Element | null =>
-  document.getElementById(TOOLBAR_ROW1_ID);
-
 const init = (): void => {
   const buttonConfigs: ElementConfig[] = [
     {
@@ -646,22 +642,6 @@ const init = (): void => {
       onClick: addBookmark,
       hintId: "bookmark-btn",
     }),
-    // ツールバー1段目に配置
-    {
-      id: "save-btn-fallback",
-      getTargetElement: findBookmarkButtonTarget,
-      createElement: (row1) => {
-        const btn = document.createElement("button");
-        btn.id = "save-btn-fallback";
-        btn.title = t`${"bookmark"}`;
-        btn.className = "btn btn-xs btn-ghost";
-        btn.style.cssText =
-          "height: 1.25rem; min-height: 1.25rem; width: 1.25rem; min-width: 1.25rem; padding: 0;";
-        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-120v-640q0-33 23.5-56.5T280-840h400q33 0 56.5 23.5T760-760v640L480-240 200-120Zm80-122 200-86 200 86v-518H280v518Zm0-518h400-400Z"/></svg>`;
-        btn.addEventListener("click", addBookmark);
-        row1.appendChild(btn);
-      },
-    },
   ];
   setupElementObserver(buttonConfigs);
 

@@ -2,6 +2,8 @@ import {
   getAggregatedColorStats,
   getStatsPerImage,
   getOverlayPixelColor,
+  getTilePixelColor,
+  extractConnectedTileRegion,
   perTileColorStats,
   getOriginalBlob,
   setOriginalBlob,
@@ -178,6 +180,51 @@ export const handlePixelColorRequest = async (data: {
   console.log(
     `🧑‍🎨 : Sent pixel color for (${data.lat}, ${data.lng}) (request: ${data.requestId})`
   );
+};
+
+export const handleTilePixelColorRequest = async (data: {
+  lat: number;
+  lng: number;
+  requestId: string;
+}): Promise<void> => {
+  const color = await getTilePixelColor(data.lat, data.lng);
+
+  window.postMessage(
+    {
+      source: "mr-wplace-response-tile-pixel-color",
+      requestId: data.requestId,
+      color,
+    },
+    "*"
+  );
+};
+
+export const handleConnectedTileRegionRequest = async (data: {
+  lat: number;
+  lng: number;
+  requestId: string;
+}): Promise<void> => {
+  try {
+    const result = await extractConnectedTileRegion(data.lat, data.lng);
+
+    window.postMessage(
+      {
+        source: "mr-wplace-response-connected-tile-region",
+        requestId: data.requestId,
+        result,
+      },
+      "*"
+    );
+  } catch (error) {
+    window.postMessage(
+      {
+        source: "mr-wplace-response-connected-tile-region",
+        requestId: data.requestId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "*"
+    );
+  }
 };
 
 /**

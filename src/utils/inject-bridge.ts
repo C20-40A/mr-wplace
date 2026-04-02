@@ -46,6 +46,19 @@ export type AdjustPreviewResult = {
   colorStats: Record<string, { matched: number; total: number }>;
 };
 
+export type ConnectedTileRegionResult = {
+  dataUrl: string;
+  width: number;
+  height: number;
+  pixelCount: number;
+  origin: {
+    TLX: number;
+    TLY: number;
+    PxX: number;
+    PxY: number;
+  };
+};
+
 /**
  * Request aggregated color stats from inject side
  * Used by: paint-stats, color-filter
@@ -87,6 +100,53 @@ export const getAggregatedColorStats = async (
       window.removeEventListener("message", handler);
       console.warn("🧑‍🎨 : Stats request timed out");
       resolve({});
+    }, 5000);
+  });
+};
+
+/**
+ * Request tile pixel color from inject side
+ *
+ * @param lat - Latitude coordinate
+ * @param lng - Longitude coordinate
+ * @returns Promise resolving to RGBA color or null if unavailable
+ */
+export const getTilePixelColor = async (
+  lat: number,
+  lng: number
+): Promise<{ r: number; g: number; b: number; a: number } | null> => {
+  const requestId = generateRequestId();
+
+  return new Promise((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-response-tile-pixel-color" &&
+        event.data.requestId === requestId
+      ) {
+        clearTimeout(timeoutId);
+        window.removeEventListener("message", handler);
+        resolve(event.data.color);
+      }
+    };
+
+    window.addEventListener("message", handler);
+
+    window.postMessage(
+      {
+        source: "mr-wplace-request-tile-pixel-color",
+        lat,
+        lng,
+        requestId,
+      },
+      "*"
+    );
+
+    timeoutId = setTimeout(() => {
+      window.removeEventListener("message", handler);
+      console.warn("🧑‍🎨 : Tile pixel color request timed out");
+      resolve(null);
     }, 5000);
   });
 };
@@ -135,6 +195,50 @@ export const getOverlayPixelColor = async (
       window.removeEventListener("message", handler);
       console.warn("🧑‍🎨 : Pixel color request timed out");
       resolve(null);
+    }, 5000);
+  });
+};
+
+export const extractConnectedTileRegion = async (
+  lat: number,
+  lng: number,
+): Promise<ConnectedTileRegionResult | null> => {
+  const requestId = generateRequestId();
+
+  return new Promise((resolve, reject) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-response-connected-tile-region" &&
+        event.data.requestId === requestId
+      ) {
+        clearTimeout(timeoutId);
+        window.removeEventListener("message", handler);
+
+        if (event.data.error) {
+          reject(new Error(event.data.error));
+          return;
+        }
+
+        resolve(event.data.result);
+      }
+    };
+
+    window.addEventListener("message", handler);
+    window.postMessage(
+      {
+        source: "mr-wplace-request-connected-tile-region",
+        lat,
+        lng,
+        requestId,
+      },
+      "*",
+    );
+
+    timeoutId = setTimeout(() => {
+      window.removeEventListener("message", handler);
+      reject(new Error("Connected tile region request timed out"));
     }, 5000);
   });
 };
