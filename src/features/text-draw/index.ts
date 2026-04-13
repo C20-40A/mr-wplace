@@ -21,8 +21,8 @@ let textDrawUI: TextDrawUI;
 
 const showModal = (): void => {
   textDrawUI.show(
-    async (text: string, font: string, colorId: number) => {
-      await handleDrawText(text, font, colorId);
+    async (text: string, font: string, colorId: number, lineSpacing: number) => {
+      await handleDrawText(text, font, colorId, lineSpacing);
     },
     textInstances,
     (key: string, direction: "up" | "down" | "left" | "right") =>
@@ -35,8 +35,9 @@ const handleDrawText = async (
   text: string,
   font: string,
   colorId: number,
+  lineSpacing: number,
 ): Promise<void> => {
-  const instance = await drawText(text, font, colorId);
+  const instance = await drawText(text, font, colorId, lineSpacing);
   if (!instance) return;
 
   textInstances.push(instance);
@@ -76,6 +77,7 @@ const init = async (): Promise<void> => {
     key: layer.key,
     text: layer.text,
     font: layer.font,
+    lineSpacing: layer.lineSpacing ?? 0,
     coords: layer.coords,
     colorId: layer.colorId,
   }));

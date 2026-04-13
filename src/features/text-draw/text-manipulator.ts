@@ -14,7 +14,8 @@ import { sendTextLayersToInject } from "@/content";
 export const drawText = async (
   text: string,
   font: string,
-  colorId: number
+  colorId: number,
+  lineSpacing: number,
 ): Promise<TextInstance | null> => {
   const position = getCurrentPosition();
   if (!position) {
@@ -26,7 +27,7 @@ export const drawText = async (
   const key = `text_${Date.now()}`;
 
   await ensureFontLoaded();
-  const blob = await textToBlob(text, font, colorId);
+  const blob = await textToBlob(text, font, colorId, lineSpacing);
 
   // Convert blob to dataUrl
   const dataUrl = await new Promise<string>((resolve) => {
@@ -41,6 +42,7 @@ export const drawText = async (
     key,
     text,
     font,
+    lineSpacing,
     coords: {
       TLX: coords.TLX,
       TLY: coords.TLY,
@@ -61,6 +63,7 @@ export const drawText = async (
     key,
     text,
     font,
+    lineSpacing,
     coords: {
       TLX: coords.TLX,
       TLY: coords.TLY,

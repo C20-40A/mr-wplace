@@ -30,6 +30,7 @@ export interface TextLayer {
   key: string;
   text: string;
   font: string;
+  lineSpacing?: number;
   coords: {
     TLX: number;
     TLY: number;

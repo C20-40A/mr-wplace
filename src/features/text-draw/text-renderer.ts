@@ -15,7 +15,12 @@ const getColorHex = (colorId: number): string => {
 
 const normalizeLines = (text: string): string[] => text.replace(/\r\n?/g, "\n").split("\n");
 
-export const textToBlob = async (text: string, font: string, colorId: number): Promise<Blob> => {
+export const textToBlob = async (
+  text: string,
+  font: string,
+  colorId: number,
+  lineSpacing = 0,
+): Promise<Blob> => {
   const fontConfig = fonts[font];
   if (!fontConfig) throw new Error(`Font not found: ${font}`);
 
@@ -23,7 +28,7 @@ export const textToBlob = async (text: string, font: string, colorId: number): P
   const lines = normalizeLines(text);
 
   if (fontConfig.type === "bitmap") {
-    return bitmapToBlob(lines, fontConfig.data, colorHex);
+    return bitmapToBlob(lines, fontConfig.data, colorHex, lineSpacing);
   }
 
   const canvas = document.createElement("canvas");
@@ -31,7 +36,7 @@ export const textToBlob = async (text: string, font: string, colorId: number): P
   if (!ctx) throw new Error("Canvas context not found");
 
   const fontSize = fontConfig.size;
-  const lineHeight = fontSize;
+  const lineHeight = Math.max(fontSize + lineSpacing, 1);
   ctx.font = `${fontSize}px ${font}`;
 
   const maxWidth = Math.max(
@@ -79,7 +84,8 @@ export const textToBlob = async (text: string, font: string, colorId: number): P
 const bitmapToBlob = async (
   lines: string[],
   bitmapData: BitmapChar[],
-  colorHex: string
+  colorHex: string,
+  lineSpacing = 0,
 ): Promise<Blob> => {
   const charSpacing = 1;
   const charMap = new Map(bitmapData.map((c) => [c.char, c]));
@@ -106,7 +112,10 @@ const bitmapToBlob = async (
 
   const maxWidth = Math.max(...lineInfos.map((line) => line.totalWidth), 1);
   const defaultHeight = bitmapData.reduce((height, char) => Math.max(height, char.height), 1);
-  const lineHeight = Math.max(...lineInfos.map((line) => line.maxHeight), defaultHeight);
+  const lineHeight = Math.max(
+    Math.max(...lineInfos.map((line) => line.maxHeight), defaultHeight) + lineSpacing,
+    1,
+  );
 
   if (!lineInfos.some((line) => line.charInfos.length > 0)) {
     throw new Error("No valid characters found");

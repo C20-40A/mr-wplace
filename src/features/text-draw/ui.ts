@@ -10,12 +10,14 @@ export interface TextInstance {
   key: string;
   text: string;
   font: string;
+  lineSpacing?: number;
   coords: { TLX: number; TLY: number; PxX: number; PxY: number };
   colorId?: number;
 }
 
 const FONT_STORAGE_KEY = "text_draw_selected_font";
 const COLOR_STORAGE_KEY = "text_draw_selected_color";
+const LINE_SPACING_STORAGE_KEY = "text_draw_line_spacing";
 
 export const createTextInputButton = (): HTMLButtonElement => {
   return createResponsiveButton({
@@ -33,6 +35,7 @@ export class TextDrawUI {
     text: string,
     font: string,
     colorId: number,
+    lineSpacing: number,
   ) => Promise<void>;
   private onMove?: (
     key: string,
@@ -44,6 +47,7 @@ export class TextDrawUI {
   private input!: HTMLTextAreaElement;
   private fontSelect!: HTMLSelectElement;
   private colorSelect!: HTMLSelectElement;
+  private lineSpacingInput!: HTMLInputElement;
 
   constructor() {}
 
@@ -188,6 +192,24 @@ export class TextDrawUI {
       localStorage.setItem(COLOR_STORAGE_KEY, this.colorSelect.value);
     });
 
+    this.lineSpacingInput = document.createElement("input");
+    this.lineSpacingInput.type = "number";
+    this.lineSpacingInput.min = "0";
+    this.lineSpacingInput.step = "1";
+    this.lineSpacingInput.className = "input input-bordered w-full";
+    this.lineSpacingInput.placeholder = "Line spacing";
+    this.lineSpacingInput.style.cssText = "width: 100%;";
+    this.lineSpacingInput.value =
+      localStorage.getItem(LINE_SPACING_STORAGE_KEY) ?? "0";
+    this.lineSpacingInput.addEventListener("change", () => {
+      const value = Math.max(
+        0,
+        Number.parseInt(this.lineSpacingInput.value || "0", 10) || 0,
+      );
+      this.lineSpacingInput.value = String(value);
+      localStorage.setItem(LINE_SPACING_STORAGE_KEY, String(value));
+    });
+
     const buttonContainer = document.createElement("div");
     buttonContainer.style.cssText =
       "display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: auto;";
@@ -200,7 +222,13 @@ export class TextDrawUI {
       const text = this.input.value;
       if (!text || !this.onDraw) return;
       const colorId = parseInt(this.colorSelect.value, 10);
-      await this.onDraw(text, this.fontSelect.value, colorId);
+      const lineSpacing = Math.max(
+        0,
+        Number.parseInt(this.lineSpacingInput.value || "0", 10) || 0,
+      );
+      this.lineSpacingInput.value = String(lineSpacing);
+      localStorage.setItem(LINE_SPACING_STORAGE_KEY, String(lineSpacing));
+      await this.onDraw(text, this.fontSelect.value, colorId, lineSpacing);
       this.input.value = "";
     };
 
@@ -215,6 +243,7 @@ export class TextDrawUI {
     rightPanel.appendChild(this.input);
     rightPanel.appendChild(this.fontSelect);
     rightPanel.appendChild(this.colorSelect);
+    rightPanel.appendChild(this.lineSpacingInput);
     rightPanel.appendChild(buttonContainer);
 
     contentContainer.appendChild(rightPanel);
@@ -224,7 +253,12 @@ export class TextDrawUI {
   }
 
   show(
-    onDraw: (text: string, font: string, colorId: number) => Promise<void>,
+    onDraw: (
+      text: string,
+      font: string,
+      colorId: number,
+      lineSpacing: number,
+    ) => Promise<void>,
     textInstances: TextInstance[],
     onMove: (key: string, direction: "up" | "down" | "left" | "right") => void,
     onDelete: (key: string) => void,
@@ -297,7 +331,10 @@ export class TextDrawUI {
         "font-weight: 500; word-break: break-word; white-space: pre-wrap; font-size: 0.875rem;";
 
       const fontLabel = document.createElement("div");
-      fontLabel.textContent = instance.font;
+      fontLabel.textContent =
+        instance.lineSpacing && instance.lineSpacing > 0
+          ? `${instance.font} / line ${instance.lineSpacing}`
+          : instance.font;
       fontLabel.style.cssText =
         "font-size: 0.625rem; margin-top: 0.125rem; opacity: 0.6;";
 
