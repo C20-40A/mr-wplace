@@ -1,5 +1,6 @@
 import {
   addImageToOverlayLayers,
+  removePreparedOverlayImageByKey,
   removeOverlayImageByKey,
 } from "../features/tile-draw";
 import { loadImageBitmap } from "../utils/image-loader";
