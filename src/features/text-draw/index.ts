@@ -5,7 +5,7 @@ import {
 import { TextDrawUI, TextInstance } from "./ui";
 import { createMapPinButtonObserverConfig } from "@/utils/map-pin-helper";
 import type { TextDrawAPI } from "@/core/di";
-import { drawText, moveText, deleteText } from "./text-manipulator";
+import { drawText, moveText, deleteText, updateText } from "./text-manipulator";
 import { t } from "@/i18n/manager";
 
 // ========================================
@@ -21,8 +21,14 @@ let textDrawUI: TextDrawUI;
 
 const showModal = (): void => {
   textDrawUI.show(
-    async (text: string, font: string, colorId: number, lineSpacing: number) => {
-      await handleDrawText(text, font, colorId, lineSpacing);
+    async (
+      text: string,
+      font: string,
+      colorId: number,
+      lineSpacing: number,
+      editingKey?: string,
+    ) => {
+      await handleSubmitText(text, font, colorId, lineSpacing, editingKey);
     },
     textInstances,
     (key: string, direction: "up" | "down" | "left" | "right") =>
@@ -31,12 +37,30 @@ const showModal = (): void => {
   );
 };
 
-const handleDrawText = async (
+const handleSubmitText = async (
   text: string,
   font: string,
   colorId: number,
   lineSpacing: number,
+  editingKey?: string,
 ): Promise<void> => {
+  if (editingKey) {
+    const updated = await updateText(
+      editingKey,
+      text,
+      font,
+      colorId,
+      lineSpacing,
+    );
+    if (!updated) return;
+
+    textInstances = textInstances.map((instance) =>
+      instance.key === editingKey ? updated : instance,
+    );
+    textDrawUI.updateList(textInstances);
+    return;
+  }
+
   const instance = await drawText(text, font, colorId, lineSpacing);
   if (!instance) return;
 

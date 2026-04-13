@@ -36,6 +36,7 @@ export class TextDrawUI {
     font: string,
     colorId: number,
     lineSpacing: number,
+    editingKey?: string,
   ) => Promise<void>;
   private onMove?: (
     key: string,
@@ -48,6 +49,9 @@ export class TextDrawUI {
   private fontSelect!: HTMLSelectElement;
   private colorSelect!: HTMLSelectElement;
   private lineSpacingInput!: HTMLInputElement;
+  private submitButton!: HTMLButtonElement;
+  private cancelEditButton!: HTMLButtonElement;
+  private selectedKey: string | null = null;
 
   constructor() {}
 
@@ -78,7 +82,8 @@ export class TextDrawUI {
       text-decoration: underline;
       text-underline-offset: 2px;
     `;
-    coordsButton.onclick = async () => {
+    coordsButton.onclick = async (event) => {
+      event.stopPropagation();
       const { lat, lng } = tilePixelToLatLng(
         instance.coords.TLX,
         instance.coords.TLY,
@@ -242,11 +247,11 @@ export class TextDrawUI {
     buttonContainer.style.cssText =
       "display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: auto;";
 
-    const drawButton = document.createElement("button");
-    drawButton.innerHTML = "✏️ Draw";
-    drawButton.className = "btn btn-primary";
+    this.submitButton = document.createElement("button");
+    this.submitButton.innerHTML = "✏️ Draw";
+    this.submitButton.className = "btn btn-primary";
 
-    drawButton.onclick = async () => {
+    this.submitButton.onclick = async () => {
       const text = this.input.value;
       if (!text || !this.onDraw) return;
       const colorId = parseInt(this.colorSelect.value, 10);
@@ -256,17 +261,31 @@ export class TextDrawUI {
       );
       this.lineSpacingInput.value = String(lineSpacing);
       localStorage.setItem(LINE_SPACING_STORAGE_KEY, String(lineSpacing));
-      await this.onDraw(text, this.fontSelect.value, colorId, lineSpacing);
+      await this.onDraw(
+        text,
+        this.fontSelect.value,
+        colorId,
+        lineSpacing,
+        this.selectedKey ?? undefined,
+      );
+      if (this.selectedKey) return this.clearSelection();
       this.input.value = "";
     };
 
     this.input.onkeydown = (e) => {
       if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-        drawButton.click();
+        this.submitButton.click();
       }
     };
 
-    buttonContainer.appendChild(drawButton);
+    this.cancelEditButton = document.createElement("button");
+    this.cancelEditButton.textContent = "Cancel";
+    this.cancelEditButton.className = "btn btn-ghost";
+    this.cancelEditButton.style.display = "none";
+    this.cancelEditButton.onclick = () => this.clearSelection();
+
+    buttonContainer.appendChild(this.cancelEditButton);
+    buttonContainer.appendChild(this.submitButton);
 
     rightPanel.appendChild(this.input);
     rightPanel.appendChild(this.fontSelect);
@@ -277,6 +296,30 @@ export class TextDrawUI {
     contentContainer.appendChild(this.leftPanel);
 
     container.appendChild(contentContainer);
+
+    this.syncEditorState();
+  }
+
+  private syncEditorState(): void {
+    const isEditing = Boolean(this.selectedKey);
+    this.submitButton.innerHTML = isEditing ? "💾 Update" : "✏️ Draw";
+    this.cancelEditButton.style.display = isEditing ? "" : "none";
+  }
+
+  private fillForm(instance: TextInstance): void {
+    this.input.value = instance.text;
+    this.fontSelect.value = instance.font;
+    this.fontSelect.style.fontFamily = instance.font;
+    this.colorSelect.value = String(instance.colorId ?? 1);
+    this.lineSpacingInput.value = String(instance.lineSpacing ?? 0);
+  }
+
+  private clearSelection(): void {
+    this.selectedKey = null;
+    this.input.value = "";
+    this.syncEditorState();
+    this.updateList();
+    this.input.focus();
   }
 
   show(
@@ -285,6 +328,7 @@ export class TextDrawUI {
       font: string,
       colorId: number,
       lineSpacing: number,
+      editingKey?: string,
     ) => Promise<void>,
     textInstances: TextInstance[],
     onMove: (key: string, direction: "up" | "down" | "left" | "right") => void,
@@ -294,6 +338,7 @@ export class TextDrawUI {
     this.textInstances = textInstances;
     this.onMove = onMove;
     this.onDelete = onDelete;
+    this.selectedKey = null;
 
     this.showModal(); // モーダルを先に作成（buildUIが呼ばれる）
     this.updateList(); // その後リスト更新
@@ -330,7 +375,16 @@ export class TextDrawUI {
     this.textInstances.forEach((instance) => {
       const itemContainer = document.createElement("div");
       itemContainer.style.cssText =
-        "border-bottom: 1px solid #e5e7eb; padding: 0.25rem 0; position: relative; display: flex; align-items: center; gap: 0.5rem;";
+        `border-bottom: 1px solid #e5e7eb; padding: 0.25rem 0; position: relative; display: flex; align-items: center; gap: 0.5rem; border-radius: 0.375rem; ${
+          this.selectedKey === instance.key ? "background: rgba(59,130,246,0.08);" : ""
+        }`;
+      itemContainer.onclick = () => {
+        this.selectedKey = instance.key;
+        this.fillForm(instance);
+        this.syncEditorState();
+        this.updateList();
+        this.input.focus();
+      };
 
       // Delete button (×) - absolute position at top right
       const deleteBtn = document.createElement("button");
@@ -343,8 +397,10 @@ export class TextDrawUI {
       deleteBtn.onmouseout = () => {
         deleteBtn.style.opacity = "0.4";
       };
-      deleteBtn.onclick = () => {
+      deleteBtn.onclick = (event) => {
+        event.stopPropagation();
         this.onDelete?.(instance.key);
+        if (this.selectedKey === instance.key) this.clearSelection();
       };
 
       // Text container - takes up remaining space
@@ -433,7 +489,8 @@ export class TextDrawUI {
         btn.onmouseout = () => {
           btn.style.outline = "none";
         };
-        btn.onclick = () => {
+        btn.onclick = (event) => {
+          event.stopPropagation();
           this.onMove?.(instance.key, direction);
         };
         return btn;

@@ -111,6 +111,50 @@ export const moveText = async (
   console.log("🧑‍🎨 : Text moved", direction, instance.coords);
 };
 
+export const updateText = async (
+  key: string,
+  text: string,
+  font: string,
+  colorId: number,
+  lineSpacing: number,
+): Promise<TextInstance | null> => {
+  const textLayerStorage = new TextLayerStorage();
+  const existing = await textLayerStorage.get(key);
+  if (!existing) return null;
+
+  await ensureFontLoaded();
+  const blob = await textToBlob(text, font, colorId, lineSpacing);
+
+  const dataUrl = await new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.readAsDataURL(blob);
+  });
+
+  await textLayerStorage.save({
+    ...existing,
+    text,
+    font,
+    lineSpacing,
+    dataUrl,
+    colorId,
+    timestamp: Date.now(),
+  });
+
+  await sendTextLayersToInject();
+
+  console.log("🧑‍🎨 : Text updated", key);
+
+  return {
+    key,
+    text,
+    font,
+    lineSpacing,
+    coords: existing.coords,
+    colorId,
+  };
+};
+
 export const deleteText = async (
   key: string,
   textInstances: TextInstance[]
