@@ -13,14 +13,17 @@ const getColorHex = (colorId: number): string => {
   return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
 };
 
+const normalizeLines = (text: string): string[] => text.replace(/\r\n?/g, "\n").split("\n");
+
 export const textToBlob = async (text: string, font: string, colorId: number): Promise<Blob> => {
   const fontConfig = fonts[font];
   if (!fontConfig) throw new Error(`Font not found: ${font}`);
 
   const colorHex = getColorHex(colorId);
+  const lines = normalizeLines(text);
 
   if (fontConfig.type === "bitmap") {
-    return bitmapToBlob(text, fontConfig.data, colorHex);
+    return bitmapToBlob(lines, fontConfig.data, colorHex);
   }
 
   const canvas = document.createElement("canvas");
@@ -28,16 +31,22 @@ export const textToBlob = async (text: string, font: string, colorId: number): P
   if (!ctx) throw new Error("Canvas context not found");
 
   const fontSize = fontConfig.size;
+  const lineHeight = fontSize;
   ctx.font = `${fontSize}px ${font}`;
 
-  const metrics = ctx.measureText(text);
-  canvas.width = Math.ceil(metrics.width);
-  canvas.height = fontSize;
+  const maxWidth = Math.max(
+    ...lines.map((line) => Math.ceil(ctx.measureText(line).width)),
+    1,
+  );
+  canvas.width = maxWidth;
+  canvas.height = Math.max(lines.length * lineHeight, 1);
 
   ctx.font = `${fontSize}px ${font}`;
   ctx.fillStyle = colorHex;
   ctx.textBaseline = "top";
-  ctx.fillText(text, 0, 0);
+  lines.forEach((line, index) => {
+    ctx.fillText(line, 0, index * lineHeight);
+  });
 
   // Pre-render to bitmap: 閾値処理でアンチエイリアス排除
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -68,56 +77,65 @@ export const textToBlob = async (text: string, font: string, colorId: number): P
 };
 
 const bitmapToBlob = async (
-  text: string,
+  lines: string[],
   bitmapData: BitmapChar[],
   colorHex: string
 ): Promise<Blob> => {
   const charSpacing = 1;
-  const chars = text.split("");
-
-  // 文字マップ構築
   const charMap = new Map(bitmapData.map((c) => [c.char, c]));
+  const lineInfos = lines.map((line) => {
+    let totalWidth = 0;
+    let maxHeight = 0;
+    const charInfos: BitmapChar[] = [];
 
-  // Canvas サイズ計算
-  let totalWidth = 0;
-  let maxHeight = 0;
-  const charInfos: BitmapChar[] = [];
-
-  for (const char of chars) {
-    const info = charMap.get(char);
-    if (!info) {
-      console.log("🧑‍🎨 : Character not found in bitmap data:", char);
-      continue;
+    for (const char of line) {
+      const info = charMap.get(char);
+      if (!info) {
+        console.log("🧑‍🎨 : Character not found in bitmap data:", char);
+        continue;
+      }
+      charInfos.push(info);
+      totalWidth += info.width + charSpacing;
+      maxHeight = Math.max(maxHeight, info.height);
     }
-    charInfos.push(info);
-    totalWidth += info.width + charSpacing;
-    maxHeight = Math.max(maxHeight, info.height);
+
+    if (charInfos.length > 0) totalWidth -= charSpacing;
+
+    return { charInfos, totalWidth, maxHeight };
+  });
+
+  const maxWidth = Math.max(...lineInfos.map((line) => line.totalWidth), 1);
+  const defaultHeight = bitmapData.reduce((height, char) => Math.max(height, char.height), 1);
+  const lineHeight = Math.max(...lineInfos.map((line) => line.maxHeight), defaultHeight);
+
+  if (!lineInfos.some((line) => line.charInfos.length > 0)) {
+    throw new Error("No valid characters found");
   }
 
-  if (charInfos.length === 0) throw new Error("No valid characters found");
-
-  totalWidth -= charSpacing; // 最後の文字間スペース削除
-
   const canvas = document.createElement("canvas");
-  canvas.width = totalWidth;
-  canvas.height = maxHeight;
+  canvas.width = maxWidth;
+  canvas.height = Math.max(lineInfos.length * lineHeight, 1);
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas context not found");
 
-  // 描画（下詰め）
-  let x = 0;
-  for (const charInfo of charInfos) {
-    const yOffset = maxHeight - charInfo.height; // 下詰めのためのオフセット
-    for (let row = 0; row < charInfo.height; row++) {
-      for (let col = 0; col < charInfo.width; col++) {
-        if (charInfo.data[row][col] === 1) {
-          ctx.fillStyle = colorHex;
-          ctx.fillRect(x + col, yOffset + row, 1, 1);
+  ctx.fillStyle = colorHex;
+
+  lineInfos.forEach(({ charInfos, maxHeight }, lineIndex) => {
+    let x = 0;
+    const lineBaseY = lineIndex * lineHeight;
+
+    for (const charInfo of charInfos) {
+      const yOffset = lineBaseY + (maxHeight - charInfo.height);
+      for (let row = 0; row < charInfo.height; row++) {
+        for (let col = 0; col < charInfo.width; col++) {
+          if (charInfo.data[row][col] === 1) {
+            ctx.fillRect(x + col, yOffset + row, 1, 1);
+          }
         }
       }
+      x += charInfo.width + charSpacing;
     }
-    x += charInfo.width + charSpacing;
-  }
+  });
 
   return new Promise((resolve) => {
     canvas.toBlob((blob) => {

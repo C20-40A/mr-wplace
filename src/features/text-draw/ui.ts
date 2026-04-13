@@ -41,7 +41,7 @@ export class TextDrawUI {
   private onDelete?: (key: string) => void;
 
   private leftPanel!: HTMLElement;
-  private input!: HTMLInputElement;
+  private input!: HTMLTextAreaElement;
   private fontSelect!: HTMLSelectElement;
   private colorSelect!: HTMLSelectElement;
 
@@ -124,11 +124,11 @@ export class TextDrawUI {
       gap: 0.5rem;
     `;
 
-    this.input = document.createElement("input");
-    this.input.type = "text";
+    this.input = document.createElement("textarea");
     this.input.placeholder = "Enter text...";
-    this.input.className = "input input-bordered w-full";
-    this.input.style.cssText = "width: 100%;";
+    this.input.className = "textarea textarea-bordered w-full";
+    this.input.rows = 4;
+    this.input.style.cssText = "width: 100%; resize: vertical; white-space: pre-wrap;";
 
     this.fontSelect = document.createElement("select");
     this.fontSelect.className = "select select-bordered w-full";
@@ -197,7 +197,7 @@ export class TextDrawUI {
     drawButton.className = "btn btn-primary";
 
     drawButton.onclick = async () => {
-      const text = this.input.value.trim();
+      const text = this.input.value.replace(/^\s+|\s+$/g, "");
       if (!text || !this.onDraw) return;
       const colorId = parseInt(this.colorSelect.value, 10);
       await this.onDraw(text, this.fontSelect.value, colorId);
@@ -205,7 +205,7 @@ export class TextDrawUI {
     };
 
     this.input.onkeydown = (e) => {
-      if (e.key === "Enter") {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
         drawButton.click();
       }
     };
@@ -294,7 +294,7 @@ export class TextDrawUI {
       const textLabel = document.createElement("div");
       textLabel.textContent = instance.text;
       textLabel.style.cssText =
-        "font-weight: 500; word-break: break-all; font-size: 0.875rem;";
+        "font-weight: 500; word-break: break-word; white-space: pre-wrap; font-size: 0.875rem;";
 
       const fontLabel = document.createElement("div");
       fontLabel.textContent = instance.font;
