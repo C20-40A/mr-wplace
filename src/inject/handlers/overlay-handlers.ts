@@ -6,6 +6,7 @@ import {
 import { loadImageBitmap } from "../utils/image-loader";
 import { refreshFrontTileLayer } from "../features/map-instance";
 import type { TileDrawInstance } from "../features/tile-draw/types";
+import type { SnapshotImage, TextLayer } from "../types";
 
 const hasSameAffectedTiles = (
   previous: string[] | undefined,
@@ -53,6 +54,25 @@ const shouldPreserveGalleryStats = (
     return false;
 
   return true;
+};
+
+const removeTrackedOverlayKeys = (keys?: Set<string>): void => {
+  if (!keys) return;
+  for (const key of keys) removePreparedOverlayImageByKey(key);
+};
+
+const replaceTrackedMap = <T extends { key: string }>(
+  current: Map<string, T> | undefined,
+  items: T[]
+): Map<string, T> => {
+  const next = current ?? new Map<string, T>();
+  next.clear();
+  for (const item of items) next.set(item.key, item);
+  return next;
+};
+
+const updateTrackedKeys = (items: Array<{ key: string }>): Set<string> => {
+  return new Set(items.map((item) => item.key));
 };
 
 /**
@@ -169,22 +189,14 @@ export const handleSnapshotsUpdate = async (data: {
 }): Promise<void> => {
   const { getSnapshotRepository } = await import("../db/snapshot-repository");
 
-  if (!window.mrWplaceSnapshots) {
-    window.mrWplaceSnapshots = new Map();
-  }
-
-  // Remove previously tracked snapshots from overlay layers
-  if (window.mrWplaceSnapshotKeys) {
-    for (const key of window.mrWplaceSnapshotKeys) {
-      removePreparedOverlayImageByKey(key);
-    }
-  }
-
-  // Clear snapshots
-  window.mrWplaceSnapshots.clear();
+  removeTrackedOverlayKeys(window.mrWplaceSnapshotKeys);
+  window.mrWplaceSnapshots = replaceTrackedMap<SnapshotImage>(
+    window.mrWplaceSnapshots,
+    []
+  );
 
   // Add each snapshot to overlay layers (load from IndexedDB)
-  const snapshotKeys: string[] = [];
+  const snapshots: SnapshotImage[] = [];
   const repository = getSnapshotRepository();
 
   for (const drawState of data.snapshotDrawStates) {
@@ -213,14 +225,14 @@ export const handleSnapshotsUpdate = async (data: {
         drawState.key
       );
 
-      // Store snapshot info for reference
-      window.mrWplaceSnapshots.set(drawState.key, {
+      const snapshot = {
         key: drawState.key,
         tileX: drawState.tileX,
         tileY: drawState.tileY,
-      });
+      };
+      window.mrWplaceSnapshots.set(drawState.key, snapshot);
 
-      snapshotKeys.push(drawState.key);
+      snapshots.push(snapshot);
       console.log(
         `🧑‍🎨 : Added snapshot ${drawState.key} to overlay at (${drawState.tileX}, ${drawState.tileY})`
       );
@@ -233,9 +245,9 @@ export const handleSnapshotsUpdate = async (data: {
   }
 
   // Save current snapshot keys for next update
-  window.mrWplaceSnapshotKeys = new Set(snapshotKeys);
+  window.mrWplaceSnapshotKeys = updateTrackedKeys(snapshots);
 
-  console.log(`🧑‍🎨 : Snapshots updated: ${snapshotKeys.length} active`);
+  console.log(`🧑‍🎨 : Snapshots updated: ${snapshots.length} active`);
   refreshFrontTileLayer();
 };
 
@@ -244,34 +256,16 @@ export const handleSnapshotsUpdate = async (data: {
  * Text layers are dynamically placed text overlays
  */
 export const handleTextLayersUpdate = async (data: {
-  textLayers: Array<{
-    key: string;
-    text: string;
-    font: string;
-    coords: { TLX: number; TLY: number; PxX: number; PxY: number };
-    dataUrl: string;
-    timestamp: number;
-  }>;
+  textLayers: TextLayer[];
 }): Promise<void> => {
-  if (!window.mrWplaceTextLayers) {
-    window.mrWplaceTextLayers = new Map();
-  }
-
-  // Remove previously tracked text layers from overlay layers
-  if (window.mrWplaceTextLayerKeys) {
-    for (const key of window.mrWplaceTextLayerKeys) {
-      removePreparedOverlayImageByKey(key);
-    }
-  }
-
-  // Clear and update text layers
-  window.mrWplaceTextLayers.clear();
-  for (const textLayer of data.textLayers) {
-    window.mrWplaceTextLayers.set(textLayer.key, textLayer);
-  }
+  removeTrackedOverlayKeys(window.mrWplaceTextLayerKeys);
+  window.mrWplaceTextLayers = replaceTrackedMap(
+    window.mrWplaceTextLayers,
+    data.textLayers
+  );
 
   // Add each text layer to overlay layers
-  const textLayerKeys: string[] = [];
+  const syncedTextLayers: TextLayer[] = [];
   for (const textLayer of data.textLayers) {
     try {
       const bitmap = await loadImageBitmap(textLayer.dataUrl, textLayer.key);
@@ -287,7 +281,7 @@ export const handleTextLayersUpdate = async (data: {
         textLayer.key
       );
 
-      textLayerKeys.push(textLayer.key);
+      syncedTextLayers.push(textLayer);
       console.log(
         `🧑‍🎨 : Added text layer ${textLayer.key} to overlay at (${textLayer.coords.TLX}, ${textLayer.coords.TLY})`
       );
@@ -300,7 +294,7 @@ export const handleTextLayersUpdate = async (data: {
   }
 
   // Save current text layer keys for next update
-  window.mrWplaceTextLayerKeys = new Set(textLayerKeys);
+  window.mrWplaceTextLayerKeys = updateTrackedKeys(syncedTextLayers);
 
   console.log(`🧑‍🎨 : Text layers updated: ${data.textLayers.length} active`);
   refreshFrontTileLayer();
