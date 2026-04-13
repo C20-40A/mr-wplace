@@ -197,7 +197,7 @@ export class TextDrawUI {
     drawButton.className = "btn btn-primary";
 
     drawButton.onclick = async () => {
-      const text = this.input.value.replace(/^\s+|\s+$/g, "");
+      const text = this.input.value;
       if (!text || !this.onDraw) return;
       const colorId = parseInt(this.colorSelect.value, 10);
       await this.onDraw(text, this.fontSelect.value, colorId);
