@@ -197,7 +197,6 @@ export class TextDrawUI {
     this.lineSpacingInput.min = "0";
     this.lineSpacingInput.step = "1";
     this.lineSpacingInput.className = "input input-bordered w-full";
-    this.lineSpacingInput.placeholder = "Line spacing";
     this.lineSpacingInput.style.cssText = "width: 100%;";
     this.lineSpacingInput.value =
       localStorage.getItem(LINE_SPACING_STORAGE_KEY) ?? "0";
@@ -209,6 +208,35 @@ export class TextDrawUI {
       this.lineSpacingInput.value = String(value);
       localStorage.setItem(LINE_SPACING_STORAGE_KEY, String(value));
     });
+
+    const settingsRow = document.createElement("div");
+    settingsRow.style.cssText =
+      "display: flex; align-items: flex-end; gap: 0.5rem;";
+
+    const colorGroup = document.createElement("div");
+    colorGroup.style.cssText =
+      "flex: 2 1 0%; display: flex; flex-direction: column; gap: 0.25rem;";
+
+    const colorLabel = document.createElement("label");
+    colorLabel.textContent = t`${"map_filter_area_color"}`;
+    colorLabel.style.cssText = "font-size: 0.75rem; opacity: 0.8;";
+
+    colorGroup.appendChild(colorLabel);
+    colorGroup.appendChild(this.colorSelect);
+
+    const lineSpacingGroup = document.createElement("div");
+    lineSpacingGroup.style.cssText =
+      "flex: 1 1 0%; display: flex; flex-direction: column; gap: 0.25rem;";
+
+    const lineSpacingLabel = document.createElement("label");
+    lineSpacingLabel.textContent = t`${"text_draw_line_spacing"}`;
+    lineSpacingLabel.style.cssText = "font-size: 0.75rem; opacity: 0.8;";
+
+    lineSpacingGroup.appendChild(lineSpacingLabel);
+    lineSpacingGroup.appendChild(this.lineSpacingInput);
+
+    settingsRow.appendChild(colorGroup);
+    settingsRow.appendChild(lineSpacingGroup);
 
     const buttonContainer = document.createElement("div");
     buttonContainer.style.cssText =
@@ -242,8 +270,7 @@ export class TextDrawUI {
 
     rightPanel.appendChild(this.input);
     rightPanel.appendChild(this.fontSelect);
-    rightPanel.appendChild(this.colorSelect);
-    rightPanel.appendChild(this.lineSpacingInput);
+    rightPanel.appendChild(settingsRow);
     rightPanel.appendChild(buttonContainer);
 
     contentContainer.appendChild(rightPanel);

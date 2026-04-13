@@ -594,4 +594,5 @@ export const esTranslations = {
   tile_crop_include_diagonals: "Incluir vecinos diagonales",
   tile_crop_redetect: "Detectar de nuevo",
   hint_tile_crop_save: "¡Nueva función! Puedes detectar pixel art y guardarlo.",
+  text_draw_line_spacing: "Espaciado entre líneas",
 };
