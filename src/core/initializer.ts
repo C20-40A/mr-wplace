@@ -12,6 +12,7 @@ import { timeTravelAPI } from "@/features/time-travel";
 import { drawingLoaderAPI } from "@/features/drawing-loader";
 import { friendsBookAPI } from "@/features/friends-book";
 import { ColorFilter } from "@/features/color-filter";
+import { MiniColorFilter } from "@/features/mini-color-filter";
 import { ColorFilterManager } from "@/utils/color-filter-manager";
 import { textDrawAPI } from "@/features/text-draw";
 import { mapFilterMenuAPI, dataSaverAPI } from "@/features/map-filter";
@@ -96,6 +97,7 @@ export const initializeFeatures = async () => {
   safeInit("drawing", () => new Drawing());
   safeInit("drawingLoader", () => drawingLoaderAPI.initDrawingLoader());
   safeInit("colorFilter", () => new ColorFilter());
+  safeInit("miniColorFilter", () => new MiniColorFilter());
   const colorFilterManager = new ColorFilterManager();
   safeInit("paletteToggle", () => new PaletteToggle());
   const colorIsolate = new ColorIsolate();
