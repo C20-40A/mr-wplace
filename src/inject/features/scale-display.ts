@@ -12,6 +12,7 @@ const SCALE_LINE_ID = "mr-wplace-scale-line";
 const SCALE_LABEL_ID = "mr-wplace-scale-label";
 const SCALE_PIN_A_ID = "mr-wplace-scale-pin-a";
 const SCALE_PIN_B_ID = "mr-wplace-scale-pin-b";
+const SCALE_LOCK_BTN_ID = "mr-wplace-scale-lock-btn";
 const DEFAULT_PIN_OFFSET_PX = 140;
 const MAP_UPDATE_EVENTS = ["move", "zoom", "rotate", "pitch", "resize"];
 
@@ -38,7 +39,14 @@ interface ScaleMap {
   };
 }
 
-type DragTarget = "A" | "B" | null;
+type DragTarget = "A" | "B" | "LINE" | null;
+
+interface LineDragState {
+  startClientX: number;
+  startClientY: number;
+  startPinAPixel: [number, number];
+  startPinBPixel: [number, number];
+}
 
 let scaleEnabled = false;
 interface PixelVector {
@@ -48,10 +56,13 @@ interface PixelVector {
 
 let isLocked = false;
 let lockedPixelVector: PixelVector | null = null;
+let lineDragState: LineDragState | null = null;
 
 let scaleContainer: HTMLDivElement | null = null;
 let scaleLine: HTMLDivElement | null = null;
 let scaleLabel: HTMLDivElement | null = null;
+let scaleLabelText: HTMLSpanElement | null = null;
+let scaleLockBtn: HTMLButtonElement | null = null;
 let pinAElement: HTMLDivElement | null = null;
 let pinBElement: HTMLDivElement | null = null;
 
@@ -64,7 +75,8 @@ let activeDragTarget: DragTarget = null;
 let mapUpdateHandler: (() => void) | null = null;
 let pinAPointerDownHandler: ((e: PointerEvent) => void) | null = null;
 let pinBPointerDownHandler: ((e: PointerEvent) => void) | null = null;
-let labelClickHandler: ((e: MouseEvent) => void) | null = null;
+let linePointerDownHandler: ((e: PointerEvent) => void) | null = null;
+let lockBtnClickHandler: ((e: MouseEvent) => void) | null = null;
 let pointerMoveHandler: ((e: PointerEvent) => void) | null = null;
 let pointerUpHandler: (() => void) | null = null;
 
@@ -150,12 +162,27 @@ const createScaleContainer = (): HTMLDivElement => {
   line.id = SCALE_LINE_ID;
   line.style.cssText = `
     position: absolute;
-    height: 2px;
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(33, 33, 33, 0.65);
+    height: 14px;
+    background: transparent;
     transform-origin: 0 50%;
     box-sizing: border-box;
+    pointer-events: none;
+    touch-action: none;
   `;
+  const lineCore = document.createElement("div");
+  lineCore.style.cssText = `
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 2px;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(33, 33, 33, 0.65);
+    box-sizing: border-box;
+    pointer-events: none;
+  `;
+  line.appendChild(lineCore);
 
   const label = document.createElement("div");
   label.id = SCALE_LABEL_ID;
@@ -174,11 +201,35 @@ const createScaleContainer = (): HTMLDivElement => {
     text-align: center;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
     pointer-events: auto;
-    cursor: pointer;
     z-index: 1;
     user-select: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
   `;
-  label.title = "クリックで距離(px)を固定/解除";
+
+  const labelText = document.createElement("span");
+  label.appendChild(labelText);
+
+  const lockBtn = document.createElement("button");
+  lockBtn.id = SCALE_LOCK_BTN_ID;
+  lockBtn.type = "button";
+  lockBtn.style.cssText = `
+    all: unset;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    line-height: 1;
+  `;
+  lockBtn.title = "距離(px)を固定/解除";
+  lockBtn.textContent = "🔓";
+  label.appendChild(lockBtn);
 
   const pinA = createPinElement(SCALE_PIN_A_ID, "A", "#e74c3c");
   const pinB = createPinElement(SCALE_PIN_B_ID, "B", "#2980b9");
@@ -187,6 +238,9 @@ const createScaleContainer = (): HTMLDivElement => {
   container.appendChild(label);
   container.appendChild(pinA);
   container.appendChild(pinB);
+
+  scaleLabelText = labelText;
+  scaleLockBtn = lockBtn;
 
   scaleLine = line;
   scaleLabel = label;
@@ -280,16 +334,16 @@ const updateScaleDisplay = (map: ScaleMap): void => {
   const pixelDistance = Math.round(Math.hypot(px2 - px1, py2 - py1));
 
   const distanceText = formatDistance(getDistanceMeters(pinALngLat, pinBLngLat));
-  const lockMark = isLocked ? " 🔒" : "";
-  scaleLabel.innerHTML = `${distanceText}<br><span style="font-size: 10px; opacity: 0.85;">${pixelDistance} px${lockMark}</span>`;
+  if (scaleLabelText) {
+    scaleLabelText.innerHTML = `${distanceText}<br><span style="font-size: 10px; opacity: 0.85;">${pixelDistance} px</span>`;
+  }
   scaleLabel.style.background = isLocked ? "rgba(41, 128, 185, 0.92)" : "rgba(0, 0, 0, 0.82)";
+  if (scaleLockBtn) scaleLockBtn.textContent = isLocked ? "🔒" : "🔓";
   scaleLabel.style.left = `${(pointA.x + pointB.x) / 2}px`;
   scaleLabel.style.top = `${(pointA.y + pointB.y) / 2 - 12}px`;
 };
 
-const setPinFromPointer = (map: ScaleMap, event: PointerEvent): void => {
-  if (!activeDragTarget) return;
-
+const handlePinDrag = (map: ScaleMap, event: PointerEvent): void => {
   const mapContainer = getMapContainer(map);
   if (!mapContainer) return;
 
@@ -298,21 +352,69 @@ const setPinFromPointer = (map: ScaleMap, event: PointerEvent): void => {
   const y = Math.min(Math.max(event.clientY - rect.top, 0), rect.height);
   const lngLat = map.unproject({ x, y });
 
-  if (activeDragTarget === "A") pinALngLat = lngLat;
-  if (activeDragTarget === "B") pinBLngLat = lngLat;
-
-  // lock中: 動かしていない側を、wplace pixelベクトルを保ったまま追従
-  if (isLocked && lockedPixelVector) {
-    if (activeDragTarget === "A" && pinALngLat) {
-      const [ax, ay] = latLonToPixels(pinALngLat.lat, pinALngLat.lng);
-      pinBLngLat = pixelsToLatLng(ax + lockedPixelVector.dx, ay + lockedPixelVector.dy);
-    } else if (activeDragTarget === "B" && pinBLngLat) {
+  if (isLocked && lockedPixelVector && pinALngLat && pinBLngLat) {
+    // 距離(wplace px)を保ち、相手側を軸に回転
+    const length = Math.hypot(lockedPixelVector.dx, lockedPixelVector.dy);
+    if (activeDragTarget === "A") {
       const [bx, by] = latLonToPixels(pinBLngLat.lat, pinBLngLat.lng);
-      pinALngLat = pixelsToLatLng(bx - lockedPixelVector.dx, by - lockedPixelVector.dy);
+      const [px, py] = latLonToPixels(lngLat.lat, lngLat.lng);
+      const ang = Math.atan2(py - by, px - bx);
+      const nax = bx + length * Math.cos(ang);
+      const nay = by + length * Math.sin(ang);
+      pinALngLat = pixelsToLatLng(nax, nay);
+      lockedPixelVector = { dx: bx - nax, dy: by - nay };
+    } else if (activeDragTarget === "B") {
+      const [ax, ay] = latLonToPixels(pinALngLat.lat, pinALngLat.lng);
+      const [px, py] = latLonToPixels(lngLat.lat, lngLat.lng);
+      const ang = Math.atan2(py - ay, px - ax);
+      const nbx = ax + length * Math.cos(ang);
+      const nby = ay + length * Math.sin(ang);
+      pinBLngLat = pixelsToLatLng(nbx, nby);
+      lockedPixelVector = { dx: nbx - ax, dy: nby - ay };
     }
+  } else {
+    if (activeDragTarget === "A") pinALngLat = lngLat;
+    if (activeDragTarget === "B") pinBLngLat = lngLat;
   }
 
   updateScaleDisplay(map);
+};
+
+const handleLineDrag = (map: ScaleMap, event: PointerEvent): void => {
+  const state = lineDragState;
+  if (!state) return;
+  const mapContainer = getMapContainer(map);
+  if (!mapContainer) return;
+
+  const rect = mapContainer.getBoundingClientRect();
+  const startLngLat = map.unproject({
+    x: state.startClientX - rect.left,
+    y: state.startClientY - rect.top,
+  });
+  const currentLngLat = map.unproject({
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top,
+  });
+  const [sx, sy] = latLonToPixels(startLngLat.lat, startLngLat.lng);
+  const [cx, cy] = latLonToPixels(currentLngLat.lat, currentLngLat.lng);
+  const deltaPx = cx - sx;
+  const deltaPy = cy - sy;
+
+  pinALngLat = pixelsToLatLng(
+    state.startPinAPixel[0] + deltaPx,
+    state.startPinAPixel[1] + deltaPy,
+  );
+  pinBLngLat = pixelsToLatLng(
+    state.startPinBPixel[0] + deltaPx,
+    state.startPinBPixel[1] + deltaPy,
+  );
+  updateScaleDisplay(map);
+};
+
+const setPinFromPointer = (map: ScaleMap, event: PointerEvent): void => {
+  if (!activeDragTarget) return;
+  if (activeDragTarget === "LINE") handleLineDrag(map, event);
+  else handlePinDrag(map, event);
 };
 
 const stopDragging = (): void => {
@@ -320,6 +422,8 @@ const stopDragging = (): void => {
 
   pinAElement?.style.setProperty("cursor", "grab");
   pinBElement?.style.setProperty("cursor", "grab");
+  scaleLine?.style.setProperty("cursor", "grab");
+  lineDragState = null;
   activeMap.dragPan?.enable();
 
   if (pointerMoveHandler) {
@@ -336,6 +440,12 @@ const stopDragging = (): void => {
   updateScaleDisplay(activeMap);
 };
 
+const updateLineInteractivity = (): void => {
+  if (!scaleLine) return;
+  scaleLine.style.pointerEvents = isLocked ? "auto" : "none";
+  scaleLine.style.cursor = isLocked ? "grab" : "default";
+};
+
 const toggleLock = (map: ScaleMap): void => {
   if (isLocked) {
     isLocked = false;
@@ -347,6 +457,7 @@ const toggleLock = (map: ScaleMap): void => {
     lockedPixelVector = { dx: bx - ax, dy: by - ay };
     isLocked = true;
   }
+  updateLineInteractivity();
   updateScaleDisplay(map);
   console.log("🧑‍🎨 : Scale lock:", isLocked);
 };
@@ -366,6 +477,17 @@ const startDragging = (
 
   if (target === "A") pinAElement?.style.setProperty("cursor", "grabbing");
   if (target === "B") pinBElement?.style.setProperty("cursor", "grabbing");
+  if (target === "LINE") {
+    scaleLine?.style.setProperty("cursor", "grabbing");
+    if (pinALngLat && pinBLngLat) {
+      lineDragState = {
+        startClientX: event.clientX,
+        startClientY: event.clientY,
+        startPinAPixel: latLonToPixels(pinALngLat.lat, pinALngLat.lng),
+        startPinBPixel: latLonToPixels(pinBLngLat.lat, pinBLngLat.lng),
+      };
+    }
+  }
 
   pointerMoveHandler = (moveEvent) => {
     if (!activeMap) return;
@@ -404,8 +526,18 @@ const addScaleDisplay = (map: ScaleMap): void => {
   pinAElement?.addEventListener("pointerdown", pinAPointerDownHandler);
   pinBElement?.addEventListener("pointerdown", pinBPointerDownHandler);
 
-  labelClickHandler = () => toggleLock(map);
-  scaleLabel?.addEventListener("click", labelClickHandler);
+  lockBtnClickHandler = (event) => {
+    event.stopPropagation();
+    toggleLock(map);
+  };
+  scaleLockBtn?.addEventListener("click", lockBtnClickHandler);
+
+  linePointerDownHandler = (event) => {
+    if (!isLocked) return;
+    startDragging(map, "LINE", event);
+  };
+  scaleLine?.addEventListener("pointerdown", linePointerDownHandler);
+  updateLineInteractivity();
 
   mapUpdateHandler = () => updateScaleDisplay(map);
   for (const eventName of MAP_UPDATE_EVENTS) map.on(eventName, mapUpdateHandler);
@@ -431,15 +563,22 @@ const removeScaleDisplay = (map: ScaleMap): void => {
   pinAPointerDownHandler = null;
   pinBPointerDownHandler = null;
 
-  if (labelClickHandler && scaleLabel) {
-    scaleLabel.removeEventListener("click", labelClickHandler);
+  if (linePointerDownHandler && scaleLine) {
+    scaleLine.removeEventListener("pointerdown", linePointerDownHandler);
   }
-  labelClickHandler = null;
+  linePointerDownHandler = null;
+
+  if (lockBtnClickHandler && scaleLockBtn) {
+    scaleLockBtn.removeEventListener("click", lockBtnClickHandler);
+  }
+  lockBtnClickHandler = null;
 
   scaleContainer?.remove();
   scaleContainer = null;
   scaleLine = null;
   scaleLabel = null;
+  scaleLabelText = null;
+  scaleLockBtn = null;
   pinAElement = null;
   pinBElement = null;
   pinALngLat = null;
