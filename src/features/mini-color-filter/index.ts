@@ -5,9 +5,9 @@ import {
 } from "@/constants/selectors";
 import { colorpalette } from "@/constants/colors";
 import {
-  sendColorFilterToInject,
-} from "@/core/bridge/overlay-bridge";
-import { ColorFilter } from "@/features/color-filter";
+  applyEnhancedMode,
+  applySelectedColors,
+} from "@/features/color-filter/state-actions";
 import { ENHANCED_MODE_OPTIONS } from "@/components/color-palette/utils";
 import { createEnhancedModeIcons } from "@/assets/enhanced-mode-icons";
 import type { EnhancedMode } from "@/types/image";
@@ -16,7 +16,7 @@ const FAB_ID = "mini-color-filter-fab";
 const PANEL_ID = "mini-color-filter-panel";
 const STYLE_ID = "mini-color-filter-style";
 
-const ICON_FILTER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><circle cx="7" cy="7" r="4"/><circle cx="17" cy="11" r="4"/><circle cx="11" cy="17" r="4"/></svg>`;
+const ICON_FILTER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><polygon points="3 4 21 4 14 12.5 14 20 10 18 10 12.5 3 4"/></svg>`;
 const LABEL_ALL = "ALL";
 const LABEL_NONE = "NONE";
 const ICON_CLOSE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="width:14px;height:14px;"><path d="M6 6l12 12M18 6L6 18"/></svg>`;
@@ -54,14 +54,6 @@ const ensureStyles = (): void => {
 const getActiveColorIds = (): Set<number> => {
   const mgr = window.mrWplace?.colorFilterManager;
   return new Set(mgr?.getSelectedColors() ?? colorpalette.map((c) => c.id));
-};
-
-const applySelectedColors = async (colorIds: number[]): Promise<void> => {
-  const mgr = window.mrWplace?.colorFilterManager;
-  if (!mgr) return;
-  await mgr.setSelectedColors(colorIds);
-  sendColorFilterToInject(mgr);
-  ColorFilter.getInstance()?.refreshFABBadge();
 };
 
 const rgbToHex = (rgb: [number, number, number]): string =>
@@ -230,10 +222,7 @@ export class MiniColorFilter {
         item.innerHTML = `<img src="${items[opt.value]}" alt="${opt.value}"><span>${opt.value}</span>`;
         item.addEventListener("click", (e) => {
           e.stopPropagation();
-          const m = window.mrWplace?.colorFilterManager;
-          if (!m) return;
-          m.setEnhancedMode(opt.value);
-          sendColorFilterToInject(m);
+          applyEnhancedMode(opt.value);
           btn.innerHTML = `<img src="${items[opt.value]}" alt="${opt.value}">`;
           renderItems();
           this.closeEnhancedDropdown();
