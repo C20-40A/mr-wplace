@@ -1,8 +1,5 @@
 import { setupElementObserver } from "@/components/element-observer";
-import {
-  findPaintPixelControls,
-  findTopLeftControls,
-} from "@/constants/selectors";
+import { findPaintPixelControls } from "@/constants/selectors";
 import { colorpalette } from "@/constants/colors";
 import {
   applyEnhancedMode,
@@ -47,6 +44,7 @@ const ensureStyles = (): void => {
     #${PANEL_ID} .mcf-color.off{opacity:0.25;}
     #${PANEL_ID} .mcf-color.off::after{content:"";position:absolute;inset:0;background:linear-gradient(45deg,transparent 45%,rgba(0,0,0,0.6) 45%,rgba(0,0,0,0.6) 55%,transparent 55%);border-radius:inherit;}
     #${PANEL_ID} .mcf-sep{width:1px;align-self:stretch;background:var(--color-base-300,rgba(0,0,0,0.12));margin:0 2px;}
+    #${FAB_ID}{position:fixed;top:8px;left:8px;z-index:40;}
   `;
   document.head.appendChild(style);
 };
@@ -69,7 +67,7 @@ export class MiniColorFilter {
       {
         id: FAB_ID,
         getTargetElement: () =>
-          findPaintPixelControls() ? findTopLeftControls() : null,
+          findPaintPixelControls() ? document.body : null,
         createElement: (host) => {
           if (document.getElementById(FAB_ID)) return;
           const btn = document.createElement("button");
@@ -82,8 +80,7 @@ export class MiniColorFilter {
             e.stopPropagation();
             this.togglePanel();
           });
-          // 先頭に挿入
-          host.insertBefore(btn, host.firstChild);
+          host.appendChild(btn);
         },
       },
     ]);
