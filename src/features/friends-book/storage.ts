@@ -34,19 +34,20 @@ export class FriendsBookStorage {
     await this.setValue(JSON.stringify(friends));
   }
 
-  static async removeFriend(id: number): Promise<void> {
+  static async removeFriendAt(index: number): Promise<void> {
     const friends = await this.getFriends();
-    const filtered = friends.filter((f) => f.id !== id);
-    await this.setValue(JSON.stringify(filtered));
+    if (index < 0 || index >= friends.length) return;
+    friends.splice(index, 1);
+    await this.setValue(JSON.stringify(friends));
   }
 
-  static async updateFriend(friend: Friend): Promise<void> {
+  static async updateFriend(friend: Friend, targetIndex?: number): Promise<void> {
     const friends = await this.getFriends();
-    const index = friends.findIndex((f) => f.id === friend.id);
-    if (index !== -1) {
-      friends[index] = friend;
-      await this.setValue(JSON.stringify(friends));
-    }
+    const index =
+      targetIndex ?? friends.findIndex((f) => f.id === friend.id);
+    if (index < 0 || index >= friends.length) return;
+    friends[index] = friend;
+    await this.setValue(JSON.stringify(friends));
   }
 
   static async getFriendById(id: number): Promise<Friend | undefined> {

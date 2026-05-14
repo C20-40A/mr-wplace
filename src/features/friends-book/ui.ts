@@ -26,10 +26,15 @@ export const showAddFriendDialog = async (userData?: {
   allianceId?: number;
   allianceName?: string;
   picture?: string;
+  memo?: string;
+  tag?: Tag;
+  index?: number;
 }): Promise<void> => {
   return new Promise((resolve) => {
     // 既に友人リストに存在するかチェック
-    const checkPromise = userData
+    const checkPromise = userData?.index !== undefined
+      ? Promise.resolve(userData)
+      : userData
       ? FriendsBookStorage.getFriendById(userData.id)
       : Promise.resolve(null);
 
@@ -264,7 +269,7 @@ export const showAddFriendDialog = async (userData?: {
         };
 
         if (isExisting) {
-          await FriendsBookStorage.updateFriend(friend);
+          await FriendsBookStorage.updateFriend(friend, userData?.index);
         } else {
           await FriendsBookStorage.addFriend(friend);
         }
@@ -493,9 +498,9 @@ export const renderFriends = (
   if (!grid) return;
 
   // タグフィルター適用
-  let filteredFriends = friends;
+  let filteredFriends = friends.map((friend, index) => ({ friend, index }));
   if (selectedTagFilters.size > 0) {
-    filteredFriends = friends.filter((friend) => {
+    filteredFriends = filteredFriends.filter(({ friend }) => {
       if (!friend.tag) return false;
       const tagKey = `${friend.tag.color}-${friend.tag.name || ""}`;
       return selectedTagFilters.has(tagKey);
@@ -503,12 +508,12 @@ export const renderFriends = (
   }
 
   // ソート
-  let sortedFriends: Friend[];
+  let sortedFriends: { friend: Friend; index: number }[];
   if (sortType === "added") {
     // 配列順 = 追加順（新しいものほど末尾）なので、逆順にして新しい順に表示
     sortedFriends = [...filteredFriends].reverse();
   } else {
-    sortedFriends = [...filteredFriends].sort((a, b) => {
+    sortedFriends = [...filteredFriends].sort(({ friend: a }, { friend: b }) => {
       switch (sortType) {
         case "name":
           return a.name.localeCompare(b.name);
@@ -535,7 +540,7 @@ export const renderFriends = (
   }
 
   grid.innerHTML = sortedFriends
-    .map((friend) => {
+    .map(({ friend, index }) => {
       let avatarImage: string;
       if (friend.picture) {
         avatarImage = `<img src="${friend.picture}" class="rounded-full w-8 h-8" style="image-rendering: pixelated;" />`;
@@ -546,7 +551,8 @@ export const renderFriends = (
 
       return `
         <div class="friends-card card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
-             data-id="${friend.id}">
+             data-id="${friend.id}"
+             data-index="${index}">
           <div class="card-body p-2">
             <!-- User Info -->
             <div class="flex items-center gap-2 mb-1">
@@ -594,14 +600,14 @@ export const renderFriends = (
               <div class="flex gap-1">
                 <button class="friends-edit-btn btn btn-ghost btn-xs" data-id="${
                   friend.id
-                }">
+                }" data-index="${index}">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-3">
                     <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
                   </svg>
                 </button>
                 <button class="friends-delete-btn btn btn-ghost btn-xs text-error" data-id="${
                   friend.id
-                }">
+                }" data-index="${index}">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-3">
                     <path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/>
                   </svg>

@@ -241,9 +241,9 @@ const render = async (): Promise<void> => {
 /**
  * 友人を削除
  */
-const deleteFriend = async (id: number): Promise<void> => {
+const deleteFriend = async (index: number): Promise<void> => {
   if (!confirm(t`delete_confirm`)) return;
-  await FriendsBookStorage.removeFriend(id);
+  await FriendsBookStorage.removeFriendAt(index);
   render();
   Toast.success(t`deleted_message`);
 };
@@ -251,18 +251,21 @@ const deleteFriend = async (id: number): Promise<void> => {
 /**
  * 友人を編集
  */
-const editFriend = async (id: number): Promise<void> => {
+const editFriend = async (index: number): Promise<void> => {
   const friends = await FriendsBookStorage.getFriends();
-  const friend = friends.find((f) => f.id === id);
+  const friend = friends[index];
   if (!friend) return;
 
   await showAddFriendDialog({
+    index,
     id: friend.id,
     name: friend.name,
     equippedFlag: friend.equippedFlag,
     allianceId: friend.allianceId,
     allianceName: friend.allianceName,
     picture: friend.picture,
+    memo: friend.memo,
+    tag: friend.tag,
   });
 
   render();
@@ -386,10 +389,10 @@ const setupModal = (): void => {
       ".friends-delete-btn",
     ) as HTMLElement | null;
 
-    if (editBtn?.dataset.id) {
-      editFriend(parseInt(editBtn.dataset.id));
-    } else if (deleteBtn?.dataset.id) {
-      deleteFriend(parseInt(deleteBtn.dataset.id));
+    if (editBtn?.dataset.index) {
+      editFriend(parseInt(editBtn.dataset.index));
+    } else if (deleteBtn?.dataset.index) {
+      deleteFriend(parseInt(deleteBtn.dataset.index));
     }
   });
 
