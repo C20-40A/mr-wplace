@@ -275,13 +275,7 @@ const handleResetAreas = async (): Promise<void> => {
 // --- Main ---
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const __t0 = performance.now();
-  const __mark = (label: string) =>
-    console.log(`🧑‍🎨 ⏱ popup [${(performance.now() - __t0).toFixed(1)}ms] ${label}`);
-  __mark("DOMContentLoaded");
-
   await notifyPopupWindowState(POPUP_WINDOW_OPENED);
-  __mark("notifyPopupWindowState(OPENED)");
 
   const languageSelect = document.getElementById("language-select") as HTMLSelectElement;
   const navigationSelect = document.getElementById("navigation-select") as HTMLSelectElement | null;
@@ -301,15 +295,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   let mapInstanceReady = false;
 
   try {
-    const t = performance.now();
     await I18nManager.init(currentLocale);
-    console.log(`🧑‍🎨 ⏱ popup [+${(performance.now() - t).toFixed(1)}ms] I18nManager.init`);
     currentLocale = I18nManager.getCurrentLocale();
     languageSelect.value = currentLocale;
     updateUI();
-    __mark("after i18n + updateUI");
 
-    const tStates = performance.now();
     await Promise.all([
       loadNavigationModeFromStorage(),
       loadLockButtonEnhancerFromStorage(),
@@ -319,17 +309,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       loadCloseButtonBigFromStorage(),
       loadFabVisibilityFromStorage(),
     ]);
-    console.log(`🧑‍🎨 ⏱ popup [+${(performance.now() - tStates).toFixed(1)}ms] state loads (Promise.all x7)`);
 
     currentMode = getNavigationMode();
-    const tDev = performance.now();
     currentComputeDevice = await ColorPaletteStorage.getComputeDevice();
-    console.log(`🧑‍🎨 ⏱ popup [+${(performance.now() - tDev).toFixed(1)}ms] getComputeDevice`);
 
     try {
-      const tMap = performance.now();
       const response = await notifyContentScript({ type: "GET_MAP_INSTANCE_READY" });
-      console.log(`🧑‍🎨 ⏱ popup [+${(performance.now() - tMap).toFixed(1)}ms] GET_MAP_INSTANCE_READY round-trip`);
       mapInstanceReady = response?.ready || false;
     } catch (error) {
       if (!isNoContentReceiverError(error))
@@ -341,7 +326,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Hide loader and reveal settings regardless of init result
     removeLoadingIndicator();
     settingsBody?.removeAttribute("style");
-    __mark("settings revealed (total)");
   }
 
   languageSelect.value = currentLocale;

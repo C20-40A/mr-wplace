@@ -93,31 +93,21 @@ export class GalleryList {
     onCloseModal?: () => void
   ): Promise<void> {
     this.onDrawToggleCallback = onDrawToggle;
-    const __t0 = performance.now();
-    const __mark = (label: string) =>
-      console.log(`🧑‍🎨 ⏱ gallery-list [${(performance.now() - __t0).toFixed(1)}ms] ${label}`);
-    __mark("render start");
     renderLoadingIndicator(container, {
       id: "gallery-list-loading-indicator",
       minHeight: "240px",
     });
 
     try {
-      const tGetAll = performance.now();
       const items = await this.storage.getAll();
-      console.log(
-        `🧑‍🎨 ⏱ gallery-list [+${(performance.now() - tGetAll).toFixed(1)}ms] storage.getAll (count=${items.length})`,
-      );
       console.log("🧑‍🎨 : Fetched gallery items (thumbnails):", items);
 
       // ソート設定を取得
-      const tSort = performance.now();
       const result = await browserStorage.get([SORT_KEY]);
       const sortType: GallerySortType = result[SORT_KEY] || "layer";
 
       // アイテムをソート
       const sortedItems = this.sortItems(items, sortType);
-      console.log(`🧑‍🎨 ⏱ gallery-list [+${(performance.now() - tSort).toFixed(1)}ms] sort + sort-key fetch`);
 
       // 描画位置がある画像の統計を取得
       const itemsWithDrawPosition = sortedItems.filter(
@@ -125,11 +115,7 @@ export class GalleryList {
       );
       if (itemsWithDrawPosition.length > 0) {
         const imageKeys = itemsWithDrawPosition.map((item) => item.key);
-        const tStats = performance.now();
         const statsPerImage = await getStatsPerImage(imageKeys);
-        console.log(
-          `🧑‍🎨 ⏱ gallery-list [+${(performance.now() - tStats).toFixed(1)}ms] getStatsPerImage round-trip (n=${imageKeys.length})`,
-        );
 
         console.log("🧑‍🎨 : Fetched stats for gallery images:", statsPerImage);
 
@@ -142,7 +128,6 @@ export class GalleryList {
           }
         }
       }
-      __mark("before ui.render");
 
       const refresh = () =>
         this.render(container, router, onImageClick, onDrawToggle, onCloseModal);
@@ -169,7 +154,6 @@ export class GalleryList {
         },
         refresh
       );
-      __mark("ui.render done (total)");
     } catch (error) {
       console.error("🧑‍🎨 : Failed to render gallery list:", error);
       container.replaceChildren();
