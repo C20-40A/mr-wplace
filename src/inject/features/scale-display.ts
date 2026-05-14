@@ -1,5 +1,11 @@
 import { getMapInstanceFromWplace } from "./map-instance";
-import { latLonToPixels } from "@/utils/geo-converter";
+import { latLonToPixels, pixelsToMeters, metersToLatLon } from "@/utils/geo-converter";
+
+const pixelsToLatLng = (px: number, py: number): LngLat => {
+  const [mx, my] = pixelsToMeters(px, py);
+  const [lat, lng] = metersToLatLon(mx, my);
+  return { lat, lng };
+};
 
 const SCALE_CONTAINER_ID = "mr-wplace-scale-display";
 const SCALE_LINE_ID = "mr-wplace-scale-line";
@@ -35,6 +41,13 @@ interface ScaleMap {
 type DragTarget = "A" | "B" | null;
 
 let scaleEnabled = false;
+interface PixelVector {
+  dx: number;
+  dy: number;
+}
+
+let isLocked = false;
+let lockedPixelVector: PixelVector | null = null;
 
 let scaleContainer: HTMLDivElement | null = null;
 let scaleLine: HTMLDivElement | null = null;
@@ -51,6 +64,7 @@ let activeDragTarget: DragTarget = null;
 let mapUpdateHandler: (() => void) | null = null;
 let pinAPointerDownHandler: ((e: PointerEvent) => void) | null = null;
 let pinBPointerDownHandler: ((e: PointerEvent) => void) | null = null;
+let labelClickHandler: ((e: MouseEvent) => void) | null = null;
 let pointerMoveHandler: ((e: PointerEvent) => void) | null = null;
 let pointerUpHandler: (() => void) | null = null;
 
@@ -159,9 +173,12 @@ const createScaleContainer = (): HTMLDivElement => {
     line-height: 1.3;
     text-align: center;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-    pointer-events: none;
+    pointer-events: auto;
+    cursor: pointer;
     z-index: 1;
+    user-select: none;
   `;
+  label.title = "クリックで距離(px)を固定/解除";
 
   const pinA = createPinElement(SCALE_PIN_A_ID, "A", "#e74c3c");
   const pinB = createPinElement(SCALE_PIN_B_ID, "B", "#2980b9");
@@ -263,7 +280,9 @@ const updateScaleDisplay = (map: ScaleMap): void => {
   const pixelDistance = Math.round(Math.hypot(px2 - px1, py2 - py1));
 
   const distanceText = formatDistance(getDistanceMeters(pinALngLat, pinBLngLat));
-  scaleLabel.innerHTML = `${distanceText}<br><span style="font-size: 10px; opacity: 0.85;">${pixelDistance} px</span>`;
+  const lockMark = isLocked ? " 🔒" : "";
+  scaleLabel.innerHTML = `${distanceText}<br><span style="font-size: 10px; opacity: 0.85;">${pixelDistance} px${lockMark}</span>`;
+  scaleLabel.style.background = isLocked ? "rgba(41, 128, 185, 0.92)" : "rgba(0, 0, 0, 0.82)";
   scaleLabel.style.left = `${(pointA.x + pointB.x) / 2}px`;
   scaleLabel.style.top = `${(pointA.y + pointB.y) / 2 - 12}px`;
 };
@@ -281,6 +300,18 @@ const setPinFromPointer = (map: ScaleMap, event: PointerEvent): void => {
 
   if (activeDragTarget === "A") pinALngLat = lngLat;
   if (activeDragTarget === "B") pinBLngLat = lngLat;
+
+  // lock中: 動かしていない側を、wplace pixelベクトルを保ったまま追従
+  if (isLocked && lockedPixelVector) {
+    if (activeDragTarget === "A" && pinALngLat) {
+      const [ax, ay] = latLonToPixels(pinALngLat.lat, pinALngLat.lng);
+      pinBLngLat = pixelsToLatLng(ax + lockedPixelVector.dx, ay + lockedPixelVector.dy);
+    } else if (activeDragTarget === "B" && pinBLngLat) {
+      const [bx, by] = latLonToPixels(pinBLngLat.lat, pinBLngLat.lng);
+      pinALngLat = pixelsToLatLng(bx - lockedPixelVector.dx, by - lockedPixelVector.dy);
+    }
+  }
+
   updateScaleDisplay(map);
 };
 
@@ -303,6 +334,21 @@ const stopDragging = (): void => {
 
   activeDragTarget = null;
   updateScaleDisplay(activeMap);
+};
+
+const toggleLock = (map: ScaleMap): void => {
+  if (isLocked) {
+    isLocked = false;
+    lockedPixelVector = null;
+  } else {
+    if (!pinALngLat || !pinBLngLat) return;
+    const [ax, ay] = latLonToPixels(pinALngLat.lat, pinALngLat.lng);
+    const [bx, by] = latLonToPixels(pinBLngLat.lat, pinBLngLat.lng);
+    lockedPixelVector = { dx: bx - ax, dy: by - ay };
+    isLocked = true;
+  }
+  updateScaleDisplay(map);
+  console.log("🧑‍🎨 : Scale lock:", isLocked);
 };
 
 const startDragging = (
@@ -358,6 +404,9 @@ const addScaleDisplay = (map: ScaleMap): void => {
   pinAElement?.addEventListener("pointerdown", pinAPointerDownHandler);
   pinBElement?.addEventListener("pointerdown", pinBPointerDownHandler);
 
+  labelClickHandler = () => toggleLock(map);
+  scaleLabel?.addEventListener("click", labelClickHandler);
+
   mapUpdateHandler = () => updateScaleDisplay(map);
   for (const eventName of MAP_UPDATE_EVENTS) map.on(eventName, mapUpdateHandler);
 
@@ -382,6 +431,11 @@ const removeScaleDisplay = (map: ScaleMap): void => {
   pinAPointerDownHandler = null;
   pinBPointerDownHandler = null;
 
+  if (labelClickHandler && scaleLabel) {
+    scaleLabel.removeEventListener("click", labelClickHandler);
+  }
+  labelClickHandler = null;
+
   scaleContainer?.remove();
   scaleContainer = null;
   scaleLine = null;
@@ -392,6 +446,8 @@ const removeScaleDisplay = (map: ScaleMap): void => {
   pinBLngLat = null;
   activeMap = null;
   activeDragTarget = null;
+  isLocked = false;
+  lockedPixelVector = null;
 
   console.log("🧑‍🎨 : Scale display removed");
 };
