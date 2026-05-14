@@ -17,8 +17,8 @@ const PANEL_ID = "mini-color-filter-panel";
 const STYLE_ID = "mini-color-filter-style";
 
 const ICON_FILTER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><circle cx="7" cy="7" r="4"/><circle cx="17" cy="11" r="4"/><circle cx="11" cy="17" r="4"/></svg>`;
-const ICON_ALL = `<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>`;
-const ICON_NONE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:14px;height:14px;"><path d="M6 6l12 12M18 6L6 18"/></svg>`;
+const LABEL_ALL = "ALL";
+const LABEL_NONE = "NONE";
 const ICON_CLOSE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="width:14px;height:14px;"><path d="M6 6l12 12M18 6L6 18"/></svg>`;
 
 const ensureStyles = (): void => {
@@ -27,8 +27,8 @@ const ensureStyles = (): void => {
   style.id = STYLE_ID;
   style.textContent = `
     #${PANEL_ID}{position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:41;display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--color-base-100,#fff);color:var(--color-base-content,#222);border:1px solid var(--color-base-300,rgba(0,0,0,0.12));border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,0.18);max-width:calc(100vw - 16px);}
-    #${PANEL_ID} .mcf-actions{display:flex;gap:2px;flex:none;}
-    #${PANEL_ID} .mcf-act{width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid transparent;background:transparent;color:inherit;cursor:pointer;padding:0;}
+    #${PANEL_ID} .mcf-actions{display:flex;flex-direction:column;gap:2px;flex:none;align-self:stretch;justify-content:center;}
+    #${PANEL_ID} .mcf-act{min-width:36px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--color-base-300,rgba(0,0,0,0.12));background:transparent;color:inherit;cursor:pointer;padding:0 6px;font-size:10px;font-weight:700;letter-spacing:0.5px;line-height:1;}
     #${PANEL_ID} .mcf-act:hover{background:var(--color-base-200,rgba(0,0,0,0.06));}
     #${PANEL_ID} .mcf-act.active{background:var(--color-primary,#0f766e);color:var(--color-primary-content,#fff);}
     #${PANEL_ID} .mcf-em{position:relative;}
@@ -133,27 +133,29 @@ export class MiniColorFilter {
     panel.appendChild(actions);
 
     const mkAct = (
-      icon: string,
+      content: string,
       title: string,
       onClick: () => void,
+      asHtml = false,
     ): HTMLButtonElement => {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "mcf-act";
       b.title = title;
-      b.innerHTML = icon;
+      if (asHtml) b.innerHTML = content;
+      else b.textContent = content;
       b.addEventListener("click", onClick);
       return b;
     };
 
     actions.appendChild(
-      mkAct(ICON_ALL, "All", async () => {
+      mkAct(LABEL_ALL, "All", async () => {
         await applySelectedColors(colorpalette.map((c) => c.id));
         this.refreshColors();
       }),
     );
     actions.appendChild(
-      mkAct(ICON_NONE, "None", async () => {
+      mkAct(LABEL_NONE, "None", async () => {
         await applySelectedColors([]);
         this.refreshColors();
       }),
@@ -177,7 +179,7 @@ export class MiniColorFilter {
     sep3.className = "mcf-sep";
     panel.appendChild(sep3);
 
-    panel.appendChild(mkAct(ICON_CLOSE, "Close", () => this.closePanel()));
+    panel.appendChild(mkAct(ICON_CLOSE, "Close", () => this.closePanel(), true));
 
     document.body.appendChild(panel);
     this.refreshColors();
