@@ -96,17 +96,20 @@ export const injectImageEditorStyles = (
         position: absolute; bottom: 0.25rem; right: 0.25rem; display: flex; align-items: center; gap: 0.25rem; font-size: 0.7rem; cursor: pointer; background: var(--color-base-300); padding: 0.2rem 0.4rem; border-radius: 0.25rem; opacity: 0.6; transition: opacity 0.2s;
       }
       .gpu-toggle-label:hover { opacity: 1; }
-      #wps-current-expand-toggle {
+      #wps-current-expand-toggle,
+      #wps-flip-horizontal-btn {
         position: absolute;
         bottom: 0.25rem;
-        left: 0.25rem;
         min-height: 1.5rem;
         min-width: 1.5rem;
         padding: 0 0.3rem;
         line-height: 1;
         opacity: 0.7;
       }
-      #wps-current-expand-toggle:hover { opacity: 1; }
+      #wps-current-expand-toggle { left: 0.25rem; }
+      #wps-flip-horizontal-btn { left: 2rem; }
+      #wps-current-expand-toggle:hover,
+      #wps-flip-horizontal-btn:hover { opacity: 1; }
       #wps-image-editor-container.current-expanded #wps-original-area {
         display: none;
       }

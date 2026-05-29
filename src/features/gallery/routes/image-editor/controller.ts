@@ -271,6 +271,33 @@ export class EditorController {
     this.updateScaledImage();
   }
 
+  flipHorizontal(): void {
+    if (!this.originalImage) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = this.originalImage.naturalWidth;
+    canvas.height = this.originalImage.naturalHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(this.originalImage, 0, 0);
+
+    if (this.cachedResizedBitmap) {
+      this.cachedResizedBitmap.close();
+      this.cachedResizedBitmap = null;
+    }
+    this.clearOutlineBitmapCache();
+    this.transparencyMaskEditor.clear();
+
+    this.originalImage.src = canvas.toDataURL("image/png");
+    this.originalImage.onload = () => {
+      this.updateOriginalImageDisplay();
+      this.updateScaledImage();
+    };
+  }
+
   onQuantizationMethodChange(method: QuantizationMethod): void {
     console.log("🧑‍🎨 : Quantization method changed:", method);
     this.quantizationMethod = method;

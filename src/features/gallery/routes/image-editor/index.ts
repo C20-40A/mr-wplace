@@ -49,6 +49,7 @@ export class GalleryImageEditor {
       onQuantizationMethodChange: (method) => this.controller?.onQuantizationMethodChange(method),
       onColorFlattenModeChange: (mode) => this.controller?.onColorFlattenModeChange(mode),
       onGpuToggle: (enabled) => this.controller?.onGpuToggle(enabled),
+      onFlipHorizontal: () => this.controller?.flipHorizontal(),
       onTransparentColorsChange: (colors) => this.controller?.onTransparentColorsChange(colors),
       onOpenTransparencyTool: () => this.controller?.getProcessedImage() ?? null,
       onOpenAdjustTool: () => this.controller?.openAdjustTool(),

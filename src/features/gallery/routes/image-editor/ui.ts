@@ -32,6 +32,7 @@ export interface ImageEditorCallbacks {
   onQuantizationMethodChange: (method: QuantizationMethod) => void;
   onColorFlattenModeChange: (mode: ColorFlattenMode) => void;
   onGpuToggle: (enabled: boolean) => void;
+  onFlipHorizontal: () => void;
   onTransparentColorsChange: (colors: Set<string>) => void;
   onOpenTransparencyTool: () => HTMLImageElement | HTMLCanvasElement | null;
   onOpenAdjustTool: () => void;
@@ -426,6 +427,9 @@ export class ImageEditorUI {
     switch (target.id) {
       case "wps-current-expand-toggle":
         this.toggleCurrentImageExpand();
+        break;
+      case "wps-flip-horizontal-btn":
+        this.callbacks.onFlipHorizontal();
         break;
       case "wps-add-to-gallery":
         this.callbacks.onSaveToGallery();

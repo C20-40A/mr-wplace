@@ -114,11 +114,23 @@ const createCurrentArea = (
     },
     ["⤢"],
   );
+  const flipHorizontalBtn = createElement(
+    "button",
+    {
+      id: "wps-flip-horizontal-btn",
+      className: "btn btn-xs",
+      type: "button",
+      title: "Flip horizontal",
+      "aria-label": "Flip horizontal",
+    },
+    ["⇄"],
+  );
 
   const flexContainer = createElement("div", { className: "flex" }, [
     canvasContainer,
     imageContainer,
     gpuLabel,
+    flipHorizontalBtn,
     expandToggle,
     createElement(
       "div",
