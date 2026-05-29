@@ -556,6 +556,24 @@ const scaleAndRenderWithMode = (
   ) {
     const armLength = 30;
     const centerSize = 1; // 中央3x3の半径（±1 = 3px）
+    const isScaledCenter = (v: number): boolean =>
+      (v - 1) % pixelScale === 0;
+    const writeHugeMarkerPixel = (
+      px: number,
+      py: number,
+      alpha: number = 255,
+    ): void => {
+      if (px < 0 || px >= scaledWidth || py < 0 || py >= scaledHeight) return;
+
+      const i = (py * scaledWidth + px) * 4;
+      if (isScaledCenter(px) && isScaledCenter(py) && scaledData[i + 3] !== 0)
+        return;
+
+      scaledData[i] = ecR;
+      scaledData[i + 1] = ecG;
+      scaledData[i + 2] = ecB;
+      scaledData[i + 3] = alpha;
+    };
 
     for (const { x: cx, y: cy } of unplacedCenters) {
       if (isHugeRedCross) {
@@ -564,23 +582,13 @@ const scaleAndRenderWithMode = (
         for (let dx = -armLength; dx <= armLength; dx++) {
           if (Math.abs(dx) <= centerSize) continue; // 中心3x3はスキップ
           const px = cx + dx;
-          if (px < 0 || px >= scaledWidth) continue;
-          const i = (cy * scaledWidth + px) * 4;
-          scaledData[i] = ecR;
-          scaledData[i + 1] = ecG;
-          scaledData[i + 2] = ecB;
-          scaledData[i + 3] = 255;
+          writeHugeMarkerPixel(px, cy);
         }
         // 垂直腕
         for (let dy = -armLength; dy <= armLength; dy++) {
           if (Math.abs(dy) <= centerSize) continue; // 中心3x3はスキップ
           const py = cy + dy;
-          if (py < 0 || py >= scaledHeight) continue;
-          const i = (py * scaledWidth + cx) * 4;
-          scaledData[i] = ecR;
-          scaledData[i + 1] = ecG;
-          scaledData[i + 2] = ecB;
-          scaledData[i + 3] = 255;
+          writeHugeMarkerPixel(cx, py);
         }
       } else if (isHugeRedCrossBold) {
         // 巨大赤十字（極太）: 3x3幅のクロス
@@ -598,14 +606,7 @@ const scaleAndRenderWithMode = (
 
             const px = cx + dx;
             const py = cy + dy;
-            if (px < 0 || px >= scaledWidth || py < 0 || py >= scaledHeight)
-              continue;
-
-            const i = (py * scaledWidth + px) * 4;
-            scaledData[i] = ecR;
-            scaledData[i + 1] = ecG;
-            scaledData[i + 2] = ecB;
-            scaledData[i + 3] = 255;
+            writeHugeMarkerPixel(px, py);
           }
         }
       } else if (isHugeRedDiamond) {
@@ -621,18 +622,11 @@ const scaleAndRenderWithMode = (
 
             const px = cx + dx;
             const py = cy + dy;
-            if (px < 0 || px >= scaledWidth || py < 0 || py >= scaledHeight)
-              continue;
-
-            const i = (py * scaledWidth + px) * 4;
 
             // グラデーション: 中心が濃い(255)、外が薄い(64)
             const ratio = dist / armLength;
             const alpha = Math.round(255 - ratio * 191); // 255 → 64
-            scaledData[i] = ecR;
-            scaledData[i + 1] = ecG;
-            scaledData[i + 2] = ecB;
-            scaledData[i + 3] = alpha;
+            writeHugeMarkerPixel(px, py, alpha);
           }
         }
       } else if (isHugeRedRing) {
@@ -652,17 +646,10 @@ const scaleAndRenderWithMode = (
 
             const px = cx + dx;
             const py = cy + dy;
-            if (px < 0 || px >= scaledWidth || py < 0 || py >= scaledHeight)
-              continue;
-
-            const i = (py * scaledWidth + px) * 4;
             // グラデーション: 内側が濃い、外側が薄い
             const ratio = (dist - innerRadius) / (outerRadius - innerRadius);
             const alpha = Math.round(255 - ratio * 191); // 255 → 64
-            scaledData[i] = ecR;
-            scaledData[i + 1] = ecG;
-            scaledData[i + 2] = ecB;
-            scaledData[i + 3] = alpha;
+            writeHugeMarkerPixel(px, py, alpha);
           }
         }
       }
