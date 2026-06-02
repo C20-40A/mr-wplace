@@ -32,6 +32,21 @@ const dialogLikeStack: DialogLikeElement[] = [];
 
 export const hasOpenModal = (): boolean => dialogLikeStack.length > 0;
 
+const getViewportHeightPx = (): number =>
+  window.visualViewport?.height ?? window.innerHeight;
+
+const syncModalViewportHeight = (modal: HTMLElement): void => {
+  modal.style.setProperty("--mr-wplace-modal-vh", `${getViewportHeightPx()}px`);
+};
+
+const getModalBoxHeightStyle = (): string => {
+  const maxHeight = isMobileViewport()
+    ? "calc(var(--mr-wplace-modal-vh, 100dvh) - 1rem)"
+    : "min(90vh, calc(var(--mr-wplace-modal-vh, 100vh) - 2rem))";
+
+  return `max-height: ${maxHeight};`;
+};
+
 const animateModalOpen = (
   modalBox: HTMLElement | null,
   backdrop: HTMLElement | null,
@@ -308,8 +323,9 @@ export const createModal = (options: ModalOptions): ModalElements => {
 
   const modal = createDialogLikeModal();
   modal.id = id;
+  syncModalViewportHeight(modal);
   modal.innerHTML = t`
-    <div class="modal-box" style="width: 90%; max-width: ${maxWidth}; ${isMobileViewport() ? "max-height: 95vh;" : "max-height: 90vh;"} display: flex; flex-direction: column; padding:${isMobileViewport() ? ".5rem" : " 1rem"}; ${containerStyle}">
+    <div class="modal-box" style="width: 90%; max-width: ${maxWidth}; ${getModalBoxHeightStyle()} display: flex; flex-direction: column; padding:${isMobileViewport() ? ".5rem" : " 1rem"}; ${containerStyle}">
       <!-- Header -->
       <div class="flex justify-between items-center ${isMobileViewport() ? "mb-2" : "mb-4"}" style="flex-shrink: 0;">
         <div class="flex items-center gap-2">
@@ -382,6 +398,7 @@ export const createModal = (options: ModalOptions): ModalElements => {
   // イベントハンドラーを関数として保持（removeEventListenerで使用するため）
   const handleBack = onBack || (() => {});
   const handleClose = () => modal.close();
+  const handleViewportResize = () => syncModalViewportHeight(modal);
 
   let isMinimized = false;
   const handleMinimize = () => {
@@ -427,6 +444,9 @@ export const createModal = (options: ModalOptions): ModalElements => {
   minimizeButton.addEventListener("click", handleMinimize);
   closeButton.addEventListener("click", handleClose);
   backdropButton.addEventListener("click", handleClose);
+  window.visualViewport?.addEventListener("resize", handleViewportResize);
+  window.visualViewport?.addEventListener("scroll", handleViewportResize);
+  window.addEventListener("resize", handleViewportResize);
 
   // クリーンアップ処理（共通化）
   const cleanup = () => {
@@ -435,6 +455,9 @@ export const createModal = (options: ModalOptions): ModalElements => {
     minimizeButton.removeEventListener("click", handleMinimize);
     closeButton.removeEventListener("click", handleClose);
     backdropButton.removeEventListener("click", handleClose);
+    window.visualViewport?.removeEventListener("resize", handleViewportResize);
+    window.visualViewport?.removeEventListener("scroll", handleViewportResize);
+    window.removeEventListener("resize", handleViewportResize);
 
     // router の参照クリア
     if (router?.clearHeaderElements) router.clearHeaderElements();
