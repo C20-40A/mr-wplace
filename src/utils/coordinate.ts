@@ -38,6 +38,24 @@ export const latLngToTilePixel = (lat: number, lng: number) => {
 };
 
 /**
+ * 緯度・経度からタイルインデックスとタイル内ピクセル座標へ変換（round版）
+ * wplace本体は整数pixelにroundしてからtile/pixelへ分解するため、
+ * 「整数pixel由来のlat/lngをpixelへ戻す往復」ではfloorではなくこちらを使う
+ * (floorだと浮動小数点誤差で整数の下側に出た際に1pxずれる)
+ */
+export const latLngToTilePixelRound = (lat: number, lng: number) => {
+  const [px, py] = latLonToPixels(lat, lng);
+  const worldX = Math.round(px);
+  const worldY = Math.round(py);
+  return {
+    TLX: Math.floor(worldX / TILE_SIZE),
+    TLY: Math.floor(worldY / TILE_SIZE),
+    PxX: worldX % TILE_SIZE,
+    PxY: worldY % TILE_SIZE,
+  };
+};
+
+/**
  * 緯度・経度からタイルインデックスとタイル内ピクセル座標へ変換（浮動小数点版）
  * ピクセル境界判定に使用
  */

@@ -1,4 +1,4 @@
-import { latLngToTilePixel, tilePixelToLatLng } from "@/utils/coordinate";
+import { latLngToTilePixelRound, tilePixelToLatLng } from "@/utils/coordinate";
 import { gotoPosition } from "@/utils/position";
 import { t } from "@/i18n/manager";
 
@@ -99,7 +99,7 @@ export const renderCoordinateJumper = (container: HTMLElement): void => {
     const lng = parseFloat(lngInput.value);
 
     if (!isNaN(lat) && !isNaN(lng)) {
-      const coords = latLngToTilePixel(lat, lng);
+      const coords = latLngToTilePixelRound(lat, lng);
       tileXInput.value = coords.TLX.toString();
       tileYInput.value = coords.TLY.toString();
       pixelXInput.value = coords.PxX.toString();

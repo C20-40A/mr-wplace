@@ -1,4 +1,4 @@
-import { latLngToTilePixel } from "@/utils/coordinate";
+import { latLngToTilePixelRound } from "@/utils/coordinate";
 import type { DrawPosition } from "@/states/galleryStorage";
 
 interface WplaceFileImage {
@@ -88,7 +88,12 @@ export async function readFileAsText(file: File): Promise<string> {
 }
 
 const parseWplaceJson = (json: WplaceOverlayFile): ImportedEditorFile => {
-  const drawPosition = latLngToTilePixel(json.bounds.north, json.bounds.west);
+  // bounds は wplace本体が整数pixelをroundして生成した lat/lng のため、
+  // floorではなくround版で戻す (floorだと誤差で1pxずれる)
+  const drawPosition: DrawPosition = latLngToTilePixelRound(
+    json.bounds.north,
+    json.bounds.west
+  );
 
   return {
     dataUrl: json.image.dataUrl,
