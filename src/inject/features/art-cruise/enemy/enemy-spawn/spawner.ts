@@ -237,6 +237,16 @@ export class ArtCruiseSpawner {
     enemy.vx = side === "left" ? speed : -speed;
     enemy.hp += spawn.hpBonus ?? 0;
 
+    // sidePeek は「spawn した端から内側へのぞき込み、同じ端へ戻る」動き。
+    // 侵入向き(=inward)は moveSidePeek が vx の符号から導くため、spawn 位置と
+    // 整合させる必要がある。xRatio 指定の sidePeek で side(left/right) がランダムだと
+    // 50% で外側へ飛び出して即 isOutOfBounds 除去される(出てこない)。
+    // spawn x が画面右半分なら左向き、左半分なら右向きに矯正する。
+    if (enemy.movement === "sidePeek" && spawn.xRatio !== undefined) {
+      const speedAbs = Math.abs(enemy.vx);
+      enemy.vx = spawn.xRatio > 0.5 ? -speedAbs : speedAbs;
+    }
+
     const margin = isBoss ? 140 : 96;
     let x = 0;
     let y = 0;
