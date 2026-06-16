@@ -24,11 +24,14 @@ export const vFormationCommands = (
   squadFormUp(
     0.5,
     0.14,
-    (i, count) => ({ dx: (count > 1 ? i / (count - 1) - 0.5 : 0) * 0.5, dy: 0 }),
+    (i, count) => ({
+      dx: (count > 1 ? i / (count - 1) - 0.5 : 0) * 0.5,
+      dy: 0,
+    }),
     2.0,
     gameWidth,
     gameHeight,
   ),
   // 画面上部でとどまる
-  squadWait(3.5),
+  squadWait(1.5),
 ];
