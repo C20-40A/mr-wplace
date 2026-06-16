@@ -586,4 +586,5 @@ export const ptTranslations = {
   tile_crop_redetect: "Detectar novamente",
   hint_tile_crop_save: "Novo recurso! Você pode detectar pixel art e salvá-lo.",
   text_draw_line_spacing: "Espaçamento entre linhas",
+  hint_art_cruise_btn: "Voe pela sua pixel art neste minijogo de tiro!",
 };

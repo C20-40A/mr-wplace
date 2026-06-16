@@ -55,7 +55,20 @@
         "assets/images/tutorial/how_to_draw_archive.gif",
         "assets/images/tutorial/how_to_draw_text.gif",
         "assets/images/tutorial/how_to_bookmark.gif",
-        "assets/images/bookmark/bookmark-button-location.png"
+        "assets/images/bookmark/bookmark-button-location.png",
+        "assets/art-cruise/audio/stage.ogg",
+        "assets/art-cruise/audio/boss.ogg",
+        "assets/art-cruise/audio/game-over.ogg",
+        "assets/art-cruise/audio/se/player-shoot.wav",
+        "assets/art-cruise/audio/se/explosion.wav",
+        "assets/art-cruise/audio/se/hit-pyun.wav",
+        "assets/art-cruise/audio/se/player-dead.wav",
+        "assets/art-cruise/audio/se/grunt-down.wav",
+        "assets/art-cruise/audio/se/enemy-shot.wav",
+        "assets/art-cruise/audio/se/enemy-shot-short.wav",
+        "assets/art-cruise/mandala/mandala-b.png",
+        "assets/art-cruise/mandala/mandala-c.png",
+        "assets/art-cruise/hint/art-cruise-hint.webp"
       ]
     }
   ],

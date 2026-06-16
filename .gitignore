@@ -1,4 +1,5 @@
 dist/
+.dev-extension/
 node_modules/
 web/node_modules/
 web/dist/
@@ -23,3 +24,6 @@ prompt.txt
 
 
 /docs/secret
+
+# art-cruise BGM の元素材 (巨大 WAV)。圧縮済み ogg は public/assets に配置
+/use_this/

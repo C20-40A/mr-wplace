@@ -18,8 +18,9 @@ import {
   loadFabVisibilityFromStorage,
   type FabFeature,
 } from "@/states/fab-visibility";
-import { IMG_MR_FACE } from "@/assets/iconImages";
 import { ColorFilter } from "@/features/color-filter";
+import { createArtCruiseButton } from "@/features/art-cruise";
+import { showFeatureHint } from "@/features/feature-hints";
 
 // Re-export bridge functions for backward compatibility
 export {
@@ -207,8 +208,6 @@ const scheduleLegacyTmpTilesCleanup = () => {
 };
 
 const FAB_VISIBILITY_STYLE_ID = "mr-wplace-fab-visibility-style";
-const POPUP_LAUNCH_BUTTON_ID = "mr-wplace-popup-launch-btn";
-const OPEN_POPUP_FROM_CONTENT = "OPEN_POPUP_FROM_CONTENT";
 
 const FAB_SELECTOR_MAP: Record<FabFeature, string[]> = {
   gallery: ["#gallery-btn"],
@@ -216,7 +215,6 @@ const FAB_SELECTOR_MAP: Record<FabFeature, string[]> = {
   "time-travel": ["#timetravel-fab-btn"],
   "data-saver": ["#data-saver-btn"],
   filter: ["#color-filter-fab-btn"],
-  "popup-launch": [`#${POPUP_LAUNCH_BUTTON_ID}`],
   "friends-book": ["#friends-book-fab"],
   "map-filter": ["#map-filter-trigger-btn"],
   "status-bar": ["#user-status-container"],
@@ -252,51 +250,27 @@ const applyFabVisibilityStyles = (
       : "";
 };
 
-const setupPopupLaunchButton = () => {
-  if (document.getElementById(POPUP_LAUNCH_BUTTON_ID)) return;
-
+const setupFloatingButtons = () => {
+  if (document.getElementById("mr-wplace-art-cruise-btn")) return;
   const container = document.createElement("div");
   container.style.cssText = `
     position: fixed;
     left: 47px;
     top: 8px;
     z-index: 30;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
   `;
 
-  const button = document.createElement("button");
-  button.id = POPUP_LAUNCH_BUTTON_ID;
-  button.type = "button";
-  button.title = "Mr. Wplace Settings";
-  button.className = "btn btn-sm btn-circle";
-  button.innerHTML = `
-    <img src="${IMG_MR_FACE}" alt="Mr. Wplace Settings" style="image-rendering: pixelated; width: calc(var(--spacing)*5); height: calc(var(--spacing)*5);">
-  `;
-  button.style.cssText = `
-    transition: transform 0.2s ease;
-  `;
-
-  button.addEventListener("mouseenter", () => {
-    button.style.transform = "scale(1.1)";
-  });
-
-  button.addEventListener("mouseleave", () => {
-    button.style.transform = "scale(1)";
-  });
-
-  button.addEventListener("click", async () => {
-    try {
-      const response = await runtime.sendMessage({
-        type: OPEN_POPUP_FROM_CONTENT,
-      });
-      if (response?.success) return;
-    } catch (error) {
-      console.warn("🧑‍🎨 : Failed to open extension popup from content:", error);
-    }
-  });
-
-  container.appendChild(button);
+  const artCruiseButton = createArtCruiseButton();
+  container.appendChild(artCruiseButton);
   (document.body || document.documentElement).appendChild(container);
+
+  showFeatureHint("art-cruise-btn", artCruiseButton);
 };
+
 
 // メッセージリスナー
 const registerMessageListeners = () => {
@@ -497,7 +471,7 @@ registerMessageListeners();
         performance.now() - featureInitStartedAt,
       )}ms`,
     );
-    setupPopupLaunchButton();
+    setupFloatingButtons();
     scheduleLegacyTmpTilesCleanup();
     console.log("🧑‍🎨: scheduled legacy tmp cleanup on idle");
     console.log(

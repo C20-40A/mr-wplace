@@ -69,6 +69,7 @@ import {
   getMapInstanceFromWplace,
   handleMapInstanceFlyTo,
 } from "./features/map-instance";
+import { startArtCruise, stopArtCruise } from "./features/art-cruise";
 import { setGridDisplayEnabled } from "./features/grid-display";
 import { setScaleDisplayEnabled } from "./features/scale-display";
 import {
@@ -288,7 +289,8 @@ const messageHandlers: Record<string, MessageHandler> = {
     setScaleDisplayEnabled(data.visible),
   [AREA_MESSAGE_SOURCE.MEASURE_UPDATE]: (data) =>
     setAreaMeasureEnabled(data.visible),
-  [AREA_MESSAGE_SOURCE.REGIONS_SYNC]: (data) => setAreaRegions(data.regions || []),
+  [AREA_MESSAGE_SOURCE.REGIONS_SYNC]: (data) =>
+    setAreaRegions(data.regions || []),
   [AREA_MESSAGE_SOURCE.DISPLAY_OPTIONS_UPDATE]: (data) =>
     setAreaDisplayOptions(data.options || {}),
   [AREA_MESSAGE_SOURCE.REGION_EDIT_START]: (data) => startAreaRegionEdit(data),
@@ -300,6 +302,8 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-map-3d-update": (data) => changeMap3dEnabled(data.enabled),
   "mr-wplace-map-3d-drag-rotate-update": (data) =>
     changeMap3dDragRotateEnabled(data.enabled),
+  "mr-wplace-art-cruise-update": (data) =>
+    data.enabled ? startArtCruise(data) : stopArtCruise(),
   "mr-wplace-cache-clear": handleCacheClear,
   "mr-wplace-front-tile-layer-update": handleFrontTileLayerUpdate,
   "mr-wplace-transparent-pixel-filter-update":

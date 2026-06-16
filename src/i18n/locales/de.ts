@@ -585,4 +585,5 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   tile_crop_redetect: "Erneut erkennen",
   hint_tile_crop_save: "Neue Funktion! Du kannst Pixel-Art erkennen und speichern.",
   text_draw_line_spacing: "Zeilenabstand",
+  hint_art_cruise_btn: "Düse in diesem Shooter-Minispiel durch deine Pixelkunst!",
 };

@@ -602,4 +602,5 @@ export const frTranslations = {
   tile_crop_redetect: "Relancer la détection",
   hint_tile_crop_save: "Nouvelle fonctionnalité ! Vous pouvez détecter un pixel art et l'enregistrer.",
   text_draw_line_spacing: "Interligne",
+  hint_art_cruise_btn: "Traversez votre pixel art dans ce mini-jeu de tir !",
 };

@@ -126,6 +126,17 @@ export interface WplaceMap {
     },
   ) => void;
   jumpTo: (options: { center: [number, number]; zoom: number }) => void;
+  easeTo: (options: {
+    center?: [number, number];
+    zoom?: number;
+    bearing?: number;
+    pitch?: number;
+    duration?: number;
+    easing?: (t: number) => number;
+  }) => void;
+  stop: () => void;
+  getPitch: () => number;
+  getBearing: () => number;
   setPaintProperty: (layer: string, property: string, value: any) => void;
   getLayer: (layerId: string) => any;
   getSource: (sourceId: string) => any;

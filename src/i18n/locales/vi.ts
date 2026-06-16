@@ -581,4 +581,5 @@ export const viTranslations = {
   tile_crop_redetect: "Phát hiện lại",
   hint_tile_crop_save: "Tính năng mới! Bạn có thể phát hiện pixel art và lưu lại.",
   text_draw_line_spacing: "Giãn dòng",
+  hint_art_cruise_btn: "Bắn phá xuyên qua pixel art trong minigame bắn súng này!",
 };

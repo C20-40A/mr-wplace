@@ -13,6 +13,7 @@ import {
 } from "@/states/feature-hints";
 import { getAllGalleryMetadata } from "@/core/bridge/gallery-storage-bridge";
 import { isBlueMarbleDetected } from "@/utils/blue-marble";
+import { runtime } from "@/utils/browser-api";
 
 export type FeatureHintId =
   | "paint-pixel-icon"
@@ -38,12 +39,14 @@ export type FeatureHintId =
   // | "image-detail-dpad"
   | "image-detail-download"
   // | "image-detail-edit-title"
-  | "gallery-import-export-btn";
+  | "gallery-import-export-btn"
+  | "art-cruise-btn";
 
 interface FeatureHintDefinition {
   messageKey?: string;
   getMessage?: () => string;
   iconSrc?: string;
+  imageSrc?: string;
   placement: HintPlacement;
   priority?: number;
   dependsOn?: FeatureHintId[];
@@ -215,6 +218,14 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     placement: "top",
     dependsOn: ["show-unplaced-only"],
   },
+  // ------- Art Cruise Hint -------
+  "art-cruise-btn": {
+    messageKey: "hint_art_cruise_btn",
+    imageSrc: runtime.getURL("assets/art-cruise/hint/art-cruise-hint.webp"),
+    placement: "right",
+    priority: 5,
+    condition: isNoModalOpen,
+  },
 };
 
 const pendingHints = new Map<FeatureHintId, HTMLElement>();
@@ -305,6 +316,7 @@ const tryShowNextHint = async (): Promise<void> => {
       target,
       message: message ?? t(definition.messageKey!),
       iconSrc: definition.iconSrc ?? DEFAULT_HINT_ICON_SRC,
+      imageSrc: definition.imageSrc,
       placement: definition.placement,
       onClose: async () => {
         nextHintAvailableAt = Date.now() + (await getFeatureHintCooldownMs());

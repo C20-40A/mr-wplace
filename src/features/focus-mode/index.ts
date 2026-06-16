@@ -80,6 +80,10 @@ const createButton = (container: Element) => {
   container.prepend(btn);
 };
 
+export const activateFocusMode = () => activate();
+export const deactivateFocusMode = () => deactivate();
+export const isFocusModeActive = () => active;
+
 export class FocusMode {
   constructor() {
     setupElementObserver([

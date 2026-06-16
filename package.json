@@ -5,7 +5,8 @@
   "scripts": {
     "build": "esbuild src/content.ts src/popup.ts src/inject.ts src/inject/workers/migration.worker.ts --bundle --outdir=dist --minify --target=chrome88 --alias:@=./src",
     "copy-assets": "cp -r public/* .",
-    "dev": "npm run copy-assets && npm run build -- --watch",
+    "prepare:dev-extension": "node ./scripts/prepare-dev-extension.js",
+    "dev": "npm run prepare:dev-extension && esbuild src/content.ts src/popup.ts src/inject.ts src/inject/workers/migration.worker.ts --bundle --outdir=.dev-extension/dist --minify --target=chrome88 --alias:@=./src --watch",
     "manifest:chrome": "node ./scripts/generate-manifest.js chrome",
     "manifest:firefox": "node ./scripts/generate-manifest.js firefox",
     "build:chrome": "npm run manifest:chrome && npm run build",
@@ -31,6 +32,7 @@
     "ts-morph": "^27.0.2"
   },
   "dependencies": {
-    "jszip": "^3.10.1"
+    "jszip": "^3.10.1",
+    "pixi.js": "^8.19.0"
   }
 }

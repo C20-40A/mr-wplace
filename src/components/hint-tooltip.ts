@@ -13,6 +13,7 @@ export interface HintTooltipOptions {
   message: string;
   title?: string;
   iconSrc?: string;
+  imageSrc?: string;
   placement?: HintPlacement;
   offset?: number;
   onClose?: (markDismissed: boolean) => void | Promise<void>;
@@ -268,6 +269,25 @@ const ensureStyles = (): void => {
     .${TOOLTIP_CLASS} [data-role="message"]::before {
       content: ">> ";
     }
+
+    .${TOOLTIP_CLASS}[data-has-image="true"] {
+      max-width: min(248px, calc(100vw - 1.5rem));
+    }
+
+    .${TOOLTIP_CLASS} [data-role="image-frame"] {
+      margin-top: 8px;
+      border: 1px solid #fff;
+      padding: 2px;
+      background: #000;
+      line-height: 0;
+    }
+
+    .${TOOLTIP_CLASS} [data-role="image"] {
+      display: block;
+      width: 100%;
+      height: auto;
+      image-rendering: pixelated;
+    }
   `;
 
   (document.head || document.documentElement).appendChild(style);
@@ -475,6 +495,23 @@ const dequeueAndShow = async (): Promise<void> => {
   header.appendChild(closeButton);
   tooltip.appendChild(header);
   tooltip.appendChild(message);
+
+  if (options.imageSrc) {
+    const imageFrame = document.createElement("div");
+    imageFrame.dataset.role = "image-frame";
+    const image = document.createElement("img");
+    image.dataset.role = "image";
+    image.src = options.imageSrc;
+    image.alt = "";
+    tooltip.dataset.hasImage = "true";
+    // 画像読み込み完了後に位置を再計算（高さ確定でズレ防止）
+    image.addEventListener("load", () => {
+      if (activeHint?.id === options.id) handlePositionUpdate();
+    });
+    imageFrame.appendChild(image);
+    tooltip.appendChild(imageFrame);
+  }
+
   document.body.appendChild(tooltip);
 
   const placement = options.placement ?? "top";
