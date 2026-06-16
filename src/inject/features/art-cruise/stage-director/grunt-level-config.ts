@@ -40,11 +40,14 @@ export const ART_CRUISE_GRUNT_LEVEL_POOLS: ArtCruiseGruntLevelPool[] = [
     minLevel: 1,
     clearGapMs: 1_500,
     formations: [
-      formation("sidePeekers", ["ringPulse"]),
-      formation("opening", ["aimedFan"]),
-      formation("opening", ["spreadBurst"]),
-      // vFormation は隊形が薄いので弱でも spreadBurst で密度を補う
-      formation("vFormation", ["spreadBurst"]),
+      formation("topLine", ["aimedBurst"]),
+      formation("sidePeekers", ["aimedBurst"]),
+      formation("straightPass", ["aimedBurst"]),
+      formation("opening", ["aimedBurst"]),
+      formation("vFormation", ["aimedBurst"]),
+      formation("rollingWave", ["aimedBurst"]),
+      formation("mirroredDiagonals", ["aimedBurst"]),
+      formation("snake", ["aimedBurst"]),
     ],
   },
   {
@@ -53,14 +56,12 @@ export const ART_CRUISE_GRUNT_LEVEL_POOLS: ArtCruiseGruntLevelPool[] = [
     clearGapMs: 1_200,
     formations: [
       formation("topLine", ["spreadBurst"]),
-      formation("topLine", ["aimedFan"]),
-      formation("sidePeekers", ["aimedFan"]),
-      formation("opening", ["aimedFan", "spreadBurst"]),
+      formation("sidePeekers", ["aimedBurst"]),
+      formation("opening", ["spreadBurst"]),
       formation("straightPass", ["aimedFan"]),
       formation("vFormation", ["aimedFan", "spreadBurst"]),
       formation("mirroredDiagonals", ["aimedFan"]),
-      // むずいformationの先出し1枠。aimedBurstは連結で混ぜる。
-      formation("rollingWave", ["aimedFan", "aimedBurst"]),
+      formation("rollingWave", ["spreadBurst", "aimedBurst"]),
     ],
   },
   {
@@ -71,12 +72,13 @@ export const ART_CRUISE_GRUNT_LEVEL_POOLS: ArtCruiseGruntLevelPool[] = [
       formation("topLine", ["ringPulse"]),
       formation("straightPass", ["spreadBurst", "aimedFan"]),
       formation("sideCrestWave", ["aimedFan"]),
+      formation("opening", ["spreadBurst", "aimedFan"]),
       formation("mirroredDiagonals", ["spreadBurst", "aimedFan"]),
       formation("vFormation", ["switchFan", "aimedFan"]),
       formation("rollingWave", ["aimedFan", "spreadBurst"]),
       formation("staggeredSwarm", ["spreadBurst", "aimedFan"]),
       // snake はかなりむずいので導入は弱patternで
-      formation("snake", ["aimedFan"]),
+      formation("snake", ["spreadBurst"]),
     ],
   },
   {
@@ -90,7 +92,7 @@ export const ART_CRUISE_GRUNT_LEVEL_POOLS: ArtCruiseGruntLevelPool[] = [
       formation("vFormation", ["switchFan", "spreadBurst"]),
       formation("rollingWave", ["aimedFan", "switchFan", "spreadBurst"]),
       formation("staggeredSwarm", ["switchFan", "spreadBurst", "aimedFan"]),
-      formation("snake", ["spreadBurst"]),
+      formation("snake", ["switchFan"]),
     ],
   },
   {
@@ -117,6 +119,7 @@ export const ART_CRUISE_GRUNT_LEVEL_POOLS: ArtCruiseGruntLevelPool[] = [
       formation("sideCrestWave", ["spreadBurst", "crossFire"]),
       formation("mirroredDiagonals", ["crossFire", "switchFan"]),
       formation("vFormation", ["spiralShot", "switchFan"]),
+      formation("opening", ["spiralShot", "spreadBurst"]),
       formation("rollingWave", ["aimedFan", "crossFire", "spreadBurst"]),
       formation("staggeredSwarm", ["crossFire", "spreadBurst", "switchFan"]),
       // snake はかなりむずいので spiralShot は1枠のみ、後続は弱patternで緩める
