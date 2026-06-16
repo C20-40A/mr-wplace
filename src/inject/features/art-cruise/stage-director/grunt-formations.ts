@@ -22,6 +22,11 @@ const grunt = (
   speedScale,
 });
 
+// sidePeek 隊の出現端を左右ランダムで決める。左 = 画面外左(-0.08)、右 = 画面外右(1.08)。
+// spawner 側が xRatio>0.5 を内向き(左へ)、<0.5 を内向き(右へ)に矯正するため、
+// この xRatio をそのまま渡せば左右どちらの端からでも確実に画面内へ入ってくる。
+const pickSidePeekXRatio = (): number => (Math.random() < 0.5 ? -0.08 : 1.08);
+
 /**
  * フォーメーションごとの spawn 列生成関数。
  * 隊形(movement/座標) のみを定義し、bulletPattern は grunt-level-config 側で割り当てる。
@@ -68,22 +73,30 @@ export const GRUNT_FORMATION_BUILDERS = {
     grunt(0, -0.12, 0.98, 0.66, "diagonalLeft"),
   ],
 
-  // 横からのぞき込む小隊
-  sidePeekers: (): ArtCruiseStageSpawn[] => [
-    grunt(550, 0.25, 0.85, 1.08, "sidePeek"),
-    grunt(400, 0.44, 0.89, 1.08, "sidePeek"),
-    grunt(400, 0.63, 0.93, 1.08, "sidePeek"),
-  ],
+  // 横からのぞき込む小隊。spawn ごとに左右どちらの端から出すかをランダムで決め、
+  // 隊全体を同じ端へ揃える(xRatio を side とセットで決めるので spawner の内向き矯正で
+  // 確実に画面内へ入る。過去のように side だけランダムだと逆端へ飛び出して即消滅する)。
+  sidePeekers: (): ArtCruiseStageSpawn[] => {
+    const xRatio = pickSidePeekXRatio();
+    return [
+      grunt(550, 0.25, 0.85, xRatio, "sidePeek"),
+      grunt(400, 0.44, 0.89, xRatio, "sidePeek"),
+      grunt(400, 0.63, 0.93, xRatio, "sidePeek"),
+    ];
+  },
 
-  // 横から波状に押し寄せる
-  sideCrestWave: (): ArtCruiseStageSpawn[] => [
-    grunt(520, 0.24, 0.9, 1.08, "sidePeek"),
-    grunt(70, 0.34, 0.94, 1.08, "sidePeek"),
-    grunt(70, 0.44, 0.98, 1.08, "sidePeek"),
-    grunt(740, 0.56, 1, 1.08, "sidePeek"),
-    grunt(80, 0.46, 0.96, 1.08, "sidePeek"),
-    grunt(80, 0.36, 0.92, 1.08, "sidePeek"),
-  ],
+  // 横から波状に押し寄せる。sidePeekers と同様に隊全体を同じ端へ揃える。
+  sideCrestWave: (): ArtCruiseStageSpawn[] => {
+    const xRatio = pickSidePeekXRatio();
+    return [
+      grunt(520, 0.24, 0.9, xRatio, "sidePeek"),
+      grunt(70, 0.34, 0.94, xRatio, "sidePeek"),
+      grunt(70, 0.44, 0.98, xRatio, "sidePeek"),
+      grunt(740, 0.56, 1, xRatio, "sidePeek"),
+      grunt(80, 0.46, 0.96, xRatio, "sidePeek"),
+      grunt(80, 0.36, 0.92, xRatio, "sidePeek"),
+    ];
+  },
 
   // ボス撃破直後の追い込みラッシュ
   afterBossRush: (): ArtCruiseStageSpawn[] => [
