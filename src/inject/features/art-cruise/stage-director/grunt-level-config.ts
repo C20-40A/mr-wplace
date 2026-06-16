@@ -56,11 +56,11 @@ export const ART_CRUISE_GRUNT_LEVEL_POOLS: ArtCruiseGruntLevelPool[] = [
     clearGapMs: 1_200,
     formations: [
       formation("topLine", ["spreadBurst"]),
-      formation("sidePeekers", ["aimedBurst"]),
+      formation("sidePeekers", ["aimedBurst", "ringPulse"]),
       formation("opening", ["spreadBurst"]),
-      formation("straightPass", ["aimedFan"]),
-      formation("vFormation", ["aimedFan", "spreadBurst"]),
-      formation("mirroredDiagonals", ["aimedFan"]),
+      formation("straightPass", ["aimedFan", "ringPulse", "aimedBurst"]),
+      formation("vFormation", ["aimedFan", "spreadBurst", "ringPulse"]),
+      formation("mirroredDiagonals", ["aimedBurst", "aimedFan", "ringPulse"]),
       formation("rollingWave", ["spreadBurst", "aimedBurst"]),
     ],
   },
@@ -71,14 +71,14 @@ export const ART_CRUISE_GRUNT_LEVEL_POOLS: ArtCruiseGruntLevelPool[] = [
     formations: [
       formation("topLine", ["ringPulse"]),
       formation("straightPass", ["spreadBurst", "aimedFan"]),
-      formation("sideCrestWave", ["aimedFan"]),
-      formation("opening", ["spreadBurst", "aimedFan"]),
-      formation("mirroredDiagonals", ["spreadBurst", "aimedFan"]),
-      formation("vFormation", ["switchFan", "aimedFan"]),
+      formation("sidePeekers", ["spiralShot"]),
+      formation("opening", ["crossFire", "aimedFan", "spiralShot"]),
+      formation("mirroredDiagonals", ["spreadBurst", "switchFan"]),
+      formation("vFormation", ["ringPulse"]),
+      formation("sideCrestWave", ["ringPulse"]),
       formation("rollingWave", ["aimedFan", "spreadBurst"]),
       formation("staggeredSwarm", ["spreadBurst", "aimedFan"]),
-      // snake はかなりむずいので導入は弱patternで
-      formation("snake", ["spreadBurst"]),
+      formation("snake", ["spreadBurst", "aimedFan"]),
     ],
   },
   {
@@ -87,6 +87,8 @@ export const ART_CRUISE_GRUNT_LEVEL_POOLS: ArtCruiseGruntLevelPool[] = [
     clearGapMs: 850,
     formations: [
       formation("straightPass", ["crossFire", "aimedFan"]),
+      formation("topLine", ["spiralShot"]),
+      formation("topLine", ["ringPulse"]),
       formation("sideCrestWave", ["spreadBurst", "aimedFan"]),
       formation("mirroredDiagonals", ["crossFire", "aimedFan"]),
       formation("vFormation", ["switchFan", "spreadBurst"]),
@@ -101,7 +103,6 @@ export const ART_CRUISE_GRUNT_LEVEL_POOLS: ArtCruiseGruntLevelPool[] = [
     clearGapMs: 700,
     formations: [
       formation("straightPass", ["crossFire", "switchFan"]),
-      formation("sideCrestWave", ["spreadBurst", "switchFan"]),
       formation("mirroredDiagonals", ["switchFan", "spreadBurst"]),
       // spiralShot は避けやすい簡単formationに1枠だけ混ぜて山を作る
       formation("vFormation", ["spiralShot", "aimedFan"]),
@@ -116,7 +117,6 @@ export const ART_CRUISE_GRUNT_LEVEL_POOLS: ArtCruiseGruntLevelPool[] = [
     clearGapMs: 650,
     formations: [
       formation("straightPass", ["crossFire", "spreadBurst"]),
-      formation("sideCrestWave", ["spreadBurst", "crossFire"]),
       formation("mirroredDiagonals", ["crossFire", "switchFan"]),
       formation("vFormation", ["spiralShot", "switchFan"]),
       formation("opening", ["spiralShot", "spreadBurst"]),
