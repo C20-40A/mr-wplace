@@ -141,7 +141,9 @@ export class ArtCruiseGameLoop {
   private readonly enemyManager = new ArtCruiseEnemyManager(
     this.gameLayer,
     this.enemyBulletManager,
-    (enemy) => this.handleEnemyRemoved(enemy),
+    // NOTE: class field の初期化順序により、ここで this.handleEnemyRemoved を
+    // 直接参照すると（定義が後方のため）undefined が渡る。必ずラッパーで遅延評価する。
+    (enemy, defeated) => this.handleEnemyRemoved(enemy, defeated),
     (seId) => this.handleEnemyShot(seId),
   );
   private readonly bossController = new ArtCruiseBossController();
@@ -752,7 +754,7 @@ export class ArtCruiseGameLoop {
     });
   };
 
-  private handleEnemyRemoved = (enemy: ArtCruiseEnemyEntity) => {
+  private handleEnemyRemoved = (enemy: ArtCruiseEnemyEntity, defeated: boolean) => {
     // 共有 texture の参照を解放。最後の参照が外れた退避済み texture はここで破棄される。
     const assetId = enemy.rawData.dynamicAsset?.id;
     if (assetId) this.enemyGraphics.release(assetId);
@@ -762,7 +764,7 @@ export class ArtCruiseGameLoop {
       this.bossController.clearBoss(enemy);
       this.options.onBossHudHide?.();
       this.audio?.transitionToStage();
-    } else this.audio?.playSe("grunt-down");
+    } else if (defeated) this.audio?.playSe("grunt-down");
 
     if (enemy.squadId) {
       const squad = this.squads.find((s) => s.id === enemy.squadId);

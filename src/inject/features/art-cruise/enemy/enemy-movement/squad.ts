@@ -38,6 +38,9 @@ export class ArtCruiseSquad {
   }
 
   update(_now: number, dt: number) {
+    // destroy 済みの view は `enemy?.view` ガードを素通りし、内部 transform が
+    // null のため `.x`/`.y` getter でクラッシュする。コマンド実行前に掃除する。
+    this.enemies = this.enemies.filter((e) => e?.view && !e.view.destroyed);
     if (this.enemies.length === 0) return;
 
     // 全コマンドを撃ち切ったら下方向へ退出させ、画面外で除去させる

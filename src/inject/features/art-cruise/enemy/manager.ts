@@ -19,7 +19,7 @@ export class ArtCruiseEnemyManager {
   constructor(
     private readonly container: Container,
     private readonly bulletManager: ArtCruiseEnemyBulletManager,
-    private readonly onRemove?: (enemy: ArtCruiseEnemyEntity) => void,
+    private readonly onRemove?: (enemy: ArtCruiseEnemyEntity, defeated: boolean) => void,
     private readonly onShoot?: (seId?: ArtCruiseSeId) => void,
   ) {
     this.container.addChild(this.launcherContainer);
@@ -56,7 +56,7 @@ export class ArtCruiseEnemyManager {
 
       // 画面外判定
       if (enemy.isOutOfBounds(bounds, now)) {
-        this.removeEnemy(i);
+        this.removeEnemy(i, false);
       }
     }
 
@@ -100,7 +100,7 @@ export class ArtCruiseEnemyManager {
     this.launcherSprites = [];
   }
 
-  removeEnemy(index: number) {
+  removeEnemy(index: number, defeated = true) {
     const enemy = this.enemies[index];
     if (!enemy) return null;
 
@@ -108,7 +108,7 @@ export class ArtCruiseEnemyManager {
     const last = this.enemies.pop();
     if (last && index < this.enemies.length) this.enemies[index] = last;
     this.launcherOriginsDirty = true;
-    this.onRemove?.(enemy);
+    this.onRemove?.(enemy, defeated);
     return enemy;
   }
 
