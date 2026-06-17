@@ -158,10 +158,11 @@ const handleGalleryImport = async (data: {
 const handleGalleryExport = async (data: {
   requestId: string;
   workerUrl: string;
+  format?: "png" | "wplace";
 }): Promise<void> => {
-  const { requestId, workerUrl } = data;
+  const { requestId, workerUrl, format } = data;
   try {
-    const result = await exportAndDownload(workerUrl, (progress) => {
+    const result = await exportAndDownload(workerUrl, format, (progress) => {
       window.postMessage(
         {
           source: "mr-wplace-gallery-export-response",

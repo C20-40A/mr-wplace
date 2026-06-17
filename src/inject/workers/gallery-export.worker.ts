@@ -12,16 +12,22 @@
  */
 
 import JSZip from "jszip";
+import { tilePixelToLatLng } from "@/utils/coordinate";
 
 const DB_NAME = "mr-wplace-gallery-v2";
 const DB_VERSION = 2;
 const STORE_IMAGES = "images";
 const STORE_METADATA = "metadata";
 
+type ExportFormat = "png" | "wplace";
+
 interface GalleryMetadata {
   id: string;
   title?: string;
   coords?: { TLX: number; TLY: number; PxX: number; PxY: number };
+  width: number;
+  height: number;
+  visible?: boolean;
   zIndex: number;
 }
 
@@ -91,7 +97,67 @@ const buildFilename = (meta: GalleryMetadata, blob: Blob): string => {
     : `${meta.zIndex}__${TLX}_${TLY}_${PxX}_${PxY}.${ext}`;
 };
 
-const runExport = async (): Promise<void> => {
+// .wplace 用 png風内部ファイル名（単体エクスポート createPngFilename と互換）
+const buildWplaceImageName = (meta: GalleryMetadata): string => {
+  const { TLX, TLY, PxX, PxY } = meta.coords!;
+  const coords = `${TLX}-${TLY}-${PxX}-${PxY}`;
+  const base = meta.title ? `${meta.title}_${coords}` : coords;
+  return sanitizeTitle(base) + ".png";
+};
+
+const buildWplaceFilename = (meta: GalleryMetadata): string => {
+  const base = meta.title || `image_${meta.zIndex}`;
+  return sanitizeTitle(base) + ".wplace";
+};
+
+const blobToDataUrl = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+
+// 単体エクスポート downloadWplaceFile と同じ .wplace payload を生成
+const buildWplacePayload = async (
+  meta: GalleryMetadata,
+  blob: Blob
+): Promise<unknown> => {
+  const { TLX, TLY, PxX, PxY } = meta.coords!;
+  const northWest = tilePixelToLatLng(TLX, TLY, PxX, PxY);
+  const southEast = tilePixelToLatLng(
+    TLX,
+    TLY,
+    PxX + meta.width,
+    PxY + meta.height
+  );
+  const dataUrl = await blobToDataUrl(blob);
+
+  return {
+    id:
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `mr-wplace-${Date.now()}-${meta.zIndex}`,
+    schemaVersion: "1",
+    name: buildWplaceImageName(meta),
+    opacity: 1,
+    image: { dataUrl, width: meta.width, height: meta.height },
+    bounds: {
+      north: northWest.lat,
+      south: southEast.lat,
+      west: northWest.lng,
+      east: southEast.lng,
+    },
+    colorMetric: "lab",
+    dithering: false,
+    order: meta.zIndex,
+    locked: false,
+    hasPlaced: true,
+    visible: meta.visible !== false,
+  };
+};
+
+const runExport = async (format: ExportFormat): Promise<void> => {
   const db = await openDatabase();
 
   const allMetadata = await getAllMetadata(db);
@@ -113,7 +179,14 @@ const runExport = async (): Promise<void> => {
     const blob = await recordToBlob(record);
     if (!blob) continue;
 
-    zip.file(buildFilename(meta, blob), blob, { compression: "STORE" });
+    if (format === "wplace") {
+      const payload = await buildWplacePayload(meta, blob);
+      zip.file(buildWplaceFilename(meta), JSON.stringify(payload, null, 2), {
+        compression: "DEFLATE",
+      });
+    } else {
+      zip.file(buildFilename(meta, blob), blob, { compression: "STORE" });
+    }
     added++;
 
     self.postMessage({
@@ -129,8 +202,13 @@ const runExport = async (): Promise<void> => {
     return;
   }
 
+  // .wplace は base64 JSON テキストなので DEFLATE で圧縮、png は元々圧縮済みなので STORE
   const zipBlob = await zip.generateAsync(
-    { type: "blob", compression: "STORE", streamFiles: true },
+    {
+      type: "blob",
+      compression: format === "wplace" ? "DEFLATE" : "STORE",
+      streamFiles: true,
+    },
     (metadata) => {
       self.postMessage({
         type: "progress",
@@ -143,9 +221,10 @@ const runExport = async (): Promise<void> => {
   self.postMessage({ type: "done", blob: zipBlob, count: added });
 };
 
-self.onmessage = async () => {
+self.onmessage = async (event: MessageEvent<{ format?: ExportFormat }>) => {
+  const format: ExportFormat = event.data?.format === "wplace" ? "wplace" : "png";
   try {
-    await runExport();
+    await runExport(format);
   } catch (error) {
     self.postMessage({
       type: "error",

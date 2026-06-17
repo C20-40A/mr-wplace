@@ -6,6 +6,7 @@ import { showFeatureHint } from "@/features/feature-hints";
 import { runtime } from "@/utils/browser-api";
 import { Toast } from "@/components/toast";
 import { exportGallery } from "@/utils/inject-bridge";
+import { showDownloadFormatDialog } from "../image-detail/download-dialog";
 
 export type GallerySortType = "layer" | "distance" | "created";
 
@@ -173,6 +174,9 @@ export class GalleryListUI {
     ) as HTMLButtonElement | null;
     if (!btn || btn.disabled) return;
 
+    const format = await showDownloadFormatDialog(true);
+    if (!format) return;
+
     const originalHtml = btn.innerHTML;
     btn.disabled = true;
     const setLabel = (text: string) => {
@@ -184,7 +188,7 @@ export class GalleryListUI {
       const workerUrl = runtime.getURL(
         "dist/inject/workers/gallery-export.worker.js",
       );
-      const result = await exportGallery(workerUrl, (progress) => {
+      const result = await exportGallery(workerUrl, format, (progress) => {
         if (progress.phase === "read") {
           setLabel(`${progress.current}/${progress.total}`);
         } else {

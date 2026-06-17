@@ -170,13 +170,16 @@ export const importGalleryFromZip = async (
 // Export (Worker-based, off-thread ZIP)
 // ============================================
 
+export type GalleryExportFormat = "png" | "wplace";
+
 export const exportGalleryToZip = async (
   workerUrl: string,
+  format: GalleryExportFormat = "png",
   onProgress?: (progress: ZipExportProgress) => void,
 ): Promise<ZipExportResult> => {
   const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
-  const filename = `wplace_gallery_${ts}.zip`;
-  return runZipExportWorker(workerUrl, {}, filename, onProgress);
+  const filename = `wplace_gallery_${format}_${ts}.zip`;
+  return runZipExportWorker(workerUrl, { format }, filename, onProgress);
 };
 
 // ============================================
@@ -223,8 +226,9 @@ export const openFilePickerAndImport = (): Promise<{ success: number; failed: nu
 
 export const exportAndDownload = (
   workerUrl: string,
+  format: GalleryExportFormat = "png",
   onProgress?: (progress: ZipExportProgress) => void,
-): Promise<ZipExportResult> => exportGalleryToZip(workerUrl, onProgress);
+): Promise<ZipExportResult> => exportGalleryToZip(workerUrl, format, onProgress);
 
 // ============================================
 // Reset (delete all)

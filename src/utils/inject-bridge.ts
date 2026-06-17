@@ -991,14 +991,16 @@ export const exportSnapshots = (
 /**
  * Request inject side to export the gallery to a ZIP off the main thread.
  * @param workerUrl - runtime.getURL(...) for the gallery export worker
+ * @param format - "png" (raw images) or "wplace" (.wplace JSON per image)
  */
 export const exportGallery = (
   workerUrl: string,
+  format: "png" | "wplace" = "png",
   onProgress?: (progress: ZipExportProgress) => void,
 ): Promise<ZipExportResult> =>
   requestZipExport(
     "mr-wplace-gallery-export",
     "mr-wplace-gallery-export-response",
-    { workerUrl },
+    { workerUrl, format },
     onProgress,
   );
