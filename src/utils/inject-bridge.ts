@@ -897,3 +897,84 @@ export const setMapProjectionTracking = (enabled: boolean): void => {
     "*",
   );
 };
+
+// ============================================
+// Snapshot Export (Worker-based, off-thread ZIP)
+// ============================================
+
+export type SnapshotExportScope =
+  | { scope: "all" }
+  | { scope: "tile"; tileX: number; tileY: number };
+
+export type SnapshotExportProgress =
+  | { phase: "read"; current: number; total: number }
+  | { phase: "pack"; percent: number };
+
+export type SnapshotExportResult = {
+  status: "done" | "empty";
+  count: number;
+};
+
+/**
+ * Request inject side to export snapshots to a ZIP off the main thread.
+ * Inject spawns a Worker (workerUrl) that reads IndexedDB + packs ZIP, then
+ * triggers the download itself. Progress is streamed via onProgress.
+ *
+ * @param workerUrl - runtime.getURL("dist/snapshot-export.worker.js") from content
+ * @param scope - all snapshots or a single tile
+ * @param onProgress - optional progress callback
+ */
+export const exportSnapshots = (
+  workerUrl: string,
+  scope: SnapshotExportScope,
+  onProgress?: (progress: SnapshotExportProgress) => void,
+): Promise<SnapshotExportResult> => {
+  const requestId = generateRequestId();
+  const IDLE_TIMEOUT_MS = 30000;
+
+  return new Promise((resolve, reject) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const resetTimeout = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        window.removeEventListener("message", handler);
+        reject(new Error("Snapshot export timed out"));
+      }, IDLE_TIMEOUT_MS);
+    };
+
+    const handler = (event: MessageEvent) => {
+      const data = event.data;
+      if (
+        data?.source !== "mr-wplace-snapshot-export-response" ||
+        data.requestId !== requestId
+      )
+        return;
+
+      if (data.type === "progress") {
+        resetTimeout();
+        onProgress?.(data.progress as SnapshotExportProgress);
+        return;
+      }
+
+      clearTimeout(timeoutId);
+      window.removeEventListener("message", handler);
+
+      if (data.type === "error") {
+        reject(new Error(data.error || "Snapshot export failed"));
+        return;
+      }
+      resolve({
+        status: data.type === "empty" ? "empty" : "done",
+        count: data.count ?? 0,
+      });
+    };
+
+    window.addEventListener("message", handler);
+    window.postMessage(
+      { source: "mr-wplace-snapshot-export", requestId, workerUrl, ...scope },
+      "*",
+    );
+    resetTimeout();
+  });
+};

@@ -596,4 +596,5 @@ export const esTranslations = {
   hint_tile_crop_save: "¡Nueva función! Puedes detectar pixel art y guardarlo.",
   text_draw_line_spacing: "Espaciado entre líneas",
   hint_art_cruise_btn: "¡Atraviesa tu pixel art en este minijuego de disparos!",
+  no_snapshots_to_export: "No hay capturas para exportar",
 };

@@ -15,6 +15,7 @@ import { storage, runtime } from "@/utils/browser-api";
 import { getCurrentPosition } from "@/utils/position";
 import { latLngToTilePixel } from "@/utils/coordinate";
 import { Tutorial } from "@/features/tutorial";
+import { runSnapshotExport } from "../utils/export-snapshots";
 
 type TileSortType = "distance" | "last_updated" | "tile_count" | "name";
 const TILE_SORT_KEY = "wplace-studio-tile-sort";
@@ -39,6 +40,9 @@ export class TileListRoute {
       <div class="mb-2" style="display: flex; gap: 0.5rem; align-items: center;">
         <button id="wps-import-snapshot-btn" class="btn btn-sm btn-neutral">
           ${"import"}
+        </button>
+        <button id="wps-export-snapshot-btn" class="btn btn-sm btn-neutral">
+          <span>${"export"}</span>
         </button>
         <button id="wps-tile-merge-btn" class="btn btn-sm btn-primary">
           ${"merge_tiles"}
@@ -74,6 +78,15 @@ export class TileListRoute {
       .querySelector("#wps-import-snapshot-btn")
       ?.addEventListener("click", () => {
         router.navigate("import-snapshot");
+      });
+
+    // Export all snapshots event
+    container
+      .querySelector("#wps-export-snapshot-btn")
+      ?.addEventListener("click", (e) => {
+        runSnapshotExport(e.currentTarget as HTMLButtonElement, {
+          scope: "all",
+        });
       });
 
     // Merge button event

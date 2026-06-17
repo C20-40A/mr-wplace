@@ -615,4 +615,5 @@ export const jaTranslations = {
   hint_tile_crop_save: "新機能！ ピクセルアートを判定して保存できます",
   text_draw_line_spacing: "行間",
   hint_art_cruise_btn: "シューティングでドット絵の世界を駆け抜けよう！",
+  no_snapshots_to_export: "エクスポートできるスナップショットがありません",
 };

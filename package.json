@@ -3,10 +3,10 @@
   "version": "2.13.0",
   "license": "MPL-2.0",
   "scripts": {
-    "build": "esbuild src/content.ts src/popup.ts src/inject.ts src/inject/workers/migration.worker.ts --bundle --outdir=dist --minify --target=chrome88 --alias:@=./src",
+    "build": "esbuild src/content.ts src/popup.ts src/inject.ts src/inject/workers/migration.worker.ts src/inject/workers/snapshot-export.worker.ts --bundle --outdir=dist --minify --target=chrome88 --alias:@=./src",
     "copy-assets": "cp -r public/* .",
     "prepare:dev-extension": "node ./scripts/prepare-dev-extension.js",
-    "dev": "npm run prepare:dev-extension && esbuild src/content.ts src/popup.ts src/inject.ts src/inject/workers/migration.worker.ts --bundle --outdir=.dev-extension/dist --minify --target=chrome88 --alias:@=./src --watch",
+    "dev": "npm run prepare:dev-extension && esbuild src/content.ts src/popup.ts src/inject.ts src/inject/workers/migration.worker.ts src/inject/workers/snapshot-export.worker.ts --bundle --outdir=.dev-extension/dist --minify --target=chrome88 --alias:@=./src --watch",
     "manifest:chrome": "node ./scripts/generate-manifest.js chrome",
     "manifest:firefox": "node ./scripts/generate-manifest.js firefox",
     "build:chrome": "npm run manifest:chrome && npm run build",

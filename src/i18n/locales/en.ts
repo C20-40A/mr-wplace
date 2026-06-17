@@ -612,4 +612,5 @@ Do not use this feature to paint actual pixels.`,
   hint_tile_crop_save: "New feature! You can detect pixel art and save it.",
   text_draw_line_spacing: "Line Spacing",
   hint_art_cruise_btn: "Blast through your pixel art in this shooting mini-game!",
+  no_snapshots_to_export: "No snapshots to export",
 };

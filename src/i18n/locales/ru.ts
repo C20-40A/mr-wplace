@@ -599,4 +599,5 @@ export const ruTranslations = {
   hint_tile_crop_save: "Новая функция! Вы можете распознать пиксель-арт и сохранить его.",
   text_draw_line_spacing: "Межстрочный интервал",
   hint_art_cruise_btn: "Прорывайтесь сквозь пиксель-арт в этой мини-игре-шутере!",
+  no_snapshots_to_export: "Нет снимков для экспорта",
 };

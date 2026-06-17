@@ -57,6 +57,10 @@ import {
   resetGallery,
 } from "./utils/gallery-io";
 import {
+  exportSnapshotsToZip,
+  type SnapshotExportScope,
+} from "./utils/snapshot-io";
+import {
   handleDangerousAuthInit,
   isDangerousMessageAuthorized,
 } from "./security/message-auth";
@@ -169,6 +173,59 @@ const handleGalleryExport = async (data: {
       {
         source: "mr-wplace-gallery-export-response",
         requestId: data.requestId,
+        error: error instanceof Error ? error.message : String(error),
+      },
+      "*",
+    );
+  }
+};
+
+/**
+ * Handle snapshot export request (Worker-based, off-thread ZIP)
+ */
+const handleSnapshotExport = async (data: {
+  requestId: string;
+  workerUrl: string;
+  scope: "all" | "tile";
+  tileX?: number;
+  tileY?: number;
+}): Promise<void> => {
+  const { requestId, workerUrl } = data;
+  const scope: SnapshotExportScope =
+    data.scope === "tile"
+      ? { scope: "tile", tileX: data.tileX!, tileY: data.tileY! }
+      : { scope: "all" };
+
+  try {
+    const result = await exportSnapshotsToZip(workerUrl, scope, {
+      onProgress: (progress) => {
+        window.postMessage(
+          {
+            source: "mr-wplace-snapshot-export-response",
+            requestId,
+            type: "progress",
+            progress,
+          },
+          "*",
+        );
+      },
+    });
+
+    window.postMessage(
+      {
+        source: "mr-wplace-snapshot-export-response",
+        requestId,
+        type: result.status,
+        count: result.count,
+      },
+      "*",
+    );
+  } catch (error) {
+    window.postMessage(
+      {
+        source: "mr-wplace-snapshot-export-response",
+        requestId,
+        type: "error",
         error: error instanceof Error ? error.message : String(error),
       },
       "*",
@@ -341,6 +398,7 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-gallery-import": handleGalleryImport,
   "mr-wplace-gallery-export": handleGalleryExport,
   "mr-wplace-gallery-reset": handleGalleryReset,
+  "mr-wplace-snapshot-export": handleSnapshotExport,
   "mr-wplace-request-user-data": handleUserDataRecoveryRequest,
 };
 
