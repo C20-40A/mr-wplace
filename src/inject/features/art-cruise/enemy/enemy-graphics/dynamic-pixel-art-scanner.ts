@@ -52,7 +52,16 @@ type WorkerCandidate = {
 
 type WorkerScanResponse = {
   candidates?: WorkerCandidate[];
+  nextOffset?: number;
+  total?: number;
   error?: string;
+};
+
+type ScanResult = {
+  candidates: DynamicPixelArtEnemyCandidate[];
+  // 次回スキャン再開位置 (px index)。全走査済みなら 0。total は走査範囲のpx総数。
+  nextOffset: number;
+  total: number;
 };
 
 const NEIGHBOR_OFFSETS = [
@@ -168,22 +177,30 @@ const getScannerWorker = () => {
         };
       };
 
-      const scan = (tileKey, width, height, data, scanOffsetRatio) => {
+      const scan = (tileKey, width, height, data, startOffset, maxCandidates) => {
         const total = width * height;
-        const scanOffset = Math.floor(scanOffsetRatio * total) % (total || 1);
+        // startOffset < 0 は「ランダム開始」の合図。それ以外は px 絶対位置を正規化。
+        const scanOffset =
+          startOffset < 0
+            ? Math.floor(Math.random() * total) % (total || 1)
+            : startOffset % (total || 1);
+        const limit = maxCandidates > 0 ? maxCandidates : MAX_CANDIDATES;
         const visited = new Uint8Array(total);
         const queue = new Int32Array(total);
         const candidates = [];
 
-        for (let i = 0; i < total; i++) {
-          if (candidates.length >= MAX_CANDIDATES) break;
+        let i = 0;
+        for (; i < total; i++) {
+          if (candidates.length >= limit) break;
           const start = (scanOffset + i) % total;
           if (visited[start] || !isOpaque(data, start)) continue;
 
           const result = extractComponent(tileKey, width, height, data, visited, queue, start);
           if (result) candidates.push(result);
         }
-        return candidates;
+        // 次回はこの続き(走査済みの直後)から再開する。全走査し切ったら 0 に戻す。
+        const nextOffset = i >= total ? 0 : (scanOffset + i) % total;
+        return { candidates, nextOffset, total };
       };
 
       // blob 経路: worker 内で decode (createImageBitmap + OffscreenCanvas) して
@@ -201,7 +218,7 @@ const getScannerWorker = () => {
 
       self.onmessage = async (event) => {
         try {
-          const { tileKey, width, height, buffer, blob, scanOffsetRatio } = event.data;
+          const { tileKey, width, height, buffer, blob, startOffset, maxCandidates } = event.data;
           let data;
           let scanWidth = width;
           let scanHeight = height;
@@ -214,8 +231,8 @@ const getScannerWorker = () => {
             data = new Uint8ClampedArray(buffer);
           }
 
-          const candidates = scan(tileKey, scanWidth, scanHeight, data, scanOffsetRatio);
-          self.postMessage({ candidates }, candidates.map((candidate) => candidate.buffer));
+          const { candidates, nextOffset, total } = scan(tileKey, scanWidth, scanHeight, data, startOffset, maxCandidates);
+          self.postMessage({ candidates, nextOffset, total }, candidates.map((candidate) => candidate.buffer));
         } catch (error) {
           self.postMessage({ error: error instanceof Error ? error.message : String(error) });
         }
@@ -266,6 +283,8 @@ const decodeTile = async (blob: Blob): Promise<DecodedTile> => {
 export class DynamicPixelArtEnemyScanner {
   private readonly candidates: DynamicPixelArtEnemyCandidate[] = [];
   private readonly scannedVersions = new Map<string, string>();
+  // tile ごとの次回スキャン開始 px index。pool が埋まるまで続きから網羅走査する。
+  private readonly scanCursors = new Map<string, number>();
   private scanning = false;
   private lastScanAt = -DYNAMIC_ENEMY_SCAN_INTERVAL_MS;
   private version = 0;
@@ -293,6 +312,8 @@ export class DynamicPixelArtEnemyScanner {
   destroy = () => {
     for (const candidate of this.candidates) candidate.bitmap.close();
     this.candidates.length = 0;
+    this.scannedVersions.clear();
+    this.scanCursors.clear();
     scannerWorker?.terminate();
     scannerWorker = undefined;
   };
@@ -307,24 +328,39 @@ export class DynamicPixelArtEnemyScanner {
       if (!blob) continue;
 
       const version = `${getOriginalLastModified(tileKey) ?? "unknown"}:${blob.size}`;
-      if (this.scannedVersions.get(tileKey) === version) continue;
+      const versionChanged = this.scannedVersions.get(tileKey) !== version;
+      if (versionChanged) {
+        // タイル内容が変わったらカーソルをリセットして最初から走査し直す。
+        this.scannedVersions.set(tileKey, version);
+        this.scanCursors.delete(tileKey);
+      } else if (!this.scanCursors.has(tileKey)) {
+        // 未更新タイルで一周走査済み (cursor 削除済み) なら再走査しない。
+        // stop 条件は「タイル内を一周しきった」に一本化している。
+        continue;
+      }
 
-      this.scannedVersions.set(tileKey, version);
       scannedCount += 1;
 
       await waitForIdle();
-      const scanOffsetRatio = Math.random();
-      const candidates = await this.extractCandidates(
-        tileKey,
-        blob,
-        scanOffsetRatio,
-      );
-      if (!candidates.length) continue;
+      // pool 満杯時は古い候補を 1 体ずつ入れ替えるよう取得数を 1 に絞る (緩やかな新陳代謝)。
+      const poolFull = this.candidates.length >= DYNAMIC_ENEMY_SCANNER_POOL_LIMIT;
+      const maxCandidates = poolFull ? 1 : DYNAMIC_ENEMY_MAX_CANDIDATES_PER_TILE;
+      // 初回 (cursor 未設定) はランダム開始、以降は前回の続きから網羅走査する。
+      const cursor = this.scanCursors.get(tileKey);
+      const result = await this.extractCandidates(tileKey, blob, cursor, maxCandidates);
 
-      for (const candidate of candidates) this.addCandidate(candidate);
+      // nextOffset===0 は一周完了。次回以降はタイル更新まで走査しない。
+      if (result.nextOffset === 0) this.scanCursors.delete(tileKey);
+      else this.scanCursors.set(tileKey, result.nextOffset);
+
+      if (!result.candidates.length) continue;
+
+      for (const candidate of result.candidates) this.addCandidate(candidate);
       console.log("🧑‍🎨 : Art cruise dynamic enemies scanned", {
         tileKey,
-        count: candidates.length,
+        count: result.candidates.length,
+        nextOffset: result.nextOffset,
+        pool: this.candidates.length,
       });
     }
   };
@@ -354,18 +390,23 @@ export class DynamicPixelArtEnemyScanner {
   private extractCandidates = async (
     tileKey: string,
     blob: Blob,
-    scanOffsetRatio: number,
-  ): Promise<DynamicPixelArtEnemyCandidate[]> => {
+    cursor: number | undefined,
+    maxCandidates: number,
+  ): Promise<ScanResult> => {
+    // cursor 未設定なら -1 (ランダム開始) を worker/fallback に渡す。
+    const startOffset = cursor ?? -1;
+
     // 優先経路: worker 内で decode (createImageBitmap + OffscreenCanvas) + scan を
     // 一括実行し、メインスレッドの 4MB getImageData/走査を肩代わりさせる。
-    const workerCandidates = await this.extractCandidatesInWorker(
+    const workerResult = await this.extractCandidatesInWorker(
       tileKey,
       blob,
-      scanOffsetRatio,
+      startOffset,
+      maxCandidates,
     );
-    if (workerCandidates)
-      return Promise.all(
-        workerCandidates.map(async (candidate) => ({
+    if (workerResult) {
+      const candidates = await Promise.all(
+        workerResult.candidates.map(async (candidate) => ({
           id: candidate.id,
           tileKey,
           bitmap: await createEnemyBitmap(candidate.imageData),
@@ -375,18 +416,24 @@ export class DynamicPixelArtEnemyScanner {
           scannedAt: performance.now(),
         })),
       );
+      return { candidates, nextOffset: workerResult.nextOffset, total: workerResult.total };
+    }
 
     // フォールバック: worker 不在/decode 不可環境ではメインで decode + 走査する。
     const tile = await decodeTile(blob);
     const total = tile.width * tile.height;
-    const scanOffset = Math.floor(scanOffsetRatio * total) % (total || 1);
+    const scanOffset =
+      startOffset < 0
+        ? Math.floor(Math.random() * total) % (total || 1)
+        : startOffset % (total || 1);
     const visited = new Uint8Array(total);
     const queue = new Int32Array(total);
     const candidates: DynamicPixelArtEnemyCandidate[] = [];
 
-    for (let i = 0; i < total; i++) {
+    let i = 0;
+    for (; i < total; i++) {
       if (i % SCAN_YIELD_INTERVAL === 0) await waitForIdle();
-      if (candidates.length >= DYNAMIC_ENEMY_MAX_CANDIDATES_PER_TILE) break;
+      if (candidates.length >= maxCandidates) break;
       const start = (scanOffset + i) % total;
       if (visited[start] || !this.isOpaque(tile.data, start)) continue;
 
@@ -394,18 +441,28 @@ export class DynamicPixelArtEnemyScanner {
       if (result) candidates.push(result);
     }
 
-    return candidates;
+    const nextOffset = i >= total ? 0 : (scanOffset + i) % total;
+    return { candidates, nextOffset, total };
   };
 
   private extractCandidatesInWorker = (
     tileKey: string,
     blob: Blob,
-    scanOffsetRatio: number,
-  ): Promise<ExtractedCandidate[] | null> => {
+    startOffset: number,
+    maxCandidates: number,
+  ): Promise<{
+    candidates: ExtractedCandidate[];
+    nextOffset: number;
+    total: number;
+  } | null> => {
     const worker = getScannerWorker();
     if (!worker) return Promise.resolve(null);
 
-    return new Promise<ExtractedCandidate[] | null>((resolve, reject) => {
+    return new Promise<{
+      candidates: ExtractedCandidate[];
+      nextOffset: number;
+      total: number;
+    } | null>((resolve, reject) => {
       const cleanup = () => {
         worker.removeEventListener("message", handleMessage);
         worker.removeEventListener("error", handleError);
@@ -417,8 +474,8 @@ export class DynamicPixelArtEnemyScanner {
           return;
         }
 
-        resolve(
-          (event.data.candidates ?? []).map((candidate) => ({
+        resolve({
+          candidates: (event.data.candidates ?? []).map((candidate) => ({
             id: candidate.id,
             imageData: new ImageData(
               new Uint8ClampedArray(candidate.buffer),
@@ -429,7 +486,9 @@ export class DynamicPixelArtEnemyScanner {
             height: candidate.height,
             opaquePixels: candidate.opaquePixels,
           })),
-        );
+          nextOffset: event.data.nextOffset ?? 0,
+          total: event.data.total ?? 0,
+        });
       };
       const handleError = (error: ErrorEvent) => {
         cleanup();
@@ -440,7 +499,7 @@ export class DynamicPixelArtEnemyScanner {
       worker.addEventListener("error", handleError);
       // Blob は構造化クローンで worker に渡る (内部データはコピーされず効率的)。
       // worker 側で decode できればメインの 4MB getImageData を完全に省ける。
-      worker.postMessage({ tileKey, blob, scanOffsetRatio });
+      worker.postMessage({ tileKey, blob, startOffset, maxCandidates });
     }).catch((error) => {
       console.warn("🧑‍🎨 : Art cruise dynamic enemy worker scan failed", error);
       scannerWorker?.terminate();
