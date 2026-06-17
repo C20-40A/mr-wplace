@@ -6,6 +6,11 @@
 import JSZip from "jszip";
 import { initGalleryRepository } from "@/inject/db/gallery-repository";
 import type { GalleryMetadata } from "@/inject/db/schema-v2";
+import {
+  runZipExportWorker,
+  type ZipExportProgress,
+  type ZipExportResult,
+} from "./zip-export-worker";
 
 // ============================================
 // Filename parsing
@@ -17,21 +22,6 @@ interface DrawPosition {
   PxX: number;
   PxY: number;
 }
-
-const sanitizeTitle = (title: string): string =>
-  title
-    .replace(/[/:*?"<>|\\]/g, "_")
-    .replace(/\s+/g, "_")
-    .replace(/_+/g, "_")
-    .substring(0, 50);
-
-const getExtensionFromBlob = (blob: Blob): string => {
-  const type = blob.type;
-  if (type.includes("png")) return "png";
-  if (type.includes("jpeg") || type.includes("jpg")) return "jpg";
-  if (type.includes("webp")) return "webp";
-  return "png";
-};
 
 const parseFilename = (
   filename: string
@@ -177,46 +167,16 @@ export const importGalleryFromZip = async (
 };
 
 // ============================================
-// Export
+// Export (Worker-based, off-thread ZIP)
 // ============================================
 
-export const exportGalleryToZip = async (): Promise<Blob> => {
-  const repo = await initGalleryRepository();
-  const zip = new JSZip();
-
-  const allMetadata = await repo.getAllMetadata();
-  const itemsToExport = allMetadata
-    .filter((m) => m.coords)
-    .sort((a, b) => a.zIndex - b.zIndex);
-
-  if (itemsToExport.length === 0) {
-    throw new Error("No images with draw position to export");
-  }
-
-  console.log(`🧑‍🎨 : Exporting ${itemsToExport.length} images to ZIP`);
-
-  for (const meta of itemsToExport) {
-    const imageBlob = await repo.getImage(meta.id);
-    if (!imageBlob) {
-      console.warn(`🧑‍🎨 : Skipping ${meta.id} - no image`);
-      continue;
-    }
-
-    const { TLX, TLY, PxX, PxY } = meta.coords!;
-    const ext = getExtensionFromBlob(imageBlob);
-    const titlePart = meta.title ? sanitizeTitle(meta.title) : "";
-    const filename = titlePart
-      ? `${meta.zIndex}_${titlePart}_${TLX}_${TLY}_${PxX}_${PxY}.${ext}`
-      : `${meta.zIndex}__${TLX}_${TLY}_${PxX}_${PxY}.${ext}`;
-
-    zip.file(filename, imageBlob);
-    console.log(`🧑‍🎨 : Added ${filename}`);
-  }
-
-  const zipBlob = await zip.generateAsync({ type: "blob" });
-  console.log(`🧑‍🎨 : ZIP size: ${(zipBlob.size / 1024 / 1024).toFixed(2)} MB`);
-
-  return zipBlob;
+export const exportGalleryToZip = async (
+  workerUrl: string,
+  onProgress?: (progress: ZipExportProgress) => void,
+): Promise<ZipExportResult> => {
+  const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  const filename = `wplace_gallery_${ts}.zip`;
+  return runZipExportWorker(workerUrl, {}, filename, onProgress);
 };
 
 // ============================================
@@ -261,24 +221,10 @@ export const openFilePickerAndImport = (): Promise<{ success: number; failed: nu
 // Export + Download (called from inject)
 // ============================================
 
-export const exportAndDownload = async (): Promise<void> => {
-  const zipBlob = await exportGalleryToZip();
-
-  const timestamp = new Date()
-    .toISOString()
-    .replace(/[:.]/g, "-")
-    .slice(0, 19);
-  const filename = `wplace_gallery_${timestamp}.zip`;
-
-  const url = URL.createObjectURL(zipBlob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-};
+export const exportAndDownload = (
+  workerUrl: string,
+  onProgress?: (progress: ZipExportProgress) => void,
+): Promise<ZipExportResult> => exportGalleryToZip(workerUrl, onProgress);
 
 // ============================================
 // Reset (delete all)

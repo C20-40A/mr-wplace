@@ -153,18 +153,31 @@ const handleGalleryImport = async (data: {
 };
 
 /**
- * Handle gallery export request
+ * Handle gallery export request (Worker-based, off-thread ZIP)
  */
 const handleGalleryExport = async (data: {
   requestId: string;
+  workerUrl: string;
 }): Promise<void> => {
+  const { requestId, workerUrl } = data;
   try {
-    await exportAndDownload();
+    const result = await exportAndDownload(workerUrl, (progress) => {
+      window.postMessage(
+        {
+          source: "mr-wplace-gallery-export-response",
+          requestId,
+          type: "progress",
+          progress,
+        },
+        "*",
+      );
+    });
     window.postMessage(
       {
         source: "mr-wplace-gallery-export-response",
-        requestId: data.requestId,
-        success: true,
+        requestId,
+        type: result.status,
+        count: result.count,
       },
       "*",
     );
@@ -172,7 +185,8 @@ const handleGalleryExport = async (data: {
     window.postMessage(
       {
         source: "mr-wplace-gallery-export-response",
-        requestId: data.requestId,
+        requestId,
+        type: "error",
         error: error instanceof Error ? error.message : String(error),
       },
       "*",

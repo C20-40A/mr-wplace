@@ -906,29 +906,27 @@ export type SnapshotExportScope =
   | { scope: "all" }
   | { scope: "tile"; tileX: number; tileY: number };
 
-export type SnapshotExportProgress =
+export type ZipExportProgress =
   | { phase: "read"; current: number; total: number }
   | { phase: "pack"; percent: number };
 
-export type SnapshotExportResult = {
+export type ZipExportResult = {
   status: "done" | "empty";
   count: number;
 };
 
 /**
- * Request inject side to export snapshots to a ZIP off the main thread.
+ * Generic Worker-based ZIP export request to inject.
  * Inject spawns a Worker (workerUrl) that reads IndexedDB + packs ZIP, then
  * triggers the download itself. Progress is streamed via onProgress.
- *
- * @param workerUrl - runtime.getURL("dist/snapshot-export.worker.js") from content
- * @param scope - all snapshots or a single tile
- * @param onProgress - optional progress callback
+ * The idle timeout resets on every progress message so long exports don't abort.
  */
-export const exportSnapshots = (
-  workerUrl: string,
-  scope: SnapshotExportScope,
-  onProgress?: (progress: SnapshotExportProgress) => void,
-): Promise<SnapshotExportResult> => {
+const requestZipExport = (
+  requestSource: string,
+  responseSource: string,
+  payload: Record<string, unknown>,
+  onProgress?: (progress: ZipExportProgress) => void,
+): Promise<ZipExportResult> => {
   const requestId = generateRequestId();
   const IDLE_TIMEOUT_MS = 30000;
 
@@ -939,21 +937,18 @@ export const exportSnapshots = (
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
         window.removeEventListener("message", handler);
-        reject(new Error("Snapshot export timed out"));
+        reject(new Error("Export timed out"));
       }, IDLE_TIMEOUT_MS);
     };
 
     const handler = (event: MessageEvent) => {
       const data = event.data;
-      if (
-        data?.source !== "mr-wplace-snapshot-export-response" ||
-        data.requestId !== requestId
-      )
+      if (data?.source !== responseSource || data.requestId !== requestId)
         return;
 
       if (data.type === "progress") {
         resetTimeout();
-        onProgress?.(data.progress as SnapshotExportProgress);
+        onProgress?.(data.progress as ZipExportProgress);
         return;
       }
 
@@ -961,7 +956,7 @@ export const exportSnapshots = (
       window.removeEventListener("message", handler);
 
       if (data.type === "error") {
-        reject(new Error(data.error || "Snapshot export failed"));
+        reject(new Error(data.error || "Export failed"));
         return;
       }
       resolve({
@@ -971,10 +966,39 @@ export const exportSnapshots = (
     };
 
     window.addEventListener("message", handler);
-    window.postMessage(
-      { source: "mr-wplace-snapshot-export", requestId, workerUrl, ...scope },
-      "*",
-    );
+    window.postMessage({ source: requestSource, requestId, ...payload }, "*");
     resetTimeout();
   });
 };
+
+/**
+ * Request inject side to export snapshots to a ZIP off the main thread.
+ * @param workerUrl - runtime.getURL(...) for the snapshot export worker
+ * @param scope - all snapshots or a single tile
+ */
+export const exportSnapshots = (
+  workerUrl: string,
+  scope: SnapshotExportScope,
+  onProgress?: (progress: ZipExportProgress) => void,
+): Promise<ZipExportResult> =>
+  requestZipExport(
+    "mr-wplace-snapshot-export",
+    "mr-wplace-snapshot-export-response",
+    { workerUrl, ...scope },
+    onProgress,
+  );
+
+/**
+ * Request inject side to export the gallery to a ZIP off the main thread.
+ * @param workerUrl - runtime.getURL(...) for the gallery export worker
+ */
+export const exportGallery = (
+  workerUrl: string,
+  onProgress?: (progress: ZipExportProgress) => void,
+): Promise<ZipExportResult> =>
+  requestZipExport(
+    "mr-wplace-gallery-export",
+    "mr-wplace-gallery-export-response",
+    { workerUrl },
+    onProgress,
+  );

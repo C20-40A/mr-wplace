@@ -3,6 +3,9 @@ import { ImageGridComponent } from "./components/ImageGridComponent";
 import { gotoMapPosition, toggleDrawState } from "../../common-actions";
 import { t } from "@/i18n";
 import { showFeatureHint } from "@/features/feature-hints";
+import { runtime } from "@/utils/browser-api";
+import { Toast } from "@/components/toast";
+import { exportGallery } from "@/utils/inject-bridge";
 
 export type GallerySortType = "layer" | "distance" | "created";
 
@@ -164,11 +167,43 @@ export class GalleryListUI {
     requestAnimationFrame(() => document.addEventListener("click", closeMenu));
   }
 
-  private handleExport(): void {
-    window.postMessage(
-      { source: "mr-wplace-gallery-export", requestId: Date.now().toString() },
-      "*",
-    );
+  private async handleExport(): Promise<void> {
+    const btn = document.getElementById(
+      "wps-gallery-import-export-btn",
+    ) as HTMLButtonElement | null;
+    if (!btn || btn.disabled) return;
+
+    const originalHtml = btn.innerHTML;
+    btn.disabled = true;
+    const setLabel = (text: string) => {
+      btn.textContent = text;
+    };
+    setLabel(t`${"exporting"}`);
+
+    try {
+      const workerUrl = runtime.getURL(
+        "dist/inject/workers/gallery-export.worker.js",
+      );
+      const result = await exportGallery(workerUrl, (progress) => {
+        if (progress.phase === "read") {
+          setLabel(`${progress.current}/${progress.total}`);
+        } else {
+          setLabel(`${Math.round(progress.percent)}%`);
+        }
+      });
+
+      if (result.status === "empty") {
+        Toast.error(t`${"no_images_to_export"}`);
+        return;
+      }
+      Toast.success(t`${"download_success"}`);
+    } catch (error) {
+      console.error("🧑‍🎨 : Gallery export failed", error);
+      Toast.error(t`${"export_failed"}`);
+    } finally {
+      btn.innerHTML = originalHtml;
+      btn.disabled = false;
+    }
   }
 
   private handleImport(): void {
