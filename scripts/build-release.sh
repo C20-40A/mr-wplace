@@ -36,6 +36,9 @@ create_package() {
   cp dist/content.js release-${BROWSER}/dist/
   cp dist/popup.js release-${BROWSER}/dist/
   cp dist/inject.js release-${BROWSER}/dist/
+  # bundled workers (snapshot-export / gallery-export / migration)
+  mkdir -p release-${BROWSER}/dist/inject/workers
+  cp dist/inject/workers/*.worker.js release-${BROWSER}/dist/inject/workers/
   cp -r icons release-${BROWSER}/
   cp -r _locales release-${BROWSER}/
   cp -r public/* release-${BROWSER}/
