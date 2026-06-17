@@ -16,6 +16,7 @@ import { getCurrentPosition } from "@/utils/position";
 import { latLngToTilePixel } from "@/utils/coordinate";
 import { Tutorial } from "@/features/tutorial";
 import { runSnapshotExport } from "../utils/export-snapshots";
+import { VIEWPORT_MEDIA_QUERIES } from "@/constants/breakpoints";
 
 type TileSortType = "distance" | "last_updated" | "tile_count" | "name";
 const TILE_SORT_KEY = "wplace-studio-tile-sort";
@@ -38,11 +39,11 @@ export class TileListRoute {
 
     container.innerHTML = t`
       <div class="mb-2" style="display: flex; gap: 0.5rem; align-items: center;">
-        <button id="wps-import-snapshot-btn" class="btn btn-sm btn-neutral">
-          ${"import"}
-        </button>
-        <button id="wps-export-snapshot-btn" class="btn btn-sm btn-neutral">
-          <span>${"export"}</span>
+        <button id="wps-import-export-btn" class="btn btn-outline btn-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
+            <path d="M440-367v-465l-64 64-56-57 160-160 160 160-56 57-64-64v465h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
+          </svg>
+          <span id="wps-import-export-label">${"import_export"}</span>
         </button>
         <button id="wps-tile-merge-btn" class="btn btn-sm btn-primary">
           ${"merge_tiles"}
@@ -73,21 +74,26 @@ export class TileListRoute {
   }
 
   private setupEvents(container: HTMLElement, router: TimeTravelRouter): void {
-    // Import button event
-    container
-      .querySelector("#wps-import-snapshot-btn")
-      ?.addEventListener("click", () => {
-        router.navigate("import-snapshot");
-      });
+    // Import/Export dropdown menu
+    const importExportBtn = container.querySelector(
+      "#wps-import-export-btn",
+    ) as HTMLButtonElement | null;
+    importExportBtn?.addEventListener("click", () => {
+      this.showImportExportMenu(importExportBtn, router);
+    });
 
-    // Export all snapshots event
-    container
-      .querySelector("#wps-export-snapshot-btn")
-      ?.addEventListener("click", (e) => {
-        runSnapshotExport(e.currentTarget as HTMLButtonElement, {
-          scope: "all",
-        });
-      });
+    // モバイル時はテキスト非表示
+    const importExportLabel = container.querySelector(
+      "#wps-import-export-label",
+    ) as HTMLElement | null;
+    if (importExportLabel) {
+      const mq = window.matchMedia(VIEWPORT_MEDIA_QUERIES.smUp);
+      const update = () => {
+        importExportLabel.style.display = mq.matches ? "" : "none";
+      };
+      update();
+      mq.addEventListener("change", update);
+    }
 
     // Merge button event
     container
@@ -120,6 +126,63 @@ export class TileListRoute {
           router.navigate("tile-snapshots");
         }
       });
+  }
+
+  private showImportExportMenu(
+    anchor: HTMLElement,
+    router: TimeTravelRouter,
+  ): void {
+    // 既存メニューがあれば閉じる
+    const existing = document.getElementById("wps-snapshot-io-menu");
+    if (existing) {
+      existing.remove();
+      return;
+    }
+
+    const menu = document.createElement("div");
+    menu.id = "wps-snapshot-io-menu";
+    menu.className = "menu bg-base-200 rounded-box shadow-lg p-2";
+    menu.style.cssText = "position:absolute;z-index:20;min-width:10rem;";
+    menu.innerHTML = t`
+      <li><button id="wps-snapshot-export-action" class="btn btn-ghost btn-sm justify-start w-full">📤 <span>${"export"}</span></button></li>
+      <li><button id="wps-snapshot-import-action" class="btn btn-ghost btn-sm justify-start w-full">📥 ${"import"}</button></li>
+    `;
+
+    // anchorの下に配置
+    anchor.parentElement!.style.position = "relative";
+    const rect = anchor.getBoundingClientRect();
+    const parentRect = anchor.parentElement!.getBoundingClientRect();
+    menu.style.top = `${rect.bottom - parentRect.top}px`;
+    menu.style.left = `${rect.left - parentRect.left}px`;
+
+    anchor.parentElement!.appendChild(menu);
+
+    // Export
+    menu
+      .querySelector("#wps-snapshot-export-action")!
+      .addEventListener("click", (e) => {
+        menu.remove();
+        runSnapshotExport(e.currentTarget as HTMLButtonElement, {
+          scope: "all",
+        });
+      });
+
+    // Import
+    menu
+      .querySelector("#wps-snapshot-import-action")!
+      .addEventListener("click", () => {
+        menu.remove();
+        router.navigate("import-snapshot");
+      });
+
+    // 外部クリックで閉じる
+    const closeMenu = (e: MouseEvent) => {
+      if (!menu.contains(e.target as Node) && e.target !== anchor) {
+        menu.remove();
+        document.removeEventListener("click", closeMenu);
+      }
+    };
+    requestAnimationFrame(() => document.addEventListener("click", closeMenu));
   }
 
   private sortTiles(
