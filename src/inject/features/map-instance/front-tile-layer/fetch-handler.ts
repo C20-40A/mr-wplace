@@ -145,6 +145,7 @@ const renderBaseZoomTile = async (
   // Render on transparent layer, but compare against the original tile if available
   return await drawOverlayLayersOnTile(emptyBlob, [x, y], "gpu", {
     comparisonTileBlob,
+    transparentBase: true,
   });
 };
 
@@ -209,6 +210,7 @@ const renderZoom10Tile = async (
       childTasks.push(
         drawOverlayLayersOnTile(emptyBlob, [childX, childY], "gpu", {
           comparisonTileBlob,
+          transparentBase: true,
         })
           .then((blob) => ({ dx, dy, blob }))
           .catch(() => ({ dx, dy, blob: null })),

@@ -850,6 +850,7 @@ export const drawOverlayLayersOnTile = async (
   computeDevice: "gpu" | "cpu" = "gpu",
   options: {
     comparisonTileBlob?: Blob;
+    transparentBase?: boolean;
   } = {},
 ): Promise<Blob> => {
   if (overlayLayers.length === 0) return tileBlob;
@@ -978,29 +979,35 @@ export const drawOverlayLayersOnTile = async (
   // 一時統計マップ: 複数タイルまたがり対応
   const tempStatsMap = new Map<string, ColorStats>();
 
-  // 背景タイル1回デコード（下地描画用）
-  const {
-    pixels: bgPixels,
-    width: bgWidth,
-    height: bgHeight,
-  } = await blobToPixels(tileBlob);
+  let finalBgPixels: Uint8Array | null = null;
+  let finalBgWidth: number = TILE_DRAW_CONSTANTS.TILE_SIZE;
+  let finalBgHeight: number = TILE_DRAW_CONSTANTS.TILE_SIZE;
 
-  // 1x1 = 未ロードタイル → 透明1000x1000生成
-  // NOTE: 何も描かれていない場所に描画しようとすると、1x1 ピクセルの背景 blob がやってきて、画像が描画されない問題の修正
-  let finalBgPixels = bgPixels;
-  let finalBgWidth = bgWidth;
-  let finalBgHeight = bgHeight;
-  if (bgWidth === 1 && bgHeight === 1) {
-    console.log("🧑‍🎨 : 1x1 tile detected, generating transparent 1000x1000");
-    finalBgPixels = new Uint8Array(
-      TILE_DRAW_CONSTANTS.TILE_SIZE * TILE_DRAW_CONSTANTS.TILE_SIZE * 4,
-    );
-    finalBgWidth = TILE_DRAW_CONSTANTS.TILE_SIZE;
-    finalBgHeight = TILE_DRAW_CONSTANTS.TILE_SIZE;
+  if (!options.transparentBase) {
+    // 背景タイル1回デコード（下地描画用）
+    const {
+      pixels: bgPixels,
+      width: bgWidth,
+      height: bgHeight,
+    } = await blobToPixels(tileBlob);
+
+    // 1x1 = 未ロードタイル → 透明1000x1000生成
+    // NOTE: 何も描かれていない場所に描画しようとすると、1x1 ピクセルの背景 blob がやってきて、画像が描画されない問題の修正
+    finalBgPixels = bgPixels;
+    finalBgWidth = bgWidth;
+    finalBgHeight = bgHeight;
+    if (bgWidth === 1 && bgHeight === 1) {
+      console.log("🧑‍🎨 : 1x1 tile detected, generating transparent 1000x1000");
+      finalBgPixels = new Uint8Array(
+        TILE_DRAW_CONSTANTS.TILE_SIZE * TILE_DRAW_CONSTANTS.TILE_SIZE * 4,
+      );
+      finalBgWidth = TILE_DRAW_CONSTANTS.TILE_SIZE;
+      finalBgHeight = TILE_DRAW_CONSTANTS.TILE_SIZE;
+    }
   }
 
   // 背景比較用タイル（未指定時は下地と同一を使い再デコードを避ける）
-  let comparisonBgPixels = finalBgPixels;
+  let comparisonBgPixels: Uint8Array | null = finalBgPixels;
   let comparisonBgWidth = finalBgWidth;
   const comparisonTileBlob = options.comparisonTileBlob;
   const lightweightMode = window.mrWplaceOverlayLightweightMode === true;
@@ -1029,12 +1036,9 @@ export const drawOverlayLayersOnTile = async (
     }
   }
 
-  const bgImageData = new ImageData(
-    new Uint8ClampedArray(finalBgPixels),
-    finalBgWidth,
-    finalBgHeight,
+  comparisonBgPixels ??= new Uint8Array(
+    TILE_DRAW_CONSTANTS.TILE_SIZE * TILE_DRAW_CONSTANTS.TILE_SIZE * 4,
   );
-  const tileBitmap = await createImageBitmap(bgImageData);
 
   // キャンバス作成（実サイズベース）
   const drawSize =
@@ -1044,8 +1048,20 @@ export const drawOverlayLayersOnTile = async (
   if (!context) throw new Error("tile canvas context not found");
   context.imageSmoothingEnabled = false;
 
-  // 元タイル画像を下地化（デコード済みImageBitmap）
-  context.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
+  if (finalBgPixels) {
+    const bgImageData = new ImageData(
+      new Uint8ClampedArray(finalBgPixels),
+      finalBgWidth,
+      finalBgHeight,
+    );
+    const tileBitmap = await createImageBitmap(bgImageData);
+    try {
+      // 元タイル画像を下地化（デコード済みImageBitmap）
+      context.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
+    } finally {
+      tileBitmap.close();
+    }
+  }
 
   // 描画モードと色を取得
   const mode = getEnhancedMode();
