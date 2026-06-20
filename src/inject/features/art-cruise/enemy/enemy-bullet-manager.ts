@@ -154,16 +154,18 @@ export class ArtCruiseEnemyBulletManager {
 
       // 画面内に少しでも残っているなら続行
       // レーザー(capsule)は後方端も考慮: 先頭から-length方向にbodyが伸びる
+      const x = bullet.view.x;
+      const y = bullet.view.y;
       const tailOffset = bullet.shape === "capsule" && bullet.length ? bullet.length : 0;
       const headOffset = bullet.shape === "rect" && bullet.length ? bullet.length : 0;
-      const tailX = bullet.view.x - bullet.dirX * tailOffset;
-      const tailY = bullet.view.y - bullet.dirY * tailOffset;
-      const headX = bullet.view.x + bullet.dirX * headOffset;
-      const headY = bullet.view.y + bullet.dirY * headOffset;
-      const minX = Math.min(bullet.view.x, tailX, headX) - bullet.radius;
-      const maxX = Math.max(bullet.view.x, tailX, headX) + bullet.radius;
-      const minY = Math.min(bullet.view.y, tailY, headY) - bullet.radius;
-      const maxY = Math.max(bullet.view.y, tailY, headY) + bullet.radius;
+      const tailX = x - bullet.dirX * tailOffset;
+      const tailY = y - bullet.dirY * tailOffset;
+      const headX = x + bullet.dirX * headOffset;
+      const headY = y + bullet.dirY * headOffset;
+      const minX = Math.min(x, tailX, headX) - bullet.radius;
+      const maxX = Math.max(x, tailX, headX) + bullet.radius;
+      const minY = Math.min(y, tailY, headY) - bullet.radius;
+      const maxY = Math.max(y, tailY, headY) + bullet.radius;
       if (maxX >= 0 && minX <= bounds.width && maxY >= 0 && minY <= bounds.height) {
         continue;
       }

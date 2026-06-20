@@ -10,11 +10,11 @@ export const updatePixiEnemyBulletMovement = (
   }
 
   if (now < bullet.bornAt) {
-    bullet.view.visible = false;
+    if (bullet.view.visible) bullet.view.visible = false;
     return;
   }
 
-  bullet.view.visible = true;
+  if (!bullet.view.visible) bullet.view.visible = true;
   if (bullet.maxAgeMs && bullet.shape === "capsule")
     bullet.view.alpha = getBulletAlpha(bullet, now);
 
@@ -39,27 +39,27 @@ const updateBeamState = (bullet: ArtCruisePixiEnemyBullet, now: number) => {
   bullet.view.y = bullet.originY + moveDirY * distance;
 
   if (now < startsAt) {
-    bullet.view.visible = false;
+    if (bullet.view.visible) bullet.view.visible = false;
     return;
   }
 
-  bullet.view.visible = true;
+  if (!bullet.view.visible) bullet.view.visible = true;
   const warning = bullet.pooled.warning;
   const beam = bullet.pooled.beam;
 
   if (now < bullet.bornAt) {
     const t = (now - startsAt) / Math.max(1, warningMs);
     if (warning) {
-      warning.visible = true;
+      if (!warning.visible) warning.visible = true;
       warning.alpha = 0.22 + Math.sin(t * Math.PI * 7) * 0.12 + t * 0.42;
     }
-    if (beam) beam.visible = false;
+    if (beam?.visible) beam.visible = false;
     return;
   }
 
-  if (warning) warning.visible = false;
+  if (warning?.visible) warning.visible = false;
   if (beam) {
-    beam.visible = true;
+    if (!beam.visible) beam.visible = true;
     beam.alpha = getBeamAlpha(bullet, now);
   }
 };

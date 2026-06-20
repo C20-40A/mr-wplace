@@ -57,6 +57,16 @@ const CAPSULE_RADIUS_Y_RATIOS: Record<ArtCruiseBulletVariant, number> = {
   silverCapsule: 8 / 16,
 };
 
+const CAPSULE_TYPES_BY_VARIANT: Record<
+  ArtCruiseBulletVariant,
+  ArtCruiseBulletTypeDef
+> = Object.fromEntries(
+  Object.entries(CAPSULE_RADIUS_Y_RATIOS).map(([variant, radiusYRatio]) => [
+    variant,
+    { ...BULLET_TYPES.capsule, radiusYRatio },
+  ]),
+) as Record<ArtCruiseBulletVariant, ArtCruiseBulletTypeDef>;
+
 const LEGACY_CAPSULE_VARIANT_BY_COLOR: Partial<
   Record<ArtCruiseBulletColor, ArtCruiseBulletVariant>
 > = {
@@ -76,5 +86,5 @@ export const getBulletType = (
   if (shape !== "capsule") return bulletType;
   const capsuleVariant = variant ?? (color && LEGACY_CAPSULE_VARIANT_BY_COLOR[color]);
   if (!capsuleVariant) return bulletType;
-  return { ...bulletType, radiusYRatio: CAPSULE_RADIUS_Y_RATIOS[capsuleVariant] };
+  return CAPSULE_TYPES_BY_VARIANT[capsuleVariant];
 };

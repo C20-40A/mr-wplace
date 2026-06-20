@@ -185,6 +185,7 @@ export class ArtCruiseGameLoop {
     bounds: GAME_BOUNDS,
   };
   private readonly playerPos = { x: 0, y: 0 };
+  private readonly enemyHitPoint: HitPoint = { x: 0, y: 0 };
   private audio: ArtCruiseAudioManager | null = null;
 
   private lastBulletAt = 0;
@@ -685,21 +686,18 @@ export class ArtCruiseGameLoop {
       const enemy = enemies[i];
       if (!enemy?.view) continue;
 
-      let hitPoint: HitPoint | null = null;
       let hitBulletIndex = -1;
       for (let j = 0; j < this.bullets.length; j++) {
         const bullet = this.bullets[j];
-        hitPoint = this.getEnemyHitPoint(
+        if (!this.setEnemyHitPoint(
           enemy.view,
           enemy.radius,
           bullet.view,
           bullet.halfW,
           bullet.halfH,
-        );
-        if (hitPoint) {
-          hitBulletIndex = j;
-          break;
-        }
+        )) continue;
+        hitBulletIndex = j;
+        break;
       }
 
       if (hitBulletIndex >= 0) {
@@ -707,8 +705,8 @@ export class ArtCruiseGameLoop {
         const y = enemy.view.y;
         removePlayerBullet(this.bullets, hitBulletIndex);
         this.effectManager.spawnHit(
-          hitPoint!.x ?? x,
-          hitPoint!.y ?? y,
+          this.enemyHitPoint.x,
+          this.enemyHitPoint.y,
           now,
           true,
         );
@@ -939,21 +937,35 @@ export class ArtCruiseGameLoop {
     this.bossModeLevel ?? this.stageDirector.getState().level;
 
   // enemy(中心±halfSize) と player弾(中心±halfW/halfH) の矩形×矩形(AABB)判定。
-  // 円のsqrtや乗算が不要で最速。交差領域の中心をhitPointとして返す。
-  private getEnemyHitPoint = (
+  // no-hit を早期 return し、hitPoint は再利用オブジェクトへ書く。
+  private setEnemyHitPoint = (
     enemy: { x: number; y: number },
     enemyHalfSize: number,
     bullet: { x: number; y: number },
     bulletHalfW: number,
     bulletHalfH: number,
-  ): HitPoint | null => {
-    const minX = Math.max(enemy.x - enemyHalfSize, bullet.x - bulletHalfW);
-    const maxX = Math.min(enemy.x + enemyHalfSize, bullet.x + bulletHalfW);
-    if (minX > maxX) return null;
-    const minY = Math.max(enemy.y - enemyHalfSize, bullet.y - bulletHalfH);
-    const maxY = Math.min(enemy.y + enemyHalfSize, bullet.y + bulletHalfH);
-    if (minY > maxY) return null;
-    return { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+  ): boolean => {
+    const enemyX = enemy.x;
+    const enemyY = enemy.y;
+    const bulletX = bullet.x;
+    const bulletY = bullet.y;
+    const enemyMinX = enemyX - enemyHalfSize;
+    const enemyMaxX = enemyX + enemyHalfSize;
+    const bulletMinX = bulletX - bulletHalfW;
+    const bulletMaxX = bulletX + bulletHalfW;
+    if (enemyMinX > bulletMaxX || enemyMaxX < bulletMinX) return false;
+
+    const enemyMinY = enemyY - enemyHalfSize;
+    const enemyMaxY = enemyY + enemyHalfSize;
+    const bulletMinY = bulletY - bulletHalfH;
+    const bulletMaxY = bulletY + bulletHalfH;
+    if (enemyMinY > bulletMaxY || enemyMaxY < bulletMinY) return false;
+
+    this.enemyHitPoint.x =
+      (Math.max(enemyMinX, bulletMinX) + Math.min(enemyMaxX, bulletMaxX)) * 0.5;
+    this.enemyHitPoint.y =
+      (Math.max(enemyMinY, bulletMinY) + Math.min(enemyMaxY, bulletMaxY)) * 0.5;
+    return true;
   };
 
   private unitScale = () => GAME_LOGICAL_WIDTH / 10;
