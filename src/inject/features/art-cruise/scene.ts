@@ -60,6 +60,9 @@ export class ArtCruiseScene {
       onResolutionChange: this.game.setResolutionLevel,
       getDynamicEnemyMaxSizePx: this.game.getDynamicEnemyMaxSizePx,
       onDynamicEnemyMaxSizeChange: this.game.setDynamicEnemyMaxSizePx,
+      getGalleryEnemyFallbackEnabled:
+        this.game.getGalleryEnemyFallbackEnabled,
+      onGalleryEnemyFallbackChange: this.game.setGalleryEnemyFallbackEnabled,
       getDPadEnabled: this.game.getDPadEnabled,
       onDPadEnabledChange: this.game.setDPadEnabled,
       getMusicVolume: this.game.getMusicVolume,

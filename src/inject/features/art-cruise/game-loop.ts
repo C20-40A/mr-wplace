@@ -11,12 +11,14 @@ import {
   PLAYER_HIT_RADIUS,
   type ResolutionLevel,
   getDPadEnabled as readDPadEnabled,
+  getGalleryEnemyFallbackEnabled as readGalleryEnemyFallbackEnabled,
   getDynamicEnemyMaxSizePx,
   getMusicVolume as readMusicVolume,
   getResolutionLevel,
   getSeVolume as readSeVolume,
   resolveResolutionValue,
   setDPadEnabled as persistDPadEnabled,
+  setGalleryEnemyFallbackEnabled as persistGalleryEnemyFallbackEnabled,
   setDynamicEnemyMaxSizePx,
   setMusicVolume as persistMusicVolume,
   setResolutionLevel,
@@ -29,7 +31,10 @@ import {
 import { hitTestHittableBullet } from "./enemy/enemy-bullet/hitbox";
 import { drawDebugHitboxes as renderDebugHitboxes } from "./debug/hitbox-overlay";
 import { DynamicPixelArtEnemyScanner } from "./enemy/enemy-graphics/dynamic-pixel-art-scanner";
-import { preloadFallbackEnemyTextures } from "./enemy/enemy-graphics/fallback-enemy-view";
+import {
+  preloadFallbackEnemyTextures,
+  refreshGalleryFallbackEnemyTextures,
+} from "./enemy/enemy-graphics/fallback-enemy-view";
 import { ArtCruisePixiEnemyGraphicPool } from "./enemy/enemy-graphics/pixi-enemy-graphic-pool";
 import { ArtCruiseSquad } from "./enemy/enemy-movement/squad";
 import { ArtCruiseStageDirector } from "./stage-director";
@@ -994,5 +999,13 @@ export class ArtCruiseGameLoop {
   setDynamicEnemyMaxSizePx = (sizePx: number) => {
     const next = setDynamicEnemyMaxSizePx(sizePx);
     this.scanner.setMaxSizePx(next);
+    void refreshGalleryFallbackEnemyTextures();
+  };
+
+  getGalleryEnemyFallbackEnabled = () => readGalleryEnemyFallbackEnabled();
+
+  setGalleryEnemyFallbackEnabled = (enabled: boolean) => {
+    persistGalleryEnemyFallbackEnabled(enabled);
+    void refreshGalleryFallbackEnemyTextures();
   };
 }

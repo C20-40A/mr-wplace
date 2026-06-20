@@ -407,8 +407,7 @@ export class DynamicPixelArtEnemyScanner {
     if (this.maxSizePx === sizePx) return;
 
     this.maxSizePx = sizePx;
-    for (const candidate of this.candidates) candidate.bitmap.close();
-    this.candidates.length = 0;
+    this.clearCandidates();
     this.tileVersions.clear();
     this.completedVersions.clear();
     this.scanCursors.clear();
@@ -418,8 +417,7 @@ export class DynamicPixelArtEnemyScanner {
   };
 
   destroy = () => {
-    for (const candidate of this.candidates) candidate.bitmap.close();
-    this.candidates.length = 0;
+    this.clearCandidates();
     this.tileVersions.clear();
     this.completedVersions.clear();
     this.scanCursors.clear();
@@ -569,6 +567,11 @@ export class DynamicPixelArtEnemyScanner {
 
     this.candidates.push(candidate);
     this.version += 1;
+  };
+
+  private clearCandidates = () => {
+    for (const candidate of this.candidates) candidate.bitmap.close();
+    this.candidates.length = 0;
   };
 
   private getCachedVisited = (tileKey: string, version: string) => {

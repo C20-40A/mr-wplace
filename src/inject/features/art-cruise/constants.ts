@@ -12,9 +12,11 @@ export const isDebugMode = () =>
 export const RESOLUTION_STORAGE_KEY = "mr-wplace-art-cruise-resolution";
 export const DYNAMIC_ENEMY_MAX_SIZE_STORAGE_KEY =
   "mr-wplace-art-cruise-dynamic-enemy-max-size";
+export const GALLERY_ENEMY_FALLBACK_STORAGE_KEY =
+  "mr-wplace-art-cruise-gallery-enemy-fallback";
 export type ResolutionLevel = 0 | 1 | 2 | 3;
 export const RESOLUTION_LABELS: Record<ResolutionLevel, string> = {
-  0: "LOW",
+  0: "PIXEL(recommend)",
   1: "MEDIUM",
   2: "HIGH",
   3: "NATIVE",
@@ -143,6 +145,20 @@ export const setDynamicEnemyMaxSizePx = (sizePx: number) => {
     /* ignore */
   }
   return next;
+};
+
+export const getGalleryEnemyFallbackEnabled = () =>
+  localStorage.getItem(GALLERY_ENEMY_FALLBACK_STORAGE_KEY) !== "false";
+
+export const setGalleryEnemyFallbackEnabled = (enabled: boolean) => {
+  try {
+    localStorage.setItem(
+      GALLERY_ENEMY_FALLBACK_STORAGE_KEY,
+      enabled ? "true" : "false",
+    );
+  } catch {
+    /* ignore */
+  }
 };
 
 export const VIEW_CROP_TOP_RATIO = 1 / 4;

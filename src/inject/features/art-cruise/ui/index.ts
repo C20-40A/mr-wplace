@@ -56,6 +56,8 @@ type ArtCruiseUiOptions = {
   onResolutionChange: (level: ResolutionLevel) => void;
   getDynamicEnemyMaxSizePx: () => number;
   onDynamicEnemyMaxSizeChange: (sizePx: number) => void;
+  getGalleryEnemyFallbackEnabled: () => boolean;
+  onGalleryEnemyFallbackChange: (enabled: boolean) => void;
   getDPadEnabled: () => boolean;
   onDPadEnabledChange: (enabled: boolean) => void;
   getMusicVolume: () => number;
@@ -384,6 +386,10 @@ export class ArtCruiseUi {
       onResolutionChange: this.options.onResolutionChange,
       dynamicEnemyMaxSizePx: this.options.getDynamicEnemyMaxSizePx(),
       onDynamicEnemyMaxSizeChange: this.options.onDynamicEnemyMaxSizeChange,
+      galleryEnemyFallbackEnabled:
+        this.options.getGalleryEnemyFallbackEnabled(),
+      onGalleryEnemyFallbackChange:
+        this.options.onGalleryEnemyFallbackChange,
       dPadEnabled: this.options.getDPadEnabled(),
       onDPadEnabledChange: this.options.onDPadEnabledChange,
       musicVolume: this.options.getMusicVolume(),
@@ -560,6 +566,10 @@ export class ArtCruiseUi {
       onResolutionChange: this.options.onResolutionChange,
       dynamicEnemyMaxSizePx: this.options.getDynamicEnemyMaxSizePx(),
       onDynamicEnemyMaxSizeChange: this.options.onDynamicEnemyMaxSizeChange,
+      galleryEnemyFallbackEnabled:
+        this.options.getGalleryEnemyFallbackEnabled(),
+      onGalleryEnemyFallbackChange:
+        this.options.onGalleryEnemyFallbackChange,
       dPadEnabled: this.options.getDPadEnabled(),
       onDPadEnabledChange: this.options.onDPadEnabledChange,
       musicVolume: this.options.getMusicVolume(),

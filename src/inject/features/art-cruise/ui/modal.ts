@@ -227,7 +227,13 @@ const createGameOverResultCanvas = (
     );
   }
 
-  const nextY = showContinueCount ? (highScore ? 221 : 201) : highScore ? 201 : 181;
+  const nextY = showContinueCount
+    ? highScore
+      ? 221
+      : 201
+    : highScore
+      ? 201
+      : 181;
   if (next === null) {
     ctx.fillStyle = rank.color;
     drawCanvasText(ctx, "★ MAX RANK ★", width / 2, nextY, 1);
@@ -365,6 +371,8 @@ type SettingsModalOptions = {
   onResolutionChange: (level: ResolutionLevel) => void;
   dynamicEnemyMaxSizePx: number;
   onDynamicEnemyMaxSizeChange: (sizePx: number) => void;
+  galleryEnemyFallbackEnabled: boolean;
+  onGalleryEnemyFallbackChange: (enabled: boolean) => void;
   dPadEnabled: boolean;
   onDPadEnabledChange: (enabled: boolean) => void;
   musicVolume: number;
@@ -723,10 +731,14 @@ export const createSettingsModal = (
   actions.append(closeButton);
   panel.append(
     title,
-    createResolutionSlider(options.resolutionLevel, options.onResolutionChange),
     createDynamicEnemyMaxSizeControl(
       options.dynamicEnemyMaxSizePx,
       options.onDynamicEnemyMaxSizeChange,
+    ),
+    createToggleControl(
+      "USE MY GALLERY AS FALLBACK",
+      options.galleryEnemyFallbackEnabled,
+      options.onGalleryEnemyFallbackChange,
     ),
     createVolumeControl(
       "MUSIC VOLUME",
@@ -743,6 +755,7 @@ export const createSettingsModal = (
       options.dPadEnabled,
       options.onDPadEnabledChange,
     ),
+    createResolutionSlider(options.resolutionLevel, options.onResolutionChange),
     actions,
   );
 

@@ -1,8 +1,16 @@
 import { Assets, Sprite, Texture } from "pixi.js";
 
+import { GalleryRepository } from "@/inject/db/gallery-repository";
+import type { GalleryMetadata } from "@/inject/db/schema-v2";
 import {
+  DYNAMIC_ENEMY_ALPHA_THRESHOLD,
+  DYNAMIC_ENEMY_MAX_OPAQUE_PIXELS,
+  DYNAMIC_ENEMY_MIN_OPAQUE_PIXELS,
+  DYNAMIC_ENEMY_MIN_SIZE_PX,
   DYNAMIC_ENEMY_SIZE_UNITS,
   ENEMY_BOSS_SIZE_UNITS,
+  getDynamicEnemyMaxSizePx,
+  getGalleryEnemyFallbackEnabled,
 } from "../../constants";
 
 const ENEMY_DATA_URLS = [
@@ -11,6 +19,13 @@ const ENEMY_DATA_URLS = [
 ] as const;
 
 let textures: Texture[] | null = null;
+let galleryTextures: Texture[] = [];
+let galleryRepo: GalleryRepository | null = null;
+let galleryLoadPromise: Promise<void> | null = null;
+let galleryLoadSizePx = 0;
+
+const GALLERY_FALLBACK_TEXTURE_LIMIT = 12;
+const GALLERY_FALLBACK_MAX_ATTEMPTS = 24;
 
 const pickRandom = <T>(arr: readonly T[]): T =>
   arr[Math.floor(Math.random() * arr.length)];
@@ -21,6 +36,7 @@ const setNearest = (texture: Texture) => {
 };
 
 export const preloadFallbackEnemyTextures = async () => {
+  await preloadGalleryFallbackEnemyTextures();
   if (textures) return;
   try {
     textures = await Promise.all(
@@ -32,13 +48,130 @@ export const preloadFallbackEnemyTextures = async () => {
   }
 };
 
+export const refreshGalleryFallbackEnemyTextures = () => {
+  galleryLoadSizePx = 0;
+  for (const texture of galleryTextures) texture.destroy(true);
+  galleryTextures = [];
+  return preloadGalleryFallbackEnemyTextures();
+};
+
+const preloadGalleryFallbackEnemyTextures = async () => {
+  if (!getGalleryEnemyFallbackEnabled()) return;
+
+  const maxSizePx = getDynamicEnemyMaxSizePx();
+  if (galleryTextures.length > 0 && galleryLoadSizePx === maxSizePx) return;
+  if (galleryLoadPromise) return galleryLoadPromise;
+
+  galleryLoadPromise = loadGalleryFallbackEnemyTextures(maxSizePx).finally(() => {
+    galleryLoadPromise = null;
+  });
+  return galleryLoadPromise;
+};
+
+const loadGalleryFallbackEnemyTextures = async (maxSizePx: number) => {
+  try {
+    galleryRepo ??= new GalleryRepository();
+    await galleryRepo.init();
+    const metadata = await galleryRepo.getAllMetadata();
+    const candidates = shuffle(
+      metadata.filter((item) => isGalleryMetadataUsable(item, maxSizePx)),
+    );
+    const nextTextures: Texture[] = [];
+
+    for (const item of candidates.slice(0, GALLERY_FALLBACK_MAX_ATTEMPTS)) {
+      const texture = await createGalleryFallbackTexture(item, maxSizePx);
+      if (!texture) continue;
+      nextTextures.push(texture);
+      if (nextTextures.length >= GALLERY_FALLBACK_TEXTURE_LIMIT) break;
+    }
+
+    for (const texture of galleryTextures) texture.destroy(true);
+    galleryTextures = nextTextures;
+    galleryLoadSizePx = maxSizePx;
+    console.log("🧑‍🎨 : Art cruise gallery fallback enemies loaded", {
+      count: galleryTextures.length,
+      maxSizePx,
+    });
+  } catch (error) {
+    console.warn("🧑‍🎨 : Art cruise gallery fallback enemy preload failed", error);
+  }
+};
+
+const isGalleryMetadataUsable = (
+  metadata: GalleryMetadata,
+  maxSizePx: number,
+) =>
+  metadata.width >= DYNAMIC_ENEMY_MIN_SIZE_PX &&
+  metadata.height >= DYNAMIC_ENEMY_MIN_SIZE_PX &&
+  metadata.width <= maxSizePx &&
+  metadata.height <= maxSizePx;
+
+const createGalleryFallbackTexture = async (
+  metadata: GalleryMetadata,
+  maxSizePx: number,
+) => {
+  if (!galleryRepo) return null;
+
+  const blob = await galleryRepo.getImage(metadata.id);
+  if (!blob) return null;
+
+  const bitmap = await createImageBitmap(blob);
+  try {
+    if (
+      bitmap.width < DYNAMIC_ENEMY_MIN_SIZE_PX ||
+      bitmap.height < DYNAMIC_ENEMY_MIN_SIZE_PX ||
+      bitmap.width > maxSizePx ||
+      bitmap.height > maxSizePx
+    )
+      return null;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return null;
+
+    ctx.drawImage(bitmap, 0, 0);
+    const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const opaquePixels = countOpaquePixels(image.data);
+    if (
+      opaquePixels < DYNAMIC_ENEMY_MIN_OPAQUE_PIXELS ||
+      opaquePixels > DYNAMIC_ENEMY_MAX_OPAQUE_PIXELS
+    )
+      return null;
+
+    return setNearest(Texture.from(canvas));
+  } finally {
+    bitmap.close();
+  }
+};
+
+const countOpaquePixels = (data: Uint8ClampedArray) => {
+  let count = 0;
+  for (let i = 3; i < data.length; i += 4) {
+    if (data[i]! > DYNAMIC_ENEMY_ALPHA_THRESHOLD) count += 1;
+  }
+  return count;
+};
+
+const shuffle = <T>(items: T[]) => {
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j]!, shuffled[i]!];
+  }
+  return shuffled;
+};
+
 export const createFallbackEnemyView = (
   rank: "grunt" | "boss",
   unitScale: number,
 ): Sprite => {
-  const texture = pickRandom(
-    textures ?? ENEMY_DATA_URLS.map((url) => Texture.from(url)),
-  );
+  const fallbackTextures =
+    getGalleryEnemyFallbackEnabled() && galleryTextures.length > 0
+      ? galleryTextures
+      : textures ?? ENEMY_DATA_URLS.map((url) => Texture.from(url));
+  const texture = pickRandom(fallbackTextures);
   setNearest(texture);
 
   const sprite = new Sprite(texture);
