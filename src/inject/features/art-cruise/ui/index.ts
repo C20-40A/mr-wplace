@@ -4,16 +4,19 @@ import type {
   ArtCruiseDebugBossOptions,
   ArtCruiseDebugSpawnOptions,
 } from "../debug";
+import type { ArtCruiseDebugWaveOption } from "../stage-director";
 import type { ArtCruiseEnemyBulletPatternId } from "../enemy/enemy-rules/types";
 import { ArtCruiseTitleScreen } from "../title-screen";
 import { ArtCruiseBossSelectScreen } from "../boss-mode/select-screen";
 import type { ArtCruiseViewport } from "../viewport";
+import { getHighScore, type ArtCruiseHighScoreResult } from "../score";
 import { createBossHud } from "./boss-hud";
 import { FONT_STACK, formatHp, formatScore, formatTime } from "./format";
 import {
   createBossClearModal,
   createGameOverModal,
   createPauseModal,
+  createSettingsModal,
 } from "./modal";
 import { createScoreHudPanel } from "./score-hud";
 
@@ -31,6 +34,7 @@ type ArtCruiseUiOptions = {
   onStart: () => void;
   onStartBoss: (level: number) => void;
   onRetry: () => void;
+  onContinue: () => void;
   onExit: () => void;
   onPauseChange: (paused: boolean) => void;
   onDebugSpawn: (options: ArtCruiseDebugSpawnOptions) => void;
@@ -38,8 +42,8 @@ type ArtCruiseUiOptions = {
   onDebugPanelChange: (open: boolean) => void;
   getModuleIds: () => string[];
   onRunModule: (moduleId: string) => void;
-  getBulletPatternIds: () => ArtCruiseEnemyBulletPatternId[];
-  onRunBulletPattern: (patternId: ArtCruiseEnemyBulletPatternId, level: number) => void;
+  getLevelWaveOptions: (level: number) => ArtCruiseDebugWaveOption[];
+  onRunLevelWave: (level: number, waveIndex: number) => void;
   getBossBulletPatternIds: () => ArtCruiseEnemyBulletPatternId[];
   onSpawnBossLevel: (
     level: number,
@@ -49,6 +53,14 @@ type ArtCruiseUiOptions = {
   onHitboxToggle: (enabled: boolean) => void;
   getResolutionLevel: () => ResolutionLevel;
   onResolutionChange: (level: ResolutionLevel) => void;
+  getDynamicEnemyMaxSizePx: () => number;
+  onDynamicEnemyMaxSizeChange: (sizePx: number) => void;
+  getDPadEnabled: () => boolean;
+  onDPadEnabledChange: (enabled: boolean) => void;
+  getMusicVolume: () => number;
+  onMusicVolumeChange: (volume: number) => void;
+  getSeVolume: () => number;
+  onSeVolumeChange: (volume: number) => void;
 };
 
 export class ArtCruiseUi {
@@ -61,6 +73,7 @@ export class ArtCruiseUi {
   private stageInfoEl: HTMLDivElement | null = null;
   private stopViewportListener: (() => void) | null = null;
   private scoreValueEl: HTMLSpanElement | null = null;
+  private highScoreValueEl: HTMLSpanElement | null = null;
   private timeValueEl: HTMLSpanElement | null = null;
   private hpValueEl: HTMLSpanElement | null = null;
   private setScoreHudOrientation: ((o: "column" | "row") => void) | null = null;
@@ -69,6 +82,7 @@ export class ArtCruiseUi {
   private bossHudPipsEl: HTMLDivElement | null = null;
   private bossHudBarFillEl: HTMLDivElement | null = null;
   private gameOverModal: HTMLDivElement | null = null;
+  private pauseButton: HTMLButtonElement | null = null;
   private lastScore = -1;
   private lastSurvivalSecond = -1;
   private lastHp = -1;
@@ -87,55 +101,56 @@ export class ArtCruiseUi {
       pointer-events: auto;
       font-family: ${FONT_STACK};
       display: none;
+      padding: 0 10px;
     `;
 
     const {
       el: scoreHudEl,
       scoreValueEl,
+      highScoreValueEl,
       timeValueEl,
       hpValueEl,
       setOrientation,
     } = createScoreHudPanel();
     this.scoreValueEl = scoreValueEl;
+    this.highScoreValueEl = highScoreValueEl;
     this.timeValueEl = timeValueEl;
     this.hpValueEl = hpValueEl;
     this.setScoreHudOrientation = setOrientation;
 
     const escapeButton = document.createElement("button");
     escapeButton.type = "button";
-    escapeButton.textContent = "PAUSE";
-    escapeButton.title = "Exit Art Cruise";
+    escapeButton.textContent = "Esc";
+    escapeButton.title = "Pause Art Cruise";
     escapeButton.style.cssText = `
-      min-width: 74px;
-      height: 36px;
-      border: 1px solid rgba(103, 232, 249, 0.9);
-      border-bottom-color: rgba(244, 114, 182, 0.9);
-      border-radius: 4px;
-      background:
-        linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.92)),
-        repeating-linear-gradient(0deg, transparent 0 3px, rgba(103, 232, 249, 0.12) 3px 4px);
-      color: #e0faff;
-      box-shadow:
-        0 0 0 1px rgba(2, 6, 23, 0.9),
-        0 0 16px rgba(34, 211, 238, 0.42),
-        inset 0 0 14px rgba(14, 165, 233, 0.18);
-      font-size: 12px;
-      font-weight: 900;
-      letter-spacing: 1px;
-      text-shadow: 0 0 8px rgba(34, 211, 238, 0.9);
+      position: fixed;
+      left: 8px;
+      top: 8px;
+      z-index: 1003;
+      padding: 2px 5px;
+      border: 0;
+      border-radius: 3px;
+      background: rgba(2, 6, 23, 0.38);
+      color: rgba(224, 250, 255, 0.58);
+      font-family: ${FONT_STACK};
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+      text-shadow: 0 0 8px rgba(2, 6, 23, 0.9);
       cursor: pointer;
-      transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+      display: none;
     `;
     escapeButton.addEventListener("pointerenter", () => {
-      escapeButton.style.transform = "translateY(-1px)";
-      escapeButton.style.borderColor = "rgba(244, 114, 182, 0.95)";
+      escapeButton.style.color = "rgba(224, 250, 255, 0.82)";
+      escapeButton.style.background = "rgba(2, 6, 23, 0.54)";
     });
     escapeButton.addEventListener("pointerleave", () => {
-      escapeButton.style.transform = "";
-      escapeButton.style.borderColor = "rgba(103, 232, 249, 0.9)";
-      escapeButton.style.borderBottomColor = "rgba(244, 114, 182, 0.9)";
+      escapeButton.style.color = "rgba(224, 250, 255, 0.58)";
+      escapeButton.style.background = "rgba(2, 6, 23, 0.38)";
     });
     escapeButton.addEventListener("click", this.openExitModal);
+    document.body.appendChild(escapeButton);
+    this.pauseButton = escapeButton;
 
     const debug = isDebugMode();
 
@@ -145,7 +160,6 @@ export class ArtCruiseUi {
     debugButton.title = "Open Art Cruise debug menu";
     debugButton.style.cssText = `
       display: ${debug ? "inline-block" : "none"};
-      margin-left: 6px;
       min-width: 56px;
       height: 36px;
       border: 1px solid rgba(103, 232, 249, 0.72);
@@ -180,7 +194,7 @@ export class ArtCruiseUi {
     stageInfoEl.textContent = "LV — BOSS —/— —";
     this.stageInfoEl = stageInfoEl;
 
-    root.append(scoreHudEl, stageInfoEl, escapeButton, debugButton);
+    root.append(scoreHudEl, stageInfoEl, debugButton);
     document.body.appendChild(root);
     this.root = root;
 
@@ -197,8 +211,8 @@ export class ArtCruiseUi {
       onOpenChange: this.options.onDebugPanelChange,
       getModuleIds: this.options.getModuleIds,
       onRunModule: this.options.onRunModule,
-      getBulletPatternIds: this.options.getBulletPatternIds,
-      onRunBulletPattern: this.options.onRunBulletPattern,
+      getLevelWaveOptions: this.options.getLevelWaveOptions,
+      onRunLevelWave: this.options.onRunLevelWave,
       getBossBulletPatternIds: this.options.getBossBulletPatternIds,
       onSpawnBossLevel: this.options.onSpawnBossLevel,
       onAdvanceBossPhase: this.options.onAdvanceBossPhase,
@@ -210,9 +224,11 @@ export class ArtCruiseUi {
       fontStack: FONT_STACK,
       onStart: this.startGame,
       onBossMode: this.openBossSelect,
+      onSettings: this.openTitleSettings,
       onExit: this.options.onExit,
     });
     this.titleScreen.mount();
+    this.updateHighScore(getHighScore()?.score ?? 0);
 
     this.layoutRoot();
     this.stopViewportListener = this.options.viewport.onChange(this.layoutRoot);
@@ -240,6 +256,11 @@ export class ArtCruiseUi {
     if (this.hpValueEl) this.hpValueEl.textContent = formatHp(hp);
   };
 
+  private updateHighScore = (score: number) => {
+    if (this.highScoreValueEl)
+      this.highScoreValueEl.textContent = formatScore(score);
+  };
+
   updateDebugState = (state: {
     level: number;
     sinceBoss: number;
@@ -257,20 +278,33 @@ export class ArtCruiseUi {
     this.stageInfoEl.textContent = `LV ${state.level}  BOSS ${state.sinceBoss}/${state.requiredWavesBeforeBoss}  ${state.lastModuleId || "—"}${perf}`;
   };
 
-  showGameOver = (score: number, survivalMs: number, level: number) => {
+  showGameOver = (
+    score: number,
+    survivalMs: number,
+    level: number,
+    continueCount: number,
+    highScore: ArtCruiseHighScoreResult | null,
+  ) => {
     if (this.gameOverModal) return;
 
     this.gameOverModal = createGameOverModal({
       score,
       survivalMs,
       level,
+      continueCount,
+      highScore,
       onReady: () => this.options.onPauseChange(true),
+      onContinue: () => {
+        this.closeGameOver();
+        this.options.onContinue();
+      },
       onRetry: () => {
         this.closeGameOver();
         this.options.onRetry();
       },
       onExit: this.options.onExit,
     });
+    if (highScore) this.updateHighScore(highScore.score);
   };
 
   private closeGameOver = () => {
@@ -294,6 +328,7 @@ export class ArtCruiseUi {
     this.stopViewportListener = null;
     this.debugPanel = null;
     this.scoreValueEl = null;
+    this.highScoreValueEl = null;
     this.timeValueEl = null;
     if (this.keydownHandler) {
       document.removeEventListener("keydown", this.keydownHandler);
@@ -304,6 +339,8 @@ export class ArtCruiseUi {
     this.bossHudNameEl = null;
     this.bossHudPipsEl = null;
     this.bossHudBarFillEl = null;
+    this.pauseButton?.remove();
+    this.pauseButton = null;
     this.root?.remove();
     this.root = null;
   };
@@ -332,9 +369,27 @@ export class ArtCruiseUi {
       fontStack: FONT_STACK,
       onStart: this.startGame,
       onBossMode: this.openBossSelect,
+      onSettings: this.openTitleSettings,
       onExit: this.options.onExit,
     });
     this.titleScreen.mount();
+  };
+
+  private openTitleSettings = () => {
+    if (this.modal) return;
+    this.modal = createSettingsModal({
+      onClose: () => this.closeModal(false),
+      resolutionLevel: this.options.getResolutionLevel(),
+      onResolutionChange: this.options.onResolutionChange,
+      dynamicEnemyMaxSizePx: this.options.getDynamicEnemyMaxSizePx(),
+      onDynamicEnemyMaxSizeChange: this.options.onDynamicEnemyMaxSizeChange,
+      dPadEnabled: this.options.getDPadEnabled(),
+      onDPadEnabledChange: this.options.onDPadEnabledChange,
+      musicVolume: this.options.getMusicVolume(),
+      onMusicVolumeChange: this.options.onMusicVolumeChange,
+      seVolume: this.options.getSeVolume(),
+      onSeVolumeChange: this.options.onSeVolumeChange,
+    });
   };
 
   private startBossGame = (level: number) => {
@@ -349,6 +404,7 @@ export class ArtCruiseUi {
     this.titleScreen?.destroy();
     this.titleScreen = null;
     if (this.root) this.root.style.display = "";
+    if (this.pauseButton) this.pauseButton.style.display = "";
     this.layoutRoot();
     if (this.keydownHandler) return;
     this.keydownHandler = (e: KeyboardEvent) => {
@@ -394,9 +450,11 @@ export class ArtCruiseUi {
     if (fitsRight) {
       // 横長: プレイエリア右側に縦並び配置。
       this.setScoreHudOrientation?.("column");
+      this.root.style.padding = "0 10px";
       this.root.style.left = `${Math.max(gap, rightLeft)}px`;
       this.root.style.right = "";
       this.root.style.top = `${Math.max(gap, rect.top)}px`;
+      this.layoutPauseButton(8, 8);
     } else {
       // 縦長(モバイル等): プレイエリア上端の外側に横並び配置。
       // 上に収まらなければエリア内上端へフォールバック。
@@ -404,12 +462,20 @@ export class ArtCruiseUi {
       const margin = 8;
       const above = rect.top - margin;
       const top = above >= gap + 56 ? gap : rect.top + margin;
+      this.root.style.padding = "0";
       this.root.style.left = `${rect.left}px`;
       this.root.style.right = `${window.innerWidth - rect.right}px`;
       this.root.style.top = `${top}px`;
+      this.layoutPauseButton(rect.left + margin, rect.top + margin);
     }
 
     this.layoutBossHud(rect);
+  };
+
+  private layoutPauseButton = (left: number, top: number) => {
+    if (!this.pauseButton) return;
+    this.pauseButton.style.left = `${left}px`;
+    this.pauseButton.style.top = `${top}px`;
   };
 
   private layoutBossHud = (rect: DOMRect) => {
@@ -434,7 +500,11 @@ export class ArtCruiseUi {
     this.updateBossHud(state.hpRatio);
   };
 
-  updateBossHud = (hpRatio: number, phaseIndex?: number, phaseCount?: number) => {
+  updateBossHud = (
+    hpRatio: number,
+    phaseIndex?: number,
+    phaseCount?: number,
+  ) => {
     if (this.bossHudBarFillEl)
       this.bossHudBarFillEl.style.transform = `scaleX(${Math.max(0, Math.min(1, hpRatio))})`;
     if (phaseIndex !== undefined && phaseCount !== undefined)
@@ -470,9 +540,25 @@ export class ArtCruiseUi {
 
     this.modal = createPauseModal({
       onResume: () => this.closeModal(true),
+      onSettings: this.routePauseToSettings,
       onExit: this.options.onExit,
+    });
+  };
+
+  private routePauseToSettings = () => {
+    this.modal?.remove();
+    this.modal = createSettingsModal({
+      onClose: () => this.closeModal(true),
       resolutionLevel: this.options.getResolutionLevel(),
       onResolutionChange: this.options.onResolutionChange,
+      dynamicEnemyMaxSizePx: this.options.getDynamicEnemyMaxSizePx(),
+      onDynamicEnemyMaxSizeChange: this.options.onDynamicEnemyMaxSizeChange,
+      dPadEnabled: this.options.getDPadEnabled(),
+      onDPadEnabledChange: this.options.onDPadEnabledChange,
+      musicVolume: this.options.getMusicVolume(),
+      onMusicVolumeChange: this.options.onMusicVolumeChange,
+      seVolume: this.options.getSeVolume(),
+      onSeVolumeChange: this.options.onSeVolumeChange,
     });
   };
 

@@ -600,4 +600,5 @@ export const ruTranslations = {
   text_draw_line_spacing: "Межстрочный интервал",
   hint_art_cruise_btn: "Прорывайтесь сквозь пиксель-арт в этой мини-игре-шутере!",
   no_snapshots_to_export: "Нет снимков для экспорта",
+  quantization_lab_wplace: "Lab CIE94 / Wplace (Медленно, перцептивный)",
 };

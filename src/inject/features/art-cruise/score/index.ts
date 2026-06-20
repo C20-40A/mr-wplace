@@ -1,5 +1,12 @@
 import type { ArtCruiseEnemyConfig } from "../enemy/enemy-rules/types";
 
+export {
+  getHighScore,
+  recordHighScore,
+  type ArtCruiseHighScore,
+  type ArtCruiseHighScoreResult,
+} from "./storage";
+
 export class ArtCruiseScore {
   private value = 0;
   private startedAt = 0;
@@ -32,4 +39,3 @@ export class ArtCruiseScore {
     return this.survivalMs;
   }
 }
-

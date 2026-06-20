@@ -96,9 +96,9 @@ export class ArtCruiseShip {
     this.hp += amount;
   }
 
-  reset() {
-    this.hp = PLAYER_MAX_HP;
-    this.invincibleUntil = 0;
+  reset(hp = PLAYER_MAX_HP, invincibleUntil = 0) {
+    this.hp = hp;
+    this.invincibleUntil = invincibleUntil;
     this.dead = false;
     this.view.alpha = 1;
   }

@@ -1,3 +1,4 @@
+import { isMobileViewport } from "@/constants/breakpoints";
 import type { WplaceMap } from "@/inject/types";
 import {
   GAME_VIEWPORT_ASPECT_HEIGHT,
@@ -87,10 +88,11 @@ export class ArtCruiseViewport {
   private layout = () => {
     if (!this.frame) return;
 
-    const margin = this.config.marginPx ?? GAME_VIEWPORT_MARGIN_PX;
+    const mobile = isMobileViewport();
+    const margin = this.config.marginPx ?? (mobile ? 4 : GAME_VIEWPORT_MARGIN_PX);
     const maxWidth =
       window.innerWidth *
-        (this.config.maxWidthRatio ?? GAME_VIEWPORT_MAX_WIDTH_RATIO) -
+        (this.config.maxWidthRatio ?? (mobile ? 1 : GAME_VIEWPORT_MAX_WIDTH_RATIO)) -
       margin * 2;
     const maxHeight =
       window.innerHeight *

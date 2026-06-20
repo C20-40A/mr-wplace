@@ -1,9 +1,5 @@
 import { RIP_IMAGE_DATA_URL } from "../effects/rip-image";
-import {
-  ART_CRUISE_BOSS_LEVELS,
-  getBossRecord,
-  type ArtCruiseBossRecord,
-} from "./storage";
+import { ART_CRUISE_BOSS_LEVELS, getBossRecord } from "./storage";
 
 type ArtCruiseBossSelectScreenOptions = {
   fontStack: string;
@@ -151,7 +147,7 @@ export class ArtCruiseBossSelectScreen {
     info.style.cssText = `flex: 1 1 auto; min-width: 0;`;
 
     const name = document.createElement("div");
-    name.textContent = unlocked ? `BOSS LV.${level}` : "LOCKED";
+    name.textContent = "LOCKED";
     name.style.cssText = `
       font-size: 13px;
       font-weight: 1000;
@@ -160,17 +156,19 @@ export class ArtCruiseBossSelectScreen {
 
     const sub = document.createElement("div");
     sub.style.cssText = `
-      margin-top: 3px;
-      font-size: 10px;
-      font-weight: 900;
-      letter-spacing: 0.5px;
-      color: rgba(224, 250, 255, 0.7);
+      margin-top: ${unlocked ? "0" : "3px"};
+      font-size: ${unlocked ? "16px" : "10px"};
+      font-weight: 1000;
+      letter-spacing: ${unlocked ? "1px" : "0.5px"};
+      color: ${unlocked ? "#f8fdff" : "rgba(224, 250, 255, 0.7)"};
+      text-shadow: ${unlocked ? "0 0 10px rgba(34, 211, 238, 0.62)" : "none"};
     `;
     sub.textContent = unlocked
-      ? `BEST ${formatBestTime((record as ArtCruiseBossRecord).bestTimeMs)}`
+      ? `TIME ${formatBestTime(record?.bestTimeMs ?? 0)}`
       : "Defeat to unlock";
 
-    info.append(name, sub);
+    if (unlocked) info.append(sub);
+    else info.append(name, sub);
     card.append(badge, info);
 
     if (unlocked) {

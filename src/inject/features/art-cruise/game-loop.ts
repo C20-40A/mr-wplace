@@ -10,9 +10,17 @@ import {
   GAME_LOGICAL_WIDTH,
   PLAYER_HIT_RADIUS,
   type ResolutionLevel,
+  getDPadEnabled as readDPadEnabled,
+  getDynamicEnemyMaxSizePx,
+  getMusicVolume as readMusicVolume,
   getResolutionLevel,
+  getSeVolume as readSeVolume,
   resolveResolutionValue,
+  setDPadEnabled as persistDPadEnabled,
+  setDynamicEnemyMaxSizePx,
+  setMusicVolume as persistMusicVolume,
   setResolutionLevel,
+  setSeVolume as persistSeVolume,
 } from "./constants";
 import {
   ArtCruiseBossController,
@@ -49,7 +57,8 @@ import {
   removePlayerBullet,
   destroyPlayerBulletPool,
 } from "./player/player-bullets";
-import { ArtCruiseScore } from "./score";
+import { ArtCruiseScore, recordHighScore } from "./score";
+import type { ArtCruiseHighScoreResult } from "./score";
 import { ArtCruiseAudioManager } from "./audio";
 import type { ArtCruiseAudioUrls, ArtCruiseSeId } from "./audio";
 import type { ArtCruiseMandalaUrls } from "./bg-layer";
@@ -72,6 +81,7 @@ const GAME_BOUNDS = {
 
 /** スコア/生存時間 HUD の更新間隔。60fps の DOM 書き換えは視認できないため間引く。 */
 const SCORE_NOTIFY_INTERVAL_MS = 100;
+const CONTINUE_HP = 3;
 
 type ArtCruiseGameLoopOptions = {
   map: WplaceMap;
@@ -81,7 +91,13 @@ type ArtCruiseGameLoopOptions = {
   debug?: ArtCruiseDebugConfig;
   onScoreUpdate?: (score: number, survivalMs: number) => void;
   onHpChange?: (hp: number) => void;
-  onGameOver?: (score: number, survivalMs: number, level: number) => void;
+  onGameOver?: (
+    score: number,
+    survivalMs: number,
+    level: number,
+    continueCount: number,
+    highScore: ArtCruiseHighScoreResult | null,
+  ) => void;
   // BOSS 練習モードでそのボスを撃破した時に発火（level, クリアタイム ms）。
   onBossClear?: (level: number, timeMs: number) => void;
   onStageUpdate?: (state: {
@@ -159,7 +175,7 @@ export class ArtCruiseGameLoop {
     stageDirector: this.stageDirector,
     squads: this.squads,
     unitScale: () => this.unitScale(),
-    onBossSpawn: (enemy) => this.handleBossSpawn(enemy),
+    onBossSpawn: (enemy, options) => this.handleBossSpawn(enemy, options),
   });
   private readonly ship: ArtCruiseShip;
   private readonly input: ArtCruiseInput;
@@ -183,6 +199,7 @@ export class ArtCruiseGameLoop {
   private bossModeLevel: number | null = null;
   // ボス出現時刻（タイム計測の起点）。null は計測中でない。
   private bossSpawnedAt: number | null = null;
+  private continueCount = 0;
   private debugPanelOpen = false;
   private debugFrameCount = 0;
   private debugLastSampleAt = 0;
@@ -226,8 +243,13 @@ export class ArtCruiseGameLoop {
     this.active = true;
     this.gameOver = false;
     this.gameTime = 0;
+    this.continueCount = 0;
     this.resetDebugStats();
     this.ship.reset();
+    this.input.setTarget(
+      GAME_LOGICAL_WIDTH * 0.5,
+      GAME_LOGICAL_HEIGHT * ArtCruiseShip.BASE_RATIO,
+    );
     this.options.onHpChange?.(this.ship.currentHp);
     this.score.reset(this.gameTime);
     this.options.onScoreUpdate?.(this.score.score, this.score.survivalTimeMs);
@@ -247,6 +269,7 @@ export class ArtCruiseGameLoop {
 
     this.gameOver = false;
     this.gameTime = 0;
+    this.continueCount = 0;
     this.lastBulletAt = 0;
     this.lastScoreNotifyAt = 0;
     this.resetDebugStats();
@@ -256,6 +279,7 @@ export class ArtCruiseGameLoop {
       GAME_LOGICAL_WIDTH * 0.5,
       GAME_LOGICAL_HEIGHT * ArtCruiseShip.BASE_RATIO,
     );
+    this.input.setTarget(this.ship.x, this.ship.y);
     this.options.onHpChange?.(this.ship.currentHp);
     this.score.reset(this.gameTime);
     this.options.onScoreUpdate?.(this.score.score, this.score.survivalTimeMs);
@@ -267,12 +291,72 @@ export class ArtCruiseGameLoop {
       this.spawner.debugSpawnBossLevel(this.bossModeLevel, this.gameTime);
   };
 
+  /** ゲームオーバー後のコンティニュー。進行レベルを保ち、スコアと現 wave を初期化して再開する */
+  continueGame = () => {
+    if (!this.initialized || !this.gameOver) return;
+
+    const level = this.stageDirector.getState().level;
+    const boss = this.enemyManager.activeEnemies.find(
+      (enemy) => enemy.config.rank === "boss",
+    );
+
+    this.gameOver = false;
+    this.continueCount += 1;
+    this.lastBulletAt = 0;
+    this.lastScoreNotifyAt = 0;
+    this.bossSpawnedAt = null;
+    this.resetDebugStats();
+    this.bgLayer.reset();
+    this.ship.reset(CONTINUE_HP);
+    this.ship.view.position.set(
+      GAME_LOGICAL_WIDTH * 0.5,
+      GAME_LOGICAL_HEIGHT * ArtCruiseShip.BASE_RATIO,
+    );
+    this.input.setTarget(this.ship.x, this.ship.y);
+    this.options.onHpChange?.(this.ship.currentHp);
+    this.score.reset(this.gameTime);
+    this.options.onScoreUpdate?.(this.score.score, this.score.survivalTimeMs);
+
+    this.stageDirector.reset({ level });
+    if (boss) {
+      this.resetActiveBossForContinue(boss);
+      return;
+    }
+
+    this.debugClearEnemies();
+    this.audio?.resetToStage();
+    if (this.bossModeLevel !== null)
+      this.spawner.debugSpawnBossLevel(this.bossModeLevel, this.gameTime);
+  };
+
+  private resetActiveBossForContinue = (boss: ArtCruiseEnemyEntity) => {
+    for (let i = this.enemyManager.activeEnemies.length - 1; i >= 0; i--) {
+      if (this.enemyManager.activeEnemies[i] === boss) continue;
+      this.enemyManager.removeEnemy(i, false);
+    }
+    this.enemyBulletManager.reset();
+    for (let i = this.bullets.length - 1; i >= 0; i--)
+      removePlayerBullet(this.bullets, i);
+    this.squads.length = 0;
+
+    boss.resetBossPhase(this.gameTime);
+    boss.view.position.set(GAME_LOGICAL_WIDTH * 0.5, GAME_LOGICAL_HEIGHT * -0.14);
+    boss.rawData.originX = boss.view.x;
+    boss.rawData.originY = boss.view.y;
+    this.bossController.setBoss(boss);
+    this.handleBossSpawn(boss);
+  };
+
   /** stage -> boss BGM crossfade（ボス出現時に呼ぶ想定の公開 API） */
-  transitionToBossBgm = () => this.audio?.transitionToBoss();
+  transitionToBossBgm = () =>
+    this.audio?.transitionToBoss(this.getCurrentBossLevel());
 
   private startAudio = () => {
     if (this.audio || !this.options.audioUrls) return;
-    this.audio = new ArtCruiseAudioManager(this.options.audioUrls);
+    this.audio = new ArtCruiseAudioManager(this.options.audioUrls, {
+      musicVolume: readMusicVolume(),
+      seVolume: readSeVolume(),
+    });
     void this.audio.start();
   };
 
@@ -301,8 +385,29 @@ export class ArtCruiseGameLoop {
 
   setPaused = (paused: boolean) => {
     this.paused = paused;
-    this.audio?.setMuted(paused);
+    this.audio?.setMuted(paused && !this.gameOver);
     if (paused) this.input.setShooting(false);
+  };
+
+  getDPadEnabled = () => readDPadEnabled();
+
+  setDPadEnabled = (enabled: boolean) => {
+    persistDPadEnabled(enabled);
+    this.input.setDPadEnabled(enabled);
+  };
+
+  getMusicVolume = () => readMusicVolume();
+
+  setMusicVolume = (volume: number) => {
+    const next = persistMusicVolume(volume);
+    this.audio?.setMusicVolume(next);
+  };
+
+  getSeVolume = () => readSeVolume();
+
+  setSeVolume = (volume: number) => {
+    const next = persistSeVolume(volume);
+    this.audio?.setSeVolume(next);
   };
 
   setDebugPanelOpen = (open: boolean) => {
@@ -310,6 +415,9 @@ export class ArtCruiseGameLoop {
   };
 
   getStageModuleIds = () => this.stageDirector.getModuleIds();
+
+  getLevelWaveOptions = (level: number) =>
+    this.stageDirector.getDebugWaveOptions(level);
 
   forceNextModule = (moduleId: string) =>
     this.stageDirector.forceNextModule(moduleId);
@@ -321,7 +429,11 @@ export class ArtCruiseGameLoop {
     this.spawner.debugSpawnModule(moduleId, this.gameTime);
   };
 
-  getBulletPatternIds = () => ART_CRUISE_BULLET_PATTERN_IDS;
+  runLevelWave = (level: number, waveIndex: number) => {
+    if (!this.initialized) return;
+    this.debugClearEnemies();
+    this.spawner.debugSpawnLevelWave(level, waveIndex, this.gameTime);
+  };
 
   getBossBulletPatternIds = () =>
     ART_CRUISE_BULLET_PATTERN_IDS.filter((id) => id !== "none");
@@ -330,12 +442,21 @@ export class ArtCruiseGameLoop {
   debugSpawnBulletPattern = (
     bulletPattern: ArtCruiseDebugSpawnOptions["bulletPattern"],
     level = 1,
+    bulletTuning?: ArtCruiseDebugSpawnOptions["bulletTuning"],
   ) => {
     if (!this.initialized) return;
-    this.spawner.debugSpawnBulletPattern(bulletPattern, this.gameTime, level);
+    this.spawner.debugSpawnBulletPattern(
+      bulletPattern,
+      this.gameTime,
+      level,
+      bulletTuning,
+    );
   };
 
-  debugSpawnBossLevel = (level: number, options?: ArtCruiseDebugBossOptions) => {
+  debugSpawnBossLevel = (
+    level: number,
+    options?: ArtCruiseDebugBossOptions,
+  ) => {
     if (!this.initialized) return;
     this.spawner.debugSpawnBossLevel(level, this.gameTime, options);
   };
@@ -428,6 +549,7 @@ export class ArtCruiseGameLoop {
     if (this.debugGraphics) this.root.addChild(this.debugGraphics);
 
     this.input.start();
+    this.input.setDPadEnabled(readDPadEnabled());
 
     const syncViewport = () => {
       const rect = this.options.viewport.getRect();
@@ -442,6 +564,7 @@ export class ArtCruiseGameLoop {
       GAME_LOGICAL_WIDTH * 0.5,
       GAME_LOGICAL_HEIGHT * ArtCruiseShip.BASE_RATIO,
     );
+    this.input.setTarget(this.ship.x, this.ship.y);
     this.bgLayer.load(GAME_LOGICAL_WIDTH, GAME_LOGICAL_HEIGHT);
     this.bgLayer.drawOverlay(GAME_LOGICAL_WIDTH, GAME_LOGICAL_HEIGHT);
     await preloadFallbackEnemyTextures();
@@ -474,6 +597,7 @@ export class ArtCruiseGameLoop {
     );
     this.bgLayer.update(deltaSeconds, GAME_LOGICAL_WIDTH, GAME_LOGICAL_HEIGHT);
 
+    this.input.updateDirectionalTarget(deltaSeconds);
     this.ship.update(this.input.pointer.x, this.input.pointer.y, now);
 
     this.updateBullets(frame);
@@ -582,7 +706,12 @@ export class ArtCruiseGameLoop {
         const x = enemy.view.x;
         const y = enemy.view.y;
         removePlayerBullet(this.bullets, hitBulletIndex);
-        this.effectManager.spawnHit(hitPoint!.x ?? x, hitPoint!.y ?? y, now, true);
+        this.effectManager.spawnHit(
+          hitPoint!.x ?? x,
+          hitPoint!.y ?? y,
+          now,
+          true,
+        );
         this.score.addDamage(enemy.config, Math.min(1, enemy.hp));
         const damageResult = enemy.takeDamage(1, now);
         const isBossEnemy = enemy.config.rank === "boss";
@@ -656,7 +785,12 @@ export class ArtCruiseGameLoop {
     this.playBossPhaseTransition(x, y, now, phaseName);
   };
 
-  private playBossPhaseTransition = (x: number, y: number, now: number, phaseName?: string) => {
+  private playBossPhaseTransition = (
+    x: number,
+    y: number,
+    now: number,
+    phaseName?: string,
+  ) => {
     playBossPhaseTransitionEffect(
       {
         effectManager: this.effectManager,
@@ -679,8 +813,7 @@ export class ArtCruiseGameLoop {
 
     for (const bullet of this.enemyBulletManager.activeBullets) {
       if (now < bullet.bornAt) continue;
-      if (!hitTestHittableBullet(bullet, px, py, PLAYER_HIT_RADIUS))
-        continue;
+      if (!hitTestHittableBullet(bullet, px, py, PLAYER_HIT_RADIUS)) continue;
 
       const result = this.ship.takeHit(now);
       if (!result.damaged) return;
@@ -698,10 +831,13 @@ export class ArtCruiseGameLoop {
     }
   };
 
-  private handleBossSpawn = (enemy: ArtCruiseEnemyEntity) => {
+  private handleBossSpawn = (
+    enemy: ArtCruiseEnemyEntity,
+    options: { skipEntrance?: boolean } = {},
+  ) => {
     this.bossSpawnedAt = this.gameTime;
     this.bgLayer.setBossActive(true);
-    this.audio?.transitionToBoss();
+    this.audio?.transitionToBoss(this.getCurrentBossLevel());
     enemy.setInvincible(this.gameTime + 4000);
     this.options.onBossHudShow?.({
       name: enemy.rawData.bossPhases?.[0]?.ultimateName ?? "BOSS",
@@ -709,6 +845,11 @@ export class ArtCruiseGameLoop {
       phaseIndex: enemy.rawData.bossPhaseIndex ?? 0,
       hpRatio: getBossHpRatio(enemy),
     });
+    if (options.skipEntrance) {
+      this.bossController.startArrival();
+      return;
+    }
+
     const texture = this.app.renderer.generateTexture({ target: enemy.view });
     const firstPhaseName = enemy.rawData.bossPhases?.[0]?.ultimateName;
     this.effectManager.spawnBossEntrance(
@@ -740,8 +881,18 @@ export class ArtCruiseGameLoop {
     this.audio?.playGameOver();
     const { score, survivalTimeMs } = this.score;
     const { level } = this.stageDirector.getState();
+    const highScore =
+      this.bossModeLevel === null
+        ? recordHighScore(score, survivalTimeMs, level)
+        : null;
     setTimeout(() => {
-      this.options.onGameOver?.(score, survivalTimeMs, level);
+      this.options.onGameOver?.(
+        score,
+        survivalTimeMs,
+        level,
+        this.continueCount,
+        highScore,
+      );
     }, 1500);
   };
 
@@ -754,7 +905,10 @@ export class ArtCruiseGameLoop {
     });
   };
 
-  private handleEnemyRemoved = (enemy: ArtCruiseEnemyEntity, defeated: boolean) => {
+  private handleEnemyRemoved = (
+    enemy: ArtCruiseEnemyEntity,
+    defeated: boolean,
+  ) => {
     // 共有 texture の参照を解放。最後の参照が外れた退避済み texture はここで破棄される。
     const assetId = enemy.rawData.dynamicAsset?.id;
     if (assetId) this.enemyGraphics.release(assetId);
@@ -780,6 +934,9 @@ export class ArtCruiseGameLoop {
     this.lastEnemyShotSeAt = now;
     this.audio?.playSe(seId);
   };
+
+  private getCurrentBossLevel = () =>
+    this.bossModeLevel ?? this.stageDirector.getState().level;
 
   // enemy(中心±halfSize) と player弾(中心±halfW/halfH) の矩形×矩形(AABB)判定。
   // 円のsqrtや乗算が不要で最速。交差領域の中心をhitPointとして返す。
@@ -814,5 +971,12 @@ export class ArtCruiseGameLoop {
     const rect = this.options.viewport.getRect();
     this.app.renderer.resize(rect.width, rect.height);
     this.root.scale.set(rect.width / GAME_LOGICAL_WIDTH);
+  };
+
+  getDynamicEnemyMaxSizePx = () => getDynamicEnemyMaxSizePx();
+
+  setDynamicEnemyMaxSizePx = (sizePx: number) => {
+    const next = setDynamicEnemyMaxSizePx(sizePx);
+    this.scanner.setMaxSizePx(next);
   };
 }

@@ -11,6 +11,7 @@ export type ArtCruiseSeId =
 export type ArtCruiseAudioUrls = {
   stage: string;
   boss: string;
+  boss2: string;
   gameOver: string;
   se: Record<ArtCruiseSeId, string>;
 };

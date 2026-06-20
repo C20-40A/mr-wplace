@@ -1,5 +1,6 @@
 import { Texture } from "pixi.js";
 import {
+  DYNAMIC_ENEMY_BOSS_MIN_OPAQUE_PIXELS,
   DYNAMIC_ENEMY_POOL_LIMIT,
   DYNAMIC_ENEMY_SIZE_UNITS,
   ENEMY_BOSS_SIZE_UNITS,
@@ -33,6 +34,7 @@ type PooledGraphic = {
   texture: Texture;
   aspect: number;
   size: number;
+  opaquePixels: number;
   createdAt: number;
   lastUsedAt: number;
   // 表示中の敵がこの texture を共有する数。0 になるまで破棄しない。
@@ -40,9 +42,6 @@ type PooledGraphic = {
   // pool から退避済みだが使用中のため破棄を保留している
   pendingDestroy: boolean;
 };
-
-/** 上位 N 個の最大画像を boss 候補とする */
-const BOSS_TOP_COUNT = 2;
 
 const createTextureCanvas = (
   width: number,
@@ -58,10 +57,12 @@ const createTextureCanvas = (
 };
 
 export class ArtCruisePixiEnemyGraphicPool {
-  // size 降順は take 時に都度評価。pool 自体は投入順 (createdAt 昇順) を保つ。
+  // pool は grunt 専用。boss は新規候補が流入する 1 スロットで予約する。
   private readonly pool: PooledGraphic[] = [];
+  private bossCandidate: PooledGraphic | null = null;
+  private bossCandidateUsed = false;
   private readonly ids = new Set<string>();
-  // id -> graphic。pool 退避後も release で破棄判定するため参照を保持する。
+  // id -> graphic。pool/候補退避後も release で破棄判定するため参照を保持する。
   private readonly byId = new Map<string, PooledGraphic>();
   private syncedScannerVersion = -1;
 
@@ -82,24 +83,17 @@ export class ArtCruisePixiEnemyGraphicPool {
   };
 
   take = (rank?: ArtCruiseEnemyRank) => {
-    if (!this.pool.length) return null;
-
-    const sorted = [...this.pool].sort((a, b) => b.size - a.size);
-    const bossSet = new Set(sorted.slice(0, BOSS_TOP_COUNT));
     const wantBoss = rank === "boss";
+    const graphic = wantBoss
+      ? this.bossCandidate
+      : this.pickLeastRecent(this.pool);
 
-    const candidates = this.pool.filter((g) =>
-      wantBoss ? bossSet.has(g) : !bossSet.has(g),
-    );
-    // 対象 rank の候補が空なら反対側にフォールバックして枯渇を避ける。
-    const graphic = this.pickLeastRecent(candidates.length ? candidates : this.pool);
     if (!graphic) return null;
 
     graphic.lastUsedAt = performance.now();
     graphic.refCount += 1;
-    const resolvedRank: ArtCruiseEnemyRank =
-      wantBoss && candidates.length ? "boss" : rank ?? "grunt";
-    return this.buildAsset(graphic, resolvedRank);
+    if (wantBoss && graphic === this.bossCandidate) this.bossCandidateUsed = true;
+    return this.buildAsset(graphic, rank ?? "grunt");
   };
 
   // 敵除去時に呼ぶ。使用中 (refCount>0) は破棄せず、退避保留中なら 0 で破棄する。
@@ -116,6 +110,8 @@ export class ArtCruisePixiEnemyGraphicPool {
   destroy = () => {
     for (const graphic of this.byId.values()) graphic.texture.destroy(true);
     this.pool.length = 0;
+    this.bossCandidate = null;
+    this.bossCandidateUsed = false;
     this.ids.clear();
     this.byId.clear();
   };
@@ -126,14 +122,47 @@ export class ArtCruisePixiEnemyGraphicPool {
       texture: this.createTexture(candidate.bitmap),
       aspect: candidate.width / candidate.height,
       size: this.getCandidateSize(candidate),
+      opaquePixels: candidate.opaquePixels,
       createdAt: performance.now(),
       lastUsedAt: 0,
       refCount: 0,
       pendingDestroy: false,
     };
-    this.pool.push(graphic);
     this.ids.add(graphic.id);
     this.byId.set(graphic.id, graphic);
+
+    if (this.trySetBossCandidate(graphic)) return;
+    this.enqueueGruntGraphic(graphic);
+  };
+
+  private trySetBossCandidate = (graphic: PooledGraphic) => {
+    if (this.shouldReplaceBossCandidate(graphic)) {
+      const previous = this.bossCandidate;
+      this.bossCandidate = graphic;
+      this.bossCandidateUsed = false;
+      if (previous) this.enqueueGruntGraphic(previous);
+      return true;
+    }
+
+    return false;
+  };
+
+  private shouldReplaceBossCandidate = (graphic: PooledGraphic) => {
+    const current = this.bossCandidate;
+    if (!current || this.bossCandidateUsed) return true;
+
+    const currentLarge =
+      current.opaquePixels >= DYNAMIC_ENEMY_BOSS_MIN_OPAQUE_PIXELS;
+    const nextLarge =
+      graphic.opaquePixels >= DYNAMIC_ENEMY_BOSS_MIN_OPAQUE_PIXELS;
+
+    if (!currentLarge && nextLarge) return true;
+    if (currentLarge && !nextLarge) return false;
+    return Math.random() < 0.5;
+  };
+
+  private enqueueGruntGraphic = (graphic: PooledGraphic) => {
+    this.pool.push(graphic);
 
     // 24 超は投入時刻が最古のものから out (最終アクセスは無関係)。
     while (this.pool.length > DYNAMIC_ENEMY_POOL_LIMIT) {

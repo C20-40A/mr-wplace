@@ -588,4 +588,5 @@ export const ptTranslations = {
   text_draw_line_spacing: "Espaçamento entre linhas",
   hint_art_cruise_btn: "Voe pela sua pixel art neste minijogo de tiro!",
   no_snapshots_to_export: "Nenhum instantâneo para exportar",
+  quantization_lab_wplace: "Lab CIE94 / Wplace (Lento, Perceptual)",
 };

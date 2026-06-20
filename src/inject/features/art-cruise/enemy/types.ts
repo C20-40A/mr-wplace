@@ -3,6 +3,7 @@ import type { PooledBulletView } from "../sprite-pool";
 import type { ArtCruisePixiDynamicEnemyAsset } from "./enemy-graphics/pixi-enemy-graphic-pool";
 import type {
   ArtCruiseBulletColor,
+  ArtCruiseBulletVariant,
   ArtCruiseBulletPatternTuning,
   ArtCruiseEnemyConfig,
   ArtCruiseEnemyBulletPatternId,
@@ -27,6 +28,9 @@ export type ArtCruisePixiEnemy = {
   /** 同時発射する弾幕パターン群。通常敵は1要素、ボスはフェーズごとに複数を組み合わせる。 */
   bulletPatterns: ArtCruiseEnemyBulletPatternId[];
   bulletTuning?: ArtCruiseBulletPatternTuning;
+  bulletPatternTunings?: Partial<
+    Record<ArtCruiseEnemyBulletPatternId, ArtCruiseBulletPatternTuning>
+  >;
   bossPhases?: ArtCruiseBossPhaseConfig[];
   bossPhaseIndex?: number;
   invincibleUntil?: number;
@@ -52,19 +56,28 @@ export type ArtCruisePixiEnemyBullet = {
   angle: number;
   dirX: number;
   dirY: number;
+  moveDirX?: number;
+  moveDirY?: number;
   speed: number;
   /** 進行方向への加速度(px/s^2)。負値で減速→停止→逆走。未指定は0。 */
   accel?: number;
+  /** 加速度つき移動時の最低速度。未指定なら速度下限なし。 */
+  minSpeed?: number;
   radius: number;
   hitRadius: number;
   bornAt: number;
   splitOnBoundary?: boolean;
   boundarySplitDone?: boolean;
   maxAgeMs?: number;
-  shape?: "circle" | "capsule" | "ellipse";
+  shape?: "circle" | "capsule" | "ellipse" | "rect";
   length?: number;
   trailMs?: number;
   radiusY?: number;
+  warningMs?: number;
   /** circle弾の色アート。boundary split時に引き継ぐ */
   bulletColor?: ArtCruiseBulletColor;
+  /** 色とは独立した弾画像。boundary split時に引き継ぐ */
+  bulletVariant?: ArtCruiseBulletVariant;
+  rotateToAngle?: boolean;
+  rotationOffset?: number;
 };

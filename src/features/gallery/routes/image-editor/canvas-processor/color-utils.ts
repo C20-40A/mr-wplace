@@ -1,3 +1,4 @@
+import { rgbToLabWplace, distanceLabWplace } from "@/utils/color-quantize";
 import type {
   PerceptualQuantizationMethod,
   QuantizationMethod,
@@ -65,7 +66,7 @@ export const rgbToOklab = (r: number, g: number, b: number): RgbColor => {
 export const isPerceptualQuantizationMethod = (
   method: QuantizationMethod
 ): method is PerceptualQuantizationMethod =>
-  method === "lab" || method === "oklab";
+  method === "lab" || method === "oklab" || method === "lab-wplace";
 
 export const rgbToPerceptualColor = (
   method: PerceptualQuantizationMethod,
@@ -74,6 +75,10 @@ export const rgbToPerceptualColor = (
   b: number
 ): RgbColor => {
   if (method === "oklab") return rgbToOklab(r, g, b);
+  if (method === "lab-wplace") {
+    const lab = rgbToLabWplace({ r, g, b });
+    return [lab.l, lab.a, lab.b];
+  }
   return rgbToLab(r, g, b);
 };
 

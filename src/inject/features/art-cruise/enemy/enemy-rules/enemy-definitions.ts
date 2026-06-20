@@ -15,7 +15,7 @@ const GRUNT_MOVEMENTS: ArtCruiseEnemyMovementId[] = [
 ];
 const GRUNT_BULLET_PATTERNS: ArtCruiseEnemyBulletPatternId[] = [
   "aimedFan",
-  "spreadBurst",
+  "burst",
 ];
 
 const pickRandom = <T>(items: T[]): T =>

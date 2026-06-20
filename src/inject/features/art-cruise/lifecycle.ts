@@ -64,8 +64,9 @@ export class ArtCruiseLifecycle {
     this.scene?.destroy();
     this.scene = null;
     changeBackgroundColor(null);
-    this.cruiseController?.stop(() => changeMap3dEnabled(false));
+    this.cruiseController?.stop();
     this.cruiseController = null;
+    changeMap3dEnabled(false);
     console.log("🧑‍🎨 : Art cruise stopped");
   };
 

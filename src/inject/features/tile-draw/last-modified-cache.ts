@@ -114,6 +114,8 @@ export const invalidateTile = (cacheKey: string): void => {
 export const getOriginalBlob = (cacheKey: string): Blob | null =>
   originalBlobCache.get(cacheKey) ?? null;
 
+export const getOriginalBlobKeys = (): string[] => [...originalBlobCache.keys()];
+
 /**
  * Save original tile blob to cache (LRU)
  */

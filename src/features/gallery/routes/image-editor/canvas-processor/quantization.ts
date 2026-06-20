@@ -1,4 +1,5 @@
 import { colorpalette } from "@/constants/colors";
+import { distanceLabWplace, rgbToLabWplace } from "@/utils/color-quantize";
 import {
   clampByte,
   colorDistPerceptualEuclidean2,
@@ -52,12 +53,33 @@ const createPerceptualNearestColorFinder = (
   };
 };
 
+const createLabWplaceNearestColorFinder = (
+  rgbList: RgbColor[]
+): ((r: number, g: number, b: number) => RgbColor) => {
+  const paletteLab = rgbList.map(([r, g, b]) => rgbToLabWplace({ r, g, b }));
+
+  return (r: number, g: number, b: number): RgbColor => {
+    const srcLab = rgbToLabWplace({ r, g, b });
+    let minDist = Infinity;
+    let nearest = rgbList[0];
+    for (let i = 0; i < rgbList.length; i++) {
+      const dist = distanceLabWplace(srcLab, paletteLab[i]);
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = rgbList[i];
+      }
+    }
+    return nearest;
+  };
+};
+
 const createNearestColorFinder = (
   selectedColorIds: number[],
   method: QuantizationMethod
 ): ((r: number, g: number, b: number) => RgbColor) | null => {
   const rgbList = getPaletteColors(selectedColorIds);
   if (rgbList.length === 0) return null;
+  if (method === "lab-wplace") return createLabWplaceNearestColorFinder(rgbList);
   if (isPerceptualQuantizationMethod(method)) {
     return createPerceptualNearestColorFinder(rgbList, method);
   }

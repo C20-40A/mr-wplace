@@ -1,10 +1,14 @@
 import {
   ART_CRUISE_VERSION,
+  DYNAMIC_ENEMY_MAX_SIZE_PX,
+  DYNAMIC_ENEMY_MAX_SIZE_MAX_PX,
+  DYNAMIC_ENEMY_MAX_SIZE_MIN_PX,
   type ResolutionLevel,
   RESOLUTION_LABELS,
 } from "../constants";
 import { RIP_IMAGE_DATA_URL } from "../effects/rip-image";
 import { getBossRecord } from "../boss-mode/storage";
+import type { ArtCruiseHighScoreResult } from "../score";
 import { FONT_STACK, formatScoreComma, formatTime } from "./format";
 import { type CruiseRank, nextRankInfo, resolveRank } from "./rank";
 
@@ -22,15 +26,15 @@ export const createModalButton = (label: string, primary: boolean) => {
   btn.style.cssText = `
     min-width: 84px;
     height: 34px;
-    border: 1px solid ${primary ? "rgba(244, 114, 182, 0.9)" : "rgba(103, 232, 249, 0.78)"};
+    border: 1px solid ${primary ? "rgba(125, 211, 252, 0.9)" : "rgba(103, 232, 249, 0.78)"};
     border-radius: 4px;
     background: ${
       primary
-        ? "linear-gradient(180deg, rgba(190, 24, 93, 0.92), rgba(88, 28, 135, 0.92))"
+        ? "linear-gradient(180deg, rgba(14, 165, 233, 0.92), rgba(12, 74, 110, 0.9))"
         : "linear-gradient(180deg, rgba(8, 47, 73, 0.92), rgba(12, 74, 110, 0.86))"
     };
     color: #f0f9ff;
-    box-shadow: inset 0 0 12px ${primary ? "rgba(244, 114, 182, 0.24)" : "rgba(34, 211, 238, 0.2)"};
+    box-shadow: inset 0 0 12px ${primary ? "rgba(186, 230, 253, 0.2)" : "rgba(34, 211, 238, 0.2)"};
     font-size: 12px;
     font-weight: 900;
     letter-spacing: 0.9px;
@@ -44,8 +48,11 @@ type GameOverModalOptions = {
   score: number;
   survivalMs: number;
   level: number;
+  continueCount: number;
+  highScore: ArtCruiseHighScoreResult | null;
   /** フェード完了後に呼ばれる（ポーズ開始 + 操作受付） */
   onReady: () => void;
+  onContinue: () => void;
   onRetry: () => void;
   onExit: () => void;
 };
@@ -107,11 +114,14 @@ const createGameOverResultCanvas = (
   score: number,
   survivalMs: number,
   level: number,
+  continueCount: number,
   rank: CruiseRank,
+  highScore: ArtCruiseHighScoreResult | null,
 ) => {
   const canvas = document.createElement("canvas");
   const width = 304;
-  const height = 184;
+  const showContinueCount = continueCount > 0;
+  const height = (highScore ? 204 : 184) + (showContinueCount ? 20 : 0);
   const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
   const next = nextRankInfo(score);
   const ctx = canvas.getContext("2d");
@@ -140,13 +150,29 @@ const createGameOverResultCanvas = (
   ctx.shadowColor = "rgba(34, 211, 238, 0.6)";
   ctx.shadowBlur = 18;
   ctx.fillStyle = "#f0f9ff";
-  ctx.font = `900 52px ${FONT_STACK}`;
-  drawCanvasText(ctx, formatScoreComma(score), width / 2, 65, 1);
+  ctx.font = `900 48px ${FONT_STACK}`;
+  drawCanvasText(ctx, formatScoreComma(score), width / 2, 61, 1);
   ctx.restore();
+
+  if (highScore) {
+    ctx.fillStyle = highScore.isNewBest
+      ? "rgba(244, 114, 182, 0.95)"
+      : "rgba(224, 250, 255, 0.68)";
+    ctx.font = `900 12px ${FONT_STACK}`;
+    drawCanvasText(
+      ctx,
+      highScore.isNewBest
+        ? "★ NEW HIGH SCORE ★"
+        : `HIGH SCORE ${formatScoreComma(highScore.score)}`,
+      width / 2,
+      82,
+      1,
+    );
+  }
 
   const badgeWidth = Math.min(250, 122 + rank.title.length * 8);
   const badgeX = (width - badgeWidth) / 2;
-  const badgeY = 84;
+  const badgeY = highScore ? 94 : 84;
   const badgeHeight = 56;
   roundRectPath(ctx, badgeX, badgeY, badgeWidth, badgeHeight, 10);
   ctx.fillStyle = "rgba(2, 6, 23, 0.55)";
@@ -185,19 +211,32 @@ const createGameOverResultCanvas = (
     ctx,
     `LV ${level}  TIME ${formatTime(survivalMs)}`,
     width / 2,
-    158,
+    highScore ? 168 : 158,
     1,
   );
 
+  if (showContinueCount) {
+    ctx.fillStyle = "rgba(224, 250, 255, 0.72)";
+    ctx.font = `900 12px ${FONT_STACK}`;
+    drawCanvasText(
+      ctx,
+      `CONTINUES ${continueCount}`,
+      width / 2,
+      highScore ? 188 : 178,
+      1,
+    );
+  }
+
+  const nextY = showContinueCount ? (highScore ? 221 : 201) : highScore ? 201 : 181;
   if (next === null) {
     ctx.fillStyle = rank.color;
-    drawCanvasText(ctx, "★ MAX RANK ★", width / 2, 181, 1);
+    drawCanvasText(ctx, "★ MAX RANK ★", width / 2, nextY, 1);
     return canvas;
   }
 
   const nextText = `NEXT ${next.rank.badge}  ${next.gap.toLocaleString("en-US")}`;
   ctx.fillStyle = "rgba(224, 250, 255, 0.78)";
-  drawCanvasText(ctx, nextText, width / 2, 181, 1);
+  drawCanvasText(ctx, nextText, width / 2, nextY, 1);
 
   return canvas;
 };
@@ -206,7 +245,17 @@ const createGameOverResultCanvas = (
 export const createGameOverModal = (
   options: GameOverModalOptions,
 ): HTMLDivElement => {
-  const { score, survivalMs, level, onReady, onRetry, onExit } = options;
+  const {
+    score,
+    survivalMs,
+    level,
+    continueCount,
+    highScore,
+    onReady,
+    onContinue,
+    onRetry,
+    onExit,
+  } = options;
   const FADE_SECONDS = 1.5;
 
   const rank = resolveRank(score);
@@ -259,19 +308,24 @@ export const createGameOverModal = (
     score,
     survivalMs,
     level,
+    continueCount,
     rank,
+    highScore,
   );
 
   const actions = document.createElement("div");
   actions.style.cssText = "display: flex; justify-content: center; gap: 10px;";
 
-  const retryButton = createModalButton("RETRY", true);
+  const continueButton = createModalButton("CONTINUE", true);
+  continueButton.addEventListener("click", onContinue);
+
+  const retryButton = createModalButton("RETRY", false);
   retryButton.addEventListener("click", onRetry);
 
   const exitButton = createModalButton("EXIT", false);
   exitButton.addEventListener("click", onExit);
 
-  actions.append(retryButton, exitButton);
+  actions.append(continueButton, retryButton, exitButton);
   const versionLabel = document.createElement("div");
   versionLabel.textContent = `v${ART_CRUISE_VERSION}`;
   versionLabel.style.cssText = `
@@ -300,92 +354,29 @@ export const createGameOverModal = (
 
 type PauseModalOptions = {
   onResume: () => void;
+  onSettings: () => void;
   onExit: () => void;
+};
+
+type SettingsModalOptions = {
+  onClose: () => void;
   resolutionLevel: ResolutionLevel;
   onResolutionChange: (level: ResolutionLevel) => void;
+  dynamicEnemyMaxSizePx: number;
+  onDynamicEnemyMaxSizeChange: (sizePx: number) => void;
+  dPadEnabled: boolean;
+  onDPadEnabledChange: (enabled: boolean) => void;
+  musicVolume: number;
+  onMusicVolumeChange: (volume: number) => void;
+  seVolume: number;
+  onSeVolumeChange: (volume: number) => void;
 };
 
 const RESOLUTION_LEVEL_COUNT = 4;
+const DYNAMIC_ENEMY_PERFORMANCE_WARNING_THRESHOLD_PX =
+  DYNAMIC_ENEMY_MAX_SIZE_PX;
 
-/**
- * 4-step resolution slider for the pause menu.
- * Clicking the track or +/- buttons steps through LOW → MEDIUM → HIGH → NATIVE.
- */
-const createResolutionSlider = (
-  initial: ResolutionLevel,
-  onChange: (level: ResolutionLevel) => void,
-) => {
-  let current = initial;
-
-  const wrap = document.createElement("div");
-  wrap.style.cssText = `
-    margin-top: 14px;
-    padding: 10px 12px;
-    border: 1px solid rgba(103, 232, 249, 0.5);
-    border-radius: 5px;
-    background: rgba(8, 47, 73, 0.5);
-    color: #e0faff;
-  `;
-
-  const header = document.createElement("div");
-  header.style.cssText =
-    "display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;";
-
-  const labelEl = document.createElement("div");
-  labelEl.textContent = "RESOLUTION";
-  labelEl.style.cssText = "font-size: 12px; font-weight: 900; letter-spacing: 1px;";
-
-  const valueEl = document.createElement("div");
-  valueEl.style.cssText =
-    "font-size: 11px; font-weight: 900; letter-spacing: 0.8px; color: #67e8f9;";
-
-  header.append(labelEl, valueEl);
-
-  // Track with 4 pip segments
-  const trackWrap = document.createElement("div");
-  trackWrap.style.cssText =
-    "display: flex; gap: 4px; align-items: center;";
-
-  const pips: HTMLDivElement[] = [];
-  for (let i = 0; i < RESOLUTION_LEVEL_COUNT; i++) {
-    const pip = document.createElement("div");
-    pip.style.cssText = `
-      flex: 1;
-      height: 6px;
-      border-radius: 3px;
-      cursor: pointer;
-      transition: background 0.12s ease;
-    `;
-    pip.addEventListener("click", (e) => {
-      e.stopPropagation();
-      current = i as ResolutionLevel;
-      applyStyle();
-      onChange(current);
-    });
-    pips.push(pip);
-    trackWrap.appendChild(pip);
-  }
-
-  wrap.append(header, trackWrap);
-
-  const applyStyle = () => {
-    valueEl.textContent = RESOLUTION_LABELS[current];
-    for (let i = 0; i < RESOLUTION_LEVEL_COUNT; i++) {
-      pips[i]!.style.background =
-        i <= current ? "rgba(103, 232, 249, 0.85)" : "rgba(103, 232, 249, 0.18)";
-    }
-    wrap.style.borderColor =
-      current === 0 ? "rgba(103, 232, 249, 0.5)" : "rgba(103, 232, 249, 0.8)";
-  };
-
-  applyStyle();
-  return wrap;
-};
-
-/** ポーズ（EXIT 確認）モーダルを生成し、body に追加して返す */
-export const createPauseModal = (
-  options: PauseModalOptions,
-): HTMLDivElement => {
+const createMenuModalShell = (widthPx: number) => {
   const modal = document.createElement("div");
   modal.style.cssText = `
     position: fixed;
@@ -415,7 +406,7 @@ export const createPauseModal = (
 
   const panel = document.createElement("div");
   panel.style.cssText = `
-    width: min(320px, calc(100vw - 32px));
+    width: min(${widthPx}px, calc(100vw - 32px));
     border: 1px solid rgba(103, 232, 249, 0.78);
     border-bottom-color: rgba(244, 114, 182, 0.78);
     border-radius: 6px;
@@ -432,7 +423,6 @@ export const createPauseModal = (
   panel.addEventListener("pointerdown", (e) => e.stopPropagation());
 
   const title = document.createElement("div");
-  title.textContent = "PAUSE";
   title.style.cssText = `
     color: #f0f9ff;
     font-size: 16px;
@@ -442,25 +432,344 @@ export const createPauseModal = (
     text-shadow: 0 0 12px rgba(34, 211, 238, 0.85);
   `;
 
+  modal.appendChild(panel);
+  document.body.appendChild(modal);
+  return { modal, panel, title };
+};
+
+/**
+ * 4-step resolution slider for the pause menu.
+ * Clicking the track or +/- buttons steps through LOW → MEDIUM → HIGH → NATIVE.
+ */
+const createResolutionSlider = (
+  initial: ResolutionLevel,
+  onChange: (level: ResolutionLevel) => void,
+) => {
+  let current = initial;
+
+  const wrap = document.createElement("div");
+  wrap.style.cssText = `
+    margin-top: 14px;
+    padding: 10px 12px;
+    border: 1px solid rgba(103, 232, 249, 0.5);
+    border-radius: 5px;
+    background: rgba(8, 47, 73, 0.5);
+    color: #e0faff;
+  `;
+
+  const header = document.createElement("div");
+  header.style.cssText =
+    "display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;";
+
+  const labelEl = document.createElement("div");
+  labelEl.textContent = "RESOLUTION";
+  labelEl.style.cssText =
+    "font-size: 12px; font-weight: 900; letter-spacing: 1px;";
+
+  const valueEl = document.createElement("div");
+  valueEl.style.cssText =
+    "font-size: 11px; font-weight: 900; letter-spacing: 0.8px; color: #67e8f9;";
+
+  header.append(labelEl, valueEl);
+
+  // Track with 4 pip segments
+  const trackWrap = document.createElement("div");
+  trackWrap.style.cssText = "display: flex; gap: 4px; align-items: center;";
+
+  const pips: HTMLDivElement[] = [];
+  for (let i = 0; i < RESOLUTION_LEVEL_COUNT; i++) {
+    const pip = document.createElement("div");
+    pip.style.cssText = `
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: background 0.12s ease;
+    `;
+    pip.addEventListener("click", (e) => {
+      e.stopPropagation();
+      current = i as ResolutionLevel;
+      applyStyle();
+      onChange(current);
+    });
+    pips.push(pip);
+    trackWrap.appendChild(pip);
+  }
+
+  wrap.append(header, trackWrap);
+
+  const applyStyle = () => {
+    valueEl.textContent = RESOLUTION_LABELS[current];
+    for (let i = 0; i < RESOLUTION_LEVEL_COUNT; i++) {
+      pips[i]!.style.background =
+        i <= current
+          ? "rgba(103, 232, 249, 0.85)"
+          : "rgba(103, 232, 249, 0.18)";
+    }
+    wrap.style.borderColor =
+      current === 0 ? "rgba(103, 232, 249, 0.5)" : "rgba(103, 232, 249, 0.8)";
+  };
+
+  applyStyle();
+  return wrap;
+};
+
+const createDynamicEnemyMaxSizeControl = (
+  initial: number,
+  onChange: (sizePx: number) => void,
+) => {
+  let current = initial;
+
+  const wrap = document.createElement("div");
+  wrap.style.cssText = `
+    margin-top: 12px;
+    padding: 10px 12px;
+    border: 1px solid rgba(103, 232, 249, 0.5);
+    border-radius: 5px;
+    background: rgba(8, 47, 73, 0.5);
+    color: #e0faff;
+  `;
+
+  const header = document.createElement("div");
+  header.style.cssText =
+    "display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px;";
+
+  const labelEl = document.createElement("div");
+  labelEl.textContent = "ENEMY MAX SIZE";
+  labelEl.style.cssText =
+    "font-size: 12px; font-weight: 900; letter-spacing: 1px;";
+
+  const valueEl = document.createElement("div");
+  valueEl.style.cssText =
+    "font-size: 11px; font-weight: 900; letter-spacing: 0.8px; color: #67e8f9;";
+
+  const warningEl = document.createElement("div");
+  warningEl.textContent = "Large sizes can slow dynamic enemy scanning.";
+  warningEl.style.cssText = `
+    display: none;
+    margin-top: 8px;
+    padding: 7px 8px;
+    border: 1px solid rgba(251, 191, 36, 0.55);
+    border-radius: 4px;
+    background: rgba(120, 53, 15, 0.28);
+    color: rgba(254, 243, 199, 0.95);
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.35;
+  `;
+
+  const input = document.createElement("input");
+  input.type = "range";
+  input.min = String(DYNAMIC_ENEMY_MAX_SIZE_MIN_PX);
+  input.max = String(DYNAMIC_ENEMY_MAX_SIZE_MAX_PX);
+  input.step = "10";
+  input.value = String(current);
+  input.style.cssText = `
+    width: 100%;
+    accent-color: #67e8f9;
+    cursor: pointer;
+  `;
+
+  const apply = () => {
+    valueEl.textContent = `${current}px`;
+    warningEl.style.display =
+      current > DYNAMIC_ENEMY_PERFORMANCE_WARNING_THRESHOLD_PX
+        ? "block"
+        : "none";
+    wrap.style.borderColor =
+      current === DYNAMIC_ENEMY_MAX_SIZE_PX
+        ? "rgba(103, 232, 249, 0.5)"
+        : "rgba(103, 232, 249, 0.8)";
+  };
+
+  input.addEventListener("input", () => {
+    current = Number(input.value);
+    apply();
+    onChange(current);
+  });
+
+  header.append(labelEl, valueEl);
+  wrap.append(header, input, warningEl);
+  apply();
+  return wrap;
+};
+
+const createVolumeControl = (
+  label: string,
+  initial: number,
+  onChange: (volume: number) => void,
+) => {
+  let current = Math.max(0, Math.min(1, initial));
+
+  const wrap = document.createElement("div");
+  wrap.style.cssText = `
+    margin-top: 12px;
+    padding: 10px 12px;
+    border: 1px solid rgba(103, 232, 249, 0.5);
+    border-radius: 5px;
+    background: rgba(8, 47, 73, 0.5);
+    color: #e0faff;
+  `;
+
+  const header = document.createElement("div");
+  header.style.cssText =
+    "display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px;";
+
+  const labelEl = document.createElement("div");
+  labelEl.textContent = label;
+  labelEl.style.cssText =
+    "font-size: 12px; font-weight: 900; letter-spacing: 1px;";
+
+  const valueEl = document.createElement("div");
+  valueEl.style.cssText =
+    "font-size: 11px; font-weight: 900; letter-spacing: 0.8px; color: #67e8f9;";
+
+  const input = document.createElement("input");
+  input.type = "range";
+  input.min = "0";
+  input.max = "100";
+  input.step = "1";
+  input.value = String(Math.round(current * 100));
+  input.style.cssText = `
+    width: 100%;
+    accent-color: #67e8f9;
+    cursor: pointer;
+  `;
+
+  const apply = () => {
+    valueEl.textContent = `${Math.round(current * 100)}%`;
+    wrap.style.borderColor =
+      current > 0 ? "rgba(103, 232, 249, 0.8)" : "rgba(103, 232, 249, 0.32)";
+  };
+
+  input.addEventListener("input", () => {
+    current = Number(input.value) / 100;
+    apply();
+    onChange(current);
+  });
+
+  header.append(labelEl, valueEl);
+  wrap.append(header, input);
+  apply();
+  return wrap;
+};
+
+const createToggleControl = (
+  label: string,
+  initial: boolean,
+  onChange: (enabled: boolean) => void,
+) => {
+  let current = initial;
+
+  const wrap = document.createElement("button");
+  wrap.type = "button";
+  wrap.style.cssText = `
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border: 1px solid rgba(103, 232, 249, 0.5);
+    border-radius: 5px;
+    background: rgba(8, 47, 73, 0.5);
+    color: #e0faff;
+    cursor: pointer;
+  `;
+
+  const labelEl = document.createElement("span");
+  labelEl.textContent = label;
+  labelEl.style.cssText =
+    "font-size: 12px; font-weight: 900; letter-spacing: 1px;";
+
+  const valueEl = document.createElement("span");
+  valueEl.style.cssText =
+    "min-width: 44px; font-size: 11px; font-weight: 900; letter-spacing: 0.8px; text-align: right;";
+
+  const apply = () => {
+    valueEl.textContent = current ? "ON" : "OFF";
+    valueEl.style.color = current ? "#67e8f9" : "rgba(224, 250, 255, 0.48)";
+    wrap.style.borderColor = current
+      ? "rgba(103, 232, 249, 0.8)"
+      : "rgba(103, 232, 249, 0.32)";
+  };
+
+  wrap.addEventListener("click", () => {
+    current = !current;
+    apply();
+    onChange(current);
+  });
+
+  wrap.append(labelEl, valueEl);
+  apply();
+  return wrap;
+};
+
+export const createSettingsModal = (
+  options: SettingsModalOptions,
+): HTMLDivElement => {
+  const { modal, panel, title } = createMenuModalShell(340);
+  title.textContent = "SETTINGS";
+
   const actions = document.createElement("div");
   actions.style.cssText =
     "display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;";
 
-  const cancelButton = createModalButton("RESUME", false);
-  cancelButton.addEventListener("click", options.onResume);
+  const closeButton = createModalButton("CLOSE", false);
+  closeButton.addEventListener("click", options.onClose);
 
-  const exitButton = createModalButton("QUIT", true);
-  exitButton.addEventListener("click", options.onExit);
-
-  const resolutionSlider = createResolutionSlider(
-    options.resolutionLevel,
-    options.onResolutionChange,
+  actions.append(closeButton);
+  panel.append(
+    title,
+    createResolutionSlider(options.resolutionLevel, options.onResolutionChange),
+    createDynamicEnemyMaxSizeControl(
+      options.dynamicEnemyMaxSizePx,
+      options.onDynamicEnemyMaxSizeChange,
+    ),
+    createVolumeControl(
+      "MUSIC VOLUME",
+      options.musicVolume,
+      options.onMusicVolumeChange,
+    ),
+    createVolumeControl(
+      "SE VOLUME",
+      options.seVolume,
+      options.onSeVolumeChange,
+    ),
+    createToggleControl(
+      "MOBILE D-PAD",
+      options.dPadEnabled,
+      options.onDPadEnabledChange,
+    ),
+    actions,
   );
 
-  actions.append(cancelButton, exitButton);
-  panel.append(title, resolutionSlider, actions);
-  modal.appendChild(panel);
-  document.body.appendChild(modal);
+  return modal;
+};
+
+/** ポーズ（EXIT 確認）モーダルを生成し、body に追加して返す */
+export const createPauseModal = (
+  options: PauseModalOptions,
+): HTMLDivElement => {
+  const { modal, panel, title } = createMenuModalShell(320);
+  title.textContent = "PAUSE";
+
+  const actions = document.createElement("div");
+  actions.style.cssText =
+    "display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;";
+
+  const cancelButton = createModalButton("RESUME", true);
+  cancelButton.addEventListener("click", options.onResume);
+
+  const settingsButton = createModalButton("SETTINGS", false);
+  settingsButton.addEventListener("click", options.onSettings);
+
+  const exitButton = createModalButton("QUIT", false);
+  exitButton.addEventListener("click", options.onExit);
+
+  actions.append(cancelButton, settingsButton, exitButton);
+  panel.append(title, actions);
 
   return modal;
 };

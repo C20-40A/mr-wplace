@@ -199,7 +199,7 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     display: ${hasAcknowledgedWarning ? "none" : "flex"};
     flex-direction: column;
     gap: 10px;
-    min-width: 260px;
+    min-width: 330px;
     max-width: 320px;
     padding: 4px 0 2px;
   `;

@@ -83,16 +83,28 @@ export class ArtCruiseEnemyBulletManager {
         shape: spawn.shape,
         length: spawn.length,
         bulletColor: spawn.bulletColor,
+        bulletVariant: spawn.bulletVariant,
       });
       const { view } = pooled;
       view.position.set(origin.x, origin.y);
-      view.rotation = spawn.angle;
+      view.rotation =
+        spawn.rotateToAngle === false
+          ? 0
+          : spawn.angle + (spawn.rotationOffset ?? 0);
       view.visible = !spawn.delayMs;
       this.container.addChild(view);
 
-      const bulletType = getBulletType(spawn.shape);
+      const bulletType = getBulletType(
+        spawn.shape,
+        spawn.bulletColor,
+        spawn.bulletVariant,
+      );
       const dirX = Math.cos(spawn.angle);
       const dirY = Math.sin(spawn.angle);
+      const moveDirX =
+        spawn.moveAngle === undefined ? undefined : Math.cos(spawn.moveAngle);
+      const moveDirY =
+        spawn.moveAngle === undefined ? undefined : Math.sin(spawn.moveAngle);
 
       this.bullets.push({
         view,
@@ -102,8 +114,11 @@ export class ArtCruiseEnemyBulletManager {
         angle: spawn.angle,
         dirX,
         dirY,
+        moveDirX,
+        moveDirY,
         speed: spawn.speed * 74,
         accel: spawn.accel != null ? spawn.accel * 74 : undefined,
+        minSpeed: spawn.minSpeed != null ? spawn.minSpeed * 74 : undefined,
         radius,
         hitRadius: radius * bulletType.hitScale,
         bornAt: now + (spawn.delayMs ?? 0),
@@ -114,8 +129,12 @@ export class ArtCruiseEnemyBulletManager {
           ? radius * bulletType.radiusYRatio
           : undefined,
         length: spawn.length,
+        warningMs: spawn.warningMs,
         trailMs: spawn.trailMs,
         bulletColor: spawn.bulletColor,
+        bulletVariant: spawn.bulletVariant,
+        rotateToAngle: spawn.rotateToAngle,
+        rotationOffset: spawn.rotationOffset,
       });
     }
   }
@@ -136,12 +155,15 @@ export class ArtCruiseEnemyBulletManager {
       // 画面内に少しでも残っているなら続行
       // レーザー(capsule)は後方端も考慮: 先頭から-length方向にbodyが伸びる
       const tailOffset = bullet.shape === "capsule" && bullet.length ? bullet.length : 0;
+      const headOffset = bullet.shape === "rect" && bullet.length ? bullet.length : 0;
       const tailX = bullet.view.x - bullet.dirX * tailOffset;
       const tailY = bullet.view.y - bullet.dirY * tailOffset;
-      const minX = Math.min(bullet.view.x, tailX) - bullet.radius;
-      const maxX = Math.max(bullet.view.x, tailX) + bullet.radius;
-      const minY = Math.min(bullet.view.y, tailY) - bullet.radius;
-      const maxY = Math.max(bullet.view.y, tailY) + bullet.radius;
+      const headX = bullet.view.x + bullet.dirX * headOffset;
+      const headY = bullet.view.y + bullet.dirY * headOffset;
+      const minX = Math.min(bullet.view.x, tailX, headX) - bullet.radius;
+      const maxX = Math.max(bullet.view.x, tailX, headX) + bullet.radius;
+      const minY = Math.min(bullet.view.y, tailY, headY) - bullet.radius;
+      const maxY = Math.max(bullet.view.y, tailY, headY) + bullet.radius;
       if (maxX >= 0 && minX <= bounds.width && maxY >= 0 && minY <= bounds.height) {
         continue;
       }
@@ -209,13 +231,19 @@ export class ArtCruiseEnemyBulletManager {
     return {
       origin: { x: hit.x, y: hit.y },
       angle: hit.angle,
+      moveAngle: hit.angle,
       speed: bullet.speed / 74,
+      minSpeed: bullet.minSpeed === undefined ? undefined : bullet.minSpeed / 74,
       size: bullet.radius,
       maxAgeMs: bullet.maxAgeMs,
       shape: bullet.shape === "capsule" ? "laser" : "circle",
       length: bullet.length,
+      warningMs: bullet.warningMs,
       trailMs: bullet.trailMs,
       bulletColor: bullet.bulletColor,
+      bulletVariant: bullet.bulletVariant,
+      rotateToAngle: bullet.rotateToAngle,
+      rotationOffset: bullet.rotationOffset,
     };
   }
 

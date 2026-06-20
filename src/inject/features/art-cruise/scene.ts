@@ -26,8 +26,8 @@ export class ArtCruiseScene {
       debug: options.debug,
       onScoreUpdate: (score, survivalMs) => this.ui.updateScore(score, survivalMs),
       onHpChange: (hp) => this.ui.updateHp(hp),
-      onGameOver: (score, survivalMs, level) =>
-        this.ui.showGameOver(score, survivalMs, level),
+      onGameOver: (score, survivalMs, level, continueCount, highScore) =>
+        this.ui.showGameOver(score, survivalMs, level, continueCount, highScore),
       onBossClear: (level, timeMs) => this.ui.showBossClear(level, timeMs),
       onStageUpdate: (state) => this.ui.updateDebugState(state),
       onBossHudShow: (state) => this.ui.showBossHud(state),
@@ -41,6 +41,7 @@ export class ArtCruiseScene {
       onStart: this.startGame,
       onStartBoss: this.startBossGame,
       onRetry: this.retryGame,
+      onContinue: this.continueGame,
       onExit: () => this.options.onExit?.(),
       onPauseChange: this.setPaused,
       onDebugSpawn: this.game.debugSpawnEnemy,
@@ -48,14 +49,22 @@ export class ArtCruiseScene {
       onDebugPanelChange: this.game.setDebugPanelOpen,
       getModuleIds: this.game.getStageModuleIds,
       onRunModule: this.game.runModule,
-      getBulletPatternIds: this.game.getBulletPatternIds,
-      onRunBulletPattern: (id, level) => this.game.debugSpawnBulletPattern(id, level),
+      getLevelWaveOptions: this.game.getLevelWaveOptions,
+      onRunLevelWave: this.game.runLevelWave,
       getBossBulletPatternIds: this.game.getBossBulletPatternIds,
       onSpawnBossLevel: this.game.debugSpawnBossLevel,
       onAdvanceBossPhase: this.game.debugAdvanceBossPhase,
       onHitboxToggle: this.game.setShowHitboxes,
       getResolutionLevel: this.game.getResolutionLevel,
       onResolutionChange: this.game.setResolutionLevel,
+      getDynamicEnemyMaxSizePx: this.game.getDynamicEnemyMaxSizePx,
+      onDynamicEnemyMaxSizeChange: this.game.setDynamicEnemyMaxSizePx,
+      getDPadEnabled: this.game.getDPadEnabled,
+      onDPadEnabledChange: this.game.setDPadEnabled,
+      getMusicVolume: this.game.getMusicVolume,
+      onMusicVolumeChange: this.game.setMusicVolume,
+      getSeVolume: this.game.getSeVolume,
+      onSeVolumeChange: this.game.setSeVolume,
     });
   }
 
@@ -112,6 +121,11 @@ export class ArtCruiseScene {
   private retryGame = () => {
     this.game.restart();
     console.log("🧑‍🎨 : Art cruise Pixi game restarted");
+  };
+
+  private continueGame = () => {
+    this.game.continueGame();
+    console.log("🧑‍🎨 : Art cruise Pixi game continued");
   };
 
   /** ボス出現時に boss BGM へ crossfade（呼び出し配線は今後） */

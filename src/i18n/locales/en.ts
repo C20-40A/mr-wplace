@@ -613,4 +613,5 @@ Do not use this feature to paint actual pixels.`,
   text_draw_line_spacing: "Line Spacing",
   hint_art_cruise_btn: "Blast through your pixel art in this shooting mini-game!",
   no_snapshots_to_export: "No snapshots to export",
+  quantization_lab_wplace: "Lab CIE94 / Wplace (Slow, Perceptual)",
 };

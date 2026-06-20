@@ -1,4 +1,4 @@
-import { Container, Sprite, Texture } from "pixi.js";
+import { Container, Graphics, Sprite, Texture, TilingSprite } from "pixi.js";
 
 /**
  * 汎用Spriteプール — 弾など高頻度に生成/破棄されるSpriteを使い回す。
@@ -47,6 +47,8 @@ export class SpritePool {
 export type PooledBulletView = {
   view: Container;
   sprite: Sprite;
+  beam?: TilingSprite;
+  warning?: Graphics;
 };
 
 export class BulletViewPool {

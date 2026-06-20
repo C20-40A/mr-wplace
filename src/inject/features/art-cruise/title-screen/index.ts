@@ -2,6 +2,7 @@ type ArtCruiseTitleScreenOptions = {
   fontStack: string;
   onStart: () => void;
   onBossMode: () => void;
+  onSettings: () => void;
   onExit: () => void;
 };
 
@@ -78,19 +79,22 @@ export class ArtCruiseTitleScreen {
       display: grid;
       gap: 10px;
       width: min(260px, 100%);
-      margin: 0 auto;
+      margin: 20px auto;
     `;
 
-    const startButton = this.createButton("START", true);
+    const startButton = this.createButton("START GAME", true);
     startButton.addEventListener("click", this.options.onStart);
 
-    const bossModeButton = this.createButton("BOSS", false);
+    const bossModeButton = this.createButton("BOSS MODE", false);
     bossModeButton.addEventListener("click", this.options.onBossMode);
+
+    const settingsButton = this.createButton("SETTINGS", false);
+    settingsButton.addEventListener("click", this.options.onSettings);
 
     const exitButton = this.createButton("EXIT", false);
     exitButton.addEventListener("click", this.options.onExit);
 
-    actions.append(startButton, bossModeButton, exitButton);
+    actions.append(startButton, bossModeButton, settingsButton, exitButton);
     panel.append(brand, title, actions);
     root.appendChild(panel);
     document.body.appendChild(root);
@@ -109,18 +113,18 @@ export class ArtCruiseTitleScreen {
     button.style.cssText = `
       position: relative;
       height: 48px;
-      border: 1px solid ${primary ? "rgba(244, 114, 182, 0.98)" : "rgba(103, 232, 249, 0.82)"};
+      border: 1px solid ${primary ? "rgba(125, 211, 252, 0.98)" : "rgba(103, 232, 249, 0.72)"};
       border-radius: 6px;
       background: ${
         primary
-          ? "linear-gradient(180deg, rgba(236, 72, 153, 0.95), rgba(88, 28, 135, 0.95))"
+          ? "linear-gradient(180deg, rgba(14, 165, 233, 0.92), rgba(12, 74, 110, 0.96))"
           : "linear-gradient(180deg, rgba(8, 47, 73, 0.94), rgba(15, 23, 42, 0.94))"
       };
       color: #f8fdff;
       box-shadow:
         0 0 0 1px rgba(2, 6, 23, 0.92),
-        0 0 22px ${primary ? "rgba(244, 114, 182, 0.42)" : "rgba(34, 211, 238, 0.26)"},
-        inset 0 0 16px ${primary ? "rgba(251, 207, 232, 0.22)" : "rgba(34, 211, 238, 0.16)"};
+        0 0 22px ${primary ? "rgba(34, 211, 238, 0.34)" : "rgba(34, 211, 238, 0.22)"},
+        inset 0 0 16px ${primary ? "rgba(186, 230, 253, 0.2)" : "rgba(34, 211, 238, 0.14)"};
       font-size: 14px;
       font-weight: 1000;
       letter-spacing: 2px;

@@ -38,6 +38,8 @@ export interface GalleryMetadata {
     string,
     { matched: Record<string, number>; total: Record<string, number> }
   >;
+  colorMetric?: string;
+  dithering?: boolean;
 }
 
 /**

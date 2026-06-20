@@ -10,6 +10,8 @@ export const isDebugMode = () =>
  * Default is 0 (lowest) for best out-of-the-box performance.
  */
 export const RESOLUTION_STORAGE_KEY = "mr-wplace-art-cruise-resolution";
+export const DYNAMIC_ENEMY_MAX_SIZE_STORAGE_KEY =
+  "mr-wplace-art-cruise-dynamic-enemy-max-size";
 export type ResolutionLevel = 0 | 1 | 2 | 3;
 export const RESOLUTION_LABELS: Record<ResolutionLevel, string> = {
   0: "LOW",
@@ -42,12 +44,55 @@ export const resolveResolutionValue = (level: ResolutionLevel): number => {
 };
 export const INPUT_SHIELD_ID = "mr-wplace-art-cruise-input-shield";
 export const UI_ROOT_ID = "mr-wplace-art-cruise-ui";
+export const D_PAD_ROOT_ID = "mr-wplace-art-cruise-d-pad";
+export const D_PAD_ENABLED_STORAGE_KEY = "mr-wplace-art-cruise-d-pad-enabled";
+export const MUSIC_VOLUME_STORAGE_KEY = "mr-wplace-art-cruise-music-volume";
+export const SE_VOLUME_STORAGE_KEY = "mr-wplace-art-cruise-se-volume";
 export const HIDDEN_MARKER_STYLE_ID =
   "mr-wplace-art-cruise-hidden-marker-style";
+
+export const getDPadEnabled = () =>
+  localStorage.getItem(D_PAD_ENABLED_STORAGE_KEY) !== "false";
+
+export const setDPadEnabled = (enabled: boolean) => {
+  try {
+    localStorage.setItem(D_PAD_ENABLED_STORAGE_KEY, enabled ? "true" : "false");
+  } catch { /* ignore */ }
+};
+
+const clampVolume = (value: number) =>
+  Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
+
+const getStoredVolume = (key: string, fallback: number) => {
+  const raw = localStorage.getItem(key);
+  const n = Number(raw);
+  if (raw !== null && Number.isFinite(n)) return clampVolume(n);
+  return fallback;
+};
+
+const setStoredVolume = (key: string, volume: number) => {
+  const next = clampVolume(volume);
+  try {
+    localStorage.setItem(key, String(next));
+  } catch { /* ignore */ }
+  return next;
+};
+
+export const DEFAULT_MUSIC_VOLUME = 0.5;
+export const DEFAULT_SE_VOLUME = 0.6;
+export const getMusicVolume = () =>
+  getStoredVolume(MUSIC_VOLUME_STORAGE_KEY, DEFAULT_MUSIC_VOLUME);
+export const setMusicVolume = (volume: number) =>
+  setStoredVolume(MUSIC_VOLUME_STORAGE_KEY, volume);
+export const getSeVolume = () =>
+  getStoredVolume(SE_VOLUME_STORAGE_KEY, DEFAULT_SE_VOLUME);
+export const setSeVolume = (volume: number) =>
+  setStoredVolume(SE_VOLUME_STORAGE_KEY, volume);
 
 export const GAME_LOGICAL_WIDTH = 650;
 export const GAME_LOGICAL_HEIGHT = 866;
 export const POINTER_FOLLOW_RATE = 0.2;
+export const D_PAD_TARGET_SPEED = 520;
 
 export const BULLET_INTERVAL_MS = 70;
 
@@ -60,12 +105,36 @@ export const DYNAMIC_ENEMY_SCAN_TILE_LIMIT = 1;
 export const DYNAMIC_ENEMY_POOL_LIMIT = 24;
 export const DYNAMIC_ENEMY_SCANNER_POOL_LIMIT = 24;
 export const DYNAMIC_ENEMY_MAX_CANDIDATES_PER_TILE = 4;
+export const DYNAMIC_ENEMY_BOSS_MIN_OPAQUE_PIXELS = 2500;
 export const DYNAMIC_ENEMY_ALPHA_THRESHOLD = 16;
 export const DYNAMIC_ENEMY_MIN_SIZE_PX = 10;
 export const DYNAMIC_ENEMY_MAX_SIZE_PX = 150;
+export const DYNAMIC_ENEMY_MAX_SIZE_MIN_PX = 30;
+export const DYNAMIC_ENEMY_MAX_SIZE_MAX_PX = 500;
 export const DYNAMIC_ENEMY_MIN_OPAQUE_PIXELS = 48;
 export const DYNAMIC_ENEMY_MAX_OPAQUE_PIXELS = 12_000;
 export const DYNAMIC_ENEMY_SIZE_UNITS = 1.2;
+
+const clampDynamicEnemyMaxSize = (value: number) =>
+  Math.max(
+    DYNAMIC_ENEMY_MAX_SIZE_MIN_PX,
+    Math.min(DYNAMIC_ENEMY_MAX_SIZE_MAX_PX, Math.round(value)),
+  );
+
+export const getDynamicEnemyMaxSizePx = () => {
+  const raw = localStorage.getItem(DYNAMIC_ENEMY_MAX_SIZE_STORAGE_KEY);
+  const n = Number(raw);
+  if (Number.isFinite(n)) return clampDynamicEnemyMaxSize(n);
+  return DYNAMIC_ENEMY_MAX_SIZE_PX;
+};
+
+export const setDynamicEnemyMaxSizePx = (sizePx: number) => {
+  const next = clampDynamicEnemyMaxSize(sizePx);
+  try {
+    localStorage.setItem(DYNAMIC_ENEMY_MAX_SIZE_STORAGE_KEY, String(next));
+  } catch { /* ignore */ }
+  return next;
+};
 
 export const VIEW_CROP_TOP_RATIO = 1 / 4;
 export const VIEW_VISIBLE_RATIO = 1 - VIEW_CROP_TOP_RATIO;

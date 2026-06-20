@@ -21,6 +21,7 @@ export type ArtCruiseDebugSpawnOptions = {
   enemyId: ArtCruiseDebugEnemyId;
   rank?: ArtCruiseEnemyRank;
   bulletPattern?: ArtCruiseEnemyBulletPatternId;
+  bulletTuning?: ArtCruiseBulletPatternTuning;
   movement?: ArtCruiseEnemyMovementId;
   squad?: boolean;
   formation?: ArtCruiseDebugFormationId;
@@ -29,4 +30,7 @@ export type ArtCruiseDebugSpawnOptions = {
 export type ArtCruiseDebugBossOptions = {
   patterns?: ArtCruiseEnemyBulletPatternId[];
   tuning?: ArtCruiseBulletPatternTuning;
+  patternTunings?: Partial<
+    Record<ArtCruiseEnemyBulletPatternId, ArtCruiseBulletPatternTuning>
+  >;
 };

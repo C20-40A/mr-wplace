@@ -31,6 +31,14 @@ export type BulletHitbox =
       angle: number;
       length: number;
       r: number;
+    }
+  | {
+      kind: "rect";
+      x: number;
+      y: number;
+      angle: number;
+      length: number;
+      halfH: number;
     };
 
 type HittableBullet = {
@@ -39,7 +47,7 @@ type HittableBullet = {
   dirX?: number;
   dirY?: number;
   hitRadius: number;
-  shape?: "circle" | "capsule" | "ellipse";
+  shape?: "circle" | "capsule" | "ellipse" | "rect";
   length?: number;
   radiusY?: number;
 };
@@ -81,6 +89,25 @@ const hitTestEllipse = (
   return local * local + perp * perp <= 1;
 };
 
+const hitTestRect = (
+  x: number,
+  y: number,
+  cos: number,
+  sin: number,
+  length: number,
+  halfH: number,
+  px: number,
+  py: number,
+  playerR: number,
+) => {
+  const dx = px - x;
+  const dy = py - y;
+  const along = dx * cos + dy * sin;
+  if (along < -playerR || along > length + playerR) return false;
+  const perp = Math.abs(-dx * sin + dy * cos);
+  return perp <= halfH + playerR;
+};
+
 /** 弾から実効当たり判定形状を導出する(絞り係数込み) */
 export const getBulletHitbox = (bullet: HittableBullet): BulletHitbox => {
   const { x, y } = bullet.view;
@@ -109,6 +136,16 @@ export const getBulletHitbox = (bullet: HittableBullet): BulletHitbox => {
       angle: bullet.angle,
       rx: bullet.hitRadius,
       ry: bullet.radiusY ?? bullet.hitRadius,
+    };
+
+  if (bullet.shape === "rect" && bullet.length)
+    return {
+      kind: "rect",
+      x,
+      y,
+      angle: bullet.angle,
+      length: bullet.length,
+      halfH: bullet.hitRadius,
     };
 
   return { kind: "circle", x, y, r: bullet.hitRadius };
@@ -149,6 +186,19 @@ export const hitTestHittableBullet = (
       bullet.dirY ?? Math.sin(bullet.angle),
       bullet.hitRadius,
       bullet.radiusY ?? bullet.hitRadius,
+      px,
+      py,
+      playerR,
+    );
+
+  if (bullet.shape === "rect" && bullet.length)
+    return hitTestRect(
+      x,
+      y,
+      bullet.dirX ?? Math.cos(bullet.angle),
+      bullet.dirY ?? Math.sin(bullet.angle),
+      bullet.length,
+      bullet.hitRadius,
       px,
       py,
       playerR,
@@ -197,6 +247,19 @@ export const hitTestBullet = (
     );
   }
 
+  if (h.kind === "rect")
+    return hitTestRect(
+      h.x,
+      h.y,
+      Math.cos(h.angle),
+      Math.sin(h.angle),
+      h.length,
+      h.halfH,
+      px,
+      py,
+      playerR,
+    );
+
   const dx = px - h.x;
   const dy = py - h.y;
   const r = h.r + playerR;
@@ -240,6 +303,22 @@ export const strokeBulletHitbox = (
       else g.lineTo(ex, ey);
     }
     g.stroke({ color, width, alpha: 0.9 });
+    return;
+  }
+
+  if (h.kind === "rect") {
+    const cos = Math.cos(h.angle);
+    const sin = Math.sin(h.angle);
+    const nx = -sin * h.halfH;
+    const ny = cos * h.halfH;
+    const headX = h.x + cos * h.length;
+    const headY = h.y + sin * h.length;
+    g.moveTo(h.x + nx, h.y + ny)
+      .lineTo(headX + nx, headY + ny)
+      .lineTo(headX - nx, headY - ny)
+      .lineTo(h.x - nx, h.y - ny)
+      .lineTo(h.x + nx, h.y + ny)
+      .stroke({ color, width, alpha: 0.9 });
     return;
   }
 

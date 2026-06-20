@@ -1,4 +1,5 @@
 import type {
+  ArtCruiseBulletPatternTuning,
   ArtCruiseEnemyBulletPatternId,
   ArtCruiseEnemyMovementId,
   ArtCruiseEnemyRank,
@@ -16,6 +17,7 @@ export type ArtCruiseStageSpawn = {
   bossPhases?: ArtCruiseBossPhaseConfig[];
   squadId?: string;
   bulletPattern?: ArtCruiseEnemyBulletPatternId;
+  bulletTuning?: ArtCruiseBulletPatternTuning;
 };
 
 export type ArtCruiseStageContext = {
@@ -24,4 +26,9 @@ export type ArtCruiseStageContext = {
   maxEnemies: number;
   sinceBoss: number;
   requiredWavesBeforeBoss: number;
+};
+
+export type ArtCruiseDebugWaveOption = {
+  index: number;
+  label: string;
 };

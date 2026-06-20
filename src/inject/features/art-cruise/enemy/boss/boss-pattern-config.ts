@@ -18,6 +18,9 @@ export type ArtCruiseBossPhaseConfig = {
   hp: number;
   ultimateName?: string;
   bulletTuning?: ArtCruiseBulletPatternTuning;
+  bulletPatternTunings?: Partial<
+    Record<ArtCruiseEnemyBulletPatternId, ArtCruiseBulletPatternTuning>
+  >;
 };
 
 export type ArtCruiseBossPatternContext = {
@@ -25,11 +28,15 @@ export type ArtCruiseBossPatternContext = {
   sinceBoss: number;
   debugPatterns?: ArtCruiseEnemyBulletPatternId[];
   debugTuning?: ArtCruiseBulletPatternTuning;
+  debugPatternTunings?: Partial<
+    Record<ArtCruiseEnemyBulletPatternId, ArtCruiseBulletPatternTuning>
+  >;
 };
 
 const resolvePhase = (
   patternSet: ArtCruiseBossPatternSet,
   tuning?: ArtCruiseBulletPatternTuning,
+  patternTunings = patternSet.patternTunings,
 ): ArtCruiseBossPhaseConfig => {
   const bulletPatterns = patternSet.ids;
   const metas = bulletPatterns.map(getBulletPatternMeta);
@@ -42,11 +49,29 @@ const resolvePhase = (
     hp: patternSet.hp,
     ultimateName,
     bulletTuning: tuning,
+    bulletPatternTunings: patternTunings,
   };
 };
 
 const patternKey = (pattern: ArtCruiseBossPatternSet) =>
   [...pattern.ids].sort().join("|");
+
+const mergePatternTunings = (
+  patternSet: ArtCruiseBossPatternSet,
+  debugTunings:
+    | Partial<Record<ArtCruiseEnemyBulletPatternId, ArtCruiseBulletPatternTuning>>
+    | undefined,
+) => {
+  if (!debugTunings) return patternSet.patternTunings;
+  const matched = patternSet.ids.flatMap((id) =>
+    debugTunings[id] ? [[id, debugTunings[id]] as const] : [],
+  );
+  if (!matched.length) return patternSet.patternTunings;
+  return {
+    ...patternSet.patternTunings,
+    ...Object.fromEntries(matched),
+  };
+};
 
 const shuffled = <T>(items: T[]) => {
   const result = [...items];
@@ -92,10 +117,18 @@ export const createBossDronePatternConfig = (
   const debugHp = pool.patterns[0]?.hp ?? 700;
   if (debugPatterns?.length)
     return Array.from({ length: pool.phaseCount }, () =>
-      resolvePhase({ ids: debugPatterns, hp: debugHp }, tuning),
+      resolvePhase(
+        { ids: debugPatterns, hp: debugHp },
+        tuning,
+        context.debugPatternTunings,
+      ),
     );
 
   return pickUniquePatterns(context.level, pool).map((pattern) =>
-    resolvePhase(pattern, tuning),
+    resolvePhase(
+      pattern,
+      tuning,
+      mergePatternTunings(pattern, context.debugPatternTunings),
+    ),
   );
 };

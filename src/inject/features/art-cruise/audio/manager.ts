@@ -1,6 +1,6 @@
 import type { ArtCruiseAudioUrls, ArtCruiseSeId } from "./types";
 
-type TrackId = "stage" | "boss" | "gameOver";
+type TrackId = "stage" | "boss" | "boss2" | "gameOver";
 
 type Track = {
   buffer: AudioBuffer;
@@ -12,6 +12,12 @@ const DEFAULT_BGM_VOLUME = 0.5;
 const DEFAULT_SE_VOLUME = 0.6;
 const CROSSFADE_SECONDS = 2.4;
 const RAMP_TAIL_SECONDS = 0.05;
+const BOSS2_MIN_LEVEL = 4;
+
+type ArtCruiseAudioManagerOptions = {
+  musicVolume?: number;
+  seVolume?: number;
+};
 
 /**
  * Art cruise 用 BGM/SE マネージャー (WebAudio)
@@ -23,14 +29,25 @@ export class ArtCruiseAudioManager {
   private context: AudioContext | null = null;
   private masterGain: GainNode | null = null;
   private seGain: GainNode | null = null;
+  private gameOverGain: GainNode | null = null;
   private readonly tracks = new Map<TrackId, Track>();
   private readonly seBuffers = new Map<ArtCruiseSeId, AudioBuffer>();
   private current: TrackId | null = null;
   private gameOverSource: AudioBufferSourceNode | null = null;
   private destroyed = false;
   private muted = false;
+  private musicVolume = DEFAULT_BGM_VOLUME;
+  private seVolume = DEFAULT_SE_VOLUME;
 
-  constructor(private readonly urls: ArtCruiseAudioUrls) {}
+  constructor(
+    private readonly urls: ArtCruiseAudioUrls,
+    options: ArtCruiseAudioManagerOptions = {},
+  ) {
+    this.musicVolume = this.clampVolume(
+      options.musicVolume ?? DEFAULT_BGM_VOLUME,
+    );
+    this.seVolume = this.clampVolume(options.seVolume ?? DEFAULT_SE_VOLUME);
+  }
 
   /** 非同期で音源を読み込み、stage BGM のループ再生を開始する */
   start = async () => {
@@ -39,19 +56,20 @@ export class ArtCruiseAudioManager {
     const context = new AudioContext();
     this.context = context;
     const masterGain = context.createGain();
-    masterGain.gain.value = this.muted ? 0 : DEFAULT_BGM_VOLUME;
+    masterGain.gain.value = this.muted ? 0 : this.musicVolume;
     masterGain.connect(context.destination);
     this.masterGain = masterGain;
 
     // SE は BGM とは独立した gain にぶら下げて一括音量調整できるようにする
     const seGain = context.createGain();
-    seGain.gain.value = this.muted ? 0 : DEFAULT_SE_VOLUME;
+    seGain.gain.value = this.seVolume;
     seGain.connect(context.destination);
     this.seGain = seGain;
 
     await Promise.all([
       this.loadTrack("stage", this.urls.stage),
       this.loadTrack("boss", this.urls.boss),
+      this.loadTrack("boss2", this.urls.boss2),
       this.loadTrack("gameOver", this.urls.gameOver),
       this.loadAllSe(),
     ]);
@@ -80,9 +98,10 @@ export class ArtCruiseAudioManager {
   };
 
   /** stage から boss BGM へ crossfade で移行する */
-  transitionToBoss = () => {
-    if (this.current === "boss") return;
-    this.playTrack("boss", { fadeInSeconds: CROSSFADE_SECONDS });
+  transitionToBoss = (level = 1) => {
+    const trackId: TrackId = level >= BOSS2_MIN_LEVEL ? "boss2" : "boss";
+    if (this.current === trackId) return;
+    this.playTrack(trackId, { fadeInSeconds: CROSSFADE_SECONDS });
   };
 
   /** ゲームオーバーBGMを一回再生し、BGMをフェードアウトする */
@@ -99,22 +118,27 @@ export class ArtCruiseAudioManager {
     masterGain.gain.linearRampToValueAtTime(0, now + CROSSFADE_SECONDS);
     for (const track of this.tracks.values()) {
       track.source?.stop(now + CROSSFADE_SECONDS + RAMP_TAIL_SECONDS);
-      track.source = null;
     }
     this.current = null;
 
     const gameOverTrack = this.tracks.get("gameOver");
     if (!gameOverTrack) return;
+    const gameOverGain = context.createGain();
+    gameOverGain.gain.value = this.muted ? 0 : this.musicVolume;
+    gameOverGain.connect(context.destination);
     const source = context.createBufferSource();
     source.buffer = gameOverTrack.buffer;
     source.loop = false;
-    source.connect(context.destination);
+    source.connect(gameOverGain);
     source.start(now + CROSSFADE_SECONDS);
     source.onended = () => {
       source.disconnect();
+      gameOverGain.disconnect();
       if (this.gameOverSource === source) this.gameOverSource = null;
+      if (this.gameOverGain === gameOverGain) this.gameOverGain = null;
     };
     this.gameOverSource = source;
+    this.gameOverGain = gameOverGain;
   };
 
   /** stage BGM へ戻す（リトライ・ボス撃破後などに利用想定） */
@@ -145,9 +169,47 @@ export class ArtCruiseAudioManager {
     const now = context.currentTime;
     masterGain.gain.cancelScheduledValues(now);
     masterGain.gain.linearRampToValueAtTime(
-      muted ? 0 : DEFAULT_BGM_VOLUME,
+      muted ? 0 : this.musicVolume,
       now + 0.2,
     );
+    if (this.gameOverGain) {
+      this.gameOverGain.gain.cancelScheduledValues(now);
+      this.gameOverGain.gain.linearRampToValueAtTime(
+        muted ? 0 : this.musicVolume,
+        now + 0.2,
+      );
+    }
+  };
+
+  setMusicVolume = (volume: number) => {
+    this.musicVolume = this.clampVolume(volume);
+    const context = this.context;
+    if (!context) return;
+    const now = context.currentTime;
+    if (this.masterGain) {
+      this.masterGain.gain.cancelScheduledValues(now);
+      this.masterGain.gain.linearRampToValueAtTime(
+        this.muted ? 0 : this.musicVolume,
+        now + 0.08,
+      );
+    }
+    if (this.gameOverGain) {
+      this.gameOverGain.gain.cancelScheduledValues(now);
+      this.gameOverGain.gain.linearRampToValueAtTime(
+        this.muted ? 0 : this.musicVolume,
+        now + 0.08,
+      );
+    }
+  };
+
+  setSeVolume = (volume: number) => {
+    this.seVolume = this.clampVolume(volume);
+    const context = this.context;
+    const seGain = this.seGain;
+    if (!context || !seGain) return;
+    const now = context.currentTime;
+    seGain.gain.cancelScheduledValues(now);
+    seGain.gain.linearRampToValueAtTime(this.seVolume, now + 0.08);
   };
 
   destroy = () => {
@@ -162,6 +224,8 @@ export class ArtCruiseAudioManager {
     this.seBuffers.clear();
     this.seGain?.disconnect();
     this.seGain = null;
+    this.gameOverGain?.disconnect();
+    this.gameOverGain = null;
     this.masterGain?.disconnect();
     this.masterGain = null;
     this.current = null;
@@ -202,23 +266,42 @@ export class ArtCruiseAudioManager {
   private playTrack = (id: TrackId, { fadeInSeconds }: { fadeInSeconds: number }) => {
     const context = this.context;
     const track = this.tracks.get(id);
-    if (!context || !track) return;
+    const masterGain = this.masterGain;
+    if (!context || !track || !masterGain) return;
 
     const now = context.currentTime;
+    this.stopGameOver();
+    masterGain.gain.cancelScheduledValues(now);
+    masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+    masterGain.gain.linearRampToValueAtTime(
+      this.muted ? 0 : this.musicVolume,
+      now + 0.08,
+    );
 
     // 旧トラックをフェードアウトして停止
-    if (this.current && this.current !== id) {
-      const prev = this.tracks.get(this.current);
-      if (prev?.source) {
+    for (const [trackId, prev] of this.tracks) {
+      if (trackId === id || !prev.source) continue;
+      if (this.current === trackId) {
         prev.gain.gain.cancelScheduledValues(now);
         prev.gain.gain.setValueAtTime(prev.gain.gain.value, now);
         prev.gain.gain.linearRampToValueAtTime(0, now + fadeInSeconds);
-        prev.source.stop(now + fadeInSeconds + RAMP_TAIL_SECONDS);
-        prev.source = null;
+        this.stopTrackSource(prev, now + fadeInSeconds + RAMP_TAIL_SECONDS);
+        continue;
       }
+      this.stopTrackSource(prev);
     }
 
-    // 再生中なら何もしない（フェードのみ）
+    if (track.source) {
+      try {
+        track.source.stop();
+      } catch {
+        // 停止済みまたは停止予約済みの source は作り直す
+      }
+      track.source.disconnect();
+      track.source = null;
+    }
+
+    // AudioBufferSourceNode は再利用できないため、通常 BGM 復帰時は作り直す。
     if (!track.source) {
       const source = context.createBufferSource();
       source.buffer = track.buffer;
@@ -239,6 +322,8 @@ export class ArtCruiseAudioManager {
     if (!source) return;
 
     this.gameOverSource = null;
+    const gain = this.gameOverGain;
+    this.gameOverGain = null;
     source.onended = null;
     try {
       source.stop();
@@ -246,5 +331,25 @@ export class ArtCruiseAudioManager {
       // すでに終了済みの場合は止める必要がない
     }
     source.disconnect();
+    gain?.disconnect();
   };
+
+  private stopTrackSource = (track: Track, when?: number) => {
+    const source = track.source;
+    if (!source) return;
+
+    track.source = null;
+    source.onended = null;
+    try {
+      if (when === undefined) source.stop();
+      else source.stop(when);
+    } catch {
+      // すでに終了済みの場合は止める必要がない
+    }
+    if (when === undefined) source.disconnect();
+    else source.onended = () => source.disconnect();
+  };
+
+  private clampVolume = (volume: number) =>
+    Math.max(0, Math.min(1, Number.isFinite(volume) ? volume : 0));
 }

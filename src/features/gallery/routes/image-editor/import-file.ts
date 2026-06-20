@@ -1,5 +1,6 @@
 import { latLngToTilePixelRound } from "@/utils/coordinate";
 import type { DrawPosition } from "@/states/galleryStorage";
+import { type ColorMetric, quantizePixels } from "@/utils/color-quantize";
 
 interface WplaceFileImage {
   dataUrl: string;
@@ -43,6 +44,10 @@ export interface ImportedEditorFile {
   dataUrl: string;
   drawPosition: DrawPosition | null;
   fileName?: string;
+  colorMetric?: string;
+  dithering?: boolean;
+  /** `.wplace` overlay 由来なら true (bluemarble等と区別) */
+  isWplaceOverlay?: boolean;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -87,6 +92,12 @@ export async function readFileAsText(file: File): Promise<string> {
   });
 }
 
+const normalizeColorMetric = (value: unknown): string | undefined => {
+  if (value === "compuphase" || value === "ciede2000") return value;
+  if (value === "lab" || value == null) return undefined;
+  return undefined;
+};
+
 const parseWplaceJson = (json: WplaceOverlayFile): ImportedEditorFile => {
   // bounds は wplace本体が整数pixelをroundして生成した lat/lng のため、
   // floorではなくround版で戻す (floorだと誤差で1pxずれる)
@@ -99,6 +110,9 @@ const parseWplaceJson = (json: WplaceOverlayFile): ImportedEditorFile => {
     dataUrl: json.image.dataUrl,
     drawPosition,
     fileName: json.name,
+    colorMetric: normalizeColorMetric(json.colorMetric),
+    dithering: typeof json.dithering === "boolean" ? json.dithering : undefined,
+    isWplaceOverlay: true,
   };
 };
 
@@ -270,6 +284,57 @@ const parseBluemarbleJsonObject = async (
     dataUrl: canvas.toDataURL("image/png"),
     drawPosition,
   };
+};
+
+const toColorMetric = (value: string | undefined): ColorMetric => {
+  if (value === "compuphase" || value === "ciede2000") return value;
+  return "lab";
+};
+
+const loadDataUrlToImageData = (dataUrl: string): Promise<ImageData> =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Failed to get canvas context"));
+        return;
+      }
+      ctx.drawImage(img, 0, 0);
+      resolve(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    };
+    img.onerror = () => reject(new Error("Failed to load image"));
+    img.src = dataUrl;
+  });
+
+/**
+ * `.wplace` 由来のdataUrlを color-quantize.ts の正確な計算でパレットへ量子化し直す。
+ * 編集画面を経由せずそのまま登録する用途。
+ */
+export const requantizeWplaceDataUrl = async (
+  dataUrl: string,
+  colorMetric: string | undefined,
+  dithering: boolean | undefined
+): Promise<string> => {
+  const imageData = await loadDataUrlToImageData(dataUrl);
+  await quantizePixels(
+    imageData.data,
+    imageData.width,
+    imageData.height,
+    toColorMetric(colorMetric),
+    dithering ?? false,
+    undefined
+  );
+  const canvas = document.createElement("canvas");
+  canvas.width = imageData.width;
+  canvas.height = imageData.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Failed to get canvas context");
+  ctx.putImageData(imageData, 0, 0);
+  return canvas.toDataURL("image/png");
 };
 
 export const parseImportedEditorFile = async (

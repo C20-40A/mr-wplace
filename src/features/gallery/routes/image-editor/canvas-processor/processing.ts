@@ -38,10 +38,12 @@ const canUseGpuProcessing = (
   useGpu: boolean,
   ditheringEnabled: boolean,
   ditheringMethod: DitheringMethod,
-  colorFlattenMode: ColorFlattenMode
+  colorFlattenMode: ColorFlattenMode,
+  quantizationMethod: QuantizationMethod
 ): boolean =>
   useGpu &&
   colorFlattenMode === "none" &&
+  quantizationMethod !== "lab-wplace" &&
   (!ditheringEnabled || ditheringMethod === "ordered");
 
 const logProcessingMode = (
@@ -281,7 +283,7 @@ export const createProcessedCanvasFromBitmap = async (
   colorFlattenMode: ColorFlattenMode = "none",
   transparentColors?: Set<string>
 ): Promise<HTMLCanvasElement> => {
-  if (canUseGpuProcessing(useGpu, ditheringEnabled, ditheringMethod, colorFlattenMode)) {
+  if (canUseGpuProcessing(useGpu, ditheringEnabled, ditheringMethod, colorFlattenMode, quantizationMethod)) {
     try {
       console.log(
         "🧑‍🎨 : Attempting GPU processing via ImageBitmap, dithering:",

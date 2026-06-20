@@ -13,12 +13,13 @@ export interface OutlinePreserveOptions {
 }
 
 export type ColorFlattenMode = "none" | "light" | "medium";
-export type PerceptualQuantizationMethod = "lab" | "oklab";
+export type PerceptualQuantizationMethod = "lab" | "oklab" | "lab-wplace";
 export type QuantizationMethod =
   | "rgb-euclidean"
   | "weighted-rgb"
   | "lab"
-  | "oklab";
+  | "oklab"
+  | "lab-wplace";
 export type DitheringMethod = "ordered" | "floyd-steinberg";
 
 export type RgbColor = [number, number, number];

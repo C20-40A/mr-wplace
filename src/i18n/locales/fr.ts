@@ -604,4 +604,5 @@ export const frTranslations = {
   text_draw_line_spacing: "Interligne",
   hint_art_cruise_btn: "Traversez votre pixel art dans ce mini-jeu de tir !",
   no_snapshots_to_export: "Aucun instantané à exporter",
+  quantization_lab_wplace: "Lab CIE94 / Wplace (Lent, Perceptuel)",
 };

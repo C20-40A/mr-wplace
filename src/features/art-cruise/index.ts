@@ -36,6 +36,7 @@ const notifyInject = (enabled: boolean) =>
       audioUrls: {
         stage: runtime.getURL("assets/art-cruise/audio/stage.ogg"),
         boss: runtime.getURL("assets/art-cruise/audio/boss.ogg"),
+        boss2: runtime.getURL("assets/art-cruise/audio/boss2.ogg"),
         gameOver: runtime.getURL("assets/art-cruise/audio/game-over.ogg"),
         se: {
           "player-shoot": runtime.getURL(

@@ -21,8 +21,10 @@ import {
   parseDrawPositionFromFileName,
 } from "./file-handler";
 import {
+  type ImportedEditorFile,
   isImportableEditorFile,
   parseImportedEditorFile,
+  requantizeWplaceDataUrl,
 } from "./import-file";
 import {
   ColorFlattenMode,
@@ -63,6 +65,7 @@ export class EditorController {
   private onSaveSuccess?: () => void;
   private currentFileName: string | null = null;
   private drawPosition: DrawPosition | null = null;
+  private wplaceColorMetric: string | undefined = undefined;
   private isEditMode = false;
   private editingItemKey: string | null = null;
   private isDesktopMode = true;
@@ -99,6 +102,7 @@ export class EditorController {
     this.editingItemKey = item.key;
     this.drawPosition = item.drawPosition ?? null;
     this.currentFileName = `edit_${item.key}`;
+    this.wplaceColorMetric = item.colorMetric;
 
     console.log("🧑‍🎨 : Loading existing image for edit:", item.key);
 
@@ -144,6 +148,18 @@ export class EditorController {
       console.log("🧑‍🎨 : Detected importable overlay file");
       this.currentFileName = imported.fileName || file.name;
       this.drawPosition = imported.drawPosition;
+      this.wplaceColorMetric = imported.colorMetric;
+
+      // .wplace overlay は編集画面を経由せず、正確な量子化のままそのまま登録する
+      if (imported.isWplaceOverlay) {
+        await this.importWplaceOverlayDirectly(imported);
+        return;
+      }
+
+      if (imported.dithering !== undefined) {
+        this.ditheringEnabled = imported.dithering;
+        this.syncDitheringUI(imported.dithering);
+      }
       this.displayImage(imported.dataUrl);
       return;
     }
@@ -177,6 +193,11 @@ export class EditorController {
       console.log("🧑‍🎨 : Detected importable overlay file");
       this.currentFileName = imported.fileName || file.name;
       this.drawPosition = imported.drawPosition;
+      this.wplaceColorMetric = imported.colorMetric;
+      if (imported.dithering !== undefined) {
+        this.ditheringEnabled = imported.dithering;
+        this.syncDitheringUI(imported.dithering);
+      }
       this.replaceImageDisplay(imported.dataUrl);
       return;
     }
@@ -413,6 +434,28 @@ export class EditorController {
     );
   }
 
+  private syncDitheringUI(enabled: boolean): void {
+    const el = this.container.querySelector(
+      "#wps-dithering-checkbox",
+    ) as HTMLInputElement | null;
+    if (el) el.checked = enabled;
+
+    const slider = this.container.querySelector(
+      "#wps-dithering-threshold-slider",
+    ) as HTMLInputElement | null;
+    if (slider) slider.disabled = !enabled;
+
+    const method = this.container.querySelector(
+      "#wps-dithering-method",
+    ) as HTMLSelectElement | null;
+    if (method) method.disabled = !enabled;
+
+    const details = this.container.querySelector(
+      "#wps-dithering-mobile-details",
+    ) as HTMLElement | null;
+    if (details) details.hidden = !enabled;
+  }
+
   private applyProcessingParams(params: AdjustToolProcessingParams): void {
     const { adjustments } = params;
     this.brightness = adjustments.brightness;
@@ -642,6 +685,7 @@ export class EditorController {
     this.transparencyMaskEditor.clear();
     this.currentFileName = null;
     this.drawPosition = null;
+    this.wplaceColorMetric = undefined;
     this.isEditMode = false;
     this.editingItemKey = null;
 
@@ -887,6 +931,8 @@ export class EditorController {
       visible: this.drawPosition ? true : false,
       zIndex: 0,
       timestamp: Date.now(),
+      colorMetric: this.wplaceColorMetric,
+      dithering: this.ditheringEnabled || undefined,
     });
 
     console.log(
@@ -911,6 +957,23 @@ export class EditorController {
     const response = await fetch(dataUrl);
     const blob = await response.blob();
     await this.saveToStorage(blob);
+  }
+
+  /**
+   * `.wplace` overlay を編集画面を経由せず、color-quantize.ts の正確な計算で
+   * 量子化し直してそのままギャラリーへ登録する。
+   * drawPosition / wplaceColorMetric は呼び出し前にセット済み前提。
+   */
+  private async importWplaceOverlayDirectly(
+    imported: ImportedEditorFile,
+  ): Promise<void> {
+    this.ditheringEnabled = imported.dithering ?? false;
+    const quantizedDataUrl = await requantizeWplaceDataUrl(
+      imported.dataUrl,
+      imported.colorMetric,
+      imported.dithering,
+    );
+    await this.saveDirectlyToGallery(quantizedDataUrl);
   }
 
   private displayImage(imageSrc: string): void {

@@ -138,6 +138,7 @@ export const createContrastQuantizationControl = (
       ]),
       createElement("option", { value: "lab" }, [t("quantization_lab")]),
       createElement("option", { value: "oklab" }, [t("quantization_oklab")]),
+      createElement("option", { value: "lab-wplace" }, [t("quantization_lab_wplace")]),
     ],
   ) as HTMLSelectElement;
   elements.colorFlattenMode = createElement(

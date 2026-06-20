@@ -40,7 +40,10 @@ type ArtCruiseSpawnerDeps = {
   stageDirector: ArtCruiseStageDirector;
   squads: ArtCruiseSquad[];
   unitScale: () => number;
-  onBossSpawn?: (enemy: ArtCruiseEnemyEntity) => void;
+  onBossSpawn?: (
+    enemy: ArtCruiseEnemyEntity,
+    options?: { skipEntrance?: boolean },
+  ) => void;
 };
 
 /**
@@ -78,6 +81,21 @@ export class ArtCruiseSpawner {
       moduleId,
       enemyManager.activeEnemies.length,
     );
+    this.debugSpawnWaveSpawns(spawns, now);
+  };
+
+  debugSpawnLevelWave = (level: number, waveIndex: number, now: number) => {
+    const spawns = this.deps.stageDirector.buildDebugWaveSpawns(
+      level,
+      waveIndex,
+    );
+    this.debugSpawnWaveSpawns(spawns, now);
+  };
+
+  private debugSpawnWaveSpawns = (
+    spawns: ArtCruiseStageSpawn[],
+    now: number,
+  ) => {
     let offset = 0;
     for (const spawn of spawns) {
       offset += spawn.delayMs;
@@ -94,6 +112,7 @@ export class ArtCruiseSpawner {
     bulletPattern: ArtCruiseDebugSpawnOptions["bulletPattern"],
     now: number,
     level = 1,
+    bulletTuning?: ArtCruiseDebugSpawnOptions["bulletTuning"],
   ) => {
     const hpBonus = Math.min(Math.floor(level / 2), 6) + 9999;
     const speedScale = 1 + Math.min(level, 8) * 0.02;
@@ -106,6 +125,7 @@ export class ArtCruiseSpawner {
         movement: "none",
         hpBonus,
         speedScale,
+        bulletTuning,
       },
       now,
       bulletPattern,
@@ -133,11 +153,13 @@ export class ArtCruiseSpawner {
           sinceBoss: 0,
           debugPatterns: debugOptions?.patterns,
           debugTuning: debugOptions?.tuning,
+          debugPatternTunings: debugOptions?.patternTunings,
         }),
       },
       now,
       enemyId: "bossDrone",
       forceStatic: true,
+      skipBossEntrance: true,
     });
   };
 
@@ -196,12 +218,14 @@ export class ArtCruiseSpawner {
     enemyId,
     bulletPattern,
     forceStatic = false,
+    skipBossEntrance = false,
   }: {
     spawn: ArtCruiseStageSpawn;
     now: number;
     enemyId?: ArtCruiseDebugSpawnOptions["enemyId"];
     bulletPattern?: ArtCruiseDebugSpawnOptions["bulletPattern"];
     forceStatic?: boolean;
+    skipBossEntrance?: boolean;
   }) => {
     const { enemyManager, bossController, enemyGraphics, squads, unitScale } =
       this.deps;
@@ -218,11 +242,13 @@ export class ArtCruiseSpawner {
     enemy.movement = isBoss ? "none" : (spawn.movement ?? enemy.movement);
     if (bulletPattern) enemy.bulletPatterns = [bulletPattern];
     else if (spawn.bulletPattern) enemy.bulletPatterns = [spawn.bulletPattern];
+    if (spawn.bulletTuning) enemy.bulletTuning = spawn.bulletTuning;
     if (isBoss && spawn.bossPhases?.length) {
       enemy.bossPhases = spawn.bossPhases;
       enemy.bossPhaseIndex = 0;
       enemy.bulletPatterns = spawn.bossPhases[0].bulletPatterns;
       enemy.bulletTuning = spawn.bossPhases[0].bulletTuning;
+      enemy.bulletPatternTunings = spawn.bossPhases[0].bulletPatternTunings;
       enemy.hp = spawn.bossPhases[0].hp;
       enemy.config.hp = spawn.bossPhases.reduce(
         (sum, phase) => sum + phase.hp,
@@ -276,7 +302,7 @@ export class ArtCruiseSpawner {
 
     if (isBoss) {
       bossController.setBoss(entity);
-      this.deps.onBossSpawn?.(entity);
+      this.deps.onBossSpawn?.(entity, { skipEntrance: skipBossEntrance });
       return;
     }
 

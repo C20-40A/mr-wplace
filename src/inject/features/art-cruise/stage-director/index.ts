@@ -16,7 +16,11 @@ import {
 } from "./grunt-formations";
 import type { GruntFormationId } from "./grunt-formations";
 import { buildBossSpawn, buildFormationSpawns } from "./modules";
-import type { ArtCruiseStageContext, ArtCruiseStageSpawn } from "./types";
+import type {
+  ArtCruiseDebugWaveOption,
+  ArtCruiseStageContext,
+  ArtCruiseStageSpawn,
+} from "./types";
 
 type QueuedSpawn = ArtCruiseStageSpawn & {
   readyAt: number;
@@ -34,7 +38,7 @@ const pickRandom = <T>(items: T[]): T =>
 export class ArtCruiseStageDirector {
   private readonly maxEnemies: number;
   private readonly queue: QueuedSpawn[] = [];
-  private level = ART_CRUISE_STAGE_BALANCE.initialLevel;
+  private level: number = ART_CRUISE_STAGE_BALANCE.initialLevel;
   private sinceBoss = 0;
   private nextReadyBaseAt = 0;
   private lastModuleId = "";
@@ -49,9 +53,9 @@ export class ArtCruiseStageDirector {
     this.maxEnemies = options.maxEnemies ?? ENEMY_MAX_COUNT;
   }
 
-  reset = () => {
+  reset = (options: { level?: number } = {}) => {
     this.queue.length = 0;
-    this.level = ART_CRUISE_STAGE_BALANCE.initialLevel;
+    this.level = options.level ?? ART_CRUISE_STAGE_BALANCE.initialLevel;
     this.sinceBoss = 0;
     this.nextReadyBaseAt = 0;
     this.lastModuleId = "";
@@ -116,6 +120,25 @@ export class ArtCruiseStageDirector {
     });
   };
 
+  getDebugWaveOptions = (level: number): ArtCruiseDebugWaveOption[] =>
+    pickGruntLevelPool(level).formations.map((config, index) => ({
+      index,
+      label: `lv${level} #${index + 1} ${config.id} / ${config.bulletPatterns
+        .map((pattern) => pattern.id)
+        .join("+")}`,
+    }));
+
+  buildDebugWaveSpawns = (
+    level: number,
+    index: number,
+  ): ArtCruiseStageSpawn[] => {
+    const config = pickGruntLevelPool(level).formations[index];
+    if (!config) return [];
+    return buildFormationSpawns(config).map((spawn) =>
+      this.applyGruntScaling(spawn, level),
+    );
+  };
+
   takeReadySpawn = (
     now: number,
     activeEnemies: number,
@@ -170,7 +193,7 @@ export class ArtCruiseStageDirector {
 
     for (const spawn of spawns) {
       readyAt += spawn.delayMs;
-      this.queue.push({ ...this.applyGruntScaling(spawn), readyAt });
+      this.queue.push({ ...this.applyGruntScaling(spawn, this.level), readyAt });
     }
 
     this.lastModuleId = moduleId;
@@ -238,10 +261,11 @@ export class ArtCruiseStageDirector {
   // boss は bossPhases 側で別途スケールするため対象外。
   private applyGruntScaling = (
     spawn: ArtCruiseStageSpawn,
+    level: number,
   ): ArtCruiseStageSpawn => {
     if (spawn.rank !== "grunt") return spawn;
-    const hpBonus = (spawn.hpBonus ?? 0) + Math.min(Math.floor(this.level / 2), 6);
-    const speedScale = (spawn.speedScale ?? 1) * (1 + Math.min(this.level, 8) * 0.02);
+    const hpBonus = (spawn.hpBonus ?? 0) + Math.min(Math.floor(level / 2), 6);
+    const speedScale = (spawn.speedScale ?? 1) * (1 + Math.min(level, 8) * 0.02);
     return { ...spawn, hpBonus, speedScale };
   };
 
@@ -284,4 +308,4 @@ export class ArtCruiseStageDirector {
   };
 }
 
-export type { ArtCruiseStageSpawn } from "./types";
+export type { ArtCruiseDebugWaveOption, ArtCruiseStageSpawn } from "./types";

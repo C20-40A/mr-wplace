@@ -5,11 +5,27 @@ import {
   createEnemyBulletSpawns,
   getBulletPatternFireInterval,
 } from "./enemy-bullet-patterns";
-import type { ArtCruiseEnemyBulletSpawn } from "./enemy-rules/types";
+import type {
+  ArtCruiseBulletPatternTuning,
+  ArtCruiseEnemyBulletPatternId,
+  ArtCruiseEnemyBulletSpawn,
+} from "./enemy-rules/types";
 
 export type ArtCruiseEnemyDamageResult = {
   defeated: boolean;
   phaseChanged: boolean;
+};
+
+const resolvePatternTuning = (
+  base: ArtCruiseBulletPatternTuning | undefined,
+  patternTunings:
+    | Partial<Record<ArtCruiseEnemyBulletPatternId, ArtCruiseBulletPatternTuning>>
+    | undefined,
+  pattern: ArtCruiseEnemyBulletPatternId,
+): ArtCruiseBulletPatternTuning | undefined => {
+  const local = patternTunings?.[pattern];
+  if (!local) return base;
+  return { ...base, ...local };
 };
 
 export class ArtCruiseEnemyEntity {
@@ -82,10 +98,15 @@ export class ArtCruiseEnemyEntity {
     // 各パターンを独立したインターバルで判定し、撃てるものを合成する。
     for (const pattern of this.data.bulletPatterns) {
       if (pattern === "none") continue;
+      const tuning = resolvePatternTuning(
+        this.data.bulletTuning,
+        this.data.bulletPatternTunings,
+        pattern,
+      );
       const lastFired = this.data.lastFiredAt[pattern] ?? 0;
       if (
         now - lastFired <
-        getBulletPatternFireInterval(pattern, this.data.bulletTuning)
+        getBulletPatternFireInterval(pattern, tuning)
       )
         continue;
 
@@ -95,7 +116,7 @@ export class ArtCruiseEnemyEntity {
         playerPos,
         bounds,
         now,
-        tuning: this.data.bulletTuning,
+        tuning,
       });
       if (patternSpawns.length === 0) continue;
       (spawns ??= []).push(...patternSpawns);
@@ -110,6 +131,21 @@ export class ArtCruiseEnemyEntity {
 
   setInvincible(until: number) {
     this.data.invincibleUntil = until;
+  }
+
+  resetBossPhase(now: number) {
+    const first = this.data.bossPhases?.[0];
+    if (this.data.config.rank !== "boss" || !first) return false;
+
+    this.data.bossPhaseIndex = 0;
+    this.data.bulletPatterns = first.bulletPatterns;
+    this.data.bulletTuning = first.bulletTuning;
+    this.data.bulletPatternTunings = first.bulletPatternTunings;
+    this.data.hp = first.hp;
+    this.data.lastFiredAt = {};
+    this.data.spawnedAt = now;
+    this.data.invincibleUntil = undefined;
+    return true;
   }
 
   takeDamage(amount: number, now?: number): ArtCruiseEnemyDamageResult {
@@ -131,6 +167,7 @@ export class ArtCruiseEnemyEntity {
     this.data.bossPhaseIndex = nextIndex;
     this.data.bulletPatterns = next.bulletPatterns;
     this.data.bulletTuning = next.bulletTuning;
+    this.data.bulletPatternTunings = next.bulletPatternTunings;
     this.data.hp = next.hp;
     // 新フェーズのパターンは即時発射できるようタイマーをクリアする。
     this.data.lastFiredAt = {};

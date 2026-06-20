@@ -48,6 +48,8 @@ export interface GalleryItem {
     string,
     { matched: Record<string, number>; total: Record<string, number> }
   >;
+  colorMetric?: string;
+  dithering?: boolean;
 }
 
 /**
@@ -68,6 +70,8 @@ const metadataToItem = (
   width: metadata.width,
   height: metadata.height,
   perTileColorStats: metadata.perTileStats,
+  colorMetric: metadata.colorMetric,
+  dithering: metadata.dithering,
 });
 
 /**
@@ -128,6 +132,8 @@ export class GalleryStorage {
         zIndex: item.layerOrder ?? 0,
         timestamp: item.timestamp,
         perTileStats: item.perTileColorStats,
+        colorMetric: item.colorMetric,
+        dithering: item.dithering,
       });
     } else {
       // Update metadata only
@@ -137,6 +143,8 @@ export class GalleryStorage {
         visible: item.drawEnabled !== false,
         zIndex: item.layerOrder ?? 0,
         perTileStats: item.perTileColorStats,
+        colorMetric: item.colorMetric,
+        dithering: item.dithering,
       });
     }
   }

@@ -13,10 +13,12 @@ const applyBulletPatterns = (
   let gruntIndex = 0;
   return spawns.map((spawn) => {
     if (spawn.rank !== "grunt" || spawn.bulletPattern) return spawn;
-    const bulletPattern =
+    const pattern =
       config.bulletPatterns[gruntIndex % config.bulletPatterns.length];
     gruntIndex += 1;
-    return bulletPattern ? { ...spawn, bulletPattern } : spawn;
+    return pattern
+      ? { ...spawn, bulletPattern: pattern.id, bulletTuning: pattern.tuning }
+      : spawn;
   });
 };
 

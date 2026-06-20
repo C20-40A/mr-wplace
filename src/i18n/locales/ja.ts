@@ -616,4 +616,5 @@ export const jaTranslations = {
   text_draw_line_spacing: "行間",
   hint_art_cruise_btn: "シューティングでドット絵の世界を駆け抜けよう！",
   no_snapshots_to_export: "エクスポートできるスナップショットがありません",
+  quantization_lab_wplace: "Lab CIE94 / Wplace（低速・知覚的）",
 };

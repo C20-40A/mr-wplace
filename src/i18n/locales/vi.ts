@@ -583,4 +583,5 @@ export const viTranslations = {
   text_draw_line_spacing: "Giãn dòng",
   hint_art_cruise_btn: "Bắn phá xuyên qua pixel art trong minigame bắn súng này!",
   no_snapshots_to_export: "Không có ảnh chụp để xuất",
+  quantization_lab_wplace: "Lab CIE94 / Wplace (Chậm, Tri Giác)",
 };
