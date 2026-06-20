@@ -34,6 +34,7 @@ export type ArtCruisePixiEnemy = {
   bossPhases?: ArtCruiseBossPhaseConfig[];
   bossPhaseIndex?: number;
   invincibleUntil?: number;
+  bossChargeUntil?: number;
   movement: ArtCruiseEnemyMovementId;
   squadId?: string;
   squadIndex?: number;

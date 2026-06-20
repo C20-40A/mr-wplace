@@ -355,7 +355,6 @@ export const ART_CRUISE_BOSS_PHASE_POOLS: ArtCruiseBossPhasePool[] = [
         ],
         660,
       ),
-      patternSet([p("bossWeavingStream")], 780),
       patternSet(
         [
           p("bossReflectLaser", {
@@ -393,6 +392,7 @@ export const ART_CRUISE_BOSS_PHASE_POOLS: ArtCruiseBossPhasePool[] = [
     phaseCount: 4,
     patterns: [
       patternSet([p("bossFrozenLattice")], 820), // できる
+      patternSet([p("bossWeavingStream")], 700), // 思ったよりむずい
       patternSet(
         [
           p("bossSideKunaiBarrage", {

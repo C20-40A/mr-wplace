@@ -443,6 +443,63 @@ export class ArtCruiseEffectManager {
     });
   }
 
+  spawnBossPhaseCharge(
+    target: { x: number; y: number; radius?: number },
+    now: number,
+    durationMs: number,
+  ) {
+    const g = new Graphics();
+    this.layer.addChild(g);
+    const sparkCount = 18;
+    const sparks = Array.from({ length: sparkCount }, (_, i) => ({
+      angle: (Math.PI * 2 * i) / sparkCount,
+      phase: Math.random() * Math.PI * 2,
+      radius: 90 + Math.random() * 80,
+      size: 2 + Math.random() * 3,
+      speed: 1.8 + Math.random() * 1.2,
+      color: Math.random() < 0.5 ? 0xffe4ff : 0x9ee8ff,
+    }));
+
+    this.particles.push({
+      g,
+      update: (time) => {
+        const t = Math.min((time - now) / durationMs, 1);
+        const pulse = 0.5 + Math.sin(t * Math.PI * 10) * 0.5;
+        const baseRadius = Math.max(34, target.radius ?? 54);
+        g.position.set(target.x, target.y);
+        g.clear();
+
+        g.circle(0, 0, baseRadius + 18 + pulse * 10);
+        g.stroke({
+          width: 4 + pulse * 3,
+          color: 0xffffff,
+          alpha: 0.22 + pulse * 0.28,
+        });
+        g.circle(0, 0, baseRadius + 44 - t * 18);
+        g.stroke({
+          width: 3,
+          color: 0xff44ff,
+          alpha: 0.4 + pulse * 0.25,
+        });
+
+        for (const spark of sparks) {
+          const angle =
+            spark.angle + t * Math.PI * spark.speed + spark.phase * 0.18;
+          const distance =
+            spark.radius * (1 - t * 0.72) +
+            Math.sin(t * 18 + spark.phase) * 8;
+          const px = Math.cos(angle) * distance;
+          const py = Math.sin(angle) * distance;
+          const alpha = 0.35 + pulse * 0.45;
+          g.circle(px, py, spark.size);
+          g.fill({ color: spark.color, alpha });
+        }
+
+        return t < 1;
+      },
+    });
+  }
+
   private spawnBossDefeatBurst(x: number, y: number, now: number) {
     const lifeMs = 980;
     const g = new Graphics();

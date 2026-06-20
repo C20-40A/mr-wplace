@@ -710,6 +710,8 @@ export class ArtCruiseGameLoop {
           now,
           true,
         );
+        if (enemy.isInvincible(now)) continue;
+
         this.score.addDamage(enemy.config, Math.min(1, enemy.hp));
         const damageResult = enemy.takeDamage(1, now);
         const isBossEnemy = enemy.config.rank === "boss";
@@ -778,9 +780,11 @@ export class ArtCruiseGameLoop {
       phaseIndex,
       hpRatio: getBossHpRatio(enemy),
     });
-    enemy.setInvincible(now + 2000);
-    this.stageDirector.pauseForBossPhaseTransition(now, 2000);
+    const chargeMs = 2000;
+    enemy.startBossCharge(now + chargeMs);
+    this.stageDirector.pauseForBossPhaseTransition(now, chargeMs);
     this.playBossPhaseTransition(x, y, now, phaseName);
+    this.effectManager.spawnBossPhaseCharge(enemy.view, now, chargeMs);
   };
 
   private playBossPhaseTransition = (

@@ -82,6 +82,8 @@ export class ArtCruiseEnemyEntity {
     bounds: { width: number; height: number },
     playerPos: { x: number; y: number },
   ): ArtCruiseEnemyBulletSpawn[] | null {
+    if (this.isBossCharging(now)) return null;
+
     // プレイエリア内（表示範囲内）にいるときのみ弾を撃てる
     if (
       this.view.x < 0 ||
@@ -133,6 +135,16 @@ export class ArtCruiseEnemyEntity {
     this.data.invincibleUntil = until;
   }
 
+  isBossCharging(now: number) {
+    return (this.data.bossChargeUntil ?? 0) > now;
+  }
+
+  startBossCharge(until: number) {
+    if (this.data.config.rank !== "boss") return;
+    this.data.bossChargeUntil = until;
+    this.setInvincible(until);
+  }
+
   resetBossPhase(now: number) {
     const first = this.data.bossPhases?.[0];
     if (this.data.config.rank !== "boss" || !first) return false;
@@ -145,11 +157,13 @@ export class ArtCruiseEnemyEntity {
     this.data.lastFiredAt = {};
     this.data.spawnedAt = now;
     this.data.invincibleUntil = undefined;
+    this.data.bossChargeUntil = undefined;
     return true;
   }
 
   takeDamage(amount: number, now?: number): ArtCruiseEnemyDamageResult {
-    if (now !== undefined && this.isInvincible(now)) return { defeated: false, phaseChanged: false };
+    if (now !== undefined && this.isInvincible(now))
+      return { defeated: false, phaseChanged: false };
     this.data.hp -= amount;
     if (this.data.hp > 0) return { defeated: false, phaseChanged: false };
     if (this.advanceBossPhase()) return { defeated: false, phaseChanged: true };
@@ -169,7 +183,7 @@ export class ArtCruiseEnemyEntity {
     this.data.bulletTuning = next.bulletTuning;
     this.data.bulletPatternTunings = next.bulletPatternTunings;
     this.data.hp = next.hp;
-    // 新フェーズのパターンは即時発射できるようタイマーをクリアする。
+    // 新フェーズのパターンはチャージ後に即時発射できるようタイマーをクリアする。
     this.data.lastFiredAt = {};
     return true;
   }
