@@ -77,6 +77,7 @@ export class ArtCruiseEffectManager {
       now,
       scale: isBoss ? 12 : 4,
     });
+    if (!isBoss) this.spawnGruntDeathRing(x, y, now);
     if (isBoss) this.spawnBossDefeatBurst(x, y, now);
   }
 
@@ -550,6 +551,28 @@ export class ArtCruiseEffectManager {
           g.stroke({ width: spark.size * alpha, color: spark.color, alpha: alpha * 0.95 });
         }
 
+        return t < 1;
+      },
+    });
+  }
+
+  private spawnGruntDeathRing(x: number, y: number, now: number) {
+    const lifeMs = 360;
+    const g = new Graphics();
+    g.position.set(x, y);
+    this.layer.addChild(g);
+
+    this.particles.push({
+      g,
+      update: (time) => {
+        const t = Math.min((time - now) / lifeMs, 1);
+        const eased = 1 - (1 - t) * (1 - t);
+        const alpha = 1 - t;
+        g.clear();
+        g.circle(0, 0, 10 + eased * 42);
+        g.stroke({ width: 3 * alpha, color: 0xffffff, alpha: alpha * 0.75 });
+        g.circle(0, 0, 6 + eased * 28);
+        g.stroke({ width: 2 * alpha, color: 0xffd15c, alpha: alpha * 0.55 });
         return t < 1;
       },
     });
