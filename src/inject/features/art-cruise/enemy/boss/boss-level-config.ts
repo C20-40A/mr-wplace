@@ -129,6 +129,22 @@ export const ART_CRUISE_BOSS_PHASE_POOLS: ArtCruiseBossPhasePool[] = [
       ),
       patternSet(
         [
+          p("bossFlappyGate", {
+            speedScale: 2.5,
+            flappyGate: {
+              side: "top",
+              gateCount: 1,
+              gapSize: 100,
+              thickness: 0.05,
+              gapMoveMinPx: 300,
+              gapMoveMaxPx: 400,
+            },
+          }),
+        ],
+        560,
+      ),
+      patternSet(
+        [
           p("bossEdgeBeam", {
             sizeScale: 2,
             edgeBeam: {
@@ -289,6 +305,16 @@ export const ART_CRUISE_BOSS_PHASE_POOLS: ArtCruiseBossPhasePool[] = [
     patterns: [
       patternSet(
         [
+          p("bossSideKunaiBarrage", {
+            sideKunai: {
+              fireMode: "random",
+            },
+          }),
+        ],
+        700,
+      ),
+      patternSet(
+        [
           needleBurst({
             speedScale: 2,
             delayScale: 0.5,
@@ -300,32 +326,6 @@ export const ART_CRUISE_BOSS_PHASE_POOLS: ArtCruiseBossPhasePool[] = [
           }),
         ],
         660,
-      ),
-      patternSet(
-        [
-          p("bossFlappyGate", {
-            speedScale: 2.5,
-            flappyGate: {
-              side: "top",
-              gateCount: 1,
-              gapSize: 100,
-              thickness: 0.05,
-              gapMoveMinPx: 300,
-              gapMoveMaxPx: 400,
-            },
-          }),
-        ],
-        560,
-      ),
-      patternSet(
-        [
-          p("bossSideKunaiBarrage", {
-            sideKunai: {
-              fireMode: "random",
-            },
-          }),
-        ],
-        700,
       ),
       patternSet(
         [
@@ -385,21 +385,6 @@ export const ART_CRUISE_BOSS_PHASE_POOLS: ArtCruiseBossPhasePool[] = [
       ),
       patternSet([p("bossDenseRing")], 780),
       patternSet([p("bossWeavingStream")], 780),
-      patternSet(
-        [
-          p("bossSideKunaiBarrage", {
-            intervalScale: 1.15,
-            sideKunai: {
-              aimAtPlayer: true,
-              fireMode: "sequence",
-              bulletsPerWave: 12,
-              delayStepMs: 28,
-              spreadRad: 0.03,
-            },
-          }),
-        ],
-        780,
-      ),
       patternSet([p("bossRovingTurret"), p("spiralShot")], 780),
       patternSet([p("petalRing"), p("bossBigRing"), p("ringPulse")], 780),
     ],

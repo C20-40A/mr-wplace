@@ -181,4 +181,4 @@ export const PLAYER_BLINK_INTERVAL_MS = 120;
 
 export const ENEMY_SPEED = 170;
 
-export const ART_CRUISE_VERSION = "1.0.0";
+export const ART_CRUISE_VERSION = "1.2.1";
