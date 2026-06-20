@@ -30,17 +30,20 @@ export const RESOLUTION_VALUES: Record<ResolutionLevel, number | "native"> = {
 export const getResolutionLevel = (): ResolutionLevel => {
   const raw = localStorage.getItem(RESOLUTION_STORAGE_KEY);
   const n = Number(raw);
-  if (raw !== null && (n === 0 || n === 1 || n === 2 || n === 3)) return n as ResolutionLevel;
+  if (raw !== null && (n === 0 || n === 1 || n === 2 || n === 3))
+    return n as ResolutionLevel;
   return 0; // default: LOW
 };
 export const setResolutionLevel = (level: ResolutionLevel) => {
   try {
     localStorage.setItem(RESOLUTION_STORAGE_KEY, String(level));
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 };
 export const resolveResolutionValue = (level: ResolutionLevel): number => {
   const v = RESOLUTION_VALUES[level];
-  return v === "native" ? (window.devicePixelRatio || 1) : v;
+  return v === "native" ? window.devicePixelRatio || 1 : v;
 };
 export const INPUT_SHIELD_ID = "mr-wplace-art-cruise-input-shield";
 export const UI_ROOT_ID = "mr-wplace-art-cruise-ui";
@@ -57,7 +60,9 @@ export const getDPadEnabled = () =>
 export const setDPadEnabled = (enabled: boolean) => {
   try {
     localStorage.setItem(D_PAD_ENABLED_STORAGE_KEY, enabled ? "true" : "false");
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 };
 
 const clampVolume = (value: number) =>
@@ -74,7 +79,9 @@ const setStoredVolume = (key: string, volume: number) => {
   const next = clampVolume(volume);
   try {
     localStorage.setItem(key, String(next));
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return next;
 };
 
@@ -105,12 +112,12 @@ export const DYNAMIC_ENEMY_SCAN_TILE_LIMIT = 1;
 export const DYNAMIC_ENEMY_POOL_LIMIT = 24;
 export const DYNAMIC_ENEMY_SCANNER_POOL_LIMIT = 24;
 export const DYNAMIC_ENEMY_MAX_CANDIDATES_PER_TILE = 4;
-export const DYNAMIC_ENEMY_BOSS_MIN_OPAQUE_PIXELS = 2500;
+export const DYNAMIC_ENEMY_BOSS_MIN_OPAQUE_PIXELS = 2000;
 export const DYNAMIC_ENEMY_ALPHA_THRESHOLD = 16;
 export const DYNAMIC_ENEMY_MIN_SIZE_PX = 10;
-export const DYNAMIC_ENEMY_MAX_SIZE_PX = 150;
+export const DYNAMIC_ENEMY_MAX_SIZE_PX = 250;
 export const DYNAMIC_ENEMY_MAX_SIZE_MIN_PX = 30;
-export const DYNAMIC_ENEMY_MAX_SIZE_MAX_PX = 500;
+export const DYNAMIC_ENEMY_MAX_SIZE_MAX_PX = 1000;
 export const DYNAMIC_ENEMY_MIN_OPAQUE_PIXELS = 48;
 export const DYNAMIC_ENEMY_MAX_OPAQUE_PIXELS = 12_000;
 export const DYNAMIC_ENEMY_SIZE_UNITS = 1.2;
@@ -132,7 +139,9 @@ export const setDynamicEnemyMaxSizePx = (sizePx: number) => {
   const next = clampDynamicEnemyMaxSize(sizePx);
   try {
     localStorage.setItem(DYNAMIC_ENEMY_MAX_SIZE_STORAGE_KEY, String(next));
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return next;
 };
 
