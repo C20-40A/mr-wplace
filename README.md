@@ -4,7 +4,7 @@
 
 ![WPlace](.image/wplace.live_400x300.png)
 
-![Version](https://img.shields.io/badge/version-2.13.3-blue.svg)
+![Version](https://img.shields.io/badge/version-2.13.4-blue.svg)
 ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-green.svg)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-orange.svg)
 ![License](https://img.shields.io/badge/license-MPL--2.0-blue.svg)
