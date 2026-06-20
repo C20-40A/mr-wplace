@@ -36,6 +36,7 @@ type ArtCruiseUiOptions = {
   onRetry: () => void;
   onContinue: () => void;
   onExit: () => void;
+  onReturnToTitle: () => void;
   onPauseChange: (paused: boolean) => void;
   onDebugSpawn: (options: ArtCruiseDebugSpawnOptions) => void;
   onDebugClear: () => void;
@@ -541,8 +542,14 @@ export class ArtCruiseUi {
     this.modal = createPauseModal({
       onResume: () => this.closeModal(true),
       onSettings: this.routePauseToSettings,
+      onReturnToTitle: this.returnToTitle,
       onExit: this.options.onExit,
     });
+  };
+
+  private returnToTitle = () => {
+    this.closeModal(false);
+    this.options.onReturnToTitle();
   };
 
   private routePauseToSettings = () => {

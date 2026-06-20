@@ -43,6 +43,7 @@ export class ArtCruiseScene {
       onRetry: this.retryGame,
       onContinue: this.continueGame,
       onExit: () => this.options.onExit?.(),
+      onReturnToTitle: () => this.options.onReturnToTitle?.(),
       onPauseChange: this.setPaused,
       onDebugSpawn: this.game.debugSpawnEnemy,
       onDebugClear: this.game.debugClearEnemies,

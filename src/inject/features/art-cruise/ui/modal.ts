@@ -355,6 +355,7 @@ export const createGameOverModal = (
 type PauseModalOptions = {
   onResume: () => void;
   onSettings: () => void;
+  onReturnToTitle: () => void;
   onExit: () => void;
 };
 
@@ -757,7 +758,7 @@ export const createPauseModal = (
 
   const actions = document.createElement("div");
   actions.style.cssText =
-    "display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;";
+    "display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 16px;";
 
   const cancelButton = createModalButton("RESUME", true);
   cancelButton.addEventListener("click", options.onResume);
@@ -765,10 +766,13 @@ export const createPauseModal = (
   const settingsButton = createModalButton("SETTINGS", false);
   settingsButton.addEventListener("click", options.onSettings);
 
+  const titleButton = createModalButton("TITLE", false);
+  titleButton.addEventListener("click", options.onReturnToTitle);
+
   const exitButton = createModalButton("QUIT", false);
   exitButton.addEventListener("click", options.onExit);
 
-  actions.append(cancelButton, settingsButton, exitButton);
+  actions.append(cancelButton, settingsButton, titleButton, exitButton);
   panel.append(title, actions);
 
   return modal;

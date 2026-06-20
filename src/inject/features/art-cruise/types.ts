@@ -13,6 +13,7 @@ export type ArtCruiseSceneOptions = {
   debug?: ArtCruiseDebugConfig;
   viewportConfig?: ArtCruiseViewportConfig;
   onExit?: () => void;
+  onReturnToTitle?: () => void;
   onGameStart?: () => void;
   onPauseChange?: (paused: boolean) => void;
 };

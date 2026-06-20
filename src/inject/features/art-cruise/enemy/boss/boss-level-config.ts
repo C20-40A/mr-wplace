@@ -66,7 +66,7 @@ export const ART_CRUISE_BOSS_PHASE_POOLS: ArtCruiseBossPhasePool[] = [
       patternSet(
         [
           p("aimedFan", {
-            speedScale: 2,
+            speedScale: 1.5,
             delayScale: 0.5,
             intervalScale: 0.5,
           }),
