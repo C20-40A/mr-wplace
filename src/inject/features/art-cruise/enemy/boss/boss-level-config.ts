@@ -101,6 +101,24 @@ export const ART_CRUISE_BOSS_PHASE_POOLS: ArtCruiseBossPhasePool[] = [
       ),
       patternSet(
         [
+          p("burst", {
+            sizeScale: 0.8,
+            delayScale: 0.5,
+            burst: {
+              bulletArt: "smallSilver",
+              bulletCount: 12,
+              minSpeed: 2,
+              baseSpeed: 8,
+              accel: -7,
+              angleJitterRad: 10,
+              repeatCount: 4,
+            },
+          }),
+        ],
+        660,
+      ),
+      patternSet(
+        [
           p("bossGalaxyVortex", {
             speedScale: 1.2,
             sizeScale: 0.8,

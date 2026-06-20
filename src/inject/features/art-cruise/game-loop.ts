@@ -358,7 +358,7 @@ export class ArtCruiseGameLoop {
       musicVolume: readMusicVolume(),
       seVolume: readSeVolume(),
     });
-    void this.audio.start();
+    void this.audio.start({ bossLevel: this.bossModeLevel });
   };
 
   destroy = () => {

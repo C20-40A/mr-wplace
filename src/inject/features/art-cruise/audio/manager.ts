@@ -19,6 +19,10 @@ type ArtCruiseAudioManagerOptions = {
   seVolume?: number;
 };
 
+type ArtCruiseAudioStartOptions = {
+  bossLevel?: number | null;
+};
+
 /**
  * Art cruise 用 BGM/SE マネージャー (WebAudio)
  * - stage はループ再生（端の繋ぎはフェードで緩和）
@@ -49,8 +53,8 @@ export class ArtCruiseAudioManager {
     this.seVolume = this.clampVolume(options.seVolume ?? DEFAULT_SE_VOLUME);
   }
 
-  /** 非同期で音源を読み込み、stage BGM のループ再生を開始する */
-  start = async () => {
+  /** 非同期で音源を読み込み、初期 BGM のループ再生を開始する */
+  start = async (options: ArtCruiseAudioStartOptions = {}) => {
     if (this.context || this.destroyed) return;
 
     const context = new AudioContext();
@@ -77,7 +81,8 @@ export class ArtCruiseAudioManager {
 
     // ユーザー操作起点なら resume 済みのはずだが念のため
     if (context.state === "suspended") void context.resume();
-    this.playTrack("stage", { fadeInSeconds: 0 });
+    const initialTrack = this.getBossTrackId(options.bossLevel) ?? "stage";
+    this.playTrack(initialTrack, { fadeInSeconds: 0 });
   };
 
   /**
@@ -99,7 +104,7 @@ export class ArtCruiseAudioManager {
 
   /** stage から boss BGM へ crossfade で移行する */
   transitionToBoss = (level = 1) => {
-    const trackId: TrackId = level >= BOSS2_MIN_LEVEL ? "boss2" : "boss";
+    const trackId = this.getBossTrackId(level) ?? "boss";
     if (this.current === trackId) return;
     this.playTrack(trackId, { fadeInSeconds: CROSSFADE_SECONDS });
   };
@@ -261,6 +266,11 @@ export class ArtCruiseAudioManager {
     gain.gain.value = 0;
     gain.connect(this.masterGain!);
     this.tracks.set(id, { buffer, source: null, gain });
+  };
+
+  private getBossTrackId = (level?: number | null): TrackId | null => {
+    if (level === undefined || level === null) return null;
+    return level >= BOSS2_MIN_LEVEL ? "boss2" : "boss";
   };
 
   private playTrack = (id: TrackId, { fadeInSeconds }: { fadeInSeconds: number }) => {
