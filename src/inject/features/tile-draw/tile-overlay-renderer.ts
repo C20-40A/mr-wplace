@@ -18,6 +18,7 @@ import {
 import { overlayLayers, perTileColorStats } from "./states";
 
 const DEBUG_TILE_OVERLAY_RENDERER = false;
+const hasOwn = Object.prototype.hasOwnProperty;
 
 /**
  * RGBA配列を毎回生成せずに色一致判定する
@@ -964,10 +965,9 @@ export const drawOverlayLayersOnTile = async (
       }
     } else if (instance.tiles) {
       // Non-optimized layer - use existing tile keys
-      const tiles = Object.keys(instance.tiles).filter((tile) =>
-        tile.startsWith(coordStrPadded),
-      );
-      for (const tileKey of tiles) {
+      for (const tileKey in instance.tiles) {
+        if (!hasOwn.call(instance.tiles, tileKey)) continue;
+        if (!tileKey.startsWith(coordStrPadded)) continue;
         matchingTiles.push({ tileKey, instance });
       }
     }
