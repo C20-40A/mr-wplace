@@ -27,3 +27,5 @@ prompt.txt
 
 # art-cruise BGM の元素材 (巨大 WAV)。圧縮済み ogg は public/assets に配置
 /use_this/
+
+dist-app

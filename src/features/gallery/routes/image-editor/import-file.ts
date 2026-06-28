@@ -1,6 +1,11 @@
 import { latLngToTilePixelRound } from "@/utils/coordinate";
+import { TILE_SIZE } from "@/utils/geo-converter";
 import type { DrawPosition } from "@/states/galleryStorage";
-import { type ColorMetric, quantizePixels } from "@/utils/color-quantize";
+import {
+  type ColorMetric,
+  quantizePixels,
+  resizeImageDataNearest,
+} from "@/utils/color-quantize";
 
 interface WplaceFileImage {
   dataUrl: string;
@@ -28,6 +33,11 @@ interface WplaceOverlayFile {
   locked?: boolean;
   hasPlaced?: boolean;
   visible?: boolean;
+}
+
+interface WplaceOverlaySize {
+  width: number;
+  height: number;
 }
 
 interface BluemarbleJson {
@@ -98,16 +108,65 @@ const normalizeColorMetric = (value: unknown): string | undefined => {
   return undefined;
 };
 
-const parseWplaceJson = (json: WplaceOverlayFile): ImportedEditorFile => {
+const getWorldPixel = (lat: number, lng: number) => {
+  const pos = latLngToTilePixelRound(lat, lng);
+  return {
+    x: pos.TLX * TILE_SIZE + pos.PxX,
+    y: pos.TLY * TILE_SIZE + pos.PxY,
+  };
+};
+
+const getWplaceBoundsSize = (
+  bounds: WplaceFileBounds
+): WplaceOverlaySize | null => {
+  const northWest = getWorldPixel(bounds.north, bounds.west);
+  const southEast = getWorldPixel(bounds.south, bounds.east);
+  const width = southEast.x - northWest.x;
+  const height = southEast.y - northWest.y;
+
+  if (width <= 0 || height <= 0) return null;
+  return { width, height };
+};
+
+const resizeDataUrl = async (
+  dataUrl: string,
+  target: WplaceOverlaySize
+): Promise<string> => {
+  const imageData = await loadDataUrlToImageData(dataUrl);
+  if (imageData.width === target.width && imageData.height === target.height)
+    return dataUrl;
+
+  const resized = resizeImageDataNearest(
+    imageData,
+    target.width,
+    target.height
+  );
+  const canvas = document.createElement("canvas");
+  canvas.width = target.width;
+  canvas.height = target.height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Failed to get canvas context");
+
+  ctx.putImageData(resized, 0, 0);
+  return canvas.toDataURL("image/png");
+};
+
+const parseWplaceJson = async (
+  json: WplaceOverlayFile
+): Promise<ImportedEditorFile> => {
   // bounds は wplace本体が整数pixelをroundして生成した lat/lng のため、
   // floorではなくround版で戻す (floorだと誤差で1pxずれる)
   const drawPosition: DrawPosition = latLngToTilePixelRound(
     json.bounds.north,
     json.bounds.west
   );
+  const targetSize = getWplaceBoundsSize(json.bounds);
+  const dataUrl = targetSize
+    ? await resizeDataUrl(json.image.dataUrl, targetSize)
+    : json.image.dataUrl;
 
   return {
-    dataUrl: json.image.dataUrl,
+    dataUrl,
     drawPosition,
     fileName: json.name,
     colorMetric: normalizeColorMetric(json.colorMetric),
