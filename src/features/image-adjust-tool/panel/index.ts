@@ -262,6 +262,7 @@ export class PanelManager {
         { value: "weighted-rgb", label: t("quantization_weighted_rgb") },
         { value: "lab", label: t("quantization_lab") },
         { value: "oklab", label: t("quantization_oklab") },
+        { value: "lab-wplace", label: t("quantization_lab_wplace") },
       ],
       s.quantizationMethod,
       (v) => { s.quantizationMethod = v as QuantizationMethod; onChange(); },

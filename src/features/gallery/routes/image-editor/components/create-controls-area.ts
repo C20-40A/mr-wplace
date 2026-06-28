@@ -1,5 +1,8 @@
 import { t } from "@/i18n/manager";
-import type { ColorFlattenMode } from "../canvas-processor";
+import {
+  DEFAULT_QUANTIZATION_METHOD,
+  type ColorFlattenMode,
+} from "../canvas-processor";
 import type { CreateElementFn, UIElements } from "./types";
 import { isMobileViewport } from "@/constants/breakpoints";
 
@@ -138,7 +141,14 @@ export const createContrastQuantizationControl = (
       ]),
       createElement("option", { value: "lab" }, [t("quantization_lab")]),
       createElement("option", { value: "oklab" }, [t("quantization_oklab")]),
-      createElement("option", { value: "lab-wplace" }, [t("quantization_lab_wplace")]),
+      createElement(
+        "option",
+        {
+          value: "lab-wplace",
+          selected: DEFAULT_QUANTIZATION_METHOD === "lab-wplace",
+        },
+        [t("quantization_lab_wplace")],
+      ),
     ],
   ) as HTMLSelectElement;
   elements.colorFlattenMode = createElement(

@@ -8,6 +8,7 @@ import {
   setMapProjectionTracking,
 } from "@/utils/inject-bridge";
 import { colorpalette, TRANSPARENT_COLOR_ID } from "@/constants/colors";
+import { DEFAULT_QUANTIZATION_METHOD } from "@/features/gallery/routes/image-editor/canvas-processor";
 import {
   IMAGE_ADJUST_TOOL_MAP_Z_INDEX,
   MIN_FRAME_WIDTH,
@@ -55,7 +56,7 @@ const createDefaultProcessingState = (): ProcessingState => ({
   ditheringEnabled: false,
   ditheringThreshold: 500,
   ditheringMethod: "ordered",
-  quantizationMethod: "rgb-euclidean",
+  quantizationMethod: DEFAULT_QUANTIZATION_METHOD,
   colorFlattenMode: "none",
   outlineEnabled: false,
   outlineThreshold: 55,

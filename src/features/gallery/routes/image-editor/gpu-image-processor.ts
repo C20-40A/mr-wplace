@@ -7,6 +7,7 @@ import type {
   PerceptualQuantizationMethod,
   QuantizationMethod,
 } from "./canvas-processor/types";
+import { DEFAULT_QUANTIZATION_METHOD } from "./canvas-processor/types";
 
 /**
  * GPU画像処理: brightness/contrast/saturation + パレット量子化 + ディザリング
@@ -18,7 +19,7 @@ export const gpuProcessImage = async (
   paletteRGB: Array<[number, number, number]>,
   ditheringEnabled = false,
   ditheringThreshold = 500,
-  quantizationMethod: QuantizationMethod = "rgb-euclidean"
+  quantizationMethod: QuantizationMethod = DEFAULT_QUANTIZATION_METHOD
 ): Promise<Uint8ClampedArray> => {
   const width = sourceBitmap.width;
   const height = sourceBitmap.height;

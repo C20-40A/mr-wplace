@@ -12,6 +12,7 @@ import type {
   ImageAdjustments,
   QuantizationMethod,
 } from "./types";
+import { DEFAULT_QUANTIZATION_METHOD } from "./types";
 
 const createCanvasFromImageData = (imageData: ImageData): HTMLCanvasElement => {
   const canvas = document.createElement("canvas");
@@ -279,7 +280,7 @@ export const createProcessedCanvasFromBitmap = async (
   ditheringThreshold = 500,
   ditheringMethod: DitheringMethod = "ordered",
   useGpu = true,
-  quantizationMethod: QuantizationMethod = "rgb-euclidean",
+  quantizationMethod: QuantizationMethod = DEFAULT_QUANTIZATION_METHOD,
   colorFlattenMode: ColorFlattenMode = "none",
   transparentColors?: Set<string>
 ): Promise<HTMLCanvasElement> => {
@@ -334,7 +335,7 @@ export const createProcessedCanvas = async (
   ditheringThreshold = 500,
   ditheringMethod: DitheringMethod = "ordered",
   useGpu = true,
-  quantizationMethod: QuantizationMethod = "rgb-euclidean",
+  quantizationMethod: QuantizationMethod = DEFAULT_QUANTIZATION_METHOD,
   colorFlattenMode: ColorFlattenMode = "none"
 ): Promise<HTMLCanvasElement> => {
   const resizedBitmap = await createResizedImageBitmap(img, {

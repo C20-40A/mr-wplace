@@ -23,3 +23,5 @@ export type QuantizationMethod =
 export type DitheringMethod = "ordered" | "floyd-steinberg";
 
 export type RgbColor = [number, number, number];
+
+export const DEFAULT_QUANTIZATION_METHOD: QuantizationMethod = "lab-wplace";

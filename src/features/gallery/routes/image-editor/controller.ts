@@ -28,6 +28,7 @@ import {
 } from "./import-file";
 import {
   ColorFlattenMode,
+  DEFAULT_QUANTIZATION_METHOD,
   DitheringMethod,
   ImageAdjustments,
   QuantizationMethod,
@@ -56,7 +57,7 @@ export class EditorController {
   private ditheringEnabled = false;
   private ditheringThreshold = 500;
   private ditheringMethod: DitheringMethod = "ordered";
-  private quantizationMethod: QuantizationMethod = "rgb-euclidean";
+  private quantizationMethod: QuantizationMethod = DEFAULT_QUANTIZATION_METHOD;
   private colorFlattenMode: ColorFlattenMode = "none";
   private useGpu = true;
   private transparentColors = new Set<string>();
@@ -682,7 +683,7 @@ export class EditorController {
     this.ditheringEnabled = false;
     this.ditheringThreshold = 500;
     this.ditheringMethod = "ordered";
-    this.quantizationMethod = "rgb-euclidean";
+    this.quantizationMethod = DEFAULT_QUANTIZATION_METHOD;
     this.colorFlattenMode = "none";
     this.useGpu = true;
     this.transparentColors.clear();
@@ -849,7 +850,7 @@ export class EditorController {
     ) as HTMLElement | null;
     if (ditheringMobileDetails) ditheringMobileDetails.hidden = true;
     if (quantizationMethodSelect)
-      quantizationMethodSelect.value = "rgb-euclidean";
+      quantizationMethodSelect.value = DEFAULT_QUANTIZATION_METHOD;
     if (ditheringMethodSelect) {
       ditheringMethodSelect.value = "ordered";
       ditheringMethodSelect.disabled = true;

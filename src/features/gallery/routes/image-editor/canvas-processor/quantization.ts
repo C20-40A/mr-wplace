@@ -14,6 +14,7 @@ import type {
   QuantizationMethod,
   RgbColor,
 } from "./types";
+import { DEFAULT_QUANTIZATION_METHOD } from "./types";
 
 const BAYER_MATRIX_4X4 = [
   [0, 8, 2, 10],
@@ -107,7 +108,7 @@ const createNearestColorFinder = (
 export const quantizeToColorPalette = (
   imageData: ImageData,
   selectedColorIds: number[],
-  method: QuantizationMethod = "rgb-euclidean"
+  method: QuantizationMethod = DEFAULT_QUANTIZATION_METHOD
 ): void => {
   const findNearestColor = createNearestColorFinder(selectedColorIds, method);
   if (!findNearestColor) return;
@@ -132,7 +133,7 @@ export const quantizeWithDithering = (
   imageData: ImageData,
   selectedColorIds: number[],
   ditheringThreshold: number,
-  method: QuantizationMethod = "rgb-euclidean",
+  method: QuantizationMethod = DEFAULT_QUANTIZATION_METHOD,
   ditheringMethod: DitheringMethod = "ordered"
 ): void => {
   const findNearestColor = createNearestColorFinder(selectedColorIds, method);

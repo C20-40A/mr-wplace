@@ -5,6 +5,7 @@ export type {
   OutlinePreserveOptions,
   QuantizationMethod,
 } from "./canvas-processor/types";
+export { DEFAULT_QUANTIZATION_METHOD } from "./canvas-processor/types";
 
 export { createOutlinePreservedBitmap } from "./canvas-processor/outline";
 export {
