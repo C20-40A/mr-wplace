@@ -15,6 +15,9 @@ const stopInteractionPropagation = (event: Event): void => {
   event.stopPropagation();
 };
 
+const hasOpenAppModal = (): boolean =>
+  !!document.querySelector(".modal.modal-open, .modal[open]");
+
 export const createDeveloperDialog = (): DeveloperDialogElements => {
   // 既存のダイアログがあれば再利用
   if (dialogInstance) return dialogInstance;
@@ -304,10 +307,23 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
       hideDeveloperDialog();
     }
   };
+  const closeWhenAppModalOpens = () => {
+    if (dialog.style.display === "none") return;
+    if (!hasOpenAppModal()) return;
+    hideDeveloperDialog();
+  };
+  const modalObserver = new MutationObserver(closeWhenAppModalOpens);
   document.addEventListener("keydown", handleKeydown);
+  modalObserver.observe(document.body, {
+    attributes: true,
+    attributeFilter: ["class", "open"],
+    childList: true,
+    subtree: true,
+  });
 
   const destroy = () => {
     document.removeEventListener("keydown", handleKeydown);
+    modalObserver.disconnect();
     ["pointerdown", "mousedown", "click", "touchstart"].forEach(
       (eventName) => {
         dialog.removeEventListener(eventName, stopInteractionPropagation);
