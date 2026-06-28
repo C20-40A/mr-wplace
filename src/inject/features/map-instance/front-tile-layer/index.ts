@@ -221,7 +221,7 @@ export const upsertFrontTilePaintGuide = (
   tileY: number,
   pixelX: number,
   pixelY: number,
-  kind: "mismatch" | "already",
+  kind: "mismatch" | "overflow" | "already",
   _templateRgbInt: number,
 ): void => {
   if (!isEnabled()) return;

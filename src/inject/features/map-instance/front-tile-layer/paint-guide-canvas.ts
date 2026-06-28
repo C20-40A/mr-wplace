@@ -12,9 +12,11 @@ const CANVAS_ID = "mr-wplace-paint-guide-canvas";
 const GUIDE_SYNC_DEBOUNCE_MS = 50;
 const MAX_GUIDE_POINTS = 1500;
 
-// mismatch: 黄色点滅、already: 水色（点滅なし）
+// mismatch: 黄色点滅、overflow: 紫点滅、already: 水色（点滅なし）
 const MISMATCH_COLOR = "#ffbf00";
 const MISMATCH_STROKE = "#000000";
+const OVERFLOW_COLOR = "#a855f7";
+const OVERFLOW_STROKE = "#1f0b3d";
 const ALREADY_COLOR = "#00d4ff";
 const ALREADY_STROKE = "#002433";
 const DOT_RADIUS = 3.5;
@@ -24,7 +26,7 @@ const BLINK_PERIOD_MS = 800;
 interface PaintGuidePoint {
   lat: number;
   lng: number;
-  kind: "mismatch" | "already";
+  kind: "mismatch" | "overflow" | "already";
 }
 
 const points = new Map<string, PaintGuidePoint>();
@@ -131,14 +133,24 @@ const drawFrame = (timestamp: number): void => {
     // 画面外は描画スキップ
     if (x < -DOT_RADIUS || y < -DOT_RADIUS || x > c.width + DOT_RADIUS || y > c.height + DOT_RADIUS) continue;
 
-    const isMismatch = pt.kind === "mismatch";
-    ctx.globalAlpha = isMismatch ? blinkOpacity : 0.95;
+    const isWarning = pt.kind === "mismatch" || pt.kind === "overflow";
+    ctx.globalAlpha = isWarning ? blinkOpacity : 0.95;
     ctx.beginPath();
     ctx.arc(x, y, DOT_RADIUS, 0, Math.PI * 2);
-    ctx.fillStyle = isMismatch ? MISMATCH_COLOR : ALREADY_COLOR;
+    ctx.fillStyle =
+      pt.kind === "mismatch"
+        ? MISMATCH_COLOR
+        : pt.kind === "overflow"
+          ? OVERFLOW_COLOR
+          : ALREADY_COLOR;
     ctx.fill();
     ctx.lineWidth = STROKE_WIDTH;
-    ctx.strokeStyle = isMismatch ? MISMATCH_STROKE : ALREADY_STROKE;
+    ctx.strokeStyle =
+      pt.kind === "mismatch"
+        ? MISMATCH_STROKE
+        : pt.kind === "overflow"
+          ? OVERFLOW_STROKE
+          : ALREADY_STROKE;
     ctx.stroke();
   }
   ctx.restore();
@@ -195,7 +207,7 @@ export const upsertPaintGuidePoint = (
   tileY: number,
   pixelX: number,
   pixelY: number,
-  kind: "mismatch" | "already",
+  kind: "mismatch" | "overflow" | "already",
 ): void => {
   if (!guideActive) return;
   if (pixelX < 0 || pixelY < 0 || pixelX >= 1000 || pixelY >= 1000) return;
