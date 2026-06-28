@@ -39,6 +39,8 @@ export type ArtCruiseRuntime = {
   enableTileFetchBypass?: boolean;
   enableDynamicTileEnemies?: boolean;
   enableGalleryFallbackEnemies?: boolean;
+  // 裏に実マップが無い web fallback では擬似3D背景を描画する。
+  enableFallbackBackground?: boolean;
 };
 
 export const createArtCruiseFallbackMap = (): ArtCruiseMapLike => {

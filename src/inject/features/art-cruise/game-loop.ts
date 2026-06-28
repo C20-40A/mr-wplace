@@ -159,7 +159,7 @@ export class ArtCruiseGameLoop {
   private readonly options: ArtCruiseGameLoopOptions;
   private readonly app = new Application();
   private readonly root = new Container();
-  private readonly background = new ArtCruiseBackground();
+  private readonly background: ArtCruiseBackground;
   private readonly bgLayer: ArtCruiseBgLayer;
   private readonly gameLayer = new Container();
   private readonly debugGraphics: Graphics | null;
@@ -213,6 +213,9 @@ export class ArtCruiseGameLoop {
 
   constructor(options: ArtCruiseGameLoopOptions) {
     this.options = options;
+    this.background = new ArtCruiseBackground(
+      options.runtime?.enableFallbackBackground === true,
+    );
     this.bgLayer = new ArtCruiseBgLayer(this.options.mandalaUrls);
     this.debugGraphics = this.options.debug?.showHitboxes
       ? new Graphics()

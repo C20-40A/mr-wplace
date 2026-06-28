@@ -23,6 +23,7 @@ const createWebRuntime = (): ArtCruiseRuntime => ({
   enableTileFetchBypass: false,
   enableDynamicTileEnemies: false,
   enableGalleryFallbackEnemies: false,
+  enableFallbackBackground: true,
 });
 
 const createScene = () => {
