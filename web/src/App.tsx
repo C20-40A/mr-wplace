@@ -19,13 +19,16 @@ import sc_image_gallery from "./assets/showcase/sc_image_gallery.webp";
 import sc_mini_pallete from "./assets/showcase/sc_mini_pallete.webp";
 
 const WPLACE_URL = "https://wplace.live/";
+const ART_CRUISE_URL = `${import.meta.env.BASE_URL}art-cruise/`;
 const MESSAGES = {
   en: {
     navOpenWplace: "Open Wplace",
+    navPlayGame: "Play Art Cruise",
     installFor: (name: string) => `Install for ${name}`,
     heroBadge: "Browser Extension",
     heroTagline: "Draw smarter on Wplace.",
     heroOpen: "Open Wplace",
+    heroPlay: "Play Art Cruise",
     heroShowcase: "See Showcase ↓",
     showcaseTitle: "Showcase",
     showcaseDescription: "See Mr. Wplace in action.",
@@ -53,10 +56,12 @@ const MESSAGES = {
   },
   ja: {
     navOpenWplace: "Wplace を開く",
+    navPlayGame: "Art Cruise で遊ぶ",
     installFor: (name: string) => `${name} に追加`,
     heroBadge: "ブラウザ拡張機能",
     heroTagline: "Wplaceに別次元の快適さを",
     heroOpen: "Wplace を開く",
+    heroPlay: "Art Cruise で遊ぶ",
     heroShowcase: "Showcase ↓",
     showcaseTitle: "Showcase",
     showcaseDescription: "横にスワイプして搭載された機能をご覧ください",
@@ -219,6 +224,14 @@ export default function App() {
         </span>
         <div className="flex items-center gap-2">
           <a
+            href={ART_CRUISE_URL}
+            title={t.navPlayGame}
+            className="inline-flex items-center justify-center rounded-lg border border-(--brand-border) px-3 py-2 text-[13px] font-semibold text-foreground no-underline [background:var(--brand-bg)] transition-[background,border-color,transform] duration-200 hover:border-(--brand) hover:-translate-y-px sm:px-2.5"
+          >
+            <span className="max-sm:hidden">{t.navPlayGame}</span>
+            <span className="sm:hidden">GAME</span>
+          </a>
+          <a
             href={WPLACE_URL}
             target="_blank"
             rel="noopener noreferrer"
@@ -312,6 +325,12 @@ export default function App() {
             >
               <GlobeIcon />
               <span>{t.heroOpen}</span>
+            </a>
+            <a
+              href={ART_CRUISE_URL}
+              className="inline-flex w-fit items-center gap-1.5 px-3 py-1.5 rounded-[9px] border border-(--brand-border) [background:var(--brand-bg)] text-foreground font-semibold text-[12px] no-underline transition-[background,border-color,transform] duration-200 hover:border-(--brand) hover:-translate-y-px"
+            >
+              <span>{t.heroPlay}</span>
             </a>
           </div>
           <a

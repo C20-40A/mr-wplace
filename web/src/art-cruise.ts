@@ -6,4 +6,8 @@ document.body.style.margin = "0";
 document.body.style.overflow = "hidden";
 document.body.style.background = "#000";
 
-startArtCruiseWeb();
+startArtCruiseWeb({
+  onExit: () => {
+    window.location.assign(new URL("../", window.location.href));
+  },
+});

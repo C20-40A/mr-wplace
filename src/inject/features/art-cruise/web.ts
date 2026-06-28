@@ -11,6 +11,7 @@ export type ArtCruiseWebStartData = {
   audioUrls?: ArtCruiseAudioUrls;
   mandalaUrls?: ArtCruiseMandalaUrls;
   debug?: ArtCruiseDebugConfig;
+  onExit?: () => void;
 };
 
 let scene: ArtCruiseScene | null = null;
@@ -38,7 +39,7 @@ const createScene = () => {
       maxHeightRatio: 1,
       marginPx: 0,
     },
-    onExit: stopArtCruiseWeb,
+    onExit: exitArtCruiseWeb,
     onReturnToTitle: returnToTitle,
   });
 };
@@ -65,4 +66,10 @@ export const stopArtCruiseWeb = () => {
   runtime = null;
   startData = undefined;
   console.log("🧑‍🎨 : Art cruise web stopped");
+};
+
+const exitArtCruiseWeb = () => {
+  const onExit = startData?.onExit;
+  stopArtCruiseWeb();
+  onExit?.();
 };
