@@ -35,6 +35,8 @@ import {
 } from "./canvas-processor";
 
 const MIN_SCALE = 0.1;
+const LARGE_IMAGE_EDGE_PX = 1000;
+const LARGE_IMAGE_DEFAULT_QUANTIZATION_METHOD: QuantizationMethod = "rgb-euclidean";
 
 /**
  * 画像エディタController
@@ -328,6 +330,19 @@ export class EditorController {
     console.log("🧑‍🎨 : Quantization method changed:", method);
     this.quantizationMethod = method;
     this.updateScaledImage();
+  }
+
+  private syncDefaultQuantizationMethodForImage(width: number, height: number): void {
+    const method =
+      Math.max(width, height) >= LARGE_IMAGE_EDGE_PX
+        ? LARGE_IMAGE_DEFAULT_QUANTIZATION_METHOD
+        : DEFAULT_QUANTIZATION_METHOD;
+
+    this.quantizationMethod = method;
+    const select = this.container.querySelector(
+      "#wps-quantization-method",
+    ) as HTMLSelectElement | null;
+    if (select) select.value = method;
   }
 
   onColorFlattenModeChange(mode: ColorFlattenMode): void {
@@ -1038,6 +1053,10 @@ export class EditorController {
             "#wps-scale-slider",
           ) as HTMLInputElement | null;
 
+          this.syncDefaultQuantizationMethodForImage(
+            originalWidth,
+            originalHeight,
+          );
           widthInput.value = originalWidth.toString();
           heightInput.value = originalHeight.toString();
           widthInput.dataset.originalWidth = originalWidth.toString();
