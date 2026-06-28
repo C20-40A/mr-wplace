@@ -614,4 +614,6 @@ Do not use this feature to paint actual pixels.`,
   hint_art_cruise_btn: "Blast through your pixel art in this shooting mini-game!",
   no_snapshots_to_export: "No snapshots to export",
   quantization_lab_wplace: "Lab CIE94 / Wplace (Slow, Perceptual)",
+  text_draw_direction_horizontal: "Horizontal",
+  text_draw_direction_vertical: "Vertical",
 };

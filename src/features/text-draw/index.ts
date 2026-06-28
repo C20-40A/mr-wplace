@@ -7,6 +7,7 @@ import { createMapPinButtonObserverConfig } from "@/utils/map-pin-helper";
 import type { TextDrawAPI } from "@/core/di";
 import { drawText, moveText, deleteText, updateText } from "./text-manipulator";
 import { t } from "@/i18n/manager";
+import type { TextDirection } from "./text-renderer";
 
 // ========================================
 // Module-level state
@@ -26,9 +27,10 @@ const showModal = (): void => {
       font: string,
       colorId: number,
       lineSpacing: number,
+      direction: TextDirection,
       editingKey?: string,
     ) => {
-      await handleSubmitText(text, font, colorId, lineSpacing, editingKey);
+      await handleSubmitText(text, font, colorId, lineSpacing, direction, editingKey);
     },
     textInstances,
     (key: string, direction: "up" | "down" | "left" | "right") =>
@@ -42,6 +44,7 @@ const handleSubmitText = async (
   font: string,
   colorId: number,
   lineSpacing: number,
+  direction: TextDirection,
   editingKey?: string,
 ): Promise<void> => {
   if (editingKey) {
@@ -51,6 +54,7 @@ const handleSubmitText = async (
       font,
       colorId,
       lineSpacing,
+      direction,
     );
     if (!updated) return;
 
@@ -61,7 +65,7 @@ const handleSubmitText = async (
     return;
   }
 
-  const instance = await drawText(text, font, colorId, lineSpacing);
+  const instance = await drawText(text, font, colorId, lineSpacing, direction);
   if (!instance) return;
 
   textInstances.push(instance);
@@ -102,6 +106,7 @@ const init = async (): Promise<void> => {
     text: layer.text,
     font: layer.font,
     lineSpacing: layer.lineSpacing ?? 0,
+    direction: layer.direction ?? "horizontal",
     coords: layer.coords,
     colorId: layer.colorId,
   }));

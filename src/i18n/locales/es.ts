@@ -598,4 +598,6 @@ export const esTranslations = {
   hint_art_cruise_btn: "¡Atraviesa tu pixel art en este minijuego de disparos!",
   no_snapshots_to_export: "No hay capturas para exportar",
   quantization_lab_wplace: "Lab CIE94 / Wplace (Lento, Perceptual)",
+  text_draw_direction_horizontal: "Horizontal",
+  text_draw_direction_vertical: "Vertical",
 };

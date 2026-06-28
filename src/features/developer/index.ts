@@ -35,6 +35,10 @@ import {
 } from "./area-fill-ui";
 import { AreaFillStorage } from "./area-fill-storage";
 
+const stopInteractionPropagation = (event: Event): void => {
+  event.stopPropagation();
+};
+
 export class DevInject {
   private devMode: boolean = false;
   private autoCanvasClickEnabled: boolean = false;
@@ -174,7 +178,12 @@ export class DevInject {
       opacity: 0.6;
       transition: opacity 0.2s ease;
     `;
-    triggerButton.addEventListener("click", () => {
+    ["pointerdown", "mousedown", "touchstart"].forEach((eventName) => {
+      triggerButton.addEventListener(eventName, stopInteractionPropagation);
+    });
+    triggerButton.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
       this.ensureDialogContent();
       this.toggleDialogWithLifecycle();
     });

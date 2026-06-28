@@ -11,6 +11,9 @@ interface DeveloperDialogElements {
 let dialogInstance: DeveloperDialogElements | null = null;
 let onHideCallback: (() => void) | null = null;
 const DEV_WARNING_ACK_KEY = "mr-wplace-dev-warning-ack";
+const stopInteractionPropagation = (event: Event): void => {
+  event.stopPropagation();
+};
 
 export const createDeveloperDialog = (): DeveloperDialogElements => {
   // 既存のダイアログがあれば再利用
@@ -44,6 +47,9 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     user-select: none;
     font-family: 'Consolas', 'Monaco', monospace;
   `;
+  ["pointerdown", "mousedown", "click", "touchstart"].forEach((eventName) => {
+    dialog.addEventListener(eventName, stopInteractionPropagation);
+  });
 
   const triggerButton = document.getElementById("dev-trigger-btn");
   if (triggerButton) {
@@ -138,7 +144,10 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
   menuBtn.addEventListener("mouseup", () => {
     menuBtn.style.transform = "scale(1)";
   });
-  menuBtn.addEventListener("click", () => toggleDeveloperMenu());
+  menuBtn.addEventListener("click", (event) => {
+    event.preventDefault();
+    toggleDeveloperMenu();
+  });
 
   // Close button
   const closeBtn = document.createElement("button");
@@ -177,7 +186,10 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
   closeBtn.addEventListener("mouseup", () => {
     closeBtn.style.transform = "scale(1)";
   });
-  closeBtn.addEventListener("click", () => hideDeveloperDialog());
+  closeBtn.addEventListener("click", (event) => {
+    event.preventDefault();
+    hideDeveloperDialog();
+  });
 
   buttonContainer.appendChild(menuBtn);
   buttonContainer.appendChild(closeBtn);
@@ -246,7 +258,8 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     cursor: pointer;
   `;
   splashCloseButton.textContent = t`${"developer_warning_splash_close"}`;
-  splashCloseButton.addEventListener("click", () => {
+  splashCloseButton.addEventListener("click", (event) => {
+    event.preventDefault();
     hideDeveloperDialog();
   });
 
@@ -263,7 +276,8 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
     cursor: pointer;
   `;
   splashOkButton.textContent = t`${"developer_warning_splash_ok"}`;
-  splashOkButton.addEventListener("click", () => {
+  splashOkButton.addEventListener("click", (event) => {
+    event.preventDefault();
     localStorage.setItem(DEV_WARNING_ACK_KEY, "true");
     splash.style.display = "none";
     header.style.display = "flex";
@@ -294,6 +308,11 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
 
   const destroy = () => {
     document.removeEventListener("keydown", handleKeydown);
+    ["pointerdown", "mousedown", "click", "touchstart"].forEach(
+      (eventName) => {
+        dialog.removeEventListener(eventName, stopInteractionPropagation);
+      },
+    );
     dialog.remove();
     dialogInstance = null;
   };

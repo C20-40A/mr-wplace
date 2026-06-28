@@ -31,6 +31,7 @@ export interface TextLayer {
   text: string;
   font: string;
   lineSpacing?: number;
+  direction?: "horizontal" | "vertical";
   coords: {
     TLX: number;
     TLY: number;

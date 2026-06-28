@@ -605,4 +605,6 @@ export const frTranslations = {
   hint_art_cruise_btn: "Traversez votre pixel art dans ce mini-jeu de tir !",
   no_snapshots_to_export: "Aucun instantané à exporter",
   quantization_lab_wplace: "Lab CIE94 / Wplace (Lent, Perceptuel)",
+  text_draw_direction_horizontal: "Horizontal",
+  text_draw_direction_vertical: "Vertical",
 };

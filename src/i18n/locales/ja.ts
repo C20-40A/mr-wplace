@@ -617,4 +617,6 @@ export const jaTranslations = {
   hint_art_cruise_btn: "シューティングでドット絵の世界を駆け抜けよう！",
   no_snapshots_to_export: "エクスポートできるスナップショットがありません",
   quantization_lab_wplace: "Lab CIE94 / Wplace（低速・知覚的）",
+  text_draw_direction_horizontal: "横書き",
+  text_draw_direction_vertical: "縦書き",
 };

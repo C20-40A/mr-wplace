@@ -601,4 +601,6 @@ export const ruTranslations = {
   hint_art_cruise_btn: "Прорывайтесь сквозь пиксель-арт в этой мини-игре-шутере!",
   no_snapshots_to_export: "Нет снимков для экспорта",
   quantization_lab_wplace: "Lab CIE94 / Wplace (Медленно, перцептивный)",
+  text_draw_direction_horizontal: "Горизонтально",
+  text_draw_direction_vertical: "Вертикально",
 };

@@ -2,7 +2,7 @@ import { getCurrentPosition } from "../../utils/position";
 import { latLngToTilePixel } from "../../utils/coordinate";
 import { Toast } from "../../components/toast";
 import { ensureFontLoaded } from "./font-loader";
-import { textToBlob } from "./text-renderer";
+import { textToBlob, type TextDirection } from "./text-renderer";
 import type { TextInstance } from "./ui";
 import { TextLayerStorage } from "./text-layer-storage";
 import { sendTextLayersToInject } from "@/content";
@@ -16,6 +16,7 @@ export const drawText = async (
   font: string,
   colorId: number,
   lineSpacing: number,
+  direction: TextDirection,
 ): Promise<TextInstance | null> => {
   const position = getCurrentPosition();
   if (!position) {
@@ -27,7 +28,7 @@ export const drawText = async (
   const key = `text_${Date.now()}`;
 
   await ensureFontLoaded();
-  const blob = await textToBlob(text, font, colorId, lineSpacing);
+  const blob = await textToBlob(text, font, colorId, lineSpacing, direction);
 
   // Convert blob to dataUrl
   const dataUrl = await new Promise<string>((resolve) => {
@@ -43,6 +44,7 @@ export const drawText = async (
     text,
     font,
     lineSpacing,
+    direction,
     coords: {
       TLX: coords.TLX,
       TLY: coords.TLY,
@@ -64,6 +66,7 @@ export const drawText = async (
     text,
     font,
     lineSpacing,
+    direction,
     coords: {
       TLX: coords.TLX,
       TLY: coords.TLY,
@@ -117,13 +120,14 @@ export const updateText = async (
   font: string,
   colorId: number,
   lineSpacing: number,
+  direction: TextDirection,
 ): Promise<TextInstance | null> => {
   const textLayerStorage = new TextLayerStorage();
   const existing = await textLayerStorage.get(key);
   if (!existing) return null;
 
   await ensureFontLoaded();
-  const blob = await textToBlob(text, font, colorId, lineSpacing);
+  const blob = await textToBlob(text, font, colorId, lineSpacing, direction);
 
   const dataUrl = await new Promise<string>((resolve) => {
     const reader = new FileReader();
@@ -136,6 +140,7 @@ export const updateText = async (
     text,
     font,
     lineSpacing,
+    direction,
     dataUrl,
     colorId,
     timestamp: Date.now(),
@@ -150,6 +155,7 @@ export const updateText = async (
     text,
     font,
     lineSpacing,
+    direction,
     coords: existing.coords,
     colorId,
   };

@@ -588,4 +588,6 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   hint_art_cruise_btn: "Düse in diesem Shooter-Minispiel durch deine Pixelkunst!",
   no_snapshots_to_export: "Keine Snapshots zum Exportieren",
   quantization_lab_wplace: "Lab CIE94 / Wplace (Langsam, Wahrnehmungsbasiert)",
+  text_draw_direction_horizontal: "Horizontal",
+  text_draw_direction_vertical: "Vertikal",
 };

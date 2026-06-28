@@ -5,12 +5,14 @@ import { isMobileViewport } from "@/constants/breakpoints";
 import { colorpalette } from "@/constants/colors";
 import { tilePixelToLatLng } from "@/utils/coordinate";
 import { gotoPosition } from "@/utils/position";
+import type { TextDirection } from "./text-renderer";
 
 export interface TextInstance {
   key: string;
   text: string;
   font: string;
   lineSpacing?: number;
+  direction?: TextDirection;
   coords: { TLX: number; TLY: number; PxX: number; PxY: number };
   colorId?: number;
 }
@@ -18,6 +20,7 @@ export interface TextInstance {
 const FONT_STORAGE_KEY = "text_draw_selected_font";
 const COLOR_STORAGE_KEY = "text_draw_selected_color";
 const LINE_SPACING_STORAGE_KEY = "text_draw_line_spacing";
+const DIRECTION_STORAGE_KEY = "text_draw_direction";
 
 export const createTextInputButton = (): HTMLButtonElement => {
   return createResponsiveButton({
@@ -36,6 +39,7 @@ export class TextDrawUI {
     font: string,
     colorId: number,
     lineSpacing: number,
+    direction: TextDirection,
     editingKey?: string,
   ) => Promise<void>;
   private onMove?: (
@@ -49,6 +53,7 @@ export class TextDrawUI {
   private fontSelect!: HTMLSelectElement;
   private colorSelect!: HTMLSelectElement;
   private lineSpacingInput!: HTMLInputElement;
+  private directionButton!: HTMLButtonElement;
   private submitButton!: HTMLButtonElement;
   private cancelEditButton!: HTMLButtonElement;
   private selectedKey: string | null = null;
@@ -214,6 +219,33 @@ export class TextDrawUI {
       localStorage.setItem(LINE_SPACING_STORAGE_KEY, String(value));
     });
 
+    this.directionButton = document.createElement("button");
+    this.directionButton.type = "button";
+    this.directionButton.className = "btn btn-sm btn-ghost";
+    this.directionButton.style.cssText =
+      "flex: 0 0 2.25rem; width: 2.25rem; min-height: 2.25rem; padding: 0; font-size: 1rem;";
+
+    const getDirection = (): TextDirection =>
+      localStorage.getItem(DIRECTION_STORAGE_KEY) === "vertical"
+        ? "vertical"
+        : "horizontal";
+
+    const updateDirectionButton = (direction = getDirection()) => {
+      this.directionButton.dataset.direction = direction;
+      this.directionButton.textContent = direction === "vertical" ? "↕" : "↔";
+      this.directionButton.title =
+        direction === "vertical"
+          ? t`${"text_draw_direction_vertical"}`
+          : t`${"text_draw_direction_horizontal"}`;
+    };
+
+    this.directionButton.onclick = () => {
+      const next = getDirection() === "vertical" ? "horizontal" : "vertical";
+      localStorage.setItem(DIRECTION_STORAGE_KEY, next);
+      updateDirectionButton(next);
+    };
+    updateDirectionButton();
+
     const settingsRow = document.createElement("div");
     settingsRow.style.cssText =
       "display: flex; align-items: flex-end; gap: 0.5rem;";
@@ -242,6 +274,7 @@ export class TextDrawUI {
 
     settingsRow.appendChild(colorGroup);
     settingsRow.appendChild(lineSpacingGroup);
+    settingsRow.appendChild(this.directionButton);
 
     const buttonContainer = document.createElement("div");
     buttonContainer.style.cssText =
@@ -266,6 +299,9 @@ export class TextDrawUI {
         this.fontSelect.value,
         colorId,
         lineSpacing,
+        this.directionButton.dataset.direction === "vertical"
+          ? "vertical"
+          : "horizontal",
         this.selectedKey ?? undefined,
       );
       if (this.selectedKey) return this.clearSelection();
@@ -312,6 +348,14 @@ export class TextDrawUI {
     this.fontSelect.style.fontFamily = instance.font;
     this.colorSelect.value = String(instance.colorId ?? 1);
     this.lineSpacingInput.value = String(instance.lineSpacing ?? 0);
+    const direction = instance.direction ?? "horizontal";
+    localStorage.setItem(DIRECTION_STORAGE_KEY, direction);
+    this.directionButton.dataset.direction = direction;
+    this.directionButton.textContent = direction === "vertical" ? "↕" : "↔";
+    this.directionButton.title =
+      direction === "vertical"
+        ? t`${"text_draw_direction_vertical"}`
+        : t`${"text_draw_direction_horizontal"}`;
   }
 
   private clearSelection(): void {
@@ -328,6 +372,7 @@ export class TextDrawUI {
       font: string,
       colorId: number,
       lineSpacing: number,
+      direction: TextDirection,
       editingKey?: string,
     ) => Promise<void>,
     textInstances: TextInstance[],
@@ -414,10 +459,14 @@ export class TextDrawUI {
         "font-weight: 500; word-break: break-word; white-space: pre-wrap; font-size: 0.875rem;";
 
       const fontLabel = document.createElement("div");
+      const directionLabel =
+        instance.direction === "vertical"
+          ? t`${"text_draw_direction_vertical"}`
+          : t`${"text_draw_direction_horizontal"}`;
       fontLabel.textContent =
         instance.lineSpacing && instance.lineSpacing > 0
-          ? `${instance.font} / line ${instance.lineSpacing}`
-          : instance.font;
+          ? `${instance.font} / ${directionLabel} / line ${instance.lineSpacing}`
+          : `${instance.font} / ${directionLabel}`;
       fontLabel.style.cssText =
         "font-size: 0.625rem; margin-top: 0.125rem; opacity: 0.6;";
 

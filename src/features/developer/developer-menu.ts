@@ -27,6 +27,10 @@ import {
 import { storage } from "@/utils/browser-api";
 import { resetFeatureHintsState } from "@/states/feature-hints";
 
+const stopInteractionPropagation = (event: Event): void => {
+  event.stopPropagation();
+};
+
 // ==========================================
 const ACTIONS = [
   {
@@ -154,6 +158,9 @@ export const setupDeveloperMenu = (): void => {
   `,
   );
   menu.id = "mr-wplace-developer-menu";
+  ["pointerdown", "mousedown", "click", "touchstart"].forEach((eventName) => {
+    menu.addEventListener(eventName, stopInteractionPropagation);
+  });
 
   // Close Button (Right Top)
   const closeBtn = el(
@@ -161,7 +168,10 @@ export const setupDeveloperMenu = (): void => {
     "position:absolute; top:5px; right:5px; background:none; border:none; color:#aaa; cursor:pointer; font-size:16px;",
     "×",
   );
-  closeBtn.onclick = () => (menu.style.display = "none");
+  closeBtn.onclick = (event) => {
+    event.preventDefault();
+    menu.style.display = "none";
+  };
   menu.appendChild(closeBtn);
 
   // Title
@@ -178,7 +188,8 @@ export const setupDeveloperMenu = (): void => {
     );
     btn.onmouseover = () => (btn.style.background = "#666");
     btn.onmouseout = () => (btn.style.background = "#444");
-    btn.onclick = async () => {
+    btn.onclick = async (event) => {
+      event.preventDefault();
       await Promise.resolve(action());
       menu.style.display = "none";
     }; // 実行後閉じる
