@@ -7,6 +7,9 @@ import type { ArtCruiseDebugConfig, ArtCruiseSceneOptions } from "./types";
 import type { WplaceMap } from "@/inject/types";
 import type { ArtCruiseAudioUrls } from "./audio";
 import type { ArtCruiseMandalaUrls } from "./bg-layer";
+import type { ArtCruiseMapLike, ArtCruiseRuntime } from "./runtime";
+import { installTileFetchBypass } from "./tile-fetch-bypass";
+import { DynamicPixelArtEnemyScanner } from "./enemy/enemy-graphics/dynamic-pixel-art-scanner";
 
 export type ArtCruiseStartData = {
   fontUrl?: string;
@@ -23,7 +26,7 @@ export class ArtCruiseLifecycle {
   private cruising = false;
   private scene: ArtCruiseScene | null = null;
   private cruiseController: ArtCruiseCruiseController | null = null;
-  private map: WplaceMap | null = null;
+  private runtime: ArtCruiseRuntime | null = null;
   private startData: ArtCruiseStartData | undefined;
 
   get active() {
@@ -33,8 +36,8 @@ export class ArtCruiseLifecycle {
   start = (data?: ArtCruiseStartData) => {
     if (this.cruising) return;
 
-    const map = getMapInstanceFromWplace();
-    if (!map) {
+    const runtime = this.createWplaceRuntime();
+    if (!runtime) {
       console.warn("🧑‍🎨 : Art cruise map instance is missing");
       return;
     }
@@ -45,12 +48,12 @@ export class ArtCruiseLifecycle {
     }
 
     this.cruising = true;
-    this.map = map;
+    this.runtime = runtime;
     this.startData = data;
-    this.cruiseController = new ArtCruiseCruiseController(map);
-    changeBackgroundColor("#000000");
-    changeMap3dEnabled(true);
-    this.scene = this.createScene(map, data);
+    this.cruiseController = new ArtCruiseCruiseController(runtime.map);
+    runtime.setBackgroundColor?.("#000000");
+    runtime.setMap3dEnabled?.(true);
+    this.scene = this.createScene(runtime, data);
     this.scene.start();
     console.log("🧑‍🎨 : Art cruise started");
   };
@@ -60,40 +63,60 @@ export class ArtCruiseLifecycle {
     this.cruising = false;
     this.scene?.destroy();
     this.scene = null;
-    changeBackgroundColor(null);
+    const runtime = this.runtime;
+    runtime?.setBackgroundColor?.(null);
     this.cruiseController?.stop();
     this.cruiseController = null;
-    this.map = null;
+    this.runtime = null;
     this.startData = undefined;
-    changeMap3dEnabled(false);
+    runtime?.setMap3dEnabled?.(false);
     console.log("🧑‍🎨 : Art cruise stopped");
   };
 
   private returnToTitle = () => {
-    if (!this.cruising || !this.map || !this.cruiseController) return;
+    if (!this.cruising || !this.runtime || !this.cruiseController) return;
 
     this.cruiseController.stop();
     this.scene?.destroy();
-    this.scene = this.createScene(this.map, this.startData);
+    this.scene = this.createScene(this.runtime, this.startData);
     this.scene.start();
     console.log("🧑‍🎨 : Art cruise returned to title");
   };
 
   private createScene = (
-    map: WplaceMap,
+    runtime: ArtCruiseRuntime,
     data?: ArtCruiseStartData,
   ): ArtCruiseScene => {
     const options: ArtCruiseSceneOptions = {
-      map,
+      map: runtime.map,
+      runtime,
       audioUrls: data?.audioUrls,
       mandalaUrls: data?.mandalaUrls,
       debug: data?.debug,
-      onExit: this.notifyContentExit,
+      onExit: () => runtime.notifyExit?.(),
       onReturnToTitle: this.returnToTitle,
       onGameStart: this.cruiseController?.start,
       onPauseChange: this.cruiseController?.setPaused,
     };
     return new ArtCruiseScene(options);
+  };
+
+  private createWplaceRuntime = (): ArtCruiseRuntime | null => {
+    const map = getMapInstanceFromWplace();
+    if (!map) return null;
+
+    return {
+      map: map as ArtCruiseMapLike,
+      setBackgroundColor: changeBackgroundColor,
+      setMap3dEnabled: changeMap3dEnabled,
+      notifyExit: this.notifyContentExit,
+      createEnemyScanner: (map) =>
+        new DynamicPixelArtEnemyScanner(map as WplaceMap),
+      installTileFetchBypass,
+      enableTileFetchBypass: true,
+      enableDynamicTileEnemies: true,
+      enableGalleryFallbackEnemies: true,
+    };
   };
 
   private notifyContentExit = () =>

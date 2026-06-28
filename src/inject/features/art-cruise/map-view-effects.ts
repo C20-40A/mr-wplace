@@ -1,4 +1,4 @@
-import type { WplaceMap } from "@/inject/types";
+import type { ArtCruiseMapLike } from "./runtime";
 import {
   HIDDEN_MARKER_STYLE_ID,
   VIEW_CROP_TOP_RATIO,
@@ -15,7 +15,7 @@ export class ArtCruiseMapViewEffects {
   private mapCanvas: HTMLCanvasElement | null = null;
   private originalCanvasStyle: Partial<CanvasStyleSnapshot> | null = null;
 
-  constructor(private readonly map: WplaceMap) {}
+  constructor(private readonly map: ArtCruiseMapLike) {}
 
   apply = () => {
     this.applyCroppedView();
@@ -28,7 +28,7 @@ export class ArtCruiseMapViewEffects {
   };
 
   private applyCroppedView = () => {
-    const map = this.map as WplaceMap & {
+    const map = this.map as ArtCruiseMapLike & {
       getCanvas?: () => HTMLCanvasElement;
     };
     const canvas = map.getCanvas?.();

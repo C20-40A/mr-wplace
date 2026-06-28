@@ -35,8 +35,10 @@ const setNearest = (texture: Texture) => {
   return texture;
 };
 
-export const preloadFallbackEnemyTextures = async () => {
-  await preloadGalleryFallbackEnemyTextures();
+export const preloadFallbackEnemyTextures = async (
+  options: { gallery?: boolean } = {},
+) => {
+  if (options.gallery !== false) await preloadGalleryFallbackEnemyTextures();
   if (textures) return;
   try {
     textures = await Promise.all(
@@ -48,10 +50,13 @@ export const preloadFallbackEnemyTextures = async () => {
   }
 };
 
-export const refreshGalleryFallbackEnemyTextures = () => {
+export const refreshGalleryFallbackEnemyTextures = (
+  options: { gallery?: boolean } = {},
+) => {
   galleryLoadSizePx = 0;
   for (const texture of galleryTextures) texture.destroy(true);
   galleryTextures = [];
+  if (options.gallery === false) return Promise.resolve();
   return preloadGalleryFallbackEnemyTextures();
 };
 

@@ -1,5 +1,5 @@
 import { isMobileViewport } from "@/constants/breakpoints";
-import type { WplaceMap } from "@/inject/types";
+import type { ArtCruiseMapLike } from "./runtime";
 import {
   GAME_VIEWPORT_ASPECT_HEIGHT,
   GAME_VIEWPORT_ASPECT_WIDTH,
@@ -16,7 +16,7 @@ export type ArtCruiseViewportConfig = {
   maxHeightRatio?: number;
 };
 
-type ResizableMap = WplaceMap & {
+type ResizableMap = ArtCruiseMapLike & {
   resize?: () => void;
 };
 
@@ -26,7 +26,7 @@ export class ArtCruiseViewport {
   private readonly listeners = new Set<() => void>();
 
   constructor(
-    private readonly map: WplaceMap,
+    private readonly map: ArtCruiseMapLike,
     private readonly config: ArtCruiseViewportConfig = {},
   ) {}
 

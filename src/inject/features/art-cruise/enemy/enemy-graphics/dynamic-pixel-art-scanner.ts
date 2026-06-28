@@ -17,16 +17,7 @@ import {
   getOriginalLastModified,
 } from "../../../tile-draw/last-modified-cache";
 import { createEnemyBitmap } from "./enemy-bitmap-renderer";
-
-export type DynamicPixelArtEnemyCandidate = {
-  id: string;
-  tileKey: string;
-  bitmap: ImageBitmap;
-  width: number;
-  height: number;
-  opaquePixels: number;
-  scannedAt: number;
-};
+import type { ArtCruiseDynamicEnemyCandidate } from "./pixi-enemy-graphic-pool";
 
 type DecodedTile = {
   width: number;
@@ -67,7 +58,7 @@ type WorkerScanResponse = {
 };
 
 type ScanResult = {
-  candidates: DynamicPixelArtEnemyCandidate[];
+  candidates: ArtCruiseDynamicEnemyCandidate[];
   // 次回スキャン再開位置 (px index)。全走査済みなら 0。total は走査範囲のpx総数。
   nextOffset: number;
   total: number;
@@ -371,7 +362,7 @@ const parseTileKey = (tileKey: string) => {
 };
 
 export class DynamicPixelArtEnemyScanner {
-  private readonly candidates: DynamicPixelArtEnemyCandidate[] = [];
+  private readonly candidates: ArtCruiseDynamicEnemyCandidate[] = [];
   private readonly tileVersions = new Map<string, string>();
   private readonly completedVersions = new Map<string, string>();
   // tile ごとの次回スキャン開始 px index。pool が埋まるまで続きから網羅走査する。
@@ -559,7 +550,7 @@ export class DynamicPixelArtEnemyScanner {
     return [...fixedTileKeys, ...cachedTileKeys];
   };
 
-  private addCandidate = (candidate: DynamicPixelArtEnemyCandidate) => {
+  private addCandidate = (candidate: ArtCruiseDynamicEnemyCandidate) => {
     if (this.candidates.length >= DYNAMIC_ENEMY_SCANNER_POOL_LIMIT) {
       const removed = this.candidates.shift();
       removed?.bitmap.close();

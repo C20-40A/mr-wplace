@@ -12,10 +12,21 @@ import type {
   ArtCruiseEnemyMovementId,
   ArtCruiseEnemyRank,
 } from "../enemy-rules/types";
-import type {
-  DynamicPixelArtEnemyCandidate,
-  DynamicPixelArtEnemyScanner,
-} from "./dynamic-pixel-art-scanner";
+
+export type ArtCruiseDynamicEnemyCandidate = {
+  id: string;
+  tileKey: string;
+  bitmap: ImageBitmap;
+  width: number;
+  height: number;
+  opaquePixels: number;
+  scannedAt: number;
+};
+
+export type ArtCruiseEnemyScannerLike = {
+  getVersion: () => number;
+  getCandidates: () => ArtCruiseDynamicEnemyCandidate[];
+};
 
 /** take() で払い出される敵 1 体分のアセット。take 毎に def を付与して生成する。 */
 export type ArtCruisePixiDynamicEnemyAsset = {
@@ -67,7 +78,7 @@ export class ArtCruisePixiEnemyGraphicPool {
   private syncedScannerVersion = -1;
 
   constructor(
-    private readonly scanner: DynamicPixelArtEnemyScanner,
+    private readonly scanner: ArtCruiseEnemyScannerLike,
     private readonly getUnitScale: () => number,
   ) {}
 
@@ -116,7 +127,7 @@ export class ArtCruisePixiEnemyGraphicPool {
     this.byId.clear();
   };
 
-  private enqueue = (candidate: DynamicPixelArtEnemyCandidate) => {
+  private enqueue = (candidate: ArtCruiseDynamicEnemyCandidate) => {
     const graphic: PooledGraphic = {
       id: candidate.id,
       texture: this.createTexture(candidate.bitmap),
@@ -226,7 +237,7 @@ export class ArtCruisePixiEnemyGraphicPool {
     return texture;
   };
 
-  private getCandidateSize = (candidate: DynamicPixelArtEnemyCandidate) =>
+  private getCandidateSize = (candidate: ArtCruiseDynamicEnemyCandidate) =>
     candidate.opaquePixels * 10_000 + candidate.width * candidate.height;
 
   private getDefinition = (rank: ArtCruiseEnemyRank) => {

@@ -1,4 +1,4 @@
-import type { WplaceMap } from "@/inject/types";
+import type { ArtCruiseMapLike } from "./runtime";
 
 const STEP_LAT = 0.008;
 const STEP_DURATION = 3000;
@@ -6,7 +6,7 @@ const INITIAL_ZOOM_DURATION = 800;
 const NEXT_STEP_LEAD_MS = 120;
 export const ART_CRUISE_ZOOM = 14;
 
-type ArtCruiseMap = WplaceMap & {
+type ArtCruiseMap = ArtCruiseMapLike & {
   getVerticalFieldOfView?: () => number;
 };
 

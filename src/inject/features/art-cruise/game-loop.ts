@@ -1,6 +1,6 @@
 import "pixi.js/unsafe-eval";
 import { Application, Container, Graphics, Ticker } from "pixi.js";
-import type { WplaceMap } from "@/inject/types";
+import type { ArtCruiseMapLike, ArtCruiseRuntime } from "./runtime";
 import {
   BULLET_INTERVAL_MS,
   CANVAS_ROOT_ID,
@@ -30,12 +30,14 @@ import {
 } from "./enemy/boss";
 import { hitTestHittableBullet } from "./enemy/enemy-bullet/hitbox";
 import { drawDebugHitboxes as renderDebugHitboxes } from "./debug/hitbox-overlay";
-import { DynamicPixelArtEnemyScanner } from "./enemy/enemy-graphics/dynamic-pixel-art-scanner";
 import {
   preloadFallbackEnemyTextures,
   refreshGalleryFallbackEnemyTextures,
 } from "./enemy/enemy-graphics/fallback-enemy-view";
-import { ArtCruisePixiEnemyGraphicPool } from "./enemy/enemy-graphics/pixi-enemy-graphic-pool";
+import {
+  ArtCruisePixiEnemyGraphicPool,
+  type ArtCruiseEnemyScannerLike,
+} from "./enemy/enemy-graphics/pixi-enemy-graphic-pool";
 import { ArtCruiseSquad } from "./enemy/enemy-movement/squad";
 import { ArtCruiseStageDirector } from "./stage-director";
 import {
@@ -67,7 +69,6 @@ import type { ArtCruiseHighScoreResult } from "./score";
 import { ArtCruiseAudioManager } from "./audio";
 import type { ArtCruiseAudioUrls, ArtCruiseSeId } from "./audio";
 import type { ArtCruiseMandalaUrls } from "./bg-layer";
-import { installTileFetchBypass } from "./tile-fetch-bypass";
 import { ART_CRUISE_BULLET_PATTERN_IDS } from "./enemy/enemy-bullet-patterns";
 import { recordBossClear } from "./boss-mode/storage";
 
@@ -88,8 +89,23 @@ const GAME_BOUNDS = {
 const SCORE_NOTIFY_INTERVAL_MS = 100;
 const CONTINUE_HP = 3;
 
+type ArtCruiseEnemyScannerRuntime = ArtCruiseEnemyScannerLike & {
+  update: (now: number) => void;
+  setMaxSizePx: (sizePx: number) => void;
+  destroy: () => void;
+};
+
+const createDisabledEnemyScanner = (): ArtCruiseEnemyScannerRuntime => ({
+  getVersion: () => 0,
+  getCandidates: () => [],
+  update: () => {},
+  setMaxSizePx: () => {},
+  destroy: () => {},
+});
+
 type ArtCruiseGameLoopOptions = {
-  map: WplaceMap;
+  map: ArtCruiseMapLike;
+  runtime?: ArtCruiseRuntime;
   viewport: ArtCruiseViewport;
   audioUrls?: ArtCruiseAudioUrls;
   mandalaUrls?: ArtCruiseMandalaUrls;
@@ -140,48 +156,29 @@ type HitPoint = {
 };
 
 export class ArtCruiseGameLoop {
+  private readonly options: ArtCruiseGameLoopOptions;
   private readonly app = new Application();
   private readonly root = new Container();
   private readonly background = new ArtCruiseBackground();
-  private readonly bgLayer = new ArtCruiseBgLayer(this.options.mandalaUrls);
+  private readonly bgLayer: ArtCruiseBgLayer;
   private readonly gameLayer = new Container();
-  private readonly debugGraphics = this.options.debug?.showHitboxes
-    ? new Graphics()
-    : null;
-  private readonly scanner = new DynamicPixelArtEnemyScanner(this.options.map);
-  private readonly enemyGraphics = new ArtCruisePixiEnemyGraphicPool(
-    this.scanner,
-    () => this.unitScale(),
-  );
+  private readonly debugGraphics: Graphics | null;
+  private readonly scanner: ArtCruiseEnemyScannerRuntime;
+  private readonly enemyGraphics: ArtCruisePixiEnemyGraphicPool;
   private readonly enemyBulletManager = new ArtCruiseEnemyBulletManager(
     this.gameLayer,
     ENEMY_BULLET_MAX_COUNT,
   );
   private readonly effectManager = new ArtCruiseEffectManager(this.root);
   private readonly score = new ArtCruiseScore();
-  private readonly enemyManager = new ArtCruiseEnemyManager(
-    this.gameLayer,
-    this.enemyBulletManager,
-    // NOTE: class field の初期化順序により、ここで this.handleEnemyRemoved を
-    // 直接参照すると（定義が後方のため）undefined が渡る。必ずラッパーで遅延評価する。
-    (enemy, defeated) => this.handleEnemyRemoved(enemy, defeated),
-    (seId) => this.handleEnemyShot(seId),
-  );
+  private readonly enemyManager: ArtCruiseEnemyManager;
   private readonly bossController = new ArtCruiseBossController();
   private readonly bullets: ArtCruisePixiPlayerBullet[] = [];
   private readonly squads: ArtCruiseSquad[] = [];
   private readonly stageDirector = new ArtCruiseStageDirector({
     maxEnemies: ENEMY_MAX_COUNT,
   });
-  private readonly spawner = new ArtCruiseSpawner({
-    enemyManager: this.enemyManager,
-    bossController: this.bossController,
-    enemyGraphics: this.enemyGraphics,
-    stageDirector: this.stageDirector,
-    squads: this.squads,
-    unitScale: () => this.unitScale(),
-    onBossSpawn: (enemy, options) => this.handleBossSpawn(enemy, options),
-  });
+  private readonly spawner: ArtCruiseSpawner;
   private readonly ship: ArtCruiseShip;
   private readonly input: ArtCruiseInput;
   private readonly frame: FrameContext = {
@@ -214,10 +211,46 @@ export class ArtCruiseGameLoop {
   private restoreTileFetchBypass: (() => void) | null = null;
   private prescanTimer: number | null = null;
 
-  constructor(private readonly options: ArtCruiseGameLoopOptions) {
+  constructor(options: ArtCruiseGameLoopOptions) {
+    this.options = options;
+    this.bgLayer = new ArtCruiseBgLayer(this.options.mandalaUrls);
+    this.debugGraphics = this.options.debug?.showHitboxes
+      ? new Graphics()
+      : null;
+    this.scanner = this.createEnemyScanner();
+    this.enemyGraphics = new ArtCruisePixiEnemyGraphicPool(
+      this.scanner,
+      () => this.unitScale(),
+    );
+    this.enemyManager = new ArtCruiseEnemyManager(
+      this.gameLayer,
+      this.enemyBulletManager,
+      (enemy, defeated) => this.handleEnemyRemoved(enemy, defeated),
+      (seId) => this.handleEnemyShot(seId),
+    );
+    this.spawner = new ArtCruiseSpawner({
+      enemyManager: this.enemyManager,
+      bossController: this.bossController,
+      enemyGraphics: this.enemyGraphics,
+      stageDirector: this.stageDirector,
+      squads: this.squads,
+      unitScale: () => this.unitScale(),
+      onBossSpawn: (enemy, spawnOptions) =>
+        this.handleBossSpawn(enemy, spawnOptions),
+    });
     this.ship = new ArtCruiseShip(1, 1);
     this.input = new ArtCruiseInput(this.options.viewport);
   }
+
+  private createEnemyScanner = (): ArtCruiseEnemyScannerRuntime => {
+    if (this.options.runtime?.enableDynamicTileEnemies === false)
+      return createDisabledEnemyScanner();
+
+    return (
+      this.options.runtime?.createEnemyScanner?.(this.options.map) ??
+      createDisabledEnemyScanner()
+    );
+  };
 
   /**
    * タイトル画面中に敵グラフィックを先読みする。ticker (= game.start) に
@@ -259,7 +292,9 @@ export class ArtCruiseGameLoop {
     this.options.onHpChange?.(this.ship.currentHp);
     this.score.reset(this.gameTime);
     this.options.onScoreUpdate?.(this.score.score, this.score.survivalTimeMs);
-    this.restoreTileFetchBypass ??= installTileFetchBypass();
+    if (this.options.runtime?.enableTileFetchBypass !== false)
+      this.restoreTileFetchBypass ??=
+        this.options.runtime?.installTileFetchBypass?.() ?? null;
     this.startAudio();
     void this.mount();
   };
@@ -573,7 +608,9 @@ export class ArtCruiseGameLoop {
     this.input.setTarget(this.ship.x, this.ship.y);
     this.bgLayer.load(GAME_LOGICAL_WIDTH, GAME_LOGICAL_HEIGHT);
     this.bgLayer.drawOverlay(GAME_LOGICAL_WIDTH, GAME_LOGICAL_HEIGHT);
-    await preloadFallbackEnemyTextures();
+    await preloadFallbackEnemyTextures({
+      gallery: this.options.runtime?.enableGalleryFallbackEnemies !== false,
+    });
     this.app.ticker.add(this.update);
     if (this.bossModeLevel !== null)
       this.spawner.debugSpawnBossLevel(this.bossModeLevel, this.gameTime);
@@ -999,13 +1036,17 @@ export class ArtCruiseGameLoop {
   setDynamicEnemyMaxSizePx = (sizePx: number) => {
     const next = setDynamicEnemyMaxSizePx(sizePx);
     this.scanner.setMaxSizePx(next);
-    void refreshGalleryFallbackEnemyTextures();
+    void refreshGalleryFallbackEnemyTextures({
+      gallery: this.options.runtime?.enableGalleryFallbackEnemies !== false,
+    });
   };
 
   getGalleryEnemyFallbackEnabled = () => readGalleryEnemyFallbackEnabled();
 
   setGalleryEnemyFallbackEnabled = (enabled: boolean) => {
     persistGalleryEnemyFallbackEnabled(enabled);
-    void refreshGalleryFallbackEnemyTextures();
+    void refreshGalleryFallbackEnemyTextures({
+      gallery: this.options.runtime?.enableGalleryFallbackEnemies !== false,
+    });
   };
 }

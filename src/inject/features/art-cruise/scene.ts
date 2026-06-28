@@ -20,6 +20,7 @@ export class ArtCruiseScene {
     this.viewport = new ArtCruiseViewport(options.map, options.viewportConfig);
     this.game = new ArtCruiseGameLoop({
       map: options.map,
+      runtime: options.runtime,
       viewport: this.viewport,
       audioUrls: options.audioUrls,
       mandalaUrls: options.mandalaUrls,

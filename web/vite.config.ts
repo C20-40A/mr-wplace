@@ -19,12 +19,13 @@ export default defineConfig(() => ({
       input: {
         main: path.resolve(__dirname, 'index.html'),
         ja: path.resolve(__dirname, 'ja/index.html'),
+        artCruise: path.resolve(__dirname, 'art-cruise/index.html'),
       },
     },
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(__dirname, '../src'),
     },
   },
 }))
