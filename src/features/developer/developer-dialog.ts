@@ -1,7 +1,6 @@
 import { getColor, TEXT_COLORS, TEXT_OUTLINE } from "./ui-colors";
 import { t } from "@/i18n/manager";
 import { toggleDeveloperMenu } from "./developer-menu";
-import { HIDE_PALETTE_EVENT } from "@/constants/events";
 
 interface DeveloperDialogElements {
   dialog: HTMLDivElement;
@@ -323,7 +322,6 @@ export const createDeveloperDialog = (): DeveloperDialogElements => {
 };
 
 export const showDeveloperDialog = (): void => {
-  window.dispatchEvent(new Event(HIDE_PALETTE_EVENT));
   const { dialog } = createDeveloperDialog();
   dialog.style.display = "block";
   localStorage.setItem("mr-wplace-dev-visible", "true");
