@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# art-cruise アセットは dev/build 時に ../public からコピーする (vite plugin)
+public/assets/art-cruise
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

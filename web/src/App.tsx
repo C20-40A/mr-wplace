@@ -23,13 +23,18 @@ const ART_CRUISE_URL = `${import.meta.env.BASE_URL}art-cruise/`;
 const MESSAGES = {
   en: {
     navOpenWplace: "Open Wplace",
-    navPlayGame: "Play Art Cruise",
+    navPlayGame: "Mini Game",
     installFor: (name: string) => `Install for ${name}`,
     heroBadge: "Browser Extension",
     heroTagline: "Draw smarter on Wplace.",
     heroOpen: "Open Wplace",
-    heroPlay: "Play Art Cruise",
     heroShowcase: "See Showcase ↓",
+    gameBadge: "★ Mini Game ★",
+    gameTitle: "Art Cruise",
+    gameDescription:
+      "A free shoot-'em-up hidden inside Mr. Wplace. Pilot your ship across the pixel canvas and blast through the waves. No install, no account — just play in your browser.",
+    gamePlay: "▶ Play Now — Free",
+    gameTagline: "INSERT COIN",
     showcaseTitle: "Showcase",
     showcaseDescription: "See Mr. Wplace in action.",
     mobileTitle: "Mobile Support",
@@ -56,13 +61,18 @@ const MESSAGES = {
   },
   ja: {
     navOpenWplace: "Wplace を開く",
-    navPlayGame: "Art Cruise で遊ぶ",
+    navPlayGame: "ミニゲーム",
     installFor: (name: string) => `${name} に追加`,
     heroBadge: "ブラウザ拡張機能",
     heroTagline: "Wplaceに別次元の快適さを",
     heroOpen: "Wplace を開く",
-    heroPlay: "Art Cruise で遊ぶ",
     heroShowcase: "Showcase ↓",
+    gameBadge: "★ おまけミニゲーム ★",
+    gameTitle: "Art Cruise",
+    gameDescription:
+      "Mr. Wplace に隠された無料のシューティングゲーム。自機を操ってドット絵の世界を駆け抜け、迫りくる敵を撃ち落とそう。インストールもアカウントも不要、ブラウザですぐ遊べます。",
+    gamePlay: "▶ いますぐ遊ぶ（無料）",
+    gameTagline: "INSERT COIN",
     showcaseTitle: "Showcase",
     showcaseDescription: "横にスワイプして搭載された機能をご覧ください",
     mobileTitle: "スマホ対応",
@@ -94,6 +104,32 @@ type MessageMap = (typeof MESSAGES)["en"];
 type MessageTextKey = {
   [K in keyof MessageMap]: MessageMap[K] extends string ? K : never;
 }[keyof MessageMap];
+
+// Pixel-art style spaceship, matches the Art Cruise game vibe.
+const ShipIcon = ({ size = 18 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 16 16"
+    shapeRendering="crispEdges"
+    aria-hidden="true"
+  >
+    <g fill="currentColor">
+      <rect x="7" y="1" width="2" height="2" />
+      <rect x="6" y="3" width="4" height="2" />
+      <rect x="5" y="5" width="6" height="2" />
+      <rect x="4" y="7" width="8" height="3" />
+      <rect x="2" y="9" width="2" height="2" />
+      <rect x="12" y="9" width="2" height="2" />
+      <rect x="6" y="10" width="4" height="2" />
+    </g>
+    <g fill="currentColor" opacity="0.55">
+      <rect x="6" y="12" width="1" height="2" />
+      <rect x="9" y="12" width="1" height="2" />
+      <rect x="7" y="13" width="2" height="2" />
+    </g>
+  </svg>
+);
 
 const GlobeIcon = () => (
   <svg
@@ -224,12 +260,12 @@ export default function App() {
         </span>
         <div className="flex items-center gap-2">
           <a
-            href={ART_CRUISE_URL}
+            href="#game"
             title={t.navPlayGame}
-            className="inline-flex items-center justify-center rounded-lg border border-(--brand-border) px-3 py-2 text-[13px] font-semibold text-foreground no-underline [background:var(--brand-bg)] transition-[background,border-color,transform] duration-200 hover:border-(--brand) hover:-translate-y-px sm:px-2.5"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-(--brand-border) px-3 py-2 text-[13px] font-semibold text-foreground no-underline [background:var(--brand-bg)] transition-[background,border-color,transform] duration-200 hover:border-(--brand) hover:-translate-y-px sm:px-2.5"
           >
+            <ShipIcon size={15} />
             <span className="max-sm:hidden">{t.navPlayGame}</span>
-            <span className="sm:hidden">GAME</span>
           </a>
           <a
             href={WPLACE_URL}
@@ -326,12 +362,6 @@ export default function App() {
               <GlobeIcon />
               <span>{t.heroOpen}</span>
             </a>
-            <a
-              href={ART_CRUISE_URL}
-              className="inline-flex w-fit items-center gap-1.5 px-3 py-1.5 rounded-[9px] border border-(--brand-border) [background:var(--brand-bg)] text-foreground font-semibold text-[12px] no-underline transition-[background,border-color,transform] duration-200 hover:border-(--brand) hover:-translate-y-px"
-            >
-              <span>{t.heroPlay}</span>
-            </a>
           </div>
           <a
             href="#showcase"
@@ -371,6 +401,48 @@ export default function App() {
             <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-linear-to-r from-background to-transparent max-sm:w-8" />
             <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-linear-to-l from-background to-transparent max-sm:w-8" />
           </div>
+        </div>
+      </section>
+
+      {/* Mini Game */}
+      <section
+        id="game"
+        className="px-8 py-20 border-t border-border sm:px-4 sm:py-14"
+      >
+        <div className="reveal max-w-240 mx-auto transition-[opacity,transform] duration-700 ease-out">
+          <a
+            href={ART_CRUISE_URL}
+            className="group relative block overflow-hidden rounded-3xl border-2 border-(--brand-border) [background:radial-gradient(120%_120%_at_50%_0%,var(--brand-bg),transparent_70%),var(--background)] no-underline transition-[border-color,transform] duration-300 hover:border-(--brand) hover:-translate-y-1"
+          >
+            {/* animated backdrops */}
+            <div className="pointer-events-none absolute inset-0 game-starfield" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 game-grid" />
+
+            <div className="relative flex flex-col items-center gap-5 px-8 py-16 text-center sm:px-5 sm:py-12">
+              <div className="game-blink inline-flex items-center gap-2 rounded-full border border-(--brand-border) [background:var(--brand-bg)] px-4 py-1 text-xs font-bold uppercase tracking-[2px] text-foreground">
+                {t.gameBadge}
+              </div>
+
+              <div className="game-ship text-foreground">
+                <ShipIcon size={84} />
+              </div>
+
+              <h2 className="m-0 text-[clamp(32px,5vw,52px)] font-bold tracking-[-1px] text-foreground [text-shadow:0_0_24px_var(--brand-border)]">
+                {t.gameTitle}
+              </h2>
+              <p className="max-w-150 text-base text-muted-foreground leading-relaxed sm:text-sm">
+                {t.gameDescription}
+              </p>
+
+              <span className="mt-2 inline-flex items-center gap-2 rounded-xl border-2 border-(--brand) [background:var(--brand-bg)] px-7 py-3.5 text-base font-bold text-foreground transition-transform duration-200 group-hover:scale-105 sm:px-5 sm:py-3 sm:text-sm">
+                {t.gamePlay}
+              </span>
+
+              <span className="game-blink mt-1 font-mono text-xs tracking-[3px] text-muted-foreground">
+                {t.gameTagline}
+              </span>
+            </div>
+          </a>
         </div>
       </section>
 
