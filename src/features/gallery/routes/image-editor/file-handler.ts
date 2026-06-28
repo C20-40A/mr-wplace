@@ -106,19 +106,26 @@ export const downloadBlob = (blob: Blob, filename: string): void => {
 };
 
 /**
- * ファイル名から座標情報抽出
- * 形式: ${TLX}-${TLY}-${PxX}-${PxY}.png
+ * ファイル名からタイトル/座標情報抽出
+ * 形式: ${TLX}-${TLY}-${PxX}-${PxY}.png or ${title}_${TLX}-${TLY}-${PxX}-${PxY}.png
  */
-export const parseDrawPositionFromFileName = (
+export const parseImageMetadataFromFileName = (
   fileName: string,
-): DrawPosition | null => {
-  const match = fileName.match(/^(\d+)-(\d+)-(\d+)-(\d+)\.png$/);
-  if (!match) return null;
+): { title?: string; drawPosition: DrawPosition | null } => {
+  const match = fileName.match(/^(?:(.+)_)?(\d+)-(\d+)-(\d+)-(\d+)\.png$/i);
+  if (!match) return { drawPosition: null };
 
   return {
-    TLX: parseInt(match[1]),
-    TLY: parseInt(match[2]),
-    PxX: parseInt(match[3]),
-    PxY: parseInt(match[4]),
+    title: match[1],
+    drawPosition: {
+      TLX: parseInt(match[2], 10),
+      TLY: parseInt(match[3], 10),
+      PxX: parseInt(match[4], 10),
+      PxY: parseInt(match[5], 10),
+    },
   };
 };
+
+export const parseDrawPositionFromFileName = (
+  fileName: string,
+): DrawPosition | null => parseImageMetadataFromFileName(fileName).drawPosition;

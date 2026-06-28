@@ -18,7 +18,7 @@ import {
   createBlobFromCanvas,
   blobToDataUrl,
   downloadBlob,
-  parseDrawPositionFromFileName,
+  parseImageMetadataFromFileName,
 } from "./file-handler";
 import {
   type ImportedEditorFile,
@@ -64,6 +64,7 @@ export class EditorController {
   private colorPalette: ColorPalette | null = null;
   private onSaveSuccess?: () => void;
   private currentFileName: string | null = null;
+  private currentImageTitle: string | undefined = undefined;
   private drawPosition: DrawPosition | null = null;
   private wplaceColorMetric: string | undefined = undefined;
   private isEditMode = false;
@@ -102,6 +103,7 @@ export class EditorController {
     this.editingItemKey = item.key;
     this.drawPosition = item.drawPosition ?? null;
     this.currentFileName = `edit_${item.key}`;
+    this.currentImageTitle = item.title;
     this.wplaceColorMetric = item.colorMetric;
 
     console.log("🧑‍🎨 : Loading existing image for edit:", item.key);
@@ -147,6 +149,7 @@ export class EditorController {
 
       console.log("🧑‍🎨 : Detected importable overlay file");
       this.currentFileName = imported.fileName || file.name;
+      this.applyTitleFromFileName(this.currentFileName);
       this.drawPosition = imported.drawPosition;
       this.wplaceColorMetric = imported.colorMetric;
 
@@ -167,7 +170,7 @@ export class EditorController {
     if (!file.type.startsWith("image/")) return;
 
     this.currentFileName = file.name;
-    this.drawPosition = parseDrawPositionFromFileName(file.name);
+    this.applyFileNameMetadata(file.name);
 
     const dataUrl = await readFileAsDataUrl(file);
     const { action, dataUrl: processedDataUrl } = await showImageSizeDialog(
@@ -192,6 +195,7 @@ export class EditorController {
 
       console.log("🧑‍🎨 : Detected importable overlay file");
       this.currentFileName = imported.fileName || file.name;
+      this.applyTitleFromFileName(this.currentFileName);
       this.drawPosition = imported.drawPosition;
       this.wplaceColorMetric = imported.colorMetric;
       if (imported.dithering !== undefined) {
@@ -205,7 +209,7 @@ export class EditorController {
     if (!file.type.startsWith("image/")) return;
 
     this.currentFileName = file.name;
-    this.drawPosition = parseDrawPositionFromFileName(file.name);
+    this.applyFileNameMetadata(file.name);
 
     // 画像差し替え時は警告ダイアログをスキップして直接編集を続行
     const dataUrl = await readFileAsDataUrl(file);
@@ -684,6 +688,7 @@ export class EditorController {
     this.transparentColors.clear();
     this.transparencyMaskEditor.clear();
     this.currentFileName = null;
+    this.currentImageTitle = undefined;
     this.drawPosition = null;
     this.wplaceColorMetric = undefined;
     this.isEditMode = false;
@@ -926,7 +931,7 @@ export class EditorController {
       await import("@/core/bridge/gallery-storage-bridge");
 
     await saveGalleryItem(itemKey, dataUrl, {
-      title: undefined,
+      title: this.currentImageTitle,
       coords: this.drawPosition || undefined,
       visible: this.drawPosition ? true : false,
       zIndex: 0,
@@ -957,6 +962,18 @@ export class EditorController {
     const response = await fetch(dataUrl);
     const blob = await response.blob();
     await this.saveToStorage(blob);
+  }
+
+  private applyFileNameMetadata(fileName: string): void {
+    const metadata = parseImageMetadataFromFileName(fileName);
+    if (metadata.title || !this.currentImageTitle)
+      this.currentImageTitle = metadata.title;
+    this.drawPosition = metadata.drawPosition;
+  }
+
+  private applyTitleFromFileName(fileName: string): void {
+    const { title } = parseImageMetadataFromFileName(fileName);
+    if (title || !this.currentImageTitle) this.currentImageTitle = title;
   }
 
   /**
