@@ -1,5 +1,6 @@
 import { setupElementObserver } from "@/components/element-observer";
 import { findPaintPixelControls } from "@/constants/selectors";
+import { HIDE_PALETTE_EVENT } from "@/constants/events";
 import { PaletteToggleStorage } from "./storage";
 
 const COLOR_SELECTOR = "#color-1";
@@ -20,6 +21,9 @@ export class PaletteToggle {
     console.log("🧑‍🎨 : Palette toggle initialized");
 
     this.setupUI();
+    window.addEventListener(HIDE_PALETTE_EVENT, () => {
+      void this.hideForModal();
+    });
     this.observeColorChanges();
 
     // Load saved state without blocking hint/button creation
@@ -116,19 +120,39 @@ export class PaletteToggle {
     }
 
     // Toggle hidden attribute (same as bookmarklet)
-    this.isHidden = paletteContainer.hasAttribute("hidden");
-    if (this.isHidden) {
-      paletteContainer.removeAttribute("hidden");
-      this.isHidden = false;
-      console.log("🧑‍🎨 : Palette shown");
-    } else {
-      paletteContainer.setAttribute("hidden", "");
-      this.isHidden = true;
+    const shouldHide = !paletteContainer.hasAttribute("hidden");
+    await this.setPaletteHidden(shouldHide, true);
+
+    if (shouldHide) {
       console.log("🧑‍🎨 : Palette hidden");
+    } else {
+      console.log("🧑‍🎨 : Palette shown");
+    }
+  }
+
+  private async hideForModal(): Promise<void> {
+    const paletteContainer = this.findPaletteContainer();
+    if (!paletteContainer || paletteContainer.hasAttribute("hidden")) return;
+
+    await this.setPaletteHidden(true, false);
+    console.log("🧑‍🎨 : Palette hidden for modal");
+  }
+
+  private async setPaletteHidden(
+    isHidden: boolean,
+    shouldPersist: boolean,
+  ): Promise<void> {
+    const paletteContainer = this.findPaletteContainer();
+    if (!paletteContainer) return;
+
+    this.isHidden = isHidden;
+    if (isHidden) {
+      paletteContainer.setAttribute("hidden", "");
+    } else {
+      paletteContainer.removeAttribute("hidden");
     }
 
-    // Save state to storage
-    await PaletteToggleStorage.set(this.isHidden);
+    if (shouldPersist) await PaletteToggleStorage.set(isHidden);
 
     // Update button icon
     if (this.button) {

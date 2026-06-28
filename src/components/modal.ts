@@ -1,6 +1,7 @@
 import { t } from "@/i18n/manager";
 import { Router } from "../utils/router";
 import { isMobileViewport } from "@/constants/breakpoints";
+import { HIDE_PALETTE_EVENT } from "@/constants/events";
 
 export interface ModalOptions {
   id: string;
@@ -136,6 +137,7 @@ const createDialogLikeModal = (): HTMLDialogElement => {
     modal.__dialogLike.isOpen = open;
     modal.classList.toggle("modal-open", open);
     if (open) {
+      window.dispatchEvent(new Event(HIDE_PALETTE_EVENT));
       moveToStackTop();
       modal.setAttribute("open", "");
       addEscListener();

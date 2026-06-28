@@ -26,6 +26,7 @@ import {
 
 import { storage } from "@/utils/browser-api";
 import { resetFeatureHintsState } from "@/states/feature-hints";
+import { HIDE_PALETTE_EVENT } from "@/constants/events";
 
 const stopInteractionPropagation = (event: Event): void => {
   event.stopPropagation();
@@ -204,5 +205,6 @@ export const toggleDeveloperMenu = (): void => {
   const menu = document.getElementById("mr-wplace-developer-menu") as HTMLDivElement | null;
   if (!menu) return;
   const isHidden = menu.style.display === "none";
+  if (isHidden) window.dispatchEvent(new Event(HIDE_PALETTE_EVENT));
   menu.style.display = isHidden ? "block" : "none";
 };
