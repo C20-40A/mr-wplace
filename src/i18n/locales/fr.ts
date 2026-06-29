@@ -110,7 +110,7 @@ export const frTranslations = {
   enter_tile_name: "Entrez le nom de la tuile (vide pour les coordonnées) :",
 
   // Image Editor
-  drag_drop_or_click: "Glisser-déposer ou cliquer pour sélectionner une image",
+  drag_drop_or_click: "Glisser-déposer ou cliquer pour sélectionner un fichier",
   clear_image: "Effacer l'image",
   original_image: "Image d'origine",
   click_or_drop_to_change: "Cliquer ou déposer pour changer",

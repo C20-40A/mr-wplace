@@ -107,7 +107,7 @@ export const enTranslations = {
   enter_tile_name: "Enter tile name (empty for coordinates):",
 
   // Image Editor
-  drag_drop_or_click: "Drag & drop or click to select image",
+  drag_drop_or_click: "Drag & drop or click to select file",
   clear_image: "Clear image",
   original_image: "Original image",
   click_or_drop_to_change: "Click or drop to change",

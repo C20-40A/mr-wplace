@@ -113,7 +113,7 @@ export const jaTranslations = {
   import_snapshot_success: "インポートが完了しました",
 
   // Image Editor関連
-  drag_drop_or_click: "画像をドラッグ&ドロップまたはクリックして選択",
+  drag_drop_or_click: "ファイルをドラッグ&ドロップまたはクリックして選択",
   clear_image: "画像をクリア",
   original_image: "元画像",
   click_or_drop_to_change: "クリックまたはドロップで変更",

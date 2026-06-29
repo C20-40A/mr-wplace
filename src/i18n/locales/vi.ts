@@ -106,7 +106,7 @@ export const viTranslations = {
   enter_tile_name: "Nhập tên ô (để trống là tọa độ):",
 
   // Image Editor
-  drag_drop_or_click: "Kéo & thả hoặc nhấp để chọn hình ảnh",
+  drag_drop_or_click: "Kéo & thả hoặc nhấp để chọn tệp",
   clear_image: "Xóa hình ảnh",
   original_image: "Hình ảnh gốc",
   click_or_drop_to_change: "Nhấp hoặc thả để thay đổi",

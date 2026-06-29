@@ -108,7 +108,7 @@ export const ptTranslations = {
   enter_tile_name: "Insira o nome do tile (vazio para coordenadas):",
 
   // Image Editor
-  drag_drop_or_click: "Arraste e solte ou clique para selecionar imagem",
+  drag_drop_or_click: "Arraste e solte ou clique para selecionar um arquivo",
   clear_image: "Limpar imagem",
   original_image: "Imagem original",
   click_or_drop_to_change: "Clique ou solte para alterar",

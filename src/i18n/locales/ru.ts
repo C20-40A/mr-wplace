@@ -107,7 +107,7 @@ export const ruTranslations = {
   enter_tile_name: "Введите имя тайла (пусто для координат):",
 
   // Image Editor
-  drag_drop_or_click: "Перетащите или нажмите для выбора изображения",
+  drag_drop_or_click: "Перетащите или нажмите, чтобы выбрать файл",
   clear_image: "Очистить изображение",
   original_image: "Исходное изображение",
   click_or_drop_to_change: "Нажмите или перетащите для изменения",

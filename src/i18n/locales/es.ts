@@ -111,7 +111,7 @@ export const esTranslations = {
   enter_tile_name: "Introduce el nombre del azulejo (vacío para coordenadas):",
 
   // Image Editor
-  drag_drop_or_click: "Arrastra y suelta o haz clic para seleccionar imagen",
+  drag_drop_or_click: "Arrastra y suelta o haz clic para seleccionar un archivo",
   clear_image: "Limpiar imagen",
   original_image: "Imagen original",
   click_or_drop_to_change: "Haz clic o suelta para cambiar",

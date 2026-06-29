@@ -133,7 +133,6 @@ export class ImageEditorUI {
 
     this.imageDropzone = new ImageDropzone(dropzoneContainer, {
       onFileSelected: (file: File) => this.callbacks?.onFileHandle(file),
-      acceptedTypes: "image/*,.json,.wplace",
       autoHide: true,
     });
   }

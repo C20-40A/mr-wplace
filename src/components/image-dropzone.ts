@@ -2,7 +2,7 @@ import { t } from "../i18n/manager";
 
 interface ImageDropzoneOptions {
   onFileSelected: (file: File) => void;
-  acceptedTypes?: string; // デフォルト: "image/*"
+  acceptedTypes?: string;
   autoHide?: boolean; // ファイル選択時に自動非表示（デフォルト: false）
 }
 
@@ -14,13 +14,13 @@ export class ImageDropzone {
   private container: HTMLElement;
   private dropzoneElement!: HTMLElement;
   private fileInput!: HTMLInputElement;
-  private options: Required<ImageDropzoneOptions>;
+  private options: ImageDropzoneOptions & { autoHide: boolean };
 
   constructor(container: HTMLElement, options: ImageDropzoneOptions) {
     this.container = container;
     this.options = {
       onFileSelected: options.onFileSelected,
-      acceptedTypes: options.acceptedTypes ?? "image/*",
+      acceptedTypes: options.acceptedTypes,
       autoHide: options.autoHide ?? false,
     };
 
@@ -40,13 +40,15 @@ export class ImageDropzone {
             <path fill-rule="evenodd" d="M11.47 2.47a.75.75 0 011.06 0l4.5 4.5a.75.75 0 01-1.06 1.06L12.75 4.81V15a.75.75 0 01-1.5 0V4.81L8.03 8.03a.75.75 0 01-1.06-1.06l4.5-4.5zM3 15.75a.75.75 0 01.75.75v2.25A1.5 1.5 0 005.25 21h13.5a1.5 1.5 0 001.5-1.5V16.5a.75.75 0 011.5 0v2.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V16.5a.75.75 0 01.75-.75z" clip-rule="evenodd"/>
           </svg>
           <p class="text-gray-600 mb-2">${t`${"drag_drop_or_click"}`}</p>
-          <input type="file" id="dropzone-file-input" accept="${this.options.acceptedTypes}" class="hidden">
+          <input type="file" id="dropzone-file-input" class="hidden">
         </div>
       </div>
     `;
 
     this.dropzoneElement = this.container.querySelector("#image-dropzone")!;
     this.fileInput = this.container.querySelector("#dropzone-file-input")! as HTMLInputElement;
+    if (this.options.acceptedTypes)
+      this.fileInput.accept = this.options.acceptedTypes;
   }
 
   private setupEventHandlers(): void {

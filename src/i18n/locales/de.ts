@@ -109,7 +109,7 @@ export const deTranslations = {
   enter_tile_name: "Kachelnamen eingeben (leer = Koordinaten):",
 
   // Image Editor
-  drag_drop_or_click: "Ziehen & ablegen oder klicken, um ein Bild auszuwählen",
+  drag_drop_or_click: "Ziehen & ablegen oder klicken, um eine Datei auszuwählen",
   clear_image: "Bild löschen",
   original_image: "Originalbild",
   click_or_drop_to_change: "Klicken oder ablegen zum Ändern",

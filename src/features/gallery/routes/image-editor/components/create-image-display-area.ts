@@ -42,7 +42,6 @@ const createOriginalArea = (
   elements.replaceFileInput = createElement("input", {
     id: "wps-replace-file-input",
     type: "file",
-    accept: "image/*,.json,.wplace",
     style: { display: "none" },
   }) as HTMLInputElement;
 
