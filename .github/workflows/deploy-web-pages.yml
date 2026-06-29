@@ -39,7 +39,11 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Install dependencies
+      - name: Install extension dependencies
+        working-directory: .
+        run: bun install --frozen-lockfile
+
+      - name: Install web dependencies
         run: bun install --frozen-lockfile
 
       - name: Build
