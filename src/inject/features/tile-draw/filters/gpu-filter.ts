@@ -332,7 +332,6 @@ export const processGpuColorFilter = async (
     gl.UNSIGNED_BYTE,
     overlayBitmap
   );
-  gl.finish();
 
   // カラーフィルター uniform 設定
   const filters = colorFilter ?? [];
@@ -356,14 +355,18 @@ export const processGpuColorFilter = async (
   gl.clearColor(0, 0, 0, 0);
   gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.TRIANGLES, 0, 6);
-  gl.finish();
 
-  // readPixels
+  // readPixels自体が描画完了を待つため、直前のgl.finishは不要。
   const outBuf = new Uint8Array(width * height * 4);
   gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, outBuf);
 
   // NOTE: overlayBitmap.close() は呼ばない
   // この ImageBitmap は instance.tiles に保存されていて、複数回再利用される可能性があるため
 
-  return new Uint8ClampedArray(outBuf);
+  // 同じArrayBufferをviewし、4MBのTypedArrayコピーを避ける。
+  return new Uint8ClampedArray(
+    outBuf.buffer,
+    outBuf.byteOffset,
+    outBuf.byteLength,
+  );
 };

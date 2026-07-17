@@ -19,6 +19,7 @@ import { overlayLayers, perTileColorStats } from "./states";
 
 const DEBUG_TILE_OVERLAY_RENDERER = false;
 const hasOwn = Object.prototype.hasOwnProperty;
+const EMPTY_PIXEL_DATA = new Uint8ClampedArray(0);
 
 /**
  * RGBA配列を毎回生成せずに色一致判定する
@@ -117,13 +118,15 @@ const computeStatsWithBackground = (
   offsetY: number,
   stats: ColorStats,
 ): void => {
-  // "r,g,b" 文字列生成を色ごとに1回へ抑える
-  const colorKeyCache = new Map<number, string>();
+  // ホットループでは文字列キーを作らず、24bit RGBで集計する。
+  // ColorStatsへの文字列変換は登場色ごとに最後の1回だけ行う。
+  const totalCounts = new Map<number, number>();
+  const matchedCounts = new Map<number, number>();
 
   for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const i = (y * width + x) * 4;
-
+    let i = y * width * 4;
+    let bgI = ((offsetY + y) * bgWidth + offsetX) * 4;
+    for (let x = 0; x < width; x++, i += 4, bgI += 4) {
       // 透明ピクセルをスキップ（元画像基準）
       if (originalData[i + 3] === 0) continue;
 
@@ -132,21 +135,11 @@ const computeStatsWithBackground = (
       const origG = originalData[i + 1];
       const origB = originalData[i + 2];
       const colorInt = (origR << 16) | (origG << 8) | origB;
-      let totalColorKey = colorKeyCache.get(colorInt);
-      if (!totalColorKey) {
-        totalColorKey = colorToKey([origR, origG, origB]);
-        colorKeyCache.set(colorInt, totalColorKey);
-      }
-      stats.total.set(totalColorKey, (stats.total.get(totalColorKey) || 0) + 1);
+      totalCounts.set(colorInt, (totalCounts.get(colorInt) || 0) + 1);
 
       // matched: 元画像の色でカウント（カラーフィルター無関係）
-      // 背景位置を計算
-      const bgX = offsetX + x;
-      const bgY = offsetY + y;
-      const bgI = (bgY * bgWidth + bgX) * 4;
-
       // 背景の範囲外のピクセルはスキップ（matchedのみ）
-      if (bgI + 3 >= bgData.length) continue;
+      if (bgI < 0 || bgI + 3 >= bgData.length) continue;
 
       // 背景比較（元画像の色で）
       const bgR = bgData[bgI];
@@ -164,13 +157,27 @@ const computeStatsWithBackground = (
         bgA,
       );
 
-      if (colorMatches) {
-        stats.matched.set(
-          totalColorKey,
-          (stats.matched.get(totalColorKey) || 0) + 1,
-        );
-      }
+      if (colorMatches)
+        matchedCounts.set(colorInt, (matchedCounts.get(colorInt) || 0) + 1);
     }
+  }
+
+  for (const [colorInt, count] of totalCounts) {
+    const colorKey = colorToKey([
+      colorInt >> 16,
+      (colorInt >> 8) & 0xff,
+      colorInt & 0xff,
+    ]);
+    stats.total.set(colorKey, (stats.total.get(colorKey) || 0) + count);
+  }
+
+  for (const [colorInt, count] of matchedCounts) {
+    const colorKey = colorToKey([
+      colorInt >> 16,
+      (colorInt >> 8) & 0xff,
+      colorInt & 0xff,
+    ]);
+    stats.matched.set(colorKey, (stats.matched.get(colorKey) || 0) + count);
   }
 };
 
@@ -192,7 +199,6 @@ const scaleAndRenderWithMode = (
   offsetX: number,
   offsetY: number,
   mode: EnhancedMode,
-  shouldSkipRendering: boolean,
   skipBackgroundComparison: boolean = false,
   showUnplacedOnly: boolean = false,
   enhancedColor: readonly [number, number, number] = [255, 0, 0],
@@ -207,18 +213,20 @@ const scaleAndRenderWithMode = (
   const scaledStride = scaledWidth * 4;
   const [ecR, ecG, ecB] = enhancedColor;
 
-  if (shouldSkipRendering) {
-    return scaledData; // 透明データを返す
-  }
-
   // huge-red-cross/diamond用: 未配置ピクセルの中心座標を収集
-  const unplacedCenters: Array<{ x: number; y: number }> = [];
+  // 座標オブジェクトではなくscaledData上の中心インデックスを保持する。
+  const unplacedCenters: number[] = [];
   const isHugeRedCross = mode === "huge-red-cross";
   const isHugeRedCrossBold = mode === "huge-red-cross-bold";
   const isHugeRedDiamond = mode === "huge-red-diamond";
   const isHugeRedRing = mode === "huge-red-ring";
   const needsHugeMarker =
     isHugeRedCross || isHugeRedCrossBold || isHugeRedDiamond || isHugeRedRing;
+  const maxPixels = ENHANCED_MODE_OPTIONS.find(
+    (o) => o.value === mode,
+  )?.maxPixels;
+  let canRenderHugeMarkers = true;
+  const useOriginalComparison = showUnplacedOnly && comparisonData !== null;
 
   for (let y1 = 0; y1 < height; y1++) {
     for (let x1 = 0; x1 < width; x1++) {
@@ -231,7 +239,6 @@ const scaleAndRenderWithMode = (
       const a = data[srcI + 3];
 
       // ON時のみ元画像基準で背景一致判定（OFF時は従来どおり描画データ基準）
-      const useOriginalComparison = showUnplacedOnly && comparisonData !== null;
       if (!useOriginalComparison && a === 0) continue;
       const cmpR = useOriginalComparison ? comparisonData[srcI] : r;
       const cmpG = useOriginalComparison ? comparisonData[srcI + 1] : g;
@@ -363,8 +370,17 @@ const scaleAndRenderWithMode = (
         scaledData[center + 2] = b;
         scaledData[center + 3] = a;
         // huge marker: 中心座標を収集
-        if (needsHugeMarker)
-          unplacedCenters.push({ x: baseX + 1, y: baseY + 1 });
+        if (needsHugeMarker && canRenderHugeMarkers) {
+          if (maxPixels === undefined || unplacedCenters.length < maxPixels) {
+            unplacedCenters.push(
+              (baseY + 1) * scaledWidth + baseX + 1,
+            );
+          } else {
+            // 上限超過後は描画されないため、それ以上の収集と保持を止める。
+            canRenderHugeMarkers = false;
+            unplacedCenters.length = 0;
+          }
+        }
       }
 
       // huge marker は 2nd pass で処理するので、1st pass では中心+crossのみ
@@ -547,13 +563,10 @@ const scaleAndRenderWithMode = (
   }
 
   // 2nd pass: huge marker 描画
-  // Per-mode pixel limit (undefined = no limit)
-  const modeOption = ENHANCED_MODE_OPTIONS.find((o) => o.value === mode);
-  const maxPixels = modeOption?.maxPixels;
   if (
     needsHugeMarker &&
-    unplacedCenters.length > 0 &&
-    (maxPixels === undefined || unplacedCenters.length <= maxPixels)
+    canRenderHugeMarkers &&
+    unplacedCenters.length > 0
   ) {
     const armLength = 30;
     const centerSize = 1; // 中央3x3の半径（±1 = 3px）
@@ -576,7 +589,9 @@ const scaleAndRenderWithMode = (
       scaledData[i + 3] = alpha;
     };
 
-    for (const { x: cx, y: cy } of unplacedCenters) {
+    for (const centerIndex of unplacedCenters) {
+      const cx = centerIndex % scaledWidth;
+      const cy = Math.floor(centerIndex / scaledWidth);
       if (isHugeRedCross) {
         // 巨大赤十字: 細い線（1px幅）
         // 水平腕
@@ -722,7 +737,7 @@ const renderLightweightFastPath = async (
  */
 const applyOverlayProcessing = async (
   overlayBitmap: ImageBitmap,
-  bgPixels: Uint8Array,
+  bgPixels: Uint8Array | null,
   bgWidth: number,
   offsetX: number,
   offsetY: number,
@@ -732,7 +747,7 @@ const applyOverlayProcessing = async (
   compute_device: "gpu" | "cpu" = "gpu",
   skipStatsComputation: boolean = false,
   enhancedColor: [number, number, number] = [255, 0, 0],
-): Promise<ImageBitmap> => {
+): Promise<ImageBitmap | null> => {
   const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
   const width = overlayBitmap.width;
   const height = overlayBitmap.height;
@@ -749,11 +764,19 @@ const applyOverlayProcessing = async (
     return originalData;
   };
 
-  // 背景データ準備
-  const bgData = new Uint8ClampedArray(bgPixels.buffer);
   const showUnplacedOnly = window.mrWplaceShowUnplacedOnly ?? false;
   const lightweightMode = window.mrWplaceOverlayLightweightMode === true;
   const skipBackgroundComparison = lightweightMode && !showUnplacedOnly;
+  const bgData = bgPixels
+    ? new Uint8ClampedArray(
+        bgPixels.buffer as ArrayBuffer,
+        bgPixels.byteOffset,
+        bgPixels.byteLength,
+      )
+    : null;
+
+  if (!bgData && !skipBackgroundComparison)
+    throw new Error("comparison background pixels not found");
 
   // Phase 1: 背景比較 + 統計計算（カラーフィルター無関係）
   // Skip if we already have stats for this tile
@@ -771,13 +794,18 @@ const applyOverlayProcessing = async (
       getOriginalData(),
       width,
       height,
-      bgData,
+      bgData!,
       bgWidth,
       offsetX,
       offsetY,
       stats,
     );
   }
+
+  // 空フィルターは統計だけ更新し、36MBの透明画像生成を行わない。
+  const shouldSkipRendering =
+    colorFilter !== undefined && colorFilter.length === 0;
+  if (shouldSkipRendering) return null;
 
   // Phase 2: カラーフィルター適用（描画用のみ）
   const filteredData = await applyColorFilterToOverlay(
@@ -788,14 +816,10 @@ const applyOverlayProcessing = async (
   );
 
   // Phase 3: x3拡大 + モード別処理
-  const shouldSkipRendering =
-    colorFilter !== undefined && colorFilter.length === 0;
-
   if (
     lightweightMode &&
     !showUnplacedOnly &&
-    !window.mrWplaceSelectedColorOnlyMark &&
-    !shouldSkipRendering
+    !window.mrWplaceSelectedColorOnlyMark
   ) {
     return await renderLightweightFastPath(filteredData, width, height);
   }
@@ -822,12 +846,11 @@ const applyOverlayProcessing = async (
     comparisonData,
     width,
     height,
-    bgData,
+    bgData ?? EMPTY_PIXEL_DATA,
     bgWidth,
     offsetX,
     offsetY,
     mode,
-    shouldSkipRendering,
     skipBackgroundComparison,
     showUnplacedOnly,
     enhancedColor,
@@ -1036,10 +1059,6 @@ export const drawOverlayLayersOnTile = async (
     }
   }
 
-  comparisonBgPixels ??= new Uint8Array(
-    TILE_DRAW_CONSTANTS.TILE_SIZE * TILE_DRAW_CONSTANTS.TILE_SIZE * 4,
-  );
-
   // キャンバス作成（実サイズベース）
   const drawSize =
     Math.max(finalBgWidth, finalBgHeight) * TILE_DRAW_CONSTANTS.RENDER_SCALE;
@@ -1049,8 +1068,16 @@ export const drawOverlayLayersOnTile = async (
   context.imageSmoothingEnabled = false;
 
   if (finalBgPixels) {
+    const bgImageDataInput =
+      finalBgPixels.buffer instanceof ArrayBuffer
+        ? new Uint8ClampedArray(
+            finalBgPixels.buffer,
+            finalBgPixels.byteOffset,
+            finalBgPixels.byteLength,
+          )
+        : new Uint8ClampedArray(finalBgPixels);
     const bgImageData = new ImageData(
-      new Uint8ClampedArray(finalBgPixels),
+      bgImageDataInput,
       finalBgWidth,
       finalBgHeight,
     );
@@ -1142,7 +1169,7 @@ export const drawOverlayLayersOnTile = async (
     const imageStatsMap = perTileColorStats.get(instance.imageKey);
     const alreadyHasStats = imageStatsMap?.has(coordStrPadded) ?? false;
 
-    paintedTilebitmap = await applyOverlayProcessing(
+    const processedBitmap = await applyOverlayProcessing(
       paintedTilebitmap,
       comparisonBgPixels,
       comparisonBgWidth,
@@ -1156,14 +1183,16 @@ export const drawOverlayLayersOnTile = async (
       enhancedColor,
     );
 
+    if (!processedBitmap) continue;
+
     try {
       context.drawImage(
-        paintedTilebitmap,
+        processedBitmap,
         offsetX * TILE_DRAW_CONSTANTS.RENDER_SCALE,
         offsetY * TILE_DRAW_CONSTANTS.RENDER_SCALE,
       );
     } finally {
-      paintedTilebitmap.close();
+      processedBitmap.close();
     }
   }
 

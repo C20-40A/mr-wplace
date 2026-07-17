@@ -12,6 +12,7 @@ const BASE_TILE_ZOOM = 11;
 const MID_TILE_ZOOM = 10;
 const CACHE_CONTROL_HEADER = "public, max-age=31536000, immutable";
 const FRONT_RENDER_CACHE_MAX = 60;
+const FRONT_BASE_RENDER_CONCURRENCY = 2;
 const FRONT_TILE_URL_ORIGIN = "https://backend.wplace.live";
 const FRONT_TILE_URL_PATH_PREFIX = "/mr-wplace/front-tile";
 
@@ -19,7 +20,30 @@ export const buildFrontLayerTileUrl = (version: number): string =>
   `${FRONT_TILE_URL_ORIGIN}${FRONT_TILE_URL_PATH_PREFIX}/{z}/{x}/{y}.png?v=${version}`;
 
 let transparentTileBlobPromise: Promise<Blob> | null = null;
+let activeBaseRenders = 0;
+const baseRenderWaiters: Array<() => void> = [];
 const frontRenderedTileCache = new Map<string, { token: string; blob: Blob }>();
+const frontRenderInFlight = new Map<string, Promise<Blob>>();
+
+const withBaseRenderSlot = async <T>(task: () => Promise<T>): Promise<T> => {
+  if (activeBaseRenders >= FRONT_BASE_RENDER_CONCURRENCY) {
+    await new Promise<void>((resolve) => baseRenderWaiters.push(resolve));
+  } else {
+    activeBaseRenders++;
+  }
+
+  try {
+    return await task();
+  } finally {
+    const next = baseRenderWaiters.shift();
+    if (next) {
+      // 実行枠を次の待機処理へ直接引き継ぐ。
+      next();
+    } else {
+      activeBaseRenders--;
+    }
+  }
+};
 
 /**
  * Invalidate front-rendered tile cache for a specific tile.
@@ -127,6 +151,18 @@ const buildZoom9LastModifiedToken = (
   return `${stateVersion}|${parts.join("|")}`;
 };
 
+const buildFrontTileToken = (
+  z: number,
+  x: number,
+  y: number,
+  stateVersion: string,
+): string | null =>
+  z === BASE_TILE_ZOOM
+    ? buildBaseTileLastModifiedToken(x, y, stateVersion)
+    : z === MID_TILE_ZOOM
+    ? buildZoom10LastModifiedToken(x, y, stateVersion)
+    : buildZoom9LastModifiedToken(x, y, stateVersion);
+
 const renderBaseZoomTile = async (
   x: number,
   y: number,
@@ -190,6 +226,7 @@ const renderZoom10Tile = async (
   x: number,
   y: number,
   emptyBlob: Blob,
+  stateVersion: string,
 ): Promise<Blob> => {
   const childTileSize = TILE_SIZE / 2;
   const childTasks: Array<
@@ -200,18 +237,14 @@ const renderZoom10Tile = async (
     for (let dx = 0; dx < 2; dx++) {
       const childX = x * 2 + dx;
       const childY = y * 2 + dy;
-      const comparisonTileBlob = getOriginalBlob(`${childX},${childY}`);
-
-      if (!comparisonTileBlob) {
+      if (!getOriginalBlob(`${childX},${childY}`)) {
+        // 比較背景がない子は透明なので、デコード・再エンコードを避ける。
         markFrontTileComparisonPending(childX, childY);
         continue;
       }
 
       childTasks.push(
-        drawOverlayLayersOnTile(emptyBlob, [childX, childY], "gpu", {
-          comparisonTileBlob,
-          transparentBase: true,
-        })
+        renderFrontTile(childX, childY, BASE_TILE_ZOOM, stateVersion)
           .then((blob) => ({ dx, dy, blob }))
           .catch(() => ({ dx, dy, blob: null })),
       );
@@ -226,6 +259,7 @@ const renderZoom9Tile = async (
   x: number,
   y: number,
   emptyBlob: Blob,
+  stateVersion: string,
 ): Promise<Blob> => {
   const childTileSize = TILE_SIZE / 2;
   const childTasks: Array<
@@ -237,7 +271,7 @@ const renderZoom9Tile = async (
       const childX = x * 2 + dx;
       const childY = y * 2 + dy;
       childTasks.push(
-        renderZoom10Tile(childX, childY, emptyBlob)
+        renderFrontTile(childX, childY, MID_TILE_ZOOM, stateVersion)
           .then((blob) => ({ dx, dy, blob }))
           .catch(() => ({ dx, dy, blob: null })),
       );
@@ -245,6 +279,47 @@ const renderZoom9Tile = async (
   }
 
   return composeChildrenToTile(await Promise.all(childTasks), childTileSize, emptyBlob);
+};
+
+/**
+ * 全zoomで同じキャッシュとin-flight Promiseを共有する。
+ * 親タイル生成から参照された子タイルも以後のz11/z10要求で再利用できる。
+ */
+const renderFrontTile = async (
+  x: number,
+  y: number,
+  z: number,
+  stateVersion: string,
+): Promise<Blob> => {
+  const cacheKey = getFrontRenderCacheKey(z, x, y);
+  const token = buildFrontTileToken(z, x, y, stateVersion);
+  const cached = getCachedFrontRenderedTile(cacheKey, token);
+  if (cached) return cached;
+
+  const inFlightKey = `${cacheKey}|${token ?? `pending:${stateVersion}`}`;
+  const existing = frontRenderInFlight.get(inFlightKey);
+  if (existing) return await existing;
+
+  const renderPromise = (async (): Promise<Blob> => {
+    const emptyBlob = await getTransparentTileBlob();
+    const blob =
+      z === BASE_TILE_ZOOM
+        ? await withBaseRenderSlot(() => renderBaseZoomTile(x, y, emptyBlob))
+        : z === MID_TILE_ZOOM
+        ? await renderZoom10Tile(x, y, emptyBlob, stateVersion)
+        : await renderZoom9Tile(x, y, emptyBlob, stateVersion);
+
+    setCachedFrontRenderedTile(cacheKey, token, blob);
+    return blob;
+  })();
+
+  frontRenderInFlight.set(inFlightKey, renderPromise);
+  try {
+    return await renderPromise;
+  } finally {
+    if (frontRenderInFlight.get(inFlightKey) === renderPromise)
+      frontRenderInFlight.delete(inFlightKey);
+  }
 };
 
 const getTransparentTileBlob = (): Promise<Blob> => {
@@ -277,25 +352,7 @@ export const handleFrontLayerTileRequest = async (
 
   try {
     const stateVersion = getRequestedStateVersion(url);
-    const cacheKey = getFrontRenderCacheKey(z, x, y);
-    const lastModifiedToken =
-      z === BASE_TILE_ZOOM
-        ? buildBaseTileLastModifiedToken(x, y, stateVersion)
-        : z === MID_TILE_ZOOM
-        ? buildZoom10LastModifiedToken(x, y, stateVersion)
-        : buildZoom9LastModifiedToken(x, y, stateVersion);
-    const cached = getCachedFrontRenderedTile(cacheKey, lastModifiedToken);
-    if (cached) return createTransparentTileResponse(cached);
-
-    // Create transparent background blob (1000x1000)
-    const emptyBlob = await getTransparentTileBlob();
-    const blob =
-      z === BASE_TILE_ZOOM
-        ? await renderBaseZoomTile(x, y, emptyBlob)
-        : z === MID_TILE_ZOOM
-        ? await renderZoom10Tile(x, y, emptyBlob)
-        : await renderZoom9Tile(x, y, emptyBlob);
-    setCachedFrontRenderedTile(cacheKey, lastModifiedToken, blob);
+    const blob = await renderFrontTile(x, y, z, stateVersion);
 
     return new Response(blob, {
       status: 200,
