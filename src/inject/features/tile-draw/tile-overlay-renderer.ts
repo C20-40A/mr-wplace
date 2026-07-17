@@ -6,6 +6,7 @@ import type { TileDrawInstance, ColorStats, EnhancedMode } from "./types";
 import { getAuxiliaryColor, colorToKey } from "./filters/color-processing";
 import { ENHANCED_MODE_OPTIONS } from "@/components/color-palette/utils";
 import { convertImageBitmapToUint8ClampedArray } from "./image-processing/pixel-processing";
+import { renderFillAt1x } from "./image-processing/render-fill";
 import { processGpuColorFilter } from "./filters/gpu-filter";
 import { processCpuColorFilter } from "./filters/cpu-filter";
 import {
@@ -728,6 +729,11 @@ const renderLightweightFastPath = async (
   return await convertToImageBitmap(scaledData, scaledWidth, scaledHeight);
 };
 
+interface ProcessedOverlay {
+  bitmap: ImageBitmap;
+  drawScale: number;
+}
+
 /**
  * オーバーレイ最終処理（メイン関数）
  * 1. 背景比較+統計計算（x1サイズ）- カラーフィルター無関係
@@ -747,7 +753,7 @@ const applyOverlayProcessing = async (
   compute_device: "gpu" | "cpu" = "gpu",
   skipStatsComputation: boolean = false,
   enhancedColor: [number, number, number] = [255, 0, 0],
-): Promise<ImageBitmap | null> => {
+): Promise<ProcessedOverlay | null> => {
   const pixelScale = TILE_DRAW_CONSTANTS.PIXEL_SCALE;
   const width = overlayBitmap.width;
   const height = overlayBitmap.height;
@@ -821,11 +827,36 @@ const applyOverlayProcessing = async (
     !showUnplacedOnly &&
     !window.mrWplaceSelectedColorOnlyMark
   ) {
-    return await renderLightweightFastPath(filteredData, width, height);
+    return {
+      bitmap: await renderLightweightFastPath(filteredData, width, height),
+      drawScale: 1,
+    };
   }
 
   const comparisonData = showUnplacedOnly ? getOriginalData() : null;
   const showUnplacedColor = getShowUnplacedColor();
+  const renderBgData = bgData ?? EMPTY_PIXEL_DATA;
+
+  // fillは各x3セルが同色なので、x1で生成してCanvasのnearest-neighbor拡大へ委譲する。
+  if (mode === "fill" && !window.mrWplaceSelectedColorOnlyMark) {
+    const fillData = renderFillAt1x({
+      data: filteredData,
+      comparisonData,
+      width,
+      height,
+      bgData: renderBgData,
+      bgWidth,
+      offsetX,
+      offsetY,
+      skipBackgroundComparison,
+      showUnplacedOnly,
+      showUnplacedColor,
+    });
+    return {
+      bitmap: await convertToImageBitmap(fillData, width, height),
+      drawScale: pixelScale,
+    };
+  }
 
   // selectedColorOnlyMark: 選択色のRGBを解決
   let selectedColorOnlyMarkRGB: readonly [number, number, number] | null = null;
@@ -846,7 +877,7 @@ const applyOverlayProcessing = async (
     comparisonData,
     width,
     height,
-    bgData ?? EMPTY_PIXEL_DATA,
+    renderBgData,
     bgWidth,
     offsetX,
     offsetY,
@@ -860,11 +891,14 @@ const applyOverlayProcessing = async (
   );
 
   // Phase 4: ImageBitmap変換
-  return await convertToImageBitmap(
-    scaledData,
-    width * pixelScale,
-    height * pixelScale,
-  );
+  return {
+    bitmap: await convertToImageBitmap(
+      scaledData,
+      width * pixelScale,
+      height * pixelScale,
+    ),
+    drawScale: 1,
+  };
 };
 
 export const drawOverlayLayersOnTile = async (
@@ -1169,7 +1203,7 @@ export const drawOverlayLayersOnTile = async (
     const imageStatsMap = perTileColorStats.get(instance.imageKey);
     const alreadyHasStats = imageStatsMap?.has(coordStrPadded) ?? false;
 
-    const processedBitmap = await applyOverlayProcessing(
+    const processedOverlay = await applyOverlayProcessing(
       paintedTilebitmap,
       comparisonBgPixels,
       comparisonBgWidth,
@@ -1183,14 +1217,23 @@ export const drawOverlayLayersOnTile = async (
       enhancedColor,
     );
 
-    if (!processedBitmap) continue;
+    if (!processedOverlay) continue;
 
+    const { bitmap: processedBitmap, drawScale } = processedOverlay;
     try {
-      context.drawImage(
-        processedBitmap,
-        offsetX * TILE_DRAW_CONSTANTS.RENDER_SCALE,
-        offsetY * TILE_DRAW_CONSTANTS.RENDER_SCALE,
-      );
+      const drawX = offsetX * TILE_DRAW_CONSTANTS.RENDER_SCALE;
+      const drawY = offsetY * TILE_DRAW_CONSTANTS.RENDER_SCALE;
+      if (drawScale === 1) {
+        context.drawImage(processedBitmap, drawX, drawY);
+      } else {
+        context.drawImage(
+          processedBitmap,
+          drawX,
+          drawY,
+          processedBitmap.width * drawScale,
+          processedBitmap.height * drawScale,
+        );
+      }
     } finally {
       processedBitmap.close();
     }
