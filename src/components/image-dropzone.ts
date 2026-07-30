@@ -15,6 +15,7 @@ export class ImageDropzone {
   private dropzoneElement!: HTMLElement;
   private fileInput!: HTMLInputElement;
   private options: ImageDropzoneOptions & { autoHide: boolean };
+  private pasteHandler: ((event: ClipboardEvent) => void) | null = null;
 
   constructor(container: HTMLElement, options: ImageDropzoneOptions) {
     this.container = container;
@@ -82,6 +83,50 @@ export class ImageDropzone {
         this.handleFileSelection(files[0]);
       }
     });
+
+    // Paste an image from the clipboard (for example, with Ctrl+V).
+    this.pasteHandler = (event: ClipboardEvent) => {
+      if (!this.container.isConnected || this.container.style.display === "none") {
+        return;
+      }
+
+      const target = event.target;
+      if (
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+      ) {
+        return;
+      }
+
+      const clipboardItems = event.clipboardData?.items;
+      const imageItem = clipboardItems
+        ? Array.from(clipboardItems).find(
+            (item) => item.kind === "file" && item.type.startsWith("image/"),
+          )
+        : undefined;
+      const clipboardFile =
+        imageItem?.getAsFile() ??
+        Array.from(event.clipboardData?.files ?? []).find((file) =>
+          file.type.startsWith("image/"),
+        );
+      if (!clipboardFile) return;
+
+      event.preventDefault();
+      this.handleFileSelection(this.createPastedImageFile(clipboardFile));
+    };
+    this.container.ownerDocument.addEventListener("paste", this.pasteHandler);
+  }
+
+  private createPastedImageFile(file: File): File {
+    if (file.name) return file;
+
+    const extension = file.type.split("/")[1]?.split("+")[0] || "png";
+    return new File([file], `pasted-image.${extension}`, {
+      type: file.type,
+      lastModified: Date.now(),
+    });
   }
 
   private handleFileSelection(file: File): void {
@@ -127,7 +172,12 @@ export class ImageDropzone {
   }
 
   destroy(): void {
-    // Event listeners are automatically removed when elements are removed
+    if (this.pasteHandler) {
+      this.container.ownerDocument.removeEventListener("paste", this.pasteHandler);
+      this.pasteHandler = null;
+    }
+
+    // Event listeners on the dropzone are removed with its DOM nodes.
     this.container.innerHTML = "";
   }
 

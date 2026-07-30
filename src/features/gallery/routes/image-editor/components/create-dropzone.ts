@@ -6,6 +6,7 @@ export const createDropzone = (
 ): HTMLElement => {
   elements.dropzoneContainer = createElement("div", {
     id: "wps-dropzone-container",
+    tabIndex: 0,
     style: {
       border: "2px dashed #d1d5db",
       borderRadius: "0.5rem",
