@@ -20,6 +20,7 @@ import {
   isFrontTileLayerOperational,
   notifyFrontTileComparisonReady,
 } from "./features/map-instance/front-tile-layer";
+import { isDraftModeEnabled } from "./features/draft-draw";
 
 const TILE_URL_REGEX = /\/tiles?\/(\d+)\/(\d+)\.png(?:[?#].*)?$/;
 let frontTileXhrInterceptorInstalled = false;
@@ -143,6 +144,19 @@ export const setupFetchInterceptor = (): void => {
           const tileX = parseInt(pixelMatch[1], 10);
           const tileY = parseInt(pixelMatch[2], 10);
           const cacheKey = `${tileX},${tileY}`;
+
+          // Draft mode: never submit paint to the backend.
+          // Charge は消費されず、下書きは overlay 側にのみ残る。
+          if (isDraftModeEnabled()) {
+            console.log("🧑‍🎨: Draft mode - blocked pixel paint POST:", cacheKey);
+            return new Response(
+              JSON.stringify({ error: "mr-wplace-draft-mode" }),
+              {
+                status: 403,
+                headers: { "Content-Type": "application/json" },
+              }
+            );
+          }
 
           console.log("🧑‍🎨: Detected pixel paint POST:", cacheKey);
 

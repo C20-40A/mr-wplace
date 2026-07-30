@@ -53,6 +53,25 @@ export const sendOverlayLightweightModeToInject = (enabled: boolean) => {
 };
 
 /**
+ * Send draft mode toggle to inject side
+ */
+export const sendDraftModeToInject = (enabled: boolean) => {
+  window.postMessage(
+    { source: "mr-wplace-draft-mode-update", enabled },
+    "*"
+  );
+  console.log(`🧑‍🎨 : Sent draft mode to inject side: ${enabled}`);
+};
+
+/**
+ * Request inject side to discard all draft pixels
+ */
+export const sendDraftClearToInject = () => {
+  window.postMessage({ source: "mr-wplace-draft-clear" }, "*");
+  console.log("🧑‍🎨 : Sent draft clear to inject side");
+};
+
+/**
  * Send color filter state to inject side
  */
 export const sendColorFilterToInject = (

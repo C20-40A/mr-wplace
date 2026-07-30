@@ -19,6 +19,7 @@ import {
   handlePaintForStats,
   handlePaintDeleteForStats,
 } from "./features/paint-stats-updater";
+import { eraseDraftPixel } from "./features/draft-draw";
 import { scheduleStartupUserDataRecovery } from "./features/user-status/user-data-recovery";
 
 const LOCATION_KEY = "location";
@@ -99,6 +100,8 @@ const forceStartupLocationZoom = (): void => {
       handlePaintDeleteForStats(coord);
       const { tileX, tileY, pixelX, pixelY } = coord;
       clearFrontTilePaintGuide(tileX, tileY, pixelX, pixelY);
+      // 下書きモード中の取り消し操作を overlay へ反映
+      eraseDraftPixel({ tileX, tileY, pixelX, pixelY });
     });
     setPaintClearListener(() => {
       clearFrontTilePaintGuideAll();

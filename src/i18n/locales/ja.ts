@@ -619,4 +619,6 @@ export const jaTranslations = {
   quantization_lab_wplace: "Lab CIE94 / Wplace（低速・知覚的）",
   text_draw_direction_horizontal: "横書き",
   text_draw_direction_vertical: "縦書き",
+  draft_mode: "下書き",
+  draft_clear: "下書きを消去",
 };

@@ -30,6 +30,7 @@ export {
   getCapturedPaintedCoordinates,
   setPaintListener,
   setSecondaryPaintListener,
+  setDraftPaintListener,
   setPaintSessionListener,
   setPaintDeleteListener,
   setPaintClearListener,

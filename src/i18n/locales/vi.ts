@@ -586,4 +586,6 @@ export const viTranslations = {
   quantization_lab_wplace: "Lab CIE94 / Wplace (Chậm, Tri Giác)",
   text_draw_direction_horizontal: "Ngang",
   text_draw_direction_vertical: "Dọc",
+  draft_mode: "Bản nháp",
+  draft_clear: "Xóa bản nháp",
 };

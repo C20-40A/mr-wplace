@@ -26,6 +26,8 @@ type PaintListener = (coord: CapturedPaintedCoordinate) => void;
 let paintListener: PaintListener | null = null;
 // Secondary paint listener (e.g., area-fill charge tracking)
 let secondaryPaintListener: PaintListener | null = null;
+// Draft paint listener (draft-draw accumulates pixels without consuming charges)
+let draftPaintListener: PaintListener | null = null;
 type PaintDeleteListener = (
   coord: Pick<
     CapturedPaintedCoordinate,
@@ -46,6 +48,12 @@ export const setSecondaryPaintListener = (
   listener: PaintListener | null
 ): void => {
   secondaryPaintListener = listener;
+};
+
+export const setDraftPaintListener = (
+  listener: PaintListener | null
+): void => {
+  draftPaintListener = listener;
 };
 
 export const setPaintSessionListener = (
@@ -254,6 +262,7 @@ const handleSet = (mapRef: unknown, key: string, value: unknown): void => {
   exposeCaptureState({ mapRef: map });
   paintListener?.(record);
   secondaryPaintListener?.(record);
+  draftPaintListener?.(record);
 };
 
 const handleDelete = (mapRef: unknown, key: unknown): void => {

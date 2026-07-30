@@ -44,6 +44,7 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
 - 一般 state: `mr-wplace-theme-update`, `mr-wplace-color-filter`, `mr-wplace-show-unplaced-only`, `mr-wplace-compute-device`, `mr-wplace-front-tile-layer-update`, map表示/3d関連。
 - 注意: `mr-wplace-area-display-update` は現在 `scale-display` トグルに接続。
 - overlay 同期: `mr-wplace-gallery-images-v2`, `mr-wplace-snapshots`, `mr-wplace-text-layers`。
+- 下書き: `mr-wplace-draft-mode-update`, `mr-wplace-draft-clear`。
 - stats 要求: `mr-wplace-request-stats`, `...pixel-color`, `...tile-stats`, `...image-stats`, `...map-center`, `mr-wplace-compute-total-stats`。
 - dev: auto-click / auto-color-spoit / area-fill start stop estimate。
 - gallery/snapshot bridge: `mr-wplace-gallery-v2-*`, `mr-wplace-snapshot-*`。
@@ -79,6 +80,11 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
     - `index.ts`: source/layer lifecycle、soft refresh(`v=`更新)、pending comparison、paint guide。
     - `fetch-handler.ts`: z9-11受理。z11はbase描画、z10/z9は縮小合成経路。front render cache LRU 40、token=`stateVersion|lastModified`。
     - `state-version.ts`: refresh 用 version counter。
+- `features/draft-draw/`
+  - 下書きモード。ON 中は `POST /pixel` を fetch-interceptor で 403 遮断し charge を消費させない。
+  - `draft-store.ts`: tile 単位の pixel Map が source of truth。dirty tile 集合も保持。
+  - `draft-renderer.ts`: tile 全面 1000x1000 の ImageBitmap へ焼き、`overlayLayers` に `mr-wplace-draft:<tx,ty>` キーで差し込む(split 処理は通さない)。
+  - `index.ts`: `setDraftPaintListener` で捕捉 → microtask で dirty tile のみ再描画。
 - `features/grid-display.ts`: zoom>=14 で pixel grid。
 - `features/scale-display.ts`: A/B pin 距離 UI。
 - `features/area-display.ts`: area region layer、編集 UI、measure。

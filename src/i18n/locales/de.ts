@@ -590,4 +590,6 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   quantization_lab_wplace: "Lab CIE94 / Wplace (Langsam, Wahrnehmungsbasiert)",
   text_draw_direction_horizontal: "Horizontal",
   text_draw_direction_vertical: "Vertikal",
+  draft_mode: "Entwurf",
+  draft_clear: "Entwurf löschen",
 };

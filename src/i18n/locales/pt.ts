@@ -591,4 +591,6 @@ export const ptTranslations = {
   quantization_lab_wplace: "Lab CIE94 / Wplace (Lento, Perceptual)",
   text_draw_direction_horizontal: "Horizontal",
   text_draw_direction_vertical: "Vertical",
+  draft_mode: "Rascunho",
+  draft_clear: "Limpar rascunho",
 };

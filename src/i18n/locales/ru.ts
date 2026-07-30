@@ -603,4 +603,6 @@ export const ruTranslations = {
   quantization_lab_wplace: "Lab CIE94 / Wplace (Медленно, перцептивный)",
   text_draw_direction_horizontal: "Горизонтально",
   text_draw_direction_vertical: "Вертикально",
+  draft_mode: "Черновик",
+  draft_clear: "Очистить черновик",
 };

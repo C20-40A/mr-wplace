@@ -35,6 +35,10 @@ import {
   handleOriginalTileRequest,
   handleMapThumbnailRequest,
 } from "./handlers/request-handlers";
+import {
+  setDraftModeEnabled,
+  clearAllDraft,
+} from "./features/draft-draw";
 import { setupGalleryV2Handlers } from "./handlers/gallery-v2-handlers";
 import { setupSnapshotHandlers } from "./handlers/snapshot-handlers";
 import {
@@ -384,6 +388,8 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-gallery-images-v2": handleGalleryImagesV2,
   "mr-wplace-snapshots": handleSnapshotsUpdate,
   "mr-wplace-text-layers": handleTextLayersUpdate,
+  "mr-wplace-draft-mode-update": (data) => setDraftModeEnabled(data.enabled),
+  "mr-wplace-draft-clear": () => clearAllDraft(),
   "mr-wplace-request-stats": handleStatsRequest,
   "mr-wplace-request-pixel-color": handlePixelColorRequest,
   "mr-wplace-request-tile-pixel-color": handleTilePixelColorRequest,

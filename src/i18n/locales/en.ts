@@ -616,4 +616,6 @@ Do not use this feature to paint actual pixels.`,
   quantization_lab_wplace: "Lab CIE94 / Wplace (Slow, Perceptual)",
   text_draw_direction_horizontal: "Horizontal",
   text_draw_direction_vertical: "Vertical",
+  draft_mode: "Draft",
+  draft_clear: "Clear draft",
 };

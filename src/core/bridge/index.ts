@@ -22,6 +22,8 @@ export {
   sendSelectedColorOnlyMarkToInject,
   sendOverlayLightweightModeToInject,
   sendColorFilterToInject,
+  sendDraftModeToInject,
+  sendDraftClearToInject,
 } from "./overlay-bridge";
 
 // Text
