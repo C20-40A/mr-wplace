@@ -78,12 +78,15 @@ type SeedPoint = { x: number; y: number; r: number; g: number; b: number };
  *   Map への直接 set では代替できない。合成クリックで本物のペイントを
  *   1px 発火させ、レイヤー生成をトリガーする必要がある (charges を 1px 分消費)。
  *
- * タイル中心の world pixel 座標を lat/lng に変換し、map.project() で
- * 画面座標に変換してから canvas へ合成イベントを送る。
+ * トリガーに使う1pxは、タイル中心などの無関係な座標ではなく
+ * **seed対象ピクセルそのもの (seedPoint)** を使う。こうすることで
+ * 「本来のドット絵と無関係なゴミ1px」が残らず、後続の一括描画でも
+ * そのまま上書きされる (同じ座標・同じ色なので実質的にノーコスト)。
  */
 const triggerTilePreviewLayer = async (
   tileX: number,
   tileY: number,
+  seedPoint: SeedPoint,
   timeoutMs = 2000,
 ): Promise<boolean> => {
   if (findPaintPreviewSourceId(getMapInstanceFromWplace()!, tileX, tileY))
@@ -92,7 +95,7 @@ const triggerTilePreviewLayer = async (
   const map = getMapInstanceFromWplace();
   if (!map) return false;
 
-  const { lat, lng } = tilePixelToLatLng(tileX, tileY, 500, 500);
+  const { lat, lng } = tilePixelToLatLng(tileX, tileY, seedPoint.x, seedPoint.y);
   if (!clickAtLatLng(map, lat, lng)) return false;
 
   const deadline = Date.now() + timeoutMs;
@@ -172,7 +175,11 @@ export const handleDraftSeedRequest = async (data: {
       }
 
       for (const { tileX, tileY, points } of byTile.values()) {
-        const layerReady = await triggerTilePreviewLayer(tileX, tileY);
+        const layerReady = await triggerTilePreviewLayer(
+          tileX,
+          tileY,
+          points[0],
+        );
 
         if (!layerReady) {
           seeded += seedDraftFromPixels(

@@ -123,8 +123,11 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
     - wplace 自身のクリックハンドラ (`He` 関数、Svelte コンポーネントのクロージャ内で外部から直接呼べない) は
       予約 Map の set + canvas 描画 + charges 消費チェック + UI 更新を全部まとめて行う。
       **charges を消費させたくないため、この関数は使わず**、代わりに:
-      1. タイル中心へ合成クリック (`clickAtLatLng`) を1回発火し、wplace 自身に1pxペイントさせて
-         `paint-preview-*` レイヤーを動的生成させる (**charges を1px分だけ消費する**、トレードオフとして受容)。
+      1. **seed対象ピクセルの最初の1点**へ合成クリック (`clickAtLatLng`) を1回発火し、wplace 自身に
+         1pxペイントさせて `paint-preview-*` レイヤーを動的生成させる
+         (**charges を1px分だけ消費する**、トレードオフとして受容)。
+         タイル中心などの無関係な座標ではなく seed 対象そのものを使うことで、
+         テンプレと無関係な「ゴミ1px」が残らない (直後の一括描画で同じ座標が正しい色で上書きされる)。
       2. レイヤー生成を `findPaintPreviewSourceId` でポーリング確認。
       3. 生成された canvas へ残り全ピクセルを `fillPaintPreviewTile` で直接描画 (charges 消費なし)。
     - `handleDraftSeedRequest` (`mr-wplace-request-draft-seed`) はこの一連の流れを
