@@ -23,6 +23,7 @@ import {
 import {
   shouldBlockPaintSubmit,
   notifyDraftSubmitBlocked,
+  isDraftModeEnabled,
 } from "./features/draft-draw";
 
 const TILE_URL_REGEX = /\/tiles?\/(\d+)\/(\d+)\.png(?:[?#].*)?$/;
@@ -322,7 +323,10 @@ const handleTileRequest = async (
   const cacheKey = `${tileX},${tileY}`;
   const dataSaver = window.mrWplaceDataSaver;
   const dataSaverEnabled = dataSaver?.enabled === true;
-  const frontOperational = isFrontTileLayerOperational();
+  // 下書きモード中はテンプレ(オーバーレイ)を完全非表示にしたいので、
+  // front layer 運用中と同様に「合成済みキャッシュを使わず生タイルを返す」経路に倒す。
+  const draftActive = isDraftModeEnabled();
+  const frontOperational = isFrontTileLayerOperational() || draftActive;
   const snapshotCaptureEnabled = window.mrWplaceSnapshotCaptureEnabled === true;
   let reusableProcessedBlob: Blob | null = null;
 

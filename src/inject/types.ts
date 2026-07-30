@@ -104,6 +104,9 @@ export interface WplaceMap {
   version: string;
   getCenter: () => { lat: number; lng: number };
   getZoom: () => number;
+  project: (lngLat: { lng: number; lat: number }) => { x: number; y: number };
+  getCanvas: () => HTMLCanvasElement;
+  getCanvasContainer: () => HTMLElement;
   flyTo: (options: {
     center: [number, number];
     zoom: number;

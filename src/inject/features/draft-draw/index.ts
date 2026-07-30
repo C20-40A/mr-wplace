@@ -1,4 +1,10 @@
-import { setDraftPaintListener } from "@/inject/features/map-instance";
+import {
+  setDraftPaintListener,
+  clickAtLatLng,
+  findPaintPreviewSourceId,
+  fillPaintPreviewTile,
+  getMapInstanceFromWplace,
+} from "@/inject/features/map-instance";
 import {
   addDraftPixel,
   clearDraft,
@@ -8,6 +14,8 @@ import {
   toTileKey,
 } from "./draft-store";
 import { exportDraftAsImage, type DraftExportResult } from "./draft-export";
+import { TILE_DRAW_CONSTANTS } from "@/inject/features/tile-draw/constants";
+import { tilePixelToLatLng } from "@/utils/coordinate";
 
 /**
  * Draft draw (下書きモード)
@@ -51,9 +59,60 @@ export const resetDraftSession = (): void => {
   clearAllDraft();
 };
 
+const TILE_SIZE = TILE_DRAW_CONSTANTS.TILE_SIZE;
+
+const delay = (ms: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+type SeedPoint = { x: number; y: number; r: number; g: number; b: number };
+
+/**
+ * 指定タイルの paint-preview-* レイヤーを動的生成させる。
+ *
+ * 背景 (use_this のリバースエンジニアリングで判明):
+ * - targetPaintedPixelMap.set() だけでは画面に何も反映されない。
+ *   wplace 本体は Map 更新とは別に、専用の Umt クラスが
+ *   タイル単位の ImageSource (paint-preview-{tileX,tileY}) を
+ *   「最初の1pxペイント時」に動的生成し、以後はその canvas に直接描く。
+ * - このレイヤー生成は wplace 自身のクリックハンドラ内でのみ行われるため、
+ *   Map への直接 set では代替できない。合成クリックで本物のペイントを
+ *   1px 発火させ、レイヤー生成をトリガーする必要がある (charges を 1px 分消費)。
+ *
+ * タイル中心の world pixel 座標を lat/lng に変換し、map.project() で
+ * 画面座標に変換してから canvas へ合成イベントを送る。
+ */
+const triggerTilePreviewLayer = async (
+  tileX: number,
+  tileY: number,
+  timeoutMs = 2000,
+): Promise<boolean> => {
+  if (findPaintPreviewSourceId(getMapInstanceFromWplace()!, tileX, tileY))
+    return true;
+
+  const map = getMapInstanceFromWplace();
+  if (!map) return false;
+
+  const { lat, lng } = tilePixelToLatLng(tileX, tileY, 500, 500);
+  if (!clickAtLatLng(map, lat, lng)) return false;
+
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (findPaintPreviewSourceId(map, tileX, tileY)) return true;
+    await delay(50);
+  }
+  return false;
+};
+
 /**
  * 既存 gallery 画像を下書きへ読み込む (下書き編集の起点用)。
  * dataUrl を decode し、透明ピクセルを除いて座標付きで蓄積する。
+ *
+ * 「配置済みの見た目」から編集を始めるため、タイル単位で:
+ *   1. タイル中心へ合成クリックし、wplace 自身に1pxペイントさせて
+ *      paint-preview レイヤーを動的生成させる (charges を 1px 分消費)
+ *   2. 生成された canvas へ残り全ピクセルを直接描画する (charges 消費なし)
+ * レイヤーを生成できなかったタイルは draft-store のみへフォールバック蓄積する
+ * (画面には反映されないが下書き自体は失われない)。
  */
 export const handleDraftSeedRequest = async (data: {
   requestId: string;
@@ -76,17 +135,78 @@ export const handleDraftSeedRequest = async (data: {
         bitmap.height,
       );
 
-      const points: Array<{ x: number; y: number; r: number; g: number; b: number }> = [];
+      // world pixel 座標(TLX/TLY/PxX/PxYからの絶対座標) -> tile単位でグルーピング
+      const { TLX, TLY, PxX, PxY } = data.origin;
+      const byTile = new Map<
+        string,
+        { tileX: number; tileY: number; points: SeedPoint[] }
+      >();
+
       for (let y = 0; y < bitmap.height; y++) {
         for (let x = 0; x < bitmap.width; x++) {
           const i = (y * bitmap.width + x) * 4;
           const a = pixels[i + 3];
           if (a === 0) continue;
-          points.push({ x, y, r: pixels[i], g: pixels[i + 1], b: pixels[i + 2] });
+
+          const worldX = TLX * TILE_SIZE + PxX + x;
+          const worldY = TLY * TILE_SIZE + PxY + y;
+          const tileX = Math.floor(worldX / TILE_SIZE);
+          const tileY = Math.floor(worldY / TILE_SIZE);
+          const pixelX = worldX - tileX * TILE_SIZE;
+          const pixelY = worldY - tileY * TILE_SIZE;
+
+          const tileKey = toTileKey(tileX, tileY);
+          let entry = byTile.get(tileKey);
+          if (!entry) {
+            entry = { tileX, tileY, points: [] };
+            byTile.set(tileKey, entry);
+          }
+          entry.points.push({
+            x: pixelX,
+            y: pixelY,
+            r: pixels[i],
+            g: pixels[i + 1],
+            b: pixels[i + 2],
+          });
         }
       }
 
-      seeded = seedDraftFromPixels(points, data.origin);
+      for (const { tileX, tileY, points } of byTile.values()) {
+        const layerReady = await triggerTilePreviewLayer(tileX, tileY);
+
+        if (!layerReady) {
+          seeded += seedDraftFromPixels(
+            points.map((p) => ({ x: p.x, y: p.y, r: p.r, g: p.g, b: p.b })),
+            data.origin,
+          );
+          console.warn(
+            `🧑‍🎨 : Draft seed: tile (${tileX},${tileY}) preview layer not available, ${points.length} pixels stored in draft only`,
+          );
+          continue;
+        }
+
+        const map = getMapInstanceFromWplace();
+        const filled =
+          !!map &&
+          fillPaintPreviewTile(
+            map,
+            tileX,
+            tileY,
+            points.map((p) => ({
+              pixelX: p.x,
+              pixelY: p.y,
+              r: p.r,
+              g: p.g,
+              b: p.b,
+            })),
+          );
+
+        if (filled) {
+          seeded += points.length;
+        } else {
+          seeded += seedDraftFromPixels(points, data.origin);
+        }
+      }
     }
   } catch (error) {
     console.error("🧑‍🎨 : Draft seed failed:", error);

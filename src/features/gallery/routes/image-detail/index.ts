@@ -16,6 +16,7 @@ import { showNameInputModal } from "@/components/modal";
 import { tilePixelToLatLng } from "@/utils/coordinate";
 import { createDPad } from "../../components/d-pad";
 import { showDownloadFormatDialog } from "./download-dialog";
+import { getMapInstanceReady } from "@/states/map-instance-ready";
 
 export class GalleryImageDetail {
   private currentItem: GalleryItem | null = null;
@@ -219,7 +220,11 @@ export class GalleryImageDetail {
             ${
               item.drawPosition
                 ? `
-            <button id="draft-edit-btn" class="btn btn-warning" title="${t`${"draft_edit"}`}">
+            <button id="draft-edit-btn" class="btn btn-warning" title="${
+                  getMapInstanceReady()
+                    ? t`${"draft_edit"}`
+                    : `${t`${"draft_edit"}`} (${t`${"map_not_ready"}`})`
+                }" ${getMapInstanceReady() ? "" : "disabled"}>
               📌 ${t`${"draft_edit"}`}
             </button>`
                 : ""

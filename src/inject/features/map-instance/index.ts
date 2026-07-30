@@ -34,4 +34,9 @@ export {
   setPaintSessionListener,
   setPaintDeleteListener,
   setPaintClearListener,
+  seedPaintedPixel,
+  ensurePaintedPixelMapCaptured,
+  clickAtLatLng,
+  findPaintPreviewSourceId,
+  fillPaintPreviewTile,
 } from "./painted-coordinates-capture";

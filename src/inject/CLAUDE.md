@@ -97,18 +97,54 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
     ペイントセッション終了 (`setPaintSessionListener(false)`) で mode 強制 OFF + 下書き破棄。
     content 側は ON 中 wplace の確定ボタンを隠し「下書きを保存」に差し替える(誤送信導線を消す)。
   - 下書きモード中は wplace 純正 UI のみ。Mr の FAB は `paint-mode-style` が既に隠す。
-  - map instance 未取得時は FAB を disable (座標変換ができず保存できないため)。
-  - 描画はしない。予約中のピクセルは wplace 本体が既に表示するため overlay 不要。
-    よって `overlayLayers` / `tile-overlay-renderer` には一切関与しない
-    (統計や enhanced/unplaced 描画に混ざる問題も原理的に発生しない)。
-  - `draft-store.ts`: tile 単位の pixel Map。蓄積のみ。`seedDraftFromPixels` で既存画像ピクセルの事前投入も可能 (下書き編集用)。
+  - map instance 未取得時は FAB / gallery の下書き編集ボタンを disable (座標変換ができず保存できないため)。
+  - 通常の下書き(新規)は描画しない。予約中のピクセルは wplace 本体が既に表示するため overlay 不要。
+  - **下書きモード中は既存テンプレ overlay も全部非表示にする**
+    (`tile-overlay-renderer.drawOverlayLayersOnTile` 冒頭で `isDraftModeEnabled()` を見て早期return、
+    `fetch-interceptor.handleTileRequest` も draftActive を `frontOperational` 相当として扱い
+    合成済みキャッシュを迂回して生タイルを返す)。
+    理由: 編集前のテンプレが編集中の画面に重なって見えると混乱するため (特に下書き編集で顕著)。
+  - `draft-store.ts`: tile 単位の pixel Map。`seedDraftFromPixels` は seed のフォールバック経路
+    (paint-preview レイヤーを生成できなかったタイルのみ使用)。
   - `draft-export.ts`: 保存時に bounding box で切り出し dataUrl 化 (`mr-wplace-request-draft-export`)。gallery 保存用。
   - `index.ts`: `setDraftPaintListener` で捕捉 → store に蓄積するだけ。
-    `handleDraftSeedRequest` (`mr-wplace-request-draft-seed`) は gallery item の dataUrl を decode し、
-    透明ピクセルを除いて world pixel 座標で `seedDraftFromPixels` へ渡す (下書き編集の起点)。
-  - 下書き編集: gallery の image-detail に「📌 下書き編集」ボタン (`drawPosition` がある item のみ表示)。
-    content 側 `features/draft-draw/index.ts` の `enterDraftEditForItem` がマップ移動 → ペイントモード遷移 →
-    既存ピクセルの seed まで行う。保存時は同じ gallery key を上書きし、title 等の既存メタデータを引き継ぐ。
+
+  - **下書き編集 seed のアーキテクチャ (use_this のリバースエンジニアリングで判明した仕様)**:
+    - `targetPaintedPixelMap.set()` (旧実装で試みた方式) は **wplace 本体の内部状態を書き換えるだけで、
+      画面には一切反映されない**。実際の描画パイプラインは別に存在する。
+    - wplace は `paint-preview-{乱数}-{tileX},{tileY}` という **タイル単位の maplibregl ImageSource** を持ち、
+      これが画面上の「配置済みピクセル」の実体。このレイヤーは **そのタイルに最初の1pxがペイントされた瞬間に
+      wplace 自身が動的生成**する (`Umt` クラス、`place()` メソッド)。事前には存在しない。
+    - レイヤー生成後は `source.options.canvas` に直接 `fillRect` で描画し、`source.play()` を呼べば
+      即座に画面へ反映される (Map への set は不要)。
+    - **Y軸反転に注意**: canvas の `(0,0)` はタイルの**左下**に対応する。
+      wplace 本体も `tileSize - pixelY - 1` で変換している。
+      `painted-coordinates-capture.fillPaintPreviewTile()` もこれに倣う。
+    - wplace 自身のクリックハンドラ (`He` 関数、Svelte コンポーネントのクロージャ内で外部から直接呼べない) は
+      予約 Map の set + canvas 描画 + charges 消費チェック + UI 更新を全部まとめて行う。
+      **charges を消費させたくないため、この関数は使わず**、代わりに:
+      1. タイル中心へ合成クリック (`clickAtLatLng`) を1回発火し、wplace 自身に1pxペイントさせて
+         `paint-preview-*` レイヤーを動的生成させる (**charges を1px分だけ消費する**、トレードオフとして受容)。
+      2. レイヤー生成を `findPaintPreviewSourceId` でポーリング確認。
+      3. 生成された canvas へ残り全ピクセルを `fillPaintPreviewTile` で直接描画 (charges 消費なし)。
+    - `handleDraftSeedRequest` (`mr-wplace-request-draft-seed`) はこの一連の流れを
+      seed 対象ピクセルをタイル単位でグルーピングしてから実行する。
+    - レイヤー生成に失敗したタイル (合成クリックが effective でない、map instance 未取得等) は
+      `seedDraftFromPixels` で draft-store へのみフォールバック蓄積する
+      (画面上は配置済みに見えないが下書き自体は失われない)。
+    - `painted-coordinates-capture.ts` の関連 export:
+      - `clickAtLatLng(map, lat, lng)`: 指定座標へ合成 pointerdown/mousedown/pointerup/mouseup/click を発火。
+      - `findPaintPreviewSourceId(map, tileX, tileY)`: style.layers から `paint-preview-*-{tileX},{tileY}` を検索。
+      - `fillPaintPreviewTile(map, tileX, tileY, pixels)`: 該当タイルの canvas へ直接描画 + play()。
+      - `ensurePaintedPixelMapCaptured()`: (現在 seed では未使用) targetPaintedPixelMap 自体の強制捕捉。
+        画面反映には無関係と判明したため、現状は将来の別用途向けに残置。
+      - `seedPaintedPixel()`: (現在 seed では未使用) targetPaintedPixelMap への直接 set。同上の理由で残置。
+  - 下書き編集: gallery の image-detail に「📌 下書き編集」ボタン (`drawPosition` がある item のみ表示、
+    map instance 未準備なら disabled)。
+    content 側 `features/draft-draw/index.ts` の `enterDraftEditForItem` が
+    `mr-wplace-map-flyto` を直接送って強制 flyTo でマップ移動 (URL nav モードでのリロードを回避) →
+    ペイントモード遷移 → 既存ピクセルの seed まで行う。
+    保存時は同じ gallery key を上書きし、title 等の既存メタデータを引き継ぐ (`seedItem` で保持)。
 - `features/grid-display.ts`: zoom>=14 で pixel grid。
 - `features/scale-display.ts`: A/B pin 距離 UI。
 - `features/area-display.ts`: area region layer、編集 UI、measure。

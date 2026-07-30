@@ -17,6 +17,7 @@ import {
   isColorFilterActive,
 } from "../../states/colorFilterState";
 import { overlayLayers, perTileColorStats } from "./states";
+import { isDraftModeEnabled } from "@/inject/features/draft-draw";
 
 const DEBUG_TILE_OVERLAY_RENDERER = false;
 const hasOwn = Object.prototype.hasOwnProperty;
@@ -920,7 +921,10 @@ export const drawOverlayLayersOnTile = async (
     transparentBase?: boolean;
   } = {},
 ): Promise<Blob> => {
-  if (overlayLayers.length === 0) return tileBlob;
+  // 下書きモード中はテンプレ(オーバーレイ)を一切描画しない。
+  // 理由: 編集前のテンプレが編集中の画面に重なって見え、混乱の元になるため。
+  // wplace 本体が予約中ピクセルを既に表示しているので、overlay 無しでも支障はない。
+  if (overlayLayers.length === 0 || isDraftModeEnabled()) return tileBlob;
 
   // padded format for legacy compatibility: "0005,0003"
   const coordStrPadded =

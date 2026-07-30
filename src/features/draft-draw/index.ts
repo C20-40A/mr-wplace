@@ -15,8 +15,8 @@ import {
   sendGalleryImagesToInject,
 } from "@/core/bridge";
 import { GalleryItem, GalleryStorage } from "@/states/galleryStorage";
-import { gotoMapPosition } from "@/features/gallery/common-actions";
 import { getImageDataUrl } from "@/utils/indexed-db-bridge";
+import { tilePixelToLatLng } from "@/utils/coordinate";
 
 /**
  * 下書きモード (draft draw / blueprint)
@@ -187,14 +187,29 @@ export class DraftDraw {
   /**
    * 既存 gallery item を「下書き編集」として開く。
    * 座標が無い(未配置)画像は編集できない。
+   *
+   * NOTE: 通常の gotoMapPosition は navigation mode が URL の場合ページを
+   * リロードしてしまい、直後のペイントモード遷移が行えなくなる。
+   * 下書き編集は map instance が生きていることが前提の機能なので、
+   * ここでは常に flyTo (inject 側の smart navigation) を使う。
    */
   async enterDraftEditForItem(item: GalleryItem): Promise<void> {
+    if (!getMapInstanceReady()) {
+      Toast.show(t`${"map_not_ready"}`, "error");
+      return;
+    }
     if (!item.drawPosition) {
       Toast.show(t`${"draft_edit_needs_position"}`, "error");
       return;
     }
 
-    await gotoMapPosition(item);
+    const { TLX, TLY, PxX, PxY } = item.drawPosition;
+    const { lat, lng } = tilePixelToLatLng(TLX, TLY, PxX, PxY);
+    window.postMessage(
+      { source: "mr-wplace-map-flyto", lat, lng, zoom: 14 },
+      "*"
+    );
+
     this.enterDraftMode(item);
   }
 
