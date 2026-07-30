@@ -609,4 +609,9 @@ export const frTranslations = {
   text_draw_direction_vertical: "Vertical",
   draft_mode: "Brouillon",
   draft_clear: "Effacer le brouillon",
+  draft_blocked_notice: "Mode brouillon : non envoyé",
+  draft_confirm_body: "Activer le mode brouillon ? Les pixels ne seront PAS envoyés à wplace et aucune charge n'est utilisée. Désactivez-le avant de peindre pour de vrai.",
+  draft_save: "Enregistrer le brouillon",
+  draft_discard_confirm: "Désactiver le mode brouillon ? Le brouillon actuel sera supprimé.",
+  draft_save_failed: "Échec de l'enregistrement du brouillon",
 };

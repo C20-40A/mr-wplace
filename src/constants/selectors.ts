@@ -298,6 +298,24 @@ export const findShareModalUrlContainer = (
 };
 
 /**
+ * ペイント確定ボタン(Paint)のコンテナを検索
+ *
+ * 構造: <div class="absolute bottom-0 left-1/2 -translate-x-1/2">
+ *         <button class="btn ... btn-primary">...Paint...</button>
+ *       </div>
+ * 下書きモード中はこのコンテナごと隠し、代わりに保存ボタンを出す。
+ */
+export const findPaintSubmitContainer = (): HTMLElement | null => {
+  const container = document.querySelector(
+    ".absolute.bottom-0.left-1\\/2.-translate-x-1\\/2",
+  );
+  // btn-primary を含むものだけを対象にする(他の bottom-center 要素との誤爆回避)
+  if (container?.querySelector("button.btn-primary"))
+    return container as HTMLElement;
+  return null;
+};
+
+/**
  * "My location" ボタンのコンテナを検索（右下）
  */
 export const findMyLocationContainer = (): Element | null => {

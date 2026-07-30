@@ -4,7 +4,8 @@ import type { CapturedPaintedCoordinate } from "@/inject/types";
  * Draft pixel store (inject context)
  *
  * ペイント予約を charge を消費せずに蓄積する。
- * tile 単位の Map を source of truth とし、bitmap は描画時に焼く。
+ * 描画は行わない (wplace 本体が予約中のピクセルを表示するため)。
+ * 蓄積データは「下書きを保存」時の画像化にのみ使う。
  */
 
 /** 1 pixel 分の下書きデータ */
@@ -18,9 +19,6 @@ export interface DraftPixel {
 
 /** tileKey = "tx,ty" -> (pixelKey = "px,py") -> DraftPixel */
 const draftTiles = new Map<string, Map<string, DraftPixel>>();
-
-/** 変更のあった tileKey。再描画対象の絞り込みに使う */
-const dirtyTiles = new Set<string>();
 
 export const toTileKey = (tileX: number, tileY: number): string =>
   `${tileX},${tileY}`;
@@ -38,16 +36,6 @@ export const getDraftPixelCount = (): number => {
   let total = 0;
   for (const tile of draftTiles.values()) total += tile.size;
   return total;
-};
-
-export const takeDirtyTiles = (): string[] => {
-  const keys = [...dirtyTiles];
-  dirtyTiles.clear();
-  return keys;
-};
-
-export const markDirty = (tileKey: string): void => {
-  dirtyTiles.add(tileKey);
 };
 
 /**
@@ -73,7 +61,6 @@ export const addDraftPixel = (coord: CapturedPaintedCoordinate): boolean => {
     b: color.b,
   });
 
-  dirtyTiles.add(tileKey);
   return true;
 };
 
@@ -89,14 +76,10 @@ export const removeDraftPixel = (
   if (!tile?.delete(toPixelKey(pixelX, pixelY))) return false;
 
   if (tile.size === 0) draftTiles.delete(tileKey);
-  dirtyTiles.add(tileKey);
   return true;
 };
 
-/** 全下書きを破棄。破棄前に存在した tileKey を返す(再描画用) */
-export const clearDraft = (): string[] => {
-  const keys = [...draftTiles.keys()];
+/** 全下書きを破棄 */
+export const clearDraft = (): void => {
   draftTiles.clear();
-  for (const key of keys) dirtyTiles.add(key);
-  return keys;
 };

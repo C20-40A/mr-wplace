@@ -19,7 +19,7 @@ import {
   handlePaintForStats,
   handlePaintDeleteForStats,
 } from "./features/paint-stats-updater";
-import { eraseDraftPixel } from "./features/draft-draw";
+import { eraseDraftPixel, resetDraftSession } from "./features/draft-draw";
 import { scheduleStartupUserDataRecovery } from "./features/user-status/user-data-recovery";
 
 const LOCATION_KEY = "location";
@@ -108,6 +108,8 @@ const forceStartupLocationZoom = (): void => {
     });
     setPaintSessionListener((active) => {
       setFrontTilePaintGuideActive(active, { clearNow: !active });
+      // セッション終了で「下書き混入」フラグを解除 (次セッションは通常送信可)
+      if (!active) resetDraftSession();
     });
     setupFetchInterceptor();
     scheduleStartupUserDataRecovery();

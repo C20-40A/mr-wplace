@@ -20,7 +20,10 @@ import {
   isFrontTileLayerOperational,
   notifyFrontTileComparisonReady,
 } from "./features/map-instance/front-tile-layer";
-import { isDraftModeEnabled } from "./features/draft-draw";
+import {
+  shouldBlockPaintSubmit,
+  notifyDraftSubmitBlocked,
+} from "./features/draft-draw";
 
 const TILE_URL_REGEX = /\/tiles?\/(\d+)\/(\d+)\.png(?:[?#].*)?$/;
 let frontTileXhrInterceptorInstalled = false;
@@ -145,17 +148,13 @@ export const setupFetchInterceptor = (): void => {
           const tileY = parseInt(pixelMatch[2], 10);
           const cacheKey = `${tileX},${tileY}`;
 
-          // Draft mode: never submit paint to the backend.
-          // Charge は消費されず、下書きは overlay 側にのみ残る。
-          if (isDraftModeEnabled()) {
+          // SAFETY: 下書きモード中、または下書きが混入したセッションは送信しない。
+          // 誤送信は BAN リスクに直結するため fail-closed で判定する。
+          if (shouldBlockPaintSubmit()) {
             console.log("🧑‍🎨: Draft mode - blocked pixel paint POST:", cacheKey);
-            return new Response(
-              JSON.stringify({ error: "mr-wplace-draft-mode" }),
-              {
-                status: 403,
-                headers: { "Content-Type": "application/json" },
-              }
-            );
+            notifyDraftSubmitBlocked();
+            // ネットワークエラーとして返し、wplace 側に「送信済み」と誤認させない
+            throw new TypeError("Failed to fetch");
           }
 
           console.log("🧑‍🎨: Detected pixel paint POST:", cacheKey);

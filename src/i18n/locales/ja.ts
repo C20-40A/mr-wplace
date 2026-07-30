@@ -621,4 +621,9 @@ export const jaTranslations = {
   text_draw_direction_vertical: "縦書き",
   draft_mode: "下書き",
   draft_clear: "下書きを消去",
+  draft_blocked_notice: "下書きモード: 送信されません",
+  draft_confirm_body: "下書きモードを有効にしますか？ ピクセルは wplace に送信されず、チャージも消費されません。実際に描くときは必ずOFFにしてください。",
+  draft_save: "下書きを保存",
+  draft_discard_confirm: "下書きモードをOFFにしますか？ 現在の下書きは破棄されます。",
+  draft_save_failed: "下書きの保存に失敗しました",
 };

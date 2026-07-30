@@ -602,4 +602,9 @@ export const esTranslations = {
   text_draw_direction_vertical: "Vertical",
   draft_mode: "Borrador",
   draft_clear: "Borrar borrador",
+  draft_blocked_notice: "Modo borrador: no enviado",
+  draft_confirm_body: "¿Activar el modo borrador? Los píxeles NO se enviarán a wplace ni se usarán cargas. Desactívalo antes de pintar de verdad.",
+  draft_save: "Guardar borrador",
+  draft_discard_confirm: "¿Desactivar el modo borrador? El borrador actual se descartará.",
+  draft_save_failed: "Error al guardar el borrador",
 };

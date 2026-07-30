@@ -29,6 +29,7 @@ const MAP_FAB_IDS = [
   "tile-crop-save-btn",
   "bookmark-map-pin-btn",
   "mr-wplace-focus-mode-btn",
+  "mr-wplace-art-cruise-btn",
 ] as const;
 
 interface StyleRule {

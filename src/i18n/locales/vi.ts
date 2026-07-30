@@ -588,4 +588,9 @@ export const viTranslations = {
   text_draw_direction_vertical: "Dọc",
   draft_mode: "Bản nháp",
   draft_clear: "Xóa bản nháp",
+  draft_blocked_notice: "Chế độ nháp: không gửi",
+  draft_confirm_body: "Bật chế độ nháp? Pixel sẽ KHÔNG được gửi tới wplace và không tốn lượt. Hãy tắt trước khi vẽ thật.",
+  draft_save: "Lưu bản nháp",
+  draft_discard_confirm: "Tắt chế độ nháp? Bản nháp hiện tại sẽ bị xóa.",
+  draft_save_failed: "Lưu bản nháp thất bại",
 };

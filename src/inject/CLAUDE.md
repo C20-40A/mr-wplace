@@ -81,10 +81,18 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
     - `fetch-handler.ts`: z9-11受理。z11はbase描画、z10/z9は縮小合成経路。front render cache LRU 40、token=`stateVersion|lastModified`。
     - `state-version.ts`: refresh 用 version counter。
 - `features/draft-draw/`
-  - 下書きモード。ON 中は `POST /pixel` を fetch-interceptor で 403 遮断し charge を消費させない。
-  - `draft-store.ts`: tile 単位の pixel Map が source of truth。dirty tile 集合も保持。
-  - `draft-renderer.ts`: tile 全面 1000x1000 の ImageBitmap へ焼き、`overlayLayers` に `mr-wplace-draft:<tx,ty>` キーで差し込む(split 処理は通さない)。
-  - `index.ts`: `setDraftPaintListener` で捕捉 → microtask で dirty tile のみ再描画。
+  - 下書きモード。ON 中は `POST /pixel` を fetch-interceptor で遮断し charge を消費させない。
+  - SAFETY: 遮断判定は `shouldBlockPaintSubmit()` = `mode ON || セッションに下書き混入` の OR (fail-closed)。
+    遮断は 403 ではなく `TypeError` を throw し、wplace 側に「送信済み」と誤認させない。
+    ペイントセッション終了 (`setPaintSessionListener(false)`) で mode 強制 OFF + 下書き破棄。
+    UI はペイントモーダル内にしか無いため、ON のまま残すと本人が気づけない。
+    content 側は ON 中 wplace の Paint ボタンを隠し「下書きを保存」に差し替える(誤送信導線を消す)。
+  - 描画はしない。予約中のピクセルは wplace 本体が既に表示するため overlay 不要。
+    よって `overlayLayers` / `tile-overlay-renderer` には一切関与しない
+    (統計や enhanced/unplaced 描画に混ざる問題も原理的に発生しない)。
+  - `draft-store.ts`: tile 単位の pixel Map。蓄積のみ。
+  - `draft-export.ts`: 保存時に bounding box で切り出し dataUrl 化 (`mr-wplace-request-draft-export`)。gallery 保存用。
+  - `index.ts`: `setDraftPaintListener` で捕捉 → store に蓄積するだけ。
 - `features/grid-display.ts`: zoom>=14 で pixel grid。
 - `features/scale-display.ts`: A/B pin 距離 UI。
 - `features/area-display.ts`: area region layer、編集 UI、measure。
