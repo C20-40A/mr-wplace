@@ -223,6 +223,11 @@ const scaleAndRenderWithMode = (
   const isHugeRedRing = mode === "huge-red-ring";
   const needsHugeMarker =
     isHugeRedCross || isHugeRedCrossBold || isHugeRedDiamond || isHugeRedRing;
+  // 巨大マーカーから保護する表示対象セル。目的ピクセルの中心だけでなく、
+  // x3セル全体を保護し、密集時に隣のマーカー色で埋まるのを防ぐ。
+  const protectedHugeMarkerCells = needsHugeMarker
+    ? new Uint8Array(width * height)
+    : null;
   const maxPixels = ENHANCED_MODE_OPTIONS.find(
     (o) => o.value === mode,
   )?.maxPixels;
@@ -293,6 +298,8 @@ const scaleAndRenderWithMode = (
       const bottomRight = row2 + 8;
 
       if (showUnplacedOnly && colorMatches) {
+        if (protectedHugeMarkerCells)
+          protectedHugeMarkerCells[y1 * width + x1] = 1;
         // 配置済みを専用色で塗る。視認性のため元色を少しだけ残す
         const matchedR = (showUnplacedColor[0] * 224 + cmpR * 32) >> 8;
         const matchedG = (showUnplacedColor[1] * 224 + cmpG * 32) >> 8;
@@ -341,6 +348,8 @@ const scaleAndRenderWithMode = (
       }
       // showUnplacedOnly時でも未配置表示は選択色フィルターに従う
       if (a === 0) continue;
+      if (protectedHugeMarkerCells)
+        protectedHugeMarkerCells[y1 * width + x1] = 1;
 
       // selectedColorOnlyMark: 選択色以外はdot表示にフォールバック
       if (selectedColorOnlyMarkRGB && originalDataForMark) {
@@ -571,8 +580,6 @@ const scaleAndRenderWithMode = (
   ) {
     const armLength = 30;
     const centerSize = 1; // 中央3x3の半径（±1 = 3px）
-    const isScaledCenter = (v: number): boolean =>
-      (v - 1) % pixelScale === 0;
     const writeHugeMarkerPixel = (
       px: number,
       py: number,
@@ -580,10 +587,13 @@ const scaleAndRenderWithMode = (
     ): void => {
       if (px < 0 || px >= scaledWidth || py < 0 || py >= scaledHeight) return;
 
-      const i = (py * scaledWidth + px) * 4;
-      if (isScaledCenter(px) && isScaledCenter(py) && scaledData[i + 3] !== 0)
-        return;
+      // 表示対象の3x3セル内はすべてくり抜く。x1マスクを参照するため、
+      // scaledDataの書込状態に左右されず、隣接マーカー同士でも安定する。
+      const sourceX = Math.floor(px / pixelScale);
+      const sourceY = Math.floor(py / pixelScale);
+      if (protectedHugeMarkerCells![sourceY * width + sourceX] !== 0) return;
 
+      const i = (py * scaledWidth + px) * 4;
       scaledData[i] = ecR;
       scaledData[i + 1] = ecG;
       scaledData[i + 2] = ecB;
