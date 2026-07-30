@@ -25,6 +25,7 @@ export {
   sendDraftModeToInject,
   sendDraftClearToInject,
   requestDraftExport,
+  requestDraftSeed,
 } from "./overlay-bridge";
 
 // Text

@@ -4,6 +4,7 @@ import {
   clearDraft,
   getDraftPixelCount,
   removeDraftPixel,
+  seedDraftFromPixels,
   toTileKey,
 } from "./draft-store";
 import { exportDraftAsImage, type DraftExportResult } from "./draft-export";
@@ -48,6 +49,59 @@ export const resetDraftSession = (): void => {
   if (draftModeEnabled) setDraftModeEnabled(false);
   // 下書きはセッション内だけのもの。閉じたら残さない(保存済みは gallery 側にある)
   clearAllDraft();
+};
+
+/**
+ * 既存 gallery 画像を下書きへ読み込む (下書き編集の起点用)。
+ * dataUrl を decode し、透明ピクセルを除いて座標付きで蓄積する。
+ */
+export const handleDraftSeedRequest = async (data: {
+  requestId: string;
+  dataUrl: string;
+  origin: { TLX: number; TLY: number; PxX: number; PxY: number };
+}): Promise<void> => {
+  let seeded = 0;
+  try {
+    const res = await fetch(data.dataUrl);
+    const blob = await res.blob();
+    const bitmap = await createImageBitmap(blob);
+    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.drawImage(bitmap, 0, 0);
+      const { data: pixels } = ctx.getImageData(
+        0,
+        0,
+        bitmap.width,
+        bitmap.height,
+      );
+
+      const points: Array<{ x: number; y: number; r: number; g: number; b: number }> = [];
+      for (let y = 0; y < bitmap.height; y++) {
+        for (let x = 0; x < bitmap.width; x++) {
+          const i = (y * bitmap.width + x) * 4;
+          const a = pixels[i + 3];
+          if (a === 0) continue;
+          points.push({ x, y, r: pixels[i], g: pixels[i + 1], b: pixels[i + 2] });
+        }
+      }
+
+      seeded = seedDraftFromPixels(points, data.origin);
+    }
+  } catch (error) {
+    console.error("🧑‍🎨 : Draft seed failed:", error);
+  }
+
+  notifyDraftState();
+
+  window.postMessage(
+    {
+      source: "mr-wplace-response-draft-seed",
+      requestId: data.requestId,
+      seeded,
+    },
+    "*"
+  );
 };
 
 /** 下書きを画像化して content へ返す (gallery 保存用) */

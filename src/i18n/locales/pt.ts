@@ -598,4 +598,6 @@ export const ptTranslations = {
   draft_update: "Atualizar rascunho",
   map_not_ready: "Mapa não pronto",
   draft_enter_failed: "Não foi possível entrar no modo de pintura",
+  draft_edit: "Editar rascunho",
+  draft_edit_needs_position: "Primeiro coloque esta imagem no mapa",
 };

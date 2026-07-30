@@ -44,7 +44,7 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
 - 一般 state: `mr-wplace-theme-update`, `mr-wplace-color-filter`, `mr-wplace-show-unplaced-only`, `mr-wplace-compute-device`, `mr-wplace-front-tile-layer-update`, map表示/3d関連。
 - 注意: `mr-wplace-area-display-update` は現在 `scale-display` トグルに接続。
 - overlay 同期: `mr-wplace-gallery-images-v2`, `mr-wplace-snapshots`, `mr-wplace-text-layers`。
-- 下書き: `mr-wplace-draft-mode-update`, `mr-wplace-draft-clear`。
+- 下書き: `mr-wplace-draft-mode-update`, `mr-wplace-draft-clear`, `mr-wplace-request-draft-seed`。
 - stats 要求: `mr-wplace-request-stats`, `...pixel-color`, `...tile-stats`, `...image-stats`, `...map-center`, `mr-wplace-compute-total-stats`。
 - dev: auto-click / auto-color-spoit / area-fill start stop estimate。
 - gallery/snapshot bridge: `mr-wplace-gallery-v2-*`, `mr-wplace-snapshot-*`。
@@ -101,9 +101,14 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
   - 描画はしない。予約中のピクセルは wplace 本体が既に表示するため overlay 不要。
     よって `overlayLayers` / `tile-overlay-renderer` には一切関与しない
     (統計や enhanced/unplaced 描画に混ざる問題も原理的に発生しない)。
-  - `draft-store.ts`: tile 単位の pixel Map。蓄積のみ。
+  - `draft-store.ts`: tile 単位の pixel Map。蓄積のみ。`seedDraftFromPixels` で既存画像ピクセルの事前投入も可能 (下書き編集用)。
   - `draft-export.ts`: 保存時に bounding box で切り出し dataUrl 化 (`mr-wplace-request-draft-export`)。gallery 保存用。
   - `index.ts`: `setDraftPaintListener` で捕捉 → store に蓄積するだけ。
+    `handleDraftSeedRequest` (`mr-wplace-request-draft-seed`) は gallery item の dataUrl を decode し、
+    透明ピクセルを除いて world pixel 座標で `seedDraftFromPixels` へ渡す (下書き編集の起点)。
+  - 下書き編集: gallery の image-detail に「📌 下書き編集」ボタン (`drawPosition` がある item のみ表示)。
+    content 側 `features/draft-draw/index.ts` の `enterDraftEditForItem` がマップ移動 → ペイントモード遷移 →
+    既存ピクセルの seed まで行う。保存時は同じ gallery key を上書きし、title 等の既存メタデータを引き継ぐ。
 - `features/grid-display.ts`: zoom>=14 で pixel grid。
 - `features/scale-display.ts`: A/B pin 距離 UI。
 - `features/area-display.ts`: area region layer、編集 UI、measure。

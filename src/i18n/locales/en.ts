@@ -623,4 +623,6 @@ Do not use this feature to paint actual pixels.`,
   draft_update: "Update draft",
   map_not_ready: "Map not ready",
   draft_enter_failed: "Could not enter paint mode",
+  draft_edit: "Draft edit",
+  draft_edit_needs_position: "Place this image on the map first",
 };

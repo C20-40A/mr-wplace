@@ -111,6 +111,7 @@ export class GalleryImageDetail {
     onDelete: (key: string) => void,
     onEdit?: () => void,
     ui?: GalleryUI,
+    onDraftEdit?: (item: GalleryItem) => void,
   ): void {
     this.currentItem = item;
     this.ui = ui || null;
@@ -211,10 +212,18 @@ export class GalleryImageDetail {
         </div>
 
         <div style="padding: 0 8px 8px;">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div style="display: grid; grid-template-columns: ${item.drawPosition ? "1fr 1fr 1fr" : "1fr 1fr"}; gap: 8px;">
             <button id="edit-btn" class="btn btn-primary">
               ✏️ ${t`${"edit"}`}
             </button>
+            ${
+              item.drawPosition
+                ? `
+            <button id="draft-edit-btn" class="btn btn-warning" title="${t`${"draft_edit"}`}">
+              📌 ${t`${"draft_edit"}`}
+            </button>`
+                : ""
+            }
             <button id="download-btn" class="btn btn-accent" style="width: 100%;">
               📥 ${t`${"download"}`}
             </button>
@@ -227,7 +236,7 @@ export class GalleryImageDetail {
     this.loadImageToCanvas(item);
 
     // ボタンイベント設定
-    this.setupButtonEvents(router, onDelete, onEdit);
+    this.setupButtonEvents(router, onDelete, onEdit, onDraftEdit);
   }
 
   private async loadImageToCanvas(item: GalleryItem): Promise<void> {
@@ -276,6 +285,7 @@ export class GalleryImageDetail {
     router: GalleryRouter,
     onDelete: (key: string) => void,
     onEdit?: () => void,
+    onDraftEdit?: (item: GalleryItem) => void,
   ): void {
     if (!this.currentItem) return;
 
@@ -450,6 +460,14 @@ export class GalleryImageDetail {
 
       onEdit?.();
       router.navigate("image-editor");
+    });
+
+    // 下書き編集ボタン (ピクセル単位でマップ上から直接編集)
+    const draftEditBtn = document.getElementById("draft-edit-btn");
+    draftEditBtn?.addEventListener("click", () => {
+      if (!this.currentItem) return;
+
+      onDraftEdit?.(this.currentItem);
     });
 
     // シェアボタン

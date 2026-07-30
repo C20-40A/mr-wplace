@@ -614,4 +614,6 @@ export const frTranslations = {
   draft_update: "Mettre à jour le brouillon",
   map_not_ready: "Carte non prête",
   draft_enter_failed: "Impossible d'entrer en mode peinture",
+  draft_edit: "Modifier le brouillon",
+  draft_edit_needs_position: "Placez d'abord cette image sur la carte",
 };

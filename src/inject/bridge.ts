@@ -39,6 +39,7 @@ import {
   setDraftModeEnabled,
   clearAllDraft,
   handleDraftExportRequest,
+  handleDraftSeedRequest,
 } from "./features/draft-draw";
 import { setupGalleryV2Handlers } from "./handlers/gallery-v2-handlers";
 import { setupSnapshotHandlers } from "./handlers/snapshot-handlers";
@@ -392,6 +393,7 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-draft-mode-update": (data) => setDraftModeEnabled(data.enabled),
   "mr-wplace-draft-clear": () => clearAllDraft(),
   "mr-wplace-request-draft-export": handleDraftExportRequest,
+  "mr-wplace-request-draft-seed": handleDraftSeedRequest,
   "mr-wplace-request-stats": handleStatsRequest,
   "mr-wplace-request-pixel-color": handlePixelColorRequest,
   "mr-wplace-request-tile-pixel-color": handleTilePixelColorRequest,

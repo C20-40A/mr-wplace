@@ -214,14 +214,23 @@ const setupStatsUpdateListener = (): void => {
 export const initPaintStats = (): void => {
   setupStatsUpdateListener();
 
+  // NOTE: 表示対象アイテムが無い/statsがマッチしない場合 .paint-stats-remaining が
+  // 一切生成されないため「未表示なら再計算」という素朴なガードは無限ループになる
+  // (毎回のDOM変化 -> 未表示 -> 再計算 -> 変化 -> ...)。
+  // 「color buttons が新たに現れた時だけ」トリガーすることでループを断つ。
+  let colorButtonsWerePresent = false;
+
   const observer = new MutationObserver(() => {
-    const colorButtons = findColorButtons();
-    if (colorButtons.length === 0) return;
+    const hasColorButtons = findColorButtons().length > 0;
 
-    // 既にstats表示済みならスキップ
-    if (document.querySelector(".paint-stats-remaining")) return;
+    if (!hasColorButtons) {
+      colorButtonsWerePresent = false;
+      return;
+    }
 
-    // stats計算・表示
+    if (colorButtonsWerePresent) return;
+    colorButtonsWerePresent = true;
+
     displayColorStats();
   });
 

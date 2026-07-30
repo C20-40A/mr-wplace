@@ -593,4 +593,6 @@ export const viTranslations = {
   draft_update: "Cập nhật bản nháp",
   map_not_ready: "Bản đồ chưa sẵn sàng",
   draft_enter_failed: "Không thể vào chế độ vẽ",
+  draft_edit: "Chỉnh sửa bản nháp",
+  draft_edit_needs_position: "Hãy đặt hình ảnh này lên bản đồ trước",
 };

@@ -607,4 +607,6 @@ export const esTranslations = {
   draft_update: "Actualizar borrador",
   map_not_ready: "Mapa no listo",
   draft_enter_failed: "No se pudo entrar en modo pintura",
+  draft_edit: "Editar borrador",
+  draft_edit_needs_position: "Primero coloca esta imagen en el mapa",
 };

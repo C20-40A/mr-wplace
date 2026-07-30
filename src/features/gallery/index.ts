@@ -130,7 +130,15 @@ const createGallery = () => {
           // 編集ボタンコールバック
           state.editingItem = state.currentDetailItem;
         },
-        ui
+        ui,
+        async (item) => {
+          // 下書き編集ボタンコールバック: gallery を閉じてマップ上で編集させる
+          ui.closeModal();
+          const { enterDraftEditForItem } = await import(
+            "@/features/draft-draw"
+          );
+          await enterDraftEditForItem(item);
+        }
       );
     },
 

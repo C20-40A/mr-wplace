@@ -1,5 +1,8 @@
 import type { CapturedPaintedCoordinate } from "@/inject/types";
 import { colorpalette } from "@/constants/colors";
+import { TILE_DRAW_CONSTANTS } from "@/inject/features/tile-draw/constants";
+
+const TILE_SIZE = TILE_DRAW_CONSTANTS.TILE_SIZE;
 
 /**
  * Draft pixel store (inject context)
@@ -106,4 +109,40 @@ export const removeDraftPixel = (
 /** 全下書きを破棄 */
 export const clearDraft = (): void => {
   draftTiles.clear();
+};
+
+/**
+ * 既存画像を下書きへ読み込む (下書き編集の起点用)。
+ * world pixel 座標 (原点 origin) を tile/pixel へ分解して蓄積する。
+ */
+export const seedDraftFromPixels = (
+  pixels: Array<{ x: number; y: number; r: number; g: number; b: number }>,
+  origin: { TLX: number; TLY: number; PxX: number; PxY: number },
+): number => {
+  let seeded = 0;
+  for (const pixel of pixels) {
+    const worldX = origin.TLX * TILE_SIZE + origin.PxX + pixel.x;
+    const worldY = origin.TLY * TILE_SIZE + origin.PxY + pixel.y;
+    const tileX = Math.floor(worldX / TILE_SIZE);
+    const tileY = Math.floor(worldY / TILE_SIZE);
+    const pixelX = worldX - tileX * TILE_SIZE;
+    const pixelY = worldY - tileY * TILE_SIZE;
+
+    const tileKey = toTileKey(tileX, tileY);
+    let tile = draftTiles.get(tileKey);
+    if (!tile) {
+      tile = new Map<string, DraftPixel>();
+      draftTiles.set(tileKey, tile);
+    }
+
+    tile.set(toPixelKey(pixelX, pixelY), {
+      pixelX,
+      pixelY,
+      r: pixel.r,
+      g: pixel.g,
+      b: pixel.b,
+    });
+    seeded++;
+  }
+  return seeded;
 };

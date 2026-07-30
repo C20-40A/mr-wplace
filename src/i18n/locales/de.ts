@@ -597,4 +597,6 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   draft_update: "Entwurf aktualisieren",
   map_not_ready: "Karte nicht bereit",
   draft_enter_failed: "Malmodus konnte nicht gestartet werden",
+  draft_edit: "Entwurf bearbeiten",
+  draft_edit_needs_position: "Platziere dieses Bild zuerst auf der Karte",
 };

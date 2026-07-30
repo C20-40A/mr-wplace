@@ -113,6 +113,43 @@ export const requestDraftExport = (): Promise<DraftExportResult | null> =>
   });
 
 /**
+ * Request the inject side to seed the draft store from an existing image
+ * (下書き編集: 既存 gallery item のピクセルを下書きへ読み込む).
+ * Returns the number of pixels seeded (0 on failure/timeout).
+ */
+export const requestDraftSeed = (
+  dataUrl: string,
+  origin: { TLX: number; TLY: number; PxX: number; PxY: number }
+): Promise<number> =>
+  new Promise((resolve) => {
+    const requestId = `draft-seed-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2)}`;
+
+    const timeoutId = window.setTimeout(() => {
+      window.removeEventListener("message", onMessage);
+      console.warn("🧑‍🎨 : Draft seed request timed out");
+      resolve(0);
+    }, 15000);
+
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== window) return;
+      if (event.data?.source !== "mr-wplace-response-draft-seed") return;
+      if (event.data.requestId !== requestId) return;
+
+      window.clearTimeout(timeoutId);
+      window.removeEventListener("message", onMessage);
+      resolve(event.data.seeded ?? 0);
+    };
+
+    window.addEventListener("message", onMessage);
+    window.postMessage(
+      { source: "mr-wplace-request-draft-seed", requestId, dataUrl, origin },
+      "*"
+    );
+  });
+
+/**
  * Send color filter state to inject side
  */
 export const sendColorFilterToInject = (

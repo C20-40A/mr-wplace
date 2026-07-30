@@ -11,9 +11,12 @@ import { getMapInstanceReady } from "@/states/map-instance-ready";
 import {
   sendDraftModeToInject,
   requestDraftExport,
+  requestDraftSeed,
   sendGalleryImagesToInject,
 } from "@/core/bridge";
-import { GalleryStorage } from "@/states/galleryStorage";
+import { GalleryItem, GalleryStorage } from "@/states/galleryStorage";
+import { gotoMapPosition } from "@/features/gallery/common-actions";
+import { getImageDataUrl } from "@/utils/indexed-db-bridge";
 
 /**
  * 下書きモード (draft draw / blueprint)
@@ -47,6 +50,8 @@ export class DraftDraw {
   private saving = false;
   /** 保存済みギャラリーitemのkey。2回目以降は更新扱いにする */
   private savedKey: string | null = null;
+  /** 下書き編集で開始した場合の元item。保存時にtitle等を引き継ぐ */
+  private seedItem: GalleryItem | null = null;
   private closeObserver: MutationObserver | null = null;
   /** display:none にした確定ボタン。隠すと再検索できないため参照を保持する */
   private hiddenSubmitButton: HTMLElement | null = null;
@@ -54,6 +59,7 @@ export class DraftDraw {
 
   constructor() {
     this.init();
+    activeInstance = this;
   }
 
   private init(): void {
@@ -128,8 +134,11 @@ export class DraftDraw {
   /**
    * wplace の Paint ボタンを押してペイントモードへ入り、同時に下書きモードON。
    * ボタンが見つからない場合は何もしない (状態を進めない)。
+   *
+   * @param seedItem 指定時は下書き編集: 既存画像のピクセルを読み込み、
+   *   保存時は新規作成ではなく同じ item を上書きする。
    */
-  private enterDraftMode(): void {
+  private enterDraftMode(seedItem?: GalleryItem): void {
     if (!getMapInstanceReady()) return;
 
     const entryButton = findPaintEntryButton();
@@ -139,13 +148,14 @@ export class DraftDraw {
       return;
     }
 
-    this.savedKey = null;
+    this.savedKey = seedItem?.key ?? null;
+    this.seedItem = seedItem ?? null;
     entryButton.click();
 
     // Svelte の再描画タイミングが読めないため、ペイントUIの出現を待つ。
     // 出現を確認してから下書きモードを立ち上げる (空振り防止)。
     this.waitForPaintControls()
-      .then((ready) => {
+      .then(async (ready) => {
         if (!ready) {
           Toast.show(t`${"draft_enter_failed"}`, "error");
           return;
@@ -155,8 +165,37 @@ export class DraftDraw {
         this.enabled = true;
         this.observePaintControlsClose();
         this.renderSaveButton();
+
+        if (seedItem) await this.seedFromItem(seedItem);
       })
       .catch(() => Toast.show(t`${"draft_enter_failed"}`, "error"));
+  }
+
+  /** 既存 gallery item のピクセルを下書きへ読み込む (下書き編集) */
+  private async seedFromItem(item: GalleryItem): Promise<void> {
+    if (!item.drawPosition) return;
+
+    const dataUrl = await getImageDataUrl(item, {
+      showToastOnError: true,
+      logContext: "draft edit seed",
+    });
+    if (!dataUrl) return;
+
+    await requestDraftSeed(dataUrl, item.drawPosition);
+  }
+
+  /**
+   * 既存 gallery item を「下書き編集」として開く。
+   * 座標が無い(未配置)画像は編集できない。
+   */
+  async enterDraftEditForItem(item: GalleryItem): Promise<void> {
+    if (!item.drawPosition) {
+      Toast.show(t`${"draft_edit_needs_position"}`, "error");
+      return;
+    }
+
+    await gotoMapPosition(item);
+    this.enterDraftMode(item);
   }
 
   /** ペイントUIが現れるまで待つ (最大2秒) */
@@ -199,6 +238,7 @@ export class DraftDraw {
       this.enabled = false;
       this.pixelCount = 0;
       this.savedKey = null;
+      this.seedItem = null;
       // モーダルごと消えるので復元不要。次回セッションで探し直す
       this.hiddenSubmitButton = null;
       this.submitContainer = null;
@@ -276,11 +316,16 @@ export class DraftDraw {
 
       // 既存keyがあれば同じitemを上書き = 下書き画像の更新
       const key = this.savedKey ?? `${SAVED_KEY_PREFIX}${Date.now()}`;
+      // 下書き編集(既存item)なら title 等を引き継ぐ。新規下書きなら生成する
+      const title =
+        this.seedItem?.title ||
+        `${t`${"draft_mode"}`} ${new Date().toLocaleString()}`;
       await new GalleryStorage().save({
+        ...this.seedItem,
         key,
         timestamp: Date.now(),
         dataUrl: result.dataUrl,
-        title: `${t`${"draft_mode"}`} ${new Date().toLocaleString()}`,
+        title,
         drawPosition: result.coords,
         drawEnabled: true,
         width: result.width,
@@ -299,3 +344,20 @@ export class DraftDraw {
     }
   }
 }
+
+/** 実行中の DraftDraw インスタンス (initializer が1つだけ生成する) */
+let activeInstance: DraftDraw | null = null;
+
+/**
+ * gallery 側から「下書き編集」を開始するための公開関数。
+ * DraftDraw は DI に登録されていないため、モジュール直下の関数として公開する。
+ */
+export const enterDraftEditForItem = async (
+  item: GalleryItem,
+): Promise<void> => {
+  if (!activeInstance) {
+    Toast.show(t`${"draft_enter_failed"}`, "error");
+    return;
+  }
+  await activeInstance.enterDraftEditForItem(item);
+};

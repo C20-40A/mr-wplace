@@ -626,4 +626,6 @@ export const jaTranslations = {
   draft_update: "下書きを更新",
   map_not_ready: "マップ準備中",
   draft_enter_failed: "ペイントモードに入れませんでした",
+  draft_edit: "下書き編集",
+  draft_edit_needs_position: "先にこの画像をマップに配置してください",
 };

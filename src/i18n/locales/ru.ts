@@ -610,4 +610,6 @@ export const ruTranslations = {
   draft_update: "Обновить черновик",
   map_not_ready: "Карта не готова",
   draft_enter_failed: "Не удалось войти в режим рисования",
+  draft_edit: "Редактировать черновик",
+  draft_edit_needs_position: "Сначала разместите это изображение на карте",
 };
