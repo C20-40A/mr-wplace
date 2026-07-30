@@ -587,10 +587,10 @@ export const viTranslations = {
   text_draw_direction_horizontal: "Ngang",
   text_draw_direction_vertical: "Dọc",
   draft_mode: "Bản nháp",
-  draft_clear: "Xóa bản nháp",
   draft_blocked_notice: "Chế độ nháp: không gửi",
-  draft_confirm_body: "Bật chế độ nháp? Pixel sẽ KHÔNG được gửi tới wplace và không tốn lượt. Hãy tắt trước khi vẽ thật.",
   draft_save: "Lưu bản nháp",
-  draft_discard_confirm: "Tắt chế độ nháp? Bản nháp hiện tại sẽ bị xóa.",
   draft_save_failed: "Lưu bản nháp thất bại",
+  draft_update: "Cập nhật bản nháp",
+  map_not_ready: "Bản đồ chưa sẵn sàng",
+  draft_enter_failed: "Không thể vào chế độ vẽ",
 };

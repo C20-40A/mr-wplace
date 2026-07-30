@@ -298,21 +298,65 @@ export const findShareModalUrlContainer = (
 };
 
 /**
- * ペイント確定ボタン(Paint)のコンテナを検索
+ * ペイント関連ボタンのブラシアイコン SVG path。
  *
- * 構造: <div class="absolute bottom-0 left-1/2 -translate-x-1/2">
- *         <button class="btn ... btn-primary">...Paint...</button>
- *       </div>
- * 下書きモード中はこのコンテナごと隠し、代わりに保存ボタンを出す。
+ * wplace の「Paint(モード遷移)」と「確定」ボタンは同一のアイコンを使う。
+ * ラベルは言語で変わる (Paint / Pintar / ピクセルを塗る ...) が
+ * この path は不変なので、多言語テキスト表を持たずに特定できる。
  */
-export const findPaintSubmitContainer = (): HTMLElement | null => {
-  const container = document.querySelector(
-    ".absolute.bottom-0.left-1\\/2.-translate-x-1\\/2",
+const PAINT_BRUSH_ICON_PATH_PREFIX = "M240-120q-45 0-89-22t-71-58";
+
+/**
+ * ブラシアイコンを持つ primary ボタンを検索
+ *
+ * NOTE: wplace はこのボタンを使い回す。
+ * - ペイントモード外: モードへ入る「Paint」ボタン
+ * - ペイントモード中: 確定ボタン
+ * 区別は `findPaintPixelControls()` の有無で行う。
+ *
+ * ラッパー要素の class に依存すると壊れやすいため、
+ * ボタン自身 + アイコンで判定する。
+ */
+const findBrushIconButtons = (): HTMLElement[] =>
+  Array.from(document.querySelectorAll("button.btn-primary")).filter(
+    (button) => {
+      const d = button.querySelector("svg path")?.getAttribute("d");
+      return !!d?.startsWith(PAINT_BRUSH_ICON_PATH_PREFIX);
+    },
+  ) as HTMLElement[];
+
+export const findBottomCenterPrimaryButton = (): HTMLElement | null =>
+  findBrushIconButtons()[0] ?? null;
+
+/**
+ * ペイントモードへ入るためのボタン (ペイントモード外でのみ存在)
+ */
+export const findPaintEntryButton = (): HTMLElement | null => {
+  if (findPaintPixelControls()) return null;
+  return findBottomCenterPrimaryButton();
+};
+
+/**
+ * ペイント確定ボタン (ペイントモード中でのみ存在)
+ * 下書きモード中はこれを隠し、代わりに保存ボタンを出す。
+ *
+ * NOTE: エントリボタンと確定ボタンは同じブラシアイコンを持つ。
+ * ペイントモード遷移後もエントリボタンが DOM に残る場合があるため、
+ * 「最初に見つかったもの」ではなく **表示されている方** を選ぶ。
+ * (隠れているボタンを操作すると、生きている方のUIを壊す)
+ */
+export const findPaintSubmitButton = (): HTMLElement | null => {
+  if (!findPaintPixelControls()) return null;
+
+  const visible = findBrushIconButtons().filter(
+    (button) => button.offsetParent !== null,
   );
-  // btn-primary を含むものだけを対象にする(他の bottom-center 要素との誤爆回避)
-  if (container?.querySelector("button.btn-primary"))
-    return container as HTMLElement;
-  return null;
+  // 表示されているものが複数あれば、画面下にある方(確定ボタン)を採る
+  return (
+    visible.sort(
+      (a, b) => b.getBoundingClientRect().top - a.getBoundingClientRect().top,
+    )[0] ?? null
+  );
 };
 
 /**

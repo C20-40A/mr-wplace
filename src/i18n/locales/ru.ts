@@ -604,10 +604,10 @@ export const ruTranslations = {
   text_draw_direction_horizontal: "Горизонтально",
   text_draw_direction_vertical: "Вертикально",
   draft_mode: "Черновик",
-  draft_clear: "Очистить черновик",
   draft_blocked_notice: "Черновик: не отправлено",
-  draft_confirm_body: "Включить черновик? Пиксели НЕ будут отправлены в wplace, заряды не расходуются. Выключите перед реальным рисованием.",
   draft_save: "Сохранить черновик",
-  draft_discard_confirm: "Выключить черновик? Текущий черновик будет удалён.",
   draft_save_failed: "Не удалось сохранить черновик",
+  draft_update: "Обновить черновик",
+  map_not_ready: "Карта не готова",
+  draft_enter_failed: "Не удалось войти в режим рисования",
 };

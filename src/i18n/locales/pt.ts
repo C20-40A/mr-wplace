@@ -592,10 +592,10 @@ export const ptTranslations = {
   text_draw_direction_horizontal: "Horizontal",
   text_draw_direction_vertical: "Vertical",
   draft_mode: "Rascunho",
-  draft_clear: "Limpar rascunho",
   draft_blocked_notice: "Modo rascunho: não enviado",
-  draft_confirm_body: "Ativar o modo rascunho? Os pixels NÃO serão enviados ao wplace e nenhuma carga é usada. Desative antes de pintar de verdade.",
   draft_save: "Salvar rascunho",
-  draft_discard_confirm: "Desativar o modo rascunho? O rascunho atual será descartado.",
   draft_save_failed: "Falha ao salvar o rascunho",
+  draft_update: "Atualizar rascunho",
+  map_not_ready: "Mapa não pronto",
+  draft_enter_failed: "Não foi possível entrar no modo de pintura",
 };

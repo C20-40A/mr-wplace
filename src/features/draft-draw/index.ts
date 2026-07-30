@@ -1,13 +1,15 @@
 import { setupElementObserver } from "@/components/element-observer";
 import {
+  findMyLocationContainer,
   findPaintPixelControls,
-  findPaintSubmitContainer,
+  findPaintEntryButton,
+  findPaintSubmitButton,
 } from "@/constants/selectors";
 import { Toast } from "@/components/toast";
 import { t } from "@/i18n/manager";
+import { getMapInstanceReady } from "@/states/map-instance-ready";
 import {
   sendDraftModeToInject,
-  sendDraftClearToInject,
   requestDraftExport,
   sendGalleryImagesToInject,
 } from "@/core/bridge";
@@ -16,29 +18,39 @@ import { GalleryStorage } from "@/states/galleryStorage";
 /**
  * 下書きモード (draft draw / blueprint)
  *
- * ON の間はペイント送信が inject 側で遮断され、charge を消費せずに
- * overlay 上へ下書きが残る。
+ * 導線:
+ *   マップ上の下書きFAB → クリック → wplace の Paint ボタンを自動クリック
+ *   → ペイントモードへ遷移 → 同時に下書きモードON
+ *
+ * ペイントモードとの切替動線を持たないので、
+ * 「気づかないうちに下書きモード」も「誤って本送信」も構造的に起きない。
+ *
+ * 下書きモード中は wplace 純正 UI のみを使う。
+ * (Mr 追加のFABは paint-mode-style が既に隠すため、ここでは何も足さない)
  *
  * SAFETY:
- * - ボタンはペイントモーダル内にのみ出す (モード外で ON にできない)
- * - ON 中は wplace の Paint ボタンを隠し、代わりに「下書きを保存」を出す
- *   -> 誤って本送信する導線自体を消す
- * - ON->OFF / モーダルを閉じた時は下書きを破棄 (残留させない)
- * - 実送信の最終遮断は inject 側 `shouldBlockPaintSubmit()` が担当
+ * - 送信の最終遮断は inject 側 `shouldBlockPaintSubmit()` が担当
+ * - ペイントモーダルを閉じたらモードも下書きも破棄される
  */
 
-const BUTTON_ID = "mr-wplace-draft-btn";
-const SAVE_BUTTON_ID = "mr-wplace-draft-save-btn";
 const FAB_ID = "mr-wplace-draft-fab";
+const SAVE_BUTTON_ID = "mr-wplace-draft-save-btn";
+/** 下書き保存で作られたギャラリー item。再保存で上書きする */
+const SAVED_KEY_PREFIX = "draft-";
 
 const ICON_SVG =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" style="width:18px;height:18px;"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>';
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" style="width:calc(var(--spacing)*8);height:calc(var(--spacing)*8);"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>';
 
 export class DraftDraw {
   private enabled = false;
   private pixelCount = 0;
   private saving = false;
+  /** 保存済みギャラリーitemのkey。2回目以降は更新扱いにする */
+  private savedKey: string | null = null;
   private closeObserver: MutationObserver | null = null;
+  /** display:none にした確定ボタン。隠すと再検索できないため参照を保持する */
+  private hiddenSubmitButton: HTMLElement | null = null;
+  private submitContainer: HTMLElement | null = null;
 
   constructor() {
     this.init();
@@ -49,13 +61,13 @@ export class DraftDraw {
 
     setupElementObserver([
       {
-        // mini-color-filter-fab の下に固定配置 (モバイルのstatus bar圧迫を回避)
         id: FAB_ID,
+        // ペイントモード外でのみ出す (bookmark等と同じ右下スタック)
         getTargetElement: () =>
-          findPaintPixelControls() ? document.body : null,
-        createElement: () => {
-          if (document.getElementById(FAB_ID)) return;
-          this.mountFab();
+          findPaintPixelControls() ? null : findMyLocationContainer(),
+        createElement: (container) => {
+          if (container.querySelector(`#${FAB_ID}`)) return;
+          this.mountFab(container);
         },
       },
     ]);
@@ -68,7 +80,7 @@ export class DraftDraw {
     if (source === "mr-wplace-draft-state") {
       this.enabled = !!event.data.enabled;
       this.pixelCount = event.data.pixelCount ?? 0;
-      this.render();
+      this.renderSaveButton();
       return;
     }
 
@@ -76,98 +88,158 @@ export class DraftDraw {
       Toast.show(t`${"draft_blocked_notice"}`, "error");
   };
 
-  private mountFab(): void {
+  private mountFab(container: Element): void {
     const button = document.createElement("button");
     button.id = FAB_ID;
     button.type = "button";
-    button.className = "btn btn-sm btn-square shadow-md";
-    // mini-color-filter-fab: top:8px/left:8px, 高さ約32px。その直下へ
-    button.style.cssText =
-      "position:fixed; top:48px; left:8px; z-index:40;";
-    button.addEventListener("click", () => this.toggle());
+    button.className =
+      "btn btn-lg sm:btn-xl btn-square shadow-md text-base-content/80 z-30";
+    button.innerHTML = ICON_SVG;
+    button.title = t`${"draft_mode"}`;
+    button.addEventListener("click", () => this.enterDraftMode());
 
-    document.body.appendChild(button);
-    this.observePaintControlsClose();
-    this.render();
+    container.className += " flex flex-col-reverse gap-1";
+    button.style.order = "1";
+    container.appendChild(button);
+
+    this.syncFabAvailability();
   }
 
   /**
-   * ペイントモーダルが閉じたら FAB を撤去する。
+   * map instance が無いと座標変換ができず保存もできないため無効化する。
+   * 準備完了は非同期なので、押せるようになるまで定期的に見直す。
+   */
+  private syncFabAvailability(): void {
+    const button = document.getElementById(FAB_ID) as HTMLButtonElement | null;
+    if (!button) return;
+
+    const ready = getMapInstanceReady();
+    button.disabled = !ready;
+    button.style.opacity = ready ? "" : "0.4";
+    button.style.cursor = ready ? "" : "not-allowed";
+    button.title = ready
+      ? t`${"draft_mode"}`
+      : `${t`${"draft_mode"}`} (${t`${"map_not_ready"}`})`;
+
+    if (ready) return;
+    window.setTimeout(() => this.syncFabAvailability(), 1000);
+  }
+
+  /**
+   * wplace の Paint ボタンを押してペイントモードへ入り、同時に下書きモードON。
+   * ボタンが見つからない場合は何もしない (状態を進めない)。
+   */
+  private enterDraftMode(): void {
+    if (!getMapInstanceReady()) return;
+
+    const entryButton = findPaintEntryButton();
+    // disabled (チャージ待ち等) はクリックしても遷移しないので弾く
+    if (!entryButton || (entryButton as HTMLButtonElement).disabled) {
+      Toast.show(t`${"draft_enter_failed"}`, "error");
+      return;
+    }
+
+    this.savedKey = null;
+    entryButton.click();
+
+    // Svelte の再描画タイミングが読めないため、ペイントUIの出現を待つ。
+    // 出現を確認してから下書きモードを立ち上げる (空振り防止)。
+    this.waitForPaintControls()
+      .then((ready) => {
+        if (!ready) {
+          Toast.show(t`${"draft_enter_failed"}`, "error");
+          return;
+        }
+
+        sendDraftModeToInject(true);
+        this.enabled = true;
+        this.observePaintControlsClose();
+        this.renderSaveButton();
+      })
+      .catch(() => Toast.show(t`${"draft_enter_failed"}`, "error"));
+  }
+
+  /** ペイントUIが現れるまで待つ (最大2秒) */
+  private waitForPaintControls(timeoutMs = 2000): Promise<boolean> {
+    if (findPaintPixelControls()) return Promise.resolve(true);
+
+    return new Promise((resolve) => {
+      const deadline = Date.now() + timeoutMs;
+
+      const tick = () => {
+        if (findPaintPixelControls()) return resolve(true);
+        if (Date.now() > deadline) return resolve(false);
+        window.requestAnimationFrame(tick);
+      };
+
+      window.requestAnimationFrame(tick);
+    });
+  }
+
+  /**
+   * ペイントモーダルが閉じたら後始末する。
    * element-observer は生成のみ担当し削除しないため、ここで面倒を見る。
-   * 残すとモード外で ON にできてしまい危険。
    */
   private observePaintControlsClose(): void {
     this.closeObserver?.disconnect();
 
+    // NOTE: renderSaveButton() 自体がDOMを書き換えるため、
+    // 無条件に呼ぶと observer が自分の変更で再発火し続ける(強制リフロー多発)。
+    // 「保存ボタンが消えた時だけ」再生成することでループを断つ。
     const observer = new MutationObserver(() => {
-      if (findPaintPixelControls()) return;
+      if (findPaintPixelControls()) {
+        if (!document.getElementById(SAVE_BUTTON_ID)) this.renderSaveButton();
+        return;
+      }
 
-      // Paint ボタンを隠したままにしない (念のための復帰)
-      this.enabled = false;
-      this.renderSubmitArea();
-
-      document.getElementById(FAB_ID)?.remove();
       document.getElementById(SAVE_BUTTON_ID)?.remove();
       observer.disconnect();
       this.closeObserver = null;
       // inject 側もセッション終了で mode OFF + 下書き破棄される
       this.enabled = false;
       this.pixelCount = 0;
+      this.savedKey = null;
+      // モーダルごと消えるので復元不要。次回セッションで探し直す
+      this.hiddenSubmitButton = null;
+      this.submitContainer = null;
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
     this.closeObserver = observer;
   }
 
-  /** ボタン表示 + Paint ボタン差し替えをまとめて反映 */
-  private render(): void {
-    this.renderFab();
-    this.renderSubmitArea();
-  }
-
-  private renderFab(): void {
-    const button = document.getElementById(FAB_ID) as HTMLButtonElement | null;
-    if (!button) return;
-
-    button.innerHTML = ICON_SVG;
-    button.title = this.enabled
-      ? t`${"draft_blocked_notice"}`
-      : t`${"draft_mode"}`;
-
-    // ON は警告色で強く主張する (誤操作防止)
-    if (this.enabled) {
-      button.style.background = "var(--color-warning)";
-      button.style.color = "var(--color-warning-content)";
-      button.style.opacity = "1";
-    } else {
-      button.style.background = "";
-      button.style.color = "";
-      button.style.opacity = "0.75";
-    }
-  }
-
   /**
-   * 下書きモード中は wplace の Paint ボタンを隠し、保存ボタンに差し替える。
+   * 下書きモード中は wplace の確定ボタンを隠し、保存ボタンに差し替える。
    * 誤送信の導線そのものを消すのが目的。
    */
-  private renderSubmitArea(): void {
-    const container = findPaintSubmitContainer();
-    if (!container) return;
-
-    const paintButton = container.querySelector(
-      "button.btn-primary"
-    ) as HTMLElement | null;
-    let saveButton = document.getElementById(
-      SAVE_BUTTON_ID
-    ) as HTMLButtonElement | null;
-
+  private renderSaveButton(): void {
     if (!this.enabled) {
-      if (paintButton) paintButton.style.display = "";
-      saveButton?.remove();
+      // 隠した確定ボタンを戻す (display:none にすると再検索で見つからないので保持参照を使う)
+      if (this.hiddenSubmitButton) {
+        this.hiddenSubmitButton.style.display = "";
+        this.hiddenSubmitButton = null;
+      }
+      document.getElementById(SAVE_BUTTON_ID)?.remove();
       return;
     }
 
-    if (paintButton) paintButton.style.display = "none";
+    let saveButton = document.getElementById(
+      SAVE_BUTTON_ID,
+    ) as HTMLButtonElement | null;
+
+    // 初回のみ確定ボタンを探して隠す。
+    // 一度隠すと offsetParent が null になり再検索できないため参照を保持する。
+    if (!this.hiddenSubmitButton) {
+      const submitButton = findPaintSubmitButton();
+      if (!submitButton) return;
+
+      this.hiddenSubmitButton = submitButton;
+      this.submitContainer = submitButton.parentElement;
+      submitButton.style.display = "none";
+    }
+
+    const container = this.submitContainer;
+    if (!container) return;
 
     if (!saveButton) {
       saveButton = document.createElement("button");
@@ -182,16 +254,18 @@ export class DraftDraw {
 
     saveButton.disabled = this.saving || this.pixelCount === 0;
     saveButton.style.opacity = saveButton.disabled ? "0.6" : "1";
-    saveButton.innerHTML = `<div class="flex items-center gap-1.5">${ICON_SVG}<span>${t`${"draft_save"}`}${
+
+    const label = this.savedKey ? t`${"draft_update"}` : t`${"draft_save"}`;
+    saveButton.innerHTML = `<div class="flex items-center gap-1.5">${ICON_SVG}<span>${label}${
       this.pixelCount > 0 ? ` (${this.pixelCount})` : ""
     }</span></div>`;
   }
 
-  /** 下書きを gallery へ保存 */
+  /** 下書きを gallery へ保存 (2回目以降は同じitemを更新) */
   private async save(): Promise<void> {
     if (this.saving || this.pixelCount === 0) return;
     this.saving = true;
-    this.renderSubmitArea();
+    this.renderSaveButton();
 
     try {
       const result = await requestDraftExport();
@@ -200,8 +274,10 @@ export class DraftDraw {
         return;
       }
 
+      // 既存keyがあれば同じitemを上書き = 下書き画像の更新
+      const key = this.savedKey ?? `${SAVED_KEY_PREFIX}${Date.now()}`;
       await new GalleryStorage().save({
-        key: `draft-${Date.now()}`,
+        key,
         timestamp: Date.now(),
         dataUrl: result.dataUrl,
         title: `${t`${"draft_mode"}`} ${new Date().toLocaleString()}`,
@@ -212,36 +288,14 @@ export class DraftDraw {
       });
       await sendGalleryImagesToInject();
 
+      this.savedKey = key;
       Toast.show(t`${"saved_to_gallery"}`, "success");
     } catch (error) {
       console.error("🧑‍🎨 : Failed to save draft:", error);
       Toast.show(t`${"draft_save_failed"}`, "error");
     } finally {
       this.saving = false;
-      this.renderSubmitArea();
+      this.renderSaveButton();
     }
-  }
-
-  private toggle(): void {
-    // SAFETY: OFF -> ON は確認必須
-    if (!this.enabled) {
-      if (!window.confirm(t`${"draft_confirm_body"}`)) return;
-      this.enabled = true;
-      sendDraftModeToInject(true);
-      this.render();
-      return;
-    }
-
-    // ON -> OFF: 未保存の下書きがあれば破棄の確認を出す
-    if (
-      this.pixelCount > 0 &&
-      !window.confirm(t`${"draft_discard_confirm"}`)
-    )
-      return;
-
-    this.enabled = false;
-    sendDraftClearToInject();
-    sendDraftModeToInject(false);
-    this.render();
   }
 }

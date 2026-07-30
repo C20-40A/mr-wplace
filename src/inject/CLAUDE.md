@@ -82,11 +82,22 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
     - `state-version.ts`: refresh 用 version counter。
 - `features/draft-draw/`
   - 下書きモード。ON 中は `POST /pixel` を fetch-interceptor で遮断し charge を消費させない。
+  - 導線: マップ上の下書きFAB → wplace の Paint ボタンを自動クリック → ペイントモード遷移 + 下書きモードON。
+    ペイントモードとの相互切替を持たないため「気づかないうちに下書きモード」が起きない。
+    Paint ボタンの特定は**ブラシアイコンの SVG path** で行う (`selectors.findBottomCenterPrimaryButton`)。
+    ラベルは言語依存 (Paint/Pintar/...) かつラッパー DOM 構造も遷移前後で異なるため、
+    class やテキストではなくアイコンを anchor にするのが最も安定。
+    注意: エントリボタンと確定ボタンは**同じアイコン**を持ち、遷移後もエントリ側が
+    DOM に残ることがある。確定ボタンは `offsetParent !== null` で可視のものだけに絞る
+    (`findPaintSubmitButton`)。隠れている方を掴むと生きている UI を壊す。
+    注意: 保存ボタンの再生成を MutationObserver から無条件に呼ぶと、
+    自身の DOM 変更で再発火し強制リフローが多発する。「消えた時だけ」再生成すること。
   - SAFETY: 遮断判定は `shouldBlockPaintSubmit()` = `mode ON || セッションに下書き混入` の OR (fail-closed)。
     遮断は 403 ではなく `TypeError` を throw し、wplace 側に「送信済み」と誤認させない。
     ペイントセッション終了 (`setPaintSessionListener(false)`) で mode 強制 OFF + 下書き破棄。
-    UI はペイントモーダル内にしか無いため、ON のまま残すと本人が気づけない。
-    content 側は ON 中 wplace の Paint ボタンを隠し「下書きを保存」に差し替える(誤送信導線を消す)。
+    content 側は ON 中 wplace の確定ボタンを隠し「下書きを保存」に差し替える(誤送信導線を消す)。
+  - 下書きモード中は wplace 純正 UI のみ。Mr の FAB は `paint-mode-style` が既に隠す。
+  - map instance 未取得時は FAB を disable (座標変換ができず保存できないため)。
   - 描画はしない。予約中のピクセルは wplace 本体が既に表示するため overlay 不要。
     よって `overlayLayers` / `tile-overlay-renderer` には一切関与しない
     (統計や enhanced/unplaced 描画に混ざる問題も原理的に発生しない)。

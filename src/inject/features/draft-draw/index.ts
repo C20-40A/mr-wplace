@@ -76,12 +76,24 @@ export const notifyDraftSubmitBlocked = (): void => {
   window.postMessage({ source: "mr-wplace-draft-submit-blocked" }, "*");
 };
 
+let lastNotifiedCount = -1;
+
 const notifyDraftState = (): void => {
+  const pixelCount = getDraftPixelCount();
+
+  // 蓄積が進んでいるかを確認できるよう、変化時だけ出力する
+  if (pixelCount !== lastNotifiedCount) {
+    lastNotifiedCount = pixelCount;
+    console.log(
+      `🧑‍🎨 : Draft state: enabled=${draftModeEnabled} pixels=${pixelCount}`,
+    );
+  }
+
   window.postMessage(
     {
       source: "mr-wplace-draft-state",
       enabled: draftModeEnabled,
-      pixelCount: getDraftPixelCount(),
+      pixelCount,
     },
     "*"
   );
@@ -98,7 +110,7 @@ export const setDraftModeEnabled = (enabled: boolean): void => {
       sessionHasDraftPixels = true;
       notifyDraftState();
     });
-    console.log("🧑‍🎨 : Draft mode enabled");
+    console.log("🧑‍🎨 : Draft mode enabled (listener attached)");
   } else {
     setDraftPaintListener(null);
     console.log("🧑‍🎨 : Draft mode disabled");

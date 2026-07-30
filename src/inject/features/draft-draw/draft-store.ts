@@ -1,4 +1,5 @@
 import type { CapturedPaintedCoordinate } from "@/inject/types";
+import { colorpalette } from "@/constants/colors";
 
 /**
  * Draft pixel store (inject context)
@@ -38,13 +39,36 @@ export const getDraftPixelCount = (): number => {
   return total;
 };
 
+/** colorIdx -> RGB。wplace の値が color を持たない場合の復元用 */
+const paletteByIdx = new Map(
+  colorpalette.map((entry) => [entry.id, entry.rgb]),
+);
+
+const resolveColorFromIdx = (
+  colorIdx: number | undefined,
+): { r: number; g: number; b: number } | null => {
+  if (typeof colorIdx !== "number") return null;
+  const rgb = paletteByIdx.get(colorIdx);
+  if (!rgb) return null;
+  return { r: rgb[0], g: rgb[1], b: rgb[2] };
+};
+
 /**
  * 捕捉したペイントを下書きへ追加。
  * 色が取れない場合は描画できないので無視する。
  */
 export const addDraftPixel = (coord: CapturedPaintedCoordinate): boolean => {
-  const { color } = coord;
-  if (!color) return false;
+  // wplace の Map 値が color を持たず colorIdx だけの場合があるため、
+  // パレットから解決する。両方無ければ描けないので捨てる。
+  const color = coord.color ?? resolveColorFromIdx(coord.colorIdx);
+  if (!color) {
+    console.warn(
+      "🧑‍🎨 : Draft pixel dropped (no color)",
+      coord.colorIdx,
+      coord.key,
+    );
+    return false;
+  }
 
   const tileKey = toTileKey(coord.tileX, coord.tileY);
   let tile = draftTiles.get(tileKey);
