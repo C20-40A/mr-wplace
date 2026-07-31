@@ -631,4 +631,6 @@ export const jaTranslations = {
   draft_bucket: "バケツ塗り",
   draft_bucket_too_large: "範囲が広すぎて塗れません",
   draft_discard_confirm: "保存していない下書きの変更を破棄しますか？",
+  draft_brush: "ブラシ",
+  draft_map_lock: "マップ固定 (ドラッグで描画)",
 };

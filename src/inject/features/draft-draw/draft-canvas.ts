@@ -10,6 +10,7 @@ import {
   getDraftTileKeys,
 } from "./draft-store";
 import { computeBucketFill } from "./draft-bucket-fill";
+import { forEachBrushPixel, getDraftBrushSize } from "./draft-brush";
 
 /**
  * Draft canvas layer
@@ -26,6 +27,7 @@ import { computeBucketFill } from "./draft-bucket-fill";
  * 操作体系:
  * - 左クリック単発      : dot を1つ置く
  * - 左ドラッグ          : マップを平行移動 (map へ委譲)
+ * - **マップロック ON** : 左ドラッグがそのまま描画になる (pan しない)
  * - Space 押下中に移動  : 連続 dotting (**クリック不要**。押しっぱなしでなぞるだけ)
  * - 中クリック          : spoit (その座標の色を拾って選択色にする)
  * - 右ドラッグ          : 消しゴム
@@ -67,6 +69,11 @@ let eraseMode = false;
 let bucketMode = false;
 /** Space 押下中か。押している間だけ左ドラッグが連続描画になる */
 let spaceHeld = false;
+/**
+ * マップロック。ON の間は左ドラッグを map の pan に渡さず、そのまま描画に流す
+ * (= Space を押しっぱなしにしたのと同じ状態を latch する)。
+ */
+let mapLocked = false;
 
 let onPaint: PaintHandler | null = null;
 let onErase: EraseHandler | null = null;
@@ -119,6 +126,17 @@ export const isDraftEraseMode = (): boolean => eraseMode;
 export const setDraftBucketMode = (enabled: boolean): void => {
   bucketMode = enabled;
   if (enabled) eraseMode = false;
+  updateCursor();
+};
+
+/**
+ * マップロックの ON/OFF。
+ * ON にすると左ドラッグが pan ではなく描画になる (Space の latch 版)。
+ */
+export const setDraftMapLocked = (locked: boolean): void => {
+  mapLocked = locked;
+  // ロック解除時にストロークを切る。次の pan と線で繋がらないようにする
+  if (!locked && !dragMode) lastWorld = null;
   updateCursor();
 };
 
@@ -192,24 +210,39 @@ const screenToWorldPixel = (
 
 // ------- painting -------
 
-const paintWorldPixel = (
+/** world pixel 1点 (ブラシ展開後) を store へ流す */
+const applyWorldPixel = (
   worldX: number,
   worldY: number,
-  mode: DragMode,
+  color: { r: number; g: number; b: number } | null,
 ): void => {
   const tileX = Math.floor(worldX / TILE_SIZE);
   const tileY = Math.floor(worldY / TILE_SIZE);
   const pixelX = worldX - tileX * TILE_SIZE;
   const pixelY = worldY - tileY * TILE_SIZE;
 
-  if (mode === "erase") {
+  if (!color) {
     onErase?.(tileX, tileY, pixelX, pixelY);
     return;
   }
-
-  const color = getSelectedColor();
-  if (!color) return;
   onPaint?.(tileX, tileY, pixelX, pixelY, color);
+};
+
+/**
+ * ブラシ1打点。円ブラシを展開し、描画時のみディザマスクを掛ける。
+ * (消しゴムにディザを掛けると消し残しが出て使いにくいので掛けない)
+ */
+const paintWorldPixel = (
+  worldX: number,
+  worldY: number,
+  mode: DragMode,
+): void => {
+  const color = mode === "erase" ? null : getSelectedColor();
+  if (mode === "draw" && !color) return;
+
+  forEachBrushPixel(worldX, worldY, mode === "draw", (x, y) =>
+    applyWorldPixel(x, y, color),
+  );
 };
 
 /**
@@ -228,11 +261,16 @@ const paintLine = (
 
   const dx = to.x - from.x;
   const dy = to.y - from.y;
-  const steps = Math.max(Math.abs(dx), Math.abs(dy));
-  if (steps === 0) {
+  const distance = Math.max(Math.abs(dx), Math.abs(dy));
+  if (distance === 0) {
     paintWorldPixel(to.x, to.y, mode);
     return;
   }
+
+  // 太いブラシで 1px 刻みに打つと size^2 * 距離ぶん無駄になる。
+  // 半径の半分ずつ進めれば隙間なく繋がる (1px ブラシでは従来通り 1px 刻み)。
+  const stride = Math.max(1, Math.floor(getDraftBrushSize() / 2));
+  const steps = Math.ceil(distance / stride);
 
   for (let i = 1; i <= steps; i++) {
     paintWorldPixel(
@@ -308,6 +346,7 @@ const stop = (e: Event): void => {
  *
  * NOTE: Space 押下中の描画はここでは扱わない。ボタンを一切押さずに
  * なぞるだけで塗る仕様なので、pointermove 側 (spaceHeld) が担当する。
+ * マップロック中の左ドラッグは handlePointerDown 側で先に確定させる。
  */
 const resolveDragMode = (e: PointerEvent): DragMode | null => {
   if (e.button === 2) return "erase";
@@ -328,13 +367,29 @@ const handlePointerDown = (e: PointerEvent): void => {
 
   // Space 中は「なぞって塗る」モード。ここで pan させると塗りながら地図が
   // 動いてしまうので、左押下は map へ渡さず塗りとして扱う
-  if (spaceHeld && e.button === 0) {
+  if (spaceHeld && e.button === 0 && !bucketMode) {
     stop(e);
     const world = screenToWorldPixel(e.clientX, e.clientY);
     if (world) {
       paintLine(lastWorld, world, eraseMode ? "erase" : "draw");
       lastWorld = world;
     }
+    return;
+  }
+
+  /**
+   * マップロック中の左ドラッグは pan させず、そのまま描画ストロークにする。
+   * Space と違い **ボタンを押している間だけ** 塗る (latch なので、
+   * hover で塗ると地図上をなぞっただけで描けてしまい事故になる)。
+   * バケツ ON の時は「クリック = バケツ」を優先する。
+   */
+  if (mapLocked && e.button === 0 && !bucketMode) {
+    stop(e);
+    dragMode = eraseMode ? "erase" : "draw";
+    pendingClick = null;
+    inputTarget?.setPointerCapture(e.pointerId);
+    lastWorld = screenToWorldPixel(e.clientX, e.clientY);
+    if (lastWorld) paintWorldPixel(lastWorld.x, lastWorld.y, dragMode);
     return;
   }
 
@@ -450,7 +505,8 @@ const updateCursor = (): void => {
       ? "cell"
       : bucketMode
         ? "copy"
-        : spaceHeld
+        : // ロック中は pan しないので grab (掴める) に見せない
+          spaceHeld || mapLocked
           ? "crosshair"
           : "grab";
 };
@@ -609,6 +665,7 @@ export const setDraftCanvasActive = (enabled: boolean): void => {
   detachPointerHandlers();
   eraseMode = false;
   bucketMode = false;
+  mapLocked = false;
   if (rafId !== null) {
     cancelAnimationFrame(rafId);
     rafId = null;

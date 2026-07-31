@@ -44,7 +44,7 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
 - 一般 state: `mr-wplace-theme-update`, `mr-wplace-color-filter`, `mr-wplace-show-unplaced-only`, `mr-wplace-compute-device`, `mr-wplace-front-tile-layer-update`, map表示/3d関連。
 - 注意: `mr-wplace-area-display-update` は現在 `scale-display` トグルに接続。
 - overlay 同期: `mr-wplace-gallery-images-v2`, `mr-wplace-snapshots`, `mr-wplace-text-layers`。
-- 下書き: `mr-wplace-draft-mode-update`, `mr-wplace-draft-erase-update`, `mr-wplace-draft-clear`, `mr-wplace-request-draft-seed`, `mr-wplace-request-draft-export`。
+- 下書き: `mr-wplace-draft-mode-update`, `mr-wplace-draft-erase-update`, `mr-wplace-draft-bucket-update`, `mr-wplace-draft-brush-update`, `mr-wplace-draft-map-lock-update`, `mr-wplace-draft-clear`, `mr-wplace-request-draft-seed`, `mr-wplace-request-draft-export`。
 - stats 要求: `mr-wplace-request-stats`, `...pixel-color`, `...tile-stats`, `...image-stats`, `...map-center`, `mr-wplace-compute-total-stats`。
 - dev: auto-click / auto-color-spoit / area-fill start stop estimate。
 - gallery/snapshot bridge: `mr-wplace-gallery-v2-*`, `mr-wplace-snapshot-*`。
@@ -97,6 +97,13 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
     - 中クリック = spoit (下書きの色を拾って選択色にする) / 右ドラッグ = 消しゴム
     - ホイール = マップズーム
     - ツールバーの 🪣 ON 中は左クリックがバケツ塗りになる (消しゴムとは排他)
+    - ツールバーの 🖌 でブラシ設定ポップアップ (サイズ / ディザリングスタイル)
+    - **ツールバーの 🔒 (マップロック) ON 中は左ドラッグがそのまま描画になる** (pan しない)
+      - Space の latch 版だが、Space と違い **ボタンを押している間だけ** 塗る。
+        hover で塗ると地図上をなぞっただけで描けてしまい事故になるため。
+      - `handlePointerDown` で先に `dragMode` を確定させる (pointermove 任せにしない)。
+      - バケツ ON の時はロック中でも「クリック = バケツ」を優先する。
+      - アイコンは開錠/施錠を差し替える (色だけだと状態が分かりにくい)。
   - UI は **bottom sheet 方式** (画面下辺に密着・全幅・上側だけ角丸)。
     モバイル/タブレットで左右マージンがあると地図を隠して邪魔になるため。
     `env(safe-area-inset-bottom)` でホームバーを避ける。
@@ -119,6 +126,11 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
       `window.resize` で再計算するので、**解除漏れに注意** (`exitDraftMode` と
       `updateToolbar` の無効化パス両方で `removeEventListener`)。
     - 色スウォッチは hover で色名を吹き出し表示 (`showColorTip`。`title` の遅延を避ける)。
+    - ブラシ設定ポップアップの「外側クリックで閉じる」は **capture 段階** で張るので
+      popup 自身より先に走る。**popup 側の stopPropagation では止められない**ため、
+      判定は伝播ではなく **target が popup の内側か** で行うこと
+      (伝播に頼ると slider やスタイルボタンを押した瞬間に閉じて操作不能になる)。
+      ブラシボタン自身も除外する (閉じてから toggle が走り、開き直してしまうため)。
 
   - **CRITICAL: この UI は Tailwind ユーティリティに頼らない。**
     拡張機能なのでページ側に utility class が存在せず効かない場面がある。
@@ -168,12 +180,29 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
     - ブラシ色は `localStorage["selected-color"]` (wplace と同じキー) を
       `colorpalette` で RGB に解決する。透明色/未選択なら描かない。
 
+  - `draft-brush.ts`: ブラシ形状 (**常に円**) + ディザリングスタイル。
+    変えられるのは **サイズ (1-32px)** と **ディザスタイル** だけ。形状の選択肢は持たない。
+    - ディザマスクは **world pixel 座標そのもの** で判定する (乱数ではない)。
+      これが要点で、同じ場所を何度なぞってもマスクが同じ格子に乗るため
+      ストロークが重なっても模様が崩れない。
+    - スタイル: solid(100%) / checker(50%) / diagonal(33%) / dots25(25%) / hline(50%) / sparse(6%)。
+    - ディザは **描画時のみ** 適用し、消しゴムには掛けない (掛けると消し残しが出て使えない)。
+    - 円スタンプのオフセットはサイズ変更時にだけ組み直してキャッシュする。
+    - content 側の `DITHER_MASKS` はプレビュー(8x8 SVG)用に**同じ式**を持つ。
+      片方だけ変えると見た目と実際の塗りがズレるので、**必ず両方揃える**。
+    - `paintLine` はブラシ半径の半分ずつ進める。太いブラシで 1px 刻みに打つと
+      `size^2 * 距離` ぶん無駄になるため (1px ブラシでは従来通り 1px 刻み)。
+
   - `draft-store.ts`: 下書きの唯一の真実。タイルごとに 2 表現を持つ。
     - `pixels`: 保存(export)用の厳密なピクセル集合
     - `canvas`: 表示用の 1000x1000 ラスタ
     両方を常に同期して更新する。`setDraftStoreChangeListener` で変更を通知し、
     再描画 (`markDraftCanvasDirty`) と content への状態通知を走らせる。
     seed は数十万 pixel になりうるので `silent: true` で個別通知を抑え、最後に1回だけ通知する。
+    通常の set/remove の通知は **queueMicrotask で1回に合流させる** (`notifyChange`)。
+    太いブラシ1打点は数百 pixel を触るので、pixel ごとに通知すると
+    同数の postMessage が飛んで実用にならない。表示は次フレームでまとめて
+    描き直されるため 1操作 1通知で足りる。
 
   - `draft-bucket-fill.ts`: world pixel 空間の 4 近傍 flood fill。
     **CRITICAL**: 下書きは「広大な world map 上に浮いた疎なピクセル集合」なので、

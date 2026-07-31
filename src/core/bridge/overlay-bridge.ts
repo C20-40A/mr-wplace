@@ -83,6 +83,30 @@ export const sendDraftBucketModeToInject = (enabled: boolean) => {
   );
 };
 
+/**
+ * Send draft map lock toggle to inject side.
+ * When locked, left drag paints instead of panning the map.
+ */
+export const sendDraftMapLockToInject = (enabled: boolean) => {
+  window.postMessage(
+    { source: "mr-wplace-draft-map-lock-update", enabled },
+    "*"
+  );
+};
+
+/**
+ * Send draft brush settings (size / dither style) to inject side
+ */
+export const sendDraftBrushToInject = (settings: {
+  size?: number;
+  ditherStyle?: string;
+}) => {
+  window.postMessage(
+    { source: "mr-wplace-draft-brush-update", ...settings },
+    "*"
+  );
+};
+
 export interface DraftExportResult {
   dataUrl: string;
   width: number;

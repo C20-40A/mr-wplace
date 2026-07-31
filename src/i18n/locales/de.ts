@@ -602,4 +602,6 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   draft_bucket: "Fülleimer",
   draft_bucket_too_large: "Bereich zu groß zum Füllen",
   draft_discard_confirm: "Nicht gespeicherte Entwurfsänderungen verwerfen?",
+  draft_brush: "Pinsel",
+  draft_map_lock: "Karte sperren (zum Zeichnen ziehen)",
 };

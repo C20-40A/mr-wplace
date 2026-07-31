@@ -612,4 +612,6 @@ export const esTranslations = {
   draft_bucket: "Relleno",
   draft_bucket_too_large: "Área demasiado grande para rellenar",
   draft_discard_confirm: "¿Descartar los cambios no guardados del borrador?",
+  draft_brush: "Pincel",
+  draft_map_lock: "Bloquear mapa (arrastrar para dibujar)",
 };

@@ -10,6 +10,8 @@ import {
   sendDraftModeToInject,
   sendDraftEraseModeToInject,
   sendDraftBucketModeToInject,
+  sendDraftBrushToInject,
+  sendDraftMapLockToInject,
   requestDraftExport,
   requestDraftSeed,
   sendGalleryImagesToInject,
@@ -41,6 +43,40 @@ const NOTICE_ID = "mr-wplace-draft-notice";
 const CLOSE_ID = "mr-wplace-draft-close";
 const COLOR_TIP_ID = "mr-wplace-draft-color-tip";
 const COLOR_STRIP_ID = "mr-wplace-draft-colors";
+const BRUSH_POPUP_ID = "mr-wplace-draft-brush-popup";
+
+/** ブラシサイズの範囲 (inject 側 draft-brush.ts と揃える) */
+const BRUSH_MIN_SIZE = 1;
+const BRUSH_MAX_SIZE = 32;
+
+/**
+ * ディザリングスタイル。プレビューは 8x8 の格子を実際のマスク式で描いた
+ * data-URI 無しの inline SVG。**文字を使わない**ので i18n も増えない。
+ * mask は inject 側 draft-brush.ts の DITHER_MASKS と同じ式にする。
+ */
+type DitherStyle = "solid" | "checker" | "dots25" | "sparse" | "hline" | "diagonal";
+
+const DITHER_MASKS: Record<DitherStyle, (x: number, y: number) => boolean> = {
+  solid: () => true,
+  checker: (x, y) => ((x + y) & 1) === 0,
+  dots25: (x, y) => (x & 1) === 0 && (y & 1) === 0,
+  sparse: (x, y) => (x & 3) === 0 && (y & 3) === 0,
+  hline: (_x, y) => (y & 1) === 0,
+  diagonal: (x, y) => (x + y) % 3 === 0,
+};
+
+const DITHER_STYLES = Object.keys(DITHER_MASKS) as DitherStyle[];
+
+/** スタイルの見た目をそのまま 8x8 のドット絵で示す (文字なし) */
+const buildDitherPreviewSvg = (style: DitherStyle): string => {
+  const mask = DITHER_MASKS[style];
+  let rects = "";
+  for (let y = 0; y < 8; y++)
+    for (let x = 0; x < 8; x++)
+      if (mask(x, y)) rects += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" width="20" height="20" fill="currentColor" shape-rendering="crispEdges">${rects}</svg>`;
+};
 
 /**
  * パレットの行数まわり。**行数**を 2-8 に収め、列は横幅ぶん好きなだけ使う。
@@ -60,6 +96,10 @@ const COLOR_SWATCH_MAX_PX = 40;
 const ICON_ATTRS =
   'width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
 const ERASER_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21"/><path d="m5.082 11.09 8.828 8.828"/></svg>`;
+const BRUSH_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="m16 22-1-4"/><path d="M19 14a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2h-3a1 1 0 0 1-1-1V4a2 2 0 0 0-4 0v5a1 1 0 0 1-1 1H6a2 2 0 0 0-2 2v1a1 1 0 0 0 1 1"/><path d="M19 14H5l-1.973 6.767A1 1 0 0 0 4 22h16a1 1 0 0 0 .973-1.233z"/><path d="m8 22 1-4"/></svg>`;
+/** マップロック。ON = 左ドラッグが pan ではなく描画になる */
+const LOCK_OPEN_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>`;
+const LOCK_CLOSED_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
 const BUCKET_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M11 7 6 2"/><path d="M18.992 12H2.041"/><path d="M21.145 18.38A3.34 3.34 0 0 1 20 16.5a3.3 3.3 0 0 1-1.145 1.88c-.575.46-.855 1.02-.855 1.595A2 2 0 0 0 20 22a2 2 0 0 0 2-2.025c0-.58-.285-1.13-.855-1.595"/><path d="m8.5 4.5 2.148-2.148a1.205 1.205 0 0 1 1.704 0l7.296 7.296a1.205 1.205 0 0 1 0 1.704l-7.592 7.592a3.615 3.615 0 0 1-5.112 0l-3.888-3.888a3.615 3.615 0 0 1 0-5.112L5.67 7.33"/></svg>`;
 /** 下書き保存で作られたギャラリー item。再保存で上書きする */
 const SAVED_KEY_PREFIX = "draft-";
@@ -82,6 +122,11 @@ export class DraftDraw {
   private savedPixelCount = 0;
   /** 下書き編集で開始した場合の元item。保存時にtitle等を引き継ぐ */
   private seedItem: GalleryItem | null = null;
+  /** ブラシ設定。形状は常に円で、変えられるのはサイズとディザだけ */
+  private brushSize = 1;
+  private ditherStyle: DitherStyle = "solid";
+  /** マップロック。ON の間は左ドラッグが pan ではなく描画になる */
+  private mapLocked = false;
 
   constructor() {
     this.init();
@@ -194,12 +239,19 @@ export class DraftDraw {
     this.savedKey = seedItem?.key ?? null;
     this.seedItem = seedItem ?? null;
     this.erasing = false;
+    this.mapLocked = false;
 
     // 他の UI が邪魔になるので focus mode と同じ挙動 (#map を最前面へ) にする。
     // 下書き中はマップ上を連打するので、クリックで解除されない sticky 版を使う。
     activateStickyFocusMode();
 
     sendDraftModeToInject(true);
+    // inject 側の設定は module 単位で残るので、毎回明示的に揃える
+    sendDraftBrushToInject({
+      size: this.brushSize,
+      ditherStyle: this.ditherStyle,
+    });
+    sendDraftMapLockToInject(this.mapLocked);
     this.enabled = true;
     this.renderToolbar();
 
@@ -212,6 +264,7 @@ export class DraftDraw {
     this.enabled = false;
     this.erasing = false;
     this.bucket = false;
+    this.mapLocked = false;
     this.pixelCount = 0;
     this.savedKey = null;
     this.savedPixelCount = 0;
@@ -221,6 +274,7 @@ export class DraftDraw {
     document.getElementById(NOTICE_ID)?.remove();
     document.getElementById(CLOSE_ID)?.remove();
     this.hideColorTip();
+    this.closeBrushPopup();
     window.removeEventListener("resize", this.handleResize);
   }
 
@@ -475,6 +529,30 @@ export class DraftDraw {
       this.updateToolbar();
     });
 
+    const brush = document.createElement("button");
+    brush.id = `${TOOLBAR_ID}-brush`;
+    brush.type = "button";
+    brush.className = "btn btn-sm btn-square";
+    brush.innerHTML = BRUSH_ICON_SVG;
+    brush.title = t`${"draft_brush"}`;
+    brush.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.toggleBrushPopup();
+    });
+
+    // マップロック: ON にすると左ドラッグが pan ではなく描画になる
+    const lock = document.createElement("button");
+    lock.id = `${TOOLBAR_ID}-lock`;
+    lock.type = "button";
+    lock.className = "btn btn-sm btn-square";
+    lock.innerHTML = LOCK_OPEN_ICON_SVG;
+    lock.title = t`${"draft_map_lock"}`;
+    lock.addEventListener("click", () => {
+      this.mapLocked = !this.mapLocked;
+      sendDraftMapLockToInject(this.mapLocked);
+      this.updateToolbar();
+    });
+
     const bucket = document.createElement("button");
     bucket.id = `${TOOLBAR_ID}-bucket`;
     bucket.type = "button";
@@ -498,8 +576,149 @@ export class DraftDraw {
     save.addEventListener("click", () => void this.save());
 
     // 閉じるは sheet の外 (右上の丸バツ) なのでここには入れない
-    row.append(save, eraser, bucket);
+    row.append(save, lock, brush, eraser, bucket);
     return row;
+  }
+
+  // ------- brush popup -------
+
+  /**
+   * ブラシ設定ポップアップ。ブラシボタンの直上に出す。
+   * サイズ (slider + 数値) と ディザリングスタイル (視覚ボタン) を1つに収める。
+   * 形状は常に円なので、形状の選択肢は置かない。
+   */
+  private toggleBrushPopup(): void {
+    if (document.getElementById(BRUSH_POPUP_ID)) {
+      this.closeBrushPopup();
+      return;
+    }
+
+    const anchor = document.getElementById(`${TOOLBAR_ID}-brush`);
+    if (!anchor) return;
+
+    const popup = document.createElement("div");
+    popup.id = BRUSH_POPUP_ID;
+    popup.style.cssText = [
+      "position:fixed;z-index:1004",
+      "display:flex;flex-direction:column;gap:8px",
+      "padding:10px;border-radius:12px;min-width:200px",
+      "background:var(--color-base-100)",
+      "border:1px solid var(--color-base-300)",
+      "color:var(--color-base-content)",
+      "box-shadow:0 4px 16px rgb(0 0 0 / 0.25)",
+    ].join(";");
+    // 下のマップへ操作が抜けて誤爆で塗られるのを防ぐ
+    popup.addEventListener("pointerdown", (e) => e.stopPropagation());
+    popup.addEventListener("click", (e) => e.stopPropagation());
+
+    popup.appendChild(this.buildBrushSizeRow());
+    popup.appendChild(this.buildDitherStyleRow());
+
+    document.body.appendChild(popup);
+
+    // ブラシボタンの真上・中央。画面端でははみ出さないよう clamp する
+    const rect = anchor.getBoundingClientRect();
+    popup.style.bottom = `${window.innerHeight - rect.top + 8}px`;
+    popup.style.left = `${Math.min(Math.max(rect.left + rect.width / 2 - popup.offsetWidth / 2, 8), window.innerWidth - popup.offsetWidth - 8)}px`;
+
+    // 外側をクリックしたら閉じる (capture で map より先に拾う)
+    window.addEventListener("pointerdown", this.handleOutsideBrushClick, {
+      capture: true,
+    });
+  }
+
+  /**
+   * 外側クリックでのみ閉じる。
+   *
+   * NOTE: この listener は **capture 段階** なので popup 自身より先に走る。
+   * つまり popup 側の stopPropagation では止められない (それに頼ると
+   * slider やスタイルボタンを押した瞬間に閉じてしまい、操作できなくなる)。
+   * 判定は伝播ではなく **target が popup の内側か** で行うこと。
+   */
+  private handleOutsideBrushClick = (event: Event): void => {
+    const popup = document.getElementById(BRUSH_POPUP_ID);
+    const target = event.target;
+    if (popup && target instanceof Node && popup.contains(target)) return;
+    // ブラシボタン自身は toggle 側に任せる (ここで閉じると二重で開き直る)
+    if (
+      target instanceof Node &&
+      document.getElementById(`${TOOLBAR_ID}-brush`)?.contains(target)
+    )
+      return;
+
+    this.closeBrushPopup();
+  };
+
+  private closeBrushPopup(): void {
+    document.getElementById(BRUSH_POPUP_ID)?.remove();
+    window.removeEventListener("pointerdown", this.handleOutsideBrushClick, {
+      capture: true,
+    });
+  }
+
+  /** サイズ: slider + 現在値。default は 1px */
+  private buildBrushSizeRow(): HTMLElement {
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:center;gap:8px;";
+
+    const label = document.createElement("span");
+    label.style.cssText = "font-size:11px;opacity:0.7;white-space:nowrap;";
+    label.textContent = t`${"size_reduction"}`;
+
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.min = String(BRUSH_MIN_SIZE);
+    slider.max = String(BRUSH_MAX_SIZE);
+    slider.value = String(this.brushSize);
+    slider.className = "range range-xs";
+    slider.style.cssText = "flex:1;min-width:0;";
+
+    const value = document.createElement("span");
+    value.style.cssText =
+      "font-size:12px;min-width:34px;text-align:right;white-space:nowrap;";
+    value.textContent = `${this.brushSize}px`;
+
+    slider.addEventListener("input", () => {
+      this.brushSize = Number(slider.value);
+      value.textContent = `${this.brushSize}px`;
+      sendDraftBrushToInject({ size: this.brushSize });
+    });
+
+    row.append(label, slider, value);
+    return row;
+  }
+
+  /**
+   * ディザリングスタイル。文字は使わず、実際のマスクを 8x8 のドット絵にして並べる
+   * (プロジェクト方針: UI は i18n surface を増やさない設計を優先)。
+   */
+  private buildDitherStyleRow(): HTMLElement {
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;gap:6px;justify-content:space-between;";
+
+    for (const style of DITHER_STYLES) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.ditherStyle = style;
+      button.className = "btn btn-xs btn-square";
+      button.style.cssText = "flex:1;padding:0;";
+      button.innerHTML = buildDitherPreviewSvg(style);
+      button.addEventListener("click", () => {
+        this.ditherStyle = style;
+        sendDraftBrushToInject({ ditherStyle: style });
+        this.syncDitherSelection(row);
+      });
+      row.appendChild(button);
+    }
+
+    this.syncDitherSelection(row);
+    return row;
+  }
+
+  /** NOTE: btn-square を落とすとアイコンが潰れるので必ず維持する */
+  private syncDitherSelection(row: HTMLElement): void {
+    for (const el of row.querySelectorAll<HTMLElement>("[data-dither-style]"))
+      el.className = `btn btn-xs btn-square${el.dataset.ditherStyle === this.ditherStyle ? " btn-primary" : ""}`;
   }
 
   /**
@@ -562,9 +781,15 @@ export class DraftDraw {
       "font-size:10px;line-height:1.2",
       "color:color-mix(in oklab, var(--color-base-content) 50%, transparent)",
     ].join(";");
-    hint.textContent =
-      "🖱️ dot / drag = move / Space+move = draw / mid = spoit / right = erase";
+    hint.textContent = this.buildHintText();
     return hint;
+  }
+
+  /** 🔒 ON 中は drag の意味が変わるので、その旨だけ差し替える */
+  private buildHintText(): string {
+    return this.mapLocked
+      ? "🔒 drag = draw / mid = spoit / right = erase"
+      : "🖱️ dot / drag = move / Space+move = draw / mid = spoit / right = erase";
   }
 
   private updateToolbar(): void {
@@ -576,6 +801,7 @@ export class DraftDraw {
       document.getElementById(HINT_ID)?.remove();
       document.getElementById(CLOSE_ID)?.remove();
       this.hideColorTip();
+      this.closeBrushPopup();
       window.removeEventListener("resize", this.handleResize);
       return;
     }
@@ -600,6 +826,21 @@ export class DraftDraw {
     ) as HTMLButtonElement | null;
     if (bucket)
       bucket.className = `btn btn-sm btn-square${this.bucket ? " btn-primary" : ""}`;
+
+    // ロックは状態が分かりにくいので、色だけでなく錠前の開閉も差し替える
+    const lock = document.getElementById(
+      `${TOOLBAR_ID}-lock`,
+    ) as HTMLButtonElement | null;
+    if (lock) {
+      lock.className = `btn btn-sm btn-square${this.mapLocked ? " btn-primary" : ""}`;
+      lock.innerHTML = this.mapLocked
+        ? LOCK_CLOSED_ICON_SVG
+        : LOCK_OPEN_ICON_SVG;
+    }
+
+    // ロックで drag の意味が変わるので操作説明も差し替える
+    const hint = document.getElementById(HINT_ID);
+    if (hint) hint.textContent = this.buildHintText();
 
     const save = document.getElementById(
       `${TOOLBAR_ID}-save`,

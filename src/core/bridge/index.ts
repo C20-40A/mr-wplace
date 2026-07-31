@@ -25,6 +25,8 @@ export {
   sendDraftModeToInject,
   sendDraftEraseModeToInject,
   sendDraftBucketModeToInject,
+  sendDraftBrushToInject,
+  sendDraftMapLockToInject,
   requestDraftExport,
   requestDraftSeed,
 } from "./overlay-bridge";

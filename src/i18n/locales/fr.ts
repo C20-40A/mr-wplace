@@ -619,4 +619,6 @@ export const frTranslations = {
   draft_bucket: "Pot de peinture",
   draft_bucket_too_large: "Zone trop grande à remplir",
   draft_discard_confirm: "Abandonner les modifications non enregistrées du brouillon ?",
+  draft_brush: "Pinceau",
+  draft_map_lock: "Verrouiller la carte (glisser pour dessiner)",
 };

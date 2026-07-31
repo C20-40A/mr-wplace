@@ -13,8 +13,14 @@ import {
   setDraftCanvasActive,
   setDraftCanvasHandlers,
   setDraftEraseMode,
+  setDraftMapLocked,
 } from "./draft-canvas";
 import { exportDraftAsImage, type DraftExportResult } from "./draft-export";
+import {
+  setDraftBrushSize,
+  setDraftDitherStyle,
+  type DitherStyle,
+} from "./draft-brush";
 
 /**
  * Draft draw (下書きモード)
@@ -53,20 +59,13 @@ setDraftCanvasHandlers({
   },
 });
 
-let lastNotifiedCount = -1;
-
 const notifyDraftState = (): void => {
-  const pixelCount = getDraftPixelCount();
-
-  if (pixelCount !== lastNotifiedCount) {
-    lastNotifiedCount = pixelCount;
-    console.log(
-      `🧑‍🎨 : Draft state: enabled=${draftModeEnabled} pixels=${pixelCount}`,
-    );
-  }
-
   window.postMessage(
-    { source: "mr-wplace-draft-state", enabled: draftModeEnabled, pixelCount },
+    {
+      source: "mr-wplace-draft-state",
+      enabled: draftModeEnabled,
+      pixelCount: getDraftPixelCount(),
+    },
     "*",
   );
 };
@@ -96,6 +95,21 @@ export const setDraftEraseModeEnabled = (enabled: boolean): void => {
 export const setDraftBucketModeEnabled = (enabled: boolean): void => {
   setDraftBucketMode(enabled);
   console.log(`🧑‍🎨 : Draft bucket mode: ${enabled}`);
+};
+
+/** マップロック。ON の間は左ドラッグが pan ではなく描画になる */
+export const setDraftMapLockEnabled = (enabled: boolean): void => {
+  setDraftMapLocked(enabled);
+  console.log(`🧑‍🎨 : Draft map lock: ${enabled}`);
+};
+
+/** ブラシ設定 (サイズ / ディザリングスタイル) の反映 */
+export const setDraftBrushSettings = (data: {
+  size?: number;
+  ditherStyle?: DitherStyle;
+}): void => {
+  if (typeof data.size === "number") setDraftBrushSize(data.size);
+  if (data.ditherStyle) setDraftDitherStyle(data.ditherStyle);
 };
 
 /**

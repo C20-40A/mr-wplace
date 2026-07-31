@@ -615,4 +615,6 @@ export const ruTranslations = {
   draft_bucket: "Заливка",
   draft_bucket_too_large: "Область слишком велика для заливки",
   draft_discard_confirm: "Отменить несохранённые изменения черновика?",
+  draft_brush: "Кисть",
+  draft_map_lock: "Заблокировать карту (рисование перетаскиванием)",
 };

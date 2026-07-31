@@ -603,4 +603,6 @@ export const ptTranslations = {
   draft_bucket: "Balde",
   draft_bucket_too_large: "Área grande demais para preencher",
   draft_discard_confirm: "Descartar as alterações não salvas do rascunho?",
+  draft_brush: "Pincel",
+  draft_map_lock: "Bloquear mapa (arraste para desenhar)",
 };

@@ -36,11 +36,28 @@ const draftTiles = new Map<string, DraftTile>();
 
 /** 変更通知 (表示側の再描画トリガー) */
 let onChange: (() => void) | null = null;
+/** 通知の合流待ちフラグ */
+let notifyScheduled = false;
 
 export const setDraftStoreChangeListener = (
   listener: (() => void) | null,
 ): void => {
   onChange = listener;
+};
+
+/**
+ * 変更通知をマイクロタスク1回にまとめる。
+ * 太いブラシ1打点は数百 pixel を触るので、pixel ごとに通知すると
+ * postMessage が同数飛んで実用にならない。表示は次フレームで
+ * まとめて描き直されるため、1操作 1通知で十分。
+ */
+const notifyChange = (): void => {
+  if (notifyScheduled) return;
+  notifyScheduled = true;
+  queueMicrotask(() => {
+    notifyScheduled = false;
+    onChange?.();
+  });
 };
 
 export const toTileKey = (tileX: number, tileY: number): string =>
@@ -121,7 +138,7 @@ export const setDraftPixel = (
   tile.ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
   tile.ctx.fillRect(pixelX, pixelY, 1, 1);
 
-  if (!options?.silent) onChange?.();
+  if (!options?.silent) notifyChange();
   return true;
 };
 
@@ -139,7 +156,7 @@ export const removeDraftPixel = (
   tile.ctx.clearRect(pixelX, pixelY, 1, 1);
   if (tile.pixels.size === 0) draftTiles.delete(tileKey);
 
-  onChange?.();
+  notifyChange();
   return true;
 };
 

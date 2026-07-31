@@ -598,4 +598,6 @@ export const viTranslations = {
   draft_bucket: "Đổ màu",
   draft_bucket_too_large: "Vùng quá lớn để tô",
   draft_discard_confirm: "Hủy các thay đổi bản nháp chưa lưu?",
+  draft_brush: "Cọ vẽ",
+  draft_map_lock: "Khóa bản đồ (kéo để vẽ)",
 };

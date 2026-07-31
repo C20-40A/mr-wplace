@@ -628,4 +628,6 @@ Do not use this feature to paint actual pixels.`,
   draft_bucket: "Bucket fill",
   draft_bucket_too_large: "Area too large to fill",
   draft_discard_confirm: "Discard unsaved draft changes?",
+  draft_brush: "Brush",
+  draft_map_lock: "Lock map (drag to draw)",
 };
