@@ -2,11 +2,21 @@ import { DYNAMIC_ENEMY_ALPHA_THRESHOLD } from "../../constants";
 
 const ENEMY_EFFECT_PADDING_PX = 3;
 const ENEMY_SHADOW_OFFSET_PX = 2;
+const ENEMY_RENDER_YIELD_ROWS = 8;
 
-export const createEnemyBitmap = (imageData: ImageData): Promise<ImageBitmap> =>
-  createImageBitmap(createOutlinedEnemyImageData(imageData));
+export const createEnemyBitmap = async (
+  imageData: ImageData,
+  wait?: () => Promise<void>,
+): Promise<ImageBitmap> => {
+  const outlined = await createOutlinedEnemyImageData(imageData, wait);
+  if (wait) await wait();
+  return createImageBitmap(outlined);
+};
 
-const createOutlinedEnemyImageData = (source: ImageData) => {
+const createOutlinedEnemyImageData = async (
+  source: ImageData,
+  wait?: () => Promise<void>,
+) => {
   const padding = ENEMY_EFFECT_PADDING_PX;
   const width = source.width + padding * 2;
   const height = source.height + padding * 2;
@@ -24,6 +34,8 @@ const createOutlinedEnemyImageData = (source: ImageData) => {
   };
 
   for (let y = 0; y < height; y++) {
+    if (wait && y % ENEMY_RENDER_YIELD_ROWS === 0) await wait();
+
     for (let x = 0; x < width; x++) {
       const sourceX = x - padding;
       const sourceY = y - padding;

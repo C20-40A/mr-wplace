@@ -88,8 +88,13 @@ const NEIGHBOR_OFFSETS = [
   [0, 1],
 ] as const;
 
-const SCAN_YIELD_INTERVAL = 4096;
-const COMPONENT_YIELD_INTERVAL = 2048;
+// The scanner is intentionally low priority. A worker still competes for CPU time
+// with software rendering, so keep its bursts short and leave several frames
+// between them. Detection latency is less important than game frame time.
+const SCAN_YIELD_INTERVAL = 2048;
+const COMPONENT_YIELD_INTERVAL = 1024;
+const WORKER_YIELD_DELAY_MS = 50;
+const MAIN_THREAD_YIELD_DELAY_MS = 50;
 const TILE_SCAN_CACHE_LIMIT = 8;
 const NEARBY_CACHE_TILE_RADIUS = 3;
 
@@ -106,11 +111,13 @@ const DYNAMIC_SCAN_CONFIG: ScanConfig = {
 const waitForIdle = () =>
   new Promise<void>((resolve) => {
     if ("requestIdleCallback" in window) {
-      window.requestIdleCallback(() => resolve(), { timeout: 120 });
+      // Do not set a timeout: a busy renderer must be allowed to starve this
+      // best-effort feature until the browser actually has idle time.
+      window.requestIdleCallback(() => resolve());
       return;
     }
 
-    globalThis.setTimeout(resolve, 16);
+    globalThis.setTimeout(resolve, MAIN_THREAD_YIELD_DELAY_MS);
   });
 
 const scanPixelArtCandidates = async (
@@ -254,14 +261,19 @@ const scanPixelArtCandidates = async (
 const buildScannerWorkerSource = () => `
   const DYNAMIC_SCAN_CONFIG = ${JSON.stringify(DYNAMIC_SCAN_CONFIG)};
   const scanPixelArtCandidates = ${scanPixelArtCandidates.toString()};
+  const waitForBackgroundTurn = () => new Promise((resolve) => {
+    setTimeout(resolve, ${WORKER_YIELD_DELAY_MS});
+  });
 
   const decodeInWorker = async (blob) => {
+    await waitForBackgroundTurn();
     const bitmap = await createImageBitmap(blob);
     const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) throw new Error("no 2d context in worker");
     ctx.drawImage(bitmap, 0, 0);
     bitmap.close();
+    await waitForBackgroundTurn();
     const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
     return { data: image.data, width: canvas.width, height: canvas.height };
   };
@@ -284,6 +296,7 @@ const buildScannerWorkerSource = () => `
         startOffset,
         maxCandidates,
         maxSize,
+        waitForBackgroundTurn,
       );
       self.postMessage({
         candidates: candidates.map((candidate) => ({
@@ -647,17 +660,18 @@ export class DynamicPixelArtEnemyScanner {
       maxSizePx,
     );
     if (workerResult) {
-      const candidates = await Promise.all(
-        workerResult.candidates.map(async (candidate) => ({
+      const candidates: ArtCruiseDynamicEnemyCandidate[] = [];
+      for (const candidate of workerResult.candidates) {
+        candidates.push({
           id: candidate.id,
           tileKey,
-          bitmap: await createEnemyBitmap(candidate.imageData),
+          bitmap: await createEnemyBitmap(candidate.imageData, waitForIdle),
           width: candidate.width,
           height: candidate.height,
           opaquePixels: candidate.opaquePixels,
           scannedAt: performance.now(),
-        })),
-      );
+        });
+      }
       return { candidates, nextOffset: workerResult.nextOffset, total: workerResult.total };
     }
 
@@ -677,8 +691,9 @@ export class DynamicPixelArtEnemyScanner {
       maxSizePx,
       waitForIdle,
     );
-    const candidates = await Promise.all(
-      result.candidates.map(async (candidate) => ({
+    const candidates: ArtCruiseDynamicEnemyCandidate[] = [];
+    for (const candidate of result.candidates) {
+      candidates.push({
         id: candidate.id,
         tileKey,
         bitmap: await createEnemyBitmap(
@@ -687,13 +702,14 @@ export class DynamicPixelArtEnemyScanner {
             candidate.width,
             candidate.height,
           ),
+          waitForIdle,
         ),
         width: candidate.width,
         height: candidate.height,
         opaquePixels: candidate.opaquePixels,
         scannedAt: performance.now(),
-      })),
-    );
+      });
+    }
     return { candidates, nextOffset: result.nextOffset, total };
   };
 
@@ -754,6 +770,9 @@ export class DynamicPixelArtEnemyScanner {
       };
       const handleError = (error: ErrorEvent) => {
         cleanup();
+        // A transferred visited buffer is detached on the main thread. Rebuild
+        // it if the worker fails and the scan falls back to the main thread.
+        this.scanCaches.delete(tileKey);
         reject(error.error ?? new Error(error.message));
       };
 
@@ -761,17 +780,24 @@ export class DynamicPixelArtEnemyScanner {
       worker.addEventListener("error", handleError);
       // Blob は構造化クローンで worker に渡る (内部データはコピーされず効率的)。
       // worker 側で decode できればメインの 4MB getImageData を完全に省ける。
-      worker.postMessage({
+      const visitedBuffer = this.getCachedVisited(
+        tileKey,
+        version,
+      )?.buffer as ArrayBuffer | undefined;
+      const message = {
         tileKey,
         blob,
         startOffset,
         maxCandidates,
         maxSize: maxSizePx,
-        visitedBuffer: this.getCachedVisited(tileKey, version)?.buffer,
-      });
+        visitedBuffer,
+      };
+      if (visitedBuffer) worker.postMessage(message, [visitedBuffer]);
+      else worker.postMessage(message);
     }).catch((error) => {
       console.warn("🧑‍🎨 : Art cruise dynamic enemy worker scan failed", error);
       scannerWorker?.terminate();
+      this.scanCaches.delete(tileKey);
       scannerWorker = null;
       return null;
     });
