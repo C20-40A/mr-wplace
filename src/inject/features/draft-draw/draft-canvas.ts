@@ -11,6 +11,7 @@ import {
 } from "./draft-store";
 import { computeBucketFill } from "./draft-bucket-fill";
 import { forEachBrushPixel, getDraftBrushSize } from "./draft-brush";
+import { beginHistoryEntry, commitHistoryEntry } from "./draft-history";
 
 /**
  * Draft canvas layer
@@ -97,6 +98,9 @@ const CLICK_SLOP = 3;
 let onColorPicked: ((colorId: number) => void) | null = null;
 /** バケツが上限超過で中止されたことを content 側へ伝える (ヒント表示用) */
 let onBucketFailed: (() => void) | null = null;
+/** Ctrl+Z / Ctrl+Shift+Z (キーボードからの undo/redo 要求) */
+let onUndoRequested: (() => void) | null = null;
+let onRedoRequested: (() => void) | null = null;
 
 const paletteById = new Map(colorpalette.map((c) => [c.id, c.rgb]));
 
@@ -298,6 +302,8 @@ const bucketFillAt = (clientX: number, clientY: number): void => {
     return;
   }
 
+  // バケツ1回 = undo 1回
+  beginHistoryEntry();
   for (const p of result.pixels) {
     const tileX = Math.floor(p.x / TILE_SIZE);
     const tileY = Math.floor(p.y / TILE_SIZE);
@@ -309,6 +315,7 @@ const bucketFillAt = (clientX: number, clientY: number): void => {
       color,
     );
   }
+  commitHistoryEntry();
 };
 
 /** spoit: その座標の下書き色を拾って選択色にする */
@@ -385,6 +392,8 @@ const handlePointerDown = (e: PointerEvent): void => {
    */
   if (mapLocked && e.button === 0 && !bucketMode) {
     stop(e);
+    // ストローク全体で undo 1回 (pointerup で commit)
+    beginHistoryEntry();
     dragMode = eraseMode ? "erase" : "draw";
     pendingClick = null;
     inputTarget?.setPointerCapture(e.pointerId);
@@ -402,6 +411,8 @@ const handlePointerDown = (e: PointerEvent): void => {
   }
 
   stop(e);
+  // ストローク全体で undo 1回 (pointerup で commit)
+  beginHistoryEntry();
   dragMode = mode;
   pendingClick = null;
   inputTarget?.setPointerCapture(e.pointerId);
@@ -442,7 +453,12 @@ const handlePointerUp = (e: PointerEvent): void => {
         return;
       }
       const world = screenToWorldPixel(e.clientX, e.clientY);
-      if (world) paintWorldPixel(world.x, world.y, eraseMode ? "erase" : "draw");
+      if (world) {
+        // dot 1つ = undo 1回
+        beginHistoryEntry();
+        paintWorldPixel(world.x, world.y, eraseMode ? "erase" : "draw");
+        commitHistoryEntry();
+      }
     }
     return;
   }
@@ -450,6 +466,7 @@ const handlePointerUp = (e: PointerEvent): void => {
   if (!dragMode) return;
 
   stop(e);
+  commitHistoryEntry();
   dragMode = null;
   lastWorld = null;
   if (inputTarget?.hasPointerCapture(e.pointerId))
@@ -466,16 +483,42 @@ const blockClick = (e: Event): void => {
   stop(e);
 };
 
-const handleKeyDown = (e: KeyboardEvent): void => {
-  if (!active || e.code !== "Space") return;
-  // ページスクロール抑止。入力欄にフォーカスがある時は邪魔しない
+/** 入力欄にフォーカスがある時はショートカットを奪わない */
+const isTypingTarget = (): boolean => {
   const el = document.activeElement;
-  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)
-    return;
+  return (
+    el instanceof HTMLInputElement ||
+    el instanceof HTMLTextAreaElement ||
+    (el instanceof HTMLElement && el.isContentEditable)
+  );
+};
+
+const handleKeyDown = (e: KeyboardEvent): void => {
+  if (!active) return;
+
+  // Ctrl/Cmd + Z = undo / Ctrl+Shift+Z (or Ctrl+Y) = redo
+  if ((e.ctrlKey || e.metaKey) && !isTypingTarget()) {
+    const key = e.key.toLowerCase();
+    if (key === "z" || key === "y") {
+      e.preventDefault();
+      e.stopPropagation();
+      // キーリピートで履歴を一気に食い潰さないよう初回のみ反応する
+      if (e.repeat) return;
+      if (key === "y" || e.shiftKey) onRedoRequested?.();
+      else onUndoRequested?.();
+      return;
+    }
+  }
+
+  if (e.code !== "Space") return;
+  // ページスクロール抑止。入力欄にフォーカスがある時は邪魔しない
+  if (isTypingTarget()) return;
   e.preventDefault();
   // キーリピートで塗り位置がリセットされないように初回だけ処理する
   if (spaceHeld) return;
   spaceHeld = true;
+  // Space を押してから離すまでで undo 1回 (keyup で commit)
+  beginHistoryEntry();
 
   // 押した瞬間、カーソル直下に1px置く。補間の起点もここに合わせる
   // (前回ストロークの終点から線が伸びてしまうのを防ぐ)。
@@ -489,6 +532,7 @@ const handleKeyDown = (e: KeyboardEvent): void => {
 
 const handleKeyUp = (e: KeyboardEvent): void => {
   if (e.code !== "Space") return;
+  if (spaceHeld) commitHistoryEntry();
   spaceHeld = false;
   // ストロークを切る。次に押した時に離れた場所と線で繋がらないようにする
   if (!dragMode) lastWorld = null;
@@ -632,17 +676,23 @@ export const setDraftCanvasHandlers = (handlers: {
   onErase: EraseHandler;
   onColorPicked: (colorId: number) => void;
   onBucketFailed: () => void;
+  onUndoRequested: () => void;
+  onRedoRequested: () => void;
 }): void => {
   onPaint = handlers.onPaint;
   onErase = handlers.onErase;
   onColorPicked = handlers.onColorPicked;
   onBucketFailed = handlers.onBucketFailed;
+  onUndoRequested = handlers.onUndoRequested;
+  onRedoRequested = handlers.onRedoRequested;
 };
 
 export const setDraftCanvasActive = (enabled: boolean): void => {
   if (active === enabled) return;
   active = enabled;
   dirty = true;
+  // ストローク途中で抜けた場合に記録を開きっぱなしにしない
+  commitHistoryEntry();
   dragMode = null;
   pendingClick = null;
   lastWorld = null;

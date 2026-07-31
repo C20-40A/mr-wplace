@@ -12,6 +12,8 @@ import {
   sendDraftBucketModeToInject,
   sendDraftBrushToInject,
   sendDraftMapLockToInject,
+  sendDraftUndoToInject,
+  sendDraftRedoToInject,
   requestDraftExport,
   requestDraftSeed,
   sendGalleryImagesToInject,
@@ -44,6 +46,8 @@ const CLOSE_ID = "mr-wplace-draft-close";
 const COLOR_TIP_ID = "mr-wplace-draft-color-tip";
 const COLOR_STRIP_ID = "mr-wplace-draft-colors";
 const BRUSH_POPUP_ID = "mr-wplace-draft-brush-popup";
+/** undo/redo FAB (画面左上に浮かせる) */
+const HISTORY_ID = "mr-wplace-draft-history";
 
 /** ブラシサイズの範囲 (inject 側 draft-brush.ts と揃える) */
 const BRUSH_MIN_SIZE = 1;
@@ -100,6 +104,8 @@ const BRUSH_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><p
 /** マップロック。ON = 左ドラッグが pan ではなく描画になる */
 const LOCK_OPEN_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>`;
 const LOCK_CLOSED_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+const UNDO_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>`;
+const REDO_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>`;
 const BUCKET_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M11 7 6 2"/><path d="M18.992 12H2.041"/><path d="M21.145 18.38A3.34 3.34 0 0 1 20 16.5a3.3 3.3 0 0 1-1.145 1.88c-.575.46-.855 1.02-.855 1.595A2 2 0 0 0 20 22a2 2 0 0 0 2-2.025c0-.58-.285-1.13-.855-1.595"/><path d="m8.5 4.5 2.148-2.148a1.205 1.205 0 0 1 1.704 0l7.296 7.296a1.205 1.205 0 0 1 0 1.704l-7.592 7.592a3.615 3.615 0 0 1-5.112 0l-3.888-3.888a3.615 3.615 0 0 1 0-5.112L5.67 7.33"/></svg>`;
 /** 下書き保存で作られたギャラリー item。再保存で上書きする */
 const SAVED_KEY_PREFIX = "draft-";
@@ -127,6 +133,9 @@ export class DraftDraw {
   private ditherStyle: DitherStyle = "solid";
   /** マップロック。ON の間は左ドラッグが pan ではなく描画になる */
   private mapLocked = false;
+  /** undo/redo の可否 (inject の履歴スタック由来) */
+  private canUndo = false;
+  private canRedo = false;
 
   constructor() {
     this.init();
@@ -157,6 +166,8 @@ export class DraftDraw {
     if (source === "mr-wplace-draft-state") {
       this.enabled = !!event.data.enabled;
       this.pixelCount = event.data.pixelCount ?? 0;
+      this.canUndo = !!event.data.canUndo;
+      this.canRedo = !!event.data.canRedo;
       this.updateToolbar();
       return;
     }
@@ -269,10 +280,13 @@ export class DraftDraw {
     this.savedKey = null;
     this.savedPixelCount = 0;
     this.seedItem = null;
+    this.canUndo = false;
+    this.canRedo = false;
     document.getElementById(TOOLBAR_ID)?.remove();
     document.getElementById(HINT_ID)?.remove();
     document.getElementById(NOTICE_ID)?.remove();
     document.getElementById(CLOSE_ID)?.remove();
+    document.getElementById(HISTORY_ID)?.remove();
     this.hideColorTip();
     this.closeBrushPopup();
     window.removeEventListener("resize", this.handleResize);
@@ -357,6 +371,8 @@ export class DraftDraw {
     document.body.appendChild(this.buildHintRow());
     document.getElementById(CLOSE_ID)?.remove();
     document.body.appendChild(this.buildCloseButton());
+    document.getElementById(HISTORY_ID)?.remove();
+    document.body.appendChild(this.buildHistoryFab());
 
     // 幅が変わると列数もスウォッチサイズも変わるので追従させる
     window.addEventListener("resize", this.handleResize);
@@ -748,6 +764,54 @@ export class DraftDraw {
   }
 
   /**
+   * undo / redo。**画面全体の左上**に fab として浮かせる (sheet の外)。
+   * アイコンのみ (文字を持たないので i18n surface も増えない)。
+   * 履歴本体は inject 側にあるので、ここは要求を送るだけ。
+   */
+  private buildHistoryFab(): HTMLElement {
+    const group = document.createElement("div");
+    group.id = HISTORY_ID;
+    group.style.cssText = [
+      "position:fixed;top:12px;left:12px;z-index:1002",
+      "display:flex;gap:6px",
+    ].join(";");
+
+    const build = (
+      id: string,
+      icon: string,
+      onClick: () => void,
+    ): HTMLButtonElement => {
+      const button = document.createElement("button");
+      button.id = id;
+      button.type = "button";
+      button.className = "btn btn-sm btn-square shadow-md";
+      button.innerHTML = icon;
+      button.addEventListener("click", onClick);
+      return button;
+    };
+
+    group.append(
+      build(`${HISTORY_ID}-undo`, UNDO_ICON_SVG, () => sendDraftUndoToInject()),
+      build(`${HISTORY_ID}-redo`, REDO_ICON_SVG, () => sendDraftRedoToInject()),
+    );
+    return group;
+  }
+
+  /** 履歴スタックの有無でボタンの活性を切り替える */
+  private syncHistoryFab(): void {
+    const sync = (id: string, usable: boolean): void => {
+      const button = document.getElementById(id) as HTMLButtonElement | null;
+      if (!button) return;
+      button.disabled = !usable;
+      button.style.opacity = usable ? "" : "0.4";
+      button.style.cursor = usable ? "" : "not-allowed";
+    };
+
+    sync(`${HISTORY_ID}-undo`, this.canUndo);
+    sync(`${HISTORY_ID}-redo`, this.canRedo);
+  }
+
+  /**
    * 未保存の変更があるなら確認してから閉じる。
    * 下書きは保存しない限り全部消えるので、事故防止に simple confirm を挟む。
    */
@@ -800,11 +864,14 @@ export class DraftDraw {
       bar.remove();
       document.getElementById(HINT_ID)?.remove();
       document.getElementById(CLOSE_ID)?.remove();
+      document.getElementById(HISTORY_ID)?.remove();
       this.hideColorTip();
       this.closeBrushPopup();
       window.removeEventListener("resize", this.handleResize);
       return;
     }
+
+    this.syncHistoryFab();
 
     // 選択中スワッチの強調
     const selectedId = localStorage.getItem(SELECTED_COLOR_KEY);

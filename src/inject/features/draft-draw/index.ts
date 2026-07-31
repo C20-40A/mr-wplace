@@ -1,4 +1,5 @@
 import {
+  applyDraftPixel,
   clearDraft,
   getDraftPixelCount,
   removeDraftPixel,
@@ -7,6 +8,13 @@ import {
   setDraftStoreChangeListener,
   toTileKey,
 } from "./draft-store";
+import {
+  canRedoDraft,
+  canUndoDraft,
+  redoDraft,
+  setDraftHistoryChangeListener,
+  undoDraft,
+} from "./draft-history";
 import {
   markDraftCanvasDirty,
   setDraftBucketMode,
@@ -57,6 +65,9 @@ setDraftCanvasHandlers({
   onBucketFailed: () => {
     window.postMessage({ source: "mr-wplace-draft-bucket-too-large" }, "*");
   },
+  // Ctrl+Z / Ctrl+Shift+Z。ボタン経由と同じ処理へ流す
+  onUndoRequested: () => undoDraftEdit(),
+  onRedoRequested: () => redoDraftEdit(),
 });
 
 const notifyDraftState = (): void => {
@@ -65,6 +76,8 @@ const notifyDraftState = (): void => {
       source: "mr-wplace-draft-state",
       enabled: draftModeEnabled,
       pixelCount: getDraftPixelCount(),
+      canUndo: canUndoDraft(),
+      canRedo: canRedoDraft(),
     },
     "*",
   );
@@ -75,6 +88,25 @@ setDraftStoreChangeListener(() => {
   markDraftCanvasDirty();
   notifyDraftState();
 });
+
+// 履歴の増減だけでもボタンの活性が変わるので content へ知らせる
+setDraftHistoryChangeListener(() => notifyDraftState());
+
+/**
+ * undo/redo。適用は store の `applyDraftPixel` に委ねる。
+ * 適用中は履歴側が記録を止めるので、undo が自分自身を積むことはない。
+ */
+export const undoDraftEdit = (): void => {
+  if (!draftModeEnabled) return;
+  if (undoDraft(applyDraftPixel)) markDraftCanvasDirty();
+  notifyDraftState();
+};
+
+export const redoDraftEdit = (): void => {
+  if (!draftModeEnabled) return;
+  if (redoDraft(applyDraftPixel)) markDraftCanvasDirty();
+  notifyDraftState();
+};
 
 export const setDraftModeEnabled = (enabled: boolean): void => {
   if (draftModeEnabled === enabled) return;

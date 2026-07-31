@@ -95,6 +95,18 @@ export const sendDraftMapLockToInject = (enabled: boolean) => {
 };
 
 /**
+ * Send draft undo / redo request to inject side.
+ * The inject side owns the pixel store, so history lives there too.
+ */
+export const sendDraftUndoToInject = () => {
+  window.postMessage({ source: "mr-wplace-draft-undo" }, "*");
+};
+
+export const sendDraftRedoToInject = () => {
+  window.postMessage({ source: "mr-wplace-draft-redo" }, "*");
+};
+
+/**
  * Send draft brush settings (size / dither style) to inject side
  */
 export const sendDraftBrushToInject = (settings: {

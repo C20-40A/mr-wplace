@@ -44,6 +44,8 @@ import {
   clearAllDraft,
   handleDraftExportRequest,
   handleDraftSeedRequest,
+  undoDraftEdit,
+  redoDraftEdit,
 } from "./features/draft-draw";
 import { setupGalleryV2Handlers } from "./handlers/gallery-v2-handlers";
 import { setupSnapshotHandlers } from "./handlers/snapshot-handlers";
@@ -403,6 +405,8 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-draft-map-lock-update": (data) =>
     setDraftMapLockEnabled(data.enabled),
   "mr-wplace-draft-clear": () => clearAllDraft(),
+  "mr-wplace-draft-undo": () => undoDraftEdit(),
+  "mr-wplace-draft-redo": () => redoDraftEdit(),
   "mr-wplace-request-draft-export": handleDraftExportRequest,
   "mr-wplace-request-draft-seed": handleDraftSeedRequest,
   "mr-wplace-request-stats": handleStatsRequest,

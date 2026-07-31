@@ -1,4 +1,9 @@
 import { TILE_DRAW_CONSTANTS } from "@/inject/features/tile-draw/constants";
+import {
+  clearDraftHistory,
+  recordPixelChange,
+  withoutHistory,
+} from "./draft-history";
 
 const TILE_SIZE = TILE_DRAW_CONSTANTS.TILE_SIZE;
 
@@ -138,6 +143,15 @@ export const setDraftPixel = (
   tile.ctx.fillStyle = `rgb(${color.r},${color.g},${color.b})`;
   tile.ctx.fillRect(pixelX, pixelY, 1, 1);
 
+  recordPixelChange({
+    tileX,
+    tileY,
+    pixelX,
+    pixelY,
+    before: previous ? { r: previous.r, g: previous.g, b: previous.b } : null,
+    after: { ...color },
+  });
+
   if (!options?.silent) notifyChange();
   return true;
 };
@@ -151,18 +165,51 @@ export const removeDraftPixel = (
 ): boolean => {
   const tileKey = toTileKey(tileX, tileY);
   const tile = draftTiles.get(tileKey);
-  if (!tile?.pixels.delete(toPixelKey(pixelX, pixelY))) return false;
+  if (!tile) return false;
+
+  const pixelKey = toPixelKey(pixelX, pixelY);
+  const previous = tile.pixels.get(pixelKey);
+  if (!previous) return false;
+  tile.pixels.delete(pixelKey);
 
   tile.ctx.clearRect(pixelX, pixelY, 1, 1);
   if (tile.pixels.size === 0) draftTiles.delete(tileKey);
+
+  recordPixelChange({
+    tileX,
+    tileY,
+    pixelX,
+    pixelY,
+    before: { r: previous.r, g: previous.g, b: previous.b },
+    after: null,
+  });
 
   notifyChange();
   return true;
 };
 
+/**
+ * undo/redo 用の適用口。色が null なら削除、あれば設置。
+ * 履歴側から呼ばれ、記録は `draft-history` が抑止する。
+ */
+export const applyDraftPixel = (
+  tileX: number,
+  tileY: number,
+  pixelX: number,
+  pixelY: number,
+  color: { r: number; g: number; b: number } | null,
+): void => {
+  if (!color) {
+    removeDraftPixel(tileX, tileY, pixelX, pixelY);
+    return;
+  }
+  setDraftPixel(tileX, tileY, pixelX, pixelY, color, { silent: true });
+};
+
 /** 全下書きを破棄 */
 export const clearDraft = (): void => {
   draftTiles.clear();
+  clearDraftHistory();
   onChange?.();
 };
 
@@ -177,26 +224,30 @@ export const seedDraftFromPixels = (
   const originX = origin.TLX * TILE_SIZE + origin.PxX;
   const originY = origin.TLY * TILE_SIZE + origin.PxY;
 
-  let seeded = 0;
-  for (const pixel of pixels) {
-    const worldX = originX + pixel.x;
-    const worldY = originY + pixel.y;
-    const tileX = Math.floor(worldX / TILE_SIZE);
-    const tileY = Math.floor(worldY / TILE_SIZE);
+  // seed は「保存済みの内容そのもの」なので undo の対象にしない
+  const seeded = withoutHistory(() => {
+    let count = 0;
+    for (const pixel of pixels) {
+      const worldX = originX + pixel.x;
+      const worldY = originY + pixel.y;
+      const tileX = Math.floor(worldX / TILE_SIZE);
+      const tileY = Math.floor(worldY / TILE_SIZE);
 
-    // seed は数十万 pixel になりうるので通知は最後に1回だけ
-    if (
-      setDraftPixel(
-        tileX,
-        tileY,
-        worldX - tileX * TILE_SIZE,
-        worldY - tileY * TILE_SIZE,
-        { r: pixel.r, g: pixel.g, b: pixel.b },
-        { silent: true },
+      // seed は数十万 pixel になりうるので通知は最後に1回だけ
+      if (
+        setDraftPixel(
+          tileX,
+          tileY,
+          worldX - tileX * TILE_SIZE,
+          worldY - tileY * TILE_SIZE,
+          { r: pixel.r, g: pixel.g, b: pixel.b },
+          { silent: true },
+        )
       )
-    )
-      seeded++;
-  }
+        count++;
+    }
+    return count;
+  });
 
   onChange?.();
   return seeded;
