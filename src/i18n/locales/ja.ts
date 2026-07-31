@@ -628,4 +628,6 @@ export const jaTranslations = {
   draft_edit: "下書き編集",
   draft_edit_needs_position: "先にこの画像をマップに配置してください",
   draft_eraser: "消しゴム",
+  draft_bucket: "バケツ塗り",
+  draft_bucket_too_large: "範囲が広すぎて塗れません",
 };

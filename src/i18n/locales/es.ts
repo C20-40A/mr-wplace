@@ -609,4 +609,6 @@ export const esTranslations = {
   draft_edit: "Editar borrador",
   draft_edit_needs_position: "Primero coloca esta imagen en el mapa",
   draft_eraser: "Borrador",
+  draft_bucket: "Relleno",
+  draft_bucket_too_large: "Área demasiado grande para rellenar",
 };

@@ -9,6 +9,7 @@ import {
   getDraftTileCanvas,
   getDraftTileKeys,
 } from "./draft-store";
+import { computeBucketFill } from "./draft-bucket-fill";
 
 /**
  * Draft canvas layer
@@ -62,6 +63,8 @@ let dirty = true;
 let mapListenersAttached = false;
 /** ツールバーの消しゴムトグル (右ドラッグとは独立) */
 let eraseMode = false;
+/** ツールバーのバケツトグル。ON の間はクリックで flood fill */
+let bucketMode = false;
 /** Space 押下中か。押している間だけ左ドラッグが連続描画になる */
 let spaceHeld = false;
 
@@ -80,6 +83,8 @@ const CLICK_SLOP = 3;
 
 /** spoit で色が変わったことを content 側へ伝える */
 let onColorPicked: ((colorId: number) => void) | null = null;
+/** バケツが上限超過で中止されたことを content 側へ伝える (ヒント表示用) */
+let onBucketFailed: (() => void) | null = null;
 
 const paletteById = new Map(colorpalette.map((c) => [c.id, c.rgb]));
 
@@ -100,10 +105,17 @@ export const markDraftCanvasDirty = (): void => {
 
 export const setDraftEraseMode = (enabled: boolean): void => {
   eraseMode = enabled;
+  if (enabled) bucketMode = false;
   updateCursor();
 };
 
 export const isDraftEraseMode = (): boolean => eraseMode;
+
+export const setDraftBucketMode = (enabled: boolean): void => {
+  bucketMode = enabled;
+  if (enabled) eraseMode = false;
+  updateCursor();
+};
 
 // ------- canvas lifecycle -------
 
@@ -226,6 +238,36 @@ const paintLine = (
   }
 };
 
+/**
+ * バケツ塗り。上限を超える (= 開いた領域を塗ろうとした) 場合は
+ * 1px も塗らず、content 側へヒント表示を促す。
+ */
+const bucketFillAt = (clientX: number, clientY: number): void => {
+  const world = screenToWorldPixel(clientX, clientY);
+  if (!world) return;
+
+  const color = getSelectedColor();
+  if (!color) return;
+
+  const result = computeBucketFill(world.x, world.y, color);
+  if (!result.ok) {
+    onBucketFailed?.();
+    return;
+  }
+
+  for (const p of result.pixels) {
+    const tileX = Math.floor(p.x / TILE_SIZE);
+    const tileY = Math.floor(p.y / TILE_SIZE);
+    onPaint?.(
+      tileX,
+      tileY,
+      p.x - tileX * TILE_SIZE,
+      p.y - tileY * TILE_SIZE,
+      color,
+    );
+  }
+};
+
 /** spoit: その座標の下書き色を拾って選択色にする */
 const pickColorAt = (clientX: number, clientY: number): void => {
   const world = screenToWorldPixel(clientX, clientY);
@@ -315,6 +357,10 @@ const handlePointerUp = (e: PointerEvent): void => {
     pendingClick = null;
     if (!moved) {
       stop(e);
+      if (bucketMode) {
+        bucketFillAt(e.clientX, e.clientY);
+        return;
+      }
       const world = screenToWorldPixel(e.clientX, e.clientY);
       if (world) paintWorldPixel(world.x, world.y, eraseMode ? "erase" : "draw");
     }
@@ -365,9 +411,11 @@ const updateCursor = (): void => {
     ? ""
     : eraseMode
       ? "cell"
-      : spaceHeld
-        ? "crosshair"
-        : "grab";
+      : bucketMode
+        ? "copy"
+        : spaceHeld
+          ? "crosshair"
+          : "grab";
 };
 
 let inputTarget: HTMLElement | null = null;
@@ -490,10 +538,12 @@ export const setDraftCanvasHandlers = (handlers: {
   onPaint: PaintHandler;
   onErase: EraseHandler;
   onColorPicked: (colorId: number) => void;
+  onBucketFailed: () => void;
 }): void => {
   onPaint = handlers.onPaint;
   onErase = handlers.onErase;
   onColorPicked = handlers.onColorPicked;
+  onBucketFailed = handlers.onBucketFailed;
 };
 
 export const setDraftCanvasActive = (enabled: boolean): void => {
@@ -520,6 +570,7 @@ export const setDraftCanvasActive = (enabled: boolean): void => {
   window.removeEventListener("keyup", handleKeyUp);
   detachPointerHandlers();
   eraseMode = false;
+  bucketMode = false;
   if (rafId !== null) {
     cancelAnimationFrame(rafId);
     rafId = null;

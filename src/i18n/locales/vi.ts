@@ -595,4 +595,6 @@ export const viTranslations = {
   draft_edit: "Chỉnh sửa bản nháp",
   draft_edit_needs_position: "Hãy đặt hình ảnh này lên bản đồ trước",
   draft_eraser: "Tẩy",
+  draft_bucket: "Đổ màu",
+  draft_bucket_too_large: "Vùng quá lớn để tô",
 };

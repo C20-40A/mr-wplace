@@ -24,6 +24,7 @@ export {
   sendColorFilterToInject,
   sendDraftModeToInject,
   sendDraftEraseModeToInject,
+  sendDraftBucketModeToInject,
   requestDraftExport,
   requestDraftSeed,
 } from "./overlay-bridge";

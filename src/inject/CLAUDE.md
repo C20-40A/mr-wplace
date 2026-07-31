@@ -90,6 +90,13 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
     - 左クリック単発 = dot / 左ドラッグ = マップ平行移動 / Space+左ドラッグ = 連続 dotting
     - 中クリック = spoit (下書きの色を拾って選択色にする) / 右ドラッグ = 消しゴム
     - ホイール = マップズーム
+    - ツールバーの 🪣 ON 中は左クリックがバケツ塗りになる (消しゴムとは排他)
+  - UI は **bottom sheet 方式** (画面下辺に密着・全幅・上側だけ角丸)。
+    モバイル/タブレットで左右マージンがあると地図を隠して邪魔になるため。
+    `env(safe-area-inset-bottom)` でホームバーを避ける。
+    操作説明は sheet の**外・上**に text のみを薄く置く (`positionHint` が
+    sheet の実高さを測って追従。ボタン文言で高さが変わるため毎回再計算)。
+    パレットは `overflow-y:auto` を使わない (モバイルで drag が効かなくなる既知問題)。
   - ON 中は content 側で `activateStickyFocusMode()` を呼び、他の UI を退かす。
     通常の focus mode は「どこかを click したら自動解除」だが、下書きは
     マップ上を連打するため解除されては困る。そのため sticky 版を用意し、
@@ -139,6 +146,14 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
     両方を常に同期して更新する。`setDraftStoreChangeListener` で変更を通知し、
     再描画 (`markDraftCanvasDirty`) と content への状態通知を走らせる。
     seed は数十万 pixel になりうるので `silent: true` で個別通知を抑え、最後に1回だけ通知する。
+
+  - `draft-bucket-fill.ts`: world pixel 空間の 4 近傍 flood fill。
+    **CRITICAL**: 下書きは「広大な world map 上に浮いた疎なピクセル集合」なので、
+    何も無いところをバケツすると理論上は無限に広がる。必ず
+    `MAX_FILL_PIXELS` (10万) と `MAX_FILL_EXTENT` (開始点から±2000px) で打ち切る。
+    打ち切り時は **1px も塗らずに** `too-large` を返す (all-or-nothing。
+    中途半端に塗ると取り消しが面倒なため)。
+    content 側は画面上部に控えめなヒントを 2.5 秒出す (トーストは使わない方針)。
 
   - `draft-export.ts`: 保存時に bounding box で切り出し dataUrl 化 (`mr-wplace-request-draft-export`)。gallery 保存用。
     NOTE: `PxX/PxY` は `Math.floor(minX/TILE_SIZE) * TILE_SIZE` を引いて算出する

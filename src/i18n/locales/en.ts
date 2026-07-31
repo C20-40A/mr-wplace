@@ -625,4 +625,6 @@ Do not use this feature to paint actual pixels.`,
   draft_edit: "Draft edit",
   draft_edit_needs_position: "Place this image on the map first",
   draft_eraser: "Eraser",
+  draft_bucket: "Bucket fill",
+  draft_bucket_too_large: "Area too large to fill",
 };

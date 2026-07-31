@@ -616,4 +616,6 @@ export const frTranslations = {
   draft_edit: "Modifier le brouillon",
   draft_edit_needs_position: "Placez d'abord cette image sur la carte",
   draft_eraser: "Gomme",
+  draft_bucket: "Pot de peinture",
+  draft_bucket_too_large: "Zone trop grande à remplir",
 };

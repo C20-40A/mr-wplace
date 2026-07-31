@@ -9,6 +9,7 @@ import { getMapInstanceReady } from "@/states/map-instance-ready";
 import {
   sendDraftModeToInject,
   sendDraftEraseModeToInject,
+  sendDraftBucketModeToInject,
   requestDraftExport,
   requestDraftSeed,
   sendGalleryImagesToInject,
@@ -35,6 +36,8 @@ import {
 
 const FAB_ID = "mr-wplace-draft-fab";
 const TOOLBAR_ID = "mr-wplace-draft-toolbar";
+const HINT_ID = "mr-wplace-draft-hint";
+const NOTICE_ID = "mr-wplace-draft-notice";
 /** 下書き保存で作られたギャラリー item。再保存で上書きする */
 const SAVED_KEY_PREFIX = "draft-";
 
@@ -47,6 +50,7 @@ const SELECTED_COLOR_KEY = "selected-color";
 export class DraftDraw {
   private enabled = false;
   private erasing = false;
+  private bucket = false;
   private pixelCount = 0;
   private saving = false;
   /** 保存済みギャラリーitemのkey。2回目以降は更新扱いにする */
@@ -89,7 +93,27 @@ export class DraftDraw {
 
     // spoit で色が変わったらスウォッチの選択表示を追従させる
     if (source === "mr-wplace-draft-color-picked") this.updateToolbar();
+
+    if (source === "mr-wplace-draft-bucket-too-large") this.showBucketHint();
   };
+
+  /**
+   * バケツが広すぎて中止された時のヒント。
+   * トーストは使わない方針なので、画面端に控えめに出して自動で消す。
+   */
+  private showBucketHint(): void {
+    document.getElementById(NOTICE_ID)?.remove();
+
+    const notice = document.createElement("div");
+    notice.id = NOTICE_ID;
+    notice.className =
+      "bg-warning text-warning-content rounded-box pointer-events-none fixed top-2 left-1/2 -translate-x-1/2 px-3 py-1.5 text-xs shadow-lg";
+    notice.style.zIndex = "1002";
+    notice.textContent = t`${"draft_bucket_too_large"}`;
+    document.body.appendChild(notice);
+
+    window.setTimeout(() => notice.remove(), 2500);
+  }
 
   private mountFab(container: Element): void {
     const button = document.createElement("button");
@@ -162,10 +186,13 @@ export class DraftDraw {
     deactivateFocusMode();
     this.enabled = false;
     this.erasing = false;
+    this.bucket = false;
     this.pixelCount = 0;
     this.savedKey = null;
     this.seedItem = null;
     document.getElementById(TOOLBAR_ID)?.remove();
+    document.getElementById(HINT_ID)?.remove();
+    document.getElementById(NOTICE_ID)?.remove();
   }
 
   /** 既存 gallery item のピクセルを下書きへ読み込む (下書き編集) */
@@ -213,31 +240,56 @@ export class DraftDraw {
   // ------- toolbar -------
 
   /**
-   * 下書き専用ツールバー。色選択 / 消しゴム / 保存 / 終了。
+   * 下書き専用ツールバー。色選択 / 消しゴム / バケツ / 保存 / 終了。
    * wplace の UI を借りないので、必要なものは全部ここに持つ。
+   *
+   * bottom sheet 方式: 画面下辺に密着させ、左右いっぱいに広げる。
+   * モバイル/タブレットで左右マージンがあると地図を隠して邪魔になるため。
+   * 操作説明は sheet の「外・上」に置く (地図の上に薄く重なるだけ)。
    */
   private renderToolbar(): void {
     document.getElementById(TOOLBAR_ID)?.remove();
 
-    const bar = document.createElement("div");
-    bar.id = TOOLBAR_ID;
-    bar.className =
-      "bg-base-100 border-base-300 rounded-box fixed bottom-2 left-1/2 flex max-w-[96vw] -translate-x-1/2 flex-col gap-2 border p-2 shadow-xl";
+    const sheet = document.createElement("div");
+    sheet.id = TOOLBAR_ID;
+    // 下辺密着 + 全幅。角丸は上側のみ (bottom sheet の見た目)
+    sheet.className =
+      "bg-base-100 border-base-300 fixed right-0 bottom-0 left-0 flex flex-col gap-2 border-t px-3 pt-2 shadow-xl";
     // focus mode が #map を z-index:1000 に上げるため、それより前に出す
-    bar.style.zIndex = "1001";
+    sheet.style.zIndex = "1001";
+    sheet.style.borderTopLeftRadius = "1rem";
+    sheet.style.borderTopRightRadius = "1rem";
+    // ホームバー等のセーフエリアを避ける
+    sheet.style.paddingBottom = "calc(env(safe-area-inset-bottom, 0px) + 8px)";
 
-    bar.appendChild(this.buildColorStrip());
-    bar.appendChild(this.buildActionRow());
-    bar.appendChild(this.buildHintRow());
+    sheet.appendChild(this.buildColorStrip());
+    sheet.appendChild(this.buildActionRow());
 
-    document.body.appendChild(bar);
+    document.body.appendChild(sheet);
+    // 操作説明は sheet の「外・上」。sheet の実高さを測ってその真上に置く
+    document.body.appendChild(this.buildHintRow());
+    this.positionHint();
+
     this.updateToolbar();
   }
 
-  /** パレット。選択は localStorage 経由で inject 側の描画色になる */
+  /** 操作説明を sheet の直上へ配置する (sheet の高さは内容で変わるため実測) */
+  private positionHint(): void {
+    const sheet = document.getElementById(TOOLBAR_ID);
+    const hint = document.getElementById(HINT_ID);
+    if (!sheet || !hint) return;
+    hint.style.bottom = `${sheet.offsetHeight + 4}px`;
+  }
+
+  /**
+   * パレット。選択は localStorage 経由で inject 側の描画色になる。
+   *
+   * NOTE: 縦スクロール(`overflow-y:auto`)は使わない。モバイルで drag が
+   * 効かなくなる既知の問題があるため、bottom sheet では横スクロールにする。
+   */
   private buildColorStrip(): HTMLElement {
     const strip = document.createElement("div");
-    strip.className = "flex max-h-24 flex-wrap gap-1 overflow-y-auto";
+    strip.className = "flex flex-wrap justify-center gap-1";
 
     for (const color of colorpalette) {
       if (color.id === TRANSPARENT_COLOR_ID) continue;
@@ -250,6 +302,7 @@ export class DraftDraw {
       swatch.style.cssText = `width:20px;height:20px;background:rgb(${color.rgb.join(",")});border:2px solid transparent;`;
       swatch.addEventListener("click", () => {
         localStorage.setItem(SELECTED_COLOR_KEY, String(color.id));
+        // 色を選んだら描画に戻す (バケツは色選択後も使いたいので維持)
         this.erasing = false;
         sendDraftEraseModeToInject(false);
         this.updateToolbar();
@@ -262,7 +315,7 @@ export class DraftDraw {
 
   private buildActionRow(): HTMLElement {
     const row = document.createElement("div");
-    row.className = "flex items-center gap-2";
+    row.className = "flex items-center justify-center gap-2";
 
     const eraser = document.createElement("button");
     eraser.id = `${TOOLBAR_ID}-eraser`;
@@ -271,6 +324,23 @@ export class DraftDraw {
     eraser.textContent = t`${"draft_eraser"}`;
     eraser.addEventListener("click", () => {
       this.erasing = !this.erasing;
+      // 排他: バケツとは同時に使えない
+      if (this.erasing) this.bucket = false;
+      sendDraftEraseModeToInject(this.erasing);
+      sendDraftBucketModeToInject(this.bucket);
+      this.updateToolbar();
+    });
+
+    const bucket = document.createElement("button");
+    bucket.id = `${TOOLBAR_ID}-bucket`;
+    bucket.type = "button";
+    bucket.className = "btn btn-sm";
+    bucket.textContent = "🪣";
+    bucket.title = t`${"draft_bucket"}`;
+    bucket.addEventListener("click", () => {
+      this.bucket = !this.bucket;
+      if (this.bucket) this.erasing = false;
+      sendDraftBucketModeToInject(this.bucket);
       sendDraftEraseModeToInject(this.erasing);
       this.updateToolbar();
     });
@@ -289,19 +359,23 @@ export class DraftDraw {
     close.textContent = t`${"close"}`;
     close.addEventListener("click", () => this.exitDraftMode());
 
-    row.append(eraser, save, close);
+    row.append(eraser, bucket, save, close);
     return row;
   }
 
   /**
-   * 操作説明。記号 + マウス絵文字中心にして新規翻訳キーを増やさない。
-   * (プロジェクト方針: UI は i18n surface を増やさない設計を優先)
+   * 操作説明。sheet の外・上に text のみを薄く置く。
+   * 記号 + マウス絵文字中心にして新規翻訳キーを増やさない
+   * (プロジェクト方針: UI は i18n surface を増やさない設計を優先)。
    */
   private buildHintRow(): HTMLElement {
     const hint = document.createElement("div");
-    hint.className = "text-base-content/60 text-center text-[10px] leading-tight";
+    hint.id = HINT_ID;
+    hint.className =
+      "text-base-content/50 pointer-events-none fixed right-0 left-0 text-center text-[10px] leading-tight";
+    hint.style.zIndex = "1001";
     hint.textContent =
-      "🖱️ = dot / drag = move / Space+drag = draw / 🖱️mid = spoit / 🖱️right = erase";
+      "🖱️ dot / drag = move / Space+drag = draw / mid = spoit / right = erase";
     return hint;
   }
 
@@ -311,6 +385,7 @@ export class DraftDraw {
 
     if (!this.enabled) {
       bar.remove();
+      document.getElementById(HINT_ID)?.remove();
       return;
     }
 
@@ -328,6 +403,12 @@ export class DraftDraw {
     if (eraser)
       eraser.className = `btn btn-sm${this.erasing ? " btn-primary" : ""}`;
 
+    const bucket = document.getElementById(
+      `${TOOLBAR_ID}-bucket`,
+    ) as HTMLButtonElement | null;
+    if (bucket)
+      bucket.className = `btn btn-sm${this.bucket ? " btn-primary" : ""}`;
+
     const save = document.getElementById(
       `${TOOLBAR_ID}-save`,
     ) as HTMLButtonElement | null;
@@ -337,6 +418,9 @@ export class DraftDraw {
     save.style.opacity = save.disabled ? "0.6" : "1";
     const label = this.savedKey ? t`${"draft_update"}` : t`${"draft_save"}`;
     save.textContent = `${label}${this.pixelCount > 0 ? ` (${this.pixelCount})` : ""}`;
+
+    // ボタン文言で sheet の高さが変わりうるので毎回追従させる
+    this.positionHint();
   }
 
   /** 下書きを gallery へ保存 (2回目以降は同じitemを更新) */

@@ -73,6 +73,16 @@ export const sendDraftEraseModeToInject = (enabled: boolean) => {
   );
 };
 
+/**
+ * Send draft bucket fill toggle to inject side
+ */
+export const sendDraftBucketModeToInject = (enabled: boolean) => {
+  window.postMessage(
+    { source: "mr-wplace-draft-bucket-update", enabled },
+    "*"
+  );
+};
+
 export interface DraftExportResult {
   dataUrl: string;
   width: number;

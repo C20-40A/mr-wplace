@@ -38,6 +38,7 @@ import {
 import {
   setDraftModeEnabled,
   setDraftEraseModeEnabled,
+  setDraftBucketModeEnabled,
   clearAllDraft,
   handleDraftExportRequest,
   handleDraftSeedRequest,
@@ -394,6 +395,8 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-draft-mode-update": (data) => setDraftModeEnabled(data.enabled),
   "mr-wplace-draft-erase-update": (data) =>
     setDraftEraseModeEnabled(data.enabled),
+  "mr-wplace-draft-bucket-update": (data) =>
+    setDraftBucketModeEnabled(data.enabled),
   "mr-wplace-draft-clear": () => clearAllDraft(),
   "mr-wplace-request-draft-export": handleDraftExportRequest,
   "mr-wplace-request-draft-seed": handleDraftSeedRequest,

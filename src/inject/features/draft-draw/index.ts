@@ -9,6 +9,7 @@ import {
 } from "./draft-store";
 import {
   markDraftCanvasDirty,
+  setDraftBucketMode,
   setDraftCanvasActive,
   setDraftCanvasHandlers,
   setDraftEraseMode,
@@ -45,6 +46,10 @@ setDraftCanvasHandlers({
       { source: "mr-wplace-draft-color-picked", colorId },
       "*",
     );
+  },
+  // バケツが広すぎて中止された。content 側で控えめなヒントを出す
+  onBucketFailed: () => {
+    window.postMessage({ source: "mr-wplace-draft-bucket-too-large" }, "*");
   },
 });
 
@@ -86,6 +91,11 @@ export const setDraftModeEnabled = (enabled: boolean): void => {
 export const setDraftEraseModeEnabled = (enabled: boolean): void => {
   setDraftEraseMode(enabled);
   console.log(`🧑‍🎨 : Draft erase mode: ${enabled}`);
+};
+
+export const setDraftBucketModeEnabled = (enabled: boolean): void => {
+  setDraftBucketMode(enabled);
+  console.log(`🧑‍🎨 : Draft bucket mode: ${enabled}`);
 };
 
 /**

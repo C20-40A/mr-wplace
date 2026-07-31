@@ -612,4 +612,6 @@ export const ruTranslations = {
   draft_edit: "Редактировать черновик",
   draft_edit_needs_position: "Сначала разместите это изображение на карте",
   draft_eraser: "Ластик",
+  draft_bucket: "Заливка",
+  draft_bucket_too_large: "Область слишком велика для заливки",
 };

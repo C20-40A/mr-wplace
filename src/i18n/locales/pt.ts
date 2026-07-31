@@ -600,4 +600,6 @@ export const ptTranslations = {
   draft_edit: "Editar rascunho",
   draft_edit_needs_position: "Primeiro coloque esta imagem no mapa",
   draft_eraser: "Borracha",
+  draft_bucket: "Balde",
+  draft_bucket_too_large: "Área grande demais para preencher",
 };

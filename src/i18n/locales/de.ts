@@ -599,4 +599,6 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   draft_edit: "Entwurf bearbeiten",
   draft_edit_needs_position: "Platziere dieses Bild zuerst auf der Karte",
   draft_eraser: "Radierer",
+  draft_bucket: "Fülleimer",
+  draft_bucket_too_large: "Bereich zu groß zum Füllen",
 };
