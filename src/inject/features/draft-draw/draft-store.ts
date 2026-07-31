@@ -59,6 +59,15 @@ export const getDraftTilePixels = (
   tileKey: string,
 ): Map<string, DraftPixel> | undefined => draftTiles.get(tileKey)?.pixels;
 
+/** spoit 用。その座標に下書きピクセルがあれば色を返す */
+export const getDraftPixel = (
+  tileX: number,
+  tileY: number,
+  pixelX: number,
+  pixelY: number,
+): DraftPixel | undefined =>
+  draftTiles.get(toTileKey(tileX, tileY))?.pixels.get(toPixelKey(pixelX, pixelY));
+
 export const getDraftPixelCount = (): number => {
   let total = 0;
   for (const tile of draftTiles.values()) total += tile.pixels.size;

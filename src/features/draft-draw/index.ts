@@ -17,6 +17,10 @@ import { GalleryItem, GalleryStorage } from "@/states/galleryStorage";
 import { getImageDataUrl } from "@/utils/indexed-db-bridge";
 import { tilePixelToLatLng } from "@/utils/coordinate";
 import { colorpalette, TRANSPARENT_COLOR_ID } from "@/constants/colors";
+import {
+  activateStickyFocusMode,
+  deactivateFocusMode,
+} from "@/features/focus-mode";
 
 /**
  * 下書きモード (draft draw / blueprint)
@@ -74,11 +78,17 @@ export class DraftDraw {
 
   private handleInjectMessage = (event: MessageEvent): void => {
     if (event.source !== window) return;
-    if (event.data?.source !== "mr-wplace-draft-state") return;
+    const source = event.data?.source;
 
-    this.enabled = !!event.data.enabled;
-    this.pixelCount = event.data.pixelCount ?? 0;
-    this.updateToolbar();
+    if (source === "mr-wplace-draft-state") {
+      this.enabled = !!event.data.enabled;
+      this.pixelCount = event.data.pixelCount ?? 0;
+      this.updateToolbar();
+      return;
+    }
+
+    // spoit で色が変わったらスウォッチの選択表示を追従させる
+    if (source === "mr-wplace-draft-color-picked") this.updateToolbar();
   };
 
   private mountFab(container: Element): void {
@@ -136,6 +146,10 @@ export class DraftDraw {
     this.seedItem = seedItem ?? null;
     this.erasing = false;
 
+    // 他の UI が邪魔になるので focus mode と同じ挙動 (#map を最前面へ) にする。
+    // 下書き中はマップ上を連打するので、クリックで解除されない sticky 版を使う。
+    activateStickyFocusMode();
+
     sendDraftModeToInject(true);
     this.enabled = true;
     this.renderToolbar();
@@ -145,6 +159,7 @@ export class DraftDraw {
 
   private exitDraftMode(): void {
     sendDraftModeToInject(false);
+    deactivateFocusMode();
     this.enabled = false;
     this.erasing = false;
     this.pixelCount = 0;
@@ -207,10 +222,13 @@ export class DraftDraw {
     const bar = document.createElement("div");
     bar.id = TOOLBAR_ID;
     bar.className =
-      "bg-base-100 border-base-300 rounded-box fixed bottom-2 left-1/2 z-50 flex max-w-[96vw] -translate-x-1/2 flex-col gap-2 border p-2 shadow-xl";
+      "bg-base-100 border-base-300 rounded-box fixed bottom-2 left-1/2 flex max-w-[96vw] -translate-x-1/2 flex-col gap-2 border p-2 shadow-xl";
+    // focus mode が #map を z-index:1000 に上げるため、それより前に出す
+    bar.style.zIndex = "1001";
 
     bar.appendChild(this.buildColorStrip());
     bar.appendChild(this.buildActionRow());
+    bar.appendChild(this.buildHintRow());
 
     document.body.appendChild(bar);
     this.updateToolbar();
@@ -273,6 +291,18 @@ export class DraftDraw {
 
     row.append(eraser, save, close);
     return row;
+  }
+
+  /**
+   * 操作説明。記号 + マウス絵文字中心にして新規翻訳キーを増やさない。
+   * (プロジェクト方針: UI は i18n surface を増やさない設計を優先)
+   */
+  private buildHintRow(): HTMLElement {
+    const hint = document.createElement("div");
+    hint.className = "text-base-content/60 text-center text-[10px] leading-tight";
+    hint.textContent =
+      "🖱️ = dot / drag = move / Space+drag = draw / 🖱️mid = spoit / 🖱️right = erase";
+    return hint;
   }
 
   private updateToolbar(): void {

@@ -84,8 +84,17 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
   - 下書きモード。**wplace 本体のペイント機構には一切依存しない独自レイヤー方式**。
     ペイントモードには入らず、実ペイントも charge 消費も一切発生しない。
   - 導線: マップ上の下書きFAB → 下書きモードON → 独自 canvas レイヤーが前面に出る
-    → クリック/ドラッグで描画 → 専用ツールバーから保存 / 終了。
+    → 描画 → 専用ツールバーから保存 / 終了。
     wplace の Paint ボタンも確定ボタンも触らない。
+  - 操作体系:
+    - 左クリック単発 = dot / 左ドラッグ = マップ平行移動 / Space+左ドラッグ = 連続 dotting
+    - 中クリック = spoit (下書きの色を拾って選択色にする) / 右ドラッグ = 消しゴム
+    - ホイール = マップズーム
+  - ON 中は content 側で `activateStickyFocusMode()` を呼び、他の UI を退かす。
+    通常の focus mode は「どこかを click したら自動解除」だが、下書きは
+    マップ上を連打するため解除されては困る。そのため sticky 版を用意し、
+    解除は `deactivateFocusMode()` で明示的に行う。
+    ツールバーは `#map` の `z-index:1000` より前に出す必要があるので `z-index:1001`。
   - map instance 未取得時は FAB / gallery の下書き編集ボタンを disable
     (座標変換ができず描画も保存もできないため)。
   - **下書きモード中は既存テンプレ overlay を全部非表示にする**
@@ -104,11 +113,19 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
     - 再描画は dirty フラグが立った時だけ (map の move/zoom/resize、store 変更時)。
       rAF は回すが、dirty でなければ即 return する。
     - `imageSmoothingEnabled = false` でピクセルアートを拡大時もにじませない。
-    - **pointer は capture 段階で `stopPropagation` + `preventDefault`**。
-      canvas 自体は map canvas の兄弟なので伝播経路上は競合しないが、
-      maplibre は document/window にも drag ハンドラを張るため、
-      ここで止めないと描画中に地図がパン/ズームしてしまう。
-      wheel / contextmenu / dblclick も同様に封じる。
+    - **CRITICAL: 描画 canvas は `pointer-events:none` の表示専用**にする。
+      canvas は map canvas の「兄弟かつ手前」なので、`pointer-events:auto` にすると
+      map canvas が一切イベントを受け取れなくなり **maplibre 純正の pan/zoom が完全に死ぬ**
+      (実際にこれで「ホイールズームができない」不具合が出た)。
+    - 入力は **map の canvas container** (`map.getCanvasContainer()`) に
+      capture 段階で張り、「自分が使う操作だけ」を `stopPropagation` で奪う。
+      pan/zoom させたい操作は**素通りさせる**のが要点。
+      - wheel は張らない (map にズームさせる)。
+      - 左 pointerdown は止めない (map に pan させる)。単発クリック判定は
+        pointerup で移動量 (`CLICK_SLOP`) を見て行う。
+      - `click`/`dblclick` は常に止める。wplace のマップクリック popup が
+        下書き操作と干渉するため。
+      - `contextmenu` は常に止める (右ドラッグを消しゴムに使うため)。
     - ドラッグは `pointermove` が飛び飛びに来るため、前回位置から線形補間して塗る
       (`paintLine`)。これが無いとドラッグが点線になる。
     - 画面座標 -> world pixel は `map.unproject` -> `geo-converter.latLonToPixels`。

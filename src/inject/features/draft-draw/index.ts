@@ -39,6 +39,13 @@ setDraftCanvasHandlers({
     if (!draftModeEnabled) return;
     removeDraftPixel(tileX, tileY, pixelX, pixelY);
   },
+  // spoit で選択色が変わったらツールバーの選択表示を追従させる
+  onColorPicked: (colorId) => {
+    window.postMessage(
+      { source: "mr-wplace-draft-color-picked", colorId },
+      "*",
+    );
+  },
 });
 
 let lastNotifiedCount = -1;

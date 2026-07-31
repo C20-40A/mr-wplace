@@ -3,7 +3,12 @@ import { TILE_DRAW_CONSTANTS } from "@/inject/features/tile-draw/constants";
 import { tilePixelToLatLng } from "@/utils/coordinate";
 import { latLonToPixels } from "@/utils/geo-converter";
 import { colorpalette, TRANSPARENT_COLOR_ID } from "@/constants/colors";
-import { getDraftTileCanvas, getDraftTileKeys } from "./draft-store";
+import { findNearestColorId } from "@/utils/color-quantize";
+import {
+  getDraftPixel,
+  getDraftTileCanvas,
+  getDraftTileKeys,
+} from "./draft-store";
 
 /**
  * Draft canvas layer
@@ -15,8 +20,22 @@ import { getDraftTileCanvas, getDraftTileKeys } from "./draft-store";
  * - タイル 1 枚 = 1000x1000 のオフスクリーン canvas (wplace のラスタタイルのクローン)。
  *   描画は「タイル四隅を map.project() して drawImage で1枚貼る」だけなので、
  *   ピクセル数に関係なく 1 タイル 1 drawImage で済む (100万回 project は不可能)。
- * - pointer は capture 段階で止め、wplace 側へは伝播させない。
  * - 再描画は dirty 時のみ。map 移動中は move イベントで dirty を立てる。
+ *
+ * 操作体系:
+ * - 左クリック単発      : dot を1つ置く
+ * - 左ドラッグ          : マップを平行移動 (map へ委譲)
+ * - Space + 左ドラッグ  : 連続 dotting
+ * - 中クリック          : spoit (その座標の色を拾って選択色にする)
+ * - 右ドラッグ          : 消しゴム
+ * - ホイール            : マップのズーム (map へ委譲)
+ *
+ * イベント方針 (重要):
+ * 描画 canvas 自体は `pointer-events:none` の**表示専用**にする。
+ * canvas を pointer-events:auto にすると map canvas の手前で全イベントを
+ * 奪ってしまい、maplibre 純正の pan/zoom が完全に死ぬため。
+ * 代わりに入力は **map の canvas container** で capture して、
+ * 「自分が使う操作だけ」を stopPropagation で奪い、pan/zoom は素通りさせる。
  */
 
 const CANVAS_ID = "mr-wplace-draft-canvas";
@@ -41,14 +60,26 @@ let active = false;
 let rafId: number | null = null;
 let dirty = true;
 let mapListenersAttached = false;
+/** ツールバーの消しゴムトグル (右ドラッグとは独立) */
 let eraseMode = false;
+/** Space 押下中か。押している間だけ左ドラッグが連続描画になる */
+let spaceHeld = false;
 
 let onPaint: PaintHandler | null = null;
 let onErase: EraseHandler | null = null;
 
-/** ドラッグ中の連続描画用。直前に塗った world pixel (線形補間の起点) */
-let drawing = false;
+/** 現在のドラッグ操作の種類。null = 何もしていない (= map へ委譲中) */
+type DragMode = "draw" | "erase";
+let dragMode: DragMode | null = null;
+/** 直前に塗った world pixel (線形補間の起点) */
 let lastWorld: { x: number; y: number } | null = null;
+/** pan と単発クリックを区別するための押下位置 */
+let pendingClick: { x: number; y: number } | null = null;
+/** この距離以内で離したら「クリック」扱い (手ブレ許容) */
+const CLICK_SLOP = 3;
+
+/** spoit で色が変わったことを content 側へ伝える */
+let onColorPicked: ((colorId: number) => void) | null = null;
 
 const paletteById = new Map(colorpalette.map((c) => [c.id, c.rgb]));
 
@@ -69,6 +100,7 @@ export const markDraftCanvasDirty = (): void => {
 
 export const setDraftEraseMode = (enabled: boolean): void => {
   eraseMode = enabled;
+  updateCursor();
 };
 
 export const isDraftEraseMode = (): boolean => eraseMode;
@@ -95,12 +127,18 @@ const getOrCreateCanvas = (): HTMLCanvasElement | null => {
 
   const c = document.createElement("canvas");
   c.id = CANVAS_ID;
+  // 表示専用。入力は map の canvas container 側で拾う (冒頭コメント参照)
   c.style.cssText =
-    "position:absolute;top:0;left:0;pointer-events:auto;touch-action:none;cursor:crosshair;z-index:11;";
-  attachPointerHandlers(c);
+    "position:absolute;top:0;left:0;pointer-events:none;z-index:11;";
   parent.appendChild(c);
   canvas = c;
   return canvas;
+};
+
+/** 入力を拾う対象。map canvas container (無ければ map canvas の親) */
+const getInputTarget = (): HTMLElement | null => {
+  const map = getMapInstanceFromWplace() as any;
+  return map?.getCanvasContainer?.() ?? getMapCanvas()?.parentElement ?? null;
 };
 
 const syncCanvasSize = (c: HTMLCanvasElement): void => {
@@ -124,10 +162,10 @@ const screenToWorldPixel = (
   clientY: number,
 ): { x: number; y: number } | null => {
   const map = getMapInstanceFromWplace() as any;
-  const c = canvas;
-  if (!map?.unproject || !c) return null;
+  const mapCanvas = getMapCanvas();
+  if (!map?.unproject || !mapCanvas) return null;
 
-  const rect = c.getBoundingClientRect();
+  const rect = mapCanvas.getBoundingClientRect();
   const lngLat = map.unproject([clientX - rect.left, clientY - rect.top]);
   if (!lngLat) return null;
 
@@ -137,13 +175,17 @@ const screenToWorldPixel = (
 
 // ------- painting -------
 
-const paintWorldPixel = (worldX: number, worldY: number): void => {
+const paintWorldPixel = (
+  worldX: number,
+  worldY: number,
+  mode: DragMode,
+): void => {
   const tileX = Math.floor(worldX / TILE_SIZE);
   const tileY = Math.floor(worldY / TILE_SIZE);
   const pixelX = worldX - tileX * TILE_SIZE;
   const pixelY = worldY - tileY * TILE_SIZE;
 
-  if (eraseMode) {
+  if (mode === "erase") {
     onErase?.(tileX, tileY, pixelX, pixelY);
     return;
   }
@@ -157,12 +199,13 @@ const paintWorldPixel = (worldX: number, worldY: number): void => {
  * 前回位置から今回位置まで線形補間して塗る。
  * pointermove は飛び飛びに来るため、これが無いとドラッグが点線になる。
  */
-const paintLine = (from: { x: number; y: number } | null, to: {
-  x: number;
-  y: number;
-}): void => {
+const paintLine = (
+  from: { x: number; y: number } | null,
+  to: { x: number; y: number },
+  mode: DragMode,
+): void => {
   if (!from) {
-    paintWorldPixel(to.x, to.y);
+    paintWorldPixel(to.x, to.y, mode);
     return;
   }
 
@@ -170,7 +213,7 @@ const paintLine = (from: { x: number; y: number } | null, to: {
   const dy = to.y - from.y;
   const steps = Math.max(Math.abs(dx), Math.abs(dy));
   if (steps === 0) {
-    paintWorldPixel(to.x, to.y);
+    paintWorldPixel(to.x, to.y, mode);
     return;
   }
 
@@ -178,64 +221,198 @@ const paintLine = (from: { x: number; y: number } | null, to: {
     paintWorldPixel(
       Math.round(from.x + (dx * i) / steps),
       Math.round(from.y + (dy * i) / steps),
+      mode,
     );
   }
 };
 
+/** spoit: その座標の下書き色を拾って選択色にする */
+const pickColorAt = (clientX: number, clientY: number): void => {
+  const world = screenToWorldPixel(clientX, clientY);
+  if (!world) return;
+
+  const tileX = Math.floor(world.x / TILE_SIZE);
+  const tileY = Math.floor(world.y / TILE_SIZE);
+  const pixel = getDraftPixel(
+    tileX,
+    tileY,
+    world.x - tileX * TILE_SIZE,
+    world.y - tileY * TILE_SIZE,
+  );
+  if (!pixel) return;
+
+  const id = findNearestColorId({ r: pixel.r, g: pixel.g, b: pixel.b });
+  localStorage.setItem("selected-color", String(id));
+  onColorPicked?.(id);
+};
+
 // ------- pointer handling -------
 
-/**
- * NOTE: capture 段階で stopPropagation + preventDefault する。
- * 独自 canvas は map canvas の兄弟要素なので伝播経路上は競合しないが、
- * maplibre は document/window にも drag ハンドラを張るため、
- * ここで止めないとペイント中に地図がパン/ズームしてしまう。
- */
 const stop = (e: Event): void => {
   e.stopPropagation();
   e.preventDefault();
 };
 
+/**
+ * 押下時に操作の種類を決める。
+ * - 右ボタン、またはツールバーの消しゴムON → erase
+ * - Space 押下中 → draw (連続)
+ * - それ以外の左ボタン → まだ確定しない (単発クリックなら dot、
+ *   動かしたら map の pan。pointerdown を止めないので map が pan を担当する)
+ */
+const resolveDragMode = (e: PointerEvent): DragMode | null => {
+  if (e.button === 2) return "erase";
+  if (e.button !== 0) return null;
+  if (eraseMode) return "erase";
+  if (spaceHeld) return "draw";
+  return null;
+};
+
 const handlePointerDown = (e: PointerEvent): void => {
   if (!active) return;
-  stop(e);
-  // 中クリック/右クリックは描画に使わない (誤操作防止)
-  if (e.button !== 0) return;
 
-  canvas?.setPointerCapture(e.pointerId);
-  drawing = true;
+  // 中クリックは spoit。map へは渡さない
+  if (e.button === 1) {
+    stop(e);
+    pickColorAt(e.clientX, e.clientY);
+    return;
+  }
+
+  const mode = resolveDragMode(e);
+  if (!mode) {
+    // pan させたいので **止めない**。ただし単発クリック時に dot を打てるよう
+    // 押下位置だけ覚えておく (pointerup で移動量を見て判定する)
+    pendingClick = { x: e.clientX, y: e.clientY };
+    return;
+  }
+
+  stop(e);
+  dragMode = mode;
+  pendingClick = null;
+  inputTarget?.setPointerCapture(e.pointerId);
   lastWorld = screenToWorldPixel(e.clientX, e.clientY);
-  if (lastWorld) paintWorldPixel(lastWorld.x, lastWorld.y);
+  if (lastWorld) paintWorldPixel(lastWorld.x, lastWorld.y, mode);
 };
 
 const handlePointerMove = (e: PointerEvent): void => {
-  if (!active) return;
-  if (!drawing) return;
+  if (!active || !dragMode) return;
   stop(e);
 
   const world = screenToWorldPixel(e.clientX, e.clientY);
   if (!world) return;
-  paintLine(lastWorld, world);
+  paintLine(lastWorld, world, dragMode);
   lastWorld = world;
 };
 
 const handlePointerUp = (e: PointerEvent): void => {
   if (!active) return;
+
+  // ドラッグせずに離した左クリック = dot を1つ置く
+  if (!dragMode && pendingClick && e.button === 0) {
+    const moved =
+      Math.abs(e.clientX - pendingClick.x) > CLICK_SLOP ||
+      Math.abs(e.clientY - pendingClick.y) > CLICK_SLOP;
+    pendingClick = null;
+    if (!moved) {
+      stop(e);
+      const world = screenToWorldPixel(e.clientX, e.clientY);
+      if (world) paintWorldPixel(world.x, world.y, eraseMode ? "erase" : "draw");
+    }
+    return;
+  }
+
+  if (!dragMode) return;
+
   stop(e);
-  drawing = false;
+  dragMode = null;
   lastWorld = null;
-  if (canvas?.hasPointerCapture(e.pointerId))
-    canvas.releasePointerCapture(e.pointerId);
+  if (inputTarget?.hasPointerCapture(e.pointerId))
+    inputTarget.releasePointerCapture(e.pointerId);
 };
 
-const attachPointerHandlers = (c: HTMLCanvasElement): void => {
-  c.addEventListener("pointerdown", handlePointerDown, { capture: true });
-  c.addEventListener("pointermove", handlePointerMove, { capture: true });
-  c.addEventListener("pointerup", handlePointerUp, { capture: true });
-  c.addEventListener("pointercancel", handlePointerUp, { capture: true });
-  // マップのズーム/コンテキストメニューを封じる
-  c.addEventListener("wheel", stop, { capture: true, passive: false });
-  c.addEventListener("contextmenu", stop, { capture: true });
-  c.addEventListener("dblclick", stop, { capture: true });
+/**
+ * wplace のマップクリック popup を抑止する。
+ * pointerdown は pan のために通しているので、popup を開く click / dblclick は
+ * ここで確実に止める (下書き中に popup が出ると操作が破綻するため)。
+ */
+const blockClick = (e: Event): void => {
+  if (!active) return;
+  stop(e);
+};
+
+const handleKeyDown = (e: KeyboardEvent): void => {
+  if (!active || e.code !== "Space") return;
+  // ページスクロール抑止。入力欄にフォーカスがある時は邪魔しない
+  const el = document.activeElement;
+  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)
+    return;
+  e.preventDefault();
+  spaceHeld = true;
+  updateCursor();
+};
+
+const handleKeyUp = (e: KeyboardEvent): void => {
+  if (e.code !== "Space") return;
+  spaceHeld = false;
+  updateCursor();
+};
+
+/** 現在の操作モードが分かるようカーソルを変える */
+const updateCursor = (): void => {
+  const target = getInputTarget();
+  if (!target) return;
+  target.style.cursor = !active
+    ? ""
+    : eraseMode
+      ? "cell"
+      : spaceHeld
+        ? "crosshair"
+        : "grab";
+};
+
+let inputTarget: HTMLElement | null = null;
+
+/**
+ * NOTE: capture 段階で拾う。maplibre のハンドラより先に走らせて、
+ * 描画操作のときだけ stopPropagation で pan/zoom を抑止するため。
+ * 逆に描画でない時は素通りさせるので、純正の pan/zoom がそのまま効く。
+ */
+const attachPointerHandlers = (): void => {
+  const target = getInputTarget();
+  if (!target || inputTarget === target) return;
+  detachPointerHandlers();
+
+  target.addEventListener("pointerdown", handlePointerDown, { capture: true });
+  target.addEventListener("pointermove", handlePointerMove, { capture: true });
+  target.addEventListener("pointerup", handlePointerUp, { capture: true });
+  target.addEventListener("pointercancel", handlePointerUp, { capture: true });
+  target.addEventListener("click", blockClick, { capture: true });
+  target.addEventListener("dblclick", blockClick, { capture: true });
+  // 右ドラッグ消しゴムのため、コンテキストメニューは常に殺す
+  target.addEventListener("contextmenu", stop, { capture: true });
+  // NOTE: wheel は **止めない**。map にズームさせるため素通りさせる。
+  inputTarget = target;
+};
+
+const detachPointerHandlers = (): void => {
+  const target = inputTarget;
+  if (!target) return;
+
+  target.removeEventListener("pointerdown", handlePointerDown, {
+    capture: true,
+  });
+  target.removeEventListener("pointermove", handlePointerMove, {
+    capture: true,
+  });
+  target.removeEventListener("pointerup", handlePointerUp, { capture: true });
+  target.removeEventListener("pointercancel", handlePointerUp, {
+    capture: true,
+  });
+  target.removeEventListener("click", blockClick, { capture: true });
+  target.removeEventListener("dblclick", blockClick, { capture: true });
+  target.removeEventListener("contextmenu", stop, { capture: true });
+  target.style.cursor = "";
+  inputTarget = null;
 };
 
 // ------- render loop -------
@@ -247,6 +424,8 @@ const renderFrame = (): void => {
   const c = getOrCreateCanvas();
   if (!c) return;
   syncCanvasSize(c);
+  // map canvas が作り直された場合に備えて張り直す (同一なら no-op)
+  attachPointerHandlers();
   if (!dirty) return;
 
   const ctx = c.getContext("2d");
@@ -310,25 +489,36 @@ const detachMapListeners = (): void => {
 export const setDraftCanvasHandlers = (handlers: {
   onPaint: PaintHandler;
   onErase: EraseHandler;
+  onColorPicked: (colorId: number) => void;
 }): void => {
   onPaint = handlers.onPaint;
   onErase = handlers.onErase;
+  onColorPicked = handlers.onColorPicked;
 };
 
 export const setDraftCanvasActive = (enabled: boolean): void => {
   if (active === enabled) return;
   active = enabled;
   dirty = true;
-  drawing = false;
+  dragMode = null;
+  pendingClick = null;
   lastWorld = null;
+  spaceHeld = false;
 
   if (enabled) {
     attachMapListeners();
     getOrCreateCanvas();
+    attachPointerHandlers();
+    updateCursor();
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
     if (rafId === null) rafId = requestAnimationFrame(renderFrame);
     return;
   }
 
+  window.removeEventListener("keydown", handleKeyDown);
+  window.removeEventListener("keyup", handleKeyUp);
+  detachPointerHandlers();
   eraseMode = false;
   if (rafId !== null) {
     cancelAnimationFrame(rafId);

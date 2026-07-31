@@ -8,11 +8,18 @@ const EXPAND_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" 
 let active = false;
 let previousMapZIndex = "";
 let clickListenerAttached = false;
+/**
+ * 「クリックで自動解除」を抑止する。
+ * 下書きモードのように、focus mode 中にマップ上をクリックし続ける機能向け。
+ * (解除はその機能側の明示的な deactivateFocusMode に任せる)
+ */
+let sticky = false;
 
 const getMap = (): HTMLElement | null =>
   document.querySelector<HTMLElement>("#map");
 
 const handleDocumentClick = (event: MouseEvent) => {
+  if (sticky) return;
   const target = event.target;
   if (!(target instanceof Node)) return;
   if (document.getElementById(BUTTON_ID)?.contains(target)) return;
@@ -46,6 +53,7 @@ const deactivate = () => {
   if (!active) return;
 
   active = false;
+  sticky = false;
   const map = getMap();
   if (map) map.style.zIndex = previousMapZIndex;
   previousMapZIndex = "";
@@ -81,8 +89,20 @@ const createButton = (container: Element) => {
 };
 
 export const activateFocusMode = () => activate();
-export const deactivateFocusMode = () => deactivate();
+export const deactivateFocusMode = () => {
+  sticky = false;
+  deactivate();
+};
 export const isFocusModeActive = () => active;
+
+/**
+ * focus mode を「クリックしても解除されない」状態で有効化する。
+ * 呼んだ側が責任を持って deactivateFocusMode すること。
+ */
+export const activateStickyFocusMode = () => {
+  sticky = true;
+  activate();
+};
 
 export class FocusMode {
   constructor() {
