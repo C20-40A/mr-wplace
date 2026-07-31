@@ -93,10 +93,28 @@ const NEIGHBOR_OFFSETS = [
 // between them. Detection latency is less important than game frame time.
 const SCAN_YIELD_INTERVAL = 2048;
 const COMPONENT_YIELD_INTERVAL = 1024;
-const WORKER_YIELD_DELAY_MS = 50;
+type ScanThrottleMode = "fast" | "balanced" | "slow";
+
+const WORKER_YIELD_DELAY_FAST_MS = 12;
+const WORKER_YIELD_DELAY_BALANCED_MS = 30;
+const WORKER_YIELD_DELAY_SLOW_MS = 75;
+const SCAN_INTERVAL_FAST_MS = 1_000;
+const SCAN_INTERVAL_BALANCED_MS = 2_500;
+const FRAME_TIME_EMA_ALPHA = 0.12;
 const MAIN_THREAD_YIELD_DELAY_MS = 50;
 const TILE_SCAN_CACHE_LIMIT = 8;
 const NEARBY_CACHE_TILE_RADIUS = 3;
+const getWorkerYieldDelayMs = (mode: ScanThrottleMode) => {
+  if (mode === "fast") return WORKER_YIELD_DELAY_FAST_MS;
+  if (mode === "balanced") return WORKER_YIELD_DELAY_BALANCED_MS;
+  return WORKER_YIELD_DELAY_SLOW_MS;
+};
+
+const getScanIntervalMs = (mode: ScanThrottleMode) => {
+  if (mode === "fast") return SCAN_INTERVAL_FAST_MS;
+  if (mode === "balanced") return SCAN_INTERVAL_BALANCED_MS;
+  return DYNAMIC_ENEMY_SCAN_INTERVAL_MS;
+};
 
 const DYNAMIC_SCAN_CONFIG: ScanConfig = {
   alphaThreshold: DYNAMIC_ENEMY_ALPHA_THRESHOLD,
@@ -261,9 +279,15 @@ const scanPixelArtCandidates = async (
 const buildScannerWorkerSource = () => `
   const DYNAMIC_SCAN_CONFIG = ${JSON.stringify(DYNAMIC_SCAN_CONFIG)};
   const scanPixelArtCandidates = ${scanPixelArtCandidates.toString()};
+  let workerYieldDelayMs = ${WORKER_YIELD_DELAY_FAST_MS};
   const waitForBackgroundTurn = () => new Promise((resolve) => {
-    setTimeout(resolve, ${WORKER_YIELD_DELAY_MS});
+    setTimeout(resolve, workerYieldDelayMs);
   });
+  const setYieldDelay = (value) => {
+    const delay = Number(value);
+    if (Number.isFinite(delay))
+      workerYieldDelayMs = Math.max(4, Math.min(100, delay));
+  };
 
   const decodeInWorker = async (blob) => {
     await waitForBackgroundTurn();
@@ -280,6 +304,9 @@ const buildScannerWorkerSource = () => `
 
   self.onmessage = async (event) => {
     try {
+      setYieldDelay(event.data.yieldDelayMs);
+      if (event.data.type === "throttle") return;
+
       const { tileKey, blob, startOffset, maxCandidates, maxSize, visitedBuffer } = event.data;
       const decoded = await decodeInWorker(blob);
       const total = decoded.width * decoded.height;
@@ -385,13 +412,16 @@ export class DynamicPixelArtEnemyScanner {
   private maxSizePx = getDynamicEnemyMaxSizePx();
   private scanning = false;
   private lastScanAt = -DYNAMIC_ENEMY_SCAN_INTERVAL_MS;
+  private throttleMode: ScanThrottleMode = "fast";
+  private smoothedFrameMs = 1000 / 60;
   private version = 0;
 
   constructor(private readonly map: WplaceMap) {}
 
-  update = (now: number) => {
+  update = (now: number, frameDeltaMs?: number) => {
+    this.updateThrottle(frameDeltaMs);
     if (this.scanning) return;
-    if (now - this.lastScanAt < DYNAMIC_ENEMY_SCAN_INTERVAL_MS) return;
+    if (now - this.lastScanAt < getScanIntervalMs(this.throttleMode)) return;
 
     this.lastScanAt = now;
     this.scanning = true;
@@ -406,6 +436,36 @@ export class DynamicPixelArtEnemyScanner {
 
   getCandidates = () => this.candidates;
   getVersion = () => this.version;
+
+  private updateThrottle = (frameDeltaMs?: number) => {
+    let nextMode = this.throttleMode;
+
+    if (frameDeltaMs === undefined) {
+      // Title/pause prescan has no competing gameplay, so fill the pool quickly.
+      nextMode = "fast";
+    } else if (Number.isFinite(frameDeltaMs) && frameDeltaMs > 0) {
+      const sample = Math.min(frameDeltaMs, 50);
+      this.smoothedFrameMs +=
+        (sample - this.smoothedFrameMs) * FRAME_TIME_EMA_ALPHA;
+
+      if (this.throttleMode === "fast") {
+        if (this.smoothedFrameMs > 23) nextMode = "slow";
+        else if (this.smoothedFrameMs > 19.5) nextMode = "balanced";
+      } else if (this.throttleMode === "balanced") {
+        if (this.smoothedFrameMs < 17.5) nextMode = "fast";
+        else if (this.smoothedFrameMs > 23) nextMode = "slow";
+      } else if (this.smoothedFrameMs < 20.5) {
+        nextMode = "balanced";
+      }
+    }
+
+    if (nextMode === this.throttleMode) return;
+    this.throttleMode = nextMode;
+    scannerWorker?.postMessage({
+      type: "throttle",
+      yieldDelayMs: getWorkerYieldDelayMs(nextMode),
+    });
+  };
 
   setMaxSizePx = (sizePx: number) => {
     if (this.maxSizePx === sizePx) return;
@@ -472,6 +532,12 @@ export class DynamicPixelArtEnemyScanner {
       // 初回 (cursor 未設定) はランダム開始、以降は前回の続きから網羅走査する。
       const cursor = this.scanCursors.get(tileKey);
       const maxSizePx = this.maxSizePx;
+      console.log("🧑‍🎨 : Art cruise dynamic enemy scan started", {
+        tileKey,
+        cursor: cursor ?? "random",
+        throttle: this.throttleMode,
+        yieldDelayMs: getWorkerYieldDelayMs(this.throttleMode),
+      });
       const result = await this.extractCandidates(
         tileKey,
         blob,
@@ -513,6 +579,9 @@ export class DynamicPixelArtEnemyScanner {
       skippedCompleted,
       skippedNoBlob,
       queued: nearbyTileKeys.length,
+      throttle: this.throttleMode,
+      frameMs: Math.round(this.smoothedFrameMs * 10) / 10,
+      yieldDelayMs: getWorkerYieldDelayMs(this.throttleMode),
     });
   };
 
@@ -791,6 +860,7 @@ export class DynamicPixelArtEnemyScanner {
         maxCandidates,
         maxSize: maxSizePx,
         visitedBuffer,
+        yieldDelayMs: getWorkerYieldDelayMs(this.throttleMode),
       };
       if (visitedBuffer) worker.postMessage(message, [visitedBuffer]);
       else worker.postMessage(message);

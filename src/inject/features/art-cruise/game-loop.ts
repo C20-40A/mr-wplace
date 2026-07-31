@@ -90,7 +90,7 @@ const SCORE_NOTIFY_INTERVAL_MS = 100;
 const CONTINUE_HP = 3;
 
 type ArtCruiseEnemyScannerRuntime = ArtCruiseEnemyScannerLike & {
-  update: (now: number) => void;
+  update: (now: number, frameDeltaMs?: number) => void;
   setMaxSizePx: (sizePx: number) => void;
   destroy: () => void;
 };
@@ -622,7 +622,13 @@ export class ArtCruiseGameLoop {
   };
 
   private update = (ticker: Ticker) => {
-    if (!this.active || this.paused) return;
+    if (!this.active) return;
+    if (this.paused) {
+      // Keep filling the dynamic-enemy pool while gameplay rendering is paused.
+      this.scanner.update(performance.now());
+      this.enemyGraphics.update();
+      return;
+    }
 
     const deltaSeconds = Math.min(ticker.deltaMS / 1000, 0.05);
     this.gameTime += deltaSeconds * 1000;
@@ -632,9 +638,9 @@ export class ArtCruiseGameLoop {
     const { now, bounds } = frame;
 
     this.score.update(now);
-    // scanner は gameTime ではなく実時間で間引く (pause 復帰後の初回や
-    // タイトル画面の待機中でも 7s 間隔で確実にスキャンを走らせる)。
-    this.scanner.update(performance.now());
+    // scanner は実時間で間引きつつ、直近のフレーム時間に応じて
+    // worker のCPU使用率を自動調整する。
+    this.scanner.update(performance.now(), ticker.deltaMS);
     this.enemyGraphics.update();
     this.background.update(
       deltaSeconds,
