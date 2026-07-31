@@ -437,11 +437,13 @@ export const createFriendsBookModal = (): ModalElements => {
 
   modalElements.container.style.display = "flex";
   modalElements.container.style.flexDirection = "column";
+  modalElements.container.style.minHeight = "0";
   modalElements.container.style.height = "40rem";
+  modalElements.container.style.overflow = "hidden";
 
   modalElements.container.innerHTML = t`
     <!-- Friends List Screen -->
-    <div id="friends-list-screen" style="display: flex; flex-direction: column; height: 100%;">
+    <div id="friends-list-screen" style="display: flex; flex-direction: column; flex: 1; min-height: 0;">
       <!-- Fixed Header: Sort & Filters -->
       <div class="flex gap-2" style="flex-wrap: wrap; margin-bottom: 0.7rem; flex-shrink: 0;">
         <button id="friends-add-btn" class="btn btn-primary btn-sm">
@@ -474,7 +476,7 @@ export const createFriendsBookModal = (): ModalElements => {
       </div>
 
       <!-- Scrollable Content: Friends Grid -->
-      <div style="flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0;">
+      <div id="friends-list-scroll-area" style="flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0; touch-action: pan-y;">
         <div id="friends-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2">
         </div>
       </div>
