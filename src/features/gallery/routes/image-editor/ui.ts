@@ -3,6 +3,8 @@ import {
   ColorFlattenMode,
   DitheringMethod,
   QuantizationMethod,
+  resolveSizeFromHeight,
+  resolveSizeFromWidth,
 } from "./canvas-processor";
 import type { UIElements } from "./components/types";
 import { createDropzone } from "./components/create-dropzone";
@@ -18,6 +20,7 @@ export interface ImageEditorCallbacks {
   onFileHandle: (file: File) => void;
   onReplaceImage: (file: File) => void;
   onScaleChange: (scale: number) => void;
+  onSizeChange: (width: number, height: number) => void;
   onBrightnessChange: (value: number) => void;
   onContrastChange: (value: number) => void;
   onSaturationChange: (value: number) => void;
@@ -215,9 +218,12 @@ export class ImageEditorUI {
         const originalHeight = parseInt(
           heightInput.dataset.originalHeight || "1",
         );
-        const aspectRatio = originalHeight / originalWidth;
-        heightInput.value = Math.round(width * aspectRatio).toString();
-        const scale = width / originalWidth;
+        const { height, scale } = resolveSizeFromWidth(
+          originalWidth,
+          originalHeight,
+          width,
+        );
+        heightInput.value = height.toString();
         const nextMaxScale = Math.max(1, parseFloat(scaleMaxInput.value) || 1, scale);
         scaleMaxInput.value = nextMaxScale.toString();
         scaleSlider.max = nextMaxScale.toString();
@@ -237,9 +243,12 @@ export class ImageEditorUI {
         const originalHeight = parseInt(
           heightInput.dataset.originalHeight || "1",
         );
-        const aspectRatio = originalWidth / originalHeight;
-        widthInput.value = Math.round(height * aspectRatio).toString();
-        const scale = height / originalHeight;
+        const { width, scale } = resolveSizeFromHeight(
+          originalWidth,
+          originalHeight,
+          height,
+        );
+        widthInput.value = width.toString();
         const nextMaxScale = Math.max(1, parseFloat(scaleMaxInput.value) || 1, scale);
         scaleMaxInput.value = nextMaxScale.toString();
         scaleSlider.max = nextMaxScale.toString();
@@ -283,14 +292,19 @@ export class ImageEditorUI {
 
     switch (target.id) {
       case "wps-scale-slider":
-      case "wps-scale-max-input":
-      case "wps-width-input":
-      case "wps-height-input": {
+      case "wps-scale-max-input": {
         const scale = parseFloat(
           (this.elements.scaleSlider as HTMLInputElement).value,
         );
         const maxScale = this.getScaleMax();
         this.callbacks.onScaleChange(Math.max(MIN_SCALE, Math.min(maxScale, scale)));
+        break;
+      }
+      case "wps-width-input":
+      case "wps-height-input": {
+        const width = parseInt((this.elements.widthInput as HTMLInputElement).value) || 1;
+        const height = parseInt((this.elements.heightInput as HTMLInputElement).value) || 1;
+        this.callbacks.onSizeChange(width, height);
         break;
       }
       case "wps-brightness-slider":

@@ -8,6 +8,12 @@ export type {
 export { DEFAULT_QUANTIZATION_METHOD } from "./canvas-processor/types";
 
 export { createOutlinePreservedBitmap } from "./canvas-processor/outline";
+export type { TargetSize } from "./canvas-processor/resize-size";
+export {
+  resolveSizeFromScale,
+  resolveSizeFromWidth,
+  resolveSizeFromHeight,
+} from "./canvas-processor/resize-size";
 export {
   applyTransparentColors,
   quantizeToColorPalette,
@@ -15,6 +21,5 @@ export {
 } from "./canvas-processor/quantization";
 export {
   applyImageAdjustments,
-  createProcessedCanvas,
   createProcessedCanvasFromBitmap,
 } from "./canvas-processor/processing";

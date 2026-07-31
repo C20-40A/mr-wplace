@@ -1,5 +1,6 @@
 import { createResizedImageBitmap } from "@/utils/image-bitmap-compat";
 import type { OutlinePreserveOptions } from "./types";
+import type { TargetSize } from "./resize-size";
 
 const parseHexColor = (hex: string): [number, number, number] | null => {
   const normalized = hex.trim().toLowerCase();
@@ -237,13 +238,12 @@ const dilateMask = (
 
 export const createOutlinePreservedBitmap = async (
   source: HTMLImageElement,
-  scale: number,
+  targetSize: TargetSize,
   options: OutlinePreserveOptions
 ): Promise<ImageBitmap> => {
   const sourceWidth = source.naturalWidth;
   const sourceHeight = source.naturalHeight;
-  const targetWidth = Math.max(1, Math.round(sourceWidth * scale));
-  const targetHeight = Math.max(1, Math.round(sourceHeight * scale));
+  const { width: targetWidth, height: targetHeight } = targetSize;
 
   const resizedBitmap = await createResizedImageBitmap(source, {
     width: targetWidth,
@@ -251,7 +251,8 @@ export const createOutlinePreservedBitmap = async (
     quality: "pixelated",
   });
 
-  if (!options.enabled || scale >= 1 || sourceWidth < 2 || sourceHeight < 2) {
+  const isUpscale = targetWidth >= sourceWidth && targetHeight >= sourceHeight;
+  if (!options.enabled || isUpscale || sourceWidth < 2 || sourceHeight < 2) {
     return resizedBitmap;
   }
 

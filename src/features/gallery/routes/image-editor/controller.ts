@@ -32,6 +32,8 @@ import {
   DitheringMethod,
   ImageAdjustments,
   QuantizationMethod,
+  resolveSizeFromScale,
+  TargetSize,
 } from "./canvas-processor";
 
 const MIN_SCALE = 0.1;
@@ -47,6 +49,9 @@ export class EditorController {
   private originalImage: HTMLImageElement | null = null;
   private scaledCanvas: HTMLCanvasElement | null = null;
   private imageScale = 1.0;
+  // width/height手動入力時のみ設定される明示サイズ。scale経由の往復丸め誤差を避けるため、
+  // 存在する間はimageScaleではなくこちらを実際のリサイズ寸法として使う。
+  private manualTargetSize: TargetSize | null = null;
   private selectedColorIds: number[] = [];
   private brightness = 0;
   private contrast = 0;
@@ -76,7 +81,7 @@ export class EditorController {
   private cachedResizedBitmap: ImageBitmap | null = null;
   private cachedOutlineBitmap: ImageBitmap | null = null;
   private cachedOutlineKey = "";
-  private cachedScale = 1.0;
+  private cachedScale = "";
   private readonly inspectorContainerSize = 300;
   private transparencyMaskEditor = new TransparencyMaskEditor();
   private adjustToolMode: ImageAdjustToolMode | null = null;
@@ -221,7 +226,26 @@ export class EditorController {
 
   onScaleChange(scale: number): void {
     this.imageScale = scale;
+    this.manualTargetSize = null;
     // スケール変更時はキャッシュをクリア
+    if (this.cachedResizedBitmap) {
+      this.cachedResizedBitmap.close();
+      this.cachedResizedBitmap = null;
+    }
+    this.clearOutlineBitmapCache();
+    this.updateScaledImage();
+  }
+
+  /**
+   * width/height手動入力時に呼ばれる。scale経由の往復丸めを避け、
+   * 入力されたpx数をそのまま最終リサイズ寸法として使う。
+   */
+  onSizeChange(width: number, height: number): void {
+    if (!this.originalImage) return;
+    const targetWidth = Math.max(1, Math.round(width));
+    const targetHeight = Math.max(1, Math.round(height));
+    this.manualTargetSize = { width: targetWidth, height: targetHeight };
+    this.imageScale = targetWidth / this.originalImage.naturalWidth;
     if (this.cachedResizedBitmap) {
       this.cachedResizedBitmap.close();
       this.cachedResizedBitmap = null;
@@ -420,8 +444,11 @@ export class EditorController {
       MIN_SCALE,
       Math.min(widthScale, heightScale),
     );
-    const nextWidth = Math.max(1, Math.round(originalWidth * nextScale));
-    const nextHeight = Math.max(1, Math.round(originalHeight * nextScale));
+    const { width: nextWidth, height: nextHeight } = resolveSizeFromScale(
+      originalWidth,
+      originalHeight,
+      nextScale,
+    );
 
     if (scaleMaxInput) {
       scaleMaxInput.value = Math.max(1, nextScale).toString();
@@ -686,7 +713,8 @@ export class EditorController {
     this.originalImage = null;
     this.scaledCanvas = null;
     this.imageScale = 1.0;
-    this.cachedScale = 1.0;
+    this.manualTargetSize = null;
+    this.cachedScale = "";
     this.brightness = 0;
     this.contrast = 0;
     this.saturation = 0;
@@ -1030,6 +1058,8 @@ export class EditorController {
     }
     this.clearOutlineBitmapCache();
     this.transparencyMaskEditor.clear();
+    this.imageScale = 1.0;
+    this.manualTargetSize = null;
 
     if (originalImage) {
       originalImage.src = imageSrc;
@@ -1162,13 +1192,12 @@ export class EditorController {
           const originalWidth = this.originalImage.naturalWidth;
           const originalHeight = this.originalImage.naturalHeight;
 
-          // 現在のscaleを維持してサイズを更新
-          widthInput.value = Math.round(
-            originalWidth * this.imageScale,
-          ).toString();
-          heightInput.value = Math.round(
-            originalHeight * this.imageScale,
-          ).toString();
+          // 新しい画像に対してmanual指定は無効化し、現在のscaleを維持してサイズを更新
+          this.manualTargetSize = null;
+          const { width: sizedWidth, height: sizedHeight } =
+            resolveSizeFromScale(originalWidth, originalHeight, this.imageScale);
+          widthInput.value = sizedWidth.toString();
+          heightInput.value = sizedHeight.toString();
           widthInput.dataset.originalWidth = originalWidth.toString();
           widthInput.dataset.originalHeight = originalHeight.toString();
           if (slider) {
@@ -1366,10 +1395,28 @@ export class EditorController {
     };
   }
 
+  /**
+   * 実際にリサイズすべきpx寸法を返す。manual入力(width/height)が設定されていれば
+   * それを最優先し、なければimageScaleから算出する。全リサイズ経路の唯一の窓口。
+   */
+  private resolveTargetSize(): TargetSize | null {
+    if (!this.originalImage) return null;
+    if (this.manualTargetSize) return this.manualTargetSize;
+    return resolveSizeFromScale(
+      this.originalImage.naturalWidth,
+      this.originalImage.naturalHeight,
+      this.imageScale,
+    );
+  }
+
   private async ensureResizedBitmap(): Promise<ImageBitmap | null> {
     if (!this.originalImage) return null;
 
-    if (this.cachedResizedBitmap && this.cachedScale === this.imageScale) {
+    const targetSize = this.resolveTargetSize();
+    if (!targetSize) return null;
+    const cacheKey = `${targetSize.width}x${targetSize.height}`;
+
+    if (this.cachedResizedBitmap && this.cachedScale === cacheKey) {
       return this.cachedResizedBitmap;
     }
 
@@ -1377,12 +1424,6 @@ export class EditorController {
 
     const { createResizedImageBitmap } =
       await import("@/utils/image-bitmap-compat");
-    const newWidth = Math.round(
-      this.originalImage.naturalWidth * this.imageScale,
-    );
-    const newHeight = Math.round(
-      this.originalImage.naturalHeight * this.imageScale,
-    );
 
     if (this.cachedResizedBitmap) {
       this.cachedResizedBitmap.close();
@@ -1391,21 +1432,23 @@ export class EditorController {
     this.cachedResizedBitmap = await createResizedImageBitmap(
       this.originalImage,
       {
-        width: newWidth,
-        height: newHeight,
+        width: targetSize.width,
+        height: targetSize.height,
         quality: "pixelated",
       },
     );
-    this.cachedScale = this.imageScale;
+    this.cachedScale = cacheKey;
     this.clearOutlineBitmapCache();
     return this.cachedResizedBitmap;
   }
 
   private buildOutlineCacheKey(): string {
     if (!this.originalImage) return "";
+    const targetSize = this.resolveTargetSize();
+    if (!targetSize) return "";
 
     return [
-      this.imageScale.toFixed(4),
+      `${targetSize.width}x${targetSize.height}`,
       this.outlineThreshold,
       this.outlineWidth,
       this.outlineUseFixedColor ? 1 : 0,
@@ -1419,7 +1462,12 @@ export class EditorController {
     const resizedBitmap = await this.ensureResizedBitmap();
     if (!resizedBitmap || !this.originalImage) return null;
 
-    if (!this.outlineEnabled || this.imageScale >= 1) {
+    const targetSize = this.resolveTargetSize();
+    const isUpscale =
+      !targetSize ||
+      (targetSize.width >= this.originalImage.naturalWidth &&
+        targetSize.height >= this.originalImage.naturalHeight);
+    if (!this.outlineEnabled || isUpscale) {
       this.clearOutlineBitmapCache();
       return resizedBitmap;
     }
@@ -1431,7 +1479,7 @@ export class EditorController {
       this.clearOutlineBitmapCache();
       this.cachedOutlineBitmap = await createOutlinePreservedBitmap(
         this.originalImage,
-        this.imageScale,
+        targetSize,
         {
           enabled: true,
           threshold: this.outlineThreshold,

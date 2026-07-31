@@ -33,6 +33,7 @@ export class GalleryImageEditor {
       onFileHandle: (file) => this.controller?.handleFile(file),
       onReplaceImage: (file) => this.controller?.replaceImage(file),
       onScaleChange: (scale) => this.controller?.onScaleChange(scale),
+      onSizeChange: (width, height) => this.controller?.onSizeChange(width, height),
       onBrightnessChange: (value) => this.controller?.onBrightnessChange(value),
       onContrastChange: (value) => this.controller?.onContrastChange(value),
       onSaturationChange: (value) => this.controller?.onSaturationChange(value),

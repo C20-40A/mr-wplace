@@ -1,5 +1,4 @@
 import { colorpalette } from "@/constants/colors";
-import { createResizedImageBitmap } from "@/utils/image-bitmap-compat";
 import { gpuProcessImage } from "../gpu-image-processor";
 import {
   applyTransparentColors,
@@ -326,37 +325,3 @@ export const createProcessedCanvasFromBitmap = async (
   );
 };
 
-export const createProcessedCanvas = async (
-  img: HTMLImageElement,
-  scale: number,
-  adjustments: ImageAdjustments,
-  selectedColorIds: number[],
-  ditheringEnabled = false,
-  ditheringThreshold = 500,
-  ditheringMethod: DitheringMethod = "ordered",
-  useGpu = true,
-  quantizationMethod: QuantizationMethod = DEFAULT_QUANTIZATION_METHOD,
-  colorFlattenMode: ColorFlattenMode = "none"
-): Promise<HTMLCanvasElement> => {
-  const resizedBitmap = await createResizedImageBitmap(img, {
-    width: Math.round(img.naturalWidth * scale),
-    height: Math.round(img.naturalHeight * scale),
-    quality: "pixelated",
-  });
-
-  try {
-    return await createProcessedCanvasFromBitmap(
-      resizedBitmap,
-      adjustments,
-      selectedColorIds,
-      ditheringEnabled,
-      ditheringThreshold,
-      ditheringMethod,
-      useGpu,
-      quantizationMethod,
-      colorFlattenMode
-    );
-  } finally {
-    resizedBitmap.close();
-  }
-};
