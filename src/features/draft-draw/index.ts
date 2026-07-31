@@ -38,6 +38,29 @@ const FAB_ID = "mr-wplace-draft-fab";
 const TOOLBAR_ID = "mr-wplace-draft-toolbar";
 const HINT_ID = "mr-wplace-draft-hint";
 const NOTICE_ID = "mr-wplace-draft-notice";
+const CLOSE_ID = "mr-wplace-draft-close";
+const COLOR_TIP_ID = "mr-wplace-draft-color-tip";
+const COLOR_STRIP_ID = "mr-wplace-draft-colors";
+
+/**
+ * パレットの行数まわり。**行数**を 2-8 に収め、列は横幅ぶん好きなだけ使う。
+ * 色数は固定なので「行数 = ceil(色数 / 列数)」。列数を横幅から決めれば
+ * 行数が決まるので、行が 8 を超えないだけの列数を下限として要求する。
+ */
+const COLOR_MIN_ROWS = 2;
+const COLOR_MAX_ROWS = 8;
+/** スウォッチの下限/上限。狭い画面で潰れず、広い画面で巨大化しないように */
+const COLOR_SWATCH_MIN_PX = 22;
+const COLOR_SWATCH_MAX_PX = 40;
+
+/**
+ * ツールバーアイコン (lucide)。`stroke="currentColor"` なので
+ * theme の文字色に追従する。
+ */
+const ICON_ATTRS =
+  'width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+const ERASER_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21"/><path d="m5.082 11.09 8.828 8.828"/></svg>`;
+const BUCKET_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M11 7 6 2"/><path d="M18.992 12H2.041"/><path d="M21.145 18.38A3.34 3.34 0 0 1 20 16.5a3.3 3.3 0 0 1-1.145 1.88c-.575.46-.855 1.02-.855 1.595A2 2 0 0 0 20 22a2 2 0 0 0 2-2.025c0-.58-.285-1.13-.855-1.595"/><path d="m8.5 4.5 2.148-2.148a1.205 1.205 0 0 1 1.704 0l7.296 7.296a1.205 1.205 0 0 1 0 1.704l-7.592 7.592a3.615 3.615 0 0 1-5.112 0l-3.888-3.888a3.615 3.615 0 0 1 0-5.112L5.67 7.33"/></svg>`;
 /** 下書き保存で作られたギャラリー item。再保存で上書きする */
 const SAVED_KEY_PREFIX = "draft-";
 
@@ -55,6 +78,8 @@ export class DraftDraw {
   private saving = false;
   /** 保存済みギャラリーitemのkey。2回目以降は更新扱いにする */
   private savedKey: string | null = null;
+  /** 最後に保存した時点の pixelCount。未保存変更の判定に使う */
+  private savedPixelCount = 0;
   /** 下書き編集で開始した場合の元item。保存時にtitle等を引き継ぐ */
   private seedItem: GalleryItem | null = null;
 
@@ -189,10 +214,14 @@ export class DraftDraw {
     this.bucket = false;
     this.pixelCount = 0;
     this.savedKey = null;
+    this.savedPixelCount = 0;
     this.seedItem = null;
     document.getElementById(TOOLBAR_ID)?.remove();
     document.getElementById(HINT_ID)?.remove();
     document.getElementById(NOTICE_ID)?.remove();
+    document.getElementById(CLOSE_ID)?.remove();
+    this.hideColorTip();
+    window.removeEventListener("resize", this.handleResize);
   }
 
   /** 既存 gallery item のピクセルを下書きへ読み込む (下書き編集) */
@@ -205,7 +234,9 @@ export class DraftDraw {
     });
     if (!dataUrl) return;
 
-    await requestDraftSeed(dataUrl, item.drawPosition);
+    const seeded = await requestDraftSeed(dataUrl, item.drawPosition);
+    // seed 直後の状態は「保存済みの内容そのもの」なので未保存変更に数えない
+    this.savedPixelCount = seeded;
   }
 
   /**
@@ -252,44 +283,79 @@ export class DraftDraw {
 
     const sheet = document.createElement("div");
     sheet.id = TOOLBAR_ID;
-    // 下辺密着 + 全幅。角丸は上側のみ (bottom sheet の見た目)
-    sheet.className =
-      "bg-base-100 border-base-300 fixed right-0 bottom-0 left-0 flex flex-col gap-2 border-t px-3 pt-2 shadow-xl";
+    // 色は theme 変数で拾う (固定色は使わない)。レイアウトは inline style。
     // focus mode が #map を z-index:1000 に上げるため、それより前に出す
-    sheet.style.zIndex = "1001";
-    sheet.style.borderTopLeftRadius = "1rem";
-    sheet.style.borderTopRightRadius = "1rem";
-    // ホームバー等のセーフエリアを避ける
-    sheet.style.paddingBottom = "calc(env(safe-area-inset-bottom, 0px) + 8px)";
+    sheet.style.cssText = [
+      "position:fixed;right:0;bottom:0;left:0;z-index:1001",
+      "display:flex;flex-direction:column;gap:8px",
+      "padding:8px 12px calc(env(safe-area-inset-bottom, 0px) + 8px)",
+      "background:var(--color-base-100)",
+      "border-top:1px solid var(--color-base-300)",
+      "border-top-left-radius:1rem;border-top-right-radius:1rem",
+      "box-shadow:0 -4px 12px rgb(0 0 0 / 0.15)",
+    ].join(";");
 
     sheet.appendChild(this.buildColorStrip());
     sheet.appendChild(this.buildActionRow());
 
     document.body.appendChild(sheet);
-    // 操作説明は sheet の「外・上」。sheet の実高さを測ってその真上に置く
+    // 操作説明と閉じるボタンは sheet の「外」。実高さを測って追従させる
     document.body.appendChild(this.buildHintRow());
-    this.positionHint();
+    document.getElementById(CLOSE_ID)?.remove();
+    document.body.appendChild(this.buildCloseButton());
 
+    // 幅が変わると列数もスウォッチサイズも変わるので追従させる
+    window.addEventListener("resize", this.handleResize);
+
+    this.layoutColorStrip();
+    this.positionOverlays();
     this.updateToolbar();
   }
 
-  /** 操作説明を sheet の直上へ配置する (sheet の高さは内容で変わるため実測) */
-  private positionHint(): void {
+  /** 画面幅の変化に合わせてパレット列数と外側要素の位置を組み直す */
+  private handleResize = (): void => {
+    this.layoutColorStrip();
+    this.positionOverlays();
+  };
+
+  /**
+   * sheet の外に置いた要素 (操作説明 / 閉じるボタン) を sheet の直上へ配置する。
+   * sheet の高さは内容 (ボタン文言) で変わるため毎回実測する。
+   *
+   * 閉じるボタンは操作説明と**同じ段**に置く (右端に丸バツ)。
+   * hint は中央寄せの text なので、右端のボタンとは重ならない。
+   */
+  private positionOverlays(): void {
     const sheet = document.getElementById(TOOLBAR_ID);
+    if (!sheet) return;
+    const sheetHeight = sheet.offsetHeight;
+
+    const close = document.getElementById(CLOSE_ID);
+    const closeHeight = close?.offsetHeight ?? 0;
+    // 丸ボタンの方が背が高いので、その中心に text を合わせる
+    if (close) close.style.bottom = `${sheetHeight + 4}px`;
+
     const hint = document.getElementById(HINT_ID);
-    if (!sheet || !hint) return;
-    hint.style.bottom = `${sheet.offsetHeight + 4}px`;
+    if (hint)
+      hint.style.bottom = `${sheetHeight + 4 + Math.max((closeHeight - hint.offsetHeight) / 2, 0)}px`;
   }
 
   /**
    * パレット。選択は localStorage 経由で inject 側の描画色になる。
    *
-   * NOTE: 縦スクロール(`overflow-y:auto`)は使わない。モバイルで drag が
-   * 効かなくなる既知の問題があるため、bottom sheet では横スクロールにする。
+   * レイアウト: **行数を 2-8 に収める**。列は横幅ぶん好きなだけ使ってよい。
+   * 色数は固定なので列数から行数が決まる。横幅に収まる列数を出したうえで、
+   * 「8行を超えない最小列数」を下限、「2行を下回らない最大列数」を上限にする。
+   * これで縦スクロールが不要になり、地図を隠す高さにもならない。
+   *
+   * NOTE: 拡張機能なので Tailwind のユーティリティが効かない場面がある。
+   * レイアウトは class ではなく **inline style** で組む。
    */
   private buildColorStrip(): HTMLElement {
     const strip = document.createElement("div");
-    strip.className = "flex flex-wrap justify-center gap-1";
+    strip.id = COLOR_STRIP_ID;
+    strip.style.cssText =
+      "display:grid;gap:4px;margin:0 auto;justify-content:center;";
 
     for (const color of colorpalette) {
       if (color.id === TRANSPARENT_COLOR_ID) continue;
@@ -297,9 +363,10 @@ export class DraftDraw {
       const swatch = document.createElement("button");
       swatch.type = "button";
       swatch.dataset.colorId = String(color.id);
-      swatch.title = color.name;
-      swatch.className = "draft-swatch rounded-sm";
-      swatch.style.cssText = `width:20px;height:20px;background:rgb(${color.rgb.join(",")});border:2px solid transparent;`;
+      swatch.dataset.colorName = color.name;
+      swatch.className = "draft-swatch";
+      // 正方形。実サイズは layoutColorStrip が列数と一緒に決める
+      swatch.style.cssText = `aspect-ratio:1;border-radius:2px;background:rgb(${color.rgb.join(",")});border:2px solid transparent;padding:0;cursor:pointer;`;
       swatch.addEventListener("click", () => {
         localStorage.setItem(SELECTED_COLOR_KEY, String(color.id));
         // 色を選んだら描画に戻す (バケツは色選択後も使いたいので維持)
@@ -307,21 +374,98 @@ export class DraftDraw {
         sendDraftEraseModeToInject(false);
         this.updateToolbar();
       });
+      swatch.addEventListener("pointerenter", () =>
+        this.showColorTip(swatch, color.name),
+      );
+      swatch.addEventListener("pointerleave", () => this.hideColorTip());
       strip.appendChild(swatch);
     }
 
+    // スウォッチから離れる/選び直す時に吹き出しが残らないようにする
+    strip.addEventListener("pointerleave", () => this.hideColorTip());
     return strip;
   }
 
+  /**
+   * パレットの列数とスウォッチサイズを実幅から決める。
+   *
+   * 行数を 2-8 に収めたいので、色数 n に対して
+   *   - 8行以内にするための最小列数 = ceil(n / 8)
+   *   - 2行を割らないための最大列数 = ceil(n / 2)
+   * の範囲で、実幅に収まる最大の列数を選ぶ。
+   * 列が決まればスウォッチ幅は「余白を除いた幅 / 列数」で確定する。
+   */
+  private layoutColorStrip(): void {
+    const strip = document.getElementById(COLOR_STRIP_ID);
+    const sheet = document.getElementById(TOOLBAR_ID);
+    if (!strip || !sheet) return;
+
+    const count = strip.childElementCount;
+    if (!count) return;
+
+    const gap = 4;
+    // sheet の左右 padding (12px * 2) を引いた実利用可能幅
+    const available = Math.max(sheet.clientWidth - 24, COLOR_SWATCH_MIN_PX);
+
+    const minCols = Math.ceil(count / COLOR_MAX_ROWS);
+    const maxCols = Math.ceil(count / COLOR_MIN_ROWS);
+    // 最小スウォッチ幅で何列入るか → 行数制約でクランプ
+    const fitCols = Math.floor((available + gap) / (COLOR_SWATCH_MIN_PX + gap));
+    const cols = Math.max(minCols, Math.min(fitCols, maxCols));
+
+    // 列が決まったら余白を分け合う。広すぎる画面で巨大化しないよう上限を掛ける
+    const size = Math.min(
+      Math.floor((available - gap * (cols - 1)) / cols),
+      COLOR_SWATCH_MAX_PX,
+    );
+
+    strip.style.gridTemplateColumns = `repeat(${cols},${size}px)`;
+  }
+
+  /**
+   * 色名の吹き出し。hover で即座に出す (title 属性のような遅延を避ける)。
+   * 要素は1つを使い回し、位置と文言だけ差し替える。
+   */
+  private showColorTip(swatch: HTMLElement, name: string): void {
+    let tip = document.getElementById(COLOR_TIP_ID);
+    if (!tip) {
+      tip = document.createElement("div");
+      tip.id = COLOR_TIP_ID;
+      tip.style.cssText = [
+        "position:fixed;z-index:1003;pointer-events:none",
+        "padding:2px 8px;border-radius:6px",
+        "background:var(--color-neutral);color:var(--color-neutral-content)",
+        "font-size:12px;line-height:1.4;white-space:nowrap",
+        "box-shadow:0 2px 8px rgb(0 0 0 / 0.2)",
+      ].join(";");
+      document.body.appendChild(tip);
+    }
+
+    // 先に文言を入れてから測る (サイズが文字数で変わるため)
+    tip.textContent = name;
+    const rect = swatch.getBoundingClientRect();
+    const { offsetWidth: tipW, offsetHeight: tipH } = tip;
+    // スウォッチの真上・中央。画面端でははみ出さないよう clamp する
+    tip.style.top = `${rect.top - tipH - 6}px`;
+    tip.style.left = `${Math.min(Math.max(rect.left + rect.width / 2 - tipW / 2, 4), window.innerWidth - tipW - 4)}px`;
+  }
+
+  private hideColorTip(): void {
+    document.getElementById(COLOR_TIP_ID)?.remove();
+  }
+
+  /** 保存 / 消しゴム / バケツ を横一列で中央寄せ */
   private buildActionRow(): HTMLElement {
     const row = document.createElement("div");
-    row.className = "flex items-center justify-center gap-2";
+    row.style.cssText =
+      "display:flex;align-items:center;justify-content:center;gap:8px;";
 
     const eraser = document.createElement("button");
     eraser.id = `${TOOLBAR_ID}-eraser`;
     eraser.type = "button";
-    eraser.className = "btn btn-sm";
-    eraser.textContent = t`${"draft_eraser"}`;
+    eraser.className = "btn btn-sm btn-square";
+    eraser.innerHTML = ERASER_ICON_SVG;
+    eraser.title = t`${"draft_eraser"}`;
     eraser.addEventListener("click", () => {
       this.erasing = !this.erasing;
       // 排他: バケツとは同時に使えない
@@ -334,8 +478,8 @@ export class DraftDraw {
     const bucket = document.createElement("button");
     bucket.id = `${TOOLBAR_ID}-bucket`;
     bucket.type = "button";
-    bucket.className = "btn btn-sm";
-    bucket.textContent = "🪣";
+    bucket.className = "btn btn-sm btn-square";
+    bucket.innerHTML = BUCKET_ICON_SVG;
     bucket.title = t`${"draft_bucket"}`;
     bucket.addEventListener("click", () => {
       this.bucket = !this.bucket;
@@ -353,14 +497,54 @@ export class DraftDraw {
       "background:var(--color-warning); color:var(--color-warning-content);";
     save.addEventListener("click", () => void this.save());
 
-    const close = document.createElement("button");
-    close.type = "button";
-    close.className = "btn btn-sm btn-ghost";
-    close.textContent = t`${"close"}`;
-    close.addEventListener("click", () => this.exitDraftMode());
-
-    row.append(eraser, bucket, save, close);
+    // 閉じるは sheet の外 (右上の丸バツ) なのでここには入れない
+    row.append(save, eraser, bucket);
     return row;
+  }
+
+  /**
+   * 閉じるボタン。sheet の**外・右上**に丸バツで浮かせ、操作説明と同じ段に並べる。
+   * sheet 内に置くと保存ボタンの隣で誤爆しやすいため、物理的に離す。
+   * 位置は sheet の実高さに追従させる (`positionOverlays`)。
+   */
+  private buildCloseButton(): HTMLElement {
+    const close = document.createElement("button");
+    close.id = CLOSE_ID;
+    close.type = "button";
+    close.style.cssText = [
+      "position:fixed;right:12px;z-index:1002",
+      "display:flex;align-items:center;justify-content:center",
+      "width:32px;height:32px;padding:0",
+      "border-radius:9999px;cursor:pointer",
+      "background:var(--color-base-100)",
+      "border:1px solid var(--color-base-300)",
+      "color:var(--color-base-content)",
+      "font-size:14px;line-height:1",
+      "box-shadow:0 2px 8px rgb(0 0 0 / 0.2)",
+    ].join(";");
+    close.textContent = "✕";
+    close.title = t`${"close"}`;
+    close.addEventListener("click", () => this.requestExit());
+    return close;
+  }
+
+  /**
+   * 未保存の変更があるなら確認してから閉じる。
+   * 下書きは保存しない限り全部消えるので、事故防止に simple confirm を挟む。
+   */
+  private requestExit(): void {
+    if (this.hasUnsavedChanges() && !confirm(t`${"draft_discard_confirm"}`))
+      return;
+    this.exitDraftMode();
+  }
+
+  /**
+   * 「保存後に描き足したか」で判定する。
+   * pixelCount は inject から届く現在の下書きピクセル数なので、
+   * 最後に保存した時点の数と違えば未保存の変更あり扱いにする。
+   */
+  private hasUnsavedChanges(): boolean {
+    return this.pixelCount > 0 && this.pixelCount !== this.savedPixelCount;
   }
 
   /**
@@ -371,11 +555,15 @@ export class DraftDraw {
   private buildHintRow(): HTMLElement {
     const hint = document.createElement("div");
     hint.id = HINT_ID;
-    hint.className =
-      "text-base-content/50 pointer-events-none fixed right-0 left-0 text-center text-[10px] leading-tight";
-    hint.style.zIndex = "1001";
+    // 右端は閉じるボタンの居場所なので空けておく (同じ段に並ぶため)
+    hint.style.cssText = [
+      "position:fixed;left:0;right:52px;z-index:1001",
+      "pointer-events:none;text-align:center",
+      "font-size:10px;line-height:1.2",
+      "color:color-mix(in oklab, var(--color-base-content) 50%, transparent)",
+    ].join(";");
     hint.textContent =
-      "🖱️ dot / drag = move / Space+drag = draw / mid = spoit / right = erase";
+      "🖱️ dot / drag = move / Space+move = draw / mid = spoit / right = erase";
     return hint;
   }
 
@@ -386,6 +574,9 @@ export class DraftDraw {
     if (!this.enabled) {
       bar.remove();
       document.getElementById(HINT_ID)?.remove();
+      document.getElementById(CLOSE_ID)?.remove();
+      this.hideColorTip();
+      window.removeEventListener("resize", this.handleResize);
       return;
     }
 
@@ -397,17 +588,18 @@ export class DraftDraw {
           ? "var(--color-primary)"
           : "transparent";
 
+    // NOTE: btn-square を落とすとアイコンボタンが潰れるので必ず維持する
     const eraser = document.getElementById(
       `${TOOLBAR_ID}-eraser`,
     ) as HTMLButtonElement | null;
     if (eraser)
-      eraser.className = `btn btn-sm${this.erasing ? " btn-primary" : ""}`;
+      eraser.className = `btn btn-sm btn-square${this.erasing ? " btn-primary" : ""}`;
 
     const bucket = document.getElementById(
       `${TOOLBAR_ID}-bucket`,
     ) as HTMLButtonElement | null;
     if (bucket)
-      bucket.className = `btn btn-sm${this.bucket ? " btn-primary" : ""}`;
+      bucket.className = `btn btn-sm btn-square${this.bucket ? " btn-primary" : ""}`;
 
     const save = document.getElementById(
       `${TOOLBAR_ID}-save`,
@@ -420,7 +612,7 @@ export class DraftDraw {
     save.textContent = `${label}${this.pixelCount > 0 ? ` (${this.pixelCount})` : ""}`;
 
     // ボタン文言で sheet の高さが変わりうるので毎回追従させる
-    this.positionHint();
+    this.positionOverlays();
   }
 
   /** 下書きを gallery へ保存 (2回目以降は同じitemを更新) */
@@ -456,6 +648,8 @@ export class DraftDraw {
       await sendGalleryImagesToInject();
 
       this.savedKey = key;
+      // ここまでの内容は保存済み = 未保存変更なしの基準にする
+      this.savedPixelCount = this.pixelCount;
       Toast.show(t`${"saved_to_gallery"}`, "success");
     } catch (error) {
       console.error("🧑‍🎨 : Failed to save draft:", error);

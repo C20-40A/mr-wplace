@@ -26,7 +26,7 @@ import { computeBucketFill } from "./draft-bucket-fill";
  * 操作体系:
  * - 左クリック単発      : dot を1つ置く
  * - 左ドラッグ          : マップを平行移動 (map へ委譲)
- * - Space + 左ドラッグ  : 連続 dotting
+ * - Space 押下中に移動  : 連続 dotting (**クリック不要**。押しっぱなしでなぞるだけ)
  * - 中クリック          : spoit (その座標の色を拾って選択色にする)
  * - 右ドラッグ          : 消しゴム
  * - ホイール            : マップのズーム (map へ委譲)
@@ -76,6 +76,11 @@ type DragMode = "draw" | "erase";
 let dragMode: DragMode | null = null;
 /** 直前に塗った world pixel (線形補間の起点) */
 let lastWorld: { x: number; y: number } | null = null;
+/**
+ * 最後に観測したポインタ位置。Space を押した瞬間に
+ * 「今カーソルがある場所」から塗り始めるために保持する。
+ */
+let lastPointer: { x: number; y: number } | null = null;
 /** pan と単発クリックを区別するための押下位置 */
 let pendingClick: { x: number; y: number } | null = null;
 /** この距離以内で離したら「クリック」扱い (手ブレ許容) */
@@ -298,15 +303,16 @@ const stop = (e: Event): void => {
 /**
  * 押下時に操作の種類を決める。
  * - 右ボタン、またはツールバーの消しゴムON → erase
- * - Space 押下中 → draw (連続)
  * - それ以外の左ボタン → まだ確定しない (単発クリックなら dot、
  *   動かしたら map の pan。pointerdown を止めないので map が pan を担当する)
+ *
+ * NOTE: Space 押下中の描画はここでは扱わない。ボタンを一切押さずに
+ * なぞるだけで塗る仕様なので、pointermove 側 (spaceHeld) が担当する。
  */
 const resolveDragMode = (e: PointerEvent): DragMode | null => {
   if (e.button === 2) return "erase";
   if (e.button !== 0) return null;
   if (eraseMode) return "erase";
-  if (spaceHeld) return "draw";
   return null;
 };
 
@@ -317,6 +323,18 @@ const handlePointerDown = (e: PointerEvent): void => {
   if (e.button === 1) {
     stop(e);
     pickColorAt(e.clientX, e.clientY);
+    return;
+  }
+
+  // Space 中は「なぞって塗る」モード。ここで pan させると塗りながら地図が
+  // 動いてしまうので、左押下は map へ渡さず塗りとして扱う
+  if (spaceHeld && e.button === 0) {
+    stop(e);
+    const world = screenToWorldPixel(e.clientX, e.clientY);
+    if (world) {
+      paintLine(lastWorld, world, eraseMode ? "erase" : "draw");
+      lastWorld = world;
+    }
     return;
   }
 
@@ -337,12 +355,19 @@ const handlePointerDown = (e: PointerEvent): void => {
 };
 
 const handlePointerMove = (e: PointerEvent): void => {
-  if (!active || !dragMode) return;
+  if (!active) return;
+  lastPointer = { x: e.clientX, y: e.clientY };
+
+  // Space 押下中はボタン不要でなぞるだけで塗る。
+  // 消しゴムONなら Space なぞりも消しゴムとして働く。
+  const mode: DragMode | null =
+    dragMode ?? (spaceHeld ? (eraseMode ? "erase" : "draw") : null);
+  if (!mode) return;
   stop(e);
 
   const world = screenToWorldPixel(e.clientX, e.clientY);
   if (!world) return;
-  paintLine(lastWorld, world, dragMode);
+  paintLine(lastWorld, world, mode);
   lastWorld = world;
 };
 
@@ -393,13 +418,25 @@ const handleKeyDown = (e: KeyboardEvent): void => {
   if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)
     return;
   e.preventDefault();
+  // キーリピートで塗り位置がリセットされないように初回だけ処理する
+  if (spaceHeld) return;
   spaceHeld = true;
+
+  // 押した瞬間、カーソル直下に1px置く。補間の起点もここに合わせる
+  // (前回ストロークの終点から線が伸びてしまうのを防ぐ)。
+  lastWorld = lastPointer
+    ? screenToWorldPixel(lastPointer.x, lastPointer.y)
+    : null;
+  if (lastWorld)
+    paintWorldPixel(lastWorld.x, lastWorld.y, eraseMode ? "erase" : "draw");
   updateCursor();
 };
 
 const handleKeyUp = (e: KeyboardEvent): void => {
   if (e.code !== "Space") return;
   spaceHeld = false;
+  // ストロークを切る。次に押した時に離れた場所と線で繋がらないようにする
+  if (!dragMode) lastWorld = null;
   updateCursor();
 };
 
@@ -553,6 +590,7 @@ export const setDraftCanvasActive = (enabled: boolean): void => {
   dragMode = null;
   pendingClick = null;
   lastWorld = null;
+  lastPointer = null;
   spaceHeld = false;
 
   if (enabled) {

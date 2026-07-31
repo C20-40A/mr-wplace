@@ -614,4 +614,5 @@ export const ruTranslations = {
   draft_eraser: "Ластик",
   draft_bucket: "Заливка",
   draft_bucket_too_large: "Область слишком велика для заливки",
+  draft_discard_confirm: "Отменить несохранённые изменения черновика?",
 };

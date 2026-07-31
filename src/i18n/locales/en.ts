@@ -627,4 +627,5 @@ Do not use this feature to paint actual pixels.`,
   draft_eraser: "Eraser",
   draft_bucket: "Bucket fill",
   draft_bucket_too_large: "Area too large to fill",
+  draft_discard_confirm: "Discard unsaved draft changes?",
 };

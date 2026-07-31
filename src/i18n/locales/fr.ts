@@ -618,4 +618,5 @@ export const frTranslations = {
   draft_eraser: "Gomme",
   draft_bucket: "Pot de peinture",
   draft_bucket_too_large: "Zone trop grande à remplir",
+  draft_discard_confirm: "Abandonner les modifications non enregistrées du brouillon ?",
 };

@@ -601,4 +601,5 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   draft_eraser: "Radierer",
   draft_bucket: "Fülleimer",
   draft_bucket_too_large: "Bereich zu groß zum Füllen",
+  draft_discard_confirm: "Nicht gespeicherte Entwurfsänderungen verwerfen?",
 };

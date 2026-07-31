@@ -87,16 +87,44 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
     → 描画 → 専用ツールバーから保存 / 終了。
     wplace の Paint ボタンも確定ボタンも触らない。
   - 操作体系:
-    - 左クリック単発 = dot / 左ドラッグ = マップ平行移動 / Space+左ドラッグ = 連続 dotting
+    - 左クリック単発 = dot / 左ドラッグ = マップ平行移動
+    - **Space 押下中に移動 = 連続 dotting (クリック不要。押しっぱなしでなぞるだけ)**
+      - `pointermove` は button 無しでも飛んでくるので、`spaceHeld` を見て塗る。
+      - Space 押下の瞬間にカーソル直下へ1px置く (`lastPointer` を保持しておく)。
+      - keydown のリピートで補間起点がリセットされないよう初回のみ処理する。
+      - keyup で `lastWorld` を切り、次のストロークが前回終点と線で繋がらないようにする。
+      - Space 中の左押下は map へ渡さない (塗りながら pan すると破綻するため)。
     - 中クリック = spoit (下書きの色を拾って選択色にする) / 右ドラッグ = 消しゴム
     - ホイール = マップズーム
     - ツールバーの 🪣 ON 中は左クリックがバケツ塗りになる (消しゴムとは排他)
   - UI は **bottom sheet 方式** (画面下辺に密着・全幅・上側だけ角丸)。
     モバイル/タブレットで左右マージンがあると地図を隠して邪魔になるため。
     `env(safe-area-inset-bottom)` でホームバーを避ける。
-    操作説明は sheet の**外・上**に text のみを薄く置く (`positionHint` が
+    操作説明と閉じるボタンは sheet の**外**に置く (`positionOverlays` が
     sheet の実高さを測って追従。ボタン文言で高さが変わるため毎回再計算)。
-    パレットは `overflow-y:auto` を使わない (モバイルで drag が効かなくなる既知問題)。
+    - 操作説明: sheet の外・上に text のみを薄く置く。閉じるボタンと**同じ段**なので
+      右端 52px を空けておく (`right:52px`)。
+    - 閉じる: sheet の外・**右上に丸バツ** (`btn-circle`)、操作説明と同じ段。
+      sheet 内に置くと保存ボタンの隣で誤爆しやすいため物理的に離す。
+      未保存の変更 (`pixelCount !== savedPixelCount`) があれば `confirm` で確認してから閉じる。
+      seed 直後は seeded 数を基準にするので「開いただけ」では確認が出ない。
+    - アクション行は 保存 / 消しゴム / バケツ を**横一列で中央寄せ**。
+      ツールアイコンは lucide の stroke SVG (`stroke="currentColor"` で theme 追従)。
+      `btn-square` を使うので `updateToolbar` で className を組み直す時に**落とさないこと**。
+    - パレットは **行数を 2-8 に収める** (列数は横幅ぶん好きなだけ使う)。
+      色数が固定 (63) なので列数から行数が決まる。`layoutColorStrip` が
+      sheet の実幅から「8行以内にする最小列数」〜「2行を割らない最大列数」の
+      範囲で列数を決め、スウォッチ実寸 (22-40px) も同時に確定させる。
+      これで**縦スクロールが不要**になる (地図 drag を殺す `overflow-y:auto` を避けられる)。
+      `window.resize` で再計算するので、**解除漏れに注意** (`exitDraftMode` と
+      `updateToolbar` の無効化パス両方で `removeEventListener`)。
+    - 色スウォッチは hover で色名を吹き出し表示 (`showColorTip`。`title` の遅延を避ける)。
+
+  - **CRITICAL: この UI は Tailwind ユーティリティに頼らない。**
+    拡張機能なのでページ側に utility class が存在せず効かない場面がある。
+    レイアウト/色は **inline style** で書き、色は `var(--color-*)` を使う
+    (固定色は使わない)。`btn` / `btn-sm` / `btn-square` / `btn-primary` などの
+    DaisyUI **コンポーネント** class は wplace 本体の CSS にあるので利用可。
   - ON 中は content 側で `activateStickyFocusMode()` を呼び、他の UI を退かす。
     通常の focus mode は「どこかを click したら自動解除」だが、下書きは
     マップ上を連打するため解除されては困る。そのため sticky 版を用意し、

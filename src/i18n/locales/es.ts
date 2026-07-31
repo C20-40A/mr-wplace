@@ -611,4 +611,5 @@ export const esTranslations = {
   draft_eraser: "Borrador",
   draft_bucket: "Relleno",
   draft_bucket_too_large: "Área demasiado grande para rellenar",
+  draft_discard_confirm: "¿Descartar los cambios no guardados del borrador?",
 };

@@ -602,4 +602,5 @@ export const ptTranslations = {
   draft_eraser: "Borracha",
   draft_bucket: "Balde",
   draft_bucket_too_large: "Área grande demais para preencher",
+  draft_discard_confirm: "Descartar as alterações não salvas do rascunho?",
 };
