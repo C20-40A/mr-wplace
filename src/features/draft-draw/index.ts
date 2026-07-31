@@ -26,6 +26,7 @@ import {
   activateStickyFocusMode,
   deactivateFocusMode,
 } from "@/features/focus-mode";
+import { IMG_ICON_BLUEPRINT } from "@/assets/iconImages";
 
 /**
  * 下書きモード (draft draw / blueprint)
@@ -58,7 +59,13 @@ const BRUSH_MAX_SIZE = 32;
  * data-URI 無しの inline SVG。**文字を使わない**ので i18n も増えない。
  * mask は inject 側 draft-brush.ts の DITHER_MASKS と同じ式にする。
  */
-type DitherStyle = "solid" | "checker" | "dots25" | "sparse" | "hline" | "diagonal";
+type DitherStyle =
+  | "solid"
+  | "checker"
+  | "dots25"
+  | "sparse"
+  | "hline"
+  | "diagonal";
 
 const DITHER_MASKS: Record<DitherStyle, (x: number, y: number) => boolean> = {
   solid: () => true,
@@ -110,8 +117,7 @@ const BUCKET_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><
 /** 下書き保存で作られたギャラリー item。再保存で上書きする */
 const SAVED_KEY_PREFIX = "draft-";
 
-const ICON_SVG =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" style="width:calc(var(--spacing)*8);height:calc(var(--spacing)*8);"><path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/></svg>';
+const ICON_SVG = `<img src="${IMG_ICON_BLUEPRINT}"  style="image-rendering: pixelated; width: calc(var(--spacing)*9); height: calc(var(--spacing)*9);">`;
 
 /** ブラシ色は wplace と同じ localStorage キーを共有する */
 const SELECTED_COLOR_KEY = "selected-color";
