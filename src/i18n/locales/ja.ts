@@ -633,4 +633,5 @@ export const jaTranslations = {
   draft_discard_confirm: "保存していない下書きの変更を破棄しますか？",
   draft_brush: "ブラシ",
   draft_map_lock: "マップ固定 (ドラッグで描画)",
+  hint_draft_fab_btn: "チャージを消費せず地図に自由に下書きできます",
 };

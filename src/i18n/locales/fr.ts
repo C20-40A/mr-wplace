@@ -621,4 +621,5 @@ export const frTranslations = {
   draft_discard_confirm: "Abandonner les modifications non enregistrées du brouillon ?",
   draft_brush: "Pinceau",
   draft_map_lock: "Verrouiller la carte (glisser pour dessiner)",
+  hint_draft_fab_btn: "Esquissez librement sur la carte sans consommer de charges",
 };

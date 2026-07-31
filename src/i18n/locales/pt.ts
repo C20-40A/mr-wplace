@@ -605,4 +605,5 @@ export const ptTranslations = {
   draft_discard_confirm: "Descartar as alterações não salvas do rascunho?",
   draft_brush: "Pincel",
   draft_map_lock: "Bloquear mapa (arraste para desenhar)",
+  hint_draft_fab_btn: "Rascunhe livremente no mapa sem gastar cargas",
 };

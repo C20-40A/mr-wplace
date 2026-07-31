@@ -617,4 +617,5 @@ export const ruTranslations = {
   draft_discard_confirm: "Отменить несохранённые изменения черновика?",
   draft_brush: "Кисть",
   draft_map_lock: "Заблокировать карту (рисование перетаскиванием)",
+  hint_draft_fab_btn: "Рисуйте черновик на карте свободно, не тратя заряды",
 };

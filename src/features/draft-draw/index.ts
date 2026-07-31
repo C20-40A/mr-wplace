@@ -27,6 +27,7 @@ import {
   deactivateFocusMode,
 } from "@/features/focus-mode";
 import { IMG_ICON_BLUEPRINT } from "@/assets/iconImages";
+import { showFeatureHint } from "@/features/feature-hints";
 
 /**
  * 下書きモード (draft draw / blueprint)
@@ -217,6 +218,7 @@ export class DraftDraw {
     container.appendChild(button);
 
     this.syncFabAvailability();
+    showFeatureHint("draft-fab-btn", button);
   }
 
   /**

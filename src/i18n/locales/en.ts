@@ -630,4 +630,5 @@ Do not use this feature to paint actual pixels.`,
   draft_discard_confirm: "Discard unsaved draft changes?",
   draft_brush: "Brush",
   draft_map_lock: "Lock map (drag to draw)",
+  hint_draft_fab_btn: "Draft freely on the map without spending charges",
 };

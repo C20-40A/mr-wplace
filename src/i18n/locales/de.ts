@@ -604,4 +604,5 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   draft_discard_confirm: "Nicht gespeicherte Entwurfsänderungen verwerfen?",
   draft_brush: "Pinsel",
   draft_map_lock: "Karte sperren (zum Zeichnen ziehen)",
+  hint_draft_fab_btn: "Skizziere frei auf der Karte, ohne Ladungen zu verbrauchen",
 };

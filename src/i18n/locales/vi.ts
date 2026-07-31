@@ -600,4 +600,5 @@ export const viTranslations = {
   draft_discard_confirm: "Hủy các thay đổi bản nháp chưa lưu?",
   draft_brush: "Cọ vẽ",
   draft_map_lock: "Khóa bản đồ (kéo để vẽ)",
+  hint_draft_fab_btn: "Vẽ nháp tự do trên bản đồ mà không tốn lượt",
 };

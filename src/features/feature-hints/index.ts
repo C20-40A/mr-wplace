@@ -40,7 +40,8 @@ export type FeatureHintId =
   | "image-detail-download"
   // | "image-detail-edit-title"
   | "gallery-import-export-btn"
-  | "art-cruise-btn";
+  | "art-cruise-btn"
+  | "draft-fab-btn";
 
 interface FeatureHintDefinition {
   messageKey?: string;
@@ -223,6 +224,13 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     messageKey: "hint_art_cruise_btn",
     imageSrc: runtime.getURL("assets/art-cruise/hint/art-cruise-hint.webp"),
     placement: "right",
+    priority: 5,
+    condition: isNoModalOpen,
+  },
+  // ------- Draft Draw Hint -------
+  "draft-fab-btn": {
+    messageKey: "hint_draft_fab_btn",
+    placement: "left",
     priority: 5,
     condition: isNoModalOpen,
   },
