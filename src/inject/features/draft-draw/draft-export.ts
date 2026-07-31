@@ -1,5 +1,5 @@
 import { TILE_DRAW_CONSTANTS } from "@/inject/features/tile-draw/constants";
-import { getDraftTile, getDraftTileKeys } from "./draft-store";
+import { getDraftTilePixels, getDraftTileKeys } from "./draft-store";
 
 /**
  * Draft export
@@ -49,7 +49,7 @@ export const exportDraftAsImage =
 
     for (const tileKey of tileKeys) {
       const parsed = parseTileKey(tileKey);
-      const tile = getDraftTile(tileKey);
+      const tile = getDraftTilePixels(tileKey);
       if (!parsed || !tile) continue;
 
       const [tileX, tileY] = parsed;
@@ -113,8 +113,12 @@ export const exportDraftAsImage =
       coords: {
         TLX: Math.floor(minX / TILE_SIZE),
         TLY: Math.floor(minY / TILE_SIZE),
-        PxX: minX % TILE_SIZE,
-        PxY: minY % TILE_SIZE,
+        // NOTE: JS の % は負数に対して負の余りを返すため、
+        // minX/minY が負 (負のタイル座標をまたぐ場合) だと PxX/PxY が
+        // 負値になり座標全体がズレるバグがあった。Math.floor ベースの
+        // 剰余計算で 0 <= PxX/PxY < TILE_SIZE を保証する。
+        PxX: minX - Math.floor(minX / TILE_SIZE) * TILE_SIZE,
+        PxY: minY - Math.floor(minY / TILE_SIZE) * TILE_SIZE,
       },
     };
   };

@@ -64,11 +64,13 @@ export const sendDraftModeToInject = (enabled: boolean) => {
 };
 
 /**
- * Request inject side to discard all draft pixels
+ * Send draft eraser toggle to inject side
  */
-export const sendDraftClearToInject = () => {
-  window.postMessage({ source: "mr-wplace-draft-clear" }, "*");
-  console.log("🧑‍🎨 : Sent draft clear to inject side");
+export const sendDraftEraseModeToInject = (enabled: boolean) => {
+  window.postMessage(
+    { source: "mr-wplace-draft-erase-update", enabled },
+    "*"
+  );
 };
 
 export interface DraftExportResult {

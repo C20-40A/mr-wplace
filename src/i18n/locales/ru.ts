@@ -604,7 +604,6 @@ export const ruTranslations = {
   text_draw_direction_horizontal: "Горизонтально",
   text_draw_direction_vertical: "Вертикально",
   draft_mode: "Черновик",
-  draft_blocked_notice: "Черновик: не отправлено",
   draft_save: "Сохранить черновик",
   draft_save_failed: "Не удалось сохранить черновик",
   draft_update: "Обновить черновик",
@@ -612,4 +611,5 @@ export const ruTranslations = {
   draft_enter_failed: "Не удалось войти в режим рисования",
   draft_edit: "Редактировать черновик",
   draft_edit_needs_position: "Сначала разместите это изображение на карте",
+  draft_eraser: "Ластик",
 };

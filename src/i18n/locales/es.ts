@@ -601,7 +601,6 @@ export const esTranslations = {
   text_draw_direction_horizontal: "Horizontal",
   text_draw_direction_vertical: "Vertical",
   draft_mode: "Borrador",
-  draft_blocked_notice: "Modo borrador: no enviado",
   draft_save: "Guardar borrador",
   draft_save_failed: "Error al guardar el borrador",
   draft_update: "Actualizar borrador",
@@ -609,4 +608,5 @@ export const esTranslations = {
   draft_enter_failed: "No se pudo entrar en modo pintura",
   draft_edit: "Editar borrador",
   draft_edit_needs_position: "Primero coloca esta imagen en el mapa",
+  draft_eraser: "Borrador",
 };

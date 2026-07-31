@@ -23,7 +23,7 @@ export {
   sendOverlayLightweightModeToInject,
   sendColorFilterToInject,
   sendDraftModeToInject,
-  sendDraftClearToInject,
+  sendDraftEraseModeToInject,
   requestDraftExport,
   requestDraftSeed,
 } from "./overlay-bridge";

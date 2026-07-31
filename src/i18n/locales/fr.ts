@@ -608,7 +608,6 @@ export const frTranslations = {
   text_draw_direction_horizontal: "Horizontal",
   text_draw_direction_vertical: "Vertical",
   draft_mode: "Brouillon",
-  draft_blocked_notice: "Mode brouillon : non envoyé",
   draft_save: "Enregistrer le brouillon",
   draft_save_failed: "Échec de l'enregistrement du brouillon",
   draft_update: "Mettre à jour le brouillon",
@@ -616,4 +615,5 @@ export const frTranslations = {
   draft_enter_failed: "Impossible d'entrer en mode peinture",
   draft_edit: "Modifier le brouillon",
   draft_edit_needs_position: "Placez d'abord cette image sur la carte",
+  draft_eraser: "Gomme",
 };

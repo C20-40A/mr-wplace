@@ -44,7 +44,7 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
 - 一般 state: `mr-wplace-theme-update`, `mr-wplace-color-filter`, `mr-wplace-show-unplaced-only`, `mr-wplace-compute-device`, `mr-wplace-front-tile-layer-update`, map表示/3d関連。
 - 注意: `mr-wplace-area-display-update` は現在 `scale-display` トグルに接続。
 - overlay 同期: `mr-wplace-gallery-images-v2`, `mr-wplace-snapshots`, `mr-wplace-text-layers`。
-- 下書き: `mr-wplace-draft-mode-update`, `mr-wplace-draft-clear`, `mr-wplace-request-draft-seed`。
+- 下書き: `mr-wplace-draft-mode-update`, `mr-wplace-draft-erase-update`, `mr-wplace-draft-clear`, `mr-wplace-request-draft-seed`, `mr-wplace-request-draft-export`。
 - stats 要求: `mr-wplace-request-stats`, `...pixel-color`, `...tile-stats`, `...image-stats`, `...map-center`, `mr-wplace-compute-total-stats`。
 - dev: auto-click / auto-color-spoit / area-fill start stop estimate。
 - gallery/snapshot bridge: `mr-wplace-gallery-v2-*`, `mr-wplace-snapshot-*`。
@@ -81,73 +81,76 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
     - `fetch-handler.ts`: z9-11受理。z11はbase描画、z10/z9は縮小合成経路。front render cache LRU 40、token=`stateVersion|lastModified`。
     - `state-version.ts`: refresh 用 version counter。
 - `features/draft-draw/`
-  - 下書きモード。ON 中は `POST /pixel` を fetch-interceptor で遮断し charge を消費させない。
-  - 導線: マップ上の下書きFAB → wplace の Paint ボタンを自動クリック → ペイントモード遷移 + 下書きモードON。
-    ペイントモードとの相互切替を持たないため「気づかないうちに下書きモード」が起きない。
-    Paint ボタンの特定は**ブラシアイコンの SVG path** で行う (`selectors.findBottomCenterPrimaryButton`)。
-    ラベルは言語依存 (Paint/Pintar/...) かつラッパー DOM 構造も遷移前後で異なるため、
-    class やテキストではなくアイコンを anchor にするのが最も安定。
-    注意: エントリボタンと確定ボタンは**同じアイコン**を持ち、遷移後もエントリ側が
-    DOM に残ることがある。確定ボタンは `offsetParent !== null` で可視のものだけに絞る
-    (`findPaintSubmitButton`)。隠れている方を掴むと生きている UI を壊す。
-    注意: 保存ボタンの再生成を MutationObserver から無条件に呼ぶと、
-    自身の DOM 変更で再発火し強制リフローが多発する。「消えた時だけ」再生成すること。
-  - SAFETY: 遮断判定は `shouldBlockPaintSubmit()` = `mode ON || セッションに下書き混入` の OR (fail-closed)。
-    遮断は 403 ではなく `TypeError` を throw し、wplace 側に「送信済み」と誤認させない。
-    ペイントセッション終了 (`setPaintSessionListener(false)`) で mode 強制 OFF + 下書き破棄。
-    content 側は ON 中 wplace の確定ボタンを隠し「下書きを保存」に差し替える(誤送信導線を消す)。
-  - 下書きモード中は wplace 純正 UI のみ。Mr の FAB は `paint-mode-style` が既に隠す。
-  - map instance 未取得時は FAB / gallery の下書き編集ボタンを disable (座標変換ができず保存できないため)。
-  - 通常の下書き(新規)は描画しない。予約中のピクセルは wplace 本体が既に表示するため overlay 不要。
-  - **下書きモード中は既存テンプレ overlay も全部非表示にする**
+  - 下書きモード。**wplace 本体のペイント機構には一切依存しない独自レイヤー方式**。
+    ペイントモードには入らず、実ペイントも charge 消費も一切発生しない。
+  - 導線: マップ上の下書きFAB → 下書きモードON → 独自 canvas レイヤーが前面に出る
+    → クリック/ドラッグで描画 → 専用ツールバーから保存 / 終了。
+    wplace の Paint ボタンも確定ボタンも触らない。
+  - map instance 未取得時は FAB / gallery の下書き編集ボタンを disable
+    (座標変換ができず描画も保存もできないため)。
+  - **下書きモード中は既存テンプレ overlay を全部非表示にする**
     (`tile-overlay-renderer.drawOverlayLayersOnTile` 冒頭で `isDraftModeEnabled()` を見て早期return、
     `fetch-interceptor.handleTileRequest` も draftActive を `frontOperational` 相当として扱い
     合成済みキャッシュを迂回して生タイルを返す)。
     理由: 編集前のテンプレが編集中の画面に重なって見えると混乱するため (特に下書き編集で顕著)。
-  - `draft-store.ts`: tile 単位の pixel Map。`seedDraftFromPixels` は seed のフォールバック経路
-    (paint-preview レイヤーを生成できなかったタイルのみ使用)。
-  - `draft-export.ts`: 保存時に bounding box で切り出し dataUrl 化 (`mr-wplace-request-draft-export`)。gallery 保存用。
-  - `index.ts`: `setDraftPaintListener` で捕捉 → store に蓄積するだけ。
 
-  - **下書き編集 seed のアーキテクチャ (use_this のリバースエンジニアリングで判明した仕様)**:
-    - `targetPaintedPixelMap.set()` (旧実装で試みた方式) は **wplace 本体の内部状態を書き換えるだけで、
-      画面には一切反映されない**。実際の描画パイプラインは別に存在する。
-    - wplace は `paint-preview-{乱数}-{tileX},{tileY}` という **タイル単位の maplibregl ImageSource** を持ち、
-      これが画面上の「配置済みピクセル」の実体。このレイヤーは **そのタイルに最初の1pxがペイントされた瞬間に
-      wplace 自身が動的生成**する (`Umt` クラス、`place()` メソッド)。事前には存在しない。
-    - レイヤー生成後は `source.options.canvas` に直接 `fillRect` で描画し、`source.play()` を呼べば
-      即座に画面へ反映される (Map への set は不要)。
-    - **Y軸反転に注意**: canvas の `(0,0)` はタイルの**左下**に対応する。
-      wplace 本体も `tileSize - pixelY - 1` で変換している。
-      `painted-coordinates-capture.fillPaintPreviewTile()` もこれに倣う。
-    - wplace 自身のクリックハンドラ (`He` 関数、Svelte コンポーネントのクロージャ内で外部から直接呼べない) は
-      予約 Map の set + canvas 描画 + charges 消費チェック + UI 更新を全部まとめて行う。
-      **charges を消費させたくないため、この関数は使わず**、代わりに:
-      1. **seed対象ピクセルの最初の1点**へ合成クリック (`clickAtLatLng`) を1回発火し、wplace 自身に
-         1pxペイントさせて `paint-preview-*` レイヤーを動的生成させる
-         (**charges を1px分だけ消費する**、トレードオフとして受容)。
-         タイル中心などの無関係な座標ではなく seed 対象そのものを使うことで、
-         テンプレと無関係な「ゴミ1px」が残らない (直後の一括描画で同じ座標が正しい色で上書きされる)。
-      2. レイヤー生成を `findPaintPreviewSourceId` でポーリング確認。
-      3. 生成された canvas へ残り全ピクセルを `fillPaintPreviewTile` で直接描画 (charges 消費なし)。
-    - `handleDraftSeedRequest` (`mr-wplace-request-draft-seed`) はこの一連の流れを
-      seed 対象ピクセルをタイル単位でグルーピングしてから実行する。
-    - レイヤー生成に失敗したタイル (合成クリックが effective でない、map instance 未取得等) は
-      `seedDraftFromPixels` で draft-store へのみフォールバック蓄積する
-      (画面上は配置済みに見えないが下書き自体は失われない)。
-    - `painted-coordinates-capture.ts` の関連 export:
-      - `clickAtLatLng(map, lat, lng)`: 指定座標へ合成 pointerdown/mousedown/pointerup/mouseup/click を発火。
-      - `findPaintPreviewSourceId(map, tileX, tileY)`: style.layers から `paint-preview-*-{tileX},{tileY}` を検索。
-      - `fillPaintPreviewTile(map, tileX, tileY, pixels)`: 該当タイルの canvas へ直接描画 + play()。
-      - `ensurePaintedPixelMapCaptured()`: (現在 seed では未使用) targetPaintedPixelMap 自体の強制捕捉。
-        画面反映には無関係と判明したため、現状は将来の別用途向けに残置。
-      - `seedPaintedPixel()`: (現在 seed では未使用) targetPaintedPixelMap への直接 set。同上の理由で残置。
+  - `draft-canvas.ts`: **インタラクティブな独自描画レイヤー**。
+    - map canvas の兄弟として `pointer-events:auto` の HTML canvas を重ねる。
+    - **パフォーマンス設計 (最重要)**: 1タイル = 1000x1000 のオフスクリーン canvas
+      (wplace のラスタタイルのクローン) を `draft-store` が保持し、表示側は
+      **タイルの左上/右下だけを `map.project()` して `drawImage` で1枚貼る**。
+      ピクセル単位で `project()` すると 100万回呼ぶことになり成立しないため、
+      投影は 1タイルにつき2回に固定する。1px の変更も canvas 上の 1 `fillRect` で済む。
+    - 再描画は dirty フラグが立った時だけ (map の move/zoom/resize、store 変更時)。
+      rAF は回すが、dirty でなければ即 return する。
+    - `imageSmoothingEnabled = false` でピクセルアートを拡大時もにじませない。
+    - **pointer は capture 段階で `stopPropagation` + `preventDefault`**。
+      canvas 自体は map canvas の兄弟なので伝播経路上は競合しないが、
+      maplibre は document/window にも drag ハンドラを張るため、
+      ここで止めないと描画中に地図がパン/ズームしてしまう。
+      wheel / contextmenu / dblclick も同様に封じる。
+    - ドラッグは `pointermove` が飛び飛びに来るため、前回位置から線形補間して塗る
+      (`paintLine`)。これが無いとドラッグが点線になる。
+    - 画面座標 -> world pixel は `map.unproject` -> `geo-converter.latLonToPixels`。
+      自前で WebMercator 式を書かず、プロジェクト既存の座標変換に寄せる。
+    - ブラシ色は `localStorage["selected-color"]` (wplace と同じキー) を
+      `colorpalette` で RGB に解決する。透明色/未選択なら描かない。
+
+  - `draft-store.ts`: 下書きの唯一の真実。タイルごとに 2 表現を持つ。
+    - `pixels`: 保存(export)用の厳密なピクセル集合
+    - `canvas`: 表示用の 1000x1000 ラスタ
+    両方を常に同期して更新する。`setDraftStoreChangeListener` で変更を通知し、
+    再描画 (`markDraftCanvasDirty`) と content への状態通知を走らせる。
+    seed は数十万 pixel になりうるので `silent: true` で個別通知を抑え、最後に1回だけ通知する。
+
+  - `draft-export.ts`: 保存時に bounding box で切り出し dataUrl 化 (`mr-wplace-request-draft-export`)。gallery 保存用。
+    NOTE: `PxX/PxY` は `Math.floor(minX/TILE_SIZE) * TILE_SIZE` を引いて算出する
+    (JS の `%` は負数に対して負の余りを返すため、負のタイル座標をまたぐ下書きで
+    `minX % TILE_SIZE` を直接使うと座標がズレるバグがあった)。
+
+  - `index.ts`: mode の ON/OFF、canvas ハンドラ登録、seed/export のメッセージ応答。
+    OFF 時は canvas を破棄して下書きも破棄する。
+
   - 下書き編集: gallery の image-detail に「📌 下書き編集」ボタン (`drawPosition` がある item のみ表示、
     map instance 未準備なら disabled)。
     content 側 `features/draft-draw/index.ts` の `enterDraftEditForItem` が
     `mr-wplace-map-flyto` を直接送って強制 flyTo でマップ移動 (URL nav モードでのリロードを回避) →
-    ペイントモード遷移 → 既存ピクセルの seed まで行う。
+    下書きモードON → 既存ピクセルの seed まで行う。
+    seed した時点で独自レイヤーに「配置済みの見た目」として現れる (合成クリック等は不要)。
     保存時は同じ gallery key を上書きし、title 等の既存メタデータを引き継ぐ (`seedItem` で保持)。
+
+  - **過去に破棄したアプローチ (再挑戦しないこと)**:
+    wplace 本体の `paint-preview-*` ImageSource に相乗りして「配置済みの見た目」を作る方式を試みた。
+    そのタイルの `paint-preview` レイヤーは wplace 自身が最初の1pxペイント時にしか生成しないため、
+    合成クリックでペイントを1px発火させてレイヤーを作らせる必要があった。
+    しかしこの合成クリックは実用に耐えなかった:
+    クリック位置がテンプレとずれる / 読み込みタイミングで勝手に発火する /
+    クリックの度に UI がそこへズームして画面が動き回る / 発火しないタイルがある。
+    charge を1px消費する点も含め、独自レイヤー方式で完全に置き換え済み。
+    これに伴い `shouldBlockPaintSubmit` / `notifyDraftSubmitBlocked` (POST 遮断)、
+    `clickAtLatLng` / `findPaintPreviewSourceId` / `fillPaintPreviewTile` / `seedPaintedPixel` /
+    `ensurePaintedPixelMapCaptured`、`setDraftPaintListener` はすべて削除した。
+    新方式は wplace へ pointer を渡さないため、そもそも送信が発生せず遮断ロジック自体が不要。
 - `features/grid-display.ts`: zoom>=14 で pixel grid。
 - `features/scale-display.ts`: A/B pin 距離 UI。
 - `features/area-display.ts`: area region layer、編集 UI、measure。

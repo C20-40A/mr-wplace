@@ -620,7 +620,6 @@ export const jaTranslations = {
   text_draw_direction_horizontal: "横書き",
   text_draw_direction_vertical: "縦書き",
   draft_mode: "下書き",
-  draft_blocked_notice: "下書きモード: 送信されません",
   draft_save: "下書きを保存",
   draft_save_failed: "下書きの保存に失敗しました",
   draft_update: "下書きを更新",
@@ -628,4 +627,5 @@ export const jaTranslations = {
   draft_enter_failed: "ペイントモードに入れませんでした",
   draft_edit: "下書き編集",
   draft_edit_needs_position: "先にこの画像をマップに配置してください",
+  draft_eraser: "消しゴム",
 };

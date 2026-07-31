@@ -37,6 +37,7 @@ import {
 } from "./handlers/request-handlers";
 import {
   setDraftModeEnabled,
+  setDraftEraseModeEnabled,
   clearAllDraft,
   handleDraftExportRequest,
   handleDraftSeedRequest,
@@ -391,6 +392,8 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-snapshots": handleSnapshotsUpdate,
   "mr-wplace-text-layers": handleTextLayersUpdate,
   "mr-wplace-draft-mode-update": (data) => setDraftModeEnabled(data.enabled),
+  "mr-wplace-draft-erase-update": (data) =>
+    setDraftEraseModeEnabled(data.enabled),
   "mr-wplace-draft-clear": () => clearAllDraft(),
   "mr-wplace-request-draft-export": handleDraftExportRequest,
   "mr-wplace-request-draft-seed": handleDraftSeedRequest,

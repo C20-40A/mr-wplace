@@ -592,7 +592,6 @@ export const ptTranslations = {
   text_draw_direction_horizontal: "Horizontal",
   text_draw_direction_vertical: "Vertical",
   draft_mode: "Rascunho",
-  draft_blocked_notice: "Modo rascunho: não enviado",
   draft_save: "Salvar rascunho",
   draft_save_failed: "Falha ao salvar o rascunho",
   draft_update: "Atualizar rascunho",
@@ -600,4 +599,5 @@ export const ptTranslations = {
   draft_enter_failed: "Não foi possível entrar no modo de pintura",
   draft_edit: "Editar rascunho",
   draft_edit_needs_position: "Primeiro coloque esta imagem no mapa",
+  draft_eraser: "Borracha",
 };

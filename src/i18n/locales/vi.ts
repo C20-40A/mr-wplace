@@ -587,7 +587,6 @@ export const viTranslations = {
   text_draw_direction_horizontal: "Ngang",
   text_draw_direction_vertical: "Dọc",
   draft_mode: "Bản nháp",
-  draft_blocked_notice: "Chế độ nháp: không gửi",
   draft_save: "Lưu bản nháp",
   draft_save_failed: "Lưu bản nháp thất bại",
   draft_update: "Cập nhật bản nháp",
@@ -595,4 +594,5 @@ export const viTranslations = {
   draft_enter_failed: "Không thể vào chế độ vẽ",
   draft_edit: "Chỉnh sửa bản nháp",
   draft_edit_needs_position: "Hãy đặt hình ảnh này lên bản đồ trước",
+  draft_eraser: "Tẩy",
 };

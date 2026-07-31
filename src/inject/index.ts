@@ -19,7 +19,6 @@ import {
   handlePaintForStats,
   handlePaintDeleteForStats,
 } from "./features/paint-stats-updater";
-import { eraseDraftPixel, resetDraftSession } from "./features/draft-draw";
 import { scheduleStartupUserDataRecovery } from "./features/user-status/user-data-recovery";
 
 const LOCATION_KEY = "location";
@@ -100,16 +99,12 @@ const forceStartupLocationZoom = (): void => {
       handlePaintDeleteForStats(coord);
       const { tileX, tileY, pixelX, pixelY } = coord;
       clearFrontTilePaintGuide(tileX, tileY, pixelX, pixelY);
-      // 下書きモード中の取り消し操作を overlay へ反映
-      eraseDraftPixel({ tileX, tileY, pixelX, pixelY });
     });
     setPaintClearListener(() => {
       clearFrontTilePaintGuideAll();
     });
     setPaintSessionListener((active) => {
       setFrontTilePaintGuideActive(active, { clearNow: !active });
-      // セッション終了で「下書き混入」フラグを解除 (次セッションは通常送信可)
-      if (!active) resetDraftSession();
     });
     setupFetchInterceptor();
     scheduleStartupUserDataRecovery();
