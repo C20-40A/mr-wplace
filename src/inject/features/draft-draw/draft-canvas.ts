@@ -10,6 +10,7 @@ import {
   getDraftTileKeys,
 } from "./draft-store";
 import { computeBucketFill } from "./draft-bucket-fill";
+import { clearBaseTileCache, prepareBaseTiles } from "./draft-base-layer";
 import { forEachBrushPixel, getDraftBrushSize } from "./draft-brush";
 import { beginHistoryEntry, commitHistoryEntry } from "./draft-history";
 
@@ -285,18 +286,47 @@ const paintLine = (
   }
 };
 
+/** 開始点を含む 3x3 タイル。バケツの到達範囲 (±2000px) を覆う */
+const getNeighborTiles = (
+  worldX: number,
+  worldY: number,
+): Array<{ tileX: number; tileY: number }> => {
+  const centerX = Math.floor(worldX / TILE_SIZE);
+  const centerY = Math.floor(worldY / TILE_SIZE);
+  const tiles: Array<{ tileX: number; tileY: number }> = [];
+
+  for (let dy = -1; dy <= 1; dy++)
+    for (let dx = -1; dx <= 1; dx++)
+      tiles.push({ tileX: centerX + dx, tileY: centerY + dy });
+
+  return tiles;
+};
+
 /**
  * バケツ塗り。上限を超える (= 開いた領域を塗ろうとした) 場合は
  * 1px も塗らず、content 側へヒント表示を促す。
+ *
+ * 判定は下書き + **下地 (wplace 本体タイル)** の合成で行うので、
+ * 既存アートの線をそのまま塗りの壁にできる。下地は読むだけで、
+ * 塗る先は常に下書きレイヤー。
+ *
+ * NOTE: 下地の decode は非同期なので、塗る前に開始点の周辺タイルだけ
+ * 用意してから同期の flood fill に入る。周辺 3x3 に限定するのは
+ * `MAX_FILL_EXTENT` (±2000px) が高々隣接タイルまでしか届かないため。
  */
-const bucketFillAt = (clientX: number, clientY: number): void => {
+const bucketFillAt = async (
+  clientX: number,
+  clientY: number,
+): Promise<void> => {
   const world = screenToWorldPixel(clientX, clientY);
   if (!world) return;
 
   const color = getSelectedColor();
   if (!color) return;
 
-  const result = computeBucketFill(world.x, world.y, color);
+  await prepareBaseTiles(getNeighborTiles(world.x, world.y));
+
+  const result = computeBucketFill(world.x, world.y, color, true);
   if (!result.ok) {
     onBucketFailed?.();
     return;
@@ -449,7 +479,8 @@ const handlePointerUp = (e: PointerEvent): void => {
     if (!moved) {
       stop(e);
       if (bucketMode) {
-        bucketFillAt(e.clientX, e.clientY);
+        // 下地 decode を挟むので非同期。pointer 処理はここで終える
+        void bucketFillAt(e.clientX, e.clientY);
         return;
       }
       const world = screenToWorldPixel(e.clientX, e.clientY);
@@ -721,6 +752,8 @@ export const setDraftCanvasActive = (enabled: boolean): void => {
     rafId = null;
   }
   detachMapListeners();
+  // decode 済み下地は1枚 4MB。下書きを抜けたら抱え込まない
+  clearBaseTileCache();
   canvas?.remove();
   canvas = null;
 };

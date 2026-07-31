@@ -1,5 +1,6 @@
 import { TILE_DRAW_CONSTANTS } from "@/inject/features/tile-draw/constants";
 import { getDraftPixel } from "./draft-store";
+import { getBaseColorAtWorld } from "./draft-base-layer";
 
 /**
  * Draft bucket fill
@@ -12,6 +13,13 @@ import { getDraftPixel } from "./draft-store";
  * - 開始点から矩形範囲の上限 (MAX_FILL_EXTENT)
  * 打ち切った場合は「1ピクセルも塗らずに」失敗を返す。
  * (中途半端に塗ると取り消しが面倒なため、all-or-nothing にする)
+ *
+ * 下地参照 (includeBase):
+ * 判定色は「下書きピクセルがあればそれ、無ければ wplace 本体タイルの色」という
+ * **合成** で見る。これにより既存アートの線が塗りの壁になり、下書きが空でも
+ * 下地の領域だけを塗れる。塗る先は常に下書きレイヤーで、下地は読むだけ。
+ * 下地が未取得のタイルは「色なし」扱いになる (壁にならない) ので、
+ * 呼び出し側は事前に `prepareBaseTiles` で decode を済ませておくこと。
  */
 
 const TILE_SIZE = TILE_DRAW_CONSTANTS.TILE_SIZE;
@@ -27,7 +35,15 @@ export type BucketFillResult =
 
 type Rgb = { r: number; g: number; b: number };
 
-const colorAt = (worldX: number, worldY: number): Rgb | null => {
+/**
+ * 判定色。下書きが最優先で、無ければ (includeBase 時のみ) 下地の色を見る。
+ * 下書きも下地も無ければ null = 空白。
+ */
+const colorAt = (
+  worldX: number,
+  worldY: number,
+  includeBase: boolean,
+): Rgb | null => {
   const tileX = Math.floor(worldX / TILE_SIZE);
   const tileY = Math.floor(worldY / TILE_SIZE);
   const pixel = getDraftPixel(
@@ -36,7 +52,9 @@ const colorAt = (worldX: number, worldY: number): Rgb | null => {
     worldX - tileX * TILE_SIZE,
     worldY - tileY * TILE_SIZE,
   );
-  return pixel ? { r: pixel.r, g: pixel.g, b: pixel.b } : null;
+  if (pixel) return { r: pixel.r, g: pixel.g, b: pixel.b };
+
+  return includeBase ? getBaseColorAtWorld(worldX, worldY) : null;
 };
 
 const sameColor = (a: Rgb | null, b: Rgb | null): boolean => {
@@ -52,8 +70,9 @@ export const computeBucketFill = (
   startX: number,
   startY: number,
   fillColor: Rgb,
+  includeBase = false,
 ): BucketFillResult => {
-  const targetColor = colorAt(startX, startY);
+  const targetColor = colorAt(startX, startY, includeBase);
   if (sameColor(targetColor, fillColor)) return { ok: true, pixels: [] };
 
   const minX = startX - MAX_FILL_EXTENT;
@@ -76,7 +95,7 @@ export const computeBucketFill = (
     if (visited.has(key)) continue;
     visited.add(key);
 
-    if (!sameColor(colorAt(x, y), targetColor)) continue;
+    if (!sameColor(colorAt(x, y, includeBase), targetColor)) continue;
 
     pixels.push({ x, y });
     if (pixels.length > MAX_FILL_PIXELS) return { ok: false, reason: "too-large" };

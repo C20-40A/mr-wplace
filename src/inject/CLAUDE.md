@@ -205,12 +205,25 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
     描き直されるため 1操作 1通知で足りる。
 
   - `draft-bucket-fill.ts`: world pixel 空間の 4 近傍 flood fill。
+    判定色は **下書き + 下地 (wplace 本体タイル) の合成**。下書きピクセルがあればそれ、
+    無ければ下地の色を見る。これで既存アートの線がそのまま塗りの壁になり、
+    下書きが空でも下地の領域だけを塗れる。**下地は読むだけで、塗る先は常に下書きレイヤー**。
     **CRITICAL**: 下書きは「広大な world map 上に浮いた疎なピクセル集合」なので、
     何も無いところをバケツすると理論上は無限に広がる。必ず
     `MAX_FILL_PIXELS` (10万) と `MAX_FILL_EXTENT` (開始点から±2000px) で打ち切る。
     打ち切り時は **1px も塗らずに** `too-large` を返す (all-or-nothing。
     中途半端に塗ると取り消しが面倒なため)。
     content 側は画面上部に控えめなヒントを 2.5 秒出す (トーストは使わない方針)。
+
+  - `draft-base-layer.ts`: バケツの「壁」として下地タイルを読む口。
+    `tile-draw/last-modified-cache.getOriginalBlob` (原本タイル Blob) を decode して参照する。
+    **flood fill 本体は同期のまま**にしたいので、塗る直前に開始点の周辺 3x3 タイルだけ
+    `prepareBaseTiles` で decode し、以降は `getBaseColorAtWorld` で同期に引く。
+    3x3 で足りるのは `MAX_FILL_EXTENT` (±2000px) が高々隣接タイルまでしか届かないため。
+    decode 済みタイルは 1枚 1000x1000 = 4MB なので保持は 9 枚まで (LRU)、
+    下書きモード終了時に `clearBaseTileCache()` で解放する。
+    下地が未取得 (画面外/未 fetch) のタイルは「色なし」= 壁にならない。
+    透明ピクセル (a=0) も「下地なし」扱いで、塗れる空白になる。
 
   - `draft-export.ts`: 保存時に bounding box で切り出し dataUrl 化 (`mr-wplace-request-draft-export`)。gallery 保存用。
     NOTE: `PxX/PxY` は `Math.floor(minX/TILE_SIZE) * TILE_SIZE` を引いて算出する
