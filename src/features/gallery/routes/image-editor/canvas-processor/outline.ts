@@ -242,8 +242,8 @@ export const createOutlinePreservedBitmap = async (
 ): Promise<ImageBitmap> => {
   const sourceWidth = source.naturalWidth;
   const sourceHeight = source.naturalHeight;
-  const targetWidth = Math.max(1, Math.floor(sourceWidth * scale));
-  const targetHeight = Math.max(1, Math.floor(sourceHeight * scale));
+  const targetWidth = Math.max(1, Math.round(sourceWidth * scale));
+  const targetHeight = Math.max(1, Math.round(sourceHeight * scale));
 
   const resizedBitmap = await createResizedImageBitmap(source, {
     width: targetWidth,

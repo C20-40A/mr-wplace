@@ -339,8 +339,8 @@ export const createProcessedCanvas = async (
   colorFlattenMode: ColorFlattenMode = "none"
 ): Promise<HTMLCanvasElement> => {
   const resizedBitmap = await createResizedImageBitmap(img, {
-    width: Math.floor(img.naturalWidth * scale),
-    height: Math.floor(img.naturalHeight * scale),
+    width: Math.round(img.naturalWidth * scale),
+    height: Math.round(img.naturalHeight * scale),
     quality: "pixelated",
   });
 

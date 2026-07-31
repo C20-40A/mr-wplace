@@ -1377,10 +1377,10 @@ export class EditorController {
 
     const { createResizedImageBitmap } =
       await import("@/utils/image-bitmap-compat");
-    const newWidth = Math.floor(
+    const newWidth = Math.round(
       this.originalImage.naturalWidth * this.imageScale,
     );
-    const newHeight = Math.floor(
+    const newHeight = Math.round(
       this.originalImage.naturalHeight * this.imageScale,
     );
 
