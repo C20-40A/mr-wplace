@@ -40,6 +40,7 @@ import {
   setDraftEraseModeEnabled,
   setDraftBucketModeEnabled,
   setDraftBrushSettings,
+  setDraftStampToolSettings,
   setDraftLineSettings,
   setDraftMapLockEnabled,
   clearAllDraft,
@@ -403,6 +404,8 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-draft-bucket-update": (data) =>
     setDraftBucketModeEnabled(data.enabled),
   "mr-wplace-draft-brush-update": (data) => setDraftBrushSettings(data),
+  "mr-wplace-draft-stamp-update": (data) =>
+    setDraftStampToolSettings(data),
   "mr-wplace-draft-line-update": (data) => setDraftLineSettings(data),
   "mr-wplace-draft-map-lock-update": (data) =>
     setDraftMapLockEnabled(data.enabled),

@@ -25,6 +25,7 @@ import {
   setDraftEraseMode,
   setDraftLineMode,
   setDraftMapLocked,
+  setDraftStampSettings,
   updateDraftLineSettings,
 } from "./draft-canvas";
 import { exportDraftAsImage, type DraftExportResult } from "./draft-export";
@@ -34,6 +35,7 @@ import {
   type DitherStyle,
 } from "./draft-brush";
 import { colorpalette } from "@/constants/colors";
+import type { DraftStampMode, DraftStampPattern } from "./draft-stamp";
 
 /**
  * Draft draw (下書きモード)
@@ -161,6 +163,15 @@ export const setDraftBrushSettings = (data: {
 }): void => {
   if (typeof data.size === "number") setDraftBrushSize(data.size);
   if (data.ditherStyle) setDraftDitherStyle(data.ditherStyle);
+};
+
+/** Custom stamp pattern, placement type, and active state. */
+export const setDraftStampToolSettings = (data: {
+  enabled?: boolean;
+  mode?: DraftStampMode;
+  pattern?: DraftStampPattern;
+}): void => {
+  setDraftStampSettings(data);
 };
 
 /** Line tool settings and edit commands. */

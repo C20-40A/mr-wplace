@@ -119,6 +119,15 @@ export const sendDraftBrushToInject = (settings: {
   );
 };
 
+/** Send custom stamp pattern/tool state to the inject canvas. */
+export const sendDraftStampToInject = (data: {
+  enabled?: boolean;
+  mode?: "single" | "fill";
+  pattern?: { width: number; height: number; colorIds: Array<number | null> };
+}) => {
+  window.postMessage({ source: "mr-wplace-draft-stamp-update", ...data }, "*");
+};
+
 /** Send line tool state/settings or an edit command to the inject canvas. */
 export const sendDraftLineToInject = (data: {
   enabled?: boolean;

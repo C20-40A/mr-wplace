@@ -11,6 +11,7 @@ import {
   sendDraftEraseModeToInject,
   sendDraftBucketModeToInject,
   sendDraftBrushToInject,
+  sendDraftStampToInject,
   sendDraftLineToInject,
   sendDraftMapLockToInject,
   sendDraftUndoToInject,
@@ -50,6 +51,7 @@ const COLOR_TIP_ID = "mr-wplace-draft-color-tip";
 const COLOR_STRIP_ID = "mr-wplace-draft-colors";
 const BRUSH_POPUP_ID = "mr-wplace-draft-brush-popup";
 const LINE_POPUP_ID = "mr-wplace-draft-line-popup";
+const STAMP_POPUP_ID = "mr-wplace-draft-stamp-popup";
 /** undo/redo FAB (画面左上に浮かせる) */
 const HISTORY_ID = "mr-wplace-draft-history";
 
@@ -92,6 +94,56 @@ const buildDitherPreviewSvg = (style: DitherStyle): string => {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" width="20" height="20" fill="currentColor" shape-rendering="crispEdges">${rects}</svg>`;
 };
 
+type StampMode = "single" | "fill";
+type StampPattern = { width: number; height: number; colorIds: Array<number | null> };
+type StampSample = { width: number; height: number; cells: boolean[] };
+
+const STAMP_MIN_SIZE = 1;
+const STAMP_MAX_SIZE = 24;
+
+const makeStampPattern = (
+  width: number,
+  height: number,
+  isOn: (x: number, y: number) => boolean,
+): StampSample => ({
+  width,
+  height,
+  cells: Array.from({ length: width * height }, (_, index) =>
+    isOn(index % width, Math.floor(index / width)),
+  ),
+});
+
+/** UI samples: labels are replaced by the actual dot patterns. */
+const STAMP_SAMPLES: readonly StampSample[] = [
+  makeStampPattern(3, 3, (x, y) => x === 1 && y === 1),
+  makeStampPattern(3, 3, (x, y) => y === 1 && (x === 1 || x === 2)),
+  makeStampPattern(5, 5, (x, y) => x === 2 || y === 2),
+  makeStampPattern(4, 4, (x, y) => ((x + y) & 1) === 0),
+  makeStampPattern(
+    7,
+    6,
+    (x, y) =>
+      (y === 0 && (x === 1 || x === 2 || x === 4 || x === 5)) ||
+      (y === 1 && x >= 0 && x <= 6) ||
+      (y === 2 && x >= 0 && x <= 6) ||
+      (y === 3 && x >= 1 && x <= 5) ||
+      (y === 4 && x >= 2 && x <= 4) ||
+      (y === 5 && x === 3),
+  ),
+];
+
+const buildStampPreviewSvg = (
+  pattern: StampSample,
+  size = 28,
+): string => {
+  let cells = "";
+  for (let y = 0; y < pattern.height; y++)
+    for (let x = 0; x < pattern.width; x++)
+      if (pattern.cells[y * pattern.width + x])
+        cells += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${pattern.width} ${pattern.height}" width="${size}" height="${size}" fill="currentColor" shape-rendering="crispEdges">${cells}</svg>`;
+};
+
 /**
  * パレットの行数まわり。**行数**を 2-8 に収め、列は横幅ぶん好きなだけ使う。
  * 色数は固定なので「行数 = ceil(色数 / 列数)」。列数を横幅から決めれば
@@ -117,6 +169,9 @@ const LOCK_CLOSED_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATT
 const UNDO_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>`;
 const REDO_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>`;
 const BUCKET_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M11 7 6 2"/><path d="M18.992 12H2.041"/><path d="M21.145 18.38A3.34 3.34 0 0 1 20 16.5a3.3 3.3 0 0 1-1.145 1.88c-.575.46-.855 1.02-.855 1.595A2 2 0 0 0 20 22a2 2 0 0 0 2-2.025c0-.58-.285-1.13-.855-1.595"/><path d="m8.5 4.5 2.148-2.148a1.205 1.205 0 0 1 1.704 0l7.296 7.296a1.205 1.205 0 0 1 0 1.704l-7.592 7.592a3.615 3.615 0 0 1-5.112 0l-3.888-3.888a3.615 3.615 0 0 1 0-5.112L5.67 7.33"/></svg>`;
+/** User-provided Lucide stamp icon. */
+const STAMP_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M14 13V8.5C14 7 15 7 15 5a3 3 0 0 0-6 0c0 2 1 2 1 3.5V13"/><path d="M20 15.5a2.5 2.5 0 0 0-2.5-2.5h-11A2.5 2.5 0 0 0 4 15.5V17a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1z"/><path d="M5 22h14"/></svg>`;
+const CLEAR_PATTERN_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="m12 3-1.2 3.8L7 5.5l2.3 3.2L5.5 10l3.8 1.3-2.3 3.2 3.8-1.3L12 17l1.2-3.8 3.8 1.3-2.3-3.2 3.8-1.3-3.8-1.3L17 5.5l-3.8 1.3z"/><path d="m4 20 3-2M20 20l-3-2"/></svg>`;
 /** User-provided Lucide spline icon. */
 const LINE_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M5 17A12 12 0 0 1 17 5"/></svg>`;
 const CHECK_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="m20 6-11 11-5-5"/></svg>`;
@@ -156,6 +211,13 @@ export class DraftDraw {
   private lineInnerColorId = 10; // Yellow
   private lineOutlineColorId = 9; // Gold
   private lineColorTarget: "inner" | "outline" = "inner";
+  /** 自作ドットパターン。single は1回配置、fill は連結領域へ反復する。 */
+  private stampMode: StampMode | null = null;
+  private stampWidth = STAMP_SAMPLES[1].width;
+  private stampHeight = STAMP_SAMPLES[1].height;
+  private stampColorId = 10;
+  private stampColorIds = STAMP_SAMPLES[1].cells.map((cell) => cell ? 10 : null);
+  private stampPaintColorId: number | null | undefined = null;
 
   constructor() {
     this.init();
@@ -279,6 +341,7 @@ export class DraftDraw {
     this.seedItem = seedItem ?? null;
     this.erasing = false;
     this.lineMode = false;
+    this.stampMode = null;
     this.mapLocked = false;
 
     // 他の UI が邪魔になるので focus mode と同じ挙動 (#map を最前面へ) にする。
@@ -305,6 +368,7 @@ export class DraftDraw {
     this.erasing = false;
     this.bucket = false;
     this.lineMode = false;
+    this.stampMode = null;
     this.mapLocked = false;
     this.pixelCount = 0;
     this.savedKey = null;
@@ -320,6 +384,7 @@ export class DraftDraw {
     this.hideColorTip();
     this.closeBrushPopup();
     this.closeLinePopup();
+    this.closeStampPopup();
     window.removeEventListener("resize", this.handleResize);
   }
 
@@ -474,6 +539,7 @@ export class DraftDraw {
         this.erasing = false;
         sendDraftEraseModeToInject(false);
         this.updateToolbar();
+        this.syncStampGrid();
       });
       swatch.addEventListener("pointerenter", () =>
         this.showColorTip(swatch, color.name),
@@ -569,6 +635,7 @@ export class DraftDraw {
     eraser.title = t`${"draft_eraser"}`;
     eraser.addEventListener("click", () => {
       if (this.lineMode) this.finishLineTool("cancel");
+      this.deactivateStampTool();
       this.erasing = !this.erasing;
       // 排他: バケツとは同時に使えない
       if (this.erasing) this.bucket = false;
@@ -585,6 +652,7 @@ export class DraftDraw {
     brush.title = t`${"draft_brush"}`;
     brush.addEventListener("click", (e) => {
       e.stopPropagation();
+      this.deactivateStampTool();
       if (this.lineMode) this.finishLineTool("cancel");
       this.closeLinePopup();
       this.toggleBrushPopup();
@@ -601,6 +669,23 @@ export class DraftDraw {
       e.stopPropagation();
       if (!this.lineMode) this.activateLineTool();
       else this.toggleLinePopup();
+    });
+
+    const stamp = document.createElement("button");
+    stamp.id = `${TOOLBAR_ID}-stamp`;
+    stamp.type = "button";
+    stamp.className = "btn btn-sm btn-square";
+    stamp.innerHTML = STAMP_ICON_SVG;
+    stamp.title = "Stamp";
+    stamp.setAttribute("aria-label", "Stamp");
+    stamp.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (this.lineMode) this.finishLineTool("cancel");
+      this.closeBrushPopup();
+      this.closeLinePopup();
+      if (!this.stampMode) this.activateStampTool();
+      else if (document.getElementById(STAMP_POPUP_ID)) this.closeStampPopup();
+      else this.openStampPopup();
     });
 
     // マップロック: ON にすると左ドラッグが pan ではなく描画になる
@@ -624,6 +709,7 @@ export class DraftDraw {
     bucket.title = t`${"draft_bucket"}`;
     bucket.addEventListener("click", () => {
       if (this.lineMode) this.finishLineTool("cancel");
+      this.deactivateStampTool();
       this.bucket = !this.bucket;
       if (this.bucket) this.erasing = false;
       sendDraftBucketModeToInject(this.bucket);
@@ -640,8 +726,378 @@ export class DraftDraw {
     save.addEventListener("click", () => void this.save());
 
     // 閉じるは sheet の外 (右上の丸バツ) なのでここには入れない
-    row.append(save, lock, brush, line, eraser, bucket);
+    row.append(save, lock, brush, stamp, line, eraser, bucket);
     return row;
+  }
+
+  // ------- stamp tool -------
+
+  private getStampPattern(): StampPattern {
+    return {
+      width: this.stampWidth,
+      height: this.stampHeight,
+      colorIds: [...this.stampColorIds],
+    };
+  }
+
+  private sendStampSettings(): void {
+    if (!this.stampMode) return;
+    sendDraftStampToInject({
+      enabled: true,
+      mode: this.stampMode,
+      pattern: this.getStampPattern(),
+    });
+  }
+
+  private activateStampTool(): void {
+    this.erasing = false;
+    this.bucket = false;
+    this.stampMode = "single";
+    sendDraftEraseModeToInject(false);
+    sendDraftBucketModeToInject(false);
+    this.sendStampSettings();
+    this.updateToolbar();
+    this.openStampPopup();
+  }
+
+  private deactivateStampTool(): void {
+    if (!this.stampMode) return;
+    this.stampMode = null;
+    sendDraftStampToInject({ enabled: false });
+    this.closeStampPopup();
+    this.updateToolbar();
+  }
+
+  private openStampPopup(): void {
+    this.closeStampPopup();
+    const anchor = document.getElementById(`${TOOLBAR_ID}-stamp`);
+    if (!anchor) return;
+
+    const popup = document.createElement("div");
+    popup.id = STAMP_POPUP_ID;
+    popup.style.cssText = [
+      "position:fixed;z-index:1004",
+      "display:flex;flex-direction:column;align-items:stretch;gap:8px",
+      "width:min(360px,calc(100vw - 16px));max-height:min(520px,calc(100vh - 180px));overflow:auto",
+      "padding:10px;border-radius:12px",
+      "background:var(--color-base-100)",
+      "border:1px solid var(--color-base-300)",
+      "color:var(--color-base-content)",
+      "box-shadow:0 4px 16px rgb(0 0 0 / 0.25)",
+    ].join(";");
+    popup.addEventListener("pointerdown", (event) => event.stopPropagation());
+    popup.addEventListener("click", (event) => event.stopPropagation());
+
+    const editor = document.createElement("div");
+    editor.style.cssText = "display:flex;align-items:flex-start;justify-content:center;gap:10px;";
+
+    const grid = document.createElement("div");
+    grid.id = `${STAMP_POPUP_ID}-grid`;
+    grid.style.cssText = [
+      "display:grid;align-self:center;gap:1px",
+      "padding:5px;border-radius:8px",
+      "background:var(--color-base-300)",
+      "touch-action:none;user-select:none",
+    ].join(";");
+    editor.append(grid, this.buildStampDimensionRow());
+    popup.append(editor);
+    popup.append(this.buildStampPalette());
+    popup.append(this.buildStampSampleRow());
+
+
+    const actions = document.createElement("div");
+    actions.style.cssText = "display:flex;justify-content:center;gap:8px;";
+    const clear = document.createElement("button");
+    clear.type = "button";
+    clear.className = "btn btn-sm btn-square";
+    clear.innerHTML = CLEAR_PATTERN_ICON_SVG;
+    clear.title = "Clear pattern";
+    clear.setAttribute("aria-label", "Clear pattern");
+    clear.addEventListener("click", () => {
+      this.stampColorIds.fill(null);
+      this.syncStampGrid();
+      this.sendStampSettings();
+    });
+    actions.append(clear);
+    popup.append(actions);
+    popup.append(this.buildStampModeRow());
+
+    document.body.appendChild(popup);
+    this.syncStampPopup();
+
+    const rect = anchor.getBoundingClientRect();
+    popup.style.bottom = `${window.innerHeight - rect.top + 8}px`;
+    popup.style.left = `${Math.min(Math.max(rect.left + rect.width / 2 - popup.offsetWidth / 2, 8), window.innerWidth - popup.offsetWidth - 8)}px`;
+
+    window.addEventListener("pointerdown", this.handleOutsideStampClick, {
+      capture: true,
+    });
+    window.addEventListener("pointerup", this.handleStampPaintEnd, {
+      capture: true,
+    });
+    window.addEventListener("pointercancel", this.handleStampPaintEnd, {
+      capture: true,
+    });
+  }
+
+  private buildStampModeRow(): HTMLElement {
+    const row = document.createElement("div");
+    row.id = `${STAMP_POPUP_ID}-modes`;
+    row.style.cssText = "display:flex;justify-content:center;gap:8px;";
+    const options: Array<{ mode: StampMode; icon: string }> = [
+      { mode: "single", icon: STAMP_ICON_SVG },
+      { mode: "fill", icon: BUCKET_ICON_SVG },
+    ];
+    for (const { mode, icon } of options) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.stampMode = mode;
+      button.className = "btn btn-sm";
+      button.style.cssText = "display:flex;align-items:center;gap:5px;padding-inline:10px;";
+      button.innerHTML = `${icon}<span>${mode === "single" ? "Stamp" : "Fill"}</span>`;
+      button.title = mode === "single" ? "Stamp" : "Fill";
+      button.setAttribute("aria-label", button.title);
+      button.addEventListener("click", () => {
+        this.stampMode = mode;
+        this.sendStampSettings();
+        this.syncStampPopup();
+        this.updateToolbar();
+      });
+      row.append(button);
+    }
+    return row;
+  }
+
+  private buildStampSampleRow(): HTMLElement {
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;justify-content:center;gap:6px;";
+    STAMP_SAMPLES.forEach((sample, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "btn btn-sm btn-square";
+      button.style.padding = "3px";
+      button.innerHTML = buildStampPreviewSvg(sample, 24);
+      button.title = `Sample ${index + 1}`;
+      button.setAttribute("aria-label", button.title);
+      button.addEventListener("click", () => {
+        this.stampWidth = sample.width;
+        this.stampHeight = sample.height;
+        this.stampColorIds = sample.cells.map((cell) => cell ? this.stampColorId : null);
+        this.syncStampPopup();
+        this.sendStampSettings();
+      });
+      row.append(button);
+    });
+    return row;
+  }
+
+  private buildStampDimensionRow(): HTMLElement {
+    const row = document.createElement("div");
+    row.id = `${STAMP_POPUP_ID}-dimensions`;
+    row.style.cssText = "display:flex;flex-direction:column;justify-content:center;gap:6px;";
+
+    const build = (axis: "width" | "height"): HTMLElement => {
+      const group = document.createElement("div");
+      group.style.cssText = "display:flex;align-items:center;gap:4px;";
+      const axisIcon = document.createElement("span");
+      axisIcon.style.cssText = "display:flex;opacity:.65";
+      axisIcon.innerHTML =
+        axis === "width"
+          ? `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M4 12h16M7 9l-3 3 3 3M17 9l3 3-3 3"/></svg>`
+          : `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M12 4v16M9 7l3-3 3 3M9 17l3 3 3-3"/></svg>`;
+      group.append(axisIcon);
+
+      const addStep = (delta: number, icon: string): void => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn btn-xs btn-square";
+        button.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}>${icon}</svg>`;
+        button.addEventListener("click", () => {
+          const width =
+            axis === "width" ? this.stampWidth + delta : this.stampWidth;
+          const height =
+            axis === "height" ? this.stampHeight + delta : this.stampHeight;
+          this.resizeStampPattern(width, height);
+        });
+        group.append(button);
+      };
+      addStep(-1, `<path d="M5 12h14"/>`);
+
+      const output = document.createElement("output");
+      output.dataset.stampDimension = axis;
+      output.style.cssText =
+        "min-width:24px;text-align:center;font:12px/1 monospace;";
+      group.append(output);
+      addStep(1, `<path d="M12 5v14M5 12h14"/>`);
+      return group;
+    };
+
+    row.append(build("width"), build("height"));
+    return row;
+  }
+
+  private resizeStampPattern(width: number, height: number): void {
+    const nextWidth = Math.max(
+      STAMP_MIN_SIZE,
+      Math.min(STAMP_MAX_SIZE, Math.round(width)),
+    );
+    const nextHeight = Math.max(
+      STAMP_MIN_SIZE,
+      Math.min(STAMP_MAX_SIZE, Math.round(height)),
+    );
+    if (nextWidth === this.stampWidth && nextHeight === this.stampHeight)
+      return;
+
+    const colorIds = Array(nextWidth * nextHeight).fill(null) as Array<number | null>;
+    const offsetX = Math.floor((nextWidth - this.stampWidth) / 2);
+    const offsetY = Math.floor((nextHeight - this.stampHeight) / 2);
+    for (let y = 0; y < this.stampHeight; y++)
+      for (let x = 0; x < this.stampWidth; x++) {
+        const nx = x + offsetX;
+        const ny = y + offsetY;
+        if (nx >= 0 && nx < nextWidth && ny >= 0 && ny < nextHeight)
+          colorIds[ny * nextWidth + nx] =
+            this.stampColorIds[y * this.stampWidth + x];
+      }
+
+    this.stampWidth = nextWidth;
+    this.stampHeight = nextHeight;
+    this.stampColorIds = colorIds;
+    this.syncStampPopup();
+    this.sendStampSettings();
+  }
+
+  private getStampColorCss(colorId: number | null): string {
+    const color = colorpalette.find((entry) => entry.id === colorId);
+    return color ? `rgb(${color.rgb.join(",")})` : "var(--color-base-200)";
+  }
+
+  private buildStampPalette(): HTMLElement {
+    const palette = document.createElement("div");
+    palette.id = `${STAMP_POPUP_ID}-palette`;
+    palette.style.cssText =
+      "display:grid;grid-template-columns:repeat(9,1fr);gap:3px;margin:0 auto;width:min(250px,100%);";
+    for (const color of colorpalette) {
+      if (color.id === TRANSPARENT_COLOR_ID) continue;
+      const swatch = document.createElement("button");
+      swatch.type = "button";
+      swatch.dataset.stampColorId = String(color.id);
+      swatch.className = "btn btn-xs btn-square";
+      swatch.style.cssText = `height:16px;min-height:16px;padding:0;background:rgb(${color.rgb.join(",")});border:2px solid transparent;`;
+      swatch.title = color.name;
+      swatch.setAttribute("aria-label", color.name);
+      swatch.addEventListener("click", () => {
+        this.stampColorId = color.id;
+        this.syncStampPalette();
+      });
+      palette.append(swatch);
+    }
+    return palette;
+  }
+
+  private syncStampPalette(): void {
+    for (const swatch of document.querySelectorAll<HTMLElement>(
+      `[data-stamp-color-id]`,
+    ))
+      swatch.style.borderColor =
+        Number(swatch.dataset.stampColorId) === this.stampColorId
+          ? "var(--color-primary)"
+          : "transparent";
+  }
+
+  private syncStampPopup(): void {
+    for (const button of document.querySelectorAll<HTMLElement>(
+      `[data-stamp-mode]`,
+    ))
+      button.className = `btn btn-sm${button.dataset.stampMode === this.stampMode ? " btn-primary" : ""}`;
+
+    for (const output of document.querySelectorAll<HTMLOutputElement>(
+      `[data-stamp-dimension]`,
+    ))
+      output.value = String(
+        output.dataset.stampDimension === "width"
+          ? this.stampWidth
+          : this.stampHeight,
+      );
+
+    this.syncStampPalette();
+    this.syncStampGrid();
+  }
+
+  private syncStampGrid(): void {
+    const grid = document.getElementById(`${STAMP_POPUP_ID}-grid`);
+    if (!grid) return;
+    const size = Math.max(
+      8,
+      Math.min(20, Math.floor(220 / Math.max(this.stampWidth, this.stampHeight))),
+    );
+    grid.style.gridTemplateColumns = `repeat(${this.stampWidth},${size}px)`;
+    grid.replaceChildren();
+
+    this.stampColorIds.forEach((colorId, index) => {
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.dataset.stampCell = String(index);
+      cell.setAttribute("aria-label", `Pixel ${index + 1}`);
+      cell.style.cssText = [
+        `width:${size}px;height:${size}px;padding:0;border:0;border-radius:1px`,
+        `background:${this.getStampColorCss(colorId)}`,
+        "cursor:crosshair;touch-action:none",
+      ].join(";");
+      cell.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        this.stampPaintColorId =
+          this.stampColorIds[index] === this.stampColorId
+            ? null
+            : this.stampColorId;
+        this.setStampCell(index, this.stampPaintColorId);
+      });
+      cell.addEventListener("pointerenter", (event) => {
+        if (event.buttons === 0 || this.stampPaintColorId === undefined) return;
+        this.setStampCell(index, this.stampPaintColorId);
+      });
+      grid.append(cell);
+    });
+  }
+
+  private setStampCell(index: number, colorId: number | null): void {
+    if (this.stampColorIds[index] === colorId) return;
+    this.stampColorIds[index] = colorId;
+    const cell = document.querySelector<HTMLElement>(
+      `[data-stamp-cell="${index}"]`,
+    );
+    if (cell) cell.style.background = this.getStampColorCss(colorId);
+    this.sendStampSettings();
+  }
+
+  private handleStampPaintEnd = (): void => {
+    this.stampPaintColorId = undefined;
+  };
+
+  private handleOutsideStampClick = (event: Event): void => {
+    const popup = document.getElementById(STAMP_POPUP_ID);
+    const target = event.target;
+    if (popup && target instanceof Node && popup.contains(target)) return;
+    if (
+      target instanceof Node &&
+      document.getElementById(`${TOOLBAR_ID}-stamp`)?.contains(target)
+    )
+      return;
+    this.closeStampPopup();
+  };
+
+  private closeStampPopup(): void {
+    document.getElementById(STAMP_POPUP_ID)?.remove();
+    this.stampPaintColorId = undefined;
+    window.removeEventListener("pointerdown", this.handleOutsideStampClick, {
+      capture: true,
+    });
+    window.removeEventListener("pointerup", this.handleStampPaintEnd, {
+      capture: true,
+    });
+    window.removeEventListener("pointercancel", this.handleStampPaintEnd, {
+      capture: true,
+    });
   }
 
   // ------- line tool -------
@@ -667,6 +1123,7 @@ export class DraftDraw {
 
   private activateLineTool(): void {
     this.closeBrushPopup();
+    this.deactivateStampTool();
     this.erasing = false;
     this.bucket = false;
     this.lineMode = true;
@@ -1139,6 +1596,8 @@ export class DraftDraw {
   /** 🔒 ON 中は drag の意味が変わるので、その旨だけ差し替える */
   private buildHintText(): string {
     if (this.lineMode) return "●━━━━●   ◉↕   ↵✓   esc✕";
+    if (this.stampMode === "single") return "▦  →  ⬚";
+    if (this.stampMode === "fill") return "▦  ↻  ▦▦▦";
     return this.mapLocked
       ? "🔒 drag = draw / mid = spoit / right = erase"
       : "🖱️ dot / drag = move / Space+move = draw / mid = spoit / right = erase";
@@ -1156,6 +1615,7 @@ export class DraftDraw {
       this.hideColorTip();
       this.closeBrushPopup();
       this.closeLinePopup();
+      this.closeStampPopup();
       window.removeEventListener("resize", this.handleResize);
       return;
     }
@@ -1188,6 +1648,12 @@ export class DraftDraw {
     ) as HTMLButtonElement | null;
     if (line)
       line.className = `btn btn-sm btn-square${this.lineMode ? " btn-primary" : ""}`;
+
+    const stamp = document.getElementById(
+      `${TOOLBAR_ID}-stamp`,
+    ) as HTMLButtonElement | null;
+    if (stamp)
+      stamp.className = `btn btn-sm btn-square${this.stampMode ? " btn-primary" : ""}`;
 
     // ロックは状態が分かりにくいので、色だけでなく錠前の開閉も差し替える
     const lock = document.getElementById(

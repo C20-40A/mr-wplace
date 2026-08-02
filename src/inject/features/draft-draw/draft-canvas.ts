@@ -19,6 +19,13 @@ import {
   type DraftLineSettings,
   type DraftLineShape,
 } from "./draft-line";
+import {
+  forEachDraftStampPixel,
+  getDraftStampColorIdAt,
+  normalizeDraftStampPattern,
+  type DraftStampMode,
+  type DraftStampPattern,
+} from "./draft-stamp";
 
 /**
  * Draft canvas layer
@@ -86,6 +93,14 @@ let spaceHeld = false;
  */
 let mapLocked = false;
 
+/** Custom pixel pattern tool. null means the regular brush is active. */
+let stampMode: DraftStampMode | null = null;
+let stampPattern: DraftStampPattern = {
+  width: 3,
+  height: 3,
+  colorIds: [null, 10, null, 10, 10, 10, null, 10, null],
+};
+
 /** Editable vector preview. It is rasterized into the draft store on commit. */
 let lineMode = false;
 let lineShape: DraftLineShape | null = null;
@@ -147,6 +162,7 @@ export const markDraftCanvasDirty = (): void => {
 export const setDraftEraseMode = (enabled: boolean): void => {
   eraseMode = enabled;
   if (enabled) bucketMode = false;
+  if (enabled) stampMode = null;
   updateCursor();
 };
 
@@ -155,6 +171,7 @@ export const isDraftEraseMode = (): boolean => eraseMode;
 export const setDraftBucketMode = (enabled: boolean): void => {
   bucketMode = enabled;
   if (enabled) eraseMode = false;
+  if (enabled) stampMode = null;
   updateCursor();
 };
 
@@ -163,6 +180,7 @@ export const setDraftLineMode = (enabled: boolean): void => {
   if (enabled) {
     eraseMode = false;
     bucketMode = false;
+    stampMode = null;
   } else {
     lineShape = null;
     lineDrag = null;
@@ -225,6 +243,23 @@ export const setDraftMapLocked = (locked: boolean): void => {
   mapLocked = locked;
   // ロック解除時にストロークを切る。次の pan と線で繋がらないようにする
   if (!locked && !dragMode) lastWorld = null;
+  updateCursor();
+};
+
+export const setDraftStampSettings = (data: {
+  enabled?: boolean;
+  mode?: DraftStampMode;
+  pattern?: DraftStampPattern;
+}): void => {
+  if (data.pattern) stampPattern = normalizeDraftStampPattern(data.pattern);
+  if (data.enabled === false) stampMode = null;
+  if (data.enabled === true) {
+    stampMode = data.mode === "fill" ? "fill" : "single";
+    eraseMode = false;
+    bucketMode = false;
+  } else if (stampMode && data.mode) {
+    stampMode = data.mode;
+  }
   updateCursor();
 };
 
@@ -448,6 +483,56 @@ const bucketFillAt = async (
   commitHistoryEntry();
 };
 
+/** Custom pattern 1回をクリック位置の中央へ置く。 */
+const stampAt = (clientX: number, clientY: number): void => {
+  const world = screenToWorldPixel(clientX, clientY);
+  if (!world) return;
+
+  beginHistoryEntry();
+  forEachDraftStampPixel(world.x, world.y, stampPattern, (x, y, colorId) => {
+    const rgb = paletteById.get(colorId);
+    if (!rgb) return;
+    applyWorldPixel(x, y, { r: rgb[0], g: rgb[1], b: rgb[2] });
+  });
+  commitHistoryEntry();
+};
+
+/**
+ * 既存バケツと同じ連結領域を求め、その領域内だけにパターンを反復する。
+ * OFF セルは下地を残すため、格子・網点・縞などを一操作で敷ける。
+ */
+const stampFillAt = async (
+  clientX: number,
+  clientY: number,
+): Promise<void> => {
+  const world = screenToWorldPixel(clientX, clientY);
+  if (!world) return;
+  const pattern = stampPattern;
+
+  await prepareBaseTiles(getNeighborTiles(world.x, world.y));
+  const targetColor = { r: -1, g: -1, b: -1 };
+  const result = computeBucketFill(world.x, world.y, targetColor, true);
+  if (!result.ok) {
+    onBucketFailed?.();
+    return;
+  }
+
+  beginHistoryEntry();
+  for (const pixel of result.pixels) {
+    const colorId = getDraftStampColorIdAt(
+      pixel.x,
+      pixel.y,
+      world.x,
+      world.y,
+      pattern,
+    );
+    if (colorId === null) continue;
+    const rgb = paletteById.get(colorId);
+    if (rgb) applyWorldPixel(pixel.x, pixel.y, { r: rgb[0], g: rgb[1], b: rgb[2] });
+  }
+  commitHistoryEntry();
+};
+
 /** spoit: その座標の下書き色を拾って選択色にする */
 const pickColorAt = (clientX: number, clientY: number): void => {
   const world = screenToWorldPixel(clientX, clientY);
@@ -650,7 +735,7 @@ const handlePointerDown = (e: PointerEvent): void => {
 
   // Space 中は「なぞって塗る」モード。ここで pan させると塗りながら地図が
   // 動いてしまうので、左押下は map へ渡さず塗りとして扱う
-  if (spaceHeld && e.button === 0 && !bucketMode) {
+  if (spaceHeld && e.button === 0 && !bucketMode && !stampMode) {
     stop(e);
     const world = screenToWorldPixel(e.clientX, e.clientY);
     if (world) {
@@ -666,7 +751,7 @@ const handlePointerDown = (e: PointerEvent): void => {
    * hover で塗ると地図上をなぞっただけで描けてしまい事故になる)。
    * バケツ ON の時は「クリック = バケツ」を優先する。
    */
-  if (mapLocked && e.button === 0 && !bucketMode) {
+  if (mapLocked && e.button === 0 && !bucketMode && !stampMode) {
     stop(e);
     // ストローク全体で undo 1回 (pointerup で commit)
     beginHistoryEntry();
@@ -726,6 +811,15 @@ const handlePointerUp = (e: PointerEvent): void => {
     pendingClick = null;
     if (!moved) {
       stop(e);
+      if (stampMode === "fill") {
+        // 下地 decode を挟むので非同期。pointer 処理はここで終える
+        void stampFillAt(e.clientX, e.clientY);
+        return;
+      }
+      if (stampMode === "single") {
+        stampAt(e.clientX, e.clientY);
+        return;
+      }
       if (bucketMode) {
         // 下地 decode を挟むので非同期。pointer 処理はここで終える
         void bucketFillAt(e.clientX, e.clientY);
@@ -808,6 +902,8 @@ const handleKeyDown = (e: KeyboardEvent): void => {
   }
 
   if (e.code !== "Space") return;
+  // スタンプはクリック配置専用。Space はマップ操作のままにする。
+  if (stampMode) return;
   // ページスクロール抑止。入力欄にフォーカスがある時は邪魔しない
   if (isTypingTarget()) return;
   e.preventDefault();
@@ -846,6 +942,8 @@ const updateCursor = (): void => {
       ? "crosshair"
     : eraseMode
       ? "cell"
+      : stampMode
+        ? "copy"
       : bucketMode
         ? "copy"
         : // ロック中は pan しないので grab (掴める) に見せない
@@ -1063,6 +1161,7 @@ export const setDraftCanvasActive = (enabled: boolean): void => {
   lineShape = null;
   lineDrag = null;
   linePointerId = null;
+  stampMode = null;
 
   if (enabled) {
     attachMapListeners();
@@ -1081,6 +1180,7 @@ export const setDraftCanvasActive = (enabled: boolean): void => {
   eraseMode = false;
   bucketMode = false;
   mapLocked = false;
+  stampMode = null;
   if (rafId !== null) {
     cancelAnimationFrame(rafId);
     rafId = null;

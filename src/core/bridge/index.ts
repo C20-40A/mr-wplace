@@ -26,6 +26,7 @@ export {
   sendDraftEraseModeToInject,
   sendDraftBucketModeToInject,
   sendDraftBrushToInject,
+  sendDraftStampToInject,
   sendDraftMapLockToInject,
   sendDraftLineToInject,
   sendDraftUndoToInject,
