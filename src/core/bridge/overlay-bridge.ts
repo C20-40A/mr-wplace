@@ -119,6 +119,18 @@ export const sendDraftBrushToInject = (settings: {
   );
 };
 
+/** Send line tool state/settings or an edit command to the inject canvas. */
+export const sendDraftLineToInject = (data: {
+  enabled?: boolean;
+  innerWidth?: number;
+  outlineWidth?: number;
+  innerColorId?: number;
+  outlineColorId?: number;
+  command?: "commit" | "cancel";
+}) => {
+  window.postMessage({ source: "mr-wplace-draft-line-update", ...data }, "*");
+};
+
 export interface DraftExportResult {
   dataUrl: string;
   width: number;

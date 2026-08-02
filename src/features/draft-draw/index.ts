@@ -11,6 +11,7 @@ import {
   sendDraftEraseModeToInject,
   sendDraftBucketModeToInject,
   sendDraftBrushToInject,
+  sendDraftLineToInject,
   sendDraftMapLockToInject,
   sendDraftUndoToInject,
   sendDraftRedoToInject,
@@ -48,6 +49,7 @@ const CLOSE_ID = "mr-wplace-draft-close";
 const COLOR_TIP_ID = "mr-wplace-draft-color-tip";
 const COLOR_STRIP_ID = "mr-wplace-draft-colors";
 const BRUSH_POPUP_ID = "mr-wplace-draft-brush-popup";
+const LINE_POPUP_ID = "mr-wplace-draft-line-popup";
 /** undo/redo FAB (画面左上に浮かせる) */
 const HISTORY_ID = "mr-wplace-draft-history";
 
@@ -115,6 +117,10 @@ const LOCK_CLOSED_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATT
 const UNDO_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>`;
 const REDO_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>`;
 const BUCKET_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M11 7 6 2"/><path d="M18.992 12H2.041"/><path d="M21.145 18.38A3.34 3.34 0 0 1 20 16.5a3.3 3.3 0 0 1-1.145 1.88c-.575.46-.855 1.02-.855 1.595A2 2 0 0 0 20 22a2 2 0 0 0 2-2.025c0-.58-.285-1.13-.855-1.595"/><path d="m8.5 4.5 2.148-2.148a1.205 1.205 0 0 1 1.704 0l7.296 7.296a1.205 1.205 0 0 1 0 1.704l-7.592 7.592a3.615 3.615 0 0 1-5.112 0l-3.888-3.888a3.615 3.615 0 0 1 0-5.112L5.67 7.33"/></svg>`;
+/** User-provided Lucide spline icon. */
+const LINE_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M5 17A12 12 0 0 1 17 5"/></svg>`;
+const CHECK_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="m20 6-11 11-5-5"/></svg>`;
+const X_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
 /** 下書き保存で作られたギャラリー item。再保存で上書きする */
 const SAVED_KEY_PREFIX = "draft-";
 
@@ -143,6 +149,13 @@ export class DraftDraw {
   /** undo/redo の可否 (inject の履歴スタック由来) */
   private canUndo = false;
   private canRedo = false;
+  /** 確定前は端点/制御点を動かせるベクター線ツール */
+  private lineMode = false;
+  private lineInnerWidth = 2;
+  private lineOutlineWidth = 1;
+  private lineInnerColorId = 10; // Yellow
+  private lineOutlineColorId = 9; // Gold
+  private lineColorTarget: "inner" | "outline" = "inner";
 
   constructor() {
     this.init();
@@ -181,6 +194,13 @@ export class DraftDraw {
 
     // spoit で色が変わったらスウォッチの選択表示を追従させる
     if (source === "mr-wplace-draft-color-picked") this.updateToolbar();
+
+    if (source === "mr-wplace-draft-line-ended") {
+      this.lineMode = false;
+      this.closeLinePopup();
+      this.updateToolbar();
+      return;
+    }
 
     if (source === "mr-wplace-draft-bucket-too-large") this.showBucketHint();
   };
@@ -258,6 +278,7 @@ export class DraftDraw {
     this.savedKey = seedItem?.key ?? null;
     this.seedItem = seedItem ?? null;
     this.erasing = false;
+    this.lineMode = false;
     this.mapLocked = false;
 
     // 他の UI が邪魔になるので focus mode と同じ挙動 (#map を最前面へ) にする。
@@ -283,6 +304,7 @@ export class DraftDraw {
     this.enabled = false;
     this.erasing = false;
     this.bucket = false;
+    this.lineMode = false;
     this.mapLocked = false;
     this.pixelCount = 0;
     this.savedKey = null;
@@ -297,6 +319,7 @@ export class DraftDraw {
     document.getElementById(HISTORY_ID)?.remove();
     this.hideColorTip();
     this.closeBrushPopup();
+    this.closeLinePopup();
     window.removeEventListener("resize", this.handleResize);
   }
 
@@ -545,6 +568,7 @@ export class DraftDraw {
     eraser.innerHTML = ERASER_ICON_SVG;
     eraser.title = t`${"draft_eraser"}`;
     eraser.addEventListener("click", () => {
+      if (this.lineMode) this.finishLineTool("cancel");
       this.erasing = !this.erasing;
       // 排他: バケツとは同時に使えない
       if (this.erasing) this.bucket = false;
@@ -561,7 +585,22 @@ export class DraftDraw {
     brush.title = t`${"draft_brush"}`;
     brush.addEventListener("click", (e) => {
       e.stopPropagation();
+      if (this.lineMode) this.finishLineTool("cancel");
+      this.closeLinePopup();
       this.toggleBrushPopup();
+    });
+
+    const line = document.createElement("button");
+    line.id = `${TOOLBAR_ID}-line`;
+    line.type = "button";
+    line.className = "btn btn-sm btn-square";
+    line.innerHTML = LINE_ICON_SVG;
+    line.title = "Line";
+    line.setAttribute("aria-label", "Line");
+    line.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!this.lineMode) this.activateLineTool();
+      else this.toggleLinePopup();
     });
 
     // マップロック: ON にすると左ドラッグが pan ではなく描画になる
@@ -584,6 +623,7 @@ export class DraftDraw {
     bucket.innerHTML = BUCKET_ICON_SVG;
     bucket.title = t`${"draft_bucket"}`;
     bucket.addEventListener("click", () => {
+      if (this.lineMode) this.finishLineTool("cancel");
       this.bucket = !this.bucket;
       if (this.bucket) this.erasing = false;
       sendDraftBucketModeToInject(this.bucket);
@@ -600,8 +640,245 @@ export class DraftDraw {
     save.addEventListener("click", () => void this.save());
 
     // 閉じるは sheet の外 (右上の丸バツ) なのでここには入れない
-    row.append(save, lock, brush, eraser, bucket);
+    row.append(save, lock, brush, line, eraser, bucket);
     return row;
+  }
+
+  // ------- line tool -------
+
+  private getLineColor(id: number): (typeof colorpalette)[number] {
+    return colorpalette.find((color) => color.id === id) ?? colorpalette[0];
+  }
+
+  /** A curved road sample communicates width, outline and both colours. */
+  private buildLinePreviewSvg(): string {
+    const inner = this.getLineColor(this.lineInnerColorId);
+    const outline = this.getLineColor(this.lineOutlineColorId);
+    const innerWidth = Math.min(10, 2 + this.lineInnerWidth * 0.25);
+    const outlineWidth =
+      innerWidth + Math.min(12, this.lineOutlineWidth * 0.8) * 2;
+    const path = "M8 27 Q52 2 112 21";
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 34" width="120" height="34" fill="none" style="display:block">${
+      this.lineOutlineWidth > 0
+        ? `<path d="${path}" stroke="rgb(${outline.rgb.join(",")})" stroke-width="${outlineWidth}" stroke-linecap="round"/>`
+        : ""
+    }<path d="${path}" stroke="rgb(${inner.rgb.join(",")})" stroke-width="${innerWidth}" stroke-linecap="round"/></svg>`;
+  }
+
+  private activateLineTool(): void {
+    this.closeBrushPopup();
+    this.erasing = false;
+    this.bucket = false;
+    this.lineMode = true;
+    sendDraftEraseModeToInject(false);
+    sendDraftBucketModeToInject(false);
+    sendDraftLineToInject({
+      enabled: true,
+      innerWidth: this.lineInnerWidth,
+      outlineWidth: this.lineOutlineWidth,
+      innerColorId: this.lineInnerColorId,
+      outlineColorId: this.lineOutlineColorId,
+    });
+    this.updateToolbar();
+    this.openLinePopup();
+  }
+
+  private finishLineTool(command: "commit" | "cancel"): void {
+    if (!this.lineMode) return;
+    sendDraftLineToInject({ command });
+    this.lineMode = false;
+    this.closeLinePopup();
+    this.updateToolbar();
+  }
+
+  private toggleLinePopup(): void {
+    if (document.getElementById(LINE_POPUP_ID)) this.closeLinePopup();
+    else this.openLinePopup();
+  }
+
+  private openLinePopup(): void {
+    this.closeLinePopup();
+    const anchor = document.getElementById(`${TOOLBAR_ID}-line`);
+    if (!anchor) return;
+
+    const popup = document.createElement("div");
+    popup.id = LINE_POPUP_ID;
+    popup.style.cssText = [
+      "position:fixed;z-index:1004",
+      "display:flex;flex-direction:column;gap:8px",
+      "width:min(340px,calc(100vw - 16px));max-height:min(440px,calc(100vh - 180px));overflow:auto",
+      "padding:10px;border-radius:12px",
+      "background:var(--color-base-100)",
+      "border:1px solid var(--color-base-300)",
+      "color:var(--color-base-content)",
+      "box-shadow:0 4px 16px rgb(0 0 0 / 0.25)",
+    ].join(";");
+    popup.addEventListener("pointerdown", (e) => e.stopPropagation());
+    popup.addEventListener("click", (e) => e.stopPropagation());
+
+    const preview = document.createElement("div");
+    preview.id = `${LINE_POPUP_ID}-preview`;
+    preview.style.cssText =
+      "display:flex;align-items:center;justify-content:center;height:40px;border-radius:8px;background:var(--color-base-200);";
+    preview.innerHTML = this.buildLinePreviewSvg();
+    popup.append(preview);
+    popup.append(this.buildLineWidthControl("inner"));
+    popup.append(this.buildLineWidthControl("outline"));
+    popup.append(this.buildLineColorChannels());
+    popup.append(this.buildLinePalette());
+
+    const actions = document.createElement("div");
+    actions.style.cssText = "display:flex;justify-content:flex-end;gap:8px;";
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "btn btn-sm btn-square";
+    cancel.innerHTML = X_ICON_SVG;
+    cancel.title = "Cancel";
+    cancel.addEventListener("click", () => this.finishLineTool("cancel"));
+    const commit = document.createElement("button");
+    commit.type = "button";
+    commit.className = "btn btn-sm btn-square btn-primary";
+    commit.innerHTML = CHECK_ICON_SVG;
+    commit.title = "Apply";
+    commit.addEventListener("click", () => this.finishLineTool("commit"));
+    actions.append(cancel, commit);
+    popup.append(actions);
+
+    document.body.appendChild(popup);
+    const rect = anchor.getBoundingClientRect();
+    popup.style.bottom = `${window.innerHeight - rect.top + 8}px`;
+    popup.style.left = `${Math.min(Math.max(rect.left + rect.width / 2 - popup.offsetWidth / 2, 8), window.innerWidth - popup.offsetWidth - 8)}px`;
+    window.addEventListener("pointerdown", this.handleOutsideLineClick, {
+      capture: true,
+    });
+    this.syncLinePopup();
+  }
+
+  private buildLineWidthControl(kind: "inner" | "outline"): HTMLElement {
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:center;gap:8px;";
+    const icon = document.createElement("span");
+    icon.style.cssText = "display:flex;width:28px;justify-content:center;";
+    icon.innerHTML =
+      kind === "inner"
+        ? `<svg ${ICON_ATTRS}><path d="M3 12h18" stroke-width="5"/></svg>`
+        : `<svg ${ICON_ATTRS}><path d="M3 12h18" stroke-width="8"/><path d="M3 12h18" stroke="var(--color-base-100)" stroke-width="3"/></svg>`;
+
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.min = kind === "inner" ? "1" : "0";
+    slider.max = kind === "inner" ? "32" : "16";
+    slider.value = String(
+      kind === "inner" ? this.lineInnerWidth : this.lineOutlineWidth,
+    );
+    slider.className = "range range-xs";
+    slider.style.cssText = "flex:1;min-width:0;";
+    slider.addEventListener("input", () => {
+      const value = Number(slider.value);
+      if (kind === "inner") this.lineInnerWidth = value;
+      else this.lineOutlineWidth = value;
+      sendDraftLineToInject(
+        kind === "inner" ? { innerWidth: value } : { outlineWidth: value },
+      );
+      this.syncLinePopup();
+    });
+    row.append(icon, slider);
+    return row;
+  }
+
+  private buildLineColorChannels(): HTMLElement {
+    const row = document.createElement("div");
+    row.id = `${LINE_POPUP_ID}-channels`;
+    row.style.cssText = "display:flex;justify-content:center;gap:10px;";
+    for (const kind of ["outline", "inner"] as const) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.lineColorTarget = kind;
+      button.className = "btn btn-sm btn-square";
+      button.addEventListener("click", () => {
+        this.lineColorTarget = kind;
+        this.syncLinePopup();
+      });
+      row.append(button);
+    }
+    return row;
+  }
+
+  private buildLinePalette(): HTMLElement {
+    const palette = document.createElement("div");
+    palette.style.cssText =
+      "display:grid;grid-template-columns:repeat(9,1fr);gap:4px;";
+    for (const color of colorpalette) {
+      if (color.id === TRANSPARENT_COLOR_ID) continue;
+      const swatch = document.createElement("button");
+      swatch.type = "button";
+      swatch.dataset.lineColorId = String(color.id);
+      swatch.style.cssText = `aspect-ratio:1;min-width:0;border-radius:3px;background:rgb(${color.rgb.join(",")});border:2px solid transparent;padding:0;cursor:pointer;`;
+      swatch.title = color.name;
+      swatch.addEventListener("click", () => {
+        if (this.lineColorTarget === "inner") this.lineInnerColorId = color.id;
+        else this.lineOutlineColorId = color.id;
+        sendDraftLineToInject(
+          this.lineColorTarget === "inner"
+            ? { innerColorId: color.id }
+            : { outlineColorId: color.id },
+        );
+        this.syncLinePopup();
+      });
+      palette.append(swatch);
+    }
+    return palette;
+  }
+
+  private syncLinePopup(): void {
+    const preview = document.getElementById(`${LINE_POPUP_ID}-preview`);
+    if (preview) preview.innerHTML = this.buildLinePreviewSvg();
+
+    for (const button of document.querySelectorAll<HTMLElement>(
+      `[data-line-color-target]`,
+    )) {
+      const kind = button.dataset.lineColorTarget as "inner" | "outline";
+      const color = this.getLineColor(
+        kind === "inner" ? this.lineInnerColorId : this.lineOutlineColorId,
+      );
+      button.className = `btn btn-sm btn-square${kind === this.lineColorTarget ? " btn-primary" : ""}`;
+      button.title = color.name;
+      button.innerHTML =
+        kind === "inner"
+          ? `<span style="width:20px;height:20px;border-radius:999px;background:rgb(${color.rgb.join(",")});border:1px solid rgb(0 0 0 / .35)"></span>`
+          : `<span style="width:20px;height:20px;border-radius:999px;background:rgb(${color.rgb.join(",")});padding:5px"><span style="display:block;width:100%;height:100%;border-radius:999px;background:var(--color-base-100)"></span></span>`;
+    }
+
+    const selectedId =
+      this.lineColorTarget === "inner"
+        ? this.lineInnerColorId
+        : this.lineOutlineColorId;
+    for (const swatch of document.querySelectorAll<HTMLElement>(
+      `[data-line-color-id]`,
+    ))
+      swatch.style.borderColor =
+        Number(swatch.dataset.lineColorId) === selectedId
+          ? "var(--color-primary)"
+          : "transparent";
+  }
+
+  private handleOutsideLineClick = (event: Event): void => {
+    const popup = document.getElementById(LINE_POPUP_ID);
+    const target = event.target;
+    if (popup && target instanceof Node && popup.contains(target)) return;
+    if (
+      target instanceof Node &&
+      document.getElementById(`${TOOLBAR_ID}-line`)?.contains(target)
+    )
+      return;
+    this.closeLinePopup();
+  };
+
+  private closeLinePopup(): void {
+    document.getElementById(LINE_POPUP_ID)?.remove();
+    window.removeEventListener("pointerdown", this.handleOutsideLineClick, {
+      capture: true,
+    });
   }
 
   // ------- brush popup -------
@@ -835,7 +1112,9 @@ export class DraftDraw {
    * 最後に保存した時点の数と違えば未保存の変更あり扱いにする。
    */
   private hasUnsavedChanges(): boolean {
-    return this.pixelCount > 0 && this.pixelCount !== this.savedPixelCount;
+    return (
+      this.lineMode || (this.pixelCount > 0 && this.pixelCount !== this.savedPixelCount)
+    );
   }
 
   /**
@@ -859,6 +1138,7 @@ export class DraftDraw {
 
   /** 🔒 ON 中は drag の意味が変わるので、その旨だけ差し替える */
   private buildHintText(): string {
+    if (this.lineMode) return "●━━━━●   ◉↕   ↵✓   esc✕";
     return this.mapLocked
       ? "🔒 drag = draw / mid = spoit / right = erase"
       : "🖱️ dot / drag = move / Space+move = draw / mid = spoit / right = erase";
@@ -875,6 +1155,7 @@ export class DraftDraw {
       document.getElementById(HISTORY_ID)?.remove();
       this.hideColorTip();
       this.closeBrushPopup();
+      this.closeLinePopup();
       window.removeEventListener("resize", this.handleResize);
       return;
     }
@@ -885,7 +1166,7 @@ export class DraftDraw {
     const selectedId = localStorage.getItem(SELECTED_COLOR_KEY);
     for (const el of bar.querySelectorAll<HTMLElement>(".draft-swatch"))
       el.style.borderColor =
-        !this.erasing && el.dataset.colorId === selectedId
+        !this.lineMode && !this.erasing && el.dataset.colorId === selectedId
           ? "var(--color-primary)"
           : "transparent";
 
@@ -901,6 +1182,12 @@ export class DraftDraw {
     ) as HTMLButtonElement | null;
     if (bucket)
       bucket.className = `btn btn-sm btn-square${this.bucket ? " btn-primary" : ""}`;
+
+    const line = document.getElementById(
+      `${TOOLBAR_ID}-line`,
+    ) as HTMLButtonElement | null;
+    if (line)
+      line.className = `btn btn-sm btn-square${this.lineMode ? " btn-primary" : ""}`;
 
     // ロックは状態が分かりにくいので、色だけでなく錠前の開閉も差し替える
     const lock = document.getElementById(
@@ -922,7 +1209,8 @@ export class DraftDraw {
     ) as HTMLButtonElement | null;
     if (!save) return;
 
-    save.disabled = this.saving || this.pixelCount === 0;
+    // ベクタープレビューは ✓ でラスタ確定してから保存する。
+    save.disabled = this.saving || this.pixelCount === 0 || this.lineMode;
     save.style.opacity = save.disabled ? "0.6" : "1";
     const label = this.savedKey ? t`${"draft_update"}` : t`${"draft_save"}`;
     save.textContent = `${label}${this.pixelCount > 0 ? ` (${this.pixelCount})` : ""}`;

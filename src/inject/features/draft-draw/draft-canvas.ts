@@ -13,6 +13,12 @@ import { computeBucketFill } from "./draft-bucket-fill";
 import { clearBaseTileCache, prepareBaseTiles } from "./draft-base-layer";
 import { forEachBrushPixel, getDraftBrushSize } from "./draft-brush";
 import { beginHistoryEntry, commitHistoryEntry } from "./draft-history";
+import {
+  getDraftLineMidpoint,
+  rasterizeDraftLine,
+  type DraftLineSettings,
+  type DraftLineShape,
+} from "./draft-line";
 
 /**
  * Draft canvas layer
@@ -44,6 +50,9 @@ import { beginHistoryEntry, commitHistoryEntry } from "./draft-history";
  */
 
 const CANVAS_ID = "mr-wplace-draft-canvas";
+const LINE_ACTIONS_ID = "mr-wplace-draft-line-actions";
+const LINE_ACTION_ICON_ATTRS =
+  'width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"';
 const TILE_SIZE = TILE_DRAW_CONSTANTS.TILE_SIZE;
 
 type PaintHandler = (
@@ -77,8 +86,23 @@ let spaceHeld = false;
  */
 let mapLocked = false;
 
+/** Editable vector preview. It is rasterized into the draft store on commit. */
+let lineMode = false;
+let lineShape: DraftLineShape | null = null;
+let lineControlMoved = false;
+let lineDrag: "create" | "start" | "control" | "end" | null = null;
+let linePointerId: number | null = null;
+let lineSettings: DraftLineSettings = {
+  innerWidth: 2,
+  outlineWidth: 1,
+  innerColor: { r: 249, g: 221, b: 59 },
+  outlineColor: { r: 246, g: 170, b: 9 },
+};
+
 let onPaint: PaintHandler | null = null;
 let onErase: EraseHandler | null = null;
+let lineActionButtons: HTMLDivElement | null = null;
+let onLineAction: ((action: "commit" | "cancel") => void) | null = null;
 
 /** 現在のドラッグ操作の種類。null = 何もしていない (= map へ委譲中) */
 type DragMode = "draw" | "erase";
@@ -132,6 +156,65 @@ export const setDraftBucketMode = (enabled: boolean): void => {
   bucketMode = enabled;
   if (enabled) eraseMode = false;
   updateCursor();
+};
+
+export const setDraftLineMode = (enabled: boolean): void => {
+  lineMode = enabled;
+  if (enabled) {
+    eraseMode = false;
+    bucketMode = false;
+  } else {
+    lineShape = null;
+    lineDrag = null;
+    linePointerId = null;
+    lineActionButtons?.remove();
+    lineActionButtons = null;
+  }
+  dirty = true;
+  updateCursor();
+};
+
+export const updateDraftLineSettings = (
+  settings: Partial<DraftLineSettings>,
+): void => {
+  lineSettings = {
+    ...lineSettings,
+    ...settings,
+    innerWidth: Math.max(
+      1,
+      Math.min(32, Math.round(settings.innerWidth ?? lineSettings.innerWidth)),
+    ),
+    outlineWidth: Math.max(
+      0,
+      Math.min(
+        16,
+        Math.round(settings.outlineWidth ?? lineSettings.outlineWidth),
+      ),
+    ),
+  };
+  dirty = true;
+};
+
+export const commitDraftLine = (): void => {
+  if (!lineShape) return;
+  beginHistoryEntry();
+  rasterizeDraftLine(lineShape, lineSettings, (x, y, color) =>
+    applyWorldPixel(x, y, color),
+  );
+  commitHistoryEntry();
+  lineShape = null;
+  lineDrag = null;
+  lineActionButtons?.remove();
+  lineActionButtons = null;
+  dirty = true;
+};
+
+export const cancelDraftLine = (): void => {
+  lineShape = null;
+  lineDrag = null;
+  lineActionButtons?.remove();
+  lineActionButtons = null;
+  dirty = true;
 };
 
 /**
@@ -211,6 +294,23 @@ const screenToWorldPixel = (
 
   const [x, y] = latLonToPixels(lngLat.lat, lngLat.lng);
   return { x: Math.floor(x), y: Math.floor(y) };
+};
+
+const worldToScreenPixel = (
+  point: { x: number; y: number },
+): { x: number; y: number } | null => {
+  const map = getMapInstanceFromWplace() as any;
+  if (!map?.project) return null;
+  const tileX = Math.floor(point.x / TILE_SIZE);
+  const tileY = Math.floor(point.y / TILE_SIZE);
+  const lngLat = tilePixelToLatLng(
+    tileX,
+    tileY,
+    point.x - tileX * TILE_SIZE,
+    point.y - tileY * TILE_SIZE,
+  );
+  const projected = map.project([lngLat.lng, lngLat.lat]);
+  return projected ? { x: projected.x, y: projected.y } : null;
 };
 
 // ------- painting -------
@@ -392,13 +492,159 @@ const resolveDragMode = (e: PointerEvent): DragMode | null => {
   return null;
 };
 
+const getLineHandleAt = (
+  clientX: number,
+  clientY: number,
+): "start" | "control" | "end" | null => {
+  if (!lineShape) return null;
+  const rect = getMapCanvas()?.getBoundingClientRect();
+  if (!rect) return null;
+  const x = clientX - rect.left;
+  const y = clientY - rect.top;
+  for (const key of ["control", "start", "end"] as const) {
+    const point = worldToScreenPixel(lineShape[key]);
+    if (point && Math.hypot(point.x - x, point.y - y) <= 12) return key;
+  }
+  return null;
+};
+
+const isLineActionTarget = (target: EventTarget | null): boolean =>
+  target instanceof Node && !!lineActionButtons?.contains(target);
+
+const syncLineActionButtons = (canvasElement: HTMLCanvasElement): void => {
+  if (!lineMode || !lineShape) {
+    lineActionButtons?.remove();
+    lineActionButtons = null;
+    return;
+  }
+
+  const parent = canvasElement.parentElement;
+  if (!parent) return;
+  if (!lineActionButtons?.isConnected) {
+    const group = document.createElement("div");
+    group.id = LINE_ACTIONS_ID;
+    group.style.cssText = [
+      "position:absolute;z-index:12;display:flex;gap:6px",
+      "padding:4px;border-radius:999px",
+      "background:rgb(0 0 0 / .45);box-shadow:0 2px 8px rgb(0 0 0 / .25)",
+    ].join(";");
+    const addButton = (action: "commit" | "cancel", icon: string): void => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.title = action === "commit" ? "Apply" : "Cancel";
+      button.style.cssText = [
+        "display:flex;align-items:center;justify-content:center",
+        "width:30px;height:30px;padding:0;border:0;border-radius:999px",
+        "cursor:pointer;color:white",
+        action === "commit" ? "background:#16a34a" : "background:#dc2626",
+      ].join(";");
+      button.innerHTML = icon;
+      button.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      });
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onLineAction?.(action);
+      });
+      group.appendChild(button);
+    };
+    addButton(
+      "commit",
+      `<svg xmlns="http://www.w3.org/2000/svg" ${LINE_ACTION_ICON_ATTRS}><path d="m20 6-11 11-5-5"/></svg>`,
+    );
+    addButton(
+      "cancel",
+      `<svg xmlns="http://www.w3.org/2000/svg" ${LINE_ACTION_ICON_ATTRS}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`,
+    );
+    parent.appendChild(group);
+    lineActionButtons = group;
+  }
+
+  const points = [lineShape.start, lineShape.control, lineShape.end]
+    .map(worldToScreenPixel)
+    .filter((point): point is { x: number; y: number } => !!point);
+  if (points.length !== 3) return;
+  const x = Math.min(
+    canvasElement.width - lineActionButtons.offsetWidth - 6,
+    Math.max(6, Math.max(...points.map((point) => point.x)) + 14),
+  );
+  const y = Math.min(
+    canvasElement.height - lineActionButtons.offsetHeight - 6,
+    Math.max(6, Math.max(...points.map((point) => point.y)) + 14),
+  );
+  lineActionButtons.style.left = `${x}px`;
+  lineActionButtons.style.top = `${y}px`;
+};
+
+const handleLinePointerDown = (e: PointerEvent): void => {
+  stop(e);
+  const world = screenToWorldPixel(e.clientX, e.clientY);
+  if (!world) return;
+
+  const handle = getLineHandleAt(e.clientX, e.clientY);
+  if (handle) {
+    lineDrag = handle;
+  } else {
+    lineShape = {
+      start: world,
+      control: world,
+      end: world,
+    };
+    lineControlMoved = false;
+    lineDrag = "create";
+  }
+
+  linePointerId = e.pointerId;
+  inputTarget?.setPointerCapture(e.pointerId);
+  dirty = true;
+};
+
+const handleLinePointerMove = (e: PointerEvent): boolean => {
+  if (!lineDrag || !lineShape || e.pointerId !== linePointerId) return false;
+  stop(e);
+  const world = screenToWorldPixel(e.clientX, e.clientY);
+  if (!world) return true;
+
+  if (lineDrag === "create") {
+    lineShape.end = world;
+    lineShape.control = getDraftLineMidpoint(lineShape.start, lineShape.end);
+  } else {
+    lineShape[lineDrag] = world;
+    if (lineDrag === "control") lineControlMoved = true;
+    else if (!lineControlMoved)
+      lineShape.control = getDraftLineMidpoint(lineShape.start, lineShape.end);
+  }
+  dirty = true;
+  return true;
+};
+
+const handleLinePointerUp = (e: PointerEvent): boolean => {
+  if (!lineDrag || e.pointerId !== linePointerId) return false;
+  stop(e);
+  lineDrag = null;
+  linePointerId = null;
+  if (inputTarget?.hasPointerCapture(e.pointerId))
+    inputTarget.releasePointerCapture(e.pointerId);
+  dirty = true;
+  return true;
+};
+
 const handlePointerDown = (e: PointerEvent): void => {
   if (!active) return;
+
+  if (isLineActionTarget(e.target)) return;
 
   // 中クリックは spoit。map へは渡さない
   if (e.button === 1) {
     stop(e);
     pickColorAt(e.clientX, e.clientY);
+    return;
+  }
+
+  if (lineMode && e.button === 0) {
+    handleLinePointerDown(e);
     return;
   }
 
@@ -453,6 +699,7 @@ const handlePointerDown = (e: PointerEvent): void => {
 const handlePointerMove = (e: PointerEvent): void => {
   if (!active) return;
   lastPointer = { x: e.clientX, y: e.clientY };
+  if (handleLinePointerMove(e)) return;
 
   // Space 押下中はボタン不要でなぞるだけで塗る。
   // 消しゴムONなら Space なぞりも消しゴムとして働く。
@@ -469,6 +716,7 @@ const handlePointerMove = (e: PointerEvent): void => {
 
 const handlePointerUp = (e: PointerEvent): void => {
   if (!active) return;
+  if (handleLinePointerUp(e)) return;
 
   // ドラッグせずに離した左クリック = dot を1つ置く
   if (!dragMode && pendingClick && e.button === 0) {
@@ -541,6 +789,24 @@ const handleKeyDown = (e: KeyboardEvent): void => {
     }
   }
 
+  if (lineMode && !isTypingTarget()) {
+    if (e.key === "Escape" || e.key === "Enter") {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.key === "Enter") commitDraftLine();
+      else cancelDraftLine();
+      setDraftLineMode(false);
+      window.postMessage(
+        {
+          source: "mr-wplace-draft-line-ended",
+          committed: e.key === "Enter",
+        },
+        "*",
+      );
+      return;
+    }
+  }
+
   if (e.code !== "Space") return;
   // ページスクロール抑止。入力欄にフォーカスがある時は邪魔しない
   if (isTypingTarget()) return;
@@ -576,6 +842,8 @@ const updateCursor = (): void => {
   if (!target) return;
   target.style.cursor = !active
     ? ""
+    : lineMode
+      ? "crosshair"
     : eraseMode
       ? "cell"
       : bucketMode
@@ -673,6 +941,66 @@ const renderFrame = (): void => {
 
     ctx.drawImage(tileCanvas, p0.x, p0.y, w, h);
   }
+
+  renderLinePreview(ctx);
+  syncLineActionButtons(c);
+};
+
+const renderLinePreview = (ctx: CanvasRenderingContext2D): void => {
+  if (!lineMode || !lineShape) return;
+  const start = worldToScreenPixel(lineShape.start);
+  const control = worldToScreenPixel(lineShape.control);
+  const end = worldToScreenPixel(lineShape.end);
+  const unit = worldToScreenPixel({
+    x: lineShape.start.x + 1,
+    y: lineShape.start.y,
+  });
+  if (!start || !control || !end || !unit) return;
+
+  const scale = Math.max(0.01, Math.hypot(unit.x - start.x, unit.y - start.y));
+  const drawStroke = (
+    width: number,
+    color: DraftLineSettings["innerColor"],
+  ): void => {
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.quadraticCurveTo(control.x, control.y, end.x, end.y);
+    ctx.lineWidth = Math.max(1, width * scale);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = `rgb(${color.r},${color.g},${color.b})`;
+    ctx.stroke();
+  };
+
+  if (lineSettings.outlineWidth > 0)
+    drawStroke(
+      lineSettings.innerWidth + lineSettings.outlineWidth * 2,
+      lineSettings.outlineColor,
+    );
+  drawStroke(lineSettings.innerWidth, lineSettings.innerColor);
+
+  ctx.save();
+  ctx.setLineDash([4, 4]);
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "rgba(255,255,255,.8)";
+  ctx.beginPath();
+  ctx.moveTo(start.x, start.y);
+  ctx.lineTo(control.x, control.y);
+  ctx.lineTo(end.x, end.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  const handles = [start, control, end];
+  handles.forEach((point, index) => {
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, index === 1 ? 7 : 6, 0, Math.PI * 2);
+    ctx.fillStyle = index === 1 ? "#3b82f6" : "#ffffff";
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#111827";
+    ctx.stroke();
+  });
+  ctx.restore();
 };
 
 // ------- map listeners -------
@@ -709,6 +1037,7 @@ export const setDraftCanvasHandlers = (handlers: {
   onBucketFailed: () => void;
   onUndoRequested: () => void;
   onRedoRequested: () => void;
+  onLineAction: (action: "commit" | "cancel") => void;
 }): void => {
   onPaint = handlers.onPaint;
   onErase = handlers.onErase;
@@ -716,6 +1045,7 @@ export const setDraftCanvasHandlers = (handlers: {
   onBucketFailed = handlers.onBucketFailed;
   onUndoRequested = handlers.onUndoRequested;
   onRedoRequested = handlers.onRedoRequested;
+  onLineAction = handlers.onLineAction;
 };
 
 export const setDraftCanvasActive = (enabled: boolean): void => {
@@ -729,6 +1059,10 @@ export const setDraftCanvasActive = (enabled: boolean): void => {
   lastWorld = null;
   lastPointer = null;
   spaceHeld = false;
+  lineMode = false;
+  lineShape = null;
+  lineDrag = null;
+  linePointerId = null;
 
   if (enabled) {
     attachMapListeners();

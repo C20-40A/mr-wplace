@@ -16,12 +16,16 @@ import {
   undoDraft,
 } from "./draft-history";
 import {
+  cancelDraftLine,
+  commitDraftLine,
   markDraftCanvasDirty,
   setDraftBucketMode,
   setDraftCanvasActive,
   setDraftCanvasHandlers,
   setDraftEraseMode,
+  setDraftLineMode,
   setDraftMapLocked,
+  updateDraftLineSettings,
 } from "./draft-canvas";
 import { exportDraftAsImage, type DraftExportResult } from "./draft-export";
 import {
@@ -29,6 +33,7 @@ import {
   setDraftDitherStyle,
   type DitherStyle,
 } from "./draft-brush";
+import { colorpalette } from "@/constants/colors";
 
 /**
  * Draft draw (下書きモード)
@@ -68,6 +73,20 @@ setDraftCanvasHandlers({
   // Ctrl+Z / Ctrl+Shift+Z。ボタン経由と同じ処理へ流す
   onUndoRequested: () => undoDraftEdit(),
   onRedoRequested: () => redoDraftEdit(),
+  // 線のそばに出す ✓ / ×。確定後は content 側のツール状態も閉じる。
+  onLineAction: (action) => {
+    if (action === "commit") commitDraftLine();
+    else cancelDraftLine();
+    setDraftLineMode(false);
+    notifyDraftState();
+    window.postMessage(
+      {
+        source: "mr-wplace-draft-line-ended",
+        committed: action === "commit",
+      },
+      "*",
+    );
+  },
 });
 
 const notifyDraftState = (): void => {
@@ -142,6 +161,46 @@ export const setDraftBrushSettings = (data: {
 }): void => {
   if (typeof data.size === "number") setDraftBrushSize(data.size);
   if (data.ditherStyle) setDraftDitherStyle(data.ditherStyle);
+};
+
+/** Line tool settings and edit commands. */
+export const setDraftLineSettings = (data: {
+  enabled?: boolean;
+  innerWidth?: number;
+  outlineWidth?: number;
+  innerColorId?: number;
+  outlineColorId?: number;
+  command?: "commit" | "cancel";
+}): void => {
+  const settings: Parameters<typeof updateDraftLineSettings>[0] = {};
+  if (typeof data.innerWidth === "number")
+    settings.innerWidth = data.innerWidth;
+  if (typeof data.outlineWidth === "number")
+    settings.outlineWidth = data.outlineWidth;
+
+  const toColor = (id: number | undefined) => {
+    if (typeof id !== "number") return null;
+    const entry = colorpalette.find((color) => color.id === id);
+    if (!entry) return null;
+    return { r: entry.rgb[0], g: entry.rgb[1], b: entry.rgb[2] };
+  };
+  const innerColor = toColor(data.innerColorId);
+  const outlineColor = toColor(data.outlineColorId);
+  if (innerColor) settings.innerColor = innerColor;
+  if (outlineColor) settings.outlineColor = outlineColor;
+  updateDraftLineSettings(settings);
+
+  if (data.command === "commit") {
+    commitDraftLine();
+    setDraftLineMode(false);
+    return;
+  }
+  if (data.command === "cancel") {
+    cancelDraftLine();
+    setDraftLineMode(false);
+    return;
+  }
+  if (typeof data.enabled === "boolean") setDraftLineMode(data.enabled);
 };
 
 /**
