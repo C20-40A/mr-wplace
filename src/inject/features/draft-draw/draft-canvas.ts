@@ -26,6 +26,13 @@ import {
   type DraftStampMode,
   type DraftStampPattern,
 } from "./draft-stamp";
+import {
+  getDraftShapeBounds,
+  rasterizeDraftShape,
+  snapDraftShapeToSquare,
+  type DraftShapeRect,
+  type DraftShapeSettings,
+} from "./draft-shape";
 
 /**
  * Draft canvas layer
@@ -58,6 +65,7 @@ import {
 
 const CANVAS_ID = "mr-wplace-draft-canvas";
 const LINE_ACTIONS_ID = "mr-wplace-draft-line-actions";
+const SHAPE_ACTIONS_ID = "mr-wplace-draft-shape-actions";
 const LINE_ACTION_ICON_ATTRS =
   'width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"';
 const TILE_SIZE = TILE_DRAW_CONSTANTS.TILE_SIZE;
@@ -115,11 +123,48 @@ let lineSettings: DraftLineSettings = {
   innerColor: { r: 249, g: 221, b: 59 },
   outlineColor: { r: 246, g: 170, b: 9 },
 };
+/**
+ * ラスタプレビューのキャッシュ。線 1 本ぶんの world pixel を実際に
+ * `rasterizeDraftLine` で焼いて持つ。map の移動/ズームでは中身が変わらないので、
+ * shape/settings が変わった時だけ焼き直す。
+ */
+let linePreviewCache: {
+  canvas: HTMLCanvasElement;
+  originX: number;
+  originY: number;
+  token: string;
+} | null = null;
+
+/**
+ * 矩形ツール。線ツールと同じく「確定するまでベクター」で持ち、
+ * commit で初めて下書きストアへラスタライズする。
+ */
+let shapeMode = false;
+/** 正方形トグル。ON (または Shift 押下中) は正方形へスナップする */
+let shapeSquareMode = false;
+let shapeRect: DraftShapeRect | null = null;
+let shapeDrag: "create" | "start" | "end" | null = null;
+let shapePointerId: number | null = null;
+let shapeSettings: DraftShapeSettings = {
+  strokeWidth: 1,
+  filled: false,
+  strokeColor: { r: 249, g: 221, b: 59 },
+  fillColor: { r: 246, g: 170, b: 9 },
+};
+/** 線と同じくラスタプレビューをキャッシュする (map 移動では焼き直さない) */
+let shapePreviewCache: {
+  canvas: HTMLCanvasElement;
+  originX: number;
+  originY: number;
+  token: string;
+} | null = null;
 
 let onPaint: PaintHandler | null = null;
 let onErase: EraseHandler | null = null;
 let lineActionButtons: HTMLDivElement | null = null;
 let onLineAction: ((action: "commit" | "cancel") => void) | null = null;
+let shapeActionButtons: HTMLDivElement | null = null;
+let onShapeAction: ((action: "commit" | "cancel") => void) | null = null;
 
 /** 現在のドラッグ操作の種類。null = 何もしていない (= map へ委譲中) */
 type DragMode = "draw" | "erase";
@@ -177,20 +222,33 @@ export const setDraftBucketMode = (enabled: boolean): void => {
   updateCursor();
 };
 
+/**
+ * 編集中の線を破棄して、付随する UI/キャッシュも片付ける。
+ * 確定・取消・モード解除・下書き終了のすべてがここを通る。
+ */
+const resetDraftLineShape = (): void => {
+  lineShape = null;
+  lineDrag = null;
+  linePointerId = null;
+  lineControlMoved = false;
+  linePreviewCache = null;
+  lineActionButtons?.remove();
+  lineActionButtons = null;
+  dirty = true;
+};
+
 export const setDraftLineMode = (enabled: boolean): void => {
   lineMode = enabled;
   if (enabled) {
     eraseMode = false;
     bucketMode = false;
     stampMode = null;
+    shapeMode = false;
+    resetDraftShape();
+    dirty = true;
   } else {
-    lineShape = null;
-    lineDrag = null;
-    linePointerId = null;
-    lineActionButtons?.remove();
-    lineActionButtons = null;
+    resetDraftLineShape();
   }
-  dirty = true;
   updateCursor();
 };
 
@@ -227,19 +285,75 @@ export const commitDraftLine = (): void => {
     applyWorldPixel(x, y, color),
   );
   commitHistoryEntry();
-  lineShape = null;
-  lineDrag = null;
-  lineActionButtons?.remove();
-  lineActionButtons = null;
-  dirty = true;
+  // 線ツールは付けっぱなしにする。続けて次の線を引けるようにするため
+  resetDraftLineShape();
 };
 
 export const cancelDraftLine = (): void => {
-  lineShape = null;
-  lineDrag = null;
-  lineActionButtons?.remove();
-  lineActionButtons = null;
+  resetDraftLineShape();
+};
+
+/** 編集中の矩形を破棄し、付随する UI/キャッシュも片付ける */
+const resetDraftShape = (): void => {
+  shapeRect = null;
+  shapeDrag = null;
+  shapePointerId = null;
+  shapePreviewCache = null;
+  shapeActionButtons?.remove();
+  shapeActionButtons = null;
   dirty = true;
+};
+
+export const setDraftShapeMode = (enabled: boolean): void => {
+  shapeMode = enabled;
+  if (enabled) {
+    eraseMode = false;
+    bucketMode = false;
+    stampMode = null;
+    lineMode = false;
+    resetDraftLineShape();
+    dirty = true;
+  } else {
+    resetDraftShape();
+  }
+  updateCursor();
+};
+
+/** 正方形トグル。Shift 押下中と同じ拘束を latch する */
+export const setDraftShapeSquareMode = (enabled: boolean): void => {
+  shapeSquareMode = enabled;
+};
+
+export const updateDraftShapeSettings = (
+  settings: Partial<DraftShapeSettings>,
+): void => {
+  shapeSettings = {
+    ...shapeSettings,
+    ...settings,
+    strokeWidth: Math.max(
+      0,
+      Math.min(
+        32,
+        Math.round(settings.strokeWidth ?? shapeSettings.strokeWidth),
+      ),
+    ),
+  };
+  dirty = true;
+};
+
+export const commitDraftShape = (): void => {
+  if (!shapeRect) return;
+  beginHistoryEntry();
+  rasterizeDraftShape(shapeRect, shapeSettings, (x, y, color) =>
+    applyWorldPixel(x, y, color),
+  );
+  commitHistoryEntry();
+  // 続けて次の矩形を描けるよう、ツール自体は付けっぱなしにする
+  resetDraftShape();
+};
+
+export const cancelDraftShape = (): void => {
+  resetDraftShape();
 };
 
 /**
@@ -601,7 +715,72 @@ const getLineHandleAt = (
 };
 
 const isLineActionTarget = (target: EventTarget | null): boolean =>
-  target instanceof Node && !!lineActionButtons?.contains(target);
+  target instanceof Node &&
+  (!!lineActionButtons?.contains(target) ||
+    !!shapeActionButtons?.contains(target));
+
+/** 地図上へ浮かせる ✓ / × のペア。線ツールと矩形ツールで共用する */
+const createActionButtons = (
+  id: string,
+  onAction: () => ((action: "commit" | "cancel") => void) | null,
+): HTMLDivElement => {
+  const group = document.createElement("div");
+  group.id = id;
+  group.style.cssText = [
+    "position:absolute;z-index:12;display:flex;gap:6px",
+    "padding:4px;border-radius:999px",
+    "background:rgb(0 0 0 / .45);box-shadow:0 2px 8px rgb(0 0 0 / .25)",
+  ].join(";");
+
+  const addButton = (action: "commit" | "cancel", icon: string): void => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.title = action === "commit" ? "Apply" : "Cancel";
+    button.style.cssText = [
+      "display:flex;align-items:center;justify-content:center",
+      "width:30px;height:30px;padding:0;border:0;border-radius:999px",
+      "cursor:pointer;color:white",
+      action === "commit" ? "background:#16a34a" : "background:#dc2626",
+    ].join(";");
+    button.innerHTML = icon;
+    // NOTE: 確定/取消は pointerdown で走らせる。map container 側の blockClick が
+    // capture 段階で click を殺すため、click では届かない。
+    button.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      onAction()?.(action);
+    });
+    group.appendChild(button);
+  };
+
+  addButton(
+    "commit",
+    `<svg xmlns="http://www.w3.org/2000/svg" ${LINE_ACTION_ICON_ATTRS}><path d="m20 6-11 11-5-5"/></svg>`,
+  );
+  addButton(
+    "cancel",
+    `<svg xmlns="http://www.w3.org/2000/svg" ${LINE_ACTION_ICON_ATTRS}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`,
+  );
+  return group;
+};
+
+/** 図形の右下あたりへ ✓ / × を寄せる (画面外へ出さないよう clamp) */
+const positionActionButtons = (
+  group: HTMLDivElement,
+  canvasElement: HTMLCanvasElement,
+  points: Array<{ x: number; y: number }>,
+): void => {
+  const x = Math.min(
+    canvasElement.width - group.offsetWidth - 6,
+    Math.max(6, Math.max(...points.map((point) => point.x)) + 14),
+  );
+  const y = Math.min(
+    canvasElement.height - group.offsetHeight - 6,
+    Math.max(6, Math.max(...points.map((point) => point.y)) + 14),
+  );
+  group.style.left = `${x}px`;
+  group.style.top = `${y}px`;
+};
 
 const syncLineActionButtons = (canvasElement: HTMLCanvasElement): void => {
   if (!lineMode || !lineShape) {
@@ -613,59 +792,39 @@ const syncLineActionButtons = (canvasElement: HTMLCanvasElement): void => {
   const parent = canvasElement.parentElement;
   if (!parent) return;
   if (!lineActionButtons?.isConnected) {
-    const group = document.createElement("div");
-    group.id = LINE_ACTIONS_ID;
-    group.style.cssText = [
-      "position:absolute;z-index:12;display:flex;gap:6px",
-      "padding:4px;border-radius:999px",
-      "background:rgb(0 0 0 / .45);box-shadow:0 2px 8px rgb(0 0 0 / .25)",
-    ].join(";");
-    const addButton = (action: "commit" | "cancel", icon: string): void => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.title = action === "commit" ? "Apply" : "Cancel";
-      button.style.cssText = [
-        "display:flex;align-items:center;justify-content:center",
-        "width:30px;height:30px;padding:0;border:0;border-radius:999px",
-        "cursor:pointer;color:white",
-        action === "commit" ? "background:#16a34a" : "background:#dc2626",
-      ].join(";");
-      button.innerHTML = icon;
-      // NOTE: 確定/取消は pointerdown で走らせる。map container 側の blockClick が
-      // capture 段階で click を殺すため、click では届かない。
-      button.addEventListener("pointerdown", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        onLineAction?.(action);
-      });
-      group.appendChild(button);
-    };
-    addButton(
-      "commit",
-      `<svg xmlns="http://www.w3.org/2000/svg" ${LINE_ACTION_ICON_ATTRS}><path d="m20 6-11 11-5-5"/></svg>`,
-    );
-    addButton(
-      "cancel",
-      `<svg xmlns="http://www.w3.org/2000/svg" ${LINE_ACTION_ICON_ATTRS}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`,
-    );
-    parent.appendChild(group);
-    lineActionButtons = group;
+    lineActionButtons = createActionButtons(LINE_ACTIONS_ID, () => onLineAction);
+    parent.appendChild(lineActionButtons);
   }
 
   const points = [lineShape.start, lineShape.control, lineShape.end]
     .map(worldToScreenPixel)
     .filter((point): point is { x: number; y: number } => !!point);
   if (points.length !== 3) return;
-  const x = Math.min(
-    canvasElement.width - lineActionButtons.offsetWidth - 6,
-    Math.max(6, Math.max(...points.map((point) => point.x)) + 14),
-  );
-  const y = Math.min(
-    canvasElement.height - lineActionButtons.offsetHeight - 6,
-    Math.max(6, Math.max(...points.map((point) => point.y)) + 14),
-  );
-  lineActionButtons.style.left = `${x}px`;
-  lineActionButtons.style.top = `${y}px`;
+  positionActionButtons(lineActionButtons, canvasElement, points);
+};
+
+const syncShapeActionButtons = (canvasElement: HTMLCanvasElement): void => {
+  if (!shapeMode || !shapeRect) {
+    shapeActionButtons?.remove();
+    shapeActionButtons = null;
+    return;
+  }
+
+  const parent = canvasElement.parentElement;
+  if (!parent) return;
+  if (!shapeActionButtons?.isConnected) {
+    shapeActionButtons = createActionButtons(
+      SHAPE_ACTIONS_ID,
+      () => onShapeAction,
+    );
+    parent.appendChild(shapeActionButtons);
+  }
+
+  const points = [shapeRect.start, shapeRect.end]
+    .map(worldToScreenPixel)
+    .filter((point): point is { x: number; y: number } => !!point);
+  if (points.length !== 2) return;
+  positionActionButtons(shapeActionButtons, canvasElement, points);
 };
 
 const handleLinePointerDown = (e: PointerEvent): void => {
@@ -754,6 +913,70 @@ const handleLinePointerUp = (e: PointerEvent): boolean => {
   return true;
 };
 
+/** 矩形の角ハンドル。掴んだ角を動かし、対角は固定する */
+const getShapeHandleAt = (
+  clientX: number,
+  clientY: number,
+): "start" | "end" | null => {
+  if (!shapeRect) return null;
+  const rect = getMapCanvas()?.getBoundingClientRect();
+  if (!rect) return null;
+  const x = clientX - rect.left;
+  const y = clientY - rect.top;
+  for (const key of ["end", "start"] as const) {
+    const point = worldToScreenPixel(shapeRect[key]);
+    if (point && Math.hypot(point.x - x, point.y - y) <= 12) return key;
+  }
+  return null;
+};
+
+const handleShapePointerDown = (e: PointerEvent): void => {
+  stop(e);
+  const world = screenToWorldPixel(e.clientX, e.clientY);
+  if (!world) return;
+
+  const handle = getShapeHandleAt(e.clientX, e.clientY);
+  if (handle) {
+    shapeDrag = handle;
+  } else {
+    // 新しくドラッグを始めたら、編集中の矩形は捨てて引き直す
+    shapeRect = { start: world, end: world };
+    shapeDrag = "create";
+  }
+
+  shapePointerId = e.pointerId;
+  inputTarget?.setPointerCapture(e.pointerId);
+  dirty = true;
+};
+
+const handleShapePointerMove = (e: PointerEvent): boolean => {
+  if (!shapeDrag || !shapeRect || e.pointerId !== shapePointerId) return false;
+  stop(e);
+  const world = screenToWorldPixel(e.clientX, e.clientY);
+  if (!world) return true;
+
+  // 掴んでいる角の対角を固定点にして正方形へ寄せる
+  const anchor = shapeDrag === "start" ? shapeRect.end : shapeRect.start;
+  const point =
+    shapeSquareMode || e.shiftKey ? snapDraftShapeToSquare(anchor, world) : world;
+
+  if (shapeDrag === "start") shapeRect.start = point;
+  else shapeRect.end = point;
+  dirty = true;
+  return true;
+};
+
+const handleShapePointerUp = (e: PointerEvent): boolean => {
+  if (!shapeDrag || e.pointerId !== shapePointerId) return false;
+  stop(e);
+  shapeDrag = null;
+  shapePointerId = null;
+  if (inputTarget?.hasPointerCapture(e.pointerId))
+    inputTarget.releasePointerCapture(e.pointerId);
+  dirty = true;
+  return true;
+};
+
 const handlePointerDown = (e: PointerEvent): void => {
   if (!active) return;
 
@@ -768,6 +991,11 @@ const handlePointerDown = (e: PointerEvent): void => {
 
   if (lineMode && e.button === 0) {
     handleLinePointerDown(e);
+    return;
+  }
+
+  if (shapeMode && e.button === 0) {
+    handleShapePointerDown(e);
     return;
   }
 
@@ -823,6 +1051,7 @@ const handlePointerMove = (e: PointerEvent): void => {
   if (!active) return;
   lastPointer = { x: e.clientX, y: e.clientY };
   if (handleLinePointerMove(e)) return;
+  if (handleShapePointerMove(e)) return;
 
   // Space 押下中はボタン不要でなぞるだけで塗る。
   // 消しゴムONなら Space なぞりも消しゴムとして働く。
@@ -840,6 +1069,7 @@ const handlePointerMove = (e: PointerEvent): void => {
 const handlePointerUp = (e: PointerEvent): void => {
   if (!active) return;
   if (handleLinePointerUp(e)) return;
+  if (handleShapePointerUp(e)) return;
 
   // ドラッグせずに離した左クリック = dot を1つ置く
   if (!dragMode && pendingClick && e.button === 0) {
@@ -925,13 +1155,37 @@ const handleKeyDown = (e: KeyboardEvent): void => {
     if (e.key === "Escape" || e.key === "Enter") {
       e.preventDefault();
       e.stopPropagation();
-      if (e.key === "Enter") commitDraftLine();
+      const committed = e.key === "Enter";
+      if (committed) commitDraftLine();
       else cancelDraftLine();
-      setDraftLineMode(false);
+      // Enter は「確定して次の線へ」。Escape だけツール自体を抜ける
+      if (!committed) setDraftLineMode(false);
       window.postMessage(
         {
           source: "mr-wplace-draft-line-ended",
-          committed: e.key === "Enter",
+          committed,
+          keepMode: committed,
+        },
+        "*",
+      );
+      return;
+    }
+  }
+
+  if (shapeMode && !isTypingTarget()) {
+    if (e.key === "Escape" || e.key === "Enter") {
+      e.preventDefault();
+      e.stopPropagation();
+      const committed = e.key === "Enter";
+      if (committed) commitDraftShape();
+      else cancelDraftShape();
+      // Enter は「確定して次の矩形へ」。Escape だけツール自体を抜ける
+      if (!committed) setDraftShapeMode(false);
+      window.postMessage(
+        {
+          source: "mr-wplace-draft-shape-ended",
+          committed,
+          keepMode: committed,
         },
         "*",
       );
@@ -942,6 +1196,8 @@ const handleKeyDown = (e: KeyboardEvent): void => {
   if (e.code !== "Space") return;
   // スタンプはクリック配置専用。Space はマップ操作のままにする。
   if (stampMode) return;
+  // 矩形ツール中も Space なぞりは邪魔になるだけなので無効にする
+  if (shapeMode) return;
   // ページスクロール抑止。入力欄にフォーカスがある時は邪魔しない
   if (isTypingTarget()) return;
   e.preventDefault();
@@ -976,7 +1232,7 @@ const updateCursor = (): void => {
   if (!target) return;
   target.style.cursor = !active
     ? ""
-    : lineMode
+    : lineMode || shapeMode
       ? "crosshair"
     : eraseMode
       ? "cell"
@@ -1079,7 +1335,73 @@ const renderFrame = (): void => {
   }
 
   renderLinePreview(ctx);
+  renderShapePreview(ctx);
   syncLineActionButtons(c);
+  syncShapeActionButtons(c);
+};
+
+const getLinePreviewToken = (shape: DraftLineShape): string =>
+  [
+    shape.start.x,
+    shape.start.y,
+    shape.control.x,
+    shape.control.y,
+    shape.end.x,
+    shape.end.y,
+    lineSettings.innerWidth,
+    lineSettings.outlineWidth,
+    lineSettings.innerColor.r,
+    lineSettings.innerColor.g,
+    lineSettings.innerColor.b,
+    lineSettings.outlineColor.r,
+    lineSettings.outlineColor.g,
+    lineSettings.outlineColor.b,
+  ].join(",");
+
+/**
+ * 確定時と**同じ** `rasterizeDraftLine` でプレビューを焼く。
+ * こうすると「見えている通りに置かれる」ことが保証される
+ * (以前の quadraticCurveTo プレビューは滑らかな線なので、
+ * 実際に置かれるドット絵と見た目が食い違っていた)。
+ */
+const buildLinePreviewCache = (shape: DraftLineShape) => {
+  const token = getLinePreviewToken(shape);
+  if (linePreviewCache?.token === token) return linePreviewCache;
+
+  // 太さぶん膨らむので bounding box に余白を足す
+  const pad = Math.ceil(lineSettings.innerWidth / 2 + lineSettings.outlineWidth) + 2;
+  const minX = Math.floor(Math.min(shape.start.x, shape.control.x, shape.end.x)) - pad;
+  const minY = Math.floor(Math.min(shape.start.y, shape.control.y, shape.end.y)) - pad;
+  const maxX = Math.ceil(Math.max(shape.start.x, shape.control.x, shape.end.x)) + pad;
+  const maxY = Math.ceil(Math.max(shape.start.y, shape.control.y, shape.end.y)) + pad;
+
+  const width = maxX - minX + 1;
+  const height = maxY - minY + 1;
+  // 制御点を大きく引き回した時に巨大 canvas を作らないための保険
+  if (width <= 0 || height <= 0 || width * height > 16_000_000) return null;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const previewCtx = canvas.getContext("2d");
+  if (!previewCtx) return null;
+
+  const image = previewCtx.createImageData(width, height);
+  const { data } = image;
+  rasterizeDraftLine(shape, lineSettings, (x, y, color) => {
+    const px = x - minX;
+    const py = y - minY;
+    if (px < 0 || py < 0 || px >= width || py >= height) return;
+    const i = (py * width + px) * 4;
+    data[i] = color.r;
+    data[i + 1] = color.g;
+    data[i + 2] = color.b;
+    data[i + 3] = 255;
+  });
+  previewCtx.putImageData(image, 0, 0);
+
+  linePreviewCache = { canvas, originX: minX, originY: minY, token };
+  return linePreviewCache;
 };
 
 const renderLinePreview = (ctx: CanvasRenderingContext2D): void => {
@@ -1087,33 +1409,28 @@ const renderLinePreview = (ctx: CanvasRenderingContext2D): void => {
   const start = worldToScreenPixel(lineShape.start);
   const control = worldToScreenPixel(lineShape.control);
   const end = worldToScreenPixel(lineShape.end);
-  const unit = worldToScreenPixel({
-    x: lineShape.start.x + 1,
-    y: lineShape.start.y,
-  });
-  if (!start || !control || !end || !unit) return;
+  if (!start || !control || !end) return;
 
-  const scale = Math.max(0.01, Math.hypot(unit.x - start.x, unit.y - start.y));
-  const drawStroke = (
-    width: number,
-    color: DraftLineSettings["innerColor"],
-  ): void => {
-    ctx.beginPath();
-    ctx.moveTo(start.x, start.y);
-    ctx.quadraticCurveTo(control.x, control.y, end.x, end.y);
-    ctx.lineWidth = Math.max(1, width * scale);
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = `rgb(${color.r},${color.g},${color.b})`;
-    ctx.stroke();
-  };
-
-  if (lineSettings.outlineWidth > 0)
-    drawStroke(
-      lineSettings.innerWidth + lineSettings.outlineWidth * 2,
-      lineSettings.outlineColor,
-    );
-  drawStroke(lineSettings.innerWidth, lineSettings.innerColor);
+  // 実際に置かれるドットをそのまま貼る (下書きタイルと同じ投影で位置を合わせる)
+  const preview = buildLinePreviewCache(lineShape);
+  if (preview) {
+    const topLeft = worldToScreenPixel({
+      x: preview.originX,
+      y: preview.originY,
+    });
+    const bottomRight = worldToScreenPixel({
+      x: preview.originX + preview.canvas.width,
+      y: preview.originY + preview.canvas.height,
+    });
+    if (topLeft && bottomRight)
+      ctx.drawImage(
+        preview.canvas,
+        topLeft.x,
+        topLeft.y,
+        bottomRight.x - topLeft.x,
+        bottomRight.y - topLeft.y,
+      );
+  }
 
   ctx.save();
   ctx.setLineDash([4, 4]);
@@ -1136,6 +1453,119 @@ const renderLinePreview = (ctx: CanvasRenderingContext2D): void => {
     ctx.strokeStyle = "#111827";
     ctx.stroke();
   });
+  ctx.restore();
+};
+
+const getShapePreviewToken = (shape: DraftShapeRect): string => {
+  const { minX, minY, maxX, maxY } = getDraftShapeBounds(shape);
+  return [
+    minX,
+    minY,
+    maxX,
+    maxY,
+    shapeSettings.strokeWidth,
+    shapeSettings.filled ? 1 : 0,
+    shapeSettings.strokeColor.r,
+    shapeSettings.strokeColor.g,
+    shapeSettings.strokeColor.b,
+    shapeSettings.fillColor.r,
+    shapeSettings.fillColor.g,
+    shapeSettings.fillColor.b,
+  ].join(",");
+};
+
+/**
+ * 確定時と**同じ** `rasterizeDraftShape` でプレビューを焼く。
+ * 「見えている通りに置かれる」ことを保証するため、枠のはみ出しや
+ * 塗りの有無もそのままドット絵として現れる。
+ */
+const buildShapePreviewCache = (shape: DraftShapeRect) => {
+  const token = getShapePreviewToken(shape);
+  if (shapePreviewCache?.token === token) return shapePreviewCache;
+
+  const { minX, minY, maxX, maxY } = getDraftShapeBounds(shape);
+  const width = maxX - minX + 1;
+  const height = maxY - minY + 1;
+  // 巨大な矩形を引かれた時に canvas を作り切れなくなるのを防ぐ
+  if (width <= 0 || height <= 0 || width * height > 16_000_000) return null;
+
+  const previewCanvas = document.createElement("canvas");
+  previewCanvas.width = width;
+  previewCanvas.height = height;
+  const previewCtx = previewCanvas.getContext("2d");
+  if (!previewCtx) return null;
+
+  const image = previewCtx.createImageData(width, height);
+  const { data } = image;
+  rasterizeDraftShape(shape, shapeSettings, (x, y, color) => {
+    const px = x - minX;
+    const py = y - minY;
+    if (px < 0 || py < 0 || px >= width || py >= height) return;
+    const i = (py * width + px) * 4;
+    data[i] = color.r;
+    data[i + 1] = color.g;
+    data[i + 2] = color.b;
+    data[i + 3] = 255;
+  });
+  previewCtx.putImageData(image, 0, 0);
+
+  shapePreviewCache = { canvas: previewCanvas, originX: minX, originY: minY, token };
+  return shapePreviewCache;
+};
+
+const renderShapePreview = (ctx: CanvasRenderingContext2D): void => {
+  if (!shapeMode || !shapeRect) return;
+
+  const preview = buildShapePreviewCache(shapeRect);
+  if (preview) {
+    // 下書きタイルと同じ投影で貼るので、ズームしても位置がずれない
+    const topLeft = worldToScreenPixel({
+      x: preview.originX,
+      y: preview.originY,
+    });
+    const bottomRight = worldToScreenPixel({
+      x: preview.originX + preview.canvas.width,
+      y: preview.originY + preview.canvas.height,
+    });
+    if (topLeft && bottomRight)
+      ctx.drawImage(
+        preview.canvas,
+        topLeft.x,
+        topLeft.y,
+        bottomRight.x - topLeft.x,
+        bottomRight.y - topLeft.y,
+      );
+  }
+
+  const { minX, minY, maxX, maxY } = getDraftShapeBounds(shapeRect);
+  const topLeft = worldToScreenPixel({ x: minX, y: minY });
+  const bottomRight = worldToScreenPixel({ x: maxX + 1, y: maxY + 1 });
+  if (!topLeft || !bottomRight) return;
+
+  ctx.save();
+  ctx.setLineDash([4, 4]);
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "rgba(255,255,255,.8)";
+  ctx.strokeRect(
+    topLeft.x,
+    topLeft.y,
+    bottomRight.x - topLeft.x,
+    bottomRight.y - topLeft.y,
+  );
+  ctx.setLineDash([]);
+
+  // 掴める角 (start/end) だけハンドルを出す
+  for (const key of ["start", "end"] as const) {
+    const point = worldToScreenPixel(shapeRect[key]);
+    if (!point) continue;
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, 6, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#111827";
+    ctx.stroke();
+  }
   ctx.restore();
 };
 
@@ -1174,6 +1604,7 @@ export const setDraftCanvasHandlers = (handlers: {
   onUndoRequested: () => void;
   onRedoRequested: () => void;
   onLineAction: (action: "commit" | "cancel") => void;
+  onShapeAction: (action: "commit" | "cancel") => void;
 }): void => {
   onPaint = handlers.onPaint;
   onErase = handlers.onErase;
@@ -1182,6 +1613,7 @@ export const setDraftCanvasHandlers = (handlers: {
   onUndoRequested = handlers.onUndoRequested;
   onRedoRequested = handlers.onRedoRequested;
   onLineAction = handlers.onLineAction;
+  onShapeAction = handlers.onShapeAction;
 };
 
 export const setDraftCanvasActive = (enabled: boolean): void => {
@@ -1196,12 +1628,10 @@ export const setDraftCanvasActive = (enabled: boolean): void => {
   lastPointer = null;
   spaceHeld = false;
   lineMode = false;
-  lineShape = null;
-  lineDrag = null;
-  linePointerId = null;
+  shapeMode = false;
   // 下書き終了後に ✓/× が地図上へ残らないよう明示的に片付ける
-  lineActionButtons?.remove();
-  lineActionButtons = null;
+  resetDraftLineShape();
+  resetDraftShape();
   stampMode = null;
 
   if (enabled) {

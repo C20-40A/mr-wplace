@@ -42,6 +42,7 @@ import {
   setDraftBrushSettings,
   setDraftStampToolSettings,
   setDraftLineSettings,
+  setDraftShapeSettings,
   setDraftMapLockEnabled,
   clearAllDraft,
   handleDraftExportRequest,
@@ -407,6 +408,7 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-draft-stamp-update": (data) =>
     setDraftStampToolSettings(data),
   "mr-wplace-draft-line-update": (data) => setDraftLineSettings(data),
+  "mr-wplace-draft-shape-update": (data) => setDraftShapeSettings(data),
   "mr-wplace-draft-map-lock-update": (data) =>
     setDraftMapLockEnabled(data.enabled),
   "mr-wplace-draft-clear": () => clearAllDraft(),

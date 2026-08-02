@@ -17,7 +17,9 @@ import {
 } from "./draft-history";
 import {
   cancelDraftLine,
+  cancelDraftShape,
   commitDraftLine,
+  commitDraftShape,
   markDraftCanvasDirty,
   setDraftBucketMode,
   setDraftCanvasActive,
@@ -26,8 +28,11 @@ import {
   setDraftLineMode,
   setDraftLineStraightMode,
   setDraftMapLocked,
+  setDraftShapeMode,
+  setDraftShapeSquareMode,
   setDraftStampSettings,
   updateDraftLineSettings,
+  updateDraftShapeSettings,
 } from "./draft-canvas";
 import { exportDraftAsImage, type DraftExportResult } from "./draft-export";
 import {
@@ -76,16 +81,31 @@ setDraftCanvasHandlers({
   // Ctrl+Z / Ctrl+Shift+Z。ボタン経由と同じ処理へ流す
   onUndoRequested: () => undoDraftEdit(),
   onRedoRequested: () => redoDraftEdit(),
-  // 線のそばに出す ✓ / ×。確定後は content 側のツール状態も閉じる。
+  // 線のそばに出す ✓ / ×。線ツール自体は ON のままにして続けて引けるようにする。
   onLineAction: (action) => {
     if (action === "commit") commitDraftLine();
     else cancelDraftLine();
-    setDraftLineMode(false);
     notifyDraftState();
     window.postMessage(
       {
         source: "mr-wplace-draft-line-ended",
         committed: action === "commit",
+        // ✓ / × どちらでもツールは ON のまま (続けて次の線を引ける)
+        keepMode: true,
+      },
+      "*",
+    );
+  },
+  // 矩形のそばに出す ✓ / ×。線と同じくツールは ON のまま残す。
+  onShapeAction: (action) => {
+    if (action === "commit") commitDraftShape();
+    else cancelDraftShape();
+    notifyDraftState();
+    window.postMessage(
+      {
+        source: "mr-wplace-draft-shape-ended",
+        committed: action === "commit",
+        keepMode: true,
       },
       "*",
     );
@@ -175,6 +195,16 @@ export const setDraftStampToolSettings = (data: {
   setDraftStampSettings(data);
 };
 
+/** パレット id → RGB。未指定/未知の id は null (= 設定を変えない) */
+const toDraftColor = (
+  id: number | undefined,
+): { r: number; g: number; b: number } | null => {
+  if (typeof id !== "number") return null;
+  const entry = colorpalette.find((color) => color.id === id);
+  if (!entry) return null;
+  return { r: entry.rgb[0], g: entry.rgb[1], b: entry.rgb[2] };
+};
+
 /** Line tool settings and edit commands. */
 export const setDraftLineSettings = (data: {
   enabled?: boolean;
@@ -184,6 +214,7 @@ export const setDraftLineSettings = (data: {
   outlineColorId?: number;
   straightMode?: boolean;
   command?: "commit" | "cancel";
+  keepMode?: boolean;
 }): void => {
   if (typeof data.straightMode === "boolean")
     setDraftLineStraightMode(data.straightMode);
@@ -194,29 +225,57 @@ export const setDraftLineSettings = (data: {
   if (typeof data.outlineWidth === "number")
     settings.outlineWidth = data.outlineWidth;
 
-  const toColor = (id: number | undefined) => {
-    if (typeof id !== "number") return null;
-    const entry = colorpalette.find((color) => color.id === id);
-    if (!entry) return null;
-    return { r: entry.rgb[0], g: entry.rgb[1], b: entry.rgb[2] };
-  };
-  const innerColor = toColor(data.innerColorId);
-  const outlineColor = toColor(data.outlineColorId);
+  const innerColor = toDraftColor(data.innerColorId);
+  const outlineColor = toDraftColor(data.outlineColorId);
   if (innerColor) settings.innerColor = innerColor;
   if (outlineColor) settings.outlineColor = outlineColor;
   updateDraftLineSettings(settings);
 
-  if (data.command === "commit") {
-    commitDraftLine();
-    setDraftLineMode(false);
-    return;
-  }
-  if (data.command === "cancel") {
-    cancelDraftLine();
-    setDraftLineMode(false);
+  if (data.command) {
+    if (data.command === "commit") commitDraftLine();
+    else cancelDraftLine();
+    // keepMode の時はツールを ON のまま残し、続けて次の線を引けるようにする
+    if (!data.keepMode) setDraftLineMode(false);
+    notifyDraftState();
     return;
   }
   if (typeof data.enabled === "boolean") setDraftLineMode(data.enabled);
+};
+
+/** Shape (rectangle) tool settings and edit commands. */
+export const setDraftShapeSettings = (data: {
+  enabled?: boolean;
+  strokeWidth?: number;
+  filled?: boolean;
+  strokeColorId?: number;
+  fillColorId?: number;
+  squareMode?: boolean;
+  command?: "commit" | "cancel";
+  keepMode?: boolean;
+}): void => {
+  if (typeof data.squareMode === "boolean")
+    setDraftShapeSquareMode(data.squareMode);
+
+  const settings: Parameters<typeof updateDraftShapeSettings>[0] = {};
+  if (typeof data.strokeWidth === "number")
+    settings.strokeWidth = data.strokeWidth;
+  if (typeof data.filled === "boolean") settings.filled = data.filled;
+
+  const strokeColor = toDraftColor(data.strokeColorId);
+  const fillColor = toDraftColor(data.fillColorId);
+  if (strokeColor) settings.strokeColor = strokeColor;
+  if (fillColor) settings.fillColor = fillColor;
+  updateDraftShapeSettings(settings);
+
+  if (data.command) {
+    if (data.command === "commit") commitDraftShape();
+    else cancelDraftShape();
+    // keepMode の時はツールを ON のまま残し、続けて次の矩形を描けるようにする
+    if (!data.keepMode) setDraftShapeMode(false);
+    notifyDraftState();
+    return;
+  }
+  if (typeof data.enabled === "boolean") setDraftShapeMode(data.enabled);
 };
 
 /**

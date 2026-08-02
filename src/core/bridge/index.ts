@@ -29,6 +29,7 @@ export {
   sendDraftStampToInject,
   sendDraftMapLockToInject,
   sendDraftLineToInject,
+  sendDraftShapeToInject,
   sendDraftUndoToInject,
   sendDraftRedoToInject,
   requestDraftExport,

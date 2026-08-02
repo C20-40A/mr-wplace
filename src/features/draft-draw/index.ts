@@ -13,6 +13,7 @@ import {
   sendDraftBrushToInject,
   sendDraftStampToInject,
   sendDraftLineToInject,
+  sendDraftShapeToInject,
   sendDraftMapLockToInject,
   sendDraftUndoToInject,
   sendDraftRedoToInject,
@@ -51,6 +52,7 @@ const COLOR_TIP_ID = "mr-wplace-draft-color-tip";
 const COLOR_STRIP_ID = "mr-wplace-draft-colors";
 const BRUSH_POPUP_ID = "mr-wplace-draft-brush-popup";
 const LINE_POPUP_ID = "mr-wplace-draft-line-popup";
+const SHAPE_POPUP_ID = "mr-wplace-draft-shape-popup";
 const STAMP_POPUP_ID = "mr-wplace-draft-stamp-popup";
 /** undo/redo FAB (画面左上に浮かせる) */
 const HISTORY_ID = "mr-wplace-draft-history";
@@ -177,6 +179,10 @@ const CLEAR_PATTERN_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_A
 /** User-provided Lucide spline icon. */
 const LINE_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M5 17A12 12 0 0 1 17 5"/></svg>`;
 const CHECK_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="m20 6-11 11-5-5"/></svg>`;
+/** 図形 (矩形) ツール */
+const SHAPE_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><rect width="18" height="18" x="3" y="3" rx="2"/></svg>`;
+/** 正方形トグル (Shift 押下と同じ拘束を latch する) */
+const SQUARE_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><rect width="14" height="14" x="5" y="5" rx="1"/><path d="M3 9V3h6M21 15v6h-6"/></svg>`;
 /** 直線トグル (Shift 押下と同じ拘束を latch する) */
 const STRAIGHT_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M4 12h16M7 9l-3 3 3 3M17 9l3 3-3 3"/></svg>`;
 const X_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
@@ -217,6 +223,15 @@ export class DraftDraw {
   private lineColorTarget: "inner" | "outline" = "inner";
   /** 直線トグル。ON の間は Shift 押下と同じ拘束が常時掛かる */
   private lineStraightMode = false;
+  /** 確定前は角を動かせる矩形ツール */
+  private shapeMode = false;
+  private shapeStrokeWidth = 1;
+  private shapeFilled = false;
+  private shapeStrokeColorId = 10; // Yellow
+  private shapeFillColorId = 9; // Gold
+  private shapeColorTarget: "stroke" | "fill" = "stroke";
+  /** 正方形トグル。ON の間は Shift 押下と同じ拘束が常時掛かる */
+  private shapeSquareMode = false;
   /** 自作ドットパターン。single は1回配置、fill は連結領域へ反復する。 */
   private stampMode: StampMode | null = null;
   private stampWidth = STAMP_SAMPLES[1].width;
@@ -263,9 +278,23 @@ export class DraftDraw {
     // spoit で色が変わったらスウォッチの選択表示を追従させる
     if (source === "mr-wplace-draft-color-picked") this.updateToolbar();
 
+    // ✓/× や Enter の後もツールは ON のままにして続けて線を引けるようにする。
+    // Escape だけは keepMode なしで届くのでツールごと閉じる。
     if (source === "mr-wplace-draft-line-ended") {
-      this.lineMode = false;
-      this.closeLinePopup();
+      if (!event.data.keepMode) {
+        this.lineMode = false;
+        this.closeLinePopup();
+      }
+      this.updateToolbar();
+      return;
+    }
+
+    // 矩形も線と同じ扱い。Escape だけ keepMode なしで届くのでツールごと閉じる
+    if (source === "mr-wplace-draft-shape-ended") {
+      if (!event.data.keepMode) {
+        this.shapeMode = false;
+        this.closeShapePopup();
+      }
       this.updateToolbar();
       return;
     }
@@ -347,6 +376,7 @@ export class DraftDraw {
     this.seedItem = seedItem ?? null;
     this.erasing = false;
     this.lineMode = false;
+    this.shapeMode = false;
     this.stampMode = null;
     this.mapLocked = false;
 
@@ -374,6 +404,7 @@ export class DraftDraw {
     this.erasing = false;
     this.bucket = false;
     this.lineMode = false;
+    this.shapeMode = false;
     this.stampMode = null;
     this.mapLocked = false;
     this.pixelCount = 0;
@@ -391,6 +422,7 @@ export class DraftDraw {
     this.hideColorTip();
     this.closeBrushPopup();
     this.closeLinePopup();
+    this.closeShapePopup();
     this.closeStampPopup();
     window.removeEventListener("resize", this.handleResize);
   }
@@ -643,7 +675,7 @@ export class DraftDraw {
     eraser.innerHTML = ERASER_ICON_SVG;
     eraser.title = t`${"draft_eraser"}`;
     eraser.addEventListener("click", () => {
-      if (this.lineMode) this.finishLineTool("cancel");
+      this.deactivateVectorTools();
       this.deactivateStampTool();
       this.erasing = !this.erasing;
       // 排他: バケツとは同時に使えない
@@ -662,8 +694,7 @@ export class DraftDraw {
     brush.addEventListener("click", (e) => {
       e.stopPropagation();
       this.deactivateStampTool();
-      if (this.lineMode) this.finishLineTool("cancel");
-      this.closeLinePopup();
+      this.deactivateVectorTools();
       this.toggleBrushPopup();
     });
 
@@ -680,6 +711,19 @@ export class DraftDraw {
       else this.toggleLinePopup();
     });
 
+    const shape = document.createElement("button");
+    shape.id = `${TOOLBAR_ID}-shape`;
+    shape.type = "button";
+    shape.className = "btn btn-sm btn-square";
+    shape.innerHTML = SHAPE_ICON_SVG;
+    shape.title = "Rectangle";
+    shape.setAttribute("aria-label", "Rectangle");
+    shape.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!this.shapeMode) this.activateShapeTool();
+      else this.toggleShapePopup();
+    });
+
     const stamp = document.createElement("button");
     stamp.id = `${TOOLBAR_ID}-stamp`;
     stamp.type = "button";
@@ -689,9 +733,8 @@ export class DraftDraw {
     stamp.setAttribute("aria-label", "Stamp");
     stamp.addEventListener("click", (e) => {
       e.stopPropagation();
-      if (this.lineMode) this.finishLineTool("cancel");
+      this.deactivateVectorTools();
       this.closeBrushPopup();
-      this.closeLinePopup();
       if (!this.stampMode) this.activateStampTool();
       else if (document.getElementById(STAMP_POPUP_ID)) this.closeStampPopup();
       else this.openStampPopup();
@@ -704,7 +747,7 @@ export class DraftDraw {
     bucket.innerHTML = BUCKET_ICON_SVG;
     bucket.title = t`${"draft_bucket"}`;
     bucket.addEventListener("click", () => {
-      if (this.lineMode) this.finishLineTool("cancel");
+      this.deactivateVectorTools();
       this.deactivateStampTool();
       this.bucket = !this.bucket;
       if (this.bucket) this.erasing = false;
@@ -722,8 +765,76 @@ export class DraftDraw {
     save.addEventListener("click", () => void this.save());
 
     // 閉じるは sheet の外 (右上の丸バツ)、マップロックは画面右上端なので入れない
-    row.append(save, brush, stamp, line, eraser, bucket);
+    row.append(save, brush, stamp, line, shape, eraser, bucket);
     return row;
+  }
+
+  /**
+   * 確定前のベクター (線 / 矩形) を破棄してツールを閉じる。
+   * 他ツールへ切り替える時の共通処理。
+   */
+  private deactivateVectorTools(): void {
+    if (this.lineMode) this.finishLineTool("cancel");
+    if (this.shapeMode) this.finishShapeTool("cancel");
+    this.closeLinePopup();
+    this.closeShapePopup();
+  }
+
+  // ------- popup shell (brush / line / stamp 共通) -------
+
+  /**
+   * ツールバーのボタンから生えるポップアップの共通ガワ。
+   * 3 ツールで枠/位置/外側クリックの扱いが同じなのでここへ集約する。
+   *
+   * NOTE: 外側クリックの listener は **capture 段階**で張るので popup 自身より
+   * 先に走る。つまり popup 側の stopPropagation では止められない。
+   * 判定は伝播ではなく **target が popup / アンカーの内側か** で行うこと
+   * (伝播に頼ると slider を押した瞬間に閉じて操作不能になる)。
+   */
+  private createPopupShell(
+    popupId: string,
+    extraStyle: string,
+  ): HTMLElement | null {
+    const popup = document.createElement("div");
+    popup.id = popupId;
+    popup.style.cssText = [
+      "position:fixed;z-index:1004",
+      "padding:10px;border-radius:12px",
+      "background:var(--color-base-100)",
+      "border:1px solid var(--color-base-300)",
+      "color:var(--color-base-content)",
+      "box-shadow:0 4px 16px rgb(0 0 0 / 0.25)",
+      extraStyle,
+    ].join(";");
+    // 下のマップへ操作が抜けて誤爆で塗られるのを防ぐ
+    popup.addEventListener("pointerdown", (e) => e.stopPropagation());
+    popup.addEventListener("click", (e) => e.stopPropagation());
+    return popup;
+  }
+
+  /** アンカーボタンの真上・中央へ置く。画面端でははみ出さないよう clamp する */
+  private positionPopupAbove(popup: HTMLElement, anchor: HTMLElement): void {
+    const rect = anchor.getBoundingClientRect();
+    popup.style.bottom = `${window.innerHeight - rect.top + 8}px`;
+    popup.style.left = `${Math.min(
+      Math.max(rect.left + rect.width / 2 - popup.offsetWidth / 2, 8),
+      window.innerWidth - popup.offsetWidth - 8,
+    )}px`;
+  }
+
+  /**
+   * 「popup の外か」判定。アンカーボタン自身は toggle 側へ任せるため除外する
+   * (ここで閉じると閉じた直後に開き直してしまう)。
+   */
+  private isOutsidePopup(
+    event: Event,
+    popupId: string,
+    anchorId: string,
+  ): boolean {
+    const target = event.target;
+    if (!(target instanceof Node)) return true;
+    if (document.getElementById(popupId)?.contains(target)) return false;
+    return !document.getElementById(anchorId)?.contains(target);
   }
 
   // ------- stamp tool -------
@@ -769,20 +880,11 @@ export class DraftDraw {
     const anchor = document.getElementById(`${TOOLBAR_ID}-stamp`);
     if (!anchor) return;
 
-    const popup = document.createElement("div");
-    popup.id = STAMP_POPUP_ID;
-    popup.style.cssText = [
-      "position:fixed;z-index:1004",
-      "display:flex;flex-direction:column;align-items:stretch;gap:8px",
-      "width:min(360px,calc(100vw - 16px));max-height:min(520px,calc(100vh - 180px));overflow:auto",
-      "padding:10px;border-radius:12px",
-      "background:var(--color-base-100)",
-      "border:1px solid var(--color-base-300)",
-      "color:var(--color-base-content)",
-      "box-shadow:0 4px 16px rgb(0 0 0 / 0.25)",
-    ].join(";");
-    popup.addEventListener("pointerdown", (event) => event.stopPropagation());
-    popup.addEventListener("click", (event) => event.stopPropagation());
+    const popup = this.createPopupShell(
+      STAMP_POPUP_ID,
+      "display:flex;flex-direction:column;align-items:stretch;gap:8px;width:min(360px,calc(100vw - 16px));max-height:min(520px,calc(100vh - 180px));overflow:auto",
+    );
+    if (!popup) return;
 
     const editor = document.createElement("div");
     editor.style.cssText = "display:flex;align-items:flex-start;justify-content:center;gap:10px;";
@@ -820,10 +922,7 @@ export class DraftDraw {
 
     document.body.appendChild(popup);
     this.syncStampPopup();
-
-    const rect = anchor.getBoundingClientRect();
-    popup.style.bottom = `${window.innerHeight - rect.top + 8}px`;
-    popup.style.left = `${Math.min(Math.max(rect.left + rect.width / 2 - popup.offsetWidth / 2, 8), window.innerWidth - popup.offsetWidth - 8)}px`;
+    this.positionPopupAbove(popup, anchor);
 
     window.addEventListener("pointerdown", this.handleOutsideStampClick, {
       capture: true,
@@ -1071,15 +1170,8 @@ export class DraftDraw {
   };
 
   private handleOutsideStampClick = (event: Event): void => {
-    const popup = document.getElementById(STAMP_POPUP_ID);
-    const target = event.target;
-    if (popup && target instanceof Node && popup.contains(target)) return;
-    if (
-      target instanceof Node &&
-      document.getElementById(`${TOOLBAR_ID}-stamp`)?.contains(target)
-    )
-      return;
-    this.closeStampPopup();
+    if (this.isOutsidePopup(event, STAMP_POPUP_ID, `${TOOLBAR_ID}-stamp`))
+      this.closeStampPopup();
   };
 
   private closeStampPopup(): void {
@@ -1120,6 +1212,8 @@ export class DraftDraw {
   private activateLineTool(): void {
     this.closeBrushPopup();
     this.deactivateStampTool();
+    if (this.shapeMode) this.finishShapeTool("cancel");
+    this.closeShapePopup();
     this.erasing = false;
     this.bucket = false;
     this.lineMode = true;
@@ -1137,9 +1231,21 @@ export class DraftDraw {
     this.openLinePopup();
   }
 
-  private finishLineTool(command: "commit" | "cancel"): void {
+  /**
+   * 編集中の線を確定/破棄する。
+   * `keepMode` の時はツールを ON のまま残し、続けて次の線を引けるようにする
+   * (他ツールへ切り替える時だけ完全に閉じる)。
+   */
+  private finishLineTool(
+    command: "commit" | "cancel",
+    keepMode = false,
+  ): void {
     if (!this.lineMode) return;
-    sendDraftLineToInject({ command });
+    sendDraftLineToInject({ command, keepMode });
+    if (keepMode) {
+      this.updateToolbar();
+      return;
+    }
     this.lineMode = false;
     this.closeLinePopup();
     this.updateToolbar();
@@ -1155,20 +1261,11 @@ export class DraftDraw {
     const anchor = document.getElementById(`${TOOLBAR_ID}-line`);
     if (!anchor) return;
 
-    const popup = document.createElement("div");
-    popup.id = LINE_POPUP_ID;
-    popup.style.cssText = [
-      "position:fixed;z-index:1004",
-      "display:flex;flex-direction:column;gap:8px",
-      "width:min(340px,calc(100vw - 16px));max-height:min(440px,calc(100vh - 180px));overflow:auto",
-      "padding:10px;border-radius:12px",
-      "background:var(--color-base-100)",
-      "border:1px solid var(--color-base-300)",
-      "color:var(--color-base-content)",
-      "box-shadow:0 4px 16px rgb(0 0 0 / 0.25)",
-    ].join(";");
-    popup.addEventListener("pointerdown", (e) => e.stopPropagation());
-    popup.addEventListener("click", (e) => e.stopPropagation());
+    const popup = this.createPopupShell(
+      LINE_POPUP_ID,
+      "display:flex;flex-direction:column;gap:8px;width:min(340px,calc(100vw - 16px));max-height:min(440px,calc(100vh - 180px));overflow:auto",
+    );
+    if (!popup) return;
 
     const preview = document.createElement("div");
     preview.id = `${LINE_POPUP_ID}-preview`;
@@ -1207,21 +1304,19 @@ export class DraftDraw {
     cancel.className = "btn btn-sm btn-square";
     cancel.innerHTML = X_ICON_SVG;
     cancel.title = "Cancel";
-    cancel.addEventListener("click", () => this.finishLineTool("cancel"));
+    cancel.addEventListener("click", () => this.finishLineTool("cancel", true));
     const commit = document.createElement("button");
     commit.type = "button";
     commit.className = "btn btn-sm btn-square btn-primary";
     commit.innerHTML = CHECK_ICON_SVG;
     commit.title = "Apply";
-    commit.addEventListener("click", () => this.finishLineTool("commit"));
+    commit.addEventListener("click", () => this.finishLineTool("commit", true));
     buttons.append(cancel, commit);
     actions.append(buttons);
     popup.append(actions);
 
     document.body.appendChild(popup);
-    const rect = anchor.getBoundingClientRect();
-    popup.style.bottom = `${window.innerHeight - rect.top + 8}px`;
-    popup.style.left = `${Math.min(Math.max(rect.left + rect.width / 2 - popup.offsetWidth / 2, 8), window.innerWidth - popup.offsetWidth - 8)}px`;
+    this.positionPopupAbove(popup, anchor);
     window.addEventListener("pointerdown", this.handleOutsideLineClick, {
       capture: true,
     });
@@ -1342,20 +1437,286 @@ export class DraftDraw {
   }
 
   private handleOutsideLineClick = (event: Event): void => {
-    const popup = document.getElementById(LINE_POPUP_ID);
-    const target = event.target;
-    if (popup && target instanceof Node && popup.contains(target)) return;
-    if (
-      target instanceof Node &&
-      document.getElementById(`${TOOLBAR_ID}-line`)?.contains(target)
-    )
-      return;
-    this.closeLinePopup();
+    if (this.isOutsidePopup(event, LINE_POPUP_ID, `${TOOLBAR_ID}-line`))
+      this.closeLinePopup();
   };
 
   private closeLinePopup(): void {
     document.getElementById(LINE_POPUP_ID)?.remove();
     window.removeEventListener("pointerdown", this.handleOutsideLineClick, {
+      capture: true,
+    });
+  }
+
+  // ------- shape (rectangle) tool -------
+
+  /** 枠の太さ・塗りの有無・両方の色が一目で分かる矩形サンプル */
+  private buildShapePreviewSvg(): string {
+    const stroke = this.getLineColor(this.shapeStrokeColorId);
+    const fill = this.getLineColor(this.shapeFillColorId);
+    // 実寸ではなくサンプル上の見た目の太さ (0 は枠なし)
+    const strokeWidth = Math.min(10, this.shapeStrokeWidth * 1.5);
+    const inset = strokeWidth / 2;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 34" width="120" height="34" style="display:block"><rect x="${24 + inset}" y="${4 + inset}" width="${72 - strokeWidth}" height="${26 - strokeWidth}" fill="${
+      this.shapeFilled ? `rgb(${fill.rgb.join(",")})` : "none"
+    }" stroke="${
+      this.shapeStrokeWidth > 0 ? `rgb(${stroke.rgb.join(",")})` : "none"
+    }" stroke-width="${strokeWidth}"/></svg>`;
+  }
+
+  private activateShapeTool(): void {
+    this.closeBrushPopup();
+    this.deactivateStampTool();
+    if (this.lineMode) this.finishLineTool("cancel");
+    this.closeLinePopup();
+    this.erasing = false;
+    this.bucket = false;
+    this.shapeMode = true;
+    sendDraftEraseModeToInject(false);
+    sendDraftBucketModeToInject(false);
+    sendDraftShapeToInject({
+      enabled: true,
+      strokeWidth: this.shapeStrokeWidth,
+      filled: this.shapeFilled,
+      strokeColorId: this.shapeStrokeColorId,
+      fillColorId: this.shapeFillColorId,
+      squareMode: this.shapeSquareMode,
+    });
+    this.updateToolbar();
+    this.openShapePopup();
+  }
+
+  /**
+   * 編集中の矩形を確定/破棄する。
+   * `keepMode` の時はツールを ON のまま残し、続けて次の矩形を描けるようにする。
+   */
+  private finishShapeTool(
+    command: "commit" | "cancel",
+    keepMode = false,
+  ): void {
+    if (!this.shapeMode) return;
+    sendDraftShapeToInject({ command, keepMode });
+    if (keepMode) {
+      this.updateToolbar();
+      return;
+    }
+    this.shapeMode = false;
+    this.closeShapePopup();
+    this.updateToolbar();
+  }
+
+  private toggleShapePopup(): void {
+    if (document.getElementById(SHAPE_POPUP_ID)) this.closeShapePopup();
+    else this.openShapePopup();
+  }
+
+  private openShapePopup(): void {
+    this.closeShapePopup();
+    const anchor = document.getElementById(`${TOOLBAR_ID}-shape`);
+    if (!anchor) return;
+
+    const popup = this.createPopupShell(
+      SHAPE_POPUP_ID,
+      "display:flex;flex-direction:column;gap:8px;width:min(340px,calc(100vw - 16px));max-height:min(440px,calc(100vh - 180px));overflow:auto",
+    );
+    if (!popup) return;
+
+    const preview = document.createElement("div");
+    preview.id = `${SHAPE_POPUP_ID}-preview`;
+    preview.style.cssText =
+      "display:flex;align-items:center;justify-content:center;height:40px;border-radius:8px;background:var(--color-base-200);";
+    preview.innerHTML = this.buildShapePreviewSvg();
+    popup.append(preview);
+    popup.append(this.buildShapeStrokeControl());
+    popup.append(this.buildShapeColorChannels());
+    popup.append(this.buildShapePalette());
+
+    const actions = document.createElement("div");
+    actions.style.cssText =
+      "display:flex;align-items:center;justify-content:space-between;gap:8px;";
+
+    const toggles = document.createElement("div");
+    toggles.style.cssText = "display:flex;gap:8px;";
+
+    // 正方形トグル。Shift 押しっぱなしの代わりになる
+    const square = document.createElement("button");
+    square.id = `${SHAPE_POPUP_ID}-square`;
+    square.type = "button";
+    square.className = "btn btn-sm btn-square";
+    square.innerHTML = SQUARE_ICON_SVG;
+    square.title = "Square (Shift)";
+    square.setAttribute("aria-label", square.title);
+    square.addEventListener("click", () => {
+      this.shapeSquareMode = !this.shapeSquareMode;
+      sendDraftShapeToInject({ squareMode: this.shapeSquareMode });
+      this.syncShapePopup();
+    });
+
+    // 塗りつぶしトグル。OFF なら枠だけ残る
+    const filled = document.createElement("button");
+    filled.id = `${SHAPE_POPUP_ID}-filled`;
+    filled.type = "button";
+    filled.className = "btn btn-sm btn-square";
+    filled.title = "Fill";
+    filled.setAttribute("aria-label", filled.title);
+    filled.addEventListener("click", () => {
+      this.shapeFilled = !this.shapeFilled;
+      sendDraftShapeToInject({ filled: this.shapeFilled });
+      this.syncShapePopup();
+    });
+    toggles.append(square, filled);
+    actions.append(toggles);
+
+    const buttons = document.createElement("div");
+    buttons.style.cssText = "display:flex;gap:8px;";
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "btn btn-sm btn-square";
+    cancel.innerHTML = X_ICON_SVG;
+    cancel.title = "Cancel";
+    cancel.addEventListener("click", () => this.finishShapeTool("cancel", true));
+    const commit = document.createElement("button");
+    commit.type = "button";
+    commit.className = "btn btn-sm btn-square btn-primary";
+    commit.innerHTML = CHECK_ICON_SVG;
+    commit.title = "Apply";
+    commit.addEventListener("click", () => this.finishShapeTool("commit", true));
+    buttons.append(cancel, commit);
+    actions.append(buttons);
+    popup.append(actions);
+
+    document.body.appendChild(popup);
+    this.positionPopupAbove(popup, anchor);
+    window.addEventListener("pointerdown", this.handleOutsideShapeClick, {
+      capture: true,
+    });
+    this.syncShapePopup();
+  }
+
+  /** 枠の太さ。0 にすると枠が消えて塗りだけになる */
+  private buildShapeStrokeControl(): HTMLElement {
+    const row = document.createElement("div");
+    row.style.cssText = "display:flex;align-items:center;gap:8px;";
+    const icon = document.createElement("span");
+    icon.style.cssText = "display:flex;width:28px;justify-content:center;";
+    icon.innerHTML = `<svg ${ICON_ATTRS}><rect width="18" height="18" x="3" y="3" rx="2" stroke-width="4"/></svg>`;
+
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.min = "0";
+    slider.max = "32";
+    slider.value = String(this.shapeStrokeWidth);
+    slider.className = "range range-xs";
+    slider.style.cssText = "flex:1;min-width:0;";
+    slider.addEventListener("input", () => {
+      this.shapeStrokeWidth = Number(slider.value);
+      sendDraftShapeToInject({ strokeWidth: this.shapeStrokeWidth });
+      this.syncShapePopup();
+    });
+    row.append(icon, slider);
+    return row;
+  }
+
+  private buildShapeColorChannels(): HTMLElement {
+    const row = document.createElement("div");
+    row.id = `${SHAPE_POPUP_ID}-channels`;
+    row.style.cssText = "display:flex;justify-content:center;gap:10px;";
+    for (const kind of ["stroke", "fill"] as const) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.shapeColorTarget = kind;
+      button.className = "btn btn-sm btn-square";
+      button.addEventListener("click", () => {
+        this.shapeColorTarget = kind;
+        this.syncShapePopup();
+      });
+      row.append(button);
+    }
+    return row;
+  }
+
+  private buildShapePalette(): HTMLElement {
+    const palette = document.createElement("div");
+    palette.style.cssText =
+      "display:grid;grid-template-columns:repeat(9,1fr);gap:4px;";
+    for (const color of colorpalette) {
+      if (color.id === TRANSPARENT_COLOR_ID) continue;
+      const swatch = document.createElement("button");
+      swatch.type = "button";
+      swatch.dataset.shapeColorId = String(color.id);
+      swatch.style.cssText = `aspect-ratio:1;min-width:0;border-radius:3px;background:rgb(${color.rgb.join(",")});border:2px solid transparent;padding:0;cursor:pointer;`;
+      swatch.title = color.name;
+      swatch.addEventListener("click", () => {
+        if (this.shapeColorTarget === "stroke")
+          this.shapeStrokeColorId = color.id;
+        else this.shapeFillColorId = color.id;
+        sendDraftShapeToInject(
+          this.shapeColorTarget === "stroke"
+            ? { strokeColorId: color.id }
+            : { fillColorId: color.id },
+        );
+        this.syncShapePopup();
+      });
+      palette.append(swatch);
+    }
+    return palette;
+  }
+
+  private syncShapePopup(): void {
+    const preview = document.getElementById(`${SHAPE_POPUP_ID}-preview`);
+    if (preview) preview.innerHTML = this.buildShapePreviewSvg();
+
+    // NOTE: btn-square を落とすとアイコンが潰れるので必ず維持する
+    const square = document.getElementById(`${SHAPE_POPUP_ID}-square`);
+    if (square)
+      square.className = `btn btn-sm btn-square${this.shapeSquareMode ? " btn-primary" : ""}`;
+
+    const filled = document.getElementById(`${SHAPE_POPUP_ID}-filled`);
+    if (filled) {
+      filled.className = `btn btn-sm btn-square${this.shapeFilled ? " btn-primary" : ""}`;
+      // 塗りの ON/OFF を中身の塗り潰しでそのまま示す
+      const fill = this.getLineColor(this.shapeFillColorId);
+      filled.innerHTML = `<svg ${ICON_ATTRS}><rect width="18" height="18" x="3" y="3" rx="2" fill="${
+        this.shapeFilled ? `rgb(${fill.rgb.join(",")})` : "none"
+      }"/></svg>`;
+    }
+
+    for (const button of document.querySelectorAll<HTMLElement>(
+      `[data-shape-color-target]`,
+    )) {
+      const kind = button.dataset.shapeColorTarget as "stroke" | "fill";
+      const color = this.getLineColor(
+        kind === "stroke" ? this.shapeStrokeColorId : this.shapeFillColorId,
+      );
+      button.className = `btn btn-sm btn-square${kind === this.shapeColorTarget ? " btn-primary" : ""}`;
+      button.title = color.name;
+      button.innerHTML =
+        kind === "fill"
+          ? `<span style="width:20px;height:20px;border-radius:4px;background:rgb(${color.rgb.join(",")});border:1px solid rgb(0 0 0 / .35)"></span>`
+          : `<span style="width:20px;height:20px;border-radius:4px;background:rgb(${color.rgb.join(",")});padding:5px"><span style="display:block;width:100%;height:100%;border-radius:1px;background:var(--color-base-100)"></span></span>`;
+    }
+
+    const selectedId =
+      this.shapeColorTarget === "stroke"
+        ? this.shapeStrokeColorId
+        : this.shapeFillColorId;
+    for (const swatch of document.querySelectorAll<HTMLElement>(
+      `[data-shape-color-id]`,
+    ))
+      swatch.style.borderColor =
+        Number(swatch.dataset.shapeColorId) === selectedId
+          ? "var(--color-primary)"
+          : "transparent";
+  }
+
+  private handleOutsideShapeClick = (event: Event): void => {
+    if (this.isOutsidePopup(event, SHAPE_POPUP_ID, `${TOOLBAR_ID}-shape`))
+      this.closeShapePopup();
+  };
+
+  private closeShapePopup(): void {
+    document.getElementById(SHAPE_POPUP_ID)?.remove();
+    window.removeEventListener("pointerdown", this.handleOutsideShapeClick, {
       capture: true,
     });
   }
@@ -1376,30 +1737,17 @@ export class DraftDraw {
     const anchor = document.getElementById(`${TOOLBAR_ID}-brush`);
     if (!anchor) return;
 
-    const popup = document.createElement("div");
-    popup.id = BRUSH_POPUP_ID;
-    popup.style.cssText = [
-      "position:fixed;z-index:1004",
-      "display:flex;flex-direction:column;gap:8px",
-      "padding:10px;border-radius:12px;min-width:200px",
-      "background:var(--color-base-100)",
-      "border:1px solid var(--color-base-300)",
-      "color:var(--color-base-content)",
-      "box-shadow:0 4px 16px rgb(0 0 0 / 0.25)",
-    ].join(";");
-    // 下のマップへ操作が抜けて誤爆で塗られるのを防ぐ
-    popup.addEventListener("pointerdown", (e) => e.stopPropagation());
-    popup.addEventListener("click", (e) => e.stopPropagation());
+    const popup = this.createPopupShell(
+      BRUSH_POPUP_ID,
+      "display:flex;flex-direction:column;gap:8px;min-width:200px",
+    );
+    if (!popup) return;
 
     popup.appendChild(this.buildBrushSizeRow());
     popup.appendChild(this.buildDitherStyleRow());
 
     document.body.appendChild(popup);
-
-    // ブラシボタンの真上・中央。画面端でははみ出さないよう clamp する
-    const rect = anchor.getBoundingClientRect();
-    popup.style.bottom = `${window.innerHeight - rect.top + 8}px`;
-    popup.style.left = `${Math.min(Math.max(rect.left + rect.width / 2 - popup.offsetWidth / 2, 8), window.innerWidth - popup.offsetWidth - 8)}px`;
+    this.positionPopupAbove(popup, anchor);
 
     // 外側をクリックしたら閉じる (capture で map より先に拾う)
     window.addEventListener("pointerdown", this.handleOutsideBrushClick, {
@@ -1407,26 +1755,9 @@ export class DraftDraw {
     });
   }
 
-  /**
-   * 外側クリックでのみ閉じる。
-   *
-   * NOTE: この listener は **capture 段階** なので popup 自身より先に走る。
-   * つまり popup 側の stopPropagation では止められない (それに頼ると
-   * slider やスタイルボタンを押した瞬間に閉じてしまい、操作できなくなる)。
-   * 判定は伝播ではなく **target が popup の内側か** で行うこと。
-   */
   private handleOutsideBrushClick = (event: Event): void => {
-    const popup = document.getElementById(BRUSH_POPUP_ID);
-    const target = event.target;
-    if (popup && target instanceof Node && popup.contains(target)) return;
-    // ブラシボタン自身は toggle 側に任せる (ここで閉じると二重で開き直る)
-    if (
-      target instanceof Node &&
-      document.getElementById(`${TOOLBAR_ID}-brush`)?.contains(target)
-    )
-      return;
-
-    this.closeBrushPopup();
+    if (this.isOutsidePopup(event, BRUSH_POPUP_ID, `${TOOLBAR_ID}-brush`))
+      this.closeBrushPopup();
   };
 
   private closeBrushPopup(): void {
@@ -1661,6 +1992,7 @@ export class DraftDraw {
       this.hideColorTip();
       this.closeBrushPopup();
       this.closeLinePopup();
+      this.closeShapePopup();
       this.closeStampPopup();
       window.removeEventListener("resize", this.handleResize);
       return;
@@ -1672,7 +2004,10 @@ export class DraftDraw {
     const selectedId = localStorage.getItem(SELECTED_COLOR_KEY);
     for (const el of bar.querySelectorAll<HTMLElement>(".draft-swatch"))
       el.style.borderColor =
-        !this.lineMode && !this.erasing && el.dataset.colorId === selectedId
+        !this.lineMode &&
+        !this.shapeMode &&
+        !this.erasing &&
+        el.dataset.colorId === selectedId
           ? "var(--color-primary)"
           : "transparent";
 
@@ -1694,6 +2029,12 @@ export class DraftDraw {
     ) as HTMLButtonElement | null;
     if (line)
       line.className = `btn btn-sm btn-square${this.lineMode ? " btn-primary" : ""}`;
+
+    const shape = document.getElementById(
+      `${TOOLBAR_ID}-shape`,
+    ) as HTMLButtonElement | null;
+    if (shape)
+      shape.className = `btn btn-sm btn-square${this.shapeMode ? " btn-primary" : ""}`;
 
     const stamp = document.getElementById(
       `${TOOLBAR_ID}-stamp`,
@@ -1723,7 +2064,8 @@ export class DraftDraw {
     if (!save) return;
 
     // ベクタープレビューは ✓ でラスタ確定してから保存する。
-    save.disabled = this.saving || this.pixelCount === 0 || this.lineMode;
+    save.disabled =
+      this.saving || this.pixelCount === 0 || this.lineMode || this.shapeMode;
     save.style.opacity = save.disabled ? "0.6" : "1";
     const label = this.savedKey ? t`${"draft_update"}` : t`${"draft_save"}`;
     save.textContent = `${label}${this.pixelCount > 0 ? ` (${this.pixelCount})` : ""}`;

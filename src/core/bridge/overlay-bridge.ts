@@ -137,8 +137,25 @@ export const sendDraftLineToInject = (data: {
   outlineColorId?: number;
   straightMode?: boolean;
   command?: "commit" | "cancel";
+  /** true なら確定/取消の後も線ツールを ON のまま残す */
+  keepMode?: boolean;
 }) => {
   window.postMessage({ source: "mr-wplace-draft-line-update", ...data }, "*");
+};
+
+/** Send rectangle tool state/settings or an edit command to the inject canvas. */
+export const sendDraftShapeToInject = (data: {
+  enabled?: boolean;
+  strokeWidth?: number;
+  filled?: boolean;
+  strokeColorId?: number;
+  fillColorId?: number;
+  squareMode?: boolean;
+  command?: "commit" | "cancel";
+  /** true なら確定/取消の後も矩形ツールを ON のまま残す */
+  keepMode?: boolean;
+}) => {
+  window.postMessage({ source: "mr-wplace-draft-shape-update", ...data }, "*");
 };
 
 export interface DraftExportResult {
