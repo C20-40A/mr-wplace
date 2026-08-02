@@ -37,6 +37,36 @@ test("rasterizes a two-colour outlined straight line", () => {
   expect(pixels.get("5,2")).toEqual(yellow);
 });
 
+test("the outline stays off the start and end faces", () => {
+  const pixels = rasterize(
+    {
+      start: { x: 0, y: 0 },
+      control: { x: 5, y: 0 },
+      end: { x: 10, y: 0 },
+    },
+    {
+      innerWidth: 2,
+      outlineWidth: 2,
+      innerColor: white,
+      outlineColor: yellow,
+    },
+  );
+
+  // 端点の外側 (線分の射影範囲外) には外枠を置かない
+  for (const [x, y] of [
+    [-1, 0],
+    [-2, 0],
+    [-1, 1],
+    [11, 0],
+    [12, 0],
+    [11, -1],
+  ])
+    expect(pixels.get(`${x},${y}`)).not.toEqual(yellow);
+
+  // 側面の外枠は従来通り残る
+  expect(pixels.get("5,2")).toEqual(yellow);
+});
+
 test("a moved control point produces a curve", () => {
   const pixels = rasterize(
     {

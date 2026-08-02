@@ -135,6 +135,7 @@ export const sendDraftLineToInject = (data: {
   outlineWidth?: number;
   innerColorId?: number;
   outlineColorId?: number;
+  straightMode?: boolean;
   command?: "commit" | "cancel";
 }) => {
   window.postMessage({ source: "mr-wplace-draft-line-update", ...data }, "*");

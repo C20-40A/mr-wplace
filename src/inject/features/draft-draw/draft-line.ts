@@ -22,6 +22,26 @@ export type DraftLinePixelVisitor = (
   color: { r: number; g: number; b: number },
 ) => void;
 
+type DraftLinePixelFilter = (x: number, y: number) => boolean;
+
+/**
+ * 外枠を線の「側面」だけに残すためのフィルタ。
+ * 始点→終点方向への射影が線分の範囲外に出たピクセルを落とすので、
+ * 端面に色付きのキャップが乗らず、始点・終点が塞がれない。
+ * 始点と終点が同じ (点) の場合は拘束のしようがないので素通しする。
+ */
+const makeEndCapFilter = (shape: DraftLineShape): DraftLinePixelFilter => {
+  const dx = shape.end.x - shape.start.x;
+  const dy = shape.end.y - shape.start.y;
+  const lengthSquared = dx * dx + dy * dy;
+  if (lengthSquared === 0) return () => true;
+
+  return (x, y) => {
+    const projection = (x - shape.start.x) * dx + (y - shape.start.y) * dy;
+    return projection >= 0 && projection <= lengthSquared;
+  };
+};
+
 const pointAt = (shape: DraftLineShape, t: number): DraftLinePoint => {
   const oneMinusT = 1 - t;
   return {
@@ -93,15 +113,26 @@ export const rasterizeDraftLine = (
   const paintPass = (
     width: number,
     color: DraftLineSettings["innerColor"],
+    filter?: DraftLinePixelFilter,
   ): void => {
+    const emit: DraftLinePixelVisitor = filter
+      ? (x, y, pixelColor) => {
+          if (filter(x, y)) visit(x, y, pixelColor);
+        }
+      : visit;
+
     for (let i = 0; i <= steps; i++) {
       const point = pointAt(shape, i / steps);
-      stampCircle(point.x, point.y, width, color, visit);
+      stampCircle(point.x, point.y, width, color, emit);
     }
   };
 
   if (outlineWidth > 0)
-    paintPass(innerWidth + outlineWidth * 2, settings.outlineColor);
+    paintPass(
+      innerWidth + outlineWidth * 2,
+      settings.outlineColor,
+      makeEndCapFilter(shape),
+    );
   paintPass(innerWidth, settings.innerColor);
 };
 

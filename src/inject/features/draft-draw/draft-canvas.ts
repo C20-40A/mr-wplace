@@ -103,6 +103,8 @@ let stampPattern: DraftStampPattern = {
 
 /** Editable vector preview. It is rasterized into the draft store on commit. */
 let lineMode = false;
+/** 直線トグル。ON (または Shift 押下中) は端点を水平/垂直/45° へスナップする */
+let lineStraightMode = false;
 let lineShape: DraftLineShape | null = null;
 let lineControlMoved = false;
 let lineDrag: "create" | "start" | "control" | "end" | null = null;
@@ -190,6 +192,11 @@ export const setDraftLineMode = (enabled: boolean): void => {
   }
   dirty = true;
   updateCursor();
+};
+
+/** 直線モードのトグル。Shift 押下中と同じ拘束を latch する */
+export const setDraftLineStraightMode = (enabled: boolean): void => {
+  lineStraightMode = enabled;
 };
 
 export const updateDraftLineSettings = (
@@ -624,11 +631,9 @@ const syncLineActionButtons = (canvasElement: HTMLCanvasElement): void => {
         action === "commit" ? "background:#16a34a" : "background:#dc2626",
       ].join(";");
       button.innerHTML = icon;
+      // NOTE: 確定/取消は pointerdown で走らせる。map container 側の blockClick が
+      // capture 段階で click を殺すため、click では届かない。
       button.addEventListener("pointerdown", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-      });
-      button.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
         onLineAction?.(action);
@@ -686,19 +691,52 @@ const handleLinePointerDown = (e: PointerEvent): void => {
   dirty = true;
 };
 
+/**
+ * 直線拘束。anchor から見て水平 / 垂直 / 45° の一番近いものへ寄せる。
+ * どれに寄せるかは dx/dy の比で決める (片方がもう片方の 2 倍以上なら軸、
+ * それ以外は対角線)。
+ */
+const snapToStraight = (
+  anchor: { x: number; y: number },
+  point: { x: number; y: number },
+): { x: number; y: number } => {
+  const dx = point.x - anchor.x;
+  const dy = point.y - anchor.y;
+  const absX = Math.abs(dx);
+  const absY = Math.abs(dy);
+
+  if (absX >= absY * 2) return { x: point.x, y: anchor.y };
+  if (absY >= absX * 2) return { x: anchor.x, y: point.y };
+
+  const length = Math.round((absX + absY) / 2);
+  return {
+    x: anchor.x + Math.sign(dx) * length,
+    y: anchor.y + Math.sign(dy) * length,
+  };
+};
+
 const handleLinePointerMove = (e: PointerEvent): boolean => {
   if (!lineDrag || !lineShape || e.pointerId !== linePointerId) return false;
   stop(e);
   const world = screenToWorldPixel(e.clientX, e.clientY);
   if (!world) return true;
 
+  // 直線モード中は制御点を触らせない (曲げても即座に中点へ戻るため)
+  const straight = (lineStraightMode || e.shiftKey) && lineDrag !== "control";
+
   if (lineDrag === "create") {
-    lineShape.end = world;
+    lineShape.end = straight ? snapToStraight(lineShape.start, world) : world;
     lineShape.control = getDraftLineMidpoint(lineShape.start, lineShape.end);
   } else {
-    lineShape[lineDrag] = world;
+    // 始点を動かしている時の固定側は終点、それ以外は始点
+    lineShape[lineDrag] = straight
+      ? snapToStraight(
+          lineDrag === "start" ? lineShape.end : lineShape.start,
+          world,
+        )
+      : world;
     if (lineDrag === "control") lineControlMoved = true;
-    else if (!lineControlMoved)
+    else if (!lineControlMoved || straight)
       lineShape.control = getDraftLineMidpoint(lineShape.start, lineShape.end);
   }
   dirty = true;
@@ -1161,6 +1199,9 @@ export const setDraftCanvasActive = (enabled: boolean): void => {
   lineShape = null;
   lineDrag = null;
   linePointerId = null;
+  // 下書き終了後に ✓/× が地図上へ残らないよう明示的に片付ける
+  lineActionButtons?.remove();
+  lineActionButtons = null;
   stampMode = null;
 
   if (enabled) {

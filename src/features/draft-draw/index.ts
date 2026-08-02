@@ -54,6 +54,8 @@ const LINE_POPUP_ID = "mr-wplace-draft-line-popup";
 const STAMP_POPUP_ID = "mr-wplace-draft-stamp-popup";
 /** undo/redo FAB (画面左上に浮かせる) */
 const HISTORY_ID = "mr-wplace-draft-history";
+/** マップロック (画面右上端に密着させる) */
+const MAP_LOCK_ID = "mr-wplace-draft-map-lock";
 
 /** ブラシサイズの範囲 (inject 側 draft-brush.ts と揃える) */
 const BRUSH_MIN_SIZE = 1;
@@ -175,6 +177,8 @@ const CLEAR_PATTERN_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_A
 /** User-provided Lucide spline icon. */
 const LINE_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M5 17A12 12 0 0 1 17 5"/></svg>`;
 const CHECK_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="m20 6-11 11-5-5"/></svg>`;
+/** 直線トグル (Shift 押下と同じ拘束を latch する) */
+const STRAIGHT_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M4 12h16M7 9l-3 3 3 3M17 9l3 3-3 3"/></svg>`;
 const X_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" ${ICON_ATTRS}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
 /** 下書き保存で作られたギャラリー item。再保存で上書きする */
 const SAVED_KEY_PREFIX = "draft-";
@@ -211,6 +215,8 @@ export class DraftDraw {
   private lineInnerColorId = 10; // Yellow
   private lineOutlineColorId = 9; // Gold
   private lineColorTarget: "inner" | "outline" = "inner";
+  /** 直線トグル。ON の間は Shift 押下と同じ拘束が常時掛かる */
+  private lineStraightMode = false;
   /** 自作ドットパターン。single は1回配置、fill は連結領域へ反復する。 */
   private stampMode: StampMode | null = null;
   private stampWidth = STAMP_SAMPLES[1].width;
@@ -381,6 +387,7 @@ export class DraftDraw {
     document.getElementById(NOTICE_ID)?.remove();
     document.getElementById(CLOSE_ID)?.remove();
     document.getElementById(HISTORY_ID)?.remove();
+    document.getElementById(MAP_LOCK_ID)?.remove();
     this.hideColorTip();
     this.closeBrushPopup();
     this.closeLinePopup();
@@ -469,6 +476,8 @@ export class DraftDraw {
     document.body.appendChild(this.buildCloseButton());
     document.getElementById(HISTORY_ID)?.remove();
     document.body.appendChild(this.buildHistoryFab());
+    document.getElementById(MAP_LOCK_ID)?.remove();
+    document.body.appendChild(this.buildMapLockButton());
 
     // 幅が変わると列数もスウォッチサイズも変わるので追従させる
     window.addEventListener("resize", this.handleResize);
@@ -688,19 +697,6 @@ export class DraftDraw {
       else this.openStampPopup();
     });
 
-    // マップロック: ON にすると左ドラッグが pan ではなく描画になる
-    const lock = document.createElement("button");
-    lock.id = `${TOOLBAR_ID}-lock`;
-    lock.type = "button";
-    lock.className = "btn btn-sm btn-square";
-    lock.innerHTML = LOCK_OPEN_ICON_SVG;
-    lock.title = t`${"draft_map_lock"}`;
-    lock.addEventListener("click", () => {
-      this.mapLocked = !this.mapLocked;
-      sendDraftMapLockToInject(this.mapLocked);
-      this.updateToolbar();
-    });
-
     const bucket = document.createElement("button");
     bucket.id = `${TOOLBAR_ID}-bucket`;
     bucket.type = "button";
@@ -725,8 +721,8 @@ export class DraftDraw {
       "background:var(--color-warning); color:var(--color-warning-content);";
     save.addEventListener("click", () => void this.save());
 
-    // 閉じるは sheet の外 (右上の丸バツ) なのでここには入れない
-    row.append(save, lock, brush, stamp, line, eraser, bucket);
+    // 閉じるは sheet の外 (右上の丸バツ)、マップロックは画面右上端なので入れない
+    row.append(save, brush, stamp, line, eraser, bucket);
     return row;
   }
 
@@ -1135,6 +1131,7 @@ export class DraftDraw {
       outlineWidth: this.lineOutlineWidth,
       innerColorId: this.lineInnerColorId,
       outlineColorId: this.lineOutlineColorId,
+      straightMode: this.lineStraightMode,
     });
     this.updateToolbar();
     this.openLinePopup();
@@ -1185,7 +1182,26 @@ export class DraftDraw {
     popup.append(this.buildLinePalette());
 
     const actions = document.createElement("div");
-    actions.style.cssText = "display:flex;justify-content:flex-end;gap:8px;";
+    actions.style.cssText =
+      "display:flex;align-items:center;justify-content:space-between;gap:8px;";
+
+    // 直線トグル。Shift 押しっぱなしの代わりになる
+    const straight = document.createElement("button");
+    straight.id = `${LINE_POPUP_ID}-straight`;
+    straight.type = "button";
+    straight.className = "btn btn-sm btn-square";
+    straight.innerHTML = STRAIGHT_ICON_SVG;
+    straight.title = "Straight line (Shift)";
+    straight.setAttribute("aria-label", straight.title);
+    straight.addEventListener("click", () => {
+      this.lineStraightMode = !this.lineStraightMode;
+      sendDraftLineToInject({ straightMode: this.lineStraightMode });
+      this.syncLinePopup();
+    });
+    actions.append(straight);
+
+    const buttons = document.createElement("div");
+    buttons.style.cssText = "display:flex;gap:8px;";
     const cancel = document.createElement("button");
     cancel.type = "button";
     cancel.className = "btn btn-sm btn-square";
@@ -1198,7 +1214,8 @@ export class DraftDraw {
     commit.innerHTML = CHECK_ICON_SVG;
     commit.title = "Apply";
     commit.addEventListener("click", () => this.finishLineTool("commit"));
-    actions.append(cancel, commit);
+    buttons.append(cancel, commit);
+    actions.append(buttons);
     popup.append(actions);
 
     document.body.appendChild(popup);
@@ -1290,6 +1307,11 @@ export class DraftDraw {
   private syncLinePopup(): void {
     const preview = document.getElementById(`${LINE_POPUP_ID}-preview`);
     if (preview) preview.innerHTML = this.buildLinePreviewSvg();
+
+    // NOTE: btn-square を落とすとアイコンが潰れるので必ず維持する
+    const straight = document.getElementById(`${LINE_POPUP_ID}-straight`);
+    if (straight)
+      straight.className = `btn btn-sm btn-square${this.lineStraightMode ? " btn-primary" : ""}`;
 
     for (const button of document.querySelectorAll<HTMLElement>(
       `[data-line-color-target]`,
@@ -1539,6 +1561,29 @@ export class DraftDraw {
     return group;
   }
 
+  /**
+   * マップロック。**画面の右上端に隙間なく密着**させた四角ボタン
+   * (undo/redo は左上のままなので左右で役割が分かれる)。
+   * ON にすると左ドラッグが pan ではなく描画になる。
+   */
+  private buildMapLockButton(): HTMLElement {
+    const lock = document.createElement("button");
+    lock.id = MAP_LOCK_ID;
+    lock.type = "button";
+    lock.className = "btn btn-sm btn-square shadow-md";
+    // 画面端に接するので角丸を殺す (丸型だと端の隙間が目立つため)
+    lock.style.cssText =
+      "position:fixed;top:0;right:0;z-index:1002;border-radius:0;";
+    lock.innerHTML = LOCK_OPEN_ICON_SVG;
+    lock.title = t`${"draft_map_lock"}`;
+    lock.addEventListener("click", () => {
+      this.mapLocked = !this.mapLocked;
+      sendDraftMapLockToInject(this.mapLocked);
+      this.updateToolbar();
+    });
+    return lock;
+  }
+
   /** 履歴スタックの有無でボタンの活性を切り替える */
   private syncHistoryFab(): void {
     const sync = (id: string, usable: boolean): void => {
@@ -1612,6 +1657,7 @@ export class DraftDraw {
       document.getElementById(HINT_ID)?.remove();
       document.getElementById(CLOSE_ID)?.remove();
       document.getElementById(HISTORY_ID)?.remove();
+      document.getElementById(MAP_LOCK_ID)?.remove();
       this.hideColorTip();
       this.closeBrushPopup();
       this.closeLinePopup();
@@ -1655,12 +1701,13 @@ export class DraftDraw {
     if (stamp)
       stamp.className = `btn btn-sm btn-square${this.stampMode ? " btn-primary" : ""}`;
 
-    // ロックは状態が分かりにくいので、色だけでなく錠前の開閉も差し替える
+    // ロックは状態が分かりにくいので、色だけでなく錠前の開閉も差し替える。
+    // NOTE: 画面右上端の独立ボタンなので shadow-md も落とさないこと
     const lock = document.getElementById(
-      `${TOOLBAR_ID}-lock`,
+      MAP_LOCK_ID,
     ) as HTMLButtonElement | null;
     if (lock) {
-      lock.className = `btn btn-sm btn-square${this.mapLocked ? " btn-primary" : ""}`;
+      lock.className = `btn btn-sm btn-square shadow-md${this.mapLocked ? " btn-primary" : ""}`;
       lock.innerHTML = this.mapLocked
         ? LOCK_CLOSED_ICON_SVG
         : LOCK_OPEN_ICON_SVG;

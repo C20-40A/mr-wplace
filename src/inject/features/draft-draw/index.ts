@@ -24,6 +24,7 @@ import {
   setDraftCanvasHandlers,
   setDraftEraseMode,
   setDraftLineMode,
+  setDraftLineStraightMode,
   setDraftMapLocked,
   setDraftStampSettings,
   updateDraftLineSettings,
@@ -181,8 +182,12 @@ export const setDraftLineSettings = (data: {
   outlineWidth?: number;
   innerColorId?: number;
   outlineColorId?: number;
+  straightMode?: boolean;
   command?: "commit" | "cancel";
 }): void => {
+  if (typeof data.straightMode === "boolean")
+    setDraftLineStraightMode(data.straightMode);
+
   const settings: Parameters<typeof updateDraftLineSettings>[0] = {};
   if (typeof data.innerWidth === "number")
     settings.innerWidth = data.innerWidth;
