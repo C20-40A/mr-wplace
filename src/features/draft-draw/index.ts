@@ -2051,7 +2051,7 @@ export class DraftDraw {
       MAP_LOCK_ID,
     ) as HTMLButtonElement | null;
     if (lock) {
-      lock.className = `btn btn-sm btn-square shadow-md${this.mapLocked ? " btn-primary" : ""}`;
+      lock.className = `btn btn-square shadow-md${this.mapLocked ? " btn-primary" : ""}`;
       lock.innerHTML = this.mapLocked
         ? LOCK_CLOSED_ICON_SVG
         : LOCK_OPEN_ICON_SVG;
