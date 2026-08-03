@@ -1115,6 +1115,39 @@ const handlePointerUp = (e: PointerEvent): void => {
 };
 
 /**
+ * touch は pointer とは**別の入力ストリーム**。maplibre の pan は
+ * touchstart/touchmove 側で動くため、pointerdown を stop しても
+ * mobile では map が動いてしまう
+ * (ロック中に「map が動く + draw もされる」二重発火の原因)。
+ *
+ * 描画ジェスチャが握っている単一 touch だけを止め、2本指 (pinch zoom) は
+ * maplibre へ素通しする。
+ *
+ * NOTE: 登録は `passive:false` 必須。既定の passive では touchmove の
+ * `preventDefault()` が no-op になり、結局 map が pan する。
+ */
+const isDraftGestureActive = (): boolean =>
+  dragMode !== null || lineDrag !== null || shapeDrag !== null || spaceHeld;
+
+const handleTouch = (e: TouchEvent): void => {
+  if (!active) return;
+  // pinch zoom は下書き中も使わせる
+  if (e.touches.length > 1) return;
+  if (isLineActionTarget(e.target)) return;
+
+  // pointerdown が先に走るので通常は isDraftGestureActive で足りるが、
+  // 最初の1イベントを取りこぼさないようモード側でも判定する
+  const ownsGesture =
+    isDraftGestureActive() ||
+    lineMode ||
+    shapeMode ||
+    eraseMode ||
+    (mapLocked && !bucketMode && !stampMode);
+  if (!ownsGesture) return;
+  stop(e);
+};
+
+/**
  * wplace のマップクリック popup を抑止する。
  * pointerdown は pan のために通しているので、popup を開く click / dblclick は
  * ここで確実に止める (下書き中に popup が出ると操作が破綻するため)。
@@ -1262,6 +1295,15 @@ const attachPointerHandlers = (): void => {
   target.addEventListener("pointermove", handlePointerMove, { capture: true });
   target.addEventListener("pointerup", handlePointerUp, { capture: true });
   target.addEventListener("pointercancel", handlePointerUp, { capture: true });
+  // mobile: maplibre の pan は touch 側で動くので pointer とは別に止める
+  target.addEventListener("touchstart", handleTouch, {
+    capture: true,
+    passive: false,
+  });
+  target.addEventListener("touchmove", handleTouch, {
+    capture: true,
+    passive: false,
+  });
   target.addEventListener("click", blockClick, { capture: true });
   target.addEventListener("dblclick", blockClick, { capture: true });
   // 右ドラッグ消しゴムのため、コンテキストメニューは常に殺す
@@ -1284,6 +1326,8 @@ const detachPointerHandlers = (): void => {
   target.removeEventListener("pointercancel", handlePointerUp, {
     capture: true,
   });
+  target.removeEventListener("touchstart", handleTouch, { capture: true });
+  target.removeEventListener("touchmove", handleTouch, { capture: true });
   target.removeEventListener("click", blockClick, { capture: true });
   target.removeEventListener("dblclick", blockClick, { capture: true });
   target.removeEventListener("contextmenu", stop, { capture: true });
