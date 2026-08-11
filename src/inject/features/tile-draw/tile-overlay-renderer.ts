@@ -7,6 +7,11 @@ import { getAuxiliaryColor, colorToKey } from "./filters/color-processing";
 import { ENHANCED_MODE_OPTIONS } from "@/components/color-palette/utils";
 import { convertImageBitmapToUint8ClampedArray } from "./image-processing/pixel-processing";
 import { renderFillAt1x } from "./image-processing/render-fill";
+import {
+  hasOnlyBinaryAlpha,
+  renderDotCrossBitmap,
+  renderSimpleOverlayAt1x,
+} from "./image-processing/render-dot-cross";
 import { processGpuColorFilter } from "./filters/gpu-filter";
 import { processCpuColorFilter } from "./filters/cpu-filter";
 import {
@@ -838,15 +843,58 @@ const applyOverlayProcessing = async (
     !showUnplacedOnly &&
     !window.mrWplaceSelectedColorOnlyMark
   ) {
-    return {
-      bitmap: await renderLightweightFastPath(filteredData, width, height),
-      drawScale: 1,
-    };
+    if (!hasOnlyBinaryAlpha(filteredData)) {
+      return {
+        bitmap: await renderLightweightFastPath(filteredData, width, height),
+        drawScale: 1,
+      };
+    }
+
+    try {
+      return {
+        bitmap: renderDotCrossBitmap(filteredData, width, height, "dot"),
+        drawScale: 1,
+      };
+    } catch (error) {
+      console.warn("dot GPU rendering failed, using legacy path", error);
+      return {
+        bitmap: await renderLightweightFastPath(filteredData, width, height),
+        drawScale: 1,
+      };
+    }
   }
 
   const comparisonData = showUnplacedOnly ? getOriginalData() : null;
   const showUnplacedColor = getShowUnplacedColor();
   const renderBgData = bgData ?? EMPTY_PIXEL_DATA;
+
+  // Common dot/cross modes only need x1 background masking. Expand the fixed
+  // 3x3 pattern on the GPU to avoid allocating a 36 MB JS RGBA buffer.
+  if (
+    (mode === "dot" || mode === "cross") &&
+    !showUnplacedOnly &&
+    !window.mrWplaceSelectedColorOnlyMark &&
+    hasOnlyBinaryAlpha(filteredData)
+  ) {
+    const simpleData = renderSimpleOverlayAt1x({
+      data: filteredData,
+      width,
+      height,
+      bgData: renderBgData,
+      bgWidth,
+      offsetX,
+      offsetY,
+      skipBackgroundComparison,
+    });
+    try {
+      return {
+        bitmap: renderDotCrossBitmap(simpleData, width, height, mode),
+        drawScale: 1,
+      };
+    } catch (error) {
+      console.warn("dot/cross GPU rendering failed, using legacy path", error);
+    }
+  }
 
   // fillは各x3セルが同色なので、x1で生成してCanvasのnearest-neighbor拡大へ委譲する。
   if (mode === "fill" && !window.mrWplaceSelectedColorOnlyMark) {
