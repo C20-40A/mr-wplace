@@ -123,9 +123,12 @@ type StampPattern = {
   colorIds: Array<number | null>;
 };
 type StampSample = { width: number; height: number; cells: boolean[] };
+type SavedStamp = StampPattern;
 
 const STAMP_MIN_SIZE = 1;
 const STAMP_MAX_SIZE = 24;
+const SAVED_STAMPS_KEY = "mr-wplace-draft-saved-stamps";
+const SAVED_STAMPS_MAX = 12;
 
 const makeStampPattern = (
   width: number,
@@ -165,6 +168,17 @@ const buildStampPreviewSvg = (pattern: StampSample, size = 28): string => {
       if (pattern.cells[y * pattern.width + x])
         cells += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${pattern.width} ${pattern.height}" width="${size}" height="${size}" fill="currentColor" shape-rendering="crispEdges">${cells}</svg>`;
+};
+
+const isSavedStamp = (value: unknown): value is SavedStamp => {
+  if (!value || typeof value !== "object") return false;
+  const { width, height, colorIds } = value as Partial<SavedStamp>;
+  return (
+    typeof width === "number" && Number.isInteger(width) && width >= STAMP_MIN_SIZE && width <= STAMP_MAX_SIZE &&
+    typeof height === "number" && Number.isInteger(height) && height >= STAMP_MIN_SIZE && height <= STAMP_MAX_SIZE &&
+    Array.isArray(colorIds) && colorIds.length === width * height &&
+    colorIds.every((colorId) => colorId === null || typeof colorId === "number")
+  );
 };
 
 /**
@@ -231,6 +245,7 @@ export class DraftDraw {
     cell ? 10 : null,
   );
   private stampPaintColorId: number | null | undefined = null;
+  private savedStamps = this.loadSavedStamps();
 
   constructor() {
     this.init();
@@ -894,6 +909,7 @@ export class DraftDraw {
     popup.append(editor);
     popup.append(this.buildStampPalette());
     popup.append(this.buildStampSampleRow());
+    popup.append(this.buildSavedStampRow());
 
     const actions = document.createElement("div");
     actions.style.cssText = "display:flex;justify-content:center;gap:8px;";
@@ -909,6 +925,15 @@ export class DraftDraw {
       this.sendStampSettings();
     });
     actions.append(clear);
+    const save = document.createElement("button");
+    save.type = "button";
+    save.className = "btn btn-sm";
+    save.innerHTML = `${STAMP_ICON_SVG}<span>Save</span>`;
+    save.title = "Save stamp on this device";
+    save.setAttribute("aria-label", save.title);
+    save.style.cssText = "display:flex;align-items:center;gap:5px;padding-inline:10px;";
+    save.addEventListener("click", () => this.saveCurrentStamp());
+    actions.append(save);
     popup.append(actions);
     popup.append(this.buildStampModeRow());
 
@@ -979,6 +1004,74 @@ export class DraftDraw {
       row.append(button);
     });
     return row;
+  }
+
+  private loadSavedStamps(): SavedStamp[] {
+    try {
+      const parsed: unknown = JSON.parse(localStorage.getItem(SAVED_STAMPS_KEY) ?? "[]");
+      return Array.isArray(parsed) ? parsed.filter(isSavedStamp).slice(0, SAVED_STAMPS_MAX) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private saveCurrentStamp(): void {
+    const stamp = this.getStampPattern();
+    const existingIndex = this.savedStamps.findIndex((saved) =>
+      saved.width === stamp.width && saved.height === stamp.height &&
+      saved.colorIds.every((colorId, index) => colorId === stamp.colorIds[index]),
+    );
+    if (existingIndex >= 0) this.savedStamps.splice(existingIndex, 1);
+    this.savedStamps.unshift(stamp);
+    this.savedStamps.length = Math.min(this.savedStamps.length, SAVED_STAMPS_MAX);
+    localStorage.setItem(SAVED_STAMPS_KEY, JSON.stringify(this.savedStamps));
+    this.syncSavedStampRow();
+  }
+
+  private buildSavedStampRow(): HTMLElement {
+    const row = document.createElement("div");
+    row.id = `${STAMP_POPUP_ID}-saved`;
+    row.style.cssText = "display:flex;flex-wrap:wrap;justify-content:center;gap:6px;";
+    this.syncSavedStampRow(row);
+    return row;
+  }
+
+  private syncSavedStampRow(row = document.getElementById(`${STAMP_POPUP_ID}-saved`)): void {
+    if (!row) return;
+    row.replaceChildren();
+    this.savedStamps.forEach((saved, index) => {
+      const group = document.createElement("div");
+      group.style.cssText = "position:relative;";
+      const load = document.createElement("button");
+      load.type = "button";
+      load.className = "btn btn-sm btn-square";
+      load.style.padding = "3px";
+      load.innerHTML = buildStampPreviewSvg({ ...saved, cells: saved.colorIds.map((colorId) => colorId !== null) }, 24);
+      load.title = `Saved stamp ${index + 1}`;
+      load.setAttribute("aria-label", load.title);
+      load.addEventListener("click", () => {
+        this.stampWidth = saved.width;
+        this.stampHeight = saved.height;
+        this.stampColorIds = [...saved.colorIds];
+        this.syncStampPopup();
+        this.sendStampSettings();
+      });
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "btn btn-xs btn-circle";
+      remove.innerHTML = X_ICON_SVG;
+      remove.title = `Delete saved stamp ${index + 1}`;
+      remove.setAttribute("aria-label", remove.title);
+      remove.style.cssText = "position:absolute;right:-5px;top:-5px;min-height:14px;height:14px;width:14px;padding:1px;background:var(--color-base-300);";
+      remove.addEventListener("click", (event) => {
+        event.stopPropagation();
+        this.savedStamps.splice(index, 1);
+        localStorage.setItem(SAVED_STAMPS_KEY, JSON.stringify(this.savedStamps));
+        this.syncSavedStampRow();
+      });
+      group.append(load, remove);
+      row.append(group);
+    });
   }
 
   private buildStampDimensionRow(): HTMLElement {
