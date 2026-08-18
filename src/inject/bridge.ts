@@ -14,6 +14,7 @@ import {
   handleColorFilterUpdate,
   handleCacheClear,
   handleFrontTileLayerUpdate,
+  handlePaintGuideUpdate,
   handleTransparentPixelFilterUpdate,
   handleSnapshotCaptureUpdate,
 } from "./handlers/state-handlers";
@@ -393,6 +394,7 @@ const messageHandlers: Record<string, MessageHandler> = {
     data.enabled ? startArtCruise(data) : stopArtCruise(),
   "mr-wplace-cache-clear": handleCacheClear,
   "mr-wplace-front-tile-layer-update": handleFrontTileLayerUpdate,
+  "mr-wplace-paint-guide-update": handlePaintGuideUpdate,
   "mr-wplace-transparent-pixel-filter-update":
     handleTransparentPixelFilterUpdate,
   "mr-wplace-snapshot-capture-update": handleSnapshotCaptureUpdate,

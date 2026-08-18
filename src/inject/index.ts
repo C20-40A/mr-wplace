@@ -85,6 +85,9 @@ const forceStartupLocationZoom = (): void => {
   // Initialize front tile layer (experimental, default: false)
   window.mrWplaceFrontTileLayerEnabled = false;
 
+  // Initialize paint guide indicator (template match/mismatch dots, default: on)
+  window.mrWplacePaintGuideEnabled = true;
+
   // Initialize transparent pixel filter (default: false)
   window.mrWplaceTransparentPixelFilterEnabled = false;
 

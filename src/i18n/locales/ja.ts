@@ -634,4 +634,5 @@ export const jaTranslations = {
   draft_brush: "ブラシ",
   draft_map_lock: "マップ固定 (ドラッグで描画)",
   hint_draft_fab_btn: "チャージを消費せず地図に自由に下書きできます",
+  popup_paint_guide: "テンプレ一致インジケーター",
 };

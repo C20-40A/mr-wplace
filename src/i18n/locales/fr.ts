@@ -622,4 +622,5 @@ export const frTranslations = {
   draft_brush: "Pinceau",
   draft_map_lock: "Verrouiller la carte (glisser pour dessiner)",
   hint_draft_fab_btn: "Esquissez librement sur la carte sans consommer de charges",
+  popup_paint_guide: "Indicateur de correspondance du modèle",
 };

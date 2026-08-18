@@ -127,7 +127,9 @@ export const handlePaintForStats = (
   const paintedRgbKey = `${(paintedRgbInt >> 16) & 0xff},${
     (paintedRgbInt >> 8) & 0xff
   },${paintedRgbInt & 0xff}`;
-  const guideEnabled = window.mrWplaceFrontTileLayerEnabled === true;
+  const guideEnabled =
+    window.mrWplaceFrontTileLayerEnabled === true &&
+    window.mrWplacePaintGuideEnabled !== false;
 
   const tileKey = `${coord.tileX},${coord.tileY}`;
   const paddedTileKey = toPaddedTileKey(coord.tileX, coord.tileY);

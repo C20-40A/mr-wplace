@@ -615,4 +615,5 @@ export const esTranslations = {
   draft_brush: "Pincel",
   draft_map_lock: "Bloquear mapa (arrastrar para dibujar)",
   hint_draft_fab_btn: "Dibuja libremente en el mapa sin gastar cargas",
+  popup_paint_guide: "Indicador de coincidencia de plantilla",
 };
