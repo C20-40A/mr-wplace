@@ -170,6 +170,21 @@ const buildStampPreviewSvg = (pattern: StampSample, size = 28): string => {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${pattern.width} ${pattern.height}" width="${size}" height="${size}" fill="currentColor" shape-rendering="crispEdges">${cells}</svg>`;
 };
 
+const stampRgbById = new Map(colorpalette.map((color) => [color.id, color.rgb]));
+
+const buildColoredStampPreviewSvg = (pattern: StampPattern, size = 28): string => {
+  let cells = "";
+  for (let y = 0; y < pattern.height; y++)
+    for (let x = 0; x < pattern.width; x++) {
+      const colorId = pattern.colorIds[y * pattern.width + x];
+      if (colorId === null) continue;
+      const rgb = stampRgbById.get(colorId);
+      if (!rgb) continue;
+      cells += `<rect x="${x}" y="${y}" width="1" height="1" fill="rgb(${rgb[0]},${rgb[1]},${rgb[2]})"/>`;
+    }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${pattern.width} ${pattern.height}" width="${size}" height="${size}" shape-rendering="crispEdges">${cells}</svg>`;
+};
+
 const isSavedStamp = (value: unknown): value is SavedStamp => {
   if (!value || typeof value !== "object") return false;
   const { width, height, colorIds } = value as Partial<SavedStamp>;
@@ -1046,7 +1061,7 @@ export class DraftDraw {
       load.type = "button";
       load.className = "btn btn-sm btn-square";
       load.style.padding = "3px";
-      load.innerHTML = buildStampPreviewSvg({ ...saved, cells: saved.colorIds.map((colorId) => colorId !== null) }, 24);
+      load.innerHTML = buildColoredStampPreviewSvg(saved, 24);
       load.title = `Saved stamp ${index + 1}`;
       load.setAttribute("aria-label", load.title);
       load.addEventListener("click", () => {
