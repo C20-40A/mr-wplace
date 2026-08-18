@@ -180,6 +180,17 @@ const initializeMainFeatures = async () => {
     "*",
   );
 
+  const { loadPaintGuideFromStorage, getPaintGuide } =
+    await import("@/states/paint-guide");
+  await loadPaintGuideFromStorage();
+  window.postMessage(
+    {
+      source: "mr-wplace-paint-guide-update",
+      enabled: getPaintGuide(),
+    },
+    "*",
+  );
+
   const { loadOverlayLightweightModeFromStorage, getOverlayLightweightMode } =
     await import("@/states/overlay-lightweight-mode");
   await loadOverlayLightweightModeFromStorage();
@@ -299,6 +310,17 @@ const registerMessageListeners = () => {
       window.postMessage(
         {
           source: "mr-wplace-front-tile-layer-update",
+          enabled: message.enabled,
+        },
+        "*",
+      );
+      return;
+    }
+
+    if (message.type === "PAINT_GUIDE_CHANGED") {
+      window.postMessage(
+        {
+          source: "mr-wplace-paint-guide-update",
           enabled: message.enabled,
         },
         "*",

@@ -35,6 +35,11 @@ import {
   setCloseButtonBig,
 } from "./states/close-button-big";
 import {
+  loadPaintGuideFromStorage,
+  getPaintGuide,
+  setPaintGuide,
+} from "./states/paint-guide";
+import {
   loadFabVisibilityFromStorage,
   getFabVisibility,
   setFabVisibility,
@@ -147,6 +152,7 @@ const updateUI = (): void => {
     "popup-paint-mode-style-label": "popup_paint_mode_style",
     "popup-hide-my-location-label": "popup_hide_my_location",
     "popup-close-button-big-label": "popup_close_button_big",
+    "popup-paint-guide-label": "popup_paint_guide",
     "popup-bug-report-label": "popup_bug_report",
     "popup-fab-visibility-label": "popup_fab_visibility",
     "popup-fab-gallery-label": "popup_fab_gallery",
@@ -307,6 +313,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       loadHideMyLocationFromStorage(),
       loadCloseButtonBigFromStorage(),
       loadFabVisibilityFromStorage(),
+      loadPaintGuideFromStorage(),
     ]);
 
     currentMode = getNavigationMode();
@@ -351,6 +358,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupToggle("close-button-big-toggle", getCloseButtonBig(), async (v) => {
     await setCloseButtonBig(v);
     await reloadActiveTab();
+  });
+
+  // Paint guide indicator (live update, no reload needed)
+  setupToggle("paint-guide-toggle", getPaintGuide(), async (v) => {
+    await setPaintGuide(v);
+    await notifyContentScriptBestEffort({ type: "PAINT_GUIDE_CHANGED", enabled: v });
   });
 
   // FAB visibility toggles

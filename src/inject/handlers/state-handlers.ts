@@ -5,6 +5,7 @@ import {
   setFrontTileLayerEnabled,
   refreshFrontTileLayer,
   setTransparentPixelFilterEnabled,
+  clearFrontTilePaintGuideAll,
 } from "../features/map-instance";
 
 const COLOR_FILTER_REFRESH_DEBOUNCE_MS = 120;
@@ -175,6 +176,15 @@ export const handleFrontTileLayerUpdate = (data: {
   window.mrWplaceFrontTileLayerEnabled = data.enabled;
   setFrontTileLayerEnabled(data.enabled);
   console.log("🧑‍🎨 : Front tile layer updated:", data.enabled);
+};
+
+/**
+ * Handle paint guide (template match indicator) toggle update
+ */
+export const handlePaintGuideUpdate = (data: { enabled: boolean }): void => {
+  window.mrWplacePaintGuideEnabled = data.enabled;
+  if (!data.enabled) clearFrontTilePaintGuideAll();
+  console.log("🧑‍🎨 : Paint guide indicator updated:", data.enabled);
 };
 
 export const handleTransparentPixelFilterUpdate = (data: {

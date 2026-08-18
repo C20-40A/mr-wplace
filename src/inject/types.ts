@@ -183,6 +183,7 @@ declare global {
     mrWplaceOverlayLightweightMode?: boolean;
     mrWplaceSelectedColorOnlyMark?: boolean;
     mrWplaceFrontTileLayerEnabled?: boolean;
+    mrWplacePaintGuideEnabled?: boolean;
     mrWplaceTransparentPixelFilterEnabled?: boolean;
     mrWplaceSnapshotCaptureEnabled?: boolean;
     mrWplaceTempPaintedByUser?: PaintedByUser;
