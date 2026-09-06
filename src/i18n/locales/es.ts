@@ -616,4 +616,5 @@ export const esTranslations = {
   draft_map_lock: "Bloquear mapa (arrastrar para dibujar)",
   hint_draft_fab_btn: "Dibuja libremente en el mapa sin gastar cargas",
   popup_paint_guide: "Indicador de coincidencia de plantilla",
+  popup_compact_bottom_sheet: "Panel de pintura compacto (Beta)",
 };

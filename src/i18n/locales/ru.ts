@@ -619,4 +619,5 @@ export const ruTranslations = {
   draft_map_lock: "Заблокировать карту (рисование перетаскиванием)",
   hint_draft_fab_btn: "Рисуйте черновик на карте свободно, не тратя заряды",
   popup_paint_guide: "Индикатор совпадения шаблона",
+  popup_compact_bottom_sheet: "Компактная панель рисования (бета)",
 };

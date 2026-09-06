@@ -40,6 +40,11 @@ import {
   setPaintGuide,
 } from "./states/paint-guide";
 import {
+  loadCompactBottomSheetFromStorage,
+  getCompactBottomSheet,
+  setCompactBottomSheet,
+} from "./states/compact-bottom-sheet";
+import {
   loadFabVisibilityFromStorage,
   getFabVisibility,
   setFabVisibility,
@@ -153,6 +158,7 @@ const updateUI = (): void => {
     "popup-hide-my-location-label": "popup_hide_my_location",
     "popup-close-button-big-label": "popup_close_button_big",
     "popup-paint-guide-label": "popup_paint_guide",
+    "popup-compact-bottom-sheet-label": "popup_compact_bottom_sheet",
     "popup-bug-report-label": "popup_bug_report",
     "popup-fab-visibility-label": "popup_fab_visibility",
     "popup-fab-gallery-label": "popup_fab_gallery",
@@ -314,6 +320,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       loadCloseButtonBigFromStorage(),
       loadFabVisibilityFromStorage(),
       loadPaintGuideFromStorage(),
+      loadCompactBottomSheetFromStorage(),
     ]);
 
     currentMode = getNavigationMode();
@@ -364,6 +371,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupToggle("paint-guide-toggle", getPaintGuide(), async (v) => {
     await setPaintGuide(v);
     await notifyContentScriptBestEffort({ type: "PAINT_GUIDE_CHANGED", enabled: v });
+  });
+
+  // Compact paint panel (experimental, live update)
+  setupToggle("compact-bottom-sheet-toggle", getCompactBottomSheet(), async (v) => {
+    await setCompactBottomSheet(v);
+    await notifyContentScriptBestEffort({
+      type: "COMPACT_BOTTOM_SHEET_CHANGED",
+      enabled: v,
+    });
   });
 
   // FAB visibility toggles

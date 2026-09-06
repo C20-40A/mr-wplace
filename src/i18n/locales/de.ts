@@ -606,4 +606,5 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   draft_map_lock: "Karte sperren (zum Zeichnen ziehen)",
   hint_draft_fab_btn: "Skizziere frei auf der Karte, ohne Ladungen zu verbrauchen",
   popup_paint_guide: "Vorlagenübereinstimmungs-Indikator",
+  popup_compact_bottom_sheet: "Kompaktes Malfenster (Beta)",
 };

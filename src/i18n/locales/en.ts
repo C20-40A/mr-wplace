@@ -632,4 +632,5 @@ Do not use this feature to paint actual pixels.`,
   draft_map_lock: "Lock map (drag to draw)",
   hint_draft_fab_btn: "Draft freely on the map without spending charges",
   popup_paint_guide: "Template Match Indicator",
+  popup_compact_bottom_sheet: "Compact Paint Panel (Beta)",
 };

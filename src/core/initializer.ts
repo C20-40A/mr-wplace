@@ -35,6 +35,7 @@ import { restoreLegacyPaletteVisibility } from "@/features/legacy-palette-cleanu
 import { UserStatusHint } from "@/features/user-status-hint";
 import { CloseConfirm } from "@/features/close-confirm";
 import { PaintModeStyle } from "@/features/paint-mode-style";
+import { CompactBottomSheet } from "@/features/compact-bottom-sheet";
 import { HideMyLocation } from "@/features/hide-my-location";
 import { FocusMode } from "@/features/focus-mode";
 import { initShareEnhancer } from "@/features/share-enhancer";
@@ -117,6 +118,7 @@ export const initializeFeatures = async () => {
   safeInit("userStatusHint", () => new UserStatusHint());
   safeInit("closeConfirm", () => new CloseConfirm());
   safeInit("paintModeStyle", () => new PaintModeStyle());
+  safeInit("compactBottomSheet", () => new CompactBottomSheet());
   safeInit("hideMyLocation", () => new HideMyLocation());
   safeInit("focusMode", () => new FocusMode());
   safeInit("tileCropSave", () => new TileCropSave());

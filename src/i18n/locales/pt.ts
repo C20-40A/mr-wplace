@@ -607,4 +607,5 @@ export const ptTranslations = {
   draft_map_lock: "Bloquear mapa (arraste para desenhar)",
   hint_draft_fab_btn: "Rascunhe livremente no mapa sem gastar cargas",
   popup_paint_guide: "Indicador de correspondência do modelo",
+  popup_compact_bottom_sheet: "Painel de pintura compacto (Beta)",
 };
