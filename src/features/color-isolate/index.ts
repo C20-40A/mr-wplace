@@ -1,6 +1,8 @@
-import { setupElementObserver } from "../../components/element-observer";
-import { getPaintToolbarContainer } from "@/features/paint-toolbar";
-import { createColorIsolateButton } from "./ui";
+import {
+  registerPaintToolbarButton,
+  setPaintToolbarButtonActive,
+} from "@/features/paint-toolbar";
+import { COLOR_ISOLATE_ICON_SVG } from "./ui";
 import { sendColorFilterToInject } from "../../content";
 import { t } from "@/i18n/manager";
 import { showFeatureHint } from "@/features/feature-hints";
@@ -22,26 +24,18 @@ export class ColorIsolate {
   }
 
   private setupUI(): void {
-    setupElementObserver([
-      {
-        id: "color-isolate-btn",
-        getTargetElement: getPaintToolbarContainer,
-        createElement: (container) => {
-          const tooltip = document.createElement("div");
-          tooltip.className = "tooltip tooltip-bottom";
-          tooltip.setAttribute("data-tip", t`${"show_selected_color_only"}`);
-
-          this.button = createColorIsolateButton(this.enabled);
-          this.button.id = "color-isolate-btn";
-          this.button.addEventListener("click", () => this.toggle());
-
-          tooltip.appendChild(this.button);
-          container.appendChild(tooltip);
-          showFeatureHint("color-isolate", this.button);
-          console.log("🧑‍🎨 : Color isolate button added");
-        },
+    registerPaintToolbarButton({
+      id: "color-isolate-btn",
+      tip: t`${"show_selected_color_only"}`,
+      icon: COLOR_ISOLATE_ICON_SVG,
+      isActive: () => this.enabled,
+      onClick: () => void this.toggle(),
+      onCreate: (button) => {
+        this.button = button;
+        showFeatureHint("color-isolate", button);
+        console.log("🧑‍🎨 : Color isolate button added");
       },
-    ]);
+    });
   }
 
   isEnabled(): boolean {
@@ -115,12 +109,7 @@ export class ColorIsolate {
     this.enabled = !this.enabled;
     console.log("🧑‍🎨 : Color isolate toggled:", this.enabled);
 
-    if (this.button) {
-      // ボタンの見た目を更新
-      this.button.classList.toggle("text-primary", this.enabled);
-      this.button.classList.toggle("text-base-content", !this.enabled);
-      this.button.style.opacity = this.enabled ? "1" : "0.5";
-    }
+    if (this.button) setPaintToolbarButtonActive(this.button, this.enabled);
 
     const colorFilterManager = window.mrWplace?.colorFilterManager;
     if (!colorFilterManager) {
@@ -152,11 +141,7 @@ export class ColorIsolate {
       } else {
         console.warn("🧑‍🎨 : No color selected in localStorage");
         this.enabled = false;
-        if (this.button) {
-          this.button.classList.remove("text-primary");
-          this.button.classList.add("text-base-content");
-          this.button.style.opacity = "0.5";
-        }
+        if (this.button) setPaintToolbarButtonActive(this.button, false);
       }
     } else {
       // OFF: 元の選択色に戻す

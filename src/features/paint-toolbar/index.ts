@@ -1,3 +1,4 @@
+import { setupElementObserver } from "@/components/element-observer";
 import { subscribePaintMode } from "@/utils/paint-mode";
 
 export const PAINT_TOOLBAR_ID = "mr-wplace-paint-toolbar";
@@ -50,6 +51,68 @@ const createToolbar = (): HTMLElement => {
     z-index: 30;
   `;
   return toolbar;
+};
+
+export interface PaintToolbarButtonConfig {
+  id: string;
+  /** tooltip 文言 (下方向に表示) */
+  tip: string;
+  /** button.innerHTML に入れる svg */
+  icon: string;
+  className?: string;
+  /** ON/OFF を持つボタンのみ指定。生成時の見た目に反映される */
+  isActive?: () => boolean;
+  onClick: () => void;
+  /** バッジ追加や hint 表示など、生成直後の追加処理 */
+  onCreate?: (button: HTMLButtonElement) => void;
+}
+
+const DEFAULT_BUTTON_CLASS = "btn btn-sm btn-circle btn-ghost";
+
+/** ON/OFF ボタンの見た目を切り替える */
+export const setPaintToolbarButtonActive = (
+  button: HTMLButtonElement,
+  active: boolean,
+): void => {
+  button.classList.toggle("text-primary", active);
+  button.classList.toggle("text-base-content", !active);
+  button.style.opacity = active ? "1" : "0.5";
+};
+
+/** ツールバーへアイコンボタンを登録する (ツールバー再生成時も自動で復元) */
+export const registerPaintToolbarButton = ({
+  id,
+  tip,
+  icon,
+  className = DEFAULT_BUTTON_CLASS,
+  isActive,
+  onClick,
+  onCreate,
+}: PaintToolbarButtonConfig): void => {
+  setupElementObserver([
+    {
+      id,
+      getTargetElement: getPaintToolbarContainer,
+      createElement: (container) => {
+        const tooltip = document.createElement("div");
+        tooltip.className = "tooltip tooltip-bottom";
+        tooltip.setAttribute("data-tip", tip);
+
+        const button = document.createElement("button");
+        button.id = id;
+        button.type = "button";
+        button.className = className;
+        button.style.transition = "opacity 0.2s ease";
+        button.innerHTML = icon;
+        button.addEventListener("click", onClick);
+        if (isActive) setPaintToolbarButtonActive(button, isActive());
+
+        tooltip.appendChild(button);
+        container.appendChild(tooltip);
+        onCreate?.(button);
+      },
+    },
+  ]);
 };
 
 export class PaintToolbar {

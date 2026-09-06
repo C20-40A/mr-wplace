@@ -1,5 +1,7 @@
-import { setupElementObserver } from "@/components/element-observer";
-import { getPaintToolbarContainer } from "@/features/paint-toolbar";
+import {
+  registerPaintToolbarButton,
+  setPaintToolbarButtonActive,
+} from "@/features/paint-toolbar";
 import {
   loadPaintGuideFromStorage,
   getPaintGuide,
@@ -26,46 +28,24 @@ export class PaintGuideToggle {
 
   private async init(): Promise<void> {
     await loadPaintGuideFromStorage();
-    setupElementObserver([
-      {
-        id: BUTTON_ID,
-        getTargetElement: getPaintToolbarContainer,
-        createElement: (container) => {
-          const tooltip = document.createElement("div");
-          tooltip.className = "tooltip tooltip-bottom";
-          tooltip.setAttribute("data-tip", t("popup_paint_guide"));
-
-          this.button = document.createElement("button");
-          this.button.id = BUTTON_ID;
-          this.button.type = "button";
-          this.button.className = "btn btn-sm btn-circle btn-ghost";
-          this.button.innerHTML = ICON;
-          this.button.addEventListener("click", () => void this.toggle());
-
-          tooltip.appendChild(this.button);
-          container.appendChild(tooltip);
-          this.updateButton(getPaintGuide());
-          console.log("🧑‍🎨 : Paint guide toggle button added");
-        },
+    registerPaintToolbarButton({
+      id: BUTTON_ID,
+      tip: t("popup_paint_guide"),
+      icon: ICON,
+      isActive: getPaintGuide,
+      onClick: () => void this.toggle(),
+      onCreate: (button) => {
+        this.button = button;
+        console.log("🧑‍🎨 : Paint guide toggle button added");
       },
-    ]);
-  }
-
-  private updateButton(enabled: boolean): void {
-    if (!this.button) return;
-    this.button.classList.toggle("text-primary", enabled);
-    this.button.classList.toggle("text-base-content", !enabled);
-    this.button.style.opacity = enabled ? "1" : "0.5";
+    });
   }
 
   private async toggle(): Promise<void> {
     const enabled = !getPaintGuide();
     await setPaintGuide(enabled);
-    window.postMessage(
-      { source: "mr-wplace-paint-guide-update", enabled },
-      "*",
-    );
-    this.updateButton(enabled);
+    window.postMessage({ source: "mr-wplace-paint-guide-update", enabled }, "*");
+    if (this.button) setPaintToolbarButtonActive(this.button, enabled);
     console.log("🧑‍🎨 : Paint guide toggled:", enabled);
   }
 }

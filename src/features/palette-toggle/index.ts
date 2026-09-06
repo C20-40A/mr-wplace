@@ -1,5 +1,4 @@
-import { setupElementObserver } from "@/components/element-observer";
-import { getPaintToolbarContainer } from "@/features/paint-toolbar";
+import { registerPaintToolbarButton } from "@/features/paint-toolbar";
 import { PaletteToggleStorage } from "./storage";
 
 const COLOR_SELECTOR = "#color-1";
@@ -62,50 +61,38 @@ export class PaletteToggle {
   }
 
   private setupUI(): void {
-    setupElementObserver([
-      {
-        id: "palette-toggle-btn",
-        getTargetElement: getPaintToolbarContainer,
-        createElement: (container) => {
-          const wrapper = document.createElement("div");
-          wrapper.className = "relative";
+    registerPaintToolbarButton({
+      id: "palette-toggle-btn",
+      tip: "Toggle color palette visibility",
+      icon: "",
+      className: "btn btn-sm btn-ghost p-0",
+      onClick: () => void this.toggle(),
+      onCreate: (button) => {
+        this.button = button;
+        button.appendChild(this.createEyeIcon(true));
 
-          // Toggle button
-          this.button = document.createElement("button");
-          this.button.id = "palette-toggle-btn";
-          this.button.className = "btn btn-sm btn-ghost p-0";
-          this.button.title = "Toggle color palette visibility";
-          this.button.onclick = () => void this.toggle();
+        // Current color display (badge on top-right)
+        this.colorDisplay = document.createElement("div");
+        this.colorDisplay.className =
+          "w-3 h-3 rounded-full border border-base-300";
+        this.colorDisplay.style.cssText = `
+          position: absolute;
+          top: -4px;
+          right: -4px;
+          min-width: 0.75rem;
+          min-height: 0.75rem;
+          display: none;
+        `;
+        // tooltip wrapper (position:relative) 基準でバッジを配置
+        (button.parentElement ?? button).appendChild(this.colorDisplay);
+        this.updateCurrentColor();
 
-          // Add eye icon
-          const eyeIcon = this.createEyeIcon(true);
-          this.button.appendChild(eyeIcon);
+        // Restore palette state when button is created
+        this.applyPaletteStateIfNeeded();
 
-          // Current color display (badge on top-right)
-          this.colorDisplay = document.createElement("div");
-          this.colorDisplay.className =
-            "w-3 h-3 rounded-full border border-base-300";
-          this.colorDisplay.style.cssText = `
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            min-width: 0.75rem;
-            min-height: 0.75rem;
-            display: none;
-          `;
-          this.updateCurrentColor();
-
-          wrapper.appendChild(this.button);
-          wrapper.appendChild(this.colorDisplay);
-          container.appendChild(wrapper);
-
-          // Restore palette state when button is created
-          this.applyPaletteStateIfNeeded();
-
-          console.log("🧑‍🎨 : Palette toggle button created");
-        },
+        console.log("🧑‍🎨 : Palette toggle button created");
       },
-    ]);
+    });
   }
 
   private async toggle(): Promise<void> {
@@ -130,17 +117,18 @@ export class PaletteToggle {
     // Save state to storage
     await PaletteToggleStorage.set(this.isHidden);
 
-    // Update button icon
-    if (this.button) {
-      this.button.innerHTML = "";
-      const eyeIcon = this.createEyeIcon(!this.isHidden);
-      this.button.appendChild(eyeIcon);
-    }
+    this.updateEyeIcon();
 
     // Update color display visibility
     if (this.colorDisplay) {
       this.colorDisplay.style.display = this.isHidden ? "block" : "none";
     }
+  }
+
+  /** colorDisplay を残したまま目アイコンだけ差し替える */
+  private updateEyeIcon(): void {
+    const current = this.button?.querySelector("svg");
+    current?.replaceWith(this.createEyeIcon(!this.isHidden));
   }
 
   private applyPaletteStateIfNeeded(): void {
@@ -152,12 +140,7 @@ export class PaletteToggle {
     // Apply hidden state
     paletteContainer.setAttribute("hidden", "");
 
-    // Update button icon
-    if (this.button) {
-      this.button.innerHTML = "";
-      const eyeIcon = this.createEyeIcon(!this.isHidden);
-      this.button.appendChild(eyeIcon);
-    }
+    this.updateEyeIcon();
 
     // Update color display visibility
     if (this.colorDisplay) {

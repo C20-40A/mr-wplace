@@ -1,7 +1,9 @@
-import { setupElementObserver } from "@/components/element-observer";
-import { getPaintToolbarContainer } from "@/features/paint-toolbar";
+import {
+  registerPaintToolbarButton,
+  setPaintToolbarButtonActive,
+} from "@/features/paint-toolbar";
 import { sendShowUnplacedOnlyToInject } from "@/content";
-import { createShowUnplacedOnlyButton } from "./ui";
+import { SHOW_UNPLACED_ONLY_ICON_SVG } from "@/assets/enhanced-mode-icons";
 import {
   loadShowUnplacedOnlyFromStorage,
   getShowUnplacedOnly,
@@ -35,32 +37,23 @@ export class ShowUnplacedOnly {
   }
 
   private setupUI(): void {
-    setupElementObserver([
-      {
-        id: "show-unplaced-only-btn",
-        getTargetElement: getPaintToolbarContainer,
-        createElement: (container) => {
-          const tooltip = document.createElement("div");
-          tooltip.className = "tooltip tooltip-bottom";
-          tooltip.setAttribute("data-tip", t("show_unplaced_only"));
-          this.button = createShowUnplacedOnlyButton(getShowUnplacedOnly());
-          this.button.id = "show-unplaced-only-btn";
-          this.button.addEventListener("click", () => this.toggle());
-          tooltip.appendChild(this.button);
-          container.appendChild(tooltip);
-          showFeatureHint("show-unplaced-only", this.button);
-          console.log("🧑‍🎨 : Show unplaced only button added");
-        },
+    registerPaintToolbarButton({
+      id: "show-unplaced-only-btn",
+      tip: t("show_unplaced_only"),
+      icon: SHOW_UNPLACED_ONLY_ICON_SVG,
+      className: "btn btn-square btn-sm",
+      isActive: getShowUnplacedOnly,
+      onClick: () => void this.toggle(),
+      onCreate: (button) => {
+        this.button = button;
+        showFeatureHint("show-unplaced-only", button);
+        console.log("🧑‍🎨 : Show unplaced only button added");
       },
-    ]);
+    });
   }
 
   private updateButton(enabled: boolean): void {
-    if (this.button) {
-      this.button.classList.toggle("text-primary", enabled);
-      this.button.classList.toggle("text-base-content", !enabled);
-      this.button.style.opacity = enabled ? "1" : "0.5";
-    }
+    if (this.button) setPaintToolbarButtonActive(this.button, enabled);
   }
 
   async toggle(): Promise<void> {

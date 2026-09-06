@@ -1,5 +1,7 @@
-import { setupElementObserver } from "@/components/element-observer";
-import { getPaintToolbarContainer } from "@/features/paint-toolbar";
+import {
+  getPaintToolbarContainer,
+  registerPaintToolbarButton,
+} from "@/features/paint-toolbar";
 import { subscribePaintMode } from "@/utils/paint-mode";
 import { colorpalette } from "@/constants/colors";
 import {
@@ -63,30 +65,12 @@ export class MiniColorFilter {
 
   constructor() {
     ensureStyles();
-    setupElementObserver([
-      {
-        id: FAB_ID,
-        getTargetElement: getPaintToolbarContainer,
-        createElement: (host) => {
-          const tooltip = document.createElement("div");
-          tooltip.className = "tooltip tooltip-bottom";
-          tooltip.setAttribute("data-tip", "Mini Color Filter");
-
-          const btn = document.createElement("button");
-          btn.id = FAB_ID;
-          btn.type = "button";
-          btn.className = "btn btn-sm btn-circle btn-ghost";
-          btn.innerHTML = ICON_FILTER;
-          btn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            this.togglePanel();
-          });
-
-          tooltip.appendChild(btn);
-          host.appendChild(tooltip);
-        },
-      },
-    ]);
+    registerPaintToolbarButton({
+      id: FAB_ID,
+      tip: "Mini Color Filter",
+      icon: ICON_FILTER,
+      onClick: () => this.togglePanel(),
+    });
 
     // paint mode を抜けたら片付け (FAB は toolbar ごと消える)
     subscribePaintMode((active) => {
