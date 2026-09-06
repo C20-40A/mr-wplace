@@ -28,7 +28,7 @@ export class ColorIsolate {
         getTargetElement: getPaintToolbarContainer,
         createElement: (container) => {
           const tooltip = document.createElement("div");
-          tooltip.className = "tooltip";
+          tooltip.className = "tooltip tooltip-bottom";
           tooltip.setAttribute("data-tip", t`${"show_selected_color_only"}`);
 
           this.button = createColorIsolateButton(this.enabled);

@@ -41,7 +41,7 @@ export class ShowUnplacedOnly {
         getTargetElement: getPaintToolbarContainer,
         createElement: (container) => {
           const tooltip = document.createElement("div");
-          tooltip.className = "tooltip";
+          tooltip.className = "tooltip tooltip-bottom";
           tooltip.setAttribute("data-tip", t("show_unplaced_only"));
           this.button = createShowUnplacedOnlyButton(getShowUnplacedOnly());
           this.button.id = "show-unplaced-only-btn";
