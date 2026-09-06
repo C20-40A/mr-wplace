@@ -3,6 +3,39 @@ import { colorpalette } from "@/constants/colors";
 import { getAllGalleryMetadata } from "@/core/bridge/gallery-storage-bridge";
 import { findNearestGalleryItem } from "@/utils/gallery-helpers";
 
+export interface PaintTemplateProgress {
+  id: string;
+  title?: string;
+  matched: number;
+  total: number;
+  percentage: number;
+}
+
+let selectedTemplateId: string | null = null;
+let latestTemplateProgress: PaintTemplateProgress | null = null;
+const progressListeners = new Set<
+  (progress: PaintTemplateProgress | null) => void
+>();
+
+export const selectPaintTemplate = (id: string | null): void => {
+  selectedTemplateId = id;
+  scheduleRefresh();
+};
+
+export const subscribePaintTemplateProgress = (
+  listener: (progress: PaintTemplateProgress | null) => void,
+): (() => void) => {
+  progressListeners.add(listener);
+  listener(latestTemplateProgress);
+  return () => progressListeners.delete(listener);
+};
+
+const publishTemplateProgress = (progress: PaintTemplateProgress | null): void => {
+  latestTemplateProgress = progress;
+  progressListeners.forEach((listener) => listener(progress));
+};
+
+
 // selector統一
 const findColorButtons = (): NodeListOf<Element> => {
   // 1. まず「color-」で始まるIDを持つボタンをすべて取得（DOM負荷を抑える）
@@ -150,12 +183,11 @@ const attachStatsToButtons = (
 };
 
 // 統計取得
-const getColorStats = async (): Promise<Record<
-  string,
-  { matched: number; total: number }
-> | null> => {
+const getColorStats = async (): Promise<{
+  colorStats: Record<string, { matched: number; total: number }>;
+  template: { id: string; title?: string };
+} | null> => {
   const allMetadata = await getAllGalleryMetadata();
-  // coords が存在するアイテムのみを型安全に抽出
   const drawableItems = allMetadata.filter(
     (m): m is typeof m & { coords: NonNullable<typeof m.coords> } =>
       m.visible && !!m.coords,
@@ -163,28 +195,42 @@ const getColorStats = async (): Promise<Record<
 
   if (drawableItems.length === 0) return null;
 
-  // 最寄り1件を選択
-  const nearest = findNearestGalleryItem(drawableItems);
-  if (!nearest) return null;
+  const selected = selectedTemplateId
+    ? drawableItems.find((item) => item.id === selectedTemplateId)
+    : null;
+  if (selectedTemplateId && !selected) selectedTemplateId = null;
+  const template = selected ?? findNearestGalleryItem(drawableItems);
+  if (!template) return null;
 
-  const stats = await getAggregatedColorStats([nearest.id]);
-  console.log(
-    `🧑‍🎨 : Paint stats: nearest template: ${nearest.title || nearest.id}`,
-  );
-
-  return Object.keys(stats).length > 0 ? stats : null;
+  const colorStats = await getAggregatedColorStats([template.id]);
+  return Object.keys(colorStats).length > 0
+    ? { colorStats, template }
+    : null;
 };
 
 // 統計表示
 const displayColorStats = async (): Promise<void> => {
-  const colorStats = await getColorStats();
-  if (!colorStats) {
-    console.log("🧑‍🎨 : Paint stats: no stats available");
+  const result = await getColorStats();
+  if (!result) {
+    publishTemplateProgress(null);
+    console.log("Paint stats: no stats available");
     return;
   }
 
-  attachStatsToButtons(colorStats);
-  console.log("🧑‍🎨 : Paint stats: displayed on all color buttons");
+  attachStatsToButtons(result.colorStats);
+  const totals = Object.values(result.colorStats).reduce(
+    (sum, stat) => ({
+      matched: sum.matched + stat.matched,
+      total: sum.total + stat.total,
+    }),
+    { matched: 0, total: 0 },
+  );
+  publishTemplateProgress({
+    id: result.template.id,
+    title: result.template.title,
+    ...totals,
+    percentage: totals.total > 0 ? (totals.matched / totals.total) * 100 : 0,
+  });
 };
 
 // debounce付きstats更新

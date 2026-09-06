@@ -19,6 +19,14 @@ const renderMissingItems = (group: ObserverGroup): void => {
     // element.isConnected はO(1)でDOMクエリ不要
     if (existing?.isConnected) return;
 
+    // Another observer group may already have created the same id. Reuse it
+    // instead of adding duplicate DOM ids when a feature is initialized twice.
+    const existingInDocument = document.getElementById(config.id);
+    if (existingInDocument) {
+      group.createdElements.set(config.id, existingInDocument);
+      return;
+    }
+
     const target = config.getTargetElement();
     if (!target) return;
 

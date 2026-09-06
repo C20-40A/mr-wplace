@@ -22,6 +22,7 @@ import { ColorIsolate } from "@/features/color-isolate";
 import { PositionInfo } from "@/features/position-info";
 import { initPaintStats } from "@/features/paint-stats";
 import { PaintToolbar } from "@/features/paint-toolbar";
+import { PaintTemplateIndicator } from "@/features/paint-template-indicator";
 import { PaintGuideToggle } from "@/features/paint-guide-toggle";
 import { ShowUnplacedOnly } from "@/features/show-unplaced-only";
 import {
@@ -121,6 +122,7 @@ export const initializeFeatures = async () => {
   safeInit("tileCropSave", () => new TileCropSave());
   safeInit("draftDraw", () => new DraftDraw());
   safeInit("paintStats", () => initPaintStats());
+  safeInit("paintTemplateIndicator", () => new PaintTemplateIndicator());
   safeInit("shareEnhancer", () => initShareEnhancer());
 
   // Initialize async features in parallel (each wrapped for error isolation)
