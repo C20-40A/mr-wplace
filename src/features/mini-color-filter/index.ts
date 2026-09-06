@@ -1,5 +1,6 @@
 import { setupElementObserver } from "@/components/element-observer";
 import { findPaintPixelControls } from "@/constants/selectors";
+import { subscribePaintMode } from "@/utils/paint-mode";
 import { colorpalette } from "@/constants/colors";
 import {
   applyEnhancedMode,
@@ -86,13 +87,11 @@ export class MiniColorFilter {
     ]);
 
     // paint mode を抜けたら片付け
-    const observer = new MutationObserver(() => {
-      if (!findPaintPixelControls()) {
-        document.getElementById(FAB_ID)?.remove();
-        this.closePanel();
-      }
+    subscribePaintMode((active) => {
+      if (active) return;
+      document.getElementById(FAB_ID)?.remove();
+      this.closePanel();
     });
-    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   private togglePanel(): void {

@@ -3,7 +3,7 @@ import type {
   PaintedPixelMap,
   PaintedPixelValue,
 } from "@/inject/types";
-import { findPaintPixelControls } from "@/constants/selectors";
+import { isPaintModeActive, subscribePaintMode } from "@/utils/paint-mode";
 
 const TARGET_KEY_REGEX =
   /^t=\((-?\d+),(-?\d+)\);p=\((\d+),(\d+)\);s=(-?\d+)$/;
@@ -14,9 +14,8 @@ let originalMapSet: typeof Map.prototype.set | null = null;
 let originalMapDelete: typeof Map.prototype.delete | null = null;
 let originalMapClear: typeof Map.prototype.clear | null = null;
 let targetPaintedPixelMap: PaintedPixelMap | null = null;
-let paintModalObserver: MutationObserver | null = null;
+let unsubscribePaintMode: (() => void) | null = null;
 let isPaintControlsVisible = false;
-let visibilityCheckScheduled = false;
 
 const capturedCoordinates = new Map<string, CapturedPaintedCoordinate>();
 const captureOrder: string[] = [];
@@ -292,34 +291,24 @@ const resetPaintedMapState = (reason: string): void => {
 
 const checkPaintControlsVisibility = (): void => {
   if (!isPaintControlsVisible) return;
-  if (findPaintPixelControls()) return;
+  if (isPaintModeActive()) return;
 
   resetPaintedMapState("paint modal closed");
   isPaintControlsVisible = false;
 };
 
 const setupPaintModalObserver = (): void => {
-  if (paintModalObserver) return;
+  if (unsubscribePaintMode) return;
 
-  isPaintControlsVisible = !!findPaintPixelControls();
-
-  paintModalObserver = new MutationObserver(() => {
-    if (visibilityCheckScheduled) return;
-    visibilityCheckScheduled = true;
-
-    requestAnimationFrame(() => {
-      visibilityCheckScheduled = false;
-      checkPaintControlsVisibility();
-    });
-  });
-
-  paintModalObserver.observe(document.body, { childList: true, subtree: true });
+  isPaintControlsVisible = isPaintModeActive();
+  unsubscribePaintMode = subscribePaintMode((active) => {
+    if (!active) checkPaintControlsVisibility();
+  }, false);
 };
 
 const teardownPaintModalObserver = (): void => {
-  paintModalObserver?.disconnect();
-  paintModalObserver = null;
-  visibilityCheckScheduled = false;
+  unsubscribePaintMode?.();
+  unsubscribePaintMode = null;
 };
 
 export const setupPaintedCoordinatesCapture = (): void => {

@@ -1,5 +1,6 @@
 import { findPaintPixelControls } from "@/constants/selectors";
 import { isMobileViewport } from "@/constants/breakpoints";
+import { subscribePaintMode } from "@/utils/paint-mode";
 import {
   loadPaintModeStyleFromStorage,
   getPaintModeStyle,
@@ -78,8 +79,7 @@ const hideFabRule: StyleRule = {
 const rules: StyleRule[] = [removeGapRule, hideFabRule];
 
 export class PaintModeStyle {
-  private observer: MutationObserver | null = null;
-  private active = false;
+  private unsubscribe: (() => void) | null = null;
 
   constructor() {
     this.init();
@@ -89,24 +89,16 @@ export class PaintModeStyle {
     await loadPaintModeStyleFromStorage();
     if (!getPaintModeStyle()) return;
 
-    this.observer = new MutationObserver(() => this.check());
-    this.observer.observe(document.body, { childList: true, subtree: true });
-    this.check();
+    this.unsubscribe = subscribePaintMode((active) =>
+      active ? this.activate() : this.deactivate(),
+    );
   }
 
-  private check(): void {
+  private activate(): void {
     const controls = findPaintPixelControls();
-    if (controls && !this.active) {
-      console.log("🧑‍🎨 : Paint mode detected, applying styles", controls);
-      this.activate(controls);
-    } else if (!controls && this.active) {
-      this.deactivate();
-    }
-  }
+    if (!controls) return;
 
-  private activate(controls: Element): void {
-    this.active = true;
-
+    console.log("🧑‍🎨 : Paint mode detected, applying styles", controls);
     for (const rule of rules) {
       if (rule.mobileOnly && !isMobileViewport()) continue;
       rule.apply(controls);
@@ -114,11 +106,14 @@ export class PaintModeStyle {
   }
 
   private deactivate(): void {
-    this.active = false;
-
     for (const rule of rules) {
       if (rule.mobileOnly && !isMobileViewport()) continue;
       rule.restore();
     }
+  }
+
+  destroy(): void {
+    this.unsubscribe?.();
+    this.unsubscribe = null;
   }
 }

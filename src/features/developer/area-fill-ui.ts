@@ -1,7 +1,7 @@
 import { getCurrentPosition } from "@/utils/position";
 import { latLngToTilePixel } from "@/utils/coordinate";
 import { AreaFillStorage, AreaFillCorners, type FillPattern } from "./area-fill-storage";
-import { findPaintPixelControls } from "@/constants/selectors";
+import { isPaintModeActive, subscribePaintMode } from "@/utils/paint-mode";
 import { getColor, TEXT_COLORS, TEXT_OUTLINE } from "./ui-colors";
 import { Toast } from "@/components/toast";
 import { AREA_FILL_MAX_PIXELS } from "@/constants/area-fill";
@@ -271,7 +271,7 @@ export const createAreaFillDialogItem = (
   // Fill button
   let isRunning = false;
   let isFillBtnHovered = false;
-  let isPaintControlsVisible = !!findPaintPixelControls();
+  let isPaintControlsVisible = isPaintModeActive();
   let currentCornersState = initialCorners;
   const fillBtn = document.createElement("button");
 
@@ -611,41 +611,33 @@ export const createAreaFillDialogItem = (
     }
   };
 
-  // MutationObserver for PaintPixelControls visibility
-  let observer: MutationObserver | null = null;
+  // paint modal の開閉に追従してボタンの有効/無効を切り替える
+  let unsubscribePaintMode: (() => void) | null = null;
 
   const mount = () => {
-    if (observer) return;
-    observer = new MutationObserver(() => {
-      const newVisible = !!findPaintPixelControls();
-      if (newVisible !== isPaintControlsVisible) {
-        const wasVisible = isPaintControlsVisible;
-        isPaintControlsVisible = newVisible;
-        updateFillBtnStyle();
-        updateSetBtnsStyle();
+    if (unsubscribePaintMode) return;
+    unsubscribePaintMode = subscribePaintMode((visible) => {
+      const wasVisible = isPaintControlsVisible;
+      isPaintControlsVisible = visible;
+      updateFillBtnStyle();
+      updateSetBtnsStyle();
 
-        // Stop area fill if paint modal is closed while running
-        if (wasVisible && !newVisible) {
-          if (isRunning) {
-            window.postMessage({ source: "mr-wplace-area-fill-stop" }, "*");
-            setRunning(false);
-            console.log("🧑‍🎨 : Area fill stopped (paint modal closed)");
-          }
-          // Reset progress when paint modal is closed
-          window.postMessage({ source: "mr-wplace-area-fill-reset" }, "*");
-        }
+      // Stop area fill if paint modal is closed while running
+      if (!wasVisible || visible) return;
+
+      if (isRunning) {
+        window.postMessage({ source: "mr-wplace-area-fill-stop" }, "*");
+        setRunning(false);
+        console.log("🧑‍🎨 : Area fill stopped (paint modal closed)");
       }
+      // Reset progress when paint modal is closed
+      window.postMessage({ source: "mr-wplace-area-fill-reset" }, "*");
     });
-    observer.observe(document.body, { childList: true, subtree: true });
-    // Initial check
-    isPaintControlsVisible = !!findPaintPixelControls();
-    updateFillBtnStyle();
-    updateSetBtnsStyle();
   };
 
   const unmount = () => {
-    observer?.disconnect();
-    observer = null;
+    unsubscribePaintMode?.();
+    unsubscribePaintMode = null;
   };
 
   return {
