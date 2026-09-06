@@ -1,5 +1,5 @@
 import { setupElementObserver } from "@/components/element-observer";
-import { findPaintPixelControls } from "@/constants/selectors";
+import { getPaintToolbarContainer } from "@/features/paint-toolbar";
 import { subscribePaintMode } from "@/utils/paint-mode";
 import { colorpalette } from "@/constants/colors";
 import {
@@ -45,7 +45,6 @@ const ensureStyles = (): void => {
     #${PANEL_ID} .mcf-color.off{opacity:0.25;}
     #${PANEL_ID} .mcf-color.off::after{content:"";position:absolute;inset:0;background:linear-gradient(45deg,transparent 45%,rgba(0,0,0,0.6) 45%,rgba(0,0,0,0.6) 55%,transparent 55%);border-radius:inherit;}
     #${PANEL_ID} .mcf-sep{width:1px;align-self:stretch;background:var(--color-base-300,rgba(0,0,0,0.12));margin:0 2px;}
-    #${FAB_ID}{position:fixed;top:8px;left:8px;z-index:40;}
   `;
   document.head.appendChild(style);
 };
@@ -67,29 +66,31 @@ export class MiniColorFilter {
     setupElementObserver([
       {
         id: FAB_ID,
-        getTargetElement: () =>
-          findPaintPixelControls() ? document.body : null,
+        getTargetElement: getPaintToolbarContainer,
         createElement: (host) => {
-          if (document.getElementById(FAB_ID)) return;
+          const tooltip = document.createElement("div");
+          tooltip.className = "tooltip tooltip-bottom";
+          tooltip.setAttribute("data-tip", "Mini Color Filter");
+
           const btn = document.createElement("button");
           btn.id = FAB_ID;
           btn.type = "button";
-          btn.className = "btn btn-sm btn-circle shadow-md";
-          btn.title = "Mini Color Filter";
+          btn.className = "btn btn-sm btn-circle btn-ghost";
           btn.innerHTML = ICON_FILTER;
           btn.addEventListener("click", (e) => {
             e.stopPropagation();
             this.togglePanel();
           });
-          host.appendChild(btn);
+
+          tooltip.appendChild(btn);
+          host.appendChild(tooltip);
         },
       },
     ]);
 
-    // paint mode を抜けたら片付け
+    // paint mode を抜けたら片付け (FAB は toolbar ごと消える)
     subscribePaintMode((active) => {
       if (active) return;
-      document.getElementById(FAB_ID)?.remove();
       this.closePanel();
     });
   }
@@ -170,6 +171,9 @@ export class MiniColorFilter {
     panel.appendChild(mkAct(ICON_CLOSE, "Close", () => this.closePanel(), true));
 
     document.body.appendChild(panel);
+    // toolbar のアイコン一覧の直下に出す
+    const toolbar = getPaintToolbarContainer();
+    if (toolbar) panel.style.top = `${toolbar.getBoundingClientRect().bottom + 6}px`;
     this.refreshColors();
 
     // パネル外クリックで dropdown を閉じる

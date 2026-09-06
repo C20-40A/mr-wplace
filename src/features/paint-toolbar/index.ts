@@ -20,9 +20,11 @@ const ensureStyles = (): void => {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   // paint mode 中は user-status を隠し、その位置をツールバーが引き継ぐ
+  // developer trigger はツールバーと重なるため paint mode 中は隠す
   // ボタンが1つも入らなかった場合は空の箱を見せない
   style.textContent = `
     .${PAINT_MODE_CLASS} #user-status-container{display:none !important;}
+    .${PAINT_MODE_CLASS} #dev-trigger-btn{display:none !important;}
     #${PAINT_TOOLBAR_ID}:empty{display:none;}
   `;
   (document.head || document.documentElement).appendChild(style);

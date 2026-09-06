@@ -23,6 +23,7 @@ import { PositionInfo } from "@/features/position-info";
 import { initPaintStats } from "@/features/paint-stats";
 import { PaintToolbar } from "@/features/paint-toolbar";
 import { PaletteToggle } from "@/features/palette-toggle";
+import { PaintGuideToggle } from "@/features/paint-guide-toggle";
 import { ShowUnplacedOnly } from "@/features/show-unplaced-only";
 import {
   loadSelectedColorOnlyMarkFromStorage,
@@ -103,6 +104,7 @@ export const initializeFeatures = async () => {
   const colorFilterManager = new ColorFilterManager();
   safeInit("paintToolbar", () => new PaintToolbar());
   safeInit("paletteToggle", () => new PaletteToggle());
+  safeInit("paintGuideToggle", () => new PaintGuideToggle());
   const colorIsolate = new ColorIsolate();
   const autoSpoit = new DevInject(colorFilterManager, colorIsolate);
   safeInit("positionInfo", () => new PositionInfo());
