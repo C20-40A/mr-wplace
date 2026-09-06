@@ -31,6 +31,7 @@ export class PaintGuideToggle {
     registerPaintToolbarButton({
       id: BUTTON_ID,
       tip: t("popup_paint_guide"),
+      label: "Guide",
       icon: ICON,
       isActive: getPaintGuide,
       onClick: () => void this.toggle(),

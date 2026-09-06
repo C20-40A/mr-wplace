@@ -74,6 +74,7 @@ export class MiniColorFilter {
     registerPaintToolbarButton({
       id: FAB_ID,
       tip: "Mini Color Filter",
+      label: "Filter",
       icon: ICON_FILTER,
       isActive: () => this.panel !== null,
       onClick: () => this.togglePanel(),

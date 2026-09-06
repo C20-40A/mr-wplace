@@ -26,7 +26,7 @@ const ensureStyles = (): void => {
   style.textContent = `
     .${PAINT_MODE_CLASS} #user-status-container{display:none !important;}
     .${PAINT_MODE_CLASS} #dev-trigger-btn{display:none !important;}
-    #${PAINT_TOOLBAR_ID}:empty{display:none;}.mr-template-percent{position:absolute;top:1px;left:2px;right:2px;z-index:1;font-size:8px;font-weight:700;line-height:10px;color:white;background:rgba(0,0,0,.65);border-radius:4px;text-align:center;}.mr-template-thumb{width:28px;height:20px;margin-top:9px;object-fit:cover;border-radius:4px;background:var(--color-base-300);display:block;}.mr-template-menu{position:absolute;top:calc(100% + 6px);left:0;width:190px;max-height:220px;overflow-y:auto;padding:4px;background:var(--color-base-100);border:1px solid rgba(0,0,0,.15);border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.2);z-index:31;text-align:left;}.mr-template-menu-item{width:100%;display:flex;align-items:center;gap:7px;padding:4px;border-radius:5px;background:transparent;border:0;color:inherit;text-align:left;font-size:11px;}.mr-template-menu-item:hover{background:var(--color-base-200);}.mr-template-menu-item img{width:30px;height:24px;object-fit:cover;border-radius:3px;background:var(--color-base-300);flex:none;}.mr-template-menu-item span{min-width:0;display:flex;flex-direction:column;}.mr-template-menu-progress{font-size:13px;line-height:15px;font-weight:700;}.mr-template-menu-title{font-size:9px;line-height:11px;opacity:.65;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.mr-template-menu-meter{display:none;width:100px;height:3px;margin-top:2px;overflow:hidden;border-radius:2px;background:var(--color-base-300);}.mr-template-menu-meter b{display:block;height:100%;background:var(--color-primary);transition:width .2s ease;}
+    #${PAINT_TOOLBAR_ID}:empty{display:none;}.mr-paint-tb-btn{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:34px;height:32px;min-height:32px;padding:0;border-radius:8px;}.mr-paint-tb-btn svg,.mr-paint-tb-btn img{width:19px !important;height:19px !important;}.mr-paint-tb-label{font-size:8px;line-height:9px;font-weight:600;letter-spacing:-.02em;white-space:nowrap;pointer-events:none;}.mr-template-percent{position:absolute;bottom:1px;left:2px;right:2px;z-index:1;font-size:8px;font-weight:700;line-height:9px;color:white;background:rgba(0,0,0,.65);border-radius:4px;text-align:center;}.mr-template-thumb{width:28px;height:19px;margin-bottom:2px;object-fit:cover;border-radius:4px;background:var(--color-base-300);display:block;}.mr-template-menu{position:absolute;top:calc(100% + 6px);left:0;width:190px;max-height:220px;overflow-y:auto;padding:4px;background:var(--color-base-100);border:1px solid rgba(0,0,0,.15);border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.2);z-index:31;text-align:left;}.mr-template-menu-item{width:100%;display:flex;align-items:center;gap:7px;padding:4px;border-radius:5px;background:transparent;border:0;color:inherit;text-align:left;font-size:11px;}.mr-template-menu-item:hover{background:var(--color-base-200);}.mr-template-menu-item img{width:30px;height:24px;object-fit:cover;border-radius:3px;background:var(--color-base-300);flex:none;}.mr-template-menu-item span{min-width:0;display:flex;flex-direction:column;}.mr-template-menu-progress{font-size:13px;line-height:15px;font-weight:700;}.mr-template-menu-title{font-size:9px;line-height:11px;opacity:.65;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.mr-template-menu-meter{display:none;width:100px;height:3px;margin-top:2px;overflow:hidden;border-radius:2px;background:var(--color-base-300);}.mr-template-menu-meter b{display:block;height:100%;background:var(--color-primary);transition:width .2s ease;}
   `;
   (document.head || document.documentElement).appendChild(style);
 };
@@ -59,6 +59,8 @@ export interface PaintToolbarButtonConfig {
   tip: string;
   /** button.innerHTML に入れる svg */
   icon: string;
+  /** アイコン下に表示する極小ラベル (英語1単語) */
+  label?: string;
   className?: string;
   /** ON/OFF を持つボタンのみ指定。生成時の見た目に反映される */
   isActive?: () => boolean;
@@ -76,7 +78,6 @@ export const setPaintToolbarButtonActive = (
 ): void => {
   button.classList.toggle("text-primary", active);
   button.classList.toggle("text-base-content", !active);
-  button.style.opacity = active ? "1" : "0.5";
 };
 
 /** ツールバーへアイコンボタンを登録する (ツールバー再生成時も自動で復元) */
@@ -84,6 +85,7 @@ export const registerPaintToolbarButton = ({
   id,
   tip,
   icon,
+  label,
   className = DEFAULT_BUTTON_CLASS,
   isActive,
   onClick,
@@ -101,9 +103,13 @@ export const registerPaintToolbarButton = ({
         const button = document.createElement("button");
         button.id = id;
         button.type = "button";
-        button.className = className;
-        button.style.transition = "opacity 0.2s ease";
-        button.innerHTML = icon;
+        button.className = label
+          ? `${className.replace("btn-circle", "")} mr-paint-tb-btn`
+          : className;
+        button.style.transition = "color 0.2s ease";
+        button.innerHTML = label
+          ? `${icon}<span class="mr-paint-tb-label">${label}</span>`
+          : icon;
         button.addEventListener("click", onClick);
         if (isActive) setPaintToolbarButtonActive(button, isActive());
 

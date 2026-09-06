@@ -27,6 +27,7 @@ export class ColorIsolate {
     registerPaintToolbarButton({
       id: "color-isolate-btn",
       tip: t`${"show_selected_color_only"}`,
+      label: "Isolate",
       icon: COLOR_ISOLATE_ICON_SVG,
       isActive: () => this.enabled,
       onClick: () => void this.toggle(),
