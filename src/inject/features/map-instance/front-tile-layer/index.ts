@@ -32,6 +32,7 @@ let pendingComparisonRefreshQueued = false;
 let deferredRefreshQueued = false;
 let pendingRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 let pendingOverlayRestore = false;
+let paintGuideSessionActive = false;
 
 const isEnabled = () => window.mrWplaceFrontTileLayerEnabled ?? false;
 const getFrontSourceTileUrl = (version: number): string =>
@@ -252,7 +253,13 @@ export const setFrontTilePaintGuideActive = (
   active: boolean,
   options?: { clearNow?: boolean },
 ): void => {
-  setPaintGuideActive(active, options);
+  paintGuideSessionActive = active;
+  setPaintGuideActive(active && window.mrWplacePaintGuideEnabled !== false, options);
+};
+
+export const setFrontTilePaintGuideEnabled = (enabled: boolean): boolean => {
+  setPaintGuideActive(enabled && paintGuideSessionActive, { clearNow: !enabled });
+  return enabled && paintGuideSessionActive;
 };
 
 /**

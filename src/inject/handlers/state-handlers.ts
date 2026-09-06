@@ -6,7 +6,10 @@ import {
   refreshFrontTileLayer,
   setTransparentPixelFilterEnabled,
   clearFrontTilePaintGuideAll,
+  setFrontTilePaintGuideEnabled,
+  getCapturedPaintedCoordinates,
 } from "../features/map-instance";
+import { replayPaintGuideForCoordinates } from "../features/paint-stats-updater";
 
 const COLOR_FILTER_REFRESH_DEBOUNCE_MS = 120;
 let colorFilterRefreshTimer: ReturnType<typeof setTimeout> | null = null;
@@ -183,7 +186,9 @@ export const handleFrontTileLayerUpdate = (data: {
  */
 export const handlePaintGuideUpdate = (data: { enabled: boolean }): void => {
   window.mrWplacePaintGuideEnabled = data.enabled;
+  const canReplay = setFrontTilePaintGuideEnabled(data.enabled);
   if (!data.enabled) clearFrontTilePaintGuideAll();
+  else if (canReplay) replayPaintGuideForCoordinates(getCapturedPaintedCoordinates().values(), () => window.mrWplacePaintGuideEnabled !== false);
   console.log("🧑‍🎨 : Paint guide indicator updated:", data.enabled);
 };
 

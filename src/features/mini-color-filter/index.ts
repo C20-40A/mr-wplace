@@ -1,6 +1,7 @@
 import {
   getPaintToolbarContainer,
   registerPaintToolbarButton,
+  setPaintToolbarButtonActive,
 } from "@/features/paint-toolbar";
 import { subscribePaintMode } from "@/utils/paint-mode";
 import { colorpalette } from "@/constants/colors";
@@ -10,6 +11,8 @@ import {
 } from "@/features/color-filter/state-actions";
 import { ENHANCED_MODE_OPTIONS } from "@/components/color-palette/utils";
 import { createEnhancedModeIcons } from "@/assets/enhanced-mode-icons";
+import { IMG_ICON_COLOR_FILTER } from "@/assets/iconImages";
+import { ColorFilter } from "@/features/color-filter";
 import type { EnhancedMode } from "@/types/image";
 
 const FAB_ID = "mini-color-filter-fab";
@@ -19,7 +22,6 @@ const STYLE_ID = "mini-color-filter-style";
 const ICON_FILTER = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><polygon points="3 4 21 4 14 12.5 14 20 10 18 10 12.5 3 4"/></svg>`;
 const LABEL_ALL = "ALL";
 const LABEL_NONE = "NONE";
-const ICON_CLOSE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="width:14px;height:14px;"><path d="M6 6l12 12M18 6L6 18"/></svg>`;
 
 const ensureStyles = (): void => {
   if (document.getElementById(STYLE_ID)) return;
@@ -28,12 +30,15 @@ const ensureStyles = (): void => {
   style.textContent = `
     #${PANEL_ID}{position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:41;display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--color-base-100,#fff);color:var(--color-base-content,#222);border:1px solid var(--color-base-300,rgba(0,0,0,0.12));border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,0.18);max-width:calc(100vw - 16px);}
     #${PANEL_ID} .mcf-actions{display:flex;flex-direction:column;gap:2px;flex:none;align-self:stretch;justify-content:center;}
+    #${PANEL_ID} .mcf-palette-btn{width:28px;align-self:stretch;display:flex;align-items:center;justify-content:center;border-radius:7px;border:1px solid var(--color-base-300,rgba(0,0,0,0.12));background:transparent;color:inherit;cursor:pointer;padding:3px;flex:none;}
+    #${PANEL_ID} .mcf-palette-btn:hover{background:var(--color-base-200,rgba(0,0,0,0.06));}
+    #${PANEL_ID} .mcf-palette-btn img{width:20px;height:20px;image-rendering:pixelated;}
     #${PANEL_ID} .mcf-act{min-width:36px;height:20px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--color-base-300,rgba(0,0,0,0.12));background:transparent;color:inherit;cursor:pointer;padding:0 6px;font-size:10px;font-weight:700;letter-spacing:0.5px;line-height:1;}
     #${PANEL_ID} .mcf-act:hover{background:var(--color-base-200,rgba(0,0,0,0.06));}
     #${PANEL_ID} .mcf-act.active{background:var(--color-primary,#0f766e);color:var(--color-primary-content,#fff);}
     #${PANEL_ID} .mcf-em{position:relative;}
-    #${PANEL_ID} .mcf-em-btn{display:flex;align-items:center;gap:2px;height:22px;padding:0 6px;border-radius:6px;border:1px solid var(--color-base-300,rgba(0,0,0,0.12));background:transparent;color:inherit;cursor:pointer;font-size:11px;}
-    #${PANEL_ID} .mcf-em-btn img{width:16px;height:16px;image-rendering:pixelated;}
+    #${PANEL_ID} .mcf-em-btn{display:flex;align-items:center;gap:2px;height:22px;padding:0 6px;border-radius:6px;border:1px solid var(--color-base-300,rgba(0,0,0,0.12));background:transparent;color:inherit;cursor:pointer;font-size:11px;flex-shrink:0;}
+    #${PANEL_ID} .mcf-em-btn img{width:16px;height:16px;flex-shrink:0;object-fit:contain;image-rendering:pixelated;}
     #${PANEL_ID} .mcf-em-dropdown{position:absolute;top:calc(100% + 4px);left:0;display:none;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:6px;background:var(--color-base-100,#fff);border:1px solid var(--color-base-300,rgba(0,0,0,0.12));border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.18);z-index:42;min-width:200px;}
     #${PANEL_ID} .mcf-em-dropdown.open{display:grid;}
     #${PANEL_ID} .mcf-em-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px;background:transparent;border:1.5px solid var(--color-base-300,rgba(0,0,0,0.12));border-radius:6px;cursor:pointer;color:inherit;font-size:9px;}
@@ -62,6 +67,7 @@ const rgbToHex = (rgb: [number, number, number]): string =>
 export class MiniColorFilter {
   private panel: HTMLDivElement | null = null;
   private outsideClickHandler: ((e: MouseEvent) => void) | null = null;
+  private fabButton: HTMLButtonElement | null = null;
 
   constructor() {
     ensureStyles();
@@ -69,7 +75,11 @@ export class MiniColorFilter {
       id: FAB_ID,
       tip: "Mini Color Filter",
       icon: ICON_FILTER,
+      isActive: () => this.panel !== null,
       onClick: () => this.togglePanel(),
+      onCreate: (button) => {
+        this.fabButton = button;
+      },
     });
 
     // paint mode を抜けたら片付け (FAB は toolbar ごと消える)
@@ -94,6 +104,7 @@ export class MiniColorFilter {
       document.removeEventListener("click", this.outsideClickHandler);
       this.outsideClickHandler = null;
     }
+    if (this.fabButton) setPaintToolbarButtonActive(this.fabButton, false);
   }
 
   private openPanel(): void {
@@ -101,22 +112,37 @@ export class MiniColorFilter {
     panel.id = PANEL_ID;
     this.panel = panel;
 
+    const paletteButton = document.createElement("button");
+    paletteButton.type = "button";
+    paletteButton.className = "mcf-palette-btn";
+    paletteButton.title = "Open color filter";
+    paletteButton.setAttribute("aria-label", "Open color filter");
+    paletteButton.innerHTML = `<img src="${IMG_ICON_COLOR_FILTER}" alt="">`;
+    paletteButton.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.closePanel();
+      ColorFilter.getInstance()?.showModal();
+    });
+    panel.appendChild(paletteButton);
+
+    const sep0 = document.createElement("div");
+    sep0.className = "mcf-sep";
+    panel.appendChild(sep0);
+
     const actions = document.createElement("div");
     actions.className = "mcf-actions";
     panel.appendChild(actions);
 
     const mkAct = (
-      content: string,
+      label: string,
       title: string,
       onClick: () => void,
-      asHtml = false,
     ): HTMLButtonElement => {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "mcf-act";
       b.title = title;
-      if (asHtml) b.innerHTML = content;
-      else b.textContent = content;
+      b.textContent = label;
       b.addEventListener("click", onClick);
       return b;
     };
@@ -148,17 +174,12 @@ export class MiniColorFilter {
     colors.className = "mcf-colors";
     panel.appendChild(colors);
 
-    const sep3 = document.createElement("div");
-    sep3.className = "mcf-sep";
-    panel.appendChild(sep3);
-
-    panel.appendChild(mkAct(ICON_CLOSE, "Close", () => this.closePanel(), true));
-
     document.body.appendChild(panel);
     // toolbar のアイコン一覧の直下に出す
     const toolbar = getPaintToolbarContainer();
     if (toolbar) panel.style.top = `${toolbar.getBoundingClientRect().bottom + 6}px`;
     this.refreshColors();
+    if (this.fabButton) setPaintToolbarButtonActive(this.fabButton, true);
 
     // パネル外クリックで dropdown を閉じる
     this.outsideClickHandler = (e: MouseEvent) => {

@@ -4,6 +4,7 @@ export {
   refreshFrontTileLayer,
   upsertFrontTilePaintGuide,
   setFrontTilePaintGuideActive,
+  setFrontTilePaintGuideEnabled,
   clearFrontTilePaintGuideAll,
   clearFrontTilePaintGuide,
   clearFrontTilePaintGuideTile,

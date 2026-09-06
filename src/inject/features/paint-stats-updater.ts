@@ -29,6 +29,7 @@ for (const entry of colorpalette) {
 // キャッシュすることで同一タイルの複数ピクセルペイント時に再描画不要
 const tilePixelCache = new Map<string, Uint8ClampedArray>();
 const MAX_TILE_PIXEL_CACHE = 10;
+const GUIDE_TEMPLATE_PROXIMITY_PX = 10;
 const tileCacheOrder: string[] = [];
 const toPaddedTileKey = (tileX: number, tileY: number): string =>
   `${tileX.toString().padStart(4, "0")},${tileY.toString().padStart(4, "0")}`;
@@ -64,6 +65,16 @@ const getCachedTilePixels = (
     if (oldest) tilePixelCache.delete(oldest);
   }
   return data;
+};
+
+
+const isNearOpaqueTemplatePixel = (pixels: Uint8ClampedArray, width: number, height: number, pixelX: number, pixelY: number): boolean => {
+  const radius = GUIDE_TEMPLATE_PROXIMITY_PX;
+  for (let y = Math.max(0, pixelY - radius); y <= Math.min(height - 1, pixelY + radius); y++) for (let x = Math.max(0, pixelX - radius); x <= Math.min(width - 1, pixelX + radius); x++) {
+    const dx = x - pixelX, dy = y - pixelY;
+    if (dx * dx + dy * dy < radius * radius && pixels[(y * width + x) * 4 + 3] !== 0) return true;
+  }
+  return false;
 };
 
 // debounce 通知
@@ -120,7 +131,8 @@ const getPaintedRgbInt = (
  * ペイント1ピクセルの楽観的統計更新
  */
 export const handlePaintForStats = (
-  coord: CapturedPaintedCoordinate
+  coord: CapturedPaintedCoordinate,
+  updateStats = true,
 ): void => {
   const paintedRgbInt = getPaintedRgbInt(coord);
   if (paintedRgbInt == null) return;
@@ -136,6 +148,7 @@ export const handlePaintForStats = (
   let topOverlayRgbInt: number | null = null;
   let topOverlayOrder = -1;
   let hasTransparentTemplatePixel = false;
+  let isNearTemplatePixel = false;
 
   for (let order = 0; order < overlayLayers.length; order++) {
     const instance = overlayLayers[order];
@@ -166,7 +179,10 @@ export const handlePaintForStats = (
     const idx = (coord.pixelY * bitmap.width + coord.pixelX) * 4;
     if (idx + 3 >= pixels.length) continue;
     if (pixels[idx + 3] === 0) {
-      if (guideEnabled) hasTransparentTemplatePixel = true;
+      if (guideEnabled) {
+        hasTransparentTemplatePixel = true;
+        isNearTemplatePixel ||= isNearOpaqueTemplatePixel(pixels, bitmap.width, bitmap.height, coord.pixelX, coord.pixelY);
+      }
       continue; // 透明ピクセルはスキップ
     }
 
@@ -180,7 +196,7 @@ export const handlePaintForStats = (
     }
 
     // overlay のこの位置の色とペイントした色が一致 → matched +1
-    if (overlayRgbInt !== paintedRgbInt) continue;
+    if (!updateStats || overlayRgbInt !== paintedRgbInt) continue;
 
     const tileStatsMap = perTileColorStats.get(instance.imageKey);
     if (!tileStatsMap) continue;
@@ -203,7 +219,7 @@ export const handlePaintForStats = (
   if (!guideEnabled) return;
 
   if (topOverlayRgbInt == null) {
-    if (hasTransparentTemplatePixel) {
+    if (hasTransparentTemplatePixel && isNearTemplatePixel) {
       upsertFrontTilePaintGuide(
         coord.tileX,
         coord.tileY,
@@ -232,6 +248,17 @@ export const handlePaintForStats = (
   }
 
   clearFrontTilePaintGuide(coord.tileX, coord.tileY, coord.pixelX, coord.pixelY);
+};
+
+
+export const replayPaintGuideForCoordinates = (coordinates: Iterable<CapturedPaintedCoordinate>, shouldContinue: () => boolean): void => {
+  const iterator = coordinates[Symbol.iterator]();
+  const replayNextBatch = (): void => {
+    if (!shouldContinue()) return;
+    for (let i = 0; i < 100; i++) { const next = iterator.next(); if (next.done) return; handlePaintForStats(next.value, false); }
+    requestAnimationFrame(replayNextBatch);
+  };
+  requestAnimationFrame(replayNextBatch);
 };
 
 export const handlePaintDeleteForStats = (

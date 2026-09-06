@@ -22,7 +22,6 @@ import { ColorIsolate } from "@/features/color-isolate";
 import { PositionInfo } from "@/features/position-info";
 import { initPaintStats } from "@/features/paint-stats";
 import { PaintToolbar } from "@/features/paint-toolbar";
-import { PaletteToggle } from "@/features/palette-toggle";
 import { PaintGuideToggle } from "@/features/paint-guide-toggle";
 import { ShowUnplacedOnly } from "@/features/show-unplaced-only";
 import {
@@ -31,7 +30,7 @@ import {
 } from "@/states/selectedColorOnlyMark";
 import { sendSelectedColorOnlyMarkToInject } from "@/core/bridge";
 import { LockButtonEnhancer } from "@/features/lock-button-enhancer";
-import { PaintPixelIcon } from "@/features/paint-pixel-icon";
+import { restoreLegacyPaletteVisibility } from "@/features/legacy-palette-cleanup";
 import { UserStatusHint } from "@/features/user-status-hint";
 import { CloseConfirm } from "@/features/close-confirm";
 import { PaintModeStyle } from "@/features/paint-mode-style";
@@ -103,7 +102,7 @@ export const initializeFeatures = async () => {
   safeInit("miniColorFilter", () => new MiniColorFilter());
   const colorFilterManager = new ColorFilterManager();
   safeInit("paintToolbar", () => new PaintToolbar());
-  safeInit("paletteToggle", () => new PaletteToggle());
+  safeInitAsync("legacyPaletteCleanup", restoreLegacyPaletteVisibility);
   safeInit("paintGuideToggle", () => new PaintGuideToggle());
   const colorIsolate = new ColorIsolate();
   const autoSpoit = new DevInject(colorFilterManager, colorIsolate);
@@ -114,7 +113,6 @@ export const initializeFeatures = async () => {
     sendSelectedColorOnlyMarkToInject(getSelectedColorOnlyMark());
   });
   safeInit("lockButtonEnhancer", () => new LockButtonEnhancer());
-  safeInit("paintPixelIcon", () => new PaintPixelIcon());
   safeInit("userStatusHint", () => new UserStatusHint());
   safeInit("closeConfirm", () => new CloseConfirm());
   safeInit("paintModeStyle", () => new PaintModeStyle());

@@ -15,6 +15,7 @@ export {
   setupFrontTileLayerOnMapReady,
   refreshFrontTileLayer,
   setFrontTilePaintGuideActive,
+  setFrontTilePaintGuideEnabled,
   clearFrontTilePaintGuideAll,
   clearFrontTilePaintGuide,
 } from "./front-tile-layer";
