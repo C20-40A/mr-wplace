@@ -1,5 +1,5 @@
 import { setupElementObserver } from "@/components/element-observer";
-import { findPaintPixelControls } from "@/constants/selectors";
+import { getPaintToolbarContainer } from "@/features/paint-toolbar";
 import { PaletteToggleStorage } from "./storage";
 
 const COLOR_SELECTOR = "#color-1";
@@ -65,7 +65,7 @@ export class PaletteToggle {
     setupElementObserver([
       {
         id: "palette-toggle-btn",
-        getTargetElement: findPaintPixelControls,
+        getTargetElement: getPaintToolbarContainer,
         createElement: (container) => {
           const wrapper = document.createElement("div");
           wrapper.className = "relative";

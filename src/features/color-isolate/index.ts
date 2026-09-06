@@ -1,5 +1,5 @@
 import { setupElementObserver } from "../../components/element-observer";
-import { findPaintPixelControls } from "../../constants/selectors";
+import { getPaintToolbarContainer } from "@/features/paint-toolbar";
 import { createColorIsolateButton } from "./ui";
 import { sendColorFilterToInject } from "../../content";
 import { t } from "@/i18n/manager";
@@ -25,7 +25,7 @@ export class ColorIsolate {
     setupElementObserver([
       {
         id: "color-isolate-btn",
-        getTargetElement: findPaintPixelControls,
+        getTargetElement: getPaintToolbarContainer,
         createElement: (container) => {
           const tooltip = document.createElement("div");
           tooltip.className = "tooltip";

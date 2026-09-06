@@ -21,6 +21,7 @@ import { DevInject } from "@/features/developer";
 import { ColorIsolate } from "@/features/color-isolate";
 import { PositionInfo } from "@/features/position-info";
 import { initPaintStats } from "@/features/paint-stats";
+import { PaintToolbar } from "@/features/paint-toolbar";
 import { PaletteToggle } from "@/features/palette-toggle";
 import { ShowUnplacedOnly } from "@/features/show-unplaced-only";
 import {
@@ -100,6 +101,7 @@ export const initializeFeatures = async () => {
   safeInit("colorFilter", () => new ColorFilter());
   safeInit("miniColorFilter", () => new MiniColorFilter());
   const colorFilterManager = new ColorFilterManager();
+  safeInit("paintToolbar", () => new PaintToolbar());
   safeInit("paletteToggle", () => new PaletteToggle());
   const colorIsolate = new ColorIsolate();
   const autoSpoit = new DevInject(colorFilterManager, colorIsolate);

@@ -1,5 +1,5 @@
 import { setupElementObserver } from "@/components/element-observer";
-import { findPaintPixelControls } from "@/constants/selectors";
+import { getPaintToolbarContainer } from "@/features/paint-toolbar";
 import { sendShowUnplacedOnlyToInject } from "@/content";
 import { createShowUnplacedOnlyButton } from "./ui";
 import {
@@ -38,7 +38,7 @@ export class ShowUnplacedOnly {
     setupElementObserver([
       {
         id: "show-unplaced-only-btn",
-        getTargetElement: findPaintPixelControls,
+        getTargetElement: getPaintToolbarContainer,
         createElement: (container) => {
           const tooltip = document.createElement("div");
           tooltip.className = "tooltip";
