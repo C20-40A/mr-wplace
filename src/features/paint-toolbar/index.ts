@@ -3,15 +3,10 @@ import { subscribePaintMode } from "@/utils/paint-mode";
 
 export const PAINT_TOOLBAR_ID = "mr-wplace-paint-toolbar";
 const PAINT_MODE_CLASS = "mr-wplace-paint-mode";
+const PAINT_TOOLBAR_FALLBACK_CLASS = "mr-wplace-paint-toolbar-fallback";
 const STYLE_ID = "mr-wplace-paint-toolbar-style";
 
-/**
- * paint mode 中だけ表示されるフローティングツールバー
- * 位置は user-status-container と同じ (上部中央)
- *
- * paint modal 内へ直接ボタンを差し込む代わりに、
- * 各featureはこのコンテナを getTargetElement に指定して集約する
- */
+/** paint mode 中だけ表示される拡張ボタンのコンテナ */
 export const getPaintToolbarContainer = (): HTMLElement | null =>
   document.getElementById(PAINT_TOOLBAR_ID);
 
@@ -20,12 +15,11 @@ const ensureStyles = (): void => {
 
   const style = document.createElement("style");
   style.id = STYLE_ID;
-  // paint mode 中は user-status を隠し、その位置をツールバーが引き継ぐ
-  // developer trigger はツールバーと重なるため paint mode 中は隠す
-  // ボタンが1つも入らなかった場合は空の箱を見せない
+  // フォールバック時だけ上部の既存UIと重なるため、それらを隠す。
+  // ボタンが1つも入らなかった場合は空の箱を見せない。
   style.textContent = `
-    .${PAINT_MODE_CLASS} #user-status-container{display:none !important;}
-    .${PAINT_MODE_CLASS} #dev-trigger-btn{display:none !important;}
+    .${PAINT_MODE_CLASS}.${PAINT_TOOLBAR_FALLBACK_CLASS} #user-status-container{display:none !important;}
+    .${PAINT_MODE_CLASS}.${PAINT_TOOLBAR_FALLBACK_CLASS} #dev-trigger-btn{display:none !important;}
     #${PAINT_TOOLBAR_ID}:empty{display:none;}.mr-paint-tb-btn{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:34px;height:32px;min-height:32px;padding:0;border-radius:8px;}.mr-paint-tb-btn svg,.mr-paint-tb-btn img{width:19px !important;height:19px !important;}.mr-paint-tb-label{font-size:8px;line-height:9px;font-weight:600;letter-spacing:-.02em;white-space:nowrap;pointer-events:none;}.mr-template-percent{position:absolute;bottom:1px;left:2px;right:2px;z-index:1;font-size:8px;font-weight:700;line-height:9px;color:white;background:rgba(0,0,0,.65);border-radius:4px;text-align:center;}.mr-template-thumb{width:28px;height:19px;margin-bottom:2px;object-fit:cover;border-radius:4px;background:var(--color-base-300);display:block;}.mr-template-menu{position:absolute;top:calc(100% + 6px);left:0;width:190px;max-height:220px;overflow-y:auto;padding:4px;background:var(--color-base-100);border:1px solid rgba(0,0,0,.15);border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.2);z-index:31;text-align:left;}.mr-template-menu-item{width:100%;display:flex;align-items:center;gap:7px;padding:4px;border-radius:5px;background:transparent;border:0;color:inherit;text-align:left;font-size:11px;}.mr-template-menu-item:hover{background:var(--color-base-200);}.mr-template-menu-item img{width:30px;height:24px;object-fit:cover;border-radius:3px;background:var(--color-base-300);flex:none;}.mr-template-menu-item span{min-width:0;display:flex;flex-direction:column;}.mr-template-menu-progress{font-size:13px;line-height:15px;font-weight:700;}.mr-template-menu-title{font-size:9px;line-height:11px;opacity:.65;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.mr-template-menu-meter{display:none;width:100px;height:3px;margin-top:2px;overflow:hidden;border-radius:2px;background:var(--color-base-300);}.mr-template-menu-meter b{display:block;height:100%;background:var(--color-primary);transition:width .2s ease;}
   `;
   (document.head || document.documentElement).appendChild(style);
@@ -34,6 +28,24 @@ const ensureStyles = (): void => {
 const createToolbar = (): HTMLElement => {
   const toolbar = document.createElement("div");
   toolbar.id = PAINT_TOOLBAR_ID;
+  toolbar.style.cssText = "display:flex;align-items:center;gap:2px;pointer-events:all;";
+  return toolbar;
+};
+
+const placeToolbar = (toolbar: HTMLElement): boolean => {
+  const redo = document.querySelector<HTMLButtonElement>(
+    '.paint-toolbar button[aria-label="Redo"]',
+  );
+  const redoTooltip = redo?.closest<HTMLElement>(".tooltip");
+
+  // Tailwind の sm ブレークポイント以上では、公式の操作列に続けて置く。
+  if (window.matchMedia("(min-width: 640px)").matches && redoTooltip) {
+    toolbar.style.cssText =
+      "display:flex;align-items:center;gap:2px;margin-left:2px;pointer-events:all;";
+    redoTooltip.after(toolbar);
+    return false;
+  }
+
   toolbar.style.cssText = `
     position: absolute;
     top: 5px;
@@ -50,7 +62,8 @@ const createToolbar = (): HTMLElement => {
     border: 1px solid rgba(0, 0, 0, 0.1);
     z-index: 30;
   `;
-  return toolbar;
+  document.body.appendChild(toolbar);
+  return true;
 };
 
 export interface PaintToolbarButtonConfig {
@@ -135,12 +148,16 @@ export class PaintToolbar {
     document.documentElement.classList.add(PAINT_MODE_CLASS);
     if (getPaintToolbarContainer()) return;
 
-    document.body.appendChild(createToolbar());
+    document.documentElement.classList.toggle(
+      PAINT_TOOLBAR_FALLBACK_CLASS,
+      placeToolbar(createToolbar()),
+    );
     console.log("🧑‍🎨 : Paint toolbar created");
   }
 
   private deactivate(): void {
     document.documentElement.classList.remove(PAINT_MODE_CLASS);
+    document.documentElement.classList.remove(PAINT_TOOLBAR_FALLBACK_CLASS);
     getPaintToolbarContainer()?.remove();
   }
 

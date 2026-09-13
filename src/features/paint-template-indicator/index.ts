@@ -94,8 +94,13 @@ export class PaintTemplateIndicator {
   }
 
   private async refreshAvailability(): Promise<void> {
-    const metadata = await getAllGalleryMetadata();
-    this.hasTemplates = metadata.some((item) => item.visible && item.coords);
+    try {
+      const metadata = await getAllGalleryMetadata();
+      this.hasTemplates = metadata.some((item) => item.visible && item.coords);
+    } catch (error) {
+      console.warn("🧑‍🎨 : Failed to load template availability", error);
+      this.hasTemplates = false;
+    }
     this.renderCurrent();
   }
 
@@ -133,7 +138,14 @@ export class PaintTemplateIndicator {
     this.button.parentElement?.appendChild(menu);
     this.menu = menu;
 
-    const metadata = await getAllGalleryMetadata();
+    let metadata: GalleryMetadata[];
+    try {
+      metadata = await getAllGalleryMetadata();
+    } catch (error) {
+      console.warn("🧑‍🎨 : Failed to load template menu", error);
+      if (this.menu === menu) menu.textContent = "テンプレートを読み込めませんでした";
+      return;
+    }
     const templates = metadata
       .filter(
         (item): item is typeof item & { coords: NonNullable<typeof item.coords> } =>
