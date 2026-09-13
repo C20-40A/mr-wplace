@@ -32,19 +32,25 @@ const createToolbar = (): HTMLElement => {
   return toolbar;
 };
 
-const placeToolbar = (toolbar: HTMLElement): boolean => {
+const placeToolbarBesideRedo = (toolbar: HTMLElement): boolean => {
   const redo = document.querySelector<HTMLButtonElement>(
     '.paint-toolbar button[aria-label="Redo"]',
   );
   const redoTooltip = redo?.closest<HTMLElement>(".tooltip");
+  if (!redoTooltip) return false;
 
+  toolbar.style.cssText =
+    "display:flex;align-items:center;gap:2px;margin-left:2px;pointer-events:all;";
+  redoTooltip.after(toolbar);
+  return true;
+};
+
+const placeToolbar = (toolbar: HTMLElement): boolean => {
   // Tailwind の sm ブレークポイント以上では、公式の操作列に続けて置く。
-  if (window.matchMedia("(min-width: 640px)").matches && redoTooltip) {
-    toolbar.style.cssText =
-      "display:flex;align-items:center;gap:2px;margin-left:2px;pointer-events:all;";
-    redoTooltip.after(toolbar);
-    return false;
-  }
+  if (
+    window.matchMedia("(min-width: 640px)").matches &&
+    placeToolbarBesideRedo(toolbar)
+  ) return false;
 
   toolbar.style.cssText = `
     position: absolute;
@@ -136,6 +142,7 @@ export const registerPaintToolbarButton = ({
 
 export class PaintToolbar {
   private unsubscribe: (() => void) | null = null;
+  private placementObserver: MutationObserver | null = null;
 
   constructor() {
     ensureStyles();
@@ -148,14 +155,39 @@ export class PaintToolbar {
     document.documentElement.classList.add(PAINT_MODE_CLASS);
     if (getPaintToolbarContainer()) return;
 
+    const toolbar = createToolbar();
+    const isFallback = placeToolbar(toolbar);
     document.documentElement.classList.toggle(
       PAINT_TOOLBAR_FALLBACK_CLASS,
-      placeToolbar(createToolbar()),
+      isFallback,
     );
+    if (isFallback) this.moveToDesktopToolbarWhenReady(toolbar);
     console.log("🧑‍🎨 : Paint toolbar created");
   }
 
+  private moveToDesktopToolbarWhenReady(toolbar: HTMLElement): void {
+    if (!window.matchMedia("(min-width: 640px)").matches) return;
+
+    const move = (): boolean => {
+      if (!toolbar.isConnected || !placeToolbarBesideRedo(toolbar)) return false;
+      document.documentElement.classList.remove(PAINT_TOOLBAR_FALLBACK_CLASS);
+      return true;
+    };
+    if (move()) return;
+
+    this.placementObserver?.disconnect();
+    const observer = new MutationObserver(() => {
+      if (!move()) return;
+      observer.disconnect();
+      if (this.placementObserver === observer) this.placementObserver = null;
+    });
+    this.placementObserver = observer;
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
   private deactivate(): void {
+    this.placementObserver?.disconnect();
+    this.placementObserver = null;
     document.documentElement.classList.remove(PAINT_MODE_CLASS);
     document.documentElement.classList.remove(PAINT_TOOLBAR_FALLBACK_CLASS);
     getPaintToolbarContainer()?.remove();

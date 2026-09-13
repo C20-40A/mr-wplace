@@ -109,7 +109,7 @@ export class PaintTemplateIndicator {
     this.button.style.display = this.hasTemplates ? "inline-flex" : "none";
 
     const template = this.currentTemplate;
-    const percent = this.progress?.id === template?.id
+    const percent = this.progress?.id === template?.id && this.progress
       ? `${Math.round(this.progress.percentage)}%`
       : "—";
     this.button.title = template?.title || "テンプレートを選択";
