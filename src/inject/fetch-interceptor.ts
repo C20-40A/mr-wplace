@@ -258,6 +258,12 @@ const setupFrontTileXhrInterceptor = (): void => {
         cleanupBlobUrl();
         meta.blobUrl = URL.createObjectURL(blob);
 
+        // MapLibre requests raster tiles as ArrayBuffers. Re-opening an XHR
+        // resets request state; Edge resets responseType to the default text
+        // response here. Preserve it, or MapLibre drops the overlay tile after
+        // receiving corrupt text-decoded bytes.
+        const responseType = xhr.responseType;
+
         originalOpen.call(
           xhr,
           meta.method,
@@ -266,6 +272,7 @@ const setupFrontTileXhrInterceptor = (): void => {
           meta.user,
           meta.password,
         );
+        if (responseType) xhr.responseType = responseType;
         for (const header of meta.headers) {
           try {
             originalSetRequestHeader.call(xhr, header.name, header.value);
