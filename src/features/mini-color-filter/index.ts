@@ -28,7 +28,7 @@ const ensureStyles = (): void => {
   const style = document.createElement("style");
   style.id = STYLE_ID;
   style.textContent = `
-    #${PANEL_ID}{position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:41;display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--color-base-100,#fff);color:var(--color-base-content,#222);border:1px solid var(--color-base-300,rgba(0,0,0,0.12));border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,0.18);max-width:calc(100vw - 16px);}
+    #${PANEL_ID}{position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--color-base-100,#fff);color:var(--color-base-content,#222);border:1px solid var(--color-base-300,rgba(0,0,0,0.12));border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,0.18);max-width:calc(100vw - 16px);}
     #${PANEL_ID} .mcf-actions{display:flex;flex-direction:column;gap:2px;flex:none;align-self:stretch;justify-content:center;}
     #${PANEL_ID} .mcf-palette-btn{width:28px;align-self:stretch;display:flex;align-items:center;justify-content:center;border-radius:7px;border:1px solid var(--color-base-300,rgba(0,0,0,0.12));background:transparent;color:inherit;cursor:pointer;padding:3px;flex:none;}
     #${PANEL_ID} .mcf-palette-btn:hover{background:var(--color-base-200,rgba(0,0,0,0.06));}
@@ -39,8 +39,9 @@ const ensureStyles = (): void => {
     #${PANEL_ID} .mcf-em{position:relative;}
     #${PANEL_ID} .mcf-em-btn{display:flex;align-items:center;gap:2px;height:22px;padding:0 6px;border-radius:6px;border:1px solid var(--color-base-300,rgba(0,0,0,0.12));background:transparent;color:inherit;cursor:pointer;font-size:11px;flex-shrink:0;}
     #${PANEL_ID} .mcf-em-btn img{width:16px;height:16px;flex-shrink:0;object-fit:contain;image-rendering:pixelated;}
-    #${PANEL_ID} .mcf-em-dropdown{position:absolute;top:calc(100% + 4px);left:0;display:none;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:6px;background:var(--color-base-100,#fff);border:1px solid var(--color-base-300,rgba(0,0,0,0.12));border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.18);z-index:42;min-width:200px;}
+    #${PANEL_ID} .mcf-em-dropdown{position:absolute;top:calc(100% + 4px);left:0;display:none;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:6px;background:var(--color-base-100,#fff);border:1px solid var(--color-base-300,rgba(0,0,0,0.12));border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.18);z-index:61;min-width:200px;}
     #${PANEL_ID} .mcf-em-dropdown.open{display:grid;}
+    #${PANEL_ID}.mcf-up .mcf-em-dropdown{top:auto;bottom:calc(100% + 4px);}
     #${PANEL_ID} .mcf-em-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px;background:transparent;border:1.5px solid var(--color-base-300,rgba(0,0,0,0.12));border-radius:6px;cursor:pointer;color:inherit;font-size:9px;}
     #${PANEL_ID} .mcf-em-item img{width:22px;height:22px;image-rendering:pixelated;}
     #${PANEL_ID} .mcf-em-item.selected{border-color:var(--color-primary,#22c55e);background:var(--color-primary,#22c55e);color:var(--color-primary-content,#fff);}
@@ -51,7 +52,6 @@ const ensureStyles = (): void => {
     #${PANEL_ID} .mcf-color{width:16px;height:16px;border-radius:3px;border:1px solid rgba(0,0,0,0.2);cursor:pointer;padding:0;position:relative;}
     #${PANEL_ID} .mcf-color.off{opacity:0.25;}
     #${PANEL_ID} .mcf-color.off::after{content:"";position:absolute;inset:0;background:linear-gradient(45deg,transparent 45%,rgba(0,0,0,0.6) 45%,rgba(0,0,0,0.6) 55%,transparent 55%);border-radius:inherit;}
-    #${PANEL_ID} .mcf-sep{width:1px;align-self:stretch;background:var(--color-base-300,rgba(0,0,0,0.12));margin:0 2px;}
   `;
   document.head.appendChild(style);
 };
@@ -126,10 +126,6 @@ export class MiniColorFilter {
     });
     panel.appendChild(paletteButton);
 
-    const sep0 = document.createElement("div");
-    sep0.className = "mcf-sep";
-    panel.appendChild(sep0);
-
     const actions = document.createElement("div");
     actions.className = "mcf-actions";
     panel.appendChild(actions);
@@ -161,24 +157,26 @@ export class MiniColorFilter {
       }),
     );
 
-    const sep1 = document.createElement("div");
-    sep1.className = "mcf-sep";
-    panel.appendChild(sep1);
-
     panel.appendChild(this.buildEnhancedModeSelect());
-
-    const sep2 = document.createElement("div");
-    sep2.className = "mcf-sep";
-    panel.appendChild(sep2);
 
     const colors = document.createElement("div");
     colors.className = "mcf-colors";
     panel.appendChild(colors);
 
     document.body.appendChild(panel);
-    // toolbar のアイコン一覧の直下に出す
+    // toolbar が paint panel 内に inject されている場合は上、独立表示なら直下に出す
     const toolbar = getPaintToolbarContainer();
-    if (toolbar) panel.style.top = `${toolbar.getBoundingClientRect().bottom + 6}px`;
+    if (toolbar) {
+      const rect = toolbar.getBoundingClientRect();
+      const insidePaintPanel = toolbar.parentElement !== document.body;
+      panel.classList.toggle("mcf-up", insidePaintPanel);
+      if (insidePaintPanel) {
+        panel.style.top = "auto";
+        panel.style.bottom = `${window.innerHeight - rect.top + 6}px`;
+      } else {
+        panel.style.top = `${rect.bottom + 6}px`;
+      }
+    }
     this.refreshColors();
     if (this.fabButton) setPaintToolbarButtonActive(this.fabButton, true);
 
