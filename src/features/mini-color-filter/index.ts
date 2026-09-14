@@ -68,6 +68,9 @@ export class MiniColorFilter {
   private panel: HTMLDivElement | null = null;
   private outsideClickHandler: ((e: MouseEvent) => void) | null = null;
   private fabButton: HTMLButtonElement | null = null;
+  private unsubscribeFilter: (() => void) | null = null;
+  private renderEnhancedItems: (() => void) | null = null;
+  private colorButtons: Array<{ id: number; el: HTMLButtonElement }> = [];
 
   constructor() {
     ensureStyles();
@@ -101,6 +104,10 @@ export class MiniColorFilter {
   private closePanel(): void {
     this.panel?.remove();
     this.panel = null;
+    this.unsubscribeFilter?.();
+    this.unsubscribeFilter = null;
+    this.renderEnhancedItems = null;
+    this.colorButtons = [];
     if (this.outsideClickHandler) {
       document.removeEventListener("click", this.outsideClickHandler);
       this.outsideClickHandler = null;
@@ -147,13 +154,11 @@ export class MiniColorFilter {
     actions.appendChild(
       mkAct(LABEL_ALL, "All", async () => {
         await applySelectedColors(colorpalette.map((c) => c.id));
-        this.refreshColors();
       }),
     );
     actions.appendChild(
       mkAct(LABEL_NONE, "None", async () => {
         await applySelectedColors([]);
-        this.refreshColors();
       }),
     );
 
@@ -162,6 +167,7 @@ export class MiniColorFilter {
     const colors = document.createElement("div");
     colors.className = "mcf-colors";
     panel.appendChild(colors);
+    this.buildColors(colors);
 
     document.body.appendChild(panel);
     // toolbar が paint panel 内に inject されている場合は上、独立表示なら直下に出す
@@ -177,8 +183,13 @@ export class MiniColorFilter {
         panel.style.top = `${rect.bottom + 6}px`;
       }
     }
-    this.refreshColors();
+    this.refresh();
     if (this.fabButton) setPaintToolbarButtonActive(this.fabButton, true);
+
+    // color-isolate など外部からの filter 変更に追従する
+    this.unsubscribeFilter =
+      window.mrWplace?.colorFilterManager?.onChange(() => this.refresh()) ??
+      null;
 
     // パネル外クリックで dropdown を閉じる
     this.outsideClickHandler = (e: MouseEvent) => {
@@ -217,6 +228,7 @@ export class MiniColorFilter {
       const mode = mgr2?.getEnhancedMode() ?? "cross";
       const color = mgr2?.getEnhancedColor() ?? [255, 0, 0];
       const items = createEnhancedModeIcons(rgbToHex(color));
+      btn.innerHTML = `<img src="${items[mode]}" alt="${mode}">`;
       dropdown.innerHTML = "";
       for (const opt of ENHANCED_MODE_OPTIONS) {
         const item = document.createElement("button");
@@ -227,13 +239,13 @@ export class MiniColorFilter {
         item.addEventListener("click", (e) => {
           e.stopPropagation();
           applyEnhancedMode(opt.value);
-          btn.innerHTML = `<img src="${items[opt.value]}" alt="${opt.value}">`;
-          renderItems();
           this.closeEnhancedDropdown();
         });
         dropdown.appendChild(item);
       }
     };
+
+    this.renderEnhancedItems = renderItems;
 
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -249,20 +261,23 @@ export class MiniColorFilter {
     return wrap;
   }
 
+  /** manager の現在状態でパネル表示を再構築 */
+  private refresh(): void {
+    if (!this.panel) return;
+    this.renderEnhancedItems?.();
+    this.refreshColors();
+  }
+
   private closeEnhancedDropdown(): void {
     this.panel?.querySelector(".mcf-em-dropdown")?.classList.remove("open");
   }
 
-  private refreshColors(): void {
-    if (!this.panel) return;
-    const container = this.panel.querySelector<HTMLDivElement>(".mcf-colors");
-    if (!container) return;
-    const active = getActiveColorIds();
-    container.innerHTML = "";
-    for (const c of colorpalette) {
+  /** 色ボタンは生成し直さず class の付け外しだけで状態を反映する */
+  private buildColors(container: HTMLDivElement): void {
+    this.colorButtons = colorpalette.map((c) => {
       const b = document.createElement("button");
       b.type = "button";
-      b.className = `mcf-color${active.has(c.id) ? "" : " off"}`;
+      b.className = "mcf-color";
       b.style.backgroundColor = `rgb(${c.rgb[0]},${c.rgb[1]},${c.rgb[2]})`;
       b.title = c.name;
       b.addEventListener("click", async () => {
@@ -270,15 +285,20 @@ export class MiniColorFilter {
         if (cur.has(c.id)) cur.delete(c.id);
         else cur.add(c.id);
         await applySelectedColors([...cur]);
-        this.refreshColors();
       });
       b.addEventListener("dblclick", async (e) => {
         e.preventDefault();
         e.stopPropagation();
         await applySelectedColors([c.id]);
-        this.refreshColors();
       });
       container.appendChild(b);
-    }
+      return { id: c.id, el: b };
+    });
+  }
+
+  private refreshColors(): void {
+    const active = getActiveColorIds();
+    for (const { id, el } of this.colorButtons)
+      el.classList.toggle("off", !active.has(id));
   }
 }

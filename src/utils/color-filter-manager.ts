@@ -17,6 +17,7 @@ export class ColorFilterManager {
   private extraColorsBitmap: number | undefined = undefined;
   private showUnplacedColorSaveTimer: ReturnType<typeof setTimeout> | null =
     null;
+  private changeListeners = new Set<() => void>();
 
   constructor() {
     this.selectedColorIds = this.getDefaultColorIds();
@@ -30,9 +31,20 @@ export class ColorFilterManager {
     await this.loadShowUnplacedColorFromStorage();
   }
 
+  /** 選択色/Enhanced設定の変更を購読する (返り値で解除) */
+  onChange(listener: () => void): () => void {
+    this.changeListeners.add(listener);
+    return () => this.changeListeners.delete(listener);
+  }
+
+  private emitChange(): void {
+    for (const listener of this.changeListeners) listener();
+  }
+
   async setSelectedColors(colorIds: number[]): Promise<void> {
     this.selectedColorIds = new Set(colorIds);
     this.updateSelectedRGBs();
+    this.emitChange();
     await this.saveToStorage();
   }
 
@@ -129,6 +141,7 @@ export class ColorFilterManager {
 
   setEnhancedMode(mode: EnhancedMode): void {
     this.enhancedMode = mode;
+    this.emitChange();
     this.saveEnhancedModeToStorage();
   }
 
@@ -138,6 +151,7 @@ export class ColorFilterManager {
 
   setEnhancedColor(color: [number, number, number]): void {
     this.enhancedColor = color;
+    this.emitChange();
     this.saveEnhancedColorToStorage();
   }
 
