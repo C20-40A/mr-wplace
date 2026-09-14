@@ -7,6 +7,8 @@ import { sendColorFilterToInject } from "../../content";
 import { t } from "@/i18n/manager";
 import { showFeatureHint } from "@/features/feature-hints";
 import { ColorFilter } from "@/features/color-filter";
+import { showPaintNotice } from "@/components/paint-notice";
+import { colorpalette } from "@/constants/colors";
 
 export class ColorIsolate {
   private enabled: boolean = false;
@@ -136,6 +138,9 @@ export class ColorIsolate {
           "🧑‍🎨 : Color isolate enabled for color ID:",
           selectedColorId
         );
+        const colorName =
+          colorpalette.find((c) => c.id === selectedColorId)?.name ?? "";
+        showPaintNotice(t("notice_isolate_on").replace("{color}", colorName));
 
         // localStorage監視を開始
         this.startMonitoring();
@@ -151,6 +156,7 @@ export class ColorIsolate {
       sendColorFilterToInject(colorFilterManager);
       ColorFilter.getInstance()?.refreshFABBadge();
       console.log("🧑‍🎨 : Color isolate disabled, restored original colors");
+      showPaintNotice(t("notice_isolate_off"));
     }
   }
 }

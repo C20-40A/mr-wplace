@@ -8,6 +8,7 @@ import {
   setPaintGuide,
 } from "@/states/paint-guide";
 import { t } from "@/i18n";
+import { showPaintNotice } from "@/components/paint-notice";
 
 const BUTTON_ID = "paint-guide-toggle-btn";
 
@@ -47,6 +48,9 @@ export class PaintGuideToggle {
     await setPaintGuide(enabled);
     window.postMessage({ source: "mr-wplace-paint-guide-update", enabled }, "*");
     if (this.button) setPaintToolbarButtonActive(this.button, enabled);
+    showPaintNotice(
+      t(enabled ? "notice_paint_guide_on" : "notice_paint_guide_off"),
+    );
     console.log("🧑‍🎨 : Paint guide toggled:", enabled);
   }
 }

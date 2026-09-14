@@ -603,4 +603,9 @@ export const viTranslations = {
   hint_draft_fab_btn: "Vẽ nháp tự do trên bản đồ mà không tốn lượt",
   popup_paint_guide: "Chỉ báo khớp mẫu",
   popup_compact_bottom_sheet: "Bảng vẽ thu gọn (Beta)",
+  notice_isolate_on: "Chỉ hiển thị {color} trong mẫu",
+  notice_isolate_off: "Hiển thị tất cả màu của mẫu",
+  notice_paint_guide_on: "Làm nổi bật các pixel tô sai",
+  notice_paint_guide_off: "Ẩn chức năng làm nổi bật pixel tô sai",
+  notice_unplaced_on: "Đổi màu các pixel đã đặt trên mẫu",
 };

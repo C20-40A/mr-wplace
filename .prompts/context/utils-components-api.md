@@ -1,9 +1,9 @@
 # Utils / Components API Context
 
-- generated_at: 2026-06-29T10:49:22.627Z
+- generated_at: 2026-09-14T12:32:00.668Z
 - project: tsconfig.json
 - targets: src/utils, src/components
-- files: 32
+- files: 34
 
 ## src/components/card.ts
 
@@ -117,15 +117,15 @@
   - signature: `boolean`
 - variable `renderMissingItems` (L16)
   - signature: `(group: ObserverGroup) => void`
-- variable `renderAllGroups` (L33)
+- variable `renderAllGroups` (L41)
   - signature: `() => void`
-- variable `scheduleRenderAllGroups` (L37)
+- variable `scheduleRenderAllGroups` (L45)
   - signature: `() => void`
-- variable `shouldRenderGroup` (L46)
+- variable `shouldRenderGroup` (L54)
   - signature: `(group: ObserverGroup, mutations: MutationRecord[]) => boolean`
-- variable `ensureSharedObserver` (L54)
+- variable `ensureSharedObserver` (L62)
   - signature: `() => void`
-- export variable `setupElementObserver` (L72)
+- export variable `setupElementObserver` (L80)
   - signature: `(configs: ElementConfig[]) => void`
   - summary: Elementを監視して、存在しない場合に生成する 要素が削除された場合も再生成する
 
@@ -270,6 +270,32 @@
   - summary: 名称入力Modal - NOTE: 空文字は''。キャンセルの場合はnullを返す
 - export variable `createModal` (L308)
   - signature: `(options: ModalOptions) => ModalElements`
+
+## src/components/paint-notice.ts
+
+- exports: 1
+- top_level_declarations: 9
+- declarations:
+- variable `NOTICE_ID` (L3)
+  - signature: `"mr-wplace-paint-notice"`
+- variable `STYLE_ID` (L4)
+  - signature: `"mr-wplace-paint-notice-style"`
+- variable `DURATION_MS` (L5)
+  - signature: `2000`
+- variable `FADE_MS` (L6)
+  - signature: `160`
+- variable `ensureStyles` (L9)
+  - signature: `() => void`
+  - summary: paint panel 上の hint pill と同じ見た目。paint panel(z-50)より前面に出す
+- variable `hideTimer` (L20)
+  - signature: `ReturnType<typeof setTimeout> | null`
+- variable `removeTimer` (L21)
+  - signature: `ReturnType<typeof setTimeout> | null`
+- variable `positionNotice` (L23)
+  - signature: `(notice: HTMLDivElement) => void`
+- export variable `showPaintNotice` (L37)
+  - signature: `(message: string) => void`
+  - summary: 2秒だけ表示される通知。連続呼び出しは最新のメッセージで上書きする
 
 ## src/components/responsive-button.ts
 
@@ -797,6 +823,33 @@
   - signature: `(str: string) => number`
 - export variable `minidenticon` (L20)
   - signature: `(seed?: string, saturation?: number, lightness?: number, hashFn?: (str: string) => number) => string`
+
+## src/utils/paint-mode.ts
+
+- exports: 2
+- top_level_declarations: 9
+- declarations:
+- type `PaintModeListener` (L3)
+  - signature: `(active: boolean) => void`
+- variable `listeners` (L5)
+  - signature: `Set<PaintModeListener>`
+- variable `observer` (L6)
+  - signature: `MutationObserver | null`
+- variable `scheduled` (L7)
+  - signature: `boolean`
+- variable `active` (L8)
+  - signature: `boolean`
+- export variable `isPaintModeActive` (L11)
+  - signature: `() => boolean`
+  - summary: paint modal (Paint pixel) が開いているか
+- variable `notify` (L13)
+  - signature: `() => void`
+- variable `schedule` (L27)
+  - signature: `() => void`
+- export variable `subscribePaintMode` (L44)
+  - signature: `(listener: PaintModeListener, immediate?: boolean) => (() => void)`
+  - summary: paint modal の開閉を購読する MutationObserverは全購読者で1本のみ共有する
+  - tags: @param 状態が変化したときに呼ばれる | @param 購読時に現在の状態で1回呼ぶ (default: true) | @returns 購読解除関数
 
 ## src/utils/pixel-converters.ts
 

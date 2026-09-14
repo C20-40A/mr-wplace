@@ -12,6 +12,7 @@ import {
 } from "@/states/showUnplacedOnly";
 import { t } from "@/i18n";
 import { showFeatureHint } from "@/features/feature-hints";
+import { showPaintNotice } from "@/components/paint-notice";
 
 export class ShowUnplacedOnly {
   private button: HTMLButtonElement | null = null;
@@ -61,6 +62,7 @@ export class ShowUnplacedOnly {
     const newState = !getShowUnplacedOnly();
     await setShowUnplacedOnly(newState);
     sendShowUnplacedOnlyToInject(newState);
+    if (newState) showPaintNotice(t("notice_unplaced_on"));
     console.log("🧑‍🎨 : Show unplaced only toggled:", newState);
   }
 

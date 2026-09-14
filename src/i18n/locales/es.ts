@@ -617,4 +617,9 @@ export const esTranslations = {
   hint_draft_fab_btn: "Dibuja libremente en el mapa sin gastar cargas",
   popup_paint_guide: "Indicador de coincidencia de plantilla",
   popup_compact_bottom_sheet: "Panel de pintura compacto (Beta)",
+  notice_isolate_on: "Mostrando solo {color} en las plantillas",
+  notice_isolate_off: "Mostrando todos los colores de la plantilla",
+  notice_paint_guide_on: "Resaltando los píxeles mal colocados",
+  notice_paint_guide_off: "Se ocultó el resaltado de píxeles mal colocados",
+  notice_unplaced_on: "Cambiando el color de los píxeles ya colocados en la plantilla",
 };

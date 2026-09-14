@@ -608,4 +608,9 @@ export const ptTranslations = {
   hint_draft_fab_btn: "Rascunhe livremente no mapa sem gastar cargas",
   popup_paint_guide: "Indicador de correspondência do modelo",
   popup_compact_bottom_sheet: "Painel de pintura compacto (Beta)",
+  notice_isolate_on: "Mostrando apenas {color} nos modelos",
+  notice_isolate_off: "Mostrando todas as cores do modelo",
+  notice_paint_guide_on: "Destacando os pixels colocados errados",
+  notice_paint_guide_off: "Ocultando o destaque dos pixels colocados errados",
+  notice_unplaced_on: "Alterando a cor dos pixels já colocados no modelo",
 };

@@ -620,4 +620,9 @@ export const ruTranslations = {
   hint_draft_fab_btn: "Рисуйте черновик на карте свободно, не тратя заряды",
   popup_paint_guide: "Индикатор совпадения шаблона",
   popup_compact_bottom_sheet: "Компактная панель рисования (бета)",
+  notice_isolate_on: "Показывается только {color} в шаблонах",
+  notice_isolate_off: "Показываются все цвета шаблона",
+  notice_paint_guide_on: "Ошибочно закрашенные пиксели выделяются",
+  notice_paint_guide_off: "Выделение ошибочных пикселей скрыто",
+  notice_unplaced_on: "Цвет уже размещённых на шаблоне пикселей меняется",
 };

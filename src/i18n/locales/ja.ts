@@ -636,4 +636,9 @@ export const jaTranslations = {
   hint_draft_fab_btn: "チャージを消費せず地図に自由に下書きできます",
   popup_paint_guide: "テンプレ一致インジケーター",
   popup_compact_bottom_sheet: "コンパクトなペイントパネル (Beta)",
+  notice_isolate_on: "{color}のテンプレート色のみ表示します",
+  notice_isolate_off: "すべてのテンプレート色を表示します",
+  notice_paint_guide_on: "塗り間違えを目立たせます",
+  notice_paint_guide_off: "塗り間違えを目立たせる機能を非表示にします",
+  notice_unplaced_on: "テンプレートに配置したピクセルの色を変えます",
 };
