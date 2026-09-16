@@ -16,6 +16,7 @@ export {
   refreshFrontTileLayer,
   setFrontTilePaintGuideActive,
   setFrontTilePaintGuideEnabled,
+  setFrontTilePaintGuideKinds,
   clearFrontTilePaintGuideAll,
   clearFrontTilePaintGuide,
 } from "./front-tile-layer";

@@ -10,6 +10,7 @@ import {
   clearPaintGuidePointsTile,
   clearAllPaintGuidePoints,
   setPaintGuideActive,
+  setPaintGuideKinds,
   setupPaintGuideCanvas,
   destroyPaintGuideCanvas,
 } from "./paint-guide-canvas";
@@ -255,6 +256,12 @@ export const setFrontTilePaintGuideActive = (
 ): void => {
   paintGuideSessionActive = active;
   setPaintGuideActive(active && window.mrWplacePaintGuideEnabled !== false, options);
+};
+
+export const setFrontTilePaintGuideKinds = (
+  kinds: Partial<Record<"mismatch" | "overflow" | "already", boolean>>,
+): void => {
+  setPaintGuideKinds(kinds);
 };
 
 export const setFrontTilePaintGuideEnabled = (enabled: boolean): boolean => {

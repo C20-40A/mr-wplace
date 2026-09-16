@@ -181,13 +181,14 @@ const initializeMainFeatures = async () => {
     "*",
   );
 
-  const { loadPaintGuideFromStorage, getPaintGuide } =
+  const { loadPaintGuideFromStorage, getPaintGuide, getPaintGuideKinds } =
     await import("@/states/paint-guide");
   await loadPaintGuideFromStorage();
   window.postMessage(
     {
       source: "mr-wplace-paint-guide-update",
       enabled: getPaintGuide(),
+      kinds: getPaintGuideKinds(),
     },
     "*",
   );
@@ -319,10 +320,15 @@ const registerMessageListeners = () => {
     }
 
     if (message.type === "PAINT_GUIDE_CHANGED") {
+      // popup 側で保存済みなので、種別設定ごと読み直して inject に流す
+      const { loadPaintGuideFromStorage, getPaintGuide, getPaintGuideKinds } =
+        await import("@/states/paint-guide");
+      await loadPaintGuideFromStorage();
       window.postMessage(
         {
           source: "mr-wplace-paint-guide-update",
-          enabled: message.enabled,
+          enabled: getPaintGuide(),
+          kinds: getPaintGuideKinds(),
         },
         "*",
       );

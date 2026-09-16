@@ -7,6 +7,7 @@ import {
   setTransparentPixelFilterEnabled,
   clearFrontTilePaintGuideAll,
   setFrontTilePaintGuideEnabled,
+  setFrontTilePaintGuideKinds,
   getCapturedPaintedCoordinates,
 } from "../features/map-instance";
 import { replayPaintGuideForCoordinates } from "../features/paint-stats-updater";
@@ -184,8 +185,12 @@ export const handleFrontTileLayerUpdate = (data: {
 /**
  * Handle paint guide (template match indicator) toggle update
  */
-export const handlePaintGuideUpdate = (data: { enabled: boolean }): void => {
+export const handlePaintGuideUpdate = (data: {
+  enabled: boolean;
+  kinds?: Partial<Record<"mismatch" | "overflow" | "already", boolean>>;
+}): void => {
   window.mrWplacePaintGuideEnabled = data.enabled;
+  if (data.kinds) setFrontTilePaintGuideKinds(data.kinds);
   const canReplay = setFrontTilePaintGuideEnabled(data.enabled);
   if (!data.enabled) clearFrontTilePaintGuideAll();
   else if (canReplay) replayPaintGuideForCoordinates(getCapturedPaintedCoordinates().values(), () => window.mrWplacePaintGuideEnabled !== false);

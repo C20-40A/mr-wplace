@@ -605,7 +605,8 @@ export const viTranslations = {
   popup_compact_bottom_sheet: "Bảng vẽ thu gọn (Beta)",
   notice_isolate_on: "Chỉ hiển thị {color} trong mẫu",
   notice_isolate_off: "Hiển thị tất cả màu của mẫu",
-  notice_paint_guide_on: "Làm nổi bật các pixel tô sai",
-  notice_paint_guide_off: "Ẩn chức năng làm nổi bật pixel tô sai",
   notice_unplaced_on: "Đổi màu các pixel đã đặt trên mẫu",
+  paint_guide_kind_mismatch: "Tô sai",
+  paint_guide_kind_overflow: "Tràn ra",
+  paint_guide_kind_already: "Đã đặt",
 };

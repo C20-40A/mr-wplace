@@ -29,7 +29,14 @@ interface PaintGuidePoint {
   kind: "mismatch" | "overflow" | "already";
 }
 
+type PaintGuideKind = PaintGuidePoint["kind"];
+
 const points = new Map<string, PaintGuidePoint>();
+const enabledKinds: Record<PaintGuideKind, boolean> = {
+  mismatch: true,
+  overflow: true,
+  already: true,
+};
 let guideActive = false;
 let canvas: HTMLCanvasElement | null = null;
 let rafId: number | null = null;
@@ -207,12 +214,18 @@ export const upsertPaintGuidePoint = (
   tileY: number,
   pixelX: number,
   pixelY: number,
-  kind: "mismatch" | "overflow" | "already",
+  kind: PaintGuideKind,
 ): void => {
   if (!guideActive) return;
   if (pixelX < 0 || pixelY < 0 || pixelX >= 1000 || pixelY >= 1000) return;
 
   const key = getGuidePointKey(tileX, tileY, pixelX, pixelY);
+  // OFF の種別へ変化した点は残さない (前の種別のまま固まるのを防ぐ)
+  if (!enabledKinds[kind]) {
+    points.delete(key);
+    return;
+  }
+
   const existing = points.get(key);
   if (existing && existing.kind === kind) return;
 
@@ -244,6 +257,15 @@ export const clearPaintGuidePointsTile = (tileX: number, tileY: number): void =>
 
 export const clearAllPaintGuidePoints = (): void => {
   points.clear();
+};
+
+/** 種別ごとの表示 ON/OFF。OFF になった種別の点は即座に捨てる */
+export const setPaintGuideKinds = (
+  kinds: Partial<Record<PaintGuideKind, boolean>>,
+): void => {
+  Object.assign(enabledKinds, kinds);
+  for (const [key, point] of points)
+    if (!enabledKinds[point.kind]) points.delete(key);
 };
 
 export const setPaintGuideActive = (

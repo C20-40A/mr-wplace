@@ -626,7 +626,8 @@ export const frTranslations = {
   popup_compact_bottom_sheet: "Panneau de peinture compact (Bêta)",
   notice_isolate_on: "Affichage uniquement de {color} dans les modèles",
   notice_isolate_off: "Affichage de toutes les couleurs du modèle",
-  notice_paint_guide_on: "Mise en évidence des pixels mal placés",
-  notice_paint_guide_off: "Masquage de la mise en évidence des pixels mal placés",
   notice_unplaced_on: "Changement de couleur des pixels déjà placés sur le modèle",
+  paint_guide_kind_mismatch: "Mal placé",
+  paint_guide_kind_overflow: "Débordement",
+  paint_guide_kind_already: "Déjà placé",
 };

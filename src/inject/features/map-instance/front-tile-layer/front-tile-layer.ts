@@ -5,6 +5,7 @@ export {
   upsertFrontTilePaintGuide,
   setFrontTilePaintGuideActive,
   setFrontTilePaintGuideEnabled,
+  setFrontTilePaintGuideKinds,
   clearFrontTilePaintGuideAll,
   clearFrontTilePaintGuide,
   clearFrontTilePaintGuideTile,
