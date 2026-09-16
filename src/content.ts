@@ -193,6 +193,21 @@ const initializeMainFeatures = async () => {
     "*",
   );
 
+  const {
+    loadPaintBeaconFromStorage,
+    getPaintBeacon,
+    getPaintBeaconThreshold,
+  } = await import("@/states/paint-beacon");
+  await loadPaintBeaconFromStorage();
+  window.postMessage(
+    {
+      source: "mr-wplace-paint-beacon-update",
+      enabled: getPaintBeacon(),
+      threshold: getPaintBeaconThreshold(),
+    },
+    "*",
+  );
+
   const { loadOverlayLightweightModeFromStorage, getOverlayLightweightMode } =
     await import("@/states/overlay-lightweight-mode");
   await loadOverlayLightweightModeFromStorage();

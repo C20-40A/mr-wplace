@@ -11,6 +11,7 @@ import {
   getCapturedPaintedCoordinates,
 } from "../features/map-instance";
 import { replayPaintGuideForCoordinates } from "../features/paint-stats-updater";
+import { setBeaconSettings } from "../features/beacon";
 
 const COLOR_FILTER_REFRESH_DEBOUNCE_MS = 120;
 let colorFilterRefreshTimer: ReturnType<typeof setTimeout> | null = null;
@@ -195,6 +196,19 @@ export const handlePaintGuideUpdate = (data: {
   if (!data.enabled) clearFrontTilePaintGuideAll();
   else if (canReplay) replayPaintGuideForCoordinates(getCapturedPaintedCoordinates().values(), () => window.mrWplacePaintGuideEnabled !== false);
   console.log("🧑‍🎨 : Paint guide indicator updated:", data.enabled);
+};
+
+export const handlePaintBeaconUpdate = (data: {
+  enabled: boolean;
+  threshold: number;
+}): void => {
+  setBeaconSettings({ enabled: data.enabled, threshold: data.threshold });
+  console.log(
+    "🧑‍🎨 : Paint beacon updated:",
+    data.enabled,
+    "threshold:",
+    data.threshold,
+  );
 };
 
 export const handleTransparentPixelFilterUpdate = (data: {

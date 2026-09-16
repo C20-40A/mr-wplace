@@ -11,8 +11,28 @@ import {
   PAINT_GUIDE_KINDS,
   type PaintGuideKind,
 } from "@/states/paint-guide";
+import {
+  loadPaintBeaconFromStorage,
+  getPaintBeacon,
+  getPaintBeaconThreshold,
+  setPaintBeacon,
+  setPaintBeaconThreshold,
+  BEACON_THRESHOLD_MIN,
+  BEACON_THRESHOLD_MAX,
+  BEACON_THRESHOLD_STEP,
+} from "@/states/paint-beacon";
+import {
+  loadFrontTileLayerFromStorage,
+  getFrontTileLayer,
+  setFrontTileLayer,
+} from "@/states/front-tile-layer";
+import {
+  getOverlayLightweightMode,
+  setOverlayLightweightMode,
+} from "@/states/overlay-lightweight-mode";
 import { t } from "@/i18n";
 import { subscribePaintMode } from "@/utils/paint-mode";
+import { showPaintNotice } from "@/components/paint-notice";
 
 const BUTTON_ID = "paint-guide-toggle-btn";
 const PANEL_ID = "paint-guide-panel";
@@ -26,6 +46,8 @@ const ICON = `
 `;
 
 /** paint-guide-canvas のドット色と揃える */
+const BEACON_COLOR = "#ff0000";
+
 const KIND_COLOR: Record<PaintGuideKind, string> = {
   mismatch: "#ffbf00",
   overflow: "#a855f7",
@@ -36,6 +58,19 @@ const KIND_LABEL_KEY: Record<PaintGuideKind, string> = {
   mismatch: "paint_guide_kind_mismatch",
   overflow: "paint_guide_kind_overflow",
   already: "paint_guide_kind_already",
+};
+
+/** トグル操作時に出す説明 hint (on/off) */
+const KIND_NOTICE_KEY: Record<PaintGuideKind, [string, string]> = {
+  mismatch: [
+    "notice_paint_guide_mismatch_on",
+    "notice_paint_guide_mismatch_off",
+  ],
+  overflow: [
+    "notice_paint_guide_overflow_on",
+    "notice_paint_guide_overflow_off",
+  ],
+  already: ["notice_paint_guide_already_on", "notice_paint_guide_already_off"],
 };
 
 const ensureStyles = (): void => {
@@ -52,6 +87,14 @@ const ensureStyles = (): void => {
     #${PANEL_ID} .pg-item.on{border-color:var(--color-primary,#0f766e);}
     #${PANEL_ID} .pg-item.on .pg-state{opacity:1;color:var(--color-primary,#0f766e);}
     #${PANEL_ID} .pg-item.off .pg-dot{opacity:.25;}
+    #${PANEL_ID} .pg-sep{height:1px;margin:2px 0;background:var(--color-base-300,rgba(0,0,0,0.12));}
+    #${PANEL_ID} .pg-slider{display:flex;flex-direction:column;gap:3px;padding:2px 7px 4px;}
+    #${PANEL_ID} .pg-slider[hidden]{display:none;}
+    #${PANEL_ID} .pg-slider input{width:100%;accent-color:var(--color-primary,#0f766e);}
+    #${PANEL_ID} .pg-slider-desc{font-size:9px;line-height:12px;opacity:.65;}
+    #${PANEL_ID} .pg-warn{display:flex;flex-direction:column;gap:5px;max-width:190px;margin-top:2px;padding:6px 7px;border-radius:8px;border:1px solid var(--color-warning,#f59e0b);background:color-mix(in srgb, var(--color-warning,#f59e0b) 14%, transparent);font-size:10px;line-height:14px;}
+    #${PANEL_ID} .pg-warn-btn{align-self:stretch;padding:4px 6px;border-radius:6px;border:0;background:var(--color-warning,#f59e0b);color:var(--color-warning-content,#1f1300);font-size:10px;font-weight:700;cursor:pointer;}
+    #${PANEL_ID} .pg-warn-btn:hover{filter:brightness(1.05);}
   `;
   document.head.appendChild(style);
 };
@@ -68,7 +111,12 @@ export class PaintGuideToggle {
 
   private async init(): Promise<void> {
     ensureStyles();
-    await loadPaintGuideFromStorage();
+    await Promise.all([
+      loadPaintGuideFromStorage(),
+      loadPaintBeaconFromStorage(),
+      loadFrontTileLayerFromStorage(),
+    ]);
+    this.sendBeaconToInject();
     registerPaintToolbarButton({
       id: BUTTON_ID,
       tip: t("popup_paint_guide"),
@@ -112,6 +160,14 @@ export class PaintGuideToggle {
       panel.appendChild(item);
     }
 
+    const separator = document.createElement("div");
+    separator.className = "pg-sep";
+    panel.appendChild(separator);
+    panel.appendChild(this.buildBeaconRows());
+
+    // overlay が「独立」でないとガイド/ビーコンが機能しないため、切替導線を出す
+    if (!getFrontTileLayer()) panel.appendChild(this.buildLayerModeWarning());
+
     document.body.appendChild(panel);
     this.positionPanel(panel);
     if (this.button) setPaintToolbarButtonActive(this.button, true);
@@ -124,6 +180,114 @@ export class PaintGuideToggle {
     document.addEventListener("pointerdown", this.outsideHandler, {
       capture: true,
     });
+  }
+
+  /** 塗り残しビーコン: トグル + (ON のときだけ) 閾値スライダー */
+  private buildBeaconRows(): DocumentFragment {
+    const fragment = document.createDocumentFragment();
+
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "pg-item";
+    toggle.innerHTML = `<span class="pg-dot" style="background:${BEACON_COLOR}"></span><span class="pg-label">${t("paint_beacon_label")}</span><span class="pg-state"></span>`;
+    this.applyItemState(toggle, getPaintBeacon());
+    fragment.appendChild(toggle);
+
+    const sliderRow = document.createElement("div");
+    sliderRow.className = "pg-slider";
+    const desc = document.createElement("div");
+    desc.className = "pg-slider-desc";
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.min = String(BEACON_THRESHOLD_MIN);
+    slider.max = String(BEACON_THRESHOLD_MAX);
+    slider.step = String(BEACON_THRESHOLD_STEP);
+    slider.value = String(getPaintBeaconThreshold());
+    sliderRow.append(slider, desc);
+    fragment.appendChild(sliderRow);
+
+    const renderDesc = (value: number): void => {
+      desc.textContent = t("paint_beacon_desc").replace("{n}", String(value));
+    };
+    const syncSliderVisibility = (): void => {
+      sliderRow.hidden = !getPaintBeacon();
+    };
+    renderDesc(getPaintBeaconThreshold());
+    syncSliderVisibility();
+
+    toggle.addEventListener("click", () => {
+      void (async () => {
+        const enabled = !getPaintBeacon();
+        await setPaintBeacon(enabled);
+        this.applyItemState(toggle, enabled);
+        syncSliderVisibility();
+        this.sendBeaconToInject();
+        showPaintNotice(
+          enabled
+            ? t("notice_beacon_on").replace(
+                "{n}",
+                String(getPaintBeaconThreshold()),
+              )
+            : t("notice_beacon_off"),
+        );
+      })();
+    });
+
+    // input 中は文言だけ更新し、確定 (change) で保存 + hint を出す
+    slider.addEventListener("input", () => renderDesc(Number(slider.value)));
+    slider.addEventListener("change", () => {
+      void (async () => {
+        await setPaintBeaconThreshold(Number(slider.value));
+        const value = getPaintBeaconThreshold();
+        slider.value = String(value);
+        renderDesc(value);
+        this.sendBeaconToInject();
+        showPaintNotice(t("notice_beacon_on").replace("{n}", String(value)));
+      })();
+    });
+
+    return fragment;
+  }
+
+  /** 「独立」モードでないときの警告枠 + 切替ボタン */
+  private buildLayerModeWarning(): HTMLDivElement {
+    const box = document.createElement("div");
+    box.className = "pg-warn";
+
+    const message = document.createElement("span");
+    message.textContent = t("hint_requires_layer_mode");
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "pg-warn-btn";
+    button.textContent = t("hint_requires_layer_mode_action");
+    button.addEventListener("click", () => {
+      void (async () => {
+        button.disabled = true;
+        await setFrontTileLayer(true);
+        // 「合成+最小機能」から来た場合に lite が残らないようにする
+        if (getOverlayLightweightMode()) await setOverlayLightweightMode(false);
+        window.postMessage(
+          { source: "mr-wplace-front-tile-layer-update", enabled: true },
+          "*",
+        );
+        location.reload();
+      })();
+    });
+
+    box.append(message, button);
+    return box;
+  }
+
+  private sendBeaconToInject(): void {
+    window.postMessage(
+      {
+        source: "mr-wplace-paint-beacon-update",
+        enabled: getPaintBeacon(),
+        threshold: getPaintBeaconThreshold(),
+      },
+      "*",
+    );
   }
 
   /** toolbar が paint panel 内 (画面下寄り) なら上方向、独立表示 (上部) なら下方向へ開く */
@@ -159,6 +323,7 @@ export class PaintGuideToggle {
     const enabled = !getPaintGuideKinds()[kind];
     await setPaintGuideKind(kind, enabled);
     this.applyItemState(item, enabled);
+    showPaintNotice(t(KIND_NOTICE_KEY[kind][enabled ? 0 : 1]));
     window.postMessage(
       {
         source: "mr-wplace-paint-guide-update",

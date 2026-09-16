@@ -22,6 +22,7 @@ import {
   isColorFilterActive,
 } from "../../states/colorFilterState";
 import { overlayLayers, perTileColorStats } from "./states";
+import { scheduleBeaconRecompute } from "../beacon";
 import { isDraftModeEnabled } from "@/inject/features/draft-draw";
 
 const DEBUG_TILE_OVERLAY_RENDERER = false;
@@ -189,6 +190,93 @@ const computeStatsWithBackground = (
 };
 
 /**
+ * 巨大マーカーの形状を (dx, dy, alpha) のオフセット列として事前展開したもの。
+ * 形状はモードごとに定数なので、初回のみ生成してタイル間で使い回す。
+ */
+type HugeMarkerStamp = {
+  dx: Int16Array;
+  dy: Int16Array;
+  alpha: Uint8Array;
+};
+
+const HUGE_MARKER_ARM_LENGTH = 30;
+const HUGE_MARKER_CENTER_SIZE = 1; // 中央3x3の半径（±1 = 3px）
+const hugeMarkerStampCache = new Map<EnhancedMode, HugeMarkerStamp>();
+
+const buildHugeMarkerStamp = (mode: EnhancedMode): HugeMarkerStamp => {
+  const armLength = HUGE_MARKER_ARM_LENGTH;
+  const centerSize = HUGE_MARKER_CENTER_SIZE;
+  const dxs: number[] = [];
+  const dys: number[] = [];
+  const alphas: number[] = [];
+  const push = (dx: number, dy: number, alpha: number = 255): void => {
+    dxs.push(dx);
+    dys.push(dy);
+    alphas.push(alpha);
+  };
+
+  if (mode === "huge-red-cross") {
+    // 巨大赤十字: 細い線（1px幅）
+    for (let dx = -armLength; dx <= armLength; dx++) {
+      if (Math.abs(dx) <= centerSize) continue; // 中心3x3はスキップ
+      push(dx, 0);
+    }
+    for (let dy = -armLength; dy <= armLength; dy++) {
+      if (Math.abs(dy) <= centerSize) continue;
+      push(0, dy);
+    }
+  } else if (mode === "huge-red-cross-bold") {
+    // 巨大赤十字（極太）: 3x3幅のクロス
+    const thickness = 1; // ±1 = 3px幅
+    for (let dy = -armLength; dy <= armLength; dy++) {
+      for (let dx = -armLength; dx <= armLength; dx++) {
+        if (Math.abs(dx) <= centerSize && Math.abs(dy) <= centerSize) continue;
+        if (Math.abs(dy) > thickness && Math.abs(dx) > thickness) continue;
+        push(dx, dy);
+      }
+    }
+  } else if (mode === "huge-red-diamond") {
+    // 巨大赤ダイヤ: マンハッタン距離でダイヤ形状、グラデーション
+    for (let dy = -armLength; dy <= armLength; dy++) {
+      for (let dx = -armLength; dx <= armLength; dx++) {
+        if (Math.abs(dx) <= centerSize && Math.abs(dy) <= centerSize) continue;
+        const dist = Math.abs(dx) + Math.abs(dy);
+        if (dist > armLength) continue;
+        // グラデーション: 中心が濃い(255)、外が薄い(64)
+        push(dx, dy, Math.round(255 - (dist / armLength) * 191));
+      }
+    }
+  } else if (mode === "huge-red-ring") {
+    // 巨大赤リング: ユークリッド距離で円形リング
+    const innerRadius = 10;
+    const outerRadius = armLength;
+    for (let dy = -outerRadius; dy <= outerRadius; dy++) {
+      for (let dx = -outerRadius; dx <= outerRadius; dx++) {
+        if (Math.abs(dx) <= centerSize && Math.abs(dy) <= centerSize) continue;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < innerRadius || dist > outerRadius) continue;
+        const ratio = (dist - innerRadius) / (outerRadius - innerRadius);
+        push(dx, dy, Math.round(255 - ratio * 191));
+      }
+    }
+  }
+
+  return {
+    dx: Int16Array.from(dxs),
+    dy: Int16Array.from(dys),
+    alpha: Uint8Array.from(alphas),
+  };
+};
+
+const getHugeMarkerStamp = (mode: EnhancedMode): HugeMarkerStamp => {
+  const cached = hugeMarkerStampCache.get(mode);
+  if (cached) return cached;
+  const stamp = buildHugeMarkerStamp(mode);
+  hugeMarkerStampCache.set(mode, stamp);
+  return stamp;
+};
+
+/**
  * Phase 3: x3拡大 + モード別処理
  * フィルター済みデータをx3にスケールし、描画モード（dot/cross/fill/補助色）を適用
  *
@@ -304,8 +392,8 @@ const scaleAndRenderWithMode = (
       const bottomRight = row2 + 8;
 
       if (showUnplacedOnly && colorMatches) {
-        if (protectedHugeMarkerCells)
-          protectedHugeMarkerCells[y1 * width + x1] = 1;
+        // NOTE: 配置済みセルは巨大マーカーから保護しない。
+        // 未配置マーカーの方が手前に来る方が見落としを防げるため。
         // 配置済みを専用色で塗る。視認性のため元色を少しだけ残す
         const matchedR = (showUnplacedColor[0] * 224 + cmpR * 32) >> 8;
         const matchedG = (showUnplacedColor[1] * 224 + cmpG * 32) >> 8;
@@ -388,9 +476,7 @@ const scaleAndRenderWithMode = (
         // huge marker: 中心座標を収集
         if (needsHugeMarker && canRenderHugeMarkers) {
           if (maxPixels === undefined || unplacedCenters.length < maxPixels) {
-            unplacedCenters.push(
-              (baseY + 1) * scaledWidth + baseX + 1,
-            );
+            unplacedCenters.push((baseY + 1) * scaledWidth + baseX + 1);
           } else {
             // 上限超過後は描画されないため、それ以上の収集と保持を止める。
             canRenderHugeMarkers = false;
@@ -579,118 +665,45 @@ const scaleAndRenderWithMode = (
   }
 
   // 2nd pass: huge marker 描画
-  if (
-    needsHugeMarker &&
-    canRenderHugeMarkers &&
-    unplacedCenters.length > 0
-  ) {
-    const armLength = 30;
-    const centerSize = 1; // 中央3x3の半径（±1 = 3px）
-    const writeHugeMarkerPixel = (
-      px: number,
-      py: number,
-      alpha: number = 255,
-    ): void => {
-      if (px < 0 || px >= scaledWidth || py < 0 || py >= scaledHeight) return;
-
-      // 表示対象の3x3セル内はすべてくり抜く。x1マスクを参照するため、
-      // scaledDataの書込状態に左右されず、隣接マーカー同士でも安定する。
-      const sourceX = Math.floor(px / pixelScale);
-      const sourceY = Math.floor(py / pixelScale);
-      if (protectedHugeMarkerCells![sourceY * width + sourceX] !== 0) return;
-
-      const i = (py * scaledWidth + px) * 4;
-      scaledData[i] = ecR;
-      scaledData[i + 1] = ecG;
-      scaledData[i + 2] = ecB;
-      scaledData[i + 3] = alpha;
-    };
+  if (needsHugeMarker && canRenderHugeMarkers && unplacedCenters.length > 0) {
+    // 形状は事前展開済みのオフセット列を貼るだけにする。
+    // 距離計算やグラデーション計算をピクセルごとに行わない。
+    const {
+      dx: stampDx,
+      dy: stampDy,
+      alpha: stampAlpha,
+    } = getHugeMarkerStamp(mode);
+    const stampLength = stampDx.length;
+    const mask = protectedHugeMarkerCells!;
 
     for (const centerIndex of unplacedCenters) {
       const cx = centerIndex % scaledWidth;
-      const cy = Math.floor(centerIndex / scaledWidth);
-      if (isHugeRedCross) {
-        // 巨大赤十字: 細い線（1px幅）
-        // 水平腕
-        for (let dx = -armLength; dx <= armLength; dx++) {
-          if (Math.abs(dx) <= centerSize) continue; // 中心3x3はスキップ
-          const px = cx + dx;
-          writeHugeMarkerPixel(px, cy);
-        }
-        // 垂直腕
-        for (let dy = -armLength; dy <= armLength; dy++) {
-          if (Math.abs(dy) <= centerSize) continue; // 中心3x3はスキップ
-          const py = cy + dy;
-          writeHugeMarkerPixel(cx, py);
-        }
-      } else if (isHugeRedCrossBold) {
-        // 巨大赤十字（極太）: 3x3幅のクロス
-        const thickness = 1; // ±1 = 3px幅
-        for (let dy = -armLength; dy <= armLength; dy++) {
-          for (let dx = -armLength; dx <= armLength; dx++) {
-            // 中心3x3はスキップ
-            if (Math.abs(dx) <= centerSize && Math.abs(dy) <= centerSize)
-              continue;
+      const cy = (centerIndex / scaledWidth) | 0;
+      for (let s = 0; s < stampLength; s++) {
+        const px = cx + stampDx[s];
+        if (px < 0 || px >= scaledWidth) continue;
+        const py = cy + stampDy[s];
+        if (py < 0 || py >= scaledHeight) continue;
 
-            // クロス形状: 水平または垂直の腕
-            const isHorizontalArm = Math.abs(dy) <= thickness;
-            const isVerticalArm = Math.abs(dx) <= thickness;
-            if (!isHorizontalArm && !isVerticalArm) continue;
+        // 表示対象の3x3セル内はすべてくり抜く。x1マスクを参照するため、
+        // scaledDataの書込状態に左右されず、隣接マーカー同士でも安定する。
+        if (
+          mask[((py / pixelScale) | 0) * width + ((px / pixelScale) | 0)] !== 0
+        )
+          continue;
 
-            const px = cx + dx;
-            const py = cy + dy;
-            writeHugeMarkerPixel(px, py);
-          }
-        }
-      } else if (isHugeRedDiamond) {
-        // 巨大赤ダイヤ: マンハッタン距離でダイヤ形状、グラデーション
-        for (let dy = -armLength; dy <= armLength; dy++) {
-          for (let dx = -armLength; dx <= armLength; dx++) {
-            // 中心3x3はスキップ
-            if (Math.abs(dx) <= centerSize && Math.abs(dy) <= centerSize)
-              continue;
-
-            const dist = Math.abs(dx) + Math.abs(dy);
-            if (dist > armLength) continue; // ダイヤ形状の外側
-
-            const px = cx + dx;
-            const py = cy + dy;
-
-            // グラデーション: 中心が濃い(255)、外が薄い(64)
-            const ratio = dist / armLength;
-            const alpha = Math.round(255 - ratio * 191); // 255 → 64
-            writeHugeMarkerPixel(px, py, alpha);
-          }
-        }
-      } else if (isHugeRedRing) {
-        // 巨大赤リング: ユークリッド距離で円形リング
-        const innerRadius = 10; // 内径
-        const outerRadius = armLength; // 外径
-        for (let dy = -outerRadius; dy <= outerRadius; dy++) {
-          for (let dx = -outerRadius; dx <= outerRadius; dx++) {
-            // 中心3x3はスキップ
-            if (Math.abs(dx) <= centerSize && Math.abs(dy) <= centerSize)
-              continue;
-
-            const dist = Math.sqrt(dx * dx + dy * dy);
-
-            // リング範囲内のみ描画
-            if (dist < innerRadius || dist > outerRadius) continue;
-
-            const px = cx + dx;
-            const py = cy + dy;
-            // グラデーション: 内側が濃い、外側が薄い
-            const ratio = (dist - innerRadius) / (outerRadius - innerRadius);
-            const alpha = Math.round(255 - ratio * 191); // 255 → 64
-            writeHugeMarkerPixel(px, py, alpha);
-          }
-        }
+        const i = (py * scaledWidth + px) * 4;
+        scaledData[i] = ecR;
+        scaledData[i + 1] = ecG;
+        scaledData[i + 2] = ecB;
+        scaledData[i + 3] = stampAlpha[s];
       }
     }
   }
 
   return scaledData;
 };
+
 /**
  * Phase 4: ImageBitmap変換
  * Uint8ClampedArrayをImageBitmapに変換
@@ -1313,6 +1326,7 @@ export const drawOverlayLayersOnTile = async (
   // Do this asynchronously to avoid blocking tile rendering
   if (tempStatsMap.size > 0) {
     notifyStatsUpdate(tempStatsMap, coordStrPadded);
+    scheduleBeaconRecompute();
   }
 
   const result = await canvas.convertToBlob({ type: "image/png" });

@@ -11,6 +11,7 @@
 import { colorpalette } from "@/constants/colors";
 import { overlayLayers, perTileColorStats } from "./tile-draw/states";
 import type { CapturedPaintedCoordinate } from "@/inject/types";
+import { scheduleBeaconRecompute } from "./beacon";
 import {
   upsertFrontTilePaintGuide,
   clearFrontTilePaintGuide,
@@ -111,6 +112,8 @@ const flushNotify = (): void => {
 };
 
 const scheduleNotify = (imageKey: string, tileKey: string): void => {
+  // 楽観更新で残り数が変わるので beacon も追従させる
+  scheduleBeaconRecompute();
   const pendingTileKeys = pendingNotify.get(imageKey) ?? new Set<string>();
   pendingTileKeys.add(tileKey);
   pendingNotify.set(imageKey, pendingTileKeys);

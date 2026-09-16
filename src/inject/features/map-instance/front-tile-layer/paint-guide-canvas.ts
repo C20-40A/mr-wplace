@@ -6,6 +6,10 @@
  */
 
 import { getMapInstanceFromWplace } from "../get-map-instance";
+import {
+  getOrCreateMapOverlayCanvas,
+  syncMapOverlayCanvasSize,
+} from "../overlay-canvas";
 import { tilePixelToLatLng } from "@/utils/coordinate";
 
 const CANVAS_ID = "mr-wplace-paint-guide-canvas";
@@ -52,46 +56,10 @@ const getGuidePointKey = (
 
 // ------- canvas lifecycle -------
 
-const getMapCanvas = (): HTMLCanvasElement | null => {
-  const map = getMapInstanceFromWplace() as any;
-  return map?.getCanvas?.() ?? null;
-};
-
 const getOrCreateCanvas = (): HTMLCanvasElement | null => {
-  if (canvas && canvas.isConnected) return canvas;
-
-  const mapCanvas = getMapCanvas();
-  if (!mapCanvas) return null;
-
-  const parent = mapCanvas.parentElement;
-  if (!parent) return null;
-
-  const existing = parent.querySelector(`#${CANVAS_ID}`) as HTMLCanvasElement | null;
-  if (existing) {
-    canvas = existing;
-    return canvas;
-  }
-
-  const c = document.createElement("canvas");
-  c.id = CANVAS_ID;
-  c.style.cssText =
-    "position:absolute;top:0;left:0;pointer-events:none;z-index:10;";
-  parent.appendChild(c);
-  canvas = c;
+  if (canvas?.isConnected) return canvas;
+  canvas = getOrCreateMapOverlayCanvas(CANVAS_ID, 10);
   return canvas;
-};
-
-const syncCanvasSize = (c: HTMLCanvasElement): void => {
-  const mapCanvas = getMapCanvas();
-  if (!mapCanvas) return;
-  const w = mapCanvas.offsetWidth;
-  const h = mapCanvas.offsetHeight;
-  if (c.width !== w || c.height !== h) {
-    c.width = w;
-    c.height = h;
-    c.style.width = `${w}px`;
-    c.style.height = `${h}px`;
-  }
 };
 
 const removeCanvas = (): void => {
@@ -108,7 +76,7 @@ const drawFrame = (timestamp: number): void => {
     return;
   }
 
-  syncCanvasSize(c);
+  syncMapOverlayCanvasSize(c);
   const ctx = c.getContext("2d");
   if (!ctx) {
     rafId = requestAnimationFrame(drawFrame);

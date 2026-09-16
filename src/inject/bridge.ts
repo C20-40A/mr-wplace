@@ -15,6 +15,7 @@ import {
   handleCacheClear,
   handleFrontTileLayerUpdate,
   handlePaintGuideUpdate,
+  handlePaintBeaconUpdate,
   handleTransparentPixelFilterUpdate,
   handleSnapshotCaptureUpdate,
 } from "./handlers/state-handlers";
@@ -395,6 +396,7 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-cache-clear": handleCacheClear,
   "mr-wplace-front-tile-layer-update": handleFrontTileLayerUpdate,
   "mr-wplace-paint-guide-update": handlePaintGuideUpdate,
+  "mr-wplace-paint-beacon-update": handlePaintBeaconUpdate,
   "mr-wplace-transparent-pixel-filter-update":
     handleTransparentPixelFilterUpdate,
   "mr-wplace-snapshot-capture-update": handleSnapshotCaptureUpdate,
