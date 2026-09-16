@@ -20,11 +20,20 @@ const CORE_RADIUS = 5;
 const BEACON_RGB = "255,0,0";
 
 export interface BeaconPoint {
+  key: string;
   lat: number;
   lng: number;
 }
 
-let points: BeaconPoint[] = [];
+/** tile/pixel 単位で消せるように key を持たせる */
+export const beaconPointKey = (
+  tileX: number,
+  tileY: number,
+  pixelX: number,
+  pixelY: number,
+): string => `${tileX},${tileY},${pixelX},${pixelY}`;
+
+let points = new Map<string, BeaconPoint>();
 let canvas: HTMLCanvasElement | null = null;
 let rafId: number | null = null;
 
@@ -42,14 +51,14 @@ const drawFrame = (timestamp: number): void => {
   if (!ctx) return;
 
   ctx.clearRect(0, 0, c.width, c.height);
-  if (points.length === 0) return;
+  if (points.size === 0) return;
 
   const map = getMapInstanceFromWplace() as any;
   if (!map) return;
 
   const phase = (timestamp % WAVE_PERIOD_MS) / WAVE_PERIOD_MS;
 
-  for (const point of points) {
+  for (const point of points.values()) {
     const { x, y } = map.project([point.lng, point.lat]);
     if (
       x < -MAX_RADIUS ||
@@ -108,8 +117,8 @@ const stopRaf = (): void => {
 
 /** 表示する beacon 位置を差し替える。空なら rAF ごと止める */
 export const setBeaconPoints = (next: BeaconPoint[]): void => {
-  points = next;
-  if (points.length === 0) {
+  points = new Map(next.map((point) => [point.key, point]));
+  if (points.size === 0) {
     stopRaf();
     return;
   }
@@ -117,6 +126,17 @@ export const setBeaconPoints = (next: BeaconPoint[]): void => {
 };
 
 export const clearBeaconPoints = (): void => setBeaconPoints([]);
+
+/** ペイントされた地点のビーコンは即座に消す (再計算を待たない) */
+export const clearBeaconPointAt = (
+  tileX: number,
+  tileY: number,
+  pixelX: number,
+  pixelY: number,
+): void => {
+  if (!points.delete(beaconPointKey(tileX, tileY, pixelX, pixelY))) return;
+  if (points.size === 0) stopRaf();
+};
 
 export const destroyBeaconCanvas = (): void => {
   clearBeaconPoints();

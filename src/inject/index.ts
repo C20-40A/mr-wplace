@@ -19,6 +19,11 @@ import {
   handlePaintForStats,
   handlePaintDeleteForStats,
 } from "./features/paint-stats-updater";
+import {
+  scheduleBeaconRecompute,
+  onBeaconPixelErased,
+  clearBeaconSuppression,
+} from "./features/beacon";
 import { scheduleStartupUserDataRecovery } from "./features/user-status/user-data-recovery";
 
 const LOCATION_KEY = "location";
@@ -102,9 +107,13 @@ const forceStartupLocationZoom = (): void => {
       handlePaintDeleteForStats(coord);
       const { tileX, tileY, pixelX, pixelY } = coord;
       clearFrontTilePaintGuide(tileX, tileY, pixelX, pixelY);
+      // 消した地点は塗り残しに戻るので beacon を計算し直す
+      onBeaconPixelErased(tileX, tileY, pixelX, pixelY);
     });
     setPaintClearListener(() => {
       clearFrontTilePaintGuideAll();
+      clearBeaconSuppression();
+      scheduleBeaconRecompute();
     });
     setPaintSessionListener((active) => {
       setFrontTilePaintGuideActive(active, { clearNow: !active });

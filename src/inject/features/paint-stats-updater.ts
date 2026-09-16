@@ -11,7 +11,8 @@
 import { colorpalette } from "@/constants/colors";
 import { overlayLayers, perTileColorStats } from "./tile-draw/states";
 import type { CapturedPaintedCoordinate } from "@/inject/types";
-import { scheduleBeaconRecompute } from "./beacon";
+import { scheduleBeaconRecompute, onBeaconPixelPainted } from "./beacon";
+
 import {
   upsertFrontTilePaintGuide,
   clearFrontTilePaintGuide,
@@ -139,6 +140,10 @@ export const handlePaintForStats = (
 ): void => {
   const paintedRgbInt = getPaintedRgbInt(coord);
   if (paintedRgbInt == null) return;
+
+  // 置いた瞬間にその地点のビーコンを消す (他の検知系と同じ挙動)。
+  // 色違いで置いた場合は次の再計算で戻る。
+  onBeaconPixelPainted(coord.tileX, coord.tileY, coord.pixelX, coord.pixelY);
   const paintedRgbKey = `${(paintedRgbInt >> 16) & 0xff},${
     (paintedRgbInt >> 8) & 0xff
   },${paintedRgbInt & 0xff}`;

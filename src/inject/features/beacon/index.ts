@@ -14,7 +14,13 @@ import { tilePixelToLatLng } from "@/utils/coordinate";
 import { blobToPixels } from "@/utils/pixel-converters";
 import { overlayLayers, perTileColorStats } from "../tile-draw/states";
 import { getOriginalBlob } from "../tile-draw/last-modified-cache";
-import { setBeaconPoints, clearBeaconPoints, type BeaconPoint } from "./canvas";
+import {
+  setBeaconPoints,
+  clearBeaconPoints,
+  clearBeaconPointAt,
+  beaconPointKey,
+  type BeaconPoint,
+} from "./canvas";
 
 const TILE_SIZE = 1000;
 const SELECTED_COLOR_POLL_MS = 400;
@@ -30,6 +36,52 @@ let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 let lastSelectedColor: string | null = null;
 let running = false;
 let rerunRequested = false;
+
+/**
+ * 塗った直後は比較用の原本タイルがまだ古く、走査すると「未配置」に見えてしまう。
+ * そのため塗った地点は「そのタイルの背景 blob が差し替わるまで」抑制する。
+ */
+const suppressed = new Map<string, Blob | null>();
+const MAX_SUPPRESSED = 2000;
+
+/** ペイント時: ビーコンを即消しし、背景が追いつくまで再表示を抑える */
+export const onBeaconPixelPainted = (
+  tileX: number,
+  tileY: number,
+  pixelX: number,
+  pixelY: number,
+): void => {
+  clearBeaconPointAt(tileX, tileY, pixelX, pixelY);
+  if (suppressed.size >= MAX_SUPPRESSED) {
+    const oldest = suppressed.keys().next().value;
+    if (oldest) suppressed.delete(oldest);
+  }
+  suppressed.set(
+    beaconPointKey(tileX, tileY, pixelX, pixelY),
+    getOriginalBlob(`${tileX},${tileY}`),
+  );
+};
+
+/** 消しゴム: 抑制を解除して塗り残しへ戻す */
+export const onBeaconPixelErased = (
+  tileX: number,
+  tileY: number,
+  pixelX: number,
+  pixelY: number,
+): void => {
+  suppressed.delete(beaconPointKey(tileX, tileY, pixelX, pixelY));
+  scheduleBeaconRecompute();
+};
+
+export const clearBeaconSuppression = (): void => suppressed.clear();
+
+/** 背景 blob が差し替わっていれば抑制を解除し、判定を走査に戻す */
+const isSuppressed = (key: string, currentBlob: Blob): boolean => {
+  if (!suppressed.has(key)) return false;
+  if (suppressed.get(key) === currentBlob) return true;
+  suppressed.delete(key);
+  return false;
+};
 
 const getSelectedRgb = (): [number, number, number] | null => {
   const raw = localStorage.getItem("selected-color");
@@ -144,9 +196,14 @@ const scanTile = async (
         )
           continue;
 
-        points.push(
-          tilePixelToLatLng(tileX, tileY, tileX1 + 0.5, tileY1 + 0.5),
-        );
+        const key = beaconPointKey(tileX, tileY, tileX1, tileY1);
+        // 塗った直後 (背景が未更新) の地点は復活させない
+        if (isSuppressed(key, bgBlob)) continue;
+
+        points.push({
+          key,
+          ...tilePixelToLatLng(tileX, tileY, tileX1 + 0.5, tileY1 + 0.5),
+        });
       }
     }
   }
