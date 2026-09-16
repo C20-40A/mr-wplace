@@ -1,3 +1,4 @@
+import { subscribePaintMode } from "@/utils/paint-mode";
 import {
   loadCompactBottomSheetFromStorage,
   getCompactBottomSheet,
@@ -77,10 +78,31 @@ const ensureStyle = (): void => {
   document.head.appendChild(style);
 };
 
+/**
+ * 色ボタンのラッパー(.paint-swatch)をグリッド列幅いっぱいに広げる
+ * CSSだと効かないため、paint mode 開始時にインラインで付与する
+ */
+const applySwatchWidth = (enabled: boolean): void => {
+  for (const el of document.querySelectorAll<HTMLElement>(".paint-swatch"))
+    el.style.width = enabled ? "100%" : "";
+};
+
+let unsubscribe: (() => void) | null = null;
+
 /** 有効/無効を即時反映 (popupからの変更通知でも利用) */
 export const applyCompactBottomSheet = (enabled: boolean): void => {
   ensureStyle();
   document.documentElement.classList.toggle(ROOT_CLASS, enabled);
+
+  if (!enabled) {
+    unsubscribe?.();
+    unsubscribe = null;
+    applySwatchWidth(false);
+    return;
+  }
+
+  if (unsubscribe) return;
+  unsubscribe = subscribePaintMode(applySwatchWidth);
 };
 
 export class CompactBottomSheet {
