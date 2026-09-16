@@ -639,4 +639,8 @@ Do not use this feature to paint actual pixels.`,
   paint_guide_kind_mismatch: "Misplaced",
   paint_guide_kind_overflow: "Overflow",
   paint_guide_kind_already: "Already placed",
+  paint_template_select: "Select template",
+  paint_template_load_failed: "Failed to load templates",
+  paint_template_none: "No placed templates",
+  none_short: "NONE",
 };

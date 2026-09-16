@@ -642,4 +642,8 @@ export const jaTranslations = {
   paint_guide_kind_mismatch: "塗り間違い",
   paint_guide_kind_overflow: "はみ出し",
   paint_guide_kind_already: "配置済み",
+  paint_template_select: "テンプレートを選択",
+  paint_template_load_failed: "テンプレートを読み込めませんでした",
+  paint_template_none: "配置済みテンプレートはありません",
+  none_short: "なし",
 };

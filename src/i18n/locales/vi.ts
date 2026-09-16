@@ -609,4 +609,8 @@ export const viTranslations = {
   paint_guide_kind_mismatch: "Tô sai",
   paint_guide_kind_overflow: "Tràn ra",
   paint_guide_kind_already: "Đã đặt",
+  paint_template_select: "Chọn mẫu",
+  paint_template_load_failed: "Không tải được mẫu",
+  paint_template_none: "Chưa có mẫu nào được đặt",
+  none_short: "KHÔNG",
 };

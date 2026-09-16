@@ -626,4 +626,8 @@ export const ruTranslations = {
   paint_guide_kind_mismatch: "Ошибка",
   paint_guide_kind_overflow: "Лишние",
   paint_guide_kind_already: "Уже есть",
+  paint_template_select: "Выбрать шаблон",
+  paint_template_load_failed: "Не удалось загрузить шаблоны",
+  paint_template_none: "Нет размещённых шаблонов",
+  none_short: "НЕТ",
 };

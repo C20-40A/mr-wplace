@@ -623,4 +623,8 @@ export const esTranslations = {
   paint_guide_kind_mismatch: "Mal colocado",
   paint_guide_kind_overflow: "Desbordado",
   paint_guide_kind_already: "Ya colocado",
+  paint_template_select: "Seleccionar plantilla",
+  paint_template_load_failed: "No se pudieron cargar las plantillas",
+  paint_template_none: "No hay plantillas colocadas",
+  none_short: "NINGUNO",
 };

@@ -630,4 +630,8 @@ export const frTranslations = {
   paint_guide_kind_mismatch: "Mal placé",
   paint_guide_kind_overflow: "Débordement",
   paint_guide_kind_already: "Déjà placé",
+  paint_template_select: "Choisir un modèle",
+  paint_template_load_failed: "Impossible de charger les modèles",
+  paint_template_none: "Aucun modèle placé",
+  none_short: "AUCUN",
 };

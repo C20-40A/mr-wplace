@@ -1,4 +1,5 @@
 import {
+  PAINT_TOOLBAR_FALLBACK_CLASS,
   getPaintToolbarContainer,
   registerPaintToolbarButton,
   setPaintToolbarButtonActive,
@@ -14,6 +15,7 @@ import { createEnhancedModeIcons } from "@/assets/enhanced-mode-icons";
 import { IMG_ICON_COLOR_FILTER } from "@/assets/iconImages";
 import { ColorFilter } from "@/features/color-filter";
 import type { EnhancedMode } from "@/types/image";
+import { t } from "@/i18n";
 
 const FAB_ID = "mini-color-filter-fab";
 const PANEL_ID = "mini-color-filter-panel";
@@ -76,13 +78,25 @@ export class MiniColorFilter {
     ensureStyles();
     registerPaintToolbarButton({
       id: FAB_ID,
-      tip: "Mini Color Filter",
+      tip: t("color_filter"),
       label: "Filter",
       icon: ICON_FILTER,
       isActive: () => this.panel !== null,
       onClick: () => this.togglePanel(),
       onCreate: (button) => {
         this.fabButton = button;
+        // mobile mode (floating fallback toolbar) では一番左に固定表示する
+        if (
+          document.documentElement.classList.contains(
+            PAINT_TOOLBAR_FALLBACK_CLASS,
+          )
+        ) {
+          const container = getPaintToolbarContainer();
+          const wrapper = button.closest<HTMLElement>(".tooltip");
+          if (container && wrapper && container.firstChild !== wrapper) {
+            container.insertBefore(wrapper, container.firstChild);
+          }
+        }
       },
     });
 
@@ -123,8 +137,8 @@ export class MiniColorFilter {
     const paletteButton = document.createElement("button");
     paletteButton.type = "button";
     paletteButton.className = "mcf-palette-btn";
-    paletteButton.title = "Open color filter";
-    paletteButton.setAttribute("aria-label", "Open color filter");
+    paletteButton.title = t("color_filter");
+    paletteButton.setAttribute("aria-label", t("color_filter"));
     paletteButton.innerHTML = `<img src="${IMG_ICON_COLOR_FILTER}" alt="">`;
     paletteButton.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -152,12 +166,12 @@ export class MiniColorFilter {
     };
 
     actions.appendChild(
-      mkAct(LABEL_ALL, "All", async () => {
+      mkAct(LABEL_ALL, t("all_short"), async () => {
         await applySelectedColors(colorpalette.map((c) => c.id));
       }),
     );
     actions.appendChild(
-      mkAct(LABEL_NONE, "None", async () => {
+      mkAct(LABEL_NONE, t("none_short"), async () => {
         await applySelectedColors([]);
       }),
     );
@@ -215,7 +229,7 @@ export class MiniColorFilter {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "mcf-em-btn";
-    btn.title = "Enhanced mode";
+    btn.title = t("enhanced_mode_label");
     btn.innerHTML = `<img src="${icons[currentMode]}" alt="${currentMode}">`;
     wrap.appendChild(btn);
 

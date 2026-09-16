@@ -613,4 +613,8 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   paint_guide_kind_mismatch: "Falsch gesetzt",
   paint_guide_kind_overflow: "Überstand",
   paint_guide_kind_already: "Bereits gesetzt",
+  paint_template_select: "Vorlage auswählen",
+  paint_template_load_failed: "Vorlagen konnten nicht geladen werden",
+  paint_template_none: "Keine platzierten Vorlagen",
+  none_short: "KEINE",
 };

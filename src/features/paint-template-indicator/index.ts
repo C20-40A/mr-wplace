@@ -8,10 +8,14 @@ import {
   subscribePaintTemplateProgress,
   type PaintTemplateProgress,
 } from "@/features/paint-stats";
-import { registerPaintToolbarButton } from "@/features/paint-toolbar";
+import {
+  PAINT_TOOLBAR_ID,
+  registerPaintToolbarButton,
+} from "@/features/paint-toolbar";
 import { getAggregatedColorStats } from "@/utils/inject-bridge";
 import { tilePixelToLatLng } from "@/utils/coordinate";
 import { getCurrentPosition, gotoPosition } from "@/utils/position";
+import { t } from "@/i18n";
 
 const BUTTON_ID = "paint-template-indicator";
 
@@ -80,7 +84,7 @@ export class PaintTemplateIndicator {
 
     registerPaintToolbarButton({
       id: BUTTON_ID,
-      tip: "テンプレートを選択",
+      tip: t("paint_template_select"),
       icon: "",
       className: "btn btn-sm btn-ghost",
       onClick: () => void this.toggleMenu(),
@@ -88,9 +92,25 @@ export class PaintTemplateIndicator {
         this.button = button;
         button.style.cssText =
           "position:relative;width:34px;height:32px;min-height:32px;padding:1px;overflow:visible;";
+        this.moveToDesktopToolbarStart(button);
         this.renderCurrent();
       },
     });
+  }
+
+  private isInDesktopToolbar(): boolean {
+    return !!this.button
+      ?.closest<HTMLElement>(`#${PAINT_TOOLBAR_ID}`)
+      ?.parentElement?.classList.contains("paint-tools");
+  }
+
+  private moveToDesktopToolbarStart(button: HTMLButtonElement): void {
+    const tooltip = button.parentElement;
+    const toolbar = tooltip?.parentElement;
+    if (
+      toolbar?.id === PAINT_TOOLBAR_ID &&
+      toolbar.parentElement?.classList.contains("paint-tools")
+    ) toolbar.prepend(tooltip);
   }
 
   private async refreshAvailability(): Promise<void> {
@@ -112,7 +132,7 @@ export class PaintTemplateIndicator {
     const percent = this.progress?.id === template?.id && this.progress
       ? `${Math.round(this.progress.percentage)}%`
       : "—";
-    this.button.title = template?.title || "テンプレートを選択";
+    this.button.title = template?.title || t("paint_template_select");
     this.button.innerHTML = `
       <span class="mr-template-percent">${percent}</span>
       <img class="mr-template-thumb" alt="" />
@@ -133,8 +153,10 @@ export class PaintTemplateIndicator {
     if (!this.button) return;
 
     const menu = document.createElement("div");
-    menu.className = "mr-template-menu";
-    menu.textContent = "読み込み中…";
+    menu.className = this.isInDesktopToolbar()
+      ? "mr-template-menu mr-template-menu-up"
+      : "mr-template-menu";
+    menu.textContent = t("loading");
     this.button.parentElement?.appendChild(menu);
     this.menu = menu;
 
@@ -143,7 +165,7 @@ export class PaintTemplateIndicator {
       metadata = await getAllGalleryMetadata();
     } catch (error) {
       console.warn("🧑‍🎨 : Failed to load template menu", error);
-      if (this.menu === menu) menu.textContent = "テンプレートを読み込めませんでした";
+      if (this.menu === menu) menu.textContent = t("paint_template_load_failed");
       return;
     }
     const templates = metadata
@@ -158,7 +180,7 @@ export class PaintTemplateIndicator {
     if (this.menu !== menu) return;
     menu.replaceChildren();
     if (templates.length === 0) {
-      menu.textContent = "配置済みテンプレートはありません";
+      menu.textContent = t("paint_template_none");
       return;
     }
 

@@ -614,4 +614,8 @@ export const ptTranslations = {
   paint_guide_kind_mismatch: "Mal colocado",
   paint_guide_kind_overflow: "Excedente",
   paint_guide_kind_already: "Já colocado",
+  paint_template_select: "Selecionar modelo",
+  paint_template_load_failed: "Não foi possível carregar os modelos",
+  paint_template_none: "Nenhum modelo posicionado",
+  none_short: "NENHUM",
 };
