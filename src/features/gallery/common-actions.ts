@@ -3,7 +3,7 @@
  */
 
 import { GalleryItem, GalleryStorage } from "../../states/galleryStorage";
-import { gotoPosition } from "../../utils/position";
+import { getPixelExtentZoom, gotoPosition } from "../../utils/position";
 import { tilePixelToLatLng } from "../../utils/coordinate";
 import { sendGalleryImagesToInject } from "@/content";
 import { downloadBlob } from "./routes/image-editor/file-handler";
@@ -31,7 +31,7 @@ export const toggleDrawState = async (key: string): Promise<boolean> => {
 };
 
 /**
- * マップへ移動
+ * 画像の中央へ移動（サイズ情報のない旧データは左上へ移動）
  */
 export const gotoMapPosition = async (item: GalleryItem): Promise<void> => {
   if (!item.drawPosition) throw new Error("Item has no drawPosition");
@@ -39,11 +39,17 @@ export const gotoMapPosition = async (item: GalleryItem): Promise<void> => {
   const { lat, lng } = tilePixelToLatLng(
     item.drawPosition.TLX,
     item.drawPosition.TLY,
-    item.drawPosition.PxX,
-    item.drawPosition.PxY
+    item.drawPosition.PxX + (item.width ?? 0) / 2,
+    item.drawPosition.PxY + (item.height ?? 0) / 2
   );
 
-  await gotoPosition({ lat, lng, zoom: 14 });
+  const zoom = getPixelExtentZoom(
+    item.width ?? 0,
+    item.height ?? 0,
+    window.innerWidth,
+    window.innerHeight,
+  );
+  await gotoPosition({ lat, lng, zoom });
 };
 
 /**
