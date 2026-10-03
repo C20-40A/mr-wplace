@@ -178,16 +178,6 @@ const pushText = (anchor: Anchor, text: string, x: number, y: number, o: TextOpt
 export const textAt = (wx: number, wy: number, text: string, o: TextOptions = {}) =>
   pushText({ world: true, wx, wy }, text, 0, -22, o);
 
-/** 画面上部の大きい文字（マップ中央を隠さない） */
-export const topText = (text: string, size: number, o: TextOptions & { offsetY?: number } = {}) =>
-  pushText(
-    SCREEN,
-    text,
-    window.innerWidth / 2,
-    Math.max(72, window.innerHeight * 0.14) + (o.offsetY ?? 0),
-    { rainbow: true, life: 80, ...o, size },
-  );
-
 export const screenFlash = (strength: number, rgb = "255,215,0") => {
   flash = Math.max(flash, strength);
   flashColor = rgb;

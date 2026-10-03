@@ -54,13 +54,6 @@ export const playBlip = (combo: number) => {
   tone(freq * 2, 0.03, 0.06, "triangle", 0.4);
 };
 
-/** コンボ節目のキュイーン */
-export const playMilestone = (tier: number) => {
-  for (let i = 0; i < 4 + tier; i++) {
-    tone(comboFreq(i * 2 + tier), i * 0.05, 0.15, "square", 0.5);
-  }
-};
-
 /** 確定時のファンファーレ */
 export const playFanfare = (big: boolean) => {
   const notes = big

@@ -13,38 +13,29 @@ import {
   screenFlash,
   setFxProjectorFactory,
   textAt,
-  topText,
   type WorldToScreen,
 } from "./fx";
-import { destroyHud, setHudVisible, showProgressResult, updateHud } from "./hud";
-import {
-  closeAudio,
-  playBlip,
-  playFanfare,
-  playMilestone,
-  playMiss,
-} from "./sound";
+import { destroyHud, setHudVisible, showResultPanel, updateHud } from "./hud";
+import { closeAudio, playBlip, playFanfare, playMiss } from "./sound";
 
 /**
  * 演出強化モード（パーティーモード）
  * OFF 時は notify* が先頭で return するだけで、DOM/RAF/Audio/購読を一切持たない
  *
  * ゲーム性: 量ではなく腕前を評価する
- * - 進捗(テンプレ通り & まだその色でない) だけが得点。細部(detail) は ×3
- * - 進捗が続くと倍率アップ。ミスで保留ボーナス半減 + 倍率リセット
- * - Paint 確定で保留ボーナスを獲得。確定すると倍率もリセット (= 粘るか確定するかの駆け引き)
+ * - 進捗(テンプレ通り & まだその色でない) だけが得点。細部(detail) は 3pt
+ * - ミスで保留ボーナス半減
+ * - Paint 確定で保留ボーナスを獲得
  * 演出: 1px ごとに同期で即判定。大量に塗っても演出は 1 フレームにまとめる
+ *       成功 10px ごとに +10, +20 ... を黄色で出す
  * リザルト: 確定 POST 後にペイントモードを抜けたら表示。POST 無しで抜けたらキャンセル扱いで破棄
  */
 
 const RESULT_WAIT_MS = 1200;
 const HUD_LINGER_MS = 3000;
 const DETAIL_POINTS = 3;
-const STREAK_STEP = 15;
-const MAX_MULTIPLIER = 5;
 const BURSTS_PER_FRAME = 3;
-const PRAISE_EVERY = 5;
-const PRAISES = ["NICE!", "GOOD!", "COOL!", "GREAT!", "SUPER!", "WOW!"];
+const COUNT_EVERY = 10;
 
 type Judged = "progress" | "detail" | "same" | "out" | "miss";
 interface JudgedPixel {
@@ -54,9 +45,8 @@ interface JudgedPixel {
   color: string;
 }
 
-const LABEL: Record<Judged, { color: string; size: number }> = {
-  detail: { color: "#7ff", size: 32 },
-  progress: { color: "#ffd700", size: 28 },
+// 成功時はラベルを出さない（10px ごとの +N のみ）
+const LABEL: Record<Exclude<Judged, "progress" | "detail">, { color: string; size: number }> = {
   miss: { color: "#bbb", size: 20 },
   same: { color: "#999", size: 14 },
   out: { color: "#999", size: 14 },
@@ -64,7 +54,7 @@ const LABEL: Record<Judged, { color: string; size: number }> = {
 
 let enabled = false;
 let frameQueue: JudgedPixel[] = [];
-let framePoints = 0;
+let lastMilestone = 0;
 let frameScheduled = false;
 let committed = false;
 let exitTimer: ReturnType<typeof setTimeout> | null = null;
@@ -90,9 +80,6 @@ const worldKey = (c: CapturedPaintedCoordinate) =>
 let progressImageKey: string | null = null;
 let progressBefore = 0;
 
-const multiplier = () =>
-  Math.min(1 + Math.floor(streak / STREAK_STEP) * 0.5, MAX_MULTIPLIER);
-
 const resetCycle = () => {
   streak = 0;
   pending = 0;
@@ -101,6 +88,7 @@ const resetCycle = () => {
   committed = false;
   scoredKeys.clear();
   progressImageKey = null;
+  lastMilestone = 0;
 };
 
 const syncHudVisibility = () =>
@@ -159,15 +147,13 @@ const showResult = () => {
   const perfect = acc === 100 && progressCount >= 10;
   const title = perfect ? "PERFECT!!" : acc >= 90 ? "GREAT!" : acc >= 60 ? "NICE" : "OK";
 
-  topText(title, perfect ? 56 : 44, { life: 150, rainbow: acc >= 90 });
-  topText(`+${points.toLocaleString()}`, 40, { offsetY: 56, color: "#ffd700", rainbow: false, life: 150 });
-
-  // テンプレ完成度が取れて、変化が見える時だけ N% → M%
+  // テンプレ完成度が取れた時だけ N% → M%（表示上の差が無ければ hud 側で省略）
   const after = progressImageKey ? templateStats(progressImageKey) : null;
-  if (after) {
-    const topY = Math.max(72, window.innerHeight * 0.14);
-    showProgressResult(progressBefore, after.matched / after.total, topY + 90);
-  }
+  showResultPanel({
+    title,
+    points,
+    progress: after ? [progressBefore, after.matched / after.total] : null,
+  });
 
   // 演出の量は塗った量ではなく得点の平方根で（ベタ塗りで青天井にしない）
   const power = Math.sqrt(points);
@@ -217,7 +203,6 @@ export const setPartyModeEnabled = (value: boolean) => {
   if (lingerTimer) clearTimeout(lingerTimer);
   exitTimer = lingerTimer = null;
   frameQueue = [];
-  framePoints = 0;
   resetCycle();
   setFxProjectorFactory(null);
   destroyFx();
@@ -249,7 +234,6 @@ const captureProgressStart = (coord: CapturedPaintedCoordinate) => {
 
 /** 採点して状態を更新。演出はフレーム単位でまとめる */
 const score = (coord: CapturedPaintedCoordinate, judged: Judged) => {
-  const beforeMultiplier = multiplier();
   if (judged === "miss") {
     missCount++;
     // 連続ミスで何度も半減しないよう、進捗が挟まった後の最初のミスだけ
@@ -257,15 +241,9 @@ const score = (coord: CapturedPaintedCoordinate, judged: Judged) => {
     streak = 0;
   } else if (isGood(judged)) {
     captureProgressStart(coord);
-    const points = (judged === "detail" ? DETAIL_POINTS : 1) * beforeMultiplier;
-    pending += points;
-    framePoints += points;
+    pending += judged === "detail" ? DETAIL_POINTS : 1;
     progressCount++;
     streak++;
-  }
-  if (multiplier() > beforeMultiplier) {
-    topText(`×${multiplier()} !!`, 40 + multiplier() * 4, { life: 70 });
-    playMilestone(Math.min(Math.round((multiplier() - 1) * 2), 4));
   }
 
   const { color } = coord;
@@ -280,46 +258,43 @@ const score = (coord: CapturedPaintedCoordinate, judged: Judged) => {
   requestAnimationFrame(flushFrame);
 };
 
-/** 1 フレーム分の演出: 粒子は最新数件。成功があれば合計点を最後の成功地点に、無ければ最後の判定ラベル */
+/** 1 フレーム分の演出: 粒子は最新数件。成功 10px の節目を跨いだら +N、ミス系は最後のラベル */
 const flushFrame = () => {
   frameScheduled = false;
   const queue = frameQueue;
-  const points = framePoints;
   frameQueue = [];
-  framePoints = 0;
   if (!enabled || !queue.length) return;
 
+  let lastGood: JudgedPixel | null = null;
+  for (const p of queue) {
+    if (isGood(p.judged)) lastGood = p;
+  }
   for (const p of queue.slice(-BURSTS_PER_FRAME)) {
     if (p.judged === "miss") burstAt(p.wx, p.wy, "#777", 3, 0.6);
     else if (!isGood(p.judged)) burstAt(p.wx, p.wy, p.color, 2, 0.6);
-    else burstAt(p.wx, p.wy, p.judged === "detail" ? "#7ff" : p.color, 5, 1 + multiplier() / 5);
-  }
-
-  let lastGood: JudgedPixel | null = null;
-  for (let i = queue.length - 1; i >= 0 && !lastGood; i--) {
-    if (isGood(queue[i].judged)) lastGood = queue[i];
+    else burstAt(p.wx, p.wy, p.judged === "detail" ? "#7ff" : p.color, 5, 1.2);
   }
 
   if (lastGood) {
-    const label = LABEL[lastGood.judged];
-    // 倍率が上がるほど数字も少し大きく
-    textAt(lastGood.wx, lastGood.wy, `+${Math.round(points * 10) / 10}`, {
-      ...label,
-      size: label.size + (multiplier() - 1) * 4,
-      life: 40,
-    });
-    if (streak > 0 && streak % PRAISE_EVERY === 0) {
-      const word = PRAISES[Math.floor(Math.random() * PRAISES.length)];
-      textAt(lastGood.wx, lastGood.wy - 3, word, { size: 30, rainbow: true, life: 55 });
+    const milestone = Math.floor(progressCount / COUNT_EVERY) * COUNT_EVERY;
+    if (milestone > lastMilestone) {
+      lastMilestone = milestone;
+      textAt(lastGood.wx, lastGood.wy, `+${milestone}`, {
+        size: 30 + Math.min(Math.log10(milestone) * 6, 18),
+        color: "#ffd700",
+        life: 55,
+      });
     }
     playBlip(Math.min(streak, 14) + 1);
   } else {
+    // lastGood が無い = このフレームは全部 miss/same/out
     const last = queue[queue.length - 1];
-    textAt(last.wx, last.wy, last.judged.toUpperCase(), { ...LABEL[last.judged], life: 40 });
+    const label = LABEL[last.judged as keyof typeof LABEL];
+    textAt(last.wx, last.wy, last.judged.toUpperCase(), { ...label, life: 40 });
   }
   if (queue.some((p) => p.judged === "miss")) playMiss();
 
-  updateHud(Math.round(pending), multiplier());
+  updateHud(Math.round(pending));
 };
 
 /** 1px 置かれた瞬間（paint listener から）。すべて同期で処理する */

@@ -1,22 +1,21 @@
 /**
  * party mode の DOM 表示（背景なし・縁取り文字）
  * - 右上隅の数字: 今回のボーナス。値が増えるほど少しずつ大きくなり、加算のたびにぽよん
- * - リザルトの進捗バー: テンプレ完成度 N% → M% を伸ばして見せる
+ * - リザルト: タイトル / +得点 / テンプレ完成度 N% → M% バーを 1 つの箱で出し、同時に消す
  */
 
 const HUD_ID = "mr-wplace-party-mode-hud";
-const PROGRESS_ID = "mr-wplace-party-mode-progress";
+const RESULT_ID = "mr-wplace-party-mode-result";
 const OUTLINE = "-webkit-text-stroke:5px #000;paint-order:stroke fill;";
-const PROGRESS_SHOW_MS = 3500;
+const RESULT_SHOW_MS = 3500;
 
 let hud: HTMLDivElement | null = null;
 let scoreEl: HTMLDivElement | null = null;
-let multEl: HTMLSpanElement | null = null;
 let targetScore = 0;
 let shownScore = 0;
 let rafId: number | null = null;
 let popTimer: ReturnType<typeof setTimeout> | null = null;
-let progressTimer: ReturnType<typeof setTimeout> | null = null;
+let resultTimer: ReturnType<typeof setTimeout> | null = null;
 
 const ensureHud = () => {
   if (hud) return;
@@ -28,18 +27,13 @@ const ensureHud = () => {
     right: 10px;
     z-index: 2147482999;
     pointer-events: none;
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
     font-family: system-ui, sans-serif;
     font-weight: 900;
     line-height: 1;
   `;
-  multEl = document.createElement("span");
-  multEl.style.cssText = `${OUTLINE}font-size:16px;color:#7ff;`;
   scoreEl = document.createElement("div");
   scoreEl.style.cssText = `${OUTLINE}color:#ffd700;font-variant-numeric:tabular-nums;transform-origin:right center;transition:transform 0.15s cubic-bezier(.3,1.8,.5,1),font-size 0.2s;`;
-  hud.append(multEl, scoreEl);
+  hud.append(scoreEl);
   document.body.appendChild(hud);
 };
 
@@ -55,7 +49,7 @@ const step = () => {
   if (shownScore !== targetScore) rafId = requestAnimationFrame(step);
 };
 
-export const updateHud = (score: number, multiplier: number) => {
+export const updateHud = (score: number) => {
   ensureHud();
   if (score > targetScore) {
     scoreEl!.style.transform = "scale(1.3)";
@@ -64,7 +58,6 @@ export const updateHud = (score: number, multiplier: number) => {
   }
   targetScore = score;
   scoreEl!.style.fontSize = `${scoreFontSize(score)}px`;
-  multEl!.textContent = multiplier > 1 ? `×${multiplier}` : "";
   if (rafId === null) rafId = requestAnimationFrame(step);
 };
 
@@ -82,30 +75,11 @@ const formatPair = (before: number, after: number): [string, string] | null => {
   return null;
 };
 
-/** リザルト: テンプレ完成度 before → after のバー。差が表示できなければ出さない */
-export const showProgressResult = (before: number, after: number, offsetY: number) => {
+const createProgressBar = ([before, after]: [number, number]) => {
   const labels = formatPair(before, after);
-  if (!labels) return;
-  document.getElementById(PROGRESS_ID)?.remove();
-  if (progressTimer) clearTimeout(progressTimer);
-
-  const box = document.createElement("div");
-  box.id = PROGRESS_ID;
-  box.style.cssText = `
-    position: fixed;
-    left: 50%;
-    top: ${offsetY}px;
-    transform: translateX(-50%);
-    z-index: 2147482999;
-    pointer-events: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    font-family: system-ui, sans-serif;
-    font-weight: 900;
-    transition: opacity 0.4s;
-  `;
+  if (!labels) return null;
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:6px;";
   const text = document.createElement("div");
   text.style.cssText = `${OUTLINE}font-size:22px;color:#fff;`;
   text.textContent = `${labels[0]} → ${labels[1]}`;
@@ -115,24 +89,69 @@ export const showProgressResult = (before: number, after: number, offsetY: numbe
   const fill = document.createElement("div");
   fill.style.cssText = `height:100%;width:${before * 100}%;background:linear-gradient(90deg,#ffb300,#ffe600 70%,#fff);transition:width 1.2s cubic-bezier(.2,1.2,.4,1) 0.3s;`;
   bar.appendChild(fill);
-  box.append(text, bar);
-  document.body.appendChild(box);
+  wrap.append(text, bar);
+  return { wrap, start: () => (fill.style.width = `${Math.min(after, 1) * 100}%`), fill };
+};
 
-  void fill.offsetWidth; // 初期幅を確定させてから伸ばす（transition を確実に効かせる）
-  fill.style.width = `${Math.min(after, 1) * 100}%`;
-  progressTimer = setTimeout(() => {
+/** リザルト。progress は取得できない/差が表示できない時は省略 */
+export const showResultPanel = ({
+  title,
+  points,
+  progress,
+}: {
+  title: string;
+  points: number;
+  progress: [number, number] | null;
+}) => {
+  document.getElementById(RESULT_ID)?.remove();
+  if (resultTimer) clearTimeout(resultTimer);
+
+  const box = document.createElement("div");
+  box.id = RESULT_ID;
+  box.style.cssText = `
+    position: fixed;
+    left: 50%;
+    top: max(56px, 12vh);
+    transform: translateX(-50%);
+    z-index: 2147482999;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: system-ui, sans-serif;
+    font-weight: 900;
+    line-height: 1.1;
+    transition: opacity 0.4s;
+  `;
+  const titleEl = document.createElement("div");
+  titleEl.style.cssText = `${OUTLINE}font-size:48px;color:#fff;`;
+  titleEl.textContent = title;
+  const pointsEl = document.createElement("div");
+  pointsEl.style.cssText = `${OUTLINE}font-size:40px;color:#ffd700;`;
+  pointsEl.textContent = `+${points.toLocaleString()}`;
+  box.append(titleEl, pointsEl);
+
+  const bar = progress ? createProgressBar(progress) : null;
+  if (bar) box.appendChild(bar.wrap);
+  document.body.appendChild(box);
+  if (bar) {
+    void bar.fill.offsetWidth; // 初期幅を確定させてから伸ばす（transition を確実に効かせる）
+    bar.start();
+  }
+
+  resultTimer = setTimeout(() => {
     box.style.opacity = "0";
-    progressTimer = setTimeout(() => box.remove(), 400);
-  }, PROGRESS_SHOW_MS);
+    resultTimer = setTimeout(() => box.remove(), 400);
+  }, RESULT_SHOW_MS);
 };
 
 export const destroyHud = () => {
   if (rafId !== null) cancelAnimationFrame(rafId);
   if (popTimer) clearTimeout(popTimer);
-  if (progressTimer) clearTimeout(progressTimer);
-  rafId = popTimer = progressTimer = null;
+  if (resultTimer) clearTimeout(resultTimer);
+  rafId = popTimer = resultTimer = null;
   hud?.remove();
-  document.getElementById(PROGRESS_ID)?.remove();
-  hud = scoreEl = multEl = null;
+  document.getElementById(RESULT_ID)?.remove();
+  hud = scoreEl = null;
   targetScore = shownScore = 0;
 };
