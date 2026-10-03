@@ -6,6 +6,8 @@ let lastBlipAt = 0;
 
 // ペンタトニック（ドレミソラ）で上がっていくと気持ちいい
 const PENTATONIC = [0, 2, 4, 7, 9];
+/** ド から 2 オクターブ上のドまで（それ以上は耳に刺さる） */
+const MAX_STEP = PENTATONIC.length * 2;
 
 const getAudio = () => {
   if (!audioCtx) {
@@ -44,12 +46,12 @@ const comboFreq = (step: number) => {
   return 523.25 * 2 ** (semitone / 12);
 };
 
-/** 1px 置いたときのピコッ。コンボで音程が上がる */
-export const playBlip = (combo: number) => {
+/** 1px 置いたときのピコッ。progress (0-1) で音階が上がり、1 で最高音 */
+export const playBlip = (progress: number) => {
   const now = performance.now();
   if (now - lastBlipAt < 35) return;
   lastBlipAt = now;
-  const freq = comboFreq(Math.min(combo - 1, 14));
+  const freq = comboFreq(Math.round(progress * MAX_STEP));
   tone(freq, 0, 0.09, "square", 0.6);
   tone(freq * 2, 0.03, 0.06, "triangle", 0.4);
 };
@@ -76,4 +78,13 @@ export const closeAudio = () => {
 export const playMiss = () => {
   tone(110, 0, 0.18, "sawtooth", 0.5);
   tone(82.4, 0.06, 0.2, "sawtooth", 0.4);
+};
+
+/** テンプレ完成のファンファーレ（上昇アルペジオ → 長い和音） */
+export const playComplete = () => {
+  [0, 4, 7, 12, 16, 19, 24, 28, 31, 36].forEach((n, i) =>
+    tone(523.25 * 2 ** (n / 12), i * 0.07, 0.3, "square", 0.5),
+  );
+  const end = 10 * 0.07;
+  [0, 4, 7, 12].forEach((n) => tone(1046.5 * 2 ** (n / 12), end, 1.4, "sawtooth", 0.3));
 };

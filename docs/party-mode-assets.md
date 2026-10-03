@@ -1,6 +1,6 @@
 # Party result assets
 
-Source assets live here; `bun run copy-assets` copies them to `assets/party-mode/`.
+Source assets live in `public/assets/party-mode/`; `bun run copy-assets` copies them to `assets/party-mode/`.
 Development and release packaging already copy `public/assets`.
 Four transparent WebP titles, each 400px wide, total 81,528 bytes.
 No extra +N asset: the existing score text keeps the mobile footprint small.

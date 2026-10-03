@@ -4,12 +4,14 @@
  * - リザルト: タイトル / +得点 / テンプレ完成度 N% → M% バーを 1 つの箱で出し、同時に消す
  */
 
+import { PARTY_RESULT_TITLES } from "@/constants/party-mode";
 import { getResultAsset } from "@/inject/features/party-mode/result-assets";
 
 const HUD_ID = "mr-wplace-party-mode-hud";
 const RESULT_ID = "mr-wplace-party-mode-result";
 const OUTLINE = "-webkit-text-stroke:5px #000;paint-order:stroke fill;";
 const RESULT_SHOW_MS = 3500;
+const COMPLETE_SHOW_MS = 6000;
 
 let hud: HTMLDivElement | null = null;
 let scoreEl: HTMLDivElement | null = null;
@@ -67,11 +69,17 @@ export const setHudVisible = (visible: boolean) => {
   if (hud) hud.hidden = !visible;
 };
 
+/** 切り捨て（四捨五入だと 99.8% が 100% に見える）。1e-9 は 0.57*100=56.999.. 対策 */
+const floorPercent = (ratio: number, digits: number) => {
+  const scale = 10 ** digits;
+  return (Math.floor(ratio * 100 * scale + 1e-9) / scale).toFixed(digits);
+};
+
 /** 表示上で差が出る最小の桁数 (0-2) で整形 */
 const formatPair = (before: number, after: number): [string, string] | null => {
   for (let digits = 0; digits <= 2; digits++) {
-    const a = (before * 100).toFixed(digits);
-    const b = (after * 100).toFixed(digits);
+    const a = floorPercent(before, digits);
+    const b = floorPercent(after, digits);
     if (a !== b) return [`${a}%`, `${b}%`];
   }
   return null;
@@ -95,15 +103,49 @@ const createProgressBar = ([before, after]: [number, number]) => {
   return { wrap, start: () => (fill.style.width = `${Math.min(after, 1) * 100}%`), fill };
 };
 
+const createTitle = (title: string, height: number) => {
+  const el = document.createElement("div");
+  const image = getResultAsset(title);
+  if (image) {
+    image.style.cssText = `display:block;height:${height}px;width:auto;max-width:88vw;object-fit:contain;`;
+    el.replaceChildren(image);
+    return el;
+  }
+  // 画像が準備中/失敗の時は縁取り文字（高さに合わせた大きさ）
+  el.style.cssText = `${OUTLINE}font-size:${Math.round(height * 0.55)}px;color:#fff;`;
+  el.textContent = title;
+  return el;
+};
+
+const createCompleteTitle = () => {
+  const el = document.createElement("div");
+  const image = getResultAsset(PARTY_RESULT_TITLES.complete);
+  if (image) {
+    image.style.cssText = "display:block;height:132px;width:auto;max-width:92vw;object-fit:contain;filter:drop-shadow(0 0 12px #ffe600);";
+    el.replaceChildren(image);
+    return el;
+  }
+  el.style.cssText = `${OUTLINE}font-size:clamp(40px,13vw,72px);color:#ffd700;letter-spacing:0.02em;filter:drop-shadow(0 0 12px #ffe600);`;
+  el.textContent = "COMPLETE!!";
+  return el;
+};
+
 /** リザルト。progress は取得できない/差が表示できない時は省略 */
 export const showResultPanel = ({
   title,
+  titleHeight,
   points,
   progress,
+  complete,
 }: {
-  title: string;
+  /** null = タイトル無し（成功 px が少ない時） */
+  title: string | null;
+  /** タイトル画像の高さ。画像ごとの縦横比に依らず格が揃う */
+  titleHeight: number;
   points: number;
   progress: [number, number] | null;
+  /** テンプレ完成。COMPLETE を足して長めに出す */
+  complete: boolean;
 }) => {
   document.getElementById(RESULT_ID)?.remove();
   if (resultTimer) clearTimeout(resultTimer);
@@ -125,19 +167,13 @@ export const showResultPanel = ({
     line-height: 1.1;
     transition: opacity 0.4s;
   `;
-  const titleEl = document.createElement("div");
-  titleEl.style.cssText = `${OUTLINE}font-size:48px;color:#fff;`;
-  titleEl.textContent = title;
-  const image = getResultAsset(title);
-  if (image) {
-    image.style.cssText = "display:block;width:min(400px,88vw);height:auto;";
-    titleEl.style.cssText = "";
-    titleEl.replaceChildren(image);
-  }
+  const completeEl = complete ? createCompleteTitle() : null;
+  if (completeEl) box.appendChild(completeEl);
+  if (title) box.appendChild(createTitle(title, titleHeight));
   const pointsEl = document.createElement("div");
   pointsEl.style.cssText = `${OUTLINE}font-size:40px;color:#ffd700;`;
   pointsEl.textContent = `+${points.toLocaleString()}`;
-  box.append(titleEl, pointsEl);
+  box.appendChild(pointsEl);
 
   const bar = progress ? createProgressBar(progress) : null;
   if (bar) box.appendChild(bar.wrap);
@@ -147,6 +183,11 @@ export const showResultPanel = ({
     { transform: "translateX(-50%) scale(1.12)", opacity: 1, offset: 0.65 },
     { transform: "translateX(-50%) scale(1)", opacity: 1 },
   ], { duration: 380, easing: "ease-out" });
+  // 完成時は COMPLETE だけ鼓動させ続ける（box ごと消えるので後始末不要）
+  completeEl?.animate(
+    [{ transform: "scale(1)" }, { transform: "scale(1.1)" }],
+    { duration: 420, iterations: Infinity, direction: "alternate", easing: "ease-in-out" },
+  );
   if (bar) {
     void bar.fill.offsetWidth; // 初期幅を確定させてから伸ばす（transition を確実に効かせる）
     bar.start();
@@ -155,7 +196,17 @@ export const showResultPanel = ({
   resultTimer = setTimeout(() => {
     box.style.opacity = "0";
     resultTimer = setTimeout(() => box.remove(), 400);
-  }, RESULT_SHOW_MS);
+  }, complete ? COMPLETE_SHOW_MS : RESULT_SHOW_MS);
+};
+
+/** 確定/キャンセルで保留がリセットされた時。カウントダウンさせず即 0 */
+export const resetHudScore = () => {
+  if (rafId !== null) cancelAnimationFrame(rafId);
+  rafId = null;
+  targetScore = shownScore = 0;
+  if (!scoreEl) return;
+  scoreEl.textContent = "0";
+  scoreEl.style.fontSize = `${scoreFontSize(0)}px`;
 };
 
 export const destroyHud = () => {

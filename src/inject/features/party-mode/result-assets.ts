@@ -1,4 +1,4 @@
-import { PARTY_RESULT_TITLES, type PartyResultAssetUrls } from "@/features/party-mode/assets";
+import { PARTY_RESULT_TITLES, type PartyResultAssetUrls } from "@/constants/party-mode";
 
 let images: Record<string, HTMLImageElement> = {};
 

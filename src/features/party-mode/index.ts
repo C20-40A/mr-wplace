@@ -1,5 +1,5 @@
 import { runtime, storage } from "@/utils/browser-api";
-import { PARTY_RESULT_TITLES } from "@/features/party-mode/assets";
+import { PARTY_RESULT_TITLES } from "@/constants/party-mode";
 
 /** 演出強化モード（パーティーモード）トグル。描画は inject/features/party-mode が担当 */
 

@@ -253,7 +253,7 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
     `clickAtLatLng` / `findPaintPreviewSourceId` / `fillPaintPreviewTile` / `seedPaintedPixel` /
     `ensurePaintedPixelMapCaptured`、`setDraftPaintListener` はすべて削除した。
     新方式は wplace へ pointer を渡さないため、そもそも送信が発生せず遮断ロジック自体が不要。
-- `features/party-mode/`: 演出強化モード。`handlePaintForStats` の判定 (match/detail/mismatch/none) + 下地比較 (`peekBackgroundPixelRgbInt` で同期参照、未 decode は進捗扱い) で 1px ごとに同期採点。同 pixel 同色の再発火は無視 (CRITICAL: 重複判定の Map key に wplace 形式 `t=(..);p=(..)` を使うと Map.set フックが誤認して再帰する)。成功 10px ごとに黄色の +N。演出は 1 フレームにまとめ、粒子/文字は world pixel 固定で毎フレーム再投影。右上 HUD は数字のみ・ペイント中のみ。リザルト (タイトル/+得点/完成度バーを 1 つの DOM で同時に消す) は確定 POST (`/paint`) 後にペイントモードを抜けた時だけ (テンプレ完成度 N%→M% は取得でき差が見える時のみ)。OFF 時は notify* が即 return し DOM/RAF/Audio/購読を持たない。
+- `features/party-mode/`: 演出強化モード。`handlePaintForStats` の判定 (match/detail/mismatch/none) + 下地比較 (`peekBackgroundPixelRgbInt` で同期参照、未 decode は進捗扱い) で 1px ごとに同期採点。同 pixel 同色の再発火は無視 (CRITICAL: 重複判定の Map key に wplace 形式 `t=(..);p=(..)` を使うと Map.set フックが誤認して再帰する)。成功 10px ごとに黄色の +N。演出は 1 フレームにまとめ、粒子/文字は world pixel 固定で毎フレーム再投影。右上 HUD は数字のみ・ペイント中のみ。リザルト (成功 px 50/100/200/500 で OK/NICE/GREAT/PERFECT、テンプレ完成で COMPLETE。タイトル/+得点/完成度バーを 1 つの DOM で同時に消す) は確定 POST (`/paint`) 後にペイントモードを抜けた時だけ (完成度は全タイルの stats が揃った時のみ。N%→M% は差が見える時のみ)。OFF 時は notify* が即 return し DOM/RAF/Audio/購読を持たない。
 - `features/grid-display.ts`: zoom>=14 で pixel grid。
 - `features/scale-display.ts`: A/B pin 距離 UI。
 - `features/area-display.ts`: area region layer、編集 UI、measure。

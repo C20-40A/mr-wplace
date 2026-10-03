@@ -1,5 +1,5 @@
 import type { CapturedPaintedCoordinate } from "@/inject/types";
-import { PARTY_RESULT_TITLES, type PartyResultAssetUrls } from "@/features/party-mode/assets";
+import { PARTY_RESULT_TITLES, type PartyResultAssetUrls } from "@/constants/party-mode";
 import { clearResultAssets, prepareResultAssets } from "@/inject/features/party-mode/result-assets";
 import { tilePixelToLatLng } from "@/utils/coordinate";
 import { TILE_SIZE } from "@/utils/geo-converter";
@@ -17,8 +17,8 @@ import {
   textAt,
   type WorldToScreen,
 } from "./fx";
-import { destroyHud, setHudVisible, showResultPanel, updateHud } from "./hud";
-import { closeAudio, playBlip, playFanfare, playMiss } from "./sound";
+import { destroyHud, resetHudScore, setHudVisible, showResultPanel, updateHud } from "./hud";
+import { closeAudio, playBlip, playComplete, playFanfare, playMiss } from "./sound";
 
 /**
  * 演出強化モード（パーティーモード）
@@ -34,7 +34,15 @@ import { closeAudio, playBlip, playFanfare, playMiss } from "./sound";
  */
 
 const RESULT_WAIT_MS = 1200;
-const HUD_LINGER_MS = 3000;
+/** 成功 px 数 → タイトルと画像の高さ (多いほど大きい) */
+const TITLE_TIERS = [
+  { min: 500, key: "perfect", height: 120 },
+  { min: 200, key: "great", height: 92 },
+  { min: 100, key: "nice", height: 72 },
+  { min: 50, key: "ok", height: 56 },
+] as const;
+/** この px 数で塗り音が最高音になる */
+const MAX_PITCH_PX = 500;
 const DETAIL_POINTS = 3;
 const BURSTS_PER_FRAME = 3;
 const COUNT_EVERY = 10;
@@ -60,7 +68,6 @@ let lastMilestone = 0;
 let frameId: number | null = null;
 let committed = false;
 let exitTimer: ReturnType<typeof setTimeout> | null = null;
-let lingerTimer: ReturnType<typeof setTimeout> | null = null;
 let unsubscribePaintMode: (() => void) | null = null;
 let paintModeActive = false;
 
@@ -91,10 +98,10 @@ const resetCycle = () => {
   scoredKeys.clear();
   progressImageKey = null;
   lastMilestone = 0;
+  resetHudScore();
 };
 
-const syncHudVisibility = () =>
-  setHudVisible(paintModeActive || lingerTimer !== null);
+const syncHudVisibility = () => setHudVisible(paintModeActive);
 
 /** タイル上の最上位テンプレ (表示中) の imageKey */
 const findTemplateKey = (tileX: number, tileY: number): string | null => {
@@ -110,10 +117,15 @@ const findTemplateKey = (tileX: number, tileY: number): string | null => {
   return null;
 };
 
-/** テンプレ完成度 (読み込み済みタイルの stats 合計。stats 側が塗るたびに楽観更新する) */
+/**
+ * テンプレ完成度 (stats 側が塗るたびに楽観更新する)
+ * 全タイルの stats が揃っている時だけ返す（一部だけだと % も COMPLETE 判定も嘘になる）
+ */
 const templateStats = (imageKey: string) => {
   const stats = perTileColorStats.get(imageKey);
   if (!stats) return null;
+  const layer = overlayLayers.find((l) => l.imageKey === imageKey);
+  if (layer?.affectedTileSet && stats.size < layer.affectedTileSet.size) return null;
   let matched = 0;
   let total = 0;
   for (const s of stats.values()) {
@@ -142,34 +154,32 @@ const createProjector = (refWx: number, refWy: number): WorldToScreen | null => 
 };
 
 const showResult = () => {
-  const judgedCount = progressCount + missCount;
-  if (judgedCount === 0) return;
-  const acc = Math.round((progressCount / judgedCount) * 100);
+  if (progressCount + missCount === 0) return;
   const points = Math.round(pending);
-  const perfect = acc === 100 && progressCount >= 10;
-  const title = PARTY_RESULT_TITLES[perfect ? "perfect" : acc >= 90 ? "great" : acc >= 60 ? "nice" : "ok"];
+  const tier = TITLE_TIERS.find((t) => progressCount >= t.min) ?? null;
 
   // テンプレ完成度が取れた時だけ N% → M%（表示上の差が無ければ hud 側で省略）
   const after = progressImageKey ? templateStats(progressImageKey) : null;
+  const complete = progressCount > 0 && !!after && after.matched >= after.total;
   showResultPanel({
-    title,
+    title: tier ? PARTY_RESULT_TITLES[tier.key] : null,
+    titleHeight: tier?.height ?? 0,
     points,
     progress: after ? [progressBefore, after.matched / after.total] : null,
+    complete,
   });
 
+  if (complete) {
+    confettiRain(200);
+    screenFlash(0.5);
+    playComplete();
+    return;
+  }
   // 演出の量は塗った量ではなく得点の平方根で（ベタ塗りで青天井にしない）
   const power = Math.sqrt(points);
   if (power >= 3) confettiRain(Math.min(Math.round(power * 6), 200));
-  screenFlash(perfect ? 0.3 : 0.15);
-  playFanfare(perfect);
-
-  // ペイントモードを抜けた後も、数字を少し見せる
-  if (lingerTimer) clearTimeout(lingerTimer);
-  lingerTimer = setTimeout(() => {
-    lingerTimer = null;
-    syncHudVisibility();
-  }, HUD_LINGER_MS);
-  syncHudVisibility();
+  screenFlash(tier?.key === "perfect" ? 0.3 : 0.15);
+  playFanfare(tier?.key === "perfect");
 };
 
 /** ペイントモードを抜けた: 確定 POST が来ていればリザルト、来なければキャンセル扱い */
@@ -203,8 +213,7 @@ export const setPartyModeEnabled = (value: boolean, resultAssetUrls?: PartyResul
   unsubscribePaintMode?.();
   unsubscribePaintMode = null;
   if (exitTimer) clearTimeout(exitTimer);
-  if (lingerTimer) clearTimeout(lingerTimer);
-  exitTimer = lingerTimer = null;
+  exitTimer = null;
   frameQueue = [];
   if (frameId !== null) cancelAnimationFrame(frameId);
   frameId = null;
@@ -290,7 +299,7 @@ const flushFrame = () => {
         life: 55,
       });
     }
-    playBlip(Math.min(streak, 14) + 1);
+    playBlip(Math.min(progressCount / MAX_PITCH_PX, 1));
   } else {
     // lastGood が無い = このフレームは全部 miss/same/out
     const last = queue[queue.length - 1];
