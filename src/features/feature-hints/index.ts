@@ -41,6 +41,7 @@ export type FeatureHintId =
   // | "image-detail-edit-title"
   | "gallery-import-export-btn"
   | "art-cruise-btn"
+  | "party-mode-btn"
   | "draft-fab-btn";
 
 interface FeatureHintDefinition {
@@ -225,6 +226,15 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     imageSrc: runtime.getURL("assets/art-cruise/hint/art-cruise-hint.webp"),
     placement: "right",
     priority: 5,
+    condition: isNoModalOpen,
+  },
+  // ------- Party Mode Hint -------
+  // art-cruise の hint と同時に出ないよう後回し（同じ縦並びのボタン）
+  "party-mode-btn": {
+    messageKey: "hint_party_mode_btn",
+    placement: "right",
+    priority: 6,
+    dependsOn: ["art-cruise-btn"],
     condition: isNoModalOpen,
   },
   // ------- Draft Draw Hint -------

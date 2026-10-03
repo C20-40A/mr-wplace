@@ -655,4 +655,7 @@ Do not use this feature to paint actual pixels.`,
   notice_paint_guide_already_off: "Stopped detecting painting over placed pixels",
   hint_requires_layer_mode: "This feature only works while the template display mode is \"Independent\". Switching reloads the page.",
   hint_requires_layer_mode_action: "Switch to Independent",
+  notice_party_mode_on: "Party Mode ON: painting gets flashy!",
+  notice_party_mode_off: "Party Mode OFF",
+  hint_party_mode_btn: "New! Party Mode adds effects and scores every time you paint a correct pixel.",
 };

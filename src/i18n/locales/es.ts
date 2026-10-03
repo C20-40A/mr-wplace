@@ -639,4 +639,7 @@ export const esTranslations = {
   notice_paint_guide_already_off: "Se dejó de detectar la pintura sobre píxeles ya colocados",
   hint_requires_layer_mode: "Esta función solo funciona cuando el modo de visualización de la plantilla es \"Independiente\". Al cambiar se recargará la página.",
   hint_requires_layer_mode_action: "Cambiar a Independiente",
+  notice_party_mode_on: "Modo fiesta ACTIVADO: ¡pintar se vuelve espectacular!",
+  notice_party_mode_off: "Modo fiesta DESACTIVADO",
+  hint_party_mode_btn: "¡Nuevo! El modo fiesta muestra efectos y puntos cada vez que pintas un píxel correcto.",
 };

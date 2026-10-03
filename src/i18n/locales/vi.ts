@@ -625,4 +625,7 @@ export const viTranslations = {
   notice_paint_guide_already_off: "Ngừng phát hiện việc tô đè lên pixel đã đặt",
   hint_requires_layer_mode: "Tính năng này chỉ hoạt động khi chế độ hiển thị mẫu là \"Độc lập\". Chuyển đổi sẽ tải lại trang.",
   hint_requires_layer_mode_action: "Chuyển sang Độc lập",
+  notice_party_mode_on: "Chế độ tiệc BẬT: tô màu thật hoành tráng!",
+  notice_party_mode_off: "Chế độ tiệc TẮT",
+  hint_party_mode_btn: "Mới! Chế độ tiệc hiển thị hiệu ứng và điểm mỗi khi bạn tô đúng một pixel.",
 };

@@ -658,4 +658,7 @@ export const jaTranslations = {
   notice_paint_guide_already_off: "すでに塗ってあるピクセルの上書き検知をやめます",
   hint_requires_layer_mode: "この機能はテンプレートの表示方式が「独立」のときだけ使えます。切り替えるとページを再読み込みします。",
   hint_requires_layer_mode_action: "独立モードに切り替える",
+  notice_party_mode_on: "パーティーモード ON：塗るたびに派手な演出！",
+  notice_party_mode_off: "パーティーモード OFF",
+  hint_party_mode_btn: "新機能！パーティーモードで、正しく塗るたびに演出とスコアが出ます。",
 };

@@ -630,4 +630,7 @@ export const ptTranslations = {
   notice_paint_guide_already_off: "Parou de detectar a pintura sobre pixels já colocados",
   hint_requires_layer_mode: "Este recurso só funciona quando o modo de exibição do modelo é \"Independente\". Ao trocar, a página será recarregada.",
   hint_requires_layer_mode_action: "Mudar para Independente",
+  notice_party_mode_on: "Modo festa LIGADO: pintar fica espetacular!",
+  notice_party_mode_off: "Modo festa DESLIGADO",
+  hint_party_mode_btn: "Novo! O modo festa mostra efeitos e pontos a cada pixel pintado corretamente.",
 };

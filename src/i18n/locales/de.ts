@@ -629,4 +629,7 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   notice_paint_guide_already_off: "Erkennung des Übermalens beendet",
   hint_requires_layer_mode: "Diese Funktion arbeitet nur im Vorlagen-Anzeigemodus \"Unabhängig\". Beim Wechsel wird die Seite neu geladen.",
   hint_requires_layer_mode_action: "Auf Unabhängig umschalten",
+  notice_party_mode_on: "Party-Modus AN: Malen wird spektakulär!",
+  notice_party_mode_off: "Party-Modus AUS",
+  hint_party_mode_btn: "Neu! Der Party-Modus zeigt Effekte und Punkte für jedes korrekt gemalte Pixel.",
 };

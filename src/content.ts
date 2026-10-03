@@ -295,10 +295,12 @@ const setupFloatingButtons = () => {
 
   const artCruiseButton = createArtCruiseButton();
   container.appendChild(artCruiseButton);
-  container.appendChild(createPartyModeButton());
+  const partyModeButton = createPartyModeButton();
+  container.appendChild(partyModeButton);
   (document.body || document.documentElement).appendChild(container);
 
   showFeatureHint("art-cruise-btn", artCruiseButton);
+  showFeatureHint("party-mode-btn", partyModeButton);
 };
 
 

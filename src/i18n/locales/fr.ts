@@ -646,4 +646,7 @@ export const frTranslations = {
   notice_paint_guide_already_off: "Arrêt de la détection du repassage sur les pixels placés",
   hint_requires_layer_mode: "Cette fonction ne marche que si le mode d'affichage du modèle est \"Indépendant\". Le changement recharge la page.",
   hint_requires_layer_mode_action: "Passer en Indépendant",
+  notice_party_mode_on: "Mode fête ACTIVÉ : peindre devient spectaculaire !",
+  notice_party_mode_off: "Mode fête DÉSACTIVÉ",
+  hint_party_mode_btn: "Nouveau ! Le mode fête affiche des effets et des points à chaque pixel correct.",
 };

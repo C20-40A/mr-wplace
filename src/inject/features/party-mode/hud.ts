@@ -1,13 +1,15 @@
 /**
  * party mode の DOM 表示（背景なし・縁取り文字）
- * - 右上隅の数字: 今回のボーナス。値が増えるほど少しずつ大きくなり、加算のたびにぽよん
+ * - 右上隅の数字 (mobile は lock ボタンと被るので左上): 今回のボーナス。値が増えるほど少しずつ大きくなり、加算のたびにぽよん
  * - リザルト: タイトル / +得点 / テンプレ完成度 N% → M% バーを 1 つの箱で出し、同時に消す
  */
 
+import { VIEWPORT_BREAKPOINTS } from "@/constants/breakpoints";
 import { PARTY_RESULT_TITLES } from "@/constants/party-mode";
 import { getResultAsset } from "@/inject/features/party-mode/result-assets";
 
 const HUD_ID = "mr-wplace-party-mode-hud";
+const HUD_STYLE_ID = "mr-wplace-party-mode-hud-style";
 const RESULT_ID = "mr-wplace-party-mode-result";
 const OUTLINE = "-webkit-text-stroke:5px #000;paint-order:stroke fill;";
 const RESULT_SHOW_MS = 3500;
@@ -21,14 +23,26 @@ let rafId: number | null = null;
 let popTimer: ReturnType<typeof setTimeout> | null = null;
 let resultTimer: ReturnType<typeof setTimeout> | null = null;
 
+/** 位置だけ media query で切り替える（inline style では書けない。回転/リサイズにも追従） */
+const HUD_POSITION_CSS = `
+  #${HUD_ID} { top: calc(env(safe-area-inset-top, 0px) + 8px); right: 10px; }
+  #${HUD_ID} > div { transform-origin: right center; }
+  @media (max-width: ${VIEWPORT_BREAKPOINTS.sm - 0.02}px) {
+    #${HUD_ID} { right: auto; left: 10px; }
+    #${HUD_ID} > div { transform-origin: left center; }
+  }
+`;
+
 const ensureHud = () => {
   if (hud) return;
+  const style = document.createElement("style");
+  style.id = HUD_STYLE_ID;
+  style.textContent = HUD_POSITION_CSS;
+  document.head.appendChild(style);
   hud = document.createElement("div");
   hud.id = HUD_ID;
   hud.style.cssText = `
     position: fixed;
-    top: calc(env(safe-area-inset-top, 0px) + 8px);
-    right: 10px;
     z-index: 2147482999;
     pointer-events: none;
     font-family: system-ui, sans-serif;
@@ -36,7 +50,7 @@ const ensureHud = () => {
     line-height: 1;
   `;
   scoreEl = document.createElement("div");
-  scoreEl.style.cssText = `${OUTLINE}color:#ffd700;font-variant-numeric:tabular-nums;transform-origin:right center;transition:transform 0.15s cubic-bezier(.3,1.8,.5,1),font-size 0.2s;`;
+  scoreEl.style.cssText = `${OUTLINE}color:#ffd700;font-variant-numeric:tabular-nums;transition:transform 0.15s cubic-bezier(.3,1.8,.5,1),font-size 0.2s;`;
   hud.append(scoreEl);
   document.body.appendChild(hud);
 };
@@ -215,6 +229,7 @@ export const destroyHud = () => {
   if (resultTimer) clearTimeout(resultTimer);
   rafId = popTimer = resultTimer = null;
   hud?.remove();
+  document.getElementById(HUD_STYLE_ID)?.remove();
   document.getElementById(RESULT_ID)?.remove();
   hud = scoreEl = null;
   targetScore = shownScore = 0;
