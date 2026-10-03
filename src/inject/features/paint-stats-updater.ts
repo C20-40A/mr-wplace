@@ -31,7 +31,11 @@ for (const entry of colorpalette) {
 
 // タイル ImageBitmap → ピクセルデータキャッシュ (tileKey 単位)
 // キャッシュすることで同一タイルの複数ピクセルペイント時に再描画不要
-const tilePixelCache = new Map<string, Uint8ClampedArray>();
+// テンプレ移動/再生成で同じ key のまま bitmap が差し替わるので、bitmap 同一性も見る
+const tilePixelCache = new Map<
+  string,
+  { bitmap: ImageBitmap; data: Uint8ClampedArray }
+>();
 const MAX_TILE_PIXEL_CACHE = 10;
 const GUIDE_TEMPLATE_PROXIMITY_PX = 10;
 const tileCacheOrder: string[] = [];
@@ -57,12 +61,14 @@ const getCachedTilePixels = (
   bitmap: ImageBitmap
 ): Uint8ClampedArray | null => {
   const cached = tilePixelCache.get(tileKey);
-  if (cached) return cached;
+  if (cached?.bitmap === bitmap) return cached.data;
 
   const data = getTilePixelData(bitmap);
   if (!data) return null;
 
-  tilePixelCache.set(tileKey, data);
+  // 差し替え時は順序を末尾に付け直す（重複 push で LRU が壊れないように）
+  if (cached) tileCacheOrder.splice(tileCacheOrder.indexOf(tileKey), 1);
+  tilePixelCache.set(tileKey, { bitmap, data });
   tileCacheOrder.push(tileKey);
   if (tileCacheOrder.length > MAX_TILE_PIXEL_CACHE) {
     const oldest = tileCacheOrder.shift();
