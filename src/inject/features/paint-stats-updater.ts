@@ -10,6 +10,8 @@
 
 import { colorpalette } from "@/constants/colors";
 import { overlayLayers, perTileColorStats } from "./tile-draw/states";
+import { getBackgroundPixelRgbInt } from "./paint-guide-background";
+import { getCapturedPaintedCoordinates } from "./map-instance/painted-coordinates-capture";
 import type { CapturedPaintedCoordinate } from "@/inject/types";
 import { scheduleBeaconRecompute, onBeaconPixelPainted } from "./beacon";
 
@@ -256,14 +258,31 @@ export const handlePaintForStats = (
   }
 
   clearFrontTilePaintGuide(coord.tileX, coord.tileY, coord.pixelX, coord.pixelY);
+  void getBackgroundPixelRgbInt(coord).then((backgroundRgbInt) => {
+    // Ignore reads completed after erasing, recoloring, or closing the session.
+    if (getCapturedPaintedCoordinates().get(coord.key) !== coord) return;
+    if (window.mrWplacePaintGuideEnabled === false) return;
+    if (backgroundRgbInt !== paintedRgbInt) return;
+    upsertFrontTilePaintGuide(
+      coord.tileX, coord.tileY, coord.pixelX, coord.pixelY,
+      "already", topOverlayRgbInt,
+    );
+  });
 };
 
 
-export const replayPaintGuideForCoordinates = (coordinates: Iterable<CapturedPaintedCoordinate>, shouldContinue: () => boolean): void => {
+export const replayPaintGuideForCoordinates = (
+  coordinates: Iterable<CapturedPaintedCoordinate>,
+  shouldContinue: () => boolean,
+): void => {
   const iterator = coordinates[Symbol.iterator]();
   const replayNextBatch = (): void => {
     if (!shouldContinue()) return;
-    for (let i = 0; i < 100; i++) { const next = iterator.next(); if (next.done) return; handlePaintForStats(next.value, false); }
+    for (let i = 0; i < 100; i++) {
+      const next = iterator.next();
+      if (next.done) return;
+      handlePaintForStats(next.value, false);
+    }
     requestAnimationFrame(replayNextBatch);
   };
   requestAnimationFrame(replayNextBatch);

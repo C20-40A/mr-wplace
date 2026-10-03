@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PNG alpha API boundary diagnostic</title>
+    <style>
+      body { max-width: 980px; margin: 2rem auto; padding: 0 1rem; font: 15px/1.45 system-ui, sans-serif; }
+      fieldset { margin: 1rem 0; padding: 1rem; }
+      label { display: block; margin: .5rem 0; }
+      textarea { width: min(100%, 28rem); min-height: 5rem; font: 14px monospace; }
+      button { padding: .5rem .9rem; }
+      #status { white-space: pre-wrap; }
+      table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+      th, td { border: 1px solid #aaa; padding: .35rem .5rem; text-align: left; }
+      code { background: #eee; padding: .1rem .25rem; }
+      #preview { display: block; max-width: 100%; max-height: 360px; image-rendering: pixelated; border: 1px solid #888; }
+    </style>
+  </head>
+  <body>
+    <h1>PNG alpha API boundary diagnostic</h1>
+    <p>Run this same page in Firefox after setting <code>gfx.color_management.mode</code> to 2, then 0. Restart Firefox after each change. This page uses only browser image and Canvas APIs; it does not resize, quantize, palette-match, or use WebGL.</p>
+    <fieldset>
+      <legend>PNG input</legend>
+      <label>RGBA PNG (Color Type 6): <input id="rgbaFile" type="file" accept="image/png"></label>
+      <label>Indexed PNG (Color Type 3, PLTE/tRNS): <input id="indexedFile" type="file" accept="image/png"></label>
+      <p>Choose a file, then click the preview at fully transparent pixels to add sample coordinates. You can also enter coordinates manually below.</p>
+      <canvas id="preview" aria-label="Selected image preview; click to add a sample coordinate"></canvas>
+      <label>Coordinates, one <code>x,y</code> per line (image pixel coordinates):<br><textarea id="coords" placeholder="Click the preview, or enter e.g.&#10;12,34&#10;20,34"></textarea></label>
+      <button id="run" type="button">Run A–E for selected file</button>
+    </fieldset>
+    <p id="status">Choose either PNG file to begin.</p>
+    <div id="results"></div>
+
+    <script>
+      const inputs = [document.querySelector('#rgbaFile'), document.querySelector('#indexedFile')];
+      const preview = document.querySelector('#preview');
+      const coordsInput = document.querySelector('#coords');
+      const status = document.querySelector('#status');
+      const results = document.querySelector('#results');
+      let selectedFile = null;
+      let image = null;
+      let objectUrl = null;
+
+      for (const input of inputs) input.addEventListener('change', () => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        for (const other of inputs) if (other !== input) other.value = '';
+        selectedFile = file;
+        coordsInput.value = '';
+        results.replaceChildren();
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        objectUrl = URL.createObjectURL(file);
+        image = new Image();
+        image.onload = () => {
+          preview.width = image.naturalWidth;
+          preview.height = image.naturalHeight;
+          const ctx = preview.getContext('2d', { willReadFrequently: true });
+          ctx.clearRect(0, 0, preview.width, preview.height);
+          ctx.drawImage(image, 0, 0);
+          status.textContent = `${file.name}: ${image.naturalWidth} × ${image.naturalHeight}. Preview is stage A. Click fully transparent pixels to sample them.`;
+        };
+        image.onerror = () => { status.textContent = `Could not decode ${file.name} as an image.`; };
+        image.src = objectUrl;
+      });
+
+      preview.addEventListener('click', (event) => {
+        if (!image) return;
+        const rect = preview.getBoundingClientRect();
+        const x = Math.min(image.naturalWidth - 1, Math.floor((event.clientX - rect.left) * image.naturalWidth / rect.width));
+        const y = Math.min(image.naturalHeight - 1, Math.floor((event.clientY - rect.top) * image.naturalHeight / rect.height));
+        const existing = coordsInput.value.trim();
+        coordsInput.value = `${existing ? existing + '\n' : ''}${x},${y}`;
+      });
+
+      function parseCoords() {
+        return coordsInput.value.split(/\n+/).map(line => line.trim()).filter(Boolean).map(line => {
+          const match = line.match(/^(\d+)\s*,\s*(\d+)$/);
+          if (!match) throw new Error(`Invalid coordinate: ${line} (expected x,y)`);
+          const x = Number(match[1]), y = Number(match[2]);
+          if (x >= image.naturalWidth || y >= image.naturalHeight) throw new Error(`Out of bounds: ${line}`);
+          return { x, y };
+        });
+      }
+
+      function readPixels(source, points) {
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(source, 0, 0);
+        return points.map(({ x, y }) => {
+          const rgba = Array.from(ctx.getImageData(x, y, 1, 1).data);
+          return { coordinate: `[${x}, ${y}]`, RGBA: `[${rgba.join(',')}]`, r: rgba[0], g: rgba[1], b: rgba[2], a: rgba[3] };
+        });
+      }
+
+      async function runVariant(label, options, points) {
+        let bitmap;
+        try {
+          bitmap = options === null
+            ? await createImageBitmap(image)
+            : await createImageBitmap(image, options);
+          return readPixels(bitmap, points).map(row => ({ variant: label, ...row }));
+        } catch (error) {
+          return points.map(({ x, y }) => ({ variant: label, coordinate: `[${x}, ${y}]`, RGBA: `ERROR: ${error.message}`, r: '', g: '', b: '', a: '' }));
+        } finally {
+          if (bitmap) bitmap.close();
+        }
+      }
+
+      document.querySelector('#run').addEventListener('click', async () => {
+        if (!selectedFile || !image) { status.textContent = 'Choose a PNG file first.'; return; }
+        try {
+          const points = parseCoords();
+          if (!points.length) throw new Error('Add at least one coordinate by clicking the preview or entering x,y.');
+          status.textContent = `Testing ${selectedFile.name} (${image.naturalWidth} × ${image.naturalHeight})…`;
+          results.replaceChildren();
+          // A uses the already-decoded HTMLImageElement directly.
+          const rows = readPixels(image, points).map(row => ({ variant: 'A: HTMLImageElement → Canvas', ...row }));
+          rows.push(...await runVariant('B: createImageBitmap(img)', null, points));
+          rows.push(...await runVariant('C: premultiplyAlpha:none', { premultiplyAlpha: 'none' }, points));
+          rows.push(...await runVariant('D: premultiplyAlpha:premultiply', { premultiplyAlpha: 'premultiply' }, points));
+          rows.push(...await runVariant('E: colorSpaceConversion:none + premultiplyAlpha:none', { colorSpaceConversion: 'none', premultiplyAlpha: 'none' }, points));
+          const table = document.createElement('table');
+          const thead = table.createTHead().insertRow();
+          for (const heading of ['Variant', 'Coordinate', 'RGBA', 'r', 'g', 'b', 'a']) {
+            const th = document.createElement('th'); th.textContent = heading; thead.append(th);
+          }
+          const tbody = table.createTBody();
+          for (const row of rows) {
+            const tr = tbody.insertRow();
+            for (const key of ['variant', 'coordinate', 'RGBA', 'r', 'g', 'b', 'a']) tr.insertCell().textContent = String(row[key]);
+          }
+          results.append(table);
+          console.table(rows);
+          status.textContent = `Done. File: ${selectedFile.name}; Firefox gfx.color_management.mode: check about:config and note its value beside these results. Rows show each sampled pixel after that variant's Canvas getImageData().`;
+        } catch (error) {
+          status.textContent = error.message;
+        }
+      });
+    </script>
+  </body>
+</html>

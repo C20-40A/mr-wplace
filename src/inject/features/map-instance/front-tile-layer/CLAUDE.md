@@ -633,6 +633,7 @@ window.postMessage(
 - `front-tile-layer/index.ts` に `mr-wplace-paint-guide-*` レイヤーを追加
   - `mismatch`: 黄 + 黒枠の警告ドット（やや大きめ）
   - `already`: 水色ドット（テンプレ一致かつ背景も同色で、重ね塗りが無駄な場合）
+    - 背景読み取りは `paint-guide-background.ts` に集約（最大4タイル、同一Blobの読み取りを共有）。非同期結果は背景Blobとcaptured座標の同一性を確認し、消去・色変更・セッション終了後の点の復活を防ぐ。
   - `matched` はガイドを表示せず、該当点をクリア（背景比較未準備時も安全側で非表示）
 - `pixel-art-layer-overlay` は `paint-preview-*` より下に配置（preview の視認性を優先）
 - 背景タイル更新時に guide point を自動クリアしない（mismatch が短時間で消えないようにする）
