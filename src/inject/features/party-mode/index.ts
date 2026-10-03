@@ -39,7 +39,7 @@ const TITLE_TIERS = [
   { min: 500, key: "perfect", height: 120 },
   { min: 200, key: "great", height: 92 },
   { min: 100, key: "nice", height: 72 },
-  { min: 50, key: "ok", height: 56 },
+  { min: 50, key: "ok", height: 72 },
 ] as const;
 /** この px 数で塗り音が最高音になる */
 const MAX_PITCH_PX = 500;
