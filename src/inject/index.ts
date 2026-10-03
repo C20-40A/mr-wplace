@@ -24,6 +24,7 @@ import {
   onBeaconPixelErased,
   clearBeaconSuppression,
 } from "./features/beacon";
+import { notifyPartyPaint } from "./features/party-mode";
 import { scheduleStartupUserDataRecovery } from "./features/user-status/user-data-recovery";
 
 const LOCATION_KEY = "location";
@@ -102,7 +103,10 @@ const forceStartupLocationZoom = (): void => {
   // Setup fetch interceptor synchronously (no await)
   try {
     setupPaintedCoordinatesCapture();
-    setPaintListener(handlePaintForStats);
+    setPaintListener((coord) => {
+      handlePaintForStats(coord);
+      notifyPartyPaint(coord);
+    });
     setPaintDeleteListener((coord) => {
       handlePaintDeleteForStats(coord);
       const { tileX, tileY, pixelX, pixelY } = coord;

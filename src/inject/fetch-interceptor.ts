@@ -10,6 +10,7 @@ import {
   getOriginalLastModified,
 } from "./features/tile-draw";
 import { invalidateTileCache } from "./cache-storage";
+import { notifyPartyPaintCommit } from "./features/party-mode";
 import { handleUserStatusUpdate } from "./handlers/user-status-handler";
 import { WplaceUserData } from "./types";
 import {
@@ -149,6 +150,7 @@ export const setupFetchInterceptor = (): void => {
 
           // Execute the original fetch first
           const response = await originalFetch.apply(this, args);
+          if (response.ok) notifyPartyPaintCommit();
 
           // Invalidate both LastModified cache and IndexedDB cache
           invalidateTile(cacheKey);

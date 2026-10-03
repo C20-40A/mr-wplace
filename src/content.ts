@@ -20,6 +20,7 @@ import {
 } from "@/states/fab-visibility";
 import { ColorFilter } from "@/features/color-filter";
 import { createArtCruiseButton } from "@/features/art-cruise";
+import { createPartyModeButton } from "@/features/party-mode";
 import { showFeatureHint } from "@/features/feature-hints";
 import { applyCompactBottomSheet } from "@/features/compact-bottom-sheet";
 
@@ -294,6 +295,7 @@ const setupFloatingButtons = () => {
 
   const artCruiseButton = createArtCruiseButton();
   container.appendChild(artCruiseButton);
+  container.appendChild(createPartyModeButton());
   (document.body || document.documentElement).appendChild(container);
 
   showFeatureHint("art-cruise-btn", artCruiseButton);

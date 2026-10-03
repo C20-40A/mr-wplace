@@ -91,6 +91,7 @@ import {
   handleMapInstanceFlyTo,
 } from "./features/map-instance";
 import { startArtCruise, stopArtCruise } from "./features/art-cruise";
+import { setPartyModeEnabled } from "./features/party-mode";
 import { setGridDisplayEnabled } from "./features/grid-display";
 import { setScaleDisplayEnabled } from "./features/scale-display";
 import {
@@ -393,6 +394,8 @@ const messageHandlers: Record<string, MessageHandler> = {
     changeMap3dDragRotateEnabled(data.enabled),
   "mr-wplace-art-cruise-update": (data) =>
     data.enabled ? startArtCruise(data) : stopArtCruise(),
+  "mr-wplace-party-mode-update": (data) =>
+    setPartyModeEnabled(Boolean(data.enabled)),
   "mr-wplace-cache-clear": handleCacheClear,
   "mr-wplace-front-tile-layer-update": handleFrontTileLayerUpdate,
   "mr-wplace-paint-guide-update": handlePaintGuideUpdate,
