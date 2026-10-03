@@ -11,7 +11,7 @@ import { getOriginalBlob, overlayLayers } from "../tile-draw";
 import type { TileDrawInstance } from "../tile-draw/types";
 import { statusManagerSingleton } from "../user-status/status-manager";
 import { ensureUserDataAvailable } from "../user-status/user-data-recovery";
-import { setSecondaryPaintListener } from "../map-instance";
+import { addPaintListener } from "../map-instance";
 import { colorpalette } from "@/constants/colors";
 import { AREA_FILL_MAX_PIXELS } from "@/constants/area-fill";
 
@@ -772,9 +772,9 @@ export const startAreaFill = async (
   // Track actual paint consumption via painted-coordinates-capture
   let paintConsumed = 0;
   const trackPaint = availableCharges !== null;
-  if (trackPaint) {
-    setSecondaryPaintListener(() => { paintConsumed++; });
-  }
+  const stopTrackPaint = trackPaint
+    ? addPaintListener(() => { paintConsumed++; })
+    : null;
 
   const remainingPositions = positions.slice(lastProcessedIndex);
   const limitedPositions = remainingPositions;
@@ -833,8 +833,7 @@ export const startAreaFill = async (
     await sleep(getGradualInterval(lastProcessedIndex));
   }
 
-  // Cleanup secondary paint listener
-  if (trackPaint) setSecondaryPaintListener(null);
+  stopTrackPaint?.();
 
   const isComplete = lastProcessedIndex >= positions.length;
   isRunning = false;

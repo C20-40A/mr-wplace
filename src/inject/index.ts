@@ -10,7 +10,7 @@ import {
   clearFrontTilePaintGuide,
   clearFrontTilePaintGuideAll,
   setupPaintedCoordinatesCapture,
-  setPaintListener,
+  addPaintListener,
   setPaintSessionListener,
   setPaintDeleteListener,
   setPaintClearListener,
@@ -103,10 +103,9 @@ const forceStartupLocationZoom = (): void => {
   // Setup fetch interceptor synchronously (no await)
   try {
     setupPaintedCoordinatesCapture();
-    setPaintListener((coord) => {
-      handlePaintForStats(coord);
-      notifyPartyPaint(coord);
-    });
+    addPaintListener((coord) =>
+      notifyPartyPaint(coord, handlePaintForStats(coord)),
+    );
     setPaintDeleteListener((coord) => {
       handlePaintDeleteForStats(coord);
       const { tileX, tileY, pixelX, pixelY } = coord;

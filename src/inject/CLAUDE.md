@@ -75,7 +75,7 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
 - `features/map-instance/`
   - `get-map-instance.ts`: maplibre instance を hook で捕捉。
   - `map-control.ts`: flyTo/area goto/background color/3d/tile boundary。
-  - `painted-coordinates-capture.ts`: paint session/pixel delete/clear listener。
+  - `painted-coordinates-capture.ts`: paint session/pixel delete/clear listener。paint は `addPaintListener` で複数購読 (解除関数を返す)。
   - `front-tile-layer/`
     - `index.ts`: source/layer lifecycle、soft refresh(`v=`更新)、pending comparison、paint guide。
     - `fetch-handler.ts`: z9-11受理。z11はbase描画、z10/z9は縮小合成経路。front render cache LRU 40、token=`stateVersion|lastModified`。
@@ -253,6 +253,7 @@ inject は page context。DOM/window/fetch/indexedDB 可。Chrome API 不可。�
     `clickAtLatLng` / `findPaintPreviewSourceId` / `fillPaintPreviewTile` / `seedPaintedPixel` /
     `ensurePaintedPixelMapCaptured`、`setDraftPaintListener` はすべて削除した。
     新方式は wplace へ pointer を渡さないため、そもそも送信が発生せず遮断ロジック自体が不要。
+- `features/party-mode/`: 演出強化モード。`handlePaintForStats` の判定 (match/detail/mismatch/none) + 下地比較 (`peekBackgroundPixelRgbInt` で同期参照、未 decode は進捗扱い) で 1px ごとに同期採点。同 key 同色の再発火は無視。演出は 1 フレームにまとめ、粒子/文字は world pixel 固定で毎フレーム再投影。右上 HUD は数字のみ・ペイント中のみ。リザルトは確定 POST (`/paint`) 後にペイントモードを抜けた時だけ (テンプレ完成度 N%→M% は取得でき差が見える時のみ)。OFF 時は notify* が即 return し DOM/RAF/Audio/購読を持たない。
 - `features/grid-display.ts`: zoom>=14 で pixel grid。
 - `features/scale-display.ts`: A/B pin 距離 UI。
 - `features/area-display.ts`: area region layer、編集 UI、measure。

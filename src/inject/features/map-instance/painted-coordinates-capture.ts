@@ -20,11 +20,9 @@ let isPaintControlsVisible = false;
 const capturedCoordinates = new Map<string, CapturedPaintedCoordinate>();
 const captureOrder: string[] = [];
 
-// Paint event listener for external modules (e.g., paint-stats-updater)
+// Paint event listeners for external modules (e.g., paint-stats-updater, area-fill)
 type PaintListener = (coord: CapturedPaintedCoordinate) => void;
-let paintListener: PaintListener | null = null;
-// Secondary paint listener (e.g., area-fill charge tracking)
-let secondaryPaintListener: PaintListener | null = null;
+const paintListeners = new Set<PaintListener>();
 type PaintDeleteListener = (
   coord: Pick<
     CapturedPaintedCoordinate,
@@ -37,14 +35,10 @@ let paintClearListener: PaintClearListener | null = null;
 type PaintSessionListener = (active: boolean) => void;
 let paintSessionListener: PaintSessionListener | null = null;
 
-export const setPaintListener = (listener: PaintListener | null): void => {
-  paintListener = listener;
-};
-
-export const setSecondaryPaintListener = (
-  listener: PaintListener | null
-): void => {
-  secondaryPaintListener = listener;
+/** @returns 購読解除関数 */
+export const addPaintListener = (listener: PaintListener): (() => void) => {
+  paintListeners.add(listener);
+  return () => paintListeners.delete(listener);
 };
 
 export const setPaintSessionListener = (
@@ -251,8 +245,7 @@ const handleSet = (mapRef: unknown, key: string, value: unknown): void => {
   if (!record) return;
   upsertCapturedCoordinateWithLimit(key, record);
   exposeCaptureState({ mapRef: map });
-  paintListener?.(record);
-  secondaryPaintListener?.(record);
+  for (const listener of paintListeners) listener(record);
 };
 
 const handleDelete = (mapRef: unknown, key: unknown): void => {

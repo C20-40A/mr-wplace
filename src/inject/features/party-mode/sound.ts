@@ -78,3 +78,9 @@ export const closeAudio = () => {
   audioCtx = null;
   master = null;
 };
+
+/** ハズレのブッ */
+export const playMiss = () => {
+  tone(110, 0, 0.18, "sawtooth", 0.5);
+  tone(82.4, 0.06, 0.2, "sawtooth", 0.4);
+};

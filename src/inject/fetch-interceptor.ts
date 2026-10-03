@@ -10,7 +10,10 @@ import {
   getOriginalLastModified,
 } from "./features/tile-draw";
 import { invalidateTileCache } from "./cache-storage";
-import { notifyPartyPaintCommit } from "./features/party-mode";
+import {
+  isPartyModeEnabled,
+  notifyPartyPaintCommit,
+} from "./features/party-mode";
 import { handleUserStatusUpdate } from "./handlers/user-status-handler";
 import { WplaceUserData } from "./types";
 import {
@@ -30,6 +33,8 @@ let frontTileXhrInterceptorInstalled = false;
  * Setup fetch interceptor to handle tile requests and user data
  * CRITICAL: Must be called synchronously to catch early /me requests
  */
+const PAINT_COMMIT_REGEX = /\/paint(\?|$)/;
+
 export const setupFetchInterceptor = (): void => {
   const originalFetch = window.fetch;
   window.mrWplaceOriginalFetch = originalFetch.bind(window);
@@ -42,6 +47,17 @@ export const setupFetchInterceptor = (): void => {
         : requestInfo instanceof Request
         ? requestInfo.url
         : requestInfo.toString();
+
+    // Party mode: Paint 確定 (POST /paint) を検知。OFF 時はこの分岐に入らない
+    if (isPartyModeEnabled() && PAINT_COMMIT_REGEX.test(url)) {
+      const method =
+        requestInfo instanceof Request ? requestInfo.method : args[1]?.method;
+      if (method?.toUpperCase() === "POST") {
+        const response = await originalFetch.apply(this, args);
+        if (response.ok) notifyPartyPaintCommit();
+        return response;
+      }
+    }
 
     // Intercept custom protocol tile requests for front layer
     if (url && isFrontLayerTileRequest(url)) {
@@ -150,7 +166,6 @@ export const setupFetchInterceptor = (): void => {
 
           // Execute the original fetch first
           const response = await originalFetch.apply(this, args);
-          if (response.ok) notifyPartyPaintCommit();
 
           // Invalidate both LastModified cache and IndexedDB cache
           invalidateTile(cacheKey);

@@ -124,7 +124,7 @@ const scheduleNotify = (imageKey: string, tileKey: string): void => {
   notifyTimer = setTimeout(flushNotify, NOTIFY_DEBOUNCE_MS);
 };
 
-const getPaintedRgbInt = (
+export const getPaintedRgbInt = (
   coord: Pick<CapturedPaintedCoordinate, "colorIdx" | "color">
 ): number | null =>
   coord.colorIdx != null
@@ -134,14 +134,42 @@ const getPaintedRgbInt = (
       : null;
 
 /**
+ * 置いた色と最上位テンプレ色の比較結果
+ * - detail: 一致かつ上下左右にテンプレの別色/輪郭がある (細部)
+ * - none: テンプレ外
+ */
+export type PaintVerdict = "match" | "detail" | "mismatch" | "none";
+
+const NEIGHBORS_4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
+
+const isTemplateDetailPixel = (
+  pixels: Uint8ClampedArray,
+  width: number,
+  height: number,
+  x: number,
+  y: number,
+): boolean => {
+  const i = (y * width + x) * 4;
+  for (const [dx, dy] of NEIGHBORS_4) {
+    const nx = x + dx;
+    const ny = y + dy;
+    if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+    const n = (ny * width + nx) * 4;
+    if (pixels[n + 3] === 0) return true;
+    if (pixels[n] !== pixels[i] || pixels[n + 1] !== pixels[i + 1] || pixels[n + 2] !== pixels[i + 2]) return true;
+  }
+  return false;
+};
+
+/**
  * ペイント1ピクセルの楽観的統計更新
  */
 export const handlePaintForStats = (
   coord: CapturedPaintedCoordinate,
   updateStats = true,
-): void => {
+): PaintVerdict => {
   const paintedRgbInt = getPaintedRgbInt(coord);
-  if (paintedRgbInt == null) return;
+  if (paintedRgbInt == null) return "none";
 
   // 置いた瞬間にその地点のビーコンを消す (他の検知系と同じ挙動)。
   // 色違いで置いた場合は次の再計算で戻る。
@@ -157,6 +185,9 @@ export const handlePaintForStats = (
   const paddedTileKey = toPaddedTileKey(coord.tileX, coord.tileY);
   let topOverlayRgbInt: number | null = null;
   let topOverlayOrder = -1;
+  let topOverlayPixels: Uint8ClampedArray | null = null;
+  let topOverlayWidth = 0;
+  let topOverlayHeight = 0;
   let hasTransparentTemplatePixel = false;
   let isNearTemplatePixel = false;
 
@@ -199,10 +230,13 @@ export const handlePaintForStats = (
     const overlayRgbInt =
       (pixels[idx] << 16) | (pixels[idx + 1] << 8) | pixels[idx + 2];
 
-    // Front guide は最上位レイヤーのテンプレ色を採用
-    if (guideEnabled && order >= topOverlayOrder) {
+    // Front guide / 判定結果は最上位レイヤーのテンプレ色を採用
+    if (order >= topOverlayOrder) {
       topOverlayOrder = order;
       topOverlayRgbInt = overlayRgbInt;
+      topOverlayPixels = pixels;
+      topOverlayWidth = bitmap.width;
+      topOverlayHeight = bitmap.height;
     }
 
     // overlay のこの位置の色とペイントした色が一致 → matched +1
@@ -226,7 +260,16 @@ export const handlePaintForStats = (
     );
   }
 
-  if (!guideEnabled) return;
+  const verdict: PaintVerdict =
+    topOverlayRgbInt == null
+      ? "none"
+      : topOverlayRgbInt !== paintedRgbInt
+        ? "mismatch"
+        : topOverlayPixels &&
+            isTemplateDetailPixel(topOverlayPixels, topOverlayWidth, topOverlayHeight, coord.pixelX, coord.pixelY)
+          ? "detail"
+          : "match";
+  if (!guideEnabled) return verdict;
 
   if (topOverlayRgbInt == null) {
     if (hasTransparentTemplatePixel && isNearTemplatePixel) {
@@ -238,11 +281,11 @@ export const handlePaintForStats = (
         "overflow",
         paintedRgbInt,
       );
-      return;
+      return verdict;
     }
 
     clearFrontTilePaintGuide(coord.tileX, coord.tileY, coord.pixelX, coord.pixelY);
-    return;
+    return verdict;
   }
 
   if (topOverlayRgbInt !== paintedRgbInt) {
@@ -254,7 +297,7 @@ export const handlePaintForStats = (
       "mismatch",
       topOverlayRgbInt,
     );
-    return;
+    return verdict;
   }
 
   clearFrontTilePaintGuide(coord.tileX, coord.tileY, coord.pixelX, coord.pixelY);
@@ -268,6 +311,7 @@ export const handlePaintForStats = (
       "already", topOverlayRgbInt,
     );
   });
+  return verdict;
 };
 
 
