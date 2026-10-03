@@ -645,4 +645,5 @@ export const ruTranslations = {
   notice_party_mode_on: "Режим вечеринки ВКЛ: рисование становится зрелищным!",
   notice_party_mode_off: "Режим вечеринки ВЫКЛ",
   hint_party_mode_btn: "Новинка! Режим вечеринки показывает эффекты и очки за каждый верный пиксель.",
+  paint_template_off: "Без шаблона",
 };

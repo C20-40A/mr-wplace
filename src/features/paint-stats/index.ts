@@ -12,6 +12,7 @@ export interface PaintTemplateProgress {
 }
 
 let selectedTemplateId: string | null = null;
+let templateOff = false;
 let latestTemplateProgress: PaintTemplateProgress | null = null;
 const progressListeners = new Set<
   (progress: PaintTemplateProgress | null) => void
@@ -19,6 +20,13 @@ const progressListeners = new Set<
 
 export const selectPaintTemplate = (id: string | null): void => {
   selectedTemplateId = id;
+  templateOff = false;
+  scheduleRefresh();
+};
+
+/** テンプレートを使わない (統計表示/インジケーターを止める) */
+export const disablePaintTemplate = (): void => {
+  templateOff = true;
   scheduleRefresh();
 };
 
@@ -210,6 +218,11 @@ const getColorStats = async (): Promise<{
 
 // 統計表示
 const displayColorStats = async (): Promise<void> => {
+  if (templateOff) {
+    attachStatsToButtons({});
+    publishTemplateProgress(null);
+    return;
+  }
   const result = await getColorStats();
   if (!result) {
     publishTemplateProgress(null);

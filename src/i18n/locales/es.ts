@@ -642,4 +642,5 @@ export const esTranslations = {
   notice_party_mode_on: "Modo fiesta ACTIVADO: ¡pintar se vuelve espectacular!",
   notice_party_mode_off: "Modo fiesta DESACTIVADO",
   hint_party_mode_btn: "¡Nuevo! El modo fiesta muestra efectos y puntos cada vez que pintas un píxel correcto.",
+  paint_template_off: "Sin plantilla",
 };

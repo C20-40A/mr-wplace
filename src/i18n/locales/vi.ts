@@ -628,4 +628,5 @@ export const viTranslations = {
   notice_party_mode_on: "Chế độ tiệc BẬT: tô màu thật hoành tráng!",
   notice_party_mode_off: "Chế độ tiệc TẮT",
   hint_party_mode_btn: "Mới! Chế độ tiệc hiển thị hiệu ứng và điểm mỗi khi bạn tô đúng một pixel.",
+  paint_template_off: "Không dùng mẫu",
 };

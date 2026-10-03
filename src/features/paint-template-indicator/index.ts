@@ -4,6 +4,7 @@ import {
 } from "@/core/bridge/gallery-storage-bridge";
 import type { GalleryMetadata } from "@/core/bridge/gallery-storage-bridge";
 import {
+  disablePaintTemplate,
   selectPaintTemplate,
   subscribePaintTemplateProgress,
   type PaintTemplateProgress,
@@ -70,11 +71,12 @@ export class PaintTemplateIndicator {
   private progress: PaintTemplateProgress | null = null;
   private currentTemplate: TemplateSummary | null = null;
   private hasTemplates = false;
+  private templateOff = false;
 
   constructor() {
     subscribePaintTemplateProgress((progress) => {
       this.progress = progress;
-      if (progress) {
+      if (progress && !this.templateOff) {
         this.currentTemplate = { id: progress.id, title: progress.title };
         this.hasTemplates = true;
       }
@@ -129,15 +131,19 @@ export class PaintTemplateIndicator {
     this.button.style.display = this.hasTemplates ? "inline-flex" : "none";
 
     const template = this.currentTemplate;
-    const percent = this.progress?.id === template?.id && this.progress
+    const percent = this.templateOff
+      ? "OFF"
+      : this.progress?.id === template?.id && this.progress
       ? `${Math.round(this.progress.percentage)}%`
       : "—";
-    this.button.title = template?.title || t("paint_template_select");
+    this.button.title = this.templateOff
+      ? t("paint_template_off")
+      : template?.title || t("paint_template_select");
     this.button.innerHTML = `
       <span class="mr-template-percent">${percent}</span>
       <img class="mr-template-thumb" alt="" />
     `;
-    if (!template) return;
+    if (!template || this.templateOff) return;
 
     const img = this.button.querySelector("img")!;
     void getGalleryThumbnailDataUrl(template.id).then((thumbnail) => {
@@ -184,6 +190,20 @@ export class PaintTemplateIndicator {
       return;
     }
 
+    const offRow = document.createElement("button");
+    offRow.type = "button";
+    offRow.className = "mr-template-menu-item";
+    offRow.innerHTML = '<span><strong class="mr-template-menu-progress">OFF</strong><small class="mr-template-menu-title"></small></span>';
+    (offRow.querySelector(".mr-template-menu-title") as HTMLElement).textContent = t("paint_template_off");
+    offRow.addEventListener("click", () => {
+      this.templateOff = true;
+      this.currentTemplate = null;
+      this.renderCurrent();
+      disablePaintTemplate();
+      this.closeMenu();
+    });
+    menu.appendChild(offRow);
+
     templates.forEach((template) => {
       const row = document.createElement("button");
       row.type = "button";
@@ -193,6 +213,7 @@ export class PaintTemplateIndicator {
       const title = row.querySelector(".mr-template-menu-title") as HTMLSpanElement;
       if (template.title) title.textContent = template.title;
       row.addEventListener("click", () => {
+        this.templateOff = false;
         this.currentTemplate = { id: template.id, title: template.title };
         this.renderCurrent();
         selectPaintTemplate(template.id);
