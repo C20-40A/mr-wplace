@@ -18,6 +18,8 @@ const COMPLETE_SHOW_MS = 6000;
 let hud: HTMLDivElement | null = null;
 let scoreEl: HTMLDivElement | null = null;
 let targetScore = 0;
+/** 呼び出し側の表示要求（ペイント中か）。実際の表示は 0 点の時は隠す */
+let wantVisible = false;
 let shownScore = 0;
 let rafId: number | null = null;
 let popTimer: ReturnType<typeof setTimeout> | null = null;
@@ -76,11 +78,17 @@ export const updateHud = (score: number) => {
   }
   targetScore = score;
   scoreEl!.style.fontSize = `${scoreFontSize(score)}px`;
+  applyVisibility();
   if (rafId === null) rafId = requestAnimationFrame(step);
 };
 
+const applyVisibility = () => {
+  if (hud) hud.hidden = !wantVisible || targetScore <= 0;
+};
+
 export const setHudVisible = (visible: boolean) => {
-  if (hud) hud.hidden = !visible;
+  wantVisible = visible;
+  applyVisibility();
 };
 
 /** 切り捨て（四捨五入だと 99.8% が 100% に見える）。1e-9 は 0.57*100=56.999.. 対策 */
@@ -218,6 +226,7 @@ export const resetHudScore = () => {
   if (rafId !== null) cancelAnimationFrame(rafId);
   rafId = null;
   targetScore = shownScore = 0;
+  applyVisibility();
   if (!scoreEl) return;
   scoreEl.textContent = "0";
   scoreEl.style.fontSize = `${scoreFontSize(0)}px`;
