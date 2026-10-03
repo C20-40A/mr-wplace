@@ -71,7 +71,8 @@
         "assets/art-cruise/audio/se/enemy-shot-short.wav",
         "assets/art-cruise/mandala/mandala-b.png",
         "assets/art-cruise/mandala/mandala-c.png",
-        "assets/art-cruise/hint/art-cruise-hint.webp"
+        "assets/art-cruise/hint/art-cruise-hint.webp",
+        "assets/party-mode/*.webp"
       ]
     }
   ],

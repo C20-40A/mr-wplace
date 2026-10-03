@@ -1,4 +1,5 @@
-import { storage } from "@/utils/browser-api";
+import { runtime, storage } from "@/utils/browser-api";
+import { PARTY_RESULT_TITLES } from "@/features/party-mode/assets";
 
 /** 演出強化モード（パーティーモード）トグル。描画は inject/features/party-mode が担当 */
 
@@ -8,7 +9,13 @@ const STORAGE_KEY = "party-mode-enabled";
 let enabled = false;
 
 const notifyInject = () =>
-  window.postMessage({ source: "mr-wplace-party-mode-update", enabled }, "*");
+  window.postMessage({
+    source: "mr-wplace-party-mode-update",
+    enabled,
+    resultAssetUrls: enabled ? Object.fromEntries(
+      Object.keys(PARTY_RESULT_TITLES).map((key) => [key, runtime.getURL(`assets/party-mode/result-${key}.webp`)]),
+    ) : undefined,
+  }, "*");
 
 const updateButtonStyle = (btn: HTMLButtonElement) => {
   btn.style.opacity = enabled ? "1" : "0.6";

@@ -4,6 +4,8 @@
  * - リザルト: タイトル / +得点 / テンプレ完成度 N% → M% バーを 1 つの箱で出し、同時に消す
  */
 
+import { getResultAsset } from "@/inject/features/party-mode/result-assets";
+
 const HUD_ID = "mr-wplace-party-mode-hud";
 const RESULT_ID = "mr-wplace-party-mode-result";
 const OUTLINE = "-webkit-text-stroke:5px #000;paint-order:stroke fill;";
@@ -126,6 +128,12 @@ export const showResultPanel = ({
   const titleEl = document.createElement("div");
   titleEl.style.cssText = `${OUTLINE}font-size:48px;color:#fff;`;
   titleEl.textContent = title;
+  const image = getResultAsset(title);
+  if (image) {
+    image.style.cssText = "display:block;width:min(400px,88vw);height:auto;";
+    titleEl.style.cssText = "";
+    titleEl.replaceChildren(image);
+  }
   const pointsEl = document.createElement("div");
   pointsEl.style.cssText = `${OUTLINE}font-size:40px;color:#ffd700;`;
   pointsEl.textContent = `+${points.toLocaleString()}`;
@@ -134,6 +142,11 @@ export const showResultPanel = ({
   const bar = progress ? createProgressBar(progress) : null;
   if (bar) box.appendChild(bar.wrap);
   document.body.appendChild(box);
+  box.animate([
+    { transform: "translateX(-50%) scale(0.65)", opacity: 0 },
+    { transform: "translateX(-50%) scale(1.12)", opacity: 1, offset: 0.65 },
+    { transform: "translateX(-50%) scale(1)", opacity: 1 },
+  ], { duration: 380, easing: "ease-out" });
   if (bar) {
     void bar.fill.offsetWidth; // 初期幅を確定させてから伸ばす（transition を確実に効かせる）
     bar.start();

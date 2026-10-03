@@ -395,7 +395,7 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-art-cruise-update": (data) =>
     data.enabled ? startArtCruise(data) : stopArtCruise(),
   "mr-wplace-party-mode-update": (data) =>
-    setPartyModeEnabled(Boolean(data.enabled)),
+    setPartyModeEnabled(Boolean(data.enabled), data.resultAssetUrls),
   "mr-wplace-cache-clear": handleCacheClear,
   "mr-wplace-front-tile-layer-update": handleFrontTileLayerUpdate,
   "mr-wplace-paint-guide-update": handlePaintGuideUpdate,

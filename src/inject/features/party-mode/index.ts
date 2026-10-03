@@ -1,4 +1,6 @@
 import type { CapturedPaintedCoordinate } from "@/inject/types";
+import { PARTY_RESULT_TITLES, type PartyResultAssetUrls } from "@/features/party-mode/assets";
+import { clearResultAssets, prepareResultAssets } from "@/inject/features/party-mode/result-assets";
 import { tilePixelToLatLng } from "@/utils/coordinate";
 import { TILE_SIZE } from "@/utils/geo-converter";
 import { subscribePaintMode } from "@/utils/paint-mode";
@@ -55,7 +57,7 @@ const LABEL: Record<Exclude<Judged, "progress" | "detail">, { color: string; siz
 let enabled = false;
 let frameQueue: JudgedPixel[] = [];
 let lastMilestone = 0;
-let frameScheduled = false;
+let frameId: number | null = null;
 let committed = false;
 let exitTimer: ReturnType<typeof setTimeout> | null = null;
 let lingerTimer: ReturnType<typeof setTimeout> | null = null;
@@ -145,7 +147,7 @@ const showResult = () => {
   const acc = Math.round((progressCount / judgedCount) * 100);
   const points = Math.round(pending);
   const perfect = acc === 100 && progressCount >= 10;
-  const title = perfect ? "PERFECT!!" : acc >= 90 ? "GREAT!" : acc >= 60 ? "NICE" : "OK";
+  const title = PARTY_RESULT_TITLES[perfect ? "perfect" : acc >= 90 ? "great" : acc >= 60 ? "nice" : "ok"];
 
   // テンプレ完成度が取れた時だけ N% → M%（表示上の差が無ければ hud 側で省略）
   const after = progressImageKey ? templateStats(progressImageKey) : null;
@@ -189,10 +191,11 @@ const handlePaintMode = (active: boolean) => {
 
 export const isPartyModeEnabled = () => enabled;
 
-export const setPartyModeEnabled = (value: boolean) => {
+export const setPartyModeEnabled = (value: boolean, resultAssetUrls?: PartyResultAssetUrls) => {
   if (enabled === value) return;
   enabled = value;
   if (enabled) {
+    prepareResultAssets(resultAssetUrls);
     setFxProjectorFactory(createProjector);
     unsubscribePaintMode = subscribePaintMode(handlePaintMode);
     return;
@@ -203,6 +206,9 @@ export const setPartyModeEnabled = (value: boolean) => {
   if (lingerTimer) clearTimeout(lingerTimer);
   exitTimer = lingerTimer = null;
   frameQueue = [];
+  if (frameId !== null) cancelAnimationFrame(frameId);
+  frameId = null;
+  clearResultAssets();
   resetCycle();
   setFxProjectorFactory(null);
   destroyFx();
@@ -253,14 +259,13 @@ const score = (coord: CapturedPaintedCoordinate, judged: Judged) => {
     judged,
     color: color ? `rgb(${color.r},${color.g},${color.b})` : "#ffd700",
   });
-  if (frameScheduled) return;
-  frameScheduled = true;
-  requestAnimationFrame(flushFrame);
+  if (frameId !== null) return;
+  frameId = requestAnimationFrame(flushFrame);
 };
 
 /** 1 フレーム分の演出: 粒子は最新数件。成功 10px の節目を跨いだら +N、ミス系は最後のラベル */
 const flushFrame = () => {
-  frameScheduled = false;
+  frameId = null;
   const queue = frameQueue;
   frameQueue = [];
   if (!enabled || !queue.length) return;
