@@ -142,9 +142,16 @@ export const getPaintedRgbInt = (
 /**
  * 置いた色と最上位テンプレ色の比較結果
  * - detail: 一致かつ上下左右にテンプレの別色/輪郭がある (細部)
- * - none: テンプレ外
+ * - overflow: テンプレ外だが近い (paint guide の「はみだし」と同じ判定)
+ * - none: テンプレ外 (overflow 判定を有効にしていない時はテンプレ外すべて)
  */
-export type PaintVerdict = "match" | "detail" | "mismatch" | "none";
+export type PaintVerdict = "match" | "detail" | "mismatch" | "overflow" | "none";
+
+// overflow 判定は近傍走査のコストがあるので、guide か利用側 (party mode) が要る時だけ
+let overflowVerdictEnabled = false;
+export const setOverflowVerdictEnabled = (enabled: boolean): void => {
+  overflowVerdictEnabled = enabled;
+};
 
 const NEIGHBORS_4 = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
 
@@ -226,7 +233,7 @@ export const handlePaintForStats = (
     const idx = (coord.pixelY * bitmap.width + coord.pixelX) * 4;
     if (idx + 3 >= pixels.length) continue;
     if (pixels[idx + 3] === 0) {
-      if (guideEnabled) {
+      if (guideEnabled || overflowVerdictEnabled) {
         hasTransparentTemplatePixel = true;
         isNearTemplatePixel ||= isNearOpaqueTemplatePixel(pixels, bitmap.width, bitmap.height, coord.pixelX, coord.pixelY);
       }
@@ -268,7 +275,9 @@ export const handlePaintForStats = (
 
   const verdict: PaintVerdict =
     topOverlayRgbInt == null
-      ? "none"
+      ? hasTransparentTemplatePixel && isNearTemplatePixel
+        ? "overflow"
+        : "none"
       : topOverlayRgbInt !== paintedRgbInt
         ? "mismatch"
         : topOverlayPixels &&

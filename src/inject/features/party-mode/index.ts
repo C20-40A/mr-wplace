@@ -6,7 +6,11 @@ import { TILE_SIZE } from "@/utils/geo-converter";
 import { subscribePaintMode } from "@/utils/paint-mode";
 import { getMapInstanceFromWplace } from "../map-instance/get-map-instance";
 import { peekBackgroundPixelRgbInt } from "../paint-guide-background";
-import { getPaintedRgbInt, type PaintVerdict } from "../paint-stats-updater";
+import {
+  getPaintedRgbInt,
+  setOverflowVerdictEnabled,
+  type PaintVerdict,
+} from "../paint-stats-updater";
 import { overlayLayers, perTileColorStats } from "../tile-draw/states";
 import {
   burstAt,
@@ -47,7 +51,8 @@ const DETAIL_POINTS = 3;
 const BURSTS_PER_FRAME = 3;
 const COUNT_EVERY = 10;
 
-type Judged = "progress" | "detail" | "same" | "out" | "miss";
+/** free = テンプレから十分離れた自由描画。演出は成功と同じ、得点/ミスには数えない */
+type Judged = "progress" | "detail" | "same" | "out" | "free" | "miss";
 interface JudgedPixel {
   wx: number;
   wy: number;
@@ -56,7 +61,7 @@ interface JudgedPixel {
 }
 
 // 成功時はラベルを出さない（10px ごとの +N のみ）
-const LABEL: Record<Exclude<Judged, "progress" | "detail">, { color: string; size: number }> = {
+const LABEL: Record<Exclude<Judged, "progress" | "detail" | "free">, { color: string; size: number }> = {
   miss: { color: "#bbb", size: 20 },
   same: { color: "#999", size: 14 },
   out: { color: "#999", size: 14 },
@@ -206,6 +211,7 @@ export const setPartyModeEnabled = (value: boolean, resultAssetUrls?: PartyResul
   enabled = value;
   if (enabled) {
     prepareResultAssets(resultAssetUrls);
+    setOverflowVerdictEnabled(true);
     setFxProjectorFactory(createProjector);
     unsubscribePaintMode = subscribePaintMode(handlePaintMode);
     return;
@@ -219,6 +225,7 @@ export const setPartyModeEnabled = (value: boolean, resultAssetUrls?: PartyResul
   frameId = null;
   clearResultAssets();
   resetCycle();
+  setOverflowVerdictEnabled(false);
   setFxProjectorFactory(null);
   destroyFx();
   destroyHud();
@@ -228,7 +235,9 @@ export const setPartyModeEnabled = (value: boolean, resultAssetUrls?: PartyResul
 /** 同期判定。下地が未 decode (undefined) の時は進捗として扱う */
 const judge = (coord: CapturedPaintedCoordinate, verdict: PaintVerdict): Judged => {
   if (verdict === "mismatch") return "miss";
-  if (verdict === "none") return "out";
+  // はみだし (テンプレ近傍) だけ OUT。遠く離れた場所は自由描画として扱う
+  if (verdict === "overflow") return "out";
+  if (verdict === "none") return "free";
   const background = peekBackgroundPixelRgbInt(coord);
   if (background != null && background === getPaintedRgbInt(coord)) return "same";
   return verdict === "detail" ? "detail" : "progress";
@@ -280,12 +289,16 @@ const flushFrame = () => {
   if (!enabled || !queue.length) return;
 
   let lastGood: JudgedPixel | null = null;
+  let lastLabeled: JudgedPixel | null = null;
+  let hasFree = false;
   for (const p of queue) {
     if (isGood(p.judged)) lastGood = p;
+    else if (p.judged === "free") hasFree = true;
+    else lastLabeled = p;
   }
   for (const p of queue.slice(-BURSTS_PER_FRAME)) {
     if (p.judged === "miss") burstAt(p.wx, p.wy, "#777", 3, 0.6);
-    else if (!isGood(p.judged)) burstAt(p.wx, p.wy, p.color, 2, 0.6);
+    else if (p.judged === "same" || p.judged === "out") burstAt(p.wx, p.wy, p.color, 2, 0.6);
     else burstAt(p.wx, p.wy, p.judged === "detail" ? "#7ff" : p.color, 5, 1.2);
   }
 
@@ -300,11 +313,12 @@ const flushFrame = () => {
       });
     }
     playBlip(Math.min(progressCount / MAX_PITCH_PX, 1));
-  } else {
-    // lastGood が無い = このフレームは全部 miss/same/out
-    const last = queue[queue.length - 1];
-    const label = LABEL[last.judged as keyof typeof LABEL];
-    textAt(last.wx, last.wy, last.judged.toUpperCase(), { ...label, life: 40 });
+  } else if (hasFree) {
+    playBlip(Math.min(progressCount / MAX_PITCH_PX, 1));
+  } else if (lastLabeled) {
+    // このフレームは miss/same/out だけ
+    const label = LABEL[lastLabeled.judged as keyof typeof LABEL];
+    textAt(lastLabeled.wx, lastLabeled.wy, lastLabeled.judged.toUpperCase(), { ...label, life: 40 });
   }
   if (queue.some((p) => p.judged === "miss")) playMiss();
 
