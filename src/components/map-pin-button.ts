@@ -134,28 +134,59 @@ export const createMapPinButtonContainer = (): HTMLDivElement => {
   return container;
 };
 
+const GROUP_STYLE_ID = "map-pin-button-group-style";
+
+// wplace新UI (daisyUI) のテーマ変数に追従 + 出現/クリックのマイクロインタラクション
+const ensureGroupStyles = () => {
+  if (document.getElementById(GROUP_STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = GROUP_STYLE_ID;
+  style.textContent = `
+    #map-pin-button-group{position:absolute;bottom:2.8rem;left:50%;transform:translateX(-50%);display:flex;gap:0.5rem;z-index:1000;align-items:center;}
+    .map-pin-group-button{--i:0;height:2.75rem;min-width:2.75rem;padding:0 0.55rem;border-radius:9999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;white-space:nowrap;overflow:hidden;
+      background:var(--color-base-100,#fff);color:var(--color-base-content,#222);border:2px solid var(--color-base-300,rgba(0,0,0,0.12));box-shadow:0 4px 12px rgba(0,0,0,0.22);
+      transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .2s,border-color .2s,background .2s,padding .3s ease;
+      animation:mpg-pop .55s cubic-bezier(.34,1.56,.64,1) calc(var(--i) * 70ms) backwards;}
+    .map-pin-group-button .mpg-icon{flex-shrink:0;display:flex;align-items:center;justify-content:center;width:1.5rem;height:1.5rem;font-size:1.3rem;transition:transform .35s cubic-bezier(.34,1.56,.64,1);}
+    .map-pin-group-button .mpg-icon img{image-rendering:pixelated;width:100%;height:100%;object-fit:contain;}
+    .map-pin-group-button .mpg-text{font-size:0.875rem;font-weight:600;opacity:0;max-width:0;overflow:hidden;margin-left:0;transition:all .3s ease;}
+    .map-pin-group-button:hover{transform:translateY(-3px) scale(1.06);border-color:var(--color-primary,#3b82f6);box-shadow:0 8px 18px rgba(0,0,0,0.26);padding-right:1rem;}
+    .map-pin-group-button:hover .mpg-icon{transform:rotate(-12deg) scale(1.15);}
+    .map-pin-group-button:hover .mpg-text{opacity:1;max-width:200px;margin-left:0.5rem;}
+    .map-pin-group-button:active{transform:scale(0.9);box-shadow:0 2px 6px rgba(0,0,0,0.3);transition-duration:.08s;}
+    /* pop を同じindexに残すことで、squish解除時にpopが再生されない */
+    .map-pin-group-button.mpg-squish{animation:mpg-pop .55s cubic-bezier(.34,1.56,.64,1) calc(var(--i) * 70ms) backwards,mpg-squish .45s cubic-bezier(.34,1.56,.64,1);}
+    @keyframes mpg-pop{
+      0%{opacity:0;transform:translateY(14px) scale(0.3) rotate(-25deg);}
+      60%{opacity:1;transform:translateY(-4px) scale(1.12) rotate(6deg);}
+      80%{transform:translateY(1px) scale(0.96) rotate(-2deg);}
+      100%{opacity:1;transform:none;}
+    }
+    @keyframes mpg-squish{
+      0%{transform:scale(1);}
+      30%{transform:scale(1.18,0.82);}
+      55%{transform:scale(0.9,1.12);}
+      75%{transform:scale(1.05,0.96);}
+      100%{transform:scale(1);}
+    }
+    @media (prefers-reduced-motion: reduce){.map-pin-group-button,.map-pin-group-button .mpg-icon{animation:none;transition:none;}}
+  `;
+  document.head.appendChild(style);
+};
+
 /**
  * マップピン上部のボタングループを取得または作成
  */
 export const getOrCreateMapPinButtonGroup = (
   pinContainer: Element
 ): HTMLElement => {
+  ensureGroupStyles();
   let group = pinContainer.querySelector(
     "#map-pin-button-group"
   ) as HTMLElement;
   if (!group) {
     group = document.createElement("div");
     group.id = "map-pin-button-group";
-    group.style.cssText = `
-      position: absolute;
-      bottom: 2.8rem;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 0.5rem;
-      z-index: 1000;
-      align-items: center;
-    `;
     pinContainer.appendChild(group);
   }
   return group;
@@ -173,102 +204,35 @@ export const createMapPinGroupButton = (config: {
   const button = document.createElement("button");
   button.className = "map-pin-group-button";
 
-  button.style.cssText = `
-    height: 2.75rem;
-    min-width: 2.75rem;
-    border-radius: 9999px;
-    background: linear-gradient(145deg, #3b82f6, #1e40af);
-    border: none;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: #fff;
-    overflow: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    font-family: "Inter", sans-serif;
-    user-select: none;
-    padding: 0 0.5rem;
-    backdrop-filter: blur(6px);
-    white-space: nowrap;
-  `;
-
-  // アイコン（絵文字または画像）
   const iconContainer = document.createElement("span");
-  iconContainer.style.cssText = `
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
-  `;
-
+  iconContainer.className = "mpg-icon";
   if (config.iconSrc) {
-    // 画像アイコン
     const img = document.createElement("img");
     img.src = config.iconSrc;
     img.alt = config.text;
-    img.style.cssText = `
-      image-rendering: pixelated;
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    `;
     iconContainer.appendChild(img);
   } else if (config.icon) {
-    // 絵文字アイコン
     iconContainer.textContent = config.icon;
-    iconContainer.style.fontSize = "1.3rem";
   }
 
   const textSpan = document.createElement("span");
+  textSpan.className = "mpg-text";
   textSpan.textContent = config.text;
-  textSpan.style.cssText = `
-    font-size: 0.875rem;
-    opacity: 0;
-    max-width: 0;
-    overflow: hidden;
-    margin-left: 0;
-    transition: all 0.3s ease;
-  `;
 
   button.append(iconContainer, textSpan);
 
-  // Hover effects
-  button.addEventListener("mouseenter", () => {
-    button.style.background = "linear-gradient(145deg, #2563eb, #1d4ed8)";
-    button.style.transform = "scale(1.05)";
-    textSpan.style.opacity = "1";
-    textSpan.style.maxWidth = "200px";
-    textSpan.style.marginLeft = "0.5rem";
-    button.style.paddingRight = "1rem";
-  });
-
-  button.addEventListener("mouseleave", () => {
-    button.style.background = "linear-gradient(145deg, #3b82f6, #1e40af)";
-    button.style.transform = "scale(1)";
-    textSpan.style.opacity = "0";
-    textSpan.style.maxWidth = "0";
-    textSpan.style.marginLeft = "0";
-    button.style.paddingRight = "0.5rem";
-  });
-
-  button.addEventListener("mousedown", () => {
-    button.style.transform = "scale(0.95)";
-    button.style.boxShadow = "0 2px 6px rgba(0,0,0,0.3)";
-  });
-
-  button.addEventListener("mouseup", () => {
-    button.style.transform = "scale(1.05)";
-    button.style.boxShadow = "0 4px 10px rgba(0,0,0,0.25)";
+  button.addEventListener("animationend", (e) => {
+    if (e.animationName === "mpg-squish") button.classList.remove("mpg-squish");
   });
 
   button.addEventListener("click", (e) => {
     // NOTE: これがないと、Buttonクリックした位置にpinが移動してしまう
     e.stopPropagation(); // イベントの伝播を停止
     e.preventDefault(); // 標準の動作をキャンセル (念のため)
+    // 連打でも毎回再生されるようにreflowを挟む
+    button.classList.remove("mpg-squish");
+    void button.offsetWidth;
+    button.classList.add("mpg-squish");
     config.onClick();
   });
 

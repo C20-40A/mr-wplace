@@ -33,6 +33,7 @@ export const addMapPinButton = (
     onClick: config.onClick,
   });
   button.id = config.id;
+  button.style.setProperty("--i", String(group.children.length)); // 出現stagger
 
   group.appendChild(button);
   console.log(`🧑‍🎨 : ${config.id} button added to group`);

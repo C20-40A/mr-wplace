@@ -19,7 +19,6 @@ import { TileStatisticsRoute } from "./routes/tile-statistics";
 import { TmpTileBoardRoute } from "./routes/tmp-tile-board";
 import { type TimeTravelAPI } from "../../core/di";
 import { t } from "@/i18n/manager";
-import { IMG_ICON_TIME_TRAVEL } from "@/assets/iconImages";
 import { storage } from "@/utils/browser-api";
 import { sendSnapshotCaptureToInject } from "@/utils/inject-bridge";
 
@@ -112,7 +111,7 @@ export const initTimeTravel = (): void => {
     createMapPinButtonObserverConfig({
       observerId: "timetravel-map-pin-btn",
       id: "timetravel-btn",
-      iconSrc: IMG_ICON_TIME_TRAVEL,
+      icon: "⏱️",
       text: t`${"timetravel"}`,
       onClick: showCurrentPosition,
       hintId: "timetravel-btn",
