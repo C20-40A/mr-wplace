@@ -1,9 +1,9 @@
 # Utils / Components API Context
 
-- generated_at: 2026-10-08T21:40:13.427Z
+- generated_at: 2026-10-08T22:24:58.896Z
 - project: tsconfig.json
 - targets: src/utils, src/components
-- files: 34
+- files: 35
 
 ## src/components/card.ts
 
@@ -222,20 +222,20 @@
 - exports: 4
 - top_level_declarations: 7
 - declarations:
-- interface `MapPinButtonConfig` (L1)
+- interface `MapPinButtonConfig` (L2)
   - signature: `MapPinButtonConfig`
-- export variable `createMapPinButton` (L8)
+- export variable `createMapPinButton` (L9)
   - signature: `(config: MapPinButtonConfig) => HTMLButtonElement`
-- export variable `createMapPinButtonContainer` (L126)
+- export variable `createMapPinButtonContainer` (L127)
   - signature: `() => HTMLDivElement`
-- variable `GROUP_STYLE_ID` (L137)
+- variable `GROUP_STYLE_ID` (L138)
   - signature: `"map-pin-button-group-style"`
-- variable `ensureGroupStyles` (L140)
+- variable `ensureGroupStyles` (L141)
   - signature: `() => void`
-- export variable `getOrCreateMapPinButtonGroup` (L180)
+- export variable `getOrCreateMapPinButtonGroup` (L177)
   - signature: `(pinContainer: Element) => HTMLElement`
   - summary: マップピン上部のボタングループを取得または作成
-- export variable `createMapPinGroupButton` (L198)
+- export variable `createMapPinGroupButton` (L195)
   - signature: `(config: { icon?: string; iconSrc?: string; text: string; onClick: () => void; }) => HTMLButtonElement`
   - summary: グループ内で使用するボタンを作成
 
@@ -280,27 +280,27 @@
 - exports: 1
 - top_level_declarations: 10
 - declarations:
-- variable `NOTICE_ID` (L3)
+- variable `NOTICE_ID` (L4)
   - signature: `"mr-wplace-paint-notice"`
-- variable `STYLE_ID` (L4)
+- variable `STYLE_ID` (L5)
   - signature: `"mr-wplace-paint-notice-style"`
-- variable `DURATION_MS` (L5)
+- variable `DURATION_MS` (L6)
   - signature: `2000`
-- variable `FADE_MS` (L6)
+- variable `FADE_MS` (L7)
   - signature: `160`
-- variable `ensureStyles` (L9)
+- variable `ensureStyles` (L10)
   - signature: `() => void`
   - summary: paint panel 上の hint pill と同じ見た目。paint panel(z-50)より前面に出す
-- variable `hideTimer` (L20)
+- variable `hideTimer` (L17)
   - signature: `ReturnType<typeof setTimeout> | null`
-- variable `removeTimer` (L21)
+- variable `removeTimer` (L18)
   - signature: `ReturnType<typeof setTimeout> | null`
-- variable `HINT_SLOT_OFFSET_PX` (L24)
+- variable `HINT_SLOT_OFFSET_PX` (L21)
   - signature: `26`
   - summary: wplace の "Click or hold SPACE to paint." hint と同じ位置 (panel の -60px 上)
-- variable `positionNotice` (L26)
+- variable `positionNotice` (L23)
   - signature: `(notice: HTMLDivElement) => void`
-- export variable `showPaintNotice` (L41)
+- export variable `showPaintNotice` (L38)
   - signature: `(message: string) => void`
   - summary: 2秒だけ表示される通知。連続呼び出しは最新のメッセージで上書きする
 
@@ -637,8 +637,8 @@
 
 ## src/utils/inject-bridge.ts
 
-- exports: 34
-- top_level_declarations: 40
+- exports: 35
+- top_level_declarations: 41
 - declarations:
 - variable `requestIdCounter` (L15)
   - signature: `number`
@@ -797,6 +797,9 @@
   - signature: `(workerUrl: string, format?: "png" | "wplace", onProgress?: (progress: ZipExportProgress) => void) => Promise<ZipExportResult>`
   - summary: Request inject side to export the gallery to a ZIP off the main thread.
   - tags: @param - runtime.getURL(...) for the gallery export worker | @param - "png" (raw images) or "wplace" (.wplace JSON per image)
+- export variable `createOfficialFavorite` (L1020)
+  - signature: `(params: { lat: number; lng: number; zoom: number; name?: string; }) => Promise<{ ok: boolean; error?: string; }>`
+  - summary: 公式お気に入り (Favorite places) を作成する。name 指定時は作成後に名前を更新 Used by: bookmark (旧ブックマーク → 公式 移行)
 
 ## src/utils/map-pin-helper.ts
 
@@ -896,6 +899,15 @@
   - signature: `HeaderElements`
 - export class `Router` (L8)
   - signature: `Router`
+
+## src/utils/style.ts
+
+- exports: 1
+- top_level_declarations: 1
+- declarations:
+- export variable `ensureStyle` (L2)
+  - signature: `(id: string, css: string) => void`
+  - summary: id 付き <style> を1回だけ注入する (既にあれば何もしない)
 
 ## src/utils/thumbnail.ts
 

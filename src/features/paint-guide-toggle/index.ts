@@ -33,6 +33,7 @@ import {
 import { t } from "@/i18n";
 import { subscribePaintMode } from "@/utils/paint-mode";
 import { showPaintNotice } from "@/components/paint-notice";
+import { ensureStyle } from "@/utils/style";
 
 const BUTTON_ID = "paint-guide-toggle-btn";
 const PANEL_ID = "paint-guide-panel";
@@ -74,10 +75,7 @@ const KIND_NOTICE_KEY: Record<PaintGuideKind, [string, string]> = {
 };
 
 const ensureStyles = (): void => {
-  if (document.getElementById(STYLE_ID)) return;
-  const style = document.createElement("style");
-  style.id = STYLE_ID;
-  style.textContent = `
+  ensureStyle(STYLE_ID, `
     #${PANEL_ID}{position:fixed;z-index:60;display:flex;flex-direction:column;gap:3px;padding:6px;background:var(--color-base-100,#fff);color:var(--color-base-content,#222);border:1px solid var(--color-base-300,rgba(0,0,0,0.12));border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,0.18);}
     #${PANEL_ID} .pg-item{display:flex;align-items:center;gap:6px;min-width:150px;padding:4px 7px;border-radius:7px;border:1px solid var(--color-base-300,rgba(0,0,0,0.12));background:transparent;color:inherit;cursor:pointer;font-size:11px;text-align:left;}
     #${PANEL_ID} .pg-item:hover{background:var(--color-base-200,rgba(0,0,0,0.06));}
@@ -95,8 +93,7 @@ const ensureStyles = (): void => {
     #${PANEL_ID} .pg-warn{display:flex;flex-direction:column;gap:5px;max-width:190px;margin-top:2px;padding:6px 7px;border-radius:8px;border:1px solid var(--color-warning,#f59e0b);background:color-mix(in srgb, var(--color-warning,#f59e0b) 14%, transparent);font-size:10px;line-height:14px;}
     #${PANEL_ID} .pg-warn-btn{align-self:stretch;padding:4px 6px;border-radius:6px;border:0;background:var(--color-warning,#f59e0b);color:var(--color-warning-content,#1f1300);font-size:10px;font-weight:700;cursor:pointer;}
     #${PANEL_ID} .pg-warn-btn:hover{filter:brightness(1.05);}
-  `;
-  document.head.appendChild(style);
+  `);
 };
 
 /** paint toolbar から テンプレ一致インジケーター(paint guide) を種別ごとに ON/OFF する */

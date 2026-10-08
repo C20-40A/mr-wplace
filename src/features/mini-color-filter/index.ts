@@ -17,6 +17,7 @@ import { IMG_ICON_COLOR_FILTER } from "@/assets/iconImages";
 import { ColorFilter } from "@/features/color-filter";
 import type { EnhancedMode } from "@/types/image";
 import { t } from "@/i18n";
+import { ensureStyle } from "@/utils/style";
 
 const FAB_ID = "mini-color-filter-fab";
 const PANEL_ID = "mini-color-filter-panel";
@@ -27,10 +28,7 @@ const LABEL_ALL = "ALL";
 const LABEL_NONE = "NONE";
 
 const ensureStyles = (): void => {
-  if (document.getElementById(STYLE_ID)) return;
-  const style = document.createElement("style");
-  style.id = STYLE_ID;
-  style.textContent = `
+  ensureStyle(STYLE_ID, `
     #${PANEL_ID}{position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--color-base-100,#fff);color:var(--color-base-content,#222);border:1px solid var(--color-base-300,rgba(0,0,0,0.12));border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,0.18);max-width:calc(100vw - 16px);}
     #${PANEL_ID} .mcf-actions{display:flex;flex-direction:column;gap:2px;flex:none;align-self:stretch;justify-content:center;}
     #${PANEL_ID} .mcf-palette-btn{width:28px;align-self:stretch;display:flex;align-items:center;justify-content:center;border-radius:7px;border:1px solid var(--color-base-300,rgba(0,0,0,0.12));background:transparent;color:inherit;cursor:pointer;padding:3px;flex:none;}
@@ -55,8 +53,7 @@ const ensureStyles = (): void => {
     #${PANEL_ID} .mcf-color{width:16px;height:16px;border-radius:3px;border:1px solid rgba(0,0,0,0.2);cursor:pointer;padding:0;position:relative;}
     #${PANEL_ID} .mcf-color.off{opacity:0.25;}
     #${PANEL_ID} .mcf-color.off::after{content:"";position:absolute;inset:0;background:linear-gradient(45deg,transparent 45%,rgba(0,0,0,0.6) 45%,rgba(0,0,0,0.6) 55%,transparent 55%);border-radius:inherit;}
-  `;
-  document.head.appendChild(style);
+  `);
 };
 
 const getActiveColorIds = (): Set<number> => {

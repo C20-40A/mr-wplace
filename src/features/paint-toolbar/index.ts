@@ -1,6 +1,7 @@
 import { setupElementObserver } from "@/components/element-observer";
 import { findPaintPixelControls } from "@/constants/selectors";
 import { subscribePaintMode } from "@/utils/paint-mode";
+import { ensureStyle } from "@/utils/style";
 
 export const PAINT_TOOLBAR_ID = "mr-wplace-paint-toolbar";
 const PAINT_MODE_CLASS = "mr-wplace-paint-mode";
@@ -13,18 +14,13 @@ export const getPaintToolbarContainer = (): HTMLElement | null =>
   document.getElementById(PAINT_TOOLBAR_ID);
 
 const ensureStyles = (): void => {
-  if (document.getElementById(STYLE_ID)) return;
-
-  const style = document.createElement("style");
-  style.id = STYLE_ID;
   // フォールバック時だけ上部の既存UIと重なるため、それらを隠す。
   // ボタンが1つも入らなかった場合は空の箱を見せない。
-  style.textContent = `
+  ensureStyle(STYLE_ID, `
     .${PAINT_MODE_CLASS}.${PAINT_TOOLBAR_FALLBACK_CLASS} #user-status-container{display:none !important;}
     .${PAINT_MODE_CLASS}.${PAINT_TOOLBAR_FALLBACK_CLASS} #dev-trigger-btn{display:none !important;}
     #${PAINT_TOOLBAR_ID}:empty{display:none;}.mr-paint-tb-item{position:relative;display:inline-flex;}.btn.mr-paint-tb-btn{flex-direction:column;gap:1px;padding:0;}.mr-paint-tb-btn svg{width:20px !important;height:20px !important;}.mr-paint-tb-label{font-size:8px;line-height:9px;font-weight:600;letter-spacing:-.02em;white-space:nowrap;pointer-events:none;}.mr-template-percent{position:absolute;bottom:1px;left:2px;right:2px;z-index:1;font-size:8px;font-weight:700;line-height:9px;color:white;background:rgba(0,0,0,.65);border-radius:4px;text-align:center;}.mr-template-thumb{width:28px;height:19px;margin-bottom:2px;object-fit:cover;border-radius:4px;background:var(--color-base-300);display:block;}.mr-template-menu{position:absolute;top:calc(100% + 6px);left:0;width:190px;max-height:220px;overflow-y:auto;padding:4px;background:var(--color-base-100);border:1px solid rgba(0,0,0,.15);border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.2);z-index:31;text-align:left;}.mr-template-menu-up{top:auto;bottom:calc(100% + 6px);}.mr-template-menu-item{width:100%;display:flex;align-items:center;gap:7px;padding:4px;border-radius:5px;background:transparent;border:0;color:inherit;text-align:left;font-size:11px;}.mr-template-menu-item:hover{background:var(--color-base-200);}.mr-template-menu-item img{width:30px;height:24px;object-fit:cover;border-radius:3px;background:var(--color-base-300);flex:none;}.mr-template-menu-item span{min-width:0;display:flex;flex-direction:column;}.mr-template-menu-progress{font-size:13px;line-height:15px;font-weight:700;}.mr-template-menu-title{font-size:9px;line-height:11px;opacity:.65;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.mr-template-menu-meter{display:none;width:100px;height:3px;margin-top:2px;overflow:hidden;border-radius:2px;background:var(--color-base-300);}.mr-template-menu-meter b{display:block;height:100%;background:var(--color-primary);transition:width .2s ease;}
-  `;
-  (document.head || document.documentElement).appendChild(style);
+  `);
 };
 
 const findDesktopRedoTooltip = (): HTMLElement | null => {

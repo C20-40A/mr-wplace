@@ -1,4 +1,5 @@
 import { getPaintToolbarContainer } from "@/features/paint-toolbar";
+import { ensureStyle } from "@/utils/style";
 
 const NOTICE_ID = "mr-wplace-paint-notice";
 const STYLE_ID = "mr-wplace-paint-notice-style";
@@ -7,14 +8,10 @@ const FADE_MS = 160;
 
 /** paint panel 上の hint pill と同じ見た目。paint panel(z-50)より前面に出す */
 const ensureStyles = (): void => {
-  if (document.getElementById(STYLE_ID)) return;
-  const style = document.createElement("style");
-  style.id = STYLE_ID;
-  style.textContent = `
+  ensureStyle(STYLE_ID, `
     #${NOTICE_ID}{position:fixed;left:50%;transform:translateX(-50%);z-index:70;display:flex;align-items:center;gap:6px;width:max-content;max-width:calc(100vw - 24px);padding:6px 14px;border-radius:9999px;border:2px solid color-mix(in srgb, var(--color-base-content,#222) 20%, transparent);background:color-mix(in srgb, var(--color-base-100,#fff) 60%, transparent);color:var(--color-base-content,#222);backdrop-filter:blur(6px);font-size:13px;line-height:1.4;font-weight:500;text-align:center;pointer-events:none;user-select:none;opacity:0;transition:opacity ${FADE_MS}ms ease;}
     #${NOTICE_ID}.show{opacity:1;}
-  `;
-  document.head.appendChild(style);
+  `);
 };
 
 let hideTimer: ReturnType<typeof setTimeout> | null = null;

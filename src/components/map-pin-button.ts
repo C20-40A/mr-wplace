@@ -1,3 +1,4 @@
+import { ensureStyle } from "@/utils/style";
 interface MapPinButtonConfig {
   icon: string;
   text: string;
@@ -138,10 +139,7 @@ const GROUP_STYLE_ID = "map-pin-button-group-style";
 
 // wplace新UI (daisyUI) のテーマ変数に追従 + 出現/クリックのマイクロインタラクション
 const ensureGroupStyles = () => {
-  if (document.getElementById(GROUP_STYLE_ID)) return;
-  const style = document.createElement("style");
-  style.id = GROUP_STYLE_ID;
-  style.textContent = `
+  ensureStyle(GROUP_STYLE_ID, `
     #map-pin-button-group{position:absolute;bottom:2.8rem;left:50%;transform:translateX(-50%);display:flex;gap:0.5rem;z-index:1000;align-items:center;}
     .map-pin-group-button{--i:0;height:2.75rem;min-width:2.75rem;padding:0 0.55rem;border-radius:9999px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;white-space:nowrap;overflow:hidden;
       background:var(--color-base-100,#fff);color:var(--color-base-content,#222);border:2px solid var(--color-base-300,rgba(0,0,0,0.12));box-shadow:0 4px 12px rgba(0,0,0,0.22);
@@ -170,8 +168,7 @@ const ensureGroupStyles = () => {
       100%{transform:scale(1);}
     }
     @media (prefers-reduced-motion: reduce){.map-pin-group-button,.map-pin-group-button .mpg-icon{animation:none;transition:none;}}
-  `;
-  document.head.appendChild(style);
+  `);
 };
 
 /**

@@ -1,3 +1,4 @@
+import { ensureStyle } from "@/utils/style";
 const OVERLAY_Z_INDEX = 2001;
 const PANEL_VIEWPORT_MARGIN = 12;
 
@@ -53,10 +54,7 @@ export const STYLES = {
 
 export const injectPanelStyles = (): void => {
   const styleId = "mr-wplace-adjust-tool-styles";
-  if (document.getElementById(styleId)) return;
-  const style = document.createElement("style");
-  style.id = styleId;
-  style.textContent = `
+  ensureStyle(styleId, `
     .iat-panel-section { margin-bottom: 0.5rem; }
     .iat-panel-section:last-child { margin-bottom: 0; }
     .iat-slider-row {
@@ -117,6 +115,5 @@ export const injectPanelStyles = (): void => {
     .iat-floating-panel-body {
      padding: 0.3rem;
     }
-  `;
-  document.head.appendChild(style);
+  `);
 };
