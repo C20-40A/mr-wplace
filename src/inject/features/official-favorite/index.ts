@@ -9,7 +9,22 @@ const post = async (url: string, body: unknown) => {
   });
   const json = await res.json().catch(() => null);
   if (!res.ok || !json?.success) throw new Error(`${res.status} ${json?.error ?? ""}`);
-  return json;
+  const { success: _, ...location } = json;
+  return location;
+};
+
+/**
+ * 公式 UI のユーザーストアへ最新の /me を反映する。
+ * 公式は BroadcastChannel("user-channel") の {type:"refresh"} で data を差し替える (タブ間同期用) ので、
+ * 同じページ内の別インスタンスから流せばリロードなしで favorites 一覧が更新される。
+ * (/me の fetch は interceptor 経由なので拡張側の user data / favorites も同時に更新される)
+ */
+const syncOfficialUserStore = async (): Promise<void> => {
+  const res = await fetch("https://backend.wplace.live/me", { credentials: "include" });
+  if (!res.ok) return;
+  const channel = new BroadcastChannel("user-channel");
+  channel.postMessage(JSON.stringify({ type: "refresh", data: await res.json() }));
+  channel.close();
 };
 
 /**
@@ -30,14 +45,16 @@ export const handleCreateOfficialFavorite = async (data: {
     );
 
   try {
-    const { success: _, ...created } = await post(API, {
+    const created = await post(API, {
       latitude: data.lat,
       longitude: data.lng,
       zoom: data.zoom,
     });
-    if (!data.name) return respond({ ok: true, location: created });
-    const { success: __, ...updated } = await post(`${API}/update`, { ...created, name: data.name });
-    respond({ ok: true, location: updated });
+    const location = data.name
+      ? await post(`${API}/update`, { ...created, name: data.name })
+      : created;
+    await syncOfficialUserStore().catch((e) => console.warn("🧑‍🎨 : Failed to sync official user store", e));
+    respond({ ok: true, location });
   } catch (error) {
     console.warn("🧑‍🎨 : Failed to create official favorite", error);
     respond({ ok: false, error: String(error) });

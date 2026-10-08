@@ -333,8 +333,8 @@ const handleLegacyClick = async (
       alert(t`${"bookmark_migrate_failed"}`);
       return;
     }
+    // 公式一覧/拡張側 favorites は inject 側の /me 再取得で同期済み
     await BookmarkStorage.removeBookmark(id);
-    requestOfficialFavoritesRecovery();
     await reloadLegacy();
     return;
   }
