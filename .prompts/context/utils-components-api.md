@@ -1,6 +1,6 @@
 # Utils / Components API Context
 
-- generated_at: 2026-10-08T21:05:23.098Z
+- generated_at: 2026-10-08T21:40:13.427Z
 - project: tsconfig.json
 - targets: src/utils, src/components
 - files: 34
@@ -220,7 +220,7 @@
 ## src/components/map-pin-button.ts
 
 - exports: 4
-- top_level_declarations: 5
+- top_level_declarations: 7
 - declarations:
 - interface `MapPinButtonConfig` (L1)
   - signature: `MapPinButtonConfig`
@@ -228,10 +228,14 @@
   - signature: `(config: MapPinButtonConfig) => HTMLButtonElement`
 - export variable `createMapPinButtonContainer` (L126)
   - signature: `() => HTMLDivElement`
-- export variable `getOrCreateMapPinButtonGroup` (L140)
+- variable `GROUP_STYLE_ID` (L137)
+  - signature: `"map-pin-button-group-style"`
+- variable `ensureGroupStyles` (L140)
+  - signature: `() => void`
+- export variable `getOrCreateMapPinButtonGroup` (L180)
   - signature: `(pinContainer: Element) => HTMLElement`
   - summary: マップピン上部のボタングループを取得または作成
-- export variable `createMapPinGroupButton` (L167)
+- export variable `createMapPinGroupButton` (L198)
   - signature: `(config: { icon?: string; iconSrc?: string; text: string; onClick: () => void; }) => HTMLButtonElement`
   - summary: グループ内で使用するボタンを作成
 
@@ -804,9 +808,9 @@
 - export variable `addMapPinButton` (L20)
   - signature: `(container: Element, config: MapPinButtonConfig) => HTMLButtonElement | null`
   - summary: マップピングループにボタンを追加（重複チェック付き）
-- interface `MapPinObserverConfig` (L43)
+- interface `MapPinObserverConfig` (L44)
   - signature: `MapPinObserverConfig extends MapPinButtonConfig`
-- export variable `createMapPinButtonObserverConfig` (L48)
+- export variable `createMapPinButtonObserverConfig` (L49)
   - signature: `(config: MapPinObserverConfig) => ElementConfig`
 
 ## src/utils/miniidenticon.ts

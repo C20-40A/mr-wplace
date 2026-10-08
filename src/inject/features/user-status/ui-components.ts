@@ -3,35 +3,28 @@
  * Based on src/features/user-status/ui/components.ts
  */
 
+const STYLE_ID = "user-status-style";
+
+const ensureStyles = () => {
+  if (document.getElementById(STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = STYLE_ID;
+  style.textContent = `
+    #user-status-container{position:absolute;top:5px;left:50%;translate:-50% 0;display:flex;align-items:flex-start;gap:8px;pointer-events:all;background-color:var(--color-base-100);padding:3px 4px;font-size:11px;font-weight:500;cursor:pointer;z-index:30;
+      transition:transform .25s cubic-bezier(.34,1.56,.64,1),background-color .2s;}
+    #user-status-container:hover{transform:translateY(2px) scale(1.04);background-color:var(--color-base-200);}
+    #user-status-container:active{transform:scale(.94);transition-duration:.08s;}
+    @media (prefers-reduced-motion: reduce){#user-status-container{transition:none;}}
+  `;
+  (document.head || document.documentElement).appendChild(style);
+};
+
 export class StatusUIComponents {
   createContainer(): HTMLElement {
+    ensureStyles();
     const container = document.createElement("div");
-    container.style.cssText = `
-      position: absolute;
-      top: 5px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      pointer-events: all;
-      background-color: var(--color-base-100);
-      padding: 3px 4px 3px 4px;
-      font-size: 11px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background-color 0.2s;
-      z-index: 30;
-    `;
     container.id = "user-status-container";
-
-    container.addEventListener("mouseenter", () => {
-      container.style.backgroundColor = "var(--color-base-200)";
-    });
-    container.addEventListener("mouseleave", () => {
-      container.style.backgroundColor = "var(--color-base-100)";
-    });
-
+    container.className = "game-panel-surface";
     return container;
   }
 

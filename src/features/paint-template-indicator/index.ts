@@ -107,12 +107,12 @@ export class PaintTemplateIndicator {
   }
 
   private moveToDesktopToolbarStart(button: HTMLButtonElement): void {
-    const tooltip = button.parentElement;
-    const toolbar = tooltip?.parentElement;
+    const item = button.parentElement;
+    const toolbar = item?.parentElement;
     if (
       toolbar?.id === PAINT_TOOLBAR_ID &&
       toolbar.parentElement?.classList.contains("paint-tools")
-    ) toolbar.prepend(tooltip);
+    ) toolbar.prepend(item);
   }
 
   private async refreshAvailability(): Promise<void> {
@@ -131,19 +131,20 @@ export class PaintTemplateIndicator {
     this.button.style.display = this.hasTemplates ? "inline-flex" : "none";
 
     const template = this.currentTemplate;
-    const percent = this.templateOff
-      ? "OFF"
-      : this.progress?.id === template?.id && this.progress
-      ? `${Math.round(this.progress.percentage)}%`
-      : "—";
-    this.button.title = this.templateOff
+    // テンプレート未検出時は "—" ではなく OFF 表示に寄せる
+    const percentage =
+      !this.templateOff && template && this.progress?.id === template.id
+        ? Math.round(this.progress.percentage)
+        : null;
+    const off = percentage === null;
+    this.button.title = off
       ? t("paint_template_off")
       : template?.title || t("paint_template_select");
     this.button.innerHTML = `
-      <span class="mr-template-percent">${percent}</span>
+      <span class="mr-template-percent">${off ? "OFF" : `${percentage}%`}</span>
       <img class="mr-template-thumb" alt="" />
     `;
-    if (!template || this.templateOff) return;
+    if (off || !template) return;
 
     const img = this.button.querySelector("img")!;
     void getGalleryThumbnailDataUrl(template.id).then((thumbnail) => {

@@ -3,6 +3,7 @@ import {
   getPaintToolbarContainer,
   registerPaintToolbarButton,
   setPaintToolbarButtonActive,
+  PAINT_TOOLBAR_ITEM_CLASS,
 } from "@/features/paint-toolbar";
 import { subscribePaintMode } from "@/utils/paint-mode";
 import { colorpalette } from "@/constants/colors";
@@ -92,7 +93,7 @@ export class MiniColorFilter {
           )
         ) {
           const container = getPaintToolbarContainer();
-          const wrapper = button.closest<HTMLElement>(".tooltip");
+          const wrapper = button.closest<HTMLElement>(`.${PAINT_TOOLBAR_ITEM_CLASS}`);
           if (container && wrapper && container.firstChild !== wrapper) {
             container.insertBefore(wrapper, container.firstChild);
           }
