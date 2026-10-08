@@ -5,6 +5,7 @@ import { initGalleryRepository } from "./db/gallery-repository";
 import { initSnapshotRepository } from "./db/snapshot-repository";
 import { requestPersistentStorage } from "./storage-persistence";
 import {
+  installMapConstructorHook,
   resolveMapInstanceAsync,
   setFrontTilePaintGuideActive,
   clearFrontTilePaintGuide,
@@ -62,6 +63,9 @@ const forceStartupLocationZoom = (): void => {
 // to catch /me requests before WPlace app code runs
 (() => {
   console.log("🧑‍🎨: Setting up fetch interceptor (sync)...");
+
+  // map 生成より先に張る必要があるので最優先で同期実行
+  installMapConstructorHook();
 
   forceStartupLocationZoom();
 

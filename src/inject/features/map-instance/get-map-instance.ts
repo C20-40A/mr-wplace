@@ -1,18 +1,25 @@
 import { findPositionModal } from "@/constants/selectors";
 import { WplaceMap } from "@/inject/types";
 
+/*
+ * map instance 捕捉 (2段構え)
+ * 1. constructor hook (推奨・クリック不要):
+ *    maplibre の HandlerManager は Map 生成中に `map.touchZoomRotate = handler` と
+ *    「代入」する (class field 定義ではない)。Object.prototype に同名 setter を一時的に生やすと、
+ *    その代入で setter が this = map instance で呼ばれる。inject が map 生成より先に動いた時に有効。
+ * 2. fallback: Map.prototype.values hook + 疑似クリック (inject が map 生成に間に合わなかった時)
+ */
+const HOOK_KEY = "touchZoomRotate";
+let constructedMap: WplaceMap | null = null;
+
 const delay = (ms: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-const clickPositionModalCloseButton = () => {
-  const positionModalElement = findPositionModal();
-  if (!positionModalElement) return;
-
-  const closeButton = positionModalElement.querySelector<HTMLButtonElement>(
-    'button:has(path[d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"])',
+/** 疑似クリックで開いた pixel 選択パネルを閉じる (公式は keydown Escape で onclose する) */
+const closeSelectedPixelPanel = () => {
+  document.body.dispatchEvent(
+    new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true }),
   );
-
-  closeButton?.click();
 };
 
 const isMapLike = (value: unknown): value is WplaceMap => {
@@ -26,6 +33,33 @@ const isMapLike = (value: unknown): value is WplaceMap => {
     typeof (candidate as any).getCenter === "function" &&
     typeof (candidate as any).getZoom === "function"
   );
+};
+
+const removeConstructorHook = () => {
+  const desc = Object.getOwnPropertyDescriptor(Object.prototype, HOOK_KEY);
+  if (desc?.set) delete (Object.prototype as Record<string, unknown>)[HOOK_KEY];
+};
+
+/** inject 起動直後 (同期) に呼ぶ。map 生成時の代入を横取りして instance を記録する */
+export const installMapConstructorHook = (): void => {
+  if (HOOK_KEY in Object.prototype) return;
+  Object.defineProperty(Object.prototype, HOOK_KEY, {
+    configurable: true,
+    get: () => undefined,
+    set(this: object, value: unknown) {
+      // 本来の代入結果を own property として復元する
+      Object.defineProperty(this, HOOK_KEY, {
+        value,
+        writable: true,
+        enumerable: true,
+        configurable: true,
+      });
+      if (!isMapLike(this)) return;
+      constructedMap = this;
+      removeConstructorHook();
+      console.log("🧑‍🎨 : Map instance captured via constructor hook");
+    },
+  });
 };
 
 const findMapRecursively = (
@@ -129,9 +163,23 @@ const dispatchMapClickSequence = (canvas: HTMLCanvasElement) => {
   );
 };
 
+/** canvas 出現 (= Map constructor 実行済み) まで待ち、constructor hook の結果を返す */
+const waitForConstructedMap = async (): Promise<WplaceMap | null> => {
+  for (let i = 0; i < 100 && !constructedMap; i++) {
+    if (document.querySelector("canvas.maplibregl-canvas")) break;
+    await delay(100);
+  }
+  removeConstructorHook();
+  return constructedMap;
+};
+
 export const resolveMapInstanceAsync = async (): Promise<
   WplaceMap | undefined
 > => {
+  const constructed = await waitForConstructedMap();
+  if (constructed) return constructed;
+  console.log("🧑‍🎨 : Constructor hook missed, falling back to click capture");
+
   let mapInstance: WplaceMap | null = null;
 
   const originalValues = Map.prototype.values;
@@ -172,7 +220,7 @@ export const resolveMapInstanceAsync = async (): Promise<
 
       if (mapInstance) {
         console.log("🧑‍🎨 Map instance found:", mapInstance);
-        clickPositionModalCloseButton();
+        closeSelectedPixelPanel();
         return mapInstance;
       }
 

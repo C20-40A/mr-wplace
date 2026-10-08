@@ -1,6 +1,7 @@
 export {
   resolveMapInstanceAsync,
   getMapInstanceFromWplace,
+  installMapConstructorHook,
 } from "./get-map-instance";
 export { changeBackgroundColor } from "./background-color-control";
 export {
