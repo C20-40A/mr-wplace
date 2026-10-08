@@ -16,25 +16,20 @@ export class StatusUIComponents {
       gap: 8px;
       pointer-events: all;
       background-color: var(--color-base-100);
-      border-radius: 12px;
-      padding: 4px 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(0, 0, 0, 0.1);
+      padding: 3px 4px 3px 4px;
       font-size: 11px;
       font-weight: 500;
       cursor: pointer;
-      transition: background-color 0.2s, box-shadow 0.2s;
+      transition: background-color 0.2s;
       z-index: 30;
     `;
     container.id = "user-status-container";
 
     container.addEventListener("mouseenter", () => {
       container.style.backgroundColor = "var(--color-base-200)";
-      container.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
     });
     container.addEventListener("mouseleave", () => {
       container.style.backgroundColor = "var(--color-base-100)";
-      container.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.1)";
     });
 
     return container;

@@ -27,8 +27,8 @@ export class StatusCalculator {
 
     const progressWidth = Math.floor(progressRatio * 40);
     const gaugeHtml = `
-      <div style="display:inline-block;width:40px;height:6px;background-color: var(--color-base-300);border-radius:3px;position:relative;margin-right:4px;">
-        <div style="width:${progressWidth}px;height:6px;background-color:#3B82F6;border-radius:3px;position:absolute;top:0;left:0;"></div>
+      <div style="display:inline-block;width:40px;height:4px;background-color: var(--color-base-300);border-radius:2px;position:relative;margin-right:4px;">
+        <div style="width:${progressWidth}px;height:4px;background-color:#3B82F6;border-radius:2px;position:absolute;top:0;left:0;"></div>
       </div>
     `;
 
@@ -81,8 +81,8 @@ export class StatusCalculator {
     const progressPercent = Math.floor(progressRatio * 100);
 
     return `
-      <div style="display:block;width:100%;height:6px;background-color: var(--color-base-300);border-radius:3px;position:relative;">
-        <div style="width:${progressPercent}%;height:6px;background-color:#FCD34D;border-radius:3px;position:absolute;top:0;left:0;"></div>
+      <div style="display:block;width:100%;height:4px;background-color: var(--color-base-300);border-radius:2px;position:relative;">
+        <div style="width:${progressPercent}%;height:4px;background-color:#FCD34D;border-radius:2px;position:absolute;top:0;left:0;"></div>
       </div>
     `;
   }
@@ -109,8 +109,8 @@ export class StatusCalculator {
     const progressPercent = Math.floor(progressRatio * 100);
 
     return `
-      <div style="display:block;width:100%;height:6px;background-color: var(--color-base-300);border-radius:3px;position:relative;">
-        <div style="width:${progressPercent}%;height:6px;background-color:#3B82F6;border-radius:3px;position:absolute;top:0;left:0;"></div>
+      <div style="display:block;width:100%;height:4px;background-color: var(--color-base-300);border-radius:2px;position:relative;">
+        <div style="width:${progressPercent}%;height:4px;background-color:#3B82F6;border-radius:2px;position:absolute;top:0;left:0;"></div>
       </div>
     `;
   }
