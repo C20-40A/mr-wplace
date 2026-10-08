@@ -43,7 +43,6 @@ export class ShowUnplacedOnly {
       tip: t("show_unplaced_only"),
       label: "Todo",
       icon: SHOW_UNPLACED_ONLY_ICON_SVG,
-      className: "btn btn-sm btn-ghost",
       isActive: getShowUnplacedOnly,
       onClick: () => void this.toggle(),
       onCreate: (button) => {

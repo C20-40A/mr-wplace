@@ -22,13 +22,7 @@ const ensureStyles = (): void => {
   style.textContent = `
     .${PAINT_MODE_CLASS}.${PAINT_TOOLBAR_FALLBACK_CLASS} #user-status-container{display:none !important;}
     .${PAINT_MODE_CLASS}.${PAINT_TOOLBAR_FALLBACK_CLASS} #dev-trigger-btn{display:none !important;}
-    #${PAINT_TOOLBAR_ID}:empty{display:none;}.mr-paint-tb-item{position:relative;display:inline-flex;}.mr-paint-tb-btn{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:34px;height:32px;min-height:32px;padding:0;border-radius:8px;}.mr-paint-tb-btn svg,.mr-paint-tb-btn img{width:19px !important;height:19px !important;}.mr-paint-tb-label{font-size:8px;line-height:9px;font-weight:600;letter-spacing:-.02em;white-space:nowrap;pointer-events:none;}.mr-template-percent{position:absolute;bottom:1px;left:2px;right:2px;z-index:1;font-size:8px;font-weight:700;line-height:9px;color:white;background:rgba(0,0,0,.65);border-radius:4px;text-align:center;}.mr-template-thumb{width:28px;height:19px;margin-bottom:2px;object-fit:cover;border-radius:4px;background:var(--color-base-300);display:block;}.mr-template-menu{position:absolute;top:calc(100% + 6px);left:0;width:190px;max-height:220px;overflow-y:auto;padding:4px;background:var(--color-base-100);border:1px solid rgba(0,0,0,.15);border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.2);z-index:31;text-align:left;}.mr-template-menu-up{top:auto;bottom:calc(100% + 6px);}.mr-template-menu-item{width:100%;display:flex;align-items:center;gap:7px;padding:4px;border-radius:5px;background:transparent;border:0;color:inherit;text-align:left;font-size:11px;}.mr-template-menu-item:hover{background:var(--color-base-200);}.mr-template-menu-item img{width:30px;height:24px;object-fit:cover;border-radius:3px;background:var(--color-base-300);flex:none;}.mr-template-menu-item span{min-width:0;display:flex;flex-direction:column;}.mr-template-menu-progress{font-size:13px;line-height:15px;font-weight:700;}.mr-template-menu-title{font-size:9px;line-height:11px;opacity:.65;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.mr-template-menu-meter{display:none;width:100px;height:3px;margin-top:2px;overflow:hidden;border-radius:2px;background:var(--color-base-300);}.mr-template-menu-meter b{display:block;height:100%;background:var(--color-primary);transition:width .2s ease;}
-    #${PAINT_TOOLBAR_ID} .btn svg,#${PAINT_TOOLBAR_ID} .btn img{transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
-    #${PAINT_TOOLBAR_ID} .btn:hover svg{transform:translateY(-1px) rotate(-10deg) scale(1.15);}
-    #${PAINT_TOOLBAR_ID} .btn:active svg,#${PAINT_TOOLBAR_ID} .btn:active img{transform:scale(.85);transition-duration:.08s;}
-    #${PAINT_TOOLBAR_ID} .btn.mr-tb-toggled svg{animation:mr-tb-boing .5s cubic-bezier(.34,1.56,.64,1);}
-    @keyframes mr-tb-boing{0%{transform:scale(1);}30%{transform:scale(1.35) rotate(-12deg);}55%{transform:scale(.9) rotate(6deg);}100%{transform:scale(1);}}
-    @media (prefers-reduced-motion: reduce){#${PAINT_TOOLBAR_ID},#${PAINT_TOOLBAR_ID} *{animation:none !important;transition:none !important;}}
+    #${PAINT_TOOLBAR_ID}:empty{display:none;}.mr-paint-tb-item{position:relative;display:inline-flex;}.btn.mr-paint-tb-btn{flex-direction:column;gap:1px;padding:0;}.mr-paint-tb-btn svg{width:20px !important;height:20px !important;}.mr-paint-tb-label{font-size:8px;line-height:9px;font-weight:600;letter-spacing:-.02em;white-space:nowrap;pointer-events:none;}.mr-template-percent{position:absolute;bottom:1px;left:2px;right:2px;z-index:1;font-size:8px;font-weight:700;line-height:9px;color:white;background:rgba(0,0,0,.65);border-radius:4px;text-align:center;}.mr-template-thumb{width:28px;height:19px;margin-bottom:2px;object-fit:cover;border-radius:4px;background:var(--color-base-300);display:block;}.mr-template-menu{position:absolute;top:calc(100% + 6px);left:0;width:190px;max-height:220px;overflow-y:auto;padding:4px;background:var(--color-base-100);border:1px solid rgba(0,0,0,.15);border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.2);z-index:31;text-align:left;}.mr-template-menu-up{top:auto;bottom:calc(100% + 6px);}.mr-template-menu-item{width:100%;display:flex;align-items:center;gap:7px;padding:4px;border-radius:5px;background:transparent;border:0;color:inherit;text-align:left;font-size:11px;}.mr-template-menu-item:hover{background:var(--color-base-200);}.mr-template-menu-item img{width:30px;height:24px;object-fit:cover;border-radius:3px;background:var(--color-base-300);flex:none;}.mr-template-menu-item span{min-width:0;display:flex;flex-direction:column;}.mr-template-menu-progress{font-size:13px;line-height:15px;font-weight:700;}.mr-template-menu-title{font-size:9px;line-height:11px;opacity:.65;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.mr-template-menu-meter{display:none;width:100px;height:3px;margin-top:2px;overflow:hidden;border-radius:2px;background:var(--color-base-300);}.mr-template-menu-meter b{display:block;height:100%;background:var(--color-primary);transition:width .2s ease;}
   `;
   (document.head || document.documentElement).appendChild(style);
 };
@@ -96,20 +90,12 @@ const DEFAULT_BUTTON_CLASS = "btn btn-circle btn-ghost sm:btn-sm size-11 shrink-
 
 export const PAINT_TOOLBAR_ITEM_CLASS = "mr-paint-tb-item";
 
-/** ON/OFF ボタンの見た目を切り替える */
+/** ON/OFF 状態を反映する (見た目は公式同様 aria-pressed に任せる) */
 export const setPaintToolbarButtonActive = (
   button: HTMLButtonElement,
   active: boolean,
 ): void => {
-  const changed = button.classList.contains("text-primary") !== active;
-  button.classList.toggle("text-primary", active);
-  button.classList.toggle("text-base-content", !active);
   button.setAttribute("aria-pressed", String(active));
-  if (!changed || !button.isConnected) return;
-  // ON/OFF 切替時に icon を弾ませる (連続切替でも再生されるよう reflow を挟む)
-  button.classList.remove("mr-tb-toggled");
-  void button.offsetWidth;
-  button.classList.add("mr-tb-toggled");
 };
 
 /** ツールバーへアイコンボタンを登録する (ツールバー再生成時も自動で復元) */
@@ -137,10 +123,8 @@ export const registerPaintToolbarButton = ({
         button.type = "button";
         button.title = tip;
         button.setAttribute("aria-label", tip);
-        // ラベル付きは縦並び (icon + label) の独自サイズを維持
-        button.className = label
-          ? `${className.replace(/\bbtn-circle\b|\bsize-11\b/g, "")} mr-paint-tb-btn`
-          : className;
+        // ラベル付きは縦並び (icon + label)。サイズは公式 class に従う
+        button.className = label ? `${className} mr-paint-tb-btn` : className;
         button.innerHTML = label
           ? `${icon}<span class="mr-paint-tb-label">${label}</span>`
           : icon;
@@ -148,9 +132,6 @@ export const registerPaintToolbarButton = ({
         button.addEventListener("click", onClick);
         if (isActive) setPaintToolbarButtonActive(button, isActive());
 
-        button.addEventListener("animationend", () =>
-          button.classList.remove("mr-tb-toggled"),
-        );
         item.appendChild(button);
         container.appendChild(item);
         onCreate?.(button);

@@ -88,12 +88,10 @@ export class PaintTemplateIndicator {
       id: BUTTON_ID,
       tip: t("paint_template_select"),
       icon: "",
-      className: "btn btn-sm btn-ghost",
       onClick: () => void this.toggleMenu(),
       onCreate: (button) => {
         this.button = button;
-        button.style.cssText =
-          "position:relative;width:34px;height:32px;min-height:32px;padding:1px;overflow:visible;";
+        button.style.cssText = "position:relative;padding:1px;overflow:visible;";
         this.moveToDesktopToolbarStart(button);
         this.renderCurrent();
       },
