@@ -95,6 +95,10 @@ export const findOpacityContainer = (): Element | null => {
 };
 
 export const findPositionModal = (): Element | null => {
+  // 0. 新UI (game-floating-panel)
+  const selectedPanel = document.querySelector(".game-selected-panel");
+  if (selectedPanel) return selectedPanel;
+
   // 1. classのstyleで検索
   const positionModal = document.querySelector(
     ".absolute.bottom-0.left-0.z-50.w-full.sm\\:left-1\\/2.sm\\:max-w-md.sm\\:-translate-x-1\\/2.md\\:max-w-lg",
