@@ -650,4 +650,5 @@ export const frTranslations = {
   notice_party_mode_off: "Mode fête DÉSACTIVÉ",
   hint_party_mode_btn: "Nouveau ! Le mode fête affiche des effets et des points à chaque pixel correct.",
   paint_template_off: "Aucun modèle",
+  fav_capture_thumbnail: "Enregistrer la vue actuelle de la carte comme miniature",
 };

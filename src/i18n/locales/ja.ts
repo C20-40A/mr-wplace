@@ -662,4 +662,5 @@ export const jaTranslations = {
   notice_party_mode_off: "パーティーモード OFF",
   hint_party_mode_btn: "新機能！パーティーモードで、正しく塗るたびに演出とスコアが出ます。",
   paint_template_off: "テンプレートなし",
+  fav_capture_thumbnail: "現在のマップ表示をサムネイルに保存",
 };

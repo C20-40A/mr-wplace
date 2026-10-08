@@ -634,4 +634,5 @@ export const ptTranslations = {
   notice_party_mode_off: "Modo festa DESLIGADO",
   hint_party_mode_btn: "Novo! O modo festa mostra efeitos e pontos a cada pixel pintado corretamente.",
   paint_template_off: "Sem modelo",
+  fav_capture_thumbnail: "Salvar a visualização atual do mapa como miniatura",
 };

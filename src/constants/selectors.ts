@@ -364,9 +364,52 @@ export const findPaintSubmitButton = (): HTMLElement | null => {
 };
 
 /**
+ * 公式 Favorite places の星アイコン SVG path（言語非依存で特定するため）
+ */
+const FAVORITE_STAR_ICON_PATH_PREFIX = "M13 3h2v4h8v4h-2v2h-2v3h2v6h-5";
+
+/** 右下の公式 Favorite places ボタン (dialogを開くFAB) */
+export const findOfficialFavoriteButton = (): HTMLElement | null =>
+  document
+    .querySelector(
+      `button[aria-haspopup="dialog"] path[d^="${FAVORITE_STAR_ICON_PATH_PREFIX}"]`,
+    )
+    ?.closest("button") ?? null;
+
+/** 開いている公式 Favorite places dialog */
+export const findOfficialFavoriteDialog = (): HTMLDialogElement | null =>
+  document.querySelector("dialog[open] .favorite-heading")?.closest("dialog") ??
+  null;
+
+const FAB_STACK_ID = "mr-wplace-fab-stack";
+
+/**
+ * 公式 Favorite ボタンの真上に Mr.Wplace の FAB を積むスタック。
+ * 公式ラッパーの class/layout は触らず、absolute の子要素として上に伸ばす。
+ */
+const getOrCreateFabStackAbove = (anchor: Element): Element => {
+  const existing = document.getElementById(FAB_STACK_ID);
+  if (existing?.parentElement === anchor) return existing;
+  existing?.remove();
+
+  const stack = document.createElement("div");
+  stack.id = FAB_STACK_ID;
+  stack.style.cssText =
+    "position:absolute;right:0;bottom:100%;margin-bottom:0.25rem;display:flex;flex-direction:column-reverse;align-items:flex-end;gap:0.25rem;z-index:30;";
+  anchor.appendChild(stack);
+  return stack;
+};
+
+/**
  * "My location" ボタンのコンテナを検索（右下）
+ * 公式 Favorite ボタンがあればその上のスタックを優先
  */
 export const findMyLocationContainer = (): Element | null => {
+  const favoriteButton = findOfficialFavoriteButton();
+  if (favoriteButton?.parentElement) {
+    return getOrCreateFabStackAbove(favoriteButton.parentElement);
+  }
+
   const myLocationButton = findMyLocationButton();
 
   if (myLocationButton?.parentElement) {

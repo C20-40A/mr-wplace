@@ -155,7 +155,7 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
   "timetravel-btn": {
     messageKey: "hint_timetravel_btn",
     placement: "top",
-    dependsOn: ["bookmark-btn"],
+    dependsOn: ["show-unplaced-only"],
     condition: isNoModalOpen,
   },
   "text-draw-btn": {

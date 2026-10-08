@@ -659,4 +659,5 @@ Do not use this feature to paint actual pixels.`,
   notice_party_mode_off: "Party Mode OFF",
   hint_party_mode_btn: "New! Party Mode adds effects and scores every time you paint a correct pixel.",
   paint_template_off: "No template",
+  fav_capture_thumbnail: "Save current map view as thumbnail",
 };

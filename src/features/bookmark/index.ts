@@ -1,20 +1,10 @@
-import {
-  setupElementObserver,
-  ElementConfig,
-} from "@/components/element-observer";
 import { storage } from "@/utils/browser-api";
 import { Toast } from "@/components/toast";
-import {
-  findMyLocationContainer,
-} from "@/constants/selectors";
-import { createMapPinButtonObserverConfig } from "@/utils/map-pin-helper";
 import { BookmarkStorage } from "./storage";
 import { ImportExportService } from "./import-export";
-import { getCurrentPosition, gotoPosition } from "@/utils/position";
-import { showNameInputModal } from "@/components/modal";
-import { t, formatDateShort } from "@/i18n/manager";
+import { gotoPosition } from "@/utils/position";
+import { t } from "@/i18n/manager";
 import {
-  createBookmarkButton,
   createBookmarkModal,
   renderBookmarks,
   renderFavoriteLocations,
@@ -25,10 +15,14 @@ import { BookmarkRouter } from "./router";
 import { renderCoordinateJumper } from "./routes/coordinate-jumper";
 import type { BookmarkAPI } from "@/core/di";
 import { Tutorial } from "@/features/tutorial";
-import { showFeatureHint } from "@/features/feature-hints";
 import type { FavoriteLocation } from "./types";
 import { getMapThumbnail } from "@/utils/inject-bridge";
 import { saveFavThumbnail, saveFavMetadata } from "./fav-metadata-db";
+import {
+  initOfficialFavoriteDialog,
+  requestOfficialFavoritesRecovery,
+  setOfficialFavoriteLocations,
+} from "./official-dialog";
 
 const SORT_KEY = "wplace-studio-bookmark-sort";
 const TAB_KEY = "wplace-studio-bookmark-tab";
@@ -66,16 +60,6 @@ const getOfficialFavoriteLocationsState = (): OfficialFavoriteLocationsState => 
 
 const renderOfficialFavorites = (): void => {
   renderFavoriteLocations(getOfficialFavoriteLocationsState());
-};
-
-const requestOfficialFavoritesRecovery = (): void => {
-  window.postMessage(
-    {
-      source: "mr-wplace-request-user-data",
-      reason: "official-favorites",
-    },
-    "*",
-  );
 };
 
 const scheduleOfficialFavoritesTimeout = (): void => {
@@ -148,34 +132,6 @@ const deleteBookmark = async (id: number): Promise<void> => {
   await BookmarkStorage.removeBookmark(id);
   render();
   Toast.success(t`${"deleted_message"}`);
-};
-
-const addBookmark = async (): Promise<void> => {
-  const position = getCurrentPosition();
-  if (!position) {
-    alert(t`${"location_unavailable_instruction"}`);
-    return;
-  }
-  const name = await showNameInputModal(
-    t`${"enter_bookmark_name"}`,
-    t`${"location_point"} (${position.lat.toFixed(3)}, ${position.lng.toFixed(
-      3,
-    )})`,
-  );
-  if (name === null) return;
-  const bookmarkName =
-    name === ""
-      ? `(${position.lat.toFixed(3)}, ${position.lng.toFixed(3)})`
-      : name;
-
-  await BookmarkStorage.addBookmark({
-    id: Date.now(),
-    name: bookmarkName,
-    lat: position.lat,
-    lng: position.lng,
-    zoom: position.zoom || 14,
-    date: formatDateShort(new Date()),
-  });
 };
 
 const openModal = async (): Promise<void> => {
@@ -619,38 +575,18 @@ const setupModal = (): void => {
 };
 
 const init = (): void => {
-  const buttonConfigs: ElementConfig[] = [
-    {
-      id: "bookmarks-btn",
-      getTargetElement: findMyLocationContainer,
-      createElement: (container) => {
-        const button = createBookmarkButton();
-        button.id = "bookmarks-btn";
-        button.addEventListener("click", openModal);
-        container.className += " flex flex-col-reverse gap-1";
-        button.style.order = "1";
-        container.appendChild(button);
-        showFeatureHint("bookmarks-btn", button);
-      },
-    },
-    // 優先: マップピン周辺にボタン配置
-    createMapPinButtonObserverConfig({
-      observerId: "bookmark-map-pin-btn",
-      id: "bookmark-btn",
-      icon: "⭐",
-      text: t`${"save_location"}`,
-      onClick: addBookmark,
-      hintId: "bookmark-btn",
-    }),
-  ];
-  setupElementObserver(buttonConfigs);
+  // 旧ブックマークFAB/ピン保存ボタンは公式 Favorite places を優先して無効化。
+  // 旧一覧は公式dialog内に統合し、管理画面(旧modal)はそこから開く
+  initOfficialFavoriteDialog({ openLegacyModal: openModal });
 
   // Listen for favorite locations from inject (/me response)
   window.addEventListener("message", (e) => {
     if (e.data?.source === "mr-wplace-favorite-locations") {
-      favoriteLocations = e.data.favoriteLocations || [];
+      const locations: FavoriteLocation[] = e.data.favoriteLocations || [];
+      favoriteLocations = locations;
       clearFavoriteLocationsTimeout();
-      console.log("🧑‍🎨 : Favorite locations received:", favoriteLocations.length);
+      setOfficialFavoriteLocations(locations);
+      console.log("🧑‍🎨 : Favorite locations received:", locations.length);
       if (isOfficialFavoritesTabActive()) renderOfficialFavorites();
     }
   });

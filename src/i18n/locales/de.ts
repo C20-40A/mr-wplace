@@ -632,4 +632,5 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   notice_party_mode_on: "Party-Modus AN: Malen wird spektakulär!",
   notice_party_mode_off: "Party-Modus AUS",
   hint_party_mode_btn: "Neu! Der Party-Modus zeigt Effekte und Punkte für jedes korrekt gemalte Pixel.",
+  fav_capture_thumbnail: "Aktuelle Kartenansicht als Vorschaubild speichern",
 };

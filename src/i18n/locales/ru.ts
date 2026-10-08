@@ -646,4 +646,5 @@ export const ruTranslations = {
   notice_party_mode_off: "Режим вечеринки ВЫКЛ",
   hint_party_mode_btn: "Новинка! Режим вечеринки показывает эффекты и очки за каждый верный пиксель.",
   paint_template_off: "Без шаблона",
+  fav_capture_thumbnail: "Сохранить текущий вид карты как миниатюру",
 };

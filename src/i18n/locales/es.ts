@@ -643,4 +643,5 @@ export const esTranslations = {
   notice_party_mode_off: "Modo fiesta DESACTIVADO",
   hint_party_mode_btn: "¡Nuevo! El modo fiesta muestra efectos y puntos cada vez que pintas un píxel correcto.",
   paint_template_off: "Sin plantilla",
+  fav_capture_thumbnail: "Guardar la vista actual del mapa como miniatura",
 };
