@@ -527,10 +527,8 @@ export const esTranslations = {
   hint_gallery_btn: "Puedes registrar imágenes para dibujar desde aquí.",
   hint_user_status_container:
     "Presiona aquí para configurar la alarma cuando se haya acumulado Paint",
-  hint_bookmark_btn: "Puedes marcar esta ubicación",
   hint_timetravel_btn: "Puedes guardar arte cerca de esta ubicación",
   hint_text_draw_btn: "Puedes mostrar texto en el mapa",
-  hint_bookmarks_btn: "Tus marcadores guardados están aquí",
   hint_timetravel_fab_btn: "La lista de áreas archivadas está aquí",
   import_snapshot_tile_x_label: "Coordenada de Tile X",
   import_snapshot_tile_y_label: "Coordenada de Tile Y",
@@ -586,9 +584,6 @@ export const esTranslations = {
   hint_overlay_mode_blue_marble:
     'If BlueMarble conflicts with this extension, try setting this mode to "Composite"',
   official_favorites: "Favoritos oficiales",
-  empty_official_favorites: "No hay ubicaciones favoritas oficiales",
-  official_favorites_unavailable:
-    "No se pudieron cargar las ubicaciones favoritas oficiales",
   tile_crop_selection_too_large: "La selección es demasiado grande ({count}px). Los píxeles transparentes ya están excluidos. Selecciona colores adicionales para ignorar y vuelve a detectar.",
   tile_crop_max_selected_pixels: "Píxeles máximos seleccionados",
   tile_crop_include_diagonals: "Incluir vecinos diagonales",

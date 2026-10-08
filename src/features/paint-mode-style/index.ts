@@ -17,7 +17,6 @@ import {
 /** 非表示にするマップ上のFABボタンID一覧 */
 const MAP_FAB_IDS = [
   "gallery-btn",
-  "bookmarks-btn",
   "color-filter-fab-btn",
   "timetravel-fab-btn",
   "timetravel-map-pin-btn",
@@ -28,7 +27,6 @@ const MAP_FAB_IDS = [
   "draw-btn-fallback",
   "text-draw-fallback-btn",
   "tile-crop-save-btn",
-  "bookmark-map-pin-btn",
   "mr-wplace-focus-mode-btn",
   "mr-wplace-art-cruise-btn",
   "mr-wplace-party-mode-btn",

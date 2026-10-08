@@ -465,15 +465,48 @@ const MAP_THUMBNAIL_SIZE = 256;
  * Handle map canvas thumbnail capture request
  * Returns 1:1 cropped center JPEG dataUrl (256x256)
  */
+type ThumbnailMap = {
+  getCanvas?: () => HTMLCanvasElement;
+  getZoom: () => number;
+  project: (lngLat: [number, number]) => { x: number; y: number };
+  jumpTo: (options: { center: [number, number]; zoom: number }) => void;
+  once: (event: string, listener: () => void) => void;
+};
+
+const THUMBNAIL_IDLE_TIMEOUT_MS = 8000;
+const THUMBNAIL_MAX_ZOOM_GAP = 2;
+
+/** target がサムネ範囲(中央正方形)外 or ズームが離れていれば jump して idle を待つ */
+const ensureThumbnailView = async (
+  map: ThumbnailMap,
+  canvas: HTMLCanvasElement,
+  target: { lat: number; lng: number; zoom: number },
+): Promise<void> => {
+  const { x, y } = map.project([target.lng, target.lat]);
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  const half = Math.min(w, h) / 2;
+  const inCrop = Math.abs(x - w / 2) <= half && Math.abs(y - h / 2) <= half;
+  if (inCrop && map.getZoom() >= target.zoom - THUMBNAIL_MAX_ZOOM_GAP) return;
+
+  await new Promise<void>((resolve) => {
+    const timeoutId = setTimeout(resolve, THUMBNAIL_IDLE_TIMEOUT_MS);
+    map.once("idle", () => {
+      clearTimeout(timeoutId);
+      resolve();
+    });
+    map.jumpTo({ center: [target.lng, target.lat], zoom: target.zoom });
+  });
+};
+
 export const handleMapThumbnailRequest = async (data: {
   requestId: string;
+  target?: { lat: number; lng: number; zoom: number };
 }): Promise<void> => {
   const { getMapInstanceFromWplace } = require(
     "../features/map-instance/get-map-instance",
   );
-  const mapInstance = getMapInstanceFromWplace() as {
-    getCanvas?: () => HTMLCanvasElement;
-  } | null;
+  const mapInstance = getMapInstanceFromWplace() as ThumbnailMap | null;
   const mapCanvas = mapInstance?.getCanvas?.();
 
   if (!mapCanvas) {
@@ -483,6 +516,8 @@ export const handleMapThumbnailRequest = async (data: {
     );
     return;
   }
+
+  if (data.target) await ensureThumbnailView(mapInstance!, mapCanvas, data.target);
 
   // WebGL の preserveDrawingBuffer が false のため、rAF 内でキャプチャする必要がある
   requestAnimationFrame(async () => {

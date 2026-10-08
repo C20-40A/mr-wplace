@@ -513,10 +513,8 @@ export const viTranslations = {
   hint_gallery_btn: "Bạn có thể đăng ký hình ảnh để vẽ từ đây.",
   hint_user_status_container:
     "Nhấn vào đây để cấu hình cảnh báo khi Paint đã tích lũy",
-  hint_bookmark_btn: "Bạn có thể đánh dấu vị trí này",
   hint_timetravel_btn: "Bạn có thể lưu nghệ thuật gần vị trí này",
   hint_text_draw_btn: "Bạn có thể hiển thị văn bản trên bản đồ",
-  hint_bookmarks_btn: "Các dấu trang đã lưu của bạn ở đây",
   hint_timetravel_fab_btn: "Danh sách vùng đã lưu trữ ở đây",
   import_snapshot_tile_x_label: "Tọa độ Tile X",
   import_snapshot_tile_y_label: "Tọa độ Tile Y",
@@ -572,9 +570,6 @@ export const viTranslations = {
   hint_overlay_mode_blue_marble:
     'If BlueMarble conflicts with this extension, try setting this mode to "Composite"',
   official_favorites: "Yêu thích chính thức",
-  empty_official_favorites: "Không có địa điểm yêu thích chính thức",
-  official_favorites_unavailable:
-    "Khong the tai cac dia diem yeu thich chinh thuc",
   tile_crop_selection_too_large: "Vùng chọn quá lớn ({count}px). Các pixel trong suốt đã được loại trừ. Hãy chọn thêm màu cần bỏ qua rồi phát hiện lại.",
   tile_crop_max_selected_pixels: "Số pixel chọn tối đa",
   tile_crop_include_diagonals: "Bao gồm các pixel chéo liền kề",

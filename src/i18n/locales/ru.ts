@@ -532,10 +532,8 @@ export const ruTranslations = {
     "Вы можете зарегистрировать изображения для рисования отсюда.",
   hint_user_status_container:
     "Нажмите здесь, чтобы настроить сигнал, когда накопится Paint",
-  hint_bookmark_btn: "Вы можете добавить это место в закладки",
   hint_timetravel_btn: "Вы можете сохранить искусство рядом с этим местом",
   hint_text_draw_btn: "Вы можете отобразить текст на карте",
-  hint_bookmarks_btn: "Ваши сохраненные закладки здесь",
   hint_timetravel_fab_btn: "Список архивированных областей здесь",
   hint_map_filter_trigger: "Здесь вы можете изменить вид карты",
   hint_edit_card: "Здесь вы можете изменить название и добавить теги",
@@ -589,9 +587,6 @@ export const ruTranslations = {
   hint_overlay_mode_blue_marble:
     'If BlueMarble conflicts with this extension, try setting this mode to "Composite"',
   official_favorites: "Официальное избранное",
-  empty_official_favorites: "Нет официальных избранных мест",
-  official_favorites_unavailable:
-    "Не удалось загрузить официальные избранные места",
   tile_crop_selection_too_large: "Выделенная область слишком велика ({count}px). Прозрачные пиксели уже исключены. Выберите дополнительные цвета для игнорирования и запустите обнаружение снова.",
   tile_crop_max_selected_pixels: "Максимум выбранных пикселей",
   tile_crop_include_diagonals: "Включать диагональных соседей",

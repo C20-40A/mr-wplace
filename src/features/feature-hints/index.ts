@@ -19,8 +19,6 @@ export type FeatureHintId =
   | "paint-pixel-icon"
   | "gallery-btn"
   | "drawing-btn"
-  | "bookmark-btn"
-  | "bookmarks-btn"
   | "timetravel-btn"
   // | "timetravel-fab-btn"
   | "text-draw-btn"
@@ -146,12 +144,6 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
   },
 
   // ------- Map Popup Hints -------
-  "bookmark-btn": {
-    messageKey: "hint_bookmark_btn",
-    placement: "top",
-    dependsOn: ["show-unplaced-only"],
-    condition: isNoModalOpen,
-  },
   "timetravel-btn": {
     messageKey: "hint_timetravel_btn",
     placement: "top",
@@ -162,13 +154,6 @@ const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {
     messageKey: "hint_text_draw_btn",
     placement: "top",
     dependsOn: ["timetravel-btn"],
-    condition: isNoModalOpen,
-  },
-  // ------- Main Map Hint -------
-  "bookmarks-btn": {
-    messageKey: "hint_bookmarks_btn",
-    placement: "left",
-    dependsOn: ["bookmark-btn"],
     condition: isNoModalOpen,
   },
   // "timetravel-fab-btn": {

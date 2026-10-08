@@ -65,16 +65,6 @@ export const saveFavThumbnail = async (id: number, dataUrl: string): Promise<voi
   });
 };
 
-export const getFavThumbnail = async (id: number): Promise<string | null> => {
-  const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const req = tx(db, STORES.THUMBNAILS, "readonly").get(id);
-    req.onsuccess = () =>
-      resolve((req.result as FavThumbnailRecord | undefined)?.dataUrl ?? null);
-    req.onerror = () => reject(req.error);
-  });
-};
-
 export const getAllFavThumbnails = async (): Promise<Map<number, string>> => {
   const db = await openDb();
   return new Promise((resolve, reject) => {
@@ -85,52 +75,6 @@ export const getAllFavThumbnails = async (): Promise<Map<number, string>> => {
       if (cursor) {
         const rec = cursor.value as FavThumbnailRecord;
         map.set(rec.id, rec.dataUrl);
-        cursor.continue();
-      } else {
-        resolve(map);
-      }
-    };
-    req.onerror = () => reject(req.error);
-  });
-};
-
-export const deleteFavThumbnail = async (id: number): Promise<void> => {
-  const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const req = tx(db, STORES.THUMBNAILS, "readwrite").delete(id);
-    req.onsuccess = () => resolve();
-    req.onerror = () => reject(req.error);
-  });
-};
-
-export const saveFavMetadata = async (
-  id: number,
-  patch: Partial<Omit<FavMetadataRecord, "id">>,
-): Promise<void> => {
-  const db = await openDb();
-  const store = tx(db, STORES.METADATA, "readwrite");
-  return new Promise((resolve, reject) => {
-    const getReq = store.get(id);
-    getReq.onsuccess = () => {
-      const existing = (getReq.result as FavMetadataRecord | undefined) ?? { id };
-      const putReq = store.put({ ...existing, ...patch });
-      putReq.onsuccess = () => resolve();
-      putReq.onerror = () => reject(putReq.error);
-    };
-    getReq.onerror = () => reject(getReq.error);
-  });
-};
-
-export const getAllFavMetadata = async (): Promise<Map<number, FavMetadataRecord>> => {
-  const db = await openDb();
-  return new Promise((resolve, reject) => {
-    const map = new Map<number, FavMetadataRecord>();
-    const req = tx(db, STORES.METADATA, "readonly").openCursor();
-    req.onsuccess = () => {
-      const cursor = req.result as IDBCursorWithValue | null;
-      if (cursor) {
-        const rec = cursor.value as FavMetadataRecord;
-        map.set(rec.id, rec);
         cursor.continue();
       } else {
         resolve(map);

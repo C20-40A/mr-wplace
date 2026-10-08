@@ -7,72 +7,19 @@ import { t } from "@/i18n/manager";
 import {
   createBookmarkModal,
   renderBookmarks,
-  renderFavoriteLocations,
   BookmarkSortType,
 } from "./ui";
-import type { OfficialFavoriteLocationsState } from "./ui";
 import { BookmarkRouter } from "./router";
 import { renderCoordinateJumper } from "./routes/coordinate-jumper";
 import type { BookmarkAPI } from "@/core/di";
 import { Tutorial } from "@/features/tutorial";
-import type { FavoriteLocation } from "./types";
-import { getMapThumbnail } from "@/utils/inject-bridge";
-import { saveFavThumbnail, saveFavMetadata } from "./fav-metadata-db";
-import {
-  initOfficialFavoriteDialog,
-  requestOfficialFavoritesRecovery,
-  setOfficialFavoriteLocations,
-} from "./official-dialog";
+import { initOfficialFavoriteDialog } from "./official-dialog";
 
 const SORT_KEY = "wplace-studio-bookmark-sort";
-const TAB_KEY = "wplace-studio-bookmark-tab";
 
 let router: BookmarkRouter;
 let selectedTagFilters: Set<string> = new Set();
 let tutorial: Tutorial;
-let favoriteLocations: FavoriteLocation[] | null = null;
-let favoriteLocationsTimeoutId: number | null = null;
-
-const FAVORITE_LOCATIONS_TIMEOUT_MS = 4000;
-
-const isOfficialFavoritesTabActive = (): boolean =>
-  document.getElementById("wps-official-fav-tab-content")?.style.display ===
-  "flex";
-
-const clearFavoriteLocationsTimeout = (): void => {
-  if (favoriteLocationsTimeoutId === null) return;
-  window.clearTimeout(favoriteLocationsTimeoutId);
-  favoriteLocationsTimeoutId = null;
-};
-
-const getOfficialFavoriteLocationsState = (): OfficialFavoriteLocationsState => {
-  if (favoriteLocations !== null) {
-    return {
-      status: "ready",
-      locations: favoriteLocations,
-    };
-  }
-
-  return favoriteLocationsTimeoutId === null
-    ? { status: "error" }
-    : { status: "loading" };
-};
-
-const renderOfficialFavorites = (): void => {
-  renderFavoriteLocations(getOfficialFavoriteLocationsState());
-};
-
-const scheduleOfficialFavoritesTimeout = (): void => {
-  if (favoriteLocations !== null || favoriteLocationsTimeoutId !== null) return;
-
-  favoriteLocationsTimeoutId = window.setTimeout(() => {
-    favoriteLocationsTimeoutId = null;
-    if (favoriteLocations === null && isOfficialFavoritesTabActive()) {
-      renderOfficialFavorites();
-    }
-  }, FAVORITE_LOCATIONS_TIMEOUT_MS);
-};
-
 class TagSelectionState {
   private color: string = "";
   private name: string = "";
@@ -137,9 +84,6 @@ const deleteBookmark = async (id: number): Promise<void> => {
 const openModal = async (): Promise<void> => {
   setupModal();
   router.initialize("list");
-  const saved = await storage.get([TAB_KEY]);
-  const tab = saved[TAB_KEY] === "official-fav" ? "official-fav" : "bookmark";
-  switchTab(tab, false);
   (
     document.getElementById("wplace-studio-favorite-modal") as HTMLDialogElement
   ).showModal();
@@ -441,115 +385,9 @@ const setupColorPickerHandlers = (modal: HTMLDialogElement): void => {
   });
 };
 
-const switchTab = (tab: "bookmark" | "official-fav", persist = true): void => {
-  const bookmarkTab = document.getElementById("wps-tab-bookmark");
-  const officialFavTab = document.getElementById("wps-tab-official-fav");
-  const bookmarkContent = document.getElementById("wps-bookmark-tab-content");
-  const officialFavContent = document.getElementById("wps-official-fav-tab-content");
-  if (!bookmarkTab || !officialFavTab || !bookmarkContent || !officialFavContent) return;
-  if (persist) storage.set({ [TAB_KEY]: tab });
-
-  const activeStyle =
-    "border-radius: 0.9rem; border: 1px solid var(--color-primary); background: transparent; font-weight: 700; min-height: 3rem; padding: 0.75rem 0.9rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;";
-  const inactiveStyle =
-    "border-radius: 0.9rem; border: 1px solid transparent; background: transparent; font-weight: 500; min-height: 3rem; padding: 0.75rem 0.9rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;";
-
-  if (tab === "bookmark") {
-    bookmarkTab.style.cssText = activeStyle;
-    officialFavTab.style.cssText = inactiveStyle;
-    bookmarkTab.setAttribute("aria-pressed", "true");
-    officialFavTab.setAttribute("aria-pressed", "false");
-    bookmarkContent.style.display = "flex";
-    officialFavContent.style.display = "none";
-  } else {
-    bookmarkTab.style.cssText = inactiveStyle;
-    officialFavTab.style.cssText = activeStyle;
-    bookmarkTab.setAttribute("aria-pressed", "false");
-    officialFavTab.setAttribute("aria-pressed", "true");
-    bookmarkContent.style.display = "none";
-    officialFavContent.style.display = "flex";
-    requestOfficialFavoritesRecovery();
-    scheduleOfficialFavoritesTimeout();
-    renderOfficialFavorites();
-  }
-};
-
-const setupBottomTabHandlers = (modal: HTMLDialogElement): void => {
-  modal
-    .querySelector("#wps-tab-bookmark")!
-    .addEventListener("click", () => switchTab("bookmark"));
-
-  modal
-    .querySelector("#wps-tab-official-fav")!
-    .addEventListener("click", () => switchTab("official-fav"));
-
-  // Official favorites grid click handler
-  modal
-    .querySelector("#wps-official-fav-grid")!
-    .addEventListener("click", async (e) => {
-      const target = e.target as HTMLElement;
-
-      // 📷 capture button
-      const captureBtn = target.closest(".wps-fav-capture-btn") as HTMLElement | null;
-      if (captureBtn?.dataset.favId) {
-        e.stopPropagation();
-        const favId = parseInt(captureBtn.dataset.favId);
-        captureBtn.style.opacity = "0.4";
-        captureBtn.style.pointerEvents = "none";
-        try {
-          const dataUrl = await getMapThumbnail();
-          if (dataUrl) {
-            await saveFavThumbnail(favId, dataUrl);
-            // update thumbnail in card immediately
-            const card = captureBtn.closest(".wps-card") as HTMLElement | null;
-            if (card) {
-              let thumb = card.querySelector(".wps-fav-thumb") as HTMLElement | null;
-              if (!thumb) {
-                const thumbWrapper = document.createElement("div");
-                thumbWrapper.className = "wps-fav-thumb";
-                thumbWrapper.style.cssText =
-                  "width:100%;aspect-ratio:1;overflow:hidden;border-radius:6px 6px 0 0;margin-bottom:6px;";
-                const img = document.createElement("img");
-                img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;";
-                img.alt = "";
-                thumbWrapper.appendChild(img);
-                card.insertBefore(thumbWrapper, card.firstChild);
-                thumb = thumbWrapper;
-              }
-              const img = thumb.querySelector("img") as HTMLImageElement;
-              if (img) img.src = dataUrl;
-            }
-          }
-        } catch (err) {
-          console.error("🧑‍🎨 : Failed to capture fav thumbnail:", err);
-        } finally {
-          captureBtn.style.opacity = "0.75";
-          captureBtn.style.pointerEvents = "";
-        }
-        return;
-      }
-
-      // jump to location
-      const card = target.closest(".wps-card") as HTMLElement | null;
-      if (card?.dataset.lat && card?.dataset.lng && card?.dataset.zoom) {
-        const favIdStr = card.dataset.id?.replace("fav-", "");
-        if (favIdStr) {
-          const favId = parseInt(favIdStr);
-          saveFavMetadata(favId, { lastAccessedDate: new Date().toISOString() }).catch(() => {});
-        }
-        await gotoPosition({
-          lat: parseFloat(card.dataset.lat),
-          lng: parseFloat(card.dataset.lng),
-          zoom: parseFloat(card.dataset.zoom),
-        });
-        modal.close();
-      }
-    });
-};
-
 const setupModal = (): void => {
   const modalElements = createBookmarkModal();
-  const { modal, container } = modalElements;
+  const { modal } = modalElements;
 
   tagState = new TagSelectionState();
   tutorial = new Tutorial();
@@ -566,7 +404,6 @@ const setupModal = (): void => {
   setupEditScreenHandlers(modal);
   setupTagSelectionHandlers(modal);
   setupColorPickerHandlers(modal);
-  setupBottomTabHandlers(modal);
 
   // Add tutorial button next to the modal title in bookmark list
   tutorial.createButton(modalElements.titleElement.parentElement!, {
@@ -576,21 +413,8 @@ const setupModal = (): void => {
 
 const init = (): void => {
   // 旧ブックマークFAB/ピン保存ボタンは公式 Favorite places を優先して無効化。
-  // 旧一覧は公式dialog内に統合し、管理画面(旧modal)はそこから開く
+  // 旧一覧は公式dialog内のタブに統合し、管理画面(旧modal)はそこから開く
   initOfficialFavoriteDialog({ openLegacyModal: openModal });
-
-  // Listen for favorite locations from inject (/me response)
-  window.addEventListener("message", (e) => {
-    if (e.data?.source === "mr-wplace-favorite-locations") {
-      const locations: FavoriteLocation[] = e.data.favoriteLocations || [];
-      favoriteLocations = locations;
-      clearFavoriteLocationsTimeout();
-      setOfficialFavoriteLocations(locations);
-      console.log("🧑‍🎨 : Favorite locations received:", locations.length);
-      if (isOfficialFavoritesTabActive()) renderOfficialFavorites();
-    }
-  });
-
   console.log("🧑‍🎨 : Bookmark initialized");
 };
 

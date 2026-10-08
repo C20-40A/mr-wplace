@@ -122,50 +122,8 @@ export const createBookmarkModal = (): ModalElements => {
         </div>
       </div>
 
-      <!-- Official Favorites Tab Content -->
-      <div id="wps-official-fav-tab-content" style="display: none; flex-direction: column; flex: 1; min-height: 0;">
-        <div id="wps-official-fav-scroll-area" style="flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; min-height: 0;">
-          <div id="wps-official-fav-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2">
-          </div>
-          <div id="wps-official-fav-empty" style="display: none; min-height: 100%; display: flex; align-items: center; justify-content: center;">
-            <p style="color: oklch(var(--bc) / 0.5);">${"empty_official_favorites"}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bottom Tabs -->
-    <div id="wps-bottom-tabs" style="flex-shrink: 0; display: flex; gap: 0.375rem; border-top: 1px solid color-mix(in oklab, var(--color-base-content) 10%, transparent); margin-top: 0.5rem; padding-top: 0.625rem; background: var(--color-base-100);">
-      <button
-        id="wps-tab-bookmark"
-        class="btn btn-ghost flex-1"
-        aria-pressed="true"
-        style="border-radius: 0.9rem; border: 1px solid var(--color-primary); background: transparent; font-weight: 700; min-height: 3rem; padding: 0.75rem 0.9rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="none" stroke="currentColor" stroke-width="72" stroke-linecap="round" stroke-linejoin="round" class="size-4">
-          <path d="M280-760h400v639l-200-86-200 86v-639Z"/>
-        </svg>
-        ${"bookmark"}
-      </button>
-      <button
-        id="wps-tab-official-fav"
-        class="btn btn-ghost flex-1"
-        aria-pressed="false"
-        style="border-radius: 0.9rem; border: 1px solid transparent; background: transparent; font-weight: 500; min-height: 3rem; padding: 0.75rem 0.9rem; display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
-          <path d="m233-120 65-281L80-590l288-25 112-265 112 265 288 25-218 189 65 281-247-149-247 149Zm247-98 188 113-50-214 165-143-217-19-86-203-86 203-217 19 165 143-50 214 188-113Z"/>
-        </svg>
-        ${"official_favorites"}
-      </button>
     </div>
   `;
 
   return modalElements;
-};
-
-export const getBookmarkModalElement = (
-  modalElements: ModalElements,
-): HTMLDialogElement => {
-  return modalElements.modal;
 };

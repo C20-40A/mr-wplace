@@ -1,6 +1,6 @@
 # Utils / Components API Context
 
-- generated_at: 2026-09-14T12:32:00.668Z
+- generated_at: 2026-10-08T21:05:23.098Z
 - project: tsconfig.json
 - targets: src/utils, src/components
 - files: 34
@@ -274,7 +274,7 @@
 ## src/components/paint-notice.ts
 
 - exports: 1
-- top_level_declarations: 9
+- top_level_declarations: 10
 - declarations:
 - variable `NOTICE_ID` (L3)
   - signature: `"mr-wplace-paint-notice"`
@@ -291,9 +291,12 @@
   - signature: `ReturnType<typeof setTimeout> | null`
 - variable `removeTimer` (L21)
   - signature: `ReturnType<typeof setTimeout> | null`
-- variable `positionNotice` (L23)
+- variable `HINT_SLOT_OFFSET_PX` (L24)
+  - signature: `26`
+  - summary: wplace の "Click or hold SPACE to paint." hint と同じ位置 (panel の -60px 上)
+- variable `positionNotice` (L26)
   - signature: `(notice: HTMLDivElement) => void`
-- export variable `showPaintNotice` (L37)
+- export variable `showPaintNotice` (L41)
   - signature: `(message: string) => void`
   - summary: 2秒だけ表示される通知。連続呼び出しは最新のメッセージで上書きする
 
@@ -762,31 +765,31 @@
 - export variable `projectMapPixelsToScreenPoints` (L843)
   - signature: `(points: MapPixelPoint[]) => Promise<ScreenPoint[]>`
   - summary: Project wplace pixel coordinates to viewport client points via inject map instance
-- export variable `getMapThumbnail` (L858)
-  - signature: `() => Promise<string | null>`
-  - summary: Capture current map view as 256x256 JPEG thumbnail from inject side Returns dataUrl or null if map canvas is unavailable
-- export variable `setMapProjectionTracking` (L891)
+- export variable `getMapThumbnail` (L859)
+  - signature: `(target?: { lat: number; lng: number; zoom: number; }) => Promise<string | null>`
+  - summary: Capture current map view as 256x256 JPEG thumbnail from inject side target を渡すと、現在の表示から離れている場合 jump → idle 待ちしてから撮影する Returns dataUrl or null if map canvas is unavailable
+- export variable `setMapProjectionTracking` (L899)
   - signature: `(enabled: boolean) => void`
   - summary: Enable/disable inject-side map projection tracking events. When enabled, inject posts "mr-wplace-map-view-changed" during map movement and a final settled event after movement ends.
-- export type `SnapshotExportScope` (L905)
+- export type `SnapshotExportScope` (L913)
   - signature: `| { scope: "all" }
   | { scope: "tile"; tileX: number; tileY: number }`
-- export type `ZipExportProgress` (L909)
+- export type `ZipExportProgress` (L917)
   - signature: `| { phase: "read"; current: number; total: number }
   | { phase: "pack"; percent: number }`
-- export type `ZipExportResult` (L913)
+- export type `ZipExportResult` (L921)
   - signature: `{
   status: "done" | "empty";
   count: number;
 }`
-- variable `requestZipExport` (L924)
+- variable `requestZipExport` (L932)
   - signature: `(requestSource: string, responseSource: string, payload: Record<string, unknown>, onProgress?: (progress: ZipExportProgress) => void) => Promise<ZipExportResult>`
   - summary: Generic Worker-based ZIP export request to inject. Inject spawns a Worker (workerUrl) that reads IndexedDB + packs ZIP, then triggers the download itself. Progress is streamed via onProgress. The idle timeout resets on every progress message so long exports don't abort.
-- export variable `exportSnapshots` (L979)
+- export variable `exportSnapshots` (L987)
   - signature: `(workerUrl: string, scope: SnapshotExportScope, onProgress?: (progress: ZipExportProgress) => void) => Promise<ZipExportResult>`
   - summary: Request inject side to export snapshots to a ZIP off the main thread.
   - tags: @param - runtime.getURL(...) for the snapshot export worker | @param - all snapshots or a single tile
-- export variable `exportGallery` (L996)
+- export variable `exportGallery` (L1004)
   - signature: `(workerUrl: string, format?: "png" | "wplace", onProgress?: (progress: ZipExportProgress) => void) => Promise<ZipExportResult>`
   - summary: Request inject side to export the gallery to a ZIP off the main thread.
   - tags: @param - runtime.getURL(...) for the gallery export worker | @param - "png" (raw images) or "wplace" (.wplace JSON per image)
@@ -867,14 +870,17 @@
 
 ## src/utils/position.ts
 
-- exports: 2
-- top_level_declarations: 3
+- exports: 3
+- top_level_declarations: 4
 - declarations:
-- variable `LOCATION_KEY` (L7)
+- variable `LOCATION_KEY` (L8)
   - signature: `"location"`
-- export variable `getCurrentPosition` (L9)
+- export variable `getPixelExtentZoom` (L11)
+  - signature: `(width: number, height: number, viewportWidth: number, viewportHeight: number, maxZoom?: number) => number`
+  - summary: Wplaceのワールドピクセル範囲を画面に収めるズーム。
+- export variable `getCurrentPosition` (L31)
   - signature: `() => Position | null`
-- export variable `gotoPosition` (L17)
+- export variable `gotoPosition` (L39)
   - signature: `({ lat, lng, zoom }: Position) => Promise<void>`
 
 ## src/utils/router.ts

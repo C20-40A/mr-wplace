@@ -853,9 +853,14 @@ export const projectMapPixelsToScreenPoints = async (
 
 /**
  * Capture current map view as 256x256 JPEG thumbnail from inject side
+ * target を渡すと、現在の表示から離れている場合 jump → idle 待ちしてから撮影する
  * Returns dataUrl or null if map canvas is unavailable
  */
-export const getMapThumbnail = async (): Promise<string | null> => {
+export const getMapThumbnail = async (target?: {
+  lat: number;
+  lng: number;
+  zoom: number;
+}): Promise<string | null> => {
   const requestId = generateRequestId();
 
   return new Promise((resolve) => {
@@ -873,13 +878,16 @@ export const getMapThumbnail = async (): Promise<string | null> => {
     };
 
     window.addEventListener("message", handler);
-    window.postMessage({ source: "mr-wplace-request-map-thumbnail", requestId }, "*");
+    window.postMessage(
+      { source: "mr-wplace-request-map-thumbnail", requestId, target },
+      "*",
+    );
 
     timeoutId = setTimeout(() => {
       window.removeEventListener("message", handler);
       console.warn("🧑‍🎨 : Map thumbnail request timed out");
       resolve(null);
-    }, 5000);
+    }, target ? 15000 : 5000);
   });
 };
 
