@@ -631,7 +631,6 @@ export const jaTranslations = {
   draft_map_lock: "マップ固定 (ドラッグで描画)",
   hint_draft_fab_btn: "チャージを消費せず地図に自由に下書きできます",
   popup_paint_guide: "テンプレ一致インジケーター",
-  popup_compact_bottom_sheet: "コンパクトなペイントパネル (Beta)",
   notice_isolate_on: "{color}のテンプレート色のみ表示します",
   notice_isolate_off: "すべてのテンプレート色を表示します",
   notice_unplaced_on: "テンプレートに配置したピクセルの色を変えます",
@@ -659,4 +658,7 @@ export const jaTranslations = {
   hint_party_mode_btn: "新機能！パーティーモードで、正しく塗るたびに演出とスコアが出ます。",
   paint_template_off: "テンプレートなし",
   fav_capture_thumbnail: "現在のマップ表示をサムネイルに保存",
+  palette_show_all_colors: "すべての色を表示",
+  bookmark_migrate_official: "公式お気に入りへ移行",
+  bookmark_migrate_failed: "移行に失敗しました。ログイン状態とお気に入りの上限を確認してください。",
 };

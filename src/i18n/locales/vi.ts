@@ -597,7 +597,6 @@ export const viTranslations = {
   draft_map_lock: "Khóa bản đồ (kéo để vẽ)",
   hint_draft_fab_btn: "Vẽ nháp tự do trên bản đồ mà không tốn lượt",
   popup_paint_guide: "Chỉ báo khớp mẫu",
-  popup_compact_bottom_sheet: "Bảng vẽ thu gọn (Beta)",
   notice_isolate_on: "Chỉ hiển thị {color} trong mẫu",
   notice_isolate_off: "Hiển thị tất cả màu của mẫu",
   notice_unplaced_on: "Đổi màu các pixel đã đặt trên mẫu",
@@ -625,4 +624,7 @@ export const viTranslations = {
   hint_party_mode_btn: "Mới! Chế độ tiệc hiển thị hiệu ứng và điểm mỗi khi bạn tô đúng một pixel.",
   paint_template_off: "Không dùng mẫu",
   fav_capture_thumbnail: "Lưu chế độ xem bản đồ hiện tại làm ảnh thu nhỏ",
+  palette_show_all_colors: "Hiển thị tất cả màu",
+  bookmark_migrate_official: "Chuyển sang địa điểm yêu thích",
+  bookmark_migrate_failed: "Chuyển thất bại. Vui lòng kiểm tra đăng nhập và giới hạn mục yêu thích.",
 };

@@ -22,7 +22,6 @@ import { ColorFilter } from "@/features/color-filter";
 import { createArtCruiseButton } from "@/features/art-cruise";
 import { createPartyModeButton } from "@/features/party-mode";
 import { showFeatureHint } from "@/features/feature-hints";
-import { applyCompactBottomSheet } from "@/features/compact-bottom-sheet";
 
 // Re-export bridge functions for backward compatibility
 export {
@@ -351,11 +350,6 @@ const registerMessageListeners = () => {
         },
         "*",
       );
-      return;
-    }
-
-    if (message.type === "COMPACT_BOTTOM_SHEET_CHANGED") {
-      applyCompactBottomSheet(message.enabled);
       return;
     }
 

@@ -104,6 +104,7 @@ import {
 } from "./features/area-display";
 import { AREA_MESSAGE_SOURCE } from "@/constants/area-message";
 import { ensureUserDataAvailable } from "./features/user-status/user-data-recovery";
+import { handleCreateOfficialFavorite } from "./features/official-favorite";
 
 type MessageHandler = (data: any) => void | Promise<void>;
 const LOCATION_KEY = "location";
@@ -433,6 +434,7 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-adjust-preview-session-release": handleAdjustPreviewSessionRelease,
   "mr-wplace-request-map-thumbnail": handleMapThumbnailRequest,
   "mr-wplace-request-map-center": handleMapCenterRequest,
+  "mr-wplace-request-create-official-favorite": handleCreateOfficialFavorite,
   "mr-wplace-request-map-pixels-from-screen": handleMapPixelsFromScreenRequest,
   "mr-wplace-map-projection-tracking": handleMapProjectionTrackingUpdate,
   "mr-wplace-request-screen-points-from-map-pixels":

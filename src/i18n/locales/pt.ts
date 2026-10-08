@@ -602,7 +602,6 @@ export const ptTranslations = {
   draft_map_lock: "Bloquear mapa (arraste para desenhar)",
   hint_draft_fab_btn: "Rascunhe livremente no mapa sem gastar cargas",
   popup_paint_guide: "Indicador de correspondência do modelo",
-  popup_compact_bottom_sheet: "Painel de pintura compacto (Beta)",
   notice_isolate_on: "Mostrando apenas {color} nos modelos",
   notice_isolate_off: "Mostrando todas as cores do modelo",
   notice_unplaced_on: "Alterando a cor dos pixels já colocados no modelo",
@@ -630,4 +629,7 @@ export const ptTranslations = {
   hint_party_mode_btn: "Novo! O modo festa mostra efeitos e pontos a cada pixel pintado corretamente.",
   paint_template_off: "Sem modelo",
   fav_capture_thumbnail: "Salvar a visualização atual do mapa como miniatura",
+  palette_show_all_colors: "Mostrar todas as cores",
+  bookmark_migrate_official: "Mover para locais favoritos",
+  bookmark_migrate_failed: "Falha ao mover. Verifique se você está conectado e se o limite de favoritos não foi atingido.",
 };

@@ -618,7 +618,6 @@ export const frTranslations = {
   draft_map_lock: "Verrouiller la carte (glisser pour dessiner)",
   hint_draft_fab_btn: "Esquissez librement sur la carte sans consommer de charges",
   popup_paint_guide: "Indicateur de correspondance du modèle",
-  popup_compact_bottom_sheet: "Panneau de peinture compact (Bêta)",
   notice_isolate_on: "Affichage uniquement de {color} dans les modèles",
   notice_isolate_off: "Affichage de toutes les couleurs du modèle",
   notice_unplaced_on: "Changement de couleur des pixels déjà placés sur le modèle",
@@ -646,4 +645,7 @@ export const frTranslations = {
   hint_party_mode_btn: "Nouveau ! Le mode fête affiche des effets et des points à chaque pixel correct.",
   paint_template_off: "Aucun modèle",
   fav_capture_thumbnail: "Enregistrer la vue actuelle de la carte comme miniature",
+  palette_show_all_colors: "Afficher toutes les couleurs",
+  bookmark_migrate_official: "Déplacer vers les lieux favoris",
+  bookmark_migrate_failed: "Échec du déplacement. Vérifiez que vous êtes connecté et que la limite de favoris n'est pas atteinte.",
 };

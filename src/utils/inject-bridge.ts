@@ -1012,3 +1012,36 @@ export const exportGallery = (
     { workerUrl, format },
     onProgress,
   );
+
+/**
+ * 公式お気に入り (Favorite places) を作成する。name 指定時は作成後に名前を更新
+ * Used by: bookmark (旧ブックマーク → 公式 移行)
+ */
+export const createOfficialFavorite = (params: {
+  lat: number;
+  lng: number;
+  zoom: number;
+  name?: string;
+}): Promise<{ ok: boolean; error?: string }> => {
+  const requestId = generateRequestId();
+  return new Promise((resolve) => {
+    const timeoutId = setTimeout(() => {
+      window.removeEventListener("message", handler);
+      resolve({ ok: false, error: "timeout" });
+    }, 10000);
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data?.source !== "mr-wplace-response-create-official-favorite" ||
+        event.data.requestId !== requestId
+      ) return;
+      clearTimeout(timeoutId);
+      window.removeEventListener("message", handler);
+      resolve({ ok: event.data.ok, error: event.data.error });
+    };
+    window.addEventListener("message", handler);
+    window.postMessage(
+      { source: "mr-wplace-request-create-official-favorite", requestId, ...params },
+      "*",
+    );
+  });
+};

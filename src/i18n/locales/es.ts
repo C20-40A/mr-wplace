@@ -611,7 +611,6 @@ export const esTranslations = {
   draft_map_lock: "Bloquear mapa (arrastrar para dibujar)",
   hint_draft_fab_btn: "Dibuja libremente en el mapa sin gastar cargas",
   popup_paint_guide: "Indicador de coincidencia de plantilla",
-  popup_compact_bottom_sheet: "Panel de pintura compacto (Beta)",
   notice_isolate_on: "Mostrando solo {color} en las plantillas",
   notice_isolate_off: "Mostrando todos los colores de la plantilla",
   notice_unplaced_on: "Cambiando el color de los píxeles ya colocados en la plantilla",
@@ -639,4 +638,7 @@ export const esTranslations = {
   hint_party_mode_btn: "¡Nuevo! El modo fiesta muestra efectos y puntos cada vez que pintas un píxel correcto.",
   paint_template_off: "Sin plantilla",
   fav_capture_thumbnail: "Guardar la vista actual del mapa como miniatura",
+  palette_show_all_colors: "Mostrar todos los colores",
+  bookmark_migrate_official: "Mover a lugares favoritos",
+  bookmark_migrate_failed: "No se pudo mover. Verifique que haya iniciado sesión y que no se haya alcanzado el límite de favoritos.",
 };

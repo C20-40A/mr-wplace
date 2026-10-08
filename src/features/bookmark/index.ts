@@ -2,8 +2,11 @@ import { storage } from "@/utils/browser-api";
 import { Toast } from "@/components/toast";
 import { BookmarkStorage } from "./storage";
 import { ImportExportService } from "./import-export";
-import { gotoPosition } from "@/utils/position";
-import { t } from "@/i18n/manager";
+import { getCurrentPosition, gotoPosition } from "@/utils/position";
+import { showNameInputModal } from "@/components/modal";
+import { setupElementObserver } from "@/components/element-observer";
+import { createMapPinButtonObserverConfig } from "@/utils/map-pin-helper";
+import { t, formatDateShort } from "@/i18n/manager";
 import {
   createBookmarkModal,
   renderBookmarks,
@@ -72,6 +75,49 @@ const render = async (): Promise<void> => {
     "wps-bookmark-sort",
   ) as HTMLSelectElement;
   if (sortSelect) sortSelect.value = sortType;
+};
+
+/** import/export dialog (旧modal と 公式dialog内パネルで共用) */
+const openImportExport = async (onImported: () => void): Promise<void> => {
+  const { showImportExportDialog } = await import("./ui");
+  showImportExportDialog(
+    async () => {
+      const result = await ImportExportService.importFavorites();
+      Toast.success(result.message);
+      if (result.shouldRender) onImported();
+    },
+    async () => {
+      const result = await ImportExportService.exportFavorites();
+      Toast.success(result.message);
+    },
+    async (tags) => {
+      const result = await ImportExportService.exportFavoritesByTags(tags);
+      Toast.success(result.message);
+    },
+  );
+};
+
+/** 現在地を旧ブックマークへ保存 (マップピン popup のボタン) */
+const addBookmark = async (): Promise<void> => {
+  const position = getCurrentPosition();
+  if (!position) {
+    alert(t`${"location_unavailable_instruction"}`);
+    return;
+  }
+  const fallbackName = `(${position.lat.toFixed(3)}, ${position.lng.toFixed(3)})`;
+  const name = await showNameInputModal(
+    t`${"enter_bookmark_name"}`,
+    `${t`${"location_point"}`} ${fallbackName}`,
+  );
+  if (name === null) return;
+  await BookmarkStorage.addBookmark({
+    id: Date.now(),
+    name: name || fallbackName,
+    lat: position.lat,
+    lng: position.lng,
+    zoom: position.zoom || 14,
+    date: formatDateShort(new Date()),
+  });
 };
 
 const deleteBookmark = async (id: number): Promise<void> => {
@@ -181,24 +227,7 @@ const setupBookmarkListHandlers = (modal: HTMLDialogElement): void => {
 
   modal
     .querySelector("#wps-import-export-btn")!
-    .addEventListener("click", async () => {
-      const { showImportExportDialog } = await import("./ui");
-      showImportExportDialog(
-        async () => {
-          const result = await ImportExportService.importFavorites();
-          Toast.success(result.message);
-          if (result.shouldRender) render();
-        },
-        async () => {
-          const result = await ImportExportService.exportFavorites();
-          Toast.success(result.message);
-        },
-        async (tags) => {
-          const result = await ImportExportService.exportFavoritesByTags(tags);
-          Toast.success(result.message);
-        },
-      );
-    });
+    .addEventListener("click", () => openImportExport(render));
 
   modal
     .querySelector("#wps-bookmark-sort")!
@@ -412,9 +441,18 @@ const setupModal = (): void => {
 };
 
 const init = (): void => {
-  // 旧ブックマークFAB/ピン保存ボタンは公式 Favorite places を優先して無効化。
   // 旧一覧は公式dialog内のタブに統合し、管理画面(旧modal)はそこから開く
-  initOfficialFavoriteDialog({ openLegacyModal: openModal });
+  initOfficialFavoriteDialog({ openLegacyModal: openModal, openImportExport });
+  // 既存ユーザー向けに、マップピン popup から旧ブックマークへ保存できるよう残す
+  setupElementObserver([
+    createMapPinButtonObserverConfig({
+      observerId: "bookmark-map-pin-btn",
+      id: "bookmark-btn",
+      icon: "🔖",
+      text: t`${"save_location"}`,
+      onClick: addBookmark,
+    }),
+  ]);
   console.log("🧑‍🎨 : Bookmark initialized");
 };
 

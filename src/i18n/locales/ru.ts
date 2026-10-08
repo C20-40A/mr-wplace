@@ -614,7 +614,6 @@ export const ruTranslations = {
   draft_map_lock: "Заблокировать карту (рисование перетаскиванием)",
   hint_draft_fab_btn: "Рисуйте черновик на карте свободно, не тратя заряды",
   popup_paint_guide: "Индикатор совпадения шаблона",
-  popup_compact_bottom_sheet: "Компактная панель рисования (бета)",
   notice_isolate_on: "Показывается только {color} в шаблонах",
   notice_isolate_off: "Показываются все цвета шаблона",
   notice_unplaced_on: "Цвет уже размещённых на шаблоне пикселей меняется",
@@ -642,4 +641,7 @@ export const ruTranslations = {
   hint_party_mode_btn: "Новинка! Режим вечеринки показывает эффекты и очки за каждый верный пиксель.",
   paint_template_off: "Без шаблона",
   fav_capture_thumbnail: "Сохранить текущий вид карты как миниатюру",
+  palette_show_all_colors: "Показать все цвета",
+  bookmark_migrate_official: "Перенести в избранные места",
+  bookmark_migrate_failed: "Не удалось перенести. Проверьте вход в аккаунт и лимит избранного.",
 };
