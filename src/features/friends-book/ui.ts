@@ -555,9 +555,9 @@ export const renderFriends = (
         <div class="friends-card card bg-base-200 shadow-sm hover:shadow-md transition-shadow"
              data-id="${friend.id}"
              data-index="${index}">
-          <div class="card-body p-2">
+          <div class="card-body p-2 gap-1">
             <!-- User Info -->
-            <div class="flex items-center gap-2 mb-1">
+            <div class="flex items-center gap-2">
               <div class="avatar flex-shrink-0">
                 ${avatarImage}
               </div>
@@ -569,18 +569,18 @@ export const renderFriends = (
               </div>
             </div>
 
-            <!-- Description -->
+            <!-- Description (only when present) -->
             ${
               friend.memo
                 ? `
-              <div class="text-xs opacity-80 mb-1 truncate" title="${friend.memo
+              <div class="text-xs opacity-80 truncate" title="${friend.memo
                 .replace(/"/g, "&quot;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")}">
                 ${friend.memo.replace(/</g, "&lt;").replace(/>/g, "&gt;")}
               </div>
             `
-                : `<div class="text-xs mb-1" style="height: 1.25rem;"></div>`
+                : ""
             }
 
             <!-- Tag & Actions -->
