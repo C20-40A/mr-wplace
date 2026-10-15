@@ -34,6 +34,8 @@ const CSS = `
   .${ROOT_CLASS} .paint-palette{gap:3px !important;}
   .${ROOT_CLASS} .paint-swatch,
   .${ROOT_CLASS} .paint-palette .game-color-swatch{height:1.5rem !important;min-height:0 !important;aspect-ratio:auto !important;}
+  /* パレット上下の余白 (mt-2 mb-3 と wplace の media が付ける margin-block:8px) を消す */
+  :root.${ROOT_CLASS} .paint-colors{margin-block:0 !important;}
 }
 /* tablet / mobile: 全色表示でパネルが縦に伸びるので、wplace が付けている
    左右の余白(幅上限 -24px, margin-inline:auto)と下端の浮き(+18px)を消して
