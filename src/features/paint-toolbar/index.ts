@@ -1,4 +1,5 @@
 import { setupElementObserver } from "@/components/element-observer";
+import { isMobileViewport } from "@/constants/breakpoints";
 import { findPaintPixelControls } from "@/constants/selectors";
 import { subscribePaintMode } from "@/utils/paint-mode";
 import { ensureStyle } from "@/utils/style";
@@ -49,16 +50,19 @@ const createToolbar = (): HTMLElement => {
   // wplace の panel 用 class (game UI 時は自動で bevel 枠になる)
   toolbar.className =
     "game-panel-surface bg-base-100 border-base-300 rounded-box border shadow-xl";
+  // mobile は画面が狭く要素数も多いので、枠の余白 / ボタン間 gap を最小化して詰める。
+  // (desktop で inject 先が見つからず fallback になった場合は従来の余裕を残す)
+  const compact = isMobileViewport();
   toolbar.style.cssText = `
     position: absolute;
-    top: 5px;
+    top: ${compact ? 0 : 5}px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: ${compact ? 1 : 2}px;
     pointer-events: all;
-    padding: 4px 8px;
+    padding: ${compact ? 0 : "4px 8px"};
     z-index: 30;
   `;
   document.body.appendChild(toolbar);
