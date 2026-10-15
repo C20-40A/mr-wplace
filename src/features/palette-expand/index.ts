@@ -37,7 +37,11 @@ const CSS = `
 }
 /* tablet / mobile: 全色表示でパネルが縦に伸びるので、wplace が付けている
    左右の余白(幅上限 -24px, margin-inline:auto)と下端の浮き(+18px)を消して
-   画面幅いっぱい・下端寄せにする。safe-area(ノッチ/ホームバー)は尊重する。 */
+   画面幅いっぱい・下端寄せにする。safe-area(ノッチ/ホームバー)は尊重する。
+   あわせてパネル自身の内側余白 (shell の py-3 / panel の px-3 と、
+   wplace の media が上書きしてくる padding-inline:8px) を 0 にして詰める。
+   全色表示中は Store ボタンも不要なので隠す。
+   いずれも palette-expand ON のときだけに限定する。 */
 @media (max-width: 1023px), (pointer: coarse){
   :root.${ROOT_CLASS} .game-floating-panel.game-paint-panel{
     left: env(safe-area-inset-left);
@@ -47,6 +51,10 @@ const CSS = `
     max-width: none;
     margin-inline: 0;
   }
+  :root.${ROOT_CLASS} .paint-panel-shell{padding-block:0 !important;}
+  :root.${ROOT_CLASS} .paint-panel{padding-inline:0 !important;}
+  :root.${ROOT_CLASS} button[aria-label="Store"],
+  :root.${ROOT_CLASS} button[data-tooltip="Store"]{display:none !important;}
 }
 .${ROOT_CLASS} [${UNCLAMP_ATTR}]{max-height:none !important;height:auto !important;overflow:visible !important;}
 `;
