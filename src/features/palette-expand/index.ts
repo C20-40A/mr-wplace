@@ -35,6 +35,19 @@ const CSS = `
   .${ROOT_CLASS} .paint-swatch,
   .${ROOT_CLASS} .paint-palette .game-color-swatch{height:1.5rem !important;min-height:0 !important;aspect-ratio:auto !important;}
 }
+/* tablet / mobile: 全色表示でパネルが縦に伸びるので、wplace が付けている
+   左右の余白(幅上限 -24px, margin-inline:auto)と下端の浮き(+18px)を消して
+   画面幅いっぱい・下端寄せにする。safe-area(ノッチ/ホームバー)は尊重する。 */
+@media (max-width: 1023px), (pointer: coarse){
+  :root.${ROOT_CLASS} .game-floating-panel.game-paint-panel{
+    left: env(safe-area-inset-left);
+    right: env(safe-area-inset-right);
+    bottom: var(--safe-area-inset-bottom);
+    width: auto;
+    max-width: none;
+    margin-inline: 0;
+  }
+}
 .${ROOT_CLASS} [${UNCLAMP_ATTR}]{max-height:none !important;height:auto !important;overflow:visible !important;}
 `;
 
