@@ -87,7 +87,9 @@ export const findOpacityContainer = (): Element | null => {
 
   // absoluteで左下に配置
   const newContainer = document.createElement("div");
-  newContainer.className = "absolute left-3 z-30 flex flex-col gap-1";
+  // z-20 にしておく。公式のペイントパネル (game-floating-panel) は z-30 で、
+  // body 直下に後から挿入されるこのコンテナは同 z-30 だとパネルより前面に出てしまう。
+  newContainer.className = "absolute left-3 z-20 flex flex-col gap-1";
   newContainer.style.bottom = "4.5rem"; // 既存コントロールの下に配置
   newContainer.id = containerId;
   document.body.appendChild(newContainer);
@@ -204,7 +206,8 @@ export const findTopLeftControls = (): Element | null => {
   if (existingContainer) return existingContainer;
 
   const newContainer = document.createElement("div");
-  newContainer.className = "absolute left-2 z-30 flex flex-col gap-1";
+  // z-20: 公式パネル (z-30) より下に置く
+  newContainer.className = "absolute left-2 z-20 flex flex-col gap-1";
   newContainer.style.top = "5.5rem"; // 既存コントロールの下に配置
   newContainer.id = containerId;
   document.body.appendChild(newContainer);
@@ -394,8 +397,9 @@ const getOrCreateFabStackAbove = (anchor: Element): Element => {
 
   const stack = document.createElement("div");
   stack.id = FAB_STACK_ID;
+  // z-20: 公式のペイントパネル (z-30) より下に置く
   stack.style.cssText =
-    "position:absolute;right:0;bottom:100%;margin-bottom:0.25rem;display:flex;flex-direction:column-reverse;align-items:flex-end;gap:0.25rem;z-index:30;";
+    "position:absolute;right:0;bottom:100%;margin-bottom:0.25rem;display:flex;flex-direction:column-reverse;align-items:flex-end;gap:0.25rem;z-index:20;";
   anchor.appendChild(stack);
   return stack;
 };
@@ -426,7 +430,8 @@ export const findMyLocationContainer = (): Element | null => {
   if (existingContainer) return existingContainer;
 
   const newContainer = document.createElement("div");
-  newContainer.className = "absolute bottom-3 right-3 z-30 flex flex-col gap-1";
+  // z-20: 公式のペイントパネル (z-30) より下に置く
+  newContainer.className = "absolute bottom-3 right-3 z-20 flex flex-col gap-1";
   newContainer.id = containerId;
   document.body.appendChild(newContainer);
   return newContainer;
