@@ -1,6 +1,24 @@
 const escapeAttrValue = (value: string): string =>
   value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 
+/**
+ * 多言語ラベルを OR 検索セレクタへ変換する。
+ *
+ * wplace の新UIでは `title` が廃止され `data-tooltip` / `aria-label` に
+ * 変わったため、旧UI互換の `title` も含めて全属性をまとめて引けるようにする。
+ */
+const buildButtonLabelSelector = (labels: readonly string[]): string =>
+  labels
+    .flatMap((label) => {
+      const escaped = escapeAttrValue(label);
+      return [
+        `button[data-tooltip="${escaped}"]`,
+        `button[aria-label="${escaped}"]`,
+        `button[title="${escaped}"]`,
+      ];
+    })
+    .join(", ");
+
 const PAINT_OPACITY_TEXTS = [
   "Toggle art opacity", // 英語 (ste)
   "Alterar opacidade", // ポルトガル語 (lte) - 前回の "Alternar opacidade da arte" から変更
@@ -153,43 +171,73 @@ export const findColorPalette = (): Element | null => {
   return null;
 };
 
+/**
+ * 左上「Info」ボタンのラベル（多言語）。
+ * 対応ロケール: BE, FE, OE, qE, NE, VE, ZE, UE, GE, WE, $E, HE
+ */
+const INFO_BUTTON_LABELS = [
+  "Info", // 英語 (BE, qE, NE)
+  "Informações", // ポルトガル語 (FE)
+  "信息", // 中国語 (OE)
+  "Infos", // フランス語/ドイツ語の可能性 (VE)
+  "Informazioni", // イタリア語 (ZE)
+  "情報", // 日本語 (UE)
+  "Informacje", // ポーランド語 (GE)
+  "Инфо", // ロシア語 (WE)
+  "Інформація", // ウクライナ語 ($E)
+  "Thông tin", // ベトナム語 (HE)
+] as const;
+
+/**
+ * 左上ズーム (+/-) グループの親 = 公式の左上スタックを返す。
+ * ボタンのラベルではなく表示文字 (+/-) で探すので言語非依存。
+ * (ズームグループは `max-sm:hidden` でも DOM には残っている)
+ */
+const findZoomStack = (): Element | null => {
+  for (const button of document.querySelectorAll("button.btn-circle")) {
+    if (button.textContent?.trim() !== "+") continue;
+    const group = button.parentElement;
+    if (
+      group?.querySelector(":scope > button:nth-of-type(2)")?.textContent?.trim() ===
+      "-"
+    ) {
+      return group.parentElement ?? null;
+    }
+  }
+  return null;
+};
+
+/**
+ * 左上の公式コントロールスタックを返す。
+ *
+ * NOTE: devtools の「Copy selector」が出す構造セレクタ
+ * (`body > div:nth-child(1) > div.disable-pinch-zoom... > div.top-safe-2...`)
+ * は wplace のレイアウト変更で即死するので使わない。
+ * 新UIのボタンは `title` ではなく `data-tooltip` / `aria-label` なので、
+ * ラベル属性ベースで Info ボタンを引き、その親をスタックとみなす。
+ * 公式スタックの中に足せば、ズーム (+/-) とぶつからず mobile でも余白が出ない。
+ */
 export const findTopLeftControls = (): Element | null => {
-  // 1. "Info" ボタンの多言語テキストリスト
-  // BE, FE, OE, qE, NE, VE, ZE, UE, GE, WE, $E, HE に対応
-  const infoButtonTitles = [
-    "Info", // 英語 (BE, qE, NE)
-    "Informações", // ポルトガル語 (FE)
-    "信息", // 中国語 (OE)
-    "Infos", // フランス語/ドイツ語の可能性 (VE)
-    "Informazioni", // イタリア語 (ZE)
-    "情報", // 日本語 (UE)
-    "Informacje", // ポーランド語 (GE)
-    "Инфо", // ロシア語 (WE)
-    "Інформація", // ウクライナ語 ($E)
-    "Thông tin", // ベトナム語 (HE)
-  ];
-
-  // 1. titleベース検索（多言語対応）
-  // すべての多言語タイトルを OR 検索文字列として結合
-  const titleSelectors = infoButtonTitles
-    .map((title) => `button[title="${title}"]`)
-    .join(", ");
-
-  const infoButton = document.querySelector(titleSelectors);
-
+  // 1. Info ボタン（多言語 / data-tooltip・aria-label・title）の親を採用
+  const infoButton = document.querySelector(
+    buildButtonLabelSelector(INFO_BUTTON_LABELS),
+  );
   if (infoButton?.parentElement) return infoButton.parentElement;
 
-  // 2. classベース検索 (元のロジックを維持)
+  // 2. Info が取れないときはズーム(+/-)グループの親をスタックとみなす
+  const zoomStack = findZoomStack();
+  if (zoomStack) return zoomStack;
+
+  // 3. classベース検索 (旧UI)
   const topLeftContainer = document.querySelector(
     ".absolute.left-2.top-2.z-30.flex.flex-col.gap-3",
   );
   if (topLeftContainer) return topLeftContainer;
 
-  // 3. 構造的検索 (左上のz-30要素)
-  // title属性の部分一致検索で、多言語すべてに対応させます。
-  const partialTitleSelectors = infoButtonTitles
-    .map((title) => `button[title*="${title}"]`)
-    .join(", ");
+  // 4. 構造的検索 (旧UI・部分一致)
+  const partialTitleSelectors = INFO_BUTTON_LABELS.map(
+    (title) => `button[title*="${escapeAttrValue(title)}"]`,
+  ).join(", ");
 
   const leftTopElements = document.querySelectorAll(
     ".absolute.left-2.top-2.z-30",
@@ -200,7 +248,7 @@ export const findTopLeftControls = (): Element | null => {
     }
   }
 
-  // 4. 見つからない場合は新規作成
+  // 5. どうしても取れないときだけ新規作成 (公式スタックが無い場合の保険)
   const containerId = "mr-wplace-top-left-container";
   const existingContainer = document.querySelector(`#${containerId}`);
   if (existingContainer) return existingContainer;
@@ -470,13 +518,7 @@ const LOCK_BUTTON_LABELS = [
   "Mở khóa",
 ] as const;
 
-const lockButtonLabelSelector = LOCK_BUTTON_LABELS.flatMap((label) => [
-  // 新UI
-  `button[aria-label="${escapeAttrValue(label)}"]`,
-  `button[data-tooltip="${escapeAttrValue(label)}"]`,
-  // 旧UI (互換のため残す)
-  `button[title="${escapeAttrValue(label)}"]`,
-]).join(", ");
+const lockButtonLabelSelector = buildButtonLabelSelector(LOCK_BUTTON_LABELS);
 
 /**
  * 画面右上のネイティブなロックボタンを検索する。
