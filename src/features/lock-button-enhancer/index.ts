@@ -1,4 +1,5 @@
 import { setupElementObserver } from "@/components/element-observer";
+import { findLockButton } from "@/constants/selectors";
 import {
   loadLockButtonEnhancerFromStorage,
   getLockButtonEnhancer,
@@ -6,7 +7,12 @@ import {
 
 /**
  * Lockボタンを押しやすくする機能（モバイルモード専用）
- * - Lockボタンのスタイルを調整してクリックしやすくする
+ * - ボタンを `btn-xl` で大きくする
+ * - 画面右上端に密着させて押しやすくする
+ *
+ * NOTE: ボタンの探し方は `findLockButton()` (src/constants/selectors.ts) に集約。
+ * wplace の新UIで `title` が `aria-label` / `data-tooltip` に変わったため、
+ * 属性ベースの検索に切り替えている (旧UIの title も互換で残している)。
  */
 export class LockButtonEnhancer {
   constructor() {
@@ -23,7 +29,7 @@ export class LockButtonEnhancer {
     setupElementObserver([
       {
         id: "lock-button-enhancer",
-        getTargetElement: () => this.findLockButton(),
+        getTargetElement: findLockButton,
         createElement: (lockButton) => {
           this.enhanceLockButton(lockButton);
         },
@@ -31,34 +37,26 @@ export class LockButtonEnhancer {
     ]);
   }
 
-  private findLockButton(): Element | null {
-    // title="Lock" or title="Unlock" (when locked)
-    const lockButton = document.querySelector('[title="Lock"]');
-    if (lockButton) return lockButton;
-
-    const unlockButton = document.querySelector('[title="Unlock"]');
-    if (unlockButton) return unlockButton;
-
-    // Portuguese: "Loja" (Lock) or "Desbloquear" (Unlock)
-    const lojaButton = document.querySelector('[title="Loja"]');
-    if (lojaButton) return lojaButton;
-
-    const desbloquearButton = document.querySelector('[title="Desbloquear"]');
-    return desbloquearButton;
-  }
-
   private enhanceLockButton(lockButton: Element): void {
     const button = lockButton as HTMLElement;
 
-    // Apply styles
-    button.style.borderRadius = "0";
-    button.style.width = "48px";
-    button.style.height = "48px";
+    // サイズは daisyUI の `btn-xl` に任せる。
+    // NOTE: 以前は inline の width/height 48px を直接書いていたが、
+    // サイズ変更のたびに値を追う羽目になるので class に寄せる。
+    button.classList.add("btn-xl");
 
-    // Apply styles to parent container
-    const container = button.parentNode?.parentNode?.parentNode as HTMLElement;
+    // 画面端に密着させるので角丸を殺す (丸型だと端の隙間が目立つため)
+    button.style.borderRadius = "0";
+
+    // 親コンテナの safe-area 用 margin (`top-safe-2` / `right-safe-2`) を
+    // inline で打ち消して右上端に寄せる。
+    // NOTE: 以前は `cssText` を丸ごと上書きしていたが、コンテナに他の
+    // inline style が付いた瞬間に巻き込んで壊すので top/right だけ触る。
+    const container = button.parentElement?.parentElement
+      ?.parentElement as HTMLElement | null | undefined;
     if (container) {
-      container.style.cssText = "top:0;right:0;";
+      container.style.top = "0";
+      container.style.right = "0";
     }
 
     // console.log("🧑‍🎨 : Lock button enhanced");

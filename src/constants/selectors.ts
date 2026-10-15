@@ -431,3 +431,59 @@ export const findMyLocationContainer = (): Element | null => {
   document.body.appendChild(newContainer);
   return newContainer;
 };
+
+/**
+ * wplace の「ロック / ロック解除」トグルボタンのラベル。
+ *
+ * 旧UIは `title="Lock"` だったが、新UIでは `aria-label` / `data-tooltip` に
+ * 変わった (`title` は廃止)。ラベルは言語ごとに変わるので列挙する。
+ * 言語を足すときはここに追加するだけでよい。
+ */
+const LOCK_BUTTON_LABELS = [
+  "Lock", // en
+  "Unlock",
+  "Loja", // pt
+  "Desbloquear",
+  "锁定", // zh
+  "解锁",
+  "Sperren", // de
+  "Entsperren",
+  "Bloquear", // es
+  "Verrouiller", // fr
+  "Déverrouiller",
+  "Blocca", // it
+  "Sblocca",
+  "ロック", // ja
+  "ロック解除",
+  "Zablokuj", // pl
+  "Odblokuj",
+  "Заблокировать", // ru
+  "Разблокировать",
+  "Заблокувати", // uk
+  "Розблокувати",
+  "Khóa", // vi
+  "Mở khóa",
+] as const;
+
+const lockButtonLabelSelector = LOCK_BUTTON_LABELS.flatMap((label) => [
+  // 新UI
+  `button[aria-label="${escapeAttrValue(label)}"]`,
+  `button[data-tooltip="${escapeAttrValue(label)}"]`,
+  // 旧UI (互換のため残す)
+  `button[title="${escapeAttrValue(label)}"]`,
+]).join(", ");
+
+/**
+ * 画面右上のネイティブなロックボタンを検索する。
+ *
+ * NOTE: devtools の「Copy selector」が出すような構造セレクタ
+ * (`body > div:nth-child(1) > div.disable-pinch-zoom... > button.btn.btn-square`)
+ * は wplace のレイアウト変更で即死するので使わない。
+ * 属性で引けないときだけ、モバイル専用の四角トグル
+ * (`not-touchscreen:hidden` は「タッチ端末でのみ表示」の意) にフォールバックする。
+ */
+export const findLockButton = (): HTMLElement | null =>
+  document.querySelector<HTMLElement>(lockButtonLabelSelector) ??
+  document.querySelector<HTMLElement>(
+    "button.not-touchscreen\\:hidden.btn-square[aria-pressed]",
+  );
