@@ -229,6 +229,15 @@ export class ImageAdjustToolMode {
     this.frameWrapper.style.transformOrigin = "";
   }
 
+  // Zooming mid-drag/resize changes the world size behind the fixed screen
+  // rect (and breaks far-mode's frozen scale), so swallow the wheel until the
+  // interaction ends. Capture on window to beat maplibre's own listener.
+  private readonly onWindowWheelCapture = (event: WheelEvent): void => {
+    if (!this.activeInteraction) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  };
+
   private readonly onOverlayWheel = (event: WheelEvent): void => {
     const mapRoot = this.mapElement;
     if (!mapRoot) return;
@@ -788,6 +797,10 @@ export class ImageAdjustToolMode {
     window.addEventListener("pointercancel", this.onGlobalPointerUp, {
       passive: true,
     });
+    window.addEventListener("wheel", this.onWindowWheelCapture, {
+      capture: true,
+      passive: false,
+    });
     window.addEventListener("resize", this.onWindowResize, { passive: true });
     window.addEventListener("message", this.onMapViewChanged);
   }
@@ -806,6 +819,7 @@ export class ImageAdjustToolMode {
     window.removeEventListener("pointermove", this.onGlobalPointerMove);
     window.removeEventListener("pointerup", this.onGlobalPointerUp);
     window.removeEventListener("pointercancel", this.onGlobalPointerUp);
+    window.removeEventListener("wheel", this.onWindowWheelCapture, true);
     window.removeEventListener("resize", this.onWindowResize);
     window.removeEventListener("message", this.onMapViewChanged);
   }
