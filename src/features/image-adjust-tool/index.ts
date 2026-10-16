@@ -146,13 +146,16 @@ export class ImageAdjustToolMode {
       return;
     }
 
-    // During map movement: follow the map with a CSS transform anchored to the
-    // map's own projection of the frame's world top-left. Exact and roundtrip-free.
+    // During map movement inject applies the follow transform synchronously in
+    // the map's own frame (see handleMapProjectionAnchorUpdate). Only fall back
+    // to a local transform when inject could not apply it itself.
     if (anchor && zoom !== undefined && this.transformBase) {
-      this.applyTransformApproximation(anchor, zoom);
+      if (event.data?.anchorApplied !== true)
+        this.applyTransformApproximation(anchor, zoom);
       return;
     }
 
+    // No transform available: fall back to a throttled exact projection sync.
     const now = Date.now();
     if (now - this.lastMapViewSyncAt < METRICS_DRAG_UPDATE_MS) return;
     this.lastMapViewSyncAt = now;
@@ -173,7 +176,12 @@ export class ImageAdjustToolMode {
       anchorScreenX: this.rect.x,
       anchorScreenY: this.rect.y,
     };
-    setMapProjectionAnchor({ pixelX: this.mapRect.x, pixelY: this.mapRect.y });
+    // Hand inject everything it needs to drive the follow transform itself in
+    // the map's own frame (no postMessage hop while the map is moving).
+    setMapProjectionAnchor(
+      { pixelX: this.mapRect.x, pixelY: this.mapRect.y },
+      { screenX: this.rect.x, screenY: this.rect.y, zoom },
+    );
   }
 
   private applyTransformApproximation(
@@ -191,13 +199,12 @@ export class ImageAdjustToolMode {
     const ty = anchor.y - base.anchorScreenY * scaleRatio;
 
     wrapper.style.transformOrigin = "0 0";
-    wrapper.style.transform = `translate(${tx}px, ${ty}px) scale(${scaleRatio})`;
+    wrapper.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${scaleRatio})`;
   }
 
   private clearFrameTransform(): void {
     if (!this.frameWrapper) return;
     this.frameWrapper.style.transform = "";
-    this.frameWrapper.style.transformOrigin = "";
   }
 
   private readonly onOverlayWheel = (event: WheelEvent): void => {
@@ -652,7 +659,9 @@ export class ImageAdjustToolMode {
 
     // Wrapper for map-tracking elements only (CSS transform target)
     const frameWrapper = document.createElement("div");
-    frameWrapper.style.cssText = "position: fixed; inset: 0; pointer-events: none;";
+    frameWrapper.id = "mr-wplace-image-adjust-follow";
+    frameWrapper.style.cssText =
+      "position: fixed; inset: 0; pointer-events: none; transform-origin: 0 0; will-change: transform;";
     frameWrapper.append(elements.frame, elements.topToolBar, elements.sizeInfo, bar);
     elements.overlay.appendChild(frameWrapper);
     elements.overlay.appendChild(this.createDPad());
