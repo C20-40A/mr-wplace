@@ -264,10 +264,14 @@ async render(
 **Display Components**:
 
 - **Percentage**: `(matched / total) * 100`
-- **Progress bar**: Visual indicator with gradient
+- **Progress bar**: Visual indicator with gradient (shared gauge styles in
+  `src/components/progress-gauge.ts` — `ensureGaugeStyles` + `gaugeHtml`)
 - **Pixel counts**: `matched/total` formatted with commas
 - **Estimated time**: Based on 30 seconds per pixel
   - Days (d), hours (h), minutes (m) format
+
+> The richer gauge (`createRichGauge`) is used on the image detail screen
+> (`src/features/gallery/routes/image-detail/index.ts`), not here.
 
 ## Data Structures
 
@@ -698,6 +702,7 @@ When modifying gallery list or statistics:
 - `src/features/gallery/routes/list/index.ts` - Main route logic
 - `src/features/gallery/routes/list/ui.ts` - UI rendering
 - `src/features/gallery/routes/list/components/ImageGridComponent.ts` - Grid component
+- `src/components/progress-gauge.ts` - Shared progress gauge (styles + factory)
 - `src/utils/inject-bridge.ts` - Content ↔ Inject communication bridge
 - `src/inject/features/tile-draw/utils/getStatsPerImage.ts` - Inject-side aggregation
 - `src/inject/message-handler.ts` - Request/response handling

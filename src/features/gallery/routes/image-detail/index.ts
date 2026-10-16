@@ -17,6 +17,8 @@ import { tilePixelToLatLng } from "@/utils/coordinate";
 import { showDownloadFormatDialog } from "./download-dialog";
 import { getMapInstanceReady } from "@/states/map-instance-ready";
 import { ImageAdjustToolMode } from "@/features/image-adjust-tool";
+import { createRichGauge } from "@/components/progress-gauge";
+import { getStatsPerImage } from "@/utils/inject-bridge";
 
 export class GalleryImageDetail {
   private currentItem: GalleryItem | null = null;
@@ -350,14 +352,60 @@ export class GalleryImageDetail {
             </button>
           </div>
         </div>
+
+        <!-- 塗り進捗ゲージ（配置済み画像のみ / 最下部に固定） -->
+        <div id="image-detail-progress" style="position: sticky; bottom: 0; z-index: 5; margin-top: auto; padding: 0.35rem 6px calc(0.35rem + env(safe-area-inset-bottom, 0px)); background: var(--color-base-100, #fff);"></div>
       </div>
     `;
 
     // 画像をcanvasに描画してImageInspectorを初期化
     this.loadImageToCanvas(item);
 
+    // 塗り進捗ゲージを描画
+    void this.renderProgressGauge(item);
+
     // ボタンイベント設定
     this.setupButtonEvents(router, onDelete, onEdit, onDraftEdit);
+  }
+
+  /**
+   * この画像の塗り進捗ゲージを描画する（配置済み画像のみ）。
+   * 0 から伸びる演出つきで、100% 到達時はパーティクルが弾ける。
+   * 統計が無いときは何も表示しない。
+   */
+  private async renderProgressGauge(item: GalleryItem): Promise<void> {
+    const host = document.getElementById("image-detail-progress");
+    if (!host) return;
+    host.innerHTML = "";
+    if (!item.drawPosition) return;
+
+    const statsPerImage = await getStatsPerImage([item.key]);
+    if (!host.isConnected) return; // 再描画で消えていたら破棄
+
+    const stats = statsPerImage[item.key];
+    if (!stats) return;
+
+    const matched = Object.values(stats.matched).reduce(
+      (sum, count) => sum + count,
+      0,
+    );
+    const total = Object.values(stats.total).reduce(
+      (sum, count) => sum + count,
+      0,
+    );
+    if (total <= 0) return;
+
+    const remaining = total - matched;
+    const rawPercentage = (matched / total) * 100;
+    const percentage = remaining > 0 ? Math.min(rawPercentage, 99.9) : 100;
+
+    const gauge = createRichGauge({
+      percentage,
+      animate: true,
+      popOnComplete: true,
+    });
+
+    host.appendChild(gauge.element);
   }
 
   private async loadImageToCanvas(item: GalleryItem): Promise<void> {

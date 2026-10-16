@@ -91,14 +91,34 @@ await storage.save({ ...item, title: newTitle });
 4. **Display Location**: Title appears below image in grid for easy scanning
 5. **Button Style**: `btn-ghost` for minimal, unobtrusive appearance
 
+## Image Progress Gauge (image detail)
+
+The image detail screen (`src/features/gallery/routes/image-detail/index.ts`)
+shows a progress gauge for placed images, pinned to the very bottom of the
+screen (`#image-detail-progress`).
+
+- **Data**: `renderProgressGauge()` requests this image's stats via
+  `getStatsPerImage([item.key])` (content ↔ inject bridge). Hidden when the
+  image is not placed or has no stats.
+- **Look**: `src/components/progress-gauge.ts` → `createRichGauge()` — a thin,
+  light tick track, a cyan-to-blue gradient fill, and an in-fill percentage
+  (no separate header/count row).
+- **Animation**: the fill grows from 0 and the percentage counts up on mount.
+  The whole gauge background has a slow drifting light (applies to both the
+  blue fill and the ticked track).
+- **Pop**: only on 100% the gauge turns gold and flashes (a horizontal
+  brightness pulse plus small gold particles). The gauge itself does not grow
+  vertically. `prefers-reduced-motion` disables it.
+
 ## Related Files
 
 ### Core Implementation
 
 - `src/features/gallery/storage.ts` - Data model
-- `src/features/gallery/routes/image-detail/index.ts` - Title editing UI
+- `src/features/gallery/routes/image-detail/index.ts` - Title editing UI + progress gauge
 - `src/features/gallery/routes/list/ui.ts` - Data transformation
 - `src/features/gallery/routes/list/components/ImageGridComponent.ts` - Title display
+- `src/components/progress-gauge.ts` - Shared progress gauge (styles + factory)
 
 ### Utilities
 

@@ -56,7 +56,6 @@ export class GalleryListUI {
     if (!this.container) return;
 
     this.container.innerHTML = "";
-    this.container.style.paddingBottom = "1.6rem"; // 下部スペース確保（FABと被らないように）
 
     // Sort dropdown + Import/Export buttons
     const sortContainer = document.createElement("div");

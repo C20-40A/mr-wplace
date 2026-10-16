@@ -3,12 +3,13 @@ import type { GalleryItem } from "@/states/galleryStorage";
 import { runtime } from "@/utils/browser-api";
 import { attachScrollFallback } from "@/utils/scroll";
 import { ensureStyle } from "@/utils/style";
+import {
+  ensureGaugeStyles,
+  gaugeHtml,
+} from "@/components/progress-gauge";
 import { Tutorial } from "@/features/tutorial";
 
 const ITEM_STYLE_ID = "wps-gallery-item-style";
-
-/** 進捗ゲージ/バーのスタイル ID（アイテム用と分離して管理） */
-const PROGRESS_STYLE_ID = "wps-gallery-progress-style";
 
 /** タッチ入力がある端末に付ける html クラス（hover 出し分けを無効化する） */
 const TOUCH_DEVICE_CLASS = "wps-touch-device";
@@ -68,77 +69,6 @@ const ensureItemStyles = (): void => {
   );
 };
 
-/**
- * 進捗ゲージ用スタイル。
- *
- * テーマ対応: 色を直接指定せず daisyUI のテーマ変数から組み立てるので、
- * light / dark / legacy どのテーマでも破綻しない。
- * - トラック: --color-base-300（テーマの薄いベース色）
- * - フィル:   --color-primary（wplace はどのテーマでも青系）
- * リッチさ: トラックの内側シャドウ、フィルの縦グラデ（上面ハイライト＋横グラデ）、
- * ほんのりしたグロー、数値は等幅＋tabular-nums。
- *
- * なお COMPLETE だけは例外で、テーマに追従させず金色の固定スタイルにしている
- * （達成感を出す「ご褒美」表示のため）。
- */
-const ensureProgressStyles = (): void => {
-  ensureStyle(
-    PROGRESS_STYLE_ID,
-    `
-    .wps-gauge {
-      height: 0.5rem;
-      border-radius: 9999px;
-      background-color: var(--color-base-300, #e5e7eb);
-      box-shadow: inset 0 1px 2px color-mix(in oklab, var(--color-base-content, #000) 20%, transparent);
-    }
-    .wps-gauge-fill {
-      position: relative;
-      height: 100%;
-      border-radius: 9999px;
-      background-color: var(--color-primary, #3b82f6);
-      background-image:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 55%),
-        linear-gradient(90deg,
-          color-mix(in oklab, var(--color-primary, #3b82f6) 78%, var(--color-base-100, #fff)),
-          var(--color-primary, #3b82f6));
-      box-shadow: 0 0 7px color-mix(in oklab, var(--color-primary, #3b82f6) 45%, transparent);
-      transition: width 0.3s ease;
-    }
-    /* COMPLETE: テーマに依存させず、金色で統一した「ご褒美」表示。
-       金色のロゴになじむよう金トーンでまとめ、艶(つや)のある質感にしている */
-    .wps-complete {
-      background-image:
-        /* ロゴ裏のやわらかい光 */
-        radial-gradient(ellipse 72% 92% at 50% 32%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 70%),
-        /* 上面の艶 */
-        linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.3) 18%, rgba(255, 255, 255, 0) 48%),
-        /* 斜めの光沢 */
-        linear-gradient(115deg, rgba(255, 255, 255, 0) 32%, rgba(255, 255, 255, 0.5) 46%, rgba(255, 255, 255, 0) 62%),
-        /* 磨いた金の地 */
-        linear-gradient(135deg, #fbeec0 0%, #f6dd97 28%, #eec86a 54%, #f7e2a4 76%, #e6bd55 100%);
-      border-top: 1px solid #dfb14e;
-      box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.9),
-        inset 0 -10px 16px -12px rgba(140, 92, 6, 0.55),
-        0 1px 2px rgba(120, 80, 0, 0.12);
-    }
-    .wps-complete-logo {
-      width: 84%;
-      max-width: 7.5rem;
-      height: auto;
-      filter: drop-shadow(0 2px 2px rgba(120, 80, 0, 0.4));
-    }
-    .wps-complete-sub {
-      font-size: 0.625rem;
-      font-family: ui-monospace, monospace;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #8a6220;
-    }
-    `,
-  );
-};
-
 export interface ImageGridOptions {
   items: GalleryItem[];
   isSelectionMode?: boolean;
@@ -181,7 +111,7 @@ export class ImageGridComponent {
     this.tutorial = new Tutorial();
     markTouchDevice();
     ensureItemStyles();
-    ensureProgressStyles();
+    ensureGaugeStyles();
   }
 
   /**
@@ -579,9 +509,7 @@ export class ImageGridComponent {
       <div class="border-t border-base-300/70 bg-base-100" style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0.375rem 0.625rem;">
         <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem;">
           <span class="text-sm font-bold tabular-nums text-primary" style="font-family: ui-monospace, monospace; line-height: 1;">${percentageText}%</span>
-          <div class="wps-gauge" style="flex: 1;">
-            <div class="wps-gauge-fill" style="width: ${percentageText}%;"></div>
-          </div>
+          ${gaugeHtml({ percentage: Number(percentageText), style: "flex: 1;" })}
         </div>
         <div class="tabular-nums text-base-content/60" style="display: flex; justify-content: space-between; font-size: 0.6875rem; font-family: ui-monospace, monospace; letter-spacing: 0.025em; flex-wrap: wrap;">
           <span style="margin-right: 0.5rem;">${matched.toLocaleString()}/${total.toLocaleString()}</span>
