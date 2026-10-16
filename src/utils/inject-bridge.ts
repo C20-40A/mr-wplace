@@ -970,21 +970,17 @@ export const setMapProjectionTracking = (enabled: boolean): void => {
 /**
  * Set the world pixel (wplace reference zoom) that inject keeps anchored while
  * map projection tracking is enabled. Inject streams this pixel's exact screen
- * projection in each "mr-wplace-map-view-changed" event and also drives the
- * follow transform (element `#mr-wplace-image-adjust-follow`) synchronously in
- * the map's own frame, so overlays follow the map using the map's own
- * `project()` with no per-frame postMessage hop. Pass the follow baseline
- * (`base`) so inject can compute `translate`/`scale` itself. Pass null to clear.
+ * projection in each "mr-wplace-map-view-changed" event, so overlays can follow
+ * the map using the map's own `project()` instead of re-deriving it (which
+ * drifts at some zoom levels / with bearing or pitch). Pass null to clear.
  */
 export const setMapProjectionAnchor = (
   anchor: { pixelX: number; pixelY: number } | null,
-  base?: { screenX: number; screenY: number; zoom: number } | null,
 ): void => {
   window.postMessage(
     {
       source: "mr-wplace-map-projection-anchor",
       anchor,
-      base: base ?? null,
     },
     "*",
   );

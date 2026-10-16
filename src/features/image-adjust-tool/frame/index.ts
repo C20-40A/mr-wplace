@@ -11,6 +11,10 @@ export const OPACITY_SLIDER_MAX = 100;
 export const OPACITY_SLIDER_STEP = 5;
 export const DEFAULT_IMAGE_OPACITY = 100;
 
+// Below this on-screen width the image is too small to see, so the frame
+// collapses to a pin marker (far mode). Tunable.
+export const FAR_MODE_MIN_SCREEN_PX = 28;
+
 // --- Types ---
 
 export type Rect = { x: number; y: number; width: number; height: number };
@@ -24,6 +28,12 @@ export type ActiveInteraction = {
   startRect: Rect;
   pointerId: number;
   resizeCorner?: ResizeHandleCorner;
+  // World rect captured at drag start, used to move the target in world space
+  // when it is too small on screen (far mode) instead of screen-space clamping.
+  startMapRect?: Rect;
+  // Screen px per world px captured once at drag start and frozen for the whole
+  // drag, so a mid-drag zoom can never rescale the target.
+  worldScale?: number;
 };
 
 export type Metrics = {
@@ -60,6 +70,41 @@ const STYLES = {
     image-rendering: pixelated;
     pointer-events: none;
     user-select: none;
+  `,
+  locationPin: `
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 40px;
+    height: 40px;
+    transform: translate(-50%, -50%);
+    display: none;
+    pointer-events: auto;
+    cursor: move;
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.45));
+  `,
+  pinPopup: `
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    pointer-events: none;
+    padding: 4px;
+    border-radius: 8px;
+    background: rgba(17, 24, 39, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+    z-index: 10;
+  `,
+  pinPopupImage: `
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 180px;
+    max-height: 180px;
+    border-radius: 4px;
+    image-rendering: pixelated;
   `,
   resizeHandle: `
     position: absolute;
@@ -139,6 +184,9 @@ export type FrameElements = {
   overlay: HTMLDivElement;
   frame: HTMLDivElement;
   frameImage: HTMLImageElement;
+  locationPin: HTMLDivElement;
+  pinPopup: HTMLDivElement;
+  pinPopupImage: HTMLImageElement;
   resizeHandles: Record<ResizeHandleCorner, HTMLDivElement>;
   topToolBar: HTMLDivElement;
   sizeInfo: HTMLDivElement;
@@ -165,6 +213,31 @@ export const createFrameElements = (options: {
   frameImage.src = options.imageSrc;
   frameImage.draggable = false;
   frameImage.alt = "adjust-target";
+
+  // Far-mode marker: shown when the frame is too small on screen to see the
+  // image, so the user can still grab and drag the target over long distances.
+  // Hovering it reveals a bubble with the image ("the target is here").
+  const locationPin = createElement("div", { style: STYLES.locationPin });
+  locationPin.setAttribute("data-adjust-pin", "true");
+  locationPin.innerHTML = `
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="7" fill="rgba(255,255,255,0.92)" stroke="#2563eb" stroke-width="2"/>
+      <circle cx="12" cy="12" r="2.5" fill="#2563eb"/>
+    </svg>`;
+
+  const pinPopup = createElement("div", { style: STYLES.pinPopup });
+  const pinPopupImage = createElement("img", { style: STYLES.pinPopupImage });
+  pinPopupImage.draggable = false;
+  pinPopupImage.alt = "adjust-target-preview";
+  pinPopup.appendChild(pinPopupImage);
+  locationPin.appendChild(pinPopup);
+  locationPin.addEventListener("pointerenter", () => {
+    pinPopupImage.src = frameImage.src;
+    pinPopup.style.display = "block";
+  });
+  locationPin.addEventListener("pointerleave", () => {
+    pinPopup.style.display = "none";
+  });
 
   const createResizeHandle = (
     corner: ResizeHandleCorner,
@@ -248,13 +321,16 @@ export const createFrameElements = (options: {
   confirmButton.type = "button";
   confirmButton.addEventListener("click", options.onConfirm);
 
-  frame.append(frameImage, ...Object.values(resizeHandles));
+  frame.append(frameImage, locationPin, ...Object.values(resizeHandles));
   overlay.append(frame, topToolBar, sizeInfo, closeButton, confirmButton);
 
   return {
     overlay,
     frame,
     frameImage,
+    locationPin,
+    pinPopup,
+    pinPopupImage,
     resizeHandles,
     topToolBar,
     sizeInfo,

@@ -44,26 +44,11 @@ let trackedMapContainer: HTMLElement | null = null;
 let trackedMapLiveHandler: (() => void) | null = null;
 let trackedMapSettledHandler: (() => void) | null = null;
 let liveMapViewNotifyQueued = false;
-let liveMapViewAnchorApplied = false;
 
 // World pixel (wplace reference zoom) that the consumer wants to keep anchored.
 // The map's own projection of this pixel is streamed on every view change so the
 // consumer never has to re-derive the world -> screen mapping itself.
 let projectionAnchorWorldPixel: { pixelX: number; pixelY: number } | null = null;
-
-// Follow baseline supplied by the consumer: the element transform is
-//   translate3d(anchor - base.screen * scale, 0) scale(scale)
-// with scale = 2^(zoom - base.zoom). Kept here so inject can drive the transform
-// synchronously in the map's own frame instead of round-tripping per frame.
-let projectionAnchorBase: {
-  screenX: number;
-  screenY: number;
-  zoom: number;
-} | null = null;
-
-// Element whose CSS transform follows the map. Owned by the content script
-// (image-adjust-tool) but driven from inject for same-frame smoothness.
-const FOLLOW_WRAPPER_ID = "mr-wplace-image-adjust-follow";
 
 const getProjectedAnchorClient = (): { x: number; y: number } | null => {
   if (!projectionAnchorWorldPixel || !trackedMap?.project) return null;
@@ -78,28 +63,18 @@ const getProjectedAnchorClient = (): { x: number; y: number } | null => {
   return { x: rect.left + local.x, y: rect.top + local.y };
 };
 
-/**
- * Apply the follow transform to the consumer's wrapper synchronously. Returns
- * false when the wrapper, anchor or baseline is unavailable so the consumer can
- * fall back to applying the transform itself.
- */
-const applyAnchorTransform = (): boolean => {
-  if (
-    !projectionAnchorWorldPixel ||
-    !projectionAnchorBase ||
-    !trackedMap?.getZoom
-  )
-    return false;
-  const wrapper = document.getElementById(FOLLOW_WRAPPER_ID);
-  if (!wrapper) return false;
-  const anchor = getProjectedAnchorClient();
-  if (!anchor) return false;
-
-  const scale = Math.pow(2, trackedMap.getZoom() - projectionAnchorBase.zoom);
-  const tx = anchor.x - projectionAnchorBase.screenX * scale;
-  const ty = anchor.y - projectionAnchorBase.screenY * scale;
-  wrapper.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${scale})`;
-  return true;
+const getScreenPerWorld = (): number | null => {
+  if (!trackedMap?.project || !projectionAnchorWorldPixel) return null;
+  const { pixelX, pixelY } = projectionAnchorWorldPixel;
+  const project = (px: number, py: number) => {
+    const [metersX, metersY] = pixelsToMeters(px, py);
+    const [lat, lng] = metersToLatLon(metersX, metersY);
+    return trackedMap!.project!({ lng, lat });
+  };
+  const a = project(pixelX, pixelY);
+  const b = project(pixelX + 1, pixelY);
+  const scale = Math.hypot(b.x - a.x, b.y - a.y);
+  return Number.isFinite(scale) && scale > 0 ? scale : null;
 };
 
 const getMapView = ():
@@ -107,6 +82,7 @@ const getMapView = ():
       center: { lng: number; lat: number };
       zoom: number;
       anchor: { x: number; y: number } | null;
+      scale: number | null;
     }
   | undefined => {
   if (!trackedMap?.getCenter || !trackedMap?.getZoom) return undefined;
@@ -115,13 +91,11 @@ const getMapView = ():
     center: { lng: c.lng, lat: c.lat },
     zoom: trackedMap.getZoom(),
     anchor: getProjectedAnchorClient(),
+    scale: getScreenPerWorld(),
   };
 };
 
-const notifyMapViewChanged = (
-  settled: boolean,
-  anchorApplied = false,
-): void => {
+const notifyMapViewChanged = (settled: boolean): void => {
   if (!projectionTrackingEnabled) return;
   if (settled) {
     window.postMessage(
@@ -134,8 +108,7 @@ const notifyMapViewChanged = (
     );
     return;
   }
-  // Coalesce per frame, but remember whether inject already moved the wrapper.
-  liveMapViewAnchorApplied = anchorApplied;
+  // Coalesce to one message per frame.
   if (liveMapViewNotifyQueued) return;
   liveMapViewNotifyQueued = true;
   requestAnimationFrame(() => {
@@ -145,7 +118,6 @@ const notifyMapViewChanged = (
       {
         source: "mr-wplace-map-view-changed",
         settled: false,
-        anchorApplied: liveMapViewAnchorApplied,
         ...getMapView(),
       },
       "*",
@@ -160,7 +132,6 @@ const detachMapProjectionTracking = (): void => {
     trackedMapLiveHandler = null;
     trackedMapSettledHandler = null;
     projectionAnchorWorldPixel = null;
-    projectionAnchorBase = null;
     return;
   }
   if (trackedMapLiveHandler)
@@ -173,7 +144,6 @@ const detachMapProjectionTracking = (): void => {
   trackedMapLiveHandler = null;
   trackedMapSettledHandler = null;
   projectionAnchorWorldPixel = null;
-  projectionAnchorBase = null;
 };
 
 const attachMapProjectionTracking = (): void => {
@@ -188,12 +158,8 @@ const attachMapProjectionTracking = (): void => {
     mapInstance.getContainer?.() ??
     document.querySelector<HTMLElement>(".maplibregl-map") ??
     document.querySelector<HTMLElement>(".maplibregl-canvas-container");
-  // Drive the follow transform synchronously in the map's own frame, then let
-  // the throttled postMessage notify the consumer (for zoom tracking/fallback).
-  trackedMapLiveHandler = () => {
-    const applied = applyAnchorTransform();
-    notifyMapViewChanged(false, applied);
-  };
+  // Stream the anchored world pixel's exact projection on every view change.
+  trackedMapLiveHandler = () => notifyMapViewChanged(false);
   trackedMapSettledHandler = () => notifyMapViewChanged(true);
   for (const event of MAP_VIEW_LIVE_EVENTS) mapInstance.on(event, trackedMapLiveHandler);
   for (const event of MAP_VIEW_SETTLED_EVENTS)
@@ -821,7 +787,6 @@ export const handleMapProjectionTrackingUpdate = (data: {
  */
 export const handleMapProjectionAnchorUpdate = (data: {
   anchor?: { pixelX: number; pixelY: number } | null;
-  base?: { screenX: number; screenY: number; zoom: number } | null;
 }): void => {
   const anchor = data?.anchor;
   if (
@@ -830,21 +795,12 @@ export const handleMapProjectionAnchorUpdate = (data: {
     !Number.isFinite(anchor.pixelY)
   ) {
     projectionAnchorWorldPixel = null;
-    projectionAnchorBase = null;
     return;
   }
   projectionAnchorWorldPixel = {
     pixelX: anchor.pixelX,
     pixelY: anchor.pixelY,
   };
-  const base = data?.base;
-  projectionAnchorBase =
-    base &&
-    Number.isFinite(base.screenX) &&
-    Number.isFinite(base.screenY) &&
-    Number.isFinite(base.zoom)
-      ? { screenX: base.screenX, screenY: base.screenY, zoom: base.zoom }
-      : null;
 };
 
 /**

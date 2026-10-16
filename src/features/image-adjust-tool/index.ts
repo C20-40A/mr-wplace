@@ -22,6 +22,7 @@ import {
   MAX_VIEWPORT_RATIO,
   METRICS_DRAG_UPDATE_MS,
   DEFAULT_IMAGE_OPACITY,
+  FAR_MODE_MIN_SCREEN_PX,
   createFrameElements,
   applyRectToFrame,
   type Rect,
@@ -88,6 +89,7 @@ export class ImageAdjustToolMode {
   private elements: FrameElements | null = null;
   private toolButtonBar: HTMLDivElement | null = null;
   private panelManager: PanelManager | null = null;
+  private dPad: HTMLElement | null = null;
   private baseImage: HTMLImageElement | null = null;
   private coordInputs: {
     container: HTMLDivElement;
@@ -110,6 +112,13 @@ export class ImageAdjustToolMode {
   private lastMapViewSyncAt = 0;
   private lastMetricsRequestedAt = 0;
   private lastMapZoom: number | null = null;
+
+  // Far mode: when the target is too small on screen to see the image, it is
+  // shown as a pin and dragged in world space (size preserved, projection based).
+  private farMode = false;
+  // Screen px per world px reported by inject (map's own scale), used to turn a
+  // screen drag into an exact world delta without dividing by a tiny clamped rect.
+  private mapScale: number | null = null;
 
   // CSS transform approximation during map movement
   private frameWrapper: HTMLDivElement | null = null;
@@ -135,8 +144,11 @@ export class ImageAdjustToolMode {
       | { x: number; y: number }
       | null
       | undefined;
+    const scale = event.data?.scale as number | undefined;
 
     if (zoom !== undefined) this.lastMapZoom = zoom;
+    if (typeof scale === "number" && Number.isFinite(scale) && scale > 0)
+      this.mapScale = scale;
 
     if (settled) {
       // Keep the last live transform until the exact projection lands, so the
@@ -146,12 +158,10 @@ export class ImageAdjustToolMode {
       return;
     }
 
-    // During map movement inject applies the follow transform synchronously in
-    // the map's own frame (see handleMapProjectionAnchorUpdate). Only fall back
-    // to a local transform when inject could not apply it itself.
+    // During map movement: follow the map with a CSS transform anchored to the
+    // map's own projection of the frame's world top-left. Exact and roundtrip-free.
     if (anchor && zoom !== undefined && this.transformBase) {
-      if (event.data?.anchorApplied !== true)
-        this.applyTransformApproximation(anchor, zoom);
+      this.applyTransformApproximation(anchor, zoom);
       return;
     }
 
@@ -176,12 +186,12 @@ export class ImageAdjustToolMode {
       anchorScreenX: this.rect.x,
       anchorScreenY: this.rect.y,
     };
-    // Hand inject everything it needs to drive the follow transform itself in
-    // the map's own frame (no postMessage hop while the map is moving).
-    setMapProjectionAnchor(
-      { pixelX: this.mapRect.x, pixelY: this.mapRect.y },
-      { screenX: this.rect.x, screenY: this.rect.y, zoom },
-    );
+    // Send the anchored world pixel so inject streams its exact projection with
+    // the map's own `project()` (no drift at any zoom / bearing / pitch).
+    setMapProjectionAnchor({
+      pixelX: this.mapRect.x,
+      pixelY: this.mapRect.y,
+    });
   }
 
   private applyTransformApproximation(
@@ -199,12 +209,13 @@ export class ImageAdjustToolMode {
     const ty = anchor.y - base.anchorScreenY * scaleRatio;
 
     wrapper.style.transformOrigin = "0 0";
-    wrapper.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${scaleRatio})`;
+    wrapper.style.transform = `translate(${tx}px, ${ty}px) scale(${scaleRatio})`;
   }
 
   private clearFrameTransform(): void {
     if (!this.frameWrapper) return;
     this.frameWrapper.style.transform = "";
+    this.frameWrapper.style.transformOrigin = "";
   }
 
   private readonly onOverlayWheel = (event: WheelEvent): void => {
@@ -255,6 +266,13 @@ export class ImageAdjustToolMode {
       startClientX: event.clientX,
       startClientY: event.clientY,
       startRect: { ...this.rect },
+      startMapRect: this.mapRect ? { ...this.mapRect } : undefined,
+      worldScale:
+        this.mapScale && this.mapScale > 0
+          ? this.mapScale
+          : this.mapRect && this.mapRect.width > 0
+            ? this.rect.width / this.mapRect.width
+            : 0,
       pointerId: event.pointerId,
     };
     frame.setPointerCapture(event.pointerId);
@@ -292,6 +310,34 @@ export class ImageAdjustToolMode {
     const dy = event.clientY - this.activeInteraction.startClientY;
 
     if (this.activeInteraction.type === "drag") {
+      const { startMapRect, worldScale } = this.activeInteraction;
+      // Far mode: move in world space so a big drag crosses countries. Both the
+      // scale and the on-screen size are frozen at drag start, so a mid-drag
+      // zoom can never distort the target's size.
+      if (this.farMode && startMapRect && worldScale && worldScale > 0) {
+        const worldDx = dx / worldScale;
+        const worldDy = dy / worldScale;
+        const nextMapRect = this.clampWorldRect({
+          ...startMapRect,
+          x: startMapRect.x + worldDx,
+          y: startMapRect.y + worldDy,
+        });
+        this.mapRect = nextMapRect;
+        // Derive the on-screen position from the (possibly clamped) world rect so
+        // the pin never separates from the target at the world edges.
+        this.applyRect({
+          x:
+            this.activeInteraction.startRect.x +
+            (nextMapRect.x - startMapRect.x) * worldScale,
+          y:
+            this.activeInteraction.startRect.y +
+            (nextMapRect.y - startMapRect.y) * worldScale,
+          width: this.activeInteraction.startRect.width,
+          height: this.activeInteraction.startRect.height,
+        });
+        this.applyMetricsFromMapRect();
+        return;
+      }
       this.applyRect(
         this.getClampedRect({
           ...this.activeInteraction.startRect,
@@ -342,7 +388,17 @@ export class ImageAdjustToolMode {
     if (!this.activeInteraction || !frame) return;
     if (event.pointerId !== this.activeInteraction.pointerId) return;
     frame.releasePointerCapture(event.pointerId);
+    const wasFarDrag =
+      this.farMode && this.activeInteraction.type === "drag";
     this.activeInteraction = null;
+    // Far mode already holds an exact world rect; just re-project the screen
+    // rect (and re-anchor). Recomputing metrics from the tiny screen rect would
+    // quantise the world size at low zoom.
+    if (wasFarDrag) {
+      this.applyMetricsFromMapRect();
+      void this.syncScreenRectFromMap(true);
+      return;
+    }
     this.requestMetricsUpdate(true, true);
   };
 
@@ -409,6 +465,8 @@ export class ImageAdjustToolMode {
     this.toolButtonBar = null;
     this.coordInputs?.container.remove();
     this.coordInputs = null;
+    this.dPad?.remove();
+    this.dPad = null;
     this.baseImage = null;
     this.activeInteraction = null;
     this.rect = null;
@@ -416,6 +474,8 @@ export class ImageAdjustToolMode {
     this.metrics = null;
     this.transformBase = null;
     this.frameWrapper = null;
+    this.farMode = false;
+    this.mapScale = null;
     this.mapSyncPending = false;
     this.metricsPending = false;
 
@@ -661,10 +721,11 @@ export class ImageAdjustToolMode {
     const frameWrapper = document.createElement("div");
     frameWrapper.id = "mr-wplace-image-adjust-follow";
     frameWrapper.style.cssText =
-      "position: fixed; inset: 0; pointer-events: none; transform-origin: 0 0; will-change: transform;";
+      "position: fixed; inset: 0; pointer-events: none;";
     frameWrapper.append(elements.frame, elements.topToolBar, elements.sizeInfo, bar);
     elements.overlay.appendChild(frameWrapper);
-    elements.overlay.appendChild(this.createDPad());
+    this.dPad = this.createDPad();
+    elements.overlay.appendChild(this.dPad);
     elements.overlay.appendChild(this.createCoordInput());
     document.body.appendChild(elements.overlay);
 
@@ -845,6 +906,48 @@ export class ImageAdjustToolMode {
       this.toolButtonBar,
       this.elements.sizeInfo,
     );
+    this.updateFarMode();
+  }
+
+  /**
+   * Toggle the pin/far representation based on the current on-screen size.
+   * Far mode swaps the whole overlay chrome for a single pin, which can be
+   * dragged in world space so the target can be moved across long distances
+   * without the screen-rect clamping (MIN_FRAME_WIDTH) distorting its world size.
+   */
+  private updateFarMode(): void {
+    if (!this.elements) return;
+    const far =
+      !!this.rect &&
+      Math.min(this.rect.width, this.rect.height) < FAR_MODE_MIN_SCREEN_PX;
+    if (far === this.farMode) return;
+    this.farMode = far;
+
+    const show = far ? "none" : "";
+    this.elements.frameImage.style.display = far ? "none" : "";
+    this.elements.locationPin.style.display = far ? "block" : "none";
+    for (const handle of Object.values(this.elements.resizeHandles))
+      handle.style.display = show;
+    // Pin only while far: hide the image chrome, tool bars and helpers.
+    this.elements.topToolBar.style.display = show;
+    this.elements.sizeInfo.style.display = show;
+    if (this.toolButtonBar) this.toolButtonBar.style.display = show;
+    if (this.dPad) this.dPad.style.display = show;
+    if (this.coordInputs) this.coordInputs.container.style.display = show;
+    this.elements.frame.style.border = far
+      ? "0"
+      : "1.5px dashed rgba(37, 99, 235, 0.95)";
+    if (far) this.panelManager?.close();
+  }
+
+  /** Keep the target fully inside the wplace world pixel bounds. */
+  private clampWorldRect(rect: Rect): Rect {
+    const worldPx = TILE_SIZE * Math.pow(2, ZOOM_LEVEL);
+    return {
+      ...rect,
+      x: clamp(rect.x, 0, Math.max(0, worldPx - rect.width)),
+      y: clamp(rect.y, 0, Math.max(0, worldPx - rect.height)),
+    };
   }
 
   private applyImageOpacity(): void {
@@ -1058,6 +1161,8 @@ export class ImageAdjustToolMode {
       });
       if (requestVersion !== this.previewRequestVersion) return;
       this.elements.frameImage.src = result.dataUrl;
+      if (this.elements.pinPopupImage)
+        this.elements.pinPopupImage.src = result.dataUrl;
       this.panelManager?.updateColorStats(result.colorStats);
     } finally {
       this.previewPending = false;
