@@ -38,7 +38,7 @@ export class GalleryImageDetail {
     const btn = document.createElement("button");
     btn.id = "draw-on-map-btn";
     btn.type = "button";
-    btn.className = "btn btn-sm btn-accent";
+    btn.className = "btn btn-primary";
     btn.textContent = `🗺️ ${t`${"draw_on_map"}`}`;
     btn.addEventListener("click", () => {
       void this.handleDrawOnMap();
@@ -268,7 +268,7 @@ export class GalleryImageDetail {
               ${this.getDrawToggleIcon(!!item.drawEnabled)}
             </button>
 
-            <!-- 座標編集エリア（コンパクト） -->
+            <!-- 座標編集エリア（コピー・入力・更新を1つにまとめる） -->
             ${
               item.drawPosition
                 ? `
@@ -277,27 +277,29 @@ export class GalleryImageDetail {
               </button>`
                 : ""
             }
-            <button id="copy-coords-btn" class="btn btn-xs btn-ghost" style="height: 24px; min-height: 24px; padding: 0 6px; flex-shrink: 0;" title="Copy">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-            </button>
-            <input id="coord-tlx" type="number" placeholder="TLX" value="${
-              item.drawPosition?.TLX ?? 0
-            }" style="width: 2.6rem; height: 24px; padding: 0 2px; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: .7rem;">
-            <input id="coord-tly" type="number" placeholder="TLY" value="${
-              item.drawPosition?.TLY ?? 0
-            }" style="width: 2.6rem; height: 24px; padding: 0 2px; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: .7rem;">
-            <input id="coord-pxx" type="number" placeholder="PxX" value="${
-              item.drawPosition?.PxX ?? 0
-            }" min="0" max="999" style="width: 2.6rem; height: 24px; padding: 0 2px; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: .7rem;">
-            <input id="coord-pxy" type="number" placeholder="PxY" value="${
-              item.drawPosition?.PxY ?? 0
-            }" min="0" max="999" style="width: 2.6rem; height: 24px; padding: 0 2px; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: .7rem;">
-            <button id="update-coords-btn" class="btn btn-xs btn-ghost" style="height: 24px; min-height: 24px; padding: 0 6px; flex-shrink: 0;" title="${t`${"update"}`}">
-              🔄
-            </button>
+            <div style="display: flex; align-items: center; height: 24px; border: 1px solid #d1d5db; border-radius: 6px; overflow: hidden; flex-shrink: 0;">
+              <button id="copy-coords-btn" class="btn btn-xs btn-ghost" style="height: 22px; min-height: 22px; padding: 0 6px; border-radius: 0; flex-shrink: 0;" title="Copy">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </button>
+              <input id="coord-tlx" type="number" placeholder="TLX" value="${
+                item.drawPosition?.TLX ?? 0
+              }" style="width: 2.6rem; height: 22px; padding: 0 2px; border: 0; border-left: 1px solid #d1d5db; background: transparent; text-align: center; font-size: .7rem;">
+              <input id="coord-tly" type="number" placeholder="TLY" value="${
+                item.drawPosition?.TLY ?? 0
+              }" style="width: 2.6rem; height: 22px; padding: 0 2px; border: 0; border-left: 1px solid #d1d5db; background: transparent; text-align: center; font-size: .7rem;">
+              <input id="coord-pxx" type="number" placeholder="PxX" value="${
+                item.drawPosition?.PxX ?? 0
+              }" min="0" max="999" style="width: 2.6rem; height: 22px; padding: 0 2px; border: 0; border-left: 1px solid #d1d5db; background: transparent; text-align: center; font-size: .7rem;">
+              <input id="coord-pxy" type="number" placeholder="PxY" value="${
+                item.drawPosition?.PxY ?? 0
+              }" min="0" max="999" style="width: 2.6rem; height: 22px; padding: 0 2px; border: 0; border-left: 1px solid #d1d5db; background: transparent; text-align: center; font-size: .7rem;">
+              <button id="update-coords-btn" class="btn btn-xs btn-ghost" style="height: 22px; min-height: 22px; padding: 0 6px; border-radius: 0; border-left: 1px solid #d1d5db; flex-shrink: 0;" title="${t`${"update"}`}">
+                🔄
+              </button>
+            </div>
             ${(() => {
               if (!item.drawPosition) return "";
               const { lat, lng } = tilePixelToLatLng(
@@ -326,15 +328,15 @@ export class GalleryImageDetail {
           <div id="image-draw-on-map-container"></div>
         </div>
 
-        <div style="padding: 0 8px 8px;">
-          <div style="display: grid; grid-template-columns: ${item.drawPosition ? "1fr 1fr 1fr" : "1fr 1fr"}; gap: 8px;">
-            <button id="edit-btn" class="btn btn-primary">
+        <div style="padding: 0 6px 6px;">
+          <div style="display: grid; grid-template-columns: ${item.drawPosition ? "1fr 1fr 1fr" : "1fr 1fr"}; gap: 6px;">
+            <button id="edit-btn" class="btn btn-sm">
               ✏️ ${t`${"edit"}`}
             </button>
             ${
               item.drawPosition
                 ? `
-            <button id="draft-edit-btn" class="btn btn-warning" title="${
+            <button id="draft-edit-btn" class="btn btn-sm" title="${
                   getMapInstanceReady()
                     ? t`${"draft_edit"}`
                     : `${t`${"draft_edit"}`} (${t`${"map_not_ready"}`})`
@@ -343,7 +345,7 @@ export class GalleryImageDetail {
             </button>`
                 : ""
             }
-            <button id="download-btn" class="btn btn-accent" style="width: 100%;">
+            <button id="download-btn" class="btn btn-sm btn-accent" style="width: 100%;">
               📥 ${t`${"download"}`}
             </button>
           </div>
