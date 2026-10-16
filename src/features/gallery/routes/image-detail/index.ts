@@ -1,4 +1,4 @@
-import { GalleryItem } from "@/states/galleryStorage";
+import { GalleryItem, DrawPosition } from "@/states/galleryStorage";
 import { GalleryRouter } from "../../router";
 import { GalleryUI } from "../../ui";
 import { ImageInspector } from "@/components/image-inspector";
@@ -14,68 +14,194 @@ import { showFeatureHint } from "@/features/feature-hints";
 import { Toast } from "@/components/toast";
 import { showNameInputModal } from "@/components/modal";
 import { tilePixelToLatLng } from "@/utils/coordinate";
-import { createDPad } from "../../components/d-pad";
 import { showDownloadFormatDialog } from "./download-dialog";
 import { getMapInstanceReady } from "@/states/map-instance-ready";
+import { ImageAdjustToolMode } from "@/features/image-adjust-tool";
 
 export class GalleryImageDetail {
   private currentItem: GalleryItem | null = null;
   private imageInspector: ImageInspector | null = null;
   private ui: GalleryUI | null = null;
+  private adjustTool: ImageAdjustToolMode | null = null;
+  private onItemUpdated?: (item: GalleryItem) => void;
 
-  private initDPad(): void {
-    const dpadContainer = document.getElementById("image-dpad-container");
-    if (!dpadContainer || !this.currentItem?.drawPosition) return;
+  /**
+   * 「マップに描画」ボタンを描画する。
+   * マップが使えるときは調節ツール、使えないときは直接描画へルーティングする。
+   */
+  private initDrawOnMapButton(): void {
+    const container = document.getElementById("image-draw-on-map-container");
+    if (!container) return;
 
-    // 既存のD-padをクリア
-    dpadContainer.innerHTML = "";
+    container.innerHTML = "";
 
-    const dpad = createDPad({
-      item: this.currentItem,
-      onMove: async () => {
-        // 座標入力フィールドを更新
-        const storage = new (
-          await import("../../../../states/galleryStorage")
-        ).GalleryStorage();
-        const updatedItem = await storage.get(this.currentItem!.key);
-        if (updatedItem?.drawPosition) {
-          this.currentItem = updatedItem;
-          const coordTlx = document.getElementById(
-            "coord-tlx",
-          ) as HTMLInputElement;
-          const coordTly = document.getElementById(
-            "coord-tly",
-          ) as HTMLInputElement;
-          const coordPxx = document.getElementById(
-            "coord-pxx",
-          ) as HTMLInputElement;
-          const coordPxy = document.getElementById(
-            "coord-pxy",
-          ) as HTMLInputElement;
-          if (coordTlx) coordTlx.value = String(updatedItem.drawPosition.TLX);
-          if (coordTly) coordTly.value = String(updatedItem.drawPosition.TLY);
-          if (coordPxx) coordPxx.value = String(updatedItem.drawPosition.PxX);
-          if (coordPxy) coordPxy.value = String(updatedItem.drawPosition.PxY);
-
-          // 経度緯度表示更新
-          const latLngDisplay = document.getElementById("lat-lng-display");
-          if (latLngDisplay) {
-            const { lat, lng } = tilePixelToLatLng(
-              updatedItem.drawPosition.TLX,
-              updatedItem.drawPosition.TLY,
-              updatedItem.drawPosition.PxX,
-              updatedItem.drawPosition.PxY,
-            );
-            latLngDisplay.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-          }
-
-          Toast.success(t`${"coordinates_updated"}`);
-        }
-      },
-      size: "md",
-      opacity: 0.7,
+    const btn = document.createElement("button");
+    btn.id = "draw-on-map-btn";
+    btn.type = "button";
+    btn.className = "btn btn-sm btn-accent";
+    btn.textContent = `🗺️ ${t`${"draw_on_map"}`}`;
+    btn.addEventListener("click", () => {
+      void this.handleDrawOnMap();
     });
-    dpadContainer.appendChild(dpad);
+    container.appendChild(btn);
+  }
+
+  /**
+   * 「マップに描画」のルーティング。
+   * インスタンスがある: 調節ツール / インスタンスがない: 直接描画
+   */
+  private async handleDrawOnMap(): Promise<void> {
+    if (!this.currentItem) return;
+
+    if (getMapInstanceReady()) {
+      await this.openAdjustTool();
+      return;
+    }
+
+    await this.drawImageAtMapCenterDirect();
+  }
+
+  /** マップ中央に直接描画する（マップインスタンスが無いときの「マップに描画」） */
+  private async drawImageAtMapCenterDirect(): Promise<void> {
+    if (!this.currentItem) return;
+
+    try {
+      await drawImageAtMapCenter(this.currentItem);
+
+      // 位置情報が付与されたので最新のアイテムを読み直す
+      const storage = new (
+        await import("../../../../states/galleryStorage")
+      ).GalleryStorage();
+      const updatedItem = await storage.get(this.currentItem.key);
+      if (updatedItem?.drawPosition) {
+        this.currentItem = updatedItem;
+        // 座標UIごと再描画して新しい位置を反映する
+        this.onItemUpdated?.(updatedItem);
+      }
+
+      this.showImageDetailHints();
+      Toast.success(t`${"coordinates_updated"}`);
+    } catch (err) {
+      console.error("🧑‍🎨 : Failed to draw image at map center", err);
+      Toast.error(String(err));
+    }
+  }
+
+  private loadImageElement(src: string): Promise<HTMLImageElement | null> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+  }
+
+  /**
+   * 画像詳細から調節ツール（place & resize）を開く。
+   * confirm 後は保存して同じ画像詳細を再描画する。
+   */
+  private async openAdjustTool(): Promise<void> {
+    const item = this.currentItem;
+    if (!item) return;
+
+    if (!getMapInstanceReady()) {
+      Toast.error(t`${"map_not_ready"}`);
+      return;
+    }
+
+    const { getImageDataUrl } = await import("@/utils/indexed-db-bridge");
+    const dataUrl = await getImageDataUrl(item, {
+      showToastOnError: true,
+      logContext: "image detail adjust",
+    });
+    if (!dataUrl) return;
+
+    const image = await this.loadImageElement(dataUrl);
+    if (!image) return;
+
+    this.adjustTool?.destroy();
+    this.adjustTool = new ImageAdjustToolMode({
+      imageSrc: dataUrl,
+      naturalWidth: image.naturalWidth,
+      naturalHeight: image.naturalHeight,
+      // 配置済み画像は実寸(scale=1)で開き、現在位置から調整を始める
+      initialScale: 1,
+      initialDrawPosition: item.drawPosition,
+      onConfirm: ({ widthPx, heightPx, drawPosition }) =>
+        // 保存が終わるまで confirm を待たせる（終了処理の順序を保つ）
+        this.applyAdjustResult(image, widthPx, heightPx, drawPosition),
+      onCancel: () => {
+        this.adjustTool = null;
+      },
+    });
+
+    const opened = this.adjustTool.open();
+    if (!opened) {
+      this.adjustTool = null;
+      return;
+    }
+
+    // マップが画像から離れていると調整しづらいので、画像の位置へ移動しておく
+    if (item.drawPosition) {
+      await gotoMapPosition(item);
+    }
+  }
+
+  private resizeDataUrl(
+    image: HTMLImageElement,
+    width: number,
+    height: number,
+  ): string {
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return image.src;
+    // パレット量子化済みの画像なので最近傍で拡縮し、色を維持する
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(image, 0, 0, width, height);
+    return canvas.toDataURL("image/png");
+  }
+
+  private async applyAdjustResult(
+    image: HTMLImageElement,
+    widthPx: number,
+    heightPx: number,
+    drawPosition: DrawPosition | null,
+  ): Promise<void> {
+    const item = this.currentItem;
+    if (!item) return;
+
+    const targetWidth = Math.max(1, Math.round(widthPx));
+    const targetHeight = Math.max(1, Math.round(heightPx));
+    const sizeChanged =
+      item.width !== targetWidth || item.height !== targetHeight;
+
+    const updated: GalleryItem = {
+      ...item,
+      drawPosition: drawPosition ?? item.drawPosition,
+      width: targetWidth,
+      height: targetHeight,
+    };
+
+    if (sizeChanged) {
+      // サイズが変わったときだけ実画像を最近傍でリサイズして保存する
+      // （パレット量子化済みの色は維持される）
+      updated.dataUrl = this.resizeDataUrl(image, targetWidth, targetHeight);
+    }
+
+    const { GalleryStorage } = await import("../../../../states/galleryStorage");
+    const storage = new GalleryStorage();
+    await storage.save(updated);
+
+    const { sendGalleryImagesToInject } = await import("@/content");
+    await sendGalleryImagesToInject();
+
+    this.currentItem = updated;
+    Toast.success(t`${"coordinates_updated"}`);
+
+    // 画像詳細を再描画して新しい位置・サイズを反映する
+    this.onItemUpdated?.(updated);
   }
 
   private getDrawToggleIcon(enabled: boolean): string {
@@ -113,9 +239,11 @@ export class GalleryImageDetail {
     onEdit?: () => void,
     ui?: GalleryUI,
     onDraftEdit?: (item: GalleryItem) => void,
+    onItemUpdated?: (item: GalleryItem) => void,
   ): void {
     this.currentItem = item;
     this.ui = ui || null;
+    this.onItemUpdated = onItemUpdated;
 
     // モーダルのタイトルを画像のタイトルに設定
     if (this.ui) {
@@ -130,23 +258,60 @@ export class GalleryImageDetail {
     }
 
     container.innerHTML = `
-      <div style="height: 100%; display: flex; flex-direction: column; gap: 8px;">
-        <!-- ボタンエリア -->
-        <div style="padding: 8px 8px 0; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <button id="draw-toggle-btn" class="btn btn-sm btn-ghost" style="${item.drawPosition ? "" : "display:none"}" title="${
+      <div style="height: 100%; display: flex; flex-direction: column; gap: 6px;">
+        <!-- ボタンエリア（コンパクト） -->
+        <div style="padding: 4px 6px 0; display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+          <div style="display: flex; align-items: center; gap: 2px; flex-wrap: wrap; min-width: 0;">
+            <button id="draw-toggle-btn" class="btn btn-xs btn-ghost" style="${item.drawPosition ? "" : "display:none"}" title="${
               item.drawEnabled ? t`${"draw_enabled"}` : t`${"draw_disabled"}`
             }">
               ${this.getDrawToggleIcon(!!item.drawEnabled)}
             </button>
 
-            <button id="draw-on-map-btn" class="btn btn-sm btn-accent">
-              🗺️ ${t`${"draw_on_map"}`}
+            <!-- 座標編集エリア（コンパクト） -->
+            ${
+              item.drawPosition
+                ? `
+              <button id="goto-map-btn" class="btn btn-xs btn-ghost" style="height: 24px; min-height: 24px; padding: 0 6px; flex-shrink: 0;" title="${t`${"goto_map"}`}">
+                📍
+              </button>`
+                : ""
+            }
+            <button id="copy-coords-btn" class="btn btn-xs btn-ghost" style="height: 24px; min-height: 24px; padding: 0 6px; flex-shrink: 0;" title="Copy">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
             </button>
+            <input id="coord-tlx" type="number" placeholder="TLX" value="${
+              item.drawPosition?.TLX ?? 0
+            }" style="width: 2.6rem; height: 24px; padding: 0 2px; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: .7rem;">
+            <input id="coord-tly" type="number" placeholder="TLY" value="${
+              item.drawPosition?.TLY ?? 0
+            }" style="width: 2.6rem; height: 24px; padding: 0 2px; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: .7rem;">
+            <input id="coord-pxx" type="number" placeholder="PxX" value="${
+              item.drawPosition?.PxX ?? 0
+            }" min="0" max="999" style="width: 2.6rem; height: 24px; padding: 0 2px; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: .7rem;">
+            <input id="coord-pxy" type="number" placeholder="PxY" value="${
+              item.drawPosition?.PxY ?? 0
+            }" min="0" max="999" style="width: 2.6rem; height: 24px; padding: 0 2px; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: .7rem;">
+            <button id="update-coords-btn" class="btn btn-xs btn-ghost" style="height: 24px; min-height: 24px; padding: 0 6px; flex-shrink: 0;" title="${t`${"update"}`}">
+              🔄
+            </button>
+            ${(() => {
+              if (!item.drawPosition) return "";
+              const { lat, lng } = tilePixelToLatLng(
+                item.drawPosition.TLX,
+                item.drawPosition.TLY,
+                item.drawPosition.PxX,
+                item.drawPosition.PxY,
+              );
+              return `<div id="lat-lng-display" style="padding: 0 2px; font-size: 10px; cursor: pointer; user-select: none; white-space: nowrap;" title="Click to copy">${lat.toFixed(6)}, ${lng.toFixed(6)}</div>`;
+            })()}
           </div>
 
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <button id="delete-btn" class="btn btn-sm btn-error" title="${t`${"delete"}`}">
+          <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+            <button id="delete-btn" class="btn btn-xs btn-error" title="${t`${"delete"}`}">
               🗑
             </button>
           </div>
@@ -156,60 +321,9 @@ export class GalleryImageDetail {
           <canvas id="image-detail-canvas" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);"></canvas>
         </div>
 
-        <!-- 座標編集エリア -->
-        <div style="display: flex; align-items: center; align-self: center;">
-          <!-- 左側: 上段と下段 -->
-          <div style="display: flex; flex-direction: column; align-items: center;">
-            <!-- 上段: マップ移動ボタン + 経度緯度表示 -->
-            ${
-              item.drawPosition
-                ? `
-              <div style="display: flex; align-items: center;">
-                <button id="goto-map-btn" class="btn btn-sm btn-ghost"
-                style="height: 28px; min-height: 28px; padding: 0 8px; flex-shrink: 0;" title="${t`${"goto_map"}`}">
-                  📍
-                </button>
-                ${(() => {
-                  const { lat, lng } = tilePixelToLatLng(
-                    item.drawPosition.TLX,
-                    item.drawPosition.TLY,
-                    item.drawPosition.PxX,
-                    item.drawPosition.PxY,
-                  );
-                  return `<div id="lat-lng-display" style="text-align: center; font-size: 11px; cursor: pointer; user-select: none; padding: 4px;" title="Click to copy">${lat.toFixed(6)}, ${lng.toFixed(6)}</div>`;
-                })()}
-              </div>`
-                : ""
-            }
-
-            <!-- 下段: コピー + 入力欄 + 更新 -->
-            <div style="display: flex; align-items: center; gap: 2px;">
-              <button id="copy-coords-btn" class="btn btn-sm btn-ghost" style="height: 28px; min-height: 28px; padding: 0 8px; flex-shrink: 0;" title="Copy">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-              </button>
-              <input id="coord-tlx" type="number" placeholder="TLX" value="${
-                item.drawPosition?.TLX ?? 0
-              }" style="width: 2.8rem; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: .7rem;">
-              <input id="coord-tly" type="number" placeholder="TLY" value="${
-                item.drawPosition?.TLY ?? 0
-              }" style="width: 2.8rem; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: .7rem;">
-              <input id="coord-pxx" type="number" placeholder="PxX" value="${
-                item.drawPosition?.PxX ?? 0
-              }" min="0" max="999" style="width: 2.8rem; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: .7rem;">
-              <input id="coord-pxy" type="number" placeholder="PxY" value="${
-                item.drawPosition?.PxY ?? 0
-              }" min="0" max="999" style="width: 2.8rem; border: 1px solid #d1d5db; border-radius: 4px; text-align: center; font-size: .7rem;">
-              <button id="update-coords-btn" class="btn btn-sm btn-ghost" style="height: 28px; min-height: 28px; padding: 0 8px; flex-shrink: 0;" title="${t`${"update"}`}">
-                🔄
-              </button>
-            </div>
-          </div>
-
-          <!-- 右側: D-Pad -->
-          <div id="image-dpad-container" style=""></div>
+        <!-- マップに描画（インスタンスあり: 調節ツール / なし: 直接描画） -->
+        <div style="display: flex; justify-content: center;">
+          <div id="image-draw-on-map-container"></div>
         </div>
 
         <div style="padding: 0 8px 8px;">
@@ -326,92 +440,8 @@ export class GalleryImageDetail {
       }
     }
 
-    // D-pad初期化
-    this.initDPad();
-
-    // マップに描画ボタン
-    const drawOnMapBtn = document.getElementById("draw-on-map-btn");
-    drawOnMapBtn?.addEventListener("click", async () => {
-      if (!this.currentItem) return;
-
-      try {
-        await drawImageAtMapCenter(this.currentItem);
-
-        // ボタン表示を更新
-        const drawToggleBtn = document.getElementById("draw-toggle-btn");
-        if (drawToggleBtn) drawToggleBtn.style.display = "";
-        const shareBtn = document.getElementById("share-btn");
-        if (shareBtn) shareBtn.style.display = "";
-        const gotoMapBtn = document.getElementById("goto-map-btn");
-        if (gotoMapBtn) gotoMapBtn.removeAttribute("disabled");
-
-        // 座標入力フィールドを更新
-        const storage = new (
-          await import("../../../../states/galleryStorage")
-        ).GalleryStorage();
-        const updatedItem = await storage.get(this.currentItem.key);
-        if (updatedItem?.drawPosition) {
-          this.currentItem = updatedItem;
-          const coordTlx = document.getElementById(
-            "coord-tlx",
-          ) as HTMLInputElement;
-          const coordTly = document.getElementById(
-            "coord-tly",
-          ) as HTMLInputElement;
-          const coordPxx = document.getElementById(
-            "coord-pxx",
-          ) as HTMLInputElement;
-          const coordPxy = document.getElementById(
-            "coord-pxy",
-          ) as HTMLInputElement;
-          if (coordTlx) coordTlx.value = String(updatedItem.drawPosition.TLX);
-          if (coordTly) coordTly.value = String(updatedItem.drawPosition.TLY);
-          if (coordPxx) coordPxx.value = String(updatedItem.drawPosition.PxX);
-          if (coordPxy) coordPxy.value = String(updatedItem.drawPosition.PxY);
-
-          // 経度緯度表示を追加
-          const coordEditArea = document.querySelector(
-            '[style*="padding: 0 8px; display: flex; flex-direction: column;"]',
-          ) as HTMLElement;
-          if (coordEditArea && !document.getElementById("lat-lng-display")) {
-            const { lat, lng } = tilePixelToLatLng(
-              updatedItem.drawPosition.TLX,
-              updatedItem.drawPosition.TLY,
-              updatedItem.drawPosition.PxX,
-              updatedItem.drawPosition.PxY,
-            );
-            const latLngDiv = document.createElement("div");
-            latLngDiv.id = "lat-lng-display";
-            latLngDiv.style.cssText =
-              "text-align: center; font-size: 10px; color: #666; cursor: pointer; user-select: none;";
-            latLngDiv.title = "Click to copy";
-            latLngDiv.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-            latLngDiv.onclick = async () => {
-              try {
-                await navigator.clipboard.writeText(
-                  latLngDiv.textContent || "",
-                );
-                Toast.success(t`${"copied"}`);
-              } catch (err) {
-                console.error("🧑‍🎨 : Failed to copy lat/lng", err);
-                Toast.error("Failed to copy");
-              }
-            };
-            coordEditArea.insertBefore(latLngDiv, coordEditArea.firstChild);
-          }
-
-          // D-pad表示
-          this.initDPad();
-        }
-
-        this.showImageDetailHints();
-
-        Toast.success(t`${"coordinates_updated"}`);
-      } catch (err) {
-        console.error("🧑‍🎨 : Failed to draw image at map center", err);
-        Toast.error(String(err));
-      }
-    });
+    // マップに描画ボタン（インスタンスあり: 調節ツール / なし: 直接描画）
+    this.initDrawOnMapButton();
 
     // 描画ON/OFFボタン
     const drawToggleBtn = document.getElementById("draw-toggle-btn");
@@ -605,12 +635,18 @@ export class GalleryImageDetail {
   destroy(): void {
     console.log("🧑‍🎨 : Destroying GalleryImageDetail...");
 
+    if (this.adjustTool) {
+      this.adjustTool.destroy();
+      this.adjustTool = null;
+    }
+
     if (this.imageInspector) {
       this.imageInspector.destroy();
       this.imageInspector = null;
     }
 
     this.currentItem = null;
+    this.onItemUpdated = undefined;
 
     console.log("🧑‍🎨 : GalleryImageDetail destroyed");
   }

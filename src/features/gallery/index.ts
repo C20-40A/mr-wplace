@@ -138,6 +138,11 @@ const createGallery = () => {
             "@/features/draft-draw"
           );
           await enterDraftEditForItem(item);
+        },
+        (updated) => {
+          // 調節ツール確定後: 更新済みアイテムで画像詳細(=現在のルート)を再描画する
+          state.currentDetailItem = updated;
+          router.navigate("image-detail");
         }
       );
     },

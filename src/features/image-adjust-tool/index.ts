@@ -1,5 +1,12 @@
 import { t } from "@/i18n/manager";
-import { TILE_SIZE, latLonToPixels } from "@/utils/geo-converter";
+import {
+  TILE_SIZE,
+  ZOOM_LEVEL,
+  latLonToPixels,
+  metersToLatLon,
+  pixelsToMeters,
+} from "@/utils/geo-converter";
+import { gotoPosition } from "@/utils/position";
 import {
   projectMapPixelsToScreenPoints,
   projectScreenPointsToMapPixels,
@@ -82,6 +89,13 @@ export class ImageAdjustToolMode {
   private toolButtonBar: HTMLDivElement | null = null;
   private panelManager: PanelManager | null = null;
   private baseImage: HTMLImageElement | null = null;
+  private coordInputs: {
+    container: HTMLDivElement;
+    tlx: HTMLInputElement;
+    tly: HTMLInputElement;
+    pxx: HTMLInputElement;
+    pxy: HTMLInputElement;
+  } | null = null;
 
   private readonly processingState: ProcessingState;
 
@@ -95,6 +109,8 @@ export class ImageAdjustToolMode {
   private queuedMapSync = false;
   private lastMapViewSyncAt = 0;
   private lastMetricsRequestedAt = 0;
+  private lastMapCenter: { lng: number; lat: number } | null = null;
+  private lastMapZoom: number | null = null;
 
   // CSS transform approximation during map movement
   private frameWrapper: HTMLDivElement | null = null;
@@ -117,6 +133,11 @@ export class ImageAdjustToolMode {
     const settled = event.data?.settled === true;
     const center = event.data?.center as { lng: number; lat: number } | undefined;
     const zoom = event.data?.zoom as number | undefined;
+
+    if (center && zoom !== undefined) {
+      this.lastMapCenter = center;
+      this.lastMapZoom = zoom;
+    }
 
     if (settled) {
       this.clearFrameTransform();
@@ -358,7 +379,7 @@ export class ImageAdjustToolMode {
     this.mountEvents();
     this.mounted = true;
     setMapProjectionTracking(true);
-    void this.initPositionFromDrawPosition();
+    void this.initFrame();
     return true;
   }
 
@@ -378,6 +399,8 @@ export class ImageAdjustToolMode {
     this.elements = null;
     this.toolButtonBar?.remove();
     this.toolButtonBar = null;
+    this.coordInputs?.container.remove();
+    this.coordInputs = null;
     this.baseImage = null;
     this.activeInteraction = null;
     this.rect = null;
@@ -456,6 +479,146 @@ export class ImageAdjustToolMode {
     return container;
   }
 
+  /**
+   * TLX / TLY / PxX / PxY を直接入力してフレームを配置する UI。
+   * 現在のフレーム位置も常時反映される。
+   */
+  private createCoordInput(): HTMLDivElement {
+    const container = document.createElement("div");
+    container.style.cssText = `
+      position: fixed;
+      left: 16px;
+      bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.72);
+      color: #fff;
+      font-size: 0.7rem;
+      pointer-events: auto;
+      z-index: 2002;
+    `;
+
+    const inputStyle = `
+      width: 3.2rem;
+      height: 22px;
+      padding: 0 2px;
+      font-size: 0.7rem;
+      text-align: center;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 4px;
+    `;
+
+    const createInput = (placeholder: string, max?: number) => {
+      const input = document.createElement("input");
+      input.type = "number";
+      input.placeholder = placeholder;
+      input.title = placeholder;
+      input.style.cssText = inputStyle;
+      if (max !== undefined) input.max = `${max}`;
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          void this.applyCoordInputs();
+        }
+      });
+      input.addEventListener("pointerdown", (e) => e.stopPropagation());
+      return input;
+    };
+
+    const tlx = createInput("TLX");
+    const tly = createInput("TLY");
+    const pxx = createInput("PxX", 999);
+    const pxy = createInput("PxY", 999);
+
+    const applyButton = document.createElement("button");
+    applyButton.className = "btn btn-xs btn-primary";
+    applyButton.type = "button";
+    applyButton.textContent = "📍";
+    applyButton.title = t("goto_map");
+    applyButton.style.cssText = "height: 22px; min-height: 22px; padding: 0 8px;";
+    applyButton.addEventListener("pointerdown", (e) => e.stopPropagation());
+    applyButton.addEventListener("click", (e) => {
+      e.stopPropagation();
+      void this.applyCoordInputs();
+    });
+
+    container.append(tlx, tly, pxx, pxy, applyButton);
+    this.coordInputs = { container, tlx, tly, pxx, pxy };
+    return container;
+  }
+
+  /** フレーム位置を座標入力欄に反映する（編集中の欄は触らない）。 */
+  private updateCoordInputs(): void {
+    const inputs = this.coordInputs;
+    if (!inputs || !this.mapRect) return;
+
+    const { TLX, TLY, PxX, PxY } = this.toDrawPosition(
+      this.mapRect.x,
+      this.mapRect.y,
+    );
+    const set = (el: HTMLInputElement, value: number) => {
+      if (document.activeElement === el) return;
+      const next = `${value}`;
+      if (el.value !== next) el.value = next;
+    };
+    set(inputs.tlx, TLX);
+    set(inputs.tly, TLY);
+    set(inputs.pxx, PxX);
+    set(inputs.pxy, PxY);
+  }
+
+  /** 入力された座標へフレームを移動する。画面外ならマップも移動する。 */
+  private async applyCoordInputs(): Promise<void> {
+    const inputs = this.coordInputs;
+    if (!inputs || !this.mapRect) return;
+
+    const tlx = Math.floor(Number(inputs.tlx.value));
+    const tly = Math.floor(Number(inputs.tly.value));
+    const pxx = Math.floor(Number(inputs.pxx.value));
+    const pxy = Math.floor(Number(inputs.pxy.value));
+    if ([tlx, tly, pxx, pxy].some((value) => !Number.isFinite(value))) return;
+
+    this.mapRect = {
+      ...this.mapRect,
+      x: tlx * TILE_SIZE + pxx,
+      y: tly * TILE_SIZE + pxy,
+    };
+
+    const synced = await this.syncScreenRectFromMap(true);
+    this.applyMetricsFromMapRect();
+    if (this.metrics) this.requestPreviewUpdate(this.metrics, true);
+
+    if (synced && !this.isFrameOnScreen()) {
+      await this.gotoFrameCenter();
+    }
+    this.updateCoordInputs();
+  }
+
+  private isFrameOnScreen(): boolean {
+    if (!this.rect) return false;
+    const margin = 24;
+    return (
+      this.rect.x + this.rect.width >= margin &&
+      this.rect.x <= window.innerWidth - margin &&
+      this.rect.y + this.rect.height >= margin &&
+      this.rect.y <= window.innerHeight - margin
+    );
+  }
+
+  private async gotoFrameCenter(): Promise<void> {
+    if (!this.mapRect) return;
+    const centerX = this.mapRect.x + this.mapRect.width / 2;
+    const centerY = this.mapRect.y + this.mapRect.height / 2;
+    const [metersX, metersY] = pixelsToMeters(centerX, centerY);
+    const [lat, lng] = metersToLatLon(metersX, metersY);
+    await gotoPosition({ lat, lng, zoom: this.lastMapZoom ?? ZOOM_LEVEL });
+  }
+
   private createUI(): void {
     const baseImage = document.createElement("img");
     baseImage.src = this.options.imageSrc;
@@ -491,6 +654,7 @@ export class ImageAdjustToolMode {
     frameWrapper.append(elements.frame, elements.topToolBar, elements.sizeInfo, bar);
     elements.overlay.appendChild(frameWrapper);
     elements.overlay.appendChild(this.createDPad());
+    elements.overlay.appendChild(this.createCoordInput());
     document.body.appendChild(elements.overlay);
 
     this.elements = elements;
@@ -558,22 +722,84 @@ export class ImageAdjustToolMode {
     window.removeEventListener("message", this.onMapViewChanged);
   }
 
-  private async initPositionFromDrawPosition(): Promise<void> {
+  /**
+   * The frame's footprint is defined in world (wplace) pixels and only then
+   * projected to the screen. Deriving the size here — instead of from the
+   * viewport — keeps the placed size independent of the current map zoom.
+   */
+  private getInitialWorldSize(): { width: number; height: number } {
+    const scale = clamp(this.options.initialScale, 0.05, 1);
+    const naturalWidth = Math.max(1, this.options.naturalWidth);
+    const naturalHeight = Math.max(1, this.options.naturalHeight);
+    return {
+      width: clamp(Math.round(naturalWidth * scale), 1, naturalWidth),
+      height: clamp(Math.round(naturalHeight * scale), 1, naturalHeight),
+    };
+  }
+
+  private async initFrame(): Promise<void> {
+    const { width, height } = this.getInitialWorldSize();
     const dp = this.options.initialDrawPosition;
+
+    let topLeftWorld: { x: number; y: number } | null = null;
     if (dp && (dp.TLX !== 0 || dp.TLY !== 0 || dp.PxX !== 0 || dp.PxY !== 0)) {
-      const worldX = dp.TLX * TILE_SIZE + dp.PxX;
-      const worldY = dp.TLY * TILE_SIZE + dp.PxY;
-      const naturalW = this.options.naturalWidth;
-      const naturalH = this.options.naturalHeight;
-      const scale = this.options.initialScale;
-      const widthPx = Math.max(1, Math.round(naturalW * scale));
-      const heightPx = Math.max(1, Math.round(naturalH * scale));
-      this.mapRect = { x: worldX, y: worldY, width: widthPx, height: heightPx };
-      await this.syncScreenRectFromMap(true);
-      this.requestMetricsUpdate(true);
+      topLeftWorld = {
+        x: dp.TLX * TILE_SIZE + dp.PxX,
+        y: dp.TLY * TILE_SIZE + dp.PxY,
+      };
     } else {
-      this.requestMetricsUpdate(true);
+      // No placement yet: center the frame on the current viewport center.
+      const [center] = await projectScreenPointsToMapPixels([
+        { x: window.innerWidth / 2, y: window.innerHeight / 2 },
+      ]);
+      if (center) {
+        topLeftWorld = {
+          x: center.pixelX - width / 2,
+          y: center.pixelY - height / 2,
+        };
+      }
     }
+
+    if (!topLeftWorld) {
+      // Projection unavailable: fall back to the viewport-based rect.
+      this.requestMetricsUpdate(true);
+      return;
+    }
+
+    this.mapRect = { x: topLeftWorld.x, y: topLeftWorld.y, width, height };
+    const synced = await this.syncScreenRectFromMap(true);
+    this.applyMetricsFromMapRect();
+
+    // Seed the CSS-transform approximation so the following map movement
+    // (e.g. the goto triggered on open) does not need projection roundtrips.
+    if (synced && this.lastMapCenter && this.lastMapZoom !== null) {
+      this.saveTransformBase(this.lastMapCenter, this.lastMapZoom);
+    }
+
+    if (this.metrics) this.requestPreviewUpdate(this.metrics, true);
+  }
+
+  private applyMetricsFromMapRect(): void {
+    if (!this.mapRect) return;
+    const widthPx = Math.max(1, Math.round(this.mapRect.width));
+    const heightPx = Math.max(1, Math.round(this.mapRect.height));
+    this.metrics = {
+      widthPx,
+      heightPx,
+      topLeftPixelX: this.mapRect.x,
+      topLeftPixelY: this.mapRect.y,
+    };
+    this.updateSizeInfo(widthPx, heightPx);
+    this.updateCoordInputs();
+  }
+
+  private updateSizeInfo(widthPx: number, heightPx: number): void {
+    if (!this.elements?.sizeInfo) return;
+    const totalPixels = widthPx * heightPx;
+    const timeStr = this.formatEstimatedTime(totalPixels);
+    const newHtml = `${widthPx}×${heightPx}px<br><span style="color:#9ca3af;font-size:0.6rem;">${timeStr}</span>`;
+    if (this.elements.sizeInfo.innerHTML !== newHtml)
+      this.elements.sizeInfo.innerHTML = newHtml;
   }
 
   private getInitialRect(): Rect {
@@ -715,13 +941,8 @@ export class ImageAdjustToolMode {
         height: heightPx,
       };
 
-      if (this.elements?.sizeInfo) {
-        const totalPixels = widthPx * heightPx;
-        const timeStr = this.formatEstimatedTime(totalPixels);
-        const newHtml = `${widthPx}×${heightPx}px<br><span style="color:#9ca3af;font-size:0.6rem;">${timeStr}</span>`;
-        if (this.elements.sizeInfo.innerHTML !== newHtml)
-          this.elements.sizeInfo.innerHTML = newHtml;
-      }
+      this.updateSizeInfo(widthPx, heightPx);
+      this.updateCoordInputs();
 
       this.requestPreviewUpdate(this.metrics);
       if (snapTopLeftToPixel) void this.syncScreenRectFromMap(true);
@@ -733,13 +954,13 @@ export class ImageAdjustToolMode {
 
   private async syncScreenRectFromMap(
     allowDuringInteraction = false,
-  ): Promise<void> {
+  ): Promise<boolean> {
     if (this.mapSyncPending) {
       this.queuedMapSync = true;
-      return;
+      return false;
     }
     if (!this.mapRect || (!allowDuringInteraction && this.activeInteraction))
-      return;
+      return false;
     this.mapSyncPending = true;
 
     try {
@@ -751,7 +972,7 @@ export class ImageAdjustToolMode {
           pixelY: this.mapRect.y + this.mapRect.height,
         },
       ]);
-      if (projected.length < 3) return;
+      if (projected.length < 3) return false;
 
       this.applyRect({
         x: projected[0].x,
@@ -771,6 +992,7 @@ export class ImageAdjustToolMode {
           ),
         ),
       });
+      return true;
     } finally {
       this.mapSyncPending = false;
       if (this.queuedMapSync) {
