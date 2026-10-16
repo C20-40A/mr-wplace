@@ -644,4 +644,9 @@ export const ruTranslations = {
   palette_show_all_colors: "Показать все цвета",
   bookmark_migrate_official: "Перенести в избранные места",
   bookmark_migrate_failed: "Не удалось перенести. Проверьте вход в аккаунт и лимит избранного.",
+  view_grid: "Сетка",
+  view_map: "Карта",
+  view_mode: "Режим отображения",
+  open: "Открыть",
+  zoom_in: "Увеличить",
 };

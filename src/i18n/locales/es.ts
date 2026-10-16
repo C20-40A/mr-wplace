@@ -641,4 +641,9 @@ export const esTranslations = {
   palette_show_all_colors: "Mostrar todos los colores",
   bookmark_migrate_official: "Mover a lugares favoritos",
   bookmark_migrate_failed: "No se pudo mover. Verifique que haya iniciado sesión y que no se haya alcanzado el límite de favoritos.",
+  view_grid: "Cuadrícula",
+  view_map: "Mapa",
+  view_mode: "Modo de vista",
+  open: "Abrir",
+  zoom_in: "Ampliar",
 };

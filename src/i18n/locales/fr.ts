@@ -648,4 +648,9 @@ export const frTranslations = {
   palette_show_all_colors: "Afficher toutes les couleurs",
   bookmark_migrate_official: "Déplacer vers les lieux favoris",
   bookmark_migrate_failed: "Échec du déplacement. Vérifiez que vous êtes connecté et que la limite de favoris n'est pas atteinte.",
+  view_grid: "Grille",
+  view_map: "Carte",
+  view_mode: "Affichage",
+  open: "Ouvrir",
+  zoom_in: "Agrandir",
 };

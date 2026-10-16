@@ -597,6 +597,41 @@ export const getSnapshotDataUrl = async (id: string): Promise<string | null> => 
 };
 
 /**
+ * Get snapshot thumbnail as a small dataUrl (best-effort).
+ * Resolves null when the snapshot has no thumbnail or the request fails.
+ */
+export const getThumbnailDataUrl = async (id: string): Promise<string | null> => {
+  const requestId = generateRequestId();
+
+  return new Promise((resolve) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const handler = (event: MessageEvent) => {
+      if (
+        event.data.source === "mr-wplace-snapshot-thumbnail-get-response" &&
+        event.data.requestId === requestId
+      ) {
+        clearTimeout(timeoutId);
+        window.removeEventListener("message", handler);
+        resolve(event.data.result || null);
+      }
+    };
+
+    window.addEventListener("message", handler);
+    window.postMessage(
+      { source: "mr-wplace-snapshot-thumbnail-get", requestId, id },
+      "*",
+    );
+
+    timeoutId = setTimeout(() => {
+      window.removeEventListener("message", handler);
+      console.warn("🧑‍🎨 : Get snapshot thumbnail timed out");
+      resolve(null);
+    }, 5000);
+  });
+};
+
+/**
  * Save snapshot with metadata to inject side IndexedDB
  */
 export const saveSnapshotToInject = async (

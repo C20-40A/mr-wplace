@@ -632,4 +632,9 @@ export const ptTranslations = {
   palette_show_all_colors: "Mostrar todas as cores",
   bookmark_migrate_official: "Mover para locais favoritos",
   bookmark_migrate_failed: "Falha ao mover. Verifique se você está conectado e se o limite de favoritos não foi atingido.",
+  view_grid: "Grade",
+  view_map: "Mapa",
+  view_mode: "Modo de exibição",
+  open: "Abrir",
+  zoom_in: "Ampliar",
 };

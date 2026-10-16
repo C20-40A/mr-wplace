@@ -11,6 +11,7 @@ import {
   type SnapshotMetadata,
 } from "../db/snapshot-repository";
 import { isDangerousMessageAuthorized } from "../security/message-auth";
+import { generateSnapshotThumbnail } from "../utils/snapshot-thumbnail";
 
 /**
  * Convert Blob to dataUrl
@@ -118,6 +119,30 @@ const handleGetSnapshot = async (requestId: string, id: string) => {
 };
 
 /**
+ * Handle get snapshot thumbnail request (returns small dataUrl or null)
+ */
+const handleGetThumbnail = async (requestId: string, id: string) => {
+  try {
+    const repo = await initSnapshotRepository();
+    const blob = await repo.getThumbnail(id);
+    if (!blob) {
+      // 既存スナップショットはサムネ無し。呼び出し側はプレースホルダを維持する
+      sendResponse("mr-wplace-snapshot-thumbnail-get-response", requestId, null);
+      return;
+    }
+    const dataUrl = await blobToDataUrl(blob);
+    sendResponse(
+      "mr-wplace-snapshot-thumbnail-get-response",
+      requestId,
+      dataUrl,
+    );
+  } catch (error) {
+    console.error("🧑‍🎨 [Snapshot] Get thumbnail failed:", error);
+    sendResponse("mr-wplace-snapshot-thumbnail-get-response", requestId, null);
+  }
+};
+
+/**
  * Handle save snapshot with metadata request
  */
 const handleSaveSnapshot = async (
@@ -132,6 +157,20 @@ const handleSaveSnapshot = async (
     await repo.saveSnapshotWithMetadata(id, blob, metadata);
     sendResponse("mr-wplace-snapshot-save-response", requestId, true);
     console.log(`🧑‍🎨 [Snapshot] Saved ${id}`);
+
+    // サムネ生成はあくまで best-effort。保存レスポンスを返した後に、
+    // クリティカルパスから外して実行する（失敗しても保存は成功のまま）。
+    void generateSnapshotThumbnail(blob)
+      .then((thumbnail) => {
+        if (!thumbnail) return;
+        return repo.saveThumbnail(id, thumbnail);
+      })
+      .catch((thumbnailError) => {
+        console.warn(
+          "🧑‍🎨 [Snapshot] Thumbnail save failed:",
+          thumbnailError
+        );
+      });
   } catch (error) {
     console.error("🧑‍🎨 [Snapshot] Save failed:", error);
     sendResponse(
@@ -206,6 +245,10 @@ export const setupSnapshotHandlers = () => {
 
       case "mr-wplace-snapshot-get":
         await handleGetSnapshot(requestId, event.data.id);
+        break;
+
+      case "mr-wplace-snapshot-thumbnail-get":
+        await handleGetThumbnail(requestId, event.data.id);
         break;
 
       case "mr-wplace-snapshot-save":

@@ -4,15 +4,22 @@
  * IndexedDB for tile snapshots storage
  * - snapshots: snapshot image blobs
  * - metadata: snapshot metadata (timestamp, tileX, tileY, name, etc.)
+ * - thumbnails: small preview blobs (optional / best-effort, keyed by id)
  */
 
 const DB_NAME = "mr-wplace-snapshots";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export const SNAPSHOT_STORES = {
   SNAPSHOTS: "snapshots",
   METADATA: "metadata",
+  THUMBNAILS: "thumbnails",
 } as const;
+
+export interface SnapshotThumbnailRecord {
+  id: string;
+  blob: Blob;
+}
 
 export interface SnapshotMetadata {
   id: string;
@@ -36,6 +43,12 @@ const openSnapshotDatabase = (): Promise<IDBDatabase> => {
 
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
+    request.onblocked = () => {
+      // 旧バージョンの接続が残っている。閉じられるまで待機する（致命的ではない）
+      console.warn(
+        "🧑‍🎨 [Snapshot] IndexedDB upgrade blocked by another connection",
+      );
+    };
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
@@ -55,6 +68,11 @@ const openSnapshotDatabase = (): Promise<IDBDatabase> => {
           unique: false,
         });
       }
+
+      // Thumbnails store: { id, blob } (v2, additive migration)
+      if (!db.objectStoreNames.contains(SNAPSHOT_STORES.THUMBNAILS)) {
+        db.createObjectStore(SNAPSHOT_STORES.THUMBNAILS, { keyPath: "id" });
+      }
     };
   });
 };
@@ -68,7 +86,16 @@ export class SnapshotRepository {
     if (this.initPromise) return this.initPromise;
 
     this.initPromise = (async () => {
-      this.db = await openSnapshotDatabase();
+      const db = await openSnapshotDatabase();
+      // 他タブが新しいバージョンへ更新しようとしたら、この接続を閉じて邪魔しない
+      db.onversionchange = () => {
+        db.close();
+        if (this.db === db) {
+          this.db = null;
+          this.initPromise = null;
+        }
+      };
+      this.db = db;
     })();
 
     return this.initPromise;
@@ -210,20 +237,57 @@ export class SnapshotRepository {
   }
 
   // ============================================
+  // Snapshot Thumbnail Operations (best-effort)
+  // ============================================
+
+  async getThumbnail(id: string): Promise<Blob | null> {
+    const db = this.getDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction([SNAPSHOT_STORES.THUMBNAILS], "readonly");
+      const store = tx.objectStore(SNAPSHOT_STORES.THUMBNAILS);
+      const request = store.get(id);
+
+      request.onsuccess = () => {
+        const record = request.result as SnapshotThumbnailRecord | undefined;
+        resolve(record?.blob || null);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async saveThumbnail(id: string, blob: Blob): Promise<void> {
+    const db = this.getDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction([SNAPSHOT_STORES.THUMBNAILS], "readwrite");
+      const store = tx.objectStore(SNAPSHOT_STORES.THUMBNAILS);
+      const record: SnapshotThumbnailRecord = { id, blob };
+      const request = store.put(record);
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // ============================================
   // Bulk Operations
   // ============================================
 
   async saveSnapshotWithMetadata(
     id: string,
     blob: Blob,
-    metadata: SnapshotMetadata
+    metadata: SnapshotMetadata,
+    thumbnail?: Blob | null
   ): Promise<void> {
     const db = this.getDb();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(
-        [SNAPSHOT_STORES.SNAPSHOTS, SNAPSHOT_STORES.METADATA],
-        "readwrite"
-      );
+      const storeNames = thumbnail
+        ? [
+            SNAPSHOT_STORES.SNAPSHOTS,
+            SNAPSHOT_STORES.METADATA,
+            SNAPSHOT_STORES.THUMBNAILS,
+          ]
+        : [SNAPSHOT_STORES.SNAPSHOTS, SNAPSHOT_STORES.METADATA];
+      const tx = db.transaction(storeNames, "readwrite");
 
       const snapshotStore = tx.objectStore(SNAPSHOT_STORES.SNAPSHOTS);
       const metadataStore = tx.objectStore(SNAPSHOT_STORES.METADATA);
@@ -231,6 +295,12 @@ export class SnapshotRepository {
       const snapshotRecord: SnapshotRecord = { id, blob };
       snapshotStore.put(snapshotRecord);
       metadataStore.put(metadata);
+
+      if (thumbnail) {
+        const thumbnailStore = tx.objectStore(SNAPSHOT_STORES.THUMBNAILS);
+        const thumbnailRecord: SnapshotThumbnailRecord = { id, blob: thumbnail };
+        thumbnailStore.put(thumbnailRecord);
+      }
 
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
@@ -241,15 +311,21 @@ export class SnapshotRepository {
     const db = this.getDb();
     return new Promise((resolve, reject) => {
       const tx = db.transaction(
-        [SNAPSHOT_STORES.SNAPSHOTS, SNAPSHOT_STORES.METADATA],
+        [
+          SNAPSHOT_STORES.SNAPSHOTS,
+          SNAPSHOT_STORES.METADATA,
+          SNAPSHOT_STORES.THUMBNAILS,
+        ],
         "readwrite"
       );
 
       const snapshotStore = tx.objectStore(SNAPSHOT_STORES.SNAPSHOTS);
       const metadataStore = tx.objectStore(SNAPSHOT_STORES.METADATA);
+      const thumbnailStore = tx.objectStore(SNAPSHOT_STORES.THUMBNAILS);
 
       snapshotStore.delete(id);
       metadataStore.delete(id);
+      thumbnailStore.delete(id);
 
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);

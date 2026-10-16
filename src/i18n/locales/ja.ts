@@ -661,4 +661,9 @@ export const jaTranslations = {
   palette_show_all_colors: "すべての色を表示",
   bookmark_migrate_official: "公式お気に入りへ移行",
   bookmark_migrate_failed: "移行に失敗しました。ログイン状態とお気に入りの上限を確認してください。",
+  view_mode: "表示モード",
+  view_grid: "グリッド",
+  view_map: "マップ",
+  open: "開く",
+  zoom_in: "拡大",
 };

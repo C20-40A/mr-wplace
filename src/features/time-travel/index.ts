@@ -80,6 +80,7 @@ export const initTimeTravel = (): void => {
   ui = new TimeTravelUI(router);
   ui.setOnModalClosed(() => {
     setSnapshotCaptureEnabled(false);
+    tileListRoute?.destroy();
   });
   currentPositionRoute = new SnapshotRoute({ showSaveButton: true });
   tileListRoute = new TileListRoute();

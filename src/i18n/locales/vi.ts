@@ -627,4 +627,9 @@ export const viTranslations = {
   palette_show_all_colors: "Hiển thị tất cả màu",
   bookmark_migrate_official: "Chuyển sang địa điểm yêu thích",
   bookmark_migrate_failed: "Chuyển thất bại. Vui lòng kiểm tra đăng nhập và giới hạn mục yêu thích.",
+  view_grid: "Lưới",
+  view_map: "Bản đồ",
+  view_mode: "Chế độ xem",
+  open: "Mở",
+  zoom_in: "Phóng to",
 };

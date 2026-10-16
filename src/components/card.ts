@@ -17,6 +17,11 @@ export interface CardConfig {
   data?: Record<string, string>;
   tagColor?: string;
   tagName?: string;
+  /**
+   * 指定すると、カード上部にサムネイル枠を表示する。
+   * 中身は `attachSnapshotThumbnails` 等が後から差し込む想定（未指定時は従来どおり）。
+   */
+  thumbnailId?: string;
 }
 
 /**
@@ -24,6 +29,7 @@ export interface CardConfig {
  */
 export const createCard = (config: CardConfig): string => {
   const isMobile = isMobileViewport();
+  const hasThumbnail = !!config.thumbnailId;
   const dataAttrs = config.data
     ? Object.entries(config.data)
         .map(([key, value]) => `data-${key}="${value}"`)
@@ -57,6 +63,20 @@ export const createCard = (config: CardConfig): string => {
           : ""
       }
     >
+      ${
+        hasThumbnail
+          ? `
+        <!-- サムネイルのうっすら背景（遅延ロードで差し込まれる。z-index:-1 で
+             カード自身の背景より上・テキストより下に描画される） -->
+        <div
+          class="wps-thumb"
+          data-thumb-id="${config.thumbnailId}"
+          data-thumb-opacity="0.3"
+          style="position:absolute; inset:0; z-index:-1; overflow:hidden; pointer-events:none;"
+        ></div>
+      `
+          : ""
+      }
       ${
         config.onDelete
           ? `
