@@ -1,7 +1,8 @@
 import { Bookmark } from "../types";
 import { t } from "@/i18n/manager";
-import { createCard, CardConfig, attachCardScrollPassthrough } from "@/components/card";
+import { createCard, CardConfig } from "@/components/card";
 import { runtime } from "@/utils/browser-api";
+import { attachScrollFallback } from "@/utils/scroll";
 import { showFeatureHint } from "@/features/feature-hints";
 
 export type BookmarkSortType = "created" | "accessed" | "tag";
@@ -116,7 +117,7 @@ export const renderBookmarks = (
     })
     .join("");
 
-  attachCardScrollPassthrough(grid);
+  attachScrollFallback(grid, ".wps-card");
 
   const firstEditBtn = grid.querySelector(".wps-edit-btn");
   if (firstEditBtn instanceof HTMLElement)

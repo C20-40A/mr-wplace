@@ -7,17 +7,14 @@
 
 ## src/components/card.ts
 
-- exports: 3
-- top_level_declarations: 3
+- exports: 2
+- top_level_declarations: 2
 - declarations:
 - export interface `CardConfig` (L7)
   - signature: `CardConfig`
 - export variable `createCard` (L25)
   - signature: `(config: CardConfig) => string`
   - summary: 共通カードUIを生成
-- export variable `attachCardScrollPassthrough` (L213)
-  - signature: `(gridContainer: HTMLElement) => void`
-  - summary: カード要素にスクロールパススルーを設定 グリッドコンテナ内のカード上でホイール/タッチスクロールを親に伝播させる
 
 ## src/components/color-palette/components/color-grid.ts
 

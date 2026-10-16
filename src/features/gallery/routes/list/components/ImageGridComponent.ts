@@ -1,6 +1,7 @@
 import { t } from "@/i18n/manager";
 import type { GalleryItem } from "@/states/galleryStorage";
 import { runtime } from "@/utils/browser-api";
+import { attachScrollFallback } from "@/utils/scroll";
 import { Tutorial } from "@/features/tutorial";
 
 export interface ImageGridOptions {
@@ -104,7 +105,7 @@ export class ImageGridComponent {
       .join("");
 
     this.container.innerHTML = `
-      <div class="grid ${this.options.gridCols} gap-4">
+      <div class="grid ${this.options.gridCols} gap-4" role="list">
         ${itemsHtml}
       </div>
       
@@ -131,9 +132,24 @@ export class ImageGridComponent {
     const titleHtml = this.createTitleHtml(item, !!progressHtml);
 
     return `
-      <div class="border rounded-lg overflow-hidden shadow relative gallery-item" style="display: flex; flex-direction: column;" data-item-key="${
+      <div class="border rounded-lg overflow-hidden shadow relative gallery-item" role="listitem" style="display: flex; flex-direction: column;" data-item-key="${
         item.key
       }">
+        <button
+          type="button"
+          class="w-full min-w-0 cursor-pointer text-left"
+          style="flex: 1; display: flex; flex-direction: column; background: none; border: none; padding: 0;"
+        >
+          <img
+            src="${item.thumbnail || item.dataUrl}"
+            alt="Gallery item"
+            class="w-full aspect-square object-contain"
+            style="image-rendering: pixelated; object-fit: contain;"
+            draggable="false"
+          >
+          ${titleHtml}
+          ${progressHtml}
+        </button>
         ${showDeleteBtn ? this.createDeleteButtonHtml(item.key) : ""}
         ${
           showDrawToggleBtn && item.drawPosition
@@ -141,14 +157,6 @@ export class ImageGridComponent {
             : ""
         }
         ${showGotoPositionBtn ? this.createGotoPositionButtonHtml(item) : ""}
-        <img
-          src="${item.thumbnail || item.dataUrl}"
-          alt="Gallery item"
-          class="w-full aspect-square object-contain cursor-pointer"
-          style="image-rendering: pixelated; object-fit: contain;"
-        >
-        ${titleHtml}
-        ${progressHtml}
       </div>
     `;
   }
@@ -261,49 +269,7 @@ export class ImageGridComponent {
     this.attachDrawToggleButtonListeners();
     this.attachGotoPositionButtonListeners();
     this.attachImageClickListeners();
-    this.attachWheelPassthrough();
-  }
-
-  /**
-   * スクロールイベントを親コンテナにパススルー
-   */
-  private attachWheelPassthrough(): void {
-    const scrollContainer = this.container.closest(
-      '[style*="overflow"]',
-    ) as HTMLElement;
-    if (!scrollContainer) return;
-
-    this.container.querySelectorAll(".gallery-item").forEach((item) => {
-      // デスクトップ: wheelイベント
-      item.addEventListener(
-        "wheel",
-        (e) => {
-          scrollContainer.scrollTop += (e as WheelEvent).deltaY;
-        },
-        { passive: true },
-      );
-
-      // モバイル: touchイベント
-      let touchStartY = 0;
-      item.addEventListener(
-        "touchstart",
-        (e) => {
-          touchStartY = (e as TouchEvent).touches[0].clientY;
-        },
-        { passive: true },
-      );
-
-      item.addEventListener(
-        "touchmove",
-        (e) => {
-          const touchY = (e as TouchEvent).touches[0].clientY;
-          const deltaY = touchStartY - touchY;
-          scrollContainer.scrollTop += deltaY;
-          touchStartY = touchY;
-        },
-        { passive: true },
-      );
-    });
+    attachScrollFallback(this.container, ".gallery-item");
   }
 
   /**
