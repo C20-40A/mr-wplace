@@ -2,7 +2,142 @@ import { t } from "@/i18n/manager";
 import type { GalleryItem } from "@/states/galleryStorage";
 import { runtime } from "@/utils/browser-api";
 import { attachScrollFallback } from "@/utils/scroll";
+import { ensureStyle } from "@/utils/style";
 import { Tutorial } from "@/features/tutorial";
+
+const ITEM_STYLE_ID = "wps-gallery-item-style";
+
+/** 進捗ゲージ/バーのスタイル ID（アイテム用と分離して管理） */
+const PROGRESS_STYLE_ID = "wps-gallery-progress-style";
+
+/** タッチ入力がある端末に付ける html クラス（hover 出し分けを無効化する） */
+const TOUCH_DEVICE_CLASS = "wps-touch-device";
+
+/**
+ * タッチ入力がある端末（スマホ/タブレット/タッチ対応PC）を html に記録する。
+ *
+ * アクションボタンの「ホバー時だけ表示」はマウス操作のデスクトップ専用にしたい。
+ * タブレットは hover: hover を名乗ることがあり、その状態でタップすると
+ * ボタンが隠れていて誤操作になるため、タッチがある端末は常時表示に固定する。
+ */
+const markTouchDevice = (): void => {
+  if (navigator.maxTouchPoints > 0) {
+    document.documentElement.classList.add(TOUCH_DEVICE_CLASS);
+  }
+};
+
+/**
+ * アイテム用スタイル。
+ * - カードは hover で少し浮き上がる（transform なのでレイアウトは動かない）
+ * - アクションボタンの「ホバー時だけ表示」はマウス操作のデスクトップ限定。
+ *   条件は @media (hover: hover) and (pointer: fine) かつ 非タッチ端末。
+ *   スマホ/タブレット/タッチ対応PCでは常時表示のまま（タップ時の誤操作防止）
+ * - ただし描画が「非表示(hide)」のアイテムの目玉ボタンは例外で、状態が一目で
+ *   分かるようホバーしていなくても常に表示する (.gallery-item-action-pinned)
+ *
+ * NOTE: ページ側 Tailwind はビルド済みのため、存在しないユーティリティは効かない。
+ * hover 系はタッチ端末での「張り付き hover」を避けるため自前 CSS にしている
+ * （テーマ依存の色は daisyUI の共通クラス側で指定）。
+ */
+const ensureItemStyles = (): void => {
+  ensureStyle(
+    ITEM_STYLE_ID,
+    `
+    .gallery-item .gallery-item-action {
+      opacity: var(--wps-action-opacity, 0.72);
+      transition: opacity 0.15s ease;
+    }
+    /* デスクトップ（マウス操作 & 非タッチ）だけ hover で出し分ける */
+    @media (hover: hover) and (pointer: fine) {
+      html:not(.${TOUCH_DEVICE_CLASS}) .gallery-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 22px -8px rgba(0, 0, 0, 0.28), 0 4px 10px -4px rgba(0, 0, 0, 0.16);
+      }
+      /* hide 中の目玉(pinned)は常時表示したいので、隠す対象から除外する */
+      html:not(.${TOUCH_DEVICE_CLASS}) .gallery-item .gallery-item-action:not(.gallery-item-action-pinned) {
+        opacity: 0;
+        pointer-events: none;
+      }
+      html:not(.${TOUCH_DEVICE_CLASS}) .gallery-item:hover .gallery-item-action,
+      html:not(.${TOUCH_DEVICE_CLASS}) .gallery-item:focus-within .gallery-item-action {
+        opacity: var(--wps-action-opacity, 0.72);
+        pointer-events: auto;
+      }
+    }
+    `,
+  );
+};
+
+/**
+ * 進捗ゲージ用スタイル。
+ *
+ * テーマ対応: 色を直接指定せず daisyUI のテーマ変数から組み立てるので、
+ * light / dark / legacy どのテーマでも破綻しない。
+ * - トラック: --color-base-300（テーマの薄いベース色）
+ * - フィル:   --color-primary（wplace はどのテーマでも青系）
+ * リッチさ: トラックの内側シャドウ、フィルの縦グラデ（上面ハイライト＋横グラデ）、
+ * ほんのりしたグロー、数値は等幅＋tabular-nums。
+ *
+ * なお COMPLETE だけは例外で、テーマに追従させず金色の固定スタイルにしている
+ * （達成感を出す「ご褒美」表示のため）。
+ */
+const ensureProgressStyles = (): void => {
+  ensureStyle(
+    PROGRESS_STYLE_ID,
+    `
+    .wps-gauge {
+      height: 0.5rem;
+      border-radius: 9999px;
+      background-color: var(--color-base-300, #e5e7eb);
+      box-shadow: inset 0 1px 2px color-mix(in oklab, var(--color-base-content, #000) 20%, transparent);
+    }
+    .wps-gauge-fill {
+      position: relative;
+      height: 100%;
+      border-radius: 9999px;
+      background-color: var(--color-primary, #3b82f6);
+      background-image:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 55%),
+        linear-gradient(90deg,
+          color-mix(in oklab, var(--color-primary, #3b82f6) 78%, var(--color-base-100, #fff)),
+          var(--color-primary, #3b82f6));
+      box-shadow: 0 0 7px color-mix(in oklab, var(--color-primary, #3b82f6) 45%, transparent);
+      transition: width 0.3s ease;
+    }
+    /* COMPLETE: テーマに依存させず、金色で統一した「ご褒美」表示。
+       金色のロゴになじむよう金トーンでまとめ、艶(つや)のある質感にしている */
+    .wps-complete {
+      background-image:
+        /* ロゴ裏のやわらかい光 */
+        radial-gradient(ellipse 72% 92% at 50% 32%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 70%),
+        /* 上面の艶 */
+        linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.3) 18%, rgba(255, 255, 255, 0) 48%),
+        /* 斜めの光沢 */
+        linear-gradient(115deg, rgba(255, 255, 255, 0) 32%, rgba(255, 255, 255, 0.5) 46%, rgba(255, 255, 255, 0) 62%),
+        /* 磨いた金の地 */
+        linear-gradient(135deg, #fbeec0 0%, #f6dd97 28%, #eec86a 54%, #f7e2a4 76%, #e6bd55 100%);
+      border-top: 1px solid #dfb14e;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        inset 0 -10px 16px -12px rgba(140, 92, 6, 0.55),
+        0 1px 2px rgba(120, 80, 0, 0.12);
+    }
+    .wps-complete-logo {
+      width: 84%;
+      max-width: 7.5rem;
+      height: auto;
+      filter: drop-shadow(0 2px 2px rgba(120, 80, 0, 0.4));
+    }
+    .wps-complete-sub {
+      font-size: 0.625rem;
+      font-family: ui-monospace, monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #8a6220;
+    }
+    `,
+  );
+};
 
 export interface ImageGridOptions {
   items: GalleryItem[];
@@ -44,6 +179,9 @@ export class ImageGridComponent {
       ...options,
     };
     this.tutorial = new Tutorial();
+    markTouchDevice();
+    ensureItemStyles();
+    ensureProgressStyles();
   }
 
   /**
@@ -128,25 +266,35 @@ export class ImageGridComponent {
       !this.options.isSelectionMode &&
       item.drawPosition;
 
+    const hasSizeBadge = !!(item.width && item.height);
     const progressHtml = this.createProgressBarHtml(item);
-    const titleHtml = this.createTitleHtml(item, !!progressHtml);
+    const titleHtml = this.createTitleHtml(item, !!progressHtml, hasSizeBadge);
+    const sizeBadgeHtml = hasSizeBadge
+      ? `<span class="absolute right-2 bottom-2 rounded-[var(--game-radius,5px)] bg-base-100/80 px-1.5 py-0.5 font-mono text-[10px] text-base-content/70 shadow-sm">${item.width} × ${item.height}</span>`
+      : "";
 
     return `
-      <div class="group relative flex min-w-0 flex-col rounded-[var(--game-radius,13px)] border border-base-300/70 overflow-hidden shadow transition gallery-item" role="listitem" style="display: flex; flex-direction: column;" data-item-key="${
-        item.key
-      }">
+      <div
+        class="group relative flex min-w-0 flex-col overflow-hidden rounded-[var(--game-radius,13px)] border border-base-300/70 shadow-md transition gallery-item"
+        role="listitem"
+        style="display: flex; flex-direction: column;"
+        data-item-key="${item.key}"
+      >
         <button
           type="button"
           class="w-full min-w-0 cursor-pointer text-left"
           style="flex: 1; display: flex; flex-direction: column; background: none; border: none; padding: 0;"
         >
-          <img
-            src="${item.thumbnail || item.dataUrl}"
-            alt="Gallery item"
-            class="w-full aspect-square object-contain"
-            style="image-rendering: pixelated; object-fit: contain;"
-            draggable="false"
-          >
+          <div class="relative w-full overflow-hidden">
+            <img
+              src="${item.thumbnail || item.dataUrl}"
+              alt="Gallery item"
+              class="pixelated aspect-square w-full object-contain p-2"
+              style="image-rendering: pixelated; object-fit: contain;"
+              draggable="false"
+            >
+            ${sizeBadgeHtml}
+          </div>
           ${titleHtml}
           ${progressHtml}
         </button>
@@ -171,18 +319,28 @@ export class ImageGridComponent {
     iconPath: string;
     title?: string;
     opacity?: number;
+    /** true のとき、ホバーしていなくても常に表示する（状態表示用） */
+    pinned?: boolean;
   }): string {
-    const { dataAttr, value, position, iconPath, title, opacity = 0.72 } = config;
+    const {
+      dataAttr,
+      value,
+      position,
+      iconPath,
+      title,
+      opacity = 0.72,
+      pinned = false,
+    } = config;
     const pos = Object.entries(position)
       .map(([k, v]) => `${k}: ${v};`)
       .join(" ");
     const titleAttr = title ? `title="${title}"` : "";
     return `
       <button
-        class="btn btn-xs btn-circle btn-ghost"
+        class="btn btn-xs btn-circle btn-ghost gallery-item-action${pinned ? " gallery-item-action-pinned" : ""}"
         ${dataAttr}="${value}"
         ${titleAttr}
-        style="position: absolute; ${pos} z-index: 10; background: none; border: none; padding: 0; opacity: ${opacity};"
+        style="position: absolute; ${pos} z-index: 10; background: none; border: none; padding: 0; --wps-action-opacity: ${opacity};"
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4" style="filter: ${this.overlayIconFilter};">
           ${iconPath}
@@ -222,7 +380,9 @@ export class ImageGridComponent {
       position: { top: "0.25rem", left: "0.25rem" },
       title: isEnabled ? "Hide drawing" : "Show drawing",
       iconPath: eyeIcon,
-      opacity: isEnabled ? 0.72 : 0.58,
+      // hide 中は「その状態である」ことが一目で分かるよう常時表示にする
+      opacity: isEnabled ? 0.72 : 0.9,
+      pinned: !isEnabled,
     });
   }
 
@@ -353,26 +513,22 @@ export class ImageGridComponent {
   /**
    * タイトルのHTMLを生成
    */
-  private createTitleHtml(item: GalleryItem, hasProgress: boolean): string {
+  private createTitleHtml(
+    item: GalleryItem,
+    hasProgress: boolean,
+    hasSizeBadge: boolean,
+  ): string {
     if (!item.title) return "";
 
     const bottomPosition = hasProgress ? "3.5rem" : "0.5rem";
+    // 右下のサイズバッジと重ならないように右側を空ける
+    const maxWidth = hasSizeBadge
+      ? "calc(100% - 5rem)"
+      : "calc(100% - 1rem)";
 
     return `
-      <div style="position: absolute; left: 0.5rem; bottom: ${bottomPosition}; z-index: 5;
-                  background-color: rgba(255, 255, 255, 0.95);
-                  backdrop-filter: blur(4px);
-                  padding: 0.25rem 0.5rem;
-                  border-radius: 0.5rem;
-                  font-size: 0.75rem;
-                  color: #1f2937;
-                  font-weight: 500;
-                  max-width: calc(100% - 1rem);
-                  overflow: hidden;
-                  text-overflow: ellipsis;
-                  white-space: nowrap;
-                  border: 1px solid rgba(0, 0, 0, 0.1);
-                  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);">
+      <div class="absolute truncate rounded-[var(--game-radius,5px)] border border-base-300/60 bg-base-100/90 px-2 py-1 text-xs font-medium text-base-content shadow-sm"
+           style="left: 0.5rem; bottom: ${bottomPosition}; z-index: 5; max-width: ${maxWidth}; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);">
         ${item.title}
       </div>
     `;
@@ -400,41 +556,38 @@ export class ImageGridComponent {
     const rawPercentage = (matched / total) * 100;
     const percentage = remaining > 0 ? Math.min(rawPercentage, 99.9) : 100;
 
-    // 100% Complete: リッチな達成表示
+    // 100% Complete: リッチな達成表示（背景色は --color-warning から作るのでテーマ対応）
     if (remaining === 0) {
+      const completeLogoUrl = runtime.getURL(
+        "assets/images/gallery/complete-logo.png",
+      );
       return `
-        <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0.375rem 0.625rem; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-top: 1px solid #fbbf24;">
-          <div style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
-            <span style="font-size: 0.875rem; font-weight: bold; color: #facc15; text-shadow: -1px -1px 0 #b45309, 1px -1px 0 #b45309, -1px 1px 0 #b45309, 1px 1px 0 #b45309; letter-spacing: 0.05em;">COMPLETE</span>
-            <span style="font-size: 0.625rem; color: #92400e; font-family: ui-monospace, monospace; opacity: 0.8;">${total.toLocaleString()} pixels</span>
+        <div class="wps-complete" style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0.5rem 0.625rem;">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 0.3rem;">
+            <img src="${completeLogoUrl}" alt="COMPLETE" class="wps-complete-logo" draggable="false">
+            <span class="wps-complete-sub">${total.toLocaleString()} pixels</span>
           </div>
         </div>
       `;
     }
 
-    // 進行中: 通常のプログレスバー
+    // 進行中: 通常のプログレスゲージ
     const timeStr = this.formatEstimatedTime(remaining);
-    const isDarkTheme =
-      document.documentElement.getAttribute("data-theme") === "dark";
-    const percentageTextColor = isDarkTheme ? "#60a5fa" : "#3b82f6";
+    const percentageText = percentage.toFixed(1);
 
     return `
-      <div class="border-t" style="background-color: oklch(var(--color-base-100)); flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0.375rem 0.625rem;">
-        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-          <span style="font-size: 0.75rem; font-weight: 600; color: ${percentageTextColor}; font-family: ui-monospace, monospace;">${percentage.toFixed(
-            1,
-          )}%</span>
-          <div style="flex: 1; position: relative; height: 0.375rem; background-color: #e5e7eb; border-radius: 0.25rem; overflow: hidden;">
-            <div style="height: 100%; background: linear-gradient(to right, #3b82f6, #60a5fa); width: ${percentage.toFixed(
-              1,
-            )}%; transition: width 0.3s ease;"></div>
+      <div class="border-t border-base-300/70 bg-base-100" style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0.375rem 0.625rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem;">
+          <span class="text-sm font-bold tabular-nums text-primary" style="font-family: ui-monospace, monospace; line-height: 1;">${percentageText}%</span>
+          <div class="wps-gauge" style="flex: 1;">
+            <div class="wps-gauge-fill" style="width: ${percentageText}%;"></div>
           </div>
         </div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.6875rem; font-family: ui-monospace, monospace; letter-spacing: 0.025em; flex-wrap: wrap;">
+        <div class="tabular-nums text-base-content/60" style="display: flex; justify-content: space-between; font-size: 0.6875rem; font-family: ui-monospace, monospace; letter-spacing: 0.025em; flex-wrap: wrap;">
           <span style="margin-right: 0.5rem;">${matched.toLocaleString()}/${total.toLocaleString()}</span>
           ${
             remaining > 0
-              ? `<span style="opacity: 0.8;">${remaining}px(${timeStr})</span>`
+              ? `<span>${remaining}px(${timeStr})</span>`
               : ""
           }
         </div>
