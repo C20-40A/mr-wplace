@@ -106,7 +106,8 @@ export class ImageAdjustToolMode {
   private activeInteraction: ActiveInteraction | null = null;
   private metrics: Metrics | null = null;
   private mapRect: Rect | null = null;
-  private metricsPending = false;
+  // In-flight screen→world metrics update (awaited by confirm).
+  private metricsTask: Promise<Metrics | null> | null = null;
   private mapSyncPending = false;
   private queuedMapSync = false;
   private lastMapViewSyncAt = 0;
@@ -492,7 +493,7 @@ export class ImageAdjustToolMode {
     this.farMode = false;
     this.mapScale = null;
     this.mapSyncPending = false;
-    this.metricsPending = false;
+    this.metricsTask = null;
 
     if (this.mapElement) {
       this.mapElement.style.zIndex = this.previousMapZIndex;
@@ -1015,64 +1016,80 @@ export class ImageAdjustToolMode {
     void this.updateMetrics(snapTopLeftToPixel);
   }
 
-  private async updateMetrics(
-    snapTopLeftToPixel = false,
+  /**
+   * Serialise screen→world updates so a later request (e.g. the snapped
+   * pointer-up one) is never dropped, and each run reads the latest rect.
+   */
+  private updateMetrics(snapTopLeftToPixel = false): Promise<Metrics | null> {
+    const prev = this.metricsTask ?? Promise.resolve(null);
+    const task: Promise<Metrics | null> = prev
+      .catch(() => null)
+      .then(() =>
+        this.rect
+          ? this.computeMetricsFromScreenRect(this.rect, snapTopLeftToPixel)
+          : this.metrics,
+      );
+    this.metricsTask = task;
+    void task
+      .catch(() => null)
+      .finally(() => {
+        if (this.metricsTask === task) this.metricsTask = null;
+      });
+    return task;
+  }
+
+  private async computeMetricsFromScreenRect(
+    rect: Rect,
+    snapTopLeftToPixel: boolean,
   ): Promise<Metrics | null> {
-    if (this.metricsPending || !this.rect) return this.metrics;
-    this.metricsPending = true;
+    const projected = await projectScreenPointsToMapPixels([
+      { x: rect.x, y: rect.y },
+      { x: rect.x + rect.width, y: rect.y },
+      { x: rect.x, y: rect.y + rect.height },
+    ]);
+    if (projected.length < 3) return this.metrics;
 
-    try {
-      const projected = await projectScreenPointsToMapPixels([
-        { x: this.rect.x, y: this.rect.y },
-        { x: this.rect.x + this.rect.width, y: this.rect.y },
-        { x: this.rect.x, y: this.rect.y + this.rect.height },
-      ]);
-      if (projected.length < 3) return this.metrics;
-
-      const rawWidthPx = Math.max(
-        1,
-        Math.round(
-          Math.hypot(
-            projected[1].pixelX - projected[0].pixelX,
-            projected[1].pixelY - projected[0].pixelY,
-          ),
+    const rawWidthPx = Math.max(
+      1,
+      Math.round(
+        Math.hypot(
+          projected[1].pixelX - projected[0].pixelX,
+          projected[1].pixelY - projected[0].pixelY,
         ),
-      );
-      const rawHeightPx = Math.max(
-        1,
-        Math.round(
-          Math.hypot(
-            projected[2].pixelX - projected[0].pixelX,
-            projected[2].pixelY - projected[0].pixelY,
-          ),
+      ),
+    );
+    const rawHeightPx = Math.max(
+      1,
+      Math.round(
+        Math.hypot(
+          projected[2].pixelX - projected[0].pixelX,
+          projected[2].pixelY - projected[0].pixelY,
         ),
-      );
-      const widthPx = Math.min(rawWidthPx, this.options.naturalWidth);
-      const heightPx = Math.min(rawHeightPx, this.options.naturalHeight);
-      const topLeftPixelX = snapTopLeftToPixel
-        ? Math.floor(projected[0].pixelX)
-        : projected[0].pixelX;
-      const topLeftPixelY = snapTopLeftToPixel
-        ? Math.floor(projected[0].pixelY)
-        : projected[0].pixelY;
+      ),
+    );
+    const widthPx = Math.min(rawWidthPx, this.options.naturalWidth);
+    const heightPx = Math.min(rawHeightPx, this.options.naturalHeight);
+    const topLeftPixelX = snapTopLeftToPixel
+      ? Math.floor(projected[0].pixelX)
+      : projected[0].pixelX;
+    const topLeftPixelY = snapTopLeftToPixel
+      ? Math.floor(projected[0].pixelY)
+      : projected[0].pixelY;
 
-      this.metrics = { widthPx, heightPx, topLeftPixelX, topLeftPixelY };
-      this.mapRect = {
-        x: topLeftPixelX,
-        y: topLeftPixelY,
-        width: widthPx,
-        height: heightPx,
-      };
+    this.metrics = { widthPx, heightPx, topLeftPixelX, topLeftPixelY };
+    this.mapRect = {
+      x: topLeftPixelX,
+      y: topLeftPixelY,
+      width: widthPx,
+      height: heightPx,
+    };
 
-      this.updateSizeInfo(widthPx, heightPx);
-      this.updateCoordInputs();
+    this.updateSizeInfo(widthPx, heightPx);
+    this.updateCoordInputs();
 
-      this.requestPreviewUpdate(this.metrics);
-      if (snapTopLeftToPixel) void this.syncScreenRectFromMap(true);
-      return this.metrics;
-    } finally {
-      this.metricsPending = false;
-    }
+    this.requestPreviewUpdate(this.metrics);
+    if (snapTopLeftToPixel) void this.syncScreenRectFromMap(true);
+    return this.metrics;
   }
 
   private async syncScreenRectFromMap(
@@ -1188,7 +1205,13 @@ export class ImageAdjustToolMode {
   }
 
   private async handleConfirm(): Promise<void> {
-    const latestMetrics = await this.updateMetrics(true);
+    // The frame is rendered by projecting `mapRect` (world) to screen, so
+    // confirm from that same world rect. Re-deriving it from the screen rect
+    // drifts (stale map-follow transform, roundtrip float + floor, low-zoom
+    // quantisation). Only wait for an in-flight drag/resize metrics update.
+    if (this.metricsTask) await this.metricsTask.catch(() => null);
+    this.applyMetricsFromMapRect();
+    const latestMetrics = this.metrics;
     if (!latestMetrics) return;
 
     const drawPosition = this.toDrawPosition(
@@ -1221,8 +1244,10 @@ export class ImageAdjustToolMode {
   }
 
   private toDrawPosition(pixelX: number, pixelY: number) {
-    const worldX = Math.floor(pixelX);
-    const worldY = Math.floor(pixelY);
+    // round: mapRect can be fractional (centered init, far drag); snap to the
+    // pixel nearest to where the frame is drawn.
+    const worldX = Math.round(pixelX);
+    const worldY = Math.round(pixelY);
     const localX = ((worldX % TILE_SIZE) + TILE_SIZE) % TILE_SIZE;
     const localY = ((worldY % TILE_SIZE) + TILE_SIZE) % TILE_SIZE;
 
