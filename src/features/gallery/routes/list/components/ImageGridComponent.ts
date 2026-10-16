@@ -132,7 +132,7 @@ export class ImageGridComponent {
     const titleHtml = this.createTitleHtml(item, !!progressHtml);
 
     return `
-      <div class="border rounded-lg overflow-hidden shadow relative gallery-item" role="listitem" style="display: flex; flex-direction: column;" data-item-key="${
+      <div class="group relative flex min-w-0 flex-col rounded-[var(--game-radius,13px)] border border-base-300/70 overflow-hidden shadow transition gallery-item" role="listitem" style="display: flex; flex-direction: column;" data-item-key="${
         item.key
       }">
         <button
