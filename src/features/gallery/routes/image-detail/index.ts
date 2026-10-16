@@ -19,6 +19,7 @@ import { getMapInstanceReady } from "@/states/map-instance-ready";
 import { ImageAdjustToolMode } from "@/features/image-adjust-tool";
 import { createRichGauge } from "@/components/progress-gauge";
 import { getStatsPerImage } from "@/utils/inject-bridge";
+import { setGalleryImageTemporarilyHidden } from "@/core/bridge";
 
 export class GalleryImageDetail {
   private currentItem: GalleryItem | null = null;
@@ -134,6 +135,7 @@ export class GalleryImageDetail {
         this.applyAdjustResult(image, widthPx, heightPx, drawPosition),
       onCancel: () => {
         this.adjustTool = null;
+        void setGalleryImageTemporarilyHidden(item.key, false);
       },
     });
 
@@ -142,6 +144,8 @@ export class GalleryImageDetail {
       this.adjustTool = null;
       return;
     }
+    // 移動中は元位置のタイル描画が枠と重なって紛らわしいので一時的に消す
+    void setGalleryImageTemporarilyHidden(item.key, true);
 
     // マップが画像から離れていると調整しづらいので、画像の位置へ移動しておく
     if (item.drawPosition) {
@@ -196,8 +200,8 @@ export class GalleryImageDetail {
     const storage = new GalleryStorage();
     await storage.save(updated);
 
-    const { sendGalleryImagesToInject } = await import("@/content");
-    await sendGalleryImagesToInject();
+    // 一時非表示を解除し、新しい位置で描画し直す
+    await setGalleryImageTemporarilyHidden(item.key, false);
 
     this.currentItem = updated;
     Toast.success(t`${"coordinates_updated"}`);
@@ -688,6 +692,8 @@ export class GalleryImageDetail {
     if (this.adjustTool) {
       this.adjustTool.destroy();
       this.adjustTool = null;
+      if (this.currentItem)
+        void setGalleryImageTemporarilyHidden(this.currentItem.key, false);
     }
 
     if (this.imageInspector) {

@@ -7,6 +7,7 @@
 // Gallery
 export {
   sendGalleryImagesToInject,
+  setGalleryImageTemporarilyHidden,
   requestTotalStatsComputation,
 } from "./gallery-bridge";
 

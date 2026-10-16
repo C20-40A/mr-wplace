@@ -19,6 +19,18 @@ import {
  * 2. Send metadata to inject side
  * 3. Inject side uses metadata.affectedTiles for efficient tile lookup
  */
+// 調節ツールで移動中など、保存状態は変えずに一時的に描画だけ止める画像
+const temporarilyHiddenIds = new Set<string>();
+
+export const setGalleryImageTemporarilyHidden = async (
+  id: string,
+  hidden: boolean,
+) => {
+  if (hidden) temporarilyHiddenIds.add(id);
+  else temporarilyHiddenIds.delete(id);
+  await sendGalleryImagesToInject();
+};
+
 export const sendGalleryImagesToInject = async () => {
   try {
     const metadata = await getAllGalleryMetadata();
@@ -26,7 +38,10 @@ export const sendGalleryImagesToInject = async () => {
     // Filter to items with coords (drawable items)
     const drawableItems = metadata
       .filter((m) => m.coords)
-      .sort((a, b) => a.zIndex - b.zIndex);
+      .sort((a, b) => a.zIndex - b.zIndex)
+      .map((m) =>
+        temporarilyHiddenIds.has(m.id) ? { ...m, visible: false } : m,
+      );
 
     const messageData = {
       source: "mr-wplace-gallery-images-v2",
