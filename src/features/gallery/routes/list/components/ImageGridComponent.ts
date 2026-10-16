@@ -562,8 +562,8 @@ export class ImageGridComponent {
         "assets/images/gallery/complete-logo.png",
       );
       return `
-        <div class="wps-complete" style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0.5rem 0.625rem;">
-          <div style="display: flex; flex-direction: column; align-items: center; gap: 0.3rem;">
+        <div class="wps-complete" style="flex: 1; display: flex; flex-direction: column; justify-content: center; padding-bottom: 0.2rem;">
+          <div style="display: flex; flex-direction: column; align-items: center;">
             <img src="${completeLogoUrl}" alt="COMPLETE" class="wps-complete-logo" draggable="false">
             <span class="wps-complete-sub">${total.toLocaleString()} pixels</span>
           </div>
