@@ -34,18 +34,49 @@ type ProjectionTrackingMap = {
   off?: (event: string, handler: () => void) => void;
   getCenter?: () => { lng: number; lat: number };
   getZoom?: () => number;
+  project?: (lngLat: { lng: number; lat: number }) => { x: number; y: number };
+  getContainer?: () => HTMLElement;
 };
 
 let projectionTrackingEnabled = false;
 let trackedMap: ProjectionTrackingMap | null = null;
+let trackedMapContainer: HTMLElement | null = null;
 let trackedMapLiveHandler: (() => void) | null = null;
 let trackedMapSettledHandler: (() => void) | null = null;
 let liveMapViewNotifyQueued = false;
 
-const getMapView = (): { center: { lng: number; lat: number }; zoom: number } | undefined => {
+// World pixel (wplace reference zoom) that the consumer wants to keep anchored.
+// The map's own projection of this pixel is streamed on every view change so the
+// consumer never has to re-derive the world -> screen mapping itself.
+let projectionAnchorWorldPixel: { pixelX: number; pixelY: number } | null = null;
+
+const getProjectedAnchorClient = (): { x: number; y: number } | null => {
+  if (!projectionAnchorWorldPixel || !trackedMap?.project) return null;
+  const rect = trackedMapContainer?.getBoundingClientRect();
+  if (!rect) return null;
+  const [metersX, metersY] = pixelsToMeters(
+    projectionAnchorWorldPixel.pixelX,
+    projectionAnchorWorldPixel.pixelY,
+  );
+  const [lat, lng] = metersToLatLon(metersX, metersY);
+  const local = trackedMap.project({ lng, lat });
+  return { x: rect.left + local.x, y: rect.top + local.y };
+};
+
+const getMapView = ():
+  | {
+      center: { lng: number; lat: number };
+      zoom: number;
+      anchor: { x: number; y: number } | null;
+    }
+  | undefined => {
   if (!trackedMap?.getCenter || !trackedMap?.getZoom) return undefined;
   const c = trackedMap.getCenter();
-  return { center: { lng: c.lng, lat: c.lat }, zoom: trackedMap.getZoom() };
+  return {
+    center: { lng: c.lng, lat: c.lat },
+    zoom: trackedMap.getZoom(),
+    anchor: getProjectedAnchorClient(),
+  };
 };
 
 const notifyMapViewChanged = (settled: boolean): void => {
@@ -66,8 +97,10 @@ const notifyMapViewChanged = (settled: boolean): void => {
 const detachMapProjectionTracking = (): void => {
   if (!trackedMap || typeof trackedMap.off !== "function") {
     trackedMap = null;
+    trackedMapContainer = null;
     trackedMapLiveHandler = null;
     trackedMapSettledHandler = null;
+    projectionAnchorWorldPixel = null;
     return;
   }
   if (trackedMapLiveHandler)
@@ -76,8 +109,10 @@ const detachMapProjectionTracking = (): void => {
     for (const event of MAP_VIEW_SETTLED_EVENTS)
       trackedMap.off(event, trackedMapSettledHandler);
   trackedMap = null;
+  trackedMapContainer = null;
   trackedMapLiveHandler = null;
   trackedMapSettledHandler = null;
+  projectionAnchorWorldPixel = null;
 };
 
 const attachMapProjectionTracking = (): void => {
@@ -88,6 +123,10 @@ const attachMapProjectionTracking = (): void => {
 
   detachMapProjectionTracking();
   trackedMap = mapInstance;
+  trackedMapContainer =
+    mapInstance.getContainer?.() ??
+    document.querySelector<HTMLElement>(".maplibregl-map") ??
+    document.querySelector<HTMLElement>(".maplibregl-canvas-container");
   trackedMapLiveHandler = () => notifyMapViewChanged(false);
   trackedMapSettledHandler = () => notifyMapViewChanged(true);
   for (const event of MAP_VIEW_LIVE_EVENTS) mapInstance.on(event, trackedMapLiveHandler);
@@ -649,6 +688,7 @@ export const handleScreenPointsFromMapPixelsRequest = (data: {
   const mapInstance = getMapInstanceFromWplace() as {
     project?: (lngLat: { lng: number; lat: number }) => { x: number; y: number };
     getContainer?: () => HTMLElement;
+    getZoom?: () => number;
   } | null;
 
   const mapContainer =
@@ -663,6 +703,7 @@ export const handleScreenPointsFromMapPixelsRequest = (data: {
         source: "mr-wplace-response-screen-points-from-map-pixels",
         requestId: data.requestId,
         points: [],
+        zoom: null,
       },
       "*",
     );
@@ -679,11 +720,15 @@ export const handleScreenPointsFromMapPixelsRequest = (data: {
     };
   });
 
+  // Report the zoom at projection time so the consumer can pair this projected
+  // rect with the exact scale used to produce it.
+  const zoom = mapInstance.getZoom?.();
   window.postMessage(
     {
       source: "mr-wplace-response-screen-points-from-map-pixels",
       requestId: data.requestId,
       points,
+      zoom: Number.isFinite(zoom) ? zoom : null,
     },
     "*",
   );
@@ -702,6 +747,28 @@ export const handleMapProjectionTrackingUpdate = (data: {
   }
   attachMapProjectionTracking();
   notifyMapViewChanged(true);
+};
+
+/**
+ * Set (or clear) the world pixel whose live screen projection is streamed with
+ * each "mr-wplace-map-view-changed" event. Passing a null anchor clears it.
+ */
+export const handleMapProjectionAnchorUpdate = (data: {
+  anchor?: { pixelX: number; pixelY: number } | null;
+}): void => {
+  const anchor = data?.anchor;
+  if (
+    !anchor ||
+    !Number.isFinite(anchor.pixelX) ||
+    !Number.isFinite(anchor.pixelY)
+  ) {
+    projectionAnchorWorldPixel = null;
+    return;
+  }
+  projectionAnchorWorldPixel = {
+    pixelX: anchor.pixelX,
+    pixelY: anchor.pixelY,
+  };
 };
 
 /**

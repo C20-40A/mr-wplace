@@ -822,8 +822,8 @@ const requestProjectionPoints = <TRequestPoint, TResponsePoint>(params: {
   responseSource: string;
   timeoutMessage: string;
   points: TRequestPoint[];
-}): Promise<TResponsePoint[]> => {
-  if (!params.points.length) return Promise.resolve([]);
+}): Promise<{ points: TResponsePoint[]; zoom: number | null }> => {
+  if (!params.points.length) return Promise.resolve({ points: [], zoom: null });
   const requestId = generateRequestId();
 
   return new Promise((resolve) => {
@@ -836,7 +836,12 @@ const requestProjectionPoints = <TRequestPoint, TResponsePoint>(params: {
       ) {
         clearTimeout(timeoutId);
         window.removeEventListener("message", handler);
-        resolve((event.data.points || []) as TResponsePoint[]);
+        resolve({
+          points: (event.data.points || []) as TResponsePoint[],
+          zoom: Number.isFinite(event.data.zoom)
+            ? (event.data.zoom as number)
+            : null,
+        });
       }
     };
 
@@ -853,7 +858,7 @@ const requestProjectionPoints = <TRequestPoint, TResponsePoint>(params: {
     timeoutId = setTimeout(() => {
       window.removeEventListener("message", handler);
       console.warn(`🧑‍🎨 : ${params.timeoutMessage}`);
-      resolve([]);
+      resolve({ points: [], zoom: null });
     }, 5000);
   });
 };
@@ -864,12 +869,16 @@ const requestProjectionPoints = <TRequestPoint, TResponsePoint>(params: {
 export const projectScreenPointsToMapPixels = async (
   points: ScreenPoint[],
 ): Promise<MapPixelPoint[]> => {
-  return requestProjectionPoints<ScreenPoint, MapPixelPoint>({
+  const { points: result } = await requestProjectionPoints<
+    ScreenPoint,
+    MapPixelPoint
+  >({
     requestSource: "mr-wplace-request-map-pixels-from-screen",
     responseSource: "mr-wplace-response-map-pixels-from-screen",
     timeoutMessage: "Screen point projection request timed out",
     points,
   });
+  return result;
 };
 
 /**
@@ -878,13 +887,30 @@ export const projectScreenPointsToMapPixels = async (
 export const projectMapPixelsToScreenPoints = async (
   points: MapPixelPoint[],
 ): Promise<ScreenPoint[]> => {
+  const { points: result } = await requestMapPixelsToScreenPoints(points);
+  return result;
+};
+
+/**
+ * Same as {@link projectMapPixelsToScreenPoints} but also returns the map zoom
+ * at projection time, so callers can pair the projected points with the exact
+ * scale used to produce them.
+ */
+export const projectMapPixelsToScreenPointsWithView = (
+  points: MapPixelPoint[],
+): Promise<{ points: ScreenPoint[]; zoom: number | null }> =>
+  requestMapPixelsToScreenPoints(points);
+
+function requestMapPixelsToScreenPoints(
+  points: MapPixelPoint[],
+): Promise<{ points: ScreenPoint[]; zoom: number | null }> {
   return requestProjectionPoints<MapPixelPoint, ScreenPoint>({
     requestSource: "mr-wplace-request-screen-points-from-map-pixels",
     responseSource: "mr-wplace-response-screen-points-from-map-pixels",
     timeoutMessage: "Map pixel projection request timed out",
     points,
   });
-};
+}
 
 /**
  * Capture current map view as 256x256 JPEG thumbnail from inject side
@@ -936,6 +962,25 @@ export const setMapProjectionTracking = (enabled: boolean): void => {
     {
       source: "mr-wplace-map-projection-tracking",
       enabled,
+    },
+    "*",
+  );
+};
+
+/**
+ * Set the world pixel (wplace reference zoom) that inject keeps anchored while
+ * map projection tracking is enabled. Inject streams this pixel's exact screen
+ * projection in each "mr-wplace-map-view-changed" event, so overlays can follow
+ * the map using the map's own `project()` instead of re-deriving it (which
+ * drifts at some zoom levels / with bearing or pitch). Pass null to clear.
+ */
+export const setMapProjectionAnchor = (
+  anchor: { pixelX: number; pixelY: number } | null,
+): void => {
+  window.postMessage(
+    {
+      source: "mr-wplace-map-projection-anchor",
+      anchor,
     },
     "*",
   );

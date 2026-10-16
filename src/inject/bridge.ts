@@ -31,6 +31,7 @@ import {
   handleComputeTotalStats,
   handleMapCenterRequest,
   handleMapPixelsFromScreenRequest,
+  handleMapProjectionAnchorUpdate,
   handleMapProjectionTrackingUpdate,
   handleScreenPointsFromMapPixelsRequest,
   handleTransparencyPreviewRequest,
@@ -437,6 +438,7 @@ const messageHandlers: Record<string, MessageHandler> = {
   "mr-wplace-request-create-official-favorite": handleCreateOfficialFavorite,
   "mr-wplace-request-map-pixels-from-screen": handleMapPixelsFromScreenRequest,
   "mr-wplace-map-projection-tracking": handleMapProjectionTrackingUpdate,
+  "mr-wplace-map-projection-anchor": handleMapProjectionAnchorUpdate,
   "mr-wplace-request-screen-points-from-map-pixels":
     handleScreenPointsFromMapPixelsRequest,
   "mr-wplace-request-transparency-preview": handleTransparencyPreviewRequest,

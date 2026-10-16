@@ -2,16 +2,16 @@ import { t } from "@/i18n/manager";
 import {
   TILE_SIZE,
   ZOOM_LEVEL,
-  latLonToPixels,
   metersToLatLon,
   pixelsToMeters,
 } from "@/utils/geo-converter";
 import { gotoPosition } from "@/utils/position";
 import {
-  projectMapPixelsToScreenPoints,
+  projectMapPixelsToScreenPointsWithView,
   projectScreenPointsToMapPixels,
   releaseAdjustPreviewSessionInInject,
   renderAdjustPreviewInInject,
+  setMapProjectionAnchor,
   setMapProjectionTracking,
 } from "@/utils/inject-bridge";
 import { colorpalette, TRANSPARENT_COLOR_ID } from "@/constants/colors";
@@ -109,16 +109,15 @@ export class ImageAdjustToolMode {
   private queuedMapSync = false;
   private lastMapViewSyncAt = 0;
   private lastMetricsRequestedAt = 0;
-  private lastMapCenter: { lng: number; lat: number } | null = null;
   private lastMapZoom: number | null = null;
 
   // CSS transform approximation during map movement
   private frameWrapper: HTMLDivElement | null = null;
   private transformBase: {
-    centerWorldX: number;
-    centerWorldY: number;
     zoom: number;
-    screenPerWorld: number; // screen px per world px at base zoom
+    // Screen (client) position of the anchored world pixel at the base view.
+    anchorScreenX: number;
+    anchorScreenY: number;
   } | null = null;
   private previewPending = false;
   private queuedPreviewMetrics: Metrics | null = null;
@@ -131,26 +130,26 @@ export class ImageAdjustToolMode {
   private readonly onMapViewChanged = (event: MessageEvent): void => {
     if (event.data?.source !== "mr-wplace-map-view-changed") return;
     const settled = event.data?.settled === true;
-    const center = event.data?.center as { lng: number; lat: number } | undefined;
     const zoom = event.data?.zoom as number | undefined;
+    const anchor = event.data?.anchor as
+      | { x: number; y: number }
+      | null
+      | undefined;
 
-    if (center && zoom !== undefined) {
-      this.lastMapCenter = center;
-      this.lastMapZoom = zoom;
-    }
+    if (zoom !== undefined) this.lastMapZoom = zoom;
 
     if (settled) {
-      this.clearFrameTransform();
+      // Keep the last live transform until the exact projection lands, so the
+      // frame does not snap back to its stale rect during the roundtrip.
       this.lastMapViewSyncAt = Date.now();
-      void this.syncScreenRectFromMap().then(() => {
-        if (center && zoom !== undefined) this.saveTransformBase(center, zoom);
-      });
+      void this.syncScreenRectFromMap();
       return;
     }
 
-    // During map movement: approximate with CSS transform, skip inject roundtrip
-    if (center && zoom !== undefined && this.transformBase) {
-      this.applyTransformApproximation(center, zoom);
+    // During map movement: follow the map with a CSS transform anchored to the
+    // map's own projection of the frame's world top-left. Exact and roundtrip-free.
+    if (anchor && zoom !== undefined && this.transformBase) {
+      this.applyTransformApproximation(anchor, zoom);
       return;
     }
 
@@ -160,34 +159,36 @@ export class ImageAdjustToolMode {
     void this.syncScreenRectFromMap();
   };
 
-  private saveTransformBase(center: { lng: number; lat: number }, zoom: number): void {
-    if (!this.rect || !this.mapRect) return;
-    const [cx, cy] = latLonToPixels(center.lat, center.lng);
-    const screenPerWorld = this.mapRect.width > 0 ? this.rect.width / this.mapRect.width : 0;
-    if (screenPerWorld <= 0) return;
-    this.transformBase = { centerWorldX: cx, centerWorldY: cy, zoom, screenPerWorld };
+  /**
+   * Anchor the CSS-transform follow to the frame's world top-left. The base
+   * screen position is exactly the frame's projected rect, and inject streams
+   * the same world pixel projected with the map's own `project()`. Because both
+   * sides use the map projection, the frame cannot drift at any zoom level,
+   * bearing or pitch.
+   */
+  private saveTransformBase(zoom: number): void {
+    if (!this.mounted || !this.rect || !this.mapRect) return;
+    this.transformBase = {
+      zoom,
+      anchorScreenX: this.rect.x,
+      anchorScreenY: this.rect.y,
+    };
+    setMapProjectionAnchor({ pixelX: this.mapRect.x, pixelY: this.mapRect.y });
   }
 
-  private applyTransformApproximation(center: { lng: number; lat: number }, zoom: number): void {
+  private applyTransformApproximation(
+    anchor: { x: number; y: number },
+    zoom: number,
+  ): void {
     const base = this.transformBase;
     const wrapper = this.frameWrapper;
     if (!base || !wrapper) return;
 
-    const [newCx, newCy] = latLonToPixels(center.lat, center.lng);
+    // Keep the anchored world pixel at its exact projected screen position and
+    // scale everything else about it: new = scale * base + translate.
     const scaleRatio = Math.pow(2, zoom - base.zoom);
-    const spwNew = base.screenPerWorld * scaleRatio;
-
-    // Frame position in screen coords:
-    //   base:    screenCenter + (worldX - baseCx) * spwBase
-    //   current: screenCenter + (worldX - newCx)  * spwNew
-    // delta = current - base = (baseCx - newCx)*spwNew + worldX*(spwNew - spwBase) - screenCenter*(scaleRatio-1)
-    // Expressed as transform on the wrapper (origin=0,0):
-    //   translate(tx, ty) scale(scaleRatio)
-    // where tx/ty account for both pan and zoom-anchor shift.
-    const screenCx = window.innerWidth / 2;
-    const screenCy = window.innerHeight / 2;
-    const tx = (base.centerWorldX - newCx) * spwNew + screenCx * (1 - scaleRatio);
-    const ty = (base.centerWorldY - newCy) * spwNew + screenCy * (1 - scaleRatio);
+    const tx = anchor.x - base.anchorScreenX * scaleRatio;
+    const ty = anchor.y - base.anchorScreenY * scaleRatio;
 
     wrapper.style.transformOrigin = "0 0";
     wrapper.style.transform = `translate(${tx}px, ${ty}px) scale(${scaleRatio})`;
@@ -418,6 +419,7 @@ export class ImageAdjustToolMode {
     this.previousMapZIndex = "";
     this.mounted = false;
     setMapProjectionTracking(false);
+    setMapProjectionAnchor(null);
     releaseAdjustPreviewSessionInInject(this.previewSessionId);
 
     if (triggerCancel) this.options.onCancel?.();
@@ -767,14 +769,8 @@ export class ImageAdjustToolMode {
     }
 
     this.mapRect = { x: topLeftWorld.x, y: topLeftWorld.y, width, height };
-    const synced = await this.syncScreenRectFromMap(true);
+    await this.syncScreenRectFromMap(true);
     this.applyMetricsFromMapRect();
-
-    // Seed the CSS-transform approximation so the following map movement
-    // (e.g. the goto triggered on open) does not need projection roundtrips.
-    if (synced && this.lastMapCenter && this.lastMapZoom !== null) {
-      this.saveTransformBase(this.lastMapCenter, this.lastMapZoom);
-    }
 
     if (this.metrics) this.requestPreviewUpdate(this.metrics, true);
   }
@@ -962,16 +958,21 @@ export class ImageAdjustToolMode {
     if (!this.mapRect || (!allowDuringInteraction && this.activeInteraction))
       return false;
     this.mapSyncPending = true;
+    let applied = false;
 
     try {
-      const projected = await projectMapPixelsToScreenPoints([
-        { pixelX: this.mapRect.x, pixelY: this.mapRect.y },
-        { pixelX: this.mapRect.x + this.mapRect.width, pixelY: this.mapRect.y },
-        {
-          pixelX: this.mapRect.x,
-          pixelY: this.mapRect.y + this.mapRect.height,
-        },
-      ]);
+      const { points: projected, zoom } =
+        await projectMapPixelsToScreenPointsWithView([
+          { pixelX: this.mapRect.x, pixelY: this.mapRect.y },
+          {
+            pixelX: this.mapRect.x + this.mapRect.width,
+            pixelY: this.mapRect.y,
+          },
+          {
+            pixelX: this.mapRect.x,
+            pixelY: this.mapRect.y + this.mapRect.height,
+          },
+        ]);
       if (projected.length < 3) return false;
 
       this.applyRect({
@@ -992,9 +993,22 @@ export class ImageAdjustToolMode {
           ),
         ),
       });
+      // Pair the freshly projected rect with the zoom it was projected at, so
+      // the CSS-transform follow uses the exact scale for this rect.
+      if (zoom !== null) this.lastMapZoom = zoom;
+      applied = true;
       return true;
     } finally {
       this.mapSyncPending = false;
+      // Whenever the committed rect is refreshed, re-anchor the CSS-transform
+      // follow so it always matches the projected rect (and stream the new
+      // anchor world pixel to inject for the next movement). Resetting the
+      // transform here keeps `rect` (left/top) and the transform consistent:
+      // the new projected rect is the identity-transform baseline.
+      if (applied && this.lastMapZoom !== null) {
+        this.clearFrameTransform();
+        this.saveTransformBase(this.lastMapZoom);
+      }
       if (this.queuedMapSync) {
         this.queuedMapSync = false;
         void this.syncScreenRectFromMap(allowDuringInteraction);
