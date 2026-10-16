@@ -151,10 +151,20 @@ export class ImageAdjustToolMode {
       this.mapScale = scale;
 
     if (settled) {
-      // Keep the last live transform until the exact projection lands, so the
-      // frame does not snap back to its stale rect during the roundtrip.
+      // While an interaction is active the drag/resize owns the frame's screen
+      // rect, so skip the projection sync (syncScreenRectFromMap also guards on
+      // activeInteraction, but we avoid the roundtrip entirely here).
       this.lastMapViewSyncAt = Date.now();
       void this.syncScreenRectFromMap();
+      return;
+    }
+
+    // While the user is moving/resizing the frame, the interaction owns the
+    // frame's screen rect. Do NOT also apply the map-follow transform: a
+    // wheel-zoom during the drag would otherwise scale/offset the frame, making
+    // it lag the cursor and appear to shrink. Clear any stale transform instead.
+    if (this.activeInteraction) {
+      this.clearFrameTransform();
       return;
     }
 
@@ -261,6 +271,9 @@ export class ImageAdjustToolMode {
     )
       return;
 
+    // The interaction owns the frame transform from here on; drop any map-follow
+    // transform that may still be applied from a previous map movement.
+    this.clearFrameTransform();
     this.activeInteraction = {
       type: "drag",
       startClientX: event.clientX,
@@ -289,6 +302,8 @@ export class ImageAdjustToolMode {
       .resizeCorner as ResizeHandleCorner | undefined;
     if (!resizeCorner) return;
 
+    // The interaction owns the frame transform from here on.
+    this.clearFrameTransform();
     this.activeInteraction = {
       type: "resize",
       startClientX: event.clientX,
