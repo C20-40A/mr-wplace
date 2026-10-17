@@ -97,8 +97,14 @@ const createGallery = () => {
         const { GalleryStorage } = await import("../../states/galleryStorage");
         const saved = await new GalleryStorage().get(key);
         // 選択モード(ピンから描画)で位置未指定なら、ピン位置へ即描画して閉じる
-        if (saved && !saved.drawPosition && state.onSelect)
-          state.onSelect(saved);
+        // (ピン未取得などで失敗しても保存済みなので、モーダルは閉じる)
+        if (saved && !saved.drawPosition && state.onSelect) {
+          try {
+            state.onSelect(saved);
+          } catch (err) {
+            console.error("🧑‍🎨 : Failed to draw added image at pin", err);
+          }
+        }
         if (!saved || saved.drawPosition || state.onSelect) return ui.closeModal();
         state.currentDetailItem = saved;
         router.replace("image-detail");
