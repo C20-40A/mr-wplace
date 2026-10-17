@@ -21,7 +21,7 @@ const LINKS_KEY = "mr-wplace-official-links";
 const DB_NAME = "wplace-templates";
 const IMAGE_STORE = "images";
 
-type OfficialOverlay = { id: string; order?: number } & Record<string, unknown>;
+export type OfficialOverlay = { id: string; order?: number } & Record<string, unknown>;
 
 const pending: OfficialOverlay[] = [];
 let listening = false;
@@ -148,10 +148,8 @@ const registerItem = async (item: GalleryItem): Promise<void> => {
 export type SyncRow = {
   state: "new" | "synced" | "removed" | "officialOnly";
   item?: GalleryItem;
-  /** 紐づく/同一配置の公式 overlay の名前 */
-  officialName?: string;
-  /** officialOnly のとき、取り込み対象の公式 overlay id */
-  officialId?: string;
+  /** 紐づく/同一配置の公式 overlay (officialOnly では取り込み対象) */
+  official?: OfficialOverlay;
 };
 
 export type OfficialSyncPlan = {
@@ -185,7 +183,6 @@ export const planOfficialSync = (items: GalleryItem[]): OfficialSyncPlan => {
   const links = readLinks();
   const plan: OfficialSyncPlan = { rows: [], adopt: {} };
   const matched = new Set<string>();
-  const name = (o?: OfficialOverlay) => (typeof o?.name === "string" ? o.name : undefined);
 
   for (const item of items) {
     if (!item.drawPosition || !item.width || !item.height) continue;
@@ -195,7 +192,7 @@ export const planOfficialSync = (items: GalleryItem[]): OfficialSyncPlan => {
       const o = byId.get(linked);
       if (o) {
         matched.add(linked);
-        plan.rows.push({ state: "synced", item, officialName: name(o) });
+        plan.rows.push({ state: "synced", item, official: o });
       } else {
         plan.rows.push({ state: "removed", item });
       }
@@ -206,7 +203,7 @@ export const planOfficialSync = (items: GalleryItem[]): OfficialSyncPlan => {
     if (same) {
       matched.add(same.id);
       plan.adopt[item.key] = same.id;
-      plan.rows.push({ state: "synced", item, officialName: name(same) });
+      plan.rows.push({ state: "synced", item, official: same });
       continue;
     }
     plan.rows.push({ state: "new", item });
@@ -214,7 +211,7 @@ export const planOfficialSync = (items: GalleryItem[]): OfficialSyncPlan => {
 
   for (const o of official)
     if (o?.id && !matched.has(o.id))
-      plan.rows.push({ state: "officialOnly", officialName: name(o), officialId: o.id });
+      plan.rows.push({ state: "officialOnly", official: o });
 
   const order = { removed: 0, new: 1, synced: 2, officialOnly: 3 };
   plan.rows.sort((a, b) => order[a.state] - order[b.state]);
@@ -225,6 +222,12 @@ export const planOfficialSync = (items: GalleryItem[]): OfficialSyncPlan => {
 export const isInOfficialOverlay = (key: string): boolean => {
   const id = readLinks()[key];
   return !!id && [...(readOverlays() ?? []), ...pending].some((o) => o?.id === id);
+};
+
+/** 公式 overlay の画像を表示用 object URL にする (呼び出し側で revoke する) */
+export const getOfficialImageUrl = async (id: string): Promise<string | null> => {
+  const file = await withImageStore<File | undefined>("readonly", (store) => store.get(id));
+  return file ? URL.createObjectURL(file) : null;
 };
 
 /**
@@ -286,15 +289,13 @@ export const executeOfficialSync = async (
       if (row.state === "new" && row.item) {
         await registerItem(row.item);
         registered++;
-      } else if (row.state === "officialOnly" && row.officialId && importIds.has(row.officialId)) {
-        const o = [...(readOverlays() ?? []), ...pending].find((x) => x?.id === row.officialId);
-        if (!o) throw new Error("Official overlay not found");
-        await importOfficialOverlay(o);
+      } else if (row.state === "officialOnly" && row.official && importIds.has(row.official.id)) {
+        await importOfficialOverlay(row.official);
         imported++;
       }
     } catch (err) {
       failed++;
-      console.error("🧑‍🎨 : Official sync item failed", row.item?.key ?? row.officialId, err);
+      console.error("🧑‍🎨 : Official sync item failed", row.item?.key ?? row.official?.id, err);
     }
   }
   return { registered, imported, failed };

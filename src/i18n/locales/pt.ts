@@ -643,5 +643,5 @@ export const ptTranslations = {
   official_sync_removed: "Removido no oficial (não será registrado novamente)",
   official_overlay_remains: "Também permanece nos seus overlays oficiais. Exclua-o lá separadamente, se necessário.",
   official_sync_official: "Oficial",
-  official_sync_official_only: "Somente oficial",
+  official_sync_official_only: "Somente no oficial (não importado)",
 };

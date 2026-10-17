@@ -3,6 +3,7 @@ import { GalleryStorage } from "@/states/galleryStorage";
 import { Toast } from "@/components/toast";
 import {
   executeOfficialSync,
+  getOfficialImageUrl,
   planOfficialSync,
   type SyncRow,
 } from "./official-overlay";
@@ -23,7 +24,11 @@ const text = (value: string, className = ""): HTMLElement => {
   return el;
 };
 
-const thumbnails = new WeakMap<HTMLElement, string>();
+// 行ごとのプレビュー画像の取得関数 (公式側は IndexedDB から遅延読み込み)
+const previewLoaders = new WeakMap<HTMLElement, () => Promise<string | null>>();
+
+const officialName = (row: SyncRow): string =>
+  typeof row.official?.name === "string" ? row.official.name : "";
 
 const buildRow = (row: SyncRow, selected: Set<string>, onToggle: () => void): HTMLElement => {
   const el = document.createElement("div");
@@ -39,10 +44,13 @@ const buildRow = (row: SyncRow, selected: Set<string>, onToggle: () => void): HT
       img.src = row.item.thumbnail;
       img.style.cssText = "width: 1.5rem; height: 1.5rem; object-fit: contain; image-rendering: pixelated; flex-shrink: 0;";
       left.append(img);
-      thumbnails.set(el, row.item.thumbnail);
+      const { thumbnail } = row.item;
+      previewLoaders.set(el, async () => thumbnail);
     }
     left.append(text(row.item.title || "image"));
-  } else if (row.officialId) {
+  } else if (row.official) {
+    const { id } = row.official;
+    previewLoaders.set(el, () => getOfficialImageUrl(id));
     // 公式のみ: チェックでギャラリーへ取り込む
     const label = document.createElement("label");
     label.className = "flex items-center gap-2 cursor-pointer min-w-0";
@@ -50,8 +58,8 @@ const buildRow = (row: SyncRow, selected: Set<string>, onToggle: () => void): HT
     box.type = "checkbox";
     box.className = "checkbox checkbox-xs";
     box.addEventListener("change", () => {
-      if (box.checked) selected.add(row.officialId!);
-      else selected.delete(row.officialId!);
+      if (box.checked) selected.add(id);
+      else selected.delete(id);
       onToggle();
     });
     label.append(box, text(t("import"), "opacity-80"));
@@ -63,7 +71,7 @@ const buildRow = (row: SyncRow, selected: Set<string>, onToggle: () => void): HT
       ? text(t("official_sync_new"), "badge badge-primary badge-sm")
       : row.state === "removed"
         ? text(t("official_sync_removed"), "text-warning text-xs")
-        : text(row.officialName ?? "", "opacity-80");
+        : text(officialName(row), "opacity-80");
 
   el.append(left, text(ARROW[row.state], `text-center ${row.state === "removed" ? "text-warning" : "opacity-60"}`), right);
   return el;
@@ -97,28 +105,46 @@ const buildSection = (
 };
 
 // 行ホバーで該当画像をマウス位置に表示する (dialog 内に置き top-layer の下に隠れないようにする)
-const attachPreview = (modal: HTMLElement, rows: HTMLElement) => {
+// 戻り値: 作成した object URL を解放する関数
+const attachPreview = (modal: HTMLElement, rows: HTMLElement): (() => void) => {
   const preview = document.createElement("img");
   preview.style.cssText =
     "position: fixed; display: none; width: 160px; height: 160px; object-fit: contain; image-rendering: pixelated; pointer-events: none; z-index: 100; background: var(--color-base-100, #fff); border: 1px solid currentColor; border-radius: 0.5rem; padding: 4px;";
   modal.append(preview);
 
-  rows.addEventListener("mousemove", (e) => {
+  const cache = new Map<HTMLElement, Promise<string | null>>();
+  let hovered: HTMLElement | null = null;
+
+  const hide = () => {
+    hovered = null;
+    preview.style.display = "none";
+  };
+
+  rows.addEventListener("mousemove", async (e) => {
     const row = (e.target as HTMLElement).closest<HTMLElement>("[data-row]");
-    const src = row && thumbnails.get(row);
-    if (!src) {
-      preview.style.display = "none";
-      return;
-    }
-    if (preview.src !== src) preview.src = src;
+    const load = row && previewLoaders.get(row);
+    if (!row || !load) return hide();
+
     const size = 176;
-    const x = e.clientX + 16 + size > window.innerWidth ? e.clientX - 16 - size : e.clientX + 16;
-    const y = Math.min(e.clientY + 16, window.innerHeight - size);
+    preview.style.left = `${Math.max(0, e.clientX + 16 + size > window.innerWidth ? e.clientX - 16 - size : e.clientX + 16)}px`;
+    preview.style.top = `${Math.max(0, Math.min(e.clientY + 16, window.innerHeight - size))}px`;
+    if (hovered === row) return;
+
+    hovered = row;
+    if (!cache.has(row)) cache.set(row, load());
+    const src = await cache.get(row);
+    if (hovered !== row || !src) return; // 読み込み中に別の行へ移った
+    preview.src = src;
     preview.style.display = "block";
-    preview.style.left = `${Math.max(0, x)}px`;
-    preview.style.top = `${Math.max(0, y)}px`;
   });
-  rows.addEventListener("mouseleave", () => (preview.style.display = "none"));
+  rows.addEventListener("mouseleave", hide);
+
+  return () => {
+    cache.forEach(async (p) => {
+      const src = await p;
+      if (src?.startsWith("blob:")) URL.revokeObjectURL(src);
+    });
+  };
 };
 
 /**
@@ -163,11 +189,14 @@ export const showOfficialSyncDialog = async (): Promise<void> => {
     ].filter((el): el is HTMLElement => !!el),
   );
   document.body.appendChild(modal);
-  attachPreview(modal, rows);
+  const releasePreview = attachPreview(modal, rows);
 
   onToggle();
   modal.querySelector("#official-sync-cancel")?.addEventListener("click", () => modal.close());
-  modal.addEventListener("close", () => modal.remove());
+  modal.addEventListener("close", () => {
+    releasePreview();
+    modal.remove();
+  });
 
   runBtn.addEventListener("click", async () => {
     runBtn.disabled = true;

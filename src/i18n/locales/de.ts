@@ -643,6 +643,6 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   official_sync_done: "Bereits synchronisiert",
   official_sync_removed: "Offiziell gelöscht (wird nicht erneut registriert)",
   official_sync_official: "Offiziell",
-  official_sync_official_only: "Nur offiziell",
+  official_sync_official_only: "Nur in Offiziell (nicht importiert)",
   official_overlay_remains: "Es bleibt auch in deinen offiziellen Overlays erhalten. Lösche es dort bei Bedarf separat.",
 };
