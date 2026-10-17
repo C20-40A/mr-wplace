@@ -672,4 +672,6 @@ Do not use this feature to paint actual pixels.`,
   official_sync_changed: "To update",
   select_all: "Select all",
   official_auto_sync: "Auto-sync (register & update)",
+  save_destination: "Save to",
+  favorite_save_failed: "Couldn't save. Please add it with the official Favorite places feature instead.",
 };

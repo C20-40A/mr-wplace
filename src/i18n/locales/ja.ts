@@ -675,4 +675,6 @@ export const jaTranslations = {
   official_sync_changed: "更新予定",
   select_all: "すべて選択",
   official_auto_sync: "自動で同期（登録・更新）",
+  save_destination: "保存先",
+  favorite_save_failed: "保存に失敗しました。公式のお気に入り機能から追加してください。",
 };

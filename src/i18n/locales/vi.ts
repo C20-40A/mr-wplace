@@ -641,4 +641,6 @@ export const viTranslations = {
   official_sync_changed: "Sẽ cập nhật",
   select_all: "Chọn tất cả",
   official_auto_sync: "Tự động đồng bộ (đăng ký & cập nhật)",
+  save_destination: "Lưu vào",
+  favorite_save_failed: "Lưu thất bại. Hãy thêm bằng tính năng Địa điểm yêu thích chính thức.",
 };

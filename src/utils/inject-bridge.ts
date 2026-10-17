@@ -1102,7 +1102,7 @@ export const createOfficialFavorite = (params: {
   lng: number;
   zoom: number;
   name?: string;
-}): Promise<{ ok: boolean; error?: string }> => {
+}): Promise<{ ok: boolean; id?: number; error?: string }> => {
   const requestId = generateRequestId();
   return new Promise((resolve) => {
     const timeoutId = setTimeout(() => {
@@ -1116,7 +1116,7 @@ export const createOfficialFavorite = (params: {
       ) return;
       clearTimeout(timeoutId);
       window.removeEventListener("message", handler);
-      resolve({ ok: event.data.ok, error: event.data.error });
+      resolve({ ok: event.data.ok, id: event.data.location?.id, error: event.data.error });
     };
     window.addEventListener("message", handler);
     window.postMessage(

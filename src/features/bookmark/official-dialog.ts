@@ -6,7 +6,7 @@ import { gotoPosition } from "@/utils/position";
 import { createOfficialFavorite, getMapThumbnail } from "@/utils/inject-bridge";
 import { renderCoordinateJumper } from "./routes/coordinate-jumper";
 import { BookmarkStorage } from "./storage";
-import { getAllFavThumbnails, saveFavThumbnail } from "./fav-metadata-db";
+import { deleteFavThumbnail, getAllFavThumbnails, saveFavThumbnail } from "./fav-metadata-db";
 import type { Bookmark, FavoriteLocation } from "./types";
 import { ensureStyle } from "@/utils/style";
 
@@ -85,7 +85,7 @@ const ensureStyles = (): void => {
     `color-mix(in oklab, var(--color-base-100) ${pct}%, transparent)`;
   ensureStyle(STYLE_ID, `
     /* 公式 icon はユーザー変更可能なので残し、サムネは行の背景に敷く (mobile/desktop 共通) */
-    .favorite-row[data-mrw-thumb] {
+    .favorite-row[data-mrw-thumb], #${PANEL_ID} li[data-mrw-thumb] {
       background-image: linear-gradient(90deg, ${fade(92)}, ${fade(78)} 60%, ${fade(66)}), var(${THUMB_VAR});
       background-size: cover;
       background-position: center;
@@ -238,8 +238,10 @@ const ensureTabBar = (box: HTMLElement): void => {
 const getFilterInput = (dialog: HTMLDialogElement) =>
   dialog.querySelector<HTMLInputElement>('input[type="search"]');
 
-const renderLegacyRow = (b: Bookmark, actionClass: string): string => `
-  <li class="flex min-w-0 items-center gap-2 px-4 sm:px-6" style="padding-block:4px" data-id="${b.id}" data-search="${escapeHtml(b.name.toLowerCase())}">
+const renderLegacyRow = (b: Bookmark, actionClass: string): string => {
+  const thumb = thumbnails.get(b.id);
+  return `
+  <li class="flex min-w-0 items-center gap-2 px-4 sm:px-6" style="padding-block:4px${thumb ? `;${THUMB_VAR}:url(&quot;${thumb}&quot;)` : ""}"${thumb ? " data-mrw-thumb" : ""} data-id="${b.id}" data-search="${escapeHtml(b.name.toLowerCase())}">
     <button type="button" class="mrw-legacy-go hover:bg-base-200 flex min-w-0 flex-1 items-center gap-3 rounded-xl text-left" style="padding:6px 8px">
       <span class="shrink-0" style="width:10px;height:10px;border-radius:9999px;background:${b.tag ? escapeHtml(b.tag.color) : "transparent"};"></span>
       <span class="min-w-0 flex-1">
@@ -250,6 +252,7 @@ const renderLegacyRow = (b: Bookmark, actionClass: string): string => `
     <button type="button" class="${actionClass} mrw-legacy-migrate" aria-label="${t`${"bookmark_migrate_official"}`}" title="${t`${"bookmark_migrate_official"}`}">${MIGRATE_ICON}</button>
     <button type="button" class="${actionClass} mrw-legacy-delete" aria-label="${t`${"delete"}`}" title="${t`${"delete"}`}">${TRASH_ICON}</button>
   </li>`;
+};
 
 const sortLegacy = (list: Bookmark[]): Bookmark[] =>
   [...list].sort(
@@ -335,6 +338,13 @@ const handleLegacyClick = async (
     }
     // 公式一覧/拡張側 favorites は inject 側の /me 再取得で同期済み
     await BookmarkStorage.removeBookmark(id);
+    const thumb = thumbnails.get(id);
+    if (thumb && result.id) {
+      await saveFavThumbnail(result.id, thumb).catch(() => {});
+      thumbnails.set(result.id, thumb);
+    }
+    deleteFavThumbnail(id).catch(() => {});
+    thumbnails.delete(id);
     await reloadLegacy();
     return;
   }
@@ -342,6 +352,8 @@ const handleLegacyClick = async (
   if (target.closest(".mrw-legacy-delete")) {
     if (!confirm(t`${"delete_confirm"}`)) return;
     await BookmarkStorage.removeBookmark(id);
+    deleteFavThumbnail(id).catch(() => {});
+    thumbnails.delete(id);
     legacyBookmarks = legacyBookmarks.filter((b) => b.id !== id);
     document.getElementById(PANEL_ID)?.remove();
     scheduleCheck();

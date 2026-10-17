@@ -91,7 +91,7 @@ const animateModalOpen = (
   });
 };
 
-const createDialogLikeModal = (): HTMLDialogElement => {
+export const createDialogLikeModal = (): HTMLDialogElement => {
   const modal = document.createElement("div") as unknown as DialogLikeElement;
   modal.className = "modal";
   modal.__dialogLike = { isOpen: false, returnValue: "" };

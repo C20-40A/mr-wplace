@@ -1,9 +1,9 @@
 # Utils / Components API Context
 
-- generated_at: 2026-10-08T22:24:58.896Z
+- generated_at: 2026-10-17T04:57:46.688Z
 - project: tsconfig.json
 - targets: src/utils, src/components
-- files: 35
+- files: 37
 
 ## src/components/card.ts
 
@@ -12,7 +12,7 @@
 - declarations:
 - export interface `CardConfig` (L7)
   - signature: `CardConfig`
-- export variable `createCard` (L25)
+- export variable `createCard` (L30)
   - signature: `(config: CardConfig) => string`
   - summary: 共通カードUIを生成
 
@@ -238,7 +238,7 @@
 
 ## src/components/modal.ts
 
-- exports: 5
+- exports: 6
 - top_level_declarations: 12
 - declarations:
 - export interface `ModalOptions` (L5)
@@ -264,7 +264,7 @@
   - signature: `() => string`
 - variable `animateModalOpen` (L50)
   - signature: `(modalBox: HTMLElement | null, backdrop: HTMLElement | null) => void`
-- variable `createDialogLikeModal` (L94)
+- export variable `createDialogLikeModal` (L94)
   - signature: `() => HTMLDialogElement`
 - export variable `showNameInputModal` (L225)
   - signature: `(title: string, placeholder: string, defaultValue?: string) => Promise<string | null>`
@@ -300,6 +300,42 @@
 - export variable `showPaintNotice` (L38)
   - signature: `(message: string) => void`
   - summary: 2秒だけ表示される通知。連続呼び出しは最新のメッセージで上書きする
+
+## src/components/progress-gauge.ts
+
+- exports: 9
+- top_level_declarations: 12
+- declarations:
+- variable `GAUGE_STYLE_ID` (L3)
+  - signature: `"wps-gauge-style"`
+- variable `FILL_DURATION_MS` (L6)
+  - signature: `900`
+  - summary: フィルの伸び切りアニメーション時間(ms)。ポン演出のタイミング合わせに使う
+- export variable `prefersReducedMotion` (L9)
+  - signature: `() => boolean`
+  - summary: OSの「視差効果を減らす」設定が有効か
+- export variable `ensureGaugeStyles` (L29)
+  - signature: `() => void`
+  - summary: 進捗ゲージ共通スタイル。 テーマ対応: 色を直接指定せず daisyUI のテーマ変数から組み立てるので、 light / dark / legacy どのテーマでも破綻しない。 - トラック: --color-base-300（テーマの薄いベース色） - フィル:   --color-primary（wplace はどのテーマでも青系） 演出: - ポン: 100% 到達時に弾ける達成演出（.is-popping を付ける）。 ゲージ自体は横方向のフラッシュのみで、縦には広がらない。 {@link createRichGauge} では加えて小さな金のパーティクルが飛ぶ。 COMPLETE だけは例外で、テーマに追従させず金色の固定スタイルにしている （達成感を出す「ご褒美」表示のため）。
+- variable `clampPercent` (L216)
+  - signature: `(value: number) => number`
+- export interface `GaugeOptions` (L219)
+  - signature: `GaugeOptions`
+- export interface `ProgressGauge` (L232)
+  - signature: `ProgressGauge`
+- export variable `createGauge` (L245)
+  - signature: `(options: GaugeOptions) => ProgressGauge`
+  - summary: ゲージ要素を生成する。テンプレート文字列で組み立てたい場合は {@link gaugeHtml} を使う（同じクラス構成を返す）。
+- export variable `gaugeHtml` (L316)
+  - signature: `(options: { percentage: number; className?: string; style?: string; }) => string`
+  - summary: ゲージの HTML 文字列（テンプレート埋め込み用）。 {@link createGauge} と同じクラス構成で、幅だけ確定した状態を返す。
+- export interface `RichGaugeOptions` (L327)
+  - signature: `RichGaugeOptions`
+- export interface `RichGauge` (L336)
+  - signature: `RichGauge`
+- export variable `createRichGauge` (L349)
+  - signature: `(options: RichGaugeOptions) => RichGauge`
+  - summary: 薄い目盛り + グラデーション + フィル内数値の「リッチ」ゲージ。 背景全体をゆっくり流れる光で動かす。全体進捗のようなワイド表示向け。
 
 ## src/components/responsive-button.ts
 
@@ -634,8 +670,8 @@
 
 ## src/utils/inject-bridge.ts
 
-- exports: 35
-- top_level_declarations: 41
+- exports: 38
+- top_level_declarations: 45
 - declarations:
 - variable `requestIdCounter` (L15)
   - signature: `number`
@@ -740,62 +776,73 @@
 - export variable `getSnapshotDataUrl` (L571)
   - signature: `(id: string) => Promise<string | null>`
   - summary: Get snapshot blob as dataUrl
-- export variable `saveSnapshotToInject` (L602)
+- export variable `getThumbnailDataUrl` (L603)
+  - signature: `(id: string) => Promise<string | null>`
+  - summary: Get snapshot thumbnail as a small dataUrl (best-effort). Resolves null when the snapshot has no thumbnail or the request fails.
+- export variable `saveSnapshotToInject` (L637)
   - signature: `(id: string, dataUrl: string, metadata: SnapshotMetadata) => Promise<boolean>`
   - summary: Save snapshot with metadata to inject side IndexedDB
-- export variable `updateSnapshotMetadataInInject` (L637)
+- export variable `updateSnapshotMetadataInInject` (L672)
   - signature: `(id: string, updates: Partial<Omit<SnapshotMetadata, "id">>) => Promise<boolean>`
-- export variable `deleteSnapshotFromInject` (L674)
+- export variable `deleteSnapshotFromInject` (L709)
   - signature: `(id: string) => Promise<boolean>`
   - summary: Delete snapshot with metadata from inject side IndexedDB
-- export variable `getOriginalTileDataUrl` (L711)
+- export variable `getOriginalTileDataUrl` (L746)
   - signature: `(tileX: number, tileY: number) => Promise<string | null>`
   - summary: Get original tile image as dataUrl from inject side Uses in-memory cache first and backend fetch as fallback
-- export variable `getMapCenter` (L754)
+- export variable `getMapCenter` (L789)
   - signature: `() => Promise<{ lat: number; lng: number; } | null>`
   - summary: Get map center coordinates from inject side Returns null if map instance is not available
-- type `ScreenPoint` (L782)
+- type `ScreenPoint` (L817)
   - signature: `{ x: number; y: number }`
-- type `MapPixelPoint` (L783)
+- type `MapPixelPoint` (L818)
   - signature: `{ pixelX: number; pixelY: number }`
-- variable `requestProjectionPoints` (L785)
-  - signature: `<TRequestPoint, TResponsePoint>(params: { requestSource: string; responseSource: string; timeoutMessage: string; points: TRequestPoint[]; }) => Promise<TResponsePoint[]>`
-- export variable `projectScreenPointsToMapPixels` (L829)
+- variable `requestProjectionPoints` (L820)
+  - signature: `<TRequestPoint, TResponsePoint>(params: { requestSource: string; responseSource: string; timeoutMessage: string; points: TRequestPoint[]; }) => Promise<{ points: TResponsePoint[]; zoom: number | null; }>`
+- export variable `projectScreenPointsToMapPixels` (L869)
   - signature: `(points: ScreenPoint[]) => Promise<MapPixelPoint[]>`
   - summary: Project viewport client points to wplace pixel coordinates via inject map instance
-- export variable `projectMapPixelsToScreenPoints` (L843)
+- export variable `projectMapPixelsToScreenPoints` (L887)
   - signature: `(points: MapPixelPoint[]) => Promise<ScreenPoint[]>`
   - summary: Project wplace pixel coordinates to viewport client points via inject map instance
-- export variable `getMapThumbnail` (L859)
+- export variable `projectMapPixelsToScreenPointsWithView` (L899)
+  - signature: `(points: MapPixelPoint[]) => Promise<{ points: ScreenPoint[]; zoom: number | null; }>`
+  - summary: Same as {@link projectMapPixelsToScreenPoints} but also returns the map zoom at projection time, so callers can pair the projected points with the exact scale used to produce them.
+- function `requestMapPixelsToScreenPoints` (L904)
+  - signature: `requestMapPixelsToScreenPoints(points: MapPixelPoint[]) => Promise<{ points: ScreenPoint[]; zoom: number | null }>`
+- export variable `getMapThumbnail` (L920)
   - signature: `(target?: { lat: number; lng: number; zoom: number; }) => Promise<string | null>`
   - summary: Capture current map view as 256x256 JPEG thumbnail from inject side target を渡すと、現在の表示から離れている場合 jump → idle 待ちしてから撮影する Returns dataUrl or null if map canvas is unavailable
-- export variable `setMapProjectionTracking` (L899)
+- export variable `setMapProjectionTracking` (L960)
   - signature: `(enabled: boolean) => void`
   - summary: Enable/disable inject-side map projection tracking events. When enabled, inject posts "mr-wplace-map-view-changed" during map movement and a final settled event after movement ends.
-- export type `SnapshotExportScope` (L913)
+- export variable `setMapProjectionAnchor` (L977)
+  - signature: `(anchor: { pixelX: number; pixelY: number; } | null) => void`
+  - summary: Set the world pixel (wplace reference zoom) that inject keeps anchored while map projection tracking is enabled. Inject streams this pixel's exact screen projection in each "mr-wplace-map-view-changed" event, so overlays can follow the map using the map's own `project()` instead of re-deriving it (which drifts at some zoom levels / with bearing or pitch). Pass null to clear.
+- export type `SnapshotExportScope` (L993)
   - signature: `| { scope: "all" }
   | { scope: "tile"; tileX: number; tileY: number }`
-- export type `ZipExportProgress` (L917)
+- export type `ZipExportProgress` (L997)
   - signature: `| { phase: "read"; current: number; total: number }
   | { phase: "pack"; percent: number }`
-- export type `ZipExportResult` (L921)
+- export type `ZipExportResult` (L1001)
   - signature: `{
   status: "done" | "empty";
   count: number;
 }`
-- variable `requestZipExport` (L932)
+- variable `requestZipExport` (L1012)
   - signature: `(requestSource: string, responseSource: string, payload: Record<string, unknown>, onProgress?: (progress: ZipExportProgress) => void) => Promise<ZipExportResult>`
   - summary: Generic Worker-based ZIP export request to inject. Inject spawns a Worker (workerUrl) that reads IndexedDB + packs ZIP, then triggers the download itself. Progress is streamed via onProgress. The idle timeout resets on every progress message so long exports don't abort.
-- export variable `exportSnapshots` (L987)
+- export variable `exportSnapshots` (L1067)
   - signature: `(workerUrl: string, scope: SnapshotExportScope, onProgress?: (progress: ZipExportProgress) => void) => Promise<ZipExportResult>`
   - summary: Request inject side to export snapshots to a ZIP off the main thread.
   - tags: @param - runtime.getURL(...) for the snapshot export worker | @param - all snapshots or a single tile
-- export variable `exportGallery` (L1004)
+- export variable `exportGallery` (L1084)
   - signature: `(workerUrl: string, format?: "png" | "wplace", onProgress?: (progress: ZipExportProgress) => void) => Promise<ZipExportResult>`
   - summary: Request inject side to export the gallery to a ZIP off the main thread.
   - tags: @param - runtime.getURL(...) for the gallery export worker | @param - "png" (raw images) or "wplace" (.wplace JSON per image)
-- export variable `createOfficialFavorite` (L1020)
-  - signature: `(params: { lat: number; lng: number; zoom: number; name?: string; }) => Promise<{ ok: boolean; error?: string; }>`
+- export variable `createOfficialFavorite` (L1100)
+  - signature: `(params: { lat: number; lng: number; zoom: number; name?: string; }) => Promise<{ ok: boolean; id?: number; error?: string; }>`
   - summary: 公式お気に入り (Favorite places) を作成する。name 指定時は作成後に名前を更新 Used by: bookmark (旧ブックマーク → 公式 移行)
 
 ## src/utils/map-pin-helper.ts
@@ -896,6 +943,28 @@
   - signature: `HeaderElements`
 - export class `Router` (L8)
   - signature: `Router`
+
+## src/utils/scroll.ts
+
+- exports: 1
+- top_level_declarations: 6
+- declarations:
+- variable `MIN_GESTURE_PX` (L15)
+  - signature: `16`
+  - summary: ネイティブのスクロールが効かない環境(一部の Android Firefox 等)向けの保険。 設計方針: 正常な環境の挙動を一切変えない。 - ジェスチャー中は常にネイティブに任せ、こちらからは動かさない。 - 「スクロールの余地があるのに、1 回のジェスチャーで scrollTop が動かなかった」 ときだけ「壊れている」と判定して latch する。 - latch 後だけ手動で scrollTop を動かす。 - ネイティブが動く環境では scrollTop が変わるので latch しない (= 二重スクロールは起きない)。
+- variable `WHEEL_IDLE_MS` (L16)
+  - signature: `160`
+- variable `nativeScrollBroken` (L19)
+  - signature: `boolean`
+  - summary: このセッションで「ネイティブスクロールが壊れている」と判定したか
+- variable `findScrollableAncestor` (L21)
+  - signature: `(el: HTMLElement) => HTMLElement | null`
+- variable `canScrollFurther` (L30)
+  - signature: `(el: HTMLElement, delta: number) => boolean`
+- export variable `attachScrollFallback` (L43)
+  - signature: `(root: HTMLElement, itemSelector: string) => void`
+  - summary: グリッド等の item 上でネイティブスクロールが効かない環境向けのフォールバックを仕込む。 正常環境では何も起きない。
+  - tags: @param アイテムを含む要素 (スクロールコンテナの子孫であること) | @param ジェスチャー対象となるアイテムのセレクタ
 
 ## src/utils/style.ts
 

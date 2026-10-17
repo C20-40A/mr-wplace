@@ -3,7 +3,7 @@ import { Toast } from "@/components/toast";
 import { BookmarkStorage } from "./storage";
 import { ImportExportService } from "./import-export";
 import { getCurrentPosition, gotoPosition } from "@/utils/position";
-import { showNameInputModal } from "@/components/modal";
+import { showSaveLocationDialog } from "./save-dialog";
 import { setupElementObserver } from "@/components/element-observer";
 import { createMapPinButtonObserverConfig } from "@/utils/map-pin-helper";
 import { t, formatDateShort } from "@/i18n/manager";
@@ -17,6 +17,8 @@ import { renderCoordinateJumper } from "./routes/coordinate-jumper";
 import type { BookmarkAPI } from "@/core/di";
 import { Tutorial } from "@/features/tutorial";
 import { initOfficialFavoriteDialog } from "./official-dialog";
+import { createOfficialFavorite, getMapThumbnail } from "@/utils/inject-bridge";
+import { deleteFavThumbnail, getAllFavThumbnails, saveFavThumbnail } from "./fav-metadata-db";
 
 const SORT_KEY = "wplace-studio-bookmark-sort";
 
@@ -48,6 +50,20 @@ class TagSelectionState {
 
 let tagState: TagSelectionState;
 
+/** 旧modal のカード背景にサムネを敷く */
+const applyCardThumbnails = async (): Promise<void> => {
+  const thumbs = await getAllFavThumbnails().catch(() => null);
+  if (!thumbs?.size) return;
+  document.querySelectorAll<HTMLElement>("#wps-favorites-grid .wps-card").forEach((card) => {
+    const url = thumbs.get(Number(card.dataset.id));
+    if (!url) return;
+    const fade = (pct: number) => `color-mix(in oklab, var(--color-base-200, #eee) ${pct}%, transparent)`;
+    card.style.backgroundImage = `linear-gradient(90deg, ${fade(90)}, ${fade(70)}), url("${url}")`;
+    card.style.backgroundSize = "cover";
+    card.style.backgroundPosition = "center";
+  });
+};
+
 const render = async (): Promise<void> => {
   const result = await storage.get([SORT_KEY]);
   const sortType = result[SORT_KEY] || "created";
@@ -71,6 +87,7 @@ const render = async (): Promise<void> => {
   );
 
   renderBookmarks(favorites, sortType, selectedTagFilters);
+  applyCardThumbnails();
   const sortSelect = document.getElementById(
     "wps-bookmark-sort",
   ) as HTMLSelectElement;
@@ -97,32 +114,63 @@ const openImportExport = async (onImported: () => void): Promise<void> => {
   );
 };
 
-/** 現在地を旧ブックマークへ保存 (マップピン popup のボタン) */
+/** 保存先: 公式 Favorite places (既定) / 旧ブックマーク */
+const DEST_KEY = "wplace-studio-bookmark-dest";
+
+/** 現在地を公式お気に入り or 旧ブックマークへ保存 (マップピン popup のボタン)。サムネも同時保存 */
 const addBookmark = async (): Promise<void> => {
   const position = getCurrentPosition();
   if (!position) {
     alert(t`${"location_unavailable_instruction"}`);
     return;
   }
-  const fallbackName = `(${position.lat.toFixed(3)}, ${position.lng.toFixed(3)})`;
-  const name = await showNameInputModal(
-    t`${"enter_bookmark_name"}`,
-    `${t`${"location_point"}`} ${fallbackName}`,
-  );
-  if (name === null) return;
-  await BookmarkStorage.addBookmark({
-    id: Date.now(),
-    name: name || fallbackName,
-    lat: position.lat,
-    lng: position.lng,
-    zoom: position.zoom || 14,
-    date: formatDateShort(new Date()),
+  const { lat, lng } = position;
+  const zoom = position.zoom || 14;
+  const fallbackName = `(${lat.toFixed(3)}, ${lng.toFixed(3)})`;
+  const saved = (await storage.get([DEST_KEY]))[DEST_KEY];
+
+  // ダイアログ表示と同時に背後で撮影を進める (ダイアログ内にもプレビュー表示)
+  const thumbPromise = getMapThumbnail({ lat, lng, zoom }).catch(() => null);
+  const input = await showSaveLocationDialog({
+    placeholder: `${t`${"location_point"}`} ${fallbackName}`,
+    dest: saved === "legacy" ? "legacy" : "official",
+    thumbPromise,
   });
+  if (!input) return;
+  const { name, dest } = input;
+  storage.set({ [DEST_KEY]: dest });
+
+  let id = Date.now();
+  if (dest === "official") {
+    const result = await createOfficialFavorite({
+      lat,
+      lng,
+      zoom,
+      name: name || undefined,
+    });
+    if (!result.ok || !result.id) {
+      alert(t`${"favorite_save_failed"}`);
+      return;
+    }
+    id = result.id;
+  } else {
+    await BookmarkStorage.addBookmark({
+      id,
+      name: name || fallbackName,
+      lat,
+      lng,
+      zoom,
+      date: formatDateShort(new Date()),
+    });
+  }
+  const thumb = await thumbPromise;
+  if (thumb) await saveFavThumbnail(id, thumb).catch(() => {});
 };
 
 const deleteBookmark = async (id: number): Promise<void> => {
   if (!confirm(t`${"delete_confirm"}`)) return;
   await BookmarkStorage.removeBookmark(id);
+  deleteFavThumbnail(id).catch(() => {});
   render();
   Toast.success(t`${"deleted_message"}`);
 };
@@ -448,7 +496,7 @@ const init = (): void => {
     createMapPinButtonObserverConfig({
       observerId: "bookmark-map-pin-btn",
       id: "bookmark-btn",
-      icon: "🔖",
+      icon: "⭐",
       text: t`${"save_location"}`,
       onClick: addBookmark,
     }),

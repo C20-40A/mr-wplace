@@ -83,3 +83,12 @@ export const getAllFavThumbnails = async (): Promise<Map<number, string>> => {
     req.onerror = () => reject(req.error);
   });
 };
+
+export const deleteFavThumbnail = async (id: number): Promise<void> => {
+  const db = await openDb();
+  return new Promise((resolve, reject) => {
+    const req = tx(db, STORES.THUMBNAILS, "readwrite").delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+};

@@ -662,4 +662,6 @@ export const frTranslations = {
   official_sync_changed: "À mettre à jour",
   select_all: "Tout sélectionner",
   official_auto_sync: "Synchronisation auto (enregistrer et mettre à jour)",
+  save_destination: "Enregistrer dans",
+  favorite_save_failed: "Échec de l'enregistrement. Ajoutez-le plutôt avec la fonction officielle des lieux favoris.",
 };

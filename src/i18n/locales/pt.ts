@@ -646,4 +646,6 @@ export const ptTranslations = {
   official_sync_changed: "A atualizar",
   select_all: "Selecionar tudo",
   official_auto_sync: "Sincronizar automaticamente (registrar e atualizar)",
+  save_destination: "Salvar em",
+  favorite_save_failed: "Falha ao salvar. Adicione usando a função oficial de locais favoritos.",
 };

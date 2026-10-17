@@ -647,4 +647,6 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   official_sync_changed: "Zu aktualisieren",
   select_all: "Alle auswählen",
   official_auto_sync: "Automatisch synchronisieren (registrieren & aktualisieren)",
+  save_destination: "Speichern unter",
+  favorite_save_failed: "Speichern fehlgeschlagen. Bitte füge den Ort stattdessen über die offizielle Favoriten-Funktion hinzu.",
 };
