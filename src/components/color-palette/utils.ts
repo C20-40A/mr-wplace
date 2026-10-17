@@ -102,7 +102,7 @@ export const createStatsHtml = (
   // 100%完了時: COMPLETE (gold border text) + total pixels (subscript style)
   if (remaining === 0 && stats.total > 0) {
     return `
-      <div style="width: 100%; margin-top: 0.25rem; display: flex; align-items: center; justify-content: center; gap: 0.125rem;">
+      <div style="width: 100%; margin-top: 0.125rem; display: flex; align-items: center; justify-content: center; gap: 0.125rem;">
         <span style="font-size: 0.65rem; font-weight: bold; color: #facc15; text-shadow: -1px -1px 0 #b45309, 1px -1px 0 #b45309, -1px 1px 0 #b45309, 1px 1px 0 #b45309; line-height: 1;">COMPLETE</span>
         <span style="font-size: 0.5rem; opacity: 0.6; align-self: flex-end; line-height: 1; padding-bottom: 0.05rem;">(${formatNumber(
           stats.total,
