@@ -79,7 +79,9 @@ export const renderColorFilters = async (
   // ColorFilterManagerの現在状態取得
   const colorFilterManager = window.mrWplace?.colorFilterManager;
   const currentSelectedColors = colorFilterManager?.getSelectedColors() || [];
-  const hasExtraColorsBitmap = colorFilterManager?.getOwnedColorIds() !== null;
+  const ownedColorIds = colorFilterManager?.getOwnedColorIds();
+  // 未取得(null)または全色(63色)所持なら「所持色」ボタンは不要
+  const hasExtraColorsBitmap = !!ownedColorIds && ownedColorIds.length < 63;
 
   // 最寄りテンプレートの統計取得
   let colorStats:
