@@ -28,6 +28,9 @@ export class GalleryImageDetail {
   private adjustTool: ImageAdjustToolMode | null = null;
   private onItemUpdated?: (item: GalleryItem) => void;
 
+  /** 次の render 直後に調節ツールを開く（レイヤー一覧の move リンク用） */
+  static openAdjustOnNextRender = false;
+
   /**
    * 「マップに描画」ボタンを描画する。
    * マップが使えるときは調節ツール、使えないときは直接描画へルーティングする。
@@ -498,6 +501,10 @@ export class GalleryImageDetail {
 
     // マップに描画ボタン（インスタンスあり: 調節ツール / なし: 直接描画）
     this.initDrawOnMapButton();
+    if (GalleryImageDetail.openAdjustOnNextRender) {
+      GalleryImageDetail.openAdjustOnNextRender = false;
+      void this.handleDrawOnMap();
+    }
 
     // 描画ON/OFFボタン
     const drawToggleBtn = document.getElementById("draw-toggle-btn");

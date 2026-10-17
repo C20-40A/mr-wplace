@@ -4,7 +4,8 @@ import {
   gotoMapPosition,
 } from "../../../common-actions";
 import { sendGalleryImagesToInject } from "@/content";
-import { createDPad } from "../../../components/d-pad";
+import { GalleryImageDetail } from "../../image-detail";
+import { getMapInstanceReady } from "@/states/map-instance-ready";
 
 interface LayerItemParams {
   item: any;
@@ -81,15 +82,38 @@ export const createLayerItem = (params: LayerItemParams): HTMLElement => {
   container.appendChild(buttonArea);
   container.appendChild(moveContainer);
 
-  // D-pad追加
-  const dPadContainer = createDPad({
-    item,
-    onMove: onRefreshOrder,
-    size: "sm",
-  });
-  buttonArea.insertBefore(dPadContainer, buttonArea.firstChild);
+  // 調節ツールへのリンク（マップインスタンスがあるときのみ）
+  if (onShowDetail && getMapInstanceReady())
+    buttonArea.insertBefore(
+      createMoveLink(() => {
+        GalleryImageDetail.openAdjustOnNextRender = true;
+        onShowDetail(item);
+      }),
+      buttonArea.firstChild,
+    );
 
   return container;
+};
+
+// 調節ツールへのリンク（十字キー風アイコン + 極小の "move"）
+const createMoveLink = (onClick: () => void): HTMLButtonElement => {
+  const btn = document.createElement("button");
+  btn.className = "btn btn-xs btn-info";
+  btn.style.cssText = `
+    width: 36px; height: 48px; padding: 0; gap: 1px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    touch-action: pan-y;
+  `;
+  btn.innerHTML = `
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+      <path d="M12 2l3.5 4.5h-7zM12 22l-3.5-4.5h7zM2 12l4.5-3.5v7zM22 12l-4.5 3.5v-7zM10 10h4v4h-4z"/>
+    </svg>
+    <span style="font-size: 0.5rem; line-height: 1;">move</span>`;
+  btn.onclick = (e) => {
+    e.stopPropagation();
+    onClick();
+  };
+  return btn;
 };
 
 // コンテンツエリア作成
