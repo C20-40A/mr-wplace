@@ -34,6 +34,13 @@ export class Router<T extends string> {
     this.onRouteChange?.(route);
   }
 
+  // 現在のルートを履歴を積まずに置き換える（直前のルートは再描画しない）
+  replace(route: T): void {
+    this.currentRoute = route;
+    this.updateHeader();
+    this.onRouteChange?.(route);
+  }
+
   // ヒストリーをクリアして初期化
   initialize(route: T): void {
     this.history = [];

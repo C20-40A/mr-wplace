@@ -85,13 +85,20 @@ const createGallery = () => {
     "image-editor": async (container) => {
       const route = new GalleryImageEditor();
       currentRouteInstance = route; // インスタンスを保存
-      route.setOnSaveSuccess(async () => {
+      route.setOnSaveSuccess(async (key, isEditMode) => {
         // Notify inject side to update overlay layers
         const { sendGalleryImagesToInject } = await import("@/content");
         await sendGalleryImagesToInject();
 
         state.editingItem = undefined;
-        router.navigateBack();
+        if (isEditMode) return router.navigateBack();
+        // 新規追加: 位置付きならモーダルを閉じ、位置なしなら詳細へ置き換える
+        // (navigateBack すると一覧の非同期描画が詳細を上書きするため replace を使う)
+        const { GalleryStorage } = await import("../../states/galleryStorage");
+        const saved = await new GalleryStorage().get(key);
+        if (!saved || saved.drawPosition) return ui.closeModal();
+        state.currentDetailItem = saved;
+        router.replace("image-detail");
       });
       route.render(container);
 

@@ -186,6 +186,8 @@ export class GalleryImageDetail {
     const updated: GalleryItem = {
       ...item,
       drawPosition: drawPosition ?? item.drawPosition,
+      // 未配置で追加した画像は非表示で保存されているので、配置したら表示にする
+      drawEnabled: true,
       width: targetWidth,
       height: targetHeight,
     };
@@ -206,8 +208,8 @@ export class GalleryImageDetail {
     this.currentItem = updated;
     Toast.success(t`${"coordinates_updated"}`);
 
-    // 画像詳細を再描画して新しい位置・サイズを反映する
-    this.onItemUpdated?.(updated);
+    // 設置が完了したのでモーダルを閉じる
+    this.ui?.closeModal();
   }
 
   private getDrawToggleIcon(enabled: boolean): string {

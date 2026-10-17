@@ -70,7 +70,7 @@ export class EditorController {
   private transparentColors = new Set<string>();
   private imageInspector: ImageInspector | null = null;
   private colorPalette: ColorPalette | null = null;
-  private onSaveSuccess?: () => void;
+  private onSaveSuccess?: (key: string, isEditMode: boolean) => void;
   private currentFileName: string | null = null;
   private currentImageTitle: string | undefined = undefined;
   private drawPosition: DrawPosition | null = null;
@@ -90,7 +90,7 @@ export class EditorController {
     this.container = container;
   }
 
-  setOnSaveSuccess(callback?: () => void): void {
+  setOnSaveSuccess(callback?: (key: string, isEditMode: boolean) => void): void {
     this.onSaveSuccess = callback;
   }
 
@@ -990,7 +990,7 @@ export class EditorController {
       itemKey,
     );
 
-    this.onSaveSuccess?.();
+    this.onSaveSuccess?.(itemKey, isEditMode);
   }
 
   private async saveCanvasToGallery(blob: Blob): Promise<void> {

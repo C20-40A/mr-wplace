@@ -4,13 +4,13 @@ import { EditorController } from "./controller";
 export class GalleryImageEditor {
   private ui: ImageEditorUI;
   private controller: EditorController | null = null;
-  private onSaveSuccess?: () => void;
+  private onSaveSuccess?: (key: string, isEditMode: boolean) => void;
 
   constructor() {
     this.ui = new ImageEditorUI();
   }
 
-  setOnSaveSuccess(callback: () => void): void {
+  setOnSaveSuccess(callback: (key: string, isEditMode: boolean) => void): void {
     this.onSaveSuccess = callback;
   }
 
