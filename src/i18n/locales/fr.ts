@@ -653,6 +653,9 @@ export const frTranslations = {
   view_mode: "Affichage",
   open: "Ouvrir",
   zoom_in: "Agrandir",
-  register_official_overlay: "Ajouter aux overlays officiels",
-  official_overlay_registered: "Enregistré. Rechargez la page pour appliquer.",
+  official_sync: "Synchroniser avec l'officiel",
+  official_sync_new: "À enregistrer",
+  official_sync_done: "Déjà synchronisé",
+  official_sync_removed: "Supprimé côté officiel (ne sera pas réenregistré)",
+  official_sync_reload: "Enregistré. Rechargez la page pour appliquer.",
 };

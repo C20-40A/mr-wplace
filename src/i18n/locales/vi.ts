@@ -632,6 +632,9 @@ export const viTranslations = {
   view_mode: "Chế độ xem",
   open: "Mở",
   zoom_in: "Phóng to",
-  register_official_overlay: "Thêm vào overlay chính thức",
-  official_overlay_registered: "Đã đăng ký. Tải lại trang để áp dụng.",
+  official_sync: "Đồng bộ với chính thức",
+  official_sync_new: "Sẽ đăng ký",
+  official_sync_done: "Đã đồng bộ",
+  official_sync_removed: "Đã xóa ở bản chính thức (sẽ không đăng ký lại)",
+  official_sync_reload: "Đã đăng ký. Tải lại trang để áp dụng.",
 };

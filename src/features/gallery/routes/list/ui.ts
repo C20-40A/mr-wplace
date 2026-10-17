@@ -66,7 +66,10 @@ export class GalleryListUI {
         <option value="distance">${t`${"sort_distance"}`}</option>
         <option value="created">${t`${"sort_created"}`}</option>
       </select>
-      <button id="wps-gallery-import-export-btn" class="btn btn-outline btn-sm ml-auto">
+      <button id="wps-gallery-official-sync-btn" class="btn btn-outline btn-sm ml-auto">
+        ${t`${"official_sync"}`}
+      </button>
+      <button id="wps-gallery-import-export-btn" class="btn btn-outline btn-sm">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
           <path d="M440-367v-465l-64 64-56-57 160-160 160 160-56 57-64-64v465h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
         </svg>
@@ -83,6 +86,18 @@ export class GalleryListUI {
       this.sortType = (e.target as HTMLSelectElement).value as GallerySortType;
       this.onSortChange?.(this.sortType);
     });
+
+    sortContainer
+      .querySelector("#wps-gallery-official-sync-btn")!
+      .addEventListener("click", async () => {
+        try {
+          const { showOfficialSyncDialog } = await import("../../official-sync-dialog");
+          await showOfficialSyncDialog();
+        } catch (err) {
+          console.error("🧑‍🎨 : Failed to open official sync", err);
+          Toast.error(String(err));
+        }
+      });
 
     // Import/Export dropdown menu
     const importExportBtn = sortContainer.querySelector(

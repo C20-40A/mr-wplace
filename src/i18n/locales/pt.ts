@@ -637,6 +637,9 @@ export const ptTranslations = {
   view_mode: "Modo de exibição",
   open: "Abrir",
   zoom_in: "Ampliar",
-  register_official_overlay: "Adicionar aos overlays oficiais",
-  official_overlay_registered: "Registrado. Recarregue a página para aplicar.",
+  official_sync: "Sincronizar com oficial",
+  official_sync_new: "A registrar",
+  official_sync_done: "Já sincronizado",
+  official_sync_removed: "Removido no oficial (não será registrado novamente)",
+  official_sync_reload: "Registrado. Recarregue a página para aplicar.",
 };

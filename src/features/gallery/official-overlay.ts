@@ -82,16 +82,19 @@ const putOfficialImage = async (id: string, file: File): Promise<void> => {
   }
 };
 
+const saveLinks = (add: Record<string, string>) => {
+  try {
+    localStorage.setItem(LINKS_KEY, JSON.stringify({ ...readLinks(), ...add }));
+  } catch {}
+};
+
 /**
- * 公式 overlay (非表示) として登録する。登録済みなら何もしない。
- * 削除済み id は公式の tombstone に残るため、再登録は常に新しい UUID を使う。
+ * 公式 overlay (非表示) として登録する。
+ * 削除済み id は公式の tombstone に残るため、常に新しい UUID を使う。
  */
-export const registerToOfficialOverlay = async (item: GalleryItem): Promise<void> => {
+const registerItem = async (item: GalleryItem): Promise<void> => {
   const list = readOverlays();
   if (!list) throw new Error("Official overlay data is unreadable");
-
-  const linked = readLinks()[item.key];
-  if (linked && [...list, ...pending].some((t) => t?.id === linked)) return;
 
   const bounds = getOverlayBounds(item);
   const dataUrl = await getImageDataUrl(item, {
@@ -125,11 +128,85 @@ export const registerToOfficialOverlay = async (item: GalleryItem): Promise<void
     updatedAt: Date.now(),
   });
 
-  try {
-    localStorage.setItem(LINKS_KEY, JSON.stringify({ ...readLinks(), [item.key]: id }));
-  } catch {}
+  saveLinks({ [item.key]: id });
 
   if (listening) return;
   listening = true;
   window.addEventListener("pagehide", flushPending);
+};
+
+export type OfficialSyncPlan = {
+  /** 公式に未登録で登録予定 */
+  toRegister: GalleryItem[];
+  /** 同一配置の公式 overlay が既にある (リンクだけ記録する) */
+  adopt: Record<string, string>;
+  /** 紐づく公式 overlay が存在する */
+  synced: number;
+  /** 一度登録したが公式から消えている (再登録しない) */
+  removed: number;
+};
+
+const NEAR = 1e-6; // 1px ≒ 1.7e-4° なので別配置とは混ざらない
+
+const isSamePlacement = (item: GalleryItem, t: OfficialOverlay): boolean => {
+  const b = t.bounds as Record<string, number> | undefined;
+  if (!b || t.originalWidth !== item.width || t.originalHeight !== item.height) return false;
+  const want = getOverlayBounds(item);
+  return (["north", "south", "west", "east"] as const).every(
+    (k) => Math.abs((b[k] ?? NaN) - want[k]) < NEAR,
+  );
+};
+
+/**
+ * 同期の計画を立てる (何も書き込まない)。
+ * 既存の公式 overlay / ギャラリーは変更も削除もしない。
+ */
+export const planOfficialSync = (items: GalleryItem[]): OfficialSyncPlan => {
+  const list = readOverlays();
+  if (!list) throw new Error("Official overlay data is unreadable");
+
+  const official = [...list, ...pending];
+  const ids = new Set(official.map((t) => t?.id));
+  const links = readLinks();
+  const plan: OfficialSyncPlan = { toRegister: [], adopt: {}, synced: 0, removed: 0 };
+
+  for (const item of items) {
+    if (!item.drawPosition || !item.width || !item.height) continue;
+
+    const linked = links[item.key];
+    if (linked) {
+      if (ids.has(linked)) plan.synced++;
+      else plan.removed++;
+      continue;
+    }
+
+    const same = official.find((t) => isSamePlacement(item, t));
+    if (same) {
+      plan.adopt[item.key] = same.id;
+      plan.synced++;
+      continue;
+    }
+    plan.toRegister.push(item);
+  }
+  return plan;
+};
+
+/** 計画を実行する。個別の失敗は残りを止めない。 */
+export const executeOfficialSync = async (
+  plan: OfficialSyncPlan,
+): Promise<{ registered: number; failed: number }> => {
+  saveLinks(plan.adopt);
+
+  let registered = 0;
+  let failed = 0;
+  for (const item of plan.toRegister) {
+    try {
+      await registerItem(item);
+      registered++;
+    } catch (err) {
+      failed++;
+      console.error("🧑‍🎨 : Failed to register official overlay", item.key, err);
+    }
+  }
+  return { registered, failed };
 };

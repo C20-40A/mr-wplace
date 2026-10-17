@@ -649,6 +649,9 @@ export const ruTranslations = {
   view_mode: "Режим отображения",
   open: "Открыть",
   zoom_in: "Увеличить",
-  register_official_overlay: "Добавить в официальные оверлеи",
-  official_overlay_registered: "Добавлено. Перезагрузите страницу, чтобы применить.",
+  official_sync: "Синхронизировать с официальным",
+  official_sync_new: "К добавлению",
+  official_sync_done: "Уже синхронизировано",
+  official_sync_removed: "Удалено в официальном (повторно добавляться не будет)",
+  official_sync_reload: "Добавлено. Перезагрузите страницу, чтобы применить.",
 };

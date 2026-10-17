@@ -1,6 +1,6 @@
 import { t } from "@/i18n/manager";
 
-export type DownloadFormat = "png" | "wplace" | "official";
+export type DownloadFormat = "png" | "wplace";
 
 export const showDownloadFormatDialog = (
   hasDrawPosition: boolean
@@ -17,8 +17,7 @@ export const showDownloadFormatDialog = (
           <button id="download-png-btn" class="btn btn-accent">${t("export_png")}</button>
           ${
             hasDrawPosition
-              ? `<button id="download-wplace-btn" class="btn btn-accent">.wplace</button>
-                 <button id="register-official-btn" class="btn btn-accent">${t("register_official_overlay")}</button>`
+              ? `<button id="download-wplace-btn" class="btn btn-accent">.wplace</button>`
               : ""
           }
           <button id="download-cancel-btn" class="btn btn-ghost">${t("close")}</button>
@@ -45,9 +44,6 @@ export const showDownloadFormatDialog = (
     });
     modal.querySelector("#download-wplace-btn")?.addEventListener("click", () => {
       finish("wplace");
-    });
-    modal.querySelector("#register-official-btn")?.addEventListener("click", () => {
-      finish("official");
     });
     modal
       .querySelector("#download-cancel-btn")

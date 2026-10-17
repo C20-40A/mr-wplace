@@ -666,6 +666,9 @@ export const jaTranslations = {
   view_map: "マップ",
   open: "開く",
   zoom_in: "拡大",
-  register_official_overlay: "公式 overlay に登録",
-  official_overlay_registered: "登録しました。ページを再読み込みすると反映されます",
+  official_sync: "公式と同期",
+  official_sync_new: "登録予定",
+  official_sync_done: "同期済み",
+  official_sync_removed: "公式で削除済み（再登録しません）",
+  official_sync_reload: "登録しました。ページを再読み込みすると反映されます",
 };
