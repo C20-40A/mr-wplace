@@ -10,6 +10,10 @@ import {
 } from "@/components/progress-gauge";
 import { Tutorial } from "@/features/tutorial";
 
+/** 最大5列(11.5rem×5 + gap)で頭打ちにし、画面幅でカードが巨大化しないようにする。Tailwind 非依存 */
+const GRID_STYLE =
+  "display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); max-width: 61.5rem; margin: 0 auto;";
+
 const ITEM_STYLE_ID = "wps-gallery-item-style";
 
 /** タッチ入力がある端末に付ける html クラス（hover 出し分けを無効化する） */
@@ -45,10 +49,21 @@ const ensureItemStyles = (): void => {
   ensureStyle(
     ITEM_STYLE_ID,
     `
+    /* 画像の白/黒どちらの上でも見えるよう、テーマ色の半透明チップにする */
+    .gallery-item .gallery-item-action,
+    .gallery-item .gallery-item-badge {
+      background: color-mix(in oklab, var(--color-base-100) 82%, transparent);
+      border: 1px solid color-mix(in oklab, var(--color-base-content) 22%, transparent);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+      color: var(--color-base-content);
+    }
     .gallery-item .gallery-item-action {
-      opacity: var(--wps-action-opacity, 0.72);
+      opacity: var(--wps-action-opacity, 0.85);
       transition: opacity 0.15s ease;
     }
+    .gallery-item .gallery-item-badge { transition: opacity 0.15s ease; }
     /* デスクトップ（マウス操作 & 非タッチ）だけ hover で出し分ける */
     @media (hover: hover) and (pointer: fine) {
       html:not(.${TOUCH_DEVICE_CLASS}) .gallery-item:hover {
@@ -62,9 +77,12 @@ const ensureItemStyles = (): void => {
       }
       html:not(.${TOUCH_DEVICE_CLASS}) .gallery-item:hover .gallery-item-action,
       html:not(.${TOUCH_DEVICE_CLASS}) .gallery-item:focus-within .gallery-item-action {
-        opacity: var(--wps-action-opacity, 0.72);
+        opacity: var(--wps-action-opacity, 0.85);
         pointer-events: auto;
       }
+      /* サイズ表示(64 × 64 等)は hover 時のみ */
+      html:not(.${TOUCH_DEVICE_CLASS}) .gallery-item .gallery-item-badge { opacity: 0; }
+      html:not(.${TOUCH_DEVICE_CLASS}) .gallery-item:hover .gallery-item-badge { opacity: 1; }
     }
     `,
   );
@@ -86,15 +104,16 @@ export interface ImageGridOptions {
   emptyStateMessage?: string;
   emptyStateButtonText?: string; // 空状態のボタンテキスト（i18nキー）
   emptyStateButtonStyle?: "fab" | "primary"; // 空状態のボタンスタイル
+  /** Tailwind の列指定。未指定なら固定幅上限つきの auto-fill グリッド */
   gridCols?: string;
+  /** 指定すると、チュートリアルボタンをこの要素の左隣(ヘッダー)に置く */
+  tutorialAnchor?: HTMLElement | null;
 }
 
 export class ImageGridComponent {
   private container: HTMLElement;
   private options: ImageGridOptions;
   private tutorial: Tutorial;
-  private readonly overlayIconFilter =
-    "drop-shadow(0 0 1px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 2px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 1px rgba(255, 255, 255, 0.45))";
 
   constructor(container: HTMLElement, options: ImageGridOptions) {
     this.container = container;
@@ -106,7 +125,7 @@ export class ImageGridComponent {
       showGotoPositionButton: true, // デフォルトでピンアイコンを表示
       emptyStateMessage: t`${"no_saved_images"}`,
       emptyStateButtonStyle: "fab", // デフォルトはFABボタン
-      gridCols: "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5",
+      gridCols: "",
       ...options,
     };
     this.tutorial = new Tutorial();
@@ -129,12 +148,23 @@ export class ImageGridComponent {
   render(): void {
     if (this.options.items.length === 0) {
       this.renderEmptyState();
-      this.tutorial.createButton(this.container);
+      this.placeTutorialButton();
       return;
     }
 
     this.renderImageGrid();
-    this.tutorial.createButton(this.container);
+    this.placeTutorialButton();
+  }
+
+  private placeTutorialButton(): void {
+    const anchor = this.options.tutorialAnchor;
+    if (!anchor?.parentElement) {
+      this.tutorial.createButton(this.container);
+      return;
+    }
+    anchor.before(
+      this.tutorial.createButton(anchor.parentElement, { placement: "inline" }),
+    );
   }
 
   /**
@@ -174,7 +204,7 @@ export class ImageGridComponent {
       .join("");
 
     this.container.innerHTML = `
-      <div class="grid ${this.options.gridCols} gap-4" role="list">
+      <div class="${this.options.gridCols ? `grid ${this.options.gridCols} gap-4` : ""}" role="list" style="${this.options.gridCols ? "" : GRID_STYLE}">
         ${itemsHtml}
       </div>
       
@@ -201,7 +231,7 @@ export class ImageGridComponent {
     const progressHtml = this.createProgressBarHtml(item);
     const titleHtml = this.createTitleHtml(item, !!progressHtml, hasSizeBadge);
     const sizeBadgeHtml = hasSizeBadge
-      ? `<span class="absolute right-2 bottom-2 rounded-[var(--game-radius,5px)] bg-base-100/80 px-1.5 py-0.5 font-mono text-[10px] text-base-content/70 shadow-sm">${item.width} × ${item.height}</span>`
+      ? `<span class="gallery-item-badge absolute right-2 bottom-2 rounded-[var(--game-radius,5px)] px-1.5 py-0.5 font-mono text-[10px]">${item.width} × ${item.height}</span>`
       : "";
 
     return `
@@ -232,7 +262,7 @@ export class ImageGridComponent {
         ${showDeleteBtn ? this.createDeleteButtonHtml(item.key) : ""}
         ${
           showDrawToggleBtn && item.drawPosition
-            ? this.createDrawToggleButtonHtml(item)
+            ? this.createDrawToggleButtonHtml(item, !!showGotoPositionBtn)
             : ""
         }
         ${showGotoPositionBtn ? this.createGotoPositionButtonHtml(item) : ""}
@@ -259,7 +289,7 @@ export class ImageGridComponent {
       position,
       iconPath,
       title,
-      opacity = 0.72,
+      opacity = 0.85,
       pinned = false,
     } = config;
     const pos = Object.entries(position)
@@ -271,9 +301,9 @@ export class ImageGridComponent {
         class="btn btn-xs btn-circle btn-ghost gallery-item-action${pinned ? " gallery-item-action-pinned" : ""}"
         ${dataAttr}="${value}"
         ${titleAttr}
-        style="position: absolute; ${pos} z-index: 10; background: none; border: none; padding: 0; --wps-action-opacity: ${opacity};"
+        style="position: absolute; ${pos} z-index: 10; padding: 0; --wps-action-opacity: ${opacity};"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4" style="filter: ${this.overlayIconFilter};">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4">
           ${iconPath}
         </svg>
       </button>
@@ -293,13 +323,14 @@ export class ImageGridComponent {
     return this.createOverlayIconButton({
       dataAttr: "data-goto-position",
       value: item.key,
-      position: { top: "0.25rem", left: "2rem" },
+      position: { top: "0.25rem", left: "0.25rem" },
       title: "Go to map position",
+      pinned: true, // hover に関係なく常に表示
       iconPath: `<path fill-rule="evenodd" d="m11.54 22.351.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>`,
     });
   }
 
-  private createDrawToggleButtonHtml(item: GalleryItem): string {
+  private createDrawToggleButtonHtml(item: GalleryItem, showGoto: boolean): string {
     const isEnabled = item.drawEnabled;
     const eyeIcon = isEnabled
       ? `<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z" clip-rule="evenodd"/>`
@@ -308,11 +339,11 @@ export class ImageGridComponent {
     return this.createOverlayIconButton({
       dataAttr: "data-draw-toggle",
       value: item.key,
-      position: { top: "0.25rem", left: "0.25rem" },
+      position: { top: "0.25rem", left: showGoto ? "2.1rem" : "0.25rem" },
       title: isEnabled ? "Hide drawing" : "Show drawing",
       iconPath: eyeIcon,
       // hide 中は「その状態である」ことが一目で分かるよう常時表示にする
-      opacity: isEnabled ? 0.72 : 0.9,
+      opacity: isEnabled ? 0.85 : 1,
       pinned: !isEnabled,
     });
   }

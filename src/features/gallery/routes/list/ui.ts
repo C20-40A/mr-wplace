@@ -128,6 +128,9 @@ export class GalleryListUI {
     if (this.imageGrid) this.imageGrid.destroy();
 
     this.imageGrid = new ImageGridComponent(gridContainer, {
+      tutorialAnchor: document.getElementById(
+        "wplace-studio-gallery-modal-minimize-btn",
+      ),
       items,
       isSelectionMode: false,
       onImageClick: (item) => this.onImageClick?.(item),
