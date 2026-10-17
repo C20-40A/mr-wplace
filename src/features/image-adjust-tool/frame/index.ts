@@ -142,8 +142,8 @@ const STYLES = {
   `,
   closeButton: `
     position: fixed;
-    top: 16px;
-    right: 16px;
+    top: 0;
+    right: 0;
     pointer-events: auto;
   `,
   confirmButton: `
@@ -305,7 +305,7 @@ export const createFrameElements = (options: {
   topToolBar.append(opacitySlider);
 
   const closeButton = createElement("button", {
-    className: "btn btn-sm btn-circle btn-error",
+    className: "btn btn-lg btn-circle btn-error",
     style: STYLES.closeButton,
   });
   closeButton.type = "button";
@@ -314,7 +314,7 @@ export const createFrameElements = (options: {
   closeButton.addEventListener("click", options.onClose);
 
   const confirmButton = createElement("button", {
-    className: "btn btn-primary",
+    className: "btn btn-lg btn-primary",
     style: STYLES.confirmButton,
     textContent: options.confirmText,
   });
