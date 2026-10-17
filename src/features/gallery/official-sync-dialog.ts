@@ -125,7 +125,7 @@ export const showOfficialSyncDialog = async (): Promise<void> => {
       <div class="mt-4" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
         <button id="official-sync-cancel" class="btn btn-ghost">${t("cancel")}</button>
         <button id="official-sync-run" class="btn btn-primary" ${
-          plan.toRegister.length || Object.keys(plan.adopt).length ? "" : "disabled"
+          by("new").length || Object.keys(plan.adopt).length ? "" : "disabled"
         }>${t("official_sync")}</button>
       </div>
     </div>

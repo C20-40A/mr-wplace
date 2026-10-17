@@ -23,22 +23,20 @@ type OfficialOverlay = { id: string; order?: number } & Record<string, unknown>;
 const pending: OfficialOverlay[] = [];
 let listening = false;
 
-const readOverlays = (): OfficialOverlay[] | null => {
+const readJson = <T>(key: string, fallback: T): T | null => {
   try {
-    const list = JSON.parse(localStorage.getItem(OVERLAYS_KEY) ?? "[]");
-    return Array.isArray(list) ? list : null;
+    return JSON.parse(localStorage.getItem(key) ?? JSON.stringify(fallback));
   } catch {
     return null;
   }
 };
 
-const readLinks = (): Record<string, string> => {
-  try {
-    return JSON.parse(localStorage.getItem(LINKS_KEY) ?? "{}") ?? {};
-  } catch {
-    return {};
-  }
+const readOverlays = (): OfficialOverlay[] | null => {
+  const list = readJson<OfficialOverlay[]>(OVERLAYS_KEY, []);
+  return Array.isArray(list) ? list : null;
 };
+
+const readLinks = (): Record<string, string> => readJson(LINKS_KEY, {}) ?? {};
 
 // 公式の書き戻し後に、未反映の登録分を追記する (id で重複排除)
 const flushPending = () => {
@@ -145,14 +143,8 @@ export type SyncRow = {
 export type OfficialSyncPlan = {
   /** 表示用の一覧 (警告→登録予定→同期済み→公式のみ) */
   rows: SyncRow[];
-  /** 公式に未登録で登録予定 */
-  toRegister: GalleryItem[];
   /** 同一配置の公式 overlay が既にある (リンクだけ記録する) */
   adopt: Record<string, string>;
-  /** 紐づく公式 overlay が存在する */
-  synced: number;
-  /** 一度登録したが公式から消えている (再登録しない) */
-  removed: number;
 };
 
 const NEAR = 1e-6; // 1px ≒ 1.7e-4° なので別配置とは混ざらない
@@ -177,7 +169,7 @@ export const planOfficialSync = (items: GalleryItem[]): OfficialSyncPlan => {
   const official = [...list, ...pending];
   const byId = new Map(official.map((t) => [t?.id, t]));
   const links = readLinks();
-  const plan: OfficialSyncPlan = { rows: [], toRegister: [], adopt: {}, synced: 0, removed: 0 };
+  const plan: OfficialSyncPlan = { rows: [], adopt: {} };
   const matched = new Set<string>();
   const name = (o?: OfficialOverlay) => (typeof o?.name === "string" ? o.name : undefined);
 
@@ -189,10 +181,8 @@ export const planOfficialSync = (items: GalleryItem[]): OfficialSyncPlan => {
       const o = byId.get(linked);
       if (o) {
         matched.add(linked);
-        plan.synced++;
         plan.rows.push({ state: "synced", item, officialName: name(o) });
       } else {
-        plan.removed++;
         plan.rows.push({ state: "removed", item });
       }
       continue;
@@ -202,11 +192,9 @@ export const planOfficialSync = (items: GalleryItem[]): OfficialSyncPlan => {
     if (same) {
       matched.add(same.id);
       plan.adopt[item.key] = same.id;
-      plan.synced++;
       plan.rows.push({ state: "synced", item, officialName: name(same) });
       continue;
     }
-    plan.toRegister.push(item);
     plan.rows.push({ state: "new", item });
   }
 
@@ -233,13 +221,14 @@ export const executeOfficialSync = async (
 
   let registered = 0;
   let failed = 0;
-  for (const item of plan.toRegister) {
+  for (const row of plan.rows) {
+    if (row.state !== "new" || !row.item) continue;
     try {
-      await registerItem(item);
+      await registerItem(row.item);
       registered++;
     } catch (err) {
       failed++;
-      console.error("🧑‍🎨 : Failed to register official overlay", item.key, err);
+      console.error("🧑‍🎨 : Failed to register official overlay", row.item.key, err);
     }
   }
   return { registered, failed };
