@@ -1,5 +1,5 @@
 import { GalleryItem, DrawPosition } from "@/states/galleryStorage";
-import { withOfficialNote } from "../../official-overlay";
+import { confirmDelete } from "../../delete-confirm-dialog";
 import { GalleryRouter } from "../../router";
 import { GalleryUI } from "../../ui";
 import { ImageInspector } from "@/components/image-inspector";
@@ -542,11 +542,12 @@ export class GalleryImageDetail {
 
     // 削除ボタン
     const deleteBtn = document.getElementById("delete-btn");
-    deleteBtn?.addEventListener("click", () => {
+    deleteBtn?.addEventListener("click", async () => {
       if (!this.currentItem) return;
 
-      if (confirm(withOfficialNote(t`${"delete_confirm"}`, this.currentItem.key))) {
-        onDelete(this.currentItem.key);
+      const { key } = this.currentItem;
+      if (await confirmDelete(t`${"delete_confirm"}`, key)) {
+        onDelete(key);
         router.navigateBack(); // 削除後は一覧に戻る
         Toast.success(t`${"deleted"}`);
       }

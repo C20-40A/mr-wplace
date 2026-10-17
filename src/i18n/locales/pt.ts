@@ -641,7 +641,6 @@ export const ptTranslations = {
   official_sync_new: "A registrar",
   official_sync_done: "Já sincronizado",
   official_sync_removed: "Removido no oficial (não será registrado novamente)",
-  official_sync_reload: "Registrado. Recarregue a página para aplicar.",
   official_overlay_remains: "Também permanece nos seus overlays oficiais. Exclua-o lá separadamente, se necessário.",
   official_sync_official: "Oficial",
   official_sync_official_only: "Somente oficial",

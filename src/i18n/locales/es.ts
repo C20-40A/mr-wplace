@@ -650,7 +650,6 @@ export const esTranslations = {
   official_sync_new: "Por registrar",
   official_sync_done: "Ya sincronizado",
   official_sync_removed: "Eliminado en oficial (no se volverá a registrar)",
-  official_sync_reload: "Registrado. Recarga la página para aplicar.",
   official_overlay_remains: "También se conserva en tus overlays oficiales. Elimínalo allí por separado si es necesario.",
   official_sync_official: "Oficial",
   official_sync_official_only: "Solo oficial",

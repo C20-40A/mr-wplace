@@ -10,7 +10,6 @@
  */
 
 import type { GalleryItem } from "@/states/galleryStorage";
-import { t } from "@/i18n/manager";
 import { getImageDataUrl } from "@/utils/indexed-db-bridge";
 import { getOverlayBounds, sanitizeFilename } from "./common-actions";
 
@@ -225,10 +224,6 @@ export const isInOfficialOverlay = (key: string): boolean => {
   const id = readLinks()[key];
   return !!id && [...(readOverlays() ?? []), ...pending].some((o) => o?.id === id);
 };
-
-/** 削除確認メッセージに「公式にも残る」案内を足す */
-export const withOfficialNote = (message: string, key: string): string =>
-  isInOfficialOverlay(key) ? `${message}\n\n${t("official_overlay_remains")}` : message;
 
 /** 計画を実行する。個別の失敗は残りを止めない。 */
 export const executeOfficialSync = async (
