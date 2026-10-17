@@ -11,7 +11,10 @@
 
 import type { GalleryItem } from "@/states/galleryStorage";
 import { getImageDataUrl } from "@/utils/indexed-db-bridge";
+import { saveGalleryItem } from "@/core/bridge/gallery-storage-bridge";
 import { getOverlayBounds, sanitizeFilename } from "./common-actions";
+import { parseImageMetadataFromFileName, readFileAsDataUrl } from "./routes/image-editor/file-handler";
+import { parseWplaceJson, requantizeWplaceDataUrl, type WplaceOverlayFile } from "./routes/image-editor/import-file";
 
 const OVERLAYS_KEY = "template-overlays";
 const LINKS_KEY = "mr-wplace-official-links";
@@ -53,7 +56,7 @@ const flushPending = () => {
 };
 
 // 公式 DB が未作成なら新規作成せず失敗させる (空 DB を作ると公式の初期化を壊すため)
-const putOfficialImage = async (id: string, file: File): Promise<void> => {
+const openOfficialDb = async (): Promise<IDBDatabase> => {
   const dbs = await indexedDB.databases();
   if (!dbs.some((d) => d.name === DB_NAME))
     throw new Error("Official overlay storage not found");
@@ -64,16 +67,24 @@ const putOfficialImage = async (id: string, file: File): Promise<void> => {
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
+  if (!db.objectStoreNames.contains(IMAGE_STORE)) {
+    db.close();
+    throw new Error("Official overlay image store not found");
+  }
+  return db;
+};
 
+const withImageStore = async <T>(
+  mode: IDBTransactionMode,
+  run: (store: IDBObjectStore) => IDBRequest<T>,
+): Promise<T> => {
+  const db = await openOfficialDb();
   try {
-    if (!db.objectStoreNames.contains(IMAGE_STORE))
-      throw new Error("Official overlay image store not found");
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(IMAGE_STORE, "readwrite");
-      tx.objectStore(IMAGE_STORE).put(file, id);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-      tx.onabort = () => reject(tx.error);
+    return await new Promise<T>((resolve, reject) => {
+      const tx = db.transaction(IMAGE_STORE, mode);
+      const req = run(tx.objectStore(IMAGE_STORE));
+      tx.oncomplete = () => resolve(req.result);
+      tx.onerror = tx.onabort = () => reject(tx.error);
     });
   } finally {
     db.close();
@@ -106,7 +117,8 @@ const registerItem = async (item: GalleryItem): Promise<void> => {
   const blob = await (await fetch(dataUrl)).blob();
 
   // 画像 → メタの順 (逆だと画像のない overlay が残る)
-  await putOfficialImage(id, new File([blob], name, { type: blob.type || "image/png" }));
+  const file = new File([blob], name, { type: blob.type || "image/png" });
+  await withImageStore("readwrite", (store) => store.put(file, id));
 
   const order = Math.max(-1, ...[...list, ...pending].map((t) => t?.order ?? 0)) + 1;
   pending.push({
@@ -138,6 +150,8 @@ export type SyncRow = {
   item?: GalleryItem;
   /** 紐づく/同一配置の公式 overlay の名前 */
   officialName?: string;
+  /** officialOnly のとき、取り込み対象の公式 overlay id */
+  officialId?: string;
 };
 
 export type OfficialSyncPlan = {
@@ -200,7 +214,7 @@ export const planOfficialSync = (items: GalleryItem[]): OfficialSyncPlan => {
 
   for (const o of official)
     if (o?.id && !matched.has(o.id))
-      plan.rows.push({ state: "officialOnly", officialName: name(o) });
+      plan.rows.push({ state: "officialOnly", officialName: name(o), officialId: o.id });
 
   const order = { removed: 0, new: 1, synced: 2, officialOnly: 3 };
   plan.rows.sort((a, b) => order[a.state] - order[b.state]);
@@ -213,23 +227,75 @@ export const isInOfficialOverlay = (key: string): boolean => {
   return !!id && [...(readOverlays() ?? []), ...pending].some((o) => o?.id === id);
 };
 
-/** 計画を実行する。個別の失敗は残りを止めない。 */
+/**
+ * 公式 overlay をギャラリーへ取り込む。`.wplace` の直接取り込みと同じ変換
+ * (bounds→座標、リサイズ、量子化) を通す。公式側は変更しない。
+ * 二重描画を避けるため、取り込み直後の描画は OFF にする。
+ */
+const importOfficialOverlay = async (o: OfficialOverlay): Promise<void> => {
+  const file = await withImageStore<File | undefined>("readonly", (store) => store.get(o.id));
+  if (!file) throw new Error("Official overlay image not found");
+
+  const imported = await parseWplaceJson({
+    id: o.id,
+    schemaVersion: "1",
+    name: typeof o.name === "string" ? o.name : undefined,
+    image: {
+      dataUrl: await readFileAsDataUrl(file),
+      width: Number(o.originalWidth),
+      height: Number(o.originalHeight),
+    },
+    bounds: o.bounds as WplaceOverlayFile["bounds"],
+    colorMetric: typeof o.colorMetric === "string" ? o.colorMetric : undefined,
+    dithering: typeof o.dithering === "boolean" ? o.dithering : undefined,
+  });
+  const dataUrl = await requantizeWplaceDataUrl(
+    imported.dataUrl,
+    imported.colorMetric,
+    imported.dithering,
+  );
+
+  const key = `gallery_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  await saveGalleryItem(key, dataUrl, {
+    title: parseImageMetadataFromFileName(imported.fileName ?? "").title ?? imported.fileName?.replace(/\.[^.]+$/, ""),
+    coords: imported.drawPosition ?? undefined,
+    visible: false,
+    zIndex: 0,
+    timestamp: Date.now(),
+    colorMetric: imported.colorMetric,
+    dithering: imported.dithering || undefined,
+  });
+  saveLinks({ [key]: o.id });
+};
+
+/**
+ * 計画を実行する。個別の失敗は残りを止めない。
+ * importIds: ギャラリーへ取り込む公式 overlay の id (officialOnly の行から選択)
+ */
 export const executeOfficialSync = async (
   plan: OfficialSyncPlan,
-): Promise<{ registered: number; failed: number }> => {
+  importIds: ReadonlySet<string> = new Set(),
+): Promise<{ registered: number; imported: number; failed: number }> => {
   saveLinks(plan.adopt);
 
   let registered = 0;
+  let imported = 0;
   let failed = 0;
   for (const row of plan.rows) {
-    if (row.state !== "new" || !row.item) continue;
     try {
-      await registerItem(row.item);
-      registered++;
+      if (row.state === "new" && row.item) {
+        await registerItem(row.item);
+        registered++;
+      } else if (row.state === "officialOnly" && row.officialId && importIds.has(row.officialId)) {
+        const o = [...(readOverlays() ?? []), ...pending].find((x) => x?.id === row.officialId);
+        if (!o) throw new Error("Official overlay not found");
+        await importOfficialOverlay(o);
+        imported++;
+      }
     } catch (err) {
       failed++;
-      console.error("🧑‍🎨 : Failed to register official overlay", row.item.key, err);
+      console.error("🧑‍🎨 : Official sync item failed", row.item?.key ?? row.officialId, err);
     }
   }
-  return { registered, failed };
+  return { registered, imported, failed };
 };

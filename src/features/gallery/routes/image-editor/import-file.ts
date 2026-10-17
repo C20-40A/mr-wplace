@@ -20,7 +20,7 @@ interface WplaceFileBounds {
   east: number;
 }
 
-interface WplaceOverlayFile {
+export interface WplaceOverlayFile {
   id: string;
   schemaVersion: string;
   name?: string;
@@ -151,7 +151,7 @@ const resizeDataUrl = async (
   return canvas.toDataURL("image/png");
 };
 
-const parseWplaceJson = async (
+export const parseWplaceJson = async (
   json: WplaceOverlayFile
 ): Promise<ImportedEditorFile> => {
   // bounds は wplace本体が整数pixelをroundして生成した lat/lng のため、

@@ -25,7 +25,7 @@ const text = (value: string, className = ""): HTMLElement => {
 
 const thumbnails = new WeakMap<HTMLElement, string>();
 
-const buildRow = (row: SyncRow): HTMLElement => {
+const buildRow = (row: SyncRow, selected: Set<string>, onToggle: () => void): HTMLElement => {
   const el = document.createElement("div");
   el.className = "items-center py-1 px-1 rounded hover:bg-base-200";
   el.style.cssText = GRID;
@@ -42,8 +42,20 @@ const buildRow = (row: SyncRow): HTMLElement => {
       thumbnails.set(el, row.item.thumbnail);
     }
     left.append(text(row.item.title || "image"));
-  } else {
-    left.append(text("—", "opacity-40"));
+  } else if (row.officialId) {
+    // 公式のみ: チェックでギャラリーへ取り込む
+    const label = document.createElement("label");
+    label.className = "flex items-center gap-2 cursor-pointer min-w-0";
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.className = "checkbox checkbox-xs";
+    box.addEventListener("change", () => {
+      if (box.checked) selected.add(row.officialId!);
+      else selected.delete(row.officialId!);
+      onToggle();
+    });
+    label.append(box, text(t("import"), "opacity-80"));
+    left.append(label);
   }
 
   const right =
@@ -57,10 +69,16 @@ const buildRow = (row: SyncRow): HTMLElement => {
   return el;
 };
 
-const buildSection = (title: string, rows: SyncRow[], accordion: boolean): HTMLElement | null => {
+const buildSection = (
+  title: string,
+  rows: SyncRow[],
+  accordion: boolean,
+  selected: Set<string>,
+  onToggle: () => void,
+): HTMLElement | null => {
   if (!rows.length) return null;
   const body = document.createElement("div");
-  body.append(...rows.map(buildRow));
+  body.append(...rows.map((r) => buildRow(r, selected, onToggle)));
 
   const label = `${title} (${rows.length})`;
   if (!accordion) {
@@ -112,6 +130,7 @@ export const showOfficialSyncDialog = async (): Promise<void> => {
   const items = await new GalleryStorage().getAll();
   const plan = planOfficialSync(items);
   const by = (state: SyncRow["state"]) => plan.rows.filter((r) => r.state === state);
+  const selected = new Set<string>();
 
   const modal = document.createElement("dialog");
   modal.className = "modal modal-open";
@@ -124,9 +143,7 @@ export const showOfficialSyncDialog = async (): Promise<void> => {
       <div id="official-sync-rows" class="text-sm" style="max-height: 50vh; overflow-y: auto;"></div>
       <div class="mt-4" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
         <button id="official-sync-cancel" class="btn btn-ghost">${t("cancel")}</button>
-        <button id="official-sync-run" class="btn btn-primary" ${
-          by("new").length || Object.keys(plan.adopt).length ? "" : "disabled"
-        }>${t("official_sync")}</button>
+        <button id="official-sync-run" class="btn btn-primary">${t("official_sync")}</button>
       </div>
     </div>
     <form method="dialog" class="modal-backdrop">
@@ -134,28 +151,31 @@ export const showOfficialSyncDialog = async (): Promise<void> => {
     </form>
   `;
   const rows = modal.querySelector<HTMLElement>("#official-sync-rows")!;
+  const runBtn = modal.querySelector<HTMLButtonElement>("#official-sync-run")!;
+  const hasWork = () => by("new").length > 0 || Object.keys(plan.adopt).length > 0 || selected.size > 0;
+  const onToggle = () => (runBtn.disabled = !hasWork());
   rows.append(
     ...[
-      buildSection(t("official_sync_removed"), by("removed"), false),
-      buildSection(t("official_sync_new"), by("new"), false),
-      buildSection(t("official_sync_done"), by("synced"), true),
-      buildSection(t("official_sync_official_only"), by("officialOnly"), true),
+      buildSection(t("official_sync_removed"), by("removed"), false, selected, onToggle),
+      buildSection(t("official_sync_new"), by("new"), false, selected, onToggle),
+      buildSection(t("official_sync_done"), by("synced"), true, selected, onToggle),
+      buildSection(t("official_sync_official_only"), by("officialOnly"), true, selected, onToggle),
     ].filter((el): el is HTMLElement => !!el),
   );
   document.body.appendChild(modal);
   attachPreview(modal, rows);
 
-  const runBtn = modal.querySelector<HTMLButtonElement>("#official-sync-run")!;
+  onToggle();
   modal.querySelector("#official-sync-cancel")?.addEventListener("click", () => modal.close());
   modal.addEventListener("close", () => modal.remove());
 
   runBtn.addEventListener("click", async () => {
     runBtn.disabled = true;
     try {
-      const { registered, failed } = await executeOfficialSync(plan);
+      const { registered, imported, failed } = await executeOfficialSync(plan, selected);
       if (failed) Toast.error(`${t("error")}: ${failed}`);
-      // メタは公式の pagehide 書き戻し後に反映されるため、再読み込みで確定させる
-      if (registered) setTimeout(() => location.reload(), failed ? 1500 : 0);
+      // 登録分は公式の pagehide 書き戻し後に反映されるため、再読み込みで確定させる (取り込み分の一覧更新も兼ねる)
+      if (registered || imported) setTimeout(() => location.reload(), failed ? 1500 : 0);
     } catch (err) {
       console.error("🧑‍🎨 : Official sync failed", err);
       Toast.error(String(err));
