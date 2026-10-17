@@ -96,7 +96,10 @@ const createGallery = () => {
         // (navigateBack すると一覧の非同期描画が詳細を上書きするため replace を使う)
         const { GalleryStorage } = await import("../../states/galleryStorage");
         const saved = await new GalleryStorage().get(key);
-        if (!saved || saved.drawPosition) return ui.closeModal();
+        // 選択モード(ピンから描画)で位置未指定なら、ピン位置へ即描画して閉じる
+        if (saved && !saved.drawPosition && state.onSelect)
+          state.onSelect(saved);
+        if (!saved || saved.drawPosition || state.onSelect) return ui.closeModal();
         state.currentDetailItem = saved;
         router.replace("image-detail");
       });
@@ -239,6 +242,7 @@ const createGallery = () => {
       currentRouteInstance = null;
     }
     state.editingItem = undefined; // 編集モード状態をクリア
+    state.onSelect = undefined; // 選択モードは1回のモーダル表示で完結させる
   };
 
   // 初期化
