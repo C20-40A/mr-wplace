@@ -129,6 +129,7 @@ export const ensureGaugeStyles = (): void => {
       background-position: 130% 0;
       animation: wps-rgauge-drift 6s linear infinite;
     }
+    .wps-rgauge.is-empty::before { display: none; }
     @keyframes wps-rgauge-drift {
       from { background-position: 130% 0; }
       to { background-position: -130% 0; }
@@ -371,6 +372,7 @@ export const createRichGauge = (options: RichGaugeOptions): RichGauge => {
     const pct = clampPercent(p);
     cancelAnimationFrame(counterRaf);
     element.classList.toggle("is-complete", pct >= 100);
+    element.classList.toggle("is-empty", pct <= 0);
 
     if (!withAnimation || reduced) {
       fill.style.transition = "none";
