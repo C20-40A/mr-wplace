@@ -658,4 +658,5 @@ export const ruTranslations = {
   official_sync_official_only: "Только в официальном (не импортировано)",
   official_sync_changed: "К обновлению",
   select_all: "Выбрать все",
+  official_auto_sync: "Автосинхронизация (добавление и обновление)",
 };

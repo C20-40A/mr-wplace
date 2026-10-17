@@ -5,7 +5,7 @@ import { t } from "@/i18n";
 import { showFeatureHint } from "@/features/feature-hints";
 import { runtime } from "@/utils/browser-api";
 import { Toast } from "@/components/toast";
-import { countOfficialSyncPending } from "../../official-overlay";
+import { autoSyncOfficial, countOfficialSyncPending } from "../../official-overlay";
 import { exportGallery } from "@/utils/inject-bridge";
 import { showDownloadFormatDialog } from "../image-detail/download-dialog";
 
@@ -105,6 +105,12 @@ export class GalleryListUI {
           Toast.error(String(err));
         }
       });
+
+    // 自動同期が有効なら登録/更新を反映し、終わったら更新ドットを消す
+    void autoSyncOfficial(items).then(() => {
+      if (!countOfficialSyncPending(items))
+        sortContainer.querySelector(".indicator-item")?.remove();
+    });
 
     // Import/Export dropdown menu
     const importExportBtn = sortContainer.querySelector(

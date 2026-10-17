@@ -4,6 +4,8 @@ import { Toast } from "@/components/toast";
 import {
   executeOfficialSync,
   getOfficialImageUrl,
+  isAutoSyncEnabled,
+  setAutoSyncEnabled,
   planOfficialSync,
   type SyncRow,
 } from "./official-overlay";
@@ -179,6 +181,7 @@ const attachPreview = (modal: HTMLElement, rows: HTMLElement): (() => void) => {
 export const showOfficialSyncDialog = async (): Promise<void> => {
   const items = await new GalleryStorage().getAll();
   const plan = planOfficialSync(items);
+  const autoSync = await isAutoSyncEnabled();
   const by = (state: SyncRow["state"]) => plan.rows.filter((r) => r.state === state);
   const selected = new Set<string>();
 
@@ -191,7 +194,11 @@ export const showOfficialSyncDialog = async (): Promise<void> => {
         <span>Mr. Wplace</span><span></span><span>${t("official_sync_official")}</span>
       </div>
       <div id="official-sync-rows" class="text-sm" style="max-height: 50vh; overflow-y: auto;"></div>
-      <div class="mt-4" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+      <label class="mt-3 flex items-center gap-2 cursor-pointer text-sm">
+        <input id="official-sync-auto" type="checkbox" class="toggle toggle-sm toggle-primary" ${autoSync ? "checked" : ""} />
+        <span>${t("official_auto_sync")}</span>
+      </label>
+      <div class="mt-3" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
         <button id="official-sync-cancel" class="btn btn-ghost">${t("cancel")}</button>
         <button id="official-sync-run" class="btn btn-primary">${t("official_sync")}</button>
       </div>
@@ -217,6 +224,9 @@ export const showOfficialSyncDialog = async (): Promise<void> => {
   const releasePreview = attachPreview(modal, rows);
 
   onToggle();
+  modal.querySelector<HTMLInputElement>("#official-sync-auto")?.addEventListener("change", (e) => {
+    void setAutoSyncEnabled((e.target as HTMLInputElement).checked);
+  });
   modal.querySelector("#official-sync-cancel")?.addEventListener("click", () => modal.close());
   modal.addEventListener("close", () => {
     releasePreview();

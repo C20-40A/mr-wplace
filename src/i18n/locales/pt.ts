@@ -646,4 +646,5 @@ export const ptTranslations = {
   official_sync_official_only: "Somente no oficial (não importado)",
   official_sync_changed: "A atualizar",
   select_all: "Selecionar tudo",
+  official_auto_sync: "Sincronizar automaticamente (registrar e atualizar)",
 };

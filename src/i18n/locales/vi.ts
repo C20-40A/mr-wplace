@@ -641,4 +641,5 @@ export const viTranslations = {
   official_sync_official_only: "Chỉ có ở chính thức (chưa nhập)",
   official_sync_changed: "Sẽ cập nhật",
   select_all: "Chọn tất cả",
+  official_auto_sync: "Tự động đồng bộ (đăng ký & cập nhật)",
 };

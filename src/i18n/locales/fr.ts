@@ -662,4 +662,5 @@ export const frTranslations = {
   official_sync_official_only: "Uniquement dans l'officiel (non importé)",
   official_sync_changed: "À mettre à jour",
   select_all: "Tout sélectionner",
+  official_auto_sync: "Synchronisation auto (enregistrer et mettre à jour)",
 };

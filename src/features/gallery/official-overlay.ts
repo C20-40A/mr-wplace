@@ -10,6 +10,7 @@
  */
 
 import type { GalleryItem } from "@/states/galleryStorage";
+import { storage } from "@/utils/browser-api";
 import { getImageDataUrl } from "@/utils/indexed-db-bridge";
 import { saveGalleryItem } from "@/core/bridge/gallery-storage-bridge";
 import { getOverlayBounds, sanitizeFilename } from "./common-actions";
@@ -19,6 +20,8 @@ import { parseWplaceJson, requantizeWplaceDataUrl, type WplaceOverlayFile } from
 const OVERLAYS_KEY = "template-overlays";
 const LINKS_KEY = "mr-wplace-official-links";
 const SNAPS_KEY = "mr-wplace-official-snapshots";
+const AUTO_SYNC_KEY = "official-auto-sync";
+const AUTO_SYNC_MAX_PER_RUN = 20;
 const DB_NAME = "wplace-templates";
 const IMAGE_STORE = "images";
 
@@ -71,7 +74,8 @@ const flushPending = () => {
   }
 };
 
-// flush は公式の pagehide 書き戻しより後に走る必要があるため、最初の登録/更新時に初めて登録する
+// 即時にも書く (タブが pagehide なしで終了しても取りこぼさない)。公式 store が後で書き戻した分は
+// pagehide の flush で再度反映する。flush は公式の書き戻しより後に走る必要があるため、最初の登録/更新時に初めて登録する
 const ensureFlushListener = () => {
   if (listening) return;
   listening = true;
@@ -84,6 +88,7 @@ const queuePatch = (id: string, patch: Record<string, unknown>) => {
   if (target) Object.assign(target, patch);
   else patches.set(id, { ...patches.get(id), ...patch });
   ensureFlushListener();
+  flushPending();
 };
 
 // 公式 DB が未作成なら新規作成せず失敗させる (空 DB を作ると公式の初期化を壊すため)
@@ -211,6 +216,7 @@ const registerItem = async (item: GalleryItem): Promise<void> => {
   saveLinks({ [item.key]: id });
   saveSnap(item);
   ensureFlushListener();
+  flushPending();
 };
 
 export type SyncRow = {
@@ -433,5 +439,34 @@ export const countOfficialSyncPending = (items: GalleryItem[]): number => {
     return planOfficialSync(items).rows.filter((r) => r.state === "new" || r.state === "changed").length;
   } catch {
     return 0;
+  }
+};
+
+export const isAutoSyncEnabled = async (): Promise<boolean> =>
+  (await storage.get(AUTO_SYNC_KEY))[AUTO_SYNC_KEY] === true;
+
+export const setAutoSyncEnabled = (enabled: boolean): Promise<void> =>
+  storage.set({ [AUTO_SYNC_KEY]: enabled });
+
+let autoRunning = false;
+
+/**
+ * 自動同期: 有効なら登録予定/更新予定だけを反映する (取り込み・削除はしない)。
+ * 一覧を開いたときに呼ぶ。再読み込みはせず、反映は次の読み込み時になる。
+ * 一度に大量に流さないよう件数を絞り、残りは次回に回す。
+ */
+export const autoSyncOfficial = async (items: GalleryItem[]): Promise<void> => {
+  if (autoRunning || !(await isAutoSyncEnabled())) return;
+  autoRunning = true;
+  try {
+    const plan = planOfficialSync(items);
+    const rows = plan.rows
+      .filter((r) => r.state === "new" || r.state === "changed")
+      .slice(0, AUTO_SYNC_MAX_PER_RUN);
+    if (rows.length) await executeOfficialSync({ rows, adopt: plan.adopt });
+  } catch (err) {
+    console.error("🧑‍🎨 : Auto sync to official overlays failed", err);
+  } finally {
+    autoRunning = false;
   }
 };

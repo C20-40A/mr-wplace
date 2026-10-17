@@ -672,4 +672,5 @@ Do not use this feature to paint actual pixels.`,
   official_sync_official_only: "Only in official (not imported)",
   official_sync_changed: "To update",
   select_all: "Select all",
+  official_auto_sync: "Auto-sync (register & update)",
 };

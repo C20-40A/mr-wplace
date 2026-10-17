@@ -675,4 +675,5 @@ export const jaTranslations = {
   official_sync_official_only: "公式にのみ存在（未取り込み）",
   official_sync_changed: "更新予定",
   select_all: "すべて選択",
+  official_auto_sync: "自動で同期（登録・更新）",
 };

@@ -647,4 +647,5 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   official_overlay_remains: "Es bleibt auch in deinen offiziellen Overlays erhalten. Lösche es dort bei Bedarf separat.",
   official_sync_changed: "Zu aktualisieren",
   select_all: "Alle auswählen",
+  official_auto_sync: "Automatisch synchronisieren (registrieren & aktualisieren)",
 };
