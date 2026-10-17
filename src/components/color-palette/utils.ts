@@ -112,7 +112,7 @@ export const createStatsHtml = (
   }
 
   return `
-    <div style="width: 100%; margin-top: 0.25rem; display: flex; align-items: center;">
+    <div style="width: 100%; margin-top: 0.125rem; display: flex; align-items: center;">
       <div style="flex: 1; height: 0.5rem; background: #e5e7eb; border: 1px solid #d1d5db; border-radius: 0.125rem; overflow: hidden;">
         <div style="height: 100%; background: linear-gradient(to right, #3b82f6, #60a5fa); width: ${percentage.toFixed(
           1,
