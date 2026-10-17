@@ -430,7 +430,10 @@ export class ImageEditorUI {
       this.openTransparencyDialog();
       return;
     }
-    if (target.id === "wps-adjust-tool-btn") {
+    if (
+      target.id === "wps-adjust-tool-btn" ||
+      target.id === "wps-coord-move-btn"
+    ) {
       this.callbacks.onOpenAdjustTool();
       return;
     }

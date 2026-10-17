@@ -351,7 +351,6 @@ Do not use this feature to paint actual pixels.`,
   search_results: "Search Results",
 
   // Coordinate Input (Image Editor)
-  coordinate_input_optional: "Coordinate Input (Optional)",
   tile_x: "Tile X",
   tile_y: "Tile Y",
   pixel_x: "Pixel X",

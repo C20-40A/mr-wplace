@@ -358,7 +358,6 @@ export const jaTranslations = {
   search_results: "検索結果",
 
   // Coordinate Input (Image Editor)
-  coordinate_input_optional: "座標入力（任意）",
   tile_x: "タイルX",
   tile_y: "タイルY",
   pixel_x: "ピクセルX",

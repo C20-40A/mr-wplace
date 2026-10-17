@@ -1229,8 +1229,27 @@ export class EditorController {
     }
   }
 
+  private autoFilledCoords = "";
+
+  private positionKey = (p: DrawPosition): string =>
+    `${p.TLX},${p.TLY},${p.PxX},${p.PxY}`;
+
+  // 全欄空なら ""
+  private readCoordinateInputs(): string {
+    const vals = ["tlx", "tly", "pxx", "pxy"].map(
+      (k) =>
+        (this.container.querySelector(`#wps-coord-${k}`) as HTMLInputElement)
+          ?.value ?? "",
+    );
+    return vals.every((v) => !v) ? "" : vals.join(",");
+  }
+
   private updateCoordinateInputs(): void {
     if (!this.drawPosition) return;
+    // ユーザ入力済み (前回の自動入力値と異なる) 場合は上書きしない
+    const current = this.readCoordinateInputs();
+    if (current && current !== this.autoFilledCoords) return;
+    this.autoFilledCoords = this.positionKey(this.drawPosition);
     this.setCoordinateInputs(this.drawPosition);
 
     console.log("🧑‍🎨 : Auto-filled coordinates:", this.drawPosition);

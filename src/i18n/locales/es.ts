@@ -335,7 +335,6 @@ export const esTranslations = {
   search_results: "Resultados de Búsqueda",
 
   // Coordinate Input (Image Editor)
-  coordinate_input_optional: "Entrada de Coordenadas (Opcional)",
   tile_x: "Bloque X",
   tile_y: "Bloque Y",
   pixel_x: "Píxel X",

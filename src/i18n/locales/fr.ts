@@ -335,7 +335,6 @@ export const frTranslations = {
   search_results: "Résultats de recherche",
 
   // Coordinate Input (Image Editor)
-  coordinate_input_optional: "Saisie des coordonnées (facultatif)",
   tile_x: "Tuile X",
   tile_y: "Tuile Y",
   pixel_x: "Pixel X",

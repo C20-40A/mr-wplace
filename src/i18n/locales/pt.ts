@@ -331,7 +331,6 @@ export const ptTranslations = {
   search_results: "Resultados da Busca",
 
   // Coordinate Input (Image Editor)
-  coordinate_input_optional: "Entrada de Coordenadas (Opcional)",
   tile_x: "Bloco X",
   tile_y: "Bloco Y",
   pixel_x: "Pixel X",

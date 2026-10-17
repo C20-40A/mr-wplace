@@ -356,7 +356,6 @@ Verwende diese Funktion nicht zum Zeichnen echter Pixel.`,
   search_results: "Suchergebnisse",
 
   // Coordinate Input (Image Editor)
-  coordinate_input_optional: "Koordinateneingabe (optional)",
   tile_x: "Kachel X",
   tile_y: "Kachel Y",
   pixel_x: "Pixel X",

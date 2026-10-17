@@ -333,7 +333,6 @@ export const ruTranslations = {
   search_results: "Результаты поиска",
 
   // Coordinate Input (Image Editor)
-  coordinate_input_optional: "Ввод координат (необязательно)",
   tile_x: "Тайл X",
   tile_y: "Тайл Y",
   pixel_x: "Пиксель X",

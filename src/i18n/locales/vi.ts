@@ -329,7 +329,6 @@ export const viTranslations = {
   search_results: "Kết quả tìm kiếm",
 
   // Coordinate Input (Image Editor)
-  coordinate_input_optional: "Nhập tọa độ (Tùy chọn)",
   tile_x: "Ô X",
   tile_y: "Ô Y",
   pixel_x: "Pixel X",

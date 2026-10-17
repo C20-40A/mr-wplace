@@ -671,9 +671,24 @@ const createCoordinateInput = (
   }) as HTMLInputElement;
 
   return createElement("div", {}, [
-    createElement("label", { className: "control-label-sm" }, [
-      t("coordinate_input_optional"),
-    ]),
+    createElement(
+      "div",
+      { style: "display:flex;align-items:center;gap:4px;" },
+      [
+        createElement("label", { className: "control-label-sm" }, [
+          t("coordinates"),
+        ]),
+        createElement(
+          "button",
+          {
+            id: "wps-coord-move-btn",
+            className: "btn btn-ghost btn-xs",
+            title: t("adjust_tool"),
+          },
+          ["✥"],
+        ),
+      ],
+    ),
     createElement("div", { className: "grid-4-col" }, [
       elements.coordTlx as HTMLInputElement,
       elements.coordTly as HTMLInputElement,
