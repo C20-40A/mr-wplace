@@ -660,4 +660,6 @@ export const frTranslations = {
   official_overlay_remains: "Il reste aussi dans vos overlays officiels. Supprimez-le séparément là-bas si nécessaire.",
   official_sync_official: "Officiel",
   official_sync_official_only: "Uniquement dans l'officiel (non importé)",
+  official_sync_changed: "À mettre à jour",
+  select_all: "Tout sélectionner",
 };

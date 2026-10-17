@@ -673,4 +673,6 @@ export const jaTranslations = {
   official_overlay_remains: "公式 overlay にも残っています。必要なら公式側で別途削除してください。",
   official_sync_official: "公式",
   official_sync_official_only: "公式にのみ存在（未取り込み）",
+  official_sync_changed: "更新予定",
+  select_all: "すべて選択",
 };

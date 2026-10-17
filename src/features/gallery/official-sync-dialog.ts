@@ -11,6 +11,7 @@ import {
 const GRID = "display: grid; grid-template-columns: minmax(0, 1fr) 1.25rem minmax(0, 1fr); gap: 0.5rem;";
 const ARROW: Record<SyncRow["state"], string> = {
   new: "→",
+  changed: "→",
   synced: "⇄",
   removed: "⚠",
   officialOnly: "←",
@@ -57,6 +58,7 @@ const buildRow = (row: SyncRow, selected: Set<string>, onToggle: () => void): HT
     const box = document.createElement("input");
     box.type = "checkbox";
     box.className = "checkbox checkbox-xs";
+    box.dataset.rowCheck = "";
     box.addEventListener("change", () => {
       if (box.checked) selected.add(id);
       else selected.delete(id);
@@ -69,12 +71,32 @@ const buildRow = (row: SyncRow, selected: Set<string>, onToggle: () => void): HT
   const right =
     row.state === "new"
       ? text(t("official_sync_new"), "badge badge-primary badge-sm")
-      : row.state === "removed"
+      : row.state === "changed"
+        ? text(t("official_sync_changed"), "badge badge-secondary badge-sm")
+        : row.state === "removed"
         ? text(t("official_sync_removed"), "text-warning text-xs")
         : text(officialName(row), "opacity-80");
 
   el.append(left, text(ARROW[row.state], `text-center ${row.state === "removed" ? "text-warning" : "opacity-60"}`), right);
   return el;
+};
+
+// 取り込み対象の行を一括でチェック/解除する
+const buildSelectAll = (body: HTMLElement): HTMLElement => {
+  const label = document.createElement("label");
+  label.className = "flex items-center gap-2 cursor-pointer py-1 px-1 text-xs opacity-80";
+  const all = document.createElement("input");
+  all.type = "checkbox";
+  all.className = "checkbox checkbox-xs";
+  all.addEventListener("change", () => {
+    body.querySelectorAll<HTMLInputElement>("input[data-row-check]").forEach((box) => {
+      if (box.checked === all.checked) return;
+      box.checked = all.checked;
+      box.dispatchEvent(new Event("change"));
+    });
+  });
+  label.append(all, text(t("select_all")));
+  return label;
 };
 
 const buildSection = (
@@ -83,10 +105,12 @@ const buildSection = (
   accordion: boolean,
   selected: Set<string>,
   onToggle: () => void,
+  selectAll = false,
 ): HTMLElement | null => {
   if (!rows.length) return null;
   const body = document.createElement("div");
   body.append(...rows.map((r) => buildRow(r, selected, onToggle)));
+  if (selectAll) body.prepend(buildSelectAll(body));
 
   const label = `${title} (${rows.length})`;
   if (!accordion) {
@@ -178,14 +202,15 @@ export const showOfficialSyncDialog = async (): Promise<void> => {
   `;
   const rows = modal.querySelector<HTMLElement>("#official-sync-rows")!;
   const runBtn = modal.querySelector<HTMLButtonElement>("#official-sync-run")!;
-  const hasWork = () => by("new").length > 0 || Object.keys(plan.adopt).length > 0 || selected.size > 0;
+  const hasWork = () => by("new").length > 0 || by("changed").length > 0 || Object.keys(plan.adopt).length > 0 || selected.size > 0;
   const onToggle = () => (runBtn.disabled = !hasWork());
   rows.append(
     ...[
       buildSection(t("official_sync_removed"), by("removed"), false, selected, onToggle),
       buildSection(t("official_sync_new"), by("new"), false, selected, onToggle),
+      buildSection(t("official_sync_changed"), by("changed"), false, selected, onToggle),
       buildSection(t("official_sync_done"), by("synced"), true, selected, onToggle),
-      buildSection(t("official_sync_official_only"), by("officialOnly"), true, selected, onToggle),
+      buildSection(t("official_sync_official_only"), by("officialOnly"), true, selected, onToggle, true),
     ].filter((el): el is HTMLElement => !!el),
   );
   document.body.appendChild(modal);
@@ -201,10 +226,10 @@ export const showOfficialSyncDialog = async (): Promise<void> => {
   runBtn.addEventListener("click", async () => {
     runBtn.disabled = true;
     try {
-      const { registered, imported, failed } = await executeOfficialSync(plan, selected);
+      const { registered, updated, imported, failed } = await executeOfficialSync(plan, selected);
       if (failed) Toast.error(`${t("error")}: ${failed}`);
       // 登録分は公式の pagehide 書き戻し後に反映されるため、再読み込みで確定させる (取り込み分の一覧更新も兼ねる)
-      if (registered || imported) setTimeout(() => location.reload(), failed ? 1500 : 0);
+      if (registered || updated || imported) setTimeout(() => location.reload(), failed ? 1500 : 0);
     } catch (err) {
       console.error("🧑‍🎨 : Official sync failed", err);
       Toast.error(String(err));

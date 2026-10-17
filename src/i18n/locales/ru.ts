@@ -656,4 +656,6 @@ export const ruTranslations = {
   official_overlay_remains: "Он также сохранён в официальных оверлеях. При необходимости удалите его там отдельно.",
   official_sync_official: "Официальный",
   official_sync_official_only: "Только в официальном (не импортировано)",
+  official_sync_changed: "К обновлению",
+  select_all: "Выбрать все",
 };

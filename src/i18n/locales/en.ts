@@ -670,4 +670,6 @@ Do not use this feature to paint actual pixels.`,
   official_overlay_remains: "It is also kept in your official overlays. Delete it there separately if needed.",
   official_sync_official: "Official",
   official_sync_official_only: "Only in official (not imported)",
+  official_sync_changed: "To update",
+  select_all: "Select all",
 };

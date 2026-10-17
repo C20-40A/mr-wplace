@@ -18,12 +18,14 @@ import { parseWplaceJson, requantizeWplaceDataUrl, type WplaceOverlayFile } from
 
 const OVERLAYS_KEY = "template-overlays";
 const LINKS_KEY = "mr-wplace-official-links";
+const SNAPS_KEY = "mr-wplace-official-snapshots";
 const DB_NAME = "wplace-templates";
 const IMAGE_STORE = "images";
 
 export type OfficialOverlay = { id: string; order?: number } & Record<string, unknown>;
 
 const pending: OfficialOverlay[] = [];
+const patches = new Map<string, Record<string, unknown>>();
 let listening = false;
 
 const readJson = <T>(key: string, fallback: T): T | null => {
@@ -41,18 +43,47 @@ const readOverlays = (): OfficialOverlay[] | null => {
 
 const readLinks = (): Record<string, string> => readJson(LINKS_KEY, {}) ?? {};
 
-// 公式の書き戻し後に、未反映の登録分を追記する (id で重複排除)
+// 公式の書き戻し後に、未反映の登録分/更新分を反映する (id で重複排除)
 const flushPending = () => {
   const list = readOverlays();
   if (!list) return;
+
+  let dirty = false;
+  for (const e of list) {
+    const patch = patches.get(e?.id);
+    if (patch) {
+      Object.assign(e, patch);
+      dirty = true;
+    }
+  }
   const ids = new Set(list.map((t) => t?.id));
   const added = pending.filter((e) => !ids.has(e.id));
-  if (!added.length) return;
+  if (added.length) {
+    list.push(...added);
+    dirty = true;
+  }
+  if (!dirty) return;
+
   try {
-    localStorage.setItem(OVERLAYS_KEY, JSON.stringify([...list, ...added]));
+    localStorage.setItem(OVERLAYS_KEY, JSON.stringify(list));
   } catch (err) {
     console.error("🧑‍🎨 : Failed to write official overlays", err);
   }
+};
+
+// flush は公式の pagehide 書き戻しより後に走る必要があるため、最初の登録/更新時に初めて登録する
+const ensureFlushListener = () => {
+  if (listening) return;
+  listening = true;
+  window.addEventListener("pagehide", flushPending);
+};
+
+/** 更新分を反映キューに積む (同セッションで登録済みでまだ未反映なら pending 側へ直接反映) */
+const queuePatch = (id: string, patch: Record<string, unknown>) => {
+  const target = pending.find((e) => e.id === id);
+  if (target) Object.assign(target, patch);
+  else patches.set(id, { ...patches.get(id), ...patch });
+  ensureFlushListener();
 };
 
 // 公式 DB が未作成なら新規作成せず失敗させる (空 DB を作ると公式の初期化を壊すため)
@@ -91,10 +122,49 @@ const withImageStore = async <T>(
   }
 };
 
-const saveLinks = (add: Record<string, string>) => {
+const writeMerged = (key: string, add: Record<string, unknown>) => {
   try {
-    localStorage.setItem(LINKS_KEY, JSON.stringify({ ...readLinks(), ...add }));
+    localStorage.setItem(key, JSON.stringify({ ...readJson(key, {}), ...add }));
   } catch {}
+};
+
+const saveLinks = (add: Record<string, string>) => writeMerged(LINKS_KEY, add);
+
+/** 最後に公式へ反映した時点のギャラリー項目の内容 (変更検知の基準) */
+type Snap = { t: number; title: string; pos: number[]; w: number; h: number; m: string; d: boolean };
+type SnapSource = Pick<
+  GalleryItem,
+  "timestamp" | "title" | "drawPosition" | "width" | "height" | "colorMetric" | "dithering"
+>;
+
+const toSnap = (i: SnapSource): Snap => {
+  const p = i.drawPosition;
+  return {
+    t: i.timestamp,
+    title: i.title ?? "",
+    pos: p ? [p.TLX, p.TLY, p.PxX, p.PxY] : [],
+    w: i.width ?? 0,
+    h: i.height ?? 0,
+    m: i.colorMetric ?? "lab",
+    d: i.dithering ?? false,
+  };
+};
+
+const readSnaps = (): Record<string, Snap> => readJson(SNAPS_KEY, {}) ?? {};
+const saveSnap = (item: SnapSource & { key: string }) =>
+  writeMerged(SNAPS_KEY, { [item.key]: toSnap(item) });
+
+export type ItemChanges = { image: boolean; place: boolean; title: boolean; params: boolean };
+
+const diffSnap = (a: Snap, b: Snap): ItemChanges | null => {
+  const size = a.w !== b.w || a.h !== b.h;
+  const changes = {
+    image: a.t !== b.t || size,
+    place: size || a.pos.join() !== b.pos.join(),
+    title: a.title !== b.title,
+    params: a.m !== b.m || a.d !== b.d,
+  };
+  return Object.values(changes).some(Boolean) ? changes : null;
 };
 
 /**
@@ -139,17 +209,17 @@ const registerItem = async (item: GalleryItem): Promise<void> => {
   });
 
   saveLinks({ [item.key]: id });
-
-  if (listening) return;
-  listening = true;
-  window.addEventListener("pagehide", flushPending);
+  saveSnap(item);
+  ensureFlushListener();
 };
 
 export type SyncRow = {
-  state: "new" | "synced" | "removed" | "officialOnly";
+  state: "new" | "changed" | "synced" | "removed" | "officialOnly";
   item?: GalleryItem;
   /** 紐づく/同一配置の公式 overlay (officialOnly では取り込み対象) */
   official?: OfficialOverlay;
+  /** changed のとき、ギャラリー側で変わった内容 */
+  changes?: ItemChanges;
 };
 
 export type OfficialSyncPlan = {
@@ -161,10 +231,13 @@ export type OfficialSyncPlan = {
 
 const NEAR = 1e-6; // 1px ≒ 1.7e-4° なので別配置とは混ざらない
 
-const isSamePlacement = (item: GalleryItem, t: OfficialOverlay): boolean => {
+const isSamePlacement = (
+  item: GalleryItem,
+  want: ReturnType<typeof getOverlayBounds>,
+  t: OfficialOverlay,
+): boolean => {
   const b = t.bounds as Record<string, number> | undefined;
   if (!b || t.originalWidth !== item.width || t.originalHeight !== item.height) return false;
-  const want = getOverlayBounds(item);
   return (["north", "south", "west", "east"] as const).every(
     (k) => Math.abs((b[k] ?? NaN) - want[k]) < NEAR,
   );
@@ -181,6 +254,8 @@ export const planOfficialSync = (items: GalleryItem[]): OfficialSyncPlan => {
   const official = [...list, ...pending];
   const byId = new Map(official.map((t) => [t?.id, t]));
   const links = readLinks();
+  const snaps = readSnaps();
+  const baseline: Record<string, Snap> = {};
   const plan: OfficialSyncPlan = { rows: [], adopt: {} };
   const matched = new Set<string>();
 
@@ -192,14 +267,22 @@ export const planOfficialSync = (items: GalleryItem[]): OfficialSyncPlan => {
       const o = byId.get(linked);
       if (o) {
         matched.add(linked);
-        plan.rows.push({ state: "synced", item, official: o });
+        const prev = snaps[item.key];
+        if (!prev) baseline[item.key] = toSnap(item);
+        const changes = prev && diffSnap(prev, toSnap(item));
+        plan.rows.push(
+          changes
+            ? { state: "changed", item, official: o, changes }
+            : { state: "synced", item, official: o },
+        );
       } else {
         plan.rows.push({ state: "removed", item });
       }
       continue;
     }
 
-    const same = official.find((t) => isSamePlacement(item, t));
+    const want = getOverlayBounds(item);
+    const same = official.find((t) => isSamePlacement(item, want, t));
     if (same) {
       matched.add(same.id);
       plan.adopt[item.key] = same.id;
@@ -213,7 +296,10 @@ export const planOfficialSync = (items: GalleryItem[]): OfficialSyncPlan => {
     if (o?.id && !matched.has(o.id))
       plan.rows.push({ state: "officialOnly", official: o });
 
-  const order = { removed: 0, new: 1, synced: 2, officialOnly: 3 };
+  // 基準が未記録の登録済み項目は、現状を基準として記録する (以降の変更を検知するため)
+  if (Object.keys(baseline).length) writeMerged(SNAPS_KEY, baseline);
+
+  const order = { removed: 0, new: 1, changed: 2, synced: 3, officialOnly: 4 };
   plan.rows.sort((a, b) => order[a.state] - order[b.state]);
   return plan;
 };
@@ -259,7 +345,7 @@ const importOfficialOverlay = async (o: OfficialOverlay): Promise<void> => {
   );
 
   const key = `gallery_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-  await saveGalleryItem(key, dataUrl, {
+  const meta = await saveGalleryItem(key, dataUrl, {
     title: parseImageMetadataFromFileName(imported.fileName ?? "").title ?? imported.fileName?.replace(/\.[^.]+$/, ""),
     coords: imported.drawPosition ?? undefined,
     visible: false,
@@ -269,6 +355,38 @@ const importOfficialOverlay = async (o: OfficialOverlay): Promise<void> => {
     dithering: imported.dithering || undefined,
   });
   saveLinks({ [key]: o.id });
+  saveSnap({ key, ...meta, drawPosition: meta.coords });
+};
+
+/**
+ * ギャラリーで変わった内容だけを登録済みの公式 overlay に反映する。
+ * 公式側で個別に編集された項目 (位置・名前など) は、ギャラリーで変えていない限り触らない。
+ */
+const updateItem = async (item: GalleryItem, official: OfficialOverlay, changes: ItemChanges) => {
+  const patch: Record<string, unknown> = { updatedAt: Date.now() };
+  if (changes.place) {
+    patch.bounds = getOverlayBounds(item);
+    patch.originalWidth = item.width;
+    patch.originalHeight = item.height;
+  }
+  if (changes.title) patch.name = `${sanitizeFilename(item.title || "image")}.png`;
+  if (changes.params) {
+    patch.colorMetric = item.colorMetric ?? "lab";
+    patch.dithering = item.dithering ?? false;
+  }
+
+  if (changes.image) {
+    const dataUrl = await getImageDataUrl(item, { showToastOnError: true, logContext: "official overlay" });
+    if (!dataUrl) throw new Error("Failed to load image data");
+    const blob = await (await fetch(dataUrl)).blob();
+    const name = String(patch.name ?? official.name ?? "image.png");
+    const file = new File([blob], name, { type: blob.type || "image/png" });
+    await withImageStore("readwrite", (store) => store.put(file, official.id));
+  }
+
+  // 画像 → メタの順 (登録と同じ)
+  queuePatch(official.id, patch);
+  saveSnap(item);
 };
 
 /**
@@ -278,10 +396,12 @@ const importOfficialOverlay = async (o: OfficialOverlay): Promise<void> => {
 export const executeOfficialSync = async (
   plan: OfficialSyncPlan,
   importIds: ReadonlySet<string> = new Set(),
-): Promise<{ registered: number; imported: number; failed: number }> => {
+): Promise<{ registered: number; updated: number; imported: number; failed: number }> => {
   saveLinks(plan.adopt);
+  for (const { item } of plan.rows) if (item && plan.adopt[item.key]) saveSnap(item);
 
   let registered = 0;
+  let updated = 0;
   let imported = 0;
   let failed = 0;
   for (const row of plan.rows) {
@@ -289,6 +409,9 @@ export const executeOfficialSync = async (
       if (row.state === "new" && row.item) {
         await registerItem(row.item);
         registered++;
+      } else if (row.state === "changed" && row.item && row.official && row.changes) {
+        await updateItem(row.item, row.official, row.changes);
+        updated++;
       } else if (row.state === "officialOnly" && row.official && importIds.has(row.official.id)) {
         await importOfficialOverlay(row.official);
         imported++;
@@ -298,5 +421,17 @@ export const executeOfficialSync = async (
       console.error("🧑‍🎨 : Official sync item failed", row.item?.key ?? row.official?.id, err);
     }
   }
-  return { registered, imported, failed };
+  return { registered, updated, imported, failed };
+};
+
+/**
+ * 同期で実行すべき件数 (登録予定 + 更新予定)。一覧を開くたびの表示判定用。
+ * 読み込み済みの items と localStorage だけで完結し、追加の通信や画像読み込みはしない。
+ */
+export const countOfficialSyncPending = (items: GalleryItem[]): number => {
+  try {
+    return planOfficialSync(items).rows.filter((r) => r.state === "new" || r.state === "changed").length;
+  } catch {
+    return 0;
+  }
 };

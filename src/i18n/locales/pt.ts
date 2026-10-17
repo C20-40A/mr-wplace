@@ -644,4 +644,6 @@ export const ptTranslations = {
   official_overlay_remains: "Também permanece nos seus overlays oficiais. Exclua-o lá separadamente, se necessário.",
   official_sync_official: "Oficial",
   official_sync_official_only: "Somente no oficial (não importado)",
+  official_sync_changed: "A atualizar",
+  select_all: "Selecionar tudo",
 };

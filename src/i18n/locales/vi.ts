@@ -639,4 +639,6 @@ export const viTranslations = {
   official_overlay_remains: "Mục này vẫn còn trong overlay chính thức. Hãy xóa riêng ở đó nếu cần.",
   official_sync_official: "Chính thức",
   official_sync_official_only: "Chỉ có ở chính thức (chưa nhập)",
+  official_sync_changed: "Sẽ cập nhật",
+  select_all: "Chọn tất cả",
 };

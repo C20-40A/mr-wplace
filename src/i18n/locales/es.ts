@@ -653,4 +653,6 @@ export const esTranslations = {
   official_overlay_remains: "También se conserva en tus overlays oficiales. Elimínalo allí por separado si es necesario.",
   official_sync_official: "Oficial",
   official_sync_official_only: "Solo en oficial (sin importar)",
+  official_sync_changed: "Por actualizar",
+  select_all: "Seleccionar todo",
 };
