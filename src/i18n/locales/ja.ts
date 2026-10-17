@@ -671,4 +671,7 @@ export const jaTranslations = {
   official_sync_done: "同期済み",
   official_sync_removed: "公式で削除済み（再登録しません）",
   official_sync_reload: "登録しました。ページを再読み込みすると反映されます",
+  official_overlay_remains: "公式 overlay にも残っています。必要なら公式側で別途削除してください。",
+  official_sync_official: "公式",
+  official_sync_official_only: "公式のみ",
 };

@@ -10,6 +10,7 @@
  */
 
 import type { GalleryItem } from "@/states/galleryStorage";
+import { t } from "@/i18n/manager";
 import { getImageDataUrl } from "@/utils/indexed-db-bridge";
 import { getOverlayBounds, sanitizeFilename } from "./common-actions";
 
@@ -135,7 +136,16 @@ const registerItem = async (item: GalleryItem): Promise<void> => {
   window.addEventListener("pagehide", flushPending);
 };
 
+export type SyncRow = {
+  state: "new" | "synced" | "removed" | "officialOnly";
+  item?: GalleryItem;
+  /** 紐づく/同一配置の公式 overlay の名前 */
+  officialName?: string;
+};
+
 export type OfficialSyncPlan = {
+  /** 表示用の一覧 (警告→登録予定→同期済み→公式のみ) */
+  rows: SyncRow[];
   /** 公式に未登録で登録予定 */
   toRegister: GalleryItem[];
   /** 同一配置の公式 overlay が既にある (リンクだけ記録する) */
@@ -166,30 +176,59 @@ export const planOfficialSync = (items: GalleryItem[]): OfficialSyncPlan => {
   if (!list) throw new Error("Official overlay data is unreadable");
 
   const official = [...list, ...pending];
-  const ids = new Set(official.map((t) => t?.id));
+  const byId = new Map(official.map((t) => [t?.id, t]));
   const links = readLinks();
-  const plan: OfficialSyncPlan = { toRegister: [], adopt: {}, synced: 0, removed: 0 };
+  const plan: OfficialSyncPlan = { rows: [], toRegister: [], adopt: {}, synced: 0, removed: 0 };
+  const matched = new Set<string>();
+  const name = (o?: OfficialOverlay) => (typeof o?.name === "string" ? o.name : undefined);
 
   for (const item of items) {
     if (!item.drawPosition || !item.width || !item.height) continue;
 
     const linked = links[item.key];
     if (linked) {
-      if (ids.has(linked)) plan.synced++;
-      else plan.removed++;
+      const o = byId.get(linked);
+      if (o) {
+        matched.add(linked);
+        plan.synced++;
+        plan.rows.push({ state: "synced", item, officialName: name(o) });
+      } else {
+        plan.removed++;
+        plan.rows.push({ state: "removed", item });
+      }
       continue;
     }
 
     const same = official.find((t) => isSamePlacement(item, t));
     if (same) {
+      matched.add(same.id);
       plan.adopt[item.key] = same.id;
       plan.synced++;
+      plan.rows.push({ state: "synced", item, officialName: name(same) });
       continue;
     }
     plan.toRegister.push(item);
+    plan.rows.push({ state: "new", item });
   }
+
+  for (const o of official)
+    if (o?.id && !matched.has(o.id))
+      plan.rows.push({ state: "officialOnly", officialName: name(o) });
+
+  const order = { removed: 0, new: 1, synced: 2, officialOnly: 3 };
+  plan.rows.sort((a, b) => order[a.state] - order[b.state]);
   return plan;
 };
+
+/** 公式に対応する overlay が残っているか (削除ダイアログの案内用) */
+export const isInOfficialOverlay = (key: string): boolean => {
+  const id = readLinks()[key];
+  return !!id && [...(readOverlays() ?? []), ...pending].some((o) => o?.id === id);
+};
+
+/** 削除確認メッセージに「公式にも残る」案内を足す */
+export const withOfficialNote = (message: string, key: string): string =>
+  isInOfficialOverlay(key) ? `${message}\n\n${t("official_overlay_remains")}` : message;
 
 /** 計画を実行する。個別の失敗は残りを止めない。 */
 export const executeOfficialSync = async (

@@ -654,4 +654,7 @@ export const ruTranslations = {
   official_sync_done: "Уже синхронизировано",
   official_sync_removed: "Удалено в официальном (повторно добавляться не будет)",
   official_sync_reload: "Добавлено. Перезагрузите страницу, чтобы применить.",
+  official_overlay_remains: "Он также сохранён в официальных оверлеях. При необходимости удалите его там отдельно.",
+  official_sync_official: "Официальный",
+  official_sync_official_only: "Только в официальном",
 };

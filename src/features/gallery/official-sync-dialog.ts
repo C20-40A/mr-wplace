@@ -1,12 +1,51 @@
 import { t } from "@/i18n/manager";
 import { GalleryStorage } from "@/states/galleryStorage";
 import { Toast } from "@/components/toast";
-import { executeOfficialSync, planOfficialSync } from "./official-overlay";
+import {
+  executeOfficialSync,
+  planOfficialSync,
+  type SyncRow,
+} from "./official-overlay";
+
+const ARROW: Record<SyncRow["state"], string> = {
+  new: "→",
+  synced: "=",
+  removed: "⚠",
+  officialOnly: "←",
+};
+
+const cell = (text: string, extraClass = ""): HTMLElement => {
+  const el = document.createElement("span");
+  el.className = `truncate ${extraClass}`.trim();
+  el.textContent = text;
+  el.title = text;
+  return el;
+};
+
+const buildRow = (row: SyncRow): HTMLElement => {
+  const el = document.createElement("div");
+  el.className = "items-center gap-2 py-1";
+  el.style.cssText =
+    "display: grid; grid-template-columns: minmax(0, 1fr) 1.5rem minmax(0, 1fr);";
+  const mine = row.item ? row.item.title || "image" : t("official_sync_official_only");
+  const theirs =
+    row.state === "new"
+      ? t("official_sync_new")
+      : row.state === "removed"
+        ? t("official_sync_removed")
+        : (row.officialName ?? "");
+  el.append(
+    cell(mine, row.item ? "" : "opacity-60"),
+    cell(ARROW[row.state], `text-center ${row.state === "removed" ? "text-warning" : ""}`),
+    cell(theirs, row.state === "new" ? "text-primary" : row.state === "removed" ? "text-warning" : "opacity-80"),
+  );
+  return el;
+};
 
 /**
  * 「公式と同期」確認ダイアログ。
- * 登録予定/同期済み/公式で削除済み(警告のみ) を表示し、確認後に未登録分だけ登録する。
- * ギャラリー・公式 overlay の削除や上書きは行わない。
+ * Mr. Wplace と公式 overlay の対応を表で見せ、確認後に未登録分だけ登録する。
+ * ギャラリー・公式 overlay の削除や上書きは行わない (公式で消えたものは警告のみ)。
  */
 export const showOfficialSyncDialog = async (): Promise<void> => {
   const items = await new GalleryStorage().getAll();
@@ -15,18 +54,19 @@ export const showOfficialSyncDialog = async (): Promise<void> => {
   const modal = document.createElement("dialog");
   modal.className = "modal modal-open";
   modal.innerHTML = `
-    <div class="modal-box" style="max-width: 28rem;">
-      <h3 class="font-bold text-lg mb-3">${t("official_sync")}</h3>
-      <ul class="text-sm mb-4" style="display: flex; flex-direction: column; gap: 0.25rem;">
-        <li>${t("official_sync_new")}: <b>${plan.toRegister.length}</b></li>
-        <li>${t("official_sync_done")}: <b>${plan.synced}</b></li>
-        ${
-          plan.removed
-            ? `<li class="text-warning">⚠ ${t("official_sync_removed")}: <b>${plan.removed}</b></li>`
-            : ""
+    <div class="modal-box" style="max-width: 32rem;">
+      <h3 class="font-bold text-lg mb-2">${t("official_sync")}</h3>
+      <p class="text-sm mb-3 opacity-80">
+        ${t("official_sync_new")}: <b>${plan.toRegister.length}</b> ·
+        ${t("official_sync_done")}: <b>${plan.synced}</b>${
+          plan.removed ? ` · <span class="text-warning">⚠ <b>${plan.removed}</b></span>` : ""
         }
-      </ul>
-      <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+      </p>
+      <div class="text-xs font-bold opacity-60 pb-1" style="display: grid; grid-template-columns: minmax(0, 1fr) 1.5rem minmax(0, 1fr); gap: 0.5rem; border-bottom: 1px solid currentColor;">
+        <span>Mr. Wplace</span><span></span><span>${t("official_sync_official")}</span>
+      </div>
+      <div id="official-sync-rows" class="text-sm" style="max-height: 50vh; overflow-y: auto;"></div>
+      <div class="mt-4" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
         <button id="official-sync-cancel" class="btn btn-ghost">${t("cancel")}</button>
         <button id="official-sync-run" class="btn btn-primary" ${
           plan.toRegister.length || Object.keys(plan.adopt).length ? "" : "disabled"
@@ -37,6 +77,7 @@ export const showOfficialSyncDialog = async (): Promise<void> => {
       <button aria-label="${t("close")}">${t("close")}</button>
     </form>
   `;
+  modal.querySelector("#official-sync-rows")!.append(...plan.rows.map(buildRow));
   document.body.appendChild(modal);
 
   const runBtn = modal.querySelector<HTMLButtonElement>("#official-sync-run")!;

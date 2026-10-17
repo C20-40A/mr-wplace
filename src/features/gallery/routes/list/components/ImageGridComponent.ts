@@ -1,4 +1,5 @@
 import { t } from "@/i18n/manager";
+import { withOfficialNote } from "../../../official-overlay";
 import type { GalleryItem } from "@/states/galleryStorage";
 import { runtime } from "@/utils/browser-api";
 import { attachScrollFallback } from "@/utils/scroll";
@@ -388,7 +389,7 @@ export class ImageGridComponent {
         const key = (e.currentTarget as HTMLElement).getAttribute(
           "data-delete",
         );
-        if (key && confirm(t`${"delete_image_confirm"}`)) {
+        if (key && confirm(withOfficialNote(t`${"delete_image_confirm"}`, key))) {
           this.options.onImageDelete?.(key);
         }
       });

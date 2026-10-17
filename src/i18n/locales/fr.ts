@@ -658,4 +658,7 @@ export const frTranslations = {
   official_sync_done: "Déjà synchronisé",
   official_sync_removed: "Supprimé côté officiel (ne sera pas réenregistré)",
   official_sync_reload: "Enregistré. Rechargez la page pour appliquer.",
+  official_overlay_remains: "Il reste aussi dans vos overlays officiels. Supprimez-le séparément là-bas si nécessaire.",
+  official_sync_official: "Officiel",
+  official_sync_official_only: "Officiel uniquement",
 };
