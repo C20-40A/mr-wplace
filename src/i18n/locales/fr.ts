@@ -653,4 +653,6 @@ export const frTranslations = {
   view_mode: "Affichage",
   open: "Ouvrir",
   zoom_in: "Agrandir",
+  register_official_overlay: "Ajouter aux overlays officiels",
+  official_overlay_registered: "Enregistré. Rechargez la page pour appliquer.",
 };

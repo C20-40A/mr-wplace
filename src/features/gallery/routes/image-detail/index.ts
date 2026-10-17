@@ -587,6 +587,13 @@ export class GalleryImageDetail {
         );
         if (!format) return;
 
+        if (format === "official") {
+          const { registerToOfficialOverlay } = await import("../../official-overlay");
+          await registerToOfficialOverlay(this.currentItem);
+          Toast.success(t`${"official_overlay_registered"}`);
+          return;
+        }
+
         if (format === "wplace") {
           await downloadWplaceFile(this.currentItem);
         } else {

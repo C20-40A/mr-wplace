@@ -649,4 +649,6 @@ export const ruTranslations = {
   view_mode: "Режим отображения",
   open: "Открыть",
   zoom_in: "Увеличить",
+  register_official_overlay: "Добавить в официальные оверлеи",
+  official_overlay_registered: "Добавлено. Перезагрузите страницу, чтобы применить.",
 };

@@ -632,4 +632,6 @@ export const viTranslations = {
   view_mode: "Chế độ xem",
   open: "Mở",
   zoom_in: "Phóng to",
+  register_official_overlay: "Thêm vào overlay chính thức",
+  official_overlay_registered: "Đã đăng ký. Tải lại trang để áp dụng.",
 };

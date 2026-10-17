@@ -13,7 +13,7 @@ import { getImageDataUrl } from "@/utils/indexed-db-bridge";
  * ファイル名のサニタイズ
  * ファイルシステムで使えない文字を削除または置換
  */
-const sanitizeFilename = (filename: string): string => {
+export const sanitizeFilename = (filename: string): string => {
   return filename
     .replace(/[/\\:*?"<>|]/g, "_")
     .replace(/\s+/g, "_")
@@ -99,6 +99,23 @@ const createWplaceFilename = (item: GalleryItem): string => {
   return sanitizeFilename(baseFilename) + ".wplace";
 };
 
+/**
+ * 公式 overlay 形式の bounds (lat/lng) を返す。drawPosition/width/height 必須
+ */
+export const getOverlayBounds = (item: GalleryItem) => {
+  if (!item.drawPosition || !item.width || !item.height)
+    throw new Error("Item has no drawPosition or dimensions");
+  const { TLX, TLY, PxX, PxY } = item.drawPosition;
+  const northWest = tilePixelToLatLng(TLX, TLY, PxX, PxY);
+  const southEast = tilePixelToLatLng(TLX, TLY, PxX + item.width, PxY + item.height);
+  return {
+    north: northWest.lat,
+    south: southEast.lat,
+    west: northWest.lng,
+    east: southEast.lng,
+  };
+};
+
 export const downloadWplaceFile = async (item: GalleryItem): Promise<void> => {
   if (!item.drawPosition) throw new Error("Item has no drawPosition");
   if (!item.width || !item.height) throw new Error("Image dimensions not available");
@@ -110,9 +127,7 @@ export const downloadWplaceFile = async (item: GalleryItem): Promise<void> => {
 
   if (!imageDataUrl) throw new Error("Failed to load image data");
 
-  const { TLX, TLY, PxX, PxY } = item.drawPosition;
-  const northWest = tilePixelToLatLng(TLX, TLY, PxX, PxY);
-  const southEast = tilePixelToLatLng(TLX, TLY, PxX + item.width, PxY + item.height);
+  const bounds = getOverlayBounds(item);
   const fileName = createWplaceFilename(item);
   const imageName = createPngFilename(item);
 
@@ -129,12 +144,7 @@ export const downloadWplaceFile = async (item: GalleryItem): Promise<void> => {
       width: item.width,
       height: item.height,
     },
-    bounds: {
-      north: northWest.lat,
-      south: southEast.lat,
-      west: northWest.lng,
-      east: southEast.lng,
-    },
+    bounds,
     colorMetric: item.colorMetric ?? "lab",
     dithering: item.dithering ?? false,
     order: item.layerOrder ?? 0,

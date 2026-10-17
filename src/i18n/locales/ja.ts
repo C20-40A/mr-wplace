@@ -666,4 +666,6 @@ export const jaTranslations = {
   view_map: "マップ",
   open: "開く",
   zoom_in: "拡大",
+  register_official_overlay: "公式 overlay に登録",
+  official_overlay_registered: "登録しました。ページを再読み込みすると反映されます",
 };

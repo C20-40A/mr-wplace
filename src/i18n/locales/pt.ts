@@ -637,4 +637,6 @@ export const ptTranslations = {
   view_mode: "Modo de exibição",
   open: "Abrir",
   zoom_in: "Ampliar",
+  register_official_overlay: "Adicionar aos overlays oficiais",
+  official_overlay_registered: "Registrado. Recarregue a página para aplicar.",
 };

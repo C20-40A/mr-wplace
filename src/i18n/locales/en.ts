@@ -663,4 +663,6 @@ Do not use this feature to paint actual pixels.`,
   view_map: "Map",
   open: "Open",
   zoom_in: "Zoom in",
+  register_official_overlay: "Add to official overlays",
+  official_overlay_registered: "Registered. Reload the page to apply.",
 };
