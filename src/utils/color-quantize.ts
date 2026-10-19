@@ -117,9 +117,10 @@ for (let i = 0; i < 256; i++) {
 
 // RGB → CIE Lab (D65)
 export const rgbToLabWplace = (rgb: RGB): Lab => {
-  const r = SRGB_LUT[rgb.r];
-  const g = SRGB_LUT[rgb.g];
-  const b = SRGB_LUT[rgb.b];
+  // Dithering supplies fractional channels; LUT indices must be integer bytes.
+  const r = SRGB_LUT[Math.max(0, Math.min(255, Math.round(rgb.r)))];
+  const g = SRGB_LUT[Math.max(0, Math.min(255, Math.round(rgb.g)))];
+  const b = SRGB_LUT[Math.max(0, Math.min(255, Math.round(rgb.b)))];
   let x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047;
   let y = r * 0.2126 + g * 0.7152 + b * 0.0722;
   let z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
