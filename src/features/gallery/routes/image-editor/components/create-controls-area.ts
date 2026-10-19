@@ -673,7 +673,7 @@ const createCoordinateInput = (
   return createElement("div", {}, [
     createElement(
       "div",
-      { style: "display:flex;align-items:center;gap:4px;" },
+      { style: { display: "flex", alignItems: "center", gap: "4px" } },
       [
         createElement("label", { className: "control-label-sm" }, [
           t("coordinates"),

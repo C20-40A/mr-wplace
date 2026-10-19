@@ -24,7 +24,7 @@ export class PositionInfo {
   private bigObserver: MutationObserver | null = null;
   private bigEnabled = false;
   private bigScheduled = false;
-  private observedCoordSpan: Element | null = null;
+  private observedContainer: Element | null = null;
   private observedBigContainer: Element | null = null;
 
   constructor() {
@@ -114,23 +114,35 @@ export class PositionInfo {
     this.bigObserver.observe(container, { childList: true, subtree: true });
   }
 
-  private observeCoordSpan(
-    coordSpan: Element,
-    tileCoordSpan: HTMLElement,
-  ): void {
-    if (this.observedCoordSpan === coordSpan && this.observer) return;
+  private updateTileInfo(span: HTMLElement): void {
+    const pos = getCurrentPosition();
+    if (!pos) return;
+    const c = latLngToTilePixel(pos.lat, pos.lng);
+    const text = `${c.TLX}-${c.TLY}-${c.PxX}-${c.PxY}`;
+    // 自身の書き換えで observer がループしないよう、変化時のみ更新
+    if (span.textContent !== text) span.textContent = text;
+  }
+
+  /**
+   * パネル全体を監視して座標を再計算する
+   * (サイト側の座標spanは再描画で差し替わるため、span単体は監視しない)
+   */
+  private observeContainer(container: Element): void {
+    if (this.observedContainer === container && this.observer) return;
 
     this.observer?.disconnect();
-    this.observedCoordSpan = coordSpan;
+    this.observedContainer = container;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     this.observer = new MutationObserver(() => {
-      setTimeout(() => {
-        const pos = getCurrentPosition();
-        if (!pos) return;
-        const c = latLngToTilePixel(pos.lat, pos.lng);
-        tileCoordSpan.textContent = `${c.TLX}-${c.TLY}-${c.PxX}-${c.PxY}`;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const span = container.querySelector<HTMLElement>(
+          "#position-tile-info",
+        );
+        if (span) this.updateTileInfo(span);
       }, 50);
     });
-    this.observer.observe(coordSpan, {
+    this.observer.observe(container, {
       childList: true,
       subtree: true,
       characterData: true,
@@ -152,11 +164,8 @@ export class PositionInfo {
       "#position-tile-info",
     );
     if (existingTileInfo) {
-      const pos = getCurrentPosition();
-      if (pos) {
-        const c = latLngToTilePixel(pos.lat, pos.lng);
-        existingTileInfo.textContent = `${c.TLX}-${c.TLY}-${c.PxX}-${c.PxY}`;
-      }
+      this.updateTileInfo(existingTileInfo);
+      this.observeContainer(container);
       if (this.bigEnabled) {
         this.scheduleCloseButtonBig(container);
         this.startBigObserver(container);
@@ -253,11 +262,9 @@ export class PositionInfo {
       this.startBigObserver(container);
     }
 
-    // MutationObserver: 座標変更監視（サイト側の座標spanを監視）
-    const coordSpan = container.querySelector(
-      "span.text-base-content\\/70.text-xs:not(#position-tile-info)",
-    );
-    if (coordSpan) this.observeCoordSpan(coordSpan, tileCoordSpan);
+    // 座標変更監視（パネル再描画・location 書き込み遅延に追従）
+    this.observeContainer(container);
+    setTimeout(() => this.updateTileInfo(tileCoordSpan), 50);
   }
 
   private createToolbarButton(
