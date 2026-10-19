@@ -10,7 +10,6 @@ import {
 } from "./color-utils";
 import type {
   DitheringMethod,
-  PerceptualQuantizationMethod,
   QuantizationMethod,
   RgbColor,
 } from "./types";
@@ -26,83 +25,84 @@ const BAYER_MATRIX_4X4 = [
 const getPaletteColors = (selectedColorIds: number[]): RgbColor[] =>
   colorpalette.filter((color) => selectedColorIds.includes(color.id)).map((color) => color.rgb);
 
-const createPerceptualNearestColorFinder = (
+type NearestColorFinder = (r: number, g: number, b: number) => RgbColor;
+
+const createNearestFinderInSpace = <T>(
   rgbList: RgbColor[],
-  method: PerceptualQuantizationMethod
-): ((r: number, g: number, b: number) => RgbColor) => {
-  const palettePerceptual = rgbList.map(([r, g, b]) =>
-    rgbToPerceptualColor(method, r, g, b)
-  );
+  toSpace: (r: number, g: number, b: number) => T,
+  distance: (a: T, b: T) => number
+): NearestColorFinder => {
+  const palette = rgbList.map(([r, g, b]) => toSpace(r, g, b));
 
   return (r: number, g: number, b: number): RgbColor => {
-    const sourcePerceptual = rgbToPerceptualColor(method, r, g, b);
+    const source = toSpace(r, g, b);
     let minDist = Infinity;
     let nearest = rgbList[0];
-
     for (let i = 0; i < rgbList.length; i++) {
-      const dist = colorDistPerceptualEuclidean2(
-        sourcePerceptual,
-        palettePerceptual[i]
-      );
+      const dist = distance(source, palette[i]);
       if (dist < minDist) {
         minDist = dist;
         nearest = rgbList[i];
       }
     }
-
     return nearest;
   };
 };
 
-const createLabWplaceNearestColorFinder = (
-  rgbList: RgbColor[]
-): ((r: number, g: number, b: number) => RgbColor) => {
-  const paletteLab = rgbList.map(([r, g, b]) => rgbToLabWplace({ r, g, b }));
-
+// 入力RGBを丸めて探索結果をキャッシュする
+// lab-wplace 専用: rgbToLabWplace は整数indexのLUT参照で、ディザ由来の小数だと NaN になり rgbList[0] 固定になる
+// (他方式は小数のまま計算できるので、ディザ結果を変えないよう適用しない)
+const withRoundedCache = (find: NearestColorFinder): NearestColorFinder => {
+  const cache = new Map<number, RgbColor>();
   return (r: number, g: number, b: number): RgbColor => {
-    const srcLab = rgbToLabWplace({ r, g, b });
-    let minDist = Infinity;
-    let nearest = rgbList[0];
-    for (let i = 0; i < rgbList.length; i++) {
-      const dist = distanceLabWplace(srcLab, paletteLab[i]);
-      if (dist < minDist) {
-        minDist = dist;
-        nearest = rgbList[i];
-      }
-    }
+    const ri = Math.round(r);
+    const gi = Math.round(g);
+    const bi = Math.round(b);
+    const key = (ri << 16) | (gi << 8) | bi;
+    const cached = cache.get(key);
+    if (cached) return cached;
+    const nearest = find(ri, gi, bi);
+    cache.set(key, nearest);
     return nearest;
   };
+};
+
+const toRgbTuple = (r: number, g: number, b: number): RgbColor => [r, g, b];
+
+const createMethodFinder = (
+  rgbList: RgbColor[],
+  method: QuantizationMethod
+): NearestColorFinder => {
+  if (method === "lab-wplace") {
+    return withRoundedCache(
+      createNearestFinderInSpace(
+        rgbList,
+        (r, g, b) => rgbToLabWplace({ r, g, b }),
+        distanceLabWplace
+      )
+    );
+  }
+  if (isPerceptualQuantizationMethod(method)) {
+    return createNearestFinderInSpace(
+      rgbList,
+      (r, g, b) => rgbToPerceptualColor(method, r, g, b),
+      colorDistPerceptualEuclidean2
+    );
+  }
+  const rgbDist =
+    method === "weighted-rgb" ? colorDistWeightedRgb2 : colorDistRgbEuclidean2;
+  return createNearestFinderInSpace(rgbList, toRgbTuple, (a, b) =>
+    rgbDist(a[0], a[1], a[2], b[0], b[1], b[2])
+  );
 };
 
 const createNearestColorFinder = (
   selectedColorIds: number[],
   method: QuantizationMethod
-): ((r: number, g: number, b: number) => RgbColor) | null => {
+): NearestColorFinder | null => {
   const rgbList = getPaletteColors(selectedColorIds);
   if (rgbList.length === 0) return null;
-  if (method === "lab-wplace") return createLabWplaceNearestColorFinder(rgbList);
-  if (isPerceptualQuantizationMethod(method)) {
-    return createPerceptualNearestColorFinder(rgbList, method);
-  }
-
-  const colorDistFn =
-    method === "weighted-rgb" ? colorDistWeightedRgb2 : colorDistRgbEuclidean2;
-
-  return (r: number, g: number, b: number): RgbColor => {
-    let minDist = Infinity;
-    let nearest = rgbList[0];
-
-    for (let i = 0; i < rgbList.length; i++) {
-      const color = rgbList[i];
-      const dist = colorDistFn(r, g, b, color[0], color[1], color[2]);
-      if (dist < minDist) {
-        minDist = dist;
-        nearest = color;
-      }
-    }
-
-    return nearest;
-  };
+  return createMethodFinder(rgbList, method);
 };
 
 export const quantizeToColorPalette = (
