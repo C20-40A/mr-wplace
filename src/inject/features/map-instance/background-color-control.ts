@@ -15,6 +15,7 @@ type BackgroundLayerState = {
 };
 
 let backgroundLayerState: BackgroundLayerState | null = null;
+let cancelPendingBackground: (() => void) | null = null;
 
 const getLayersBeforePixelArt = (mapInstance: any): any[] => {
   const layers = mapInstance.getStyle?.()?.layers;
@@ -113,23 +114,44 @@ const applySolidBackground = (mapInstance: any, color: string): void => {
 };
 
 export const changeBackgroundColor = (color: string | null): void => {
+  cancelPendingBackground?.();
+  cancelPendingBackground = null;
+
   const mapInstance = getMapInstanceFromWplace();
   if (!mapInstance) {
     console.log("🧑‍🎨 : Map instance not available");
     return;
   }
 
-  try {
-    restoreBackgroundLayerState(mapInstance);
-
-    if (color == null) {
-      console.log("🧑‍🎨 : Background color reset");
+  const apply = (): void => {
+    // Map capture can precede creation of pixel-art-layer on a fresh load.
+    if (color != null && !resolveBackgroundLayer(mapInstance)) {
+      mapInstance.on("styledata", retry);
+      cancelPendingBackground = () => mapInstance.off("styledata", retry);
       return;
     }
 
-    applySolidBackground(mapInstance, color);
-    console.log("🧑‍🎨 : Background color updated to:", color);
-  } catch (error) {
-    console.error("🧑‍🎨 : Error changing background color:", error);
-  }
+    try {
+      restoreBackgroundLayerState(mapInstance);
+
+      if (color == null) {
+        console.log("🧑‍🎨 : Background color reset");
+        return;
+      }
+
+      applySolidBackground(mapInstance, color);
+      console.log("🧑‍🎨 : Background color updated to:", color);
+    } catch (error) {
+      console.error("🧑‍🎨 : Error changing background color:", error);
+    }
+  };
+
+  const retry = (): void => {
+    // Paint/layout updates also emit styledata; detach before changing them.
+    cancelPendingBackground?.();
+    cancelPendingBackground = null;
+    apply();
+  };
+
+  apply();
 };

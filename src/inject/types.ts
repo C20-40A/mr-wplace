@@ -150,6 +150,7 @@ export interface WplaceMap {
   removeLayer: (layerId: string) => void;
   getStyle: () => any;
   on: (event: string, handler: (e: any) => void) => void;
+  off: (event: string, handler: (e: any) => void) => void;
   showTileBoundaries: boolean;
   setSky?: (sky: SkySpecification) => void;
   setMaxPitch: (pitch: number) => void;
