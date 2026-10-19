@@ -58,9 +58,18 @@ const createLabWplaceNearestColorFinder = (
   rgbList: RgbColor[]
 ): ((r: number, g: number, b: number) => RgbColor) => {
   const paletteLab = rgbList.map(([r, g, b]) => rgbToLabWplace({ r, g, b }));
+  const cache = new Map<number, RgbColor>();
 
+  // rgbToLabWplace は整数indexのLUT参照。ディザ由来の小数を渡すと NaN になり rgbList[0] 固定になるため丸める
   return (r: number, g: number, b: number): RgbColor => {
-    const srcLab = rgbToLabWplace({ r, g, b });
+    const ri = Math.round(r);
+    const gi = Math.round(g);
+    const bi = Math.round(b);
+    const key = (ri << 16) | (gi << 8) | bi;
+    const cached = cache.get(key);
+    if (cached) return cached;
+
+    const srcLab = rgbToLabWplace({ r: ri, g: gi, b: bi });
     let minDist = Infinity;
     let nearest = rgbList[0];
     for (let i = 0; i < rgbList.length; i++) {
@@ -70,6 +79,7 @@ const createLabWplaceNearestColorFinder = (
         nearest = rgbList[i];
       }
     }
+    cache.set(key, nearest);
     return nearest;
   };
 };
