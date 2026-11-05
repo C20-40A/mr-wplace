@@ -114,7 +114,7 @@ const createRasterCanvas = (
 const getRasterContext = (
   canvas: OffscreenCanvas | HTMLCanvasElement,
 ): OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D => {
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
   if (!ctx) throw new Error("Failed to get tile canvas context");
   if ("drawImage" in ctx && "getImageData" in ctx) return ctx;
 

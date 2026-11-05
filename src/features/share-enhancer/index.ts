@@ -1,5 +1,6 @@
 import { findShareModalUrlContainer } from "@/constants/selectors";
 import { latLngToTilePixel } from "@/utils/coordinate";
+import { onDomChange } from "@/utils/dom-change";
 
 const ROW_ID = "mr-wplace-share-short-coords";
 
@@ -76,12 +77,11 @@ const inject = (modalBox: Element): void => {
 };
 
 const observeShareModal = (): void => {
-  const observer = new MutationObserver(() => {
+  onDomChange(() => {
     for (const modalBox of document.querySelectorAll(".modal-box")) {
       if (findShareModalUrlContainer(modalBox)) inject(modalBox);
     }
   });
-  observer.observe(document.body, { childList: true, subtree: true });
 };
 
 export const initShareEnhancer = (): void => {

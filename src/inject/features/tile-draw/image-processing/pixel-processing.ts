@@ -40,7 +40,8 @@ export const convertImageBitmapToUint8ClampedArray = (
 ) => {
   // OffscreenCanvasを作成
   const offscreen = new OffscreenCanvas(imageBitmap.width, imageBitmap.height);
-  const context = offscreen.getContext("2d");
+  // 描画→getImageData の読み戻し専用。GPU canvas からの readback を避ける
+  const context = offscreen.getContext("2d", { willReadFrequently: true });
 
   if (!context)
     throw new Error("OffscreenCanvasのコンテキスト取得に失敗しました");

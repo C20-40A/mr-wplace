@@ -2,6 +2,7 @@ import { getAggregatedColorStats } from "@/utils/inject-bridge";
 import { colorpalette } from "@/constants/colors";
 import { getAllGalleryMetadata } from "@/core/bridge/gallery-storage-bridge";
 import { findNearestGalleryItem } from "@/utils/gallery-helpers";
+import { onDomChange } from "@/utils/dom-change";
 
 export interface PaintTemplateProgress {
   id: string;
@@ -279,7 +280,7 @@ export const initPaintStats = (): void => {
   // 「color buttons が新たに現れた時だけ」トリガーすることでループを断つ。
   let colorButtonsWerePresent = false;
 
-  const observer = new MutationObserver(() => {
+  onDomChange(() => {
     const hasColorButtons = findColorButtons().length > 0;
 
     if (!hasColorButtons) {
@@ -292,6 +293,4 @@ export const initPaintStats = (): void => {
 
     displayColorStats();
   });
-
-  observer.observe(document.body, { childList: true, subtree: true });
 };

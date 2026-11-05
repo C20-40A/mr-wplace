@@ -29,7 +29,8 @@ const blobToPixelsWithCanvas = async (
     const canvas = document.createElement("canvas");
     canvas.width = img.width;
     canvas.height = img.height;
-    const ctx = canvas.getContext("2d");
+    // 読み戻し専用 (GPU readback を避ける。未対応ブラウザでは無視される)
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) throw new Error("Failed to get 2d context");
     ctx.drawImage(img, 0, 0);
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);

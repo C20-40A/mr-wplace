@@ -2,7 +2,14 @@
  * Stats Bridge - Content ↔ Inject communication for statistics computation
  */
 
+type TileStatsPayload = Record<
+  string,
+  { matched: Record<string, number>; total: Record<string, number> }
+>;
+
 const statsUpdateQueue = new Map<string, Promise<void>>();
+// 保存待ち (まだ実行が始まっていない) の tile delta。imageKey ごとに1件へ合流させる
+const pendingStatsDeltas = new Map<string, TileStatsPayload>();
 
 /**
  * Handle stats computation notification from inject side
@@ -12,21 +19,30 @@ const statsUpdateQueue = new Map<string, Promise<void>>();
  */
 export const handleStatsComputed = async (
   imageKey: string,
-  tileStatsPayload:
-    | Record<
-        string,
-        { matched: Record<string, number>; total: Record<string, number> }
-      >
-    | undefined
+  tileStatsPayload: TileStatsPayload | undefined
 ) => {
   // Skip temporary layers (text, snapshot)
   if (imageKey.startsWith("text_") || imageKey.startsWith("snapshot_")) return;
   if (!tileStatsPayload) return;
 
+  // タイル描画が連続すると1タイルごとに metadata 読み書きが直列で走る。
+  // 未実行の保存があればそこへ合流させ、まとめて1回で保存する
+  // (tile 単位で上書きなので、合流しても最終結果は同じ)。
+  const pending = pendingStatsDeltas.get(imageKey);
+  if (pending) {
+    Object.assign(pending, tileStatsPayload);
+    await statsUpdateQueue.get(imageKey);
+    return;
+  }
+  const delta: TileStatsPayload = { ...tileStatsPayload };
+  pendingStatsDeltas.set(imageKey, delta);
+
   const previousTask = statsUpdateQueue.get(imageKey) || Promise.resolve();
   const currentTask = previousTask
     .catch(() => undefined)
     .then(async () => {
+      if (pendingStatsDeltas.get(imageKey) === delta)
+        pendingStatsDeltas.delete(imageKey);
       try {
         const { GalleryStorage } = await import("@/states/galleryStorage");
         const galleryStorage = new GalleryStorage();
@@ -36,7 +52,7 @@ export const handleStatsComputed = async (
           string,
           { matched: Map<string, number>; total: Map<string, number> }
         >();
-        for (const [tileKey, stats] of Object.entries(tileStatsPayload)) {
+        for (const [tileKey, stats] of Object.entries(delta)) {
           statsMap.set(tileKey, {
             matched: new Map(
               Object.entries(stats.matched).map(([k, v]) => [k, v]),

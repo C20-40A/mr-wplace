@@ -4,6 +4,7 @@ import {
   getCloseConfirm,
 } from "@/states/close-confirm";
 import { t } from "@/i18n/manager";
+import { onDomChange } from "@/utils/dom-change";
 
 /**
  * Paint modalを閉じる際に確認ダイアログを表示する機能
@@ -87,11 +88,7 @@ export class CloseConfirm {
     // 初回チェック
     checkAndAttach();
 
-    // DOM変更を監視
-    const observer = new MutationObserver(() => {
-      requestAnimationFrame(checkAndAttach);
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
+    // DOM変更を監視 (1フレーム1回にまとめて再チェック)
+    onDomChange(checkAndAttach);
   }
 }

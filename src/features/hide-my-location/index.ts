@@ -1,4 +1,5 @@
 import { findMyLocationButton } from "@/constants/selectors";
+import { onDomChange } from "@/utils/dom-change";
 import {
   loadHideMyLocationFromStorage,
   getHideMyLocation,
@@ -14,8 +15,7 @@ export class HideMyLocation {
     if (!getHideMyLocation()) return;
 
     this.hide();
-    const observer = new MutationObserver(() => this.hide());
-    observer.observe(document.body, { childList: true, subtree: true });
+    onDomChange(() => this.hide());
   }
 
   private hide(): void {

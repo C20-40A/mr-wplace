@@ -1,9 +1,9 @@
 # Utils / Components API Context
 
-- generated_at: 2026-11-05T00:12:05.668Z
+- generated_at: 2026-11-05T00:27:33.373Z
 - project: tsconfig.json
 - targets: src/utils, src/components
-- files: 38
+- files: 39
 
 ## src/components/card.ts
 
@@ -537,6 +537,28 @@
   - signature: `(vertices: LngLatLike[]) => number`
   - summary: Wplace world pixel 座標系でのポリゴン面積 (px²)
 
+## src/utils/dom-change.ts
+
+- exports: 1
+- top_level_declarations: 7
+- declarations:
+- type `DomChangeListener` (L1)
+  - signature: `() => void`
+- variable `listeners` (L3)
+  - signature: `Set<DomChangeListener>`
+- variable `observer` (L4)
+  - signature: `MutationObserver | null`
+- variable `scheduled` (L5)
+  - signature: `boolean`
+- variable `flush` (L7)
+  - signature: `() => void`
+- variable `schedule` (L19)
+  - signature: `() => void`
+- export variable `onDomChange` (L32)
+  - signature: `(listener: DomChangeListener) => (() => void)`
+  - summary: document.body 配下の childList 変化を購読する。 MutationObserver は全購読者で1本だけ共有し、通知は1フレーム1回にまとめる (rAF は描画前に走るので、要素の非表示などもちらつかずに間に合う)。
+  - tags: @returns 購読解除関数
+
 ## src/utils/gallery-helpers.ts
 
 - exports: 2
@@ -892,7 +914,7 @@
 ## src/utils/paint-mode.ts
 
 - exports: 2
-- top_level_declarations: 9
+- top_level_declarations: 11
 - declarations:
 - type `PaintModeListener` (L3)
   - signature: `(active: boolean) => void`
@@ -902,16 +924,21 @@
   - signature: `MutationObserver | null`
 - variable `scheduled` (L7)
   - signature: `boolean`
-- variable `active` (L8)
+- variable `attrObserver` (L8)
+  - signature: `MutationObserver | null`
+- variable `active` (L9)
   - signature: `boolean`
-- export variable `isPaintModeActive` (L11)
+- export variable `isPaintModeActive` (L12)
   - signature: `() => boolean`
-  - summary: paint modal (Paint pixel) が開いているか
-- variable `notify` (L13)
+  - summary: paint modal (Paint pixel) が開いているか (DOMに残っていても非表示なら false)
+- variable `notify` (L17)
   - signature: `() => void`
-- variable `schedule` (L27)
+- variable `syncAttrObserver` (L33)
   - signature: `() => void`
-- export variable `subscribePaintMode` (L44)
+  - summary: 属性変化(class/hidden/style)の監視はペイントモード中のみ。負荷を抑える
+- variable `schedule` (L48)
+  - signature: `() => void`
+- export variable `subscribePaintMode` (L65)
   - signature: `(listener: PaintModeListener, immediate?: boolean) => (() => void)`
   - summary: paint modal の開閉を購読する MutationObserverは全購読者で1本のみ共有する
   - tags: @param 状態が変化したときに呼ばれる | @param 購読時に現在の状態で1回呼ぶ (default: true) | @returns 購読解除関数
@@ -925,9 +952,9 @@
   - signature: `(blob: Blob) => Promise<{ pixels: Uint8Array; width: number; height: number; }>`
 - variable `blobToPixelsWithCanvas` (L18)
   - signature: `(blob: Blob) => Promise<{ pixels: Uint8Array; width: number; height: number; }>`
-- variable `useImageDecoder` (L47)
+- variable `useImageDecoder` (L48)
   - signature: `boolean`
-- export variable `blobToPixels` (L49)
+- export variable `blobToPixels` (L50)
   - signature: `(blob: Blob) => Promise<{ pixels: Uint8Array; width: number; height: number; }>`
 
 ## src/utils/position.ts

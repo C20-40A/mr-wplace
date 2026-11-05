@@ -41,7 +41,7 @@ const decodeTile = async (blob: Blob): Promise<DecodedTile> => {
           height: bitmap.height,
         });
 
-  const ctx = canvas.getContext("2d") as
+  const ctx = canvas.getContext("2d", { willReadFrequently: true }) as
     | OffscreenCanvasRenderingContext2D
     | CanvasRenderingContext2D
     | null;

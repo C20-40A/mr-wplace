@@ -1,4 +1,5 @@
 import { storage } from "@/utils/browser-api";
+import { onDomChange } from "@/utils/dom-change";
 
 const LEGACY_STORAGE_KEY = "palette-toggle-hidden";
 const COLOR_SELECTOR = "#color-1";
@@ -15,11 +16,9 @@ export const restoreLegacyPaletteVisibility = async (): Promise<void> => {
   };
 
   if (!revealPalette()) {
-    const observer = new MutationObserver(() => {
-      if (!revealPalette()) return;
-      observer.disconnect();
+    const unsubscribe = onDomChange(() => {
+      if (revealPalette()) unsubscribe();
     });
-    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   await storage.remove(LEGACY_STORAGE_KEY);
