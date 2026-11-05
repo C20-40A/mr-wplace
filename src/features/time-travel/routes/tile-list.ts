@@ -1289,7 +1289,7 @@ export class TileListRoute {
 
     const cardConfig: CardConfig = {
       id: `${tile.tileX}_${tile.tileY}`,
-      title: displayName,
+      title: escapeHtml(displayName),
       subtitle: `📍${tile.tileX}, ${tile.tileY}`,
       badge: `${tile.count}`,
       hasActiveIcon: hasActiveSnapshot,

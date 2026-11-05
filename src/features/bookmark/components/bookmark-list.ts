@@ -4,6 +4,7 @@ import { createCard, CardConfig } from "@/components/card";
 import { runtime } from "@/utils/browser-api";
 import { attachScrollFallback } from "@/utils/scroll";
 import { showFeatureHint } from "@/features/feature-hints";
+import { escapeHtml } from "@/utils/html";
 
 export type BookmarkSortType = "created" | "accessed" | "tag";
 
@@ -100,13 +101,13 @@ export const renderBookmarks = (
     .map((fav) => {
       const cardConfig: CardConfig = {
         id: fav.id.toString(),
-        title: fav.name,
+        title: escapeHtml(fav.name),
         padding: "11px 14px 10px 10px",
         onDelete: true,
         onEdit: true,
         onClick: true,
-        tagColor: fav.tag?.color,
-        tagName: fav.tag?.name,
+        tagColor: fav.tag && escapeHtml(fav.tag.color),
+        tagName: fav.tag?.name && escapeHtml(fav.tag.name),
         data: {
           lat: fav.lat.toString(),
           lng: fav.lng.toString(),

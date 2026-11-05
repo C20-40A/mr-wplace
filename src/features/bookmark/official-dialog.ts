@@ -462,6 +462,7 @@ export const initOfficialFavoriteDialog = async (options: {
 
   // /me 応答から公式お気に入りの id を取得 (サムネ保存キー)
   window.addEventListener("message", (e) => {
+    if (e.source !== window) return;
     if (e.data?.source !== "mr-wplace-favorite-locations") return;
     const locations: FavoriteLocation[] = e.data.favoriteLocations || [];
     locationByCoord = new Map(

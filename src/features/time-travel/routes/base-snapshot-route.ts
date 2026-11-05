@@ -8,6 +8,7 @@ import {
   deleteSnapshotFromInject,
   updateSnapshotMetadataInInject,
 } from "@/utils/inject-bridge";
+import { escapeHtml } from "@/utils/html";
 
 export abstract class BaseSnapshotRoute {
   protected setupSnapshotEvents(
@@ -67,10 +68,10 @@ export abstract class BaseSnapshotRoute {
     return `
       <div class="border-b wps-snapshot-item" data-snapshot-key="${
         snapshot.fullKey
-      }" data-snapshot-name="${snapshot.name || ""}" style="position: relative; cursor: pointer;">
+      }" data-snapshot-name="${escapeHtml(snapshot.name)}" style="position: relative; cursor: pointer;">
         <div class="p-3 pr-28">
           <div class="text-sm font-medium flex items-center gap-2">
-            <span>${snapshot.name || formattedTime}</span>
+            <span>${escapeHtml(snapshot.name) || formattedTime}</span>
             <button
               class="wps-edit-btn opacity-40 hover:opacity-70 transition-opacity"
               data-snapshot-key="${snapshot.fullKey}"

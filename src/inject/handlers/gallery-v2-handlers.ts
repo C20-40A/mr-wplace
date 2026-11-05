@@ -271,6 +271,7 @@ const handleUpdateMetadata = async (
  */
 export const setupGalleryV2Handlers = () => {
   window.addEventListener("message", async (event) => {
+    if (event.source !== window) return;
     const { source, requestId } = event.data;
 
     switch (source) {

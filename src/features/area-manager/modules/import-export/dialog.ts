@@ -1,5 +1,6 @@
 import { t } from "@/i18n/manager";
 import type { AreaRegion } from "@/types/area-region";
+import { escapeHtml } from "@/utils/html";
 
 type ImportMode = "merge" | "replace";
 type ImportOptions = {
@@ -35,7 +36,7 @@ const showImportConfirmDialog = async (
     <div class="modal-box" style="max-width: 28rem; display: flex; flex-direction: column; gap: 0.8rem;">
       <h3 class="font-bold text-lg">${t`${"map_filter_area_import_confirm_title"}`}</h3>
       <div style="font-size: 0.875rem; color: oklch(var(--bc) / 0.7);">
-        <div><strong>${t`${"file_select"}`}:</strong> ${file.name}</div>
+        <div><strong>${t`${"file_select"}`}:</strong> ${escapeHtml(file.name)}</div>
         <div><strong>${t`${"file_size"}`}:</strong> ${formatFileSizeLabel(file.size)}</div>
       </div>
 

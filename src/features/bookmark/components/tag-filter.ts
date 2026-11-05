@@ -1,5 +1,6 @@
 import { Tag, Bookmark } from "../types";
 import { t } from "@/i18n/manager";
+import { escapeHtml } from "@/utils/html";
 
 export const renderTagFilters = (
   tags: Tag[],
@@ -45,10 +46,10 @@ export const renderTagFilters = (
       return `
         <button
           class="wps-tag-filter-btn btn btn-sm ${isSelected ? "btn-primary" : "btn-outline"}"
-          data-tag-key="${tagKey}"
+          data-tag-key="${escapeHtml(tagKey)}"
           style="flex-shrink: 0; display: inline-flex; align-items: center; gap: 0.5rem;">
-          <div style="width: 16px; height: 16px; border-radius: 4px; background: ${tag.color};"></div>
-          <span>${tag.name || t`${"no_name"}`}</span>
+          <div style="width: 16px; height: 16px; border-radius: 4px; background: ${escapeHtml(tag.color)};"></div>
+          <span>${escapeHtml(tag.name) || t`${"no_name"}`}</span>
         </button>
       `;
     })

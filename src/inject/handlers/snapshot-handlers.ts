@@ -228,6 +228,7 @@ const handleDeleteSnapshot = async (requestId: string, id: string) => {
  */
 export const setupSnapshotHandlers = () => {
   window.addEventListener("message", async (event) => {
+    if (event.source !== window) return;
     const { source, requestId } = event.data;
 
     switch (source) {

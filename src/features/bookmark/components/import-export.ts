@@ -1,6 +1,7 @@
 import { Tag } from "../types";
 import { t } from "@/i18n/manager";
 import { BookmarkStorage } from "../storage";
+import { escapeHtml } from "@/utils/html";
 
 export const showImportExportDialog = async (
   onImport: () => void,
@@ -60,13 +61,13 @@ export const showImportExportDialog = async (
                     return t`
                       <label class="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-base-200" style="margin-bottom: 0.25rem;">
                         <input type="checkbox" class="checkbox checkbox-sm wps-tag-checkbox" data-color="${
-                          tag.color
-                        }" data-name="${tag.name || ""}" />
+                          escapeHtml(tag.color)
+                        }" data-name="${escapeHtml(tag.name) || ""}" />
                         <div style="width: 20px; height: 20px; border-radius: 4px; background: ${
-                          tag.color
+                          escapeHtml(tag.color)
                         }; flex-shrink: 0;"></div>
                         <span style="flex: 1;">${
-                          tag.name || `${"no_name"}`
+                          escapeHtml(tag.name) || `${"no_name"}`
                         }</span>
                         <span style="font-size: 0.75rem; color: oklch(var(--bc) / 0.6);">(${count})</span>
                       </label>

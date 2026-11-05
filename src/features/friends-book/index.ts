@@ -20,6 +20,7 @@ import { Tag } from "./types";
 import { TOOLBAR_ROW1_ID, TOOLBAR_ROW2_ID } from "@/features/position-info";
 import { findTopLeftControls } from "@/constants/selectors";
 import { isMobileViewport } from "@/constants/breakpoints";
+import { escapeHtml } from "@/utils/html";
 
 const FRIENDS_INFO_BAR_ID = "friends-book-info-bar";
 const FRIENDS_ADD_TO_FRIENDS_GROUP_ID = "friends-add-to-friends-group";
@@ -98,16 +99,16 @@ const updateFriendsInfoBar = async (): Promise<void> => {
   }
 
   const tagHTML = friend.tag
-    ? `<span style="display:inline-flex;align-items:center;gap:3px;border:1px solid ${friend.tag.color};border-radius:4px;padding:1px 4px;background:${friend.tag.color}22;font-size:10px;">
+    ? `<span style="display:inline-flex;align-items:center;gap:3px;border:1px solid ${escapeHtml(friend.tag.color)};border-radius:4px;padding:1px 4px;background:${friend.tag.color}22;font-size:10px;">
         <span style="width:7px;height:7px;border-radius:50%;background:${friend.tag.color};flex-shrink:0;"></span>
-        ${friend.tag.name || t`tag`}
+        ${escapeHtml(friend.tag.name) || t`tag`}
       </span>`
     : "";
 
-  const nameHTML = `<span style="opacity:0.8;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;">${lastPaintedByUser.name}</span>`;
+  const nameHTML = `<span style="opacity:0.8;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px;">${escapeHtml(lastPaintedByUser.name)}</span>`;
 
   const memoHTML = friend.memo
-    ? `<span style="opacity:0.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;" title="${friend.memo}">${friend.memo}</span>`
+    ? `<span style="opacity:0.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;" title="${escapeHtml(friend.memo)}">${escapeHtml(friend.memo)}</span>`
     : "";
 
   infoBar.innerHTML = `${tagHTML}${nameHTML}${memoHTML}`;
@@ -418,6 +419,7 @@ const init = (): void => {
 
   // Listen for painted by user data from inject
   window.addEventListener("message", (event) => {
+    if (event.source !== window) return;
     if (event.data.source === "mr-wplace-painted-by-user") {
       lastPaintedByUser = {
         id: event.data.userData.id,

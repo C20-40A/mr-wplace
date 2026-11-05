@@ -49,6 +49,9 @@ export const runZipExportWorker = async (
   filename: string,
   onProgress?: (progress: ZipExportProgress) => void,
 ): Promise<ZipExportResult> => {
+  if (!/^(chrome|moz|safari-web)-extension:\/\//.test(workerUrl))
+    throw new Error("Invalid worker URL");
+
   // Fetch the bundled worker and wrap in a Blob URL (page CSP friendly)
   const res = await fetch(workerUrl);
   const workerSource = await res.text();

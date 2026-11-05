@@ -465,6 +465,7 @@ export const setupMessageHandler = (): void => {
   setupSnapshotHandlers();
 
   window.addEventListener("message", async (event: MessageEvent) => {
+    if (event.source !== window) return;
     const { source } = event.data;
     const handler = messageHandlers[source];
 

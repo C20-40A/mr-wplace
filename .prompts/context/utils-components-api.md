@@ -1,9 +1,9 @@
 # Utils / Components API Context
 
-- generated_at: 2026-10-17T04:57:46.688Z
+- generated_at: 2026-11-05T00:12:05.668Z
 - project: tsconfig.json
 - targets: src/utils, src/components
-- files: 37
+- files: 38
 
 ## src/components/card.ts
 
@@ -177,9 +177,9 @@
 - exports: 1
 - top_level_declarations: 2
 - declarations:
-- interface `ImageDropzoneOptions` (L3)
+- interface `ImageDropzoneOptions` (L4)
   - signature: `ImageDropzoneOptions`
-- export class `ImageDropzone` (L13)
+- export class `ImageDropzone` (L14)
   - signature: `ImageDropzone`
   - summary: ドラッグ&ドロップによる画像ファイル選択コンポーネント clickでファイル選択ダイアログも開く
 
@@ -471,34 +471,34 @@
   - signature: `Float64Array<ArrayBuffer>`
 - export variable `rgbToLabWplace` (L119)
   - signature: `(rgb: RGB) => Lab`
-- variable `PALETTE_LAB` (L135)
+- variable `PALETTE_LAB` (L136)
   - signature: `Array<{ idx: number; lab: Lab }>`
-- variable `PALETTE_RGB` (L143)
+- variable `PALETTE_RGB` (L144)
   - signature: `Array<{ idx: number; rgb: RGB }>`
-- variable `LAB_BY_IDX` (L151)
+- variable `LAB_BY_IDX` (L152)
   - signature: `Array<{ idx: number; lab: Lab } | undefined>`
-- variable `RGB_BY_IDX` (L156)
+- variable `RGB_BY_IDX` (L157)
   - signature: `Array<{ idx: number; rgb: RGB } | undefined>`
-- export variable `distanceLabWplace` (L164)
+- export variable `distanceLabWplace` (L165)
   - signature: `(a: Lab, b: Lab) => number`
-- variable `distanceCiede2000` (L182)
+- variable `distanceCiede2000` (L183)
   - signature: `(a: Lab, b: Lab) => number`
-- variable `distanceCompuphase` (L237)
+- variable `distanceCompuphase` (L238)
   - signature: `(a: RGB, b: RGB) => number`
-- variable `findNearestLab` (L249)
+- variable `findNearestLab` (L250)
   - signature: `(lab: Lab, distFn: (a: Lab, b: Lab) => number, allowedColorIdxs: number[] | undefined) => number`
-- variable `findNearestCompuphase` (L270)
+- variable `findNearestCompuphase` (L271)
   - signature: `(rgb: RGB, allowedColorIdxs: number[] | undefined) => number`
-- export variable `findNearestColorId` (L294)
+- export variable `findNearestColorId` (L295)
   - signature: `(rgb: RGB, metric?: ColorMetric, allowedColorIdxs?: number[]) => number`
   - summary: Find nearest palette colorId for an RGB input. Returns colorId (= index into PALETTE_COLORS).
-- export variable `colorIdToRgba` (L312)
+- export variable `colorIdToRgba` (L313)
   - signature: `(colorId: number) => { r: number; g: number; b: number; a: number; }`
   - summary: Get RGBA for a colorId. colorId 0 (Transparent) returns alpha=0.
-- export variable `resizeImageDataNearest` (L322)
+- export variable `resizeImageDataNearest` (L323)
   - signature: `(src: ImageData, dstWidth: number, dstHeight: number) => ImageData`
   - summary: Nearest-neighbor resize of ImageData (integer pixel mapping). Equivalent to imageSmoothingEnabled=false drawImage.
-- export variable `quantizePixels` (L359)
+- export variable `quantizePixels` (L360)
   - signature: `(pixels: Uint8ClampedArray, width: number, height: number, metric: ColorMetric, dithering: boolean, allowedColorIdxs: number[] | undefined, onYield?: () => Promise<void>, yieldIntervalMs?: number) => Promise<void>`
   - summary: Apply palette quantization with optional Floyd-Steinberg dithering. Mutates pixels in-place (same as original).
   - tags: @param - ImageData.data (Uint8ClampedArray), mutated in-place | @param | @param | @param - color distance metric | @param - enable Floyd-Steinberg dithering | @param - restrict palette to these colorIds (undefined = all) | @param - optional async yield callback for chunked processing
@@ -601,6 +601,17 @@
   - signature: `(pixelX: number, pixelY: number, zoom?: number) => { min: [number, number]; max: [number, number]; }`
 - export variable `latLonToRegionAndPixel` (L290)
   - signature: `(lat: number, lon: number, zoom?: number, regionSizeTiles?: number) => { region: [number, number]; pixel: [number, number]; }`
+
+## src/utils/html.ts
+
+- exports: 1
+- top_level_declarations: 2
+- declarations:
+- variable `HTML_ENTITIES` (L1)
+  - signature: `Record<string, string>`
+- export variable `escapeHtml` (L10)
+  - signature: `(value: unknown) => string`
+  - summary: innerHTML / 属性値へ埋め込む文字列をエスケープする (null/undefined は空文字)
 
 ## src/utils/image-bitmap-compat.ts
 

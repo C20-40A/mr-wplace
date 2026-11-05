@@ -4,6 +4,7 @@ import { TileNameStorage } from "../tile-name-storage";
 import { t } from "@/i18n/manager";
 import { createCleanImageBitmap } from "@/utils/image-bitmap-compat";
 import { getSnapshotDataUrl } from "@/utils/inject-bridge";
+import { escapeHtml } from "@/utils/html";
 
 interface TileGroup {
   id: number;
@@ -457,7 +458,7 @@ export class TileMergeRoute {
         <div style="font-weight: bold;">${dateStr} ${timeStr}</div>
         ${
           snapshot.name
-            ? `<div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">${snapshot.name}</div>`
+            ? `<div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">${escapeHtml(snapshot.name)}</div>`
             : ""
         }
       `;

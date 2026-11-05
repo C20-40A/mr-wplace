@@ -9,6 +9,7 @@ import {
   gaugeHtml,
 } from "@/components/progress-gauge";
 import { Tutorial } from "@/features/tutorial";
+import { escapeHtml } from "@/utils/html";
 
 /** 最大5列(11.5rem×5 + gap)で頭打ちにし、画面幅でカードが巨大化しないようにする。Tailwind 非依存 */
 const GRID_STYLE =
@@ -491,7 +492,7 @@ export class ImageGridComponent {
     return `
       <div class="absolute truncate rounded-[var(--game-radius,5px)] border border-base-300/60 bg-base-100/90 px-2 py-1 text-xs font-medium text-base-content shadow-sm"
            style="left: 0.5rem; bottom: ${bottomPosition}; z-index: 5; max-width: ${maxWidth}; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);">
-        ${item.title}
+        ${escapeHtml(item.title)}
       </div>
     `;
   }

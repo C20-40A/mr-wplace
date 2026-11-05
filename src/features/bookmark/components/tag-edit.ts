@@ -1,6 +1,7 @@
 import { Tag, Bookmark } from "../types";
 import { t } from "@/i18n/manager";
 import { BookmarkStorage } from "../storage";
+import { escapeHtml } from "@/utils/html";
 
 export const PREDEFINED_COLORS = [
   { name: "Red", value: "#ef4444" },
@@ -31,8 +32,8 @@ export const renderExistingTags = (tags: Tag[], currentTag?: Tag): void => {
       const selected = isSelected(tag);
       return `
     <div class="wps-existing-tag-item"
-         data-color="${tag.color}"
-         data-name="${tag.name || ""}"
+         data-color="${escapeHtml(tag.color)}"
+         data-name="${escapeHtml(tag.name) || ""}"
          style="
            display: flex;
            align-items: center;
@@ -61,7 +62,7 @@ export const renderExistingTags = (tags: Tag[], currentTag?: Tag): void => {
           width: 24px;
           height: 24px;
           border-radius: 4px;
-          background: ${tag.color};
+          background: ${escapeHtml(tag.color)};
           flex-shrink: 0;
           position: relative;
           display: flex;
@@ -77,13 +78,13 @@ export const renderExistingTags = (tags: Tag[], currentTag?: Tag): void => {
           }
         </div>
         <span style="flex: 1; font-weight: ${selected ? "600" : "400"};">${
-          tag.name || `(${t`${"tag_name"}`})`
+          escapeHtml(tag.name) || `(${t`${"tag_name"}`})`
         }</span>
       </div>
       <button
         class="wps-tag-edit-btn btn btn-ghost btn-xs"
-        data-color="${tag.color}"
-        data-name="${tag.name || ""}"
+        data-color="${escapeHtml(tag.color)}"
+        data-name="${escapeHtml(tag.name) || ""}"
         type="button"
         style="flex-shrink: 0; z-index: 10;">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4" style="pointer-events: none;">
@@ -183,7 +184,7 @@ export const showTagEditModal = (
       <div style="margin-bottom: 1rem;">
         <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">${t`${"tag_name"}`} (${t`${"optional"}`})</label>
         <input id="wps-tag-edit-name" type="text" class="input input-bordered w-full" value="${
-          tag.name || ""
+          escapeHtml(tag.name) || ""
         }" />
       </div>
 

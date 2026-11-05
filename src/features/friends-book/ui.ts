@@ -3,6 +3,7 @@ import { FriendsBookStorage } from "./storage";
 import { t } from "@/i18n/manager";
 import { createModal, ModalElements } from "@/components/modal";
 import { minidenticon } from "@/utils/miniidenticon";
+import { escapeHtml } from "@/utils/html";
 
 const TAG_COLORS = [
   "#ef4444",
@@ -76,7 +77,7 @@ export const showAddFriendDialog = async (userData?: {
               type="text"
               class="input input-bordered input-sm w-full text-xs"
               placeholder="${"user_name_placeholder"}"
-              value="${userData?.name || ""}"
+              value="${escapeHtml(userData?.name)}"
             />
           </div>
           `
@@ -84,14 +85,14 @@ export const showAddFriendDialog = async (userData?: {
           <!-- ユーザー情報表示 (新規追加ではない場合) -->
           <div class="bg-base-200 rounded-lg p-2 mb-3">
             <div class="flex items-center gap-2">
-              <span class="font-medium text-red-500 text-sm">${
-                userData.name
-              }</span>
+              <span class="font-medium text-red-500 text-sm">${escapeHtml(
+                userData.name,
+              )}</span>
               <span class="text-xs opacity-70">#${userData.id}</span>
             </div>
             ${
               userData.allianceName
-                ? `<div class="text-xs opacity-70 mt-0.5">${userData.allianceName}</div>`
+                ? `<div class="text-xs opacity-70 mt-0.5">${escapeHtml(userData.allianceName)}</div>`
                 : ""
             }
           </div>
@@ -116,7 +117,7 @@ export const showAddFriendDialog = async (userData?: {
               type="text"
               class="input input-bordered input-sm w-full text-xs"
               placeholder="${`description_placeholder`}"
-              value="${existingFriend?.memo || ""}"
+              value="${escapeHtml(existingFriend?.memo)}"
             />
           </div>
 
@@ -184,14 +185,14 @@ export const showAddFriendDialog = async (userData?: {
                     ? "btn-primary"
                     : "btn-outline"
                 }"
-                data-color="${tag.color}"
-                data-name="${tag.name || ""}"
-                style="border-color: ${tag.color};"
+                data-color="${escapeHtml(tag.color)}"
+                data-name="${escapeHtml(tag.name) || ""}"
+                style="border-color: ${escapeHtml(tag.color)};"
               >
                 <span style="width: 8px; height: 8px; background: ${
-                  tag.color
+                  escapeHtml(tag.color)
                 }; border-radius: 50%; display: inline-block;"></span>
-                <span class="text-xs">${tag.name || `tag`}</span>
+                <span class="text-xs">${escapeHtml(tag.name) || `tag`}</span>
               </button>
             `,
               )
@@ -545,7 +546,7 @@ export const renderFriends = (
     .map(({ friend, index }) => {
       let avatarImage: string;
       if (friend.picture) {
-        avatarImage = `<img src="${friend.picture}" class="rounded-full w-8 h-8" style="image-rendering: pixelated;" />`;
+        avatarImage = `<img src="${escapeHtml(friend.picture)}" class="rounded-full w-8 h-8" style="image-rendering: pixelated;" />`;
       } else {
         const svg = minidenticon(friend.id.toString());
         avatarImage = `<div class="rounded-full w-8 h-8 overflow-hidden">${svg}</div>`;
@@ -562,9 +563,9 @@ export const renderFriends = (
                 ${avatarImage}
               </div>
               <div class="flex-1 min-w-0">
-                <h3 class="font-bold text-sm truncate">${friend.name}</h3>
+                <h3 class="font-bold text-sm truncate">${escapeHtml(friend.name)}</h3>
                 <p class="text-xs opacity-70">#${friend.id}${
-                  friend.allianceName ? ` · ${friend.allianceName}` : ""
+                  friend.allianceName ? ` · ${escapeHtml(friend.allianceName)}` : ""
                 }</p>
               </div>
             </div>
@@ -589,12 +590,12 @@ export const renderFriends = (
                 friend.tag
                   ? `
                 <div class="badge badge-sm gap-1" style="background: ${
-                  friend.tag.color
-                }20; border-color: ${friend.tag.color};">
+                  escapeHtml(friend.tag.color)
+                }20; border-color: ${escapeHtml(friend.tag.color)};">
                   <div style="width: 6px; height: 6px; border-radius: 50%; background: ${
-                    friend.tag.color
+                    escapeHtml(friend.tag.color)
                   };"></div>
-                  <span class="text-xs">${friend.tag.name || t`tag`}</span>
+                  <span class="text-xs">${escapeHtml(friend.tag.name) || t`tag`}</span>
                 </div>
               `
                   : `<div></div>`
@@ -666,17 +667,17 @@ export const renderFriendsTagFilters = (
           class="friends-tag-filter-btn btn btn-sm ${
             isSelected ? "btn-primary" : "btn-outline"
           }"
-          data-tag-key="${tagKey}"
-          style="border-color: ${tag.color}; ${
+          data-tag-key="${escapeHtml(tagKey)}"
+          style="border-color: ${escapeHtml(tag.color)}; ${
             isSelected
-              ? `background: ${tag.color}; border-color: ${tag.color};`
+              ? `background: ${escapeHtml(tag.color)}; border-color: ${escapeHtml(tag.color)};`
               : ""
           }"
         >
           <span style="width: 12px; height: 12px; background: ${
-            tag.color
+            escapeHtml(tag.color)
           }; border-radius: 50%; display: inline-block;"></span>
-          ${tag.name || t`tag`} (${count})
+          ${escapeHtml(tag.name) || t`tag`} (${count})
         </button>
       `;
     })
@@ -784,12 +785,12 @@ export const showImportExportDialog = async (
                     return t`
                       <label class="flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-base-200" style="margin-bottom: 0.25rem;">
                         <input type="checkbox" class="checkbox checkbox-sm friends-tag-checkbox" data-color="${
-                          tag.color
-                        }" data-name="${tag.name || ""}" />
+                          escapeHtml(tag.color)
+                        }" data-name="${escapeHtml(tag.name) || ""}" />
                         <div style="width: 20px; height: 20px; border-radius: 4px; background: ${
-                          tag.color
+                          escapeHtml(tag.color)
                         }; flex-shrink: 0;"></div>
-                        <span style="flex: 1;">${tag.name || `no_name`}</span>
+                        <span style="flex: 1;">${escapeHtml(tag.name) || `no_name`}</span>
                         <span style="font-size: 0.75rem; color: oklch(var(--bc) / 0.6);">(${count})</span>
                       </label>
                     `;

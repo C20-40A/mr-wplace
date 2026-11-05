@@ -1,4 +1,5 @@
 import { t } from "../i18n/manager";
+import { escapeHtml } from "@/utils/html";
 
 interface ImageDropzoneOptions {
   onFileSelected: (file: File) => void;
@@ -141,7 +142,7 @@ export class ImageDropzone {
     if (!file.type.startsWith("image/")) {
       this.dropzoneElement.innerHTML = `
         <div class="text-center">
-          <p class="text-sm text-gray-600">${file.name}</p>
+          <p class="text-sm text-gray-600">${escapeHtml(file.name)}</p>
           <p class="text-xs text-gray-500 mt-1">クリックで変更</p>
         </div>
       `;
@@ -153,7 +154,7 @@ export class ImageDropzone {
       this.dropzoneElement.innerHTML = `
         <div class="text-center">
           <img src="${e.target?.result}" class="max-w-full max-h-32 mx-auto mb-2 rounded" alt="Selected image">
-          <p class="text-sm text-gray-600">${file.name}</p>
+          <p class="text-sm text-gray-600">${escapeHtml(file.name)}</p>
           <p class="text-xs text-gray-500 mt-1">クリックで変更</p>
         </div>
       `;

@@ -22,6 +22,7 @@ export const setupMessageHandlers = (
   const userModalHandler = setupUserModalHandler(notificationModal);
 
   window.addEventListener("message", async (event) => {
+    if (event.source !== window) return;
     // Run all handlers (each checks its own source)
     await Promise.all([
       snapshotHandler(event),
