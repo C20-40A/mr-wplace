@@ -35,5 +35,8 @@
   "dependencies": {
     "jszip": "^3.10.1",
     "pixi.js": "^8.19.0"
+  },
+  "volta": {
+    "node": "26.12.1"
   }
 }
