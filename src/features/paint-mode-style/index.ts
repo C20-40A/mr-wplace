@@ -1,5 +1,6 @@
 import { findPaintPixelControls } from "@/constants/selectors";
 import { isMobileViewport } from "@/constants/breakpoints";
+import { ensureStyle } from "@/utils/style";
 import { subscribePaintMode } from "@/utils/paint-mode";
 import {
   loadPaintModeStyleFromStorage,
@@ -57,22 +58,22 @@ const removeGapRule: StyleRule = {
   },
 };
 
-/** マップFABを非表示にするルール */
+const HIDE_CLASS = "mr-wplace-paint-mode";
+
+/** マップFABを非表示にするルール (htmlのclass+CSS。他機能のinline displayを壊さない) */
 const hideFabRule: StyleRule = {
   name: "hideMapFabs",
   mobileOnly: false,
   apply: () => {
-    for (const id of MAP_FAB_IDS) {
-      const el = document.getElementById(id) as HTMLElement | null;
-      if (el) el.style.display = "none";
-    }
+    ensureStyle(
+      "mr-wplace-paint-mode-style",
+      `html.${HIDE_CLASS} ${MAP_FAB_IDS.map((id) => `#${id}`).join(
+        `, html.${HIDE_CLASS} `,
+      )} { display: none !important; }`,
+    );
+    document.documentElement.classList.add(HIDE_CLASS);
   },
-  restore: () => {
-    for (const id of MAP_FAB_IDS) {
-      const el = document.getElementById(id) as HTMLElement | null;
-      if (el) el.style.display = "";
-    }
-  },
+  restore: () => document.documentElement.classList.remove(HIDE_CLASS),
 };
 
 const rules: StyleRule[] = [removeGapRule, hideFabRule];
@@ -106,7 +107,6 @@ export class PaintModeStyle {
 
   private deactivate(): void {
     for (const rule of rules) {
-      if (rule.mobileOnly && !isMobileViewport()) continue;
       rule.restore();
     }
   }
@@ -114,5 +114,6 @@ export class PaintModeStyle {
   destroy(): void {
     this.unsubscribe?.();
     this.unsubscribe = null;
+    this.deactivate();
   }
 }
