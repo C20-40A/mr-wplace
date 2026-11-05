@@ -14,6 +14,7 @@ import {
 import { getAllGalleryMetadata } from "@/core/bridge/gallery-storage-bridge";
 import { isBlueMarbleDetected } from "@/utils/blue-marble";
 import { runtime } from "@/utils/browser-api";
+import { onDomChange } from "@/utils/dom-change";
 
 export type FeatureHintId =
   | "paint-pixel-icon"
@@ -64,10 +65,9 @@ const setupPositionModalObserver = () => {
   if (positionModalObserverSetup) return;
   positionModalObserverSetup = true;
 
-  const observer = new MutationObserver(() => {
+  onDomChange(() => {
     if (pendingHints.size > 0) refreshFeatureHints();
   });
-  observer.observe(document.body, { childList: true, subtree: true });
 };
 
 const HINT_DEFINITIONS: Record<FeatureHintId, FeatureHintDefinition> = {

@@ -1366,7 +1366,7 @@ export const getOverlayPixelColor = async (
 
       // ピクセル取得（x1サイズbitmapから直接取得）
       const canvas = new OffscreenCanvas(1, 1);
-      const ctx = canvas.getContext("2d")!;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
       ctx.drawImage(bitmap, relX, relY, 1, 1, 0, 0, 1, 1);
       const imageData = ctx.getImageData(0, 0, 1, 1);
 

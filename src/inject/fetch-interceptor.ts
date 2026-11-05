@@ -534,19 +534,13 @@ const handleTileRequest = async (
     // Save to memory cache
     dataSaver.tileCache.set(cacheKey, processedBlob);
 
-    // Save to IndexedDB for persistence
-    if (dataSaver.tileCacheDB) {
-      try {
-        await dataSaver.tileCacheDB.setCachedTile(
-          cacheKey,
-          processedBlob,
-          dataSaver.maxCacheSize
-        );
-        console.log("🧑‍🎨 : Cached processed tile to IndexedDB:", cacheKey);
-      } catch (error) {
+    // Save to IndexedDB for persistence.
+    // タイル返却を IndexedDB 書き込み(+evict)で待たせない。memory cache は上で同期更新済み。
+    dataSaver.tileCacheDB
+      ?.setCachedTile(cacheKey, processedBlob, dataSaver.maxCacheSize)
+      .catch((error) => {
         console.warn("🧑‍🎨 : Failed to cache to IndexedDB:", error);
-      }
-    }
+      });
   }
 
   // Notify that tile fetch is complete (hide drawing loader)
