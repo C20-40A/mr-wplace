@@ -69,18 +69,17 @@ export class GalleryListUI {
       </select>
       <span class="indicator ml-auto">
         ${countOfficialSyncPending(items) > 0 ? '<span class="indicator-item badge badge-primary badge-xs" style="padding: 0; width: 0.5rem; height: 0.5rem;"></span>' : ""}
-      <button id="wps-gallery-official-sync-btn" class="btn btn-outline btn-sm">
+      <button id="wps-gallery-official-sync-btn" class="btn btn-outline btn-sm" title="${t`${"official_sync"}`}" aria-label="${t`${"official_sync"}`}">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
           <path d="M160-160v-80h110l-16-14q-52-46-73-105t-21-119q0-111 66.5-197.5T400-790v84q-72 26-116 88.5T240-478q0 45 17 87.5t53 78.5l10 10v-98h80v240H160Zm400-10v-84q72-26 116-88.5T720-482q0-45-17-87.5T650-648l-10-10v98h-80v-240h240v80H690l16 14q49 49 71.5 106.5T800-482q0 111-66.5 197.5T560-170Z"/>
         </svg>
-        ${t`${"official_sync"}`}
+        <span class="max-sm:hidden">${t`${"official_sync"}`}</span>
       </button>
       </span>
-      <button id="wps-gallery-import-export-btn" class="btn btn-outline btn-sm">
+      <button id="wps-gallery-import-export-btn" class="btn btn-outline btn-sm" title="${t`${"import_export"}`}" aria-label="${t`${"import_export"}`}">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="currentColor" class="size-4">
           <path d="M440-367v-465l-64 64-56-57 160-160 160 160-56 57-64-64v465h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/>
         </svg>
-        ${t`${"import_export"}`}
       </button>
     `;
     this.container.appendChild(sortContainer);
